@@ -142,7 +142,7 @@ push_changes() {
     # Check if remote exists
     if ! git remote get-url origin > /dev/null 2>&1; then
         print_error "No remote 'origin' found. Please add your GitHub remote first."
-        print_status "Example: git remote add origin https://github.com/yourusername/shadowrealms-ai.git"
+        print_status "Example: git remote add origin https://github.com/Somnius/shadowrealms-ai.git"
         exit 1
     fi
     

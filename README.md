@@ -28,7 +28,7 @@
 ### Installation
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/shadowrealms-ai.git
+git clone https://github.com/Somnius/shadowrealms-ai.git
 cd shadowrealms-ai
 
 # Start all services
@@ -181,9 +181,9 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 📞 Support
 
-- **Issues**: [GitHub Issues](https://github.com/yourusername/shadowrealms-ai/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/yourusername/shadowrealms-ai/discussions)
-- **Documentation**: [Wiki](https://github.com/yourusername/shadowrealms-ai/wiki)
+- **Issues**: [GitHub Issues](https://github.com/Somnius/shadowrealms-ai/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/Somnius/shadowrealms-ai/discussions)
+- **Documentation**: [Wiki](https://github.com/Somnius/shadowrealms-ai/wiki)
 
 ---
 

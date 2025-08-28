@@ -13,7 +13,7 @@
 ### 2. **Set Up Local Repository**
 ```bash
 # Add GitHub remote (replace 'yourusername')
-git remote add origin https://github.com/yourusername/shadowrealms-ai.git
+git remote add origin https://github.com/Somnius/shadowrealms-ai.git
 
 # Create main branch
 git checkout -b main

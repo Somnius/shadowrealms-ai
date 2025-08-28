@@ -43,7 +43,7 @@ git init
 ### 2.2 Add GitHub Remote
 ```bash
 # Replace 'yourusername' with your actual GitHub username
-git remote add origin https://github.com/yourusername/shadowrealms-ai.git
+git remote add origin https://github.com/Somnius/shadowrealms-ai.git
 
 # Verify remote was added
 git remote -v
@@ -241,7 +241,7 @@ Transform your tabletop gaming with local AI Dungeon Masters, vector memory, and
 ```bash
 # Test cloning from another location
 cd /tmp
-git clone https://github.com/yourusername/shadowrealms-ai.git
+git clone https://github.com/Somnius/shadowrealms-ai.git
 cd shadowrealms-ai
 ls -la  # Verify files are present
 ```
