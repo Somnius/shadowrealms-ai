@@ -1,0 +1,53 @@
+# ShadowRealms AI - Web-Based RPG Platform
+# Python dependencies for the new web platform
+
+# Web Framework
+Flask>=3.0.0
+Flask-CORS>=4.0.0
+Flask-JWT-Extended>=4.6.0
+Flask-SQLAlchemy>=3.1.0
+Flask-Migrate>=4.0.0
+
+# Database & ORM
+SQLAlchemy>=2.0.0
+alembic>=1.13.0
+
+# Authentication & Security
+bcrypt>=4.1.0
+PyJWT>=2.8.0
+cryptography>=41.0.0
+
+# AI & LLM Integration
+requests>=2.31.0
+httpx>=0.25.0
+openai>=1.0.0
+
+# Vector Database & AI Memory
+chromadb>=0.4.0
+sentence-transformers>=2.2.0
+numpy>=1.24.0
+
+# Data Processing
+pydantic>=2.6.0
+pydantic-settings>=2.1.0
+python-dotenv>=1.0.0
+
+# WebSocket & Real-time
+Flask-SocketIO>=5.3.0
+python-socketio>=5.9.0
+
+# Utilities
+python-dateutil>=2.8.0
+pytz>=2023.3
+click>=8.1.0
+
+# Development & Testing
+pytest>=7.4.0
+pytest-cov>=4.1.0
+black>=23.0.0
+flake8>=6.0.0
+mypy>=1.5.0
+
+# Production
+gunicorn>=21.2.0
+uvicorn>=0.24.0

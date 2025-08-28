@@ -1,0 +1,261 @@
+# ShadowRealms AI Changelog
+
+All notable changes to this project will be documented in this file.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [0.4.5] - 2025-08-28 02:50 EEST - Docker Environment Variables & Flask Configuration
+
+### Added
+- **Docker Environment Variables**: Complete environment variable configuration for containers
+- **Flask Secret Key Management**: Secure secret key handling via environment variables
+- **Configuration Testing Scripts**: Comprehensive testing for local and Docker environments
+- **Docker Environment Guide**: Complete setup and troubleshooting documentation
+
+### Changed
+- **Flask Configuration**: Updated to use FLASK_SECRET_KEY from environment variables
+- **Docker Compose**: Enhanced environment variable passing with fallback values
+- **Configuration Loading**: Added python-dotenv support for local development
+- **Secret Key Generation**: Enhanced script with multiple generation methods
+
+### Fixed
+- **Environment Variable Loading**: Proper loading in Docker containers vs local development
+- **Configuration Debugging**: Added comprehensive logging and debug methods
+- **Security Configuration**: Secret keys now properly managed via environment variables
+
+### Technical Details
+- **Environment Flow**: .env → docker-compose.yml → Flask container → config.py
+- **Secret Key Generation**: Hex, URL-safe, UUID, and hash-based methods
+- **Docker Integration**: Environment variables passed with ${VAR:-default} syntax
+- **Configuration Testing**: Local and Docker environment validation scripts
+
+### Security Improvements
+- **Secret Key Management**: No more hardcoded keys in source code
+- **Environment Isolation**: Development vs production configuration separation
+- **Secure Defaults**: Fallback values for development with security warnings
+
+---
+
+## [0.4.4] - 2025-08-28 02:40 EEST - Backup System & Git Ignore Implementation
+
+### Added
+- **Comprehensive Backup System** - Automated tar.bz2 backup creation with timestamp naming
+- **Backup Script** - `backup.sh` with proper exclusions and progress reporting
+- **Backup Directory** - Dedicated `backup/` folder for project backups
+- **Comprehensive Git Ignore** - Complete .gitignore covering all project aspects
+
+### Changed
+- **Backup Process** - Automated backup with command: `./backup.sh`
+- **Git Management** - Enhanced version control with proper exclusions
+- **Project Organization** - Better separation of source code vs generated data
+
+### Fixed
+- **Data Management** - Proper exclusion of backup and books directories from version control
+- **File Organization** - Clear separation between source code and user data
+
+### Technical Details
+- **Backup Format**: `tg-rpg_YYYY-MM-DD_HH-MM.tar.bz2`
+- **Exclusions**: `backup/`, `books/`, `*.tar.bz2`, `.git/`
+- **Compression**: bzip2 for optimal size/speed balance
+- **Progress Reporting**: Duration, file size, and status information
+- **Git Ignore Coverage**: Python, Node.js, Docker, OS files, AI models, logs, databases
+
+### Backup Command
+```bash
+./backup.sh
+```
+
+---
+
+## [0.4.3] - 2025-08-28 02:35 EEST - Phase 1 Complete & Critical Issues Resolved
+
+### Added
+- **Phase 1 Completion** - All foundation components now functional and stable
+- **Docker Environment Stability** - All services starting successfully without crashes
+- **Comprehensive Service Integration** - Backend, ChromaDB, Redis, Monitoring, and Frontend all operational
+
+### Changed
+- **Platform Status** - Transitioned from broken/crashing system to stable, functional foundation
+- **Development Phase** - Successfully completed Phase 1, ready for Phase 2 (AI ionIntegration)
+
+### Fixed
+- **All Critical Import Errors** - Resolved all `ModuleNotFoundError` and import path issues
+- **Service Startup Issues** - Eliminated infinite waiting loops and service crashes
+- **Health Check Failures** - All endpoints now responding with 200 status
+- **Dependency Resolution** - All Python module dependencies resolving correctly in Docker
+
+### Removed
+- **Startup Failures** - No more backend crashes or service exits with error codes
+- **Blocking Issues** - All previously blocking development issues resolved
+
+### Technical Achievements
+- **Standalone Testing System** - Successfully validated all modules before Docker integration
+- **Docker Environment** - All containers starting and communicating correctly
+- **Database Operations** - SQLite database initialization and operations working
+- **Service Communication** - Inter-service dependencies and health checks functional
+- **Logging System** - Comprehensive logging and monitoring operational
+
+### Next Phase Ready
+- **AI/LLM Integration** - Foundation stable for advanced AI features
+- **Vector Memory System** - ChromaDB ready for vector operations
+- **Frontend Development** - React app compiling and ready for UI development
+
+---
+
+## [0.4.2] - 2025-08-28 02:00 EEST - Standalone Testing & Critical Bug Fixes
+
+#### Added
+- **Comprehensive Standalone Testing System** for all Python modules
+- **Module Test Runner** (`test_modules.py`) for automated testing
+- **Individual Module Tests** in each Python component
+- **Testing Documentation** (`TESTING.md`) with best practices
+- **GPU Monitoring Dependencies** (nvidia-ml-py, pynvml) for proper GPU tracking
+- **Enhanced Logging Configuration** with file and console output
+- **Debug Entrypoint Scripts** with detailed startup logging
+
+#### Changed
+- **Import Paths Fixed** - Changed from `backend.` to relative imports for Docker compatibility
+- **GPU Monitor Service** - Converted to static methods for proper health check integration
+- **Monitoring Service** - Updated to use proper NVIDIA libraries instead of deprecated nvidia_smi
+- **Database Schema** - Simplified and optimized table structure
+- **Configuration Management** - Enhanced with comprehensive logging setup
+
+#### Fixed
+- **Critical Health Check Error** - `GPUMonitorService.get_current_status() missing 1 required positional argument: 'self'`
+- **Import Module Errors** - `ModuleNotFoundError: No module named 'backend'` in Docker environment
+- **ChromaDB Health Check** - Updated from deprecated v1 API to v2 API (`/api/v2/heartbeat`)
+- **Monitoring Service Integration** - Added shared logs volume mount for backend access
+- **Entrypoint Script Permissions** - Fixed executable permissions for Docker scripts
+- **Missing Global Instance** - Restored `gpu_monitor_service` instance for route file imports
+
+#### Technical Improvements
+- **Standalone Testing Approach** - Each module can be tested independently before Docker integration
+- **Early Bug Detection** - Issues caught at module level before complex debugging in containers
+- **Development Workflow** - Clear testing → fixing → integration → deployment pipeline
+- **Error Isolation** - Problems identified and resolved in individual components
+- **Docker Compatibility** - All services now properly configured for containerized environment
+
+#### Development Benefits
+- **Faster Debugging** - Test components without full stack
+- **Confidence Building** - Know each module works before integration
+- **Easier Troubleshooting** - Isolate problems to specific components
+- **Quality Assurance** - Comprehensive testing before deployment
+- **Documentation** - Complete testing guide and best practices
+
+### [0.4.1] - 2025-08-28 01:30 EEST - Base Image Switch Complete & All Services Functional
+
+#### Added
+- **Complete React Frontend Structure** with Material-UI components
+- **Nginx Configuration** for reverse proxy routing
+- **All Docker Services** building and starting successfully
+
+#### Changed
+- **Base Images** switched to Ubuntu-based for better package compatibility
+- **Dependencies** resolved for AI/LLM integration packages
+
+#### Status
+- **Phase 1: COMPLETE** ✅
+- **Progress: 45%** of overall project
+- **All Core Services** operational
+
+### [0.4.0] - 2025-08-28 01:00 EEST - Docker Base Image & Package Compatibility
+
+#### Added
+- **Ubuntu-based Python Images** (`python:3.11-slim`) for better compatibility
+- **Resolved Dependency Conflicts** with AI/LLM packages
+- **Improved Security** with non-Alpine base images
+
+#### Changed
+- **Dockerfile Base Images** from Alpine to Ubuntu
+- **Package Installation** from `apk` to `apt-get`
+- **System Dependencies** updated for Ubuntu compatibility
+
+#### Removed
+- **Alpine Linux Base Images** due to package compatibility issues
+- **Problematic Dependencies** that caused build failures
+
+### [0.3.0] - 2025-08-28 00:15 EEST - Docker Environment & Backend Implementation
+
+#### Added
+- **Docker Compose Setup** with multi-service architecture
+- **GPU Monitoring System** using nvidia-smi and system monitoring
+- **Modular Flask Backend** with JWT authentication
+- **SQLite Database Schema** for users, campaigns, and characters
+- **LLM Service Layer** for AI integration
+- **API Routes** for authentication, users, campaigns, and AI
+- **ChromaDB Integration** for vector memory storage
+
+#### Changed
+- **Development Strategy** to Docker-first approach
+- **Project Structure** to web-based platform architecture
+- **Backend Architecture** to modular, scalable design
+
+#### Technical Foundation
+- **Containerization** with Docker and Docker Compose
+- **Backend Framework** Flask with extensions
+- **Database** SQLite with SQLAlchemy
+- **Authentication** JWT-based with role management
+- **Monitoring** GPU and system resource tracking
+
+### [0.2.1] - 2025-08-27 23:45 EEST - Development Strategy & Docker Foundation
+
+#### Added
+- **Docker Strategy** for consistent development and production
+- **Modular Backend Architecture** for easy feature addition/removal
+- **GPU Monitoring System** with configurable thresholds
+- **System Resource Tracking** (CPU, RAM, Disk I/O, Network)
+- **AI Response Optimization** based on resource availability
+
+#### Changed
+- **Development Approach** to backend-first with modular design
+- **Technology Stack** to React + Material-UI frontend
+- **Database Strategy** to ChromaDB for vector memory
+
+#### Development Decisions
+- **Backend-First Development** to establish solid foundation
+- **Modular Architecture** for scalability and maintainability
+- **Docker Containerization** for consistent environments
+- **GPU-Aware AI** for performance optimization
+
+#### Technical Foundation
+- **Python Backend** with Flask and extensions
+- **Vector Database** ChromaDB for AI memory
+- **Frontend Framework** React with Material-UI
+- **Containerization** Docker and Docker Compose
+- **Monitoring** GPU and system resource tracking
+
+### [0.2.0] - 2025-08-27 23:15 EEST - Project Rebrand & Complete Refactoring
+
+#### Added
+- **New Project Name**: ShadowRealms AI
+- **Web-Based Platform** instead of Telegram bot
+- **User Authentication System** with role-based access
+- **AI-Powered RPG Platform** with local LLM integration
+- **Vector Memory System** for persistent AI knowledge
+- **Modular Backend Architecture** for scalability
+
+#### Changed
+- **Complete Platform Transformation** from Telegram to web-based
+- **Architecture** to multi-service Docker environment
+- **Technology Stack** to modern web technologies
+- **Development Approach** to scalable, enterprise-grade platform
+
+#### Removed
+- **Telegram Bot Functionality**
+- **Old Project Structure**
+- **Legacy Code and Dependencies**
+
+---
+
+## Project Evolution Summary
+
+**ShadowRealms AI** has evolved from a simple Telegram bot concept to a comprehensive, AI-powered web-based RPG platform. The development journey has focused on:
+
+1. **Architectural Excellence** - Modular, scalable backend design
+2. **Modern Technology Stack** - Docker, React, Flask, ChromaDB
+3. **AI Integration** - Local LLM support with performance optimization
+4. **Quality Assurance** - Comprehensive testing and validation
+5. **Developer Experience** - Clear documentation and testing workflows
+
+The platform now represents a robust foundation for AI-powered tabletop RPG experiences, with a focus on performance, scalability, and user experience.

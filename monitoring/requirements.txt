@@ -1,0 +1,29 @@
+# ShadowRealms AI Monitoring Service Dependencies
+# GPU and System Resource Monitoring
+
+# Core monitoring
+psutil>=5.9.0
+GPUtil>=1.4.0
+
+# NVIDIA GPU monitoring
+nvidia-ml-py>=11.525.84
+pynvml>=11.5.0
+
+# System monitoring
+py-cpuinfo>=9.0.0
+
+# API and communication
+requests>=2.31.0
+fastapi>=0.104.0
+uvicorn>=0.24.0
+
+# Data processing
+numpy>=1.24.0
+pandas>=2.0.0
+
+# Logging and configuration
+python-dotenv>=1.0.0
+loguru>=0.7.0
+
+# Health checks
+healthcheck>=1.0.0
