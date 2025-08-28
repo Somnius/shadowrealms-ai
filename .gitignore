@@ -352,6 +352,12 @@ models/
 checkpoints/
 
 # =============================================================================
+# PROJECT-SPECIFIC EXCLUSIONS
+# =============================================================================
+# Discussion and planning documents (not for public repository)
+Discussion No1 Local LLM-Powered Tabletop RPG Platform_ Complete.md
+
+# =============================================================================
 # MONITORING AND METRICS
 # =============================================================================
 # System monitoring data

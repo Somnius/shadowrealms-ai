@@ -5,6 +5,31 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.6] - 2025-08-29 00:30 EEST - GitHub Integration & Contributing Guidelines
+
+### Added
+- **GitHub Repository Integration**: Successfully integrated with https://github.com/Somnius/shadowrealms-ai.git
+- **Comprehensive Contributing Guidelines**: Complete CONTRIBUTING.md with code standards and community guidelines
+- **Project-Specific Git Exclusions**: Enhanced .gitignore with Discussion document exclusion
+- **GitHub Workflow Scripts**: Automated git operations for streamlined development
+
+### Changed
+- **Repository URLs**: Updated all documentation from placeholder to actual GitHub repository
+- **Documentation Structure**: Enhanced with community contribution guidelines
+- **Project Visibility**: Prepared for public GitHub repository and community engagement
+
+### Removed
+- **Discussion Document**: Excluded from public repository for privacy and focus
+- **Placeholder References**: All "yourusername" references replaced with actual repository
+
+### Technical Details
+- **GitHub Remote**: Configured with proper origin URL
+- **Branch Management**: Synchronized main and develop branches
+- **Backup System**: Created verified backup with integrity checks
+- **Documentation**: Updated README, setup guides, and workflow scripts
+
+---
+
 ## [0.4.5] - 2025-08-28 02:50 EEST - Docker Environment Variables & Flask Configuration
 
 ### Added
