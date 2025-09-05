@@ -42,7 +42,7 @@ class Config:
     OPENAI_MODEL = os.environ.get('OPENAI_MODEL') or 'gpt-3.5-turbo'
     
     # ChromaDB Configuration
-    CHROMADB_HOST = os.environ.get('CHROMADB_HOST') or 'chromadb'
+    CHROMADB_HOST = os.environ.get('CHROMADB_HOST') or 'localhost'
     CHROMADB_PORT = int(os.environ.get('CHROMADB_PORT') or 8000)
     
     # GPU Monitoring Configuration

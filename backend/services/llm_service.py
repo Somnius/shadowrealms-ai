@@ -11,6 +11,7 @@ import requests
 from typing import Dict, Any, Optional, List
 from abc import ABC, abstractmethod
 from datetime import datetime
+from .smart_model_router import SmartModelRouter, create_smart_model_router
 
 logger = logging.getLogger(__name__)
 
@@ -199,19 +200,21 @@ class OllamaProvider(LLMProvider):
             return f"Error: Failed to generate response - {str(e)}"
 
 class LLMService:
-    """Main LLM service that manages multiple providers"""
+    """Main LLM service that manages multiple providers with smart routing"""
     
     def __init__(self, config: Dict[str, Any]):
         self.config = config
+        
+        # Use smart model router for efficient resource management
+        self.model_router = create_smart_model_router(config)
+        
+        # Keep legacy providers for backward compatibility
         self.providers = {
             'lm_studio': LMStudioProvider(config),
             'ollama': OllamaProvider(config)
         }
         
-        # Priority order for providers
-        self.provider_priority = ['lm_studio', 'ollama']
-        
-        logger.info("LLM Service initialized")
+        logger.info("LLM Service initialized with SmartModelRouter")
     
     def get_available_providers(self) -> List[str]:
         """Get list of available providers"""
@@ -230,20 +233,18 @@ class LLMService:
         return None
     
     def generate_response(self, prompt: str, context: Dict[str, Any], config: Dict[str, Any]) -> str:
-        """Generate response using the best available provider"""
-        # Get primary provider
-        provider = self.get_primary_provider()
+        """Generate response using smart model routing"""
+        # Use smart model router for intelligent model selection
+        result = self.model_router.generate_response(prompt, context, config)
         
-        if not provider:
-            return "Error: No LLM providers available"
-        
-        # Generate response
-        response = provider.generate_response(prompt, context, config)
+        if 'error' in result:
+            logger.error(f"SmartModelRouter error: {result['error']}")
+            return result['response']
         
         # Log the interaction
-        logger.info(f"Generated response using {provider.__class__.__name__}")
+        logger.info(f"Generated response using {result['model_used']} for {result['task_type']} task")
         
-        return response
+        return result['response']
     
     def get_system_status(self) -> Dict[str, Any]:
         """Get system status for all providers"""

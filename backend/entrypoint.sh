@@ -7,7 +7,7 @@ echo "🚀 Starting ShadowRealms AI Backend..."
 
 # Wait for ChromaDB to be ready
 echo "⏳ Waiting for ChromaDB to be ready..."
-until curl -f http://chromadb:8000/api/v2/heartbeat > /dev/null 2>&1; do
+until curl -f http://localhost:8000/api/v2/heartbeat > /dev/null 2>&1; do
     echo "   ChromaDB not ready yet, waiting..."
     sleep 2
 done

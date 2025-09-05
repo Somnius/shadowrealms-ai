@@ -18,29 +18,26 @@ services:
       - FLASK_SECRET_KEY=${FLASK_SECRET_KEY:-dev-secret-key-change-in-production}
       - JWT_SECRET_KEY=${JWT_SECRET_KEY:-jwt-secret-key-change-in-production}
       - DATABASE=/app/data/shadowrealms.db
-      - CHROMADB_HOST=chromadb
+      - CHROMADB_HOST=localhost
       - CHROMADB_PORT=8000
-      - REDIS_HOST=redis
+      - REDIS_HOST=localhost
       - REDIS_PORT=6379
       - GPU_THRESHOLD_HIGH=80
       - GPU_THRESHOLD_MEDIUM=60
       - LOG_LEVEL=INFO
       - LOG_FILE=/app/logs/backend.log
       # LLM Service Configuration
-      - LM_STUDIO_URL=http://10.0.0.1:1234
+      - LM_STUDIO_URL=http://localhost:1234
       - LM_STUDIO_API_KEY=${LM_STUDIO_API_KEY:-}
       - LM_STUDIO_MODEL=${LM_STUDIO_MODEL:-mythomakise-merged-13b}
       - LM_STUDIO_TIMEOUT=${LM_STUDIO_TIMEOUT:-30}
-      - OLLAMA_URL=http://10.0.0.1:11434
+      - OLLAMA_URL=http://localhost:11434
       - OLLAMA_MODEL=${OLLAMA_MODEL:-command-r:35b}
       - OLLAMA_TIMEOUT=${OLLAMA_TIMEOUT:-30}
     depends_on:
       - chromadb
       - monitoring
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
-    networks:
-      - shadowrealms-network
+    network_mode: "host"
     restart: unless-stopped
 
   chromadb:
