@@ -21,7 +21,6 @@ class TaskType(Enum):
     WORLD_BUILDING = "world_building"
     STORYTELLING = "storytelling"
     CREATIVE = "creative"
-    GREEK_CONTENT = "greek_content"
     DICE_ROLLING = "dice_rolling"
     COMBAT = "combat"
     CHARACTER_CREATION = "character_creation"
@@ -38,19 +37,20 @@ class SmartModelRouter:
     def __init__(self, config: Dict[str, Any]):
         self.config = config
         
-        # Model configurations with VRAM requirements
+        # Model configurations with VRAM requirements - Simplified to 2 models
         self.model_configs = {
-            # Primary models (always available)
+            # Primary model (always available)
             'mythomakisemerged-13b': {
                 'provider': ModelProvider.LM_STUDIO,
                 'base_url': config.get('LM_STUDIO_URL', 'http://localhost:1234'),
-                'specialties': [TaskType.ROLEPLAY, TaskType.CHARACTER_CREATION, TaskType.GENERAL],
+                'specialties': [TaskType.ROLEPLAY, TaskType.CHARACTER_CREATION, TaskType.STORYTELLING, TaskType.WORLD_BUILDING, TaskType.GENERAL],
                 'vram_usage': 8,  # GB
                 'max_tokens': 1024,
                 'temperature': 0.8,
-                'description': 'Primary roleplay and character consistency',
+                'description': 'Primary model for all RPG tasks',
                 'priority': 1  # Always loaded
             },
+            # Fallback model (always available)
             'llama3.2:3b': {
                 'provider': ModelProvider.OLLAMA,
                 'base_url': config.get('OLLAMA_URL', 'http://localhost:11434'),
@@ -58,40 +58,17 @@ class SmartModelRouter:
                 'vram_usage': 2,  # GB
                 'max_tokens': 512,
                 'temperature': 0.6,
-                'description': 'Fast responses for game mechanics',
+                'description': 'Fast fallback for all tasks',
                 'priority': 1  # Always loaded
-            },
-            
-            # Specialized models (load on demand)
-            'meltemi-7b-v1-i1': {
-                'provider': ModelProvider.LM_STUDIO,
-                'base_url': config.get('LM_STUDIO_URL', 'http://localhost:1234'),
-                'specialties': [TaskType.GREEK_CONTENT],
-                'vram_usage': 5,  # GB
-                'max_tokens': 512,
-                'temperature': 0.7,
-                'description': 'Greek language model',
-                'priority': 2  # Load on demand
-            },
-            'command-r:35b': {
-                'provider': ModelProvider.OLLAMA,
-                'base_url': config.get('OLLAMA_URL', 'http://localhost:11434'),
-                'specialties': [TaskType.STORYTELLING, TaskType.WORLD_BUILDING],
-                'vram_usage': 20,  # GB - too large for always-on
-                'max_tokens': 2048,
-                'temperature': 0.8,
-                'description': 'Complex storytelling and world-building',
-                'priority': 3  # Load only when needed
             }
         }
         
-        # Task routing priorities (fallback order)
+        # Task routing priorities (simplified to 2 models)
         self.task_routing = {
             TaskType.ROLEPLAY: ['mythomakisemerged-13b', 'llama3.2:3b'],
-            TaskType.WORLD_BUILDING: ['command-r:35b', 'mythomakisemerged-13b'],
-            TaskType.STORYTELLING: ['command-r:35b', 'mythomakisemerged-13b'],
+            TaskType.WORLD_BUILDING: ['mythomakisemerged-13b', 'llama3.2:3b'],
+            TaskType.STORYTELLING: ['mythomakisemerged-13b', 'llama3.2:3b'],
             TaskType.CREATIVE: ['mythomakisemerged-13b', 'llama3.2:3b'],
-            TaskType.GREEK_CONTENT: ['meltemi-7b-v1-i1', 'mythomakisemerged-13b'],
             TaskType.DICE_ROLLING: ['llama3.2:3b', 'mythomakisemerged-13b'],
             TaskType.COMBAT: ['llama3.2:3b', 'mythomakisemerged-13b'],
             TaskType.CHARACTER_CREATION: ['mythomakisemerged-13b', 'llama3.2:3b'],
@@ -109,10 +86,6 @@ class SmartModelRouter:
     def detect_task_type(self, prompt: str, context: Dict[str, Any]) -> TaskType:
         """Detect the type of task based on prompt and context"""
         prompt_lower = prompt.lower()
-        
-        # Greek content detection
-        if any(word in prompt for word in ['γεια', 'καλησπέρα', 'καλημέρα', 'ελληνικά', 'greek']):
-            return TaskType.GREEK_CONTENT
         
         # Character creation
         if any(word in prompt_lower for word in ['character', 'create', 'background', 'stats', 'sheet', 'class', 'race']):

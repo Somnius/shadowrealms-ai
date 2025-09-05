@@ -12,6 +12,7 @@ from typing import Dict, Any, Optional, List
 from abc import ABC, abstractmethod
 from datetime import datetime
 from .smart_model_router import SmartModelRouter, create_smart_model_router
+from .rag_service import RAGService, create_rag_service
 
 logger = logging.getLogger(__name__)
 
@@ -208,13 +209,16 @@ class LLMService:
         # Use smart model router for efficient resource management
         self.model_router = create_smart_model_router(config)
         
+        # Initialize RAG service for memory and context
+        self.rag_service = create_rag_service(config)
+        
         # Keep legacy providers for backward compatibility
         self.providers = {
             'lm_studio': LMStudioProvider(config),
             'ollama': OllamaProvider(config)
         }
         
-        logger.info("LLM Service initialized with SmartModelRouter")
+        logger.info("LLM Service initialized with SmartModelRouter and RAG")
     
     def get_available_providers(self) -> List[str]:
         """Get list of available providers"""
@@ -233,13 +237,36 @@ class LLMService:
         return None
     
     def generate_response(self, prompt: str, context: Dict[str, Any], config: Dict[str, Any]) -> str:
-        """Generate response using smart model routing"""
+        """Generate response using smart model routing with RAG augmentation"""
+        # Get campaign context for RAG augmentation
+        campaign_id = context.get('campaign_id')
+        user_id = context.get('user_id')
+        
+        # Augment prompt with relevant context
+        if campaign_id:
+            augmented_prompt = self.rag_service.augment_prompt(prompt, campaign_id, user_id)
+            logger.info(f"Augmented prompt with RAG context for campaign {campaign_id}")
+        else:
+            augmented_prompt = prompt
+            logger.info("No campaign context available, using original prompt")
+        
         # Use smart model router for intelligent model selection
-        result = self.model_router.generate_response(prompt, context, config)
+        result = self.model_router.generate_response(augmented_prompt, context, config)
         
         if 'error' in result:
             logger.error(f"SmartModelRouter error: {result['error']}")
             return result['response']
+        
+        # Store interaction in memory
+        if campaign_id and user_id:
+            self.rag_service.store_interaction(
+                prompt, 
+                result['response'], 
+                campaign_id, 
+                user_id,
+                result.get('task_type', 'general')
+            )
+            logger.info(f"Stored interaction in RAG memory")
         
         # Log the interaction
         logger.info(f"Generated response using {result['model_used']} for {result['task_type']} task")
@@ -247,11 +274,13 @@ class LLMService:
         return result['response']
     
     def get_system_status(self) -> Dict[str, Any]:
-        """Get system status for all providers"""
+        """Get system status for all providers and RAG"""
         status = {
             'available_providers': self.get_available_providers(),
             'primary_provider': None,
-            'providers': {}
+            'providers': {},
+            'rag_status': self.rag_service.get_system_status(),
+            'model_router_status': self.model_router.get_system_status()
         }
         
         for provider_name, provider in self.providers.items():

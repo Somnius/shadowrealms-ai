@@ -103,8 +103,7 @@ services:
     depends_on:
       - backend
       - frontend
-    networks:
-      - shadowrealms-network
+    network_mode: "host"
     restart: unless-stopped
 
 volumes:

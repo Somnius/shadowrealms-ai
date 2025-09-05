@@ -7,11 +7,10 @@ echo "🚀 Starting ShadowRealms AI Backend..."
 
 # Wait for ChromaDB to be ready
 echo "⏳ Waiting for ChromaDB to be ready..."
-until curl -f http://localhost:8000/api/v2/heartbeat > /dev/null 2>&1; do
-    echo "   ChromaDB not ready yet, waiting..."
-    sleep 2
-done
-echo "✅ ChromaDB is ready!"
+echo "   Testing ChromaDB connection..."
+curl -v http://localhost:8000/api/v2/heartbeat || echo "   ChromaDB connection failed"
+echo "   Testing with timeout..."
+timeout 5 curl -f http://localhost:8000/api/v2/heartbeat && echo "   ChromaDB is ready!" || echo "   ChromaDB still not ready, continuing anyway..."
 
 # Wait for monitoring service to be ready
 echo "⏳ Waiting for monitoring service to be ready..."

@@ -343,12 +343,73 @@ def main():
         logger.error(f"Monitoring error: {e}")
         raise
 
+def start_http_server(monitor, port=8000):
+    """Start HTTP server for monitoring service"""
+    from http.server import HTTPServer, BaseHTTPRequestHandler
+    import json
+    import threading
+    
+    class MonitoringHandler(BaseHTTPRequestHandler):
+        def do_GET(self):
+            if self.path == '/status':
+                try:
+                    status = monitor.get_system_status()
+                    response_data = {
+                        'timestamp': time.time(),
+                        'performance_mode': status.overall_performance_mode.value,
+                        'cpu_usage': status.cpu_usage,
+                        'memory_usage': status.memory_usage,
+                        'gpu_count': len(status.gpu_status),
+                        'gpu_status': [
+                            {
+                                'gpu_id': gpu.gpu_id,
+                                'name': gpu.name,
+                                'utilization': gpu.utilization,
+                                'memory_used': gpu.memory_used,
+                                'memory_total': gpu.memory_total,
+                                'temperature': gpu.temperature,
+                                'performance_mode': gpu.performance_mode.value
+                            }
+                            for gpu in status.gpu_status
+                        ]
+                    }
+                    
+                    self.send_response(200)
+                    self.send_header('Content-type', 'application/json')
+                    self.end_headers()
+                    self.wfile.write(json.dumps(response_data).encode())
+                except Exception as e:
+                    self.send_response(500)
+                    self.send_header('Content-type', 'application/json')
+                    self.end_headers()
+                    self.wfile.write(json.dumps({'error': str(e)}).encode())
+            else:
+                self.send_response(404)
+                self.end_headers()
+    
+    def run_server():
+        server = HTTPServer(('0.0.0.0', port), MonitoringHandler)
+        logger.info(f"Monitoring HTTP server started on port {port}")
+        server.serve_forever()
+    
+    # Start HTTP server in a separate thread
+    server_thread = threading.Thread(target=run_server, daemon=True)
+    server_thread.start()
+
 if __name__ == "__main__":
     """Run standalone tests or actual service based on arguments"""
     import sys
     
     if len(sys.argv) > 1 and sys.argv[1] == "--run":
         # Run the actual monitoring service
+        config = {
+            'MONITORING_INTERVAL': 10,
+            'GPU_THRESHOLD_HIGH': 80,
+            'GPU_THRESHOLD_MEDIUM': 60
+        }
+        
+        monitor = GPUResourceMonitor(config)
+        start_http_server(monitor, 8000)
         main()
     else:
         # Run standalone tests
