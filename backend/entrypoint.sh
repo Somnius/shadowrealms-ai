@@ -33,4 +33,4 @@ fi
 
 # Start Flask application
 echo "🌐 Starting Flask application..."
-exec python main.py
+exec python main.py --run

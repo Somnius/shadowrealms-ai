@@ -122,7 +122,7 @@ def login():
         
         # Create JWT tokens
         access_token = create_access_token(
-            identity=user['id'],
+            identity=str(user['id']),
             additional_claims={
                 'username': user['username'],
                 'email': user['email'],
@@ -131,7 +131,7 @@ def login():
         )
         
         refresh_token = create_refresh_token(
-            identity=user['id'],
+            identity=str(user['id']),
             additional_claims={
                 'username': user['username'],
                 'role': user['role']
@@ -182,7 +182,7 @@ def refresh():
         
         # Create new access token
         access_token = create_access_token(
-            identity=user['id'],
+            identity=str(user['id']),
             additional_claims={
                 'username': user['username'],
                 'email': user['email'],

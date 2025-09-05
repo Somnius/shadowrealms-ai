@@ -40,6 +40,20 @@ def create_app(config_class=Config):
     with app.app_context():
         init_db()
     
+    # Initialize LLM service
+    with app.app_context():
+        from services.llm_service import initialize_llm_service
+        llm_service = initialize_llm_service({
+            'LM_STUDIO_URL': os.environ.get('LM_STUDIO_URL', 'http://localhost:1234'),
+            'LM_STUDIO_API_KEY': os.environ.get('LM_STUDIO_API_KEY', ''),
+            'LM_STUDIO_MODEL': os.environ.get('LM_STUDIO_MODEL', 'mythomakise-merged-13b'),
+            'LM_STUDIO_TIMEOUT': int(os.environ.get('LM_STUDIO_TIMEOUT', '30')),
+            'OLLAMA_URL': os.environ.get('OLLAMA_URL', 'http://localhost:11434'),
+            'OLLAMA_MODEL': os.environ.get('OLLAMA_MODEL', 'command-r:35b'),
+            'OLLAMA_TIMEOUT': int(os.environ.get('OLLAMA_TIMEOUT', '30'))
+        })
+        logger.info("LLM Service initialized successfully")
+    
     # Register blueprints
     app.register_blueprint(auth.bp, url_prefix='/api/auth')
     app.register_blueprint(users.bp, url_prefix='/api/users')

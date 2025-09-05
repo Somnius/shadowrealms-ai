@@ -344,17 +344,24 @@ def main():
         raise
 
 if __name__ == "__main__":
-    """Run standalone tests if script is executed directly"""
-    print("🚀 Running Monitoring Service Standalone Tests")
-    print("=" * 50)
+    """Run standalone tests or actual service based on arguments"""
+    import sys
     
-    success = test_monitoring_service()
-    
-    print("=" * 50)
-    if success:
-        print("✅ All tests passed! Service is ready for integration.")
-        print("💡 To run the actual monitoring service, use: python monitor.py --run")
-        exit(0)
+    if len(sys.argv) > 1 and sys.argv[1] == "--run":
+        # Run the actual monitoring service
+        main()
     else:
-        print("❌ Tests failed! Please fix issues before integration.")
-        exit(1)
+        # Run standalone tests
+        print("🚀 Running Monitoring Service Standalone Tests")
+        print("=" * 50)
+        
+        success = test_monitoring_service()
+        
+        print("=" * 50)
+        if success:
+            print("✅ All tests passed! Service is ready for integration.")
+            print("💡 To run the actual monitoring service, use: python monitor.py --run")
+            exit(0)
+        else:
+            print("❌ Tests failed! Please fix issues before integration.")
+            exit(1)

@@ -33,4 +33,4 @@ RUN chmod +x /app/monitor.py
 EXPOSE 8000
 
 # Set entrypoint
-CMD ["python", "monitor.py"]
+CMD ["python", "monitor.py", "--run"]

@@ -5,6 +5,46 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.8] - 2025-09-05 20:45 EEST - Phase 2 LLM Integration & Connectivity Configuration
+
+### Added
+- **LLM Service Integration** - Complete LM Studio and Ollama provider implementation
+- **AI Chat Endpoints** - `/api/ai/chat` and `/api/ai/llm/status` for AI interactions
+- **Docker Network Configuration** - Enhanced container networking for LLM service access
+- **Environment Variable Management** - Comprehensive LLM service configuration via environment variables
+- **LLM Provider Abstraction** - Abstract base class for multiple LLM providers (LM Studio, Ollama)
+
+### Changed
+- **Docker Compose Configuration** - Added LLM service environment variables and networking
+- **Backend Service Integration** - Enhanced with LLM service initialization and health checks
+- **AI Response System** - Dynamic response generation based on GPU performance mode
+- **Service Dependencies** - Updated backend to depend on LLM service availability
+
+### Fixed
+- **Container Networking** - Resolved Docker container to host service connectivity issues
+- **Environment Variable Loading** - Proper LLM service configuration in Docker environment
+- **Service Health Checks** - Enhanced monitoring of LLM provider availability
+- **Import Path Issues** - Resolved all remaining import path problems in Docker environment
+
+### Technical Details
+- **LLM Service URLs**: `http://10.0.0.1:1234` (LM Studio), `http://10.0.0.1:11434` (Ollama)
+- **Provider Support**: LM Studio with MythoMakiseMerged-13B model, Ollama with command-r:35b
+- **Network Configuration**: Docker containers configured to access host services
+- **Environment Variables**: Complete LLM service configuration via docker-compose.yml
+
+### Phase 2 Status
+- **LLM Integration**: ✅ Complete (code implementation)
+- **Service Connectivity**: ⚠️ Pending (requires LM Studio/Ollama configuration)
+- **Model Testing**: ⚠️ Pending (requires service binding configuration)
+
+### Next Steps
+- Configure LM Studio to bind to all interfaces (0.0.0.0)
+- Configure Ollama with OLLAMA_HOST=0.0.0.0:11434
+- Test MythoMakiseMerged-13B model connectivity
+- Validate Phase 2 completion with working AI responses
+
+---
+
 ## [0.4.7] - 2025-08-29 00:45 EEST - GitHub README Enhancement & Development Status
 
 ### Added

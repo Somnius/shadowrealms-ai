@@ -12,17 +12,87 @@ from datetime import datetime
 
 from database import get_db
 from services.gpu_monitor import gpu_monitor_service
+from services.llm_service import get_llm_service
 
 logger = logging.getLogger(__name__)
 
 bp = Blueprint('ai', __name__)
+
+@bp.route('/llm/status', methods=['GET'])
+@jwt_required()
+def get_llm_status():
+    """Get LLM service status and available providers"""
+    try:
+        current_user_id = int(get_jwt_identity())
+        
+        db = get_db()
+        cursor = db.cursor()
+        
+        # Get current user role
+        cursor.execute("SELECT role FROM users WHERE id = ?", (current_user_id,))
+        current_user = cursor.fetchone()
+        
+        if not current_user:
+            return jsonify({'error': 'User not found'}), 404
+        
+        # Get LLM service status
+        llm_service = get_llm_service()
+        llm_status = llm_service.get_system_status()
+        
+        return jsonify({
+            'llm_status': llm_status,
+            'timestamp': datetime.utcnow().isoformat()
+        }), 200
+        
+    except Exception as e:
+        logger.error(f"Error getting LLM status: {e}")
+        return jsonify({'error': 'Failed to retrieve LLM status'}), 500
+    finally:
+        if 'db' in locals():
+            db.close()
+
+@bp.route('/llm/test', methods=['POST'])
+@jwt_required()
+def test_llm_provider():
+    """Test a specific LLM provider"""
+    try:
+        current_user_id = int(get_jwt_identity())
+        
+        db = get_db()
+        cursor = db.cursor()
+        
+        # Get current user role
+        cursor.execute("SELECT role FROM users WHERE id = ?", (current_user_id,))
+        current_user = cursor.fetchone()
+        
+        if not current_user:
+            return jsonify({'error': 'User not found'}), 404
+        
+        data = request.get_json()
+        provider_name = data.get('provider', 'lm_studio')
+        
+        # Test the provider
+        llm_service = get_llm_service()
+        test_result = llm_service.test_provider(provider_name)
+        
+        return jsonify({
+            'test_result': test_result,
+            'timestamp': datetime.utcnow().isoformat()
+        }), 200
+        
+    except Exception as e:
+        logger.error(f"Error testing LLM provider: {e}")
+        return jsonify({'error': 'Failed to test LLM provider'}), 500
+    finally:
+        if 'db' in locals():
+            db.close()
 
 @bp.route('/status', methods=['GET'])
 @jwt_required()
 def get_ai_status():
     """Get AI service status and GPU monitoring information"""
     try:
-        current_user_id = get_jwt_identity()
+        current_user_id = int(get_jwt_identity())
         
         db = get_db()
         cursor = db.cursor()
@@ -72,7 +142,7 @@ def get_ai_status():
 def ai_chat():
     """AI chat endpoint with performance-based response generation"""
     try:
-        current_user_id = get_jwt_identity()
+        current_user_id = int(get_jwt_identity())
         data = request.get_json()
         
         if not data:
@@ -148,7 +218,7 @@ def ai_chat():
 def ai_world_building():
     """AI-assisted world building endpoint"""
     try:
-        current_user_id = get_jwt_identity()
+        current_user_id = int(get_jwt_identity())
         data = request.get_json()
         
         if not data:
@@ -207,7 +277,7 @@ def ai_world_building():
 def get_ai_memory(campaign_id):
     """Get AI memory for a specific campaign"""
     try:
-        current_user_id = get_jwt_identity()
+        current_user_id = int(get_jwt_identity())
         
         db = get_db()
         cursor = db.cursor()
@@ -261,27 +331,199 @@ def get_ai_memory(campaign_id):
 # Helper functions for AI response generation
 def generate_efficient_response(message: str, context: dict, campaign_id: int) -> str:
     """Generate efficient (basic) AI response"""
-    return f"AI Response (Efficient Mode): {message[:100]}... [Response optimized for resource conservation]"
+    try:
+        llm_service = get_llm_service()
+        
+        # Get campaign context for better responses
+        campaign_context = get_campaign_context(campaign_id)
+        
+        # Prepare context for LLM
+        llm_context = {
+            'system_prompt': 'You are a helpful AI assistant for tabletop RPGs. Provide concise, helpful responses optimized for resource conservation.',
+            'campaign_context': campaign_context
+        }
+        
+        # Configure for efficient mode
+        llm_config = {
+            'max_tokens': 256,
+            'temperature': 0.6,
+            'top_p': 0.8
+        }
+        
+        return llm_service.generate_response(message, llm_context, llm_config)
+        
+    except Exception as e:
+        logger.error(f"Error generating efficient response: {e}")
+        return f"AI Response (Efficient Mode): {message[:100]}... [Response optimized for resource conservation]"
 
 def generate_balanced_response(message: str, context: dict, campaign_id: int) -> str:
     """Generate balanced AI response"""
-    return f"AI Response (Balanced Mode): {message[:200]}... [Response with balanced quality and performance]"
+    try:
+        llm_service = get_llm_service()
+        
+        # Get campaign context for better responses
+        campaign_context = get_campaign_context(campaign_id)
+        
+        # Prepare context for LLM
+        llm_context = {
+            'system_prompt': 'You are a helpful AI assistant for tabletop RPGs. Provide balanced, detailed responses with good quality and reasonable performance.',
+            'campaign_context': campaign_context
+        }
+        
+        # Configure for balanced mode
+        llm_config = {
+            'max_tokens': 512,
+            'temperature': 0.7,
+            'top_p': 0.9
+        }
+        
+        return llm_service.generate_response(message, llm_context, llm_config)
+        
+    except Exception as e:
+        logger.error(f"Error generating balanced response: {e}")
+        return f"AI Response (Balanced Mode): {message[:200]}... [Response with balanced quality and performance]"
 
 def generate_full_response(message: str, context: dict, campaign_id: int) -> str:
     """Generate full AI response"""
-    return f"AI Response (Full Mode): {message} [Full quality response with maximum detail]"
+    try:
+        llm_service = get_llm_service()
+        
+        # Get campaign context for better responses
+        campaign_context = get_campaign_context(campaign_id)
+        
+        # Prepare context for LLM
+        llm_context = {
+            'system_prompt': 'You are a helpful AI assistant for tabletop RPGs. Provide comprehensive, detailed responses with maximum quality and depth.',
+            'campaign_context': campaign_context
+        }
+        
+        # Configure for full mode
+        llm_config = {
+            'max_tokens': 1024,
+            'temperature': 0.8,
+            'top_p': 0.95
+        }
+        
+        return llm_service.generate_response(message, llm_context, llm_config)
+        
+    except Exception as e:
+        logger.error(f"Error generating full response: {e}")
+        return f"AI Response (Full Mode): {message} [Full quality response with maximum detail]"
+
+def get_campaign_context(campaign_id: int) -> str:
+    """Get campaign context for AI responses"""
+    try:
+        db = get_db()
+        cursor = db.cursor()
+        
+        # Get campaign details
+        cursor.execute("""
+            SELECT name, description, rpg_system, setting, status
+            FROM campaigns
+            WHERE id = ? AND is_active = 1
+        """, (campaign_id,))
+        
+        campaign = cursor.fetchone()
+        if not campaign:
+            return "No campaign context available"
+        
+        # Get recent AI memory for context
+        cursor.execute("""
+            SELECT content, memory_type, created_at
+            FROM ai_memory
+            WHERE campaign_id = ?
+            ORDER BY created_at DESC
+            LIMIT 5
+        """, (campaign_id,))
+        
+        memories = cursor.fetchall()
+        
+        context = f"Campaign: {campaign['name']} ({campaign['rpg_system']})\n"
+        context += f"Setting: {campaign['setting'] or 'Not specified'}\n"
+        context += f"Description: {campaign['description'] or 'No description'}\n"
+        
+        if memories:
+            context += "\nRecent Context:\n"
+            for memory in memories:
+                context += f"- {memory['memory_type']}: {memory['content'][:100]}...\n"
+        
+        return context
+        
+    except Exception as e:
+        logger.error(f"Error getting campaign context: {e}")
+        return "Error retrieving campaign context"
+    finally:
+        if 'db' in locals():
+            db.close()
 
 def generate_basic_world_content(world_type: str, description: str) -> str:
     """Generate basic world content"""
-    return f"Basic {world_type.title()}: {description[:100]}... [Basic content for resource conservation]"
+    try:
+        llm_service = get_llm_service()
+        
+        prompt = f"Create a basic {world_type} for a tabletop RPG based on: {description}"
+        
+        llm_context = {
+            'system_prompt': f'You are a creative assistant for tabletop RPGs. Create concise, basic {world_type} content optimized for resource conservation.',
+        }
+        
+        llm_config = {
+            'max_tokens': 256,
+            'temperature': 0.6,
+            'top_p': 0.8
+        }
+        
+        return llm_service.generate_response(prompt, llm_context, llm_config)
+        
+    except Exception as e:
+        logger.error(f"Error generating basic world content: {e}")
+        return f"Basic {world_type.title()}: {description[:100]}... [Basic content for resource conservation]"
 
 def generate_balanced_world_content(world_type: str, description: str) -> str:
     """Generate balanced world content"""
-    return f"Balanced {world_type.title()}: {description[:200]}... [Balanced content with good detail]"
+    try:
+        llm_service = get_llm_service()
+        
+        prompt = f"Create a detailed {world_type} for a tabletop RPG based on: {description}"
+        
+        llm_context = {
+            'system_prompt': f'You are a creative assistant for tabletop RPGs. Create balanced, detailed {world_type} content with good quality and reasonable performance.',
+        }
+        
+        llm_config = {
+            'max_tokens': 512,
+            'temperature': 0.7,
+            'top_p': 0.9
+        }
+        
+        return llm_service.generate_response(prompt, llm_context, llm_config)
+        
+    except Exception as e:
+        logger.error(f"Error generating balanced world content: {e}")
+        return f"Balanced {world_type.title()}: {description[:200]}... [Balanced content with good detail]"
 
 def generate_detailed_world_content(world_type: str, description: str) -> str:
     """Generate detailed world content"""
-    return f"Detailed {world_type.title()}: {description} [Full detail content with maximum quality]"
+    try:
+        llm_service = get_llm_service()
+        
+        prompt = f"Create a comprehensive, detailed {world_type} for a tabletop RPG based on: {description}"
+        
+        llm_context = {
+            'system_prompt': f'You are a creative assistant for tabletop RPGs. Create comprehensive, detailed {world_type} content with maximum quality and depth.',
+        }
+        
+        llm_config = {
+            'max_tokens': 1024,
+            'temperature': 0.8,
+            'top_p': 0.95
+        }
+        
+        return llm_service.generate_response(prompt, llm_context, llm_config)
+        
+    except Exception as e:
+        logger.error(f"Error generating detailed world content: {e}")
+        return f"Detailed {world_type.title()}: {description} [Full detail content with maximum quality]"
 
 def store_ai_memory(campaign_id: int, memory_type: str, content: str, response: str, context: dict):
     """Store AI memory in database"""

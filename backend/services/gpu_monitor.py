@@ -64,10 +64,39 @@ class GPUMonitorService:
     
     def get_ai_response_config(self) -> Dict[str, Any]:
         """Get AI response configuration based on current performance mode"""
-        from config import Config
-        
         performance_mode = self.get_performance_mode()
-        return Config.get_ai_response_config(performance_mode.value)
+        
+        # AI response configuration based on performance mode
+        configs = {
+            'fast': {
+                'max_tokens': 1024,
+                'temperature': 0.8,
+                'top_p': 0.95,
+                'response_complexity': 'high',
+                'description': 'Full performance mode - complex, detailed responses'
+            },
+            'medium': {
+                'max_tokens': 512,
+                'temperature': 0.7,
+                'top_p': 0.9,
+                'response_complexity': 'medium',
+                'description': 'Balanced mode - good quality with reasonable speed'
+            },
+            'slow': {
+                'max_tokens': 256,
+                'temperature': 0.6,
+                'top_p': 0.8,
+                'response_complexity': 'basic',
+                'description': 'Efficient mode - basic responses to conserve resources'
+            }
+        }
+        
+        return configs.get(performance_mode.value, configs['medium'])
+    
+    def is_resource_limited(self) -> bool:
+        """Check if system resources are limited (performance mode is slow)"""
+        performance_mode = self.get_performance_mode()
+        return performance_mode == PerformanceMode.SLOW
     
     def get_gpu_status_summary(self) -> Dict[str, Any]:
         """Get GPU status summary for API responses"""

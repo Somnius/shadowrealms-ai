@@ -26,9 +26,19 @@ services:
       - GPU_THRESHOLD_MEDIUM=60
       - LOG_LEVEL=INFO
       - LOG_FILE=/app/logs/backend.log
+      # LLM Service Configuration
+      - LM_STUDIO_URL=http://10.0.0.1:1234
+      - LM_STUDIO_API_KEY=${LM_STUDIO_API_KEY:-}
+      - LM_STUDIO_MODEL=${LM_STUDIO_MODEL:-mythomakise-merged-13b}
+      - LM_STUDIO_TIMEOUT=${LM_STUDIO_TIMEOUT:-30}
+      - OLLAMA_URL=http://10.0.0.1:11434
+      - OLLAMA_MODEL=${OLLAMA_MODEL:-command-r:35b}
+      - OLLAMA_TIMEOUT=${OLLAMA_TIMEOUT:-30}
     depends_on:
       - chromadb
       - monitoring
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     networks:
       - shadowrealms-network
     restart: unless-stopped
