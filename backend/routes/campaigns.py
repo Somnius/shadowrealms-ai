@@ -1,371 +1,371 @@
 #!/usr/bin/env python3
 """
-ShadowRealms AI - Campaigns Routes
-Campaign management and world building
+ShadowRealms AI - Campaign Management API
+RESTful API for campaign creation, management, and RAG integration
 """
 
-from flask import Blueprint, request, jsonify
-from flask_jwt_extended import jwt_required, get_jwt_identity
-import logging
+import os
 import json
+import logging
 from datetime import datetime
-
+from flask import Blueprint, request, jsonify, current_app
+from flask_jwt_extended import jwt_required, get_jwt_identity
+from services.rag_service import create_rag_service
+from services.embedding_service import create_embedding_service
 from database import get_db
-from services.gpu_monitor import gpu_monitor_service
 
 logger = logging.getLogger(__name__)
 
-bp = Blueprint('campaigns', __name__)
+# Create blueprint
+campaigns_bp = Blueprint('campaigns', __name__, url_prefix='/api/campaigns')
 
-@bp.route('/', methods=['GET'])
-@jwt_required()
-def get_campaigns():
-    """Get campaigns (filtered by user role and permissions)"""
-    try:
-        current_user_id = get_jwt_identity()
-        
-        db = get_db()
-        cursor = db.cursor()
-        
-        # Get current user role
-        cursor.execute("SELECT role FROM users WHERE id = ?", (current_user_id,))
-        current_user = cursor.fetchone()
-        
-        if not current_user:
-            return jsonify({'error': 'User not found'}), 404
-        
-        # Build query based on user role
-        if current_user['role'] == 'admin':
-            # Admins can see all campaigns
-            cursor.execute("""
-                SELECT c.*, u.username as creator_name
-                FROM campaigns c
-                JOIN users u ON c.created_by = u.id
-                ORDER BY c.created_at DESC
-            """)
-        elif current_user['role'] == 'helper':
-            # Helpers can see all campaigns
-            cursor.execute("""
-                SELECT c.*, u.username as creator_name
-                FROM campaigns c
-                JOIN users u ON c.created_by = u.id
-                ORDER BY c.created_at DESC
-            """)
-        else:
-            # Players can only see campaigns they're part of
-            cursor.execute("""
-                SELECT DISTINCT c.*, u.username as creator_name
-                FROM campaigns c
-                JOIN users u ON c.created_by = u.id
-                JOIN characters ch ON c.id = ch.campaign_id
-                WHERE ch.user_id = ?
-                ORDER BY c.created_at DESC
-            """, (current_user_id,))
-        
-        campaigns = []
-        for row in cursor.fetchall():
-            campaigns.append({
-                'id': row['id'],
-                'name': row['name'],
-                'description': row['description'],
-                'system_type': row['system_type'],
-                'setting': row['setting'],
-                'created_by': row['created_by'],
-                'creator_name': row['creator_name'],
-                'is_active': bool(row['is_active']),
-                'created_at': row['created_at'],
-                'updated_at': row['updated_at']
-            })
-        
-        return jsonify({
-            'campaigns': campaigns,
-            'total': len(campaigns)
-        }), 200
-        
-    except Exception as e:
-        logger.error(f"Error getting campaigns: {e}")
-        return jsonify({'error': 'Failed to retrieve campaigns'}), 500
-    finally:
-        if 'db' in locals():
-            db.close()
+def get_rag_service():
+    """Get RAG service instance"""
+    config = current_app.config
+    return create_rag_service(config)
 
-@bp.route('/', methods=['POST'])
+def get_embedding_service():
+    """Get embedding service instance"""
+    config = current_app.config
+    return create_embedding_service(config)
+
+@campaigns_bp.route('/', methods=['POST'])
 @jwt_required()
 def create_campaign():
-    """Create new campaign (admin/helper only)"""
+    """Create a new campaign"""
     try:
-        current_user_id = get_jwt_identity()
+        user_id = get_jwt_identity()
         data = request.get_json()
         
-        if not data:
-            return jsonify({'error': 'No data provided'}), 400
+        # Validate required fields
+        required_fields = ['name', 'description', 'game_system']
+        for field in required_fields:
+            if field not in data:
+                return jsonify({'error': f'Missing required field: {field}'}), 400
         
-        # Required fields
-        name = data.get('name')
-        system_type = data.get('system_type')
+        # Get database connection
+        conn = get_db()
+        cursor = conn.cursor()
         
-        if not all([name, system_type]):
-            return jsonify({'error': 'Name and system type are required'}), 400
-        
-        if system_type not in ['d20', 'd10', 'besm']:
-            return jsonify({'error': 'Invalid system type'}), 400
-        
-        db = get_db()
-        cursor = db.cursor()
-        
-        # Check if current user can create campaigns
-        cursor.execute("SELECT role FROM users WHERE id = ?", (current_user_id,))
-        current_user = cursor.fetchone()
-        
-        if not current_user or current_user['role'] not in ['admin', 'helper']:
-            return jsonify({'error': 'Admin or helper access required'}), 403
-        
-        # Check if campaign name already exists
-        cursor.execute("SELECT id FROM campaigns WHERE name = ?", (name,))
-        if cursor.fetchone():
-            return jsonify({'error': 'Campaign name already exists'}), 409
-        
-        # Create campaign
+        # Create campaign in database
         cursor.execute("""
-            INSERT INTO campaigns (name, description, system_type, setting, created_by, created_at, updated_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO campaigns (name, description, game_system, created_by, created_at, status)
+            VALUES (?, ?, ?, ?, ?, ?)
         """, (
-            name,
-            data.get('description', ''),
-            system_type,
-            data.get('setting', ''),
-            current_user_id,
-            datetime.utcnow(),
-            datetime.utcnow()
+            data['name'],
+            data['description'],
+            data['game_system'],
+            user_id,
+            datetime.now().isoformat(),
+            'active'
         ))
         
         campaign_id = cursor.lastrowid
-        db.commit()
+        conn.commit()
         
-        logger.info(f"Campaign '{name}' created by user {current_user_id}")
+        # Store campaign data in RAG system
+        rag_service = get_rag_service()
+        campaign_data = {
+            'name': data['name'],
+            'description': data['description'],
+            'game_system': data['game_system'],
+            'settings': data.get('settings', {}),
+            'world_info': data.get('world_info', {}),
+            'created_at': datetime.now().isoformat()
+        }
+        
+        memory_id = rag_service.store_campaign_data(campaign_id, campaign_data)
+        
+        # Store initial world data if provided
+        if 'world_info' in data:
+            world_memory_id = rag_service.store_world_data(campaign_id, data['world_info'])
+        
+        cursor.close()
+        conn.close()
         
         return jsonify({
             'message': 'Campaign created successfully',
             'campaign_id': campaign_id,
-            'name': name
+            'memory_id': memory_id
         }), 201
         
     except Exception as e:
         logger.error(f"Error creating campaign: {e}")
         return jsonify({'error': 'Failed to create campaign'}), 500
-    finally:
-        if 'db' in locals():
-            db.close()
 
-@bp.route('/<int:campaign_id>', methods=['GET'])
+@campaigns_bp.route('/', methods=['GET'])
+@jwt_required()
+def get_campaigns():
+    """Get all campaigns for the user"""
+    try:
+        user_id = get_jwt_identity()
+        
+        conn = get_db()
+        cursor = conn.cursor()
+        
+        cursor.execute("""
+            SELECT id, name, description, game_system, created_at, status
+            FROM campaigns
+            WHERE created_by = ? OR id IN (
+                SELECT campaign_id FROM campaign_players WHERE user_id = ?
+            )
+            ORDER BY created_at DESC
+        """, (user_id, user_id))
+        
+        campaigns = []
+        for row in cursor.fetchall():
+            campaigns.append({
+                'id': row[0],
+                'name': row[1],
+                'description': row[2],
+                'game_system': row[3],
+                'created_at': row[4],
+                'status': row[5]
+            })
+        
+        cursor.close()
+        conn.close()
+        
+        return jsonify({'campaigns': campaigns}), 200
+        
+    except Exception as e:
+        logger.error(f"Error getting campaigns: {e}")
+        return jsonify({'error': 'Failed to get campaigns'}), 500
+
+@campaigns_bp.route('/<int:campaign_id>', methods=['GET'])
 @jwt_required()
 def get_campaign(campaign_id):
     """Get specific campaign details"""
     try:
-        current_user_id = get_jwt_identity()
+        user_id = get_jwt_identity()
         
-        db = get_db()
-        cursor = db.cursor()
+        conn = get_db()
+        cursor = conn.cursor()
         
-        # Get current user role
-        cursor.execute("SELECT role FROM users WHERE id = ?", (current_user_id,))
-        current_user = cursor.fetchone()
-        
-        if not current_user:
-            return jsonify({'error': 'User not found'}), 404
-        
-        # Get campaign
+        # Check if user has access to campaign
         cursor.execute("""
-            SELECT c.*, u.username as creator_name
-            FROM campaigns c
-            JOIN users u ON c.created_by = u.id
-            WHERE c.id = ?
-        """, (campaign_id,))
+            SELECT id, name, description, game_system, created_by, created_at, status
+            FROM campaigns
+            WHERE id = ? AND (created_by = ? OR id IN (
+                SELECT campaign_id FROM campaign_players WHERE user_id = ?
+            ))
+        """, (campaign_id, user_id, user_id))
         
-        campaign = cursor.fetchone()
-        
-        if not campaign:
+        row = cursor.fetchone()
+        if not row:
             return jsonify({'error': 'Campaign not found'}), 404
         
-        # Check access permissions
-        if current_user['role'] not in ['admin', 'helper']:
-            # Players can only see campaigns they're part of
-            cursor.execute("""
-                SELECT COUNT(*) as character_count
-                FROM characters
-                WHERE user_id = ? AND campaign_id = ?
-            """, (current_user_id, campaign_id))
-            
-            if cursor.fetchone()['character_count'] == 0:
-                return jsonify({'error': 'Access denied'}), 403
+        campaign = {
+            'id': row[0],
+            'name': row[1],
+            'description': row[2],
+            'game_system': row[3],
+            'created_by': row[4],
+            'created_at': row[5],
+            'status': row[6]
+        }
         
-        # Get campaign statistics
+        # Get campaign context from RAG
+        rag_service = get_rag_service()
+        context = rag_service.get_campaign_context(campaign_id)
+        
+        campaign['context'] = context
+        
+        cursor.close()
+        conn.close()
+        
+        return jsonify({'campaign': campaign}), 200
+        
+    except Exception as e:
+        logger.error(f"Error getting campaign: {e}")
+        return jsonify({'error': 'Failed to get campaign'}), 500
+
+@campaigns_bp.route('/<int:campaign_id>/world', methods=['POST'])
+@jwt_required()
+def update_world_data(campaign_id):
+    """Update world-building data for campaign"""
+    try:
+        user_id = get_jwt_identity()
+        data = request.get_json()
+        
+        # Verify user has access to campaign
+        conn = get_db()
+        cursor = conn.cursor()
+        
         cursor.execute("""
-            SELECT COUNT(*) as character_count
-            FROM characters WHERE campaign_id = ?
-        """, (campaign_id,))
+            SELECT id FROM campaigns
+            WHERE id = ? AND (created_by = ? OR id IN (
+                SELECT campaign_id FROM campaign_players WHERE user_id = ?
+            ))
+        """, (campaign_id, user_id, user_id))
         
-        character_count = cursor.fetchone()['character_count']
+        if not cursor.fetchone():
+            cursor.close()
+            conn.close()
+            return jsonify({'error': 'Campaign not found'}), 404
         
-        cursor.execute("""
-            SELECT COUNT(*) as location_count
-            FROM locations WHERE campaign_id = ?
-        """, (campaign_id,))
+        # Store world data in RAG
+        rag_service = get_rag_service()
+        memory_id = rag_service.store_world_data(campaign_id, data)
         
-        location_count = cursor.fetchone()['location_count']
+        cursor.close()
+        conn.close()
         
         return jsonify({
-            'campaign': {
-                'id': campaign['id'],
-                'name': campaign['name'],
-                'description': campaign['description'],
-                'system_type': campaign['system_type'],
-                'setting': campaign['setting'],
-                'created_by': campaign['created_by'],
-                'creator_name': campaign['creator_name'],
-                'is_active': bool(campaign['is_active']),
-                'created_at': campaign['created_at'],
-                'updated_at': campaign['updated_at']
-            },
-            'statistics': {
-                'characters': character_count,
-                'locations': location_count
-            }
+            'message': 'World data updated successfully',
+            'memory_id': memory_id
         }), 200
         
     except Exception as e:
-        logger.error(f"Error getting campaign {campaign_id}: {e}")
-        return jsonify({'error': 'Failed to retrieve campaign'}), 500
-    finally:
-        if 'db' in locals():
-            db.close()
+        logger.error(f"Error updating world data: {e}")
+        return jsonify({'error': 'Failed to update world data'}), 500
 
-@bp.route('/<int:campaign_id>', methods=['PUT'])
+@campaigns_bp.route('/<int:campaign_id>/search', methods=['POST'])
 @jwt_required()
-def update_campaign(campaign_id):
-    """Update campaign (admin/helper or creator only)"""
+def search_campaign_memory(campaign_id):
+    """Search campaign memory using RAG"""
     try:
-        current_user_id = get_jwt_identity()
+        user_id = get_jwt_identity()
         data = request.get_json()
         
-        if not data:
-            return jsonify({'error': 'No data provided'}), 400
+        query = data.get('query', '')
+        memory_type = data.get('memory_type', 'all')
+        limit = data.get('limit', 5)
         
-        db = get_db()
-        cursor = db.cursor()
+        if not query:
+            return jsonify({'error': 'Query is required'}), 400
         
-        # Get current user role
-        cursor.execute("SELECT role FROM users WHERE id = ?", (current_user_id,))
-        current_user = cursor.fetchone()
+        # Verify user has access to campaign
+        conn = get_db()
+        cursor = conn.cursor()
         
-        if not current_user:
-            return jsonify({'error': 'User not found'}), 404
+        cursor.execute("""
+            SELECT id FROM campaigns
+            WHERE id = ? AND (created_by = ? OR id IN (
+                SELECT campaign_id FROM campaign_players WHERE user_id = ?
+            ))
+        """, (campaign_id, user_id, user_id))
         
-        # Get campaign
-        cursor.execute("SELECT * FROM campaigns WHERE id = ?", (campaign_id,))
-        campaign = cursor.fetchone()
-        
-        if not campaign:
+        if not cursor.fetchone():
+            cursor.close()
+            conn.close()
             return jsonify({'error': 'Campaign not found'}), 404
         
-        # Check permissions
-        if current_user['role'] not in ['admin', 'helper'] and campaign['created_by'] != current_user_id:
-            return jsonify({'error': 'Access denied'}), 403
+        # Search using RAG
+        rag_service = get_rag_service()
         
-        # Update fields
-        updates = []
-        params = []
+        if memory_type == 'all':
+            # Search all memory types
+            results = {}
+            for mem_type in ['campaigns', 'characters', 'world', 'sessions', 'rules']:
+                memories = rag_service.retrieve_memories(query, mem_type, campaign_id, limit)
+                if memories:
+                    results[mem_type] = memories
+        else:
+            # Search specific memory type
+            memories = rag_service.retrieve_memories(query, memory_type, campaign_id, limit)
+            results = {memory_type: memories}
         
-        if 'name' in data and data['name'] != campaign['name']:
-            # Check if name is already taken
-            cursor.execute("SELECT id FROM campaigns WHERE name = ? AND id != ?", (data['name'], campaign_id))
-            if cursor.fetchone():
-                return jsonify({'error': 'Campaign name already exists'}), 409
-            
-            updates.append("name = ?")
-            params.append(data['name'])
+        cursor.close()
+        conn.close()
         
-        if 'description' in data:
-            updates.append("description = ?")
-            params.append(data['description'])
-        
-        if 'system_type' in data and data['system_type'] != campaign['system_type']:
-            if data['system_type'] not in ['d20', 'd10', 'besm']:
-                return jsonify({'error': 'Invalid system type'}), 400
-            
-            updates.append("system_type = ?")
-            params.append(data['system_type'])
-        
-        if 'setting' in data:
-            updates.append("setting = ?")
-            params.append(data['setting'])
-        
-        if 'is_active' in data and data['is_active'] != campaign['is_active']:
-            if current_user['role'] != 'admin':
-                return jsonify({'error': 'Only admins can change campaign status'}), 403
-            
-            updates.append("is_active = ?")
-            params.append(data['is_active'])
-        
-        # Apply updates if any
-        if updates:
-            params.append(datetime.utcnow())  # updated_at
-            params.append(campaign_id)
-            
-            query = f"UPDATE campaigns SET {', '.join(updates)}, updated_at = ? WHERE id = ?"
-            cursor.execute(query, params)
-            
-            db.commit()
-            
-            logger.info(f"Campaign {campaign_id} updated by user {current_user_id}")
-        
-        # Return updated campaign
-        return get_campaign(campaign_id)
+        return jsonify({
+            'query': query,
+            'results': results,
+            'total_results': sum(len(memories) for memories in results.values())
+        }), 200
         
     except Exception as e:
-        logger.error(f"Error updating campaign {campaign_id}: {e}")
-        return jsonify({'error': 'Failed to update campaign'}), 500
-    finally:
-        if 'db' in locals():
-            db.close()
+        logger.error(f"Error searching campaign memory: {e}")
+        return jsonify({'error': 'Failed to search campaign memory'}), 500
 
-@bp.route('/<int:campaign_id>', methods=['DELETE'])
+@campaigns_bp.route('/<int:campaign_id>/context', methods=['POST'])
 @jwt_required()
-def delete_campaign(campaign_id):
-    """Delete campaign (admin only)"""
+def get_campaign_context(campaign_id):
+    """Get campaign context for AI generation"""
     try:
-        current_user_id = get_jwt_identity()
+        user_id = get_jwt_identity()
+        data = request.get_json()
         
-        db = get_db()
-        cursor = db.cursor()
+        query = data.get('query', '')
         
-        # Check if current user is admin
-        cursor.execute("SELECT role FROM users WHERE id = ?", (current_user_id,))
-        current_user = cursor.fetchone()
+        # Verify user has access to campaign
+        conn = get_db()
+        cursor = conn.cursor()
         
-        if not current_user or current_user['role'] != 'admin':
-            return jsonify({'error': 'Admin access required'}), 403
+        cursor.execute("""
+            SELECT id FROM campaigns
+            WHERE id = ? AND (created_by = ? OR id IN (
+                SELECT campaign_id FROM campaign_players WHERE user_id = ?
+            ))
+        """, (campaign_id, user_id, user_id))
         
-        # Check if campaign exists
-        cursor.execute("SELECT name FROM campaigns WHERE id = ?", (campaign_id,))
-        campaign = cursor.fetchone()
-        
-        if not campaign:
+        if not cursor.fetchone():
+            cursor.close()
+            conn.close()
             return jsonify({'error': 'Campaign not found'}), 404
         
-        # Soft delete - mark as inactive instead of removing
-        cursor.execute("UPDATE campaigns SET is_active = 0, updated_at = ? WHERE id = ?", 
-                      (datetime.utcnow(), campaign_id))
+        # Get context from RAG
+        rag_service = get_rag_service()
+        context = rag_service.get_campaign_context(campaign_id, query)
         
-        db.commit()
+        # Augment prompt if provided
+        if query:
+            augmented_prompt = rag_service.augment_prompt(query, campaign_id, user_id)
+            context['augmented_prompt'] = augmented_prompt
         
-        logger.info(f"Campaign {campaign_id} ({campaign['name']}) deactivated by admin {current_user_id}")
+        cursor.close()
+        conn.close()
         
-        return jsonify({'message': 'Campaign deactivated successfully'}), 200
+        return jsonify({'context': context}), 200
         
     except Exception as e:
-        logger.error(f"Error deleting campaign {campaign_id}: {e}")
-        return jsonify({'error': 'Failed to delete campaign'}), 500
-    finally:
-        if 'db' in locals():
-            db.close()
+        logger.error(f"Error getting campaign context: {e}")
+        return jsonify({'error': 'Failed to get campaign context'}), 500
+
+@campaigns_bp.route('/<int:campaign_id>/interaction', methods=['POST'])
+@jwt_required()
+def store_interaction(campaign_id):
+    """Store AI interaction for campaign"""
+    try:
+        user_id = get_jwt_identity()
+        data = request.get_json()
+        
+        prompt = data.get('prompt', '')
+        response = data.get('response', '')
+        interaction_type = data.get('interaction_type', 'general')
+        
+        if not prompt or not response:
+            return jsonify({'error': 'Prompt and response are required'}), 400
+        
+        # Verify user has access to campaign
+        conn = get_db()
+        cursor = conn.cursor()
+        
+        cursor.execute("""
+            SELECT id FROM campaigns
+            WHERE id = ? AND (created_by = ? OR id IN (
+                SELECT campaign_id FROM campaign_players WHERE user_id = ?
+            ))
+        """, (campaign_id, user_id, user_id))
+        
+        if not cursor.fetchone():
+            cursor.close()
+            conn.close()
+            return jsonify({'error': 'Campaign not found'}), 404
+        
+        # Store interaction in RAG
+        rag_service = get_rag_service()
+        memory_id = rag_service.store_interaction(prompt, response, campaign_id, user_id, interaction_type)
+        
+        cursor.close()
+        conn.close()
+        
+        return jsonify({
+            'message': 'Interaction stored successfully',
+            'memory_id': memory_id
+        }), 200
+        
+    except Exception as e:
+        logger.error(f"Error storing interaction: {e}")
+        return jsonify({'error': 'Failed to store interaction'}), 500

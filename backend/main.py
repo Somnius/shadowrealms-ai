@@ -39,6 +39,8 @@ def create_app(config_class=Config):
     # Initialize database
     with app.app_context():
         init_db()
+        from database import migrate_db
+        migrate_db()
     
     # Initialize LLM service
     with app.app_context():
@@ -57,7 +59,7 @@ def create_app(config_class=Config):
     # Register blueprints
     app.register_blueprint(auth.bp, url_prefix='/api/auth')
     app.register_blueprint(users.bp, url_prefix='/api/users')
-    app.register_blueprint(campaigns.bp, url_prefix='/api/campaigns')
+    app.register_blueprint(campaigns.campaigns_bp)
     app.register_blueprint(characters.bp, url_prefix='/api/characters')
     app.register_blueprint(ai.bp, url_prefix='/api/ai')
     

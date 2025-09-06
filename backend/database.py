@@ -24,6 +24,89 @@ def get_db():
     conn.row_factory = sqlite3.Row  # Enable dict-like access
     return conn
 
+def migrate_db():
+    """Migrate database schema if needed"""
+    logger.info("Checking database migrations...")
+    
+    conn = get_db()
+    try:
+        cursor = conn.cursor()
+        
+        # Check if campaigns table has game_system column
+        cursor.execute("PRAGMA table_info(campaigns)")
+        columns = [column[1] for column in cursor.fetchall()]
+        
+        if 'game_system' not in columns:
+            # Check if there's a system_type column that should be game_system
+            if 'system_type' in columns:
+                logger.info("Migrating system_type to game_system...")
+                # SQLite doesn't support RENAME COLUMN in older versions, so we need to recreate the table
+                cursor.execute("""
+                    CREATE TABLE campaigns_new (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        name TEXT NOT NULL,
+                        description TEXT,
+                        game_system TEXT NOT NULL DEFAULT 'd20',
+                        max_players INTEGER DEFAULT 6,
+                        created_by INTEGER NOT NULL,
+                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        is_active BOOLEAN DEFAULT 1,
+                        status TEXT NOT NULL DEFAULT 'active',
+                        FOREIGN KEY (created_by) REFERENCES users (id)
+                    )
+                """)
+                
+                # Copy data from old table to new table
+                cursor.execute("""
+                    INSERT INTO campaigns_new (id, name, description, game_system, max_players, created_by, created_at, is_active)
+                    SELECT id, name, description, system_type, max_players, created_by, created_at, is_active
+                    FROM campaigns
+                """)
+                
+                # Drop old table and rename new table
+                cursor.execute("DROP TABLE campaigns")
+                cursor.execute("ALTER TABLE campaigns_new RENAME TO campaigns")
+                conn.commit()
+                logger.info("✅ system_type migrated to game_system")
+            else:
+                logger.info("Adding game_system column to campaigns table...")
+                cursor.execute("ALTER TABLE campaigns ADD COLUMN game_system TEXT NOT NULL DEFAULT 'd20'")
+                conn.commit()
+                logger.info("✅ game_system column added")
+        
+        if 'status' not in columns:
+            logger.info("Adding status column to campaigns table...")
+            cursor.execute("ALTER TABLE campaigns ADD COLUMN status TEXT NOT NULL DEFAULT 'active'")
+            conn.commit()
+            logger.info("✅ status column added")
+        
+        # Check if campaign_players table exists
+        cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='campaign_players'")
+        if not cursor.fetchone():
+            logger.info("Creating campaign_players table...")
+            cursor.execute('''
+                CREATE TABLE campaign_players (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    campaign_id INTEGER NOT NULL,
+                    user_id INTEGER NOT NULL,
+                    joined_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    role TEXT DEFAULT 'player',
+                    FOREIGN KEY (campaign_id) REFERENCES campaigns (id),
+                    FOREIGN KEY (user_id) REFERENCES users (id),
+                    UNIQUE(campaign_id, user_id)
+                )
+            ''')
+            conn.commit()
+            logger.info("✅ campaign_players table created")
+        
+        conn.close()
+        logger.info("✅ Database migration completed")
+        
+    except Exception as e:
+        logger.error(f"Migration error: {e}")
+        conn.close()
+        raise
+
 def init_db():
     """Initialize database with required tables"""
     logger.info("Initializing database...")
