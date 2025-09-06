@@ -5,6 +5,36 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.1] - 2025-09-06 12:00 EEST - Phase 3 Planning Complete
+
+### Phase 3 Planning & Documentation
+- **Phase 3 Strategy**: Complete implementation plan for RPG Mechanics Integration
+- **White Wolf Priority**: WoD system implementation prioritized over D&D 5e
+- **Admin Control System**: Full ST/DM override capability with `/admin` commands
+- **XP Cost System**: AI assistance costs XP (configurable amount)
+- **Narrative Combat**: Pure storytelling combat system (no grid movement)
+- **Verification Workflow**: Admin approval required for AI-generated content
+- **Individual Testing**: Each system tested separately before integration
+
+### Documentation Updates
+- **SHADOWREALMS_AI_COMPLETE.md**: Added comprehensive Phase 3 implementation strategy
+- **README.md**: Updated with Phase 3 roadmap and current status
+- **Planning Details**: Complete Phase 3 specifications with user-approved requirements
+
+### Phase 3 Implementation Order
+1. **Week 1**: Character Management + Dice Rolling (White Wolf first)
+2. **Week 2**: Combat System + World Building (with admin verification)
+3. **Week 3**: Rule Integration + Admin Commands (full ST/DM control)
+4. **Week 4**: Testing + Polish (individual system testing)
+
+### Next Steps
+- Begin Phase 3 implementation with White Wolf character management system
+- Implement context-aware dice rolling with environmental factors
+- Create narrative combat system with XP cost AI assistance
+- Build world building tools with admin verification system
+
+---
+
 ## [0.5.0] - 2025-09-06 11:20 EEST - Phase 2 Complete: RAG & Vector Memory System
 
 ### Major Milestone Achievement

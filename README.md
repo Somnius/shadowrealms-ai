@@ -100,10 +100,10 @@ docker-compose up -d
 
 <div align="center">
 
-### **Version 0.5.0 - Phase 2 Complete: RAG & Vector Memory System**
+### **Version 0.5.1 - Phase 3 Planning Complete**
 
-**Last Updated**: `2025-09-06 11:20 EEST`  
-**Progress**: `Phase 2 FULLY FUNCTIONAL - 100% Complete - Ready for Phase 3`
+**Last Updated**: `2025-09-06 12:00 EEST`  
+**Progress**: `Phase 3 Planning Complete - Ready for RPG Mechanics Implementation`
 
 </div>
 
@@ -127,13 +127,13 @@ docker-compose up -d
 
 <div align="center">
 
-### **Coming Next: RPG Mechanics Integration**
+### **Coming Next: Phase 3 - RPG Mechanics Integration**
 
-| 🎲 **Character Management** | ⚔️ **Combat Systems** | 🌍 **Advanced World Building** |
+| 🎲 **White Wolf Character System** | ⚔️ **Narrative Combat** | 🌍 **World Building with Admin Control** |
 |:---:|:---:|:---:|
-| Character sheet creation and management | Turn-based combat system | Advanced world creation tools |
-| Dice rolling systems (D&D 5e, White Wolf) | Rule system integration | Dynamic NPC management |
-| Character progression and leveling | Combat mechanics and damage | Real-time collaboration features |
+| WoD character sheets (priority) | Turn-based narrative combat | Location & NPC management |
+| d10 dice pools with difficulty | XP cost AI assistance | Admin verification system |
+| Character progression tracking | Environmental factors | Procedural generation with approval |
 
 </div>
 
