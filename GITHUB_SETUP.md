@@ -127,7 +127,7 @@ git checkout main
 - Click "Create a new release"
 - Select tag: `v0.4.4`
 - Title: `ShadowRealms AI v0.4.4 - Phase 1 Complete`
-- Description: Copy from `CHANGELOG.txt`
+- Description: Copy from `CHANGELOG.md`
 - Click "Publish release"
 
 ## 🔄 Step 6: Ongoing Development Workflow

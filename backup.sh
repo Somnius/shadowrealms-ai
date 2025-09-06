@@ -76,7 +76,7 @@ if [ $? -eq 0 ]; then
     # Check for critical files in backup
     echo ""
     echo "🔍 Verifying critical files in backup..."
-    CRITICAL_FILES=("main.py" "config.py" "docker-compose.yml" "requirements.txt" "CHANGELOG.txt")
+    CRITICAL_FILES=("main.py" "config.py" "docker-compose.yml" "requirements.txt" "CHANGELOG.md")
     MISSING_FILES=()
     
     for file in "${CRITICAL_FILES[@]}"; do

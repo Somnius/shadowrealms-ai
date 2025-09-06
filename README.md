@@ -100,9 +100,9 @@ docker-compose up -d
 
 <div align="center">
 
-### **Version 0.5.1 - Phase 3 Planning Complete**
+### **Version 0.5.2 - Documentation Refactoring**
 
-**Last Updated**: `2025-09-06 12:00 EEST`  
+**Last Updated**: `2025-09-06 12:20 EEST`  
 **Progress**: `Phase 3 Planning Complete - Ready for RPG Mechanics Implementation`
 
 </div>

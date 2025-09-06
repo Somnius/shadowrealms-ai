@@ -5,6 +5,27 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.2] - 2025-09-06 12:20 EEST - Documentation Refactoring
+
+### Documentation Improvements
+- **File Rename**: CHANGELOG.txt → CHANGELOG.md for better GitHub display
+- **Reference Updates**: Updated all project files referencing changelog
+- **Markdown Formatting**: Improved changelog readability and GitHub compatibility
+- **Backup Script**: Updated critical files list to include CHANGELOG.md
+
+### Files Modified
+- `CHANGELOG.txt` → `CHANGELOG.md` (renamed)
+- `SHADOWREALMS_AI_COMPLETE.md` - Updated changelog reference
+- `GITHUB_SETUP.md` - Updated changelog reference  
+- `backup.sh` - Updated critical files list
+
+### Technical Improvements
+- Better GitHub integration with proper markdown formatting
+- Improved documentation consistency across project
+- Enhanced backup verification with correct file references
+
+---
+
 ## [0.5.1] - 2025-09-06 12:00 EEST - Phase 3 Planning Complete
 
 ### Phase 3 Planning & Documentation
