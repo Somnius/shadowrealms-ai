@@ -1,251 +1,238 @@
-# 🎮 ShadowRealms AI
+<div align="center">
 
-**AI-Powered Tabletop RPG Platform** - Transform your tabletop gaming with local AI Dungeon Masters, vector memory, and immersive storytelling.
+# 🏰 ShadowRealms AI 🏰
 
-[![Docker](https://img.shields.io/badge/Docker-Ready-blue?logo=docker)](https://www.docker.com/)
-[![Python](https://img.shields.io/badge/Python-3.11+-green?logo=python)](https://www.python.org/)
-[![React](https://img.shields.io/badge/React-18+-blue?logo=react)](https://reactjs.org/)
-[![AI](https://img.shields.io/badge/AI-Local%20LLMs-orange?logo=openai)](https://github.com/features/copilot)
+![ShadowRealms AI Logo](assets/logos/logo-3.png)
 
-## 🌟 Features
+### *The Ultimate AI-Powered Tabletop RPG Experience*
 
-- **🤖 AI Dungeon Master**: Local LLM models guide storytelling and world-building
-- **🧠 Vector Memory System**: Persistent AI knowledge for campaign continuity
-- **🎭 Role-Based Access**: Admin, Helper, and Player roles with JWT authentication
-- **📱 Modern Web Interface**: React + Material-UI frontend
-- **🐳 Docker Ready**: Complete containerized development and production environment
-- **🔍 GPU Monitoring**: Smart AI response optimization based on system resources
-- **🌐 Multi-Language Support**: Greek ↔ English translation pipeline
-- **💾 Automated Backups**: Comprehensive backup system with verification
+[![Version](https://img.shields.io/badge/version-0.4.11-blue.svg)](https://github.com/Somnius/shadowrealms-ai)
+[![Phase](https://img.shields.io/badge/phase-1%20complete-green.svg)](https://github.com/Somnius/shadowrealms-ai)
+[![Status](https://img.shields.io/badge/status-fully%20functional-brightgreen.svg)](https://github.com/Somnius/shadowrealms-ai)
+[![License](https://img.shields.io/badge/license-MIT-yellow.svg)](LICENSE)
 
-## 🚀 Quick Start
+---
 
-### Prerequisites
-- Docker and Docker Compose
-- NVIDIA GPU (optional, for AI acceleration)
-- 8GB+ RAM recommended
+## 🌟 **Enter a World Where AI Becomes Your Dungeon Master**
 
-### Installation
+*Experience the future of tabletop RPG gaming with intelligent AI assistance, persistent world memory, and seamless multi-language support.*
+
+---
+
+</div>
+
+## 🎮 **What is ShadowRealms AI?**
+
+ShadowRealms AI is a revolutionary platform that transforms traditional tabletop RPG gaming by integrating advanced AI technology. Our system acts as an intelligent Dungeon Master, providing dynamic storytelling, character development, and world-building assistance while maintaining complete campaign continuity through advanced memory systems.
+
+### ✨ **Key Features**
+
+<div align="center">
+
+| 🧙‍♂️ **AI Dungeon Master** | 🌍 **Persistent Worlds** | 🎲 **Smart Dice System** |
+|:---:|:---:|:---:|
+| Intelligent NPC behavior and dynamic storytelling | ChromaDB-powered memory for campaign continuity | Automated dice rolling with context awareness |
+
+| 🌐 **Multi-Language** | ⚡ **Real-time Performance** | 🔒 **Secure & Private** |
+|:---:|:---:|:---:|
+| Global accessibility with translation pipelines | Optimized for 5-10s responses, 30-60s for complex tasks | Local AI processing, no data leaves your system |
+
+</div>
+
+---
+
+## 🚀 **Quick Start**
+
+<div align="center">
+
+### **One Command to Rule Them All**
+
+```bash
+git clone https://github.com/Somnius/shadowrealms-ai.git
+cd shadowrealms-ai
+docker-compose up -d
+```
+
+**🌐 Access Points:**
+- **Frontend**: http://localhost:3000
+- **Backend API**: http://localhost:5000
+- **ChromaDB**: http://localhost:8000
+
+</div>
+
+---
+
+## 🛠️ **Technology Stack**
+
+<div align="center">
+
+### **Backend & Infrastructure**
+
+![Docker](https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white)
+![Flask](https://img.shields.io/badge/Flask-000000?style=for-the-badge&logo=flask&logoColor=white)
+![Python](https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white)
+![Redis](https://img.shields.io/badge/Redis-DC382D?style=for-the-badge&logo=redis&logoColor=white)
+
+### **AI & Machine Learning**
+
+![ChromaDB](https://img.shields.io/badge/ChromaDB-FF6B6B?style=for-the-badge&logo=vector-database&logoColor=white)
+![LM Studio](https://img.shields.io/badge/LM%20Studio-FF6B6B?style=for-the-badge&logo=local-llm&logoColor=white)
+![Ollama](https://img.shields.io/badge/Ollama-FF6B6B?style=for-the-badge&logo=ollama&logoColor=white)
+![RAG](https://img.shields.io/badge/RAG-4CAF50?style=for-the-badge&logo=artificial-intelligence&logoColor=white)
+
+### **Frontend & UI**
+
+![React](https://img.shields.io/badge/React-61DAFB?style=for-the-badge&logo=react&logoColor=black)
+![Nginx](https://img.shields.io/badge/Nginx-009639?style=for-the-badge&logo=nginx&logoColor=white)
+![Material-UI](https://img.shields.io/badge/Material--UI-0081CB?style=for-the-badge&logo=material-ui&logoColor=white)
+
+### **Development & Monitoring**
+
+![Git](https://img.shields.io/badge/Git-F05032?style=for-the-badge&logo=git&logoColor=white)
+![GitHub](https://img.shields.io/badge/GitHub-181717?style=for-the-badge&logo=github&logoColor=white)
+![JWT](https://img.shields.io/badge/JWT-000000?style=for-the-badge&logo=json-web-tokens&logoColor=white)
+
+</div>
+
+---
+
+## 📊 **Current Development Status**
+
+<div align="center">
+
+### **Version 0.4.11 - Phase 1 Full Completion & Service Fixes**
+
+**Last Updated**: `2025-09-06 10:15 EEST`  
+**Progress**: `Phase 1 FULLY FUNCTIONAL - 100% Complete - Ready for Phase 2`
+
+</div>
+
+### ✅ **What's Complete & Ready (100% Phase 1)**
+
+<div align="center">
+
+| 🏗️ **Foundation** | 🤖 **AI Services** | 🌐 **Web Interface** |
+|:---:|:---:|:---:|
+| Complete Docker environment with all 6 services stable | Both LM Studio (3 models) and Ollama (1 model) fully working | React application serving through nginx proxy |
+| Backend API with authentication and RAG integration | ChromaDB vector memory system fully functional | Production-ready reverse proxy configuration |
+| SQLite schema with ChromaDB fully operational | Smart Model Router for intelligent model selection | JWT-based user management with role-based access |
+
+</div>
+
+---
+
+## 🎯 **Phase 2 Roadmap**
+
+<div align="center">
+
+### **Coming Next: RAG & Vector Memory System Enhancements**
+
+| 🔮 **Enhanced RAG** | 🎲 **RPG Mechanics** | 🌍 **World Building** |
+|:---:|:---:|:---:|
+| Context-aware responses with campaign data | Dice rolling, combat, character creation | Dynamic world generation and NPC management |
+| Advanced memory persistence | Rule system integration (D&D, White Wolf) | Real-time collaboration features |
+| Multi-session continuity | Character sheet management | Multi-language support |
+
+</div>
+
+---
+
+## 🏗️ **Architecture Overview**
+
+<div align="center">
+
+```mermaid
+graph TB
+    A[🎮 Frontend React App] --> B[🌐 Nginx Reverse Proxy]
+    B --> C[⚡ Flask Backend API]
+    C --> D[🧠 Smart Model Router]
+    C --> E[📚 RAG Service]
+    C --> F[💾 SQLite Database]
+    C --> G[⚡ Redis Cache]
+    E --> H[🗄️ ChromaDB Vector DB]
+    D --> I[🤖 LM Studio Models]
+    D --> J[🦙 Ollama Models]
+    K[📊 GPU Monitor] --> C
+    L[🔧 System Monitor] --> C
+```
+
+</div>
+
+---
+
+## 🎮 **Game Systems Supported**
+
+<div align="center">
+
+| 🎲 **D&D 5e** | 🌙 **White Wolf** | 🏰 **Custom Systems** |
+|:---:|:---:|:---:|
+| Complete D20 system integration | D10 dice pool mechanics | Flexible rule system support |
+| Character classes and races | Vampire, Werewolf, Mage support | Custom dice mechanics |
+| Spell and ability management | Storytelling system integration | Homebrew rule compatibility |
+
+</div>
+
+---
+
+## 🚀 **Getting Started**
+
+### **Prerequisites**
+
+- Docker & Docker Compose
+- 16GB+ RAM (recommended)
+- NVIDIA GPU with 16GB+ VRAM (for optimal AI performance)
+- Linux/macOS/Windows with WSL2
+
+### **Installation**
+
 ```bash
 # Clone the repository
 git clone https://github.com/Somnius/shadowrealms-ai.git
 cd shadowrealms-ai
 
 # Start all services
-docker-compose up --build
+docker-compose up -d
 
-# Access the platform
-# Frontend: http://localhost:3000
-# Backend API: http://localhost:5000
-# ChromaDB: http://localhost:8000
+# Check service status
+docker-compose ps
 ```
 
-## 📊 **Current Development Status**
+### **First Steps**
 
-### **Version**: `0.4.11` - Phase 1 Full Completion & Service Fixes
-**Last Updated**: `2025-09-06 10:15 EEST`
-**Progress**: `Phase 1 FULLY FUNCTIONAL - 100% Complete - Ready for Phase 2`
-
-### **✅ What's Complete & Ready (100% Phase 1)**
-- **Foundation**: Complete Docker environment with all 6 services stable
-- **Backend API**: Complete REST API with authentication and RAG integration
-- **Database**: SQLite schema with initialization and ChromaDB fully operational
-- **LLM Services**: Both LM Studio (3 models) and Ollama (1 model) fully working
-- **Frontend**: React application serving through nginx proxy
-- **Networking**: All container communication resolved and functional
-- **Monitoring**: GPU and system resource monitoring with HTTP server working
-- **Authentication**: JWT-based user management with role-based access
-- **RAG Integration**: ChromaDB vector memory system fully functional
-- **Smart Model Router**: Intelligent model selection and resource management
-- **Nginx**: Production-ready reverse proxy configuration
-- **Documentation**: Comprehensive project documentation and guides
-- **Testing System**: Complete standalone testing for all modules
-- **Backup System**: Automated backup creation with comprehensive exclusions
-- **Git Management**: Complete .gitignore and GitHub workflow scripts
-- **Environment Management**: Secure Docker environment variable configuration
-- **Flask Configuration**: Environment-based secret key and configuration management
-- **GitHub Integration**: Repository setup complete with contributing guidelines
-- **Smart Model Router**: Resource-efficient AI model management system
-
-### **⚠️ What We Learned & Restructured**
-- **Hardware Reality**: System has 16GB VRAM, not 24GB+ as initially assumed
-- **Resource Management**: Need smart model loading, not all models simultaneously
-- **Core First**: Focus on essential RPG features before advanced AI
-- **Proper Testing**: Each phase must be fully functional before proceeding
-
-### **🚧 What's Next (Restructured Phases)**
-- **Phase 2**: RAG & Vector Memory System implementation
-- **Phase 3**: RPG Mechanics Integration (dice rolling, combat, world navigation)
-- **Phase 4**: Advanced AI Features (multi-model orchestration)
-- **Frontend Development**: Implement Material-UI components and user interface
-- **Performance Optimization**: Tune system for production use
-
-### **🎯 Immediate Actions & Milestones**
-1. **✅ Environment Validated**: All services starting and functioning correctly
-2. **✅ Backup System**: Automated backup creation with comprehensive exclusions
-3. **✅ Git Management**: Complete .gitignore covering all project aspects
-4. **✅ Environment Management**: Docker environment variables properly configured
-5. **✅ Flask Configuration**: Secure secret key management implemented
-6. **✅ GitHub Integration**: Repository setup complete with contributing guidelines
-7. **🚧 AI Package Testing**: Ready to test chromadb, sentence-transformers, and torch integration
-8. **🚧 AI Integration**: Begin implementing LLM service layer and vector memory system
-9. **🚧 Frontend Development**: Start Material-UI component implementation
-10. **✅ Performance Monitoring**: GPU monitoring and resource management operational
-
-### **🔍 Current Status Summary**
-ShadowRealms AI has successfully completed **Phase 1** with a solid, production-ready foundation. The platform now features a complete Docker environment, Ubuntu-based AI compatibility, and a modern web architecture ready for advanced AI integration. **All critical issues have been resolved, and the platform is now stable and fully functional.**
-
-**Next Milestone**: Version 0.5.0 - AI Integration Testing & Vector Memory System
+1. **Access the Frontend**: Open http://localhost:3000
+2. **Create Your Campaign**: Set up your first RPG campaign
+3. **Configure AI Models**: Ensure LM Studio and Ollama are running
+4. **Start Playing**: Begin your AI-assisted RPG adventure!
 
 ---
 
-## 🏗️ Architecture
+## 🤝 **Contributing**
 
-```
-┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│   React Frontend│    │  Flask Backend  │    │   ChromaDB      │
-│   (Port 3000)   │◄──►│   (Port 5000)   │◄──►│  Vector Memory  │
-└─────────────────┘    └─────────────────┘    └─────────────────┘
-         │                       │                       │
-         │                       │                       │
-         ▼                       ▼                       ▼
-┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│   Nginx Proxy   │    │ GPU Monitoring  │    │   Redis Cache   │
-│   (Port 80)     │    │   Service       │    │   (Port 6379)   │
-└─────────────────┘    └─────────────────┘    └─────────────────┘
-```
+<div align="center">
 
-## 🛠️ Technology Stack
+We welcome contributions from the RPG and AI communities! Whether you're a developer, game designer, or AI enthusiast, there's a place for you in ShadowRealms AI.
 
-### Backend
-- **Python 3.11+** with Flask framework
-- **SQLite** for user data and campaigns
-- **ChromaDB** for vector memory and AI knowledge
-- **JWT Authentication** with role-based access control
-- **GPU Monitoring** for AI performance optimization
+[![Contributing](https://img.shields.io/badge/Contributing-Welcome-green.svg)](CONTRIBUTING.md)
+[![Issues](https://img.shields.io/badge/Issues-Report-red.svg)](https://github.com/Somnius/shadowrealms-ai/issues)
+[![Discussions](https://img.shields.io/badge/Discussions-Join-blue.svg)](https://github.com/Somnius/shadowrealms-ai/discussions)
 
-### Frontend
-- **React 18** with Material-UI components
-- **WebSocket** support for real-time updates
-- **Responsive Design** for all devices
+</div>
 
-### AI/ML
-- **Local LLM Integration** (LM Studio, Ollama)
-- **Vector Embeddings** with sentence-transformers
-- **Performance Optimization** based on GPU usage
+---
 
-### Infrastructure
-- **Docker** for containerization
-- **Nginx** reverse proxy
-- **Redis** for caching and sessions
-- **Automated Backup** system with verification
-
-## 📁 Project Structure
-
-```
-shadowrealms-ai/
-├── backend/                 # Flask API server
-│   ├── routes/             # API endpoints
-│   ├── services/           # Business logic
-│   └── config.py           # Configuration
-├── frontend/               # React application
-│   ├── src/                # Source code
-│   └── public/             # Static assets
-├── monitoring/             # GPU and system monitoring
-├── nginx/                  # Reverse proxy configuration
-├── assets/                 # Logos and static files
-├── backup/                 # Automated backups
-├── docker-compose.yml      # Service orchestration
-├── requirements.txt        # Python dependencies
-└── README.md              # This file
-```
-
-## 🔧 Development
-
-### Local Development Setup
-```bash
-# Backend development
-cd backend
-python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
-pip install -r requirements.txt
-python main.py
-
-# Frontend development
-cd frontend
-npm install
-npm start
-```
-
-### Testing
-```bash
-# Run all module tests
-python test_modules.py
-
-# Test individual components
-cd backend && python services/gpu_monitor.py
-cd backend && python database.py
-cd backend && python main.py --run
-```
-
-### Backup System
-```bash
-# Create automated backup
-./backup.sh
-
-# Backup includes: source code, documentation, configuration
-# Excludes: backup/, books/, data/, .git/
-```
-
-## 🎯 Use Cases
-
-### For RPG Players
-- **AI Dungeon Master**: Get intelligent, responsive storytelling
-- **Campaign Management**: Organize characters, campaigns, and sessions
-- **World Building**: AI-assisted creation of immersive settings
-- **Character Development**: Intelligent NPC behavior and interactions
-
-### For Developers
-- **AI Integration**: Learn local LLM integration patterns
-- **Modern Web Stack**: Experience with Docker, Flask, React
-- **Vector Databases**: Work with ChromaDB and embeddings
-- **Performance Optimization**: GPU-aware application development
-
-### For Educators
-- **Teaching AI**: Demonstrate AI integration concepts
-- **Software Architecture**: Show modern development practices
-- **Testing Strategies**: Comprehensive testing approaches
-- **DevOps Practices**: Docker and deployment workflows
-
-## 🤝 Contributing
-
-We welcome contributions! Please see our [Contributing Guidelines](CONTRIBUTING.md) for details.
-
-### Development Phases
-- **✅ Phase 1**: Foundation & Docker Environment (Complete)
-- **🚧 Phase 2**: AI Integration & Testing (In Progress)
-- **📋 Phase 3**: Frontend Development (Planned)
-- **📋 Phase 4**: Advanced AI Features (Planned)
-
-## 📄 License
+## 📄 **License**
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## 🙏 Acknowledgments
-
-- **Local LLM Community** for open-source AI models
-- **Docker Community** for containerization tools
-- **Flask & React Communities** for excellent frameworks
-- **RPG Community** for inspiration and feedback
-
-## 📞 Support
-
-- **Issues**: [GitHub Issues](https://github.com/Somnius/shadowrealms-ai/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/Somnius/shadowrealms-ai/discussions)
-- **Documentation**: [Wiki](https://github.com/Somnius/shadowrealms-ai/wiki)
-
 ---
 
-**Built with ❤️ for the RPG and AI communities**
+<div align="center">
 
-*Transform your tabletop adventures with the power of local AI!* 🎲✨
+### **🌟 Star this repository if you find it helpful!**
+
+**Made with ❤️ for the RPG community**
+
+[![GitHub stars](https://img.shields.io/github/stars/Somnius/shadowrealms-ai?style=social)](https://github.com/Somnius/shadowrealms-ai)
+[![GitHub forks](https://img.shields.io/github/forks/Somnius/shadowrealms-ai?style=social)](https://github.com/Somnius/shadowrealms-ai)
+
+</div>
