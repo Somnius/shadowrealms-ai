@@ -418,7 +418,7 @@ def get_campaign_context(campaign_id: int) -> str:
         
         # Get campaign details
         cursor.execute("""
-            SELECT name, description, rpg_system, setting, status
+            SELECT name, description, game_system, status
             FROM campaigns
             WHERE id = ? AND is_active = 1
         """, (campaign_id,))
@@ -438,9 +438,9 @@ def get_campaign_context(campaign_id: int) -> str:
         
         memories = cursor.fetchall()
         
-        context = f"Campaign: {campaign['name']} ({campaign['rpg_system']})\n"
-        context += f"Setting: {campaign['setting'] or 'Not specified'}\n"
+        context = f"Campaign: {campaign['name']} ({campaign['game_system']})\n"
         context += f"Description: {campaign['description'] or 'No description'}\n"
+        context += f"Status: {campaign['status'] or 'active'}\n"
         
         if memories:
             context += "\nRecent Context:\n"

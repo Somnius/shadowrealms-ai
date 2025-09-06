@@ -81,7 +81,19 @@ class SmartModelRouter:
         self.model_timeout = 300  # 5 minutes
         self.max_vram_usage = 14  # Leave 2GB buffer
         
+        # Load priority 1 models on startup
+        self._load_priority_models()
+        
         logger.info("SmartModelRouter initialized for 16GB VRAM system")
+    
+    def _load_priority_models(self):
+        """Load priority 1 models on startup"""
+        for model_name, config in self.model_configs.items():
+            if config['priority'] == 1:
+                if self.load_model(model_name):
+                    logger.info(f"✅ Loaded priority model: {model_name}")
+                else:
+                    logger.warning(f"⚠️  Failed to load priority model: {model_name}")
     
     def detect_task_type(self, prompt: str, context: Dict[str, Any]) -> TaskType:
         """Detect the type of task based on prompt and context"""

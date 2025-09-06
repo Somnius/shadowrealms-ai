@@ -99,6 +99,64 @@ def migrate_db():
             conn.commit()
             logger.info("✅ campaign_players table created")
         
+        # Check if ai_memory table exists
+        cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='ai_memory'")
+        if not cursor.fetchone():
+            logger.info("Creating ai_memory table...")
+            cursor.execute('''
+                CREATE TABLE ai_memory (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    campaign_id INTEGER NOT NULL,
+                    memory_type TEXT NOT NULL,
+                    content TEXT NOT NULL,
+                    context TEXT,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    accessed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (campaign_id) REFERENCES campaigns (id)
+                )
+            ''')
+            conn.commit()
+            logger.info("✅ ai_memory table created")
+        
+        # Check if characters table has the correct schema
+        cursor.execute("PRAGMA table_info(characters)")
+        columns = [column[1] for column in cursor.fetchall()]
+        required_columns = ['system_type', 'attributes', 'skills', 'background', 'merits_flaws', 'updated_at']
+        
+        if not all(col in columns for col in required_columns):
+            logger.info("Updating characters table schema...")
+            # Create new table with correct schema
+            cursor.execute("""
+                CREATE TABLE characters_new (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    name TEXT NOT NULL,
+                    system_type TEXT NOT NULL DEFAULT 'd20',
+                    attributes TEXT DEFAULT '{}',
+                    skills TEXT DEFAULT '{}',
+                    background TEXT DEFAULT '',
+                    merits_flaws TEXT DEFAULT '{}',
+                    user_id INTEGER NOT NULL,
+                    campaign_id INTEGER,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (campaign_id) REFERENCES campaigns (id),
+                    FOREIGN KEY (user_id) REFERENCES users (id)
+                )
+            """)
+            
+            # Copy existing data
+            cursor.execute("""
+                INSERT INTO characters_new (id, name, user_id, campaign_id, created_at, updated_at)
+                SELECT id, name, user_id, campaign_id, created_at, last_updated
+                FROM characters
+            """)
+            
+            # Drop old table and rename new one
+            cursor.execute("DROP TABLE characters")
+            cursor.execute("ALTER TABLE characters_new RENAME TO characters")
+            conn.commit()
+            logger.info("✅ characters table schema updated")
+        
         conn.close()
         logger.info("✅ Database migration completed")
         

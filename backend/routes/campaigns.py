@@ -35,7 +35,15 @@ def create_campaign():
     """Create a new campaign"""
     try:
         user_id = get_jwt_identity()
-        data = request.get_json()
+        
+        # Handle malformed JSON
+        try:
+            data = request.get_json()
+        except Exception as e:
+            return jsonify({'error': 'Invalid JSON format'}), 400
+        
+        if not data:
+            return jsonify({'error': 'No JSON data provided'}), 400
         
         # Validate required fields
         required_fields = ['name', 'description', 'game_system']
@@ -126,7 +134,7 @@ def get_campaigns():
         cursor.close()
         conn.close()
         
-        return jsonify({'campaigns': campaigns}), 200
+        return jsonify(campaigns), 200
         
     except Exception as e:
         logger.error(f"Error getting campaigns: {e}")
@@ -174,7 +182,7 @@ def get_campaign(campaign_id):
         cursor.close()
         conn.close()
         
-        return jsonify({'campaign': campaign}), 200
+        return jsonify(campaign), 200
         
     except Exception as e:
         logger.error(f"Error getting campaign: {e}")
