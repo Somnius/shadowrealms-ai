@@ -37,7 +37,8 @@ class RAGService:
             'characters': 'character_memory', 
             'world': 'world_memory',
             'sessions': 'session_memory',
-            'rules': 'rules_memory'
+            'rules': 'rules_memory',
+            'rule_books': 'rule_books'
         }
         
         # Initialize collections
@@ -81,8 +82,8 @@ class RAGService:
             
             # Prepare metadata
             full_metadata = {
-                'campaign_id': context.get('campaign_id'),
-                'user_id': context.get('user_id'),
+                'campaign_id': context.get('campaign_id', 0),  # Use 0 for global/system-wide
+                'user_id': context.get('user_id', 0),         # Use 0 for system content
                 'memory_type': memory_type,
                 'timestamp': datetime.now().isoformat(),
                 'content_length': len(content)
@@ -90,6 +91,9 @@ class RAGService:
             
             if metadata:
                 full_metadata.update(metadata)
+            
+            # Filter out None values to prevent ChromaDB validation errors
+            full_metadata = {k: v for k, v in full_metadata.items() if v is not None}
             
             # Store in ChromaDB
             collection.add(

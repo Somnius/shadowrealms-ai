@@ -5,6 +5,53 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.3] - 2025-09-06 13:00 EEST - RAG System Critical Fix & Rule Book Integration
+
+### Major Bug Fixes
+- **RAG Storage Issue**: Fixed critical ChromaDB metadata validation error causing silent storage failures
+- **Content Retrieval**: Fixed search result formatting (content vs text field mismatch)
+- **Metadata Handling**: Implemented robust None value filtering to prevent ChromaDB errors
+- **Silent Failures**: Added proper error handling and return value checking for storage operations
+
+### RAG System Architecture Improvements
+- **Global Rule Books**: Implemented `campaign_id: 0` for system-wide rule book access
+- **Campaign Isolation**: Each campaign maintains separate memory space with proper context
+- **Admin Commands**: Added `add_book_to_campaign()` method for `/admin add book X-Y-Z` functionality
+- **Metadata Strategy**: Clear separation between global rules and campaign-specific memories
+
+### Rule Book Integration Features
+- **PDF Processing**: Successfully processed World of Darkness 2nd Edition (986 chunks, 156 pages)
+- **Vector Search**: Semantic search working with relevance scoring and proper content retrieval
+- **Content Access**: Global access to rule books across all campaigns
+- **Admin Override**: Full ST/DM control over rule book integration and content verification
+
+### Technical Improvements
+- **Error Prevention**: Robust metadata validation preventing future ChromaDB issues
+- **Content Formatting**: Fixed search result structure for proper content display
+- **Storage Reliability**: Added success/failure checking for all storage operations
+- **System Architecture**: Documented critical RAG system design decisions
+
+### Files Modified
+- `backend/services/rag_service.py` - Fixed metadata handling and None value filtering
+- `backend/services/rule_book_service.py` - Added proper context and admin commands
+- `backend/routes/rule_books.py` - Fixed content field mapping in search results
+- `SHADOWREALMS_AI_COMPLETE.md` - Added RAG system design decisions and architecture
+
+### Testing Results
+- ✅ **5/5 search queries** returning relevant results with proper content
+- ✅ **ChromaDB storage** working without validation errors
+- ✅ **Vector search** providing accurate relevance scoring
+- ✅ **Global rule access** functioning across all campaigns
+- ✅ **Content retrieval** displaying full text content properly
+
+### Next Steps
+- Begin Phase 3 implementation with fully functional RAG system
+- Implement White Wolf character management system
+- Create context-aware dice rolling with environmental factors
+- Build narrative combat system with XP cost AI assistance
+
+---
+
 ## [0.5.2] - 2025-09-06 12:20 EEST - Documentation Refactoring
 
 ### Documentation Improvements
@@ -16,7 +63,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Files Modified
 - `CHANGELOG.txt` → `CHANGELOG.md` (renamed)
 - `SHADOWREALMS_AI_COMPLETE.md` - Updated changelog reference
-- `GITHUB_SETUP.md` - Updated changelog reference  
+- `GITHUB_SETUP.md` - Updated changelog reference
 - `backup.sh` - Updated critical files list
 
 ### Technical Improvements

@@ -45,6 +45,9 @@ class Config:
     CHROMADB_HOST = os.environ.get('CHROMADB_HOST') or 'localhost'
     CHROMADB_PORT = int(os.environ.get('CHROMADB_PORT') or 8000)
     
+    # Rule Books Configuration
+    BOOKS_DIR = os.environ.get('BOOKS_DIR') or 'books'
+    
     # GPU Monitoring Configuration
     GPU_THRESHOLD_HIGH = int(os.environ.get('GPU_THRESHOLD_HIGH') or 80)
     GPU_THRESHOLD_MEDIUM = int(os.environ.get('GPU_THRESHOLD_MEDIUM') or 60)

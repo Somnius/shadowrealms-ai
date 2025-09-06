@@ -9,6 +9,7 @@ services:
       - ./data:/app/data
       - ./backend:/app
       - ./data/logs:/app/logs
+      - ./books:/app/books
     environment:
       - FLASK_ENV=development
       - FLASK_APP=main.py
