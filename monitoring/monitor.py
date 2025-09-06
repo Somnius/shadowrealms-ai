@@ -409,7 +409,11 @@ if __name__ == "__main__":
         }
         
         monitor = GPUResourceMonitor(config)
-        start_http_server(monitor, 8000)
+        # Start HTTP server in a separate thread
+        import threading
+        http_thread = threading.Thread(target=start_http_server, args=(monitor, 8000))
+        http_thread.daemon = True
+        http_thread.start()
         main()
     else:
         # Run standalone tests
