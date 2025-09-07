@@ -17,6 +17,63 @@
 - **Scalable Architecture**: Designed for growth from single campaigns to large groups
 - **Technology Exploration**: Hands-on experience with cutting-edge AI and web frameworks
 
+---
+
+## 📋 **Table of Contents**
+
+### **🏗️ Foundation & Architecture**
+- [Technical Architecture](#technical-architecture)
+  - [System Components](#system-components)
+  - [Docker Architecture](#docker-architecture)
+  - [GPU Resource Monitoring System](#gpu-resource-monitoring-system)
+- [AI/LLM Integration Strategy](#aillm-integration-strategy)
+  - [Primary Models](#primary-models)
+  - [Model Distribution](#model-distribution)
+  - [GPU Resource Management](#gpu-resource-management)
+- [User Roles & Permissions](#user-roles--permissions)
+- [Database Schema Design](#database-schema-design)
+- [Docker Strategy & Setup](#docker-strategy--setup)
+
+### **🛠️ Development & Operations**
+- [Development Commands & Reference](#development-commands--reference)
+- [Development Phases & Status](#development-phases--status)
+- [Testing & Quality Assurance](#-testing--quality-assurance)
+- [Backup System & Data Management](#backup-system--data-management)
+
+### **🎮 Game Systems & Features**
+- [RPG System Support](#rpg-system-support)
+- [Security & Privacy Features](#security--privacy-features)
+- [Performance & Scalability](#performance--scalability)
+
+### **📊 Current Status & Versions**
+- [Version 0.5.5 - Phase 3A Frontend Development Planning Complete](#version-055---phase-3a-frontend-development-planning-complete-)
+- [Version 0.5.4 - Complete User Experience Fixes & 100% Test Success](#version-054---complete-user-experience-fixes--100-test-success-)
+- [Version 0.5.3 - RAG System Critical Fix & Rule Book Integration](#version-053---rag-system-critical-fix--rule-book-integration)
+- [Version 0.5.2 - Documentation Refactoring](#version-052---documentation-refactoring)
+- [Version 0.5.1 - Phase 3 Planning Complete](#version-051---phase-3-planning-complete)
+- [Version 0.5.0 - Phase 2 Complete: RAG & Vector Memory System](#version-050---phase-2-complete-rag--vector-memory-system)
+
+### **🎯 Phase 3A: Frontend Development**
+- [Project Vision & Requirements](#-phase-3a-frontend-development--user-experience)
+- [Phase 3A Implementation Structure](#phase-3a-implementation-structure)
+- [Technical Architecture Decisions](#technical-architecture-decisions)
+- [Admin Command System (50 Commands)](#admin-command-system-50-commands)
+- [Phase 3A Interface Wireframe (ASCII)](#phase-3a-interface-wireframe-ascii)
+- [Next Steps for Phase 3A](#next-steps-for-phase-3a)
+
+### **🔧 Advanced Features & Planning**
+- [Phase Restructuring](#phase-restructuring)
+- [Revised Model Strategy](#revised-model-strategy)
+- [Quick Start Guide](#quick-start-guide)
+- [Project Benefits & Future Vision](#project-benefits--future-vision)
+- [Next Development Session](#next-development-session)
+- [Current Development Status](#current-development-status)
+
+### **📚 Documentation & Reference**
+- [Documentation Notes](#documentation-notes)
+
+---
+
 ## Technical Architecture
 
 ### System Components
@@ -1283,7 +1340,7 @@ After comprehensive testing and debugging, we achieved **100% User Experience Te
 │ │ Sidebar │ │              Main Content Area                  │ │
 │ │         │ │                                                 │ │
 │ │┌───────┐│ │ ┌─────────────────────────────────────────────┐ │ │
-│ ││Campaign││ │ │            Chat Interface                   │ │ │
+│ ││Campaign││ │ │            Chat Interface                   │ │ 
 │ ││Dashboard││ │ │                                           │ │ │
 │ │└───────┘│ │ │ ┌─────────────────────────────────────────┐ │ │ │
 │ │         │ │ │ │            Message Area                 │ │ │ │
