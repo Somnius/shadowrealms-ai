@@ -1,22 +1,39 @@
 {
   "name": "shadowrealms-ai-frontend",
-  "version": "0.4.0",
+  "version": "0.5.6",
   "description": "ShadowRealms AI - React Frontend",
   "private": true,
   "dependencies": {
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-scripts": "5.0.1",
-    "@mui/material": "^5.15.0",
-    "@mui/icons-material": "^5.15.0",
-    "@emotion/react": "^11.11.0",
-    "@emotion/styled": "^11.11.0",
-    "axios": "^1.6.0"
+    "react-router-dom": "^6.8.0",
+    "@tanstack/react-query": "^4.24.0",
+    "zustand": "^4.3.0",
+    "axios": "^1.6.0",
+    "@headlessui/react": "^1.7.0",
+    "@heroicons/react": "^2.0.0",
+    "framer-motion": "^10.0.0"
+  },
+  "devDependencies": {
+    "tailwindcss": "^3.2.0",
+    "autoprefixer": "^10.4.0",
+    "postcss": "^8.4.0",
+    "@types/react": "^18.0.0",
+    "@types/react-dom": "^18.0.0",
+    "typescript": "^4.9.0",
+    "@testing-library/react": "^13.4.0",
+    "@testing-library/jest-dom": "^5.16.0",
+    "@testing-library/user-event": "^14.4.0",
+    "jest-environment-jsdom": "^29.5.0",
+    "msw": "^1.0.0"
   },
   "scripts": {
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
+    "test:coverage": "react-scripts test --coverage --watchAll=false",
+    "test:ci": "react-scripts test --coverage --watchAll=false --passWithNoTests",
     "eject": "react-scripts eject"
   },
   "eslintConfig": {
