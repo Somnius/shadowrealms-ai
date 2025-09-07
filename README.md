@@ -6,9 +6,9 @@
 
 ### The Ultimate AI-Powered Tabletop RPG Experience
 
-[![Version](https://img.shields.io/badge/version-0.5.6-blue.svg)](https://github.com/Somnius/shadowrealms-ai)
+[![Version](https://img.shields.io/badge/version-0.5.7-blue.svg)](https://github.com/Somnius/shadowrealms-ai)
 [![Phase](https://img.shields.io/badge/phase-2%20complete-green.svg)](https://github.com/Somnius/shadowrealms-ai)
-[![Phase 3A](https://img.shields.io/badge/phase-3A%20auth%20complete-brightgreen.svg)](https://github.com/Somnius/shadowrealms-ai)
+[![Phase 3A](https://img.shields.io/badge/phase-3A%20in%20progress-orange.svg)](https://github.com/Somnius/shadowrealms-ai)
 [![Tests](https://img.shields.io/badge/tests-61%2F61%20passing-brightgreen.svg)](https://github.com/Somnius/shadowrealms-ai)
 [![Status](https://img.shields.io/badge/status-fully%20functional-brightgreen.svg)](https://github.com/Somnius/shadowrealms-ai)
 [![License](https://img.shields.io/badge/license-MIT-yellow.svg)](LICENSE)

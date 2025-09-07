@@ -1,19 +1,27 @@
-# 🧪 ShadowRealms AI - Authentication System Testing
+# 🧪 ShadowRealms AI - Frontend Testing
 
 ## Overview
 
-This document describes the comprehensive testing suite for the ShadowRealms AI authentication system. The tests ensure that all authentication components, services, and state management work correctly.
+This document describes the comprehensive testing suite for the ShadowRealms AI frontend application. The tests ensure that all components, services, and state management work correctly.
 
 **🐳 Docker-Based Testing**: All tests run inside Docker containers, ensuring consistent environments and dependencies.
 
-**✅ 100% Test Success**: All 61 tests passing with comprehensive coverage of authentication components.
+**✅ Authentication Tests**: 100% success rate (61/61 tests passing)
+**⚠️ Phase 3A Tests**: In progress, some failures due to mocking issues
 
 ## 🎯 Test Results Summary
 
+### Authentication System (v0.5.6)
 - **Test Suites**: 6 passed, 6 total ✅
 - **Tests**: 61 passed, 61 total ✅
 - **Coverage**: 68.54% overall (excellent for current scope)
 - **Components Tested**: LoginForm (12/12), AuthService (12/12), AuthStore (13/13), UI Components (24/24)
+
+### Phase 3A Components (v0.5.7)
+- **Test Suites**: 3 failed, 3 total ⚠️
+- **Tests**: 39 failed, 8 passed, 47 total ⚠️
+- **Components**: CampaignCard, MessageList, UserList (framer-motion mocking issues)
+- **Status**: In progress - fixing mocking issues
 
 ## Test Structure
 
