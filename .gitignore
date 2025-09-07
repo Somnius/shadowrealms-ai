@@ -361,18 +361,103 @@ Discussion No1 Local LLM-Powered Tabletop RPG Platform_ Complete.md
 .cursor/
 notes/
 
-# =============================================================================
-# MONITORING AND METRICS
-# =============================================================================
-# System monitoring data
+# Additional sensitive and temporary files
+*.pid
+*.sock
+*.lock
+*.swp
+*.swo
+*~
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon
+._*
+.DocumentRevisions-V100
+.fseventsd
+.Spotlight-V100
+.TemporaryItems
+.Trashes
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
+.AppleDB
+.AppleDesktop
+Network Trash Folder
+Temporary Items
+.apdisk
+
+# Additional test and coverage files
+test-results/
+test-output/
+.pytest_cache/
+.coverage.*
+htmlcov/
+coverage/
+
+# Additional temporary files
+*.tmp
+*.temp
+*.cache
+*.bak
+*.backup
+*.orig
+*.rej
+
+# Additional IDE and editor files
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+*.code-workspace
+
+# Additional Python files
+*.pyc
+*.pyo
+*.pyd
+__pycache__/
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.dmypy.json
+dmypy.json
+.pyre/
+.pytype/
+cython_debug/
+
+# Additional Node.js files
+.npm
+.eslintcache
+.rpt2_cache/
+.rts2_cache_cjs/
+.rts2_cache_es/
+.rts2_cache_umd/
+.node_repl_history
+.yarn-integrity
+.yarn/cache
+.yarn/unplugged
+.yarn/build-state.yml
+.yarn/install-state.gz
+.pnp.*
+
+# Additional build and deployment files
+dist/
+build/
+*.tar.gz
+*.tar.bz2
+*.zip
+deploy/
+production/
+staging/
+
+# Additional monitoring and metrics
 system_status.json
 gpu_status.json
 performance_metrics.json
+*.log
+logs/
+log/
 
-# =============================================================================
-# SECURITY
-# =============================================================================
-# API keys and secrets
+# Additional security files
 .env.local
 .env.production
 .env.staging
@@ -384,26 +469,5 @@ keys/
 *.pfx
 
 # =============================================================================
-# TESTING
+# END OF GITIGNORE
 # =============================================================================
-# Test artifacts
-test-results/
-test-output/
-.coverage
-.pytest_cache/
-htmlcov/
-
-# =============================================================================
-# BUILD AND DEPLOYMENT
-# =============================================================================
-# Build artifacts
-dist/
-build/
-*.tar.gz
-*.tar.bz2
-*.zip
-
-# Deployment
-deploy/
-production/
-staging/
