@@ -47,6 +47,7 @@ jest.mock('framer-motion', () => {
       button: ({ children, ...props }: any) => React.createElement('button', props, children),
       input: ({ children, ...props }: any) => React.createElement('input', props, children),
       p: ({ children, ...props }: any) => React.createElement('p', props, children),
+      span: ({ children, ...props }: any) => React.createElement('span', props, children),
     },
     // Mock AnimatePresence - just render children without animation logic
     AnimatePresence: ({ children }: any) => children,
@@ -94,5 +95,49 @@ jest.mock('@heroicons/react/24/outline', () => ({
   LockClosedIcon: () => {
     const React = require('react');
     return React.createElement('div', { 'data-testid': 'lock-icon' });
+  },
+  UserGroupIcon: () => {
+    const React = require('react');
+    return React.createElement('div', { 'data-testid': 'user-group-icon' });
+  },
+  CalendarIcon: () => {
+    const React = require('react');
+    return React.createElement('div', { 'data-testid': 'calendar-icon' });
+  },
+  ClockIcon: () => {
+    const React = require('react');
+    return React.createElement('div', { 'data-testid': 'clock-icon' });
+  },
+  TagIcon: () => {
+    const React = require('react');
+    return React.createElement('div', { 'data-testid': 'tag-icon' });
+  },
+  PlayIcon: () => {
+    const React = require('react');
+    return React.createElement('div', { 'data-testid': 'play-icon' });
+  },
+  PauseIcon: () => {
+    const React = require('react');
+    return React.createElement('div', { 'data-testid': 'pause-icon' });
+  },
+  ArchiveBoxIcon: () => {
+    const React = require('react');
+    return React.createElement('div', { 'data-testid': 'archive-icon' });
+  },
+  CheckCircleIcon: () => {
+    const React = require('react');
+    return React.createElement('div', { 'data-testid': 'check-circle-icon' });
+  },
+  ArrowRightOnRectangleIcon: () => {
+    const React = require('react');
+    return React.createElement('div', { 'data-testid': 'arrow-right-icon' });
+  },
+  UserPlusIcon: () => {
+    const React = require('react');
+    return React.createElement('div', { 'data-testid': 'user-plus-icon' });
+  },
+  UserMinusIcon: () => {
+    const React = require('react');
+    return React.createElement('div', { 'data-testid': 'user-minus-icon' });
   },
 }));
