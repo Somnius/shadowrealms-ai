@@ -1383,7 +1383,7 @@ After comprehensive testing and debugging, we achieved **100% User Experience Te
 │                          Mobile Interface (Responsive)                              │
 ├─────────────────────────────────────────────────────────────────────────────────────┤
 │ ┌─────────────────────────────────────────────────────────────────────────────────┐ │
-│ │ [☰] ShadowRealms AI                              [👤] [⚙️] [📊]                │ │
+│ │ [☰] ShadowRealms AI                              [👤] [⚙️] [📊]                 │ │
 │ └─────────────────────────────────────────────────────────────────────────────────┘ │
 │ ┌─────────────────────────────────────────────────────────────────────────────────┐ │
 │ │ Current Location: Elysium                              [📍] Change Location     │ │
@@ -2129,94 +2129,104 @@ def select_model(task_type, context):
 
 ### ⚡ **5-Minute Setup**
 
-**1. Create GitHub Repository**
-- Go to [github.com](https://github.com)
-- Click "+" → "New repository"
-- Name: `shadowrealms-ai`
-- Description: `AI-Powered Tabletop RPG Platform with local LLM integration`
-- Public repository
-- **Don't** initialize with README, .gitignore, or license
-
-**2. Set Up Local Repository**
+**1. Clone the Repository**
 ```bash
-# Add GitHub remote (replace 'yourusername')
-git remote add origin https://github.com/Somnius/shadowrealms-ai.git
+# Clone the repository
+git clone https://github.com/Somnius/shadowrealms-ai.git
+cd shadowrealms-ai
+```
 
-# Create main branch
-git checkout -b main
-
+**2. Environment Setup**
+```bash
 # Create .env file from template
 cp env.template .env
-# Edit .env with your values
+# Edit .env with your values (API keys, database settings, etc.)
 ```
 
-**3. Initial Upload**
+**3. Start the Platform**
 ```bash
-# Stage and commit all files
-./git_workflow.sh commit "Initial commit: ShadowRealms AI v0.4.4 - Complete Phase 1"
+# Start all services with Docker Compose
+docker-compose up -d
 
-# Push to GitHub
-./git_workflow.sh push
-
-# Create release tag
-./git_workflow.sh release 0.4.4
+# Check service status
+docker-compose ps
 ```
 
-**4. Create GitHub Release**
-- Go to repository → Releases → "Create a new release"
-- Tag: `v0.4.4`
-- Title: `ShadowRealms AI v0.4.4 - Phase 1 Complete`
-- Description: Copy from `CHANGELOG.md`
+**4. Access the Platform**
+- **Frontend**: http://localhost:3000
+- **Backend API**: http://localhost:5000
+- **ChromaDB**: http://localhost:8000
 
-### 🎯 **What You Get**
+### 🎯 **Current Status (v0.5.5)**
 
-✅ **Professional README.md** - GitHub-ready with badges and documentation  
-✅ **Comprehensive .gitignore** - Protects sensitive files  
-✅ **Git Workflow Script** - Easy git operations  
-✅ **Environment Template** - Safe configuration management  
-✅ **MIT License** - Open source ready  
-✅ **Setup Guide** - Complete GitHub setup instructions  
+✅ **Phase 1 Complete** - Foundation & Docker Setup  
+✅ **Phase 2 Complete** - RAG & Vector Memory System  
+🚧 **Phase 3A In Progress** - Frontend Development & User Experience  
+✅ **AI Integration** - LM Studio + Ollama models operational  
+✅ **RAG System** - ChromaDB vector memory fully functional  
+✅ **Campaign Management** - Complete CRUD operations  
+✅ **Testing Infrastructure** - Comprehensive test suite  
 
-### 🔄 **Daily Workflow**
+### 🚀 **What's Working**
+
+- **Complete Docker Environment** - All 6 services running stable
+- **AI Models** - Both LM Studio (3 models) and Ollama (1 model) operational
+- **Vector Memory** - ChromaDB with persistent AI memory across campaigns
+- **Campaign System** - Full campaign lifecycle management
+- **Character Creation** - World of Darkness d10 system support
+- **Rule Book Integration** - Searchable PDF content with AI context
+- **Admin Commands** - 50+ admin commands for full ST/DM control
+
+### 🔄 **Development Workflow**
 
 ```bash
-# Check status
-./git_workflow.sh status
+# Check service status
+docker-compose ps
 
-# Create feature branch
-./git_workflow.sh feature new-feature
+# View logs
+docker-compose logs -f [service_name]
 
-# Make changes and commit
-./git_workflow.sh commit "Add new feature"
+# Run tests
+python test_modules.py
 
-# Push changes
-./git_workflow.sh push
+# Create backup
+./backup.sh
 
-# Create PR on GitHub, then merge
-./git_workflow.sh merge feature/new-feature
+# Update and commit
+git add .
+git commit -m "Update: Description of changes"
+git push origin main
 ```
+
+### 🛠️ **Prerequisites**
+
+- **Docker & Docker Compose** - Container orchestration
+- **16GB+ RAM** - Recommended for optimal performance
+- **NVIDIA GPU with 16GB+ VRAM** - For AI model execution
+- **Linux/macOS/Windows with WSL2** - Supported platforms
 
 ### 🚨 **Security Features**
 
-- `.env` files automatically excluded
-- Backup files protected
-- Database files ignored
-- Sensitive data templates only
+- **Local AI Processing** - No data leaves your system
+- **JWT Authentication** - Secure user management
+- **Role-Based Access** - Admin, Helper, and Player roles
+- **Environment Protection** - Sensitive data in .env files only
+- **Backup System** - Automated data protection
 
 ## Conclusion & Next Steps
 
-ShadowRealms AI has successfully completed Phase 1 with a solid, production-ready foundation. The platform now features a complete Docker environment, Ubuntu-based AI compatibility, and a modern web architecture ready for advanced AI integration. **All critical issues have been resolved, and the platform is now stable and fully functional.**
+ShadowRealms AI has successfully completed **Phase 2** with a fully functional RAG & Vector Memory System. The platform now features a complete Docker environment, operational AI models, persistent memory system, and comprehensive campaign management. **Phase 3A Frontend Development is now in progress.**
 
-### Immediate Actions
-1. **✅ Environment Validated**: All services starting and functioning correctly
-2. **✅ Backup System**: Automated backup creation with comprehensive exclusions
-3. **✅ Git Management**: Complete .gitignore covering all project aspects
-4. **✅ Environment Management**: Docker environment variables properly configured
-5. **✅ Flask Configuration**: Secure secret key management implemented
-6. **✅ GitHub Integration**: Repository setup complete with contributing guidelines
-7. **🚧 AI Package Testing**: Ready to test chromadb, sentence-transformers, and torch integration
-8. **🚧 AI Integration**: Begin implementing LLM service layer and vector memory system
-9. **🚧 Frontend Development**: Start Material-UI component implementation
+### Current Status (v0.5.5)
+1. **✅ Phase 1 Complete**: Foundation & Docker Setup - All services operational
+2. **✅ Phase 2 Complete**: RAG & Vector Memory System - ChromaDB fully functional
+3. **🚧 Phase 3A In Progress**: Frontend Development & User Experience
+4. **✅ AI Integration**: LM Studio + Ollama models operational with smart routing
+5. **✅ Campaign Management**: Complete CRUD operations with persistent memory
+6. **✅ Character Creation**: World of Darkness d10 system fully implemented
+7. **✅ Rule Book Integration**: Searchable PDF content with AI context retrieval
+8. **✅ Testing Infrastructure**: Comprehensive test suite with 100% success rate
+9. **✅ Admin Commands**: 50+ admin commands for full ST/DM control
 10. **✅ Performance Monitoring**: GPU monitoring and resource management operational
 
 ### Success Metrics
