@@ -357,6 +357,10 @@ checkpoints/
 # Discussion and planning documents (not for public repository)
 Discussion No1 Local LLM-Powered Tabletop RPG Platform_ Complete.md
 
+# Local development and IDE files
+.cursor/
+notes/
+
 # =============================================================================
 # MONITORING AND METRICS
 # =============================================================================
