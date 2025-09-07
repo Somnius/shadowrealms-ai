@@ -41,6 +41,14 @@ ShadowRealms AI is a revolutionary platform that transforms traditional tabletop
 
 ---
 
+## 📖 **Complete Documentation**
+
+For comprehensive documentation, detailed setup instructions, and complete feature overview, please refer to our complete documentation:
+
+**[📋 View Complete Documentation](https://github.com/Somnius/shadowrealms-ai/blob/main/SHADOWREALMS_AI_COMPLETE.md)**
+
+---
+
 ## 🚀 **Quick Start**
 
 <div align="center">
