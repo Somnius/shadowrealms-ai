@@ -6,7 +6,7 @@
 
 ### The Ultimate AI-Powered Tabletop RPG Experience
 
-[![Version](https://img.shields.io/badge/version-0.5.7-blue.svg)](https://github.com/Somnius/shadowrealms-ai)
+[![Version](https://img.shields.io/badge/version-0.5.8-blue.svg)](https://github.com/Somnius/shadowrealms-ai)
 [![Phase](https://img.shields.io/badge/phase-2%20complete-green.svg)](https://github.com/Somnius/shadowrealms-ai)
 [![Phase 3A](https://img.shields.io/badge/phase-3A%20in%20progress-orange.svg)](https://github.com/Somnius/shadowrealms-ai)
 [![Tests](https://img.shields.io/badge/tests-61%2F61%20passing-brightgreen.svg)](https://github.com/Somnius/shadowrealms-ai)
@@ -55,6 +55,7 @@ For comprehensive documentation, detailed setup instructions, and complete featu
 - **[Contributing Guidelines](CONTRIBUTING.md)** - How to contribute to the project
 - **[Changelog](CHANGELOG.md)** - Detailed version history and updates
 - **[Docker Setup Guide](DOCKER_ENV_SETUP.md)** - Environment configuration
+- **[Books Sync Guide](books/README.md)** - World of Darkness books synchronization
 
 ---
 
@@ -117,10 +118,10 @@ docker-compose up -d
 
 <div align="center">
 
-### Version 0.5.5 - Phase 2 Complete ✅ | Phase 3A In Progress 🚧
+### Version 0.5.8 - Books Sync System Added 📚
 
-**Last Updated**: `2025-01-09`
-**Progress**: `Phase 2 Complete - Phase 3A Frontend Development Started`
+**Last Updated**: `2025-10-23`
+**Progress**: `Phase 2 Complete - Phase 3A Frontend Development + Books Management`
 
 </div>
 
@@ -136,7 +137,7 @@ docker-compose up -d
 | Campaign Management API | Memory Search & Context Retrieval | RAG-Powered AI Responses |
 | Vector Embeddings | Persistent AI Memory | Context-Aware Generation |
 | API Response Consistency | Character Creation Schema | 100% User Experience Tests |
-| Rule Book Integration | ChromaDB Storage Issues | Content Retrieval System |
+| Rule Book Integration | WoD Books Auto-Sync | Content Retrieval System |
 
 </div>
 
