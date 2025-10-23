@@ -162,6 +162,7 @@ This project is more than just a gaming platform - it's an exploration of the fu
 - [Performance & Scalability](#performance--scalability)
 
 ### **📊 Current Status & Versions**
+- [Version 0.5.8 - World of Darkness Books Sync System](#version-058---world-of-darkness-books-sync-system-)
 - [Version 0.5.7 - Phase 3A Development Pause](#version-057---phase-3a-development-pause-)
 - [Version 0.5.6 - Authentication System Testing Complete](#version-056---authentication-system-testing-complete-)
 - [Version 0.5.5 - Phase 3A Frontend Development Planning Complete](#version-055---phase-3a-frontend-development-planning-complete-)
@@ -1151,6 +1152,78 @@ The project now includes comprehensive `.gitignore` rules covering:
 - **Campaign Continuity**: Persistent AI memory across multiple sessions
 - **Multi-Language**: Global accessibility with translation pipelines
 - **Real-time Collaboration**: Live AI-assisted gaming experiences
+
+## Version 0.5.8 - World of Darkness Books Sync System 📚
+
+### What We Accomplished Today
+We implemented a complete automated book synchronization system for World of Darkness rulebooks and materials, providing seamless integration with external archives for rule reference and campaign material management:
+
+1. **Automated Book Sync**: Complete script-based synchronization from the-eye.eu World of Darkness archive
+2. **Virtual Environment Management**: Self-contained Python environment with automatic dependency handling
+3. **Smart Download System**: Resume support, intelligent file skipping, and progress tracking
+4. **Local Book Library**: Full offline access to World of Darkness materials for RAG integration
+5. **Documentation**: Comprehensive setup guide and usage instructions
+
+### Technical Achievements
+- **Recursive Directory Sync**: Complete archive mirroring with preserved directory structure
+- **Progress Tracking**: Visual progress bars for each file download with statistics
+- **HTML Rewriting**: Local index.html files for offline browsing
+- **Book Inventory**: Auto-generated book-list.txt with all PDFs and paths
+- **Error Handling**: Graceful network error recovery and safe interruption support
+- **Git Integration**: Proper .gitignore configuration to exclude downloads while preserving scripts
+
+### Book Management Features
+- ✅ **One-Command Sync**: Simple `./sync.sh` execution for complete synchronization
+- ✅ **Resume Support**: Continue interrupted downloads from where they left off
+- ✅ **Smart Skipping**: Size-based verification to skip existing files
+- ✅ **All File Types**: PDFs, HTML, images, and all archive content
+- ✅ **Cron Ready**: Schedule automated syncs with cron job support
+- ✅ **Statistics**: Download/skip/failure counts and execution time tracking
+
+### Directory Structure
+```
+books/
+├── sync.sh              # Main sync script (bash wrapper)
+├── sync_wod_books.py    # Python sync implementation
+├── requirements.txt     # Dependencies (requests, beautifulsoup4, lxml, tqdm)
+├── README.md           # Complete documentation
+├── venv/               # Auto-created virtual environment
+├── book-list.txt       # Generated PDF inventory
+└── World of Darkness/  # Downloaded books (gitignored)
+```
+
+### Integration Benefits
+- **RAG System Ready**: Books can be processed and integrated into vector database
+- **Offline Reference**: Complete WoD library available without internet connectivity
+- **Campaign Material**: Quick access to all rulebooks and supplements
+- **Future Processing**: Foundation for automated book parsing and embedding
+
+### Files Added
+- `books/sync.sh` - Main sync script with venv management
+- `books/sync_wod_books.py` - Full Python implementation with all features
+- `books/requirements.txt` - Python dependencies for sync system
+- `books/README.md` - Comprehensive documentation and usage guide
+
+### Files Modified
+- `.gitignore` - Added books directory exclusions while preserving scripts
+- `CHANGELOG.md` - Updated with version 0.5.8 entry
+- `README.md` - Updated version badges and added books sync documentation link
+- `SHADOWREALMS_AI_COMPLETE.md` - Updated version references and added this section
+
+### Next Steps
+1. Integrate synced books with RAG system for semantic search
+2. Implement book processing pipeline for vector embedding
+3. Add admin commands for book management and rule lookup
+4. Create book selection interface for campaign-specific rule access
+5. Implement PDF text extraction and chunking for vector storage
+
+### Use Cases
+- **Rule Lookup**: Quick reference to game rules through AI-powered search
+- **Campaign Preparation**: Access all materials needed for session planning
+- **Character Creation**: Reference materials for character building
+- **Automated Updates**: Regular syncs to keep library current
+
+---
 
 ## Version 0.5.7 - Phase 3A Development Pause 🚧⏸️
 
@@ -2376,7 +2449,7 @@ docker-compose ps
 - **Backend API**: http://localhost:5000
 - **ChromaDB**: http://localhost:8000
 
-### 🎯 **Current Status (v0.5.5)**
+### 🎯 **Current Status (v0.5.8)**
 
 ✅ **Phase 1 Complete** - Foundation & Docker Setup  
 ✅ **Phase 2 Complete** - RAG & Vector Memory System  
@@ -2436,7 +2509,7 @@ git push origin main
 
 ShadowRealms AI has successfully completed **Phase 2** with a fully functional RAG & Vector Memory System. The platform now features a complete Docker environment, operational AI models, persistent memory system, and comprehensive campaign management. **Phase 3A Frontend Development is now in progress.**
 
-### Current Status (v0.5.5)
+### Current Status (v0.5.8)
 1. **✅ Phase 1 Complete**: Foundation & Docker Setup - All services operational
 2. **✅ Phase 2 Complete**: RAG & Vector Memory System - ChromaDB fully functional
 3. **🚧 Phase 3A In Progress**: Frontend Development & User Experience

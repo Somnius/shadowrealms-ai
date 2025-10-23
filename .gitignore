@@ -5,7 +5,12 @@
 # =============================================================================
 # These directories contain generated data and backups that should not be versioned
 backup/
-books/
+books/*
+!books/*.py
+!books/*.sh
+!books/requirements.txt
+!books/README.md
+books/book-list.txt
 data/
 data/logs/
 data/uploads/

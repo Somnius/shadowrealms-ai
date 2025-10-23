@@ -5,6 +5,72 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.8] - 2025-10-23 - World of Darkness Books Sync System 📚
+
+### 🆕 New Features
+- **World of Darkness Books Sync**: Complete automated book synchronization system
+  - Recursive download from the-eye.eu World of Darkness archive
+  - Automatic virtual environment creation and management
+  - Resume support for interrupted downloads
+  - Smart file skipping (only downloads new/changed files)
+  - Progress bars for each file download
+  - Directory structure preservation
+  - HTML rewriting for local browsing
+  - Auto-generated book list (book-list.txt)
+
+### 📚 Book Management System
+- **Automated Sync Script** (`books/sync.sh`): One-command book synchronization
+- **Python Implementation** (`books/sync_wod_books.py`): Full-featured sync with progress tracking
+- **Requirements Management**: Isolated virtual environment with automatic dependency installation
+- **Comprehensive Documentation**: Complete setup and usage guide in `books/README.md`
+
+### 🔧 Technical Improvements
+- **Git Ignore Updates**: Proper exclusion of downloaded books while preserving scripts
+- **Virtual Environment Management**: Automatic venv creation and activation
+- **Download Statistics**: Track downloads, skips, failures, and execution time
+- **Error Handling**: Graceful handling of network issues and interruptions
+- **Local HTML Browsing**: Rewritten index.html files work offline
+
+### 📋 Features
+- ✅ Recursive directory traversal
+- ✅ Resume interrupted downloads
+- ✅ Skip existing files (size-based verification)
+- ✅ Progress indication for each file
+- ✅ HTML index rewriting for local use
+- ✅ Book list generation (all PDFs with paths)
+- ✅ Cron-ready for automated syncing
+- ✅ Safe interruption (Ctrl+C and resume)
+
+### 📂 New Directory Structure
+```
+books/
+├── sync.sh              # Main sync script
+├── sync_wod_books.py    # Python sync implementation
+├── requirements.txt     # Dependencies (requests, beautifulsoup4, lxml, tqdm)
+├── README.md           # Complete documentation
+├── venv/               # Auto-created virtual environment
+├── book-list.txt       # Generated PDF inventory
+└── World of Darkness/  # Downloaded books (gitignored)
+```
+
+### 🎯 Use Cases
+- **Rule Book Integration**: Sync WoD books for RAG system integration
+- **Offline Reference**: Complete WoD library available locally
+- **Campaign Preparation**: Quick access to all game materials
+- **Automated Updates**: Schedule regular syncs via cron
+
+### 📝 Documentation Updates
+- Added comprehensive `books/README.md` with setup and usage instructions
+- Updated `.gitignore` to handle books directory properly
+- Examples for cron job setup and periodic syncing
+
+### Next Steps
+- Integrate synced books with RAG system for rule lookup
+- Add book processing pipeline for vector embedding
+- Implement admin commands for book management
+
+---
+
 ## [0.5.7] - 2025-01-27 - Phase 3A Development Pause 🚧⏸️
 
 ### 🚧 PHASE 3A: Campaign Dashboard and Chat Interface (IN PROGRESS)
