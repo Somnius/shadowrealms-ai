@@ -298,7 +298,72 @@ const GothicShowcase = ({ onBack }) => {
 
         <SkullDivider />
 
-        {/* Gothic Box Example 3 - Chat Interface */}
+        {/* Gothic Box Example 3 - Werewolf Campaign */}
+        <GothicBox theme="werewolf" style={{
+          background: '#16213e',
+          padding: '30px',
+          borderRadius: '10px',
+          marginBottom: '40px'
+        }}>
+          <h3 style={{ 
+            color: '#d97706', 
+            marginBottom: '15px',
+            fontSize: '24px',
+            fontFamily: 'Cinzel, serif'
+          }}>
+            <i className="fas fa-wolf"></i> Werewolf: The Apocalypse
+          </h3>
+          <p style={{ 
+            color: '#b5b5c3', 
+            lineHeight: '1.8',
+            fontFamily: 'Crimson Text, serif',
+            fontSize: '16px',
+            marginBottom: '20px'
+          }}>
+            Rage burns within. The Wyrm corrupts the land. The Garou must fight to save Gaia from destruction...
+          </p>
+          <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginBottom: '15px' }}>
+            <span style={{ 
+              padding: '5px 12px', 
+              background: 'rgba(217, 119, 6, 0.2)', 
+              border: '1px solid #d97706',
+              borderRadius: '15px',
+              fontSize: '12px',
+              color: '#d97706'
+            }}>
+              <i className="fas fa-moon"></i> Tribal Fury
+            </span>
+            <span style={{ 
+              padding: '5px 12px', 
+              background: 'rgba(233, 69, 96, 0.2)', 
+              border: '1px solid #e94560',
+              borderRadius: '15px',
+              fontSize: '12px',
+              color: '#e94560'
+            }}>
+              <i className="fas fa-paw"></i> Primal Rage
+            </span>
+          </div>
+          <GothicButton
+            style={{
+              width: '100%',
+              padding: '12px',
+              background: '#d97706',
+              border: 'none',
+              borderRadius: '5px',
+              color: 'white',
+              fontWeight: 'bold',
+              cursor: 'pointer',
+              fontFamily: 'Cinzel, serif'
+            }}
+          >
+            <i className="fas fa-shield-alt"></i> Join the Pack
+          </GothicButton>
+        </GothicBox>
+
+        <OrnateDivider icon="feather-alt" />
+
+        {/* Gothic Box Example 4 - Chat Interface */}
         <GothicBox style={{
           background: '#16213e',
           padding: '30px',
