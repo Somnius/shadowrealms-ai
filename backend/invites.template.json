@@ -1,0 +1,21 @@
+{
+  "invites": {
+    "EXAMPLE-ADMIN-CODE-12345": {
+      "type": "admin",
+      "description": "Admin access invite",
+      "max_uses": 1,
+      "uses": 0,
+      "created_at": "2025-01-01T00:00:00",
+      "created_by": "system"
+    },
+    "EXAMPLE-PLAYER-CODE-67890": {
+      "type": "player",
+      "description": "Player access invite",
+      "max_uses": 1,
+      "uses": 0,
+      "created_at": "2025-01-01T00:00:00",
+      "created_by": "system"
+    }
+  }
+}
+

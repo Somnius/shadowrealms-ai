@@ -5,6 +5,112 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.0] - 2025-10-24 - THE FRONTEND ERA - Complete Rewrite 🎨🚀
+
+### 🎉 MAJOR MILESTONE: Production-Ready Frontend!
+
+This is the most significant release in ShadowRealms AI history - a complete frontend rewrite marking the transition from backend-focused development to a fully functional, production-ready web application. This MAJOR version bump (0.5.x → 0.6.0) signifies breaking changes and the beginning of the Frontend Era!
+
+**What Changed**: Complete frontend rewrite, invite system, documentation reorganization, comprehensive testing, quick import tools, and production-ready web application.
+
+**BREAKING CHANGES**: All TypeScript frontend code deleted and replaced with single-file JavaScript React application.
+
+See [SHADOWREALMS_AI_COMPLETE.md](../SHADOWREALMS_AI_COMPLETE.md) for full v0.6.0 documentation with detailed breakdown of all changes.
+
+### Quick Summary
+
+- ✅ Complete web application (SimpleApp.js - 1,376 lines)
+- ✅ Invite-only registration system
+- ✅ Documentation reorganized to docs/ directory
+- ✅ Comprehensive integration testing
+- ✅ Quick import tools for WoD books
+- ✅ 42 TypeScript files removed
+- ✅ 9 new files added
+- ✅ Production ready!
+
+---
+
+## [0.5.13] - 2025-10-24 - Phase 5A Complete: System Integration Verified ✅
+
+### 🎉 Phase 5A: Frontend/Backend Integration - COMPLETE
+
+#### Integration Test Results
+- **✅ 8/8 Tests Passing** - 100% success rate
+- **Frontend**: Accessible via Nginx (HTTP 200)
+- **Backend API**: Fully operational
+- **Authentication**: Registration, login, JWT tokens working
+- **Campaign Management**: Create and retrieve campaigns functional
+- **AI Generation**: LM Studio responding with RAG context
+- **Rule Books**: ChromaDB integration verified
+
+#### Test Suite Added
+- Created comprehensive integration test (`tests/test_frontend_backend_integration.py`)
+- Automated testing of complete user journey
+- Manual testing checklist for browser verification
+- Test results logging and reporting
+
+#### Issues Fixed
+- Campaign creation field mapping (system → game_system)
+- AI endpoint corrected (/api/ai/chat)
+- Campaign ID extraction from API response
+- All critical integration points verified
+
+#### Documentation Organization
+- **Created `docs/` directory** for all documentation
+- Moved 7 documentation files to `docs/`
+- Created `docs/README.md` with documentation index
+- Updated README.md references to new paths
+- Kept only README.md and SHADOWREALMS_AI_COMPLETE.md in root
+
+#### Files Moved to docs/
+- CHANGELOG.md
+- CONTRIBUTING.md
+- DOCKER_ENV_SETUP.md
+- FRONTEND_BACKEND_AUDIT.md
+- GITHUB_SETUP.md
+- PHASE4_COMPLETION.md
+- PHASE5A_COMPLETION.md
+- test_frontend_manual.md
+
+#### System Verification
+- ✅ Frontend→Backend communication working
+- ✅ JWT authentication functional
+- ✅ Protected routes secure
+- ✅ Campaign creation/retrieval operational
+- ✅ AI generation with RAG context working
+- ✅ Rule books searchable (9,215 chunks)
+- ✅ LM Studio integration functional
+
+## [0.5.12] - 2025-10-24 - Phase 4 Complete: Core Books Fully Imported 📚
+
+### 🎉 Phase 4: Rule Books System - COMPLETED
+
+#### Books Imported to RAG System
+- **Vampire: The Masquerade - Revised Edition**: 1,663 chunks (271 pages)
+- **Werewolf: The Apocalypse - Revised Edition**: 3,668 chunks (301 pages)
+- **Mage: The Ascension - Revised Edition**: 3,884 chunks (312 pages)
+- **Total Knowledge Base**: 9,215 chunks across 884 pages
+
+#### Added
+- Created comprehensive RAG test suite (`tests/test_core_books_rag.py`)
+- Added Phase 4 completion documentation (`PHASE4_COMPLETION.md`)
+- Verified semantic search across all three core books
+- Backend API endpoints tested and operational
+
+#### Verified Systems
+- ✅ ChromaDB semantic search working perfectly
+- ✅ RAG queries returning accurate page references
+- ✅ Backend API `/api/rule-books/scan` operational
+- ✅ All books accessible globally (campaign_id 0)
+- ✅ Book import pipeline using venv environment
+
+#### System Rebuild
+- Recovered from catastrophic disk failure
+- Rebuilt entire Docker environment
+- Restored LM Studio with MythoMax-L2-13B model
+- Reorganized test suite into `tests/` directory
+- All services operational and healthy
+
 ## [0.5.11] - 2025-10-24 - RAG Testing & Game Scenario Validation 🎮
 
 ### 🎯 Major Achievement: RAG System Production Ready!

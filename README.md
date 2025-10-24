@@ -6,7 +6,7 @@
 
 ### The Ultimate AI-Powered Tabletop RPG Experience
 
-[![Version](https://img.shields.io/badge/version-0.5.11-blue.svg)](https://github.com/Somnius/shadowrealms-ai)
+[![Version](https://img.shields.io/badge/version-0.6.0-blue.svg)](https://github.com/Somnius/shadowrealms-ai)
 [![Phase](https://img.shields.io/badge/phase-2%20complete-green.svg)](https://github.com/Somnius/shadowrealms-ai)
 [![Phase 3A](https://img.shields.io/badge/phase-3A%20in%20progress-orange.svg)](https://github.com/Somnius/shadowrealms-ai)
 [![Tests](https://img.shields.io/badge/tests-61%2F61%20passing-brightgreen.svg)](https://github.com/Somnius/shadowrealms-ai)
@@ -52,11 +52,12 @@ For comprehensive documentation, detailed setup instructions, and complete featu
 ### Additional Resources
 
 - **[Testing Guide](frontend/TESTING.md)** - Comprehensive testing documentation
-- **[Contributing Guidelines](CONTRIBUTING.md)** - How to contribute to the project
-- **[Changelog](CHANGELOG.md)** - Detailed version history and updates
-- **[Docker Setup Guide](DOCKER_ENV_SETUP.md)** - Environment configuration
+- **[Contributing Guidelines](docs/CONTRIBUTING.md)** - How to contribute to the project
+- **[Changelog](docs/CHANGELOG.md)** - Detailed version history and updates
+- **[Docker Setup Guide](docs/DOCKER_ENV_SETUP.md)** - Environment configuration
 - **[Books Sync Guide](books/README.md)** - World of Darkness books synchronization
 - **[Test Suite Guide](tests/README.md)** - Comprehensive test documentation
+- **[Documentation Index](docs/README.md)** - Complete documentation index
 
 ---
 
@@ -119,10 +120,10 @@ docker-compose up -d
 
 <div align="center">
 
-### Version 0.5.11 - RAG Testing & Game Scenario Validation 🎮
+### Version 0.6.0 - THE FRONTEND ERA 🎨🚀
 
 **Last Updated**: `2025-10-24`
-**Progress**: `Phase 2 Complete - RAG System Tested & Validated for Game Scenarios`
+**Progress**: `Complete Frontend Rewrite - Production-Ready Web Application!`
 
 </div>
 
