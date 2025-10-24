@@ -6,7 +6,7 @@
 
 ### The Ultimate AI-Powered Tabletop RPG Experience
 
-[![Version](https://img.shields.io/badge/version-0.6.0-blue.svg)](https://github.com/Somnius/shadowrealms-ai)
+[![Version](https://img.shields.io/badge/version-0.6.1-blue.svg)](https://github.com/Somnius/shadowrealms-ai)
 [![Phase 2](https://img.shields.io/badge/phase-2%20complete-green.svg)](https://github.com/Somnius/shadowrealms-ai)
 [![Phase 3A](https://img.shields.io/badge/phase-3A%20complete-green.svg)](https://github.com/Somnius/shadowrealms-ai)
 [![Phase 3B](https://img.shields.io/badge/phase-3B%20next-blue.svg)](https://github.com/Somnius/shadowrealms-ai)
@@ -120,10 +120,10 @@ docker-compose up -d
 
 <div align="center">
 
-### Version 0.6.0 - THE FRONTEND ERA 🎨🚀
+### Version 0.6.1 - Admin Panel & User Management 👑
 
 **Last Updated**: `2025-10-24`
-**Progress**: `Complete Frontend Rewrite - Production-Ready Web Application!`
+**Progress**: `Full Admin Panel - User Moderation & Character Management`
 
 </div>
 
@@ -150,7 +150,7 @@ docker-compose up -d
 
 | **Frontend Application** | **Security & Access** | **Testing & Tools** |
 |:---:|:---:|:---:|
-| **SimpleApp.js** - Complete React application (1,376 lines) | **Invite-Only Registration** - Secure access control | **Integration Tests** - End-to-end validation (401 lines) |
+| **SimpleApp.js** - Complete React application (1,400 lines) | **Invite-Only Registration** - Secure access control | **Integration Tests** - End-to-end validation (401 lines) |
 | Campaign management UI | Admin and Player invite types | RAG system tests (211 lines) |
 | Character creation interface | Usage tracking and max uses | Quick book import tool (144 lines) |
 | Location-based chat system | Role-based access control | Frontend/Backend integration suite |
@@ -159,6 +159,12 @@ docker-compose up -d
 | Rule book query UI | `invites.json` management | Performance validation |
 | Modern responsive design | Template system for invites | Production readiness confirmed |
 | Dark/Light theme support | No public registration | Full user journey tested |
+| **👑 Admin Panel** (v0.6.1) | **User Moderation** (v0.6.1) | **Character Management** (v0.6.1) |
+| Admin-only panel UI (720 lines) | Temporary & permanent bans | Convert character to NPC |
+| User table with status | Ban duration tracking | Kill character with death types |
+| Edit user profiles | Password reset by admin | Character moderation log |
+| Moderation audit log | Auto-expiring temp bans | Soft/Mid/Horrible death options |
+| Refactored architecture | All actions logged | Admin-controlled NPCs |
 
 </div>
 

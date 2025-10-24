@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import AdminPage from './pages/AdminPage';
 
 const API_URL = '/api'; // Use relative URL through nginx proxy
 
@@ -550,6 +551,22 @@ function SimpleApp() {
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
           <span style={{ color: '#b5b5c3', fontWeight: '500' }}>👤 {user?.username}</span>
+          {user?.role === 'admin' && (
+            <button
+              onClick={() => setCurrentPage('admin')}
+              style={{
+                padding: '8px 16px',
+                background: 'rgba(233, 69, 96, 0.3)',
+                color: '#e94560',
+                border: '2px solid #e94560',
+                borderRadius: '5px',
+                cursor: 'pointer',
+                fontWeight: 'bold'
+              }}
+            >
+              👑 Admin Panel
+            </button>
+          )}
           <button
             onClick={handleLogout}
             style={{
@@ -1368,6 +1385,13 @@ function SimpleApp() {
       {token && currentPage === 'createCampaign' && renderCreateCampaign()}
       {token && currentPage === 'campaignDetails' && renderCampaignDetails()}
       {token && currentPage === 'chat' && renderChat()}
+      {token && currentPage === 'admin' && (
+        <AdminPage 
+          token={token} 
+          user={user} 
+          onBack={() => setCurrentPage('dashboard')} 
+        />
+      )}
     </div>
   );
 }

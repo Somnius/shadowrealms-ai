@@ -17,7 +17,7 @@ from config import Config
 from database import init_db, get_db
 from services.gpu_monitor import GPUMonitorService
 from services.llm_service import LLMService
-from routes import auth, users, campaigns, characters, ai, rule_books
+from routes import auth, users, campaigns, characters, ai, rule_books, admin
 
 # Configure logging
 Config.setup_logging()
@@ -63,6 +63,7 @@ def create_app(config_class=Config):
     app.register_blueprint(characters.bp, url_prefix='/api/characters')
     app.register_blueprint(ai.bp, url_prefix='/api/ai')
     app.register_blueprint(rule_books.bp, url_prefix='/api/rule-books')
+    app.register_blueprint(admin.bp)
     
     # Health check endpoint
     @app.route('/health')

@@ -5,6 +5,136 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.1] - 2025-10-24 - Admin Panel & User Management 👑
+
+### Added
+
+#### Admin Panel UI
+- **New AdminPage.js component** (720 lines) - Complete admin interface
+  - User table with real-time status indicators
+  - Ban status badges (Active/Temp Ban/Permanent Ban)
+  - Quick action buttons for each user
+  - Dark Shadow Realms themed UI
+  - Responsive table layout
+  - Moderation audit log viewer
+
+#### Backend Admin API
+- **New backend/routes/admin.py** (433 lines) - Complete admin API
+  - `GET /api/admin/users` - List all users with ban status
+  - `PUT /api/admin/users/<id>` - Edit user profile (username, email, role)
+  - `POST /api/admin/users/<id>/reset-password` - Reset user password
+  - `POST /api/admin/users/<id>/ban` - Ban user (temporary or permanent)
+  - `POST /api/admin/users/<id>/unban` - Unban user
+  - `GET /api/admin/users/<id>/characters` - Get user's characters
+  - `POST /api/admin/characters/<id>/convert-to-npc` - Convert character to NPC
+  - `POST /api/admin/characters/<id>/kill` - Kill character with death description
+  - `GET /api/admin/moderation-log` - View all moderation actions
+  - All endpoints protected by `@require_admin()` decorator
+
+#### Database Schema
+- **User moderation fields** added to `users` table:
+  - `ban_type` (temporary/permanent)
+  - `ban_until` (timestamp)
+  - `ban_reason` (text)
+  - `banned_by` (admin user ID)
+  - `banned_at` (timestamp)
+- **New table: user_moderation_log** - Audit trail for all moderation actions
+- **New table: character_moderation** - Character management tracking
+
+#### Code Organization
+- **New frontend/src/utils/api.js** (115 lines) - Centralized API calls
+  - Consistent error handling
+  - Token management
+  - Request/response formatting
+- **New frontend/src/pages/** directory structure
+- **New frontend/src/components/admin/** directory (prepared for future components)
+
+#### Documentation
+- **ADMIN_PANEL_STATUS.md** (151 lines) - Complete admin API documentation
+- **REFACTORING_PLAN.md** (133 lines) - Frontend architecture guidance
+- **SESSION_SUMMARY.md** (172 lines) - Session documentation
+
+### Changed
+- **frontend/src/SimpleApp.js** (+24 lines)
+  - Integrated admin panel
+  - Added "👑 Admin Panel" button (shows only for admin users)
+  - Admin role checking
+  - Clean component import
+- **backend/main.py** (+2 lines)
+  - Registered admin routes blueprint
+
+### Features
+
+#### User Moderation
+- **Temporary Bans**
+  - Configurable duration (hours/days)
+  - Auto-expiring when time passes
+  - Ban reason tracking
+  - Who banned and when
+- **Permanent Bans**
+  - User cannot login
+  - All data preserved
+  - Can be unbanned by admin
+  - Reason logged
+- **Ban System**
+  - Checked on every login attempt
+  - Temporary bans auto-expire
+  - Permanent bans block access
+  - Admin can unban users
+
+#### Character Management
+- **Convert to NPC** - Character becomes admin-controlled
+- **Kill Character** - Three death types:
+  - Soft death (peaceful passing)
+  - Mid death (heroic sacrifice)
+  - Horrible death (brutal demise)
+- Death descriptions saved
+- Original data preserved
+- All actions logged
+
+#### Admin Capabilities
+- View all users with status indicators
+- Edit user profiles (username, email, role)
+- Reset user passwords
+- Ban users (temporary or permanent)
+- Unban users
+- View complete moderation audit log
+- Convert characters to NPCs
+- Kill characters with death descriptions
+
+#### Security Features
+- Admin-only access (role-based)
+- JWT token validation
+- All actions logged with admin ID and timestamp
+- Ban status checked on login
+- User data preserved when banned
+- Automatic temp ban expiration
+
+### Statistics
+- **Code Added**: 1,268 lines (433 backend + 835 frontend)
+- **Documentation Added**: 456 lines (3 new files)
+- **Total Changes**: 1,724 lines
+- **New Files**: 6
+- **Modified Files**: 2
+
+### Known Limitations
+- Ban message not shown to users on login (shows 401 error)
+- Character features need testing with actual characters
+- No bulk actions yet
+- No user search/filter yet
+- Death descriptions are basic templates (AI integration pending)
+
+### Planned
+- Show ban reason/duration to banned users
+- AI-generated character death descriptions
+- Bulk user actions
+- Advanced search and filtering
+- Character transfer between users
+- Email notifications for bans
+- Real-time status updates (WebSocket)
+
+---
+
 ## [0.6.0] - 2025-10-24 - THE FRONTEND ERA - Complete Rewrite 🎨🚀
 
 ### 🎉 MAJOR MILESTONE: Production-Ready Frontend!
