@@ -200,7 +200,7 @@ cd frontend
 npm test
 
 # Full test suite
-./test_modules.py
+python3 tests/test_modules.py
 ```
 
 ### **Test Standards**

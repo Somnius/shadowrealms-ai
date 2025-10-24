@@ -47,8 +47,12 @@ fi
 
 if [ "$REQUIREMENTS_INSTALLED" = false ]; then
     echo -e "${BLUE}Installing/updating dependencies...${NC}"
-    pip install --upgrade pip > /dev/null 2>&1
-    pip install -r "$REQUIREMENTS" > /dev/null 2>&1
+    echo -e "${YELLOW}This shows what's being installed (may take 2-5 min first time):${NC}"
+    echo
+    pip install --upgrade pip
+    echo
+    pip install -r "$REQUIREMENTS"
+    echo
     touch "$VENV_DIR/requirements.installed"
     echo -e "${GREEN}✓ Dependencies installed${NC}"
     echo

@@ -44,12 +44,16 @@ The script will automatically:
 ### Sync Script (`sync.sh`)
 - ✅ **Recursive Download**: Downloads all files from World of Darkness directory and subdirectories
 - ✅ **Resume Support**: Automatically resumes interrupted downloads
+- ✅ **Auto-Retry**: Retries failed downloads 3 times with exponential backoff (2s, 4s, 8s)
+- ✅ **Rate Limiting**: 1 second delay between downloads to avoid overwhelming server
 - ✅ **Smart Skipping**: Skips files that already exist with matching size
 - ✅ **Progress Bars**: Shows progress for each file download (no verbose output)
 - ✅ **Directory Structure**: Preserves the exact directory structure locally
 - ✅ **All File Types**: Downloads PDFs, HTML, images, and all other files
 - ✅ **HTML Rewriting**: Converts index.html files to use local paths
 - ✅ **Book List**: Generates `book-list.txt` with all PDF files and paths
+- ✅ **Duplicate Detection**: Finds duplicate files across directories after sync
+- ✅ **Interactive Cleanup**: Asks which duplicate to keep before deletion
 
 ### Parser Script (`parse_books.py`)
 - ✅ **Multi-core Processing**: Utilizes all CPU cores for parallel PDF processing
@@ -66,7 +70,7 @@ The script will automatically:
 
 After syncing books, you can parse them for ingestion into your RAG system.
 
-### Setup GPU Support (HIGHLY RECOMMENDED)
+### Setup GPU Support (Optional but Recommended)
 
 For GPU-accelerated embedding generation (10-50x faster):
 
@@ -248,17 +252,58 @@ Query → Embedding → Vector Search → Text Chunks → LLM (LM Studio OR Olla
 - `index.html` - Directory listings (rewritten to work locally)
 - All downloaded books and files in their original directory structure
 
+## Handling Duplicates
+
+After sync completes, the script will automatically check for duplicate files (same filename in different directories).
+
+**What happens:**
+
+1. Script scans all PDFs and finds files with the same name
+2. Shows you all versions with their locations and sizes
+3. Asks which one to keep (or keep all)
+4. Deletes the ones you don't want
+
+**Example interaction:**
+```
+📄 Duplicate: Vampire The Masquerade.pdf
+   Found in 2 locations:
+
+   [1] Classic World of Darkness/Vampire/Vampire The Masquerade.pdf
+       Size: 25.60 MB (26,843,545 bytes)
+   
+   [2] oWoD/Core Books/Vampire The Masquerade.pdf
+       Size: 25.60 MB (26,843,545 bytes)
+
+   ℹ️  All files have identical size - likely the same content
+
+   Options:
+     1 - Keep this one, delete others
+     2 - Keep this one, delete others
+     a - Keep all (skip)
+     q - Quit duplicate handling
+
+   Your choice [1-2/a/q]: 1
+```
+
+**Options:**
+- **1, 2, etc.** - Keep that version, delete all others
+- **a** - Keep all versions (skip this duplicate)
+- **q** - Stop duplicate checking (keep remaining duplicates)
+
 ## Running Periodically
 
 You can run the sync script anytime to check for new additions. It will:
 - Skip existing files (if size matches)
 - Download only new files
 - Update the book-list.txt
+- Check for duplicates (interactive)
 
 Example cron job to sync daily at 2 AM:
 ```bash
 0 2 * * * cd /path/to/shadowrealms-ai/books && ./sync.sh >> sync.log 2>&1
 ```
+
+**Note:** For automated runs (cron), duplicates won't be handled interactively. Run manually when needed to clean up duplicates.
 
 ## Statistics
 
@@ -291,7 +336,7 @@ books/
 
 **Workflow:**
 1. `./sync.sh` → Download PDFs
-2. `python parse_books.py --embeddings` → Parse + generate embeddings
+2. `python parse_books.py --embeddings` → Parse + generate embeddings (GPU accelerated)
 3. `python import_to_rag.py --import-set vampire_basic --campaign-id 1` → Import selectively
 
 Note: The `venv/` directory is automatically created and managed by the sync script.
