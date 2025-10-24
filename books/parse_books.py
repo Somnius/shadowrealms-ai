@@ -16,6 +16,7 @@ from datetime import datetime
 from tqdm import tqdm
 import pdfplumber
 from multiprocessing import Pool, cpu_count, Manager
+import multiprocessing
 from functools import partial
 import gc
 
@@ -615,5 +616,10 @@ GPU Support:
 
 
 if __name__ == "__main__":
+    # Set spawn method for CUDA compatibility with multiprocessing
+    try:
+        multiprocessing.set_start_method('spawn', force=True)
+    except RuntimeError:
+        pass  # Already set
     main()
 

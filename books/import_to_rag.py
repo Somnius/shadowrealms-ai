@@ -130,7 +130,8 @@ class SmartBookImporter:
             embeddings = [] if has_embeddings else None
             
             for i, chunk in enumerate(chunks):
-                chunk_id = f"{book_id}_{campaign_id}_{chunk['chunk_id']}"
+                # Use index to ensure uniqueness even if chunk_id has duplicates
+                chunk_id = f"{book_id}_{campaign_id}_{i}_{chunk['chunk_id']}"
                 ids.append(chunk_id)
                 documents.append(chunk['text'])
                 
@@ -313,6 +314,11 @@ Examples:
         help='Import a predefined book set'
     )
     parser.add_argument(
+        '--import-file',
+        type=str,
+        help='Import a specific JSON file (e.g., "Vampire - the Masquerade - Revised.json")'
+    )
+    parser.add_argument(
         '--campaign-id',
         type=int,
         default=0,
@@ -376,6 +382,23 @@ Examples:
     
     elif args.import_set:
         importer.import_book_set(args.import_set, args.campaign_id)
+    
+    elif args.import_file:
+        # Import specific file
+        json_path = parsed_dir / args.import_file
+        if not json_path.exists():
+            print(f"❌ File not found: {json_path}")
+            sys.exit(1)
+        
+        # Generate book_id from filename
+        book_id = args.import_file.replace('.json', '').replace(' ', '_').replace('-', '_').lower()
+        
+        success = importer.import_book(json_path, book_id, args.campaign_id)
+        if success:
+            print(f"\n✅ Successfully imported to campaign {args.campaign_id}")
+        else:
+            print(f"\n❌ Import failed")
+            sys.exit(1)
     
     elif args.list_imported:
         print("\n📚 Books in ChromaDB:")
