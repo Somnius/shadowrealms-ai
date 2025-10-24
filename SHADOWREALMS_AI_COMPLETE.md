@@ -1347,10 +1347,10 @@ This release adds a complete immersive gothic horror atmosphere to ShadowRealms 
 - **Total**: 1,170 lines of new code
 
 **Documentation Added:**
-- **GOTHIC_THEME_APPLIED.md**: 316 lines
-- **GOTHIC_THEME_READY.md**: 219 lines
-- **GOTHIC_THEME_TEST.md**: 142 lines
-- **PHASE_3A_NEXT.md**: 272 lines
+- **docs/GOTHIC_THEME_APPLIED.md**: 316 lines
+- **docs/GOTHIC_THEME_READY.md**: 219 lines
+- **docs/GOTHIC_THEME_TEST.md**: 142 lines
+- **docs/PHASE_3A_NEXT.md**: 272 lines
 - **Total**: 949 lines of documentation
 
 **Files Changed:**
@@ -1425,10 +1425,10 @@ This release adds a complete immersive gothic horror atmosphere to ShadowRealms 
 - `frontend/src/pages/GothicShowcase.js` (546 lines)
 
 **Documentation:**
-- `GOTHIC_THEME_APPLIED.md` (316 lines)
-- `GOTHIC_THEME_READY.md` (219 lines)
-- `GOTHIC_THEME_TEST.md` (142 lines)
-- `PHASE_3A_NEXT.md` (272 lines)
+- `docs/GOTHIC_THEME_APPLIED.md` (316 lines)
+- `docs/GOTHIC_THEME_READY.md` (219 lines)
+- `docs/GOTHIC_THEME_TEST.md` (142 lines)
+- `docs/PHASE_3A_NEXT.md` (272 lines)
 
 ### 📝 Files Modified
 
@@ -1622,21 +1622,21 @@ frontend/src/
 
 #### 7. Documentation
 
-**ADMIN_PANEL_STATUS.md** (151 lines):
+**docs/ADMIN_PANEL_STATUS.md** (151 lines):
 - Complete API documentation
 - Testing instructions
 - Security features
 - Example API calls
 - Invite code management
 
-**REFACTORING_PLAN.md** (133 lines):
+**docs/REFACTORING_PLAN.md** (133 lines):
 - Frontend architecture guidance
 - Migration strategies
 - Component breakdown
 - Recommendations for future
 - Incremental refactoring approach
 
-**SESSION_SUMMARY.md** (172 lines):
+**docs/SESSION_SUMMARY.md** (172 lines):
 - Complete session documentation
 - What was accomplished
 - How to test features
@@ -1789,9 +1789,9 @@ frontend/src/
 - `frontend/src/components/admin/` (directory for future components)
 
 **Documentation:**
-- `ADMIN_PANEL_STATUS.md` (151 lines)
-- `REFACTORING_PLAN.md` (133 lines)
-- `SESSION_SUMMARY.md` (172 lines)
+- `docs/ADMIN_PANEL_STATUS.md` (151 lines)
+- `docs/REFACTORING_PLAN.md` (133 lines)
+- `docs/SESSION_SUMMARY.md` (172 lines)
 
 ### 📝 Files Modified
 
@@ -1950,7 +1950,7 @@ frontend/src/
 **Components:**
 - `backend/invites.json` - Active invite codes (gitignored for security)
 - `backend/invites.template.json` - Template for invite structure
-- `INVITES_README.md` - Complete documentation
+- `docs/INVITES_README.md` - Complete documentation
 
 **Invite Types:**
 - **Admin**: Full administrative access (1 use)
@@ -2199,7 +2199,7 @@ shadowrealms-ai/
 ├── books/
 │   └── quick_import_core.py   # NEW - Quick import tool
 │
-└── INVITES_README.md          # NEW - Invite system documentation
+└── docs/INVITES_README.md     # NEW - Invite system documentation
 ```
 
 ### 🔗 Integration Benefits
@@ -2286,7 +2286,7 @@ shadowrealms-ai/
 - `frontend/src/SimpleApp.js` (1,376 lines)
 - `backend/invites.json` (active codes, gitignored)
 - `backend/invites.template.json` (template)
-- `INVITES_README.md` (invite documentation)
+- `docs/INVITES_README.md` (invite documentation)
 - `docs/` directory (11 files, 3,701 lines)
 - `tests/test_frontend_backend_integration.py` (401 lines)
 - `tests/test_core_books_rag.py` (211 lines)
