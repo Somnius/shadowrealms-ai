@@ -312,3 +312,27 @@
   }
 }
 
+/* ============================================
+   FOOTER SPECIFIC
+   ============================================ */
+
+@media (max-width: 767px) {
+  /* Footer styling for mobile */
+  footer {
+    padding: 15px 10px !important;
+    font-size: 12px;
+  }
+  
+  footer div {
+    gap: 10px !important;
+  }
+  
+  footer a {
+    font-size: 12px !important;
+  }
+  
+  footer .footer-version {
+    font-size: 11px !important;
+  }
+}
+

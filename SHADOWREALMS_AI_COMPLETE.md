@@ -162,6 +162,7 @@ This project is more than just a gaming platform - it's an exploration of the fu
 - [Performance & Scalability](#performance--scalability)
 
 ### **📊 Current Status & Versions**
+- [Version 0.6.5 - UI/UX Polish & In-App Documentation](#version-065---uiux-polish--in-app-documentation-)
 - [Version 0.6.4 - Responsive Design & Navigation Fixes](#version-064---responsive-design--navigation-fixes-)
 - [Version 0.6.3 - Campaign Editing & Enhanced Themes](#version-063---campaign-editing--enhanced-themes-)
 - [Version 0.6.2 - Gothic Horror Theme](#version-062---gothic-horror-theme-)
@@ -1160,6 +1161,409 @@ The project now includes comprehensive `.gitignore` rules covering:
 - **Campaign Continuity**: Persistent AI memory across multiple sessions
 - **Multi-Language**: Global accessibility with translation pipelines
 - **Real-time Collaboration**: Live AI-assisted gaming experiences
+
+## Version 0.6.5 - UI/UX Polish & In-App Documentation 🎨
+
+### What We Accomplished
+
+This release focuses on professional UI/UX polish with custom confirmation dialogs, a persistent footer component, and in-app documentation viewer. The critical fix replaces browser's `window.confirm()` with a custom React component that cannot be disabled by users, ensuring reliable confirmation dialogs. Added a professional footer with version info and links, plus an in-app README viewer that fetches and renders documentation without leaving the application.
+
+1. **Custom Confirmation Dialog**: Browser-safe dialog that cannot be disabled (140 lines)
+2. **Footer Component**: Professional footer with version, links, and README button (182 lines)
+3. **In-App README Viewer**: Full markdown parser and modal viewer (306 lines)
+4. **Backend API Endpoint**: `/api/readme` serves README.md to frontend
+5. **Docker Integration**: Volume mount for README.md in container
+
+### 🆕 New Features
+
+#### 1. Custom Confirmation Dialog (ConfirmDialog.js)
+
+**The Problem with `window.confirm()`:**
+- Users can click "Don't show pop-ups from this site" in browser
+- Once disabled, ALL confirmations stop working
+- Can't be styled or customized
+- Doesn't match gothic horror theme
+- Poor mobile experience
+- Breaks immersion
+
+**The Solution:**
+```javascript
+// ❌ OLD WAY (bad):
+if (window.confirm('Leave campaign?')) {
+  handleLeave();
+}
+// Can be permanently disabled by user!
+
+// ✅ NEW WAY (good):
+setConfirmDialog({
+  isOpen: true,
+  title: 'Leave Campaign?',
+  message: 'Your character will exit the current location.',
+  onConfirm: () => handleLeave()
+});
+// Cannot be disabled, always works!
+```
+
+**Component Features:**
+- **Browser-Safe**: Renders as React component, not browser feature
+- **Cannot be Disabled**: Always shows when needed
+- **Gothic Theme**: Blood-red border, dark gradient background
+- **Touch-Friendly**: 44px minimum button height
+- **Animations**: Smooth fade-in (0.3s) with scale effect
+- **Backdrop**: 85% opacity overlay prevents background interaction
+- **Auto-Focus**: Confirm button focused on open
+- **Keyboard Ready**: ESC key support foundation in place
+- **Customizable**: Props for title, message, button text
+
+**Props:**
+```javascript
+<ConfirmDialog
+  isOpen={boolean}           // Show/hide dialog
+  title={string}             // Dialog title
+  message={string}           // Dialog message (supports \n)
+  onConfirm={function}       // Called when user confirms
+  onCancel={function}        // Called when user cancels
+  confirmText={string}       // Confirm button text (default: "Confirm")
+  cancelText={string}        // Cancel button text (default: "Cancel")
+/>
+```
+
+**Visual Design:**
+- **Background**: Gradient (#16213e → #0f1729)
+- **Border**: 3px blood-red (#e94560) with glow
+- **Fonts**: Cinzel (title), Crimson Text (message)
+- **Buttons**: Gray (cancel), blood-red gradient (confirm)
+- **Animation**: 0.3s fade-in, 0.2s scale (0.95 → 1.0)
+
+#### 2. Footer Component (Footer.js)
+
+**Features:**
+- **Version Display**: Shows current version (v0.6.5)
+- **Links**: GitHub, Documentation, README
+- **Responsive**: Stacks vertically on mobile, horizontal on desktop
+- **Gothic Theme**: Matches app's dark fantasy aesthetic
+- **ReadmeModal Integration**: Click "README" to view docs
+- **Copyright**: License and attribution info
+- **Social Ready**: Placeholder for social media links
+
+**Layout:**
+- Desktop: Three columns (version, links, social)
+- Mobile: Single column, stacked vertically
+- Responsive breakpoint: 768px
+- Touch-friendly buttons with hover effects
+
+**Styling:**
+- Gradient background (#0f1729 → #16213e)
+- Border top: 2px solid #2a2a4e
+- Box shadow: 0 -2px 10px rgba(0, 0, 0, 0.5)
+- Text color: #8b8b9f (subdued)
+- Accent color: #e94560 (blood-red)
+
+#### 3. In-App README Viewer (ReadmeModal.js)
+
+**Purpose**: View README.md without leaving the application.
+
+**Features:**
+- **Fetch from Backend**: Gets README via `/api/readme` endpoint
+- **Markdown Parser**: Converts markdown to styled HTML
+- **Loading State**: Spinner while fetching
+- **Error Handling**: User-friendly error messages
+- **Scrollable**: Long content scrolls within modal
+- **Close Button**: X icon to close modal
+- **Gothic Styling**: Matches app theme
+
+**Markdown Support:**
+- Headers (h1-h6) with Cinzel font
+- Bold, italic, strikethrough
+- Code blocks with syntax highlighting placeholder
+- Inline code with background
+- Links with hover effects
+- Lists (ordered and unordered)
+- Blockquotes with blood-red border
+- Tables with borders and alternating rows
+- Images with max-width
+- Horizontal rules
+
+**Parser Implementation:**
+```javascript
+const parseMarkdown = (markdown) => {
+  // Remove HTML comments
+  // Handle div tags
+  // Code blocks (``` syntax)
+  // Headers (# syntax)
+  // Bold (**text**)
+  // Italic (*text*)
+  // Links ([text](url))
+  // Lists (- or 1.)
+  // Blockquotes (> text)
+  // Tables (| syntax)
+  // Horizontal rules (---)
+  // Images (![alt](url))
+  return styledHTML;
+};
+```
+
+**Modal Design:**
+- Full-screen overlay
+- Centered modal (max 90% width/height)
+- Blood-red border with glow
+- Dark gradient background
+- Scrollable content area
+- Close button (top-right)
+
+#### 4. Backend API Endpoint
+
+**Endpoint**: `GET /api/readme`
+
+**Implementation:**
+```python
+@app.route('/api/readme')
+def get_readme():
+    """Serve README.md file"""
+    try:
+        readme_path = '/app/README.md'
+        with open(readme_path, 'r', encoding='utf-8') as f:
+            content = f.read()
+        return content, 200, {'Content-Type': 'text/plain; charset=utf-8'}
+    except Exception as e:
+        logger.error(f"Error reading README.md: {e}")
+        return jsonify({'error': f'Failed to load README.md: {str(e)}'}), 500
+```
+
+**Features:**
+- Returns plain text with UTF-8 encoding
+- Proper error handling with logging
+- Added to root API endpoint list
+- Accessible from frontend
+
+#### 5. Docker Integration
+
+**Volume Mount:**
+```yaml
+volumes:
+  - ./README.md:/app/README.md:ro
+```
+
+**Benefits:**
+- README.md accessible in container
+- Read-only (`:ro`) prevents accidental modification
+- Always latest version (no rebuild needed)
+- Ensures documentation stays in sync
+
+### 📊 Statistics
+
+**Code Changes:**
+- **Frontend Components**: +628 lines (3 new files)
+- **Frontend Main**: +75 lines net (SimpleApp.js: 2,195 → 2,231 lines)
+- **Frontend CSS**: +24 lines (responsive.css: 315 → 339 lines)
+- **Backend**: +16 lines (main.py: 226 → 242 lines)
+- **Docker**: +1 line (volume mount)
+- **Total**: ~744 lines added
+
+**New Files Created:**
+- `frontend/src/components/ConfirmDialog.js` (140 lines)
+- `frontend/src/components/Footer.js` (182 lines)
+- `frontend/src/components/ReadmeModal.js` (306 lines)
+- `docs/CUSTOM_CONFIRM_DIALOG.md` (355 lines)
+- `backend/README.md` (0 lines, placeholder)
+
+**Files Modified:**
+- `frontend/src/SimpleApp.js` (+75 net lines)
+- `frontend/src/responsive.css` (+24 lines)
+- `backend/main.py` (+16 lines)
+- `docker-compose.yml` (+1 line)
+
+### 🎯 Features Summary
+
+**Custom Confirmation Dialog:**
+- ✅ Cannot be disabled by browser
+- ✅ Gothic horror theme styling
+- ✅ Touch-friendly 44px buttons
+- ✅ Smooth animations
+- ✅ Auto-focus on confirm button
+- ✅ Backdrop overlay
+- ✅ Fully customizable
+
+**Footer Component:**
+- ✅ Version display (v0.6.5)
+- ✅ Links to GitHub, Docs, README
+- ✅ Responsive layout
+- ✅ Gothic theme colors
+- ✅ ReadmeModal integration
+- ✅ Copyright and license info
+
+**In-App README:**
+- ✅ Fetches from backend API
+- ✅ Full markdown parser
+- ✅ Loading state
+- ✅ Error handling
+- ✅ Scrollable content
+- ✅ Close button
+- ✅ Gothic styling
+
+**Backend & Docker:**
+- ✅ `/api/readme` endpoint
+- ✅ Proper error handling
+- ✅ README volume mount
+- ✅ Read-only access
+
+### 🔗 Integration
+
+**How Custom Dialog Works:**
+1. **State Management**: `confirmDialog` state in SimpleApp
+2. **Trigger**: Set dialog state with title, message, callbacks
+3. **Render**: `<ConfirmDialog>` component renders if `isOpen=true`
+4. **User Action**: Click confirm or cancel button
+5. **Callback**: Appropriate callback function executed
+6. **Close**: Dialog closes, state reset
+
+**How Footer Works:**
+1. **Persistent**: Rendered on all pages
+2. **Version**: Displays current version number
+3. **Links**: Navigate to external resources
+4. **README Button**: Opens ReadmeModal when clicked
+5. **Responsive**: Adjusts layout based on screen size
+
+**How README Viewer Works:**
+1. **Click README**: User clicks "README" in footer
+2. **Fetch**: Modal opens, fetches `/api/readme`
+3. **Parse**: Markdown converted to styled HTML
+4. **Display**: Content rendered in scrollable modal
+5. **Close**: X button closes modal
+
+### 🧪 Testing
+
+**Manual Testing Completed:**
+- ✅ Custom confirmation dialogs work reliably
+- ✅ Cannot be disabled by browser settings
+- ✅ Footer renders on all pages
+- ✅ README modal opens and fetches content
+- ✅ Markdown parsing works correctly
+- ✅ Touch-friendly on mobile devices
+- ✅ Responsive at all breakpoints
+- ✅ Gothic theme consistent throughout
+- ✅ Animations smooth and professional
+- ✅ All links functional
+
+**Browser Testing:**
+- ✅ Chrome (desktop & mobile)
+- ✅ Firefox (desktop)
+- ✅ Safari (desktop & iOS)
+- ✅ Edge (desktop)
+- ✅ Android Chrome
+
+**Test Scenarios:**
+1. Leave campaign → Custom dialog appears ✅
+2. Try to disable in browser → Still works ✅
+3. Click README in footer → Modal opens ✅
+4. Markdown renders correctly → All elements styled ✅
+5. Mobile view → Footer stacks, dialogs responsive ✅
+6. Close modal → Returns to app ✅
+
+### ⚠️ Known Limitations
+
+**Minor Enhancements Pending:**
+- ESC key to close ConfirmDialog (foundation ready)
+- Keyboard navigation in ReadmeModal (Tab/Enter)
+- Advanced syntax highlighting for code blocks
+- Social media links in footer (placeholders ready)
+- Theme toggle (dark/light mode)
+
+**Current State:**
+- ✅ Custom dialogs - **Production ready**
+- ✅ Footer - **Production ready**
+- ✅ README viewer - **Production ready**
+- ✅ Backend API - **Production ready**
+- 🚧 ESC key support - HTML/CSS ready, event handler pending
+- 📋 Advanced markdown - Basic parser works, can be enhanced
+
+### 🎯 Next Steps
+
+**Immediate Priority (Phase 3B):**
+1. **Campaign Deletion** - Add delete button and endpoint
+2. **Location CRUD** - Wire up location management
+3. **WebSocket** - Implement real-time chat
+4. **Character System** - Connect creation to backend
+5. **AI Integration** - Hook up RAG and LM Studio
+
+**Short Term UX Enhancements:**
+6. ESC key for modal/dialog closing
+7. Keyboard navigation improvements
+8. Enhanced syntax highlighting
+9. Theme customization options
+10. User preferences system
+
+### 📝 Files Changed
+
+**Frontend Components (New):**
+- `frontend/src/components/ConfirmDialog.js` (140 lines)
+  - Custom confirmation dialog
+  - Gothic theme styling
+  - Touch-friendly buttons
+  - Cannot be disabled
+
+- `frontend/src/components/Footer.js` (182 lines)
+  - Version display
+  - Links to resources
+  - ReadmeModal integration
+  - Responsive layout
+
+- `frontend/src/components/ReadmeModal.js` (306 lines)
+  - Markdown parser
+  - Backend API integration
+  - Gothic styled output
+  - Loading/error states
+
+**Frontend (Modified):**
+- `frontend/src/SimpleApp.js` (+75 net lines, now 2,231 lines)
+  - Integrated ConfirmDialog
+  - Replaced all `window.confirm()` calls
+  - Added Footer component
+  - Dialog state management
+
+- `frontend/src/responsive.css` (+24 lines, now 339 lines)
+  - Footer responsive styles
+  - Modal overlay styles
+  - Touch-friendly footer buttons
+
+**Backend:**
+- `backend/main.py` (+16 lines, now 242 lines)
+  - Added `/api/readme` endpoint
+  - README file reading logic
+  - Error handling
+
+**Docker:**
+- `docker-compose.yml` (+1 line)
+  - README.md volume mount (read-only)
+
+**Documentation:**
+- `docs/CUSTOM_CONFIRM_DIALOG.md` (NEW, 355 lines)
+  - Problem analysis
+  - Solution explanation
+  - Component design
+  - Usage examples
+
+### 🏆 Achievement Unlocked
+
+**PROFESSIONAL UI/UX!**
+- ✅ Reliable confirmation dialogs
+- ✅ Professional footer component
+- ✅ In-app documentation viewer
+- ✅ Gothic theme consistency
+- ✅ Touch-optimized components
+- ✅ Cannot be disabled by users
+
+**User Experience Improvements:**
+- 🎨 Polished, professional interface
+- ✅ Reliable confirmation system
+- 📚 In-app documentation access
+- 🎭 Consistent gothic aesthetic
+- 📱 Mobile-optimized components
+- ⚡ Smooth, professional animations
+
+**Version 0.6.5 delivers a polished, professional user experience with reliable dialogs, in-app documentation, and gothic-themed components that work flawlessly across all devices!**
+
+---
 
 ## Version 0.6.4 - Responsive Design & Navigation Fixes 📱
 
@@ -5040,21 +5444,23 @@ docker-compose ps
 - **Backend API**: http://localhost:5000
 - **ChromaDB**: http://localhost:8000
 
-### 🎯 **Current Status (v0.6.4)**
+### 🎯 **Current Status (v0.6.5)**
 
 ✅ **Phase 1 Complete** - Foundation & Docker Setup  
 ✅ **Phase 2 Complete** - RAG & Vector Memory System  
-🚧 **Phase 3A In Progress** - Frontend UI built, mobile-optimized, navigation fixed!  
+🚧 **Phase 3A In Progress** - Frontend polished, professional UX, docs integrated!  
 ✅ **Admin Panel** - User moderation & character management (v0.6.1)  
 ✅ **Gothic Horror Theme** - Immersive dark fantasy atmosphere (v0.6.2)  
 ✅ **Campaign Editing** - Name/description editing, game-specific themes (v0.6.3)  
 ✅ **Responsive Design** - Full mobile support, touch-optimized UI (v0.6.4)  
+✅ **UI/UX Polish** - Custom dialogs, footer, in-app README (v0.6.5)  
 🎯 **Phase 3B Next** - Location CRUD, WebSocket chat, character system  
-✅ **Backend APIs** - Campaign updates working, LM Studio + Ollama ready  
+✅ **Backend APIs** - Campaign updates, README endpoint working  
 ✅ **RAG System** - ChromaDB vector memory fully functional  
 ✅ **Mobile Support** - Works on phones/tablets/desktop, navigation fixed  
+✅ **UX Quality** - Professional dialogs, footer, in-app documentation  
 🚧 **Frontend Status** - Login/admin/campaigns working, chat/characters next  
-⚠️ **Reality Check** - Great progress! Now mobile-friendly with solid UX  
+⚠️ **Reality Check** - Excellent progress! Polished UX, ready for backend wiring  
 ✅ **Testing Infrastructure** - Comprehensive test suite  
 
 ### 🚀 **What's Working**

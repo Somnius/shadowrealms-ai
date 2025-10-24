@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import AdminPage from './pages/AdminPage';
 import GothicShowcase from './pages/GothicShowcase';
 import { GothicBox } from './components/GothicDecorations';
+import ConfirmDialog from './components/ConfirmDialog';
+import Footer from './components/Footer';
 import './responsive.css';
 
 const API_URL = '/api'; // Use relative URL through nginx proxy
@@ -36,6 +38,10 @@ function SimpleApp() {
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
   const [leftSidebarOpen, setLeftSidebarOpen] = useState(false);
   const [rightSidebarOpen, setRightSidebarOpen] = useState(false);
+  
+  // Confirmation dialog state
+  const [showExitConfirm, setShowExitConfirm] = useState(false);
+  const [pendingNavigation, setPendingNavigation] = useState(null);
 
   // Load user data on mount
   useEffect(() => {
@@ -65,30 +71,17 @@ function SimpleApp() {
     const handlePopState = (event) => {
       // If leaving chat page, show confirmation
       if (currentPage === 'chat' && event.state && event.state.page !== 'chat') {
-        event.preventDefault();
-        const locationName = currentLocation?.name || 'the location';
-        /* eslint-disable-next-line no-restricted-globals */
-        const confirmed = confirm(
-          `⚠️ Leave Campaign?\n\n` +
-          `You are currently in ${locationName}.\n` +
-          `Your character will be marked as having left this location.\n\n` +
-          `Are you sure you want to go back?`
+        // Store the pending navigation
+        setPendingNavigation(event.state);
+        // Show custom confirmation dialog
+        setShowExitConfirm(true);
+        // Push current state back temporarily until user confirms
+        window.history.pushState(
+          { page: 'chat', selectedCampaign }, 
+          '', 
+          window.location.pathname
         );
-        
-        if (!confirmed) {
-          // Stay in chat - push chat state back
-          window.history.pushState(
-            { page: 'chat', selectedCampaign }, 
-            '', 
-            window.location.pathname
-          );
-          return;
-        }
-        // Clear chat state
-        setSelectedCampaign(null);
-        setCurrentLocation(null);
-        setLocations([]);
-        setMessages([]);
+        return;
       }
       
       if (event.state) {
@@ -330,21 +323,33 @@ function SimpleApp() {
 
   // Handle leaving chat with confirmation
   const handleLeaveCampaign = () => {
-    const locationName = currentLocation?.name || 'the location';
-    /* eslint-disable-next-line no-restricted-globals */
-    const confirmed = confirm(
-      `⚠️ Leave Campaign?\n\n` +
-      `You are currently in ${locationName}.\n` +
-      `Your character will be marked as having left this location.\n\n` +
-      `Are you sure you want to exit?`
-    );
-    
-    if (confirmed) {
-      navigateTo('dashboard');
-      setSelectedCampaign(null);
-      setCurrentLocation(null);
-      setLocations([]);
-      setMessages([]);
+    setShowExitConfirm(true);
+  };
+
+  // Confirm exit from campaign
+  const confirmLeaveCampaign = () => {
+    setShowExitConfirm(false);
+    navigateTo('dashboard');
+    setSelectedCampaign(null);
+    setCurrentLocation(null);
+    setLocations([]);
+    setMessages([]);
+    if (pendingNavigation) {
+      setPendingNavigation(null);
+    }
+  };
+
+  // Cancel exit from campaign
+  const cancelLeaveCampaign = () => {
+    setShowExitConfirm(false);
+    // If there was a pending navigation (from back button), restore chat state
+    if (pendingNavigation) {
+      window.history.pushState(
+        { page: 'chat', selectedCampaign }, 
+        '', 
+        window.location.pathname
+      );
+      setPendingNavigation(null);
     }
   };
 
@@ -638,11 +643,17 @@ function SimpleApp() {
       minHeight: '100vh',
       background: 'linear-gradient(135deg, #1a1a2e 0%, #0f0f1e 100%)',
       display: 'flex',
-      flexDirection: 'column',
-      alignItems: 'center',
-      justifyContent: 'center',
-      padding: '20px'
+      flexDirection: 'column'
     }}>
+      {/* Main Content - takes up available space */}
+      <div style={{
+        flex: 1,
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '20px'
+      }}>
       {/* Logo and Title */}
       <div style={{ textAlign: 'center', marginBottom: '40px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
         <img 
@@ -914,12 +925,21 @@ function SimpleApp() {
           ⚠️ {error}
         </div>
       )}
+      </div>
+
+      {/* Footer - sticks to bottom */}
+      <Footer />
     </div>
   );
 
   // Render dashboard
   const renderDashboard = () => (
-    <div style={{ minHeight: '100vh', background: '#0f0f1e' }}>
+    <div style={{ 
+      minHeight: '100vh', 
+      background: '#0f0f1e',
+      display: 'flex',
+      flexDirection: 'column'
+    }}>
       {/* Header */}
       <div style={{
         background: 'linear-gradient(135deg, #16213e 0%, #0f1729 100%)',
@@ -975,8 +995,9 @@ function SimpleApp() {
         </div>
       </div>
 
-      {/* Main content */}
-      <div style={{ maxWidth: '1200px', margin: '0 auto', padding: isMobile ? '20px 15px' : '40px 20px' }}>
+      {/* Main content - takes up available space */}
+      <div style={{ flex: 1 }}>
+        <div style={{ maxWidth: '1200px', margin: '0 auto', padding: isMobile ? '20px 15px' : '40px 20px' }}>
         <div style={{ 
           display: 'flex', 
           flexDirection: isMobile ? 'column' : 'row',
@@ -1169,7 +1190,11 @@ function SimpleApp() {
             })}
           </div>
         )}
+        </div>
       </div>
+
+      {/* Footer - sticks to bottom */}
+      <Footer />
     </div>
   );
 
@@ -2187,6 +2212,17 @@ function SimpleApp() {
           onBack={() => setCurrentPage('dashboard')} 
         />
       )}
+
+      {/* Custom Exit Confirmation Dialog */}
+      <ConfirmDialog
+        isOpen={showExitConfirm}
+        title="⚠️ Leave Campaign?"
+        message={`You are currently in ${currentLocation?.name || 'the location'}.\n\nYour character will be marked as having left this location.\n\nAre you sure you want to exit?`}
+        onConfirm={confirmLeaveCampaign}
+        onCancel={cancelLeaveCampaign}
+        confirmText="Yes, Leave"
+        cancelText="Stay Here"
+      />
     </div>
   );
 }
