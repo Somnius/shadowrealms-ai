@@ -18,6 +18,9 @@ function SimpleApp() {
   const [character, setCharacter] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  
+  // Ref for chat input to maintain focus
+  const chatInputRef = React.useRef(null);
 
   // Load user data on mount
   useEffect(() => {
@@ -228,6 +231,11 @@ function SimpleApp() {
     };
     setMessages(prev => [...prev, userMessage]);
     e.target.reset();
+    
+    // Keep focus on input after sending
+    if (chatInputRef.current) {
+      chatInputRef.current.focus();
+    }
 
     try {
       const response = await fetch(`${API_URL}/ai/chat`, {
@@ -276,9 +284,20 @@ function SimpleApp() {
     if (!campaign || !campaign.game_system) return 'none';
     const gameSystem = campaign.game_system.toLowerCase();
     
-    if (gameSystem.includes('vampire')) return 'vampire';
-    if (gameSystem.includes('mage')) return 'mage';
-    if (gameSystem.includes('werewolf')) return 'werewolf';
+    // Check for Vampire
+    if (gameSystem.includes('vampire') || gameSystem.includes('masquerade') || gameSystem.includes('vtm')) {
+      return 'vampire';
+    }
+    
+    // Check for Mage
+    if (gameSystem.includes('mage') || gameSystem.includes('ascension') || gameSystem.includes('mta')) {
+      return 'mage';
+    }
+    
+    // Check for Werewolf
+    if (gameSystem.includes('werewolf') || gameSystem.includes('apocalypse') || gameSystem.includes('wta') || gameSystem.includes('garou')) {
+      return 'werewolf';
+    }
     
     return 'none';
   };
@@ -1115,6 +1134,11 @@ function SimpleApp() {
   // Render Discord-like chat interface
   const renderChat = () => {
     const campaignTheme = getCampaignTheme(selectedCampaign);
+    console.log('Chat Theme Debug:', {
+      campaign: selectedCampaign?.name,
+      gameSystem: selectedCampaign?.game_system,
+      detectedTheme: campaignTheme
+    });
     
     return (
     <div style={{ height: '100vh', display: 'flex', background: '#36393f' }}>
@@ -1221,6 +1245,7 @@ function SimpleApp() {
           borderBottom: '1px solid #202225',
           display: 'flex',
           alignItems: 'center',
+          justifyContent: 'space-between',
           padding: '0 20px',
           background: '#36393f',
           boxShadow: '0 1px 0 rgba(0,0,0,0.2)',
@@ -1228,6 +1253,17 @@ function SimpleApp() {
         }}>
           <span style={{ color: 'white', fontSize: '16px', fontWeight: '600' }}>
             {currentLocation?.name || 'Select a location'}
+          </span>
+          {/* Debug theme indicator */}
+          <span style={{ 
+            fontSize: '11px', 
+            color: '#72767d',
+            background: '#2f3136',
+            padding: '4px 8px',
+            borderRadius: '4px',
+            fontFamily: 'monospace'
+          }}>
+            Theme: {campaignTheme || 'none'}
           </span>
         </div>
 
@@ -1298,10 +1334,12 @@ function SimpleApp() {
           <form onSubmit={handleSendMessage}>
             <div style={{ display: 'flex', gap: '10px' }}>
               <input
+                ref={chatInputRef}
                 type="text"
                 name="message"
                 placeholder={`Message in ${currentLocation?.name || 'this location'}...`}
                 disabled={loading}
+                autoFocus
                 style={{
                   flex: 1,
                   padding: '12px 16px',
