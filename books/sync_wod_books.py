@@ -15,6 +15,7 @@ import time
 import re
 import urllib3
 import hashlib
+import json
 from collections import defaultdict
 
 # Disable SSL warnings for sites with expired certificates
@@ -26,6 +27,7 @@ class WoDBookSyncer:
         self.base_url = base_url.rstrip('/') + '/'
         self.local_base_dir = Path(local_base_dir)
         self.local_base_dir.mkdir(parents=True, exist_ok=True)
+        self.choices_file = self.local_base_dir / '.duplicate_choices.json'
         self.session = requests.Session()
         self.session.headers.update({
             'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36'
@@ -265,24 +267,63 @@ class WoDBookSyncer:
         print(f"   ✓ Found {len(pdf_files)} PDF files")
         print(f"   ✓ Book list saved to: {book_list_path}")
     
+    def load_duplicate_choices(self):
+        """Load previously saved duplicate resolution choices"""
+        if self.choices_file.exists():
+            try:
+                with open(self.choices_file, 'r') as f:
+                    return json.load(f)
+            except Exception as e:
+                print(f"Warning: Could not load choices file: {e}")
+        return {}
+    
+    def save_duplicate_choices(self, choices):
+        """Save duplicate resolution choices for future runs"""
+        try:
+            with open(self.choices_file, 'w') as f:
+                json.dump(choices, f, indent=2)
+        except Exception as e:
+            print(f"Warning: Could not save choices file: {e}")
+    
     def get_file_hash(self, file_path, chunk_size=8192):
-        """Calculate MD5 hash of a file"""
+        """Calculate MD5 hash of a file with progress for large files"""
         md5 = hashlib.md5()
         try:
+            file_size = file_path.stat().st_size
+            # Show progress bar for files larger than 10MB
+            show_progress = file_size > 10 * 1024 * 1024
+            
+            if show_progress:
+                progress_bar = tqdm(
+                    total=file_size,
+                    unit='B',
+                    unit_scale=True,
+                    unit_divisor=1024,
+                    desc=f"Hashing {file_path.name[:30]}",
+                    leave=False
+                )
+            
             with open(file_path, 'rb') as f:
                 for chunk in iter(lambda: f.read(chunk_size), b''):
                     md5.update(chunk)
+                    if show_progress:
+                        progress_bar.update(len(chunk))
+            
+            if show_progress:
+                progress_bar.close()
+            
             return md5.hexdigest()
         except Exception as e:
             print(f"Error hashing {file_path}: {e}")
             return None
     
     def find_duplicates(self):
-        """Find duplicate PDF files based on filename and size"""
+        """Find duplicate PDF files based on filename and hash"""
         print("\n🔍 Checking for duplicate files...")
         
         # Find all PDFs
         pdf_files = list(self.local_base_dir.rglob('*.pdf'))
+        print(f"   Scanning {len(pdf_files)} PDF files...")
         
         # Group by filename (case-insensitive)
         by_filename = defaultdict(list)
@@ -290,37 +331,55 @@ class WoDBookSyncer:
             filename = pdf_path.name.lower()
             by_filename[filename].append(pdf_path)
         
-        # Find actual duplicates (same name, different locations)
+        # Find potential duplicates (same name, different locations)
+        print(f"   Calculating hashes for potential duplicates...")
         duplicates = {}
+        
         for filename, paths in by_filename.items():
             if len(paths) > 1:
-                # Get file sizes
+                # Get file info including hash
                 file_info = []
                 for path in paths:
                     try:
                         size = path.stat().st_size
                         relative = path.relative_to(self.local_base_dir)
-                        file_info.append({
-                            'path': path,
-                            'relative': relative,
-                            'size': size,
-                            'size_mb': size / (1024 * 1024)
-                        })
+                        file_hash = self.get_file_hash(path)
+                        
+                        if file_hash:
+                            file_info.append({
+                                'path': path,
+                                'relative': str(relative),
+                                'size': size,
+                                'size_mb': size / (1024 * 1024),
+                                'hash': file_hash
+                            })
                     except Exception as e:
                         print(f"Error checking {path}: {e}")
                 
-                if file_info:
-                    duplicates[filename] = file_info
+                if len(file_info) > 1:
+                    # Group by hash to identify truly identical files
+                    by_hash = defaultdict(list)
+                    for info in file_info:
+                        by_hash[info['hash']].append(info)
+                    
+                    # Store duplicates grouped by hash
+                    duplicates[filename] = {
+                        'all_files': file_info,
+                        'by_hash': dict(by_hash)
+                    }
         
         return duplicates
     
     def handle_duplicates_interactive(self):
-        """Interactively handle duplicate files"""
+        """Interactively handle duplicate files with persistent choices"""
         duplicates = self.find_duplicates()
         
         if not duplicates:
             print("   ✓ No duplicates found!")
             return
+        
+        # Load saved choices
+        saved_choices = self.load_duplicate_choices()
         
         print(f"   Found {len(duplicates)} duplicate filenames")
         print(f"\n{'='*80}")
@@ -329,68 +388,138 @@ class WoDBookSyncer:
         
         removed_count = 0
         kept_count = 0
+        auto_resolved = 0
         
-        for filename, file_list in sorted(duplicates.items()):
-            print(f"\n📄 Duplicate: {filename}")
-            print(f"   Found in {len(file_list)} locations:\n")
+        for filename, dup_info in sorted(duplicates.items()):
+            all_files = dup_info['all_files']
+            by_hash = dup_info['by_hash']
             
-            # Show all versions with details
-            for i, info in enumerate(file_list, 1):
-                print(f"   [{i}] {info['relative']}")
-                print(f"       Size: {info['size_mb']:.2f} MB ({info['size']:,} bytes)")
+            # Check if we have a saved choice for this filename
+            saved_choice = saved_choices.get(filename, {})
             
-            # Check if they're identical (same size)
-            sizes = [f['size'] for f in file_list]
-            if len(set(sizes)) == 1:
-                print(f"\n   ℹ️  All files have identical size - likely the same content")
-            else:
-                print(f"\n   ⚠️  Different file sizes detected!")
-            
-            # Ask user what to do
-            print(f"\n   Options:")
-            for i in range(len(file_list)):
-                print(f"     {i+1} - Keep this one, delete others")
-            print(f"     a - Keep all (skip)")
-            print(f"     q - Quit duplicate handling")
-            
-            while True:
-                choice = input(f"\n   Your choice [1-{len(file_list)}/a/q]: ").strip().lower()
+            # Try to auto-resolve based on saved choices
+            auto_resolved_this = False
+            if saved_choice:
+                action = saved_choice.get('action')
                 
-                if choice == 'q':
-                    print("\n   Stopping duplicate handling...")
-                    return
-                
-                if choice == 'a':
-                    print("   Keeping all versions")
-                    kept_count += len(file_list)
-                    break
-                
-                try:
-                    choice_num = int(choice)
-                    if 1 <= choice_num <= len(file_list):
-                        # Delete all except the chosen one
-                        keep_file = file_list[choice_num - 1]
-                        print(f"\n   Keeping: {keep_file['relative']}")
-                        
-                        for i, info in enumerate(file_list):
-                            if i != (choice_num - 1):
+                if action == 'keep_all':
+                    # User chose to keep all versions previously
+                    kept_count += len(all_files)
+                    auto_resolved += 1
+                    auto_resolved_this = True
+                    
+                elif action == 'keep_one':
+                    # User chose to keep specific file(s)
+                    keep_paths = set(saved_choice.get('keep_paths', []))
+                    
+                    # Verify saved paths still exist and match hashes
+                    valid_choice = True
+                    for file_info in all_files:
+                        if file_info['relative'] in keep_paths:
+                            # Check if hash matches what was saved
+                            saved_hash = saved_choice.get('hash')
+                            if saved_hash and saved_hash != file_info['hash']:
+                                valid_choice = False
+                                break
+                    
+                    if valid_choice and keep_paths:
+                        # Auto-apply saved choice
+                        for file_info in all_files:
+                            if file_info['relative'] in keep_paths:
+                                kept_count += 1
+                            else:
                                 try:
-                                    info['path'].unlink()
-                                    print(f"   ✓ Deleted: {info['relative']}")
+                                    Path(file_info['path']).unlink()
                                     removed_count += 1
                                 except Exception as e:
-                                    print(f"   ✗ Failed to delete {info['relative']}: {e}")
-                        
-                        kept_count += 1
+                                    print(f"   ✗ Failed to delete {file_info['relative']}: {e}")
+                        auto_resolved += 1
+                        auto_resolved_this = True
+            
+            # If not auto-resolved, ask user
+            if not auto_resolved_this:
+                print(f"\n📄 Duplicate: {filename}")
+                print(f"   Found in {len(all_files)} locations:\n")
+                
+                # Show all versions with details grouped by hash
+                for i, file_info in enumerate(all_files, 1):
+                    print(f"   [{i}] {file_info['relative']}")
+                    print(f"       Size: {file_info['size_mb']:.2f} MB ({file_info['size']:,} bytes)")
+                    print(f"       Hash: {file_info['hash'][:16]}...")
+                
+                # Check if files are truly identical
+                if len(by_hash) == 1:
+                    print(f"\n   ✅ All files have identical content (same hash)")
+                else:
+                    print(f"\n   ⚠️  Files have different content ({len(by_hash)} unique versions):")
+                    for hash_val, files in by_hash.items():
+                        print(f"      - {hash_val[:16]}... ({len(files)} file{'s' if len(files) > 1 else ''})")
+                
+                # Ask user what to do
+                print(f"\n   Options:")
+                for i in range(len(all_files)):
+                    print(f"     {i+1} - Keep this one, delete others")
+                print(f"     a - Keep all (skip)")
+                print(f"     q - Quit duplicate handling")
+                
+                while True:
+                    choice = input(f"\n   Your choice [1-{len(all_files)}/a/q]: ").strip().lower()
+                    
+                    if choice == 'q':
+                        print("\n   Stopping duplicate handling...")
+                        # Save choices made so far
+                        self.save_duplicate_choices(saved_choices)
+                        return
+                    
+                    if choice == 'a':
+                        print("   Keeping all versions")
+                        kept_count += len(all_files)
+                        # Save this choice
+                        saved_choices[filename] = {
+                            'action': 'keep_all',
+                            'timestamp': time.time()
+                        }
                         break
-                    else:
-                        print(f"   Invalid choice. Enter 1-{len(file_list)}, 'a', or 'q'")
-                except ValueError:
-                    print(f"   Invalid input. Enter 1-{len(file_list)}, 'a', or 'q'")
+                    
+                    try:
+                        choice_num = int(choice)
+                        if 1 <= choice_num <= len(all_files):
+                            # Delete all except the chosen one
+                            keep_file = all_files[choice_num - 1]
+                            print(f"\n   Keeping: {keep_file['relative']}")
+                            
+                            for i, info in enumerate(all_files):
+                                if i != (choice_num - 1):
+                                    try:
+                                        Path(info['path']).unlink()
+                                        print(f"   ✓ Deleted: {info['relative']}")
+                                        removed_count += 1
+                                    except Exception as e:
+                                        print(f"   ✗ Failed to delete {info['relative']}: {e}")
+                            
+                            kept_count += 1
+                            
+                            # Save this choice
+                            saved_choices[filename] = {
+                                'action': 'keep_one',
+                                'keep_paths': [keep_file['relative']],
+                                'hash': keep_file['hash'],
+                                'timestamp': time.time()
+                            }
+                            break
+                        else:
+                            print(f"   Invalid choice. Enter 1-{len(all_files)}, 'a', or 'q'")
+                    except ValueError:
+                        print(f"   Invalid input. Enter 1-{len(all_files)}, 'a', or 'q'")
+        
+        # Save all choices for future runs
+        self.save_duplicate_choices(saved_choices)
         
         print(f"\n{'='*80}")
         print(f"Duplicate Resolution Complete!")
         print(f"{'='*80}")
+        if auto_resolved > 0:
+            print(f"Auto-resolved: {auto_resolved} (based on previous choices)")
         print(f"Files kept:    {kept_count}")
         print(f"Files removed: {removed_count}")
         print(f"{'='*80}\n")
