@@ -279,7 +279,16 @@ function AdminPage({ token, user, onBack }) {
                         >
                           🔑 Reset PW
                         </button>
-                        {u.is_banned ? (
+                        {u.id === user?.id ? (
+                          <span style={{
+                            padding: '6px 12px',
+                            color: '#8b8b9f',
+                            fontSize: '12px',
+                            fontStyle: 'italic'
+                          }}>
+                            (You)
+                          </span>
+                        ) : u.is_banned ? (
                           <button
                             onClick={() => handleUnbanUser(u.id)}
                             style={{
