@@ -21,6 +21,12 @@ function SimpleApp() {
   
   // Ref for chat input to maintain focus
   const chatInputRef = React.useRef(null);
+  
+  // Campaign editing state
+  const [isEditingCampaignName, setIsEditingCampaignName] = useState(false);
+  const [editedCampaignName, setEditedCampaignName] = useState('');
+  const [isEditingCampaignDesc, setIsEditingCampaignDesc] = useState(false);
+  const [editedCampaignDesc, setEditedCampaignDesc] = useState('');
 
   // Load user data on mount
   useEffect(() => {
@@ -279,6 +285,79 @@ function SimpleApp() {
     setMessages([]);
   };
 
+  // Update campaign name
+  const handleUpdateCampaignName = async () => {
+    if (!editedCampaignName.trim()) {
+      setError('Campaign name cannot be empty');
+      return;
+    }
+
+    setLoading(true);
+    setError('');
+
+    try {
+      const response = await fetch(`${API_URL}/campaigns/${selectedCampaign.id}`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ name: editedCampaignName })
+      });
+
+      if (response.ok) {
+        // Update local state
+        setSelectedCampaign({ ...selectedCampaign, name: editedCampaignName });
+        setIsEditingCampaignName(false);
+        // Refresh campaigns list
+        fetchCampaigns();
+      } else {
+        const data = await response.json();
+        setError(data.error || 'Failed to update campaign name');
+      }
+    } catch (err) {
+      setError('Connection error: ' + err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleUpdateCampaignDesc = async () => {
+    if (!editedCampaignDesc.trim()) {
+      setError('Campaign description cannot be empty');
+      return;
+    }
+
+    setLoading(true);
+    setError('');
+
+    try {
+      const response = await fetch(`${API_URL}/campaigns/${selectedCampaign.id}`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ description: editedCampaignDesc })
+      });
+
+      if (response.ok) {
+        // Update local state
+        setSelectedCampaign({ ...selectedCampaign, description: editedCampaignDesc });
+        setIsEditingCampaignDesc(false);
+        // Refresh campaigns list
+        fetchCampaigns();
+      } else {
+        const data = await response.json();
+        setError(data.error || 'Failed to update campaign description');
+      }
+    } catch (err) {
+      setError('Connection error: ' + err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Get campaign theme based on game system
   const getCampaignTheme = (campaign) => {
     if (!campaign || !campaign.game_system) return 'none';
@@ -300,6 +379,124 @@ function SimpleApp() {
     }
     
     return 'none';
+  };
+
+  // Get campaign emoji based on game system
+  const getCampaignEmoji = (campaign) => {
+    if (!campaign || !campaign.game_system) return '📜';
+    const gameSystem = campaign.game_system.toLowerCase();
+    
+    // Vampire campaigns
+    if (gameSystem.includes('vampire') || gameSystem.includes('masquerade') || gameSystem.includes('vtm')) {
+      return '🦇';
+    }
+    
+    // Mage campaigns
+    if (gameSystem.includes('mage') || gameSystem.includes('ascension') || gameSystem.includes('mta')) {
+      return '🔮';
+    }
+    
+    // Werewolf campaigns
+    if (gameSystem.includes('werewolf') || gameSystem.includes('apocalypse') || gameSystem.includes('wta') || gameSystem.includes('garou')) {
+      return '🐺';
+    }
+    
+    // Changeling
+    if (gameSystem.includes('changeling') || gameSystem.includes('dreaming')) {
+      return '🧚';
+    }
+    
+    // Hunter
+    if (gameSystem.includes('hunter') || gameSystem.includes('reckoning')) {
+      return '🗡️';
+    }
+    
+    // Wraith
+    if (gameSystem.includes('wraith') || gameSystem.includes('oblivion')) {
+      return '👻';
+    }
+    
+    // D&D / Fantasy
+    if (gameSystem.includes('d&d') || gameSystem.includes('dungeons') || gameSystem.includes('pathfinder')) {
+      return '⚔️';
+    }
+    
+    // Default - ancient scroll
+    return '📜';
+  };
+
+  // Get campaign color scheme based on game system
+  const getCampaignColor = (campaign) => {
+    if (!campaign || !campaign.game_system) {
+      return {
+        primary: '#e94560',
+        bg: 'rgba(233, 69, 96, 0.2)',
+        shadow: 'rgba(233, 69, 96, 0.3)'
+      };
+    }
+    
+    const gameSystem = campaign.game_system.toLowerCase();
+    
+    // Vampire campaigns - Blood Red
+    if (gameSystem.includes('vampire') || gameSystem.includes('masquerade') || gameSystem.includes('vtm')) {
+      return {
+        primary: '#e94560',
+        bg: 'rgba(233, 69, 96, 0.2)',
+        shadow: 'rgba(233, 69, 96, 0.3)'
+      };
+    }
+    
+    // Mage campaigns - Mystic Purple
+    if (gameSystem.includes('mage') || gameSystem.includes('ascension') || gameSystem.includes('mta')) {
+      return {
+        primary: '#9d4edd',
+        bg: 'rgba(157, 78, 221, 0.2)',
+        shadow: 'rgba(157, 78, 221, 0.3)'
+      };
+    }
+    
+    // Werewolf campaigns - Amber/Golden
+    if (gameSystem.includes('werewolf') || gameSystem.includes('apocalypse') || gameSystem.includes('wta') || gameSystem.includes('garou')) {
+      return {
+        primary: '#d97706',
+        bg: 'rgba(217, 119, 6, 0.2)',
+        shadow: 'rgba(217, 119, 6, 0.3)'
+      };
+    }
+    
+    // Changeling - Fae Green
+    if (gameSystem.includes('changeling') || gameSystem.includes('dreaming')) {
+      return {
+        primary: '#10b981',
+        bg: 'rgba(16, 185, 129, 0.2)',
+        shadow: 'rgba(16, 185, 129, 0.3)'
+      };
+    }
+    
+    // Hunter - Silver
+    if (gameSystem.includes('hunter') || gameSystem.includes('reckoning')) {
+      return {
+        primary: '#94a3b8',
+        bg: 'rgba(148, 163, 184, 0.2)',
+        shadow: 'rgba(148, 163, 184, 0.3)'
+      };
+    }
+    
+    // Wraith - Ghost White/Blue
+    if (gameSystem.includes('wraith') || gameSystem.includes('oblivion')) {
+      return {
+        primary: '#60a5fa',
+        bg: 'rgba(96, 165, 250, 0.2)',
+        shadow: 'rgba(96, 165, 250, 0.3)'
+      };
+    }
+    
+    // Default - Blood Red
+    return {
+      primary: '#e94560',
+      bg: 'rgba(233, 69, 96, 0.2)',
+      shadow: 'rgba(233, 69, 96, 0.3)'
+    };
   };
 
   // ========== RENDER FUNCTIONS ==========
@@ -652,17 +849,27 @@ function SimpleApp() {
             onClick={() => setCurrentPage('createCampaign')}
             style={{
               padding: '10px 20px',
-              background: '#28a745',
+              background: 'linear-gradient(135deg, #e94560 0%, #8b0000 100%)',
               color: 'white',
-              border: 'none',
+              border: '2px solid #e94560',
               borderRadius: '8px',
               cursor: 'pointer',
               fontWeight: 'bold',
               fontSize: '16px',
-              boxShadow: '0 4px 15px rgba(40, 167, 69, 0.3)'
+              boxShadow: '0 4px 15px rgba(233, 69, 96, 0.4)',
+              fontFamily: 'Cinzel, serif',
+              transition: 'all 0.3s'
+            }}
+            onMouseOver={(e) => {
+              e.target.style.boxShadow = '0 6px 25px rgba(233, 69, 96, 0.6)';
+              e.target.style.transform = 'translateY(-2px)';
+            }}
+            onMouseOut={(e) => {
+              e.target.style.boxShadow = '0 4px 15px rgba(233, 69, 96, 0.4)';
+              e.target.style.transform = 'translateY(0)';
             }}
           >
-            ➕ New Campaign
+            ✚ New Campaign
           </button>
         </div>
 
@@ -692,6 +899,8 @@ function SimpleApp() {
                 ? firstLine.substring(0, 100) + '...' 
                 : firstLine;
               
+              const themeColor = getCampaignColor(campaign);
+              
               return (
                 <div
                   key={campaign.id}
@@ -701,8 +910,8 @@ function SimpleApp() {
                     borderRadius: '10px',
                     boxShadow: '0 2px 10px rgba(0,0,0,0.5)',
                     cursor: 'pointer',
-                    transition: 'transform 0.2s, border-color 0.2s',
-                    border: '2px solid #2a2a4e',
+                    transition: 'transform 0.2s, border-color 0.2s, box-shadow 0.2s',
+                    border: `2px solid #2a2a4e`,
                     display: 'flex',
                     flexDirection: 'column',
                     justifyContent: 'space-between',
@@ -710,8 +919,8 @@ function SimpleApp() {
                   }}
                   onMouseOver={(e) => {
                     e.currentTarget.style.transform = 'translateY(-5px)';
-                    e.currentTarget.style.borderColor = '#e94560';
-                    e.currentTarget.style.boxShadow = '0 4px 20px rgba(233, 69, 96, 0.3)';
+                    e.currentTarget.style.borderColor = themeColor.primary;
+                    e.currentTarget.style.boxShadow = `0 4px 20px ${themeColor.shadow}`;
                   }}
                   onMouseOut={(e) => {
                     e.currentTarget.style.transform = 'translateY(0)';
@@ -720,10 +929,10 @@ function SimpleApp() {
                   }}
                 >
                   <div onClick={() => enterCampaign(campaign)}>
-                    <h3 style={{ color: '#e94560', marginBottom: '10px', fontSize: '20px' }}>
-                      🎲 {campaign.name}
+                    <h3 style={{ color: themeColor.primary, marginBottom: '10px', fontSize: '20px', fontFamily: 'Cinzel, serif' }}>
+                      {getCampaignEmoji(campaign)} {campaign.name}
                     </h3>
-                    <p style={{ color: '#b5b5c3', marginBottom: '15px', fontSize: '14px', lineHeight: '1.5' }}>
+                    <p style={{ color: '#b5b5c3', marginBottom: '15px', fontSize: '14px', lineHeight: '1.5', fontFamily: 'Crimson Text, serif' }}>
                       {shortDesc}
                     </p>
                   </div>
@@ -731,13 +940,14 @@ function SimpleApp() {
                     <div style={{
                       flex: 1,
                       padding: '5px 12px',
-                      background: 'rgba(233, 69, 96, 0.2)',
-                      color: '#e94560',
+                      background: themeColor.bg,
+                      color: themeColor.primary,
                       borderRadius: '15px',
                       fontSize: '12px',
                       fontWeight: '600',
                       textAlign: 'center',
-                      border: '1px solid #e94560'
+                      border: `1px solid ${themeColor.primary}`,
+                      fontFamily: 'Cinzel, serif'
                     }}>
                       {campaign.game_system}
                     </div>
@@ -749,13 +959,23 @@ function SimpleApp() {
                       }}
                       style={{
                         padding: '8px 16px',
-                        background: 'rgba(233, 69, 96, 0.2)',
-                        color: '#e94560',
-                        border: '1px solid #e94560',
+                        background: themeColor.bg,
+                        color: themeColor.primary,
+                        border: `1px solid ${themeColor.primary}`,
                         borderRadius: '5px',
                         cursor: 'pointer',
                         fontSize: '12px',
-                        fontWeight: '600'
+                        fontWeight: '600',
+                        fontFamily: 'Cinzel, serif',
+                        transition: 'all 0.2s'
+                      }}
+                      onMouseOver={(e) => {
+                        e.target.style.background = themeColor.primary;
+                        e.target.style.color = 'white';
+                      }}
+                      onMouseOut={(e) => {
+                        e.target.style.background = themeColor.bg;
+                        e.target.style.color = themeColor.primary;
                       }}
                     >
                       ⚙️ Settings
@@ -764,17 +984,27 @@ function SimpleApp() {
                       onClick={() => enterCampaign(campaign)}
                       style={{
                         padding: '8px 16px',
-                        background: '#28a745',
+                        background: `linear-gradient(135deg, ${themeColor.primary} 0%, ${themeColor.primary}dd 100%)`,
                         color: 'white',
-                        border: 'none',
+                        border: `2px solid ${themeColor.primary}`,
                         borderRadius: '5px',
                         cursor: 'pointer',
                         fontSize: '12px',
                         fontWeight: '600',
-                        boxShadow: '0 2px 10px rgba(40, 167, 69, 0.3)'
+                        boxShadow: `0 2px 10px ${themeColor.shadow}`,
+                        fontFamily: 'Cinzel, serif',
+                        transition: 'all 0.2s'
+                      }}
+                      onMouseOver={(e) => {
+                        e.target.style.boxShadow = `0 4px 15px ${themeColor.shadow}`;
+                        e.target.style.transform = 'translateY(-1px)';
+                      }}
+                      onMouseOut={(e) => {
+                        e.target.style.boxShadow = `0 2px 10px ${themeColor.shadow}`;
+                        e.target.style.transform = 'translateY(0)';
                       }}
                     >
-                      ▶️ Enter
+                      ▶ Enter
                     </button>
                   </div>
                 </div>
@@ -818,32 +1048,128 @@ function SimpleApp() {
               onClick={() => enterCampaign(selectedCampaign)}
               style={{
                 padding: '10px 20px',
-                background: '#28a745',
+                background: 'linear-gradient(135deg, #e94560 0%, #8b0000 100%)',
                 color: 'white',
-                border: 'none',
+                border: '2px solid #e94560',
                 borderRadius: '8px',
                 cursor: 'pointer',
                 fontWeight: 'bold',
-                fontSize: '16px'
+                fontSize: '16px',
+                boxShadow: '0 4px 15px rgba(233, 69, 96, 0.4)',
+                fontFamily: 'Cinzel, serif',
+                transition: 'all 0.3s'
+              }}
+              onMouseOver={(e) => {
+                e.target.style.boxShadow = '0 6px 25px rgba(233, 69, 96, 0.6)';
+                e.target.style.transform = 'translateY(-2px)';
+              }}
+              onMouseOut={(e) => {
+                e.target.style.boxShadow = '0 4px 15px rgba(233, 69, 96, 0.4)';
+                e.target.style.transform = 'translateY(0)';
               }}
             >
-              ▶️ Enter Campaign
+              ▶ Enter Campaign
             </button>
           </div>
 
-          {/* Campaign Name */}
-          <div style={{ marginBottom: '30px', paddingBottom: '20px', borderBottom: '1px solid #eee' }}>
-            <h2 style={{ color: '#e94560', fontSize: '24px', marginBottom: '10px' }}>
-              {selectedCampaign?.name}
-            </h2>
+          {/* Campaign Name - Editable for Admin */}
+          <div style={{ marginBottom: '30px', paddingBottom: '20px', borderBottom: '2px solid #2a2a4e' }}>
+            {isEditingCampaignName ? (
+              <div style={{ marginBottom: '15px' }}>
+                <input
+                  type="text"
+                  value={editedCampaignName}
+                  onChange={(e) => setEditedCampaignName(e.target.value)}
+                  autoFocus
+                  style={{
+                    width: '100%',
+                    padding: '12px',
+                    fontSize: '24px',
+                    fontWeight: 'bold',
+                    color: '#e94560',
+                    background: '#16213e',
+                    border: '2px solid #e94560',
+                    borderRadius: '8px',
+                    marginBottom: '10px',
+                    fontFamily: 'Cinzel, serif'
+                  }}
+                />
+                <div style={{ display: 'flex', gap: '10px' }}>
+                  <button
+                    onClick={handleUpdateCampaignName}
+                    disabled={loading}
+                    style={{
+                      padding: '8px 20px',
+                      background: '#28a745',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '5px',
+                      cursor: 'pointer',
+                      fontWeight: '600',
+                      fontFamily: 'Cinzel, serif'
+                    }}
+                  >
+                    {loading ? 'Saving...' : '✓ Save'}
+                  </button>
+                  <button
+                    onClick={() => {
+                      setIsEditingCampaignName(false);
+                      setEditedCampaignName('');
+                      setError('');
+                    }}
+                    style={{
+                      padding: '8px 20px',
+                      background: '#6c757d',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '5px',
+                      cursor: 'pointer',
+                      fontWeight: '600',
+                      fontFamily: 'Cinzel, serif'
+                    }}
+                  >
+                    ✗ Cancel
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '15px', marginBottom: '10px' }}>
+                <h2 style={{ color: '#e94560', fontSize: '24px', margin: 0, fontFamily: 'Cinzel, serif' }}>
+                  {selectedCampaign?.name}
+                </h2>
+                {user?.role === 'admin' && (
+                  <button
+                    onClick={() => {
+                      setIsEditingCampaignName(true);
+                      setEditedCampaignName(selectedCampaign?.name || '');
+                    }}
+                    style={{
+                      padding: '6px 12px',
+                      background: '#16213e',
+                      color: '#e94560',
+                      border: '2px solid #e94560',
+                      borderRadius: '5px',
+                      cursor: 'pointer',
+                      fontSize: '14px',
+                      fontWeight: '600',
+                      fontFamily: 'Cinzel, serif'
+                    }}
+                  >
+                    ✏️ Edit Name
+                  </button>
+                )}
+              </div>
+            )}
             <div style={{
               display: 'inline-block',
               padding: '5px 15px',
-              background: '#e3f2fd',
-              color: '#1976d2',
+              background: 'rgba(157, 78, 221, 0.2)',
+              color: '#9d4edd',
+              border: '1px solid #9d4edd',
               borderRadius: '15px',
               fontSize: '14px',
-              fontWeight: '600'
+              fontWeight: '600',
+              fontFamily: 'Crimson Text, serif'
             }}>
               {selectedCampaign?.game_system}
             </div>
@@ -851,23 +1177,102 @@ function SimpleApp() {
 
           {/* Campaign Description/World Info */}
           <div style={{ marginBottom: '30px' }}>
-            <h3 style={{ color: '#e94560', fontSize: '18px', marginBottom: '15px' }}>
+            <h3 style={{ color: '#e94560', fontSize: '18px', marginBottom: '10px', fontFamily: 'Cinzel, serif' }}>
               📖 Campaign World & Setting
             </h3>
+            {/* Warning about editing */}
             <div style={{
-              background: '#0f1729',
-              padding: '20px',
-              borderRadius: '8px',
-              border: '1px solid #e0e0e0',
-              whiteSpace: 'pre-wrap',
-              lineHeight: '1.6',
-              fontSize: '14px',
-              color: '#444',
-              maxHeight: '400px',
-              overflowY: 'auto'
+              background: 'rgba(233, 69, 96, 0.1)',
+              border: '1px solid #e94560',
+              borderRadius: '5px',
+              padding: '10px',
+              marginBottom: '10px',
+              fontSize: '12px',
+              color: '#e94560',
+              fontFamily: 'Crimson Text, serif'
             }}>
-              {selectedCampaign?.description}
+              ⚠️ <strong>Warning:</strong> Changing this world setting will add or remove critical information that affects world generation, NPC behavior, and character interactions. Edit carefully.
             </div>
+            {isEditingCampaignDesc ? (
+              <div>
+                <textarea
+                  value={editedCampaignDesc}
+                  onChange={(e) => setEditedCampaignDesc(e.target.value)}
+                  autoFocus
+                  style={{
+                    width: '100%',
+                    minHeight: '300px',
+                    padding: '20px',
+                    background: '#16213e',
+                    color: '#d0d0e0',
+                    border: '2px solid #e94560',
+                    borderRadius: '8px',
+                    fontSize: '15px',
+                    lineHeight: '1.8',
+                    fontFamily: 'Crimson Text, serif',
+                    resize: 'vertical',
+                    boxShadow: '0 0 20px rgba(233, 69, 96, 0.3)'
+                  }}
+                />
+                <div style={{ marginTop: '10px', display: 'flex', gap: '10px' }}>
+                  <button
+                    onClick={handleUpdateCampaignDesc}
+                    disabled={loading}
+                    style={{
+                      padding: '10px 20px',
+                      background: 'linear-gradient(135deg, #e94560 0%, #8b0000 100%)',
+                      color: 'white',
+                      border: '2px solid #e94560',
+                      borderRadius: '5px',
+                      cursor: loading ? 'not-allowed' : 'pointer',
+                      fontWeight: '600',
+                      fontFamily: 'Cinzel, serif',
+                      boxShadow: '0 4px 15px rgba(233, 69, 96, 0.4)',
+                      opacity: loading ? 0.6 : 1
+                    }}
+                  >
+                    ✓ Save Changes
+                  </button>
+                  <button
+                    onClick={() => {
+                      setIsEditingCampaignDesc(false);
+                      setEditedCampaignDesc('');
+                    }}
+                    disabled={loading}
+                    style={{
+                      padding: '10px 20px',
+                      background: '#6c757d',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '5px',
+                      cursor: loading ? 'not-allowed' : 'pointer',
+                      fontWeight: '600',
+                      fontFamily: 'Cinzel, serif',
+                      opacity: loading ? 0.6 : 1
+                    }}
+                  >
+                    ✗ Cancel
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div style={{
+                background: '#16213e',
+                padding: '20px',
+                borderRadius: '8px',
+                border: '2px solid #2a2a4e',
+                whiteSpace: 'pre-wrap',
+                lineHeight: '1.8',
+                fontSize: '15px',
+                color: '#d0d0e0',
+                maxHeight: '400px',
+                overflowY: 'auto',
+                fontFamily: 'Crimson Text, serif',
+                boxShadow: 'inset 0 0 20px rgba(0,0,0,0.3)'
+              }}>
+                {selectedCampaign?.description}
+              </div>
+            )}
           </div>
 
           {/* Admin Actions */}
@@ -876,15 +1281,31 @@ function SimpleApp() {
               👑 Admin Actions
             </h3>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '10px' }}>
-              <button style={{
-                padding: '12px',
-                background: '#e94560',
-                color: 'white',
-                border: 'none',
-                borderRadius: '5px',
-                cursor: 'pointer',
-                fontWeight: '600'
-              }}>
+              <button
+                onClick={() => {
+                  setIsEditingCampaignDesc(true);
+                  setEditedCampaignDesc(selectedCampaign?.description || '');
+                }}
+                style={{
+                  padding: '12px',
+                  background: '#e94560',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '5px',
+                  cursor: 'pointer',
+                  fontWeight: '600',
+                  fontFamily: 'Cinzel, serif',
+                  transition: 'all 0.2s'
+                }}
+                onMouseOver={(e) => {
+                  e.target.style.background = '#ff556f';
+                  e.target.style.boxShadow = '0 4px 15px rgba(233, 69, 96, 0.4)';
+                }}
+                onMouseOut={(e) => {
+                  e.target.style.background = '#e94560';
+                  e.target.style.boxShadow = 'none';
+                }}
+              >
                 ✏️ Edit Campaign Info
               </button>
               <button style={{
@@ -945,27 +1366,70 @@ function SimpleApp() {
             </div>
           </div>
 
-          {/* Campaign Stats */}
+          {/* Campaign Stats - Gothic Horror Style */}
           <div>
-            <h3 style={{ color: '#e94560', fontSize: '18px', marginBottom: '15px' }}>
-              📊 Campaign Statistics
+            <h3 style={{ color: '#e94560', fontSize: '18px', marginBottom: '15px', fontFamily: 'Cinzel, serif' }}>
+              💀 Campaign Statistics
             </h3>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '15px' }}>
-              <div style={{ background: '#f0f4ff', padding: '15px', borderRadius: '8px', textAlign: 'center' }}>
-                <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#e94560' }}>0</div>
-                <div style={{ fontSize: '14px', color: '#b5b5c3', marginTop: '5px' }}>Active Players</div>
+              {/* Active Players - Blood Red */}
+              <div style={{ 
+                background: '#1a0a0a', 
+                padding: '15px', 
+                borderRadius: '8px', 
+                textAlign: 'center',
+                border: '2px solid rgba(233, 69, 96, 0.3)',
+                boxShadow: '0 0 15px rgba(233, 69, 96, 0.2)'
+              }}>
+                <div style={{ fontSize: '28px', fontWeight: 'bold', color: '#e94560', fontFamily: 'Cinzel, serif' }}>0</div>
+                <div style={{ fontSize: '12px', color: '#8b8b9f', marginTop: '8px', fontFamily: 'Crimson Text, serif', textTransform: 'uppercase', letterSpacing: '1px' }}>
+                  <i className="fas fa-users"></i> Active Players
+                </div>
               </div>
-              <div style={{ background: '#fff4e6', padding: '15px', borderRadius: '8px', textAlign: 'center' }}>
-                <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#ffa726' }}>0</div>
-                <div style={{ fontSize: '14px', color: '#b5b5c3', marginTop: '5px' }}>Characters</div>
+              
+              {/* Characters - Purple Magic */}
+              <div style={{ 
+                background: '#0a0a1a', 
+                padding: '15px', 
+                borderRadius: '8px', 
+                textAlign: 'center',
+                border: '2px solid rgba(157, 78, 221, 0.3)',
+                boxShadow: '0 0 15px rgba(157, 78, 221, 0.2)'
+              }}>
+                <div style={{ fontSize: '28px', fontWeight: 'bold', color: '#9d4edd', fontFamily: 'Cinzel, serif' }}>0</div>
+                <div style={{ fontSize: '12px', color: '#8b8b9f', marginTop: '8px', fontFamily: 'Crimson Text, serif', textTransform: 'uppercase', letterSpacing: '1px' }}>
+                  <i className="fas fa-user-secret"></i> Characters
+                </div>
               </div>
-              <div style={{ background: '#e8f5e9', padding: '15px', borderRadius: '8px', textAlign: 'center' }}>
-                <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#66bb6a' }}>0</div>
-                <div style={{ fontSize: '14px', color: '#b5b5c3', marginTop: '5px' }}>Locations</div>
+              
+              {/* Locations - Amber Werewolf */}
+              <div style={{ 
+                background: '#1a1206', 
+                padding: '15px', 
+                borderRadius: '8px', 
+                textAlign: 'center',
+                border: '2px solid rgba(217, 119, 6, 0.3)',
+                boxShadow: '0 0 15px rgba(217, 119, 6, 0.2)'
+              }}>
+                <div style={{ fontSize: '28px', fontWeight: 'bold', color: '#d97706', fontFamily: 'Cinzel, serif' }}>0</div>
+                <div style={{ fontSize: '12px', color: '#8b8b9f', marginTop: '8px', fontFamily: 'Crimson Text, serif', textTransform: 'uppercase', letterSpacing: '1px' }}>
+                  <i className="fas fa-map-marker-alt"></i> Locations
+                </div>
               </div>
-              <div style={{ background: '#fce4ec', padding: '15px', borderRadius: '8px', textAlign: 'center' }}>
-                <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#ec407a' }}>0</div>
-                <div style={{ fontSize: '14px', color: '#b5b5c3', marginTop: '5px' }}>Messages</div>
+              
+              {/* Messages - Silver */}
+              <div style={{ 
+                background: '#0f0f0f', 
+                padding: '15px', 
+                borderRadius: '8px', 
+                textAlign: 'center',
+                border: '2px solid rgba(181, 181, 195, 0.3)',
+                boxShadow: '0 0 15px rgba(181, 181, 195, 0.2)'
+              }}>
+                <div style={{ fontSize: '28px', fontWeight: 'bold', color: '#b5b5c3', fontFamily: 'Cinzel, serif' }}>0</div>
+                <div style={{ fontSize: '12px', color: '#8b8b9f', marginTop: '8px', fontFamily: 'Crimson Text, serif', textTransform: 'uppercase', letterSpacing: '1px' }}>
+                  <i className="fas fa-comment"></i> Messages
+                </div>
               </div>
             </div>
           </div>

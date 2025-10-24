@@ -162,6 +162,7 @@ This project is more than just a gaming platform - it's an exploration of the fu
 - [Performance & Scalability](#performance--scalability)
 
 ### **📊 Current Status & Versions**
+- [Version 0.6.3 - Campaign Editing & Enhanced Themes](#version-063---campaign-editing--enhanced-themes-)
 - [Version 0.6.2 - Gothic Horror Theme](#version-062---gothic-horror-theme-)
 - [Version 0.6.1 - Admin Panel & User Management](#version-061---admin-panel--user-management-)
 - [Version 0.6.0 - THE FRONTEND ERA - Complete Rewrite](#version-060---the-frontend-era---complete-rewrite-)
@@ -1158,6 +1159,235 @@ The project now includes comprehensive `.gitignore` rules covering:
 - **Campaign Continuity**: Persistent AI memory across multiple sessions
 - **Multi-Language**: Global accessibility with translation pipelines
 - **Real-time Collaboration**: Live AI-assisted gaming experiences
+
+## Version 0.6.3 - Campaign Editing & Enhanced Themes 📝
+
+### What We Accomplished
+
+This release adds functional campaign editing with theme-aware UI enhancements. Users can now edit campaign names and descriptions, and campaigns display game-specific emojis and color schemes for better visual organization.
+
+1. **Campaign Editing**: Full name and description editing with permissions
+2. **Game System Emojis**: Automatic icons for different game types
+3. **Color Schemes**: Theme-aware colors matching game systems
+4. **Enhanced UI**: Better visual hierarchy and campaign organization
+5. **Backend Integration**: Campaign update endpoint working
+
+### 🆕 New Features
+
+#### 1. Campaign Editing System
+
+**Frontend (SimpleApp.js +521 lines):**
+- Inline campaign name editing with save/cancel buttons
+- Campaign description editing with textarea
+- Real-time UI updates after saving
+- Permission-based editing (creator or admin only)
+- Loading states during save operations
+- Error handling and user feedback
+
+**Backend (campaigns.py +60 lines):**
+- New `update_campaign()` function
+- PUT method support on `/campaigns/<id>` endpoint
+- Permission checks (creator or admin)
+- Update name and description fields
+- Proper validation and error handling
+
+**How It Works:**
+1. User clicks campaign name or description
+2. Edit mode activates with input field
+3. User types changes
+4. Click save - sends PUT request to backend
+5. Backend validates permissions
+6. Updates database
+7. Returns success
+8. Frontend updates local state
+9. Campaign list refreshes automatically
+
+#### 2. Game System Emoji Mapping
+
+**Supported Game Systems:**
+- 🩸 **Vampire: The Masquerade** - Blood drop (perfect for vampire themes)
+- ✨ **Mage: The Ascension** - Sparkles (mystical magic)
+- 🐺 **Werewolf: The Apocalypse** - Wolf (primal fury)
+- 🧚 **Changeling: The Dreaming** - Fairy (fae dreams)
+- 🏹 **Hunter: The Reckoning** - Bow & arrow (hunter's weapon)
+- 👻 **Wraith: The Oblivion** - Ghost (the dead)
+- 🐉 **D&D / Fantasy** - Dragon (classic fantasy)
+- 📜 **Default** - Ancient scroll (generic campaigns)
+
+**Implementation:**
+```javascript
+const getCampaignEmoji = (campaign) => {
+  const gameSystem = campaign.game_system.toLowerCase();
+  if (gameSystem.includes('vampire')) return '🩸';
+  if (gameSystem.includes('mage')) return '✨';
+  if (gameSystem.includes('werewolf')) return '🐺';
+  // ... etc
+  return '📜'; // default
+};
+```
+
+#### 3. Game System Color Schemes
+
+**Color Palette by Game:**
+- **Vampire**: Blood Red `#e94560` (crimson, blood themes)
+- **Mage**: Mystic Purple `#9d4edd` (arcane, magical)
+- **Werewolf**: Amber/Golden `#ff9500` (primal, wild)
+- **Changeling**: Fae Green `#4ade80` (nature, dreams)
+- **Hunter**: Silver `#94a3b8` (steel, weapons)
+- **Wraith**: Ghost Blue `#60a5fa` (ethereal, spectral)
+- **Default**: Blood Red `#e94560` (fallback)
+
+**Visual Impact:**
+- Campaign cards use theme colors for borders
+- Text highlights match game system
+- Consistent visual identity
+- Easy to spot campaign types at a glance
+
+#### 4. Enhanced Campaign UI
+
+**Campaign List:**
+- Game-specific emojis on each card
+- Color-coded borders and accents
+- Edit buttons for name/description
+- Better spacing and layout
+- Hover effects on editable elements
+
+**Campaign Details:**
+- Prominent emoji display
+- Theme-colored header
+- Inline editing interface
+- Save/cancel buttons
+- Loading indicators
+- Error messages
+
+**User Experience:**
+- Click to edit (intuitive)
+- Visual feedback on hover
+- Smooth transitions
+- Clear save/cancel options
+- Instant updates after save
+
+### 📊 Statistics
+
+**Code Changes:**
+- **Frontend**: +521 lines (SimpleApp.js: 1,435 → 1,956 lines)
+- **Backend**: +60 lines (campaigns.py: 373 → 433 lines)
+- **Total**: 581 lines added
+
+**New Functions:**
+- `handleUpdateCampaignName()` - Save campaign name
+- `handleUpdateCampaignDesc()` - Save campaign description
+- `getCampaignEmoji()` - Get game-specific emoji
+- `getCampaignColor()` - Get game-specific color
+- `update_campaign()` - Backend update handler
+
+**Files Modified:**
+- `frontend/src/SimpleApp.js` (+521 lines)
+- `backend/routes/campaigns.py` (+60 lines)
+
+### 🎯 Features Summary
+
+**Campaign Management:**
+- ✅ Edit campaign name (inline)
+- ✅ Edit campaign description (textarea)
+- ✅ Permission checks (creator or admin)
+- ✅ Real-time UI updates
+- ✅ Backend validation
+- ✅ Error handling
+
+**Theme System:**
+- ✅ 8 game system emojis
+- ✅ 7 color schemes
+- ✅ Automatic detection
+- ✅ Visual consistency
+- ✅ Easy to extend
+
+**User Experience:**
+- ✅ Intuitive editing
+- ✅ Visual feedback
+- ✅ Smooth transitions
+- ✅ Clear buttons
+- ✅ Instant updates
+
+### 🔗 Integration
+
+**How Editing Works:**
+1. **Click to Edit**: Click campaign name or description
+2. **Edit Mode**: Input field appears with current value
+3. **Make Changes**: Type new value
+4. **Save**: Click save button → PUT request to `/campaigns/<id>`
+5. **Backend**: Validates permissions, updates database
+6. **Update UI**: Frontend updates local state and refreshes list
+7. **Cancel**: Restores original value, exits edit mode
+
+**Permissions:**
+- Campaign creator can edit their campaigns
+- Admins can edit any campaign
+- Other users cannot edit
+
+### ⚠️ Known Limitations
+
+**Still Need Implementation:**
+- Campaign deletion (no delete button yet)
+- Location CRUD (UI placeholder only)
+- WebSocket for real-time updates
+- Character system hookup
+- Chat functionality
+- AI integration
+
+**Current State:**
+- ✅ Campaign creation - Working
+- ✅ Campaign editing - **NEW! Working**
+- ❌ Campaign deletion - Not implemented
+- 🚧 Location management - UI only
+- 🚧 Chat - UI placeholder
+- 🚧 Characters - Form not wired
+
+### 🎯 Next Steps
+
+**Immediate Priority:**
+1. **Campaign Deletion** - Add delete button and endpoint
+2. **Location CRUD** - Wire up location management
+3. **WebSocket** - Implement real-time chat
+4. **Character System** - Connect creation to backend
+
+**Short Term:**
+5. AI chat integration
+6. Rule book search connection
+7. Dice rolling system
+8. Session management
+
+### 📝 Files Changed
+
+**Frontend:**
+- `frontend/src/SimpleApp.js` (+521 lines)
+  - Campaign editing state management
+  - Edit handlers for name/description
+  - Game system emoji mapping
+  - Color scheme system
+  - Enhanced campaign UI
+
+**Backend:**
+- `backend/routes/campaigns.py` (+60 lines)
+  - `update_campaign()` function
+  - PUT method support
+  - Permission validation
+  - Field updates
+  - Error handling
+
+### 🏆 Achievement Unlocked
+
+**CAMPAIGN MANAGEMENT FUNCTIONAL!**
+- ✅ Edit campaign names
+- ✅ Edit descriptions
+- ✅ Game-specific themes
+- ✅ Permission-based editing
+- ✅ Real-time updates
+- ✅ Backend integration working
+
+**Version 0.6.3 makes campaigns actually manageable - users can now edit their campaign details with a clean, theme-aware interface!**
+
+---
 
 ## Version 0.6.2 - Gothic Horror Theme 🦇
 
@@ -4456,18 +4686,19 @@ docker-compose ps
 - **Backend API**: http://localhost:5000
 - **ChromaDB**: http://localhost:8000
 
-### 🎯 **Current Status (v0.6.2)**
+### 🎯 **Current Status (v0.6.3)**
 
 ✅ **Phase 1 Complete** - Foundation & Docker Setup  
 ✅ **Phase 2 Complete** - RAG & Vector Memory System  
-🚧 **Phase 3A In Progress** - Frontend UI built, backend integration pending  
+🚧 **Phase 3A In Progress** - Frontend UI built, campaign editing working!  
 ✅ **Admin Panel** - User moderation & character management (v0.6.1)  
 ✅ **Gothic Horror Theme** - Immersive dark fantasy atmosphere (v0.6.2)  
-🎯 **Phase 3B Next** - Wire up campaigns, chat, characters, AI integration  
-✅ **Backend APIs** - LM Studio + Ollama models operational  
+✅ **Campaign Editing** - Name/description editing, game-specific themes (v0.6.3)  
+🎯 **Phase 3B Next** - Location CRUD, WebSocket chat, character system  
+✅ **Backend APIs** - Campaign updates working, LM Studio + Ollama ready  
 ✅ **RAG System** - ChromaDB vector memory fully functional  
-🚧 **Frontend Status** - Login/admin working, game features need wiring  
-⚠️ **Reality Check** - Beautiful UI exists, full gameplay loop not connected yet  
+🚧 **Frontend Status** - Login/admin/campaign editing working, chat/characters next  
+⚠️ **Reality Check** - Making progress! Campaign management now functional  
 ✅ **Testing Infrastructure** - Comprehensive test suite  
 
 ### 🚀 **What's Working**
