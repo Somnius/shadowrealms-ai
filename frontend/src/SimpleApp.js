@@ -271,6 +271,18 @@ function SimpleApp() {
     setMessages([]);
   };
 
+  // Get campaign theme based on game system
+  const getCampaignTheme = (campaign) => {
+    if (!campaign || !campaign.game_system) return 'none';
+    const gameSystem = campaign.game_system.toLowerCase();
+    
+    if (gameSystem.includes('vampire')) return 'vampire';
+    if (gameSystem.includes('mage')) return 'mage';
+    if (gameSystem.includes('werewolf')) return 'werewolf';
+    
+    return 'none';
+  };
+
   // ========== RENDER FUNCTIONS ==========
 
   // Render login page
@@ -1101,7 +1113,10 @@ function SimpleApp() {
   );
 
   // Render Discord-like chat interface
-  const renderChat = () => (
+  const renderChat = () => {
+    const campaignTheme = getCampaignTheme(selectedCampaign);
+    
+    return (
     <div style={{ height: '100vh', display: 'flex', background: '#36393f' }}>
       {/* Left Sidebar - Locations/Channels */}
       <div style={{
@@ -1198,8 +1213,8 @@ function SimpleApp() {
         </div>
       </div>
 
-      {/* Main Chat Area */}
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+      {/* Main Chat Area with Campaign Theme */}
+      <GothicBox theme={campaignTheme} style={{ flex: 1, display: 'flex', flexDirection: 'column', position: 'relative' }}>
         {/* Channel Header */}
         <div style={{
           height: '48px',
@@ -1208,7 +1223,8 @@ function SimpleApp() {
           alignItems: 'center',
           padding: '0 20px',
           background: '#36393f',
-          boxShadow: '0 1px 0 rgba(0,0,0,0.2)'
+          boxShadow: '0 1px 0 rgba(0,0,0,0.2)',
+          fontFamily: 'Cinzel, serif'
         }}>
           <span style={{ color: 'white', fontSize: '16px', fontWeight: '600' }}>
             {currentLocation?.name || 'Select a location'}
@@ -1294,7 +1310,8 @@ function SimpleApp() {
                   borderRadius: '8px',
                   color: '#dcddde',
                   fontSize: '15px',
-                  outline: 'none'
+                  outline: 'none',
+                  fontFamily: 'Crimson Text, serif'
                 }}
               />
               <button
@@ -1308,10 +1325,11 @@ function SimpleApp() {
                   borderRadius: '8px',
                   cursor: loading ? 'not-allowed' : 'pointer',
                   fontWeight: '600',
-                  fontSize: '15px'
+                  fontSize: '15px',
+                  fontFamily: 'Cinzel, serif'
                 }}
               >
-                {loading ? '⏳' : '📤'}
+                {loading ? 'Sending...' : 'Send'}
               </button>
             </div>
           </form>
@@ -1329,7 +1347,7 @@ function SimpleApp() {
             </div>
           )}
         </div>
-      </div>
+      </GothicBox>
 
       {/* Right Sidebar - Character Info */}
       <div style={{
@@ -1404,7 +1422,8 @@ function SimpleApp() {
         </div>
       </div>
     </div>
-  );
+    );
+  };
 
   // Main render
   
