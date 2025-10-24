@@ -36,9 +36,9 @@
   - Clean component import/export
 
 ### 5. Documentation
-- ✅ Created `ADMIN_PANEL_STATUS.md` - Backend API documentation
-- ✅ Created `REFACTORING_PLAN.md` - Frontend architecture guidance
-- ✅ Created `INVITES_README.md` - Invite code system guide
+- ✅ Created `docs/ADMIN_PANEL_STATUS.md` - Backend API documentation
+- ✅ Created `docs/REFACTORING_PLAN.md` - Frontend architecture guidance
+- ✅ Created `docs/INVITES_README.md` - Invite code system guide
 
 ## 📊 Current State
 
@@ -126,10 +126,10 @@ Try these features:
 - `frontend/src/SimpleApp.js` (added admin panel integration)
 
 **Documentation:**
-- `ADMIN_PANEL_STATUS.md` (NEW)
-- `REFACTORING_PLAN.md` (NEW)
-- `INVITES_README.md` (NEW)
-- `SESSION_SUMMARY.md` (this file)
+- `docs/ADMIN_PANEL_STATUS.md` (NEW)
+- `docs/REFACTORING_PLAN.md` (NEW)
+- `docs/INVITES_README.md` (NEW)
+- `docs/SESSION_SUMMARY.md` (this file)
 
 ## 💡 Refactoring Recommendation
 

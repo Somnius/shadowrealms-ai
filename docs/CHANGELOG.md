@@ -73,10 +73,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **frontend/src/index.js** (+1 line) - Theme CSS import
 
 ### Documentation
-- **GOTHIC_THEME_APPLIED.md** (316 lines) - Implementation details
-- **GOTHIC_THEME_READY.md** (219 lines) - Testing instructions
-- **GOTHIC_THEME_TEST.md** (142 lines) - Test scenarios
-- **PHASE_3A_NEXT.md** (272 lines) - Next steps roadmap
+- **docs/GOTHIC_THEME_APPLIED.md** (316 lines) - Implementation details
+- **docs/GOTHIC_THEME_READY.md** (219 lines) - Testing instructions
+- **docs/GOTHIC_THEME_TEST.md** (142 lines) - Test scenarios
+- **docs/PHASE_3A_NEXT.md** (272 lines) - Next steps roadmap
 
 ### Performance
 - All CSS-based animations (no heavy JavaScript)
