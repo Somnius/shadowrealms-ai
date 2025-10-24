@@ -6,7 +6,7 @@
 
 ### The Ultimate AI-Powered Tabletop RPG Experience
 
-[![Version](https://img.shields.io/badge/version-0.5.10-blue.svg)](https://github.com/Somnius/shadowrealms-ai)
+[![Version](https://img.shields.io/badge/version-0.5.11-blue.svg)](https://github.com/Somnius/shadowrealms-ai)
 [![Phase](https://img.shields.io/badge/phase-2%20complete-green.svg)](https://github.com/Somnius/shadowrealms-ai)
 [![Phase 3A](https://img.shields.io/badge/phase-3A%20in%20progress-orange.svg)](https://github.com/Somnius/shadowrealms-ai)
 [![Tests](https://img.shields.io/badge/tests-61%2F61%20passing-brightgreen.svg)](https://github.com/Somnius/shadowrealms-ai)
@@ -119,10 +119,10 @@ docker-compose up -d
 
 <div align="center">
 
-### Version 0.5.10 - Test Suite Organization & Enhanced Sync 🧪
+### Version 0.5.11 - RAG Testing & Game Scenario Validation 🎮
 
 **Last Updated**: `2025-10-24`
-**Progress**: `Phase 2 Complete - Phase 3A + Organized Test Suite + Enhanced Sync System`
+**Progress**: `Phase 2 Complete - RAG System Tested & Validated for Game Scenarios`
 
 </div>
 

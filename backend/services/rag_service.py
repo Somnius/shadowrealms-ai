@@ -219,7 +219,48 @@ class RAGService:
         
         return context
     
-    def augment_prompt(self, prompt: str, campaign_id: int, user_id: int = None) -> str:
+    def get_rule_book_context(self, query: str, campaign_id: int, n_results: int = 5) -> List[Dict[str, Any]]:
+        """
+        Get relevant context from official rule books using semantic search.
+        
+        Args:
+            query: The query to search for
+            campaign_id: Campaign ID to filter by
+            n_results: Number of chunks to retrieve
+            
+        Returns:
+            List of relevant rule book chunks with metadata
+        """
+        try:
+            collection = self._get_collection('rule_books')
+            
+            # Query the rule books collection
+            results = collection.query(
+                query_texts=[query],
+                n_results=n_results,
+                where={"campaign_id": campaign_id},
+                include=['documents', 'metadatas', 'distances']
+            )
+            
+            rule_book_context = []
+            if results['documents'] and results['documents'][0]:
+                for i, doc in enumerate(results['documents'][0]):
+                    chunk = {
+                        'content': doc,
+                        'metadata': results['metadatas'][0][i] if results['metadatas'] else {},
+                        'distance': results['distances'][0][i] if results['distances'] else 0.0,
+                        'relevance': 1 - (results['distances'][0][i] if results['distances'] else 0.0)
+                    }
+                    rule_book_context.append(chunk)
+            
+            logger.info(f"Retrieved {len(rule_book_context)} rule book chunks for query: {query[:50]}...")
+            return rule_book_context
+            
+        except Exception as e:
+            logger.error(f"Error retrieving rule book context: {e}")
+            return []
+    
+    def augment_prompt(self, prompt: str, campaign_id: int, user_id: int = None, include_rule_books: bool = True, n_rule_book_chunks: int = 5) -> str:
         """Augment prompt with relevant context from memory"""
         # Get campaign context
         context = self.get_campaign_context(campaign_id, prompt)
@@ -256,6 +297,15 @@ class RAGService:
             context_parts.append("=== GAME RULES ===")
             for memory in context['rules']:
                 context_parts.append(memory['content'])
+        
+        # Add rule book context (NEW!)
+        if include_rule_books:
+            rule_book_context = self.get_rule_book_context(prompt, campaign_id, n_rule_book_chunks)
+            if rule_book_context:
+                context_parts.append("=== OFFICIAL RULE BOOKS ===")
+                for chunk in rule_book_context:
+                    source = f"[{chunk['metadata'].get('filename', 'Unknown')} p.{chunk['metadata'].get('page_number', '?')}]"
+                    context_parts.append(f"{source}\n{chunk['content']}")
         
         # Combine with original prompt
         if context_parts:
