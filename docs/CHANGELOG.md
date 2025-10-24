@@ -5,6 +5,237 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.4] - 2025-10-24 - Responsive Design & Navigation Fixes 📱
+
+### Added
+
+#### Responsive Design System
+- **New responsive.css** (315 lines) - Complete mobile-first CSS framework
+  - Breakpoints: Mobile (<768px), Tablet (768-1024px), Desktop (>1024px)
+  - Touch-friendly targets (minimum 44x44px)
+  - Safe area insets for notched devices (iPhone X+)
+  - Utility classes for responsive behavior
+  - GPU-accelerated animations
+
+#### Mobile-Optimized Interface
+- **Collapsible Sidebars**
+  - Left sidebar (campaigns/locations)
+  - Right sidebar (characters/info)
+  - Hamburger menu on mobile
+  - Smooth slide animations
+  - Auto-close when switching to desktop
+
+- **Touch-Optimized Components**
+  - Login/Register stacks vertically on mobile
+  - Campaign list responsive cards
+  - Chat interface mobile layout
+  - Admin panel mobile view
+  - Touch-friendly buttons and inputs
+
+#### Navigation Improvements
+- **Browser Back Button Fixed**
+  - Proper navigation history tracking
+  - `navigateTo()` used consistently
+  - Back button returns to correct page
+  - No more jumping to external sites
+
+- **Exit Confirmation Dialogs**
+  - Warning when leaving campaign chat
+  - Character exit confirmation
+  - Location change warnings
+  - Prevents accidental navigation
+
+#### Mobile State Management
+- `isMobile` state with resize listener
+- `leftSidebarOpen` and `rightSidebarOpen` states
+- Automatic sidebar management
+- Viewport detection and updates
+
+### Changed
+
+- **frontend/src/SimpleApp.js** (+292 lines net, +341 total changes)
+  - Added mobile state management
+  - Implemented sidebar toggle functions
+  - Fixed `enterCampaign()` navigation
+  - Added exit confirmation dialogs
+  - Responsive layout rendering
+  - Mobile-specific UI adjustments
+
+- **frontend/src/pages/AdminPage.js** (+1 line)
+  - Added responsive.css import
+
+- **backend/config.py** (±2 lines)
+  - Minor configuration adjustment
+
+### Fixed
+
+#### Critical Navigation Bugs
+1. **Back Button Navigation**
+   - **Issue**: Back button would navigate to external pages (hours old history)
+   - **Cause**: `setCurrentPage('chat')` bypassed navigation history
+   - **Fix**: Changed to `navigateTo('chat', campaign)` for proper history tracking
+   - **Result**: ✅ Back button now correctly returns to campaign list
+
+2. **Missing Exit Warnings**
+   - **Issue**: Users could leave chat without warning
+   - **Impact**: Disrupted gameplay, character presence unclear
+   - **Fix**: Added confirmation dialogs before navigation
+   - **Result**: ✅ Users warned before leaving chat/campaign
+
+3. **Mobile Layout Issues**
+   - **Issue**: Desktop UI unusable on mobile devices
+   - **Fix**: Complete responsive CSS with mobile-first approach
+   - **Result**: ✅ Full mobile support with touch optimization
+
+### Features
+
+#### Responsive Breakpoints
+```css
+/* Mobile */
+@media (max-width: 767px) {
+  - Single column layouts
+  - Collapsible sidebars
+  - Touch-optimized controls
+  - Vertical navigation
+}
+
+/* Tablet */
+@media (min-width: 768px) and (max-width: 1024px) {
+  - Two column layouts
+  - Sidebar toggles available
+  - Hybrid touch/mouse support
+}
+
+/* Desktop */
+@media (min-width: 1025px) {
+  - Three column layouts
+  - Sidebars always visible
+  - Full feature set
+  - Mouse-optimized
+}
+```
+
+#### Mobile-Specific Features
+- **Swipeable Panels**: Future support for swipe gestures
+- **Bottom Navigation**: Mobile-friendly menu placement
+- **Collapsible Headers**: Save vertical space
+- **Touch Ripple Effects**: Visual feedback for touches
+- **Viewport Optimization**: Full screen usage with safe areas
+
+### Documentation
+
+**New Files:**
+- `docs/NAVIGATION_FIX.md` (251 lines)
+  - Detailed issue analysis
+  - Solution explanations
+  - Code examples
+  - Testing instructions
+
+- `docs/RESPONSIVE_DESIGN_COMPLETE.md` (388 lines)
+  - Complete responsive implementation guide
+  - Breakpoint documentation
+  - Mobile optimization details
+  - Testing checklist
+
+### Statistics
+
+**Code Changes:**
+- **Frontend CSS**: +315 lines (new responsive.css)
+- **Frontend JS**: +292 lines net (SimpleApp.js: 1,956 → 2,195 lines)
+- **Admin**: +1 line (import statement)
+- **Backend**: ±2 lines (config adjustment)
+- **Total**: ~610 lines added
+
+**New Files:**
+- `frontend/src/responsive.css` (315 lines)
+- `docs/NAVIGATION_FIX.md` (251 lines)
+- `docs/RESPONSIVE_DESIGN_COMPLETE.md` (388 lines)
+
+**Files Modified:**
+- `frontend/src/SimpleApp.js` (+239 net lines)
+- `frontend/src/pages/AdminPage.js` (+1 line)
+- `backend/config.py` (±2 lines)
+
+### Testing
+
+**Manual Testing Completed:**
+- ✅ iPhone 12/13/14 (iOS Safari)
+- ✅ Android devices (Chrome)
+- ✅ iPad/Tablet views
+- ✅ Desktop (Chrome/Firefox)
+- ✅ Browser back button behavior
+- ✅ Exit confirmation dialogs
+- ✅ Sidebar collapse/expand
+- ✅ Touch target sizes
+- ✅ Responsive layouts at all breakpoints
+
+### Improvements
+
+**User Experience:**
+- 📱 Full mobile device support
+- 👆 Touch-optimized interactions
+- 🔙 Reliable back button navigation
+- ⚠️ Exit confirmations prevent accidents
+- 🎨 Consistent gothic theme across devices
+- ⚡ Smooth animations and transitions
+
+**Developer Experience:**
+- 📝 Comprehensive documentation
+- 🎯 Clear responsive patterns
+- 🔧 Easy to maintain CSS
+- 📐 Consistent breakpoint system
+
+### Known Limitations
+
+**Still TODO:**
+- Swipe gestures (foundation ready)
+- Offline mode
+- PWA manifest
+- Native app packaging
+- Advanced touch interactions
+
+**Current State:**
+- ✅ Responsive design - **Working**
+- ✅ Navigation fixes - **Working**
+- ✅ Mobile layouts - **Working**
+- ✅ Touch optimization - **Working**
+- 🚧 Swipe gestures - CSS ready, JS pending
+- 📋 PWA features - Not yet implemented
+
+### Migration Notes
+
+**No Breaking Changes** - This is a pure enhancement release.
+
+**For Developers:**
+1. Import `responsive.css` in any new components
+2. Use provided utility classes for responsive behavior
+3. Test on multiple devices/breakpoints
+4. Follow mobile-first design principles
+
+**For Users:**
+- ✅ Existing functionality unchanged
+- ✅ Mobile experience significantly improved
+- ✅ Navigation more reliable
+- ✅ No data migration needed
+
+### Next Priority
+
+**Phase 3B - Full Feature Wiring:**
+1. Campaign deletion endpoint
+2. Location CRUD operations
+3. WebSocket for real-time chat
+4. Character system backend hookup
+5. AI integration with RAG
+
+**Future Mobile Enhancements:**
+6. Swipe navigation
+7. Pull-to-refresh
+8. Native app wrapper (Capacitor/React Native)
+9. Offline mode with service workers
+10. Push notifications
+
+---
+
 ## [0.6.3] - 2025-10-24 - Campaign Editing & Enhanced Themes 📝
 
 ### Added

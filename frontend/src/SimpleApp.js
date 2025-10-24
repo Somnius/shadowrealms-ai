@@ -2,12 +2,16 @@ import React, { useState, useEffect } from 'react';
 import AdminPage from './pages/AdminPage';
 import GothicShowcase from './pages/GothicShowcase';
 import { GothicBox } from './components/GothicDecorations';
+import './responsive.css';
 
 const API_URL = '/api'; // Use relative URL through nginx proxy
 
 function SimpleApp() {
   const [token, setToken] = useState(localStorage.getItem('token'));
-  const [user, setUser] = useState(null);
+  const [user, setUser] = useState(() => {
+    const savedUser = localStorage.getItem('user');
+    return savedUser ? JSON.parse(savedUser) : null;
+  });
   const [currentPage, setCurrentPage] = useState('dashboard');
   const [showGothicShowcase, setShowGothicShowcase] = useState(false);
   const [campaigns, setCampaigns] = useState([]);
@@ -27,6 +31,11 @@ function SimpleApp() {
   const [editedCampaignName, setEditedCampaignName] = useState('');
   const [isEditingCampaignDesc, setIsEditingCampaignDesc] = useState(false);
   const [editedCampaignDesc, setEditedCampaignDesc] = useState('');
+  
+  // Mobile responsive state
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+  const [leftSidebarOpen, setLeftSidebarOpen] = useState(false);
+  const [rightSidebarOpen, setRightSidebarOpen] = useState(false);
 
   // Load user data on mount
   useEffect(() => {
@@ -34,6 +43,98 @@ function SimpleApp() {
       fetchUserData();
     }
   }, [token]);
+
+  // Handle window resize for responsive design
+  useEffect(() => {
+    const handleResize = () => {
+      const mobile = window.innerWidth < 768;
+      setIsMobile(mobile);
+      // Close sidebars when switching to desktop
+      if (!mobile) {
+        setLeftSidebarOpen(false);
+        setRightSidebarOpen(false);
+      }
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  // Handle browser back/forward buttons
+  useEffect(() => {
+    const handlePopState = (event) => {
+      // If leaving chat page, show confirmation
+      if (currentPage === 'chat' && event.state && event.state.page !== 'chat') {
+        event.preventDefault();
+        const locationName = currentLocation?.name || 'the location';
+        /* eslint-disable-next-line no-restricted-globals */
+        const confirmed = confirm(
+          `⚠️ Leave Campaign?\n\n` +
+          `You are currently in ${locationName}.\n` +
+          `Your character will be marked as having left this location.\n\n` +
+          `Are you sure you want to go back?`
+        );
+        
+        if (!confirmed) {
+          // Stay in chat - push chat state back
+          window.history.pushState(
+            { page: 'chat', selectedCampaign }, 
+            '', 
+            window.location.pathname
+          );
+          return;
+        }
+        // Clear chat state
+        setSelectedCampaign(null);
+        setCurrentLocation(null);
+        setLocations([]);
+        setMessages([]);
+      }
+      
+      if (event.state) {
+        setCurrentPage(event.state.page || 'dashboard');
+        setShowGothicShowcase(event.state.showGothicShowcase || false);
+        if (event.state.selectedCampaign) {
+          setSelectedCampaign(event.state.selectedCampaign);
+        }
+      }
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    
+    // Set initial state if not already set
+    if (!window.history.state) {
+      window.history.replaceState({ page: currentPage, showGothicShowcase }, '');
+    }
+
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, [currentPage, currentLocation, selectedCampaign]);
+
+  // Navigate with browser history support
+  const navigateTo = (page, campaign = null) => {
+    const state = { 
+      page, 
+      showGothicShowcase: false,
+      selectedCampaign: campaign 
+    };
+    window.history.pushState(state, '', window.location.pathname);
+    setCurrentPage(page);
+    if (campaign) {
+      setSelectedCampaign(campaign);
+    }
+  };
+
+  const showShowcase = (show) => {
+    const state = { 
+      page: currentPage,
+      showGothicShowcase: show,
+      selectedCampaign
+    };
+    if (show) {
+      window.history.pushState(state, '', window.location.pathname);
+    }
+    setShowGothicShowcase(show);
+  };
 
   // Fetch user data
   const fetchUserData = async () => {
@@ -44,6 +145,11 @@ function SimpleApp() {
       if (response.ok) {
         const data = await response.json();
         setUser(data);
+        localStorage.setItem('user', JSON.stringify(data)); // Persist user data
+      } else if (response.status === 401) {
+        // Token expired or invalid, force logout
+        console.error('Token expired or invalid');
+        handleLogout();
       }
     } catch (err) {
       console.error('Failed to fetch user data:', err);
@@ -99,8 +205,10 @@ function SimpleApp() {
         setToken(data.access_token);
         localStorage.setItem('token', data.access_token);
         setUser(data.user);
+        localStorage.setItem('user', JSON.stringify(data.user)); // Persist user data
         setCurrentPage('dashboard');
         setError('');
+        fetchCampaigns();
       } else {
         setError(data.error || 'Login failed');
       }
@@ -138,8 +246,10 @@ function SimpleApp() {
         setToken(data.access_token);
         localStorage.setItem('token', data.access_token);
         setUser(data.user);
+        localStorage.setItem('user', JSON.stringify(data.user)); // Persist user data
         setCurrentPage('dashboard');
         setError('');
+        fetchCampaigns();
       } else {
         setError(data.error || 'Registration failed');
       }
@@ -154,6 +264,7 @@ function SimpleApp() {
   const handleLogout = () => {
     setToken(null);
     localStorage.removeItem('token');
+    localStorage.removeItem('user'); // Clear persisted user data
     setUser(null);
     setCurrentPage('dashboard');
     setCampaigns([]);
@@ -214,7 +325,27 @@ function SimpleApp() {
     setLocations(defaultLocations);
     setCurrentLocation(defaultLocations[0]);
     setMessages([]);
-    setCurrentPage('chat');
+    navigateTo('chat', campaign); // Use navigateTo for proper browser history
+  };
+
+  // Handle leaving chat with confirmation
+  const handleLeaveCampaign = () => {
+    const locationName = currentLocation?.name || 'the location';
+    /* eslint-disable-next-line no-restricted-globals */
+    const confirmed = confirm(
+      `⚠️ Leave Campaign?\n\n` +
+      `You are currently in ${locationName}.\n` +
+      `Your character will be marked as having left this location.\n\n` +
+      `Are you sure you want to exit?`
+    );
+    
+    if (confirmed) {
+      navigateTo('dashboard');
+      setSelectedCampaign(null);
+      setCurrentLocation(null);
+      setLocations([]);
+      setMessages([]);
+    }
   };
 
   // Handle send message
@@ -533,7 +664,7 @@ function SimpleApp() {
         
         {/* Gothic Theme Preview Button */}
         <button
-          onClick={() => setShowGothicShowcase(true)}
+          onClick={() => showShowcase(true)}
           style={{
             marginTop: '20px',
             padding: '10px 25px',
@@ -552,13 +683,14 @@ function SimpleApp() {
         </button>
       </div>
 
-      {/* Login and Register Side by Side */}
+      {/* Login and Register Side by Side (stacks on mobile) */}
       <div style={{
         display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))',
-        gap: '30px',
+        gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)',
+        gap: isMobile ? '20px' : '30px',
         width: '100%',
-        maxWidth: '950px'
+        maxWidth: isMobile ? '100%' : '950px',
+        padding: isMobile ? '0 10px' : '0'
       }}>
 
         {/* Login Box with Blood Theme */}
@@ -791,26 +923,28 @@ function SimpleApp() {
       {/* Header */}
       <div style={{
         background: 'linear-gradient(135deg, #16213e 0%, #0f1729 100%)',
-        padding: '20px',
+        padding: isMobile ? '15px' : '20px',
         boxShadow: '0 2px 10px rgba(0,0,0,0.5)',
         display: 'flex',
+        flexDirection: isMobile ? 'column' : 'row',
         justifyContent: 'space-between',
-        alignItems: 'center',
+        alignItems: isMobile ? 'stretch' : 'center',
+        gap: isMobile ? '15px' : '0',
         borderBottom: '2px solid #2a2a4e'
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '15px', justifyContent: isMobile ? 'center' : 'flex-start' }}>
           <img 
             src="https://github.com/Somnius/shadowrealms-ai/raw/main/assets/logos/logo-3.png" 
             alt="ShadowRealms AI" 
-            style={{ width: '50px', height: 'auto' }}
+            style={{ width: isMobile ? '40px' : '50px', height: 'auto' }}
           />
-          <h1 style={{ color: '#e94560', margin: 0 }}>ShadowRealms AI</h1>
+          <h1 style={{ color: '#e94560', margin: 0, fontSize: isMobile ? '20px' : '24px' }}>ShadowRealms AI</h1>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
-          <span style={{ color: '#b5b5c3', fontWeight: '500' }}>👤 {user?.username}</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '10px' : '15px', justifyContent: isMobile ? 'center' : 'flex-end', flexWrap: 'wrap' }}>
+          <span style={{ color: '#b5b5c3', fontWeight: '500', fontSize: isMobile ? '14px' : '16px' }}>👤 {user?.username}</span>
           {user?.role === 'admin' && (
             <button
-              onClick={() => setCurrentPage('admin')}
+              onClick={() => navigateTo('admin')}
               style={{
                 padding: '8px 16px',
                 background: 'rgba(233, 69, 96, 0.3)',
@@ -842,11 +976,18 @@ function SimpleApp() {
       </div>
 
       {/* Main content */}
-      <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '40px 20px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px' }}>
-          <h2 style={{ color: '#e94560', margin: 0 }}>📚 Your Campaigns</h2>
+      <div style={{ maxWidth: '1200px', margin: '0 auto', padding: isMobile ? '20px 15px' : '40px 20px' }}>
+        <div style={{ 
+          display: 'flex', 
+          flexDirection: isMobile ? 'column' : 'row',
+          justifyContent: 'space-between', 
+          alignItems: isMobile ? 'stretch' : 'center', 
+          gap: isMobile ? '15px' : '0',
+          marginBottom: isMobile ? '20px' : '30px' 
+        }}>
+          <h2 style={{ color: '#e94560', margin: 0, fontSize: isMobile ? '20px' : '24px', textAlign: isMobile ? 'center' : 'left' }}>📚 Your Campaigns</h2>
           <button
-            onClick={() => setCurrentPage('createCampaign')}
+            onClick={() => navigateTo('createCampaign')}
             style={{
               padding: '10px 20px',
               background: 'linear-gradient(135deg, #e94560 0%, #8b0000 100%)',
@@ -889,8 +1030,8 @@ function SimpleApp() {
         ) : (
           <div style={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
-            gap: '20px'
+            gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(300px, 1fr))',
+            gap: isMobile ? '15px' : '20px'
           }}>
             {campaigns.map(campaign => {
               // Extract first line or truncate description
@@ -905,6 +1046,7 @@ function SimpleApp() {
                 <div
                   key={campaign.id}
                   style={{
+                    position: 'relative',
                     background: '#16213e',
                     padding: '25px',
                     borderRadius: '10px',
@@ -915,7 +1057,8 @@ function SimpleApp() {
                     display: 'flex',
                     flexDirection: 'column',
                     justifyContent: 'space-between',
-                    minHeight: '200px'
+                    minHeight: '200px',
+                    overflow: 'hidden'
                   }}
                   onMouseOver={(e) => {
                     e.currentTarget.style.transform = 'translateY(-5px)';
@@ -928,36 +1071,49 @@ function SimpleApp() {
                     e.currentTarget.style.boxShadow = '0 2px 10px rgba(0,0,0,0.5)';
                   }}
                 >
-                  <div onClick={() => enterCampaign(campaign)}>
+                  {/* Gothic Ribbon - Top Left Corner */}
+                  <div style={{
+                    position: 'absolute',
+                    top: '15px',
+                    left: '-10px',
+                    background: `linear-gradient(135deg, ${themeColor.primary} 0%, ${themeColor.primary}cc 100%)`,
+                    color: 'white',
+                    padding: '8px 25px 8px 18px',
+                    fontSize: '13px',
+                    fontWeight: 'bold',
+                    fontFamily: 'Cinzel, serif',
+                    textTransform: 'uppercase',
+                    letterSpacing: '1.5px',
+                    boxShadow: `0 4px 15px ${themeColor.shadow}`,
+                    borderRadius: '0 5px 5px 0',
+                    zIndex: 10,
+                    clipPath: 'polygon(10px 0, 100% 0, 100% 100%, 10px 100%, 0 50%)',
+                    border: `2px solid ${themeColor.primary}`,
+                    borderLeft: 'none',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px'
+                  }}>
+                    <span style={{ fontSize: '18px', lineHeight: '1' }}>{getCampaignEmoji(campaign)}</span>
+                    <span>{campaign.game_system}</span>
+                  </div>
+
+                  <div onClick={() => enterCampaign(campaign)} style={{ marginTop: '45px' }}>
                     <h3 style={{ color: themeColor.primary, marginBottom: '10px', fontSize: '20px', fontFamily: 'Cinzel, serif' }}>
-                      {getCampaignEmoji(campaign)} {campaign.name}
+                      {campaign.name}
                     </h3>
                     <p style={{ color: '#b5b5c3', marginBottom: '15px', fontSize: '14px', lineHeight: '1.5', fontFamily: 'Crimson Text, serif' }}>
                       {shortDesc}
                     </p>
                   </div>
                   <div style={{ display: 'flex', gap: '10px', alignItems: 'center', marginTop: '10px' }}>
-                    <div style={{
-                      flex: 1,
-                      padding: '5px 12px',
-                      background: themeColor.bg,
-                      color: themeColor.primary,
-                      borderRadius: '15px',
-                      fontSize: '12px',
-                      fontWeight: '600',
-                      textAlign: 'center',
-                      border: `1px solid ${themeColor.primary}`,
-                      fontFamily: 'Cinzel, serif'
-                    }}>
-                      {campaign.game_system}
-                    </div>
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
-                        setSelectedCampaign(campaign);
-                        setCurrentPage('campaignDetails');
+                        navigateTo('campaignDetails', campaign);
                       }}
                       style={{
+                        flex: 1,
                         padding: '8px 16px',
                         background: themeColor.bg,
                         color: themeColor.primary,
@@ -983,6 +1139,7 @@ function SimpleApp() {
                     <button
                       onClick={() => enterCampaign(campaign)}
                       style={{
+                        flex: 1,
                         padding: '8px 16px',
                         background: `linear-gradient(135deg, ${themeColor.primary} 0%, ${themeColor.primary}dd 100%)`,
                         color: 'white',
@@ -1021,7 +1178,7 @@ function SimpleApp() {
     <div style={{ minHeight: '100vh', background: '#0f0f1e', padding: '20px' }}>
       <div style={{ maxWidth: '900px', margin: '0 auto' }}>
         <button
-          onClick={() => setCurrentPage('dashboard')}
+          onClick={() => window.history.back()}
           style={{
             marginBottom: '20px',
             padding: '10px 20px',
@@ -1443,7 +1600,7 @@ function SimpleApp() {
     <div style={{ minHeight: '100vh', background: '#0f0f1e', padding: '20px' }}>
       <div style={{ maxWidth: '700px', margin: '0 auto' }}>
         <button
-          onClick={() => setCurrentPage('dashboard')}
+          onClick={() => window.history.back()}
           style={{
             marginBottom: '20px',
             padding: '10px 20px',
@@ -1605,14 +1762,92 @@ function SimpleApp() {
     });
     
     return (
-    <div style={{ height: '100vh', display: 'flex', background: '#36393f' }}>
+    <div style={{ height: '100vh', display: 'flex', background: '#36393f', position: 'relative' }}>
+      {/* Mobile Menu Buttons */}
+      {isMobile && (
+        <>
+          <button
+            onClick={() => setLeftSidebarOpen(!leftSidebarOpen)}
+            style={{
+              position: 'fixed',
+              top: '10px',
+              left: '10px',
+              zIndex: 1001,
+              background: '#2f3136',
+              border: '2px solid #e94560',
+              color: '#e94560',
+              padding: '10px',
+              borderRadius: '8px',
+              cursor: 'pointer',
+              minWidth: '44px',
+              minHeight: '44px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: '18px'
+            }}
+          >
+            {leftSidebarOpen ? '✕' : '☰'}
+          </button>
+          <button
+            onClick={() => setRightSidebarOpen(!rightSidebarOpen)}
+            style={{
+              position: 'fixed',
+              top: '10px',
+              right: '10px',
+              zIndex: 1001,
+              background: '#2f3136',
+              border: '2px solid #e94560',
+              color: '#e94560',
+              padding: '10px',
+              borderRadius: '8px',
+              cursor: 'pointer',
+              minWidth: '44px',
+              minHeight: '44px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: '18px'
+            }}
+          >
+            {rightSidebarOpen ? '✕' : '👤'}
+          </button>
+        </>
+      )}
+
+      {/* Sidebar Overlay for Mobile */}
+      {isMobile && (leftSidebarOpen || rightSidebarOpen) && (
+        <div
+          onClick={() => {
+            setLeftSidebarOpen(false);
+            setRightSidebarOpen(false);
+          }}
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: 'rgba(0, 0, 0, 0.7)',
+            zIndex: 999
+          }}
+        />
+      )}
+
       {/* Left Sidebar - Locations/Channels */}
       <div style={{
-        width: '240px',
+        width: isMobile ? '280px' : '240px',
         background: '#2f3136',
         display: 'flex',
         flexDirection: 'column',
-        borderRight: '1px solid #202225'
+        borderRight: '1px solid #202225',
+        position: isMobile ? 'fixed' : 'relative',
+        left: isMobile ? (leftSidebarOpen ? '0' : '-280px') : 'auto',
+        top: isMobile ? '0' : 'auto',
+        bottom: isMobile ? '0' : 'auto',
+        zIndex: 1000,
+        transition: 'left 0.3s ease',
+        height: isMobile ? '100vh' : 'auto'
       }}>
         {/* Campaign Header */}
         <div style={{
@@ -1682,10 +1917,7 @@ function SimpleApp() {
             👤 {user?.username}
           </div>
           <button
-            onClick={() => {
-              setCurrentPage('dashboard');
-              setSelectedCampaign(null);
-            }}
+            onClick={handleLeaveCampaign}
             style={{
               padding: '5px 10px',
               background: '#40444b',
@@ -1853,10 +2085,17 @@ function SimpleApp() {
 
       {/* Right Sidebar - Character Info */}
       <div style={{
-        width: '280px',
+        width: isMobile ? '280px' : '280px',
         background: '#2f3136',
         borderLeft: '1px solid #202225',
         padding: '20px',
+        position: isMobile ? 'fixed' : 'relative',
+        right: isMobile ? (rightSidebarOpen ? '0' : '-280px') : 'auto',
+        top: isMobile ? '0' : 'auto',
+        bottom: isMobile ? '0' : 'auto',
+        zIndex: 1000,
+        transition: 'right 0.3s ease',
+        height: isMobile ? '100vh' : 'auto',
         overflowY: 'auto'
       }}>
         <h3 style={{ color: 'white', marginBottom: '15px', fontSize: '16px', fontWeight: '600' }}>
@@ -1931,7 +2170,7 @@ function SimpleApp() {
   
   // Show Gothic Showcase if requested
   if (showGothicShowcase) {
-    return <GothicShowcase onBack={() => setShowGothicShowcase(false)} />;
+    return <GothicShowcase onBack={() => window.history.back()} />;
   }
   
   return (

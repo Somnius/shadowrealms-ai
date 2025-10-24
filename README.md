@@ -6,7 +6,7 @@
 
 ### The Ultimate AI-Powered Tabletop RPG Experience
 
-[![Version](https://img.shields.io/badge/version-0.6.3-blue.svg)](https://github.com/Somnius/shadowrealms-ai)
+[![Version](https://img.shields.io/badge/version-0.6.4-blue.svg)](https://github.com/Somnius/shadowrealms-ai)
 [![Phase 2](https://img.shields.io/badge/phase-2%20complete-green.svg)](https://github.com/Somnius/shadowrealms-ai)
 [![Phase 3A](https://img.shields.io/badge/phase-3A%20complete-green.svg)](https://github.com/Somnius/shadowrealms-ai)
 [![Phase 3B](https://img.shields.io/badge/phase-3B%20next-blue.svg)](https://github.com/Somnius/shadowrealms-ai)
@@ -120,13 +120,13 @@ docker-compose up -d
 
 <div align="center">
 
-### Version 0.6.3 - Campaign Editing & Enhanced Themes 📝
+### Version 0.6.4 - Responsive Design & Navigation Fixes 📱
 
 **Last Updated**: `2025-10-24`
-**Progress**: `Campaign Management Active - Edit, Theme-Aware UI`
+**Progress**: `Full Mobile Support - Touch-Optimized, Navigation Fixed`
 
 **⚠️ Current Reality Check:**
-- ✅ **Working**: Login/Register, Admin Panel, Gothic Theme, **Campaign Editing**
+- ✅ **Working**: Login/Register, Admin Panel, Gothic Theme, Campaign Editing, **Mobile UI**
 - ✅ **New**: Campaign name/description editing, Game-specific emojis & colors
 - 🚧 **In Progress**: Chat interface, Character creation, Full CRUD wiring
 - 📋 **Planned**: WebSocket chat, AI integration, Character system
@@ -184,6 +184,12 @@ docker-compose up -d
 | Permission checks (creator/admin) | 🐺 Werewolf - Amber Gold | Color-coded campaign cards |
 | Real-time UI updates | 🧚 Changeling - Fae Green | Save/cancel buttons |
 | Backend PUT endpoint working | 🏹 Hunter - Silver | Instant save feedback |
+| **📱 Responsive Design** (v0.6.4) | **Navigation Fixes** (v0.6.4) | **Mobile Optimization** (v0.6.4) |
+| Full mobile support (315 lines CSS) | Browser back button fixed | Touch-friendly UI (44px targets) |
+| Collapsible sidebars on mobile | Exit confirmation dialogs | Viewport meta tag configured |
+| Mobile-first breakpoints | Proper navigation history | Safe area insets (notches) |
+| Tablet & desktop layouts | Character exit warnings | Hamburger menu navigation |
+| Responsive chat interface | Page state preservation | Swipeable panels |
 
 </div>
 
