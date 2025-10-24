@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import AdminPage from './pages/AdminPage';
+import GothicShowcase from './pages/GothicShowcase';
+import { GothicBox } from './components/GothicDecorations';
 
 const API_URL = '/api'; // Use relative URL through nginx proxy
 
@@ -7,6 +9,7 @@ function SimpleApp() {
   const [token, setToken] = useState(localStorage.getItem('token'));
   const [user, setUser] = useState(null);
   const [currentPage, setCurrentPage] = useState('dashboard');
+  const [showGothicShowcase, setShowGothicShowcase] = useState(false);
   const [campaigns, setCampaigns] = useState([]);
   const [selectedCampaign, setSelectedCampaign] = useState(null);
   const [locations, setLocations] = useState([]);
@@ -282,11 +285,16 @@ function SimpleApp() {
       padding: '20px'
     }}>
       {/* Logo and Title */}
-      <div style={{ textAlign: 'center', marginBottom: '40px' }}>
+      <div style={{ textAlign: 'center', marginBottom: '40px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
         <img 
           src="https://github.com/Somnius/shadowrealms-ai/raw/main/assets/logos/logo-3.png" 
           alt="ShadowRealms AI" 
-          style={{ width: '120px', height: 'auto', marginBottom: '15px' }}
+          style={{ 
+            width: '240px', 
+            height: 'auto', 
+            marginBottom: '20px',
+            filter: 'drop-shadow(0 0 20px rgba(233, 69, 96, 0.5))'
+          }}
         />
         <h1 style={{ color: '#e94560', marginBottom: '10px', fontSize: '32px', fontWeight: 'bold' }}>
           ShadowRealms AI
@@ -294,6 +302,26 @@ function SimpleApp() {
         <p style={{ color: '#8b8b9f', marginBottom: '0', fontSize: '16px' }}>
           Immersive Tabletop RPG with AI
         </p>
+        
+        {/* Gothic Theme Preview Button */}
+        <button
+          onClick={() => setShowGothicShowcase(true)}
+          style={{
+            marginTop: '20px',
+            padding: '10px 25px',
+            background: 'linear-gradient(135deg, #9d4edd 0%, #5a0099 100%)',
+            border: '2px solid #9d4edd',
+            color: 'white',
+            borderRadius: '8px',
+            cursor: 'pointer',
+            fontSize: '14px',
+            fontWeight: 'bold',
+            boxShadow: '0 0 20px rgba(157, 78, 221, 0.4)',
+            transition: 'all 0.3s'
+          }}
+        >
+          💀 Preview Gothic Horror Theme 💀
+        </button>
       </div>
 
       {/* Login and Register Side by Side */}
@@ -305,16 +333,16 @@ function SimpleApp() {
         maxWidth: '950px'
       }}>
 
-        {/* Login Box */}
-        <div style={{
+        {/* Login Box with Blood Theme */}
+        <GothicBox theme="vampire" style={{
           background: '#16213e',
           padding: '35px',
           borderRadius: '15px',
           boxShadow: '0 10px 30px rgba(0,0,0,0.5)',
           border: '1px solid #2a2a4e'
         }}>
-          <h2 style={{ fontSize: '24px', color: '#e94560', marginBottom: '25px', textAlign: 'center' }}>
-            🔐 Login
+          <h2 style={{ fontSize: '24px', color: '#e94560', marginBottom: '25px', textAlign: 'center', fontFamily: 'Cinzel, serif' }}>
+            Login
           </h2>
           <form onSubmit={handleLogin}>
             <div style={{ marginBottom: '15px' }}>
@@ -378,21 +406,21 @@ function SimpleApp() {
                 boxShadow: loading ? 'none' : '0 4px 15px rgba(233, 69, 96, 0.3)'
               }}
             >
-              {loading ? '⏳ Logging in...' : '🔐 Login'}
+              {loading ? 'Logging in...' : 'LOGIN'}
             </button>
           </form>
-        </div>
+        </GothicBox>
 
-        {/* Register Box */}
-        <div style={{
+        {/* Register Box with Magic Theme */}
+        <GothicBox theme="mage" style={{
           background: '#16213e',
           padding: '35px',
           borderRadius: '15px',
           boxShadow: '0 10px 30px rgba(0,0,0,0.5)',
           border: '1px solid #2a2a4e'
         }}>
-          <h2 style={{ fontSize: '24px', color: '#e94560', marginBottom: '25px', textAlign: 'center' }}>
-            ✨ Register
+          <h2 style={{ fontSize: '24px', color: '#9d4edd', marginBottom: '25px', textAlign: 'center', fontFamily: 'Cinzel, serif' }}>
+            Register
           </h2>
           <form onSubmit={handleRegister}>
             <div style={{ marginBottom: '15px' }}>
@@ -492,20 +520,21 @@ function SimpleApp() {
               style={{
                 width: '100%',
                 padding: '12px',
-                background: loading ? '#4a4a5e' : '#28a745',
+                background: loading ? '#4a4a5e' : '#9d4edd',
                 color: 'white',
                 border: 'none',
                 borderRadius: '8px',
                 fontSize: '16px',
                 fontWeight: 'bold',
                 cursor: loading ? 'not-allowed' : 'pointer',
-                boxShadow: loading ? 'none' : '0 4px 15px rgba(40, 167, 69, 0.3)'
+                boxShadow: loading ? 'none' : '0 4px 15px rgba(157, 78, 221, 0.4)',
+                fontFamily: 'Cinzel, serif'
               }}
             >
-              {loading ? '⏳ Creating account...' : '✨ Create Account'}
+              {loading ? 'Creating account...' : 'REGISTER'}
             </button>
           </form>
-        </div>
+        </GothicBox>
       </div>
 
       {/* Error Message */}
@@ -1378,6 +1407,12 @@ function SimpleApp() {
   );
 
   // Main render
+  
+  // Show Gothic Showcase if requested
+  if (showGothicShowcase) {
+    return <GothicShowcase onBack={() => setShowGothicShowcase(false)} />;
+  }
+  
   return (
     <div className="App">
       {!token && renderLogin()}

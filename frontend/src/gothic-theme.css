@@ -1,0 +1,352 @@
+/* Gothic Horror Theme for ShadowRealms AI */
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Crimson+Text:ital,wght@0,400;0,600;1,400&display=swap');
+@import url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css');
+
+/* Global Gothic Styles */
+body {
+  font-family: 'Crimson Text', serif;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Cinzel', serif;
+  letter-spacing: 2px;
+}
+
+/* Animated Blood Drip Effect */
+@keyframes blood-drip {
+  0% { transform: translateY(-10px); opacity: 0; }
+  10% { opacity: 1; }
+  100% { transform: translateY(20px); opacity: 0; }
+}
+
+.blood-drop {
+  position: absolute;
+  width: 8px;
+  height: 12px;
+  background: radial-gradient(ellipse at center, #8b0000 0%, #4a0000 100%);
+  border-radius: 0 0 50% 50%;
+  animation: blood-drip 3s ease-in infinite;
+  opacity: 0;
+}
+
+.blood-drop::before {
+  content: '';
+  position: absolute;
+  top: -4px;
+  left: 2px;
+  width: 4px;
+  height: 4px;
+  background: #8b0000;
+  border-radius: 50%;
+}
+
+/* Bite Marks Effect for Werewolf */
+@keyframes bite-pulse {
+  0%, 100% { opacity: 0.3; transform: scale(1); }
+  50% { opacity: 0.6; transform: scale(1.05); }
+}
+
+.bite-mark {
+  position: absolute;
+  width: 30px;
+  height: 30px;
+  opacity: 0.3;
+  animation: bite-pulse 4s ease-in-out infinite;
+}
+
+.bite-mark::before,
+.bite-mark::after {
+  content: '';
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  background: #8b0000;
+  border-radius: 50%;
+  box-shadow: 0 0 5px rgba(139, 0, 0, 0.5);
+}
+
+.bite-mark::before {
+  top: 0;
+  left: 0;
+}
+
+.bite-mark::after {
+  top: 0;
+  right: 0;
+}
+
+/* Additional bite marks using pseudo-elements styling */
+.bite-mark {
+  background-image: 
+    radial-gradient(circle at 25% 40%, transparent 3px, transparent 4px),
+    radial-gradient(circle at 75% 40%, transparent 3px, transparent 4px),
+    radial-gradient(circle at 20% 70%, #8b0000 2px, transparent 3px),
+    radial-gradient(circle at 40% 75%, #8b0000 2px, transparent 3px),
+    radial-gradient(circle at 60% 75%, #8b0000 2px, transparent 3px),
+    radial-gradient(circle at 80% 70%, #8b0000 2px, transparent 3px);
+  background-repeat: no-repeat;
+}
+
+/* Magic Sparkle Effect */
+@keyframes sparkle {
+  0%, 100% { opacity: 0; transform: scale(0); }
+  50% { opacity: 1; transform: scale(1); }
+}
+
+.magic-sparkle {
+  position: absolute;
+  font-size: 12px;
+  color: #9d4edd;
+  animation: sparkle 2s ease-in-out infinite;
+  text-shadow: 0 0 10px #9d4edd;
+}
+
+/* Candle Flicker */
+@keyframes candle-flicker {
+  0%, 100% { opacity: 1; text-shadow: 0 0 10px #ff9500; }
+  50% { opacity: 0.8; text-shadow: 0 0 5px #ff9500; }
+}
+
+.candle {
+  color: #ff9500;
+  animation: candle-flicker 2s ease-in-out infinite;
+}
+
+/* Gothic Border with Decorations */
+.gothic-border {
+  position: relative;
+  border: 2px solid #2a2a4e;
+  box-shadow: 
+    inset 0 0 20px rgba(233, 69, 96, 0.1),
+    0 0 20px rgba(0, 0, 0, 0.5),
+    0 0 40px rgba(139, 0, 0, 0.2);
+}
+
+.gothic-border::before,
+.gothic-border::after {
+  content: '';
+  position: absolute;
+  width: 100%;
+  height: 2px;
+  background: linear-gradient(90deg, 
+    transparent 0%, 
+    #e94560 20%, 
+    #e94560 80%, 
+    transparent 100%);
+  left: 0;
+  opacity: 0.3;
+}
+
+.gothic-border::before {
+  top: 0;
+}
+
+.gothic-border::after {
+  bottom: 0;
+}
+
+/* Corner Decorations - Skeleton Hands */
+.gothic-corner {
+  position: absolute;
+  font-size: 20px;
+  color: #8b8b9f;
+  opacity: 0.6;
+  z-index: 1;
+  text-shadow: 0 0 10px rgba(139, 139, 159, 0.5);
+}
+
+.gothic-corner.top-left {
+  top: -10px;
+  left: -10px;
+  transform: rotate(-45deg);
+}
+
+.gothic-corner.top-right {
+  top: -10px;
+  right: -10px;
+  transform: rotate(45deg);
+}
+
+.gothic-corner.bottom-left {
+  bottom: -10px;
+  left: -10px;
+  transform: rotate(-135deg);
+}
+
+.gothic-corner.bottom-right {
+  bottom: -10px;
+  right: -10px;
+  transform: rotate(135deg);
+}
+
+/* Candle Decorations */
+.candle-decoration {
+  position: absolute;
+  top: -15px;
+  font-size: 18px;
+  z-index: 1;
+}
+
+.candle-decoration.left {
+  left: 20px;
+}
+
+.candle-decoration.right {
+  right: 20px;
+}
+
+/* Skull Divider */
+.skull-divider {
+  text-align: center;
+  color: #8b8b9f;
+  font-size: 16px;
+  opacity: 0.5;
+  margin: 10px 0;
+}
+
+/* Blood Splatter Background */
+.blood-splatter {
+  position: absolute;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(139, 0, 0, 0.3) 0%, transparent 70%);
+  opacity: 0.4;
+}
+
+/* Magic Circle Accent */
+.magic-circle {
+  position: absolute;
+  width: 40px;
+  height: 40px;
+  border: 2px solid rgba(157, 78, 221, 0.3);
+  border-radius: 50%;
+  opacity: 0.5;
+}
+
+.magic-circle::before {
+  content: '✦';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: #9d4edd;
+  font-size: 20px;
+  text-shadow: 0 0 10px #9d4edd;
+}
+
+/* Gothic Card Enhancement */
+.gothic-card {
+  position: relative;
+  overflow: visible;
+}
+
+/* Floating Particles */
+@keyframes float-particle {
+  0%, 100% { transform: translateY(0px) translateX(0px); opacity: 0.3; }
+  50% { transform: translateY(-20px) translateX(10px); opacity: 0.6; }
+}
+
+.particle {
+  position: absolute;
+  font-size: 10px;
+  color: #9d4edd;
+  animation: float-particle 4s ease-in-out infinite;
+  pointer-events: none;
+}
+
+/* Glow Effect for Important Elements */
+.glow-red {
+  box-shadow: 0 0 20px rgba(233, 69, 96, 0.3);
+}
+
+.glow-purple {
+  box-shadow: 0 0 20px rgba(157, 78, 221, 0.3);
+}
+
+/* Vintage Paper Texture Overlay */
+.paper-texture {
+  background-image: 
+    repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(139, 139, 159, 0.03) 2px,
+      rgba(139, 139, 159, 0.03) 4px
+    );
+}
+
+/* Gothic Button Enhancement */
+.gothic-button {
+  position: relative;
+  overflow: hidden;
+}
+
+.gothic-button::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+  transition: left 0.5s;
+}
+
+.gothic-button:hover::before {
+  left: 100%;
+}
+
+/* Ornate Divider */
+.ornate-divider {
+  display: flex;
+  align-items: center;
+  text-align: center;
+  margin: 20px 0;
+}
+
+.ornate-divider::before,
+.ornate-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, #e94560, transparent);
+}
+
+.ornate-divider::before {
+  margin-right: 10px;
+}
+
+.ornate-divider::after {
+  margin-left: 10px;
+}
+
+/* Tooltip with Gothic Style */
+.gothic-tooltip {
+  position: relative;
+  cursor: help;
+}
+
+.gothic-tooltip::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 8px 12px;
+  background: #16213e;
+  color: #e94560;
+  border: 1px solid #2a2a4e;
+  border-radius: 4px;
+  font-size: 12px;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s;
+  z-index: 1000;
+}
+
+.gothic-tooltip:hover::after {
+  opacity: 1;
+}
+
