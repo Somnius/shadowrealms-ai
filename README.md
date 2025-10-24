@@ -6,11 +6,11 @@
 
 ### The Ultimate AI-Powered Tabletop RPG Experience
 
-[![Version](https://img.shields.io/badge/version-0.6.1-blue.svg)](https://github.com/Somnius/shadowrealms-ai)
+[![Version](https://img.shields.io/badge/version-0.6.2-blue.svg)](https://github.com/Somnius/shadowrealms-ai)
 [![Phase 2](https://img.shields.io/badge/phase-2%20complete-green.svg)](https://github.com/Somnius/shadowrealms-ai)
 [![Phase 3A](https://img.shields.io/badge/phase-3A%20complete-green.svg)](https://github.com/Somnius/shadowrealms-ai)
 [![Phase 3B](https://img.shields.io/badge/phase-3B%20next-blue.svg)](https://github.com/Somnius/shadowrealms-ai)
-[![Status](https://img.shields.io/badge/status-production%20ready-brightgreen.svg)](https://github.com/Somnius/shadowrealms-ai)
+[![Status](https://img.shields.io/badge/status-login%20%26%20theme%20active-yellow.svg)](https://github.com/Somnius/shadowrealms-ai)
 [![License](https://img.shields.io/badge/license-MIT-yellow.svg)](LICENSE)
 
 ---
@@ -120,10 +120,15 @@ docker-compose up -d
 
 <div align="center">
 
-### Version 0.6.1 - Admin Panel & User Management 👑
+### Version 0.6.2 - Gothic Horror Theme 🦇
 
 **Last Updated**: `2025-10-24`
-**Progress**: `Full Admin Panel - User Moderation & Character Management`
+**Progress**: `Core UI Complete - Login, Theme, Admin Panel Functional`
+
+**⚠️ Current Reality Check:**
+- ✅ **Working**: Login/Register, Admin Panel, Gothic Theme
+- 🚧 **In Progress**: Campaign system, Chat interface, Character creation
+- 📋 **Planned**: Full gameplay features, AI integration, WebSocket
 
 </div>
 
@@ -144,27 +149,33 @@ docker-compose up -d
 
 </div>
 
-### Phase 3A Complete ✅ (v0.6.0 - THE FRONTEND ERA!)
+### Phase 3A Status 🚧 (v0.6.0 - Frontend Foundation)
 
 <div align="center">
 
-| **Frontend Application** | **Security & Access** | **Testing & Tools** |
+| **✅ WORKING NOW** | **🚧 UI EXISTS (Not Wired)** | **📋 TODO** |
 |:---:|:---:|:---:|
-| **SimpleApp.js** - Complete React application (1,400 lines) | **Invite-Only Registration** - Secure access control | **Integration Tests** - End-to-end validation (401 lines) |
-| Campaign management UI | Admin and Player invite types | RAG system tests (211 lines) |
-| Character creation interface | Usage tracking and max uses | Quick book import tool (144 lines) |
-| Location-based chat system | Role-based access control | Frontend/Backend integration suite |
-| Real-time messaging | Invite code validation | Comprehensive test coverage |
-| AI integration interface | Security best practices | Manual testing documentation |
-| Rule book query UI | `invites.json` management | Performance validation |
-| Modern responsive design | Template system for invites | Production readiness confirmed |
-| Dark/Light theme support | No public registration | Full user journey tested |
+| **Login/Register** - Fully functional | Campaign list UI (not connected) | Campaign backend integration |
+| **Admin Panel** - User management works | Character creation form (no backend) | Character system wiring |
+| **Invite System** - Secure registration | Location chat UI (static) | WebSocket real-time chat |
+| **Gothic Theme** - Immersive atmosphere | AI chat interface (placeholder) | LM Studio integration |
+| Role-based access (admin/player) | Rule book search UI (no data) | ChromaDB RAG hookup |
+| JWT authentication | Campaign details page (empty) | Full gameplay loop |
+| User bans (temp/permanent) | Character selection (no chars) | Session management |
+| Password reset by admin | Message history display (mock) | NPC/Character management |
+| Moderation logging | OOC chat room (not live) | Dice rolling system |
 | **👑 Admin Panel** (v0.6.1) | **User Moderation** (v0.6.1) | **Character Management** (v0.6.1) |
 | Admin-only panel UI (720 lines) | Temporary & permanent bans | Convert character to NPC |
 | User table with status | Ban duration tracking | Kill character with death types |
 | Edit user profiles | Password reset by admin | Character moderation log |
 | Moderation audit log | Auto-expiring temp bans | Soft/Mid/Horrible death options |
 | Refactored architecture | All actions logged | Admin-controlled NPCs |
+| **🦇 Gothic Horror Theme** (v0.6.2) | **Theme-Specific Effects** (v0.6.2) | **Immersive Atmosphere** (v0.6.2) |
+| Complete CSS theme (352 lines) | Vampire: Dripping blood | Gothic fonts (Cinzel/Crimson Text) |
+| GothicBox components (194 lines) | Mage: Magic sparkles | Clean login/register screens |
+| Gothic Showcase (546 lines) | Werewolf: Bite marks | Campaign-aware theming |
+| Dark fantasy aesthetics | Theme auto-switches by game | Larger logo with glow |
+| GPU-accelerated animations | Effects only when appropriate | No emojis on buttons |
 
 </div>
 

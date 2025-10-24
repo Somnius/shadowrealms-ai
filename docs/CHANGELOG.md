@@ -5,6 +5,108 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.2] - 2025-10-24 - Gothic Horror Theme 🦇
+
+### ⚠️ Reality Check
+
+**What's ACTUALLY Working:**
+- ✅ Login/Register system with JWT authentication
+- ✅ Admin panel with user moderation
+- ✅ Gothic theme with campaign-specific effects
+- ✅ Backend APIs for campaigns, characters, chat (tested)
+
+**What's UI-Only (Not Wired Yet):**
+- 🚧 Campaign management UI (needs backend hookup)
+- 🚧 Chat interface (needs WebSocket implementation)
+- 🚧 Character creation form (needs API integration)
+- 🚧 AI chat interface (needs LM Studio connection)
+- 🚧 Rule book search (needs ChromaDB wiring)
+
+**This release focuses on UI/UX and theming. Full gameplay features coming in next releases.**
+
+### Added
+
+#### Gothic Horror Theme System
+- **New gothic-theme.css** (352 lines) - Complete atmospheric styling
+  - Dark fantasy color palette (blood red, magic purple, dark slate)
+  - Gothic typography (Cinzel headers, Crimson Text body)
+  - GPU-accelerated animations (60fps)
+  - Dripping blood, magic sparkles, bite marks
+  - Flickering candles, skull dividers, skeleton hands
+
+- **New GothicDecorations.js** (194 lines) - Reusable component system
+  - `<GothicBox theme="vampire">` - Blood effects
+  - `<GothicBox theme="mage">` - Magic sparkles
+  - `<GothicBox theme="werewolf">` - Bite marks
+  - Auto-detection by campaign type
+  - Decorative elements (candles, skulls, hands)
+
+- **New GothicShowcase.js** (546 lines) - Complete demo page
+  - Full-screen atmospheric showcase
+  - All visual effects demonstrated
+  - Interactive preview button on login
+  - Examples of each theme type
+
+#### Login/Register Improvements
+- Removed all emojis from buttons (clean professional look)
+- Larger logo (2x size, 240px) with glowing effect
+- Login box with blood drip effect (vampire theme)
+- Register box with magic sparkle effect (mage theme)
+- Gothic fonts throughout (Cinzel/Crimson Text)
+- Clean uppercase button text
+
+#### Theme-Specific Effects
+- **Vampire Campaigns**: Dripping blood animations, crimson colors
+- **Mage Campaigns**: Floating magic sparkles, purple mystical colors
+- **Werewolf Campaigns**: Pulsing bite marks, dark primal colors
+- **Auto-Detection**: System detects game type and applies matching theme
+
+#### Clean Design Philosophy
+- Dashboard and admin remain clean (no effects)
+- Effects only in campaign-specific areas
+- Gothic aesthetic without overwhelming functionality
+- Professional appearance maintained
+
+### Changed
+- **frontend/src/SimpleApp.js** (+67 lines) - Theme integration
+- **frontend/src/pages/AdminPage.js** (+11 lines) - Clean styling
+- **frontend/src/index.js** (+1 line) - Theme CSS import
+
+### Documentation
+- **GOTHIC_THEME_APPLIED.md** (316 lines) - Implementation details
+- **GOTHIC_THEME_READY.md** (219 lines) - Testing instructions
+- **GOTHIC_THEME_TEST.md** (142 lines) - Test scenarios
+- **PHASE_3A_NEXT.md** (272 lines) - Next steps roadmap
+
+### Performance
+- All CSS-based animations (no heavy JavaScript)
+- GPU-accelerated transforms for 60fps
+- Mobile-optimized and responsive
+- Fast load times maintained
+
+### Statistics
+- **Code Added**: 1,170 lines (theme + components + showcase)
+- **Documentation**: 949 lines (4 guide files)
+- **Total Changes**: 2,103 lines
+- **New Files**: 7
+- **Modified Files**: 3
+
+### Known Limitations
+- Campaign UI exists but not connected to backend
+- Chat interface is placeholder (needs WebSocket)
+- Character creation form needs API wiring
+- AI integration interface not hooked up yet
+- Rule book search UI not connected to ChromaDB
+
+### Next Priority
+- Wire up campaign CRUD to existing backend APIs
+- Implement WebSocket for real-time chat
+- Connect character creation to backend
+- Hook up LM Studio for AI chat
+- Link rule book search to ChromaDB
+
+---
+
 ## [0.6.1] - 2025-10-24 - Admin Panel & User Management 👑
 
 ### Added
