@@ -11,6 +11,7 @@ books/*
 !books/requirements.txt
 !books/README.md
 books/book-list.txt
+books/parsed/
 data/
 data/logs/
 data/uploads/

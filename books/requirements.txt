@@ -1,5 +1,23 @@
-# Requirements for World of Darkness Books Sync Script
+# Requirements for World of Darkness Books Sync and Parser Scripts
 requests>=2.31.0
 beautifulsoup4>=4.12.0
 tqdm>=4.66.0
+pdfplumber>=0.10.0
+urllib3>=2.0.0
+
+# Optional: GPU-accelerated embedding generation (HIGHLY RECOMMENDED for parsing)
+# Uncomment these lines if you want GPU support for embeddings:
+# torch>=2.0.0
+# sentence-transformers>=2.2.0
+#
+# For CPU-only (slower):
+# torch>=2.0.0+cpu
+# sentence-transformers>=2.2.0
+#
+# Install with: 
+#   GPU: pip install torch sentence-transformers
+#   CPU: pip install torch --index-url https://download.pytorch.org/whl/cpu && pip install sentence-transformers
+
+# For importing to ChromaDB
+chromadb>=0.4.0
 
