@@ -10,6 +10,7 @@ services:
       - ./backend:/app
       - ./data/logs:/app/logs
       - ./books:/app/books
+      - ./README.md:/app/README.md:ro
     environment:
       - FLASK_ENV=development
       - FLASK_APP=main.py

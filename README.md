@@ -6,7 +6,7 @@
 
 ### The Ultimate AI-Powered Tabletop RPG Experience
 
-[![Version](https://img.shields.io/badge/version-0.6.4-blue.svg)](https://github.com/Somnius/shadowrealms-ai)
+[![Version](https://img.shields.io/badge/version-0.6.5-blue.svg)](https://github.com/Somnius/shadowrealms-ai)
 [![Phase 2](https://img.shields.io/badge/phase-2%20complete-green.svg)](https://github.com/Somnius/shadowrealms-ai)
 [![Phase 3A](https://img.shields.io/badge/phase-3A%20complete-green.svg)](https://github.com/Somnius/shadowrealms-ai)
 [![Phase 3B](https://img.shields.io/badge/phase-3B%20next-blue.svg)](https://github.com/Somnius/shadowrealms-ai)
@@ -120,13 +120,13 @@ docker-compose up -d
 
 <div align="center">
 
-### Version 0.6.4 - Responsive Design & Navigation Fixes 📱
+### Version 0.6.5 - UI/UX Polish & In-App Documentation 🎨
 
 **Last Updated**: `2025-10-24`
-**Progress**: `Full Mobile Support - Touch-Optimized, Navigation Fixed`
+**Progress**: `Custom Dialogs, Footer, In-App README - Professional UX`
 
 **⚠️ Current Reality Check:**
-- ✅ **Working**: Login/Register, Admin Panel, Gothic Theme, Campaign Editing, **Mobile UI**
+- ✅ **Working**: Login/Register, Admin Panel, Gothic Theme, Campaign Editing, Mobile UI, **Custom Dialogs**
 - ✅ **New**: Campaign name/description editing, Game-specific emojis & colors
 - 🚧 **In Progress**: Chat interface, Character creation, Full CRUD wiring
 - 📋 **Planned**: WebSocket chat, AI integration, Character system
@@ -190,6 +190,12 @@ docker-compose up -d
 | Mobile-first breakpoints | Proper navigation history | Safe area insets (notches) |
 | Tablet & desktop layouts | Character exit warnings | Hamburger menu navigation |
 | Responsive chat interface | Page state preservation | Swipeable panels |
+| **🎨 UI/UX Polish** (v0.6.5) | **Custom Dialogs** (v0.6.5) | **In-App Docs** (v0.6.5) |
+| Custom ConfirmDialog (140 lines) | Cannot be disabled by browser | README modal (306 lines) |
+| Gothic-themed confirmations | Matches dark fantasy theme | Markdown parser built-in |
+| Touch-friendly 44px buttons | Keyboard accessible (auto-focus) | Backend API endpoint |
+| Footer component (182 lines) | Smooth fade-in animations | Docker volume mount |
+| Version info & links | Blood-red border with glow | In-app documentation viewer |
 
 </div>
 

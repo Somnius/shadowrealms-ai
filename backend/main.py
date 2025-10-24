@@ -93,6 +93,19 @@ def create_app(config_class=Config):
                 'timestamp': datetime.utcnow().isoformat()
             }), 500
     
+    # README endpoint
+    @app.route('/api/readme')
+    def get_readme():
+        """Serve README.md file"""
+        try:
+            readme_path = '/app/README.md'
+            with open(readme_path, 'r', encoding='utf-8') as f:
+                content = f.read()
+            return content, 200, {'Content-Type': 'text/plain; charset=utf-8'}
+        except Exception as e:
+            logger.error(f"Error reading README.md: {e}")
+            return jsonify({'error': f'Failed to load README.md: {str(e)}'}), 500
+    
     # Root endpoint
     @app.route('/')
     def root():
@@ -108,7 +121,8 @@ def create_app(config_class=Config):
                 'users': '/api/users',
                 'campaigns': '/api/campaigns',
                 'characters': '/api/characters',
-                'ai': '/api/ai'
+                'ai': '/api/ai',
+                'readme': '/api/readme'
             }
         })
     
