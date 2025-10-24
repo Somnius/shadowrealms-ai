@@ -6,7 +6,7 @@
 
 ### The Ultimate AI-Powered Tabletop RPG Experience
 
-[![Version](https://img.shields.io/badge/version-0.6.2-blue.svg)](https://github.com/Somnius/shadowrealms-ai)
+[![Version](https://img.shields.io/badge/version-0.6.3-blue.svg)](https://github.com/Somnius/shadowrealms-ai)
 [![Phase 2](https://img.shields.io/badge/phase-2%20complete-green.svg)](https://github.com/Somnius/shadowrealms-ai)
 [![Phase 3A](https://img.shields.io/badge/phase-3A%20complete-green.svg)](https://github.com/Somnius/shadowrealms-ai)
 [![Phase 3B](https://img.shields.io/badge/phase-3B%20next-blue.svg)](https://github.com/Somnius/shadowrealms-ai)
@@ -120,15 +120,16 @@ docker-compose up -d
 
 <div align="center">
 
-### Version 0.6.2 - Gothic Horror Theme 🦇
+### Version 0.6.3 - Campaign Editing & Enhanced Themes 📝
 
 **Last Updated**: `2025-10-24`
-**Progress**: `Core UI Complete - Login, Theme, Admin Panel Functional`
+**Progress**: `Campaign Management Active - Edit, Theme-Aware UI`
 
 **⚠️ Current Reality Check:**
-- ✅ **Working**: Login/Register, Admin Panel, Gothic Theme
-- 🚧 **In Progress**: Campaign system, Chat interface, Character creation
-- 📋 **Planned**: Full gameplay features, AI integration, WebSocket
+- ✅ **Working**: Login/Register, Admin Panel, Gothic Theme, **Campaign Editing**
+- ✅ **New**: Campaign name/description editing, Game-specific emojis & colors
+- 🚧 **In Progress**: Chat interface, Character creation, Full CRUD wiring
+- 📋 **Planned**: WebSocket chat, AI integration, Character system
 
 </div>
 
@@ -155,15 +156,16 @@ docker-compose up -d
 
 | **✅ WORKING NOW** | **🚧 UI EXISTS (Not Wired)** | **📋 TODO** |
 |:---:|:---:|:---:|
-| **Login/Register** - Fully functional | Campaign list UI (not connected) | Campaign backend integration |
-| **Admin Panel** - User management works | Character creation form (no backend) | Character system wiring |
-| **Invite System** - Secure registration | Location chat UI (static) | WebSocket real-time chat |
-| **Gothic Theme** - Immersive atmosphere | AI chat interface (placeholder) | LM Studio integration |
-| Role-based access (admin/player) | Rule book search UI (no data) | ChromaDB RAG hookup |
-| JWT authentication | Campaign details page (empty) | Full gameplay loop |
-| User bans (temp/permanent) | Character selection (no chars) | Session management |
-| Password reset by admin | Message history display (mock) | NPC/Character management |
-| Moderation logging | OOC chat room (not live) | Dice rolling system |
+| **Login/Register** - Fully functional | Character creation form (no backend) | Character system wiring |
+| **Admin Panel** - User management works | Location chat UI (static) | WebSocket real-time chat |
+| **Invite System** - Secure registration | AI chat interface (placeholder) | LM Studio integration |
+| **Gothic Theme** - Immersive atmosphere | Rule book search UI (no data) | ChromaDB RAG hookup |
+| **Campaign Editing** - Name/desc updates | Character selection (no chars) | Full gameplay loop |
+| Campaign list with themes | Message history display (mock) | Session management |
+| Role-based access (admin/player) | OOC chat room (not live) | Campaign deletion |
+| JWT authentication | Campaign details page | NPC/Character management |
+| User bans (temp/permanent) | Location management UI | Dice rolling system |
+| Password reset by admin | Game-specific emojis/colors | Advanced features |
 | **👑 Admin Panel** (v0.6.1) | **User Moderation** (v0.6.1) | **Character Management** (v0.6.1) |
 | Admin-only panel UI (720 lines) | Temporary & permanent bans | Convert character to NPC |
 | User table with status | Ban duration tracking | Kill character with death types |
@@ -176,6 +178,12 @@ docker-compose up -d
 | Gothic Showcase (546 lines) | Werewolf: Bite marks | Campaign-aware theming |
 | Dark fantasy aesthetics | Theme auto-switches by game | Larger logo with glow |
 | GPU-accelerated animations | Effects only when appropriate | No emojis on buttons |
+| **📝 Campaign Editing** (v0.6.3) | **Game System Themes** (v0.6.3) | **Enhanced UI** (v0.6.3) |
+| Edit campaign names (inline) | 🩸 Vampire - Blood Red | Click-to-edit interface |
+| Edit descriptions (textarea) | ✨ Mage - Mystic Purple | Game-specific emojis |
+| Permission checks (creator/admin) | 🐺 Werewolf - Amber Gold | Color-coded campaign cards |
+| Real-time UI updates | 🧚 Changeling - Fae Green | Save/cancel buttons |
+| Backend PUT endpoint working | 🏹 Hunter - Silver | Instant save feedback |
 
 </div>
 

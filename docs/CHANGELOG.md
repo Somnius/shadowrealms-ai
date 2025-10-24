@@ -5,6 +5,93 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.3] - 2025-10-24 - Campaign Editing & Enhanced Themes 📝
+
+### Added
+
+#### Campaign Management Features
+- **Campaign Editing** - Name and description editing
+  - Edit campaign name inline with save/cancel buttons
+  - Edit campaign description with textarea
+  - Real-time updates to campaign list
+  - Permission checks (creator or admin only)
+
+#### Game System Theming
+- **Campaign Emojis** - Game-specific icons
+  - 🩸 Vampire: The Masquerade - Blood drop
+  - ✨ Mage: The Ascension - Sparkles
+  - 🐺 Werewolf: The Apocalypse - Wolf
+  - 🧚 Changeling: The Dreaming - Fairy
+  - 🏹 Hunter: The Reckoning - Bow & arrow
+  - 👻 Wraith: The Oblivion - Ghost
+  - 🐉 D&D / Fantasy - Dragon
+  - 📜 Default - Ancient scroll
+
+- **Campaign Color Schemes** - System-specific colors
+  - Vampire: Blood Red (`#e94560`)
+  - Mage: Mystic Purple (`#9d4edd`)
+  - Werewolf: Amber/Golden (`#ff9500`)
+  - Changeling: Fae Green (`#4ade80`)
+  - Hunter: Silver (`#94a3b8`)
+  - Wraith: Ghost Blue (`#60a5fa`)
+  - Default: Blood Red
+
+#### Enhanced UI
+- Campaign cards now show game-specific emojis
+- Theme-aware color schemes for each game system
+- Improved campaign details display
+- Better visual hierarchy for campaign info
+
+### Changed
+- **frontend/src/SimpleApp.js** (+521 lines)
+  - Added campaign editing functionality
+  - Implemented game system emoji mapping
+  - Added color scheme system
+  - Enhanced campaign details UI
+  - Improved state management for editing
+
+- **backend/routes/campaigns.py** (+60 lines)
+  - Updated campaign endpoint to support PUT method
+  - Added `update_campaign()` function
+  - Permission checks for editing (creator or admin)
+  - Update name and description fields
+  - Proper error handling
+
+### Features
+
+#### Campaign Editing
+- Click campaign name/description to edit
+- Save or cancel changes
+- Permission-based (only creator or admin)
+- Real-time UI updates
+- Backend validation
+
+#### Theme System
+- Automatic emoji assignment by game system
+- Color scheme matching game type
+- Visual consistency across UI
+- Easy to extend for new game systems
+
+### Statistics
+- **Code Added**: 581 lines (521 frontend + 60 backend)
+- **Frontend**: SimpleApp.js now 1,956 lines
+- **Backend**: campaigns.py now 433 lines
+- **New Functions**: 3 (update handlers, emoji/color getters)
+
+### Known Limitations
+- Campaign deletion not yet implemented
+- Location management still placeholder
+- Chat interface needs WebSocket
+- Character creation needs backend hookup
+
+### Next Priority
+- Implement campaign deletion
+- Wire up location CRUD
+- Add WebSocket for chat
+- Connect character system
+
+---
+
 ## [0.6.2] - 2025-10-24 - Gothic Horror Theme 🦇
 
 ### ⚠️ Reality Check

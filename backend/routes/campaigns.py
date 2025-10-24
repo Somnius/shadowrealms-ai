@@ -140,10 +140,13 @@ def get_campaigns():
         logger.error(f"Error getting campaigns: {e}")
         return jsonify({'error': 'Failed to get campaigns'}), 500
 
-@campaigns_bp.route('/<int:campaign_id>', methods=['GET'])
+@campaigns_bp.route('/<int:campaign_id>', methods=['GET', 'PUT'])
 @jwt_required()
-def get_campaign(campaign_id):
-    """Get specific campaign details"""
+def get_or_update_campaign(campaign_id):
+    """Get or update specific campaign details"""
+    if request.method == 'PUT':
+        return update_campaign(campaign_id)
+    
     try:
         user_id = get_jwt_identity()
         
@@ -187,6 +190,57 @@ def get_campaign(campaign_id):
     except Exception as e:
         logger.error(f"Error getting campaign: {e}")
         return jsonify({'error': 'Failed to get campaign'}), 500
+
+def update_campaign(campaign_id):
+    """Update campaign details (admin only)"""
+    try:
+        user_id = get_jwt_identity()
+        data = request.get_json()
+        
+        conn = get_db()
+        cursor = conn.cursor()
+        
+        # Check if user is admin or campaign creator
+        cursor.execute("""
+            SELECT created_by FROM campaigns WHERE id = ?
+        """, (campaign_id,))
+        
+        row = cursor.fetchone()
+        if not row:
+            return jsonify({'error': 'Campaign not found'}), 404
+        
+        # Check if user is creator
+        cursor.execute("""
+            SELECT role FROM users WHERE id = ?
+        """, (user_id,))
+        user_row = cursor.fetchone()
+        
+        if row[0] != user_id and (not user_row or user_row[0] != 'admin'):
+            return jsonify({'error': 'Unauthorized'}), 403
+        
+        # Update campaign fields if provided
+        updates = []
+        params = []
+        
+        if 'name' in data:
+            updates.append('name = ?')
+            params.append(data['name'])
+        
+        if 'description' in data:
+            updates.append('description = ?')
+            params.append(data['description'])
+        
+        if updates:
+            params.append(campaign_id)
+            query = f"UPDATE campaigns SET {', '.join(updates)} WHERE id = ?"
+            cursor.execute(query, params)
+            conn.commit()
+        
+        return jsonify({'message': 'Campaign updated successfully'}), 200
+        
+    except Exception as e:
+        logger.error(f"Error updating campaign: {e}")
+        return jsonify({'error': 'Failed to update campaign'}), 500
 
 @campaigns_bp.route('/<int:campaign_id>/world', methods=['POST'])
 @jwt_required()
