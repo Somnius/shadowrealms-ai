@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import ReadmeModal from './ReadmeModal';
 
 function Footer() {
-  const version = "v0.6.5"; // Always check README.md for current version
+  const version = "v0.7.0"; // Always check README.md for current version
   const [showReadme, setShowReadme] = useState(false);
 
   return (
