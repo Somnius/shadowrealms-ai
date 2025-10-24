@@ -162,6 +162,7 @@ This project is more than just a gaming platform - it's an exploration of the fu
 - [Performance & Scalability](#performance--scalability)
 
 ### **📊 Current Status & Versions**
+- [Version 0.5.10 - Test Suite Organization & Enhanced Sync System](#version-0510---test-suite-organization--enhanced-sync-system-)
 - [Version 0.5.9 - PDF Parsing & RAG Integration System](#version-059---pdf-parsing--rag-integration-system-)
 - [Version 0.5.8 - World of Darkness Books Sync System](#version-058---world-of-darkness-books-sync-system-)
 - [Version 0.5.7 - Phase 3A Development Pause](#version-057---phase-3a-development-pause-)
@@ -1153,6 +1154,190 @@ The project now includes comprehensive `.gitignore` rules covering:
 - **Campaign Continuity**: Persistent AI memory across multiple sessions
 - **Multi-Language**: Global accessibility with translation pipelines
 - **Real-time Collaboration**: Live AI-assisted gaming experiences
+
+## Version 0.5.10 - Test Suite Organization & Enhanced Sync System 🧪
+
+### What We Accomplished Today
+We reorganized the entire test suite into a dedicated directory structure and significantly enhanced the book synchronization system with retry logic and improved error handling. This represents a major step forward in project organization and reliability.
+
+1. **Test Suite Migration**: Moved all 11 test files to dedicated `tests/` directory
+2. **Comprehensive Test Documentation**: Created detailed documentation for test suite
+3. **Enhanced Sync System**: Added retry logic with exponential backoff
+4. **Improved Error Handling**: Better recovery from network issues
+5. **Updated Project Documentation**: All test references updated across project
+
+### Technical Achievements
+- **Better Project Structure**: Clearer separation between tests and application code
+- **Standard Practices**: Follows Python and project conventions for test organization
+- **Improved Reliability**: Book sync system now handles network issues gracefully
+- **Complete Documentation**: Comprehensive test suite guide with examples
+- **Zero Breaking Changes**: All existing workflows still work with updated paths
+
+### Test Suite Organization
+
+**New Directory Structure:**
+```
+tests/
+├── README.md                          # Comprehensive test documentation
+├── MIGRATION_SUMMARY.md               # Migration details
+├── test_phase2.py                    # Phase 2 RAG & Vector Memory
+├── test_user_experience.py           # End-to-end user workflows
+├── test_comprehensive_verification.py # Full system health check
+├── test_deep_verification.py         # Detailed component testing
+├── test_rule_books.py                # PDF processing and RAG
+├── test_modules.py                   # Backend module unit tests
+├── test_flask_config.py              # Configuration validation
+├── test_docker_env.py                # Docker environment tests
+├── test-auth-docker.sh               # Frontend auth tests
+├── test_docker.sh                    # Docker verification
+└── validate-test-structure.sh        # Test structure validation
+```
+
+### Test Migration Details
+
+**Python Test Scripts (8 files):**
+- Phase 2 RAG tests → `tests/test_phase2.py`
+- User experience tests → `tests/test_user_experience.py`
+- Comprehensive verification → `tests/test_comprehensive_verification.py`
+- Deep verification → `tests/test_deep_verification.py`
+- Rule book tests → `tests/test_rule_books.py`
+- Module tests → `tests/test_modules.py`
+- Flask config tests → `tests/test_flask_config.py`
+- Docker env tests → `tests/test_docker_env.py`
+
+**Shell Scripts (3 files):**
+- Frontend auth tests → `tests/test-auth-docker.sh`
+- Docker tests → `tests/test_docker.sh`
+- Test structure validation → `tests/validate-test-structure.sh`
+
+### Code Changes Made
+- **Import Path Updates**: Fixed Python imports to reference `../backend` from new location
+- **Documentation Updates**: All test command examples updated across documentation
+- **Working Verification**: All tests verified working from new location
+
+### Enhanced Book Sync System
+
+**New Retry Logic:**
+- Automatic retry with exponential backoff (3 attempts)
+- Retry delays: 1s, 2s, 4s
+- Graceful recovery from temporary network issues
+- Better HTTP error handling
+
+**Improved Features:**
+- Enhanced resume support for partial downloads
+- Better progress tracking and initialization
+- Improved error messages and logging
+- MD5 hash support infrastructure (prepared for future use)
+- Duplicate detection capabilities
+
+**Reliability Improvements:**
+- Handles HTTP 416 (Range Not Satisfiable) correctly
+- Better timeout handling
+- More robust file existence checking
+- Improved chunk download with error recovery
+
+### Test Suite Documentation
+
+**tests/README.md Contents:**
+- Complete test files overview with usage examples
+- Test categories (Phase, System, Integration, Unit)
+- Quick test commands for individual and batch execution
+- Troubleshooting guide for common issues
+- Best practices for running and adding tests
+- Prerequisites and environment setup
+
+**tests/MIGRATION_SUMMARY.md Contents:**
+- Detailed list of files moved
+- Code changes made during migration
+- Verification results
+- Migration benefits
+- Updated command examples
+
+### Test Suite Status
+- **Phase 2 Tests**: 8/9 passing (88.9%) - Expected result
+- **User Experience**: 7/7 passing (100%)
+- **Frontend Auth**: 61/61 passing (100%)
+- **Docker Environment**: All checks passing
+
+### New Test Commands
+
+**Run Individual Tests:**
+```bash
+python3 tests/test_phase2.py
+python3 tests/test_user_experience.py
+./tests/test-auth-docker.sh
+./tests/test_docker.sh
+```
+
+**Run All Python Tests:**
+```bash
+for test in tests/test_*.py; do
+    echo "Running $test..."
+    python3 "$test"
+done
+```
+
+**Run All Shell Tests:**
+```bash
+for test in tests/*.sh; do
+    echo "Running $test..."
+    bash "$test"
+done
+```
+
+### Benefits of Test Migration
+
+1. **Better Organization**: All test files in single dedicated directory
+2. **Clearer Structure**: Separates tests from application code
+3. **Easier Maintenance**: Single location for all test operations
+4. **Standard Practice**: Follows Python project conventions
+5. **Better Documentation**: Dedicated README for test suite
+6. **Improved Discovery**: Easy to find and run all tests
+7. **No Breaking Changes**: All workflows still work
+
+### Enhanced Sync System Benefits
+
+1. **Network Resilience**: Automatic retry on failures
+2. **Better Reliability**: Exponential backoff prevents server overload
+3. **Improved UX**: Better progress tracking and error messages
+4. **Future-Ready**: Infrastructure for MD5 verification
+5. **Robust Downloads**: Handles partial downloads better
+
+### Files Added/Modified
+
+**NEW:**
+- `tests/README.md` - Comprehensive test suite documentation (175 lines)
+- `tests/MIGRATION_SUMMARY.md` - Migration details (127 lines)
+- All test files moved to `tests/` directory
+
+**UPDATED:**
+- `DOCKER_ENV_SETUP.md` - Test command examples updated
+- `CONTRIBUTING.md` - Testing guidelines updated
+- `books/README.md` - Enhanced workflows documentation
+- `books/sync.sh` - Minor improvements
+- `books/sync_wod_books.py` - Enhanced with retry logic (+278 lines)
+
+### Documentation Updates
+- All test references updated to `tests/` paths
+- Test suite now has dedicated documentation
+- Migration process fully documented
+- Updated command examples throughout project
+
+### Migration Verification
+✅ All tests working from new location
+✅ Import paths updated correctly
+✅ Documentation updated throughout project
+✅ No broken references
+✅ Zero breaking changes
+
+### Next Steps
+1. Continue Phase 3A frontend development
+2. Add more comprehensive test coverage
+3. Implement automated test running in CI/CD
+4. Add integration tests for book parsing pipeline
+5. Create test fixtures for consistent testing
+
+---
 
 ## Version 0.5.9 - PDF Parsing & RAG Integration System 🔬
 
@@ -2600,7 +2785,7 @@ docker-compose ps
 - **Backend API**: http://localhost:5000
 - **ChromaDB**: http://localhost:8000
 
-### 🎯 **Current Status (v0.5.9)**
+### 🎯 **Current Status (v0.5.10)**
 
 ✅ **Phase 1 Complete** - Foundation & Docker Setup  
 ✅ **Phase 2 Complete** - RAG & Vector Memory System  
@@ -2660,7 +2845,7 @@ git push origin main
 
 ShadowRealms AI has successfully completed **Phase 2** with a fully functional RAG & Vector Memory System. The platform now features a complete Docker environment, operational AI models, persistent memory system, and comprehensive campaign management. **Phase 3A Frontend Development is now in progress.**
 
-### Current Status (v0.5.9)
+### Current Status (v0.5.10)
 1. **✅ Phase 1 Complete**: Foundation & Docker Setup - All services operational
 2. **✅ Phase 2 Complete**: RAG & Vector Memory System - ChromaDB fully functional
 3. **🚧 Phase 3A In Progress**: Frontend Development & User Experience

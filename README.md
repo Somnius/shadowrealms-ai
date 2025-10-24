@@ -6,7 +6,7 @@
 
 ### The Ultimate AI-Powered Tabletop RPG Experience
 
-[![Version](https://img.shields.io/badge/version-0.5.9-blue.svg)](https://github.com/Somnius/shadowrealms-ai)
+[![Version](https://img.shields.io/badge/version-0.5.10-blue.svg)](https://github.com/Somnius/shadowrealms-ai)
 [![Phase](https://img.shields.io/badge/phase-2%20complete-green.svg)](https://github.com/Somnius/shadowrealms-ai)
 [![Phase 3A](https://img.shields.io/badge/phase-3A%20in%20progress-orange.svg)](https://github.com/Somnius/shadowrealms-ai)
 [![Tests](https://img.shields.io/badge/tests-61%2F61%20passing-brightgreen.svg)](https://github.com/Somnius/shadowrealms-ai)
@@ -56,6 +56,7 @@ For comprehensive documentation, detailed setup instructions, and complete featu
 - **[Changelog](CHANGELOG.md)** - Detailed version history and updates
 - **[Docker Setup Guide](DOCKER_ENV_SETUP.md)** - Environment configuration
 - **[Books Sync Guide](books/README.md)** - World of Darkness books synchronization
+- **[Test Suite Guide](tests/README.md)** - Comprehensive test documentation
 
 ---
 
@@ -118,10 +119,10 @@ docker-compose up -d
 
 <div align="center">
 
-### Version 0.5.9 - PDF Parsing & RAG Integration 🔬
+### Version 0.5.10 - Test Suite Organization & Enhanced Sync 🧪
 
 **Last Updated**: `2025-10-24`
-**Progress**: `Phase 2 Complete - Phase 3A Frontend Development + Advanced Books Processing`
+**Progress**: `Phase 2 Complete - Phase 3A + Organized Test Suite + Enhanced Sync System`
 
 </div>
 

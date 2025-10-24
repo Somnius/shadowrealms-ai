@@ -14,6 +14,8 @@ from tqdm import tqdm
 import time
 import re
 import urllib3
+import hashlib
+from collections import defaultdict
 
 # Disable SSL warnings for sites with expired certificates
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
@@ -90,8 +92,8 @@ class WoDBookSyncer:
         
         return self.local_base_dir / relative_path
     
-    def download_file(self, url, local_path, resume=True):
-        """Download a file with resume support and progress bar"""
+    def download_file(self, url, local_path, resume=True, max_retries=3):
+        """Download a file with resume support, progress bar, and retry logic"""
         local_path = Path(local_path)
         local_path.parent.mkdir(parents=True, exist_ok=True)
         
@@ -108,67 +110,86 @@ class WoDBookSyncer:
             self.skipped_files.append(str(local_path.relative_to(self.local_base_dir)))
             return True
         
-        # Prepare headers for resume
-        headers = {}
-        mode = 'wb'
-        if existing_size > 0 and resume:
-            headers['Range'] = f'bytes={existing_size}-'
-            mode = 'ab'
-        
-        try:
-            response = self.session.get(url, headers=headers, stream=True, timeout=30)
-            
-            # Check if resume is supported
-            if existing_size > 0 and response.status_code == 416:
-                # Range not satisfiable - file is already complete
-                self.skipped_files.append(str(local_path.relative_to(self.local_base_dir)))
+        # Retry loop with exponential backoff
+        for attempt in range(max_retries):
+            try:
+                # Prepare headers for resume
+                headers = {}
+                mode = 'wb'
+                if local_path.exists() and resume:
+                    existing_size = local_path.stat().st_size
+                    if existing_size > 0:
+                        headers['Range'] = f'bytes={existing_size}-'
+                        mode = 'ab'
+                
+                response = self.session.get(url, headers=headers, stream=True, timeout=30)
+                
+                # Check if resume is supported
+                if existing_size > 0 and response.status_code == 416:
+                    # Range not satisfiable - file is already complete
+                    self.skipped_files.append(str(local_path.relative_to(self.local_base_dir)))
+                    return True
+                
+                if response.status_code not in [200, 206]:
+                    if attempt < max_retries - 1:
+                        retry_delay = 2 ** attempt  # 1s, 2s, 4s
+                        time.sleep(retry_delay)
+                        continue
+                    print(f"Failed to download {url}: HTTP {response.status_code}")
+                    self.failed_files.append(str(local_path.relative_to(self.local_base_dir)))
+                    return False
+                
+                # Get total size
+                total_size = existing_size
+                if response.status_code == 206:
+                    # Partial content
+                    content_range = response.headers.get('content-range', '')
+                    if content_range:
+                        total_size = int(content_range.split('/')[-1])
+                else:
+                    total_size = int(response.headers.get('content-length', 0))
+                
+                # Create progress bar
+                filename = local_path.name
+                if len(filename) > 40:
+                    filename = filename[:37] + '...'
+                
+                progress_bar = tqdm(
+                    total=total_size,
+                    initial=existing_size,
+                    unit='B',
+                    unit_scale=True,
+                    unit_divisor=1024,
+                    desc=filename,
+                    leave=False
+                )
+                
+                # Download and write file
+                with open(local_path, mode) as f:
+                    for chunk in response.iter_content(chunk_size=8192):
+                        if chunk:
+                            f.write(chunk)
+                            progress_bar.update(len(chunk))
+                
+                progress_bar.close()
+                self.downloaded_files.append(str(local_path.relative_to(self.local_base_dir)))
+                
+                # Small delay between successful downloads to be nice to the server
+                time.sleep(1)
                 return True
-            
-            if response.status_code not in [200, 206]:
-                print(f"Failed to download {url}: HTTP {response.status_code}")
-                self.failed_files.append(str(local_path.relative_to(self.local_base_dir)))
-                return False
-            
-            # Get total size
-            total_size = existing_size
-            if response.status_code == 206:
-                # Partial content
-                content_range = response.headers.get('content-range', '')
-                if content_range:
-                    total_size = int(content_range.split('/')[-1])
-            else:
-                total_size = int(response.headers.get('content-length', 0))
-            
-            # Create progress bar
-            filename = local_path.name
-            if len(filename) > 40:
-                filename = filename[:37] + '...'
-            
-            progress_bar = tqdm(
-                total=total_size,
-                initial=existing_size,
-                unit='B',
-                unit_scale=True,
-                unit_divisor=1024,
-                desc=filename,
-                leave=False
-            )
-            
-            # Download and write file
-            with open(local_path, mode) as f:
-                for chunk in response.iter_content(chunk_size=8192):
-                    if chunk:
-                        f.write(chunk)
-                        progress_bar.update(len(chunk))
-            
-            progress_bar.close()
-            self.downloaded_files.append(str(local_path.relative_to(self.local_base_dir)))
-            return True
-            
-        except Exception as e:
-            print(f"Error downloading {url}: {e}")
-            self.failed_files.append(str(local_path.relative_to(self.local_base_dir)))
-            return False
+                
+            except Exception as e:
+                if attempt < max_retries - 1:
+                    # Exponential backoff: 2s, 4s, 8s
+                    retry_delay = 2 ** (attempt + 1)
+                    print(f"Retry {attempt + 1}/{max_retries} after {retry_delay}s: {local_path.name}")
+                    time.sleep(retry_delay)
+                else:
+                    print(f"Error downloading {url}: {e}")
+                    self.failed_files.append(str(local_path.relative_to(self.local_base_dir)))
+                    return False
+        
+        return False
     
     def rewrite_html_file(self, html_path):
         """Rewrite HTML file to use local paths"""
@@ -244,6 +265,136 @@ class WoDBookSyncer:
         print(f"   ✓ Found {len(pdf_files)} PDF files")
         print(f"   ✓ Book list saved to: {book_list_path}")
     
+    def get_file_hash(self, file_path, chunk_size=8192):
+        """Calculate MD5 hash of a file"""
+        md5 = hashlib.md5()
+        try:
+            with open(file_path, 'rb') as f:
+                for chunk in iter(lambda: f.read(chunk_size), b''):
+                    md5.update(chunk)
+            return md5.hexdigest()
+        except Exception as e:
+            print(f"Error hashing {file_path}: {e}")
+            return None
+    
+    def find_duplicates(self):
+        """Find duplicate PDF files based on filename and size"""
+        print("\n🔍 Checking for duplicate files...")
+        
+        # Find all PDFs
+        pdf_files = list(self.local_base_dir.rglob('*.pdf'))
+        
+        # Group by filename (case-insensitive)
+        by_filename = defaultdict(list)
+        for pdf_path in pdf_files:
+            filename = pdf_path.name.lower()
+            by_filename[filename].append(pdf_path)
+        
+        # Find actual duplicates (same name, different locations)
+        duplicates = {}
+        for filename, paths in by_filename.items():
+            if len(paths) > 1:
+                # Get file sizes
+                file_info = []
+                for path in paths:
+                    try:
+                        size = path.stat().st_size
+                        relative = path.relative_to(self.local_base_dir)
+                        file_info.append({
+                            'path': path,
+                            'relative': relative,
+                            'size': size,
+                            'size_mb': size / (1024 * 1024)
+                        })
+                    except Exception as e:
+                        print(f"Error checking {path}: {e}")
+                
+                if file_info:
+                    duplicates[filename] = file_info
+        
+        return duplicates
+    
+    def handle_duplicates_interactive(self):
+        """Interactively handle duplicate files"""
+        duplicates = self.find_duplicates()
+        
+        if not duplicates:
+            print("   ✓ No duplicates found!")
+            return
+        
+        print(f"   Found {len(duplicates)} duplicate filenames")
+        print(f"\n{'='*80}")
+        print("Duplicate File Resolution")
+        print(f"{'='*80}\n")
+        
+        removed_count = 0
+        kept_count = 0
+        
+        for filename, file_list in sorted(duplicates.items()):
+            print(f"\n📄 Duplicate: {filename}")
+            print(f"   Found in {len(file_list)} locations:\n")
+            
+            # Show all versions with details
+            for i, info in enumerate(file_list, 1):
+                print(f"   [{i}] {info['relative']}")
+                print(f"       Size: {info['size_mb']:.2f} MB ({info['size']:,} bytes)")
+            
+            # Check if they're identical (same size)
+            sizes = [f['size'] for f in file_list]
+            if len(set(sizes)) == 1:
+                print(f"\n   ℹ️  All files have identical size - likely the same content")
+            else:
+                print(f"\n   ⚠️  Different file sizes detected!")
+            
+            # Ask user what to do
+            print(f"\n   Options:")
+            for i in range(len(file_list)):
+                print(f"     {i+1} - Keep this one, delete others")
+            print(f"     a - Keep all (skip)")
+            print(f"     q - Quit duplicate handling")
+            
+            while True:
+                choice = input(f"\n   Your choice [1-{len(file_list)}/a/q]: ").strip().lower()
+                
+                if choice == 'q':
+                    print("\n   Stopping duplicate handling...")
+                    return
+                
+                if choice == 'a':
+                    print("   Keeping all versions")
+                    kept_count += len(file_list)
+                    break
+                
+                try:
+                    choice_num = int(choice)
+                    if 1 <= choice_num <= len(file_list):
+                        # Delete all except the chosen one
+                        keep_file = file_list[choice_num - 1]
+                        print(f"\n   Keeping: {keep_file['relative']}")
+                        
+                        for i, info in enumerate(file_list):
+                            if i != (choice_num - 1):
+                                try:
+                                    info['path'].unlink()
+                                    print(f"   ✓ Deleted: {info['relative']}")
+                                    removed_count += 1
+                                except Exception as e:
+                                    print(f"   ✗ Failed to delete {info['relative']}: {e}")
+                        
+                        kept_count += 1
+                        break
+                    else:
+                        print(f"   Invalid choice. Enter 1-{len(file_list)}, 'a', or 'q'")
+                except ValueError:
+                    print(f"   Invalid input. Enter 1-{len(file_list)}, 'a', or 'q'")
+        
+        print(f"\n{'='*80}")
+        print(f"Duplicate Resolution Complete!")
+        print(f"{'='*80}")
+        print(f"Files kept:    {kept_count}")
+        print(f"Files removed: {removed_count}")
+        print(f"{'='*80}\n")
+    
     def run(self):
         """Main sync process"""
         print("=" * 80)
@@ -262,6 +413,9 @@ class WoDBookSyncer:
             
             # Generate book list
             self.generate_book_list()
+            
+            # Check for duplicates
+            self.handle_duplicates_interactive()
             
             # Summary
             elapsed = time.time() - start_time

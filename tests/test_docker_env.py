@@ -109,7 +109,7 @@ def test_config_loading():
     
     try:
         # Add backend to path
-        sys.path.insert(0, 'backend')
+        sys.path.insert(0, '../backend')
         
         # Import config
         from config import Config

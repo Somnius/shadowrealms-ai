@@ -46,10 +46,10 @@ JWT_SECRET_KEY=your-jwt-secret-key-here
 ### **Step 3: Test Configuration**
 ```bash
 # Test local environment
-python test_flask_config.py
+python3 tests/test_flask_config.py
 
 # Test Docker configuration
-python test_docker_env.py
+python3 tests/test_docker_env.py
 ```
 
 ### **Step 4: Start Docker**
@@ -105,12 +105,12 @@ LOG_LEVEL=INFO
 
 ### **Test Local Configuration:**
 ```bash
-python test_flask_config.py
+python3 tests/test_flask_config.py
 ```
 
 ### **Test Docker Configuration:**
 ```bash
-python test_docker_env.py
+python3 tests/test_docker_env.py
 ```
 
 ### **Test Running Container:**
@@ -172,10 +172,10 @@ docker-compose up --build
 ### **Problem: Configuration not loading**
 ```bash
 # Test local config
-python test_flask_config.py
+python3 tests/test_flask_config.py
 
 # Test Docker config
-python test_docker_env.py
+python3 tests/test_docker_env.py
 
 # Check Python path in container
 docker-compose exec backend python -c "import sys; print(sys.path)"

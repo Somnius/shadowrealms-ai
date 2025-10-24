@@ -63,7 +63,7 @@ def test_env_loading():
     
     try:
         # Try to import the config
-        sys.path.append('backend')
+        sys.path.append('../backend')
         from config import Config
         
         print("✅ Config module imported successfully")
