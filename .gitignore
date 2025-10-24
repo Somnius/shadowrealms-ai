@@ -12,6 +12,7 @@ books/*
 !books/README.md
 books/book-list.txt
 books/parsed/
+books/.duplicate_choices.json
 data/
 data/logs/
 data/uploads/

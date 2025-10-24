@@ -52,8 +52,9 @@ The script will automatically:
 - ✅ **All File Types**: Downloads PDFs, HTML, images, and all other files
 - ✅ **HTML Rewriting**: Converts index.html files to use local paths
 - ✅ **Book List**: Generates `book-list.txt` with all PDF files and paths
-- ✅ **Duplicate Detection**: Finds duplicate files across directories after sync
+- ✅ **Hash-Based Duplicate Detection**: Uses MD5 hashes to accurately identify truly identical files
 - ✅ **Interactive Cleanup**: Asks which duplicate to keep before deletion
+- ✅ **Persistent Choices**: Remembers your duplicate resolution choices for future runs (no repeated prompts)
 
 ### Parser Script (`parse_books.py`)
 - ✅ **Multi-core Processing**: Utilizes all CPU cores for parallel PDF processing
@@ -65,6 +66,53 @@ The script will automatically:
 - ✅ **Caching**: Skips already processed PDFs (unless forced)
 - ✅ **JSON Output**: Structured JSON format with optional embeddings
 - ✅ **Progress Tracking**: Real-time progress bars for batch processing
+
+## Duplicate Detection
+
+The sync script includes intelligent duplicate detection that runs after syncing files.
+
+### How It Works
+
+1. **Hash-Based Comparison**: Calculates MD5 hash of each file to determine if files are truly identical
+2. **Smart Detection**: Identifies files with the same name in different directories
+3. **Content Verification**: Shows you which duplicates have identical content vs different versions
+4. **Interactive Cleanup**: Asks you to choose which duplicate to keep
+5. **Persistent Choices**: Saves your decisions in `.duplicate_choices.json` for future runs
+
+### Duplicate Resolution
+
+When duplicates are found, you'll be prompted with:
+```
+📄 Duplicate: vampire - the masquerade.pdf
+   Found in 2 locations:
+
+   [1] Classic World of Darkness/Vampire/Vampire - The Masquerade.pdf
+       Size: 26.61 MB (27,899,891 bytes)
+       Hash: a1b2c3d4e5f6g7h8...
+   [2] oWoD/Vampire - The Masquerade.pdf
+       Size: 26.61 MB (27,899,891 bytes)
+       Hash: a1b2c3d4e5f6g7h8...
+
+   ✅ All files have identical content (same hash)
+
+   Options:
+     1 - Keep this one, delete others
+     2 - Keep this one, delete others
+     a - Keep all (skip)
+     q - Quit duplicate handling
+
+   Your choice [1-2/a/q]:
+```
+
+### Persistent Choices
+
+Your choices are automatically saved to `.duplicate_choices.json`. The next time you run the sync script:
+- **Previously resolved duplicates won't be shown again**
+- **Automatic cleanup** happens based on your saved preferences
+- **Only new duplicates** will prompt you for input
+- **Hash verification** ensures files haven't changed before auto-applying saved choices
+
+To reset your choices, simply delete `.duplicate_choices.json` in the books directory.
 
 ## Parsing PDFs for RAG/Vector Database
 
