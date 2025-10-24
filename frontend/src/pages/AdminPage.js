@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../utils/api';
+import '../responsive.css';
 
 function AdminPage({ token, user, onBack }) {
   const [users, setUsers] = useState([]);

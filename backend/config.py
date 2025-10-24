@@ -25,7 +25,7 @@ class Config:
     # Flask Configuration
     SECRET_KEY = os.environ.get('FLASK_SECRET_KEY') or 'dev-secret-key-change-in-production'
     JWT_SECRET_KEY = os.environ.get('JWT_SECRET_KEY') or 'jwt-secret-key-change-in-production'
-    JWT_ACCESS_TOKEN_EXPIRES = timedelta(hours=1)
+    JWT_ACCESS_TOKEN_EXPIRES = timedelta(hours=6)  # 6 hours of inactivity before re-login required
     JWT_REFRESH_TOKEN_EXPIRES = timedelta(days=30)
     
     # Flask Application Settings
