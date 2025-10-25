@@ -43,6 +43,24 @@ ShadowRealms AI is a revolutionary platform that transforms traditional tabletop
 
 ---
 
+## 🎬 Demo Video
+
+See ShadowRealms AI in action:
+
+<div align="center">
+
+[![ShadowRealms AI Demo](https://img.youtube.com/vi/9RGGb-F5Y2M/maxresdefault.jpg)](https://www.youtube.com/watch?v=9RGGb-F5Y2M)
+
+**[▶️ Watch the Full Demo on YouTube](https://www.youtube.com/watch?v=9RGGb-F5Y2M)**
+
+*Watch this video to see the login system, gothic theme, campaign management, and admin panel in action!*
+
+> **Version 0.7.0 Preview:** This demo showcases the frontend interface in its current state. Please note that not all features are fully functional yet—this is a first look at the user interface and design direction of ShadowRealms AI.
+
+</div>
+
+---
+
 ## Documentation
 
 For comprehensive documentation, detailed setup instructions, and complete feature overview, please refer to our complete documentation:
