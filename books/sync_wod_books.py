@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 World of Darkness Books Sync Script
-Downloads and syncs books from the-eye.eu/public/Books/rpg.rem.uz/World of Darkness/
+Downloads and syncs books from a configured book source URL (stored in .env)
 """
 
 import os
@@ -17,6 +17,7 @@ import urllib3
 import hashlib
 import json
 from collections import defaultdict
+from dotenv import load_dotenv
 
 # Disable SSL warnings for sites with expired certificates
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
@@ -573,8 +574,15 @@ class WoDBookSyncer:
 
 
 def main():
-    # Configuration
-    BASE_URL = "https://the-eye.eu/public/Books/rpg.rem.uz/World%20of%20Darkness/"
+    # Load environment variables
+    load_dotenv(Path(__file__).parent.parent / '.env')
+    
+    # Get book source URL from environment (sensitive information)
+    BASE_URL = os.getenv('BOOK_SOURCE_URL')
+    if not BASE_URL:
+        print("ERROR: BOOK_SOURCE_URL not found in .env file")
+        print("Please set BOOK_SOURCE_URL in your .env file")
+        sys.exit(1)
     
     # Get script directory and set local directory
     script_dir = Path(__file__).parent

@@ -22,6 +22,10 @@ def get_db():
     
     conn = sqlite3.connect(db_path)
     conn.row_factory = sqlite3.Row  # Enable dict-like access
+    
+    # CRITICAL: Enable foreign key constraints for CASCADE deletes
+    conn.execute("PRAGMA foreign_keys = ON")
+    
     return conn
 
 def migrate_db():
@@ -117,6 +121,209 @@ def migrate_db():
             ''')
             conn.commit()
             logger.info("✅ ai_memory table created")
+        
+        # Check if messages table exists
+        cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='messages'")
+        if not cursor.fetchone():
+            logger.info("Creating messages table...")
+            cursor.execute('''
+                CREATE TABLE messages (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    campaign_id INTEGER NOT NULL,
+                    location_id INTEGER NOT NULL,
+                    user_id INTEGER NOT NULL,
+                    character_id INTEGER,
+                    message_type TEXT NOT NULL DEFAULT 'ic',
+                    content TEXT NOT NULL,
+                    role TEXT NOT NULL DEFAULT 'user',
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (campaign_id) REFERENCES campaigns (id) ON DELETE CASCADE,
+                    FOREIGN KEY (location_id) REFERENCES locations (id) ON DELETE CASCADE,
+                    FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE,
+                    FOREIGN KEY (character_id) REFERENCES characters (id) ON DELETE SET NULL
+                )
+            ''')
+            # Create index for faster queries
+            cursor.execute('''
+                CREATE INDEX idx_messages_location 
+                ON messages(campaign_id, location_id, created_at DESC)
+            ''')
+            conn.commit()
+            logger.info("✅ messages table created")
+        
+        # Check if npcs table exists
+        cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='npcs'")
+        if not cursor.fetchone():
+            logger.info("Creating npcs table...")
+            cursor.execute('''
+                CREATE TABLE npcs (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    campaign_id INTEGER NOT NULL,
+                    location_id INTEGER,
+                    name TEXT NOT NULL,
+                    type TEXT,
+                    description TEXT,
+                    personality TEXT,
+                    faction TEXT,
+                    npc_data TEXT,
+                    created_by INTEGER NOT NULL,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    last_seen TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    is_active BOOLEAN DEFAULT 1,
+                    FOREIGN KEY (campaign_id) REFERENCES campaigns (id) ON DELETE CASCADE,
+                    FOREIGN KEY (location_id) REFERENCES locations (id) ON DELETE SET NULL,
+                    FOREIGN KEY (created_by) REFERENCES users (id)
+                )
+            ''')
+            # Create index for location lookups
+            cursor.execute('''
+                CREATE INDEX idx_npcs_location 
+                ON npcs(campaign_id, location_id)
+            ''')
+            conn.commit()
+            logger.info("✅ npcs table created")
+        
+        # Check if npc_messages table exists
+        cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='npc_messages'")
+        if not cursor.fetchone():
+            logger.info("Creating npc_messages table...")
+            cursor.execute('''
+                CREATE TABLE npc_messages (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    npc_id INTEGER NOT NULL,
+                    location_id INTEGER NOT NULL,
+                    campaign_id INTEGER NOT NULL,
+                    content TEXT NOT NULL,
+                    context TEXT,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (npc_id) REFERENCES npcs (id) ON DELETE CASCADE,
+                    FOREIGN KEY (location_id) REFERENCES locations (id) ON DELETE CASCADE,
+                    FOREIGN KEY (campaign_id) REFERENCES campaigns (id) ON DELETE CASCADE
+                )
+            ''')
+            # Create index for NPC history lookups
+            cursor.execute('''
+                CREATE INDEX idx_npc_messages 
+                ON npc_messages(npc_id, created_at DESC)
+            ''')
+            conn.commit()
+            logger.info("✅ npc_messages table created")
+        
+        # Check if combat_encounters table exists
+        cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='combat_encounters'")
+        if not cursor.fetchone():
+            logger.info("Creating combat_encounters table...")
+            cursor.execute('''
+                CREATE TABLE combat_encounters (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    campaign_id INTEGER NOT NULL,
+                    location_id INTEGER NOT NULL,
+                    status TEXT NOT NULL DEFAULT 'active',
+                    initiative_order TEXT,
+                    round_number INTEGER DEFAULT 1,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    ended_at TIMESTAMP,
+                    FOREIGN KEY (campaign_id) REFERENCES campaigns (id) ON DELETE CASCADE,
+                    FOREIGN KEY (location_id) REFERENCES locations (id) ON DELETE CASCADE
+                )
+            ''')
+            conn.commit()
+            logger.info("✅ combat_encounters table created")
+        
+        # Check if combat_participants table exists
+        cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='combat_participants'")
+        if not cursor.fetchone():
+            logger.info("Creating combat_participants table...")
+            cursor.execute('''
+                CREATE TABLE combat_participants (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    encounter_id INTEGER NOT NULL,
+                    character_id INTEGER,
+                    npc_id INTEGER,
+                    initiative INTEGER DEFAULT 0,
+                    current_hp INTEGER,
+                    max_hp INTEGER,
+                    conditions TEXT,
+                    FOREIGN KEY (encounter_id) REFERENCES combat_encounters (id) ON DELETE CASCADE,
+                    FOREIGN KEY (character_id) REFERENCES characters (id) ON DELETE CASCADE,
+                    FOREIGN KEY (npc_id) REFERENCES npcs (id) ON DELETE CASCADE
+                )
+            ''')
+            conn.commit()
+            logger.info("✅ combat_participants table created")
+        
+        # Check if relationships table exists
+        cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='relationships'")
+        if not cursor.fetchone():
+            logger.info("Creating relationships table...")
+            cursor.execute('''
+                CREATE TABLE relationships (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    campaign_id INTEGER NOT NULL,
+                    entity1_type TEXT NOT NULL,
+                    entity1_id INTEGER NOT NULL,
+                    entity2_type TEXT NOT NULL,
+                    entity2_id INTEGER NOT NULL,
+                    relationship_type TEXT NOT NULL,
+                    strength INTEGER DEFAULT 0,
+                    notes TEXT,
+                    last_interaction TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (campaign_id) REFERENCES campaigns (id) ON DELETE CASCADE
+                )
+            ''')
+            # Create index for relationship lookups
+            cursor.execute('''
+                CREATE INDEX idx_relationships 
+                ON relationships(campaign_id, entity1_type, entity1_id)
+            ''')
+            conn.commit()
+            logger.info("✅ relationships table created")
+        
+        # Check if location_connections table exists
+        cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='location_connections'")
+        if not cursor.fetchone():
+            logger.info("Creating location_connections table...")
+            cursor.execute('''
+                CREATE TABLE location_connections (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    location1_id INTEGER NOT NULL,
+                    location2_id INTEGER NOT NULL,
+                    connection_type TEXT DEFAULT 'path',
+                    description TEXT,
+                    is_bidirectional BOOLEAN DEFAULT 1,
+                    FOREIGN KEY (location1_id) REFERENCES locations (id) ON DELETE CASCADE,
+                    FOREIGN KEY (location2_id) REFERENCES locations (id) ON DELETE CASCADE
+                )
+            ''')
+            conn.commit()
+            logger.info("✅ location_connections table created")
+        
+        # Check if location_deletion_log table exists
+        cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='location_deletion_log'")
+        if not cursor.fetchone():
+            logger.info("Creating location_deletion_log table...")
+            cursor.execute('''
+                CREATE TABLE location_deletion_log (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    location_id INTEGER NOT NULL,
+                    campaign_id INTEGER NOT NULL,
+                    location_name TEXT NOT NULL,
+                    location_type TEXT NOT NULL,
+                    location_description TEXT,
+                    deleted_by INTEGER NOT NULL,
+                    deleted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    message_count INTEGER DEFAULT 0,
+                    FOREIGN KEY (campaign_id) REFERENCES campaigns (id) ON DELETE CASCADE,
+                    FOREIGN KEY (deleted_by) REFERENCES users (id)
+                )
+            ''')
+            # Create index for audit queries
+            cursor.execute('''
+                CREATE INDEX idx_deletion_log_campaign 
+                ON location_deletion_log(campaign_id, deleted_at DESC)
+            ''')
+            conn.commit()
+            logger.info("✅ location_deletion_log table created")
         
         # Check if characters table has the correct schema
         cursor.execute("PRAGMA table_info(characters)")

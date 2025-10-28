@@ -55,7 +55,7 @@ See ShadowRealms AI in action:
 
 *Watch this video to see the login system, gothic theme, campaign management, and admin panel in action!*
 
-> **Version 0.7.0 Preview:** This demo showcases the frontend interface in its current state. Please note that not all features are fully functional yet—this is a first look at the user interface and design direction of ShadowRealms AI.
+> **Version 0.7.5 Preview:** This demo showcases the frontend interface in its current state. Please note that not all features are fully functional yet—this is a first look at the user interface and design direction of ShadowRealms AI.
 
 </div>
 
@@ -137,6 +137,16 @@ docker-compose up -d
 ## Current Development Status
 
 <div align="center">
+
+### Version 0.7.5 - AI Health Checks & Security Hardening 🛡️🔍
+
+**Latest Updates:**
+- 🏥 **LM-Studio/Ollama Health Checks**: Automatic service validation before AI operations
+- 🔒 **Sensitive Data Protection**: Book source URLs moved to `.env` (not version controlled)
+- 👁️ **OOC Monitoring System**: AI-powered detection of in-character content in OOC rooms with 3-strike ban system
+- 🧹 **AI Memory Cleanup**: Automatic purging of deleted location/campaign data from ChromaDB
+- 🔧 **API Endpoint Audit**: Complete validation and fixes for frontend-backend routing
+- 📊 **Quality Over Speed**: Comprehensive health checks prevent operations with missing services
 
 ### Version 0.7.0 - Phase 3B: Security & Testing Foundation 🔒🧪
 

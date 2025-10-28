@@ -1,13 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../utils/api';
+import { useToast } from '../components/ToastNotification';
+import ConfirmDialog from '../components/ConfirmDialog';
 import '../responsive.css';
 
 function AdminPage({ token, user, onBack }) {
+  // Initialize toast notification system
+  const { showSuccess, ToastContainer } = useToast();
   const [users, setUsers] = useState([]);
   const [selectedUser, setSelectedUser] = useState(null);
   const [showBanModal, setShowBanModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [showUnbanConfirm, setShowUnbanConfirm] = useState(false);
+  const [userToUnban, setUserToUnban] = useState(null);
   const [moderationLog, setModerationLog] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -54,7 +60,7 @@ function AdminPage({ token, user, onBack }) {
       });
       
       if (response.ok) {
-        alert('✅ User updated!');
+        showSuccess('✅ User updated successfully!');
         setShowEditModal(false);
         fetchUsers();
       } else {
@@ -78,7 +84,7 @@ function AdminPage({ token, user, onBack }) {
       const response = await api.resetUserPassword(token, selectedUser.id, newPassword);
       
       if (response.ok) {
-        alert('✅ Password reset!');
+        showSuccess('✅ Password reset successfully!');
         setShowPasswordModal(false);
       } else {
         const data = await response.json();
@@ -111,7 +117,7 @@ function AdminPage({ token, user, onBack }) {
       const response = await api.banUser(token, selectedUser.id, banData);
       
       if (response.ok) {
-        alert('✅ User banned!');
+        showSuccess('✅ User banned successfully!');
         setShowBanModal(false);
         fetchUsers();
         fetchModerationLog();
@@ -126,14 +132,21 @@ function AdminPage({ token, user, onBack }) {
     }
   };
 
-  const handleUnbanUser = async (userId) => {
-    if (!window.confirm('Unban this user?')) return;
+  const handleUnbanUser = (userId) => {
+    setUserToUnban(userId);
+    setShowUnbanConfirm(true);
+  };
+
+  const confirmUnban = async () => {
+    if (!userToUnban) return;
     
     try {
-      const response = await api.unbanUser(token, userId);
+      const response = await api.unbanUser(token, userToUnban);
       
       if (response.ok) {
-        alert('✅ User unbanned!');
+        showSuccess('✅ User unbanned successfully!');
+        setShowUnbanConfirm(false);
+        setUserToUnban(null);
         fetchUsers();
         fetchModerationLog();
       }
@@ -722,6 +735,23 @@ function AdminPage({ token, user, onBack }) {
           ⚠️ {error}
         </div>
       )}
+
+      {/* Unban Confirmation Dialog */}
+      <ConfirmDialog
+        isOpen={showUnbanConfirm}
+        title="⚠️ Unban User?"
+        message={`Are you sure you want to unban this user?\n\nThey will immediately regain full access to the system.`}
+        onConfirm={confirmUnban}
+        onCancel={() => {
+          setShowUnbanConfirm(false);
+          setUserToUnban(null);
+        }}
+        confirmText="Yes, Unban"
+        cancelText="Cancel"
+      />
+
+      {/* Toast Notifications */}
+      <ToastContainer />
     </div>
   );
 }

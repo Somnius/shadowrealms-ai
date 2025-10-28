@@ -39,7 +39,7 @@ cp env.template .env
 nano .env
 
 # Update these lines:
-FLASK_SECRET_KEY=7e99881cf6559187c323f08a1f3332cceccc7ceb2f641bab97b6f4fa73773e4e
+FLASK_SECRET_KEY=your-generated-secret-key-from-generate-script
 JWT_SECRET_KEY=your-jwt-secret-key-here
 ```
 
