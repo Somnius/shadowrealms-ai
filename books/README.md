@@ -1,6 +1,6 @@
 # World of Darkness Books Sync
 
-This directory contains the World of Darkness books synchronized from the-eye.eu.
+This directory contains the World of Darkness books synchronized from a configured book source (see `.env` file).
 
 ## Setup
 

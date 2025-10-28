@@ -34,7 +34,7 @@ class RuleBookProcessor:
                 'priority': 1,
                 'chunk_size': 1000,
                 'overlap': 200,
-                'specific_path': 'books/World of Darkness/instance_1/the-eye.eu/public/Books/rpg.rem.uz/World of Darkness/oWoD/WOD - World Of Darkness (2nd ed)_flat.pdf'
+                'specific_path': 'books/oWoD/WOD - World Of Darkness (2nd ed)_flat.pdf'
             },
             'vampire_core': {
                 'name': 'Vampire: The Masquerade Core',

@@ -5,6 +5,102 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.5] - 2025-10-28 - AI Health Checks & Security Hardening 🛡️🔍
+
+### Added
+
+#### AI Service Health Checks (Quality over Speed)
+- **health_check.py** - Comprehensive AI service validation
+  - `HealthCheckService` - Validates LM Studio, Ollama, and ChromaDB before operations
+  - `@require_llm` decorator - Ensures LLM provider is available before AI routes
+  - `@require_chromadb` decorator - Validates vector database availability
+  - `@require_ai_services` decorator - Comprehensive check for all AI services
+  - `/api/ai/health` endpoint - Real-time health check for all AI services
+  - Clear error messages with troubleshooting instructions when services are down
+  - 5-second timeout for health checks to prevent long waits
+  - Automatic detection of which LLM provider (LM Studio or Ollama) is available
+
+#### OOC (Out of Character) Monitoring System
+- **ooc_monitor.py** - AI-powered OOC rule enforcement
+  - Lightweight `llama3.2:3b` model for fast IC content detection
+  - 3-strike warning system (3 violations = 24h ban)
+  - Rolling 7-day violation tracking per user per campaign
+  - Temporary bans with automatic expiry (no manual intervention needed)
+  - Clear, educational warning messages explaining violations
+  - Ban messages show time remaining and reason
+  - Automatic OOC room creation for all campaigns
+  - OOC rooms cannot be deleted (protected in delete endpoint)
+  - Database table `ooc_violations` for tracking violations
+  - `/api/campaigns/<id>/locations/<id>` returns `ooc_warning` in response
+  - Banned users receive 403 Forbidden with ban details
+
+#### AI Memory Cleanup System
+- **AI Memory Cleanup on Deletion** - Prevents orphaned data in ChromaDB
+  - Location deletion purges all associated message embeddings from ChromaDB
+  - Campaign deletion purges all location and message embeddings
+  - Soft-delete for locations (`is_active = 0`) instead of hard delete
+  - Audit trail in `location_deletion_log` table (who, when, what, message count)
+  - All AI context queries filter deleted locations (`WHERE is_active = 1`)
+  - CASCADE delete for messages when locations are removed
+  - Comprehensive logging for deletion operations
+  - Foreign key enforcement enabled for data integrity
+
+### Changed
+
+#### Security & Privacy Improvements
+- **Book Source URL Protection**
+  - Moved book source URL from hardcoded scripts to `.env` file
+  - `BOOK_SOURCE_URL` environment variable for personal book collections
+  - Updated `books/sync_wod_books.py` to load from environment
+  - Removed all mentions of book source URLs from documentation
+  - Updated `books/README.md` to reference "configured book source"
+  - Updated `SHADOWREALMS_AI_COMPLETE.md` and `docs/CHANGELOG.md`
+  - Fixed hardcoded paths in `backend/services/rule_book_service.py`
+
+#### Documentation Updates
+- Added comprehensive `docs/OOC_MONITORING.md` documentation
+- Added `docs/AI_MEMORY_CLEANUP.md` system documentation
+- Added `docs/API_AUDIT_REPORT.md` for endpoint validation
+- Removed example secret keys from `docs/DOCKER_ENV_SETUP.md`
+- Updated all version references to 0.7.5
+- Added book source configuration instructions
+
+### Fixed
+
+#### API Endpoint Corrections
+- Fixed location deletion route mismatch (405 Method Not Allowed)
+  - Changed from `/api/locations/<id>` to `/api/campaigns/<id>/locations/<id>`
+- Fixed messages DELETE route being too broad
+  - Changed from `/api/<message_id>` to `/api/messages/<message_id>`
+- Fixed multiple error toasts on location deletion
+  - Close modal immediately before async operation
+  - Clear state to prevent duplicate calls
+- Created comprehensive API endpoint test suite (`tests/test_api_endpoints.py`)
+
+#### Database & System Fixes
+- Enabled foreign key enforcement in SQLite for data integrity
+- Fixed orphaned location data from deleted campaigns
+- Installed `sqlite3` binary in backend Docker container for debugging
+- Fixed missing OOC rooms in 3 campaigns (created retroactively)
+- Added `python-dotenv` dependency for environment variable loading
+
+### Technical Improvements
+
+#### Quality Over Speed Philosophy
+- AI operations fail fast with clear error messages if services unavailable
+- Health checks run before any AI operation (prevent wasted processing)
+- Comprehensive service status reporting for debugging
+- User-friendly troubleshooting instructions in error responses
+- Fail-open for OOC monitoring (don't block if AI unavailable)
+
+#### Testing & Validation
+- Added `tests/fix_missing_ooc_rooms.py` - Retroactive OOC room creation
+- Added `tests/check_deleted_locations.py` - Location cleanup verification
+- Added `tests/test_api_endpoints.py` - API validation (79+ endpoints)
+- Added health check endpoint for service monitoring
+
+---
+
 ## [0.7.0] - 2025-10-24 - Phase 3B: Security & Testing Foundation 🔒🧪
 
 ### Added
@@ -1696,7 +1792,7 @@ python parse_books.py --chunk-size 1500 --overlap 300 --workers 8 --embeddings
 
 ### 🆕 New Features
 - **World of Darkness Books Sync**: Complete automated book synchronization system
-  - Recursive download from the-eye.eu World of Darkness archive
+  - Recursive download from configured book source (personal collection)
   - Automatic virtual environment creation and management
   - Resume support for interrupted downloads
   - Smart file skipping (only downloads new/changed files)

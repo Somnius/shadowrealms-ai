@@ -14,6 +14,7 @@ RUN apt-get update && apt-get install -y \
     libffi-dev \
     libssl-dev \
     libsqlite3-dev \
+    sqlite3 \
     curl \
     bash \
     git \

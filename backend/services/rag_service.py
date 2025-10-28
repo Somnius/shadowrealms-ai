@@ -162,6 +162,95 @@ class RAGService:
         
         return self.store_memory(content, 'world', context, metadata)
     
+    def store_message_embedding(self, message_id: int, campaign_id: int, location_id: int, 
+                                  user_id: int, content: str, role: str, character_name: str = None) -> str:
+        """Store a chat message embedding for semantic search"""
+        try:
+            # Create a message collection if it doesn't exist
+            if 'messages' not in self.collections:
+                self.collections['messages'] = 'message_memory'
+                try:
+                    self.client.get_or_create_collection(name='message_memory')
+                except:
+                    pass
+            
+            # Build metadata
+            metadata = {
+                'campaign_id': campaign_id,
+                'location_id': location_id,
+                'user_id': user_id,
+                'message_id': message_id,
+                'role': role,
+                'timestamp': datetime.now().isoformat()
+            }
+            
+            if character_name:
+                metadata['character_name'] = character_name
+            
+            # Store in ChromaDB
+            collection = self._get_collection('messages')
+            doc_id = f"msg_{message_id}_{campaign_id}"
+            
+            collection.add(
+                documents=[content],
+                metadatas=[metadata],
+                ids=[doc_id]
+            )
+            
+            logger.info(f"Stored message embedding for message {message_id}")
+            return doc_id
+            
+        except Exception as e:
+            logger.error(f"Error storing message embedding: {e}")
+            return None
+    
+    def retrieve_relevant_messages(self, query: str, campaign_id: int, location_id: int = None, 
+                                     limit: int = 5, min_relevance: float = 0.7) -> List[Dict[str, Any]]:
+        """Retrieve semantically relevant messages from conversation history"""
+        try:
+            # Ensure messages collection exists
+            if 'messages' not in self.collections:
+                self.collections['messages'] = 'message_memory'
+            
+            collection = self._get_collection('messages')
+            
+            # Build where clause
+            where_clause = {"campaign_id": campaign_id}
+            if location_id:
+                where_clause["location_id"] = location_id
+            
+            # Query for relevant messages
+            results = collection.query(
+                query_texts=[query],
+                n_results=limit * 2,  # Get extra results to filter by relevance
+                where=where_clause
+            )
+            
+            relevant_messages = []
+            if results['documents'] and results['documents'][0]:
+                for i, doc in enumerate(results['documents'][0]):
+                    distance = results['distances'][0][i] if results['distances'] else 1.0
+                    relevance = 1.0 - distance  # Convert distance to relevance score
+                    
+                    # Only include if above relevance threshold
+                    if relevance >= min_relevance:
+                        message = {
+                            'content': doc,
+                            'metadata': results['metadatas'][0][i] if results['metadatas'] else {},
+                            'relevance': relevance
+                        }
+                        relevant_messages.append(message)
+                
+                # Limit to requested number of results
+                relevant_messages = relevant_messages[:limit]
+            
+            logger.info(f"Retrieved {len(relevant_messages)} relevant messages (threshold: {min_relevance})")
+            return relevant_messages
+            
+        except Exception as e:
+            logger.error(f"Error retrieving relevant messages: {e}")
+            return []
+    
     def store_session_data(self, session_id: int, campaign_id: int, session_data: Dict[str, Any]) -> str:
         """Store session-specific data"""
         content = json.dumps(session_data, indent=2)

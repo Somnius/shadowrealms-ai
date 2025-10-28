@@ -71,6 +71,15 @@ def create_campaign():
         campaign_id = cursor.lastrowid
         conn.commit()
         
+        # Auto-create OOC room for the campaign
+        try:
+            from routes.locations import create_ooc_room
+            ooc_location_id = create_ooc_room(campaign_id, user_id)
+            logger.info(f"OOC room created for campaign {campaign_id}: location {ooc_location_id}")
+        except Exception as e:
+            logger.error(f"Failed to create OOC room for campaign {campaign_id}: {e}")
+            # Don't fail campaign creation if OOC room fails
+        
         # Store campaign data in RAG system
         rag_service = get_rag_service()
         campaign_data = {
@@ -140,12 +149,14 @@ def get_campaigns():
         logger.error(f"Error getting campaigns: {e}")
         return jsonify({'error': 'Failed to get campaigns'}), 500
 
-@campaigns_bp.route('/<int:campaign_id>', methods=['GET', 'PUT'])
+@campaigns_bp.route('/<int:campaign_id>', methods=['GET', 'PUT', 'DELETE'])
 @jwt_required()
 def get_or_update_campaign(campaign_id):
     """Get or update specific campaign details"""
     if request.method == 'PUT':
         return update_campaign(campaign_id)
+    elif request.method == 'DELETE':
+        return delete_campaign(campaign_id)
     
     try:
         user_id = get_jwt_identity()
@@ -241,6 +252,92 @@ def update_campaign(campaign_id):
     except Exception as e:
         logger.error(f"Error updating campaign: {e}")
         return jsonify({'error': 'Failed to update campaign'}), 500
+
+def delete_campaign(campaign_id):
+    """Delete campaign with full AI memory cleanup"""
+    try:
+        user_id = get_jwt_identity()
+        
+        conn = get_db()
+        cursor = conn.cursor()
+        
+        # Check if user is admin or campaign creator
+        cursor.execute("""
+            SELECT created_by, name FROM campaigns WHERE id = ?
+        """, (campaign_id,))
+        
+        row = cursor.fetchone()
+        if not row:
+            return jsonify({'error': 'Campaign not found'}), 404
+        
+        campaign_creator, campaign_name = row
+        
+        # Check if user is creator or admin
+        cursor.execute("""
+            SELECT role FROM users WHERE id = ?
+        """, (user_id,))
+        user_row = cursor.fetchone()
+        
+        if campaign_creator != user_id and (not user_row or user_row[0] != 'admin'):
+            return jsonify({'error': 'Unauthorized'}), 403
+        
+        # Count what will be deleted for audit
+        cursor.execute("SELECT COUNT(*) FROM locations WHERE campaign_id = ?", (campaign_id,))
+        location_count = cursor.fetchone()[0]
+        
+        cursor.execute("SELECT COUNT(*) FROM messages WHERE campaign_id = ?", (campaign_id,))
+        message_count = cursor.fetchone()[0]
+        
+        logger.info(f"🗑️ Deleting campaign {campaign_id} ({campaign_name}):")
+        logger.info(f"   • {location_count} locations")
+        logger.info(f"   • {message_count} messages")
+        
+        # CLEAN UP AI MEMORY - Remove all message embeddings for this campaign from ChromaDB
+        try:
+            rag_service = get_rag_service()
+            
+            if message_count > 0 and hasattr(rag_service, 'client'):
+                try:
+                    collection = rag_service.client.get_or_create_collection(name='message_memory')
+                    # Get all message IDs for this campaign
+                    cursor.execute("SELECT id FROM messages WHERE campaign_id = ?", (campaign_id,))
+                    message_ids = [row[0] for row in cursor.fetchall()]
+                    
+                    if message_ids:
+                        embedding_ids = [f"msg_{msg_id}_{campaign_id}" for msg_id in message_ids]
+                        collection.delete(ids=embedding_ids)
+                        logger.info(f"✅ Purged {len(embedding_ids)} message embeddings from AI memory")
+                except Exception as e:
+                    logger.warning(f"⚠️ ChromaDB cleanup failed (non-critical): {e}")
+        except Exception as e:
+            logger.warning(f"⚠️ ChromaDB cleanup error: {e}")
+        
+        # SQLite's ON DELETE CASCADE will handle related records
+        # (locations, characters, messages, dice_rolls, etc.)
+        cursor.execute("DELETE FROM campaigns WHERE id = ?", (campaign_id,))
+        conn.commit()
+        
+        logger.info(f"✅ Campaign {campaign_id} ({campaign_name}) fully deleted:")
+        logger.info(f"   • SQL data removed (CASCADE)")
+        logger.info(f"   • ChromaDB embeddings purged")
+        logger.info(f"   • AI memory cleaned - no orphaned data")
+        
+        return jsonify({
+            'message': 'Campaign deleted successfully',
+            'campaign_id': campaign_id,
+            'audit': {
+                'campaign_name': campaign_name,
+                'locations_removed': location_count,
+                'messages_removed': message_count,
+                'ai_memory_cleaned': True
+            }
+        }), 200
+        
+    except Exception as e:
+        logger.error(f"❌ Error deleting campaign: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'error': 'Failed to delete campaign'}), 500
 
 @campaigns_bp.route('/<int:campaign_id>/world', methods=['POST'])
 @jwt_required()

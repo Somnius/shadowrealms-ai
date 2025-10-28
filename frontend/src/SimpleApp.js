@@ -4,11 +4,16 @@ import GothicShowcase from './pages/GothicShowcase';
 import { GothicBox } from './components/GothicDecorations';
 import ConfirmDialog from './components/ConfirmDialog';
 import Footer from './components/Footer';
+import LocationSuggestions from './components/LocationSuggestions';
+import { useToast } from './components/ToastNotification';
 import './responsive.css';
 
 const API_URL = '/api'; // Use relative URL through nginx proxy
 
 function SimpleApp() {
+  // Initialize toast notification system
+  const { showInfo, showError, showSuccess, ToastContainer } = useToast();
+  
   const [token, setToken] = useState(localStorage.getItem('token'));
   const [user, setUser] = useState(() => {
     const savedUser = localStorage.getItem('user');
@@ -42,6 +47,18 @@ function SimpleApp() {
   // Confirmation dialog state
   const [showExitConfirm, setShowExitConfirm] = useState(false);
   const [pendingNavigation, setPendingNavigation] = useState(null);
+  
+  // Location suggestions state
+  const [showLocationSuggestions, setShowLocationSuggestions] = useState(false);
+  const [newCampaignData, setNewCampaignData] = useState(null);
+  
+  // Delete confirmation state
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleteConfirmText, setDeleteConfirmText] = useState('');
+  const [showLocationManager, setShowLocationManager] = useState(false);
+  const [campaignLocations, setCampaignLocations] = useState([]);
+  const [showLocationDeleteConfirm, setShowLocationDeleteConfirm] = useState(false);
+  const [locationToDelete, setLocationToDelete] = useState(null);
 
   // Load user data on mount
   useEffect(() => {
@@ -290,10 +307,15 @@ function SimpleApp() {
       const data = await response.json();
 
       if (response.ok) {
-        alert('✅ Campaign created successfully!');
-        await fetchCampaigns();
-        setCurrentPage('dashboard');
-        setError('');
+        // Store campaign data and show location suggestions
+        console.log('✅ Campaign created:', data);
+        setNewCampaignData({
+          id: data.campaign_id, // ✅ Backend returns campaign_id, not id
+          name: campaignData.name,
+          description: campaignData.description,
+          game_system: campaignData.game_system
+        });
+        setShowLocationSuggestions(true);
         e.target.reset();
       } else {
         setError(data.error || 'Failed to create campaign');
@@ -305,19 +327,135 @@ function SimpleApp() {
     }
   };
 
-  // Enter campaign (load locations and switch to chat view)
-  const enterCampaign = (campaign) => {
+  // Fetch locations for a campaign from database
+  const fetchCampaignLocations = async (campaignId) => {
+    try {
+      const response = await fetch(`${API_URL}/campaigns/${campaignId}/locations`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        console.log(`📍 Loaded ${data.length} locations for campaign ${campaignId}`);
+        return data;
+      } else {
+        console.error('Failed to load locations:', await response.text());
+        return [];
+      }
+    } catch (error) {
+      console.error('Error fetching locations:', error);
+      return [];
+    }
+  };
+
+  // Function to load locations for location manager
+  const loadCampaignLocationsForManager = async (campaignId) => {
+    try {
+      const locations = await fetchCampaignLocations(campaignId);
+      setCampaignLocations(locations);
+    } catch (error) {
+      console.error('Error loading campaign locations:', error);
+      showError('Failed to load locations');
+    }
+  };
+
+  // Function to trigger location delete confirmation
+  const handleDeleteLocation = (locationId) => {
+    setLocationToDelete(locationId);
+    setShowLocationDeleteConfirm(true);
+  };
+
+  // Function to execute location deletion after confirmation
+  const executeDeleteLocation = async () => {
+    if (!locationToDelete) return;
+
+    // Close confirmation modal immediately
+    setShowLocationDeleteConfirm(false);
+    const locationId = locationToDelete;
+    setLocationToDelete(null);
+
+    try {
+      setLoading(true);
+      const response = await fetch(`${API_URL}/campaigns/${selectedCampaign.id}/locations/${locationId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        const errorMsg = errorData.error || `Failed to delete location (${response.status})`;
+        throw new Error(errorMsg);
+      }
+
+      const data = await response.json();
+      console.log('✅ Location deleted:', data);
+      
+      showSuccess('✅ Location deleted successfully!');
+      
+      // Reload locations list
+      await loadCampaignLocationsForManager(selectedCampaign.id);
+      
+    } catch (error) {
+      console.error('❌ Error deleting location:', error);
+      showError(`❌ ${error.message || 'Failed to delete location'}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Function to open location manager
+  const openLocationManager = async () => {
+    await loadCampaignLocationsForManager(selectedCampaign.id);
+    setShowLocationManager(true);
+  };
+
+  // Function to trigger AI location suggestions for existing campaign
+  const handleAddLocationsWithAI = () => {
+    setNewCampaignData(selectedCampaign); // Reuse the same component
+    setShowLocationSuggestions(true);
+    setShowLocationManager(false); // Close manager while showing suggestions
+  };
+
+  // Callback when AI suggestions are completed (for existing campaign)
+  const handleLocationSuggestionsComplete = async () => {
+    setShowLocationSuggestions(false);
+    setNewCampaignData(null);
+    // Reload locations and reopen manager
+    await loadCampaignLocationsForManager(selectedCampaign.id);
+    setShowLocationManager(true);
+    showSuccess('New locations added successfully!');
+  };
+
+  // Enter campaign (load locations from database and switch to chat view)
+  const enterCampaign = async (campaign) => {
     setSelectedCampaign(campaign);
-    // For now, create default locations
-    const defaultLocations = [
-      { id: 'ooc', name: '💬 OOC Chat', type: 'ooc' },
-      { id: 'elysium', name: '🏛️ Elysium', type: 'location' },
-      { id: 'downtown', name: '🌆 Downtown', type: 'location' },
-      { id: 'haven', name: '🏠 Haven', type: 'location' }
-    ];
-    setLocations(defaultLocations);
-    setCurrentLocation(defaultLocations[0]);
-    setMessages([]);
+    
+    // Fetch locations from database
+    const campaignLocations = await fetchCampaignLocations(campaign.id);
+    
+    let initialLocation = null;
+    if (campaignLocations.length > 0) {
+      setLocations(campaignLocations);
+      // Set OOC as default, or first location if no OOC
+      const oocLocation = campaignLocations.find(loc => loc.type === 'ooc');
+      initialLocation = oocLocation || campaignLocations[0];
+      setCurrentLocation(initialLocation);
+    } else {
+      // Fallback if no locations (shouldn't happen but just in case)
+      console.warn('⚠️ No locations found for campaign, using fallback');
+      const fallbackLoc = { id: 0, name: '💬 OOC Chat', type: 'ooc' };
+      setLocations([fallbackLoc]);
+      setCurrentLocation(fallbackLoc);
+      initialLocation = fallbackLoc;
+    }
+    
+    // Load messages for initial location
+    if (initialLocation) {
+      await loadMessages(campaign.id, initialLocation.id);
+    }
+    
     navigateTo('chat', campaign); // Use navigateTo for proper browser history
   };
 
@@ -364,14 +502,16 @@ function SimpleApp() {
     setLoading(true);
     setError('');
 
-    // Add user message to UI immediately
-    const userMessage = {
+    // Add user message to UI immediately (optimistic update)
+    const tempUserMessage = {
       role: 'user',
       content: messageText,
-      timestamp: new Date().toISOString(),
-      location: currentLocation.id
+      created_at: new Date().toISOString(),
+      location_id: currentLocation.id,
+      username: user.username,
+      temp: true  // Mark as temporary
     };
-    setMessages(prev => [...prev, userMessage]);
+    setMessages(prev => [...prev, tempUserMessage]);
     e.target.reset();
     
     // Keep focus on input after sending
@@ -380,7 +520,34 @@ function SimpleApp() {
     }
 
     try {
-      const response = await fetch(`${API_URL}/ai/chat`, {
+      // Save user message to database
+      const saveResponse = await fetch(`${API_URL}/messages/campaigns/${selectedCampaign.id}/locations/${currentLocation.id}`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          content: messageText,
+          message_type: 'ic',
+          role: 'user'
+        })
+      });
+
+      if (saveResponse.ok) {
+        const saveData = await saveResponse.json();
+        console.log('✅ Message saved to database:', saveData);
+        
+        // Replace temp message with saved message
+        setMessages(prev => 
+          prev.map(msg => msg.temp ? saveData.data : msg)
+        );
+      } else {
+        console.error('❌ Failed to save message to database');
+      }
+
+      // Get AI response
+      const aiResponse = await fetch(`${API_URL}/ai/chat`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -393,19 +560,41 @@ function SimpleApp() {
         })
       });
 
-      const data = await response.json();
+      const aiData = await aiResponse.json();
 
-      if (response.ok) {
-        // Add AI response to messages
-        const aiMessage = {
-          role: 'assistant',
-          content: data.response || data.message || 'No response',
-          timestamp: new Date().toISOString(),
-          location: currentLocation.id
-        };
-        setMessages(prev => [...prev, aiMessage]);
+      if (aiResponse.ok) {
+        const aiMessageContent = aiData.response || aiData.message || 'No response';
+        
+        // Save AI response to database
+        const aiSaveResponse = await fetch(`${API_URL}/messages/campaigns/${selectedCampaign.id}/locations/${currentLocation.id}`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            content: aiMessageContent,
+            message_type: 'ic',
+            role: 'assistant'
+          })
+        });
+
+        if (aiSaveResponse.ok) {
+          const aiSaveData = await aiSaveResponse.json();
+          console.log('✅ AI message saved to database:', aiSaveData);
+          setMessages(prev => [...prev, aiSaveData.data]);
+        } else {
+          // Fallback: Add AI message to UI even if save failed
+          setMessages(prev => [...prev, {
+            role: 'assistant',
+            content: aiMessageContent,
+            created_at: new Date().toISOString(),
+            location_id: currentLocation.id,
+            username: 'AI'
+          }]);
+        }
       } else {
-        setError(data.error || 'Failed to get AI response');
+        setError(aiData.error || 'Failed to get AI response');
       }
     } catch (err) {
       setError('Connection error: ' + err.message);
@@ -414,11 +603,32 @@ function SimpleApp() {
     }
   };
 
+  // Load messages for a location
+  const loadMessages = async (campaignId, locationId) => {
+    try {
+      console.log(`📨 Loading messages for location ${locationId}...`);
+      const response = await fetch(`${API_URL}/messages/campaigns/${campaignId}/locations/${locationId}`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        console.log(`✅ Loaded ${data.length} messages for location ${locationId}`);
+        setMessages(data);
+      } else {
+        console.error('❌ Failed to load messages:', await response.text());
+        setMessages([]);
+      }
+    } catch (error) {
+      console.error('❌ Error loading messages:', error);
+      setMessages([]);
+    }
+  };
+
   // Change location
-  const changeLocation = (location) => {
+  const changeLocation = async (location) => {
     setCurrentLocation(location);
-    // In a real app, load messages for this location
-    setMessages([]);
+    await loadMessages(selectedCampaign.id, location.id);
   };
 
   // Update campaign name
@@ -1490,59 +1700,78 @@ function SimpleApp() {
               >
                 ✏️ Edit Campaign Info
               </button>
-              <button style={{
-                padding: '12px',
-                background: '#e94560',
-                color: 'white',
-                border: 'none',
-                borderRadius: '5px',
-                cursor: 'pointer',
-                fontWeight: '600'
-              }}>
+              <button 
+                onClick={() => showInfo('👥 Player management UI coming soon!\n\nFor now, players can join campaigns through invite codes.', 6000)}
+                style={{
+                  padding: '12px',
+                  background: '#e94560',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '5px',
+                  cursor: 'pointer',
+                  fontWeight: '600'
+                }}
+              >
                 👥 Manage Players
               </button>
-              <button style={{
-                padding: '12px',
-                background: '#e94560',
-                color: 'white',
-                border: 'none',
-                borderRadius: '5px',
-                cursor: 'pointer',
-                fontWeight: '600'
-              }}>
+              <button 
+                onClick={openLocationManager}
+                style={{
+                  padding: '12px',
+                  background: '#e94560',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '5px',
+                  cursor: 'pointer',
+                  fontWeight: '600',
+                  fontFamily: 'Cinzel, serif'
+                }}
+              >
                 🗺️ Manage Locations
               </button>
-              <button style={{
-                padding: '12px',
-                background: '#e94560',
-                color: 'white',
-                border: 'none',
-                borderRadius: '5px',
-                cursor: 'pointer',
-                fontWeight: '600'
-              }}>
+              <button 
+                onClick={() => showInfo('📚 Rule book management coming soon!')}
+                style={{
+                  padding: '12px',
+                  background: '#e94560',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '5px',
+                  cursor: 'pointer',
+                  fontWeight: '600'
+                }}
+              >
                 📚 Add Rule Books
               </button>
-              <button style={{
-                padding: '12px',
-                background: '#ffc107',
-                color: '#e94560',
-                border: 'none',
-                borderRadius: '5px',
-                cursor: 'pointer',
-                fontWeight: '600'
-              }}>
+              <button 
+                onClick={() => showInfo('💾 Export feature coming soon!')}
+                style={{
+                  padding: '12px',
+                  background: '#ffc107',
+                  color: '#e94560',
+                  border: 'none',
+                  borderRadius: '5px',
+                  cursor: 'pointer',
+                  fontWeight: '600'
+                }}
+              >
                 💾 Export Campaign
               </button>
-              <button style={{
-                padding: '12px',
-                background: '#dc3545',
-                color: 'white',
-                border: 'none',
-                borderRadius: '5px',
-                cursor: 'pointer',
-                fontWeight: '600'
-              }}>
+              <button 
+                onClick={() => {
+                  setDeleteConfirmText('');
+                  setShowDeleteConfirm(true);
+                }}
+                style={{
+                  padding: '12px',
+                  background: '#dc3545',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '5px',
+                  cursor: 'pointer',
+                  fontWeight: '600'
+                }}
+              >
                 🗑️ Delete Campaign
               </button>
             </div>
@@ -2010,8 +2239,8 @@ function SimpleApp() {
               </div>
             </div>
           ) : (
-            messages.filter(msg => msg.location === currentLocation?.id).map((msg, idx) => (
-              <div key={idx} style={{ marginBottom: '20px' }}>
+            messages.map((msg, idx) => (
+              <div key={msg.id || idx} style={{ marginBottom: '20px' }}>
                 <div style={{ display: 'flex', alignItems: 'flex-start', gap: '15px' }}>
                   <div style={{
                     width: '40px',
@@ -2029,10 +2258,10 @@ function SimpleApp() {
                   <div style={{ flex: 1 }}>
                     <div style={{ marginBottom: '5px' }}>
                       <span style={{ color: msg.role === 'user' ? '#5865f2' : '#ed4245', fontWeight: '600', fontSize: '15px' }}>
-                        {msg.role === 'user' ? user?.username : 'AI Storyteller'}
+                        {msg.role === 'user' ? (msg.username || user?.username) : 'AI Storyteller'}
                       </span>
                       <span style={{ color: '#72767d', fontSize: '12px', marginLeft: '8px' }}>
-                        {new Date(msg.timestamp).toLocaleTimeString()}
+                        {new Date(msg.created_at).toLocaleTimeString()}
                       </span>
                     </div>
                     <div style={{ color: '#dcddde', fontSize: '15px', lineHeight: '1.5', whiteSpace: 'pre-wrap' }}>
@@ -2205,6 +2434,587 @@ function SimpleApp() {
       {token && currentPage === 'createCampaign' && renderCreateCampaign()}
       {token && currentPage === 'campaignDetails' && renderCampaignDetails()}
       {token && currentPage === 'chat' && renderChat()}
+      
+      {/* Delete Campaign Confirmation Modal */}
+      {showDeleteConfirm && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0, 0, 0, 0.9)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 3000,
+          animation: 'fadeIn 0.3s ease-out',
+          padding: '20px'
+        }}>
+          <GothicBox theme="vampire" style={{
+            background: '#16213e',
+            padding: '30px',
+            borderRadius: '15px',
+            maxWidth: '550px',
+            width: '100%',
+            textAlign: 'center',
+            boxShadow: '0 0 40px rgba(233, 69, 96, 0.8)',
+            border: '3px solid #e94560',
+            position: 'relative'
+          }}>
+            <div style={{ fontSize: '48px', marginBottom: '20px' }}>💀</div>
+            <h2 style={{ 
+              color: '#e94560', 
+              marginBottom: '20px', 
+              fontFamily: 'Cinzel, serif', 
+              fontSize: '28px',
+              textShadow: '0 0 10px rgba(233, 69, 96, 0.5)'
+            }}>
+              ⚠️ DELETE CAMPAIGN
+            </h2>
+            <div style={{
+              background: 'rgba(220, 53, 69, 0.1)',
+              border: '2px solid #dc3545',
+              borderRadius: '10px',
+              padding: '20px',
+              marginBottom: '25px',
+              textAlign: 'left'
+            }}>
+              <p style={{ 
+                color: '#ff6b6b', 
+                marginBottom: '15px', 
+                lineHeight: '1.6',
+                fontFamily: 'Crimson Text, serif',
+                fontSize: '16px',
+                fontWeight: 'bold'
+              }}>
+                You are about to permanently delete:
+              </p>
+              <p style={{ 
+                color: '#d0d0e0', 
+                marginBottom: '10px',
+                fontFamily: 'Cinzel, serif',
+                fontSize: '18px',
+                textAlign: 'center',
+                padding: '10px',
+                background: 'rgba(233, 69, 96, 0.2)',
+                borderRadius: '5px'
+              }}>
+                "{selectedCampaign?.name}"
+              </p>
+              <ul style={{ 
+                color: '#ff6b6b', 
+                marginBottom: '15px', 
+                lineHeight: '1.8',
+                fontFamily: 'Crimson Text, serif',
+                fontSize: '15px',
+                paddingLeft: '20px'
+              }}>
+                <li>All locations and rooms</li>
+                <li>All characters and their data</li>
+                <li>All messages and chat history</li>
+                <li>All dice rolls and logs</li>
+                <li>All campaign progress</li>
+              </ul>
+              <p style={{ 
+                color: '#ff4444', 
+                marginTop: '15px',
+                fontFamily: 'Cinzel, serif',
+                fontSize: '14px',
+                fontWeight: 'bold',
+                textAlign: 'center',
+                textTransform: 'uppercase',
+                letterSpacing: '1px'
+              }}>
+                ⚠️ THIS CANNOT BE UNDONE ⚠️
+              </p>
+            </div>
+            
+            <div style={{ marginBottom: '25px' }}>
+              <label style={{ 
+                color: '#b5b5c3', 
+                display: 'block', 
+                marginBottom: '10px',
+                fontFamily: 'Crimson Text, serif',
+                fontSize: '15px'
+              }}>
+                Type <strong style={{ color: '#e94560' }}>CONFIRM</strong> to proceed:
+              </label>
+              <input
+                type="text"
+                value={deleteConfirmText}
+                onChange={(e) => setDeleteConfirmText(e.target.value)}
+                placeholder="Type CONFIRM here"
+                style={{
+                  width: '100%',
+                  padding: '12px',
+                  background: '#0f1729',
+                  border: '2px solid ' + (deleteConfirmText === 'CONFIRM' ? '#4ade80' : '#2a2a4e'),
+                  borderRadius: '8px',
+                  color: '#d0d0e0',
+                  fontSize: '16px',
+                  fontFamily: 'monospace',
+                  textAlign: 'center',
+                  textTransform: 'uppercase',
+                  letterSpacing: '2px',
+                  transition: 'all 0.3s'
+                }}
+                autoFocus
+              />
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'center', gap: '15px' }}>
+              <button
+                onClick={() => {
+                  setShowDeleteConfirm(false);
+                  setDeleteConfirmText('');
+                }}
+                style={{
+                  padding: '14px 30px',
+                  background: '#40444b',
+                  color: '#dcddde',
+                  border: '2px solid #6c757d',
+                  borderRadius: '8px',
+                  cursor: 'pointer',
+                  fontWeight: 'bold',
+                  fontSize: '16px',
+                  fontFamily: 'Cinzel, serif',
+                  transition: 'all 0.2s',
+                  minWidth: '140px'
+                }}
+                onMouseOver={(e) => { 
+                  e.target.style.background = '#6c757d'; 
+                  e.target.style.color = 'white'; 
+                }}
+                onMouseOut={(e) => { 
+                  e.target.style.background = '#40444b'; 
+                  e.target.style.color = '#dcddde'; 
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={async () => {
+                  if (deleteConfirmText !== 'CONFIRM') return;
+                  
+                  try {
+                    const response = await fetch(`${API_URL}/campaigns/${selectedCampaign.id}`, {
+                      method: 'DELETE',
+                      headers: { 'Authorization': `Bearer ${token}` }
+                    });
+                    
+                    if (response.ok) {
+                      setShowDeleteConfirm(false);
+                      setDeleteConfirmText('');
+                      await fetchCampaigns();
+                      setCurrentPage('dashboard');
+                      showSuccess('✅ Campaign deleted successfully!');
+                    } else {
+                      const data = await response.json();
+                      showError('❌ Failed to delete: ' + (data.error || 'Unknown error'));
+                    }
+                  } catch (error) {
+                    showError('❌ Error deleting campaign: ' + error.message);
+                  }
+                }}
+                disabled={deleteConfirmText !== 'CONFIRM'}
+                style={{
+                  padding: '14px 30px',
+                  background: deleteConfirmText === 'CONFIRM' 
+                    ? 'linear-gradient(135deg, #dc3545 0%, #8b0000 100%)' 
+                    : '#555',
+                  color: deleteConfirmText === 'CONFIRM' ? 'white' : '#888',
+                  border: deleteConfirmText === 'CONFIRM' ? '2px solid #dc3545' : '2px solid #555',
+                  borderRadius: '8px',
+                  cursor: deleteConfirmText === 'CONFIRM' ? 'pointer' : 'not-allowed',
+                  fontWeight: 'bold',
+                  fontSize: '16px',
+                  fontFamily: 'Cinzel, serif',
+                  boxShadow: deleteConfirmText === 'CONFIRM' 
+                    ? '0 4px 20px rgba(220, 53, 69, 0.6)' 
+                    : 'none',
+                  transition: 'all 0.2s',
+                  minWidth: '140px'
+                }}
+                onMouseOver={(e) => {
+                  if (deleteConfirmText === 'CONFIRM') {
+                    e.target.style.transform = 'translateY(-2px)';
+                    e.target.style.boxShadow = '0 6px 30px rgba(220, 53, 69, 0.8)';
+                  }
+                }}
+                onMouseOut={(e) => {
+                  if (deleteConfirmText === 'CONFIRM') {
+                    e.target.style.transform = 'translateY(0)';
+                    e.target.style.boxShadow = '0 4px 20px rgba(220, 53, 69, 0.6)';
+                  }
+                }}
+              >
+                {deleteConfirmText === 'CONFIRM' ? '🗑️ Delete Forever' : '🔒 Locked'}
+              </button>
+            </div>
+          </GothicBox>
+        </div>
+      )}
+
+      {/* Location Delete Confirmation Modal */}
+      {showLocationDeleteConfirm && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0, 0, 0, 0.9)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 3000,
+          animation: 'fadeIn 0.3s ease-out',
+          padding: '20px'
+        }}>
+          <div style={{
+            background: '#16213e',
+            padding: '30px',
+            borderRadius: '15px',
+            maxWidth: '500px',
+            width: '100%',
+            textAlign: 'center',
+            boxShadow: '0 0 40px rgba(233, 69, 96, 0.8)',
+            border: '3px solid #e94560'
+          }}>
+            <div style={{ fontSize: '48px', marginBottom: '20px' }}>🗑️</div>
+            <h2 style={{ 
+              color: '#e94560', 
+              marginBottom: '20px', 
+              fontFamily: 'Cinzel, serif', 
+              fontSize: '24px'
+            }}>
+              Delete Location?
+            </h2>
+            <p style={{ 
+              color: '#d0d0e0', 
+              marginBottom: '30px', 
+              lineHeight: '1.6',
+              fontFamily: 'Crimson Text, serif',
+              fontSize: '16px'
+            }}>
+              Are you sure you want to delete this location?
+              <br />
+              <strong style={{ color: '#ff6b6b' }}>
+                This will also delete all messages in this location.
+              </strong>
+              <br />
+              This action cannot be undone.
+            </p>
+
+            <div style={{ display: 'flex', justifyContent: 'center', gap: '15px' }}>
+              <button
+                onClick={() => {
+                  setShowLocationDeleteConfirm(false);
+                  setLocationToDelete(null);
+                }}
+                style={{
+                  padding: '14px 30px',
+                  background: '#40444b',
+                  color: '#dcddde',
+                  border: '2px solid #6c757d',
+                  borderRadius: '8px',
+                  cursor: 'pointer',
+                  fontWeight: 'bold',
+                  fontSize: '16px',
+                  fontFamily: 'Cinzel, serif',
+                  transition: 'all 0.2s'
+                }}
+                onMouseOver={(e) => { 
+                  e.target.style.background = '#5a5e66'; 
+                  e.target.style.color = 'white'; 
+                }}
+                onMouseOut={(e) => { 
+                  e.target.style.background = '#40444b'; 
+                  e.target.style.color = '#dcddde'; 
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={executeDeleteLocation}
+                disabled={loading}
+                style={{
+                  padding: '14px 30px',
+                  background: loading ? '#6c757d' : '#dc3545',
+                  color: 'white',
+                  border: loading ? '2px solid #6c757d' : '2px solid #dc3545',
+                  borderRadius: '8px',
+                  cursor: loading ? 'not-allowed' : 'pointer',
+                  fontWeight: 'bold',
+                  fontSize: '16px',
+                  fontFamily: 'Cinzel, serif',
+                  transition: 'all 0.2s',
+                  minWidth: '140px'
+                }}
+                onMouseOver={(e) => {
+                  if (!loading) {
+                    e.target.style.transform = 'translateY(-2px)';
+                    e.target.style.boxShadow = '0 6px 30px rgba(220, 53, 69, 0.8)';
+                  }
+                }}
+                onMouseOut={(e) => {
+                  if (!loading) {
+                    e.target.style.transform = 'translateY(0)';
+                    e.target.style.boxShadow = 'none';
+                  }
+                }}
+              >
+                {loading ? '⏳ Deleting...' : '🗑️ Delete Location'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      
+      {/* Location Suggestions Modal */}
+      {showLocationSuggestions && newCampaignData && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0, 0, 0, 0.85)',
+          zIndex: 2000,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '20px',
+          overflowY: 'auto'
+        }}>
+          <div style={{
+            maxWidth: '900px',
+            width: '100%',
+            maxHeight: '90vh',
+            overflowY: 'auto'
+          }}>
+            <LocationSuggestions
+              campaignId={newCampaignData.id}
+              settingDescription={newCampaignData.description}
+              onComplete={async () => {
+                // Check if we're adding to an existing campaign or new campaign
+                if (selectedCampaign && selectedCampaign.id === newCampaignData.id) {
+                  // Adding to existing campaign - return to location manager
+                  await handleLocationSuggestionsComplete();
+                } else {
+                  // New campaign - return to dashboard
+                  setShowLocationSuggestions(false);
+                  setNewCampaignData(null);
+                  await fetchCampaigns();
+                  setCurrentPage('dashboard');
+                }
+              }}
+              onSkip={async () => {
+                // Check if we're adding to an existing campaign or new campaign
+                if (selectedCampaign && selectedCampaign.id === newCampaignData.id) {
+                  // Adding to existing campaign - return to location manager
+                  setShowLocationSuggestions(false);
+                  setNewCampaignData(null);
+                  setShowLocationManager(true);
+                } else {
+                  // New campaign - return to dashboard
+                  setShowLocationSuggestions(false);
+                  setNewCampaignData(null);
+                  await fetchCampaigns();
+                  setCurrentPage('dashboard');
+                }
+              }}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Location Manager Modal */}
+      {showLocationManager && selectedCampaign && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0, 0, 0, 0.85)',
+          zIndex: 2000,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '20px',
+          overflowY: 'auto'
+        }}>
+          <div style={{
+            background: '#16213e',
+            borderRadius: '15px',
+            maxWidth: '800px',
+            width: '100%',
+            maxHeight: '90vh',
+            overflowY: 'auto',
+            border: '2px solid #e94560',
+            boxShadow: '0 0 30px rgba(233, 69, 96, 0.5)'
+          }}>
+            {/* Header */}
+            <div style={{
+              background: 'linear-gradient(135deg, #e94560 0%, #8b0000 100%)',
+              padding: '20px',
+              borderTopLeftRadius: '13px',
+              borderTopRightRadius: '13px',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center'
+            }}>
+              <h2 style={{ color: 'white', margin: 0, fontFamily: 'Cinzel, serif', fontSize: '24px' }}>
+                🗺️ Manage Locations
+              </h2>
+              <button
+                onClick={() => setShowLocationManager(false)}
+                style={{
+                  background: 'rgba(255, 255, 255, 0.2)',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '50%',
+                  width: '40px',
+                  height: '40px',
+                  cursor: 'pointer',
+                  fontSize: '20px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Content */}
+            <div style={{ padding: '30px' }}>
+              {/* Add Locations Button */}
+              <div style={{ marginBottom: '30px', textAlign: 'center' }}>
+                <button
+                  onClick={handleAddLocationsWithAI}
+                  disabled={loading}
+                  style={{
+                    padding: '15px 30px',
+                    background: 'linear-gradient(135deg, #9d4edd 0%, #5a0099 100%)',
+                    color: 'white',
+                    border: '2px solid #9d4edd',
+                    borderRadius: '10px',
+                    cursor: loading ? 'not-allowed' : 'pointer',
+                    fontSize: '18px',
+                    fontWeight: 'bold',
+                    fontFamily: 'Cinzel, serif',
+                    boxShadow: '0 4px 15px rgba(157, 78, 221, 0.4)',
+                    transition: 'all 0.3s'
+                  }}
+                  onMouseOver={(e) => !loading && (e.target.style.boxShadow = '0 6px 25px rgba(157, 78, 221, 0.6)')}
+                  onMouseOut={(e) => !loading && (e.target.style.boxShadow = '0 4px 15px rgba(157, 78, 221, 0.4)')}
+                >
+                  ✨ Add New Locations (AI Suggestions)
+                </button>
+                <div style={{
+                  marginTop: '10px',
+                  color: '#9d4edd',
+                  fontSize: '14px',
+                  fontFamily: 'Crimson Text, serif'
+                }}>
+                  AI will suggest thematic locations based on your campaign setting
+                </div>
+              </div>
+
+              {/* Current Locations */}
+              <h3 style={{ color: '#e94560', marginBottom: '20px', fontFamily: 'Cinzel, serif' }}>
+                Current Locations ({campaignLocations.length})
+              </h3>
+
+              {campaignLocations.length === 0 ? (
+                <div style={{
+                  textAlign: 'center',
+                  padding: '40px',
+                  color: '#8b8b9f',
+                  fontFamily: 'Crimson Text, serif',
+                  fontSize: '16px'
+                }}>
+                  No locations found. Click "Add New Locations" to create some!
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+                  {campaignLocations.map((location) => (
+                    <div
+                      key={location.id}
+                      style={{
+                        background: '#0f1729',
+                        padding: '20px',
+                        borderRadius: '10px',
+                        border: '2px solid #2a2a4e',
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        transition: 'all 0.2s'
+                      }}
+                    >
+                      <div style={{ flex: 1 }}>
+                        <div style={{
+                          color: '#e94560',
+                          fontSize: '18px',
+                          fontWeight: 'bold',
+                          marginBottom: '5px',
+                          fontFamily: 'Cinzel, serif'
+                        }}>
+                          {location.name}
+                        </div>
+                        <div style={{
+                          color: '#9d4edd',
+                          fontSize: '14px',
+                          marginBottom: '8px',
+                          fontFamily: 'Crimson Text, serif',
+                          textTransform: 'capitalize'
+                        }}>
+                          Type: {location.type}
+                        </div>
+                        {location.description && (
+                          <div style={{
+                            color: '#b5b5c3',
+                            fontSize: '14px',
+                            fontFamily: 'Crimson Text, serif',
+                            lineHeight: '1.6'
+                          }}>
+                            {location.description}
+                          </div>
+                        )}
+                      </div>
+                      <div style={{ marginLeft: '20px', display: 'flex', gap: '10px' }}>
+                        {location.type !== 'ooc' && (
+                          <button
+                            onClick={() => handleDeleteLocation(location.id)}
+                            disabled={loading}
+                            style={{
+                              padding: '8px 16px',
+                              background: '#dc3545',
+                              color: 'white',
+                              border: 'none',
+                              borderRadius: '5px',
+                              cursor: loading ? 'not-allowed' : 'pointer',
+                              fontSize: '14px',
+                              fontWeight: '600',
+                              fontFamily: 'Cinzel, serif'
+                            }}
+                          >
+                            🗑️ Delete
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
       {token && currentPage === 'admin' && (
         <AdminPage 
           token={token} 
@@ -2223,6 +3033,9 @@ function SimpleApp() {
         confirmText="Yes, Leave"
         cancelText="Stay Here"
       />
+      
+      {/* Toast Notifications */}
+      <ToastContainer />
     </div>
   );
 }
