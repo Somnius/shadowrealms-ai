@@ -1,9 +1,28 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import ReadmeModal from './ReadmeModal';
 
 function Footer() {
-  const version = "v0.7.0"; // Always check README.md for current version
+  const [version, setVersion] = useState("v0.0.0"); // Will be fetched from backend
   const [showReadme, setShowReadme] = useState(false);
+
+  // Fetch version from backend on mount
+  useEffect(() => {
+    const fetchVersion = async () => {
+      try {
+        const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+        const response = await fetch(`${API_URL}/version`);
+        if (response.ok) {
+          const data = await response.json();
+          setVersion(data.version);
+        }
+      } catch (error) {
+        console.error('Failed to fetch version:', error);
+        // Keep default version on error
+      }
+    };
+
+    fetchVersion();
+  }, []);
 
   return (
     <>

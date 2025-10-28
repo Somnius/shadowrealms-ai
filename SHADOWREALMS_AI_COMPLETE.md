@@ -293,6 +293,10 @@ This philosophy ensures:
 - [Performance & Scalability](#performance--scalability)
 
 ### **📊 Current Status & Versions**
+- [Version 0.7.8 - Footer Version Display Fix](#version-078---footer-version-display-fix-)
+- [Version 0.7.7 - PostgreSQL Migration Fixes & Remote Access](#version-077---postgresql-migration-fixes--remote-access-)
+- [Version 0.7.6 - Message Persistence & API Verification](#version-076---message-persistence--api-verification-)
+- [Version 0.7.5 - AI Health Checks & Security Hardening](#version-075---ai-health-checks--security-hardening-)
 - [Version 0.7.0 - Phase 3B: Security & Testing Foundation](#version-070---phase-3b-security--testing-foundation-)
 - [Version 0.6.5 - UI/UX Polish & In-App Documentation](#version-065---uiux-polish--in-app-documentation-)
 - [Version 0.6.4 - Responsive Design & Navigation Fixes](#version-064---responsive-design--navigation-fixes-)
@@ -321,7 +325,7 @@ This philosophy ensures:
 - [Phase 3A Interface Wireframe (ASCII)](#phase-3a-interface-wireframe-ascii)
 - [Next Steps for Phase 3A](#next-steps-for-phase-3a)
 
-### **🚀 Phase 3B: Advanced Campaign & Character Systems** ✅ FOUNDATION COMPLETE (v0.7.0)
+### **🚀 Phase 3B: Advanced Campaign & Character Systems** ✅ VERSION DISPLAY FIXED (v0.7.8)
 - [Phase 3B Overview](#phase-3b-overview)
 - [Security & Testing Foundation](#security--testing-foundation)
 - [Location System Design](#location-system-design)
@@ -331,7 +335,7 @@ This philosophy ensures:
 - [Notification System](#notification-system)
 - [AI Integration Points](#ai-integration-points)
 - [Complete Phase 3B Documentation](docs/PHASE3B_IMPLEMENTATION.md)
-- [Phase 3B Summary](docs/PHASE3B_SUMMARY.md)
+- [Phase 3B Summary](docs/PLANNING.md)
 
 ### **🔧 Advanced Features & Planning**
 - [Phase Restructuring](#phase-restructuring)
@@ -428,7 +432,7 @@ This philosophy ensures:
 ## AI/LLM Integration Strategy
 
 ### Primary Models
-- **MythoMakiseMerged-13B**: Primary roleplay and character consistency
+- **MythoMax-L2-13B**: Primary roleplay and character consistency
 - **DreamGen Opus V1**: Narrative generation and world-building
 - **Llama 3.1 70B**: Complex storytelling and plot development
 - **Eva Qwen2.5**: Creative roleplay and character interaction
@@ -446,7 +450,7 @@ This philosophy ensures:
 │  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐              │
 │  │   Primary   │  │  Narrative  │  │  Creative   │              │
 │  │   Model     │  │   Model     │  │   Model     │              │
-│  │MythoMakise  │  │DreamGen Opus│  │Eva Qwen2.5  │              │
+│  │MythoMax-L2  │  │DreamGen Opus│  │Eva Qwen2.5  │              │
 │  │   Merged    │  │     V1      │  │             │              │
 │  │    13B      │  │             │  │             │              │
 │  └─────────────┘  └─────────────┘  └─────────────┘              │
@@ -1306,6 +1310,365 @@ The project now includes comprehensive `.gitignore` rules covering:
 - **Multi-Language**: Global accessibility with translation pipelines
 - **Real-time Collaboration**: Live AI-assisted gaming experiences
 
+## Version 0.7.8 - Footer Version Display Fix 🔧
+
+### What We Accomplished
+
+This release fixes a bug in the frontend Footer component that prevented the application version from displaying correctly. The issue was an incorrect API endpoint path that resulted from misunderstanding how the `REACT_APP_API_URL` environment variable works.
+
+### 🐛 Critical Fix
+
+#### Footer Version API Path Bug
+- **Problem**: Footer displayed `v0.0.0` instead of the actual application version
+- **Root Cause**: Code was fetching from `/api/api/version` instead of `/api/version`
+  - `REACT_APP_API_URL` is set to `/api` (already includes the `/api` prefix)
+  - Footer code was concatenating `${API_URL}/api/version`, resulting in `/api/api/version`
+  - The endpoint `/api/api/version` doesn't exist, causing fetch to fail
+- **Solution**: Changed `frontend/src/components/Footer.js` line 13 from:
+  ```javascript
+  const response = await fetch(`${API_URL}/api/version`);
+  ```
+  to:
+  ```javascript
+  const response = await fetch(`${API_URL}/version`);
+  ```
+- **Result**: Footer now correctly displays application version from backend
+
+### 📊 Technical Details
+
+**Files Modified:**
+- `frontend/src/components/Footer.js` - Fixed version endpoint path
+
+**Environment Configuration:**
+- `REACT_APP_API_URL=/api` - Already includes `/api` prefix
+- Correct endpoint: `/api/version` (not `/api/api/version`)
+
+**API Endpoint:**
+- Backend serves version at `/api/version`
+- Returns: `{"version": "v0.7.8", "timestamp": "..."}`
+
+### ✅ Testing Verified
+
+- ✅ Footer displays correct version: `v0.7.8`
+- ✅ Version endpoint accessible at `http://localhost/api/version`
+- ✅ Frontend successfully fetches version from backend on component mount
+- ✅ Version updates correctly after container recreation
+
+### 🔍 Lessons Learned
+
+1. **Environment Variable Understanding**: When using environment variables for API paths, understand what's already included in the value
+2. **URL Path Composition**: Be careful with string concatenation when building URLs - avoid double prefixes
+3. **Container Restarts vs Rebuilds**: Changing `.env` requires container recreation (`docker compose up -d`), not just restart
+4. **Frontend Debugging**: Always check browser console for failed API calls during development
+
+---
+
+## Version 0.7.7 - PostgreSQL Migration Fixes & Remote Access 🗄️🌐
+
+### What We Accomplished
+
+This release completes the PostgreSQL migration by fixing all SQLite-specific code patterns that were incompatible with PostgreSQL. We addressed dictionary row access bugs, boolean comparison syntax, SQL aggregation requirements, and network configuration for remote access. The application is now fully operational on PostgreSQL with remote LAN access.
+
+1. **PostgreSQL Dictionary Row Access**: Fixed all routes to use dictionary-style row access for `RealDictCursor`
+2. **Boolean SQL Syntax**: Updated all queries from SQLite `is_active = 1` to PostgreSQL `is_active = TRUE`
+3. **Admin Panel Fixed**: User management now displays correctly with proper datetime parsing
+4. **Location System Fixed**: Campaign locations work with PostgreSQL GROUP BY requirements
+5. **AI Model Configuration**: Smart router now dynamically loads model names from environment
+6. **Remote Network Access**: Configured hybrid Docker networking for LAN access
+7. **ChromaDB Resilience**: Added robust retry logic for service connections
+8. **Nginx Routing**: Fixed API proxy to preserve `/api` prefix
+
+### 🐛 Critical Fixes
+
+#### PostgreSQL Dictionary Row Access Bug
+- **Problem**: Admin panel showed no users, location creation failed with `KeyError: 0`
+- **Root Cause**: Code was accessing PostgreSQL `RealDictCursor` rows as tuples (e.g., `row[0]`) instead of dictionaries (e.g., `row['id']`)
+- **Solution**: Updated all routes to use dictionary-style access
+  - `backend/routes/admin.py` (lines 87-98): Fixed user data retrieval and datetime handling
+  - `backend/routes/locations.py` (lines 42-46, 153-157): Fixed campaign authorization
+  - `backend/routes/campaigns.py`: Fixed campaign data access
+  - `backend/routes/dice.py`: Fixed character name retrieval
+  - `backend/routes/messages.py`: Fixed message data construction
+  - `backend/services/ooc_monitor.py`: Fixed ban status checking
+- **Result**: Admin panel displays users, location creation works, all features functional
+
+#### PostgreSQL Boolean Comparison Syntax
+- **Problem**: Location queries failed with "operator does not exist: boolean = integer"
+- **Root Cause**: SQLite uses `is_active = 1` for boolean checks, PostgreSQL requires `is_active = TRUE`
+- **Solution**: Updated all boolean comparisons across codebase
+  - `backend/routes/locations.py` (lines 195, 423, 480)
+  - `backend/routes/ai.py` (lines 201, 325, 713, 759, 963, 1228)
+- **Result**: All location and AI queries execute correctly
+
+#### PostgreSQL GROUP BY Requirements
+- **Problem**: Campaign location query failed with GROUP BY error
+- **Root Cause**: PostgreSQL requires all selected non-aggregated columns in GROUP BY
+- **Solution**: Added `u.username` to GROUP BY clause in `get_campaign_locations` query
+- **Result**: Campaign locations load without errors
+
+#### Admin Panel Datetime Parsing
+- **Problem**: Admin panel crashed with "fromisoformat: argument must be str"
+- **Root Cause**: PostgreSQL returns datetime objects directly, SQLite returns strings
+- **Solution**: Added type checking before `datetime.fromisoformat()` calls
+- **Result**: User ban status checks work for both database types
+
+### 🌐 Network & Infrastructure Fixes
+
+#### Remote Network Access Configuration
+- **Problem**: Application not accessible from remote devices on LAN (10.0.0.x)
+- **Solution**: Configured hybrid Docker networking
+  - Backend & Nginx: `network_mode: "host"` for LM Studio/Ollama access
+  - PostgreSQL, ChromaDB, Redis, Frontend: Bridge network
+  - Environment: `CHROMADB_HOST=localhost`, `REDIS_HOST=localhost`, `DATABASE_HOST=localhost`
+- **Result**: Application accessible from all devices on local network
+
+#### Nginx API Routing
+- **Problem**: API endpoints returning 404 after login
+- **Root Cause**: `proxy_pass http://backend/;` was stripping `/api` prefix
+- **Solution**: Changed to `proxy_pass http://backend;` to preserve prefix
+- **Result**: All API endpoints including `/api/auth/login` work correctly
+
+### 🤖 AI Model Configuration
+
+#### LM Studio Model Name Dynamic Loading
+- **Problem**: AI chat failed with "Model not found" error
+- **Root Cause**: `smart_model_router.py` had hardcoded `mythomakisemerged-13b` while LM Studio was running `mythomax-l2-13b`
+- **Solution**: Updated router to read model name from `LM_STUDIO_MODEL` environment variable
+- **Result**: AI location suggestions and chat working correctly
+
+#### ChromaDB Connection Resilience
+- **Problem**: Backend occasionally failed to start due to ChromaDB not being ready
+- **Solution**: Added retry logic with 10 attempts and 2-second delays in `rag_service.py`
+- **Result**: Backend starts reliably even if ChromaDB needs initialization time
+
+### 📋 Documentation Updates
+
+#### Model Name Standardization
+- Updated all documentation to reflect correct model names:
+  - `SHADOWREALMS_AI_COMPLETE.md`: Changed `MythoMakiseMerged-13B` to `MythoMax-L2-13B`
+  - `docs/CHANGELOG.md`: Updated model references throughout
+  - `docker-compose.yml`: Maintained default for backward compatibility
+  - `env.template`: Updated LLM_MODEL references
+
+### 📊 Technical Details
+
+**Files Modified:**
+- `backend/routes/admin.py` - Dictionary row access and datetime handling
+- `backend/routes/locations.py` - Dictionary access, boolean syntax, GROUP BY clause, batch creation fix
+- `backend/routes/campaigns.py` - Dictionary row access throughout
+- `backend/routes/dice.py` - Dictionary row access for character lookups
+- `backend/routes/messages.py` - Dictionary row access for message construction
+- `backend/routes/ai.py` - Boolean comparison syntax fixes
+- `backend/services/ooc_monitor.py` - Dictionary row access for ban checks
+- `backend/services/smart_model_router.py` - Dynamic model name loading
+- `backend/services/rag_service.py` - Retry logic for ChromaDB connections
+- `backend/entrypoint.sh` - Configurable ChromaDB host/port for health checks
+- `nginx/nginx.conf` - API proxy configuration to preserve `/api` prefix
+- `docker-compose.yml` - Network configuration for hybrid setup
+- `SHADOWREALMS_AI_COMPLETE.md` - Model name updates
+- `docs/CHANGELOG.md` - Model name updates
+
+**Database Impact:**
+- No schema changes
+- All queries now fully PostgreSQL 16 compatible
+- Boolean fields working correctly
+- Aggregation queries compliant with PostgreSQL standards
+
+**Network Configuration:**
+- Host network mode for backend/nginx (LM Studio/Ollama access)
+- Bridge network for containerized services
+- Firewall configuration on host for HTTP access
+- Remote access working via 10.0.0.x addresses
+
+### ✅ Testing Verified
+
+All functionality tested and confirmed working:
+- ✅ Admin panel displays all users correctly
+- ✅ Location batch creation from AI suggestions works
+- ✅ OOC chat with AI responds without errors
+- ✅ Remote access from 10.0.0.7 → 10.0.0.3 working
+- ✅ Campaign creation and management functional
+- ✅ PostgreSQL database queries executing correctly
+- ✅ AI location suggestions generating properly
+- ✅ User authentication and authorization working
+- ✅ Real-time chat message persistence
+- ✅ ChromaDB connections stable
+
+### 🔍 Lessons Learned
+
+1. **Database Migration Complexity**: Moving from SQLite to PostgreSQL requires careful attention to:
+   - Cursor row access patterns (tuple vs dictionary)
+   - Boolean representation (integer vs boolean)
+   - SQL syntax differences (GROUP BY requirements)
+   - Data type handling (datetime parsing)
+
+2. **Docker Networking**: Hybrid network configurations can support complex requirements:
+   - Host network for host service access (LM Studio, Ollama)
+   - Bridge network for inter-container communication
+   - Proper environment variable configuration crucial
+
+3. **Configuration Management**: Dynamic configuration loading prevents hardcoded values:
+   - Model names should come from environment variables
+   - Service hostnames should be configurable
+   - Retry logic improves startup reliability
+
+4. **Remote Access**: Firewall configuration is separate from Docker networking:
+   - Docker networking handles container communication
+   - Host firewall controls external access
+   - Both must be configured correctly for remote access
+
+---
+
+## Version 0.7.6 - Message Persistence & API Verification ✅💬
+
+### What We Accomplished
+
+This release fixes critical bugs that prevented message persistence in chat rooms. After extensive testing and API auditing, we identified and corrected frontend URL path mismatches, updated ChromaDB health checks to v2 API, and implemented dynamic version management.
+
+1. **Message Persistence Fixed**: Chat messages now save to database and persist across location changes
+2. **API Path Verification**: Complete audit and correction of all frontend-backend URL patterns
+3. **ChromaDB v2 Migration**: Updated health checks to use non-deprecated API endpoints
+4. **UX Improvements**: Chat input focus maintained after sending messages
+
+### 🐛 Critical Fixes
+
+#### Message Persistence Bug
+- **Problem**: Messages were not saving to database or loading on location change
+- **Root Cause**: Frontend was calling `/api/messages/campaigns/{id}/locations/{id}` while backend expected `/api/campaigns/{id}/locations/{id}`
+- **Solution**: Corrected 3 URL paths in `SimpleApp.js` (lines 519, 564, 613)
+- **Result**: Messages now persist correctly across all locations
+
+#### ChromaDB API Deprecation
+- **Problem**: ChromaDB health checks returning 410 Gone, causing "AI services unavailable" errors
+- **Root Cause**: Using deprecated `/api/v1/heartbeat` endpoint
+- **Solution**: Updated to `/api/v2/heartbeat` in `health_check.py`
+- **Result**: All AI services including ChromaDB now validate correctly
+
+#### Chat Input Focus Loss
+- **Problem**: Chat input lost focus after sending message, requiring click to continue typing
+- **Solution**: Moved `focus()` call to `finally` block with `setTimeout(0)` to run after re-renders
+- **Result**: Smooth typing flow, no interruption between messages
+
+### 🆕 New Features
+
+#### Dynamic Version Management
+- **Backend Endpoint**: `/api/version` serves version from `.env` file
+- **Footer Integration**: Footer component fetches version dynamically from backend
+- **Centralized Control**: Version updates in `.env` automatically reflect in UI
+
+### 📋 Complete API Audit
+
+Verified all 14 frontend API calls against backend routes:
+- ✅ `/users/me` - User profile
+- ✅ `/campaigns/` - Campaign list
+- ✅ `/auth/login` - Authentication
+- ✅ `/auth/register` - User registration
+- ✅ `/campaigns` - Create campaign
+- ✅ `/campaigns/{id}/locations` - Location management
+- ✅ `/campaigns/{id}/locations/{id}` - Messages (FIXED)
+- ✅ `/ai/chat` - AI chat
+- ✅ `/campaigns/{id}` - Campaign operations
+
+### 📊 Technical Details
+
+**Files Modified:**
+- `frontend/src/SimpleApp.js` - Fixed 3 API URL paths, improved chat focus handling
+- `backend/services/health_check.py` - Updated ChromaDB API endpoint to v2
+- `backend/main.py` - Added `/api/version` endpoint
+- `frontend/src/components/Footer.js` - Dynamic version fetching
+- `.env` - Version updated to 0.7.6
+- `env.template` - Version updated to 0.7.6
+- `frontend/package.json` - Version updated to 0.7.6
+
+**Database Impact:**
+- No schema changes
+- Messages table now properly utilized
+- ChromaDB embeddings working correctly
+
+### 🔍 Lessons Learned
+
+1. **API Path Consistency**: Always verify frontend-backend URL patterns match exactly
+2. **Dependency Updates**: Monitor third-party API changes (ChromaDB v1→v2)
+3. **Focus Management**: React async operations require careful timing for DOM manipulation
+4. **Version Control**: Centralized version management prevents inconsistencies
+
+---
+
+## Version 0.7.5 - AI Health Checks & Security Hardening 🛡️🔍
+
+### What We Accomplished
+
+This release focused on implementing the "Quality Over Speed" philosophy by adding comprehensive AI service health checks, securing sensitive data, implementing OOC monitoring, and ensuring AI memory cleanup on deletions.
+
+1. **AI Service Health Checks**: Automatic validation of LM Studio, Ollama, and ChromaDB before operations
+2. **Sensitive Data Protection**: Book source URLs moved to `.env` (not version controlled)
+3. **OOC Monitoring System**: AI-powered detection of in-character content in OOC rooms with 3-strike ban system
+4. **AI Memory Cleanup**: Automatic purging of deleted location/campaign data from ChromaDB
+5. **API Endpoint Audit**: Complete validation and fixes for frontend-backend routing
+
+### 🆕 New Features
+
+#### AI Service Health Checks (Quality over Speed)
+- **health_check.py** - Comprehensive AI service validation
+  - `HealthCheckService` - Validates LM Studio, Ollama, and ChromaDB before operations
+  - `@require_llm` decorator - Ensures LLM provider is available before AI routes
+  - `@require_chromadb` decorator - Validates vector database availability
+  - `@require_ai_services` decorator - Comprehensive check for all AI services
+  - `/api/ai/health` endpoint - Real-time health check for all AI services
+  - Clear error messages with troubleshooting instructions when services are down
+  - 5-second timeout for health checks to prevent long waits
+  - Automatic detection of which LLM provider (LM Studio or Ollama) is available
+
+#### OOC (Out of Character) Monitoring System
+- **ooc_monitor.py** - AI-powered OOC rule enforcement
+  - Lightweight `llama3.2:3b` model for fast IC content detection
+  - 3-strike warning system (3 violations = 24h ban)
+  - Rolling 7-day violation tracking per user per campaign
+  - Temporary bans with automatic expiry (no manual intervention needed)
+  - Clear, educational warning messages explaining violations
+  - Ban messages show time remaining and reason
+  - Automatic OOC room creation for all campaigns
+  - OOC rooms cannot be deleted (protected in delete endpoint)
+  - Database table `ooc_violations` for tracking violations
+
+#### AI Memory Cleanup System
+- **AI Memory Cleanup on Deletion** - Prevents orphaned data in ChromaDB
+  - Location deletion purges all associated message embeddings from ChromaDB
+  - Campaign deletion purges all location and message embeddings
+  - Soft-delete for locations (`is_active = 0`) instead of hard delete
+  - Audit trail in `location_deletion_log` table (who, when, what, message count)
+  - All AI context queries filter deleted locations (`WHERE is_active = 1`)
+  - CASCADE delete for messages when locations are removed
+  - Comprehensive logging for deletion operations
+
+### 🔒 Security & Privacy Improvements
+
+#### Book Source URL Protection
+- Moved book source URL from hardcoded scripts to `.env` file
+- `BOOK_SOURCE_URL` environment variable for personal book collections
+- Updated `books/sync_wod_books.py` to load from environment
+- Removed all mentions of book source URLs from documentation
+- Updated `books/README.md` to reference "configured book source"
+- Fixed hardcoded paths in `backend/services/rule_book_service.py`
+
+### 🐛 API Endpoint Corrections
+- Fixed location deletion route mismatch (405 Method Not Allowed)
+  - Changed from `/api/locations/<id>` to `/api/campaigns/<id>/locations/<id>`
+- Fixed messages DELETE route being too broad
+  - Changed from `/api/<message_id>` to `/api/messages/<message_id>`
+- Fixed multiple error toasts on location deletion
+  - Close modal immediately before async operation
+  - Clear state to prevent duplicate calls
+- Created comprehensive API endpoint test suite (`tests/test_api_endpoints.py`)
+
+### 📚 Documentation
+- Added comprehensive AI systems documentation (now in `docs/AI_SYSTEMS.md`)
+- Added AI memory cleanup system documentation (now in `docs/AI_SYSTEMS.md`)
+- Added API audit report (now in `docs/BUG_FIXES_AND_AUDITS.md`)
+- Updated all version references to 0.7.5
+
+---
+
 ## Version 0.7.0 - Phase 3B: Security & Testing Foundation 🔒🧪
 
 ### What We Accomplished
@@ -1529,7 +1892,7 @@ This release marks the beginning of **Phase 3B** with a comprehensive security s
 - `frontend/src/__tests__/integration/userFlow.test.js` (280+ lines)
 - `run-frontend-tests.sh` (33 lines)
 - `docs/PHASE3B_IMPLEMENTATION.md` (511 lines)
-- `docs/PHASE3B_SUMMARY.md` (563 lines)
+- `docs/PLANNING.md` (563 lines)
 
 **Files Modified:**
 - `docs/CHANGELOG.md` (+215 lines)
@@ -1622,7 +1985,7 @@ npm test
 
 ### 🎯 Phase 3B Timeline
 
-**Week 1: Foundation** (CURRENT - v0.7.0)
+**Week 1: Foundation** (COMPLETE - v0.7.6)
 1. ✅ Security utilities & testing
 2. 📍 Location system (database + API) - NEXT
 3. 🏰 Enhanced campaign management - NEXT
@@ -1769,7 +2132,7 @@ From extensive user conversation (2025-10-24):
   - User requirements
   - Implementation timeline
 
-- `docs/PHASE3B_SUMMARY.md` (563 lines)
+- `docs/PLANNING.md` (563 lines)
   - High-level progress tracking
   - Week-by-week breakdown
   - Feature status
@@ -1795,7 +2158,7 @@ From extensive user conversation (2025-10-24):
 - ✅ Security best practices documented
 - ✅ User requirements captured
 
-**Version 0.7.0 establishes the security foundation for Phase 3B! All future features (locations, characters, chat) will be built on this secure base with comprehensive test coverage!**
+**Version 0.7.8 completes message persistence and API verification! All chat messages now properly save and load. The foundation is solid for Phase 3B's advanced features!**
 
 ---
 
@@ -3575,7 +3938,7 @@ frontend/src/
 **Components:**
 - `backend/invites.json` - Active invite codes (gitignored for security)
 - `backend/invites.template.json` - Template for invite structure
-- `docs/INVITES_README.md` - Complete documentation
+- `docs/FEATURES.md` - Complete feature documentation (includes invite system)
 
 **Invite Types:**
 - **Admin**: Full administrative access (1 use)
@@ -3824,7 +4187,7 @@ shadowrealms-ai/
 ├── books/
 │   └── quick_import_core.py   # NEW - Quick import tool
 │
-└── docs/INVITES_README.md     # NEW - Invite system documentation
+└── docs/FEATURES.md     # NEW - Invite system documentation
 ```
 
 ### 🔗 Integration Benefits
@@ -3911,7 +4274,7 @@ shadowrealms-ai/
 - `frontend/src/SimpleApp.js` (1,376 lines)
 - `backend/invites.json` (active codes, gitignored)
 - `backend/invites.template.json` (template)
-- `docs/INVITES_README.md` (invite documentation)
+- `docs/FEATURES.md` (invite documentation)
 - `docs/` directory (11 files, 3,701 lines)
 - `tests/test_frontend_backend_integration.py` (401 lines)
 - `tests/test_core_books_rag.py` (211 lines)
@@ -5015,7 +5378,7 @@ After comprehensive testing and debugging, we achieved **100% User Experience Te
 - **Phase 2**: ✅ FULLY FUNCTIONAL - 100% complete
 - **User Experience**: ✅ 100% TEST SUCCESS - System ready for real users
 - **RAG System**: ✅ FULLY OPERATIONAL - Rule book integration working perfectly
-- **AI Models**: ✅ Both mythomakisemerged-13b and llama3.2:3b loaded and working
+- **AI Models**: ✅ Both mythomax-l2-13b and llama3.2:3b loaded and working
 - **Database**: ✅ All tables properly migrated and functional
 - **API Endpoints**: ✅ Simplified, consistent responses
 
@@ -5369,11 +5732,11 @@ After comprehensive testing and debugging, we achieved **100% User Experience Te
 
 ---
 
-## 🚀 Phase 3B: Advanced Campaign & Character Systems (v0.7.0)
+## 🚀 Phase 3B: Advanced Campaign & Character Systems (v0.7.8)
 
-**Status:** 🚧 IN PROGRESS - Security & Testing Foundation Complete  
+**Status:** 🚧 IN PROGRESS - Version Display Fixed  
 **Start Date:** 2025-10-24  
-**Current Version:** 0.7.0
+**Current Version:** 0.7.8
 
 ### Phase 3B Overview
 
@@ -5389,8 +5752,8 @@ Phase 3B builds upon Phase 3A's frontend foundation by implementing the core gam
 
 For complete details, see:
 - **[Phase 3B Implementation Guide](docs/PHASE3B_IMPLEMENTATION.md)** - Full specification (600+ lines)
-- **[Phase 3B Summary](docs/PHASE3B_SUMMARY.md)** - Detailed summary (500+ lines)
-- **[Changelog v0.7.0](docs/CHANGELOG.md)** - Version history and technical details
+- **[Planning Documentation](docs/PLANNING.md)** - Phase planning and summaries
+- **[Changelog v0.7.6](docs/CHANGELOG.md)** - Version history and technical details
 
 ---
 
@@ -5873,7 +6236,7 @@ Reason: [Admin's stated reason]
 
 ---
 
-### Files Created/Modified (v0.7.0)
+### Files Created/Modified (v0.7.8)
 
 **Backend:**
 - `backend/database.py` - Schema migrations (pending)
@@ -5895,15 +6258,15 @@ Reason: [Admin's stated reason]
 
 **Documentation:**
 - `docs/PHASE3B_IMPLEMENTATION.md` - Complete specification ✅
-- `docs/PHASE3B_SUMMARY.md` - Detailed summary ✅
-- `docs/CHANGELOG.md` - Version 0.7.0 entry ✅
+- `docs/PLANNING.md` - Detailed summary ✅
+- `docs/CHANGELOG.md` - Version 0.7.8 entry ✅
 - `run-frontend-tests.sh` - Test runner script ✅
 
 ---
 
 **Last Updated:** 2025-10-24  
 **Next Milestone:** Location System Implementation  
-**Version:** 0.7.0
+**Version:** 0.7.8
 
 ---
 
@@ -6403,7 +6766,7 @@ Instead of running all models simultaneously, we'll:
 #### Recommended Model Setup
 
 **Primary Models (Always Available)**
-1. **MythoMakiseMerged-13B** (LM Studio)
+1. **MythoMax-L2-13B** (LM Studio)
    - **Purpose**: Primary roleplay, character creation, general RPG tasks
    - **VRAM**: ~8GB
    - **Usage**: 80% of all tasks
@@ -6429,11 +6792,11 @@ def select_model(task_type, context):
     elif task_type == "complex_storytelling":
         return load_model("command-r:35b")
     else:
-        return "mythomakisemerged-13b"  # Default
+        return "mythomax-l2-13b"  # Default
 ```
 
 #### Model Loading Strategy
-1. **Keep MythoMakiseMerged-13B loaded** (primary model)
+1. **Keep MythoMax-L2-13B loaded** (primary model)
 2. **Load specialized models** only when needed
 3. **Unload models** after 5 minutes of inactivity
 4. **Preload models** based on campaign context
@@ -6451,7 +6814,7 @@ def select_model(task_type, context):
 - **Fallback System**: Use primary model if specialized model fails
 
 ### Expected Performance
-- **Primary tasks**: <2 seconds (MythoMakiseMerged-13B)
+- **Primary tasks**: <2 seconds (MythoMax-L2-13B)
 - **Specialized tasks**: <5 seconds (including model loading)
 - **Complex content**: <8 seconds (model loading + generation)
 - **Game mechanics**: <1 second (llama3.2:3b)
@@ -6484,7 +6847,7 @@ def select_model(task_type, context):
 **Goal:** Get all planned models working with proper orchestration
 
 **1.1 Model Acquisition & Setup - SIMPLIFIED**
-- [x] Download MythoMakiseMerged-13B (Primary model for all RPG tasks)
+- [x] Download MythoMax-L2-13B (Primary model for all RPG tasks)
 - [x] Download llama3.2:3b (Fast fallback model)
 - [x] Remove unused models (mistral, qwen2.5, llama3.1:70b, command-r:35b, meltemi)
 - [x] Simplify model routing to 2 models only
@@ -6492,7 +6855,7 @@ def select_model(task_type, context):
 **1.2 Model Orchestration System - SIMPLIFIED**
 - [x] Create SmartModelRouter class
 - [x] Implement simplified model routing:
-  - Primary: MythoMakiseMerged-13B (all RPG tasks)
+  - Primary: MythoMax-L2-13B (all RPG tasks)
   - Fallback: llama3.2:3b (fast responses)
 - [x] Model fallback system
 - [x] Resource management for 16GB VRAM
@@ -6619,19 +6982,22 @@ docker-compose ps
 - **Backend API**: http://localhost:5000
 - **ChromaDB**: http://localhost:8000
 
-### 🎯 **Current Status (v0.7.0)**
+### 🎯 **Current Status (v0.7.8)**
 
 ✅ **Phase 1 Complete** - Foundation & Docker Setup  
 ✅ **Phase 2 Complete** - RAG & Vector Memory System  
 ✅ **Phase 3A Complete** - Frontend polished, professional UX, docs integrated!  
-🚧 **Phase 3B In Progress** - Security & testing foundation, Week 1 started  
+🚧 **Phase 3B In Progress** - PostgreSQL migration complete, system fully operational  
 ✅ **Admin Panel** - User moderation & character management (v0.6.1)  
 ✅ **Gothic Horror Theme** - Immersive dark fantasy atmosphere (v0.6.2)  
 ✅ **Campaign Editing** - Name/description editing, game-specific themes (v0.6.3)  
 ✅ **Responsive Design** - Full mobile support, touch-optimized UI (v0.6.4)  
 ✅ **UI/UX Polish** - Custom dialogs, footer, in-app README (v0.6.5)  
 ✅ **Security System** - Input sanitization, validation, rate limiting (v0.7.0)  
-✅ **Test Suite** - 630+ lines of tests, security & integration coverage (v0.7.0)  
+✅ **AI Health Checks** - LM Studio, Ollama, ChromaDB validation (v0.7.5)  
+✅ **Message Persistence** - Chat messages save/load correctly, ChromaDB v2 (v0.7.6)  
+✅ **PostgreSQL Migration** - Full compatibility, remote access, AI integration (v0.7.7)  
+✅ **Footer Version Display** - Fixed API path, version now displays correctly (v0.7.8)  
 🎯 **Phase 3B Week 1** - Location CRUD, Character System, Real-time Chat  
 ✅ **Backend APIs** - Campaign updates, README endpoint working  
 ✅ **RAG System** - ChromaDB vector memory fully functional  

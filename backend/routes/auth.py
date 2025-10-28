@@ -96,17 +96,13 @@ def register():
         db = get_db()
         cursor = db.cursor()
         
-        cursor.execute("SELECT id FROM users WHERE username = ? OR email = ?", (username, email))
-        if cursor.fetchone():
-            return jsonify({'error': 'Username or email already exists'}), 409
-        
-        # Insert new user
         cursor.execute("""
             INSERT INTO users (username, email, password_hash, role, created_at)
-            VALUES (?, ?, ?, ?, ?)
+            VALUES (%s, %s, %s, %s, %s)
+            RETURNING id
         """, (username, email, password_hash.decode('utf-8'), role, datetime.utcnow()))
         
-        user_id = cursor.lastrowid
+        user_id = cursor.fetchone()['id']
         db.commit()
         
         # Mark invite code as used
@@ -156,7 +152,7 @@ def login():
         
         cursor.execute("""
             SELECT id, username, email, password_hash, role, is_active
-            FROM users WHERE username = ?
+            FROM users WHERE username = %s
         """, (username,))
         
         user = cursor.fetchone()
@@ -173,7 +169,7 @@ def login():
         
         # Update last login
         cursor.execute("""
-            UPDATE users SET last_login = ? WHERE id = ?
+            UPDATE users SET last_login = %s WHERE id = %s
         """, (datetime.utcnow(), user['id']))
         
         db.commit()
@@ -230,7 +226,7 @@ def refresh():
         
         cursor.execute("""
             SELECT id, username, email, role, is_active
-            FROM users WHERE id = ?
+            FROM users WHERE id = %s
         """, (current_user_id,))
         
         user = cursor.fetchone()
@@ -277,7 +273,7 @@ def get_profile():
         
         cursor.execute("""
             SELECT id, username, email, role, created_at, last_login
-            FROM users WHERE id = ?
+            FROM users WHERE id = %s
         """, (current_user_id,))
         
         user = cursor.fetchone()
@@ -288,14 +284,14 @@ def get_profile():
         # Get user statistics
         cursor.execute("""
             SELECT COUNT(*) as campaign_count
-            FROM campaigns WHERE created_by = ?
+            FROM campaigns WHERE created_by = %s
         """, (current_user_id,))
         
         campaign_count = cursor.fetchone()['campaign_count']
         
         cursor.execute("""
             SELECT COUNT(*) as character_count
-            FROM characters WHERE user_id = ?
+            FROM characters WHERE user_id = %s
         """, (current_user_id,))
         
         character_count = cursor.fetchone()['character_count']

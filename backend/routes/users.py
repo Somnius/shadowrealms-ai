@@ -27,7 +27,7 @@ def get_users():
         db = get_db()
         cursor = db.cursor()
         
-        cursor.execute("SELECT role FROM users WHERE id = ?", (current_user_id,))
+        cursor.execute("SELECT role FROM users WHERE id = %s", (current_user_id,))
         current_user = cursor.fetchone()
         
         if not current_user or current_user['role'] != 'admin':
@@ -75,7 +75,7 @@ def get_user(user_id):
         cursor = db.cursor()
         
         # Get current user role
-        cursor.execute("SELECT role FROM users WHERE id = ?", (current_user_id,))
+        cursor.execute("SELECT role FROM users WHERE id = %s", (current_user_id,))
         current_user = cursor.fetchone()
         
         if not current_user:
@@ -88,7 +88,7 @@ def get_user(user_id):
         # Get target user
         cursor.execute("""
             SELECT id, username, email, role, created_at, last_login, is_active
-            FROM users WHERE id = ?
+            FROM users WHERE id = %s
         """, (user_id,))
         
         user = cursor.fetchone()
@@ -99,14 +99,14 @@ def get_user(user_id):
         # Get user statistics
         cursor.execute("""
             SELECT COUNT(*) as campaign_count
-            FROM campaigns WHERE created_by = ?
+            FROM campaigns WHERE created_by = %s
         """, (user_id,))
         
         campaign_count = cursor.fetchone()['campaign_count']
         
         cursor.execute("""
             SELECT COUNT(*) as character_count
-            FROM characters WHERE user_id = ?
+            FROM characters WHERE user_id = %s
         """, (user_id,))
         
         character_count = cursor.fetchone()['character_count']
@@ -149,7 +149,7 @@ def update_user(user_id):
         cursor = db.cursor()
         
         # Get current user role
-        cursor.execute("SELECT role FROM users WHERE id = ?", (current_user_id,))
+        cursor.execute("SELECT role FROM users WHERE id = %s", (current_user_id,))
         current_user = cursor.fetchone()
         
         if not current_user:
@@ -160,7 +160,7 @@ def update_user(user_id):
             return jsonify({'error': 'Access denied'}), 403
         
         # Get target user
-        cursor.execute("SELECT * FROM users WHERE id = ?", (user_id,))
+        cursor.execute("SELECT * FROM users WHERE id = %s", (user_id,))
         target_user = cursor.fetchone()
         
         if not target_user:
@@ -173,21 +173,21 @@ def update_user(user_id):
         # Username update
         if 'username' in data and data['username'] != target_user['username']:
             # Check if username is already taken
-            cursor.execute("SELECT id FROM users WHERE username = ? AND id != ?", (data['username'], user_id))
+            cursor.execute("SELECT id FROM users WHERE username = %s AND id != %s", (data['username'], user_id))
             if cursor.fetchone():
                 return jsonify({'error': 'Username already taken'}), 409
             
-            updates.append("username = ?")
+            updates.append("username = %s")
             params.append(data['username'])
         
         # Email update
         if 'email' in data and data['email'] != target_user['email']:
             # Check if email is already taken
-            cursor.execute("SELECT id FROM users WHERE email = ? AND id != ?", (data['email'], user_id))
+            cursor.execute("SELECT id FROM users WHERE email = %s AND id != %s", (data['email'], user_id))
             if cursor.fetchone():
                 return jsonify({'error': 'Email already taken'}), 409
             
-            updates.append("email = ?")
+            updates.append("email = %s")
             params.append(data['email'])
         
         # Role update (admin only)
@@ -198,7 +198,7 @@ def update_user(user_id):
             if data['role'] not in ['admin', 'helper', 'player']:
                 return jsonify({'error': 'Invalid role'}), 400
             
-            updates.append("role = ?")
+            updates.append("role = %s")
             params.append(data['role'])
         
         # Active status update (admin only)
@@ -206,7 +206,7 @@ def update_user(user_id):
             if current_user['role'] != 'admin':
                 return jsonify({'error': 'Only admins can change user status'}), 403
             
-            updates.append("is_active = ?")
+            updates.append("is_active = %s")
             params.append(data['is_active'])
         
         # Apply updates if any
@@ -214,7 +214,7 @@ def update_user(user_id):
             params.append(datetime.utcnow())  # updated_at
             params.append(user_id)
             
-            query = f"UPDATE users SET {', '.join(updates)}, updated_at = ? WHERE id = ?"
+            query = f"UPDATE users SET {', '.join(updates)}, updated_at = %s WHERE id = %s"
             cursor.execute(query, params)
             
             db.commit()
@@ -242,7 +242,7 @@ def delete_user(user_id):
         cursor = db.cursor()
         
         # Check if current user is admin
-        cursor.execute("SELECT role FROM users WHERE id = ?", (current_user_id,))
+        cursor.execute("SELECT role FROM users WHERE id = %s", (current_user_id,))
         current_user = cursor.fetchone()
         
         if not current_user or current_user['role'] != 'admin':
@@ -253,14 +253,14 @@ def delete_user(user_id):
             return jsonify({'error': 'Cannot delete your own account'}), 400
         
         # Check if user exists
-        cursor.execute("SELECT username FROM users WHERE id = ?", (user_id,))
+        cursor.execute("SELECT username FROM users WHERE id = %s", (user_id,))
         target_user = cursor.fetchone()
         
         if not target_user:
             return jsonify({'error': 'User not found'}), 404
         
         # Soft delete - mark as inactive instead of removing
-        cursor.execute("UPDATE users SET is_active = 0, updated_at = ? WHERE id = ?", 
+        cursor.execute("UPDATE users SET is_active = 0, updated_at = %s WHERE id = %s", 
                       (datetime.utcnow(), user_id))
         
         db.commit()
@@ -287,7 +287,7 @@ def get_user_stats():
         cursor = db.cursor()
         
         # Check if current user is admin
-        cursor.execute("SELECT role FROM users WHERE id = ?", (current_user_id,))
+        cursor.execute("SELECT role FROM users WHERE id = %s", (current_user_id,))
         current_user = cursor.fetchone()
         
         if not current_user or current_user['role'] != 'admin':

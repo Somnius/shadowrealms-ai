@@ -38,9 +38,12 @@ class SmartModelRouter:
         self.config = config
         
         # Model configurations with VRAM requirements - Simplified to 2 models
+        # Get LM Studio model name from config
+        lm_studio_model = config.get('LM_STUDIO_MODEL', 'mythomax-l2-13b')
+        
         self.model_configs = {
             # Primary model (always available)
-            'mythomakisemerged-13b': {
+            lm_studio_model: {
                 'provider': ModelProvider.LM_STUDIO,
                 'base_url': config.get('LM_STUDIO_URL', 'http://localhost:1234'),
                 'specialties': [TaskType.ROLEPLAY, TaskType.CHARACTER_CREATION, TaskType.STORYTELLING, TaskType.WORLD_BUILDING, TaskType.GENERAL],
@@ -65,14 +68,14 @@ class SmartModelRouter:
         
         # Task routing priorities (simplified to 2 models)
         self.task_routing = {
-            TaskType.ROLEPLAY: ['mythomakisemerged-13b', 'llama3.2:3b'],
-            TaskType.WORLD_BUILDING: ['mythomakisemerged-13b', 'llama3.2:3b'],
-            TaskType.STORYTELLING: ['mythomakisemerged-13b', 'llama3.2:3b'],
-            TaskType.CREATIVE: ['mythomakisemerged-13b', 'llama3.2:3b'],
-            TaskType.DICE_ROLLING: ['llama3.2:3b', 'mythomakisemerged-13b'],
-            TaskType.COMBAT: ['llama3.2:3b', 'mythomakisemerged-13b'],
-            TaskType.CHARACTER_CREATION: ['mythomakisemerged-13b', 'llama3.2:3b'],
-            TaskType.GENERAL: ['mythomakisemerged-13b', 'llama3.2:3b']
+            TaskType.ROLEPLAY: [lm_studio_model, 'llama3.2:3b'],
+            TaskType.WORLD_BUILDING: [lm_studio_model, 'llama3.2:3b'],
+            TaskType.STORYTELLING: [lm_studio_model, 'llama3.2:3b'],
+            TaskType.CREATIVE: [lm_studio_model, 'llama3.2:3b'],
+            TaskType.DICE_ROLLING: ['llama3.2:3b', lm_studio_model],
+            TaskType.COMBAT: ['llama3.2:3b', lm_studio_model],
+            TaskType.CHARACTER_CREATION: [lm_studio_model, 'llama3.2:3b'],
+            TaskType.GENERAL: [lm_studio_model, 'llama3.2:3b']
         }
         
         # Model state tracking

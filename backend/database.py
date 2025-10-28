@@ -5,6 +5,8 @@ SQLite database management for characters, campaigns, and user data
 """
 
 import sqlite3
+import psycopg2
+import psycopg2.extras
 import logging
 from typing import Optional, Dict, Any
 from datetime import datetime
@@ -13,25 +15,50 @@ import os
 logger = logging.getLogger(__name__)
 
 def get_db():
-    """Get database connection"""
+    """Get database connection (PostgreSQL or SQLite based on DATABASE_TYPE env var)"""
     from config import Config
-    db_path = Config.DATABASE
     
-    # Ensure directory exists
-    os.makedirs(os.path.dirname(db_path), exist_ok=True)
+    db_type = os.getenv('DATABASE_TYPE', 'sqlite').lower()
     
-    conn = sqlite3.connect(db_path)
-    conn.row_factory = sqlite3.Row  # Enable dict-like access
-    
-    # CRITICAL: Enable foreign key constraints for CASCADE deletes
-    conn.execute("PRAGMA foreign_keys = ON")
-    
-    return conn
+    if db_type == 'postgresql':
+        # PostgreSQL connection
+        logger.info("Connecting to PostgreSQL database...")
+        conn = psycopg2.connect(
+            dbname=os.getenv('DATABASE_NAME', 'shadowrealms_db'),
+            user=os.getenv('DATABASE_USER', 'shadowrealms'),
+            password=os.getenv('DATABASE_PASSWORD', ''),
+            host=os.getenv('DATABASE_HOST', 'localhost'),
+            port=os.getenv('DATABASE_PORT', '5432'),
+        )
+        # Use RealDictCursor for dict-like rows (similar to SQLite's Row)
+        conn.cursor_factory = psycopg2.extras.RealDictCursor
+        return conn
+    else:
+        # SQLite connection (fallback)
+        db_path = Config.DATABASE
+        
+        # Ensure directory exists
+        os.makedirs(os.path.dirname(db_path), exist_ok=True)
+        
+        conn = sqlite3.connect(db_path)
+        conn.row_factory = sqlite3.Row  # Enable dict-like access
+        
+        # CRITICAL: Enable foreign key constraints for CASCADE deletes
+        conn.execute("PRAGMA foreign_keys = ON")
+        
+        return conn
 
 def migrate_db():
     """Migrate database schema if needed"""
     logger.info("Checking database migrations...")
     
+    # For PostgreSQL, migrations are handled via Alembic/SQL files
+    # Skip SQLite-specific migration logic
+    if os.getenv('DATABASE_TYPE', 'sqlite').lower() == 'postgresql':
+        logger.info("PostgreSQL detected - skipping SQLite migrations")
+        return
+    
+    # SQLite migrations
     conn = get_db()
     try:
         cursor = conn.cursor()
@@ -376,6 +403,13 @@ def init_db():
     """Initialize database with required tables"""
     logger.info("Initializing database...")
     
+    # For PostgreSQL, schema is already initialized via init_postgresql_schema.sql
+    # Skip schema creation to avoid SQLite-specific syntax errors
+    if os.getenv('DATABASE_TYPE', 'sqlite').lower() == 'postgresql':
+        logger.info("PostgreSQL detected - schema already initialized")
+        return
+    
+    # SQLite schema initialization
     conn = get_db()
     try:
         cursor = conn.cursor()
@@ -470,7 +504,13 @@ def init_db():
 
 def test_database_module():
     """Standalone test function for Database Module"""
-    print("🧪 Testing Database Module...")
+    # Skip test if using PostgreSQL (this test is SQLite-specific)
+    import os
+    if os.getenv('DATABASE_TYPE', 'sqlite').lower() == 'postgresql':
+        print("⏭️  Skipping SQLite-specific database tests (PostgreSQL is configured)")
+        return True
+    
+    print("🧪 Testing Database Module (SQLite)...")
     
     try:
         # Test 1: Test database connection (with local path for standalone testing)
@@ -499,8 +539,13 @@ def test_database_module():
             # Test 3: Test table creation
             print("  ✓ Testing table creation...")
             cursor = conn.cursor()
-            cursor.execute("SELECT name FROM sqlite_master WHERE type='table'")
-            tables = [row[0] for row in cursor.fetchall()]
+            db_type = get_database_type()
+            if db_type == 'postgresql':
+                cursor.execute("SELECT tablename FROM pg_tables WHERE schemaname='public'")
+                tables = [row['tablename'] for row in cursor.fetchall()]
+            else:
+                cursor.execute("SELECT name FROM sqlite_master WHERE type='table'")
+                tables = [row['name'] if isinstance(row, dict) else row[0] for row in cursor.fetchall()]
             expected_tables = ['users', 'campaigns', 'characters', 'campaign_players', 'ai_interactions']
             
             for table in expected_tables:

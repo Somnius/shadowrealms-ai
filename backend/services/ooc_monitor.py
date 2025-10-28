@@ -89,7 +89,7 @@ class OOCMonitor:
             cursor.execute("""
                 SELECT name, description, game_system
                 FROM campaigns
-                WHERE id = ?
+                WHERE id = %s
             """, (campaign_id,))
             
             campaign = cursor.fetchone()
@@ -185,7 +185,7 @@ Answer:"""
             # Log this violation
             cursor.execute("""
                 INSERT INTO ooc_violations (user_id, campaign_id)
-                VALUES (?, ?)
+                VALUES (%s, %s)
             """, (user_id, campaign_id))
             
             # Count violations in last 7 days
@@ -193,9 +193,9 @@ Answer:"""
             cursor.execute("""
                 SELECT COUNT(*)
                 FROM ooc_violations
-                WHERE user_id = ? 
-                AND campaign_id = ?
-                AND violated_at > ?
+                WHERE user_id = %s 
+                AND campaign_id = %s
+                AND violated_at > %s
             """, (user_id, campaign_id, seven_days_ago))
             
             warning_count = cursor.fetchone()[0]
@@ -220,9 +220,9 @@ Answer:"""
             
             cursor.execute("""
                 UPDATE users
-                SET banned_until = ?,
-                    ban_reason = ?
-                WHERE id = ?
+                SET banned_until = %s,
+                    ban_reason = %s
+                WHERE id = %s
             """, (
                 ban_until,
                 f"Temporary ban for repeated OOC violations in campaign ID {campaign_id}. "
@@ -258,17 +258,17 @@ Answer:"""
             cursor.execute("""
                 SELECT banned_until, ban_reason
                 FROM users
-                WHERE id = ?
+                WHERE id = %s
             """, (user_id,))
             
             row = cursor.fetchone()
             conn.close()
             
-            if not row or not row[0]:
+            if not row or not row['ban_until']:
                 return (False, '')
             
-            banned_until_str = row[0]
-            ban_reason = row[1]
+            banned_until_str = row['ban_until']
+            ban_reason = row['ban_reason']
             
             # Parse ban expiry
             banned_until = datetime.fromisoformat(banned_until_str)
@@ -308,7 +308,7 @@ Answer:"""
                 UPDATE users
                 SET banned_until = NULL,
                     ban_reason = NULL
-                WHERE id = ?
+                WHERE id = %s
             """, (user_id,))
             
             conn.commit()

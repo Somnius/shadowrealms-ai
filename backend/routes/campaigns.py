@@ -58,7 +58,8 @@ def create_campaign():
         # Create campaign in database
         cursor.execute("""
             INSERT INTO campaigns (name, description, game_system, created_by, created_at, status)
-            VALUES (?, ?, ?, ?, ?, ?)
+            VALUES (%s, %s, %s, %s, %s, %s)
+            RETURNING id
         """, (
             data['name'],
             data['description'],
@@ -68,7 +69,8 @@ def create_campaign():
             'active'
         ))
         
-        campaign_id = cursor.lastrowid
+        result = cursor.fetchone()
+        campaign_id = result['id']
         conn.commit()
         
         # Auto-create OOC room for the campaign
@@ -123,8 +125,8 @@ def get_campaigns():
         cursor.execute("""
             SELECT id, name, description, game_system, created_at, status
             FROM campaigns
-            WHERE created_by = ? OR id IN (
-                SELECT campaign_id FROM campaign_players WHERE user_id = ?
+            WHERE created_by = %s OR id IN (
+                SELECT campaign_id FROM campaign_players WHERE user_id = %s
             )
             ORDER BY created_at DESC
         """, (user_id, user_id))
@@ -132,12 +134,12 @@ def get_campaigns():
         campaigns = []
         for row in cursor.fetchall():
             campaigns.append({
-                'id': row[0],
-                'name': row[1],
-                'description': row[2],
-                'game_system': row[3],
-                'created_at': row[4],
-                'status': row[5]
+                'id': row['id'],
+                'name': row['name'],
+                'description': row['description'],
+                'game_system': row['game_system'],
+                'created_at': row['created_at'],
+                'status': row['status']
             })
         
         cursor.close()
@@ -168,8 +170,8 @@ def get_or_update_campaign(campaign_id):
         cursor.execute("""
             SELECT id, name, description, game_system, created_by, created_at, status
             FROM campaigns
-            WHERE id = ? AND (created_by = ? OR id IN (
-                SELECT campaign_id FROM campaign_players WHERE user_id = ?
+            WHERE id = %s AND (created_by = %s OR id IN (
+                SELECT campaign_id FROM campaign_players WHERE user_id = %s
             ))
         """, (campaign_id, user_id, user_id))
         
@@ -178,13 +180,13 @@ def get_or_update_campaign(campaign_id):
             return jsonify({'error': 'Campaign not found'}), 404
         
         campaign = {
-            'id': row[0],
-            'name': row[1],
-            'description': row[2],
-            'game_system': row[3],
-            'created_by': row[4],
-            'created_at': row[5],
-            'status': row[6]
+            'id': row['id'],
+            'name': row['name'],
+            'description': row['description'],
+            'game_system': row['game_system'],
+            'created_by': row['created_by'],
+            'created_at': row['created_at'],
+            'status': row['status']
         }
         
         # Get campaign context from RAG
@@ -213,7 +215,7 @@ def update_campaign(campaign_id):
         
         # Check if user is admin or campaign creator
         cursor.execute("""
-            SELECT created_by FROM campaigns WHERE id = ?
+            SELECT created_by FROM campaigns WHERE id = %s
         """, (campaign_id,))
         
         row = cursor.fetchone()
@@ -222,11 +224,11 @@ def update_campaign(campaign_id):
         
         # Check if user is creator
         cursor.execute("""
-            SELECT role FROM users WHERE id = ?
+            SELECT role FROM users WHERE id = %s
         """, (user_id,))
         user_row = cursor.fetchone()
         
-        if row[0] != user_id and (not user_row or user_row[0] != 'admin'):
+        if row['created_by'] != user_id and (not user_row or user_row['role'] != 'admin'):
             return jsonify({'error': 'Unauthorized'}), 403
         
         # Update campaign fields if provided
@@ -234,16 +236,16 @@ def update_campaign(campaign_id):
         params = []
         
         if 'name' in data:
-            updates.append('name = ?')
+            updates.append('name = %s')
             params.append(data['name'])
         
         if 'description' in data:
-            updates.append('description = ?')
+            updates.append('description = %s')
             params.append(data['description'])
         
         if updates:
             params.append(campaign_id)
-            query = f"UPDATE campaigns SET {', '.join(updates)} WHERE id = ?"
+            query = f"UPDATE campaigns SET {', '.join(updates)} WHERE id = %s"
             cursor.execute(query, params)
             conn.commit()
         
@@ -263,30 +265,31 @@ def delete_campaign(campaign_id):
         
         # Check if user is admin or campaign creator
         cursor.execute("""
-            SELECT created_by, name FROM campaigns WHERE id = ?
+            SELECT created_by, name FROM campaigns WHERE id = %s
         """, (campaign_id,))
         
         row = cursor.fetchone()
         if not row:
             return jsonify({'error': 'Campaign not found'}), 404
         
-        campaign_creator, campaign_name = row
+        campaign_creator = row['created_by']
+        campaign_name = row['name']
         
         # Check if user is creator or admin
         cursor.execute("""
-            SELECT role FROM users WHERE id = ?
+            SELECT role FROM users WHERE id = %s
         """, (user_id,))
         user_row = cursor.fetchone()
         
-        if campaign_creator != user_id and (not user_row or user_row[0] != 'admin'):
+        if campaign_creator != user_id and (not user_row or user_row['role'] != 'admin'):
             return jsonify({'error': 'Unauthorized'}), 403
         
         # Count what will be deleted for audit
-        cursor.execute("SELECT COUNT(*) FROM locations WHERE campaign_id = ?", (campaign_id,))
-        location_count = cursor.fetchone()[0]
+        cursor.execute("SELECT COUNT(*) FROM locations WHERE campaign_id = %s", (campaign_id,))
+        location_count = cursor.fetchone()['count']
         
-        cursor.execute("SELECT COUNT(*) FROM messages WHERE campaign_id = ?", (campaign_id,))
-        message_count = cursor.fetchone()[0]
+        cursor.execute("SELECT COUNT(*) FROM messages WHERE campaign_id = %s", (campaign_id,))
+        message_count = cursor.fetchone()['count']
         
         logger.info(f"🗑️ Deleting campaign {campaign_id} ({campaign_name}):")
         logger.info(f"   • {location_count} locations")
@@ -300,8 +303,8 @@ def delete_campaign(campaign_id):
                 try:
                     collection = rag_service.client.get_or_create_collection(name='message_memory')
                     # Get all message IDs for this campaign
-                    cursor.execute("SELECT id FROM messages WHERE campaign_id = ?", (campaign_id,))
-                    message_ids = [row[0] for row in cursor.fetchall()]
+                    cursor.execute("SELECT id FROM messages WHERE campaign_id = %s", (campaign_id,))
+                    message_ids = [row['id'] for row in cursor.fetchall()]
                     
                     if message_ids:
                         embedding_ids = [f"msg_{msg_id}_{campaign_id}" for msg_id in message_ids]
@@ -314,7 +317,7 @@ def delete_campaign(campaign_id):
         
         # SQLite's ON DELETE CASCADE will handle related records
         # (locations, characters, messages, dice_rolls, etc.)
-        cursor.execute("DELETE FROM campaigns WHERE id = ?", (campaign_id,))
+        cursor.execute("DELETE FROM campaigns WHERE id = %s", (campaign_id,))
         conn.commit()
         
         logger.info(f"✅ Campaign {campaign_id} ({campaign_name}) fully deleted:")
@@ -353,8 +356,8 @@ def update_world_data(campaign_id):
         
         cursor.execute("""
             SELECT id FROM campaigns
-            WHERE id = ? AND (created_by = ? OR id IN (
-                SELECT campaign_id FROM campaign_players WHERE user_id = ?
+            WHERE id = %s AND (created_by = %s OR id IN (
+                SELECT campaign_id FROM campaign_players WHERE user_id = %s
             ))
         """, (campaign_id, user_id, user_id))
         
@@ -400,8 +403,8 @@ def search_campaign_memory(campaign_id):
         
         cursor.execute("""
             SELECT id FROM campaigns
-            WHERE id = ? AND (created_by = ? OR id IN (
-                SELECT campaign_id FROM campaign_players WHERE user_id = ?
+            WHERE id = %s AND (created_by = %s OR id IN (
+                SELECT campaign_id FROM campaign_players WHERE user_id = %s
             ))
         """, (campaign_id, user_id, user_id))
         
@@ -454,8 +457,8 @@ def get_campaign_context(campaign_id):
         
         cursor.execute("""
             SELECT id FROM campaigns
-            WHERE id = ? AND (created_by = ? OR id IN (
-                SELECT campaign_id FROM campaign_players WHERE user_id = ?
+            WHERE id = %s AND (created_by = %s OR id IN (
+                SELECT campaign_id FROM campaign_players WHERE user_id = %s
             ))
         """, (campaign_id, user_id, user_id))
         
@@ -503,8 +506,8 @@ def store_interaction(campaign_id):
         
         cursor.execute("""
             SELECT id FROM campaigns
-            WHERE id = ? AND (created_by = ? OR id IN (
-                SELECT campaign_id FROM campaign_players WHERE user_id = ?
+            WHERE id = %s AND (created_by = %s OR id IN (
+                SELECT campaign_id FROM campaign_players WHERE user_id = %s
             ))
         """, (campaign_id, user_id, user_id))
         

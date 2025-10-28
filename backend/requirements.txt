@@ -9,6 +9,7 @@ Flask-Migrate>=4.0.0
 # Database & ORM
 SQLAlchemy>=2.0.0
 alembic>=1.12.0
+psycopg2-binary>=2.9.9  # PostgreSQL driver
 
 # Authentication & Security
 bcrypt>=4.0.0

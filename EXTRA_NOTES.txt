@@ -1,0 +1,38 @@
+
+
+---
+
+i want the user, any user even admin, that clicks on their profile name or icon to be able to get into a new page that it will be the user / player profile page, there they will be able to update their real name, optional, add a profile picture to be used on all places of this platform. And more stuff, you suggest things we can insert into the profile page mate, if you have any questions don't hesitate to ask.
+
+any suggestions for the betterment of this process
+and maybe any questions ?
+
+---
+
+Maybe implement a loading screen on each page load or movement, like when user visits landing page, logs in and gets into campaigns list, when he will visit his profile page, or when an admin visits admin page, or when an admin edits a campaign, to be sure all the data that needs to be loaded ARE loaded and then shown to the user, if the stuff are fast loaded like less than 1 second then don't show that screen but if the data don't load fast then display that screen so the user understands what is happening and awaits properly.
+
+any suggestions for the betterment of this process
+and maybe any questions ?
+
+---
+
+Implement a messaging system for the users that will be only directed to the admin level users and now through each other players, so no player to player messages only through the admins.
+
+All admins should receive a toast notification upon logging in, and have a notification Bell on the left of their profile picture and username indicating there is a message. The admin level user, any of the admins, should see the message from that user that send it, and being able to reply to it and receive concurent message replies from the user/player. The user player and admin user should have an Envelope icon on the left of their profile icon and username that will open the messages to the admins pop-up that will be usable to the above process. If an admin replies the message should be sent to the player without the information of who of the admins send it, with Received from an Admin, but the admins all of them not only one user should see what username of the admin group sent that message.
+
+any suggestions for the betterment of this process
+and maybe any questions ?
+
+---
+
+If you identify that any other language rather and english is used in the in-game locations / rooms and in OOC out of character lobby, then inform them that this isn't a language to use in this platform, and should keep using proper English, or they will be banned after 3 warnings. If you identify Greek well here is another thing, report back by having the Ai system write "Κύριοι, παρακαλώ μην χρησιμοποιείτε Ελληνική γλώσσα, δεν είναι σωστό." And inform the admins through the notification system that user / player X used X language in the X location in X campaign with a toast, and leave a notification on the Bell up top, when they click it then the admin should be presented with a full report of what happened. All using the Ai system for prompts replying and what happened.
+
+any suggestions for the betterment of this process
+and maybe any questions ?
+
+---
+
+about the export campaign feature that is a button on settings of each campaign, i'm thinking of having panel pop-up one of our internal windows and say that the Ai system can and will produce a markdown that will depict all that has happend since day one of this campaign was create for later viewing, and that this process will take a bit of time to be produced. Give option save it to disk
+
+any suggestions for the betterment of this process
+and maybe any questions ?

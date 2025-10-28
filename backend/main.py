@@ -68,6 +68,16 @@ def create_app(config_class=Config):
     app.register_blueprint(dice.dice_bp, url_prefix='/api')
     app.register_blueprint(messages.messages_bp, url_prefix='/api')
     
+    # Version endpoint
+    @app.route('/api/version')
+    def get_version():
+        """Get application version from environment"""
+        version = os.environ.get('VERSION', '0.0.0')
+        return jsonify({
+            'version': f"v{version}",
+            'timestamp': datetime.utcnow().isoformat()
+        }), 200
+    
     # Health check endpoint
     @app.route('/health')
     def health_check():
@@ -75,17 +85,21 @@ def create_app(config_class=Config):
         try:
             # Check database connection
             db = get_db()
-            db.execute("SELECT 1")
+            cursor = db.cursor()
+            cursor.execute("SELECT 1")
+            cursor.close()
             
             # Check GPU monitoring status
             gpu_status = GPUMonitorService.get_current_status()
+            
+            version = os.environ.get('VERSION', '0.0.0')
             
             return jsonify({
                 'status': 'healthy',
                 'timestamp': datetime.utcnow().isoformat(),
                 'database': 'connected',
                 'gpu_monitoring': 'active' if gpu_status else 'inactive',
-                'version': '0.2.1'
+                'version': version
             }), 200
             
         except Exception as e:

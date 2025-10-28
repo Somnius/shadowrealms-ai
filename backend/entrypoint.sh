@@ -8,9 +8,20 @@ echo "🚀 Starting ShadowRealms AI Backend..."
 # Wait for ChromaDB to be ready
 echo "⏳ Waiting for ChromaDB to be ready..."
 echo "   Testing ChromaDB connection..."
-curl -v http://localhost:8000/api/v2/heartbeat || echo "   ChromaDB connection failed"
-echo "   Testing with timeout..."
-timeout 5 curl -f http://localhost:8000/api/v2/heartbeat && echo "   ChromaDB is ready!" || echo "   ChromaDB still not ready, continuing anyway..."
+# Use CHROMADB_HOST environment variable (defaults to chromadb for Docker)
+CHROMADB_HOST=${CHROMADB_HOST:-chromadb}
+CHROMADB_PORT=${CHROMADB_PORT:-8000}
+echo "   Connecting to http://${CHROMADB_HOST}:${CHROMADB_PORT}..."
+
+# Wait up to 30 seconds for ChromaDB to be ready
+for i in {1..30}; do
+    if curl -sf "http://${CHROMADB_HOST}:${CHROMADB_PORT}/api/v2/heartbeat" > /dev/null 2>&1; then
+        echo "✅ ChromaDB is ready!"
+        break
+    fi
+    echo "   Attempt $i: ChromaDB not ready yet, waiting..."
+    sleep 1
+done
 
 # Wait for monitoring service to be ready
 echo "⏳ Waiting for monitoring service to be ready..."

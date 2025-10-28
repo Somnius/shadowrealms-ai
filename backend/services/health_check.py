@@ -90,8 +90,9 @@ class HealthCheckService:
             Tuple[bool, str]: (is_available, message)
         """
         try:
+            # Try v2 API first (current version), fallback to root endpoint
             response = requests.get(
-                f"http://{host}:{port}/api/v1/heartbeat",
+                f"http://{host}:{port}/api/v2/heartbeat",
                 timeout=self.check_timeout
             )
             

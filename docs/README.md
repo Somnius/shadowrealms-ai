@@ -2,7 +2,7 @@
 
 Welcome to the ShadowRealms AI documentation! This directory contains all project documentation, guides, and references.
 
-**Last Consolidated:** October 28, 2025 - Reduced from 26 to 14 files for better organization.
+**Last Updated:** October 28, 2025 - 20 files (includes PostgreSQL migration docs)
 
 ## 📚 Quick Links
 
@@ -14,21 +14,43 @@ Welcome to the ShadowRealms AI documentation! This directory contains all projec
 ### Development
 - **[Contributing Guidelines](CONTRIBUTING.md)** - How to contribute to the project
 - **[Changelog](CHANGELOG.md)** - Version history and updates
+- **[Version Bump Process](VERSION_BUMP_PROCESS.md)** - Automated version update workflow
 - **[GitHub Setup](GITHUB_SETUP.md)** - Repository and collaboration setup
+
+### Database Migration
+- **[PostgreSQL Migration Guide](POSTGRESQL_MIGRATION_GUIDE.md)** - Complete migration from SQLite to PostgreSQL
+- **[PostgreSQL Setup](POSTGRESQL_ENV_SETUP.md)** - Secure credential generation
+- **[Migration Checklist](MIGRATION_PACKAGE_CHECKLIST.md)** - Pre-flight verification
+- **[Migration Success Report](POSTGRESQL_MIGRATION_SUCCESS.md)** - Post-migration verification
+- **[Database Migration Planning](DATABASE_MIGRATION_POSTGRESQL.md)** - Technical details and planning
 
 ### Current Phase
 - **[Phase 3B Implementation](PHASE3B_IMPLEMENTATION.md)** - Advanced campaign & character systems (IN PROGRESS)
-- **[Phase 3B Summary](PHASE3B_SUMMARY.md)** - Security & testing foundation (COMPLETE)
-- **[Phase 3A Next](PHASE_3A_NEXT.md)** - Frontend development planning
+- **[Planning Documentation](PLANNING.md)** - Phase planning and summaries
+
+### AI & Memory Systems
+- **[AI Systems](AI_SYSTEMS.md)** - Complete AI and memory system documentation
+  - OOC Monitoring
+  - AI Memory Cleanup
+  - Memory Implementation
+  - Context Proposals
 
 ### Quality & Testing
-- **[Quality Audit Report](QUALITY_AUDIT_REPORT.md)** - Current code quality audit and action plan
-- **[Frontend Manual Testing](test_frontend_manual.md)** - Manual testing checklist
-- **[Test Suite Guide](../tests/README.md)** - Automated test documentation
+- **[Quality & Testing](QUALITY_AND_TESTING.md)** - Quality assurance and testing documentation
+  - Quality Audits
+  - Testing Guides
+  - Audit Findings
 
-### Features & Implementation
-- **[Gothic Theme](GOTHIC_THEME.md)** - Complete gothic horror theme documentation
-- **[Invite System](INVITES_README.md)** - User registration invite code system
+### Features
+- **[Features](FEATURES.md)** - Feature-specific documentation
+  - Gothic Horror Theme
+  - Invite Code System
+
+### Bug Fixes & Audits
+- **[Bug Fixes & Audits](BUG_FIXES_AND_AUDITS.md)** - Bug fixes and technical audits
+  - Location Fixes
+  - Message Persistence
+  - API Audits
 
 ### Historical Archives
 - **[Project Status Archive](PROJECT_STATUS_ARCHIVED.md)** - Historical status reports
@@ -42,28 +64,35 @@ shadowrealms-ai/
 ├── README.md                          # Project overview (root)
 ├── SHADOWREALMS_AI_COMPLETE.md       # Complete documentation (root)
 ├── LICENSE                            # MIT License (root)
+├── version-bump.sh                    # Version update script (root)
 │
-├── docs/                              # All documentation files (14 files)
+├── docs/                              # All documentation files (20 files)
 │   ├── README.md                      # This file (index)
 │   │
-│   ├── CHANGELOG.md                   # Version history
-│   ├── CONTRIBUTING.md                # Contribution guide
-│   ├── QUALITY_AUDIT_REPORT.md       # Code quality audit
+│   ├── CHANGELOG.md                   # Version history ⭐
+│   ├── CONTRIBUTING.md                # Contribution guide ⭐
+│   ├── VERSION_BUMP_PROCESS.md       # Version workflow ⭐
 │   │
-│   ├── DOCKER_ENV_SETUP.md           # Docker setup
-│   ├── GITHUB_SETUP.md               # GitHub guide
-│   ├── INVITES_README.md             # Invite system
+│   ├── DOCKER_ENV_SETUP.md           # Docker setup ⭐
+│   ├── GITHUB_SETUP.md               # GitHub guide ⭐
 │   │
-│   ├── PHASE_3A_NEXT.md              # Phase 3A planning
-│   ├── PHASE3B_IMPLEMENTATION.md     # Phase 3B (active)
-│   ├── PHASE3B_SUMMARY.md            # Phase 3B completion
+│   ├── PHASE3B_IMPLEMENTATION.md     # Phase 3B (active) ⭐
+│   ├── PLANNING.md                   # Phase planning 📦
 │   │
-│   ├── GOTHIC_THEME.md               # Gothic theme docs
-│   ├── test_frontend_manual.md       # Testing guide
+│   ├── AI_SYSTEMS.md                 # AI & memory systems 📦
+│   ├── QUALITY_AND_TESTING.md        # Quality & testing 📦
+│   ├── FEATURES.md                   # Features 📦
+│   ├── BUG_FIXES_AND_AUDITS.md       # Bug fixes & audits 📦
 │   │
-│   ├── PROJECT_STATUS_ARCHIVED.md    # Historical status
-│   ├── PHASE_COMPLETIONS_ARCHIVED.md # Phase 4 & 5A
-│   └── UI_UX_IMPROVEMENTS_ARCHIVED.md # UI/UX history
+│   ├── DATABASE_MIGRATION_POSTGRESQL.md  # PostgreSQL migration planning ⭐
+│   ├── POSTGRESQL_ENV_SETUP.md           # PostgreSQL credentials guide ⭐
+│   ├── POSTGRESQL_MIGRATION_GUIDE.md     # PostgreSQL migration steps ⭐
+│   ├── POSTGRESQL_MIGRATION_SUCCESS.md   # PostgreSQL migration report ⭐
+│   ├── MIGRATION_PACKAGE_CHECKLIST.md    # Migration pre-flight check ⭐
+│   │
+│   ├── PROJECT_STATUS_ARCHIVED.md    # Historical status 📂
+│   ├── PHASE_COMPLETIONS_ARCHIVED.md # Phase 4 & 5A 📂
+│   └── UI_UX_IMPROVEMENTS_ARCHIVED.md # UI/UX history 📂
 │
 ├── tests/                             # Test suite and docs
 │   └── README.md                      # Test documentation
@@ -73,6 +102,11 @@ shadowrealms-ai/
 │
 └── assets/                            # Project assets
     └── README.md                      # Assets documentation
+
+Legend:
+  ⭐ Standalone vital file
+  📦 Consolidated file (multiple files merged)
+  📂 Archive file
 ```
 
 ## 🎯 Documentation by Topic
@@ -86,18 +120,44 @@ shadowrealms-ai/
 - **CONTRIBUTING.md**: Code standards, Git workflow, PR process
 - **GITHUB_SETUP.md**: Repository setup, branch strategy
 - **CHANGELOG.md**: Version history and release notes
-- **QUALITY_AUDIT_REPORT.md**: Code quality standards and audit results
+- **VERSION_BUMP_PROCESS.md**: Automated version update workflow
 
-### Feature Implementation
-- **GOTHIC_THEME.md**: Gothic horror theme system
-- **INVITES_README.md**: Invite code registration system
-- **PHASE_COMPLETIONS_ARCHIVED.md**: Phase 4 (RAG) & Phase 5A (integration)
-- **test_frontend_manual.md**: Testing strategies and manual tests
+### AI & Memory Systems
+- **AI_SYSTEMS.md**: Comprehensive AI documentation
+  - OOC (Out of Character) Monitoring System
+  - AI Memory Cleanup & ChromaDB Management
+  - AI Memory Implementation Plans
+  - AI Context & Memory Proposals
+  - Complete AI Memory System
 
-### UI/UX & Design
-- **GOTHIC_THEME.md**: Complete theme documentation
-- **UI_UX_IMPROVEMENTS_ARCHIVED.md**: Historical UI/UX changes
-- **QUALITY_AUDIT_REPORT.md**: Current UI/UX improvements needed
+### Quality & Testing
+- **QUALITY_AND_TESTING.md**: Complete QA documentation
+  - Quality Audit Reports
+  - Quality Audit Findings
+  - Quality Fixes Documentation
+  - Frontend Manual Testing Guide
+
+### Features
+- **FEATURES.md**: Feature implementations
+  - Gothic Horror Theme System
+  - Invite Code Registration System
+
+### Bug Fixes & Technical Audits
+- **BUG_FIXES_AND_AUDITS.md**: Technical fixes and audits
+  - Location Bug Fixes
+  - Message Persistence Implementation
+  - API Endpoint Audits
+  - API Audit Summaries
+
+### Planning
+- **PLANNING.md**: Development planning
+  - Phase 3A Next Steps
+  - Phase 3B Summary & Status
+
+### Historical Documentation
+- **PROJECT_STATUS_ARCHIVED.md**: Historical project status
+- **PHASE_COMPLETIONS_ARCHIVED.md**: Completed phases (4 & 5A)
+- **UI_UX_IMPROVEMENTS_ARCHIVED.md**: UI/UX evolution
 
 ## 📝 Contributing to Documentation
 
@@ -107,6 +167,7 @@ When adding new documentation:
 3. Update the main README if it's a major document
 4. Follow Markdown best practices
 5. Include examples and code snippets where relevant
+6. Consider if it should be consolidated into an existing category
 
 ## 🔗 External Resources
 
@@ -114,21 +175,52 @@ When adding new documentation:
 - [World of Darkness Books](../books/README.md)
 - [Test Suite](../tests/README.md)
 
-## 📋 Consolidated Documentation (Oct 28, 2025)
+## 📋 Consolidation History
 
-To improve organization, we consolidated 26 files → 14 files:
+### October 28, 2025 - Major Consolidation (28 → 15 files)
 
-**Consolidated into:**
-- `GOTHIC_THEME.md` (4 files merged)
-- `PROJECT_STATUS_ARCHIVED.md` (5 files merged)
-- `PHASE_COMPLETIONS_ARCHIVED.md` (3 files merged)  
-- `UI_UX_IMPROVEMENTS_ARCHIVED.md` (3 files merged)
+**Consolidated Groups:**
 
-**Total:** Removed 12 redundant files while preserving all information.
+1. **AI_SYSTEMS.md** (5 files merged)
+   - AI_CONTEXT_MEMORY_PROPOSAL.md
+   - AI_MEMORY_CLEANUP.md
+   - AI_MEMORY_IMPLEMENTATION_PLAN.md
+   - AI_MEMORY_SYSTEM_COMPLETE.md
+   - OOC_MONITORING.md
+
+2. **QUALITY_AND_TESTING.md** (4 files merged)
+   - QUALITY_AUDIT_FINDINGS.md
+   - QUALITY_AUDIT_REPORT.md
+   - QUALITY_FIXES_COMPLETE.md
+   - test_frontend_manual.md
+
+3. **FEATURES.md** (2 files merged)
+   - GOTHIC_THEME.md
+   - INVITES_README.md
+
+4. **BUG_FIXES_AND_AUDITS.md** (4 files merged)
+   - LOCATION_BUG_FIX.md
+   - MESSAGE_PERSISTENCE_FEATURE.md
+   - API_AUDIT_REPORT.md
+   - API_AUDIT_SUMMARY.txt
+
+5. **PLANNING.md** (2 files merged)
+   - PHASE_3A_NEXT.md
+   - PHASE3B_SUMMARY.md
+
+6. **VERSION_BUMP_PROCESS.md** (1 file merged)
+   - VERSION_BUMP_QUICKREF.md (added as section)
+
+**Result:**
+- **Before**: 28 files
+- **After**: 15 files
+- **Saved**: 13 files (46% reduction)
+
+All consolidated files maintain complete content with proper section headers and navigation.
 
 ---
 
 **Last Updated**: October 28, 2025  
-**Documentation Version**: 0.7.0  
-**Total Documentation Files**: 14 (down from 26)
+**Documentation Version**: 0.7.6  
+**Total Documentation Files**: 20 (includes PostgreSQL migration docs)
 
