@@ -69,7 +69,7 @@ grep "POSTGRES_" .env | sed 's/=.*/=***/'
 Run the comprehensive backup script:
 
 ```bash
-./backup-before-postgresql.sh
+./scripts/backup-before-postgresql.sh
 ```
 
 This creates a timestamped backup in `backups/pre-postgresql-YYYYMMDD-HHMMSS/`
@@ -108,7 +108,7 @@ docker compose logs postgresql | grep "initialized successfully"
 Run migration in dry-run mode to preview:
 
 ```bash
-docker compose exec backend python /app/migrate_sqlite_to_postgresql.py --dry-run
+docker compose exec backend python /app/scripts/migrate_sqlite_to_postgresql.py --dry-run
 ```
 
 **Review the output carefully!**
@@ -127,7 +127,7 @@ Expected:
 Run the actual migration:
 
 ```bash
-docker compose exec backend python /app/migrate_sqlite_to_postgresql.py --verify
+docker compose exec backend python /app/scripts/migrate_sqlite_to_postgresql.py --verify
 ```
 
 **What happens**:
@@ -340,8 +340,8 @@ After successful migration:
 - `docs/DATABASE_MIGRATION_POSTGRESQL.md` - Technical details and planning
 - `POSTGRESQL_ENV_SETUP.md` - Credential generation guide
 - `backend/init_postgresql_schema.sql` - Database schema
-- `migrate_sqlite_to_postgresql.py` - Migration script
-- `backup-before-postgresql.sh` - Backup script
+- `scripts/migrate_sqlite_to_postgresql.py` - Migration script
+- `scripts/backup-before-postgresql.sh` - Backup script
 
 ---
 

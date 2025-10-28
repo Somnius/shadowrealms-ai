@@ -64,7 +64,11 @@ shadowrealms-ai/
 ├── README.md                          # Project overview (root)
 ├── SHADOWREALMS_AI_COMPLETE.md       # Complete documentation (root)
 ├── LICENSE                            # MIT License (root)
-├── version-bump.sh                    # Version update script (root)
+├── scripts/                            # Utility scripts directory
+│   ├── version-bump.sh                # Version update script
+│   ├── backup.sh                      # Project backup script
+│   ├── git_workflow.sh                # Git workflow helper
+│   └── ...                            # Other utility scripts
 │
 ├── docs/                              # All documentation files (20 files)
 │   ├── README.md                      # This file (index)

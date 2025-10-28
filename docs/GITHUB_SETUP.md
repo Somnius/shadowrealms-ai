@@ -66,7 +66,7 @@ git checkout main
 ### 3.1 Check Current Status
 ```bash
 # Use our git workflow script
-./git_workflow.sh status
+./scripts/git_workflow.sh status
 ```
 
 ### 3.2 Create .env File from Template
@@ -97,17 +97,17 @@ git add .
 git status
 
 # Make initial commit
-./git_workflow.sh commit "Initial commit: ShadowRealms AI v0.4.4 - Complete Phase 1"
+./scripts/git_workflow.sh commit "Initial commit: ShadowRealms AI v0.4.4 - Complete Phase 1"
 ```
 
 ### 4.2 Push to GitHub
 ```bash
 # Push main branch
-./git_workflow.sh push
+./scripts/git_workflow.sh push
 
 # Push develop branch
 git checkout develop
-./git_workflow.sh push
+./scripts/git_workflow.sh push
 ```
 
 ## 🏷️ Step 5: Create First Release
@@ -118,7 +118,7 @@ git checkout develop
 git checkout main
 
 # Create release tag
-./git_workflow.sh release 0.4.4
+./scripts/git_workflow.sh release 0.4.4
 ```
 
 ### 5.2 GitHub Release
@@ -135,13 +135,13 @@ git checkout main
 ### 6.1 Feature Development
 ```bash
 # Create feature branch
-./git_workflow.sh feature user-authentication
+./scripts/git_workflow.sh feature user-authentication
 
 # Make changes and commit
-./git_workflow.sh commit "Add user authentication system"
+./scripts/git_workflow.sh commit "Add user authentication system"
 
 # Push feature branch
-./git_workflow.sh push
+./scripts/git_workflow.sh push
 ```
 
 ### 6.2 Pull Request Process
@@ -157,10 +157,10 @@ git checkout main
 git checkout develop
 
 # Pull latest changes
-./git_workflow.sh pull
+./scripts/git_workflow.sh pull
 
 # Merge feature branch
-./git_workflow.sh merge feature/user-authentication
+./scripts/git_workflow.sh merge feature/user-authentication
 ```
 
 ### 6.4 Creating Releases
@@ -172,7 +172,7 @@ git checkout main
 git merge develop
 
 # Create release
-./git_workflow.sh release 0.5.0
+./scripts/git_workflow.sh release 0.5.0
 ```
 
 ## 📚 Step 7: Repository Management
@@ -290,7 +290,7 @@ ls -la  # Verify files are present
 
 If you encounter issues:
 1. Check GitHub documentation
-2. Review Git workflow script help: `./git_workflow.sh help`
+2. Review Git workflow script help: `./scripts/git_workflow.sh help`
 3. Check repository settings
 4. Verify .gitignore configuration
 

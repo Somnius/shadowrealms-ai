@@ -19,7 +19,7 @@ This document describes the standardized process for bumping version numbers in 
 
 **1. Run Script**
 ```bash
-./version-bump.sh 0.7.6 0.7.7
+./scripts/version-bump.sh 0.7.6 0.7.7
 ```
 
 **2. Update 3 Files Manually**
@@ -100,12 +100,12 @@ MAJOR.MINOR.PATCH
 ### Step 1: Run the Version Bump Script
 
 ```bash
-./version-bump.sh <old_version> <new_version>
+./scripts/version-bump.sh <old_version> <new_version>
 ```
 
 **Example:**
 ```bash
-./version-bump.sh 0.7.6 0.7.7
+./scripts/version-bump.sh 0.7.6 0.7.7
 ```
 
 ### What the Script Does Automatically
@@ -453,8 +453,8 @@ sed -i 's/OLD_VERSION/NEW_VERSION/g' path/to/file.md
 
 - [Semantic Versioning 2.0.0](https://semver.org/)
 - [Keep a Changelog](https://keepachangelog.com/)
-- [Git Workflow](../git_workflow.sh)
-- [Backup Script](../backup.sh)
+- [Git Workflow](../scripts/git_workflow.sh)
+- [Backup Script](../scripts/backup.sh)
 
 ---
 

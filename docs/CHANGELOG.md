@@ -277,7 +277,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - XSS prevention in UI tests
 
 #### Development Tools
-- **run-frontend-tests.sh** - Test runner script for Docker environment
+- **scripts/run-frontend-tests.sh** - Test runner script for Docker environment
   - Runs security tests
   - Runs integration tests
   - Generates coverage reports
@@ -432,7 +432,7 @@ From extensive user conversation (2025-10-24):
 ### Migration Notes
 - No database migrations yet (coming in Week 1)
 - Frontend tests require Docker container environment
-- Use `./run-frontend-tests.sh` to run test suite
+- Use `./scripts/run-frontend-tests.sh` to run test suite
 
 ### Contributors
 - User specifications and requirements definition
@@ -2260,7 +2260,7 @@ books/
 - `CHANGELOG.txt` → `CHANGELOG.md` (renamed)
 - `SHADOWREALMS_AI_COMPLETE.md` - Updated changelog reference
 - `GITHUB_SETUP.md` - Updated changelog reference
-- `backup.sh` - Updated critical files list
+- `scripts/backup.sh` - Updated critical files list
 
 ### Technical Improvements
 - Better GitHub integration with proper markdown formatting
@@ -2664,12 +2664,12 @@ books/
 
 ### Added
 - **Comprehensive Backup System** - Automated tar.bz2 backup creation with timestamp naming
-- **Backup Script** - `backup.sh` with proper exclusions and progress reporting
+- **Backup Script** - `scripts/backup.sh` with proper exclusions and progress reporting
 - **Backup Directory** - Dedicated `backup/` folder for project backups
 - **Comprehensive Git Ignore** - Complete .gitignore covering all project aspects
 
 ### Changed
-- **Backup Process** - Automated backup with command: `./backup.sh`
+- **Backup Process** - Automated backup with command: `./scripts/backup.sh`
 - **Git Management** - Enhanced version control with proper exclusions
 - **Project Organization** - Better separation of source code vs generated data
 
@@ -2686,7 +2686,7 @@ books/
 
 ### Backup Command
 ```bash
-./backup.sh
+./scripts/backup.sh
 ```
 
 ---

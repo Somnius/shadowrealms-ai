@@ -181,7 +181,7 @@
 ### Pre-Migration Backup
 ```bash
 # Full SQLite backup
-./backup-before-postgresql.sh
+./scripts/backup-before-postgresql.sh
 ```
 
 ### PostgreSQL Backup Options
