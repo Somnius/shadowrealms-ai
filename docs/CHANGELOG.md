@@ -5,6 +5,56 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.9] - 2025-10-29 - Project Structure Organization 📁
+
+### Changed
+
+#### Project Structure Reorganization 📁
+- **Created `scripts/` Directory** - Organized all utility scripts into dedicated directory
+  - Moved 8 scripts from root to `scripts/`:
+    * `backup.sh` → `scripts/backup.sh`
+    * `backup-before-postgresql.sh` → `scripts/backup-before-postgresql.sh`
+    * `generate_secret_key.py` → `scripts/generate_secret_key.py`
+    * `git_workflow.sh` → `scripts/git_workflow.sh`
+    * `migrate_sqlite_to_postgresql.py` → `scripts/migrate_sqlite_to_postgresql.py`
+    * `migrate_users_only.py` → `scripts/migrate_users_only.py`
+    * `run-frontend-tests.sh` → `scripts/run-frontend-tests.sh`
+    * `version-bump.sh` → `scripts/version-bump.sh`
+  - Moved `test_results.log` to `tests/` directory
+  - **Result**: Cleaner project root, better organized structure
+
+#### Documentation Updates
+- **Updated Script Paths** - Fixed all script references across 10 documentation files:
+  - `SHADOWREALMS_AI_COMPLETE.md` - Updated backup and test script paths
+  - `docs/CHANGELOG.md` - Updated script references
+  - `docs/VERSION_BUMP_PROCESS.md` - Updated version-bump.sh path
+  - `docs/DOCKER_ENV_SETUP.md` - Updated generate_secret_key.py path
+  - `docs/GITHUB_SETUP.md` - Updated git_workflow.sh path
+  - `docs/POSTGRESQL_MIGRATION_GUIDE.md` - Updated migration script paths
+  - `docs/DATABASE_MIGRATION_POSTGRESQL.md` - Updated backup script path
+  - `docs/MIGRATION_PACKAGE_CHECKLIST.md` - Updated migration script paths
+  - `docs/POSTGRESQL_MIGRATION_SUCCESS.md` - Updated migrate_users_only.py path
+  - `docs/README.md` - Added scripts/ directory to structure overview
+
+### Security
+
+#### .gitignore Verification
+- **Backup Directories** - Confirmed `backup/` and `backups/` are properly ignored
+  - Both directories already in `.gitignore`
+  - Verified no backup files in git history
+  - No sensitive backup data exposed
+
+### Technical Details
+- **Files Reorganized**: 8 scripts + 1 log file moved to proper directories
+- **Documentation Updated**: 10 files with corrected paths
+- **Git Operations**: All moves tracked with proper rename detection
+
+### Benefits
+- 🗂️ **Cleaner Root Directory** - Scripts no longer cluttering project root
+- 📚 **Better Organization** - Clear separation between code, scripts, and docs
+- 🔍 **Easier Navigation** - All utilities in one predictable location
+- 📖 **Updated Documentation** - All script paths accurately reflect new structure
+
 ## [0.7.8] - 2025-10-29 - Footer Version Display Fix 🔧
 
 ### Fixed
