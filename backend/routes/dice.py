@@ -56,7 +56,8 @@ def manual_roll(campaign_id):
                 campaign_id, location_id, user_id, character_id, 
                 roll_type, action_description, dice_pool, difficulty,
                 results, successes, is_botch, is_critical, modifiers
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            RETURNING id
         """, (
             campaign_id, location_id, user_id, character_id,
             'manual', action_description, pool_size, difficulty,
@@ -65,16 +66,17 @@ def manual_roll(campaign_id):
             json.dumps({'specialty': specialty})
         ))
         
+        result = cursor.fetchone()
+        roll_id = result['id']
         conn.commit()
-        roll_id = cursor.lastrowid
         
         # Get character name if provided
         character_name = None
         if character_id:
-            cursor.execute("SELECT name FROM characters WHERE id = ?", (character_id,))
+            cursor.execute("SELECT name FROM characters WHERE id = %s", (character_id,))
             row = cursor.fetchone()
             if row:
-                character_name = row[0]
+                character_name = row['name']
         
         # Format for chat
         chat_message = dice_service.format_roll_for_chat(
@@ -136,7 +138,7 @@ def contested_roll(campaign_id):
                 campaign_id, location_id, user_id, character_id,
                 roll_type, action_description, dice_pool, difficulty,
                 results, successes, is_botch, is_critical
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
         """, (
             campaign_id, location_id, user_id, data.get('attacker_character_id'),
             'contested_attacker', action_description, attacker_pool, difficulty,
@@ -152,7 +154,7 @@ def contested_roll(campaign_id):
                 campaign_id, location_id, user_id, character_id,
                 roll_type, action_description, dice_pool, difficulty,
                 results, successes, is_botch, is_critical
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
         """, (
             campaign_id, location_id, user_id, data.get('defender_character_id'),
             'contested_defender', action_description, defender_pool, difficulty,
@@ -196,9 +198,9 @@ def ai_roll(campaign_id):
         # Verify user is admin (AI service should have admin token)
         conn = get_db()
         cursor = conn.cursor()
-        cursor.execute("SELECT role FROM users WHERE id = ?", (user_id,))
+        cursor.execute("SELECT role FROM users WHERE id = %s", (user_id,))
         row = cursor.fetchone()
-        if not row or row[0] != 'admin':
+        if not row or row['role'] != 'admin':
             return jsonify({'error': 'Unauthorized - admin only'}), 403
         
         action_type = data.get('action_type', 'event')
@@ -218,7 +220,8 @@ def ai_roll(campaign_id):
                 campaign_id, location_id, user_id,
                 roll_type, action_description, dice_pool, difficulty,
                 results, successes, is_botch, is_critical, modifiers
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            RETURNING id
         """, (
             campaign_id, location_id, user_id,
             f'ai_{action_type}', description, pool_size, difficulty,
@@ -227,8 +230,9 @@ def ai_roll(campaign_id):
             json.dumps(context)
         ))
         
+        result = cursor.fetchone()
+        roll_id = result['id']
         conn.commit()
-        roll_id = cursor.lastrowid
         
         logger.info(f"AI roll ({action_type}) in campaign {campaign_id}: {roll_result['successes']} successes")
         
@@ -269,19 +273,19 @@ def get_roll_history(campaign_id):
             FROM dice_rolls dr
             LEFT JOIN users u ON dr.user_id = u.id
             LEFT JOIN characters c ON dr.character_id = c.id
-            WHERE dr.campaign_id = ?
+            WHERE dr.campaign_id = %s
         """
         params = [campaign_id]
         
         if location_id:
-            query += " AND dr.location_id = ?"
+            query += " AND dr.location_id = %s"
             params.append(location_id)
         
         if character_id:
-            query += " AND dr.character_id = ?"
+            query += " AND dr.character_id = %s"
             params.append(character_id)
         
-        query += " ORDER BY dr.rolled_at DESC LIMIT ?"
+        query += " ORDER BY dr.rolled_at DESC LIMIT %s"
         params.append(limit)
         
         cursor.execute(query, params)
@@ -289,23 +293,23 @@ def get_roll_history(campaign_id):
         rolls = []
         for row in cursor.fetchall():
             rolls.append({
-                'id': row[0],
-                'campaign_id': row[1],
-                'location_id': row[2],
-                'user_id': row[3],
-                'character_id': row[4],
-                'roll_type': row[5],
-                'action_description': row[6],
-                'dice_pool': row[7],
-                'difficulty': row[8],
-                'results': json.loads(row[9]),
-                'successes': row[10],
-                'is_botch': row[11],
-                'is_critical': row[12],
-                'modifiers': json.loads(row[13]) if row[13] else {},
-                'rolled_at': row[14],
-                'username': row[15],
-                'character_name': row[16]
+                'id': row['id'],
+                'campaign_id': row['campaign_id'],
+                'location_id': row['location_id'],
+                'user_id': row['user_id'],
+                'character_id': row['character_id'],
+                'roll_type': row['roll_type'],
+                'action_description': row['action_description'],
+                'dice_pool': row['dice_pool'],
+                'difficulty': row['difficulty'],
+                'results': json.loads(row['results']),
+                'successes': row['successes'],
+                'is_botch': row['is_botch'],
+                'is_critical': row['is_critical'],
+                'modifiers': json.loads(row['modifiers']) if row['modifiers'] else {},
+                'rolled_at': row['rolled_at'],
+                'username': row['username'],
+                'character_name': row['character_name']
             })
         
         return jsonify(rolls), 200
@@ -325,22 +329,22 @@ def get_roll_templates(campaign_id):
         
         cursor.execute("""
             SELECT * FROM dice_roll_templates
-            WHERE campaign_id = ? OR is_system = 1
+            WHERE campaign_id = %s OR is_system = 1
             ORDER BY is_system DESC, name ASC
         """, (campaign_id,))
         
         templates = []
         for row in cursor.fetchall():
             templates.append({
-                'id': row[0],
-                'campaign_id': row[1],
-                'name': row[2],
-                'description': row[3],
-                'dice_pool_formula': row[4],
-                'default_difficulty': row[5],
-                'created_by': row[6],
-                'is_system': row[7],
-                'created_at': row[8]
+                'id': row['id'],
+                'campaign_id': row['campaign_id'],
+                'name': row['name'],
+                'description': row['description'],
+                'dice_pool_formula': row['dice_pool_formula'],
+                'default_difficulty': row['default_difficulty'],
+                'created_by': row['created_by'],
+                'is_system': row['is_system'],
+                'created_at': row['created_at']
             })
         
         return jsonify(templates), 200

@@ -11,7 +11,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-messages_bp = Blueprint('messages', __name__, url_prefix='/messages')
+messages_bp = Blueprint('messages', __name__)
 
 @messages_bp.route('/campaigns/<int:campaign_id>/locations/<int:location_id>', methods=['GET'])
 @jwt_required()
@@ -30,8 +30,8 @@ def get_messages(campaign_id, location_id):
         # Verify user has access to campaign
         cursor.execute("""
             SELECT id FROM campaigns
-            WHERE id = ? AND (created_by = ? OR id IN (
-                SELECT campaign_id FROM campaign_players WHERE user_id = ?
+            WHERE id = %s AND (created_by = %s OR id IN (
+                SELECT campaign_id FROM campaign_players WHERE user_id = %s
             ))
         """, (campaign_id, user_id, user_id))
         
@@ -55,25 +55,25 @@ def get_messages(campaign_id, location_id):
             FROM messages m
             JOIN users u ON m.user_id = u.id
             LEFT JOIN characters c ON m.character_id = c.id
-            WHERE m.campaign_id = ? AND m.location_id = ?
+            WHERE m.campaign_id = %s AND m.location_id = %s
             ORDER BY m.created_at ASC
-            LIMIT ? OFFSET ?
+            LIMIT %s OFFSET %s
         """, (campaign_id, location_id, limit, offset))
         
         messages = []
         for row in cursor.fetchall():
             messages.append({
-                'id': row[0],
-                'campaign_id': row[1],
-                'location_id': row[2],
-                'user_id': row[3],
-                'character_id': row[4],
-                'message_type': row[5],
-                'content': row[6],
-                'role': row[7],
-                'created_at': row[8],
-                'username': row[9],
-                'character_name': row[10]
+                'id': row['id'],
+                'campaign_id': row['campaign_id'],
+                'location_id': row['location_id'],
+                'user_id': row['user_id'],
+                'character_id': row['character_id'],
+                'message_type': row['message_type'],
+                'content': row['content'],
+                'role': row['role'],
+                'created_at': row['created_at'],
+                'username': row['username'],
+                'character_name': row['character_name']
             })
         
         return jsonify(messages), 200
@@ -125,8 +125,8 @@ def save_message(campaign_id, location_id):
         # Verify user has access to campaign
         cursor.execute("""
             SELECT id FROM campaigns
-            WHERE id = ? AND (created_by = ? OR id IN (
-                SELECT campaign_id FROM campaign_players WHERE user_id = ?
+            WHERE id = %s AND (created_by = %s OR id IN (
+                SELECT campaign_id FROM campaign_players WHERE user_id = %s
             ))
         """, (campaign_id, user_id, user_id))
         
@@ -136,14 +136,14 @@ def save_message(campaign_id, location_id):
         # Verify location exists in this campaign AND get location type
         cursor.execute("""
             SELECT id, type FROM locations
-            WHERE id = ? AND campaign_id = ?
+            WHERE id = %s AND campaign_id = %s
         """, (location_id, campaign_id))
         
         location_row = cursor.fetchone()
         if not location_row:
             return jsonify({'error': 'Location not found'}), 404
         
-        location_type = location_row[1]
+        location_type = location_row['type']
         
         # CHECK FOR OOC VIOLATIONS (only for user messages, not AI)
         ooc_warning = None
@@ -185,13 +185,15 @@ def save_message(campaign_id, location_id):
             INSERT INTO messages (
                 campaign_id, location_id, user_id, character_id,
                 message_type, content, role, created_at
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+            RETURNING id
         """, (
             campaign_id, location_id, user_id, character_id,
             message_type, content, role, datetime.now().isoformat()
         ))
         
-        message_id = cursor.lastrowid
+        result = cursor.fetchone()
+        message_id = result['id']
         conn.commit()
         
         # Store message embedding in ChromaDB for semantic search
@@ -202,7 +204,7 @@ def save_message(campaign_id, location_id):
             # Get character name if applicable
             character_name = None
             if character_id:
-                cursor.execute("SELECT name FROM characters WHERE id = ?", (character_id,))
+                cursor.execute("SELECT name FROM characters WHERE id = %s", (character_id,))
                 char = cursor.fetchone()
                 if char:
                     character_name = char[0]
@@ -239,22 +241,22 @@ def save_message(campaign_id, location_id):
             FROM messages m
             JOIN users u ON m.user_id = u.id
             LEFT JOIN characters c ON m.character_id = c.id
-            WHERE m.id = ?
+            WHERE m.id = %s
         """, (message_id,))
         
         row = cursor.fetchone()
         saved_message = {
-            'id': row[0],
-            'campaign_id': row[1],
-            'location_id': row[2],
-            'user_id': row[3],
-            'character_id': row[4],
-            'message_type': row[5],
-            'content': row[6],
-            'role': row[7],
-            'created_at': row[8],
-            'username': row[9],
-            'character_name': row[10]
+            'id': row['id'],
+            'campaign_id': row['campaign_id'],
+            'location_id': row['location_id'],
+            'user_id': row['user_id'],
+            'character_id': row['character_id'],
+            'message_type': row['message_type'],
+            'content': row['content'],
+            'role': row['role'],
+            'created_at': row['created_at'],
+            'username': row['username'],
+            'character_name': row['character_name']
         }
         
         logger.info(f"Message saved: ID={message_id}, Campaign={campaign_id}, Location={location_id}")
@@ -290,8 +292,8 @@ def delete_message(message_id):
             SELECT m.user_id, c.created_by, u.role
             FROM messages m
             JOIN campaigns c ON m.campaign_id = c.id
-            JOIN users u ON u.id = ?
-            WHERE m.id = ?
+            JOIN users u ON u.id = %s
+            WHERE m.id = %s
         """, (user_id, message_id))
         
         row = cursor.fetchone()
@@ -305,7 +307,7 @@ def delete_message(message_id):
             return jsonify({'error': 'Unauthorized'}), 403
         
         # Delete the message
-        cursor.execute("DELETE FROM messages WHERE id = ?", (message_id,))
+        cursor.execute("DELETE FROM messages WHERE id = %s", (message_id,))
         conn.commit()
         
         logger.info(f"Message deleted: ID={message_id} by User={user_id}")

@@ -190,6 +190,18 @@ function SimpleApp() {
     }
   }, [currentPage, token]);
 
+  // Auto-focus chat input when entering a location
+  useEffect(() => {
+    if (currentLocation && chatInputRef.current) {
+      // Small delay to ensure DOM is ready
+      setTimeout(() => {
+        if (chatInputRef.current) {
+          chatInputRef.current.focus();
+        }
+      }, 100);
+    }
+  }, [currentLocation]);
+
   // Handle login
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -513,15 +525,10 @@ function SimpleApp() {
     };
     setMessages(prev => [...prev, tempUserMessage]);
     e.target.reset();
-    
-    // Keep focus on input after sending
-    if (chatInputRef.current) {
-      chatInputRef.current.focus();
-    }
 
     try {
       // Save user message to database
-      const saveResponse = await fetch(`${API_URL}/messages/campaigns/${selectedCampaign.id}/locations/${currentLocation.id}`, {
+      const saveResponse = await fetch(`${API_URL}/campaigns/${selectedCampaign.id}/locations/${currentLocation.id}`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -566,7 +573,7 @@ function SimpleApp() {
         const aiMessageContent = aiData.response || aiData.message || 'No response';
         
         // Save AI response to database
-        const aiSaveResponse = await fetch(`${API_URL}/messages/campaigns/${selectedCampaign.id}/locations/${currentLocation.id}`, {
+        const aiSaveResponse = await fetch(`${API_URL}/campaigns/${selectedCampaign.id}/locations/${currentLocation.id}`, {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -600,6 +607,14 @@ function SimpleApp() {
       setError('Connection error: ' + err.message);
     } finally {
       setLoading(false);
+      
+      // Restore focus to input after all state updates complete
+      // Use setTimeout to ensure DOM has updated after React re-renders
+      setTimeout(() => {
+        if (chatInputRef.current) {
+          chatInputRef.current.focus();
+        }
+      }, 0);
     }
   };
 
@@ -607,7 +622,7 @@ function SimpleApp() {
   const loadMessages = async (campaignId, locationId) => {
     try {
       console.log(`📨 Loading messages for location ${locationId}...`);
-      const response = await fetch(`${API_URL}/messages/campaigns/${campaignId}/locations/${locationId}`, {
+      const response = await fetch(`${API_URL}/campaigns/${campaignId}/locations/${locationId}`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       

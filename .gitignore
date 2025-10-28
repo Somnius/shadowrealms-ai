@@ -479,3 +479,6 @@ keys/
 # END OF GITIGNORE
 # =============================================================================
 backend/invites.json
+
+# Version bump backups
+backups/

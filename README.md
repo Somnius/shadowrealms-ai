@@ -6,7 +6,7 @@
 
 ### The Ultimate AI-Powered Tabletop RPG Experience
 
-[![Version](https://img.shields.io/badge/version-0.7.0-blue.svg)](https://github.com/Somnius/shadowrealms-ai)
+[![Version](https://img.shields.io/badge/version-0.7.8-blue.svg)](https://github.com/Somnius/shadowrealms-ai)
 [![Phase 2](https://img.shields.io/badge/phase-2%20complete-green.svg)](https://github.com/Somnius/shadowrealms-ai)
 [![Phase 3A](https://img.shields.io/badge/phase-3A%20complete-green.svg)](https://github.com/Somnius/shadowrealms-ai)
 [![Phase 3B](https://img.shields.io/badge/phase-3B%20next-blue.svg)](https://github.com/Somnius/shadowrealms-ai)
@@ -55,7 +55,7 @@ See ShadowRealms AI in action:
 
 *Watch this video to see the login system, gothic theme, campaign management, and admin panel in action!*
 
-> **Version 0.7.5 Preview:** This demo showcases the frontend interface in its current state. Please note that not all features are fully functional yet—this is a first look at the user interface and design direction of ShadowRealms AI.
+> **Version 0.7.8 Preview:** This demo showcases the frontend interface in its current state. Please note that not all features are fully functional yet—this is a first look at the user interface and design direction of ShadowRealms AI.
 
 </div>
 
@@ -137,6 +137,34 @@ docker-compose up -d
 ## Current Development Status
 
 <div align="center">
+
+### Version 0.7.8 - Footer Version Display Fix 🔧
+
+**Latest Updates:**
+- 🔧 **Footer Version Fixed**: Corrected API path from `/api/api/version` to `/api/version`
+- ✅ **Version Display Working**: Footer now correctly shows application version from backend
+
+### Version 0.7.7 - PostgreSQL Migration Fixes & Remote Access 🗄️🌐
+
+**Latest Updates:**
+- 🗄️ **PostgreSQL Compatibility**: Fixed dictionary row access bugs across all routes after migration from SQLite
+- 🔧 **Boolean SQL Fixes**: Updated all queries from SQLite `is_active = 1` to PostgreSQL `is_active = TRUE`
+- 👥 **Admin Panel Fixed**: User management now displays correctly with proper datetime handling
+- 📍 **Location System Fixed**: Campaign location queries now work with PostgreSQL GROUP BY requirements
+- 🤖 **AI Model Configuration**: Smart router now dynamically loads model from `LM_STUDIO_MODEL` env var
+- 🌐 **Remote Network Access**: Configured hybrid Docker networking for LAN access (10.0.0.x)
+- 🔌 **ChromaDB Resilience**: Added retry logic (10 attempts) for reliable service connection
+- 🚪 **Nginx Routing Fixed**: API proxy now preserves `/api` prefix for correct endpoint routing
+
+### Version 0.7.6 - Message Persistence & API Verification ✅💬
+
+**Latest Updates:**
+- 💬 **Message Persistence**: Chat messages now properly save to database and persist across location changes
+- 🔍 **API Path Verification**: Complete frontend-backend URL path audit and corrections
+- 🎯 **Chat Input Focus**: Fixed focus loss after sending messages in chat
+- 📡 **ChromaDB API Update**: Updated health checks to use ChromaDB v2 API endpoints
+- 🏷️ **Dynamic Versioning**: Footer version now dynamically loads from backend `.env`
+- 🔧 **URL Standardization**: All message endpoints now follow consistent `/api/campaigns/{id}/locations/{id}` pattern
 
 ### Version 0.7.5 - AI Health Checks & Security Hardening 🛡️🔍
 

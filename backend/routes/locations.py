@@ -31,15 +31,20 @@ def suggest_locations(campaign_id):
         cursor.execute("""
             SELECT c.created_by, c.name, c.description, c.game_system, u.role
             FROM campaigns c
-            JOIN users u ON u.id = ?
-            WHERE c.id = ?
+            JOIN users u ON u.id = %s
+            WHERE c.id = %s
         """, (user_id, campaign_id))
         
         row = cursor.fetchone()
         if not row:
             return jsonify({'error': 'Campaign not found'}), 404
         
-        campaign_creator, campaign_name, campaign_desc, game_system, user_role = row
+        campaign_creator = row['created_by']
+        campaign_name = row['name']
+        campaign_desc = row['description']
+        game_system = row['game_system']
+        user_role = row['role']
+        
         if campaign_creator != user_id and user_role != 'admin':
             return jsonify({'error': 'Unauthorized'}), 403
         
@@ -137,15 +142,17 @@ def batch_create_locations(campaign_id):
         cursor.execute("""
             SELECT c.created_by, u.role
             FROM campaigns c
-            JOIN users u ON u.id = ?
-            WHERE c.id = ?
+            JOIN users u ON u.id = %s
+            WHERE c.id = %s
         """, (user_id, campaign_id))
         
         row = cursor.fetchone()
         if not row:
             return jsonify({'error': 'Campaign not found'}), 404
         
-        campaign_creator, user_role = row
+        campaign_creator = row['created_by']
+        user_role = row['role']
+        
         if campaign_creator != user_id and user_role != 'admin':
             return jsonify({'error': 'Unauthorized'}), 403
         
@@ -157,9 +164,11 @@ def batch_create_locations(campaign_id):
         for loc in locations_to_create:
             cursor.execute("""
                 INSERT INTO locations (campaign_id, name, type, description, created_by)
-                VALUES (?, ?, ?, ?, ?)
+                VALUES (%s, %s, %s, %s, %s)
+                RETURNING id
             """, (campaign_id, loc['name'], loc['type'], loc.get('description', ''), user_id))
-            created_ids.append(cursor.lastrowid)
+            result = cursor.fetchone()
+            created_ids.append(result['id'])
         
         conn.commit()
         
@@ -190,8 +199,8 @@ def get_campaign_locations(campaign_id):
             LEFT JOIN users u ON l.created_by = u.id
             LEFT JOIN character_locations cl ON l.id = cl.location_id 
                 AND cl.exited_at IS NULL
-            WHERE l.campaign_id = ? AND l.is_active = 1
-            GROUP BY l.id
+            WHERE l.campaign_id = %s AND l.is_active = TRUE
+            GROUP BY l.id, u.username
             ORDER BY 
                 CASE WHEN l.type = 'ooc' THEN 0 ELSE 1 END,
                 l.created_at ASC
@@ -200,16 +209,16 @@ def get_campaign_locations(campaign_id):
         locations = []
         for row in cursor.fetchall():
             locations.append({
-                'id': row[0],
-                'campaign_id': row[1],
-                'name': row[2],
-                'type': row[3],
-                'description': row[4],
-                'created_by': row[5],
-                'created_at': row[6],
-                'is_active': row[7],
-                'creator_name': row[8],
-                'character_count': row[9]
+                'id': row['id'],
+                'campaign_id': row['campaign_id'],
+                'name': row['name'],
+                'type': row['type'],
+                'description': row['description'],
+                'created_by': row['created_by'],
+                'created_at': row['created_at'],
+                'is_active': row['is_active'],
+                'creator_name': row['creator_name'],
+                'character_count': row['character_count']
             })
         
         return jsonify(locations), 200
@@ -231,7 +240,7 @@ def get_location(location_id):
             SELECT l.*, u.username as creator_name
             FROM locations l
             LEFT JOIN users u ON l.created_by = u.id
-            WHERE l.id = ?
+            WHERE l.id = %s
         """, (location_id,))
         
         row = cursor.fetchone()
@@ -239,15 +248,15 @@ def get_location(location_id):
             return jsonify({'error': 'Location not found'}), 404
         
         location = {
-            'id': row[0],
-            'campaign_id': row[1],
-            'name': row[2],
-            'type': row[3],
-            'description': row[4],
-            'created_by': row[5],
-            'created_at': row[6],
-            'is_active': row[7],
-            'creator_name': row[8]
+            'id': row['id'],
+            'campaign_id': row['campaign_id'],
+            'name': row['name'],
+            'type': row['type'],
+            'description': row['description'],
+            'created_by': row['created_by'],
+            'created_at': row['created_at'],
+            'is_active': row['is_active'],
+            'creator_name': row['creator_name']
         }
         
         # Get characters currently in this location
@@ -256,17 +265,17 @@ def get_location(location_id):
             FROM character_locations cl
             JOIN characters c ON cl.character_id = c.id
             JOIN users u ON c.user_id = u.id
-            WHERE cl.location_id = ? AND cl.exited_at IS NULL
+            WHERE cl.location_id = %s AND cl.exited_at IS NULL
             ORDER BY cl.entered_at ASC
         """, (location_id,))
         
         characters = []
         for char_row in cursor.fetchall():
             characters.append({
-                'id': char_row[0],
-                'name': char_row[1],
-                'player_name': char_row[2],
-                'entered_at': char_row[3]
+                'id': char_row['id'],
+                'name': char_row['name'],
+                'player_name': char_row['username'],
+                'entered_at': char_row['entered_at']
             })
         
         location['characters'] = characters
@@ -293,8 +302,8 @@ def create_location(campaign_id):
         cursor.execute("""
             SELECT c.created_by, u.role
             FROM campaigns c
-            JOIN users u ON u.id = ?
-            WHERE c.id = ?
+            JOIN users u ON u.id = %s
+            WHERE c.id = %s
         """, (user_id, campaign_id))
         
         row = cursor.fetchone()
@@ -316,11 +325,13 @@ def create_location(campaign_id):
         # Create location
         cursor.execute("""
             INSERT INTO locations (campaign_id, name, type, description, created_by)
-            VALUES (?, ?, ?, ?, ?)
+            VALUES (%s, %s, %s, %s, %s)
+            RETURNING id
         """, (campaign_id, name, location_type, description, user_id))
         
+        result = cursor.fetchone()
+        location_id = result['id']
         conn.commit()
-        location_id = cursor.lastrowid
         
         logger.info(f"Location created: {name} (ID: {location_id}) in campaign {campaign_id}")
         
@@ -355,8 +366,8 @@ def update_location(location_id):
             SELECT l.campaign_id, l.created_by, c.created_by as campaign_creator, u.role
             FROM locations l
             JOIN campaigns c ON l.campaign_id = c.id
-            JOIN users u ON u.id = ?
-            WHERE l.id = ?
+            JOIN users u ON u.id = %s
+            WHERE l.id = %s
         """, (user_id, location_id))
         
         row = cursor.fetchone()
@@ -372,22 +383,22 @@ def update_location(location_id):
         params = []
         
         if 'name' in data:
-            updates.append('name = ?')
+            updates.append('name = %s')
             params.append(data['name'].strip())
         
         if 'description' in data:
-            updates.append('description = ?')
+            updates.append('description = %s')
             params.append(data['description'].strip())
         
         if 'type' in data:
-            updates.append('type = ?')
+            updates.append('type = %s')
             params.append(data['type'].strip())
         
         if not updates:
             return jsonify({'error': 'No fields to update'}), 400
         
         params.append(location_id)
-        query = f"UPDATE locations SET {', '.join(updates)} WHERE id = ?"
+        query = f"UPDATE locations SET {', '.join(updates)} WHERE id = %s"
         cursor.execute(query, params)
         conn.commit()
         
@@ -415,8 +426,8 @@ def delete_location(campaign_id, location_id):
             SELECT l.type, l.name, l.description, l.campaign_id, c.created_by, u.role
             FROM locations l
             JOIN campaigns c ON l.campaign_id = c.id
-            JOIN users u ON u.id = ?
-            WHERE l.id = ? AND l.campaign_id = ? AND l.is_active = 1
+            JOIN users u ON u.id = %s
+            WHERE l.id = %s AND l.campaign_id = %s AND l.is_active = TRUE
         """, (user_id, location_id, campaign_id))
         
         row = cursor.fetchone()
@@ -433,7 +444,7 @@ def delete_location(campaign_id, location_id):
             return jsonify({'error': 'Unauthorized'}), 403
         
         # Count messages that will be affected
-        cursor.execute("SELECT COUNT(*) FROM messages WHERE location_id = ?", (location_id,))
+        cursor.execute("SELECT COUNT(*) FROM messages WHERE location_id = %s", (location_id,))
         message_count = cursor.fetchone()[0]
         
         logger.info(f"🗑️ Deleting location {location_id} ({location_name}) - {message_count} messages will be removed")
@@ -442,7 +453,7 @@ def delete_location(campaign_id, location_id):
         cursor.execute("""
             INSERT INTO location_deletion_log 
             (location_id, campaign_id, location_name, location_type, location_description, deleted_by, message_count)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
+            VALUES (%s, %s, %s, %s, %s, %s, %s)
         """, (location_id, campaign_id, location_name, location_type, location_desc, user_id, message_count))
         
         # 2. CLEAN UP AI MEMORY - Remove message embeddings from ChromaDB
@@ -451,8 +462,8 @@ def delete_location(campaign_id, location_id):
             rag_service = get_rag_service()
             
             # Get all message IDs for this location
-            cursor.execute("SELECT id FROM messages WHERE location_id = ?", (location_id,))
-            message_ids = [row[0] for row in cursor.fetchall()]
+            cursor.execute("SELECT id FROM messages WHERE location_id = %s", (location_id,))
+            message_ids = [row['id'] for row in cursor.fetchall()]
             
             if message_ids and hasattr(rag_service, 'client'):
                 try:
@@ -471,20 +482,17 @@ def delete_location(campaign_id, location_id):
             logger.warning(f"⚠️ ChromaDB cleanup failed (non-critical): {e}")
         
         # 3. SOFT DELETE LOCATION (marks as inactive, keeps for audit trail)
-        cursor.execute("UPDATE locations SET is_active = 0 WHERE id = ?", (location_id,))
-        
-        # 4. Exit any characters from this location
         cursor.execute("""
             SELECT id FROM locations 
-            WHERE campaign_id = ? AND type = 'ooc' AND is_active = 1
+            WHERE campaign_id = %s AND type = 'ooc' AND is_active = TRUE
         """, (campaign_id,))
         ooc_row = cursor.fetchone()
         
         if ooc_row:
             cursor.execute("""
                 UPDATE character_locations 
-                SET exited_at = ?, exit_reason = 'Location deleted by admin'
-                WHERE location_id = ? AND exited_at IS NULL
+                SET exited_at = %s, exit_reason = 'Location deleted by admin'
+                WHERE location_id = %s AND exited_at IS NULL
             """, (datetime.utcnow().isoformat(), location_id))
         
         conn.commit()
@@ -531,7 +539,7 @@ def enter_location(location_id):
         cursor = conn.cursor()
         
         # Verify character belongs to user
-        cursor.execute("SELECT id FROM characters WHERE id = ? AND user_id = ?", 
+        cursor.execute("SELECT id FROM characters WHERE id = %s AND user_id = %s", 
                       (character_id, user_id))
         if not cursor.fetchone():
             return jsonify({'error': 'Character not found or unauthorized'}), 404
@@ -539,21 +547,21 @@ def enter_location(location_id):
         # Exit from current location first
         cursor.execute("""
             UPDATE character_locations 
-            SET exited_at = ?, exit_reason = 'Moving to new location'
-            WHERE character_id = ? AND exited_at IS NULL
+            SET exited_at = %s, exit_reason = 'Moving to new location'
+            WHERE character_id = %s AND exited_at IS NULL
         """, (datetime.utcnow().isoformat(), character_id))
         
         # Enter new location
         cursor.execute("""
             INSERT INTO character_locations (character_id, location_id, entry_reason)
-            VALUES (?, ?, ?)
+            VALUES (%s, %s, %s)
         """, (character_id, location_id, entry_reason))
         
         # Update character's current location
         cursor.execute("""
             UPDATE characters 
-            SET current_location_id = ?, last_location_id = current_location_id
-            WHERE id = ?
+            SET current_location_id = %s, last_location_id = current_location_id
+            WHERE id = %s
         """, (location_id, character_id))
         
         conn.commit()
@@ -585,7 +593,7 @@ def leave_location(location_id):
         cursor = conn.cursor()
         
         # Verify character belongs to user
-        cursor.execute("SELECT id FROM characters WHERE id = ? AND user_id = ?", 
+        cursor.execute("SELECT id FROM characters WHERE id = %s AND user_id = %s", 
                       (character_id, user_id))
         if not cursor.fetchone():
             return jsonify({'error': 'Character not found or unauthorized'}), 404
@@ -593,15 +601,15 @@ def leave_location(location_id):
         # Exit location
         cursor.execute("""
             UPDATE character_locations 
-            SET exited_at = ?, exit_reason = ?
-            WHERE character_id = ? AND location_id = ? AND exited_at IS NULL
+            SET exited_at = %s, exit_reason = %s
+            WHERE character_id = %s AND location_id = %s AND exited_at IS NULL
         """, (datetime.utcnow().isoformat(), exit_reason, character_id, location_id))
         
         # Update character's last location
         cursor.execute("""
             UPDATE characters 
             SET last_location_id = current_location_id, current_location_id = NULL
-            WHERE id = ?
+            WHERE id = %s
         """, (character_id,))
         
         conn.commit()
@@ -629,7 +637,8 @@ def create_ooc_room(campaign_id: int, created_by: int) -> int:
         
         cursor.execute("""
             INSERT INTO locations (campaign_id, name, type, description, created_by)
-            VALUES (?, ?, ?, ?, ?)
+            VALUES (%s, %s, %s, %s, %s)
+            RETURNING id
         """, (
             campaign_id,
             'Out of Character Lobby',
@@ -639,8 +648,9 @@ def create_ooc_room(campaign_id: int, created_by: int) -> int:
             created_by
         ))
         
+        result = cursor.fetchone()
+        location_id = result['id']
         conn.commit()
-        location_id = cursor.lastrowid
         
         logger.info(f"OOC room created for campaign {campaign_id}: location {location_id}")
         

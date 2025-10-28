@@ -12,14 +12,21 @@ services:
       - ./books:/app/books
       - ./README.md:/app/README.md:ro
     environment:
+      - VERSION=${VERSION}
       - FLASK_ENV=development
       - FLASK_APP=main.py
       - FLASK_HOST=0.0.0.0
       - FLASK_PORT=5000
       - FLASK_DEBUG=false
-      - FLASK_SECRET_KEY=${FLASK_SECRET_KEY:-dev-secret-key-change-in-production}
-      - JWT_SECRET_KEY=${JWT_SECRET_KEY:-jwt-secret-key-change-in-production}
-      - DATABASE=/app/data/shadowrealms.db
+      - FLASK_SECRET_KEY=${FLASK_SECRET_KEY}
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY}
+      # PostgreSQL Configuration (credentials from .env - gitignored)
+      - DATABASE_TYPE=${DATABASE_TYPE}
+      - DATABASE_HOST=${DATABASE_HOST}
+      - DATABASE_PORT=${DATABASE_PORT}
+      - DATABASE_NAME=${POSTGRES_DB}
+      - DATABASE_USER=${POSTGRES_USER}
+      - DATABASE_PASSWORD=${POSTGRES_PASSWORD}
       - CHROMADB_HOST=localhost
       - CHROMADB_PORT=8000
       - REDIS_HOST=localhost
@@ -38,9 +45,33 @@ services:
       - OLLAMA_TIMEOUT=${OLLAMA_TIMEOUT:-30}
     depends_on:
       - chromadb
+      - postgresql
       - monitoring
     network_mode: "host"
     restart: unless-stopped
+
+  postgresql:
+    image: postgres:16-alpine
+    ports:
+      - "5432:5432"
+    environment:
+      # ⚠️  Credentials loaded from .env file (gitignored)
+      # See docs/POSTGRESQL_ENV_SETUP.md for secure credential generation
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - PGDATA=/var/lib/postgresql/data/pgdata
+    volumes:
+      - postgresql_data:/var/lib/postgresql/data
+      - ./backend/init_postgresql_schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+    networks:
+      - shadowrealms-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   chromadb:
     image: chromadb/chroma:latest
@@ -77,7 +108,7 @@ services:
       - ./frontend:/app
       - /app/node_modules
     environment:
-      - REACT_APP_API_URL=http://localhost:5000
+      - REACT_APP_API_URL=/api
     depends_on:
       - backend
     networks:
@@ -110,6 +141,7 @@ services:
 
 volumes:
   redis_data:
+  postgresql_data:
 
 networks:
   shadowrealms-network:

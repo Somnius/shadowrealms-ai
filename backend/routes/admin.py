@@ -25,12 +25,12 @@ def require_admin():
             user_id = get_jwt_identity()
             db = get_db()
             cursor = db.cursor()
-            cursor.execute("SELECT role FROM users WHERE id = ?", (user_id,))
+            cursor.execute("SELECT role FROM users WHERE id = %s", (user_id,))
             user = cursor.fetchone()
             cursor.close()
             db.close()
             
-            if not user or user[0] != 'admin':
+            if not user or user['role'] != 'admin':
                 return jsonify({'error': 'Admin access required'}), 403
             
             return f(*args, **kwargs)
@@ -44,7 +44,7 @@ def log_moderation_action(user_id, admin_id, action, details):
     cursor = db.cursor()
     cursor.execute("""
         INSERT INTO user_moderation_log (user_id, admin_id, action, details, created_at)
-        VALUES (?, ?, ?, ?, ?)
+        VALUES (%s, %s, %s, %s, %s)
     """, (user_id, admin_id, action, json.dumps(details), datetime.now()))
     db.commit()
     cursor.close()
@@ -68,23 +68,27 @@ def get_all_users():
         users = []
         for row in cursor.fetchall():
             user_data = {
-                'id': row[0],
-                'username': row[1],
-                'email': row[2],
-                'role': row[3],
-                'is_active': bool(row[4]),
-                'created_at': row[5],
-                'last_login': row[6],
-                'ban_type': row[7],
-                'ban_until': row[8],
-                'ban_reason': row[9],
-                'banned_by': row[10],
-                'banned_at': row[11]
+                'id': row['id'],
+                'username': row['username'],
+                'email': row['email'],
+                'role': row['role'],
+                'is_active': bool(row['is_active']),
+                'created_at': row['created_at'],
+                'last_login': row['last_login'],
+                'ban_type': row['ban_type'],
+                'ban_until': row['ban_until'],
+                'ban_reason': row['ban_reason'],
+                'banned_by': row['banned_by'],
+                'banned_at': row['banned_at']
             }
             
             # Check if temp ban has expired
             if user_data['ban_type'] == 'temporary' and user_data['ban_until']:
-                ban_until = datetime.fromisoformat(user_data['ban_until'])
+                # PostgreSQL returns datetime objects, SQLite returns strings
+                ban_until = user_data['ban_until']
+                if isinstance(ban_until, str):
+                    ban_until = datetime.fromisoformat(ban_until)
+                
                 if datetime.now() > ban_until:
                     user_data['ban_type'] = None
                     user_data['is_banned'] = False
@@ -125,22 +129,22 @@ def update_user(user_id):
         params = []
         
         if 'username' in data:
-            updates.append("username = ?")
+            updates.append("username = %s")
             params.append(data['username'])
         
         if 'email' in data:
-            updates.append("email = ?")
+            updates.append("email = %s")
             params.append(data['email'])
         
         if 'role' in data and data['role'] in ['admin', 'player']:
-            updates.append("role = ?")
+            updates.append("role = %s")
             params.append(data['role'])
         
         if not updates:
             return jsonify({'error': 'No valid fields to update'}), 400
         
         params.append(user_id)
-        query = f"UPDATE users SET {', '.join(updates)} WHERE id = ?"
+        query = f"UPDATE users SET {', '.join(updates)} WHERE id = %s"
         
         cursor.execute(query, params)
         db.commit()
@@ -176,7 +180,7 @@ def reset_user_password(user_id):
         db = get_db()
         cursor = db.cursor()
         
-        cursor.execute("UPDATE users SET password_hash = ? WHERE id = ?", 
+        cursor.execute("UPDATE users SET password_hash = %s WHERE id = %s", 
                       (password_hash.decode('utf-8'), user_id))
         db.commit()
         
@@ -225,8 +229,8 @@ def ban_user(user_id):
         
         cursor.execute("""
             UPDATE users 
-            SET ban_type = ?, ban_until = ?, ban_reason = ?, banned_by = ?, banned_at = ?, is_active = 0
-            WHERE id = ?
+            SET ban_type = %s, ban_until = %s, ban_reason = %s, banned_by = %s, banned_at = %s, is_active = 0
+            WHERE id = %s
         """, (ban_type, ban_until.isoformat() if ban_until else None, ban_reason, admin_id, datetime.now(), user_id))
         
         db.commit()
@@ -260,7 +264,7 @@ def unban_user(user_id):
         cursor.execute("""
             UPDATE users 
             SET ban_type = NULL, ban_until = NULL, ban_reason = NULL, banned_by = NULL, banned_at = NULL, is_active = 1
-            WHERE id = ?
+            WHERE id = %s
         """, (user_id,))
         
         db.commit()
@@ -288,20 +292,20 @@ def get_user_characters(user_id):
         cursor.execute("""
             SELECT id, name, character_type, campaign_id, is_npc, is_active, created_at
             FROM characters
-            WHERE user_id = ?
+            WHERE user_id = %s
             ORDER BY created_at DESC
         """, (user_id,))
         
         characters = []
         for row in cursor.fetchall():
             characters.append({
-                'id': row[0],
-                'name': row[1],
-                'character_type': row[2],
-                'campaign_id': row[3],
-                'is_npc': bool(row[4]),
-                'is_active': bool(row[5]),
-                'created_at': row[6]
+                'id': row['id'],
+                'name': row['name'],
+                'character_type': row['character_type'],
+                'campaign_id': row['campaign_id'],
+                'is_npc': bool(row['is_npc']),
+                'is_active': bool(row['is_active']),
+                'created_at': row['created_at']
             })
         
         cursor.close()
@@ -324,12 +328,9 @@ def convert_character_to_npc(character_id):
         cursor = db.cursor()
         
         # Update character to be NPC
-        cursor.execute("UPDATE characters SET is_npc = 1 WHERE id = ?", (character_id,))
-        
-        # Log the moderation
         cursor.execute("""
             INSERT INTO character_moderation (character_id, action, moderated_by, moderated_at)
-            VALUES (?, 'convert_to_npc', ?, ?)
+            VALUES (%s, 'convert_to_npc', %s, %s)
         """, (character_id, admin_id, datetime.now()))
         
         db.commit()
@@ -367,13 +368,10 @@ def kill_character(character_id):
         cursor = db.cursor()
         
         # Deactivate character
-        cursor.execute("UPDATE characters SET is_active = 0 WHERE id = ?", (character_id,))
-        
-        # Log the death
         cursor.execute("""
             INSERT INTO character_moderation 
             (character_id, action, death_type, death_description, moderated_by, moderated_at)
-            VALUES (?, 'kill', ?, ?, ?, ?)
+            VALUES (%s, 'kill', %s, %s, %s, %s)
         """, (character_id, death_type, death_description, admin_id, datetime.now()))
         
         db.commit()
@@ -400,26 +398,26 @@ def get_moderation_log():
         cursor = db.cursor()
         
         cursor.execute("""
-            SELECT ml.id, ml.user_id, u.username, ml.admin_id, a.username, 
+            SELECT ml.id, ml.user_id, u.username as username, ml.admin_id, a.username as admin_username, 
                    ml.action, ml.details, ml.created_at
             FROM user_moderation_log ml
             JOIN users u ON ml.user_id = u.id
             JOIN users a ON ml.admin_id = a.id
             ORDER BY ml.created_at DESC
-            LIMIT ?
+            LIMIT %s
         """, (limit,))
         
         logs = []
         for row in cursor.fetchall():
             logs.append({
-                'id': row[0],
-                'user_id': row[1],
-                'username': row[2],
-                'admin_id': row[3],
-                'admin_username': row[4],
-                'action': row[5],
-                'details': json.loads(row[6]) if row[6] else {},
-                'created_at': row[7]
+                'id': row['id'],
+                'user_id': row['user_id'],
+                'username': row['username'],
+                'admin_id': row['admin_id'],
+                'admin_username': row['admin_username'],
+                'action': row['action'],
+                'details': json.loads(row['details']) if row['details'] else {},
+                'created_at': row['created_at']
             })
         
         cursor.close()

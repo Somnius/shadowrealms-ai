@@ -8,6 +8,7 @@ import os
 import json
 import logging
 import hashlib
+import time
 from typing import Dict, Any, List, Optional
 from datetime import datetime
 import chromadb
@@ -24,12 +25,28 @@ class RAGService:
         self.chroma_host = config.get('CHROMADB_HOST', 'localhost')
         self.chroma_port = config.get('CHROMADB_PORT', 8000)
         
-        # Initialize ChromaDB client
-        self.client = chromadb.HttpClient(
-            host=self.chroma_host,
-            port=self.chroma_port,
-            settings=Settings(allow_reset=True)
-        )
+        # Initialize ChromaDB client with retry logic
+        max_retries = 10
+        retry_delay = 2
+        last_error = None
+        
+        for attempt in range(max_retries):
+            try:
+                # Try to connect with minimal settings
+                self.client = chromadb.HttpClient(
+                    host=self.chroma_host,
+                    port=self.chroma_port
+                )
+                logger.info(f"✅ Connected to ChromaDB at {self.chroma_host}:{self.chroma_port}")
+                break
+            except Exception as e:
+                last_error = e
+                if attempt < max_retries - 1:
+                    logger.warning(f"ChromaDB connection attempt {attempt + 1}/{max_retries} failed: {e}. Retrying in {retry_delay}s...")
+                    time.sleep(retry_delay)
+                else:
+                    logger.error(f"Failed to connect to ChromaDB after {max_retries} attempts: {e}")
+                    raise RuntimeError(f"Could not connect to ChromaDB at {self.chroma_host}:{self.chroma_port}") from last_error
         
         # Collection names for different types of memory
         self.collections = {

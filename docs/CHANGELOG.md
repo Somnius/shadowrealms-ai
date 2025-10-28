@@ -5,6 +5,130 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.8] - 2025-10-29 - Footer Version Display Fix 🔧
+
+### Fixed
+
+#### Frontend Version Display 🐛
+- **Footer Version API Path** - Fixed incorrect URL path for version endpoint
+  - `frontend/src/components/Footer.js` (line 13): Changed from `${API_URL}/api/version` to `${API_URL}/version`
+  - **Root Cause**: Since `REACT_APP_API_URL` is already `/api`, the code was incorrectly fetching from `/api/api/version`
+  - **Result**: Footer now correctly displays application version from backend
+
+### Technical Details
+- **Files Modified**: `frontend/src/components/Footer.js`
+- **Environment**: `REACT_APP_API_URL=/api` (already includes `/api` prefix)
+- **Correct Endpoint**: `/api/version` (not `/api/api/version`)
+
+### Testing Verified ✅
+- Footer displays correct version: `v0.7.8`
+- Version endpoint accessible at `http://localhost/api/version`
+- Frontend successfully fetches version from backend on load
+
+## [0.7.7] - 2025-10-29 - PostgreSQL Migration Fixes & Remote Access 🗄️🌐
+
+### Fixed
+
+#### PostgreSQL Migration Issues 🐛
+- **Dictionary Row Access Bug** - Fixed multiple instances where PostgreSQL `RealDictCursor` rows were accessed incorrectly
+  - `backend/routes/admin.py` (line 87-98): Fixed datetime parsing for user ban status checking
+  - `backend/routes/locations.py` (lines 42-46, 153-157): Fixed campaign authorization checks
+  - **Result**: Admin panel now displays users correctly, location creation works properly
+  
+- **PostgreSQL Boolean Comparisons** - Fixed SQL queries using SQLite syntax with PostgreSQL
+  - `backend/routes/locations.py` (lines 195, 423, 480): Changed `is_active = 1` to `is_active = TRUE`
+  - `backend/routes/ai.py` (lines 201, 325, 713, 759, 963, 1228): Fixed boolean comparisons across all AI endpoints
+  - **Result**: Location queries and AI chat endpoints now work correctly
+
+- **PostgreSQL GROUP BY Clause** - Fixed aggregation queries to comply with PostgreSQL requirements
+  - `backend/routes/locations.py` (line 201): Added `u.username` to GROUP BY clause
+  - **Result**: Campaign locations now load without SQL errors
+
+#### Network & Remote Access 🌐
+- **Remote Network Access** - Configured Docker networking for LAN access
+  - Backend & Nginx: Using `network_mode: "host"` for LM Studio/Ollama access
+  - PostgreSQL, ChromaDB, Redis, Frontend: On bridge network
+  - Environment variables: `CHROMADB_HOST=localhost`, `REDIS_HOST=localhost`, `DATABASE_HOST=localhost`
+  - **Result**: Application accessible from remote devices on local network (10.0.0.x)
+
+#### AI Model Configuration 🤖
+- **LM Studio Model Name** - Fixed hardcoded model name in smart router
+  - `backend/services/smart_model_router.py`: Now reads model name from `LM_STUDIO_MODEL` env var
+  - Changed hardcoded `mythomakisemerged-13b` to dynamic `mythomax-l2-13b`
+  - **Result**: AI location suggestions and chat working with correct LM Studio model
+
+- **ChromaDB Connection Retry** - Added resilient connection logic
+  - `backend/services/rag_service.py`: 10 retry attempts with 2s delay
+  - `backend/entrypoint.sh`: Updated to use ChromaDB v2 API endpoint
+  - **Result**: Backend starts reliably even if ChromaDB needs time to initialize
+
+#### Nginx Routing
+- **API Proxy Configuration** - Fixed nginx routing to preserve `/api` prefix
+  - Changed from `proxy_pass http://backend/;` (strips prefix) to `proxy_pass http://backend;` (keeps prefix)
+  - **Result**: All API endpoints including `/api/auth/login` work correctly
+
+### Documentation
+- **Model Name Updates** - Updated all documentation to reflect correct model names
+  - `SHADOWREALMS_AI_COMPLETE.md`: Changed `MythoMakiseMerged-13B` to `MythoMax-L2-13B`
+  - `docs/CHANGELOG.md`: Updated model references
+  - `docker-compose.yml`: Kept default for backward compatibility
+  - `env.template`: Updated LLM_MODEL references
+
+### Technical Details
+- **Database**: PostgreSQL 16 with full compatibility fixes
+- **Network**: Hybrid configuration (host network for backend/nginx, bridge for services)
+- **AI Models**: `mythomax-l2-13b` (LM Studio), `llama3.2:3b` (Ollama)
+- **Remote Access**: Working via firewall configuration on host machine
+
+### Testing Verified ✅
+- Admin panel displays all users correctly
+- Location batch creation from AI suggestions works
+- OOC chat with AI responds without errors
+- Remote access from 10.0.0.7 → 10.0.0.3 working
+- Campaign creation and management functional
+- PostgreSQL database queries executing correctly
+
+## [0.7.6] - 2025-10-28 - Message Persistence & API Verification ✅💬
+
+### Added
+- **Dynamic Version Endpoint** (`/api/version`) - Backend endpoint to serve version from `.env`
+- **Footer Version Integration** - Footer now dynamically fetches version from backend
+
+### Fixed
+
+#### Critical Message Persistence Bug 🐛
+- **Frontend URL Path Mismatches** - Fixed erroneous `/messages/` segment in frontend API calls
+  - Line 519: Save user message - Changed from `/api/messages/campaigns/...` to `/api/campaigns/...`
+  - Line 564: Save AI message - Changed from `/api/messages/campaigns/...` to `/api/campaigns/...`
+  - Line 613: Load messages - Changed from `/api/messages/campaigns/...` to `/api/campaigns/...`
+- **Result**: Messages now properly persist to database and load correctly across location changes
+
+#### Chat UX Improvements
+- **Chat Input Focus Loss** - Fixed focus being lost after sending message
+  - Moved `focus()` call to `finally` block with `setTimeout(0)`
+  - Input now stays focused after message send, improving typing flow
+
+#### ChromaDB API Update
+- **ChromaDB v2 API Migration** - Updated health check endpoints
+  - Changed from deprecated `/api/v1/heartbeat` to `/api/v2/heartbeat`
+  - Fixed "AI services unavailable" errors in OOC chat
+  - ChromaDB health checks now working correctly
+
+### Changed
+- **API URL Standardization** - All message endpoints follow consistent pattern
+  - Pattern: `/api/campaigns/{campaign_id}/locations/{location_id}`
+  - Removed confusing double-prefix issues
+- **Complete API Audit** - Verified all 14 frontend API calls match backend routes
+- **Version Management** - Version now centralized in `.env` and served dynamically
+
+### Documentation
+- Updated all version references from 0.7.5 to 0.7.6 across:
+  - `.env`
+  - `env.template`
+  - `frontend/package.json`
+  - `README.md` (including badge)
+  - All `.md` files in `docs/`
+
 ## [0.7.5] - 2025-10-28 - AI Health Checks & Security Hardening 🛡️🔍
 
 ### Added
@@ -2274,7 +2398,7 @@ books/
 - **Complete System Integration**: All services communicating correctly
 
 ### Technical Fixes
-- **LM Studio Integration**: Started and loaded all 3 models (meltemi-7b-v1-i1, nomic-embed-text-v1.5, mythomakisemerged-13b)
+- **LM Studio Integration**: Started and loaded all 3 models (meltemi-7b-v1-i1, nomic-embed-text-v1.5, mythomax-l2-13b)
 - **Ollama Integration**: Started and loaded llama3.2:3b model
 - **Monitoring HTTP Server**: Fixed threading issue in monitor.py
 - **Service Verification**: Comprehensive testing of all Phase 1 components
@@ -2442,7 +2566,7 @@ books/
 
 ### Technical Details
 - **LLM Service URLs**: `http://10.0.0.1:1234` (LM Studio), `http://10.0.0.1:11434` (Ollama)
-- **Provider Support**: LM Studio with MythoMakiseMerged-13B model, Ollama with command-r:35b
+- **Provider Support**: LM Studio with MythoMax-L2-13B model, Ollama with command-r:35b
 - **Network Configuration**: Docker containers configured to access host services
 - **Environment Variables**: Complete LLM service configuration via docker-compose.yml
 
@@ -2454,7 +2578,7 @@ books/
 ### Next Steps
 - Configure LM Studio to bind to all interfaces (0.0.0.0)
 - Configure Ollama with OLLAMA_HOST=0.0.0.0:11434
-- Test MythoMakiseMerged-13B model connectivity
+- Test MythoMax-L2-13B model connectivity
 - Validate Phase 2 completion with working AI responses
 
 ---

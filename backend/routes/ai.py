@@ -61,7 +61,7 @@ def get_llm_status():
         cursor = db.cursor()
         
         # Get current user role
-        cursor.execute("SELECT role FROM users WHERE id = ?", (current_user_id,))
+        cursor.execute("SELECT role FROM users WHERE id = %s", (current_user_id,))
         current_user = cursor.fetchone()
         
         if not current_user:
@@ -94,7 +94,7 @@ def test_llm_provider():
         cursor = db.cursor()
         
         # Get current user role
-        cursor.execute("SELECT role FROM users WHERE id = ?", (current_user_id,))
+        cursor.execute("SELECT role FROM users WHERE id = %s", (current_user_id,))
         current_user = cursor.fetchone()
         
         if not current_user:
@@ -130,7 +130,7 @@ def get_ai_status():
         cursor = db.cursor()
         
         # Get current user role
-        cursor.execute("SELECT role FROM users WHERE id = ?", (current_user_id,))
+        cursor.execute("SELECT role FROM users WHERE id = %s", (current_user_id,))
         current_user = cursor.fetchone()
         
         if not current_user:
@@ -197,8 +197,8 @@ def ai_chat():
             cursor.execute("""
                 SELECT c.*, u.role as user_role
                 FROM campaigns c
-                JOIN users u ON u.id = ?
-                WHERE c.id = ? AND c.is_active = 1
+                JOIN users u ON u.id = %s
+                WHERE c.id = %s AND c.is_active = TRUE
             """, (current_user_id, campaign_id))
             
             campaign = cursor.fetchone()
@@ -263,7 +263,7 @@ def ai_world_building():
         db = get_db()
         cursor = db.cursor()
         
-        cursor.execute("SELECT role FROM users WHERE id = ?", (current_user_id,))
+        cursor.execute("SELECT role FROM users WHERE id = %s", (current_user_id,))
         current_user = cursor.fetchone()
         
         if not current_user or current_user['role'] not in ['admin', 'helper']:
@@ -321,8 +321,8 @@ def get_ai_memory(campaign_id):
         cursor.execute("""
             SELECT c.*, u.role as user_role
             FROM campaigns c
-            JOIN users u ON u.id = ?
-            WHERE c.id = ? AND c.is_active = 1
+            JOIN users u ON u.id = %s
+            WHERE c.id = %s AND c.is_active = TRUE
         """, (current_user_id, campaign_id))
         
         campaign = cursor.fetchone()
@@ -334,7 +334,7 @@ def get_ai_memory(campaign_id):
         cursor.execute("""
             SELECT id, memory_type, content, context, created_at, accessed_at
             FROM ai_memory
-            WHERE campaign_id = ?
+            WHERE campaign_id = %s
             ORDER BY created_at DESC
             LIMIT 100
         """, (campaign_id,))
@@ -710,7 +710,7 @@ def get_campaign_context(campaign_id: int) -> str:
         cursor.execute("""
             SELECT name, description, game_system, status
             FROM campaigns
-            WHERE id = ? AND is_active = 1
+            WHERE id = %s AND is_active = TRUE
         """, (campaign_id,))
         
         campaign = cursor.fetchone()
@@ -721,7 +721,7 @@ def get_campaign_context(campaign_id: int) -> str:
         cursor.execute("""
             SELECT content, memory_type, created_at
             FROM ai_memory
-            WHERE campaign_id = ?
+            WHERE campaign_id = %s
             ORDER BY created_at DESC
             LIMIT 5
         """, (campaign_id,))
@@ -756,7 +756,7 @@ def get_location_context(location_id: int, campaign_id: int) -> dict:
         cursor.execute("""
             SELECT id, name, type, description
             FROM locations
-            WHERE id = ? AND campaign_id = ? AND is_active = 1
+            WHERE id = %s AND campaign_id = %s AND is_active = TRUE
         """, (location_id, campaign_id))
         
         location = cursor.fetchone()
@@ -809,9 +809,9 @@ def get_recent_messages(location_id: int, campaign_id: int, limit: int = 15) -> 
                 u.username
             FROM messages m
             JOIN users u ON m.user_id = u.id
-            WHERE m.campaign_id = ? AND m.location_id = ?
+            WHERE m.campaign_id = %s AND m.location_id = %s
             ORDER BY m.created_at DESC
-            LIMIT ?
+            LIMIT %s
         """, (campaign_id, location_id, limit))
         
         messages = cursor.fetchall()
@@ -960,7 +960,7 @@ def get_location_npcs(location_id: int, campaign_id: int) -> dict:
                 faction,
                 npc_data
             FROM npcs
-            WHERE campaign_id = ? AND location_id = ? AND is_active = 1
+            WHERE campaign_id = %s AND location_id = %s AND is_active = TRUE
             ORDER BY name
         """, (campaign_id, location_id))
         
@@ -1029,9 +1029,9 @@ def get_npc_history(npc_id: int, limit: int = 5) -> dict:
                 context,
                 created_at
             FROM npc_messages
-            WHERE npc_id = ?
+            WHERE npc_id = %s
             ORDER BY created_at DESC
-            LIMIT ?
+            LIMIT %s
         """, (npc_id, limit))
         
         messages = cursor.fetchall()
@@ -1087,14 +1087,14 @@ def store_npc_interaction(npc_id: int, location_id: int, campaign_id: int, messa
         # Store NPC message
         cursor.execute("""
             INSERT INTO npc_messages (npc_id, location_id, campaign_id, content, context, created_at)
-            VALUES (?, ?, ?, ?, ?, ?)
+            VALUES (%s, %s, %s, %s, %s, %s)
         """, (npc_id, location_id, campaign_id, message, context, datetime.now()))
         
         # Update NPC's last_seen timestamp
         cursor.execute("""
             UPDATE npcs
-            SET last_seen = ?
-            WHERE id = ?
+            SET last_seen = %s
+            WHERE id = %s
         """, (datetime.now(), npc_id))
         
         db.commit()
@@ -1119,7 +1119,7 @@ def get_active_combat(location_id: int, campaign_id: int) -> dict:
         cursor.execute("""
             SELECT id, round_number, initiative_order
             FROM combat_encounters
-            WHERE campaign_id = ? AND location_id = ? AND status = 'active'
+            WHERE campaign_id = %s AND location_id = %s AND status = 'active'
             ORDER BY created_at DESC
             LIMIT 1
         """, (campaign_id, location_id))
@@ -1136,7 +1136,7 @@ def get_active_combat(location_id: int, campaign_id: int) -> dict:
             FROM combat_participants cp
             LEFT JOIN characters c ON cp.character_id = c.id
             LEFT JOIN npcs n ON cp.npc_id = n.id
-            WHERE cp.encounter_id = ?
+            WHERE cp.encounter_id = %s
             ORDER BY cp.initiative DESC
         """, (encounter['id'],))
         
@@ -1177,9 +1177,9 @@ def get_entity_relationships(entity_type: str, entity_id: int, campaign_id: int,
             SELECT 
                 entity2_type, entity2_id, relationship_type, strength, notes
             FROM relationships
-            WHERE campaign_id = ? AND entity1_type = ? AND entity1_id = ?
+            WHERE campaign_id = %s AND entity1_type = %s AND entity1_id = %s
             ORDER BY ABS(strength) DESC
-            LIMIT ?
+            LIMIT %s
         """, (campaign_id, entity_type, entity_id, limit))
         
         relationships = cursor.fetchall()
@@ -1221,11 +1221,11 @@ def get_connected_locations(location_id: int) -> dict:
                 l.id, l.name, l.type, lc.connection_type, lc.description
             FROM location_connections lc
             JOIN locations l ON (
-                (lc.location1_id = ? AND lc.location2_id = l.id) OR
-                (lc.location2_id = ? AND lc.location1_id = l.id AND lc.is_bidirectional = 1)
+                (lc.location1_id = %s AND lc.location2_id = l.id) OR
+                (lc.location2_id = %s AND lc.location1_id = l.id AND lc.is_bidirectional = TRUE)
             )
-            WHERE (lc.location1_id = ? OR (lc.location2_id = ? AND lc.is_bidirectional = 1))
-            AND l.is_active = 1
+            WHERE (lc.location1_id = %s OR (lc.location2_id = %s AND lc.is_bidirectional = TRUE))
+            AND l.is_active = TRUE
         """, (location_id, location_id, location_id, location_id))
         
         connections = cursor.fetchall()
@@ -1272,7 +1272,7 @@ def get_character_context(user_id: int, campaign_id: int) -> dict:
                 cam.game_system
             FROM characters c
             JOIN campaigns cam ON c.campaign_id = cam.id
-            WHERE c.user_id = ? AND c.campaign_id = ?
+            WHERE c.user_id = %s AND c.campaign_id = %s
             LIMIT 1
         """, (user_id, campaign_id))
         
@@ -1438,7 +1438,7 @@ def store_ai_memory(campaign_id: int, memory_type: str, content: str, response: 
         
         cursor.execute("""
             INSERT INTO ai_memory (campaign_id, memory_type, content, context, created_at, accessed_at)
-            VALUES (?, ?, ?, ?, ?, ?)
+            VALUES (%s, %s, %s, %s, %s, %s)
         """, (
             campaign_id,
             memory_type,

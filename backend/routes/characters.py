@@ -29,7 +29,7 @@ def get_characters():
         cursor = db.cursor()
         
         # Get current user role
-        cursor.execute("SELECT role FROM users WHERE id = ?", (current_user_id,))
+        cursor.execute("SELECT role FROM users WHERE id = %s", (current_user_id,))
         current_user = cursor.fetchone()
         
         if not current_user:
@@ -44,7 +44,7 @@ def get_characters():
                     FROM characters ch
                     JOIN users u ON ch.user_id = u.id
                     JOIN campaigns c ON ch.campaign_id = c.id
-                    WHERE ch.campaign_id = ?
+                    WHERE ch.campaign_id = %s
                     ORDER BY ch.created_at DESC
                 """, (campaign_id,))
             else:
@@ -63,7 +63,7 @@ def get_characters():
                     FROM characters ch
                     JOIN users u ON ch.user_id = u.id
                     JOIN campaigns c ON ch.campaign_id = c.id
-                    WHERE ch.user_id = ? AND ch.campaign_id = ?
+                    WHERE ch.user_id = %s AND ch.campaign_id = %s
                     ORDER BY ch.created_at DESC
                 """, (current_user_id, campaign_id))
             else:
@@ -72,7 +72,7 @@ def get_characters():
                     FROM characters ch
                     JOIN users u ON ch.user_id = u.id
                     JOIN campaigns c ON ch.campaign_id = c.id
-                    WHERE ch.user_id = ?
+                    WHERE ch.user_id = %s
                     ORDER BY ch.created_at DESC
                 """, (current_user_id,))
         
@@ -135,8 +135,8 @@ def create_character():
         cursor.execute("""
             SELECT c.*, u.role as user_role
             FROM campaigns c
-            JOIN users u ON u.id = ?
-            WHERE c.id = ? AND c.is_active = 1
+            JOIN users u ON u.id = %s
+            WHERE c.id = %s AND c.is_active = 1
         """, (current_user_id, campaign_id))
         
         campaign = cursor.fetchone()
@@ -147,7 +147,7 @@ def create_character():
         # Check if character name already exists in this campaign
         cursor.execute("""
             SELECT id FROM characters 
-            WHERE name = ? AND campaign_id = ?
+            WHERE name = %s AND campaign_id = %s
         """, (name, campaign_id))
         
         if cursor.fetchone():
@@ -156,7 +156,8 @@ def create_character():
         # Create character
         cursor.execute("""
             INSERT INTO characters (name, system_type, attributes, skills, background, merits_flaws, user_id, campaign_id, created_at, updated_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            RETURNING id
         """, (
             name,
             system_type,
@@ -170,7 +171,8 @@ def create_character():
             datetime.utcnow()
         ))
         
-        character_id = cursor.lastrowid
+        result = cursor.fetchone()
+        character_id = result['id']
         db.commit()
         
         logger.info(f"Character '{name}' created by user {current_user_id} in campaign {campaign_id}")
@@ -199,7 +201,7 @@ def get_character(character_id):
         cursor = db.cursor()
         
         # Get current user role
-        cursor.execute("SELECT role FROM users WHERE id = ?", (current_user_id,))
+        cursor.execute("SELECT role FROM users WHERE id = %s", (current_user_id,))
         current_user = cursor.fetchone()
         
         if not current_user:
@@ -211,7 +213,7 @@ def get_character(character_id):
             FROM characters ch
             JOIN users u ON ch.user_id = u.id
             JOIN campaigns c ON ch.campaign_id = c.id
-            WHERE ch.id = ?
+            WHERE ch.id = %s
         """, (character_id,))
         
         character = cursor.fetchone()
@@ -263,14 +265,14 @@ def update_character(character_id):
         cursor = db.cursor()
         
         # Get current user role
-        cursor.execute("SELECT role FROM users WHERE id = ?", (current_user_id,))
+        cursor.execute("SELECT role FROM users WHERE id = %s", (current_user_id,))
         current_user = cursor.fetchone()
         
         if not current_user:
             return jsonify({'error': 'User not found'}), 404
         
         # Get character
-        cursor.execute("SELECT * FROM characters WHERE id = ?", (character_id,))
+        cursor.execute("SELECT * FROM characters WHERE id = %s", (character_id,))
         character = cursor.fetchone()
         
         if not character:
@@ -288,29 +290,29 @@ def update_character(character_id):
             # Check if name is already taken in this campaign
             cursor.execute("""
                 SELECT id FROM characters 
-                WHERE name = ? AND campaign_id = ? AND id != ?
+                WHERE name = %s AND campaign_id = %s AND id != %s
             """, (data['name'], character['campaign_id'], character_id))
             
             if cursor.fetchone():
                 return jsonify({'error': 'Character name already exists in this campaign'}), 409
             
-            updates.append("name = ?")
+            updates.append("name = %s")
             params.append(data['name'])
         
         if 'attributes' in data:
-            updates.append("attributes = ?")
+            updates.append("attributes = %s")
             params.append(json.dumps(data['attributes']))
         
         if 'skills' in data:
-            updates.append("skills = ?")
+            updates.append("skills = %s")
             params.append(json.dumps(data['skills']))
         
         if 'background' in data:
-            updates.append("background = ?")
+            updates.append("background = %s")
             params.append(data['background'])
         
         if 'merits_flaws' in data:
-            updates.append("merits_flaws = ?")
+            updates.append("merits_flaws = %s")
             params.append(json.dumps(data['merits_flaws']))
         
         # Apply updates if any
@@ -318,7 +320,7 @@ def update_character(character_id):
             params.append(datetime.utcnow())  # updated_at
             params.append(character_id)
             
-            query = f"UPDATE characters SET {', '.join(updates)}, updated_at = ? WHERE id = ?"
+            query = f"UPDATE characters SET {', '.join(updates)}, updated_at = %s WHERE id = %s"
             cursor.execute(query, params)
             
             db.commit()
@@ -346,14 +348,14 @@ def delete_character(character_id):
         cursor = db.cursor()
         
         # Get current user role
-        cursor.execute("SELECT role FROM users WHERE id = ?", (current_user_id,))
+        cursor.execute("SELECT role FROM users WHERE id = %s", (current_user_id,))
         current_user = cursor.fetchone()
         
         if not current_user:
             return jsonify({'error': 'User not found'}), 404
         
         # Get character
-        cursor.execute("SELECT * FROM characters WHERE id = ?", (character_id,))
+        cursor.execute("SELECT * FROM characters WHERE id = %s", (character_id,))
         character = cursor.fetchone()
         
         if not character:
@@ -364,7 +366,7 @@ def delete_character(character_id):
             return jsonify({'error': 'Access denied'}), 403
         
         # Delete character
-        cursor.execute("DELETE FROM characters WHERE id = ?", (character_id,))
+        cursor.execute("DELETE FROM characters WHERE id = %s", (character_id,))
         db.commit()
         
         logger.info(f"Character {character_id} ({character['name']}) deleted by user {current_user_id}")
