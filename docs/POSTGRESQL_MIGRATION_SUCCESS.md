@@ -150,7 +150,7 @@ If you need to go back to SQLite for any reason:
 3. `docs/MIGRATION_PACKAGE_CHECKLIST.md` - Pre-flight checklist
 4. `backend/init_postgresql_schema.sql` - PostgreSQL schema
 5. `backend/database_postgresql.py` - Dual-mode database module
-6. `migrate_users_only.py` - Focused migration script
+6. `scripts/migrate_users_only.py` - Focused migration script
 
 ### Modified Files (4)
 1. `docker-compose.yml` - Added PostgreSQL service

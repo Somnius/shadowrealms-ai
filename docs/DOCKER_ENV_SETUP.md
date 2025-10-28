@@ -24,7 +24,7 @@ This guide explains how environment variables work in the ShadowRealms AI Docker
 ### **Step 1: Generate Secret Keys**
 ```bash
 # Generate secure keys
-python generate_secret_key.py
+python scripts/generate_secret_key.py
 
 # Copy the hex key (most secure)
 # Example: 7e99881cf6559187c323f08a1f3332cceccc7ceb2f641bab97b6f4fa73773e4e
@@ -159,7 +159,7 @@ docker-compose exec backend env | grep FLASK
 ### **Problem: Secret keys still using defaults**
 ```bash
 # Generate new keys
-python generate_secret_key.py
+python scripts/generate_secret_key.py
 
 # Update .env file
 nano .env
@@ -214,7 +214,7 @@ services:
 
 ## 🎯 **Next Steps**
 
-1. **Generate secure keys** using `generate_secret_key.py`
+1. **Generate secure keys** using `scripts/generate_secret_key.py`
 2. **Update .env file** with your keys
 3. **Test configuration** using test scripts
 4. **Start Docker containers** with `docker-compose up --build`

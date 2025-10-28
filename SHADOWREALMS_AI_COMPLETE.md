@@ -1218,7 +1218,7 @@ chmod +x monitoring/monitor.py
 The project now includes a comprehensive backup system to protect development work and user data.
 
 #### Backup Features
-- **Automated Creation**: Run `./backup.sh` to create timestamped backups
+- **Automated Creation**: Run `./scripts/backup.sh` to create timestamped backups
 - **Smart Exclusions**: Automatically excludes `backup/`, `books/`, and other non-source directories
 - **Compression**: Uses bzip2 for optimal size/speed balance
 - **Progress Reporting**: Shows duration, file size, and completion status
@@ -1232,7 +1232,7 @@ The project now includes a comprehensive backup system to protect development wo
 #### Backup Command
 ```bash
 # Create a new backup
-./backup.sh
+./scripts/backup.sh
 
 # The script will:
 # 1. Create timestamped filename
@@ -1270,7 +1270,7 @@ The project now includes comprehensive `.gitignore` rules covering:
 
 #### Backup Workflow
 1. **Development**: Work on features and improvements
-2. **Backup**: Run `./backup.sh` before major changes
+2. **Backup**: Run `./scripts/backup.sh` before major changes
 3. **Version Control**: Commit source code changes to git
 4. **Data Protection**: User data and backups remain separate from source code
 
@@ -1832,9 +1832,9 @@ This release marks the beginning of **Phase 3B** with a comprehensive security s
 
 **Usage:**
 ```bash
-./run-frontend-tests.sh          # Run all tests
-./run-frontend-tests.sh security # Run security tests only
-./run-frontend-tests.sh integration # Run integration tests only
+./scripts/run-frontend-tests.sh          # Run all tests
+./scripts/run-frontend-tests.sh security # Run security tests only
+./scripts/run-frontend-tests.sh integration # Run integration tests only
 ```
 
 #### 4. Phase 3B Planning Documentation
@@ -1890,7 +1890,7 @@ This release marks the beginning of **Phase 3B** with a comprehensive security s
 - `frontend/src/utils/security.js` (400+ lines)
 - `frontend/src/utils/__tests__/security.test.js` (350+ lines)
 - `frontend/src/__tests__/integration/userFlow.test.js` (280+ lines)
-- `run-frontend-tests.sh` (33 lines)
+- `scripts/run-frontend-tests.sh` (33 lines)
 - `docs/PHASE3B_IMPLEMENTATION.md` (511 lines)
 - `docs/PLANNING.md` (563 lines)
 
@@ -1980,7 +1980,7 @@ This release marks the beginning of **Phase 3B** with a comprehensive security s
 npm test
 
 # From host (using script)
-./run-frontend-tests.sh
+./scripts/run-frontend-tests.sh
 ```
 
 ### 🎯 Phase 3B Timeline
@@ -2121,7 +2121,7 @@ From extensive user conversation (2025-10-24):
   - Security integration tests
 
 **Development Tools (New):**
-- `run-frontend-tests.sh` (33 lines)
+- `scripts/run-frontend-tests.sh` (33 lines)
   - Docker test runner
   - Coverage reports
   - Container management
@@ -4973,7 +4973,7 @@ done
 - `CONTRIBUTING.md` - Testing guidelines updated
 - `books/README.md` - Enhanced workflows documentation
 - `books/sync_wod_books.py` - Enhanced with retry logic and duplicate detection (+255 lines)
-- `backup.sh` - Complete rewrite with XZ compression and better exclusions (+266 lines)
+- `scripts/backup.sh` - Complete rewrite with XZ compression and better exclusions (+266 lines)
 - `.gitignore` - Added test cache directories
 
 ### Documentation Updates
@@ -6260,7 +6260,7 @@ Reason: [Admin's stated reason]
 - `docs/PHASE3B_IMPLEMENTATION.md` - Complete specification ✅
 - `docs/PLANNING.md` - Detailed summary ✅
 - `docs/CHANGELOG.md` - Version 0.7.8 entry ✅
-- `run-frontend-tests.sh` - Test runner script ✅
+- `scripts/run-frontend-tests.sh` - Test runner script ✅
 
 ---
 
@@ -7031,7 +7031,7 @@ docker-compose logs -f [service_name]
 python test_modules.py
 
 # Create backup
-./backup.sh
+./scripts/backup.sh
 
 # Update and commit
 git add .

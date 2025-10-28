@@ -16,9 +16,9 @@ Run this checklist before starting the migration to ensure all files are in plac
 - [ ] `POSTGRESQL_ENV_SETUP.md` exists (3.1K)
 - [ ] `backend/init_postgresql_schema.sql` exists (21K)
 - [ ] `backend/database_postgresql.py` exists (12K)
-- [ ] `migrate_sqlite_to_postgresql.py` exists (12K)
-- [ ] `migrate_sqlite_to_postgresql.py` is executable
-- [ ] `backup-before-postgresql.sh` exists and is executable
+- [ ] `scripts/migrate_sqlite_to_postgresql.py` exists (12K)
+- [ ] `scripts/migrate_sqlite_to_postgresql.py` is executable
+- [ ] `scripts/backup-before-postgresql.sh` exists and is executable
 
 ### Configuration Files
 
