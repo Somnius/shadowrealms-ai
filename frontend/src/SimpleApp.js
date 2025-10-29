@@ -882,7 +882,7 @@ function SimpleApp() {
       {/* Logo and Title */}
       <div style={{ textAlign: 'center', marginBottom: '40px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
         <img 
-          src="https://github.com/Somnius/shadowrealms-ai/raw/main/assets/logos/logo-3.png" 
+          src="/logo-login.png" 
           alt="ShadowRealms AI" 
           style={{ 
             width: '240px', 
@@ -1179,7 +1179,7 @@ function SimpleApp() {
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '15px', justifyContent: isMobile ? 'center' : 'flex-start' }}>
           <img 
-            src="https://github.com/Somnius/shadowrealms-ai/raw/main/assets/logos/logo-3.png" 
+            src="/logo-header.png" 
             alt="ShadowRealms AI" 
             style={{ width: isMobile ? '40px' : '50px', height: 'auto' }}
           />
