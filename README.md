@@ -6,7 +6,7 @@
 
 ### The Ultimate AI-Powered Tabletop RPG Experience
 
-[![Version](https://img.shields.io/badge/version-0.7.9-blue.svg)](https://github.com/Somnius/shadowrealms-ai)
+[![Version](https://img.shields.io/badge/version-0.7.10-blue.svg)](https://github.com/Somnius/shadowrealms-ai)
 [![Phase 2](https://img.shields.io/badge/phase-2%20complete-green.svg)](https://github.com/Somnius/shadowrealms-ai)
 [![Phase 3A](https://img.shields.io/badge/phase-3A%20complete-green.svg)](https://github.com/Somnius/shadowrealms-ai)
 [![Phase 3B](https://img.shields.io/badge/phase-3B%20next-blue.svg)](https://github.com/Somnius/shadowrealms-ai)
@@ -55,7 +55,7 @@ See ShadowRealms AI in action:
 
 *Watch this video to see the login system, gothic theme, campaign management, and admin panel in action!*
 
-> **Version 0.7.9 Preview:** This demo showcases the frontend interface in its current state. Please note that not all features are fully functional yet—this is a first look at the user interface and design direction of ShadowRealms AI.
+> **Version 0.7.10 Preview:** This demo showcases the frontend interface in its current state. Please note that not all features are fully functional yet—this is a first look at the user interface and design direction of ShadowRealms AI.
 
 </div>
 
@@ -137,6 +137,15 @@ docker-compose up -d
 ## Current Development Status
 
 <div align="center">
+
+### Version 0.7.10 - Logo & Asset Optimization ⚡
+
+**Latest Updates:**
+- ⚡ **Logo Optimization**: Reduced logo assets from 1.6MB to 116KB (93% reduction)
+- 🖼️ **Multiple Resolutions**: Created dedicated sizes for login (300x300), header (80x80), and favicons
+- 🚀 **Performance Boost**: Faster page loads, reduced bandwidth usage, better mobile experience
+- 🎨 **Enhanced Favicon Support**: Multi-format favicon.ico + PNG favicons (16x16, 32x32, 64x64)
+- 📱 **iOS Support**: Apple touch icon for better home screen bookmarks
 
 ### Version 0.7.9 - Project Structure Organization 📁
 
