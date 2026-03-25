@@ -7,7 +7,8 @@
 
 set -e
 
-DOCS_DIR="/home/lef/dev/shadowrealms-ai_dev/shadowrealms-ai/docs"
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)"
+DOCS_DIR="$(cd -- "${SCRIPT_DIR}/../docs" >/dev/null 2>&1 && pwd)"
 cd "$DOCS_DIR"
 
 echo "Creating consolidated documentation files..."

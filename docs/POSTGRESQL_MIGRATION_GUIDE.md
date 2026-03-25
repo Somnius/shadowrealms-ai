@@ -96,9 +96,31 @@ docker compose ps postgresql
 
 **Expected output**: `healthy` status
 
-**Verify schema initialized**:
+**Verify schema initialized (tables exist)**:
 ```bash
-docker compose logs postgresql | grep "initialized successfully"
+docker compose exec postgresql psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -c '\dt'
+```
+
+You should see tables like `users`, `campaigns`, etc. If `\dt` shows **no relations**, the PostgreSQL schema init step did not run.
+
+### Troubleshooting: “no relations” after fresh clone
+
+This repo’s `docker-compose.yml` expects the schema init SQL to be mounted into Postgres at:
+
+- `./backend/init_postgresql_schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro`
+
+If `backend/init_postgresql_schema.sql` is missing (or is accidentally a **directory**), Postgres will start **without tables**, and login/registration/migrations will fail with errors like `relation "users" does not exist`.
+
+Fix checklist:
+
+- Ensure `backend/init_postgresql_schema.sql` is a **file** containing the schema SQL.
+- Then re-initialize the Postgres volume so the init script runs:
+
+```bash
+docker compose down
+docker volume rm shadowrealms-ai_postgresql_data
+docker compose up -d postgresql
+docker compose exec postgresql psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -c '\dt'
 ```
 
 ---

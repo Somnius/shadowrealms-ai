@@ -362,12 +362,16 @@ checkpoints/
 # =============================================================================
 # PROJECT-SPECIFIC EXCLUSIONS
 # =============================================================================
+# Local scratch notes (never commit)
+EXTRA_NOTES.txt
+
 # Discussion and planning documents (not for public repository)
 Discussion No1 Local LLM-Powered Tabletop RPG Platform_ Complete.md
 
 # Local development and IDE files
 .cursor/
 notes/
+_notes/
 
 # Additional sensitive and temporary files
 *.pid

@@ -51,6 +51,12 @@ function SimpleApp() {
   // Location suggestions state
   const [showLocationSuggestions, setShowLocationSuggestions] = useState(false);
   const [newCampaignData, setNewCampaignData] = useState(null);
+  const [campaignStats, setCampaignStats] = useState({
+    active_players: 0,
+    characters: 0,
+    locations: 0,
+    messages: 0
+  });
   
   // Delete confirmation state
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -180,6 +186,28 @@ function SimpleApp() {
     } catch (err) {
       console.error('Failed to load campaigns:', err);
       setError('Failed to load campaigns');
+    }
+  };
+
+  const fetchCampaignStats = async (campaignId) => {
+    if (!campaignId) return;
+    try {
+      const response = await fetch(`${API_URL}/campaigns/${campaignId}/stats`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (!response.ok) {
+        console.error('Failed to load campaign stats:', await response.text());
+        return;
+      }
+      const data = await response.json();
+      setCampaignStats({
+        active_players: data.active_players ?? 0,
+        characters: data.characters ?? 0,
+        locations: data.locations ?? 0,
+        messages: data.messages ?? 0
+      });
+    } catch (error) {
+      console.error('Error fetching campaign stats:', error);
     }
   };
 
@@ -470,6 +498,13 @@ function SimpleApp() {
     
     navigateTo('chat', campaign); // Use navigateTo for proper browser history
   };
+
+  // When viewing campaign settings, load stats for the selected campaign
+  useEffect(() => {
+    if (token && currentPage === 'campaignDetails' && selectedCampaign?.id) {
+      fetchCampaignStats(selectedCampaign.id);
+    }
+  }, [token, currentPage, selectedCampaign?.id]);
 
   // Handle leaving chat with confirmation
   const handleLeaveCampaign = () => {
@@ -1807,7 +1842,7 @@ function SimpleApp() {
                 border: '2px solid rgba(233, 69, 96, 0.3)',
                 boxShadow: '0 0 15px rgba(233, 69, 96, 0.2)'
               }}>
-                <div style={{ fontSize: '28px', fontWeight: 'bold', color: '#e94560', fontFamily: 'Cinzel, serif' }}>0</div>
+                <div style={{ fontSize: '28px', fontWeight: 'bold', color: '#e94560', fontFamily: 'Cinzel, serif' }}>{campaignStats.active_players}</div>
                 <div style={{ fontSize: '12px', color: '#8b8b9f', marginTop: '8px', fontFamily: 'Crimson Text, serif', textTransform: 'uppercase', letterSpacing: '1px' }}>
                   <i className="fas fa-users"></i> Active Players
                 </div>
@@ -1822,7 +1857,7 @@ function SimpleApp() {
                 border: '2px solid rgba(157, 78, 221, 0.3)',
                 boxShadow: '0 0 15px rgba(157, 78, 221, 0.2)'
               }}>
-                <div style={{ fontSize: '28px', fontWeight: 'bold', color: '#9d4edd', fontFamily: 'Cinzel, serif' }}>0</div>
+                <div style={{ fontSize: '28px', fontWeight: 'bold', color: '#9d4edd', fontFamily: 'Cinzel, serif' }}>{campaignStats.characters}</div>
                 <div style={{ fontSize: '12px', color: '#8b8b9f', marginTop: '8px', fontFamily: 'Crimson Text, serif', textTransform: 'uppercase', letterSpacing: '1px' }}>
                   <i className="fas fa-user-secret"></i> Characters
                 </div>
@@ -1837,7 +1872,7 @@ function SimpleApp() {
                 border: '2px solid rgba(217, 119, 6, 0.3)',
                 boxShadow: '0 0 15px rgba(217, 119, 6, 0.2)'
               }}>
-                <div style={{ fontSize: '28px', fontWeight: 'bold', color: '#d97706', fontFamily: 'Cinzel, serif' }}>0</div>
+                <div style={{ fontSize: '28px', fontWeight: 'bold', color: '#d97706', fontFamily: 'Cinzel, serif' }}>{campaignStats.locations}</div>
                 <div style={{ fontSize: '12px', color: '#8b8b9f', marginTop: '8px', fontFamily: 'Crimson Text, serif', textTransform: 'uppercase', letterSpacing: '1px' }}>
                   <i className="fas fa-map-marker-alt"></i> Locations
                 </div>
@@ -1852,7 +1887,7 @@ function SimpleApp() {
                 border: '2px solid rgba(181, 181, 195, 0.3)',
                 boxShadow: '0 0 15px rgba(181, 181, 195, 0.2)'
               }}>
-                <div style={{ fontSize: '28px', fontWeight: 'bold', color: '#b5b5c3', fontFamily: 'Cinzel, serif' }}>0</div>
+                <div style={{ fontSize: '28px', fontWeight: 'bold', color: '#b5b5c3', fontFamily: 'Cinzel, serif' }}>{campaignStats.messages}</div>
                 <div style={{ fontSize: '12px', color: '#8b8b9f', marginTop: '8px', fontFamily: 'Crimson Text, serif', textTransform: 'uppercase', letterSpacing: '1px' }}>
                   <i className="fas fa-comment"></i> Messages
                 </div>

@@ -15,7 +15,6 @@ Welcome to the ShadowRealms AI documentation! This directory contains all projec
 - **[Contributing Guidelines](CONTRIBUTING.md)** - How to contribute to the project
 - **[Changelog](CHANGELOG.md)** - Version history and updates
 - **[Version Bump Process](VERSION_BUMP_PROCESS.md)** - Automated version update workflow
-- **[GitHub Setup](GITHUB_SETUP.md)** - Repository and collaboration setup
 
 ### Database Migration
 - **[PostgreSQL Migration Guide](POSTGRESQL_MIGRATION_GUIDE.md)** - Complete migration from SQLite to PostgreSQL
@@ -78,7 +77,6 @@ shadowrealms-ai/
 │   ├── VERSION_BUMP_PROCESS.md       # Version workflow ⭐
 │   │
 │   ├── DOCKER_ENV_SETUP.md           # Docker setup ⭐
-│   ├── GITHUB_SETUP.md               # GitHub guide ⭐
 │   │
 │   ├── PHASE3B_IMPLEMENTATION.md     # Phase 3B (active) ⭐
 │   ├── PLANNING.md                   # Phase planning 📦
@@ -122,7 +120,6 @@ Legend:
 
 ### Development Workflow
 - **CONTRIBUTING.md**: Code standards, Git workflow, PR process
-- **GITHUB_SETUP.md**: Repository setup, branch strategy
 - **CHANGELOG.md**: Version history and release notes
 - **VERSION_BUMP_PROCESS.md**: Automated version update workflow
 

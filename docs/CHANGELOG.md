@@ -5,6 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.11] - 2026-03-25 - Local Setup Reliability & Campaign Stats 🛠️
+
+### Added
+- **Campaign stats endpoint**: `GET /api/campaigns/<id>/stats` returning:
+  - `active_players`, `characters`, `locations`, `messages`
+- **Campaign settings UI wiring**: "Active Players / Characters / Locations / Messages" tiles now display live counts (instead of hardcoded zeros).
+
+### Changed
+- **LM Studio default model selection**: `.env` now points to `LM_STUDIO_MODEL=qwen3-8b` (matches LM Studio `/v1/models` id).
+- **Documentation**: clarified local access points and Postgres schema initialization requirements after cloning:
+  - Recommended entry: `http://localhost` (Nginx proxy) vs `http://localhost:3000` (dev server, no API proxy)
+  - Added table verification via `\dt` and troubleshooting for missing init SQL.
+
+### Fixed
+- **Fresh clone PostgreSQL usability**: documented required schema/tables for core app flows (login, campaign creation, locations).
+
 ## [0.7.10] - 2025-10-29 - Logo & Asset Optimization ⚡
 
 ### Changed
@@ -71,7 +87,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `docs/CHANGELOG.md` - Updated script references
   - `docs/VERSION_BUMP_PROCESS.md` - Updated version-bump.sh path
   - `docs/DOCKER_ENV_SETUP.md` - Updated generate_secret_key.py path
-  - `docs/GITHUB_SETUP.md` - Updated git_workflow.sh path
   - `docs/POSTGRESQL_MIGRATION_GUIDE.md` - Updated migration script paths
   - `docs/DATABASE_MIGRATION_POSTGRESQL.md` - Updated backup script path
   - `docs/MIGRATION_PACKAGE_CHECKLIST.md` - Updated migration script paths
@@ -1460,7 +1475,6 @@ See [SHADOWREALMS_AI_COMPLETE.md](../SHADOWREALMS_AI_COMPLETE.md) for full v0.6.
 - CONTRIBUTING.md
 - DOCKER_ENV_SETUP.md
 - FRONTEND_BACKEND_AUDIT.md
-- GITHUB_SETUP.md
 - PHASE4_COMPLETION.md
 - PHASE5A_COMPLETION.md
 - test_frontend_manual.md
@@ -2351,7 +2365,6 @@ books/
 ### Files Modified
 - `CHANGELOG.txt` → `CHANGELOG.md` (renamed)
 - `SHADOWREALMS_AI_COMPLETE.md` - Updated changelog reference
-- `GITHUB_SETUP.md` - Updated changelog reference
 - `scripts/backup.sh` - Updated critical files list
 
 ### Technical Improvements

@@ -204,6 +204,91 @@ def get_or_update_campaign(campaign_id):
         logger.error(f"Error getting campaign: {e}")
         return jsonify({'error': 'Failed to get campaign'}), 500
 
+@campaigns_bp.route('/<int:campaign_id>/stats', methods=['GET'])
+@jwt_required()
+def get_campaign_stats(campaign_id):
+    """Get campaign statistics counts for settings UI"""
+    try:
+        user_id = get_jwt_identity()
+        conn = get_db()
+        cursor = conn.cursor()
+
+        # Verify user has access to campaign (creator/admin/member)
+        cursor.execute("""
+            SELECT c.created_by, u.role
+            FROM campaigns c
+            JOIN users u ON u.id = %s
+            WHERE c.id = %s
+        """, (user_id, campaign_id))
+        access_row = cursor.fetchone()
+        if not access_row:
+            cursor.close()
+            conn.close()
+            return jsonify({'error': 'Campaign not found'}), 404
+
+        is_admin = access_row.get('role') == 'admin'
+        is_creator = str(access_row.get('created_by')) == str(user_id)
+
+        if not is_admin and not is_creator:
+            cursor.execute("""
+                SELECT 1
+                FROM campaign_players
+                WHERE campaign_id = %s AND user_id = %s
+                LIMIT 1
+            """, (campaign_id, user_id))
+            if not cursor.fetchone():
+                cursor.close()
+                conn.close()
+                return jsonify({'error': 'Unauthorized'}), 403
+
+        cursor.execute("""
+            SELECT COUNT(DISTINCT u.id) AS count
+            FROM (
+                SELECT created_by AS user_id FROM campaigns WHERE id = %s
+                UNION
+                SELECT user_id FROM campaign_players WHERE campaign_id = %s
+            ) p
+            JOIN users u ON u.id = p.user_id
+            WHERE u.is_active = TRUE
+        """, (campaign_id, campaign_id))
+        active_players = int(cursor.fetchone()['count'])
+
+        cursor.execute("""
+            SELECT COUNT(*) AS count
+            FROM characters
+            WHERE campaign_id = %s AND is_active = TRUE
+        """, (campaign_id,))
+        characters = int(cursor.fetchone()['count'])
+
+        cursor.execute("""
+            SELECT COUNT(*) AS count
+            FROM locations
+            WHERE campaign_id = %s AND is_active = TRUE
+        """, (campaign_id,))
+        locations = int(cursor.fetchone()['count'])
+
+        cursor.execute("""
+            SELECT COUNT(*) AS count
+            FROM messages
+            WHERE campaign_id = %s
+        """, (campaign_id,))
+        messages = int(cursor.fetchone()['count'])
+
+        cursor.close()
+        conn.close()
+
+        return jsonify({
+            'campaign_id': campaign_id,
+            'active_players': active_players,
+            'characters': characters,
+            'locations': locations,
+            'messages': messages
+        }), 200
+
+    except Exception as e:
+        logger.error(f"Error getting campaign stats: {e}")
+        return jsonify({'error': 'Failed to get campaign stats'}), 500
+
 def update_campaign(campaign_id):
     """Update campaign details (admin only)"""
     try:

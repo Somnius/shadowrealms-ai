@@ -61,6 +61,61 @@ docker-compose up --build
 docker-compose logs backend
 ```
 
+## 🗄️ PostgreSQL Schema Initialization (Tables)
+
+If you are using PostgreSQL (`DATABASE_TYPE=postgresql`), the **database tables must exist** before login/registration/campaign features will work.
+
+### Minimum required tables (fresh install)
+
+At minimum (for login + create campaign + OOC room), PostgreSQL must have:
+
+- `users`
+- `campaigns`
+- `campaign_players`
+- `locations`
+
+For the broader app/admin UI to function without “relation does not exist” errors, you should also have:
+
+- `characters`
+- `character_locations`
+- `messages`
+- `user_moderation_log`
+- `ai_interactions`
+- `ai_memory`
+- `dice_rolls`
+- `dice_roll_templates`
+- `npcs`
+- `npc_messages`
+- `location_deletion_log`
+
+### Verify tables exist
+
+```bash
+docker compose exec postgresql psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -c '\dt'
+```
+
+If you see **no relations**, PostgreSQL started without initializing the schema.
+
+### Why this happens after cloning
+
+`docker-compose.yml` mounts an init SQL file into Postgres:
+
+- `./backend/init_postgresql_schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro`
+
+If `backend/init_postgresql_schema.sql` is missing or not a valid SQL **file**, Postgres will come up empty.
+
+### Fix (re-run init script)
+
+1. Ensure `backend/init_postgresql_schema.sql` is present as a **file**
+2. Recreate the Postgres volume so init scripts run:
+
+```bash
+docker compose down
+docker volume rm shadowrealms-ai_postgresql_data
+docker compose up -d postgresql
+docker compose exec postgresql psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -c '\dt'
+```
+
 ## 🔧 **Environment Variable Flow**
 
 ```
