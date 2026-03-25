@@ -14,6 +14,13 @@ from database import get_db
 from services.gpu_monitor import gpu_monitor_service
 from services.llm_service import get_llm_service
 from services.health_check import get_health_check_service, require_llm, require_ai_services
+from services.ai_slash_commands import (
+    parse_ai_slash_line,
+    execute_ai_slash_command,
+    FUTURE_COMMAND_SUGGESTIONS,
+    SUPPORTED_AI_SLASH_VERBS,
+)
+from services.message_time_format import format_message_time
 
 logger = logging.getLogger(__name__)
 
@@ -284,6 +291,108 @@ def ai_chat():
     finally:
         if 'db' in locals():
             db.close()
+
+
+@bp.route('/slash', methods=['POST'])
+@jwt_required()
+def ai_slash_command():
+    """
+    Chat /ai … commands (diagnostics & tools). Examples: /ai health, /ai roll 4+3@7
+    Does not require Chroma/LLM globally — each subcommand enforces what it needs.
+    """
+    try:
+        current_user_id = int(get_jwt_identity())
+        data = request.get_json() or {}
+        line = (data.get('line') or data.get('message') or '').strip()
+        campaign_id = data.get('campaign_id')
+        location_id = data.get('location_id')
+        if not line:
+            return jsonify({'error': 'line or message is required'}), 400
+
+        db_role = get_db()
+        cur_role = db_role.cursor()
+        cur_role.execute("SELECT role FROM users WHERE id = %s", (current_user_id,))
+        urow = cur_role.fetchone()
+        cur_role.close()
+        db_role.close()
+        site_role = ((urow or {}).get("role") or "").strip().lower()
+        if site_role != "admin":
+            return jsonify({
+                "error": "Only site administrators may use /ai commands.",
+                "display_markdown": (
+                    "**`/ai` is restricted**\n\n"
+                    "Only **administrator** accounts can use `/ai` commands. "
+                    "For Storyteller (Old WoD) d10 rolls, everyone can use **Roll dice** "
+                    "in the right sidebar.\n"
+                ),
+                "supported_commands": SUPPORTED_AI_SLASH_VERBS,
+                "future_commands_suggestion": FUTURE_COMMAND_SUGGESTIONS,
+            }), 403
+
+        parsed = parse_ai_slash_line(line)
+        if not parsed:
+            return jsonify({
+                'error': 'Not a recognized /ai command (expected e.g. /ai health …)',
+                'future_commands_suggestion': FUTURE_COMMAND_SUGGESTIONS,
+                'supported_commands': SUPPORTED_AI_SLASH_VERBS,
+            }), 400
+
+        verb, payload = parsed
+
+        if verb == 'context' and (not campaign_id or location_id is None):
+            return jsonify({
+                'error': 'campaign_id and location_id are required for /ai context',
+                'display_markdown': (
+                    '**`/ai context`**\n\n'
+                    'Use this from inside a campaign chat room so the server knows which location to inspect.'
+                ),
+                'supported_commands': SUPPORTED_AI_SLASH_VERBS,
+                'future_commands_suggestion': FUTURE_COMMAND_SUGGESTIONS,
+            }), 400
+
+        if campaign_id:
+            db = get_db()
+            cursor = db.cursor()
+            try:
+                cursor.execute("""
+                    SELECT c.id FROM campaigns c
+                    JOIN users u ON u.id = %s
+                    WHERE c.id = %s AND c.is_active = TRUE
+                """, (current_user_id, campaign_id))
+                if not cursor.fetchone():
+                    return jsonify({'error': 'Campaign not found or access denied'}), 404
+                if verb == 'context':
+                    cursor.execute("""
+                        SELECT id FROM locations
+                        WHERE id = %s AND campaign_id = %s AND is_active = TRUE
+                    """, (location_id, campaign_id))
+                    if not cursor.fetchone():
+                        return jsonify({'error': 'Location not found in this campaign'}), 404
+            finally:
+                cursor.close()
+                db.close()
+
+        try:
+            result = execute_ai_slash_command(
+                verb,
+                payload,
+                current_user_id,
+                campaign_id=campaign_id,
+                location_id=location_id,
+            )
+        except ValueError as e:
+            return jsonify({
+                'error': str(e),
+                'supported_commands': SUPPORTED_AI_SLASH_VERBS,
+                'future_commands_suggestion': FUTURE_COMMAND_SUGGESTIONS,
+            }), 400
+
+        return jsonify(result), 200
+
+    except Exception as e:
+        logger.error(f"Error in /api/ai/slash: {e}")
+        return jsonify({'error': 'Slash command failed'}), 500
+
 
 @bp.route('/world-building', methods=['POST'])
 @jwt_required()
@@ -949,25 +1058,22 @@ def get_recent_messages(location_id: int, campaign_id: int, limit: int = 15) -> 
         
         # Format conversation history (reverse to chronological order)
         history_lines = []
+        out_messages = []
         for msg in reversed(messages):
-            # Format timestamp
-            try:
-                from datetime import datetime
-                timestamp = datetime.fromisoformat(msg['created_at'])
-                time_ago = format_time_ago(timestamp)
-            except:
-                time_ago = 'recently'
-            
+            time_label = format_message_time(msg['created_at'])
             role_label = "User" if msg['role'] == 'user' else "AI"
-            history_lines.append(f"[{time_ago}] {role_label} ({msg['username']}): {msg['content']}")
-        
+            history_lines.append(f"[{time_label}] {role_label} ({msg['username']}): {msg['content']}")
+            m = dict(msg)
+            m['time_display'] = time_label
+            out_messages.append(m)
+
         formatted = "Recent Conversation History:\n" + "\n".join(history_lines)
-        
+
         logger.info(f"Retrieved {len(messages)} messages for location {location_id}")
-        
+
         return {
             'count': len(messages),
-            'messages': [dict(msg) for msg in messages],
+            'messages': out_messages,
             'formatted': formatted
         }
         
@@ -981,30 +1087,6 @@ def get_recent_messages(location_id: int, campaign_id: int, limit: int = 15) -> 
     finally:
         if 'db' in locals():
             db.close()
-
-def format_time_ago(timestamp) -> str:
-    """Format timestamp as relative time"""
-    try:
-        from datetime import datetime
-        now = datetime.now()
-        diff = now - timestamp
-        
-        if diff.seconds < 60:
-            return "just now"
-        elif diff.seconds < 3600:
-            mins = diff.seconds // 60
-            return f"{mins} min ago"
-        elif diff.seconds < 86400:
-            hours = diff.seconds // 3600
-            return f"{hours} hr ago"
-        elif diff.days == 1:
-            return "yesterday"
-        elif diff.days < 7:
-            return f"{diff.days} days ago"
-        else:
-            return timestamp.strftime("%b %d")
-    except:
-        return "recently"
 
 def get_semantic_message_history(query: str, campaign_id: int, location_id: int = None, limit: int = 5) -> dict:
     """Get semantically relevant messages from long-term memory"""
@@ -1035,18 +1117,12 @@ def get_semantic_message_history(query: str, campaign_id: int, location_id: int 
             metadata = msg['metadata']
             relevance = msg['relevance']
             
-            # Get timestamp
-            try:
-                from datetime import datetime
-                timestamp = datetime.fromisoformat(metadata.get('timestamp', ''))
-                time_ago = format_time_ago(timestamp)
-            except:
-                time_ago = 'some time ago'
-            
-            # Format the message
+            ts = metadata.get('timestamp')
+            time_label = format_message_time(ts) if ts else 'Unknown time'
+
             character = metadata.get('character_name', 'Unknown')
             role = metadata.get('role', 'user')
-            formatted_lines.append(f"[{time_ago}] {character} ({role}): {content}")
+            formatted_lines.append(f"[{time_label}] {character} ({role}): {content}")
         
         formatted = "\n".join(formatted_lines)
         
@@ -1169,24 +1245,22 @@ def get_npc_history(npc_id: int, limit: int = 5) -> dict:
         
         # Format NPC history (reverse to chronological order)
         history_lines = []
+        out_messages = []
         for msg in reversed(messages):
-            try:
-                from datetime import datetime
-                timestamp = datetime.fromisoformat(msg['created_at'])
-                time_ago = format_time_ago(timestamp)
-            except:
-                time_ago = 'recently'
-            
-            line = f"[{time_ago}] {msg['content']}"
+            time_label = format_message_time(msg['created_at'])
+            line = f"[{time_label}] {msg['content']}"
             if msg['context']:
                 line += f" ({msg['context']})"
             history_lines.append(line)
-        
+            m = dict(msg)
+            m['time_display'] = time_label
+            out_messages.append(m)
+
         formatted = "NPC Recent Activity:\n" + "\n".join(history_lines)
-        
+
         return {
             'count': len(messages),
-            'messages': [dict(msg) for msg in messages],
+            'messages': out_messages,
             'formatted': formatted
         }
         

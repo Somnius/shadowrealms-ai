@@ -15,6 +15,35 @@ logger = logging.getLogger(__name__)
 dice_bp = Blueprint('dice', __name__)
 
 
+def _user_can_access_campaign(cursor, user_id: int, campaign_id: int) -> bool:
+    cursor.execute(
+        """
+        SELECT 1 FROM campaigns c
+        WHERE c.id = %s AND c.is_active = TRUE
+          AND (
+            c.created_by = %s
+            OR EXISTS (
+                SELECT 1 FROM campaign_players cp
+                WHERE cp.campaign_id = c.id AND cp.user_id = %s
+            )
+          )
+        """,
+        (campaign_id, user_id, user_id),
+    )
+    return cursor.fetchone() is not None
+
+
+def _character_ok_for_user_campaign(cursor, character_id: int, user_id: int, campaign_id: int) -> bool:
+    cursor.execute(
+        """
+        SELECT 1 FROM characters
+        WHERE id = %s AND user_id = %s AND campaign_id = %s
+        """,
+        (character_id, user_id, campaign_id),
+    )
+    return cursor.fetchone() is not None
+
+
 @dice_bp.route('/campaigns/<int:campaign_id>/roll', methods=['POST'])
 @jwt_required()
 def manual_roll(campaign_id):
@@ -22,7 +51,8 @@ def manual_roll(campaign_id):
     Manual dice roll by player
     
     Body:
-        pool_size: int - Number of d10s to roll
+        pool_size: int - Number of d10s to roll (or use pool_expression)
+        pool_expression: str (optional) - e.g. "4+3", "7-1" (Storyteller pool)
         difficulty: int - Target number (default 6)
         specialty: bool - Whether this is a specialty roll (10s count as 2)
         character_id: int (optional) - Character making the roll
@@ -30,26 +60,72 @@ def manual_roll(campaign_id):
         location_id: int (optional) - Where the roll is happening
     """
     try:
-        user_id = get_jwt_identity()
-        data = request.get_json()
-        
-        # Validate input
-        pool_size = data.get('pool_size')
-        if not pool_size or pool_size < 1:
-            return jsonify({'error': 'pool_size must be at least 1'}), 400
-        
-        difficulty = data.get('difficulty', 6)
-        specialty = data.get('specialty', False)
-        character_id = data.get('character_id')
-        action_description = data.get('action_description', 'Manual roll')
-        location_id = data.get('location_id')
-        
-        # Roll the dice
-        roll_result = dice_service.roll_d10_pool(pool_size, difficulty, specialty)
-        
-        # Save to database
+        user_id = int(get_jwt_identity())
+        data = request.get_json() or {}
+
         conn = get_db()
         cursor = conn.cursor()
+
+        if not _user_can_access_campaign(cursor, user_id, campaign_id):
+            cursor.close()
+            conn.close()
+            return jsonify({'error': 'Campaign not found or access denied'}), 403
+
+        pool_expression = (data.get('pool_expression') or '').strip()
+        if pool_expression:
+            from services.wod_dice import parse_pool_expression
+
+            try:
+                pool_size = parse_pool_expression(pool_expression)
+            except ValueError as e:
+                cursor.close()
+                conn.close()
+                return jsonify({'error': str(e)}), 400
+        else:
+            pool_size = data.get('pool_size')
+            if not pool_size or int(pool_size) < 1:
+                cursor.close()
+                conn.close()
+                return jsonify({'error': 'pool_size must be at least 1 (or send pool_expression)'}), 400
+            pool_size = int(pool_size)
+            if pool_size > 50:
+                cursor.close()
+                conn.close()
+                return jsonify({'error': 'pool_size must be at most 50'}), 400
+
+        difficulty = int(data.get('difficulty', 6))
+        if difficulty < 2 or difficulty > 10:
+            cursor.close()
+            conn.close()
+            return jsonify({'error': 'difficulty must be between 2 and 10'}), 400
+
+        specialty = bool(data.get('specialty', False))
+        character_id = data.get('character_id')
+        if character_id is not None:
+            character_id = int(character_id)
+            if not _character_ok_for_user_campaign(cursor, character_id, user_id, campaign_id):
+                cursor.close()
+                conn.close()
+                return jsonify({'error': 'Character not found or not yours in this campaign'}), 400
+
+        action_description = (data.get('action_description') or 'Dice roll').strip() or 'Dice roll'
+        location_id = data.get('location_id')
+        if location_id is not None:
+            location_id = int(location_id)
+            cursor.execute(
+                """
+                SELECT 1 FROM locations
+                WHERE id = %s AND campaign_id = %s AND is_active = TRUE
+                """,
+                (location_id, campaign_id),
+            )
+            if not cursor.fetchone():
+                cursor.close()
+                conn.close()
+                return jsonify({'error': 'Location not found in this campaign'}), 400
+
+        # Roll the dice
+        roll_result = dice_service.roll_d10_pool(pool_size, difficulty, specialty)
         
         cursor.execute("""
             INSERT INTO dice_rolls (
@@ -63,7 +139,7 @@ def manual_roll(campaign_id):
             'manual', action_description, pool_size, difficulty,
             json.dumps(roll_result['results']), roll_result['successes'],
             roll_result['is_botch'], roll_result['is_critical'],
-            json.dumps({'specialty': specialty})
+            json.dumps({'specialty': specialty, 'pool_expression': pool_expression or None})
         ))
         
         result = cursor.fetchone()
@@ -84,7 +160,10 @@ def manual_roll(campaign_id):
         )
         
         logger.info(f"Manual roll by user {user_id}: {roll_result['successes']} successes")
-        
+
+        cursor.close()
+        conn.close()
+
         return jsonify({
             'roll_id': roll_id,
             'roll_result': roll_result,

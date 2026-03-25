@@ -7,11 +7,30 @@ from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from database import get_db, ensure_character_portrait_url_column
 from datetime import datetime
+from services.message_time_format import format_message_time
 import logging
 
 logger = logging.getLogger(__name__)
 
 messages_bp = Blueprint('messages', __name__)
+
+
+def _message_dict_from_row(row) -> dict:
+    return {
+        'id': row['id'],
+        'campaign_id': row['campaign_id'],
+        'location_id': row['location_id'],
+        'user_id': row['user_id'],
+        'character_id': row['character_id'],
+        'message_type': row['message_type'],
+        'content': row['content'],
+        'role': row['role'],
+        'created_at': row['created_at'],
+        'time_display': format_message_time(row['created_at']),
+        'username': row['username'],
+        'character_name': row['character_name'],
+        'character_portrait_url': row['character_portrait_url'],
+    }
 
 def _ensure_location_reads_table(cursor):
     """
@@ -108,20 +127,7 @@ def get_messages(campaign_id, location_id):
 
         messages = []
         for row in rows:
-            messages.append({
-                'id': row['id'],
-                'campaign_id': row['campaign_id'],
-                'location_id': row['location_id'],
-                'user_id': row['user_id'],
-                'character_id': row['character_id'],
-                'message_type': row['message_type'],
-                'content': row['content'],
-                'role': row['role'],
-                'created_at': row['created_at'],
-                'username': row['username'],
-                'character_name': row['character_name'],
-                'character_portrait_url': row['character_portrait_url'],
-            })
+            messages.append(_message_dict_from_row(row))
         
         return jsonify(messages), 200
         
@@ -481,20 +487,7 @@ def save_message(campaign_id, location_id):
         """, (message_id,))
         
         row = cursor.fetchone()
-        saved_message = {
-            'id': row['id'],
-            'campaign_id': row['campaign_id'],
-            'location_id': row['location_id'],
-            'user_id': row['user_id'],
-            'character_id': row['character_id'],
-            'message_type': row['message_type'],
-            'content': row['content'],
-            'role': row['role'],
-            'created_at': row['created_at'],
-            'username': row['username'],
-            'character_name': row['character_name'],
-            'character_portrait_url': row['character_portrait_url'],
-        }
+        saved_message = _message_dict_from_row(row)
         
         logger.info(f"Message saved: ID={message_id}, Campaign={campaign_id}, Location={location_id}")
         

@@ -293,7 +293,9 @@ This philosophy ensures:
 - [Performance & Scalability](#performance--scalability)
 
 ### **📊 Current Status & Versions**
-- [Version 0.7.12 - Logo & Asset Optimization](#version-0710---logo--asset-optimization-)
+- [Version 0.7.13 - Chat UX, WoD dice & admin AI tools](#version-0713---chat-ux-wod-dice--admin-ai-tools-)
+- [Version 0.7.12 - OOC AI moderation & chat polish](#version-0712---ooc-ai-moderation--chat-polish-)
+- [Version 0.7.10 - Logo & Asset Optimization](#version-0710---logo--asset-optimization-)
 - [Version 0.7.9 - Project Structure Organization](#version-079---project-structure-organization-)
 - [Version 0.7.8 - Footer Version Display Fix](#version-078---footer-version-display-fix-)
 - [Version 0.7.7 - PostgreSQL Migration Fixes & Remote Access](#version-077---postgresql-migration-fixes--remote-access-)
@@ -327,7 +329,7 @@ This philosophy ensures:
 - [Phase 3A Interface Wireframe (ASCII)](#phase-3a-interface-wireframe-ascii)
 - [Next Steps for Phase 3A](#next-steps-for-phase-3a)
 
-### **🚀 Phase 3B: Advanced Campaign & Character Systems** ✅ STRUCTURE ORGANIZED (v0.7.12)
+### **🚀 Phase 3B: Advanced Campaign & Character Systems** ✅ STRUCTURE ORGANIZED (v0.7.13)
 - [Phase 3B Overview](#phase-3b-overview)
 - [Security & Testing Foundation](#security--testing-foundation)
 - [Location System Design](#location-system-design)
@@ -1312,19 +1314,31 @@ The project now includes comprehensive `.gitignore` rules covering:
 - **Multi-Language**: Global accessibility with translation pipelines
 - **Real-time Collaboration**: Live AI-assisted gaming experiences
 
+## Version 0.7.13 - Chat UX, WoD dice & admin AI tools 🎲
+
+### What changed from 0.7.12
+
+- **Message timestamps**: Message list responses include **`time_display`** (relative / local-friendly labels) via `backend/services/message_time_format.py`; the frontend uses `frontend/src/utils/messageTime.js` where applicable.
+- **Storyteller d10 rolls**: Campaign members can use **Roll dice** in the sidebar; rolls go through **`POST /api/campaigns/<campaign_id>/roll`** (`backend/routes/dice.py`, `backend/services/dice_service.py`) and can appear as chat lines.
+- **Admin `/ai` commands**: Site administrators can run **`/ai help`**, **`/ai health`**, **`/ai model`**, **`/ai ping`**, **`/ai context`**, **`/ai summarize`**, **`/ai roll`**, **`/ai respond`** from storyteller chat, handled by **`POST /api/ai/slash`** (`backend/routes/ai.py`, `backend/services/ai_slash_commands.py`). Non-admins are directed to the sidebar dice UI.
+- **Documentation**: **`docs/dice-old-wod.md`** summarizes Old World of Darkness pool rules and how they map to the implementation.
+
+**See also:** `docs/CHANGELOG.md` (`[0.7.13]`), `docs/AI_SYSTEMS.md` (OOC channel AI and `/ai` admin commands), `docs/dice-old-wod.md`.
+
+---
+
 ## Version 0.7.12 - OOC AI moderation & chat polish 🎭
 
 ### What changed from 0.7.11
 
 - **OOC locations** (`locations.type = ooc`): `POST /api/ai/chat` skips the in-character storyteller (efficient / balanced / full). The model uses campaign summary, PC names, and recent OOC-channel messages. For normal meta/OOC chat it returns **`ooc_no_reply: true`** and no assistant line. If the message reads as in-character or belongs in an IC location, it returns a **short moderator warning** only (stored as `message_type: ooc`, `role: assistant`). The server resolves OOC vs IC from the **database** via `location_id`.
 - **Chat UI**: AI storyteller header is **left-aligned** again. User messages can show **character portraits** (`portrait_url` / `character_portrait_url`) with an SVG fallback.
-- **Roadmap (not shipped)**: Per-room **`/ai` ...** slash-commands for explicit AI invokes—see `docs/AI_SYSTEMS.md`.
 
 **See also:** `docs/CHANGELOG.md` (`[0.7.12]`), `docs/AI_SYSTEMS.md` (“OOC channel AI”).
 
 ---
 
-## Version 0.7.11 - Logo & Asset Optimization ⚡
+## Version 0.7.10 - Logo & Asset Optimization ⚡
 
 ### What We Accomplished
 
@@ -2302,7 +2316,7 @@ From extensive user conversation (2025-10-24):
 - ✅ Security best practices documented
 - ✅ User requirements captured
 
-**Version 0.7.12 completes message persistence and API verification! All chat messages now properly save and load. The foundation is solid for Phase 3B's advanced features!**
+**Version 0.7.6 completes message persistence and API verification! All chat messages now properly save and load. The foundation is solid for Phase 3B's advanced features!**
 
 ---
 
@@ -5874,7 +5888,7 @@ After comprehensive testing and debugging, we achieved **100% User Experience Te
 
 ---
 
-## 🚀 Phase 3B: Advanced Campaign & Character Systems (v0.7.12)
+## 🚀 Phase 3B: Advanced Campaign & Character Systems (v0.7.13)
 
 **Status:** 🚧 IN PROGRESS - Structure Organized  
 **Start Date:** 2025-10-24  
@@ -5895,7 +5909,7 @@ Phase 3B builds upon Phase 3A's frontend foundation by implementing the core gam
 For complete details, see:
 - **[Phase 3B Implementation Guide](docs/PHASE3B_IMPLEMENTATION.md)** - Full specification (600+ lines)
 - **[Planning Documentation](docs/PLANNING.md)** - Phase planning and summaries
-- **[Changelog v0.7.6](docs/CHANGELOG.md)** - Version history and technical details
+- **[Changelog](docs/CHANGELOG.md)** - Version history through **v0.7.13**
 
 ---
 
@@ -6378,7 +6392,7 @@ Reason: [Admin's stated reason]
 
 ---
 
-### Files Created/Modified (v0.7.12)
+### Files Created/Modified (v0.7.13)
 
 **Backend:**
 - `backend/database.py` - Schema migrations (pending)
@@ -6401,14 +6415,14 @@ Reason: [Admin's stated reason]
 **Documentation:**
 - `docs/PHASE3B_IMPLEMENTATION.md` - Complete specification ✅
 - `docs/PLANNING.md` - Detailed summary ✅
-- `docs/CHANGELOG.md` - Version 0.7.12 entry ✅
+- `docs/CHANGELOG.md` - Version 0.7.13 entry ✅
 - `scripts/run-frontend-tests.sh` - Test runner script ✅
 
 ---
 
-**Last Updated:** 2025-10-24  
+**Last Updated:** 2026-03-25  
 **Next Milestone:** Location System Implementation  
-**Version:** 0.7.12
+**Version:** 0.7.13
 
 ---
 
@@ -7123,7 +7137,7 @@ docker-compose ps
 - **Backend API**: http://localhost:5000
 - **ChromaDB**: http://localhost:8000
 
-### 🎯 **Current Status (v0.7.12)**
+### 🎯 **Current Status (v0.7.13)**
 
 ✅ **Phase 1 Complete** - Foundation & Docker Setup  
 ✅ **Phase 2 Complete** - RAG & Vector Memory System  
@@ -7137,9 +7151,10 @@ docker-compose ps
 ✅ **Security System** - Input sanitization, validation, rate limiting (v0.7.0)  
 ✅ **AI Health Checks** - LM Studio, Ollama, ChromaDB validation (v0.7.5)  
 ✅ **Message Persistence** - Chat messages save/load correctly, ChromaDB v2 (v0.7.6)  
+✅ **Chat timestamps & dice (v0.7.13)** - `time_display` on messages; sidebar **Roll dice** + `POST .../roll`; admin **`/ai`** tools via `POST /api/ai/slash`  
 ✅ **PostgreSQL Migration** - Full compatibility, remote access, AI integration (v0.7.7)  
 ✅ **Footer Version Display** - Fixed API path, version now displays correctly (v0.7.8)  
-✅ **Project Structure** - Scripts organized in dedicated directory (v0.7.12)  
+✅ **Project Structure** - Scripts organized in dedicated directory (v0.7.9)  
 🎯 **Phase 3B Week 1** - Location CRUD, Character System, Real-time Chat  
 ✅ **Backend APIs** - Campaign updates, README endpoint working  
 ✅ **RAG System** - ChromaDB vector memory fully functional  

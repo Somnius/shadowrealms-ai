@@ -19,6 +19,59 @@ logger = logging.getLogger(__name__)
 # Create blueprint
 campaigns_bp = Blueprint('campaigns', __name__, url_prefix='/api/campaigns')
 
+
+def _fetch_ooc_lobby_location_ids(cursor, campaign_id: int) -> list:
+    """
+    IDs of the Out of Character Lobby for this campaign (never counted as story locations
+    or story messages). psycopg2 treats bare % in SQL as special — do not use LIKE ...% in
+    one big string; resolve ids with explicit queries instead.
+    """
+    ids = []
+    seen = set()
+
+    def _add(rows):
+        for row in rows:
+            lid = row['id']
+            if lid not in seen:
+                seen.add(lid)
+                ids.append(lid)
+
+    # Primary: type column (quoted — "type" is awkward for some parsers) + known names
+    cursor.execute(
+        """
+        SELECT l.id FROM locations l
+        WHERE l.campaign_id = %s
+          AND (
+            LOWER(TRIM(COALESCE(CAST(l."type" AS TEXT), ''))) = 'ooc'
+            OR LOWER(TRIM(COALESCE(l.name, ''))) IN (
+                'out of character lobby',
+                'ooc lobby',
+                'ooc chat',
+                '💬 ooc chat',
+                'out of character'
+            )
+          )
+        """,
+        (campaign_id,),
+    )
+    _add(cursor.fetchall())
+
+    # Secondary: names starting with "out of character" (wildcard via CHR/CHAR — no literal %)
+    db = os.getenv('DATABASE_TYPE', 'sqlite').lower()
+    pct_fn = "CHR(37)" if db == "postgresql" else "CHAR(37)"
+    cursor.execute(
+        f"""
+        SELECT l.id FROM locations l
+        WHERE l.campaign_id = %s
+          AND LOWER(TRIM(COALESCE(l.name, ''))) LIKE 'out of character' || {pct_fn}
+        """,
+        (campaign_id,),
+    )
+    _add(cursor.fetchall())
+
+    return ids
+
+
 def get_rag_service():
     """Get RAG service instance"""
     config = current_app.config
@@ -260,18 +313,66 @@ def get_campaign_stats(campaign_id):
         """, (campaign_id,))
         characters = int(cursor.fetchone()['count'])
 
-        cursor.execute("""
-            SELECT COUNT(*) AS count
-            FROM locations
-            WHERE campaign_id = %s AND is_active = TRUE
-        """, (campaign_id,))
+        ooc_ids = _fetch_ooc_lobby_location_ids(cursor, campaign_id)
+        if ooc_ids:
+            logger.info(
+                "Campaign %s stats: excluding OOC lobby location_id(s) from story counts: %s",
+                campaign_id,
+                ooc_ids,
+            )
+        else:
+            logger.warning(
+                "Campaign %s stats: no OOC lobby row matched (type=ooc / known names). "
+                "Story location and message totals may include the lobby — check locations.name/type.",
+                campaign_id,
+            )
+
+        # Story locations only — OOC lobby is not a playable "location" in this total
+        if ooc_ids:
+            ph = ",".join(["%s"] * len(ooc_ids))
+            cursor.execute(
+                f"""
+                SELECT COUNT(*) AS count
+                FROM locations l
+                WHERE l.campaign_id = %s AND l.is_active = TRUE
+                  AND l.id NOT IN ({ph})
+                """,
+                (campaign_id, *ooc_ids),
+            )
+        else:
+            cursor.execute(
+                """
+                SELECT COUNT(*) AS count
+                FROM locations l
+                WHERE l.campaign_id = %s AND l.is_active = TRUE
+                """,
+                (campaign_id,),
+            )
         locations = int(cursor.fetchone()['count'])
 
-        cursor.execute("""
-            SELECT COUNT(*) AS count
-            FROM messages
-            WHERE campaign_id = %s
-        """, (campaign_id,))
+        # Story messages: not in OOC lobby; also drop rows explicitly tagged message_type ooc
+        if ooc_ids:
+            ph = ",".join(["%s"] * len(ooc_ids))
+            cursor.execute(
+                f"""
+                SELECT COUNT(*) AS count
+                FROM messages m
+                WHERE m.campaign_id = %s
+                  AND COALESCE(LOWER(TRIM(m.message_type)), '') <> 'ooc'
+                  AND m.location_id NOT IN ({ph})
+                """,
+                (campaign_id, *ooc_ids),
+            )
+        else:
+            cursor.execute(
+                """
+                SELECT COUNT(*) AS count
+                FROM messages m
+                WHERE m.campaign_id = %s
+                  AND COALESCE(LOWER(TRIM(m.message_type)), '') <> 'ooc'
+                """,
+                (campaign_id,),
+            )
         messages = int(cursor.fetchone()['count'])
 
         cursor.close()

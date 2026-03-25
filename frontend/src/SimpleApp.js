@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useLayoutEffect } from 'react';
 import AdminPage from './pages/AdminPage';
 import GothicShowcase from './pages/GothicShowcase';
 import { GothicBox } from './components/GothicDecorations';
@@ -6,9 +6,19 @@ import ConfirmDialog from './components/ConfirmDialog';
 import Footer from './components/Footer';
 import LocationSuggestions from './components/LocationSuggestions';
 import { useToast } from './components/ToastNotification';
+import { formatMessageTime } from './utils/messageTime';
 import './responsive.css';
 
 const API_URL = '/api'; // Use relative URL through nginx proxy
+
+/** Storyteller (oWoD) pool: `5`, `4+3`, `7-1` — digits with +/− between. */
+function parseStorytellerPool(input) {
+  const t = String(input || '').replace(/\s/g, '');
+  if (!/^\d+([+-]\d+)*$/.test(t)) {
+    throw new Error('Pool must be digits with + or - (e.g. 5, 4+3, 7-1).');
+  }
+  return t.split(/(?=[+-])/).reduce((sum, p) => sum + parseInt(p, 10), 0);
+}
 
 function MessageCharacterAvatar({ url, size = 40 }) {
   const [broken, setBroken] = React.useState(false);
@@ -62,6 +72,8 @@ function SimpleApp() {
   
   // Ref for chat input to maintain focus
   const chatInputRef = React.useRef(null);
+  const chatMessagesScrollRef = React.useRef(null);
+  const chatScrollAppliedForLocationRef = React.useRef(null);
   const messagesRef = React.useRef(messages);
   const loadingRef = React.useRef(loading);
 
@@ -72,6 +84,16 @@ function SimpleApp() {
   useEffect(() => {
     loadingRef.current = loading;
   }, [loading]);
+
+  /** After user sends (or roll posts), scroll so the new line is in view — chat-app behavior. */
+  const scrollChatToBottomSoon = React.useCallback(() => {
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        const el = chatMessagesScrollRef.current;
+        if (el) el.scrollTop = el.scrollHeight;
+      });
+    });
+  }, []);
   
   // Campaign editing state
   const [isEditingCampaignName, setIsEditingCampaignName] = useState(false);
@@ -80,7 +102,8 @@ function SimpleApp() {
   const [editedCampaignDesc, setEditedCampaignDesc] = useState('');
   
   // Mobile responsive state
-  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+  /** Set after mount via matchMedia to avoid layout reads during first paint (FOUC / Firefox warnings). */
+  const [isMobile, setIsMobile] = useState(false);
   const [leftSidebarOpen, setLeftSidebarOpen] = useState(false);
   const [rightSidebarOpen, setRightSidebarOpen] = useState(false);
   
@@ -99,6 +122,15 @@ function SimpleApp() {
   });
   const [locationReadState, setLocationReadState] = useState(null);
   const [firstUnreadMessageId, setFirstUnreadMessageId] = useState(null);
+  /** Set when loadMessages succeeds; must match currentLocation.id before applying scroll. */
+  const [messagesSyncedLocationId, setMessagesSyncedLocationId] = useState(null);
+  const [chatNow, setChatNow] = useState(() => new Date());
+  const [showRollModal, setShowRollModal] = useState(false);
+  const [rollPoolInput, setRollPoolInput] = useState('5');
+  const [rollDifficulty, setRollDifficulty] = useState(6);
+  const [rollSpecialty, setRollSpecialty] = useState(false);
+  const [rollReason, setRollReason] = useState('');
+  const [rollSubmitting, setRollSubmitting] = useState(false);
 
   const renderMessageContent = (content) => {
     const text = String(content ?? '');
@@ -168,20 +200,20 @@ function SimpleApp() {
     }
   }, [token]);
 
-  // Handle window resize for responsive design
-  useEffect(() => {
-    const handleResize = () => {
-      const mobile = window.innerWidth < 768;
+  // Viewport: matchMedia before paint where possible; avoids early innerWidth layout reads
+  useLayoutEffect(() => {
+    const mql = window.matchMedia('(max-width: 767px)');
+    const apply = () => {
+      const mobile = mql.matches;
       setIsMobile(mobile);
-      // Close sidebars when switching to desktop
       if (!mobile) {
         setLeftSidebarOpen(false);
         setRightSidebarOpen(false);
       }
     };
-
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
+    apply();
+    mql.addEventListener('change', apply);
+    return () => mql.removeEventListener('change', apply);
   }, []);
 
   // Handle browser back/forward buttons
@@ -636,6 +668,7 @@ function SimpleApp() {
     setCurrentLocation(null);
     setLocations([]);
     setMessages([]);
+    setMessagesSyncedLocationId(null);
     setCampaignCharacters([]);
     setCharacter(null);
     if (pendingNavigation) {
@@ -665,6 +698,13 @@ function SimpleApp() {
     
     if (!messageText.trim()) return;
 
+    if (/^\s*\/ai(\s+|$)/i.test(messageText) && user?.role !== 'admin') {
+      setError(
+        'Only site administrators can use /ai commands. Use Roll dice in the sidebar for Storyteller (d10) pool rolls.'
+      );
+      return;
+    }
+
     setLoading(true);
     setError('');
 
@@ -682,6 +722,7 @@ function SimpleApp() {
     };
     setMessages(prev => [...prev, tempUserMessage]);
     e.target.reset();
+    scrollChatToBottomSoon();
 
     try {
       // Save user message to database
@@ -711,6 +752,71 @@ function SimpleApp() {
         console.error('❌ Failed to save message to database');
       }
 
+      // /ai … slash commands (diagnostics & tools) — bypass normal storyteller chat
+      const slashMatch = messageText.match(/^\s*\/ai\s+(\S+)(?:\s+([\s\S]*))?$/i);
+      if (slashMatch) {
+        const slashRes = await fetch(`${API_URL}/ai/slash`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            line: messageText.trim(),
+            campaign_id: selectedCampaign.id,
+            location_id: currentLocation.id,
+          }),
+        });
+        const slashData = await slashRes.json();
+        const assistantContent =
+          slashData.display_markdown ||
+          slashData.llm_acknowledgment ||
+          (slashRes.ok ? '(no body)' : null);
+        const showSlashReply = Boolean(assistantContent);
+        if (!slashRes.ok && !showSlashReply) {
+          setError(slashData.error || 'Slash command failed');
+        } else {
+          if (!slashRes.ok && slashData.error) {
+            setError(slashData.error);
+          }
+          if (showSlashReply) {
+            const aiSaveResponse = await fetch(
+              `${API_URL}/campaigns/${selectedCampaign.id}/locations/${currentLocation.id}`,
+              {
+                method: 'POST',
+                headers: {
+                  'Authorization': `Bearer ${token}`,
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                  content: assistantContent,
+                  message_type: 'system',
+                  role: 'assistant',
+                }),
+              }
+            );
+            if (aiSaveResponse.ok) {
+              const aiSaveData = await aiSaveResponse.json();
+              setMessages((prev) => [...prev, aiSaveData.data]);
+            } else {
+              setMessages((prev) => [
+                ...prev,
+                {
+                  role: 'assistant',
+                  content: assistantContent,
+                  created_at: new Date().toISOString(),
+                  location_id: currentLocation.id,
+                  username: 'AI',
+                  message_type: 'system',
+                },
+              ]);
+            }
+          }
+          if (Array.isArray(slashData.future_commands_suggestion) && slashData.future_commands_suggestion.length) {
+            console.info('/ai commands:', slashData.future_commands_suggestion);
+          }
+        }
+      } else {
       // Get AI response (OOC rooms: backend may return ooc_no_reply — no in-game storyteller)
       const aiResponse = await fetch(`${API_URL}/ai/chat`, {
         method: 'POST',
@@ -770,11 +876,13 @@ function SimpleApp() {
       } else {
         setError(aiData.error || 'Failed to get AI response');
       }
+      }
     } catch (err) {
       setError('Connection error: ' + err.message);
     } finally {
       setLoading(false);
-      
+      scrollChatToBottomSoon();
+
       // Restore focus to input after all state updates complete
       // Use setTimeout to ensure DOM has updated after React re-renders
       setTimeout(() => {
@@ -789,6 +897,7 @@ function SimpleApp() {
   const loadMessages = async (campaignId, locationId, opts = {}) => {
     const charForRead =
       opts.characterForRead !== undefined ? opts.characterForRead : character;
+    setMessagesSyncedLocationId(null);
     try {
       console.log(`📨 Loading messages for location ${locationId}...`);
       const response = await fetch(`${API_URL}/campaigns/${campaignId}/locations/${locationId}`, {
@@ -799,6 +908,7 @@ function SimpleApp() {
         const data = await response.json();
         console.log(`✅ Loaded ${data.length} messages for location ${locationId}`);
         setMessages(data);
+        setMessagesSyncedLocationId(locationId);
 
         // Load per-character read state (for unread marker + jump)
         if (charForRead?.id) {
@@ -825,12 +935,14 @@ function SimpleApp() {
       } else {
         console.error('❌ Failed to load messages:', await response.text());
         setMessages([]);
+        setMessagesSyncedLocationId(null);
         setLocationReadState(null);
         setFirstUnreadMessageId(null);
       }
     } catch (error) {
       console.error('❌ Error loading messages:', error);
       setMessages([]);
+      setMessagesSyncedLocationId(null);
       setLocationReadState(null);
       setFirstUnreadMessageId(null);
     }
@@ -895,10 +1007,66 @@ function SimpleApp() {
     };
   }, [currentPage, token, selectedCampaign?.id, currentLocation?.id]);
 
+  useEffect(() => {
+    if (currentPage !== 'chat') return undefined;
+    setChatNow(new Date());
+    const id = setInterval(() => setChatNow(new Date()), 60000);
+    return () => clearInterval(id);
+  }, [currentPage, currentLocation?.id]);
+
+  useEffect(() => {
+    chatScrollAppliedForLocationRef.current = null;
+  }, [currentLocation?.id, character?.id]);
+
+  useEffect(() => {
+    if (currentPage !== 'chat') return;
+    const lid = currentLocation?.id;
+    if (!lid || messagesSyncedLocationId !== lid) return;
+    if (chatScrollAppliedForLocationRef.current === lid) return;
+    const scrollEl = chatMessagesScrollRef.current;
+    if (!scrollEl) return;
+
+    const run = () => {
+      if (messages.length === 0) {
+        chatScrollAppliedForLocationRef.current = lid;
+        return;
+      }
+      if (firstUnreadMessageId) {
+        const node = document.getElementById(`msg-${firstUnreadMessageId}`);
+        if (node && scrollEl.contains(node)) {
+          const cRect = scrollEl.getBoundingClientRect();
+          const nRect = node.getBoundingClientRect();
+          scrollEl.scrollTop += nRect.top - cRect.top - 12;
+        } else {
+          scrollEl.scrollTop = scrollEl.scrollHeight;
+        }
+      } else {
+        scrollEl.scrollTop = scrollEl.scrollHeight;
+      }
+      chatScrollAppliedForLocationRef.current = lid;
+    };
+
+    requestAnimationFrame(() => requestAnimationFrame(run));
+  }, [
+    currentPage,
+    currentLocation?.id,
+    messagesSyncedLocationId,
+    firstUnreadMessageId,
+    messages
+  ]);
+
   const jumpToMessage = (messageId) => {
     if (!messageId) return;
-    const el = document.getElementById(`msg-${messageId}`);
-    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    const node = document.getElementById(`msg-${messageId}`);
+    if (!node) return;
+    const scrollEl = chatMessagesScrollRef.current;
+    if (scrollEl && scrollEl.contains(node)) {
+      const cRect = scrollEl.getBoundingClientRect();
+      const nRect = node.getBoundingClientRect();
+      scrollEl.scrollTop += nRect.top - cRect.top - 12;
+    } else {
+      node.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
   };
 
   const markLocationRead = async () => {
@@ -1224,12 +1392,14 @@ function SimpleApp() {
           </h2>
           <form onSubmit={handleLogin}>
             <div style={{ marginBottom: '15px' }}>
-              <label style={{ display: 'block', marginBottom: '5px', color: '#b5b5c3', fontWeight: '600' }}>
+              <label htmlFor="shadowrealms-login-username" style={{ display: 'block', marginBottom: '5px', color: '#b5b5c3', fontWeight: '600' }}>
                 Username:
               </label>
               <input
+                id="shadowrealms-login-username"
                 type="text"
                 name="username"
+                autoComplete="username"
                 required
                 placeholder="Enter your username"
                 style={{
@@ -1246,12 +1416,14 @@ function SimpleApp() {
             </div>
 
             <div style={{ marginBottom: '20px' }}>
-              <label style={{ display: 'block', marginBottom: '5px', color: '#b5b5c3', fontWeight: '600' }}>
+              <label htmlFor="shadowrealms-login-password" style={{ display: 'block', marginBottom: '5px', color: '#b5b5c3', fontWeight: '600' }}>
                 Password:
               </label>
               <input
+                id="shadowrealms-login-password"
                 type="password"
                 name="password"
+                autoComplete="current-password"
                 required
                 placeholder="Enter your password"
                 style={{
@@ -1302,12 +1474,14 @@ function SimpleApp() {
           </h2>
           <form onSubmit={handleRegister}>
             <div style={{ marginBottom: '15px' }}>
-              <label style={{ display: 'block', marginBottom: '5px', color: '#b5b5c3', fontWeight: '600' }}>
+              <label htmlFor="shadowrealms-register-username" style={{ display: 'block', marginBottom: '5px', color: '#b5b5c3', fontWeight: '600' }}>
                 Username:
               </label>
               <input
+                id="shadowrealms-register-username"
                 type="text"
                 name="username"
+                autoComplete="username"
                 required
                 placeholder="Choose a username"
                 style={{
@@ -1324,12 +1498,14 @@ function SimpleApp() {
             </div>
 
             <div style={{ marginBottom: '15px' }}>
-              <label style={{ display: 'block', marginBottom: '5px', color: '#b5b5c3', fontWeight: '600' }}>
+              <label htmlFor="shadowrealms-register-email" style={{ display: 'block', marginBottom: '5px', color: '#b5b5c3', fontWeight: '600' }}>
                 Email:
               </label>
               <input
+                id="shadowrealms-register-email"
                 type="email"
                 name="email"
+                autoComplete="email"
                 required
                 placeholder="Enter your email"
                 style={{
@@ -1346,12 +1522,14 @@ function SimpleApp() {
             </div>
 
             <div style={{ marginBottom: '15px' }}>
-              <label style={{ display: 'block', marginBottom: '5px', color: '#b5b5c3', fontWeight: '600' }}>
+              <label htmlFor="shadowrealms-register-password" style={{ display: 'block', marginBottom: '5px', color: '#b5b5c3', fontWeight: '600' }}>
                 Password:
               </label>
               <input
+                id="shadowrealms-register-password"
                 type="password"
                 name="password"
+                autoComplete="new-password"
                 required
                 placeholder="Choose a password"
                 style={{
@@ -1368,12 +1546,14 @@ function SimpleApp() {
             </div>
 
             <div style={{ marginBottom: '20px' }}>
-              <label style={{ display: 'block', marginBottom: '5px', color: '#b5b5c3', fontWeight: '600' }}>
+              <label htmlFor="shadowrealms-register-invite" style={{ display: 'block', marginBottom: '5px', color: '#b5b5c3', fontWeight: '600' }}>
                 Invite Code: <span style={{ color: '#e94560' }}>*</span>
               </label>
               <input
+                id="shadowrealms-register-invite"
                 type="text"
                 name="invite_code"
+                autoComplete="off"
                 required
                 placeholder="Enter your invite code"
                 style={{
@@ -2121,7 +2301,7 @@ function SimpleApp() {
               }}>
                 <div style={{ fontSize: '28px', fontWeight: 'bold', color: '#d97706', fontFamily: 'Cinzel, serif' }}>{campaignStats.locations}</div>
                 <div style={{ fontSize: '12px', color: '#8b8b9f', marginTop: '8px', fontFamily: 'Crimson Text, serif', textTransform: 'uppercase', letterSpacing: '1px' }}>
-                  <i className="fas fa-map-marker-alt"></i> Locations
+                  <i className="fas fa-map-marker-alt"></i> Story locations
                 </div>
               </div>
               
@@ -2136,7 +2316,7 @@ function SimpleApp() {
               }}>
                 <div style={{ fontSize: '28px', fontWeight: 'bold', color: '#b5b5c3', fontFamily: 'Cinzel, serif' }}>{campaignStats.messages}</div>
                 <div style={{ fontSize: '12px', color: '#8b8b9f', marginTop: '8px', fontFamily: 'Crimson Text, serif', textTransform: 'uppercase', letterSpacing: '1px' }}>
-                  <i className="fas fa-comment"></i> Messages
+                  <i className="fas fa-comment"></i> Story messages
                 </div>
               </div>
             </div>
@@ -2303,12 +2483,102 @@ function SimpleApp() {
     </div>
   );
 
+  const submitSidebarRoll = async () => {
+    if (!token || !selectedCampaign?.id || !currentLocation?.id) {
+      showError('Join a campaign room first.');
+      return;
+    }
+    let poolSize;
+    try {
+      poolSize = parseStorytellerPool(rollPoolInput);
+    } catch (e) {
+      showError(e.message || 'Invalid pool');
+      return;
+    }
+    if (poolSize < 1) {
+      showError('Pool must be at least 1.');
+      return;
+    }
+    if (poolSize > 50) {
+      showError('Pool cannot exceed 50 dice.');
+      return;
+    }
+    const d = Number(rollDifficulty);
+    if (Number.isNaN(d) || d < 2 || d > 10) {
+      showError('Difficulty must be between 2 and 10.');
+      return;
+    }
+    setRollSubmitting(true);
+    try {
+      const rollRes = await fetch(`${API_URL}/campaigns/${selectedCampaign.id}/roll`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          pool_size: poolSize,
+          difficulty: d,
+          specialty: rollSpecialty,
+          character_id: character?.id ?? undefined,
+          action_description: rollReason.trim() || 'Dice roll',
+          location_id: currentLocation.id,
+        }),
+      });
+      const rollData = await rollRes.json().catch(() => ({}));
+      if (!rollRes.ok) {
+        showError(rollData.error || 'Roll failed.');
+        return;
+      }
+      const chatBody = rollData.chat_message || '';
+      const msgRes = await fetch(
+        `${API_URL}/campaigns/${selectedCampaign.id}/locations/${currentLocation.id}`,
+        {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            content: chatBody,
+            message_type: 'action',
+            role: 'user',
+            ...(character?.id ? { character_id: character.id } : {}),
+          }),
+        }
+      );
+      const msgData = await msgRes.json().catch(() => ({}));
+      if (!msgRes.ok) {
+        showError(msgData.error || 'Roll saved but could not post to chat.');
+        return;
+      }
+      setMessages((prev) => [...prev, msgData.data]);
+      scrollChatToBottomSoon();
+      setShowRollModal(false);
+      showSuccess('Roll posted to this room.');
+    } catch (err) {
+      console.error(err);
+      showError('Network error while rolling.');
+    } finally {
+      setRollSubmitting(false);
+    }
+  };
+
   // Render in-campaign chat (Gothic "Dark Conclave" style — matches GothicShowcase preview)
   const renderChat = () => {
     const campaignTheme = getCampaignTheme(selectedCampaign);
 
     return (
-    <div style={{ height: '100vh', display: 'flex', background: '#0f0f1e', position: 'relative' }}>
+    <div style={{
+      height: '100vh',
+      maxHeight: '100vh',
+      width: '100%',
+      overflow: 'hidden',
+      display: 'flex',
+      alignItems: 'stretch',
+      background: '#0f0f1e',
+      position: 'relative'
+    }}>
       {/* Mobile Menu Buttons */}
       {isMobile && (
         <>
@@ -2393,7 +2663,11 @@ function SimpleApp() {
         bottom: isMobile ? '0' : 'auto',
         zIndex: 1000,
         transition: 'left 0.3s ease',
-        height: isMobile ? '100vh' : 'auto'
+        height: isMobile ? '100vh' : '100%',
+        maxHeight: '100vh',
+        minHeight: 0,
+        flexShrink: 0,
+        overflow: 'hidden'
       }}>
         {/* Campaign Header */}
         <div style={{
@@ -2408,7 +2682,7 @@ function SimpleApp() {
         </div>
 
         {/* Locations/Channels */}
-        <div style={{ flex: 1, overflowY: 'auto', padding: '10px 0' }}>
+        <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '10px 0' }}>
           <div style={{
             padding: '5px 15px',
             color: '#8b8b9f',
@@ -2487,9 +2761,19 @@ function SimpleApp() {
       </div>
 
       {/* Main Chat Area with Campaign Theme */}
-      <GothicBox theme={campaignTheme} style={{ flex: 1, display: 'flex', flexDirection: 'column', position: 'relative' }}>
+      <GothicBox theme={campaignTheme} style={{
+        flex: 1,
+        minWidth: 0,
+        minHeight: 0,
+        maxHeight: '100vh',
+        overflow: 'hidden',
+        display: 'flex',
+        flexDirection: 'column',
+        position: 'relative'
+      }}>
         {/* Channel Header */}
         <div style={{
+          flexShrink: 0,
           minHeight: '52px',
           borderBottom: '2px solid #2a2a4e',
           display: 'flex',
@@ -2519,6 +2803,7 @@ function SimpleApp() {
         {/* Pinned Topic / Room Description */}
         {currentLocation?.description && currentLocation.description.trim() && (
           <div style={{
+            flexShrink: 0,
             padding: '12px 20px',
             background: '#0f1729',
             borderBottom: '2px solid #2a2a4e',
@@ -2533,14 +2818,21 @@ function SimpleApp() {
         )}
 
         {/* Messages Area — Dark Conclave style (matches GothicShowcase) */}
-        <div style={{
-          flex: 1,
-          overflowY: 'auto',
-          padding: '16px 20px',
-          background: '#0f1729',
-          borderLeft: 'none',
-          borderRight: 'none'
-        }}>
+        <div
+          ref={chatMessagesScrollRef}
+          style={{
+            flex: 1,
+            minHeight: 0,
+            overflowY: 'auto',
+            overflowX: 'hidden',
+            overscrollBehavior: 'contain',
+            WebkitOverflowScrolling: 'touch',
+            padding: '16px 20px',
+            background: '#0f1729',
+            borderLeft: 'none',
+            borderRight: 'none'
+          }}
+        >
           <div style={{
             background: '#0f1729',
             border: '2px solid #2a2a4e',
@@ -2648,8 +2940,11 @@ function SimpleApp() {
                           {subLabel}
                         </span>
                       )}
-                      <span style={{ color: '#8b8b9f', fontSize: '12px', fontWeight: '500', fontFamily: 'Crimson Text, serif' }}>
-                        {new Date(msg.created_at).toLocaleTimeString()}
+                      <span
+                        title={msg.created_at ? String(msg.created_at) : undefined}
+                        style={{ color: '#8b8b9f', fontSize: '12px', fontWeight: '500', fontFamily: 'Crimson Text, serif' }}
+                      >
+                        {formatMessageTime(msg.created_at, chatNow)}
                       </span>
                     </div>
                     <div
@@ -2679,7 +2974,7 @@ function SimpleApp() {
         </div>
 
         {/* Input Area */}
-        <div style={{ padding: '20px', background: '#16213e', borderTop: '2px solid #2a2a4e' }}>
+        <div style={{ flexShrink: 0, padding: '20px', background: '#16213e', borderTop: '2px solid #2a2a4e' }}>
           {firstUnreadMessageId && (
             <div style={{
               marginBottom: '10px',
@@ -2800,8 +3095,12 @@ function SimpleApp() {
         bottom: isMobile ? '0' : 'auto',
         zIndex: 1000,
         transition: 'right 0.3s ease',
-        height: isMobile ? '100vh' : 'auto',
-        overflowY: 'auto'
+        height: isMobile ? '100vh' : '100%',
+        maxHeight: '100vh',
+        minHeight: 0,
+        flexShrink: 0,
+        overflowY: 'auto',
+        overscrollBehavior: 'contain'
       }}>
         <h3 style={{ color: '#e94560', marginBottom: '15px', fontSize: '16px', fontWeight: '600', fontFamily: 'Cinzel, serif' }}>
           <i className="fas fa-id-card" style={{ marginRight: '8px' }} />
@@ -2929,18 +3228,22 @@ function SimpleApp() {
             <i className="fas fa-bolt" style={{ marginRight: '6px', color: '#9d4edd' }} />
             Quick Actions
           </h4>
-          <button style={{
-            width: '100%',
-            padding: '8px',
-            background: '#0f1729',
-            color: '#b5b5c3',
-            border: '1px solid #2a2a4e',
-            borderRadius: '4px',
-            cursor: 'pointer',
-            fontSize: '13px',
-            marginBottom: '8px',
-            fontFamily: 'Cinzel, serif'
-          }}>
+          <button
+            type="button"
+            onClick={() => setShowRollModal(true)}
+            style={{
+              width: '100%',
+              padding: '8px',
+              background: '#0f1729',
+              color: '#b5b5c3',
+              border: '1px solid #2a2a4e',
+              borderRadius: '4px',
+              cursor: 'pointer',
+              fontSize: '13px',
+              marginBottom: '8px',
+              fontFamily: 'Cinzel, serif'
+            }}
+          >
             🎲 Roll Dice
           </button>
           <button style={{
@@ -2972,6 +3275,174 @@ function SimpleApp() {
           </button>
         </div>
       </div>
+
+      {showRollModal && (
+        <div
+          role="presentation"
+          onClick={() => !rollSubmitting && setShowRollModal(false)}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(0,0,0,0.75)',
+            zIndex: 2000,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '16px',
+          }}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="roll-dice-title"
+            onClick={(e) => e.stopPropagation()}
+            style={{ maxWidth: '420px', width: '100%' }}
+          >
+            <GothicBox theme="none" style={{ background: '#16213e', padding: '22px' }}>
+              <h3
+                id="roll-dice-title"
+                style={{
+                  color: '#e94560',
+                  fontSize: '17px',
+                  marginBottom: '14px',
+                  fontFamily: 'Cinzel, serif',
+                }}
+              >
+                <i className="fas fa-dice" style={{ marginRight: '8px' }} />
+                Roll dice (Storyteller)
+              </h3>
+              <p style={{ color: '#8b8b9f', fontSize: '13px', marginBottom: '16px', fontFamily: 'Crimson Text, serif', lineHeight: 1.5 }}>
+                Old World of Darkness style: pool of <strong>d10</strong>, difficulty (target number) usually 6–9.
+                Each die ≥ difficulty is a success; <strong>1s cancel</strong> successes. Optional: specialty (10s = 2 successes).
+                See <code style={{ color: '#d8b4fe' }}>docs/dice-old-wod.md</code> for details.
+              </p>
+              <label style={{ display: 'block', color: '#b5b5c3', fontSize: '12px', marginBottom: '6px', fontFamily: 'Cinzel, serif' }}>
+                Dice pool
+              </label>
+              <input
+                type="text"
+                value={rollPoolInput}
+                onChange={(e) => setRollPoolInput(e.target.value)}
+                placeholder="e.g. 5 or 4+3 or 7-1"
+                disabled={rollSubmitting}
+                style={{
+                  width: '100%',
+                  marginBottom: '12px',
+                  padding: '10px 12px',
+                  background: '#0f1729',
+                  border: '1px solid #2a2a4e',
+                  borderRadius: '6px',
+                  color: '#e0e0e0',
+                  fontSize: '15px',
+                  fontFamily: 'Crimson Text, serif',
+                }}
+              />
+              <label style={{ display: 'block', color: '#b5b5c3', fontSize: '12px', marginBottom: '6px', fontFamily: 'Cinzel, serif' }}>
+                Difficulty (target number, 2–10)
+              </label>
+              <select
+                value={rollDifficulty}
+                onChange={(e) => setRollDifficulty(Number(e.target.value))}
+                disabled={rollSubmitting}
+                style={{
+                  width: '100%',
+                  marginBottom: '12px',
+                  padding: '10px 12px',
+                  background: '#0f1729',
+                  border: '1px solid #2a2a4e',
+                  borderRadius: '6px',
+                  color: '#e0e0e0',
+                  fontSize: '15px',
+                  fontFamily: 'Crimson Text, serif',
+                }}
+              >
+                {[2, 3, 4, 5, 6, 7, 8, 9, 10].map((n) => (
+                  <option key={n} value={n}>
+                    {n}
+                    {n === 6 ? ' (common default)' : ''}
+                  </option>
+                ))}
+              </select>
+              <label
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '10px',
+                  color: '#b5b5c3',
+                  fontSize: '13px',
+                  marginBottom: '12px',
+                  cursor: rollSubmitting ? 'default' : 'pointer',
+                  fontFamily: 'Crimson Text, serif',
+                }}
+              >
+                <input
+                  type="checkbox"
+                  checked={rollSpecialty}
+                  onChange={(e) => setRollSpecialty(e.target.checked)}
+                  disabled={rollSubmitting}
+                />
+                Specialty (10s count as 2 successes)
+              </label>
+              <label style={{ display: 'block', color: '#b5b5c3', fontSize: '12px', marginBottom: '6px', fontFamily: 'Cinzel, serif' }}>
+                Reason / what you’re rolling for (optional)
+              </label>
+              <textarea
+                value={rollReason}
+                onChange={(e) => setRollReason(e.target.value)}
+                placeholder="e.g. Brawl attack, soak, Perception + Alertness…"
+                disabled={rollSubmitting}
+                rows={3}
+                style={{
+                  width: '100%',
+                  marginBottom: '16px',
+                  padding: '10px 12px',
+                  background: '#0f1729',
+                  border: '1px solid #2a2a4e',
+                  borderRadius: '6px',
+                  color: '#e0e0e0',
+                  fontSize: '14px',
+                  resize: 'vertical',
+                  fontFamily: 'Crimson Text, serif',
+                }}
+              />
+              <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
+                <button
+                  type="button"
+                  disabled={rollSubmitting}
+                  onClick={() => setShowRollModal(false)}
+                  style={{
+                    padding: '10px 16px',
+                    background: '#0f1729',
+                    color: '#b5b5c3',
+                    border: '1px solid #2a2a4e',
+                    borderRadius: '6px',
+                    cursor: rollSubmitting ? 'not-allowed' : 'pointer',
+                    fontFamily: 'Cinzel, serif',
+                  }}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  disabled={rollSubmitting}
+                  onClick={() => submitSidebarRoll()}
+                  style={{
+                    padding: '10px 16px',
+                    background: rollSubmitting ? '#4a4a5e' : '#e94560',
+                    color: 'white',
+                    border: '1px solid rgba(233, 69, 96, 0.5)',
+                    borderRadius: '6px',
+                    cursor: rollSubmitting ? 'not-allowed' : 'pointer',
+                    fontFamily: 'Cinzel, serif',
+                  }}
+                >
+                  {rollSubmitting ? 'Rolling…' : 'Roll & post'}
+                </button>
+              </div>
+            </GothicBox>
+          </div>
+        </div>
+      )}
     </div>
     );
   };

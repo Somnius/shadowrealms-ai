@@ -1,7 +1,7 @@
 # Planning & Phase Documentation
 
-**Last Updated**: 2025-10-28  
-**Version**: 0.7.6
+**Last Updated**: 2026-03-25  
+**Version**: 0.7.13
 
 This document consolidates planning documentation and phase summaries.
 
@@ -300,7 +300,7 @@ Ready to begin?
 ## 🚀 Phase 3B: Advanced Campaign & Character Systems
 
 **Status:** 🚧 IN PROGRESS (Week 1: Security & Testing Complete)  
-**Version:** 0.7.12  
+**Version:** 0.7.13  
 **Start Date:** 2025-10-24
 
 ### Overview
@@ -834,7 +834,7 @@ GET    /api/admin/campaigns/:id/stats        - Campaign statistics
 
 From extensive user conversation (2025-10-24), all specifications archived in:
 - `docs/PHASE3B_IMPLEMENTATION.md` (full details)
-- `docs/CHANGELOG.md` v0.7.6 (summary)
+- `docs/CHANGELOG.md` through **v0.7.13** (summary)
 - This document (integration into main planning)
 
 Key user requirements:
@@ -849,7 +849,7 @@ Key user requirements:
 
 ---
 
-**Last Updated:** 2025-10-24  
+**Last Updated:** 2026-03-25  
 **Next Milestone:** Location System Implementation (Week 1)  
-**Version:** 0.7.12
+**Version:** 0.7.13
 

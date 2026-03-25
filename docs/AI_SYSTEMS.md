@@ -1,7 +1,7 @@
 # AI & Memory Systems Documentation
 
 **Last Updated**: 2026-03-25  
-**Version**: 0.7.12
+**Version**: 0.7.13
 
 This document consolidates all AI and memory system documentation for ShadowRealms AI.
 
@@ -10,7 +10,7 @@ This document consolidates all AI and memory system documentation for ShadowReal
 ## Table of Contents
 
 1. [Overview](#overview)
-2. [OOC channel AI (storyteller chat)](#ooc-channel-ai-storyteller-chat)
+2. [OOC channel AI & `/ai` admin tools (storyteller chat)](#ooc-channel-ai-storyteller-chat)
 3. [OOC Monitoring System](#ooc-monitoring-system)
 4. [AI Memory Cleanup](#ai-memory-cleanup)
 5. [AI Memory Implementation](#ai-memory-implementation)
@@ -29,9 +29,15 @@ When a player sends a message from a location whose **database** `type` is `ooc`
 
 The server resolves OOC vs IC using `location_id` and the `locations` table (not client-supplied `location_type` alone), so behavior cannot be spoofed by the browser.
 
-### Planned: `/ai` commands in rooms
+### `/ai` admin commands (storyteller chat)
 
-**Not implemented yet.** A near-future iteration will add explicit **slash-commands** (for example `/ai ...`) per room so players can trigger AI help on demand. Until then: **IC** locations use the full storyteller pipeline; **OOC** uses the moderation-only behavior above.
+**Shipped in v0.7.13.** Site **administrators** (`users.role = admin`) can type lines starting with **`/ai`** in storyteller chat. The frontend sends them to **`POST /api/ai/slash`** (`backend/routes/ai.py`), which dispatches **`backend/services/ai_slash_commands.py`**.
+
+- **`/ai help`** — Lists commands (same detail as the server’s inline help).
+- **`/ai health`** — LM Studio, Ollama, ChromaDB reachability (no text generation).
+- **`/ai model`**, **`/ai ping`**, **`/ai context`**, **`/ai summarize …`**, **`/ai roll …`**, **`/ai respond …`** — Diagnostics, context preview, summarization, Storyteller d10 pool from an expression, and a minimal LLM round-trip where applicable.
+
+Non-admins receive a short message pointing them to **Roll dice** in the sidebar (campaign-level **`POST /api/campaigns/<id>/roll`**). **IC** locations still use the full storyteller pipeline for normal chat; **OOC** keeps the moderation-only behavior described above.
 
 ---
 

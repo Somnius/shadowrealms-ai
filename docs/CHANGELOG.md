@@ -5,19 +5,30 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.13] - 2026-03-25 - Chat timestamps, Storyteller dice, admin `/ai` tools 🎲
+
+### Added
+- **Message `time_display`**: `backend/services/message_time_format.py` formats `created_at` for chat UIs; list endpoints in `backend/routes/messages.py` expose the field.
+- **Manual WoD-style d10 rolls**: `POST /api/campaigns/<id>/roll` (`backend/routes/dice.py`) with pool UI in the campaign sidebar (`frontend/src/SimpleApp.js`); results can be posted into chat.
+- **Admin `/ai` slash commands**: `POST /api/ai/slash` (`backend/routes/ai.py`) runs `backend/services/ai_slash_commands.py` — `help`, `health`, `model`, `ping`, `context`, `summarize`, `roll` (expression syntax via `wod_dice.py`), `respond`. Restricted to site admins; others get guidance to use **Roll dice**.
+- **Documentation**: `docs/dice-old-wod.md` — rules context and code map for Storyteller d10 pools.
+
+### Changed
+- **AI systems doc**: `docs/AI_SYSTEMS.md` now documents shipped `/ai` admin behavior (replaces “planned only” wording for that feature).
+
 ## [0.7.12] - 2026-03-25 - OOC AI moderation, chat UI, portraits 🎭
 
 ### Added
 - **Character portraits**: `characters.portrait_url` (URLs or data URLs), exposed on character APIs; messages include `character_portrait_url` when a message is tied to a character.
 - **OOC room AI behavior**: For locations with DB `type = ooc`, `POST /api/ai/chat` skips the in-character storyteller. The model uses campaign + PC names + recent OOC lines; it either returns **no assistant message** (`ooc_no_reply: true`) for normal meta chat, or a **short moderator warning** if content reads as in-character / belongs in an IC room. Response type `ooc_moderation` vs `ooc_silent`.
-- **Documentation**: `docs/AI_SYSTEMS.md` section on OOC channel AI; **planned** `/ai` slash-commands in rooms noted (not implemented).
+- **Documentation**: `docs/AI_SYSTEMS.md` section on OOC channel AI; `/ai` admin slash-commands shipped in **[0.7.13]** (see that entry).
 
 ### Changed
 - **Chat UI**: AI storyteller label aligned **left** again (same as player rows); user rows keep optional **avatar** (portrait or SVG placeholder).
 - **Frontend**: Sends `location_type` with AI chat (informational); server uses **authoritative** location type from DB via `location_id`.
 
 ### Notes
-- **Future**: Room-level `/ai` commands for explicit AI invokes are planned; see `docs/AI_SYSTEMS.md`.
+- **Admins**: `/ai …` tooling is documented under **[0.7.13]** and `docs/AI_SYSTEMS.md`.
 
 ## [0.7.11] - 2026-03-25 - Local Setup Reliability & Campaign Stats 🛠️
 

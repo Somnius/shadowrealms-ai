@@ -14,7 +14,31 @@
       content="ShadowRealms AI - AI-Powered Tabletop RPG Platform"
     />
     <link rel="manifest" href="%PUBLIC_URL%/manifest.json" />
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <!-- Critical paint: match app dark shell before bundled CSS/fonts finish -->
+    <style>
+      html { background-color: #0f0f1e; color-scheme: dark; }
+      body {
+        margin: 0;
+        background-color: #0f0f1e;
+        color: #e5e5e5;
+        font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+      }
+      #root { min-height: 100vh; }
+    </style>
+    <!-- Load webfonts in head (avoid @import inside CSS — reduces FOUC and layout thrash) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&amp;family=Crimson+Text:ital,wght@0,400;0,600;1,400&amp;family=Inter:wght@300;400;500;600;700&amp;family=JetBrains+Mono:wght@300;400;500;600;700&amp;display=swap"
+    />
+    <!-- Single FA load (was duplicated via gothic-theme @import); newer build may reduce Firefox glyph warnings -->
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+      crossorigin="anonymous"
+      referrerpolicy="no-referrer"
+    />
     <title>ShadowRealms AI</title>
   </head>
   <body>

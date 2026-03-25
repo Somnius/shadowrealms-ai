@@ -1,5 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&display=swap');
+/* Google fonts load from public/index.html (blocking <link>) — avoid @import FOUC */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;

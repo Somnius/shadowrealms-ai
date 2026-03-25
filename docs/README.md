@@ -2,7 +2,7 @@
 
 Welcome to the ShadowRealms AI documentation! This directory contains all project documentation, guides, and references.
 
-**Last Updated:** October 28, 2025 - 20 files (includes PostgreSQL migration docs)
+**Last Updated:** March 25, 2026 — 21 markdown files in `docs/` (includes PostgreSQL migration docs, `dice-old-wod.md`, changelog through **v0.7.13**).
 
 ## 📚 Quick Links
 
@@ -44,6 +44,7 @@ Welcome to the ShadowRealms AI documentation! This directory contains all projec
 - **[Features](FEATURES.md)** - Feature-specific documentation
   - Gothic Horror Theme
   - Invite Code System
+- **[Old WoD / Storyteller dice](dice-old-wod.md)** - d10 pools, sidebar rolls, `/ai roll` (v0.7.13+)
 
 ### Bug Fixes & Audits
 - **[Bug Fixes & Audits](BUG_FIXES_AND_AUDITS.md)** - Bug fixes and technical audits
@@ -56,7 +57,7 @@ Welcome to the ShadowRealms AI documentation! This directory contains all projec
 - **[Phase Completions Archive](PHASE_COMPLETIONS_ARCHIVED.md)** - Phase 4 & 5A completion reports
 - **[UI/UX Improvements Archive](UI_UX_IMPROVEMENTS_ARCHIVED.md)** - Historical UI/UX changes
 
-## 📖 Documentation Structure (Updated Oct 28, 2025)
+## 📖 Documentation Structure (Updated Mar 25, 2026)
 
 ```
 shadowrealms-ai/
@@ -69,7 +70,7 @@ shadowrealms-ai/
 │   ├── git_workflow.sh                # Git workflow helper
 │   └── ...                            # Other utility scripts
 │
-├── docs/                              # All documentation files (20 files)
+├── docs/                              # All documentation files (21+ markdown files)
 │   ├── README.md                      # This file (index)
 │   │
 │   ├── CHANGELOG.md                   # Version history ⭐
@@ -82,6 +83,7 @@ shadowrealms-ai/
 │   ├── PLANNING.md                   # Phase planning 📦
 │   │
 │   ├── AI_SYSTEMS.md                 # AI & memory systems 📦
+│   ├── dice-old-wod.md               # Storyteller (oWoD) dice in-app 📦
 │   ├── QUALITY_AND_TESTING.md        # Quality & testing 📦
 │   ├── FEATURES.md                   # Features 📦
 │   ├── BUG_FIXES_AND_AUDITS.md       # Bug fixes & audits 📦
@@ -221,7 +223,7 @@ All consolidated files maintain complete content with proper section headers and
 
 ---
 
-**Last Updated**: October 28, 2025  
-**Documentation Version**: 0.7.6  
-**Total Documentation Files**: 20 (includes PostgreSQL migration docs)
+**Last Updated**: March 25, 2026  
+**Documentation Version**: 0.7.13  
+**Total Documentation Files**: 21+ markdown files in `docs/` (includes PostgreSQL migration docs and `dice-old-wod.md`)
 
