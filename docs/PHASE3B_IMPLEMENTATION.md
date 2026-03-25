@@ -1,6 +1,6 @@
 # Phase 3B: Advanced Campaign & Character Systems
 
-**Version:** 0.7.13  
+**Version:** 0.7.14  
 **Status:** 🚧 IN PROGRESS  
 **Start Date:** 2025-10-24  
 **Target Completion:** TBD

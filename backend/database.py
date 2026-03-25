@@ -49,6 +49,89 @@ def get_db():
         return conn
 
 
+def _pg_table_exists(cursor, table: str) -> bool:
+    cursor.execute(
+        """
+        SELECT EXISTS (
+            SELECT FROM information_schema.tables
+            WHERE table_schema = 'public' AND table_name = %s
+        )
+        """,
+        (table,),
+    )
+    row = cursor.fetchone()
+    return bool(row and row.get("exists"))
+
+
+def _pg_table_columns(cursor, table: str) -> set:
+    cursor.execute(
+        """
+        SELECT column_name FROM information_schema.columns
+        WHERE table_schema = 'public' AND table_name = %s
+        """,
+        (table,),
+    )
+    return {r["column_name"] for r in cursor.fetchall()}
+
+
+def ensure_users_display_timezone_column(cursor):
+    """Add users.display_timezone (IANA name) if missing."""
+    db_type = os.getenv("DATABASE_TYPE", "sqlite").lower()
+    if db_type == "postgresql":
+        cursor.execute(
+            "ALTER TABLE users ADD COLUMN IF NOT EXISTS display_timezone TEXT"
+        )
+    else:
+        cursor.execute("PRAGMA table_info(users)")
+        cols = [row["name"] for row in cursor.fetchall()]
+        if "display_timezone" not in cols:
+            cursor.execute(
+                "ALTER TABLE users ADD COLUMN display_timezone TEXT"
+            )
+
+
+def ensure_messages_ai_message_kind_column(cursor):
+    """Tag /ai slash user+assistant rows for cleanup (messages.ai_message_kind)."""
+    db_type = os.getenv("DATABASE_TYPE", "sqlite").lower()
+    if db_type == "postgresql":
+        cursor.execute(
+            "ALTER TABLE messages ADD COLUMN IF NOT EXISTS ai_message_kind TEXT"
+        )
+    else:
+        cursor.execute(
+            "SELECT name FROM sqlite_master WHERE type='table' AND name='messages'"
+        )
+        if not cursor.fetchone():
+            return
+        cursor.execute("PRAGMA table_info(messages)")
+        cols = [row["name"] for row in cursor.fetchall()]
+        if "ai_message_kind" not in cols:
+            cursor.execute(
+                "ALTER TABLE messages ADD COLUMN ai_message_kind TEXT"
+            )
+
+
+def ensure_locations_dice_leniency_floor_column(cursor):
+    """Per-room Storyteller leniency (minimum die floor); NULL = normal RNG."""
+    db_type = os.getenv("DATABASE_TYPE", "sqlite").lower()
+    if db_type == "postgresql":
+        cursor.execute(
+            "ALTER TABLE locations ADD COLUMN IF NOT EXISTS dice_leniency_floor INTEGER"
+        )
+    else:
+        cursor.execute(
+            "SELECT name FROM sqlite_master WHERE type='table' AND name='locations'"
+        )
+        if not cursor.fetchone():
+            return
+        cursor.execute("PRAGMA table_info(locations)")
+        cols = [row["name"] for row in cursor.fetchall()]
+        if "dice_leniency_floor" not in cols:
+            cursor.execute(
+                "ALTER TABLE locations ADD COLUMN dice_leniency_floor INTEGER"
+            )
+
+
 def ensure_character_portrait_url_column(cursor):
     """Add characters.portrait_url if missing (PostgreSQL and SQLite)."""
     db_type = os.getenv('DATABASE_TYPE', 'sqlite').lower()
@@ -65,21 +148,146 @@ def ensure_character_portrait_url_column(cursor):
             )
 
 
+def ensure_dice_tables(cursor, db_kind: str) -> None:
+    """
+    Create dice_rolls / dice_roll_templates if missing.
+    routes/dice.py INSERTs into dice_rolls; without this table rolls return 500.
+    """
+    if db_kind == 'postgresql':
+        # Older DBs had dice_rolls(dice_notation, result_total, created_at, …).
+        # CREATE IF NOT EXISTS never upgraded them — rename away and create the Storyteller schema.
+        LEGACY_ROLLS = "dice_rolls_legacy_d20_notation"
+        LEGACY_TEMPL = "dice_roll_templates_legacy_d20_notation"
+
+        if _pg_table_exists(cursor, "dice_rolls"):
+            roll_cols = _pg_table_columns(cursor, "dice_rolls")
+            if "roll_type" not in roll_cols:
+                logger.warning(
+                    "PostgreSQL: renaming legacy dice_rolls → %s (missing roll_type column)",
+                    LEGACY_ROLLS,
+                )
+                cursor.execute(f'ALTER TABLE dice_rolls RENAME TO "{LEGACY_ROLLS}"')
+
+        if _pg_table_exists(cursor, "dice_roll_templates"):
+            tmpl_cols = _pg_table_columns(cursor, "dice_roll_templates")
+            if "dice_pool_formula" not in tmpl_cols or "is_system" not in tmpl_cols:
+                logger.warning(
+                    "PostgreSQL: renaming legacy dice_roll_templates → %s",
+                    LEGACY_TEMPL,
+                )
+                cursor.execute(f'ALTER TABLE dice_roll_templates RENAME TO "{LEGACY_TEMPL}"')
+
+        cursor.execute(
+            """
+            CREATE TABLE IF NOT EXISTS dice_roll_templates (
+                id BIGSERIAL PRIMARY KEY,
+                campaign_id INTEGER REFERENCES campaigns(id) ON DELETE CASCADE,
+                name TEXT NOT NULL DEFAULT '',
+                description TEXT,
+                dice_pool_formula TEXT,
+                default_difficulty INTEGER DEFAULT 6,
+                created_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
+                is_system INTEGER NOT NULL DEFAULT 0,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+            """
+        )
+        cursor.execute(
+            """
+            CREATE TABLE IF NOT EXISTS dice_rolls (
+                id BIGSERIAL PRIMARY KEY,
+                campaign_id INTEGER NOT NULL REFERENCES campaigns(id) ON DELETE CASCADE,
+                location_id INTEGER REFERENCES locations(id) ON DELETE SET NULL,
+                user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                character_id INTEGER REFERENCES characters(id) ON DELETE SET NULL,
+                roll_type TEXT NOT NULL,
+                action_description TEXT NOT NULL,
+                dice_pool INTEGER NOT NULL,
+                difficulty INTEGER NOT NULL,
+                results TEXT NOT NULL,
+                successes INTEGER NOT NULL,
+                is_botch BOOLEAN NOT NULL DEFAULT FALSE,
+                is_critical BOOLEAN NOT NULL DEFAULT FALSE,
+                modifiers TEXT,
+                rolled_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+            """
+        )
+    else:
+        # location_id: no FK here — SQLite migrate order may not have `locations` yet
+        cursor.execute(
+            """
+            CREATE TABLE IF NOT EXISTS dice_rolls (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                campaign_id INTEGER NOT NULL,
+                location_id INTEGER,
+                user_id INTEGER NOT NULL,
+                character_id INTEGER,
+                roll_type TEXT NOT NULL,
+                action_description TEXT NOT NULL,
+                dice_pool INTEGER NOT NULL,
+                difficulty INTEGER NOT NULL,
+                results TEXT NOT NULL,
+                successes INTEGER NOT NULL,
+                is_botch INTEGER NOT NULL DEFAULT 0,
+                is_critical INTEGER NOT NULL DEFAULT 0,
+                modifiers TEXT,
+                rolled_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (campaign_id) REFERENCES campaigns(id) ON DELETE CASCADE,
+                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+                FOREIGN KEY (character_id) REFERENCES characters(id) ON DELETE SET NULL
+            )
+            """
+        )
+        cursor.execute(
+            """
+            CREATE TABLE IF NOT EXISTS dice_roll_templates (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                campaign_id INTEGER,
+                name TEXT NOT NULL DEFAULT '',
+                description TEXT,
+                dice_pool_formula TEXT,
+                default_difficulty INTEGER DEFAULT 6,
+                created_by INTEGER,
+                is_system INTEGER NOT NULL DEFAULT 0,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (campaign_id) REFERENCES campaigns(id) ON DELETE CASCADE,
+                FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL
+            )
+            """
+        )
+    logger.info("dice_rolls / dice_roll_templates verified")
+
+
 def migrate_db():
     """Migrate database schema if needed"""
     logger.info("Checking database migrations...")
     
-    # For PostgreSQL, migrations are handled via Alembic/SQL files
-    # Skip SQLite-specific migration logic
     if os.getenv('DATABASE_TYPE', 'sqlite').lower() == 'postgresql':
-        logger.info("PostgreSQL detected - skipping SQLite migrations")
+        logger.info("PostgreSQL detected — ensuring portrait column and dice tables")
+        conn = get_db()
+        try:
+            cursor = conn.cursor()
+            ensure_users_display_timezone_column(cursor)
+            ensure_messages_ai_message_kind_column(cursor)
+            ensure_locations_dice_leniency_floor_column(cursor)
+            ensure_character_portrait_url_column(cursor)
+            ensure_dice_tables(cursor, 'postgresql')
+            conn.commit()
+        except Exception as e:
+            logger.error(f"PostgreSQL schema ensure failed: {e}")
+            conn.rollback()
+            raise
+        finally:
+            conn.close()
         return
     
     # SQLite migrations
     conn = get_db()
     try:
         cursor = conn.cursor()
-        
+        ensure_users_display_timezone_column(cursor)
+
         # Check if campaigns table has game_system column
         cursor.execute("PRAGMA table_info(campaigns)")
         columns = [column[1] for column in cursor.fetchall()]
@@ -407,7 +615,11 @@ def migrate_db():
             cursor.execute("ALTER TABLE characters_new RENAME TO characters")
             conn.commit()
             logger.info("✅ characters table schema updated")
-        
+
+        ensure_messages_ai_message_kind_column(cursor)
+        ensure_locations_dice_leniency_floor_column(cursor)
+        ensure_dice_tables(cursor, 'sqlite')
+        conn.commit()
         conn.close()
         logger.info("✅ Database migration completed")
         

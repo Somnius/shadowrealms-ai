@@ -15,6 +15,17 @@ logger = logging.getLogger(__name__)
 dice_bp = Blueprint('dice', __name__)
 
 
+def _json_field(value, default):
+    if value is None or value == '':
+        return default
+    if isinstance(value, (dict, list)):
+        return value
+    try:
+        return json.loads(value)
+    except (TypeError, ValueError):
+        return default
+
+
 def _user_can_access_campaign(cursor, user_id: int, campaign_id: int) -> bool:
     cursor.execute(
         """
@@ -110,22 +121,32 @@ def manual_roll(campaign_id):
 
         action_description = (data.get('action_description') or 'Dice roll').strip() or 'Dice roll'
         location_id = data.get('location_id')
+        leniency_floor = None
         if location_id is not None:
             location_id = int(location_id)
             cursor.execute(
                 """
-                SELECT 1 FROM locations
+                SELECT dice_leniency_floor FROM locations
                 WHERE id = %s AND campaign_id = %s AND is_active = TRUE
                 """,
                 (location_id, campaign_id),
             )
-            if not cursor.fetchone():
+            loc_row = cursor.fetchone()
+            if not loc_row:
                 cursor.close()
                 conn.close()
                 return jsonify({'error': 'Location not found in this campaign'}), 400
+            lf = loc_row.get("dice_leniency_floor")
+            if lf is not None:
+                try:
+                    leniency_floor = int(lf)
+                except (TypeError, ValueError):
+                    leniency_floor = None
 
         # Roll the dice
-        roll_result = dice_service.roll_d10_pool(pool_size, difficulty, specialty)
+        roll_result = dice_service.roll_d10_pool(
+            pool_size, difficulty, specialty, leniency_floor=leniency_floor
+        )
         
         cursor.execute("""
             INSERT INTO dice_rolls (
@@ -139,7 +160,11 @@ def manual_roll(campaign_id):
             'manual', action_description, pool_size, difficulty,
             json.dumps(roll_result['results']), roll_result['successes'],
             roll_result['is_botch'], roll_result['is_critical'],
-            json.dumps({'specialty': specialty, 'pool_expression': pool_expression or None})
+            json.dumps({
+                'specialty': specialty,
+                'pool_expression': pool_expression or None,
+                'leniency_floor': roll_result.get('leniency_floor'),
+            })
         ))
         
         result = cursor.fetchone()
@@ -171,7 +196,7 @@ def manual_roll(campaign_id):
         }), 200
         
     except Exception as e:
-        logger.error(f"Error processing manual roll: {e}")
+        logger.exception("Error processing manual roll: %s", e)
         return jsonify({'error': 'Failed to process roll'}), 500
 
 
@@ -332,69 +357,82 @@ def ai_roll(campaign_id):
 @jwt_required()
 def get_roll_history(campaign_id):
     """
-    Get roll history for a campaign
-    
+    Admin-only: list dice rolls for one campaign location (everyone’s rolls in that room).
+
     Query params:
-        limit: int (default 50)
-        location_id: int (optional)
-        character_id: int (optional)
+        location_id: int (required) — current chat room / channel
+        limit: int (optional, default 100, max 200)
     """
     try:
-        limit = request.args.get('limit', 50, type=int)
+        user_id = int(get_jwt_identity())
+        limit = request.args.get('limit', 100, type=int) or 100
+        limit = max(1, min(int(limit), 200))
         location_id = request.args.get('location_id', type=int)
-        character_id = request.args.get('character_id', type=int)
-        
+        if not location_id:
+            return jsonify({'error': 'location_id query parameter is required'}), 400
+
         conn = get_db()
         cursor = conn.cursor()
-        
-        query = """
-            SELECT dr.*, u.username, c.name as character_name
-            FROM dice_rolls dr
-            LEFT JOIN users u ON dr.user_id = u.id
-            LEFT JOIN characters c ON dr.character_id = c.id
-            WHERE dr.campaign_id = %s
-        """
-        params = [campaign_id]
-        
-        if location_id:
-            query += " AND dr.location_id = %s"
-            params.append(location_id)
-        
-        if character_id:
-            query += " AND dr.character_id = %s"
-            params.append(character_id)
-        
-        query += " ORDER BY dr.rolled_at DESC LIMIT %s"
-        params.append(limit)
-        
-        cursor.execute(query, params)
-        
-        rolls = []
-        for row in cursor.fetchall():
-            rolls.append({
-                'id': row['id'],
-                'campaign_id': row['campaign_id'],
-                'location_id': row['location_id'],
-                'user_id': row['user_id'],
-                'character_id': row['character_id'],
-                'roll_type': row['roll_type'],
-                'action_description': row['action_description'],
-                'dice_pool': row['dice_pool'],
-                'difficulty': row['difficulty'],
-                'results': json.loads(row['results']),
-                'successes': row['successes'],
-                'is_botch': row['is_botch'],
-                'is_critical': row['is_critical'],
-                'modifiers': json.loads(row['modifiers']) if row['modifiers'] else {},
-                'rolled_at': row['rolled_at'],
-                'username': row['username'],
-                'character_name': row['character_name']
-            })
-        
-        return jsonify(rolls), 200
-        
+        try:
+            cursor.execute("SELECT role FROM users WHERE id = %s", (user_id,))
+            urow = cursor.fetchone()
+            if not urow or urow.get('role') != 'admin':
+                return jsonify({'error': 'Admin access required'}), 403
+
+            cursor.execute(
+                """
+                SELECT 1 FROM locations
+                WHERE id = %s AND campaign_id = %s AND is_active = TRUE
+                """,
+                (location_id, campaign_id),
+            )
+            if not cursor.fetchone():
+                return jsonify({'error': 'Location not found in this campaign'}), 404
+
+            cursor.execute(
+                """
+                SELECT dr.*, u.username, c.name AS character_name
+                FROM dice_rolls dr
+                LEFT JOIN users u ON dr.user_id = u.id
+                LEFT JOIN characters c ON dr.character_id = c.id
+                WHERE dr.campaign_id = %s AND dr.location_id = %s
+                ORDER BY dr.rolled_at DESC
+                LIMIT %s
+                """,
+                (campaign_id, location_id, limit),
+            )
+
+            rolls = []
+            for row in cursor.fetchall():
+                ra = row['rolled_at']
+                rolled_at_out = ra.isoformat() if hasattr(ra, 'isoformat') else str(ra)
+                rolls.append({
+                    'id': row['id'],
+                    'campaign_id': row['campaign_id'],
+                    'location_id': row['location_id'],
+                    'user_id': row['user_id'],
+                    'character_id': row['character_id'],
+                    'roll_type': row['roll_type'],
+                    'action_description': row['action_description'],
+                    'dice_pool': row['dice_pool'],
+                    'difficulty': row['difficulty'],
+                    'results': _json_field(row['results'], []),
+                    'successes': row['successes'],
+                    'is_botch': bool(row['is_botch']),
+                    'is_critical': bool(row['is_critical']),
+                    'modifiers': _json_field(row.get('modifiers'), {}),
+                    'rolled_at': rolled_at_out,
+                    'username': row['username'],
+                    'character_name': row['character_name'],
+                })
+
+            return jsonify(rolls), 200
+        finally:
+            cursor.close()
+            conn.close()
+
     except Exception as e:
-        logger.error(f"Error fetching roll history: {e}")
+        logger.exception("Error fetching roll history: %s", e)
         return jsonify({'error': 'Failed to fetch roll history'}), 500
 
 

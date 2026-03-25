@@ -488,3 +488,4 @@ backend/invites.json
 # Version bump backups
 backups/
 .env.backup-before-postgresql
+CLAUDE.md

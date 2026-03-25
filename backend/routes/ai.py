@@ -316,18 +316,6 @@ def ai_slash_command():
         cur_role.close()
         db_role.close()
         site_role = ((urow or {}).get("role") or "").strip().lower()
-        if site_role != "admin":
-            return jsonify({
-                "error": "Only site administrators may use /ai commands.",
-                "display_markdown": (
-                    "**`/ai` is restricted**\n\n"
-                    "Only **administrator** accounts can use `/ai` commands. "
-                    "For Storyteller (Old WoD) d10 rolls, everyone can use **Roll dice** "
-                    "in the right sidebar.\n"
-                ),
-                "supported_commands": SUPPORTED_AI_SLASH_VERBS,
-                "future_commands_suggestion": FUTURE_COMMAND_SUGGESTIONS,
-            }), 403
 
         parsed = parse_ai_slash_line(line)
         if not parsed:
@@ -338,8 +326,100 @@ def ai_slash_command():
             }), 400
 
         verb, payload = parsed
+        RELAXED_AI_VERBS = frozenset({'clean', 'dice-diff'})
+        needs_relaxed_auth = verb in RELAXED_AI_VERBS
 
-        if verb == 'context' and (not campaign_id or location_id is None):
+        owner_ok = False
+        if site_role != "admin" and campaign_id:
+            db_o = get_db()
+            co = db_o.cursor()
+            try:
+                co.execute(
+                    """
+                    SELECT created_by FROM campaigns
+                    WHERE id = %s AND is_active = TRUE
+                    """,
+                    (campaign_id,),
+                )
+                orow = co.fetchone()
+                if orow and int(orow['created_by']) == int(current_user_id):
+                    owner_ok = True
+            finally:
+                co.close()
+                db_o.close()
+
+        if site_role != "admin":
+            if needs_relaxed_auth and not owner_ok:
+                return jsonify({
+                    "error": "Only site administrators or the campaign owner may use this command.",
+                    "display_markdown": (
+                        "**Permission denied**\n\n"
+                        "Only the **campaign owner** or a **site administrator** can use **`/ai clean`** or **`/ai dice-diff`**."
+                    ),
+                    "supported_commands": SUPPORTED_AI_SLASH_VERBS,
+                    "future_commands_suggestion": FUTURE_COMMAND_SUGGESTIONS,
+                }), 403
+            if not needs_relaxed_auth and not (verb == 'help' and owner_ok):
+                return jsonify({
+                    "error": "Only site administrators may use /ai commands.",
+                    "display_markdown": (
+                        "**`/ai` is restricted**\n\n"
+                        "Only **administrator** accounts can use most `/ai` commands. "
+                        "**Campaign owners** may use **`/ai help`**, **`/ai clean …`**, and **`/ai dice-diff …`**. "
+                        "For Storyteller (Old WoD) d10 rolls, everyone can use **Roll dice** in the right sidebar.\n"
+                    ),
+                    "supported_commands": SUPPORTED_AI_SLASH_VERBS,
+                    "future_commands_suggestion": FUTURE_COMMAND_SUGGESTIONS,
+                }), 403
+
+        if needs_relaxed_auth:
+            if not campaign_id or location_id is None:
+                return jsonify({
+                    'error': 'campaign_id and location_id are required',
+                    'display_markdown': (
+                        f'**`/{verb}`**\n\n'
+                        'Open a **campaign location** first so the server knows which room to affect.'
+                    ),
+                    'supported_commands': SUPPORTED_AI_SLASH_VERBS,
+                    'future_commands_suggestion': FUTURE_COMMAND_SUGGESTIONS,
+                }), 400
+            db_r = get_db()
+            cur_r = db_r.cursor()
+            try:
+                cur_r.execute(
+                    """
+                    SELECT created_by FROM campaigns
+                    WHERE id = %s AND is_active = TRUE
+                    """,
+                    (campaign_id,),
+                )
+                crow = cur_r.fetchone()
+                if not crow:
+                    return jsonify({'error': 'Campaign not found'}), 404
+                if site_role != "admin" and int(crow['created_by']) != int(current_user_id):
+                    return jsonify({
+                        'error': 'Only the campaign owner or a site admin can use this command.',
+                        'display_markdown': (
+                            '**Permission denied**\n\n'
+                            'Only the **campaign owner** or a **site administrator** can use '
+                            '**`/ai clean`** or **`/ai dice-diff`**.'
+                        ),
+                        'supported_commands': SUPPORTED_AI_SLASH_VERBS,
+                        'future_commands_suggestion': FUTURE_COMMAND_SUGGESTIONS,
+                    }), 403
+                cur_r.execute(
+                    """
+                    SELECT id FROM locations
+                    WHERE id = %s AND campaign_id = %s AND is_active = TRUE
+                    """,
+                    (location_id, campaign_id),
+                )
+                if not cur_r.fetchone():
+                    return jsonify({'error': 'Location not found in this campaign'}), 404
+            finally:
+                cur_r.close()
+                db_r.close()
+        elif verb == 'context' and (not campaign_id or location_id is None):
             return jsonify({
                 'error': 'campaign_id and location_id are required for /ai context',
                 'display_markdown': (
@@ -350,15 +430,28 @@ def ai_slash_command():
                 'future_commands_suggestion': FUTURE_COMMAND_SUGGESTIONS,
             }), 400
 
-        if campaign_id:
+        if campaign_id and not needs_relaxed_auth:
             db = get_db()
             cursor = db.cursor()
             try:
-                cursor.execute("""
+                cursor.execute(
+                    """
                     SELECT c.id FROM campaigns c
-                    JOIN users u ON u.id = %s
                     WHERE c.id = %s AND c.is_active = TRUE
-                """, (current_user_id, campaign_id))
+                      AND (
+                        c.created_by = %s
+                        OR EXISTS (
+                            SELECT 1 FROM campaign_players cp
+                            WHERE cp.campaign_id = c.id AND cp.user_id = %s
+                        )
+                        OR EXISTS (
+                            SELECT 1 FROM users u
+                            WHERE u.id = %s AND LOWER(TRIM(COALESCE(u.role, ''))) = 'admin'
+                        )
+                      )
+                    """,
+                    (campaign_id, current_user_id, current_user_id, current_user_id),
+                )
                 if not cursor.fetchone():
                     return jsonify({'error': 'Campaign not found or access denied'}), 404
                 if verb == 'context':

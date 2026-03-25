@@ -4,6 +4,7 @@ Monitors OOC rooms for in-character discussions and warns/bans players
 """
 
 import logging
+import re
 from typing import Dict, Tuple
 from services.llm_service import LLMService
 from database import get_db
@@ -33,8 +34,12 @@ class OOCMonitor:
             Tuple of (is_violation, warning_message, should_ban)
         """
         
-        # Only monitor OOC rooms
-        if location_type != 'ooc':
+        # Only monitor OOC rooms (DB may vary casing)
+        if str(location_type or "").strip().lower() != "ooc":
+            return (False, '', False)
+
+        # Admin /ai diagnostics — never treat as IC roleplay for OOC moderation
+        if re.match(r"^\s*/ai(\s|$)", message or "", re.IGNORECASE):
             return (False, '', False)
         
         # Check if message is in-character using AI

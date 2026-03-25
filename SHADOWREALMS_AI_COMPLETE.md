@@ -293,7 +293,8 @@ This philosophy ensures:
 - [Performance & Scalability](#performance--scalability)
 
 ### **📊 Current Status & Versions**
-- [Version 0.7.13 - Chat UX, WoD dice & admin AI tools](#version-0713---chat-ux-wod-dice--admin-ai-tools-)
+- [Version 0.7.14 - Dice overlay, hidden rolls and Phase 3B prep](#version-0714---dice-overlay-hidden-rolls-and-phase-3b-prep-)
+- [Version 0.7.13 - Chat UX, WoD dice and admin AI tools](#version-0713---chat-ux-wod-dice-and-admin-ai-tools-)
 - [Version 0.7.12 - OOC AI moderation & chat polish](#version-0712---ooc-ai-moderation--chat-polish-)
 - [Version 0.7.10 - Logo & Asset Optimization](#version-0710---logo--asset-optimization-)
 - [Version 0.7.9 - Project Structure Organization](#version-079---project-structure-organization-)
@@ -329,7 +330,7 @@ This philosophy ensures:
 - [Phase 3A Interface Wireframe (ASCII)](#phase-3a-interface-wireframe-ascii)
 - [Next Steps for Phase 3A](#next-steps-for-phase-3a)
 
-### **🚀 Phase 3B: Advanced Campaign & Character Systems** ✅ STRUCTURE ORGANIZED (v0.7.13)
+### **🚀 Phase 3B: Advanced Campaign & Character Systems** ✅ STRUCTURE ORGANIZED (v0.7.14)
 - [Phase 3B Overview](#phase-3b-overview)
 - [Security & Testing Foundation](#security--testing-foundation)
 - [Location System Design](#location-system-design)
@@ -1314,7 +1315,21 @@ The project now includes comprehensive `.gitignore` rules covering:
 - **Multi-Language**: Global accessibility with translation pipelines
 - **Real-time Collaboration**: Live AI-assisted gaming experiences
 
-## Version 0.7.13 - Chat UX, WoD dice & admin AI tools 🎲
+## Version 0.7.14 - Dice overlay, hidden rolls and Phase 3B prep
+
+### What changed from 0.7.13
+
+- **Dice theatre**: Full-screen ~3s animation (cycling values, up to **10** dice on screen) for **`/ai roll`** and sidebar **Roll dice**; the final pool result posts to chat after reveal. Marker rows use `dice_animation` / `dice_roll` kinds and are not shown as normal chat lines during the sequence.
+- **`/ai roll-hidden`**: Same expression syntax as **`/ai roll`**, but only **site admins** see the full exchange in listings; other players do not receive hidden animation/roll rows (`backend/routes/messages.py` filtering).
+- **Storyteller sidebar**: **Hide roll from others** in the roll modal for **admin**, **helper**, or **campaign owner** (`created_by`). The in-campaign **Profile** shortcut in the left rail appears only for those roles.
+- **Sync**: Faster message polling so other clients pick up dice markers quickly; unread/read-state logic ignores `dice_animation%` rows.
+- **Next milestone**: Documentation and release notes call out **preparing users, players, and characters** for continued **Phase 3B** work (locations, character depth, real-time features).
+
+**See also:** `docs/CHANGELOG.md` (`[0.7.14]`), `docs/dice-old-wod.md`, `docs/AI_SYSTEMS.md` (`/ai` commands including `roll-hidden`).
+
+---
+
+## Version 0.7.13 - Chat UX, WoD dice and admin AI tools
 
 ### What changed from 0.7.12
 
@@ -5888,11 +5903,11 @@ After comprehensive testing and debugging, we achieved **100% User Experience Te
 
 ---
 
-## 🚀 Phase 3B: Advanced Campaign & Character Systems (v0.7.13)
+## 🚀 Phase 3B: Advanced Campaign & Character Systems (v0.7.14)
 
 **Status:** 🚧 IN PROGRESS - Structure Organized  
 **Start Date:** 2025-10-24  
-**Current Version:** 0.7.9
+**Current Version:** 0.7.14
 
 ### Phase 3B Overview
 
@@ -5909,7 +5924,7 @@ Phase 3B builds upon Phase 3A's frontend foundation by implementing the core gam
 For complete details, see:
 - **[Phase 3B Implementation Guide](docs/PHASE3B_IMPLEMENTATION.md)** - Full specification (600+ lines)
 - **[Planning Documentation](docs/PLANNING.md)** - Phase planning and summaries
-- **[Changelog](docs/CHANGELOG.md)** - Version history through **v0.7.13**
+- **[Changelog](docs/CHANGELOG.md)** - Version history through **v0.7.14**
 
 ---
 
@@ -6392,7 +6407,7 @@ Reason: [Admin's stated reason]
 
 ---
 
-### Files Created/Modified (v0.7.13)
+### Files Created/Modified (v0.7.14)
 
 **Backend:**
 - `backend/database.py` - Schema migrations (pending)
@@ -6415,14 +6430,14 @@ Reason: [Admin's stated reason]
 **Documentation:**
 - `docs/PHASE3B_IMPLEMENTATION.md` - Complete specification ✅
 - `docs/PLANNING.md` - Detailed summary ✅
-- `docs/CHANGELOG.md` - Version 0.7.13 entry ✅
+- `docs/CHANGELOG.md` - Version 0.7.14 entry ✅
 - `scripts/run-frontend-tests.sh` - Test runner script ✅
 
 ---
 
 **Last Updated:** 2026-03-25  
 **Next Milestone:** Location System Implementation  
-**Version:** 0.7.13
+**Version:** 0.7.14
 
 ---
 
@@ -7137,7 +7152,7 @@ docker-compose ps
 - **Backend API**: http://localhost:5000
 - **ChromaDB**: http://localhost:8000
 
-### 🎯 **Current Status (v0.7.13)**
+### 🎯 **Current Status (v0.7.14)**
 
 ✅ **Phase 1 Complete** - Foundation & Docker Setup  
 ✅ **Phase 2 Complete** - RAG & Vector Memory System  
@@ -7151,7 +7166,8 @@ docker-compose ps
 ✅ **Security System** - Input sanitization, validation, rate limiting (v0.7.0)  
 ✅ **AI Health Checks** - LM Studio, Ollama, ChromaDB validation (v0.7.5)  
 ✅ **Message Persistence** - Chat messages save/load correctly, ChromaDB v2 (v0.7.6)  
-✅ **Chat timestamps & dice (v0.7.13)** - `time_display` on messages; sidebar **Roll dice** + `POST .../roll`; admin **`/ai`** tools via `POST /api/ai/slash`  
+✅ **Chat timestamps & dice (v0.7.13+)** - `time_display` on messages; sidebar **Roll dice** + `POST .../roll`; admin **`/ai`** tools via `POST /api/ai/slash`
+✅ **Dice theatre & hidden rolls (v0.7.14)** - Center overlay for `/ai roll` and sidebar rolls; `/ai roll-hidden` and storyteller-only sidebar rolls; faster polling  
 ✅ **PostgreSQL Migration** - Full compatibility, remote access, AI integration (v0.7.7)  
 ✅ **Footer Version Display** - Fixed API path, version now displays correctly (v0.7.8)  
 ✅ **Project Structure** - Scripts organized in dedicated directory (v0.7.9)  

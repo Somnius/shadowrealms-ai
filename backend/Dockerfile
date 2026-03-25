@@ -18,6 +18,7 @@ RUN apt-get update && apt-get install -y \
     curl \
     bash \
     git \
+    tzdata \
     && rm -rf /var/lib/apt/lists/*
 
 # Set work directory

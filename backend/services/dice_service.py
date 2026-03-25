@@ -16,7 +16,12 @@ class DiceService:
     """Service for handling World of Darkness dice rolls"""
     
     @staticmethod
-    def roll_d10_pool(pool_size: int, difficulty: int = 6, specialty: bool = False) -> Dict:
+    def roll_d10_pool(
+        pool_size: int,
+        difficulty: int = 6,
+        specialty: bool = False,
+        leniency_floor: int | None = None,
+    ) -> Dict:
         """
         Roll a pool of d10s using old World of Darkness mechanics
         
@@ -42,8 +47,22 @@ class DiceService:
         if difficulty < 2 or difficulty > 10:
             difficulty = 6  # Default to 6 if invalid
         
-        # Roll the dice
-        results = [random.randint(1, 10) for _ in range(pool_size)]
+        # Roll the dice (optional room leniency: no 1s, one die ≥ floor when pool ≥ 2)
+        lf_applied = None
+        if leniency_floor is not None:
+            try:
+                v = int(leniency_floor)
+                if 2 <= v <= 10:
+                    from services.wod_dice import _lenient_d10_pool
+
+                    results = _lenient_d10_pool(pool_size, v)
+                    lf_applied = v
+                else:
+                    results = [random.randint(1, 10) for _ in range(pool_size)]
+            except (TypeError, ValueError):
+                results = [random.randint(1, 10) for _ in range(pool_size)]
+        else:
+            results = [random.randint(1, 10) for _ in range(pool_size)]
         
         # Count successes and ones
         successes = 0
@@ -83,7 +102,8 @@ class DiceService:
             'difficulty': difficulty,
             'specialty': specialty,
             'ones_count': ones_count,
-            'message': message
+            'message': message,
+            'leniency_floor': lf_applied,
         }
     
     @staticmethod
@@ -303,6 +323,13 @@ class DiceService:
             header = f"🎲 **{character_name}** rolls"
         if action_description:
             header += f" for **{action_description}**"
+
+        lf = roll_data.get('leniency_floor')
+        leniency_line = ""
+        if lf is not None:
+            leniency_line = (
+                f"\n_Leniency floor **{lf}** (no 1s; with 2+ dice, one die ≥ {lf})._\n"
+            )
         
         # Format dice results with color coding
         dice_display = []
@@ -319,7 +346,7 @@ class DiceService:
         dice_str = " ".join(dice_display)
         
         result = [
-            header,
+            header + leniency_line,
             f"Dice: {dice_str}",
             f"Difficulty: {roll_data['difficulty']} | Successes: {roll_data['successes']}",
             roll_data['message']

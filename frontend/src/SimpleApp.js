@@ -7,6 +7,8 @@ import Footer from './components/Footer';
 import LocationSuggestions from './components/LocationSuggestions';
 import { useToast } from './components/ToastNotification';
 import { formatMessageTime } from './utils/messageTime';
+import { formatDateTimeTooltip, formatDateTimeInZone } from './utils/userTimeFormat';
+import { getTimezoneSelectOptions } from './utils/timezones';
 import './responsive.css';
 
 const API_URL = '/api'; // Use relative URL through nginx proxy
@@ -18,6 +20,27 @@ function parseStorytellerPool(input) {
     throw new Error('Pool must be digits with + or - (e.g. 5, 4+3, 7-1).');
   }
   return t.split(/(?=[+-])/).reduce((sum, p) => sum + parseInt(p, 10), 0);
+}
+
+/** Strip BOM; bare `/ai` → `/ai help` for admins */
+function normalizeChatMessageInput(raw, isAdmin) {
+  const s = String(raw ?? '').replace(/^\uFEFF+/, '').trim();
+  if (!s) return s;
+  if (isAdmin && /^\s*\/ai\s*$/i.test(s)) return '/ai help';
+  return s;
+}
+
+function GothicPageLoadingOverlay({ visible, label }) {
+  if (!visible) return null;
+  return (
+    <div className="sr-page-loading-overlay" role="status" aria-live="polite" aria-busy="true">
+      <div className="sr-page-loading-card">
+        <div className="sr-page-loading-rune" aria-hidden />
+        <div className="sr-page-loading-title">ShadowRealms</div>
+        <div className="sr-page-loading-sub">{label || 'One moment…'}</div>
+      </div>
+    </div>
+  );
 }
 
 function MessageCharacterAvatar({ url, size = 40 }) {
@@ -68,6 +91,7 @@ function SimpleApp() {
   const [character, setCharacter] = useState(null);
   const [campaignCharacters, setCampaignCharacters] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [pageOverlay, setPageOverlay] = useState({ visible: false, label: '' });
   const [error, setError] = useState('');
   
   // Ref for chat input to maintain focus
@@ -130,7 +154,40 @@ function SimpleApp() {
   const [rollDifficulty, setRollDifficulty] = useState(6);
   const [rollSpecialty, setRollSpecialty] = useState(false);
   const [rollReason, setRollReason] = useState('');
+  const [rollHideOthers, setRollHideOthers] = useState(false);
   const [rollSubmitting, setRollSubmitting] = useState(false);
+  const [showDiceHistoryModal, setShowDiceHistoryModal] = useState(false);
+  const [diceHistoryLoading, setDiceHistoryLoading] = useState(false);
+  const [diceHistoryRows, setDiceHistoryRows] = useState([]);
+  const [diceHistoryError, setDiceHistoryError] = useState(null);
+
+  // Dice animation overlay (Baldur's Gate-ish feel).
+  // We drive it via special marker/final messages stored in `messages.ai_message_kind`.
+  const [diceOverlay, setDiceOverlay] = useState({
+    visible: false,
+    animationId: null,
+    startedAtMs: 0,
+    revealAtMs: 0,
+    durationMs: 3000,
+    difficulty: 6,
+    diceFinal: [],
+    diceRolling: [],
+    extraDiceCount: 0,
+    successes: 0,
+    isBotch: false,
+    isCritical: false,
+    poolSize: 0,
+  });
+  const [pendingDiceAnimations, setPendingDiceAnimations] = useState({});
+  const processedDiceAnimationsRef = React.useRef(new Set());
+  const diceRollingIntervalRef = React.useRef(null);
+  const diceRevealTimeoutRef = React.useRef(null);
+  const dicePendingTimeoutsRef = React.useRef({});
+  const [showAdminDiceRulesModal, setShowAdminDiceRulesModal] = useState(false);
+  const [adminDiceFloorDraft, setAdminDiceFloorDraft] = useState('');
+  const [adminDiceSaving, setAdminDiceSaving] = useState(false);
+  const [profileTzDraft, setProfileTzDraft] = useState('');
+  const [profileTzSaving, setProfileTzSaving] = useState(false);
 
   const renderMessageContent = (content) => {
     const text = String(content ?? '');
@@ -184,6 +241,172 @@ function SimpleApp() {
       </>
     );
   };
+
+  const _randomD10 = () => Math.floor(Math.random() * 10) + 1;
+  const _makeDiceAnimationId = () => `dice_${Date.now()}_${Math.random().toString(16).slice(2)}`;
+
+  const startDiceAnimationFromMarker = (markerObj) => {
+    if (!markerObj || typeof markerObj !== 'object') return;
+    const animationId = markerObj.animation_id || markerObj.animationId;
+    if (!animationId) return;
+    const alreadyProcessed = processedDiceAnimationsRef.current.has(String(animationId));
+    if (alreadyProcessed) return;
+    processedDiceAnimationsRef.current.add(String(animationId));
+
+    const startedAtMs = Number(markerObj.started_at_ms || markerObj.startedAtMs || Date.now());
+    const durationMs = Number(markerObj.duration_ms || markerObj.durationMs || 3000);
+    const revealAtMs = startedAtMs + durationMs;
+    const remainingMs = revealAtMs - Date.now();
+
+    const animId = String(animationId);
+
+    // Hide the final message immediately (even if we haven't rendered yet).
+    setPendingDiceAnimations((prev) => ({ ...prev, [animId]: true }));
+
+    const diceFinal = Array.isArray(markerObj.dice_preview)
+      ? markerObj.dice_preview
+      : Array.isArray(markerObj.diceFinal)
+        ? markerObj.diceFinal
+        : [];
+    const extraDiceCount = Number(markerObj.extra_dice_count || markerObj.extraDiceCount || 0);
+
+    // If we missed the window (poll delay), don't animate — just reveal.
+    if (remainingMs <= 0) {
+      setPendingDiceAnimations((prev) => {
+        const next = { ...prev };
+        delete next[animId];
+        return next;
+      });
+      if (dicePendingTimeoutsRef.current[animId]) {
+        clearTimeout(dicePendingTimeoutsRef.current[animId]);
+        delete dicePendingTimeoutsRef.current[animId];
+      }
+      return;
+    }
+
+    // Each animation schedules its own reveal time (so overlapping rolls don't get stuck).
+    if (dicePendingTimeoutsRef.current[animId]) {
+      clearTimeout(dicePendingTimeoutsRef.current[animId]);
+    }
+    dicePendingTimeoutsRef.current[animId] = setTimeout(() => {
+      setPendingDiceAnimations((prev) => {
+        const next = { ...prev };
+        delete next[animId];
+        return next;
+      });
+      delete dicePendingTimeoutsRef.current[animId];
+    }, Math.max(0, remainingMs));
+
+    setDiceOverlay({
+      visible: true,
+      animationId: animId,
+      startedAtMs,
+      revealAtMs,
+      durationMs,
+      difficulty: Number(markerObj.difficulty || 6),
+      diceFinal,
+      diceRolling: diceFinal.map(() => _randomD10()),
+      extraDiceCount,
+      successes: Number(markerObj.successes || 0),
+      isBotch: Boolean(markerObj.is_botch || markerObj.isBotch || false),
+      isCritical: Boolean(markerObj.is_critical || markerObj.isCritical || false),
+      poolSize: Number(markerObj.pool_size || markerObj.poolSize || diceFinal.length),
+    });
+  };
+
+  // Drive the overlay's rolling → settle transition.
+  useEffect(() => {
+    if (!diceOverlay.visible || !diceOverlay.animationId) return;
+
+    const animId = String(diceOverlay.animationId);
+    const finalValues = Array.isArray(diceOverlay.diceFinal) ? diceOverlay.diceFinal : [];
+    const diceCount = Math.max(1, finalValues.length);
+    const revealAtMs = Number(diceOverlay.revealAtMs || (Date.now() + diceOverlay.durationMs));
+
+    // Clear any previous animation timers.
+    if (diceRollingIntervalRef.current) clearInterval(diceRollingIntervalRef.current);
+    if (diceRevealTimeoutRef.current) clearTimeout(diceRevealTimeoutRef.current);
+
+    const remainingMs = revealAtMs - Date.now();
+    const rollIntervalMs = 90;
+
+    diceRollingIntervalRef.current = setInterval(() => {
+      setDiceOverlay((prev) => ({
+        ...prev,
+        diceRolling: Array.from({ length: diceCount }, () => _randomD10()),
+      }));
+    }, rollIntervalMs);
+
+    diceRevealTimeoutRef.current = setTimeout(() => {
+      if (diceRollingIntervalRef.current) clearInterval(diceRollingIntervalRef.current);
+      setDiceOverlay((prev) => ({
+        ...prev,
+        visible: false,
+        diceRolling: finalValues,
+      }));
+      // After reveal, ensure the final dice roll line is in view.
+      scrollChatToBottomSoon();
+    }, Math.max(0, remainingMs));
+
+    return () => {
+      if (diceRollingIntervalRef.current) clearInterval(diceRollingIntervalRef.current);
+      if (diceRevealTimeoutRef.current) clearTimeout(diceRevealTimeoutRef.current);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [diceOverlay.animationId]);
+
+  const diceMarkerRevealAtById = React.useMemo(() => {
+    const map = {};
+    for (const m of messages || []) {
+      const mk = (m.ai_message_kind || '').toLowerCase();
+      if (!mk.startsWith('dice_animation:') && !mk.startsWith('dice_animation_hidden:')) continue;
+      const parts = mk.split(':');
+      const animationId = parts.length >= 2 ? parts[1] : null;
+      if (!animationId) continue;
+      let obj = null;
+      try {
+        obj = typeof m.content === 'string' ? JSON.parse(m.content) : m.content;
+      } catch {
+        obj = null;
+      }
+      if (!obj || typeof obj !== 'object') continue;
+      const startedAtMs = Number(obj.started_at_ms || obj.startedAtMs || 0);
+      const durationMs = Number(obj.duration_ms || obj.durationMs || 3000);
+      if (!Number.isFinite(startedAtMs) || startedAtMs <= 0) continue;
+      map[String(animationId)] = startedAtMs + durationMs;
+    }
+    return map;
+  }, [messages]);
+
+  // Scan for dice animation marker messages and start overlay when they arrive.
+  useEffect(() => {
+    if (currentPage !== 'chat') return;
+    if (!Array.isArray(messages) || messages.length === 0) return;
+
+    const markerMsgs = messages.filter((m) => {
+      const mk = (m.ai_message_kind || '').toLowerCase();
+      return mk.startsWith('dice_animation:') || mk.startsWith('dice_animation_hidden:');
+    });
+
+    for (const mm of markerMsgs) {
+      const mk = (mm.ai_message_kind || '').toLowerCase();
+      const parts = mk.split(':');
+      const animationIdFromKind = parts.length >= 2 ? parts[1] : null;
+
+      let markerObj = null;
+      try {
+        markerObj = typeof mm.content === 'string' ? JSON.parse(mm.content) : mm.content;
+      } catch {
+        markerObj = null;
+      }
+      if (!markerObj) continue;
+      if (!markerObj.animation_id && animationIdFromKind) markerObj.animation_id = animationIdFromKind;
+
+      startDiceAnimationFromMarker(markerObj);
+    }
+    // Intentionally only depend on messages; startDiceAnimationFromMarker is stable via closures.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [messages, currentPage]);
   
   // Delete confirmation state
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -199,6 +422,12 @@ function SimpleApp() {
       fetchUserData();
     }
   }, [token]);
+
+  useEffect(() => {
+    if (user) {
+      setProfileTzDraft(user.display_timezone || '');
+    }
+  }, [user?.id, user?.display_timezone]);
 
   // Viewport: matchMedia before paint where possible; avoids early innerWidth layout reads
   useLayoutEffect(() => {
@@ -300,10 +529,12 @@ function SimpleApp() {
   };
 
   // Fetch campaigns
-  const fetchCampaigns = async () => {
+  const fetchCampaigns = async (authToken) => {
+    const t = authToken ?? token;
+    if (!t) return;
     try {
       const response = await fetch(`${API_URL}/campaigns/`, {
-        headers: { 'Authorization': `Bearer ${token}` }
+        headers: { Authorization: `Bearer ${t}` },
       });
       if (response.ok) {
         const data = await response.json();
@@ -362,6 +593,7 @@ function SimpleApp() {
     e.preventDefault();
     setLoading(true);
     setError('');
+    setPageOverlay({ visible: true, label: 'The gates recognize your name…' });
 
     const formData = new FormData(e.target);
     const credentials = {
@@ -385,13 +617,15 @@ function SimpleApp() {
         localStorage.setItem('user', JSON.stringify(data.user)); // Persist user data
         setCurrentPage('dashboard');
         setError('');
-        fetchCampaigns();
+        setPageOverlay({ visible: true, label: 'Summoning your chronicles…' });
+        await fetchCampaigns(data.access_token);
       } else {
         setError(data.error || 'Login failed');
       }
     } catch (err) {
       setError('Connection error: ' + err.message);
     } finally {
+      setPageOverlay({ visible: false, label: '' });
       setLoading(false);
     }
   };
@@ -401,6 +635,7 @@ function SimpleApp() {
     e.preventDefault();
     setLoading(true);
     setError('');
+    setPageOverlay({ visible: true, label: 'Forging your shadow…' });
 
     const formData = new FormData(e.target);
     const userData = {
@@ -427,13 +662,15 @@ function SimpleApp() {
         setCurrentPage('dashboard');
         setError('');
         showSuccess('✅ Account created! Check your email for a welcome message (if SMTP is configured).');
-        fetchCampaigns();
+        setPageOverlay({ visible: true, label: 'Summoning your chronicles…' });
+        await fetchCampaigns(data.access_token);
       } else {
         setError(data.error || 'Registration failed');
       }
     } catch (err) {
       setError('Connection error: ' + err.message);
     } finally {
+      setPageOverlay({ visible: false, label: '' });
       setLoading(false);
     }
   };
@@ -454,6 +691,7 @@ function SimpleApp() {
     e.preventDefault();
     setLoading(true);
     setError('');
+    setPageOverlay({ visible: true, label: 'Weaving a new chronicle…' });
 
     const formData = new FormData(e.target);
     const campaignData = {
@@ -493,6 +731,7 @@ function SimpleApp() {
     } catch (err) {
       setError('Connection error: ' + err.message);
     } finally {
+      setPageOverlay({ visible: false, label: '' });
       setLoading(false);
     }
   };
@@ -614,38 +853,60 @@ function SimpleApp() {
 
   // Enter campaign (load locations from database and switch to chat view)
   const enterCampaign = async (campaign) => {
-    setSelectedCampaign(campaign);
+    setPageOverlay({ visible: true, label: 'Crossing into the chronicle…' });
+    try {
+      // We need `created_by` (campaign creator) to enable storyteller/admin-only UI,
+      // like hidden dice rolls visibility.
+      let campaignWithCreator = campaign;
+      try {
+        const detailRes = await fetch(`${API_URL}/campaigns/${campaign.id}`, {
+          headers: { 'Authorization': `Bearer ${token}` },
+        });
+        if (detailRes.ok) {
+          const detail = await detailRes.json();
+          campaignWithCreator = { ...campaign, ...detail };
+        }
+      } catch {
+        // If the detail fetch fails, we still let the user enter the campaign.
+      }
+      setSelectedCampaign(campaignWithCreator);
 
-    const chars = await fetchCampaignCharactersList(campaign.id);
-    setCampaignCharacters(chars);
-    const primary = chars[0] || null;
-    setCharacter(primary);
+      const chars = await fetchCampaignCharactersList(campaign.id);
+      setCampaignCharacters(chars);
+      const primary = chars[0] || null;
+      setCharacter(primary);
 
-    // Fetch locations from database
-    const campaignLocations = await fetchCampaignLocations(campaign.id);
-    
-    let initialLocation = null;
-    if (campaignLocations.length > 0) {
-      setLocations(campaignLocations);
-      // Set OOC as default, or first location if no OOC
-      const oocLocation = campaignLocations.find(loc => loc.type === 'ooc');
-      initialLocation = oocLocation || campaignLocations[0];
-      setCurrentLocation(initialLocation);
-    } else {
-      // Fallback if no locations (shouldn't happen but just in case)
-      console.warn('⚠️ No locations found for campaign, using fallback');
-      const fallbackLoc = { id: 0, name: '💬 OOC Chat', type: 'ooc' };
-      setLocations([fallbackLoc]);
-      setCurrentLocation(fallbackLoc);
-      initialLocation = fallbackLoc;
+      setPageOverlay({ visible: true, label: 'Gathering places and whispers…' });
+      const campaignLocations = await fetchCampaignLocations(campaign.id);
+
+      let initialLocation = null;
+      if (campaignLocations.length > 0) {
+        setLocations(campaignLocations);
+        const oocLocation = campaignLocations.find(
+          (loc) => String(loc.type || '').toLowerCase() === 'ooc'
+        );
+        initialLocation = oocLocation || campaignLocations[0];
+        setCurrentLocation(initialLocation);
+      } else {
+        console.warn('⚠️ No locations found for campaign, using fallback');
+        const fallbackLoc = { id: 0, name: '💬 OOC Chat', type: 'ooc' };
+        setLocations([fallbackLoc]);
+        setCurrentLocation(fallbackLoc);
+        initialLocation = fallbackLoc;
+      }
+
+      if (initialLocation && initialLocation.id) {
+        setPageOverlay({ visible: true, label: 'Unsealing this room…' });
+        await loadMessages(campaign.id, initialLocation.id, { characterForRead: primary });
+      }
+
+      navigateTo('chat', campaignWithCreator);
+    } catch (err) {
+      console.error(err);
+      showError('Could not open this campaign. Try again.');
+    } finally {
+      setPageOverlay({ visible: false, label: '' });
     }
-    
-    // Load messages for initial location
-    if (initialLocation) {
-      await loadMessages(campaign.id, initialLocation.id, { characterForRead: primary });
-    }
-    
-    navigateTo('chat', campaign); // Use navigateTo for proper browser history
   };
 
   // When viewing campaign settings, load stats for the selected campaign
@@ -694,8 +955,8 @@ function SimpleApp() {
   const handleSendMessage = async (e) => {
     e.preventDefault();
     const formData = new FormData(e.target);
-    const messageText = formData.get('message');
-    
+    const messageText = normalizeChatMessageInput(formData.get('message'), user?.role === 'admin');
+
     if (!messageText.trim()) return;
 
     if (/^\s*\/ai(\s+|$)/i.test(messageText) && user?.role !== 'admin') {
@@ -724,6 +985,8 @@ function SimpleApp() {
     e.target.reset();
     scrollChatToBottomSoon();
 
+    const slashMatch = messageText.match(/^\s*\/ai\s+(\S+)(?:\s+([\s\S]*))?$/i);
+
     try {
       // Save user message to database
       const saveResponse = await fetch(`${API_URL}/campaigns/${selectedCampaign.id}/locations/${currentLocation.id}`, {
@@ -734,11 +997,15 @@ function SimpleApp() {
         },
         body: JSON.stringify({
           content: messageText,
-          message_type: 'ic',
+          message_type:
+            String(currentLocation?.type || '').toLowerCase() === 'ooc' ? 'ooc' : 'ic',
           role: 'user',
           ...(character?.id ? { character_id: character.id } : {}),
+          ...(slashMatch ? { ai_message_kind: 'slash_user' } : {}),
         })
       });
+
+      const inOocRoom = String(currentLocation?.type || '').toLowerCase() === 'ooc';
 
       if (saveResponse.ok) {
         const saveData = await saveResponse.json();
@@ -753,7 +1020,6 @@ function SimpleApp() {
       }
 
       // /ai … slash commands (diagnostics & tools) — bypass normal storyteller chat
-      const slashMatch = messageText.match(/^\s*\/ai\s+(\S+)(?:\s+([\s\S]*))?$/i);
       if (slashMatch) {
         const slashRes = await fetch(`${API_URL}/ai/slash`, {
           method: 'POST',
@@ -767,19 +1033,105 @@ function SimpleApp() {
             location_id: currentLocation.id,
           }),
         });
-        const slashData = await slashRes.json();
+        const slashData = await slashRes.json().catch(() => ({}));
         const assistantContent =
           slashData.display_markdown ||
           slashData.llm_acknowledgment ||
-          (slashRes.ok ? '(no body)' : null);
-        const showSlashReply = Boolean(assistantContent);
+          null;
+        const showSlashReply = Boolean(
+          assistantContent && String(assistantContent).trim() !== ''
+        );
         if (!slashRes.ok && !showSlashReply) {
           setError(slashData.error || 'Slash command failed');
         } else {
           if (!slashRes.ok && slashData.error) {
             setError(slashData.error);
           }
-          if (showSlashReply) {
+
+          const isDiceRollSlash =
+            slashData.command === 'roll' || slashData.command === 'roll-hidden';
+          if (isDiceRollSlash) {
+            const slashAssistantType = inOocRoom ? 'ooc' : 'ic';
+            const isHidden = slashData.command === 'roll-hidden';
+
+            const roll = slashData.roll || {};
+            const allDice = Array.isArray(roll.dice) ? roll.dice : [];
+            const preview = allDice.slice(0, 10);
+            const extraDiceCount = Math.max(0, allDice.length - preview.length);
+
+            const startedAtMs = Date.now();
+            const durationMs = 3000;
+            const animationId = _makeDiceAnimationId();
+
+            const markerObj = {
+              animation_id: animationId,
+              started_at_ms: startedAtMs,
+              duration_ms: durationMs,
+              difficulty: Number(roll.difficulty || 6),
+              dice_preview: preview,
+              extra_dice_count: extraDiceCount,
+              successes: Number(roll.net_successes || 0),
+              is_botch: Boolean(roll.botch),
+              is_critical: false,
+              pool_size: allDice.length,
+            };
+
+            startDiceAnimationFromMarker(markerObj);
+
+            const markerKind = isHidden
+              ? `dice_animation_hidden:${animationId}`
+              : `dice_animation:${animationId}`;
+            const finalKind = isHidden
+              ? `dice_roll_hidden:${animationId}`
+              : `dice_roll:${animationId}`;
+
+            const markerRes = await fetch(
+              `${API_URL}/campaigns/${selectedCampaign.id}/locations/${currentLocation.id}`,
+              {
+                method: 'POST',
+                headers: {
+                  'Authorization': `Bearer ${token}`,
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                  content: JSON.stringify(markerObj),
+                  message_type: slashAssistantType,
+                  role: 'assistant',
+                  ai_message_kind: markerKind,
+                }),
+              }
+            );
+            const markerData = await markerRes.json().catch(() => ({}));
+            if (!markerRes.ok) {
+              setError(markerData.error || 'Could not post dice animation marker.');
+              return;
+            }
+
+            const finalRes = await fetch(
+              `${API_URL}/campaigns/${selectedCampaign.id}/locations/${currentLocation.id}`,
+              {
+                method: 'POST',
+                headers: {
+                  'Authorization': `Bearer ${token}`,
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                  content: assistantContent,
+                  message_type: slashAssistantType,
+                  role: 'assistant',
+                  ai_message_kind: finalKind,
+                }),
+              }
+            );
+            const finalData = await finalRes.json().catch(() => ({}));
+            if (!finalRes.ok) {
+              setError(finalData.error || 'Could not post dice roll result.');
+              return;
+            }
+
+            setMessages((prev) => [...prev, markerData.data, finalData.data]);
+          } else if (showSlashReply) {
+            const slashAssistantType = inOocRoom ? 'ooc' : 'ic';
             const aiSaveResponse = await fetch(
               `${API_URL}/campaigns/${selectedCampaign.id}/locations/${currentLocation.id}`,
               {
@@ -790,8 +1142,9 @@ function SimpleApp() {
                 },
                 body: JSON.stringify({
                   content: assistantContent,
-                  message_type: 'system',
+                  message_type: slashAssistantType,
                   role: 'assistant',
+                  ai_message_kind: 'slash_assistant',
                 }),
               }
             );
@@ -807,10 +1160,24 @@ function SimpleApp() {
                   created_at: new Date().toISOString(),
                   location_id: currentLocation.id,
                   username: 'AI',
-                  message_type: 'system',
+                  message_type: slashAssistantType,
                 },
               ]);
             }
+          }
+          if (
+            slashData.clean_target === 'ai' &&
+            typeof slashData.deleted_count === 'number' &&
+            selectedCampaign?.id &&
+            currentLocation?.id
+          ) {
+            await loadMessages(selectedCampaign.id, currentLocation.id, { characterForRead: character });
+          }
+          if (slashData.command === 'dice-diff' && selectedCampaign?.id) {
+            const locs = await fetchCampaignLocations(selectedCampaign.id);
+            setLocations(locs);
+            const upd = locs.find((l) => l.id === currentLocation.id);
+            if (upd) setCurrentLocation(upd);
           }
           if (Array.isArray(slashData.future_commands_suggestion) && slashData.future_commands_suggestion.length) {
             console.info('/ai commands:', slashData.future_commands_suggestion);
@@ -845,7 +1212,7 @@ function SimpleApp() {
         if (skipOoc || !aiMessageContent) {
           /* OOC: model chose not to answer, or empty — no assistant line */
         } else {
-          const assistantMsgType = currentLocation?.type === 'ooc' ? 'ooc' : 'ic';
+          const assistantMsgType = inOocRoom ? 'ooc' : 'ic';
           const aiSaveResponse = await fetch(`${API_URL}/campaigns/${selectedCampaign.id}/locations/${currentLocation.id}`, {
             method: 'POST',
             headers: {
@@ -1000,7 +1367,8 @@ function SimpleApp() {
     };
 
     const kickoff = setTimeout(poll, 400);
-    const intervalId = setInterval(poll, 2500);
+    // Dice animations rely on marker messages; poll a bit faster so everyone sees it.
+    const intervalId = setInterval(poll, 1200);
     return () => {
       clearTimeout(kickoff);
       clearInterval(intervalId);
@@ -1619,6 +1987,135 @@ function SimpleApp() {
     </div>
   );
 
+  const saveProfileTimezone = async () => {
+    if (!token) return;
+    setProfileTzSaving(true);
+    try {
+      const res = await fetch(`${API_URL}/users/me`, {
+        method: 'PUT',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          display_timezone: profileTzDraft.trim() ? profileTzDraft.trim() : null,
+        }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok) {
+        setUser(data);
+        localStorage.setItem('user', JSON.stringify(data));
+        showSuccess('Display time zone saved.');
+      } else {
+        showError(data.error || 'Failed to save time zone');
+      }
+    } catch (e) {
+      showError('Connection error while saving time zone');
+    } finally {
+      setProfileTzSaving(false);
+    }
+  };
+
+  const renderProfile = () => (
+    <div style={{
+      minHeight: '100vh',
+      background: '#0f0f1e',
+      display: 'flex',
+      flexDirection: 'column',
+    }}>
+      <div style={{
+        background: 'linear-gradient(135deg, #16213e 0%, #0f1729 100%)',
+        padding: isMobile ? '15px' : '20px',
+        boxShadow: '0 2px 10px rgba(0,0,0,0.5)',
+        display: 'flex',
+        flexDirection: isMobile ? 'column' : 'row',
+        justifyContent: 'space-between',
+        alignItems: isMobile ? 'stretch' : 'center',
+        gap: isMobile ? '12px' : '0',
+        borderBottom: '2px solid #2a2a4e',
+      }}>
+        <h1 style={{ color: '#e94560', margin: 0, fontSize: isMobile ? '20px' : '24px' }}>Profile</h1>
+        <button
+          type="button"
+          onClick={() => navigateTo('dashboard')}
+          style={{
+            padding: '8px 16px',
+            background: 'rgba(233, 69, 96, 0.2)',
+            color: '#e94560',
+            border: '2px solid #e94560',
+            borderRadius: '5px',
+            cursor: 'pointer',
+            fontWeight: 'bold',
+          }}
+        >
+          Back to dashboard
+        </button>
+      </div>
+      <div style={{ flex: 1, maxWidth: '560px', margin: '0 auto', padding: isMobile ? '20px 15px' : '40px 20px', width: '100%', boxSizing: 'border-box' }}>
+        <div style={{
+          background: '#16213e',
+          borderRadius: '10px',
+          padding: '24px',
+          border: '1px solid #2a2a4e',
+          boxShadow: '0 2px 10px rgba(0,0,0,0.5)',
+        }}>
+          <p style={{ color: '#b5b5c3', marginTop: 0 }}>
+            <strong style={{ color: '#e0e0e0' }}>Username:</strong> {user?.username}
+          </p>
+          <p style={{ color: '#b5b5c3' }}>
+            <strong style={{ color: '#e0e0e0' }}>Email:</strong> {user?.email}
+          </p>
+          <p style={{ color: '#b5b5c3' }}>
+            <strong style={{ color: '#e0e0e0' }}>Role:</strong> {user?.role}
+          </p>
+          <label htmlFor="profile-timezone" style={{ display: 'block', color: '#e94560', fontWeight: 600, marginTop: '20px', marginBottom: '8px' }}>
+            Display time zone
+          </label>
+          <p style={{ color: '#8b8b9f', fontSize: '13px', marginTop: 0, marginBottom: '10px', lineHeight: 1.5 }}>
+            Message times, dice history, and admin timestamps follow this zone. Leave as browser default to use your device clock.
+          </p>
+          <select
+            id="profile-timezone"
+            value={profileTzDraft}
+            onChange={(e) => setProfileTzDraft(e.target.value)}
+            style={{
+              width: '100%',
+              maxWidth: '100%',
+              padding: '10px',
+              borderRadius: '6px',
+              background: '#0f1729',
+              color: '#e0e0e0',
+              border: '2px solid #2a2a4e',
+              marginBottom: '16px',
+            }}
+          >
+            <option value="">Browser default (device local time)</option>
+            {getTimezoneSelectOptions().map((o) => (
+              <option key={o.value} value={o.value}>{o.label}</option>
+            ))}
+          </select>
+          <button
+            type="button"
+            onClick={saveProfileTimezone}
+            disabled={profileTzSaving}
+            style={{
+              padding: '10px 20px',
+              background: profileTzSaving ? '#4a4a5e' : '#9d4edd',
+              color: 'white',
+              border: 'none',
+              borderRadius: '8px',
+              fontWeight: 'bold',
+              cursor: profileTzSaving ? 'not-allowed' : 'pointer',
+            }}
+          >
+            {profileTzSaving ? 'Saving…' : 'Save time zone'}
+          </button>
+        </div>
+      </div>
+      <Footer />
+    </div>
+  );
+
   // Render dashboard
   const renderDashboard = () => (
     <div style={{ 
@@ -1649,6 +2146,21 @@ function SimpleApp() {
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '10px' : '15px', justifyContent: isMobile ? 'center' : 'flex-end', flexWrap: 'wrap' }}>
           <span style={{ color: '#b5b5c3', fontWeight: '500', fontSize: isMobile ? '14px' : '16px' }}>👤 {user?.username}</span>
+          <button
+            type="button"
+            onClick={() => navigateTo('profile')}
+            style={{
+              padding: '8px 16px',
+              background: 'rgba(157, 78, 221, 0.15)',
+              color: '#c4b5fd',
+              border: '2px solid #7c3aed',
+              borderRadius: '5px',
+              cursor: 'pointer',
+              fontWeight: 'bold',
+            }}
+          >
+            Profile
+          </button>
           {user?.role === 'admin' && (
             <button
               onClick={() => navigateTo('admin')}
@@ -2530,7 +3042,70 @@ function SimpleApp() {
         showError(rollData.error || 'Roll failed.');
         return;
       }
+      const rollResult = rollData.roll_result || {};
       const chatBody = rollData.chat_message || '';
+
+      const results = Array.isArray(rollResult.results) ? rollResult.results : [];
+      const preview = results.slice(0, 10);
+      const extraDiceCount = Math.max(0, results.length - preview.length);
+
+      const startedAtMs = Date.now();
+      const durationMs = 3000;
+      const animationId = _makeDiceAnimationId();
+
+      const isCampaignOwner =
+        selectedCampaign?.created_by != null &&
+        user?.id != null &&
+        String(selectedCampaign.created_by) === String(user.id);
+      const canHideRollToOthers =
+        user?.role === 'admin' || user?.role === 'helper' || isCampaignOwner;
+      const hiddenToOthers = canHideRollToOthers && rollHideOthers;
+
+      const markerKind = hiddenToOthers
+        ? `dice_animation_hidden:${animationId}`
+        : `dice_animation:${animationId}`;
+      const finalKind = hiddenToOthers
+        ? `dice_roll_hidden:${animationId}`
+        : `dice_roll:${animationId}`;
+
+      const markerObj = {
+        animation_id: animationId,
+        started_at_ms: startedAtMs,
+        duration_ms: durationMs,
+        difficulty: Number(rollResult.difficulty || d),
+        dice_preview: preview,
+        extra_dice_count: extraDiceCount,
+        successes: Number(rollResult.successes || 0),
+        is_botch: Boolean(rollResult.is_botch),
+        is_critical: Boolean(rollResult.is_critical),
+        pool_size: results.length,
+      };
+
+      // Start local animation immediately; the final chat line is hidden until the timer completes.
+      startDiceAnimationFromMarker(markerObj);
+
+      const markerRes = await fetch(
+        `${API_URL}/campaigns/${selectedCampaign.id}/locations/${currentLocation.id}`,
+        {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            content: JSON.stringify(markerObj),
+            message_type: 'system',
+            role: 'assistant',
+            ai_message_kind: markerKind,
+          }),
+        }
+      );
+      const markerData = await markerRes.json().catch(() => ({}));
+      if (!markerRes.ok) {
+        showError(markerData.error || 'Could not post dice animation marker.');
+        return;
+      }
+
       const msgRes = await fetch(
         `${API_URL}/campaigns/${selectedCampaign.id}/locations/${currentLocation.id}`,
         {
@@ -2543,6 +3118,7 @@ function SimpleApp() {
             content: chatBody,
             message_type: 'action',
             role: 'user',
+            ai_message_kind: finalKind,
             ...(character?.id ? { character_id: character.id } : {}),
           }),
         }
@@ -2552,10 +3128,11 @@ function SimpleApp() {
         showError(msgData.error || 'Roll saved but could not post to chat.');
         return;
       }
-      setMessages((prev) => [...prev, msgData.data]);
+
+      setMessages((prev) => [...prev, markerData.data, msgData.data]);
       scrollChatToBottomSoon();
       setShowRollModal(false);
-      showSuccess('Roll posted to this room.');
+      showSuccess(hiddenToOthers ? 'Private roll posted to this room.' : 'Roll posted to this room.');
     } catch (err) {
       console.error(err);
       showError('Network error while rolling.');
@@ -2564,9 +3141,106 @@ function SimpleApp() {
     }
   };
 
+  const saveAdminDiceLeniency = async (opts) => {
+    if (!token || !selectedCampaign?.id || !currentLocation?.id) {
+      showError('Join a campaign room first.');
+      return;
+    }
+    setAdminDiceSaving(true);
+    try {
+      let body;
+      if (opts?.restore) {
+        body = { dice_leniency_floor: null };
+      } else {
+        const t = adminDiceFloorDraft.trim();
+        if (!t) {
+          showError('Enter a floor from 2–10, or tap Restore normal.');
+          return;
+        }
+        const n = parseInt(t, 10);
+        if (Number.isNaN(n) || n < 2 || n > 10) {
+          showError('Enter a floor from 2–10, or tap Restore normal.');
+          return;
+        }
+        body = { dice_leniency_floor: n };
+      }
+      const res = await fetch(
+        `${API_URL}/campaigns/${selectedCampaign.id}/locations/${currentLocation.id}/dice-leniency`,
+        {
+          method: 'PUT',
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(body),
+        }
+      );
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        showError(data.error || 'Could not update dice rules.');
+        return;
+      }
+      const locs = await fetchCampaignLocations(selectedCampaign.id);
+      setLocations(locs);
+      const upd = locs.find((l) => l.id === currentLocation.id);
+      if (upd) setCurrentLocation(upd);
+      showSuccess(
+        data.dice_leniency_floor != null
+          ? `Leniency floor ${data.dice_leniency_floor} saved for this room.`
+          : 'Leniency off — normal d10 randomness for this room.'
+      );
+      if (opts?.restore) setAdminDiceFloorDraft('');
+      setShowAdminDiceRulesModal(false);
+    } catch (e) {
+      console.error(e);
+      showError('Network error.');
+    } finally {
+      setAdminDiceSaving(false);
+    }
+  };
+
+  const openDiceHistory = async () => {
+    if (!token || !selectedCampaign?.id || !currentLocation?.id) {
+      showError('Join a campaign room first.');
+      return;
+    }
+    setShowDiceHistoryModal(true);
+    setDiceHistoryError(null);
+    setDiceHistoryLoading(true);
+    setDiceHistoryRows([]);
+    try {
+      const res = await fetch(
+        `${API_URL}/campaigns/${selectedCampaign.id}/rolls?location_id=${currentLocation.id}&limit=100`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setDiceHistoryError(data.error || 'Could not load roll history.');
+        return;
+      }
+      setDiceHistoryRows(Array.isArray(data) ? data : []);
+    } catch (e) {
+      console.error(e);
+      setDiceHistoryError('Network error while loading history.');
+    } finally {
+      setDiceHistoryLoading(false);
+    }
+  };
+
+  const closeRollModal = () => {
+    setShowDiceHistoryModal(false);
+    setShowRollModal(false);
+  };
+
   // Render in-campaign chat (Gothic "Dark Conclave" style — matches GothicShowcase preview)
   const renderChat = () => {
     const campaignTheme = getCampaignTheme(selectedCampaign);
+    const isCampaignOwner =
+      selectedCampaign?.created_by != null &&
+      user?.id != null &&
+      String(selectedCampaign.created_by) === String(user.id);
+    const canHideRollToOthers =
+      user?.role === 'admin' || user?.role === 'helper' || isCampaignOwner;
 
     return (
     <div style={{
@@ -2579,6 +3253,91 @@ function SimpleApp() {
       background: '#0f0f1e',
       position: 'relative'
     }}>
+      {diceOverlay.visible && (
+        <div
+          role="presentation"
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 3000,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            background: 'rgba(0,0,0,0.35)',
+            padding: '16px',
+          }}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            style={{
+              width: 'min(760px, 100%)',
+              background: 'linear-gradient(135deg, rgba(157, 78, 221, 0.18) 0%, rgba(233, 69, 96, 0.12) 100%)',
+              border: '2px solid rgba(233, 69, 96, 0.35)',
+              borderRadius: '14px',
+              boxShadow: '0 20px 70px rgba(0,0,0,0.65)',
+              padding: '18px 18px 16px',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: '12px', marginBottom: '10px' }}>
+              <div style={{ color: '#e94560', fontFamily: 'Cinzel, serif', fontSize: '18px', fontWeight: 700 }}>
+                <i className="fas fa-dice" style={{ marginRight: '10px' }} />
+                Rolling…
+              </div>
+              <div style={{ color: '#b5b5c3', fontFamily: 'Crimson Text, serif', fontSize: '12px' }}>
+                TN {diceOverlay.difficulty} · {diceOverlay.successes} net
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', justifyContent: 'center' }}>
+              {diceOverlay.diceFinal.map((_, i) => {
+                const v = diceOverlay.diceRolling[i] ?? diceOverlay.diceFinal[i] ?? 1;
+                const isSuccess = v >= diceOverlay.difficulty;
+                const isBotchDie = v === 1;
+                const bg = isBotchDie
+                  ? '#8b0000'
+                  : v === 10
+                    ? '#ffd700'
+                    : isSuccess
+                      ? '#2d7a3e'
+                      : '#374151';
+                return (
+                  <div
+                    key={`${diceOverlay.animationId}-die-${i}`}
+                    style={{
+                      width: '54px',
+                      height: '54px',
+                      borderRadius: '12px',
+                      border: '1px solid rgba(255,255,255,0.12)',
+                      background: `linear-gradient(180deg, ${bg} 0%, rgba(15, 23, 41, 0.2) 100%)`,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      boxShadow: '0 10px 35px rgba(0,0,0,0.45)',
+                      color: v === 10 ? '#1b1b1b' : 'white',
+                      fontFamily: 'Cinzel, serif',
+                      fontSize: '18px',
+                      fontWeight: 900,
+                      userSelect: 'none',
+                    }}
+                  >
+                    {v}
+                  </div>
+                );
+              })}
+              {diceOverlay.extraDiceCount > 0 && (
+                <div style={{ alignSelf: 'center', color: '#8b8b9f', fontFamily: 'Crimson Text, serif', fontSize: '14px', marginLeft: '4px' }}>
+                  +{diceOverlay.extraDiceCount} more
+                </div>
+              )}
+            </div>
+
+            <div style={{ marginTop: '12px', color: '#b5b5c3', fontFamily: 'Crimson Text, serif', fontSize: '12px', textAlign: 'center' }}>
+              The roll resolves right after the dice stop.
+            </div>
+          </div>
+        </div>
+      )}
       {/* Mobile Menu Buttons */}
       {isMobile && (
         <>
@@ -2736,27 +3495,49 @@ function SimpleApp() {
           borderTop: '2px solid #2a2a4e',
           display: 'flex',
           alignItems: 'center',
-          justifyContent: 'space-between'
+          justifyContent: 'space-between',
+          gap: '8px',
         }}>
-          <div style={{ color: '#b5b5c3', fontSize: '14px', fontWeight: '500', fontFamily: 'Crimson Text, serif' }}>
+          <div style={{ color: '#b5b5c3', fontSize: '14px', fontWeight: '500', fontFamily: 'Crimson Text, serif', minWidth: 0 }}>
             <i className="fas fa-user" style={{ marginRight: '6px', color: '#8b8b9f' }} />
             {user?.username}
           </div>
-          <button
-            onClick={handleLeaveCampaign}
-            style={{
-              padding: '5px 10px',
-              background: 'rgba(233, 69, 96, 0.15)',
-              color: '#e94560',
-              border: '1px solid rgba(233, 69, 96, 0.4)',
-              borderRadius: '4px',
-              cursor: 'pointer',
-              fontSize: '12px',
-              fontFamily: 'Cinzel, serif'
-            }}
-          >
-            🚪 Exit
-          </button>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'stretch', gap: '6px', flexShrink: 0 }}>
+            {canHideRollToOthers && (
+              <button
+                type="button"
+                onClick={() => navigateTo('profile')}
+                style={{
+                  padding: '5px 10px',
+                  background: 'rgba(157, 78, 221, 0.12)',
+                  color: '#d8b4fe',
+                  border: '1px solid rgba(124, 58, 237, 0.45)',
+                  borderRadius: '4px',
+                  cursor: 'pointer',
+                  fontSize: '11px',
+                  fontFamily: 'Cinzel, serif',
+                }}
+              >
+                Profile
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={handleLeaveCampaign}
+              style={{
+                padding: '5px 10px',
+                background: 'rgba(233, 69, 96, 0.15)',
+                color: '#e94560',
+                border: '1px solid rgba(233, 69, 96, 0.4)',
+                borderRadius: '4px',
+                cursor: 'pointer',
+                fontSize: '12px',
+                fontFamily: 'Cinzel, serif'
+              }}
+            >
+              🚪 Exit
+            </button>
+          </div>
         </div>
       </div>
 
@@ -2857,6 +3638,26 @@ function SimpleApp() {
             </div>
           ) : (
             messages.map((msg, idx) => {
+              const mk = (msg.ai_message_kind || '').toLowerCase();
+              // Marker messages should never appear in the chat list.
+              if (mk.startsWith('dice_animation:') || mk.startsWith('dice_animation_hidden:')) {
+                return null;
+              }
+              // Dice-roll final reveal is controlled by pendingDiceAnimations.
+              if (mk.startsWith('dice_roll:') || mk.startsWith('dice_roll_hidden:')) {
+                const parts = mk.split(':');
+                const animationId = parts.length >= 2 ? parts[1] : null;
+                const id = animationId ? String(animationId) : null;
+                const revealAtMs = id ? diceMarkerRevealAtById[id] : null;
+                if (
+                  id &&
+                  (pendingDiceAnimations[id] ||
+                    (revealAtMs != null && Date.now() < revealAtMs))
+                ) {
+                  return null;
+                }
+              }
+
               const isAI = msg.role === 'assistant';
               const line = isAI
                 ? {
@@ -2941,10 +3742,10 @@ function SimpleApp() {
                         </span>
                       )}
                       <span
-                        title={msg.created_at ? String(msg.created_at) : undefined}
+                        title={msg.created_at ? formatDateTimeTooltip(msg.created_at, user?.display_timezone || null) : undefined}
                         style={{ color: '#8b8b9f', fontSize: '12px', fontWeight: '500', fontFamily: 'Crimson Text, serif' }}
                       >
-                        {formatMessageTime(msg.created_at, chatNow)}
+                        {formatMessageTime(msg.created_at, chatNow, user?.display_timezone || null)}
                       </span>
                     </div>
                     <div
@@ -2985,7 +3786,7 @@ function SimpleApp() {
             }}>
               <div style={{ color: '#e94560', fontSize: '12px', fontFamily: 'Crimson Text, serif' }}>
                 {locationReadState?.first_unread_at
-                  ? `You have unread messages since ${new Date(locationReadState.first_unread_at).toLocaleString()}`
+                  ? `You have unread messages since ${formatDateTimeInZone(locationReadState.first_unread_at, user?.display_timezone || null)}`
                   : 'You have unread messages'}
               </div>
               <div style={{ display: 'flex', gap: '8px' }}>
@@ -3246,6 +4047,32 @@ function SimpleApp() {
           >
             🎲 Roll Dice
           </button>
+          {user?.role === 'admin' && (
+            <button
+              type="button"
+              onClick={() => {
+                const f = currentLocation?.dice_leniency_floor;
+                setAdminDiceFloorDraft(
+                  f !== undefined && f !== null && f !== '' ? String(f) : ''
+                );
+                setShowAdminDiceRulesModal(true);
+              }}
+              style={{
+                width: '100%',
+                padding: '8px',
+                background: 'rgba(157, 78, 221, 0.12)',
+                color: '#d8b4fe',
+                border: '1px solid rgba(124, 58, 237, 0.45)',
+                borderRadius: '4px',
+                cursor: 'pointer',
+                fontSize: '13px',
+                marginBottom: '8px',
+                fontFamily: 'Cinzel, serif',
+              }}
+            >
+              Admin Dice Rules
+            </button>
+          )}
           <button style={{
             width: '100%',
             padding: '8px',
@@ -3279,7 +4106,9 @@ function SimpleApp() {
       {showRollModal && (
         <div
           role="presentation"
-          onClick={() => !rollSubmitting && setShowRollModal(false)}
+          onClick={() =>
+            !rollSubmitting && !showDiceHistoryModal && setShowRollModal(false)
+          }
           style={{
             position: 'fixed',
             inset: 0,
@@ -3299,18 +4128,50 @@ function SimpleApp() {
             style={{ maxWidth: '420px', width: '100%' }}
           >
             <GothicBox theme="none" style={{ background: '#16213e', padding: '22px' }}>
-              <h3
-                id="roll-dice-title"
+              <div
                 style={{
-                  color: '#e94560',
-                  fontSize: '17px',
+                  display: 'flex',
+                  alignItems: 'flex-start',
+                  justifyContent: 'space-between',
+                  gap: '12px',
                   marginBottom: '14px',
-                  fontFamily: 'Cinzel, serif',
                 }}
               >
-                <i className="fas fa-dice" style={{ marginRight: '8px' }} />
-                Roll dice (Storyteller)
-              </h3>
+                <h3
+                  id="roll-dice-title"
+                  style={{
+                    color: '#e94560',
+                    fontSize: '17px',
+                    margin: 0,
+                    flex: 1,
+                    fontFamily: 'Cinzel, serif',
+                  }}
+                >
+                  <i className="fas fa-dice" style={{ marginRight: '8px' }} />
+                  Roll dice (Storyteller)
+                </h3>
+                {user?.role === 'admin' && (
+                  <button
+                    type="button"
+                    disabled={rollSubmitting}
+                    onClick={() => openDiceHistory()}
+                    style={{
+                      flexShrink: 0,
+                      padding: '6px 10px',
+                      fontSize: '11px',
+                      fontFamily: 'Cinzel, serif',
+                      background: '#0f1729',
+                      color: '#d8b4fe',
+                      border: '1px solid #6b21a8',
+                      borderRadius: '6px',
+                      cursor: rollSubmitting ? 'not-allowed' : 'pointer',
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
+                    History
+                  </button>
+                )}
+              </div>
               <p style={{ color: '#8b8b9f', fontSize: '13px', marginBottom: '16px', fontFamily: 'Crimson Text, serif', lineHeight: 1.5 }}>
                 Old World of Darkness style: pool of <strong>d10</strong>, difficulty (target number) usually 6–9.
                 Each die ≥ difficulty is a success; <strong>1s cancel</strong> successes. Optional: specialty (10s = 2 successes).
@@ -3383,6 +4244,28 @@ function SimpleApp() {
                 />
                 Specialty (10s count as 2 successes)
               </label>
+              {canHideRollToOthers && (
+                <label
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '10px',
+                    color: '#b5b5c3',
+                    fontSize: '13px',
+                    marginBottom: '14px',
+                    cursor: rollSubmitting ? 'default' : 'pointer',
+                    fontFamily: 'Crimson Text, serif',
+                  }}
+                >
+                  <input
+                    type="checkbox"
+                    checked={rollHideOthers}
+                    onChange={(e) => setRollHideOthers(e.target.checked)}
+                    disabled={rollSubmitting}
+                  />
+                  Hide roll to others (admin/storyteller only)
+                </label>
+              )}
               <label style={{ display: 'block', color: '#b5b5c3', fontSize: '12px', marginBottom: '6px', fontFamily: 'Cinzel, serif' }}>
                 Reason / what you’re rolling for (optional)
               </label>
@@ -3409,7 +4292,7 @@ function SimpleApp() {
                 <button
                   type="button"
                   disabled={rollSubmitting}
-                  onClick={() => setShowRollModal(false)}
+                  onClick={closeRollModal}
                   style={{
                     padding: '10px 16px',
                     background: '#0f1729',
@@ -3443,6 +4326,238 @@ function SimpleApp() {
           </div>
         </div>
       )}
+
+      {showAdminDiceRulesModal && (
+        <div
+          role="presentation"
+          onClick={() => !adminDiceSaving && setShowAdminDiceRulesModal(false)}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(0,0,0,0.75)',
+            zIndex: 2050,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '16px',
+          }}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="admin-dice-rules-title"
+            onClick={(e) => e.stopPropagation()}
+            style={{ maxWidth: '420px', width: '100%' }}
+          >
+            <GothicBox theme="none" style={{ background: '#16213e', padding: '22px' }}>
+              <h3
+                id="admin-dice-rules-title"
+                style={{
+                  color: '#e94560',
+                  fontSize: '17px',
+                  margin: '0 0 12px 0',
+                  fontFamily: 'Cinzel, serif',
+                }}
+              >
+                Admin Dice Rules
+              </h3>
+              <p style={{ color: '#8b8b9f', fontSize: '13px', marginBottom: '14px', lineHeight: 1.5, fontFamily: 'Crimson Text, serif' }}>
+                Applies only to <strong style={{ color: '#d0d0d0' }}>{currentLocation?.name || 'this room'}</strong>.
+                Floor <strong>2–10</strong>: no 1s; with 2+ dice, one die is always ≥ floor. Matches{' '}
+                <code style={{ color: '#d8b4fe' }}>/ai dice-diff</code> for this location.
+              </p>
+              <label style={{ display: 'block', color: '#b5b5c3', fontSize: '12px', marginBottom: '6px', fontFamily: 'Cinzel, serif' }}>
+                Leniency floor (2–10)
+              </label>
+              <input
+                type="number"
+                min={2}
+                max={10}
+                value={adminDiceFloorDraft}
+                onChange={(e) => setAdminDiceFloorDraft(e.target.value)}
+                placeholder="e.g. 7"
+                disabled={adminDiceSaving}
+                style={{
+                  width: '100%',
+                  marginBottom: '14px',
+                  padding: '10px 12px',
+                  background: '#0f1729',
+                  border: '1px solid #2a2a4e',
+                  borderRadius: '6px',
+                  color: '#e0e0e0',
+                  fontSize: '15px',
+                  fontFamily: 'Crimson Text, serif',
+                }}
+              />
+              <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', flexWrap: 'wrap' }}>
+                <button
+                  type="button"
+                  disabled={adminDiceSaving}
+                  onClick={() => saveAdminDiceLeniency({ restore: true })}
+                  style={{
+                    padding: '10px 14px',
+                    background: '#0f1729',
+                    color: '#94a3b8',
+                    border: '1px solid #475569',
+                    borderRadius: '6px',
+                    cursor: adminDiceSaving ? 'not-allowed' : 'pointer',
+                    fontFamily: 'Cinzel, serif',
+                  }}
+                >
+                  Restore normal
+                </button>
+                <button
+                  type="button"
+                  disabled={adminDiceSaving}
+                  onClick={() => setShowAdminDiceRulesModal(false)}
+                  style={{
+                    padding: '10px 14px',
+                    background: '#0f1729',
+                    color: '#b5b5c3',
+                    border: '1px solid #2a2a4e',
+                    borderRadius: '6px',
+                    cursor: adminDiceSaving ? 'not-allowed' : 'pointer',
+                    fontFamily: 'Cinzel, serif',
+                  }}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  disabled={adminDiceSaving}
+                  onClick={() => saveAdminDiceLeniency()}
+                  style={{
+                    padding: '10px 16px',
+                    background: adminDiceSaving ? '#4a4a5e' : '#9d4edd',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '6px',
+                    cursor: adminDiceSaving ? 'not-allowed' : 'pointer',
+                    fontFamily: 'Cinzel, serif',
+                  }}
+                >
+                  {adminDiceSaving ? 'Saving…' : 'Save'}
+                </button>
+              </div>
+            </GothicBox>
+          </div>
+        </div>
+      )}
+
+      {showDiceHistoryModal && (
+        <div
+          role="presentation"
+          onClick={() => !diceHistoryLoading && setShowDiceHistoryModal(false)}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(0,0,0,0.82)',
+            zIndex: 2100,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '16px',
+          }}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="dice-history-title"
+            onClick={(e) => e.stopPropagation()}
+            style={{ maxWidth: '520px', width: '100%', maxHeight: '85vh', display: 'flex', flexDirection: 'column' }}
+          >
+            <GothicBox theme="none" style={{ background: '#16213e', padding: '20px', display: 'flex', flexDirection: 'column', maxHeight: '80vh' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', gap: '12px' }}>
+                <h3
+                  id="dice-history-title"
+                  style={{ color: '#e94560', fontSize: '16px', margin: 0, fontFamily: 'Cinzel, serif' }}
+                >
+                  Dice roll history — this room
+                </h3>
+                <button
+                  type="button"
+                  disabled={diceHistoryLoading}
+                  onClick={() => setShowDiceHistoryModal(false)}
+                  style={{
+                    padding: '6px 12px',
+                    fontSize: '12px',
+                    fontFamily: 'Cinzel, serif',
+                    background: '#0f1729',
+                    color: '#b5b5c3',
+                    border: '1px solid #2a2a4e',
+                    borderRadius: '6px',
+                    cursor: diceHistoryLoading ? 'not-allowed' : 'pointer',
+                  }}
+                >
+                  Close
+                </button>
+              </div>
+              <p style={{ color: '#8b8b9f', fontSize: '12px', margin: '0 0 12px', fontFamily: 'Crimson Text, serif' }}>
+                All Storyteller rolls stored for <strong>{currentLocation?.name || 'this location'}</strong> in this campaign (admin only).
+              </p>
+              {diceHistoryError && (
+                <div style={{ color: '#f87171', fontSize: '13px', marginBottom: '10px', fontFamily: 'Crimson Text, serif' }}>
+                  {diceHistoryError}
+                </div>
+              )}
+              {diceHistoryLoading && (
+                <div style={{ color: '#b5b5c3', fontSize: '14px', fontFamily: 'Crimson Text, serif' }}>Loading…</div>
+              )}
+              {!diceHistoryLoading && !diceHistoryError && diceHistoryRows.length === 0 && (
+                <div style={{ color: '#8b8b9f', fontSize: '14px', fontFamily: 'Crimson Text, serif' }}>No rolls recorded in this room yet.</div>
+              )}
+              {!diceHistoryLoading && diceHistoryRows.length > 0 && (
+                <div
+                  style={{
+                    overflowY: 'auto',
+                    flex: 1,
+                    minHeight: 0,
+                    border: '1px solid #2a2a4e',
+                    borderRadius: '8px',
+                    background: '#0f1729',
+                    padding: '10px',
+                  }}
+                >
+                  <ul style={{ listStyle: 'none', margin: 0, padding: 0 }}>
+                    {diceHistoryRows.map((r) => {
+                      const who =
+                        [r.username, r.character_name].filter(Boolean).join(' · ') || `user #${r.user_id}`;
+                      const diceStr = Array.isArray(r.results) ? r.results.join(', ') : String(r.results ?? '');
+                      const tag = r.is_botch ? ' · BOTCH' : r.is_critical ? ' · critical' : '';
+                      return (
+                        <li
+                          key={r.id}
+                          style={{
+                            borderBottom: '1px solid #1e293b',
+                            padding: '10px 4px',
+                            fontSize: '13px',
+                            color: '#d0d0e0',
+                            fontFamily: 'Crimson Text, serif',
+                            lineHeight: 1.45,
+                          }}
+                        >
+                          <div style={{ color: '#94a3b8', fontSize: '11px', marginBottom: '4px' }}>
+                            {formatMessageTime(r.rolled_at, chatNow, user?.display_timezone || null)}
+                          </div>
+                          <div>
+                            <strong style={{ color: '#e2e8f0' }}>{who}</strong>
+                            {r.action_description ? ` — ${r.action_description}` : ''}
+                          </div>
+                          <div style={{ marginTop: '4px', color: '#b5b5c3' }}>
+                            Pool {r.dice_pool}, diff {r.difficulty}
+                            {r.modifiers?.specialty ? ', specialty' : ''}
+                            {' → '}[{diceStr}] → <strong>{r.successes}</strong> successes{tag}
+                          </div>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </div>
+              )}
+            </GothicBox>
+          </div>
+        </div>
+      )}
     </div>
     );
   };
@@ -3468,8 +4583,10 @@ function SimpleApp() {
   
   return (
     <div className="App">
+      <GothicPageLoadingOverlay visible={pageOverlay.visible} label={pageOverlay.label} />
       {!token && renderLogin()}
       {token && currentPage === 'dashboard' && renderDashboard()}
+      {token && currentPage === 'profile' && renderProfile()}
       {token && currentPage === 'createCampaign' && renderCreateCampaign()}
       {token && currentPage === 'campaignDetails' && renderCampaignDetails()}
       {token && currentPage === 'chat' && renderChat()}
@@ -4058,6 +5175,7 @@ function SimpleApp() {
         <AdminPage 
           token={token} 
           user={user} 
+          displayTimezone={user?.display_timezone || null}
           onBack={() => setCurrentPage('dashboard')} 
         />
       )}

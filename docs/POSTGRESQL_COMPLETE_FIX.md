@@ -3,7 +3,7 @@
 **Date:** 2025-10-28  
 **Version (report era):** 0.7.6  
 
-**Doc refresh:** 2026-03-25 — current release **v0.7.13**; sections below remain the **historical** verification snapshot from this fix.
+**Doc refresh:** 2026-03-25 — current release **v0.7.14**; sections below remain the **historical** verification snapshot from this fix.
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 

@@ -1,7 +1,7 @@
 # Feature Documentation
 
 **Last Updated**: 2026-03-25  
-**Version**: 0.7.13
+**Version**: 0.7.14
 
 This document consolidates all feature-specific documentation for ShadowRealms AI.
 
@@ -10,11 +10,22 @@ This document consolidates all feature-specific documentation for ShadowRealms A
 ## Table of Contents
 
 1. [Overview](#overview)
-2. [Gothic Horror Theme](#gothic-horror-theme)
-3. [Invite Code System](#invite-code-system)
+2. [Dice theatre and hidden rolls (v0.7.14)](#dice-theatre-and-hidden-rolls-v0714)
+3. [Gothic Horror Theme](#gothic-horror-theme)
+4. [Invite Code System](#invite-code-system)
 
 ---
 
+## Dice theatre and hidden rolls (v0.7.14)
+
+**Status:** Shipped  
+**Scope:** In-campaign chat and sidebar
+
+- **Public rolls:** `/ai roll` (admins) and **Roll dice** in the sidebar show a **center-screen animation** (~3 seconds, up to **10** dice) before the final pool line appears in chat.
+- **Hidden rolls:** `/ai roll-hidden` (admins) and the sidebar **Hide roll from others** option (admin, helper, or campaign owner) store results without exposing rows to other players.
+- **Details:** See `docs/dice-old-wod.md` and `docs/CHANGELOG.md` (`[0.7.14]`).
+
+---
 
 ## Gothic Horror Theme
 

@@ -12,8 +12,34 @@ import re
 import time
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional, Tuple
+from zoneinfo import ZoneInfo
 
 logger = logging.getLogger(__name__)
+
+# English labels to align with chat UI (“Wednesday, March 25, 2026 · 9:39 PM”).
+_WEEKDAYS_EN = (
+    "Monday",
+    "Tuesday",
+    "Wednesday",
+    "Thursday",
+    "Friday",
+    "Saturday",
+    "Sunday",
+)
+_MONTHS_EN = (
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December",
+)
 
 # First token after /ai is the subcommand; rest is payload (may be multiline)
 _SLASH_RE = re.compile(r"^\s*/ai\s+(\S+)(?:\s+(.*))?$", re.IGNORECASE | re.DOTALL)
@@ -27,17 +53,23 @@ SUPPORTED_AI_SLASH_VERBS: List[str] = [
     "context",
     "summarize",
     "roll",
+    "roll-hidden",
+    "clean",
+    "dice-diff",
 ]
 
 # Shown in API hints / console (full detail: `/ai help`)
 FUTURE_COMMAND_SUGGESTIONS = [
-    "/ai help — list all admin commands (administrators only)",
+    "/ai help — list all /ai commands",
     "/ai health — LM Studio / Ollama / Chroma snapshot (no generation)",
     "/ai model — configured + active provider snapshot",
     "/ai ping — tiny generation for baseline latency",
     "/ai context — truncated context for this room",
     "/ai summarize <text> — OOC wall-of-text helper",
     "/ai roll <expr> — Storyteller (oWoD) d10 pool, e.g. 5, 4+3@7",
+    "/ai roll-hidden <expr> — same as `/ai roll`, but hidden from normal players",
+    "/ai clean … — remove clutter (see `/ai clean`)",
+    "/ai dice-diff <2-10|restore> — room leniency for sidebar dice (owner/admin)",
 ]
 
 
@@ -48,7 +80,11 @@ def parse_ai_slash_line(line: str) -> Optional[Tuple[str, str]]:
     """
     if not line or not str(line).strip().lower().startswith("/ai"):
         return None
-    m = _SLASH_RE.match(str(line).strip())
+    stripped = str(line).strip()
+    # Bare "/ai" or "/ai " → same as help (common user expectation)
+    if re.match(r"^/ai\s*$", stripped, re.IGNORECASE):
+        return "help", ""
+    m = _SLASH_RE.match(stripped)
     if not m:
         return None
     verb = m.group(1).strip().lower()
@@ -56,20 +92,55 @@ def parse_ai_slash_line(line: str) -> Optional[Tuple[str, str]]:
     return verb, payload
 
 
+def _format_athens_like_chat(ath: datetime) -> str:
+    """Wall clock in Europe/Athens, similar to message timestamps (12h + weekday)."""
+    wd = _WEEKDAYS_EN[ath.weekday()]
+    mon = _MONTHS_EN[ath.month - 1]
+    h12 = ath.hour % 12 or 12
+    am_pm = "AM" if ath.hour < 12 else "PM"
+    tzabbr = (ath.tzname() or "").strip()
+    tz_part = f" {tzabbr}" if tzabbr else ""
+    return (
+        f"{wd}, {mon} {ath.day}, {ath.year} · {h12}:{ath.minute:02d}:{ath.second:02d} "
+        f"{am_pm}{tz_part}"
+    )
+
+
+def _format_time_utc_and_athens(label: str, dt_utc: datetime) -> str:
+    """Europe/Athens first (matches chat-style 9:39 PM), then UTC ISO-Z."""
+    if dt_utc.tzinfo is None:
+        dt_utc = dt_utc.replace(tzinfo=timezone.utc)
+    else:
+        dt_utc = dt_utc.astimezone(timezone.utc)
+    utc_s = dt_utc.isoformat().replace("+00:00", "Z")
+    try:
+        ath = dt_utc.astimezone(ZoneInfo("Europe/Athens"))
+        ath_chat = _format_athens_like_chat(ath)
+    except Exception:
+        ath_chat = "— (Europe/Athens unavailable; ensure tzdata on server)"
+    return (
+        f"**{label} (Europe/Athens):** {ath_chat}\n"
+        f"**{label} (UTC):** {utc_s}\n"
+    )
+
+
 def _format_respond_display(
     payload: str,
-    received_iso: str,
-    completed_iso: str,
+    received_at: datetime,
+    completed_at: datetime,
     latency_ms: int,
     llm_text: str,
 ) -> str:
     """Markdown-ish block for chat UI."""
     safe_payload = payload if payload else "(empty)"
+    times = (
+        _format_time_utc_and_athens("Server received", received_at)
+        + _format_time_utc_and_athens("Reasoning completed", completed_at)
+    )
     return (
         "**AI diagnostics — `/ai respond`**\n\n"
         f"**Payload received:**\n{safe_payload}\n\n"
-        f"**Server received (UTC):** {received_iso}\n"
-        f"**Reasoning completed (UTC):** {completed_iso}\n"
+        f"{times}"
         f"**Latency (request → LLM reply):** {latency_ms} ms\n\n"
         f"**Model acknowledgment:**\n{llm_text.strip()}"
     )
@@ -93,21 +164,32 @@ def _truncate(s: str, max_chars: int) -> Tuple[str, bool]:
 
 
 def execute_help_command(user_id: int) -> Dict[str, Any]:
-    """List /ai subcommands and short explanations (admin-only at HTTP layer)."""
-    display = """**`/ai help`** — administrator commands
+    """List /ai subcommands. Most verbs are site-admin-only; see notes for exceptions."""
+    display = """**`/ai help`** — slash commands
 
-These commands are **only for users with the site administrator role**. Other players should use the **Roll dice** control in the campaign sidebar for Old World of Darkness (Storyteller) d10 rolls.
+**Who can use what**
+- **Site administrators** can use every `/ai` verb below.
+- **Campaign owner** (creator of the campaign) can also use **`/ai clean …`** and **`/ai dice-diff …`** from inside a campaign room.
+- Everyone else: use **Roll dice** in the right sidebar for Storyteller (Old World of Darkness) d10 pools in chat.
 
+**Commands**
 - **`/ai help`** — This reference.
 - **`/ai health`** — LM Studio, Ollama, and ChromaDB reachability — **no** text generation.
 - **`/ai model`** — Env model names/URLs and router/provider snapshot.
 - **`/ai ping`** — Smallest possible LLM round-trip to measure latency (needs a running LLM).
 - **`/ai context`** — Truncated **location + recent messages + campaign** text the storyteller pipeline would see in the current room.
 - **`/ai summarize …`** — OOC helper: compress a long pasted block into short bullets (needs LLM).
-- **`/ai roll …`** — Server-side Storyteller d10 pool (e.g. `5`, `4+3@8`, `6 tn 7`).
+- **`/ai roll …`** — Server-side Storyteller d10 pool (e.g. `5`, `4+3@8`, `6 tn 7`). Uses this room’s leniency if **`/ai dice-diff`** is active.
+- **`/ai roll-hidden …`** — Same roll math as **`/ai roll`**, but the result is hidden from normal players (shown to admin/storyteller only).
 - **`/ai respond …`** — Diagnostics: echo payload through the LLM with timing (needs LLM).
+- **`/ai clean`** — Lists what you can remove from the **current room** (more targets later).
+- **`/ai clean ai`** — Deletes **admin `/ai` command lines** and the **assistant slash replies** tied to them in this room (does not remove normal storyteller chat).
+- **`/ai dice-diff <2–10>`** — **Lenient dice** for this **room** only: no **1**s; with **2+** dice, **at least one** die is **≥** your floor (e.g. `7` → one die in 7–10, others 2–10). **Botches from 1s** cannot occur. Affects **Roll dice** in the sidebar for everyone in this channel.
+- **`/ai dice-diff restore`** — Clear leniency; rolls return to normal random d10s (1–10) and standard Revised Storyteller rules.
 
-See **docs/dice-old-wod.md** in the repo for dice rules used by the app and the Roll dice UI.
+Site admins can also set the same option per room via **Admin Dice Rules** in the sidebar.
+
+See **docs/dice-old-wod.md** for base dice rules used by the app and the Roll dice UI.
 """
     return {
         "ok": True,
@@ -217,12 +299,20 @@ def execute_ping_command(user_id: int) -> Dict[str, Any]:
     rec_iso = received_at.isoformat().replace("+00:00", "Z")
     done_iso = completed_at.isoformat().replace("+00:00", "Z")
 
+    times_block = (
+        _format_time_utc_and_athens("Server received", received_at)
+        + _format_time_utc_and_athens("Completed", completed_at)
+    )
+    raw = llm_text.strip()[:200]
+    raw_display = raw if raw else "(empty)"
     display = (
         "**`/ai ping`** — minimal generation latency\n\n"
-        f"- **Server received (UTC):** {rec_iso}\n"
-        f"- **Completed (UTC):** {done_iso}\n"
-        f"- **Latency:** {latency_ms} ms\n"
-        f"- **Raw reply:** `{llm_text.strip()[:200]}`\n"
+        + times_block
+        + "\n**Note:** The UTC line is *24-hour* and ends with *Z* (UTC). "
+        "So `19:39Z` is the *same moment* as *9:39 PM* in Athens during EET (UTC+2), "
+        "not 7:39 PM.\n\n"
+        + f"- **Latency:** {latency_ms} ms\n"
+        f"- **Raw reply:** `{raw_display}`\n"
     )
     return {
         "ok": True,
@@ -343,8 +433,177 @@ def _fetch_campaign_game_system(campaign_id: Optional[int]) -> str:
     return ""
 
 
+def _fetch_location_dice_leniency_floor(
+    campaign_id: Optional[int], location_id: Optional[int]
+) -> Optional[int]:
+    if not campaign_id or location_id is None:
+        return None
+    try:
+        from database import get_db
+
+        db = get_db()
+        cur = db.cursor()
+        cur.execute(
+            """
+            SELECT dice_leniency_floor FROM locations
+            WHERE id = %s AND campaign_id = %s AND is_active = TRUE
+            """,
+            (location_id, campaign_id),
+        )
+        row = cur.fetchone()
+        cur.close()
+        db.close()
+        if not row:
+            return None
+        v = row.get("dice_leniency_floor")
+        if v is None:
+            return None
+        iv = int(v)
+        if 2 <= iv <= 10:
+            return iv
+    except Exception as e:
+        logger.warning("dice_leniency_floor lookup: %s", e)
+    return None
+
+
+def execute_clean_command(
+    payload: str,
+    user_id: int,
+    campaign_id: int,
+    location_id: int,
+) -> Dict[str, Any]:
+    """Room cleanup helpers (campaign owner or site admin at HTTP layer)."""
+    target = (payload or "").strip().lower()
+    if not target:
+        display = (
+            "**`/ai clean`** — remove clutter in **this room**\n\n"
+            "Pick a target after `clean`:\n\n"
+            "- **`/ai clean ai`** — Delete lines that are **admin `/ai …` commands** and the "
+            "**assistant slash replies** (the markdown blocks right under them). "
+            "Normal IC/OOC storyteller replies are **not** removed.\n\n"
+            "_More `/ai clean …` targets may be added later._"
+        )
+        return {
+            "ok": True,
+            "command": "clean",
+            "display_markdown": display,
+            "future_commands_suggestion": FUTURE_COMMAND_SUGGESTIONS,
+        }
+    if target == "ai":
+        from database import get_db
+        from services.chat_cleanup import delete_slash_ai_messages
+
+        conn = get_db()
+        try:
+            n = delete_slash_ai_messages(conn, campaign_id, location_id)
+        finally:
+            conn.close()
+        display = (
+            "**`/ai clean ai`**\n\n"
+            f"Removed **{n}** message(s) (`/ai` slash lines and matching assistant outputs) "
+            f"from this room."
+        )
+        return {
+            "ok": True,
+            "command": "clean",
+            "clean_target": "ai",
+            "deleted_count": n,
+            "display_markdown": display,
+            "future_commands_suggestion": FUTURE_COMMAND_SUGGESTIONS,
+        }
+    raise ValueError(
+        f"Unknown clean target `{payload.strip()!r}`. Use **`/ai clean`** to list options."
+    )
+
+
+def execute_dice_diff_command(
+    payload: str,
+    user_id: int,
+    campaign_id: int,
+    location_id: int,
+) -> Dict[str, Any]:
+    """Set or clear Storyteller leniency floor for this location (owner or site admin)."""
+    from database import get_db
+
+    raw = (payload or "").strip().lower()
+    if not raw:
+        display = (
+            "**`/ai dice-diff`** — lenient **d10** rolls in **this room only**\n\n"
+            "- **`/ai dice-diff 7`** — Floor **7**: no **1**s; with **2+** dice, **one** die is always "
+            "in **7–10**; other dice are **2–10**. Sidebar **Roll dice** uses this until restored.\n"
+            "- **`/ai dice-diff restore`** — Back to normal **1–10** random dice and standard botch rules.\n\n"
+            "_Floor must be an integer **2–10**._"
+        )
+        return {
+            "ok": True,
+            "command": "dice-diff",
+            "display_markdown": display,
+            "future_commands_suggestion": FUTURE_COMMAND_SUGGESTIONS,
+        }
+
+    conn = get_db()
+    cur = conn.cursor()
+    try:
+        if raw in ("restore", "off", "none", "normal"):
+            cur.execute(
+                """
+                UPDATE locations SET dice_leniency_floor = NULL
+                WHERE id = %s AND campaign_id = %s AND is_active = TRUE
+                """,
+                (location_id, campaign_id),
+            )
+            conn.commit()
+            cur.execute(
+                "SELECT dice_leniency_floor FROM locations WHERE id = %s",
+                (location_id,),
+            )
+            row = cur.fetchone()
+            current = row.get("dice_leniency_floor") if row else None
+            display = (
+                "**`/ai dice-diff restore`**\n\n"
+                "Leniency is **off** for this room. Dice use full **1–10** randomness again."
+            )
+        else:
+            parts = raw.replace(",", " ").split()
+            try:
+                v = int(parts[0])
+            except (ValueError, IndexError) as e:
+                raise ValueError(
+                    "Usage: `/ai dice-diff <2–10>` or `/ai dice-diff restore`."
+                ) from e
+            if v < 2 or v > 10:
+                raise ValueError("Floor must be between **2** and **10**.")
+            cur.execute(
+                """
+                UPDATE locations SET dice_leniency_floor = %s
+                WHERE id = %s AND campaign_id = %s AND is_active = TRUE
+                """,
+                (v, location_id, campaign_id),
+            )
+            conn.commit()
+            current = v
+            display = (
+                f"**`/ai dice-diff {v}`**\n\n"
+                f"**This room** now uses leniency floor **{v}**: no **1**s; with multiple dice, "
+                f"**at least one** die is **≥ {v}**. Clear with **`/ai dice-diff restore`**."
+            )
+        return {
+            "ok": True,
+            "command": "dice-diff",
+            "dice_leniency_floor": current,
+            "display_markdown": display,
+            "future_commands_suggestion": FUTURE_COMMAND_SUGGESTIONS,
+        }
+    finally:
+        cur.close()
+        conn.close()
+
+
 def execute_roll_command(
-    payload: str, user_id: int, campaign_id: Optional[int] = None
+    payload: str,
+    user_id: int,
+    campaign_id: Optional[int] = None,
+    location_id: Optional[int] = None,
 ) -> Dict[str, Any]:
     from services.wod_dice import (
         format_storyteller_roll_markdown,
@@ -355,7 +614,8 @@ def execute_roll_command(
     game_system = _fetch_campaign_game_system(campaign_id)
     default_diff = 6
     pool, diff = parse_roll_expression(payload, default_difficulty=default_diff)
-    result = roll_storyteller_pool(pool, diff)
+    lf = _fetch_location_dice_leniency_floor(campaign_id, location_id)
+    result = roll_storyteller_pool(pool, diff, leniency_floor=lf)
     display = format_storyteller_roll_markdown(result, game_system=game_system)
     return {
         "ok": True,
@@ -370,6 +630,28 @@ def execute_roll_command(
         },
         "future_commands_suggestion": FUTURE_COMMAND_SUGGESTIONS,
     }
+
+
+def execute_roll_hidden_command(
+    payload: str,
+    user_id: int,
+    campaign_id: Optional[int] = None,
+    location_id: Optional[int] = None,
+) -> Dict[str, Any]:
+    """
+    Same dice math as /ai roll, but tagged so the frontend/backend can
+    post dice animation + final messages as hidden.
+    """
+    res = execute_roll_command(
+        payload, user_id, campaign_id=campaign_id, location_id=location_id
+    )
+    res["command"] = "roll-hidden"
+    # Keep the markdown header accurate for UX.
+    if isinstance(res.get("display_markdown"), str):
+        res["display_markdown"] = res["display_markdown"].replace(
+            "**`/ai roll`**", "**`/ai roll-hidden`**", 1
+        )
+    return res
 
 
 def execute_respond_command(payload: str, user_id: int) -> Dict[str, Any]:
@@ -418,7 +700,9 @@ def execute_respond_command(payload: str, user_id: int) -> Dict[str, Any]:
     rec_iso = received_at.isoformat().replace("+00:00", "Z")
     done_iso = completed_at.isoformat().replace("+00:00", "Z")
 
-    display = _format_respond_display(payload, rec_iso, done_iso, latency_ms, llm_text)
+    display = _format_respond_display(
+        payload, received_at, completed_at, latency_ms, llm_text
+    )
 
     return {
         "ok": True,
@@ -461,5 +745,23 @@ def execute_ai_slash_command(
     if verb == "summarize":
         return execute_summarize_command(payload, user_id)
     if verb == "roll":
-        return execute_roll_command(payload, user_id, campaign_id=campaign_id)
+        return execute_roll_command(
+            payload, user_id, campaign_id=campaign_id, location_id=location_id
+        )
+    if verb == "roll-hidden":
+        return execute_roll_hidden_command(
+            payload, user_id, campaign_id=campaign_id, location_id=location_id
+        )
+    if verb == "clean":
+        if not campaign_id or location_id is None:
+            raise ValueError(
+                "Open a campaign location first — `/ai clean` runs per **room**."
+            )
+        return execute_clean_command(payload, user_id, campaign_id, location_id)
+    if verb == "dice-diff":
+        if not campaign_id or location_id is None:
+            raise ValueError(
+                "Open a campaign location first — `/ai dice-diff` applies to **this room**."
+            )
+        return execute_dice_diff_command(payload, user_id, campaign_id, location_id)
     raise ValueError(f"Unknown /ai subcommand: {verb}")

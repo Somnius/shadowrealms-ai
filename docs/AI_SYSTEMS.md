@@ -1,7 +1,7 @@
 # AI & Memory Systems Documentation
 
 **Last Updated**: 2026-03-25  
-**Version**: 0.7.13
+**Version**: 0.7.14
 
 This document consolidates all AI and memory system documentation for ShadowRealms AI.
 
@@ -31,11 +31,13 @@ The server resolves OOC vs IC using `location_id` and the `locations` table (not
 
 ### `/ai` admin commands (storyteller chat)
 
-**Shipped in v0.7.13.** Site **administrators** (`users.role = admin`) can type lines starting with **`/ai`** in storyteller chat. The frontend sends them to **`POST /api/ai/slash`** (`backend/routes/ai.py`), which dispatches **`backend/services/ai_slash_commands.py`**.
+**Shipped in v0.7.13** (extended in **v0.7.14** for dice theatre and **`roll-hidden`**). Site **administrators** (`users.role = admin`) can type lines starting with **`/ai`** in storyteller chat. The frontend sends them to **`POST /api/ai/slash`** (`backend/routes/ai.py`), which dispatches **`backend/services/ai_slash_commands.py`**.
 
 - **`/ai help`** — Lists commands (same detail as the server’s inline help).
 - **`/ai health`** — LM Studio, Ollama, ChromaDB reachability (no text generation).
-- **`/ai model`**, **`/ai ping`**, **`/ai context`**, **`/ai summarize …`**, **`/ai roll …`**, **`/ai respond …`** — Diagnostics, context preview, summarization, Storyteller d10 pool from an expression, and a minimal LLM round-trip where applicable.
+- **`/ai model`**, **`/ai ping`**, **`/ai context`**, **`/ai summarize …`**, **`/ai roll …`**, **`/ai roll-hidden …`**, **`/ai respond …`** — Diagnostics, context preview, summarization, Storyteller d10 pool from an expression (with center-screen dice animation), **storyteller-only** pool when using **`roll-hidden`**, and a minimal LLM round-trip where applicable.
+
+**v0.7.14 behavior:** **`/ai roll`** and **`/ai roll-hidden`** post non-chat-visible marker rows then the final roll line; other clients see the animation state via the overlay when the roll is public. Hidden rolls are **filtered out** in **`GET`** message APIs for users who are not site admin, helper, or campaign owner (see `backend/routes/messages.py`).
 
 Non-admins receive a short message pointing them to **Roll dice** in the sidebar (campaign-level **`POST /api/campaigns/<id>/roll`**). **IC** locations still use the full storyteller pipeline for normal chat; **OOC** keeps the moderation-only behavior described above.
 

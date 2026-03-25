@@ -157,7 +157,8 @@ def register():
                 'id': user_id,
                 'username': username,
                 'email': email,
-                'role': role
+                'role': role,
+                'display_timezone': None,
             }
         }), 201
         
@@ -191,7 +192,7 @@ def login():
         cursor = db.cursor()
         
         cursor.execute("""
-            SELECT id, username, email, password_hash, role, is_active
+            SELECT id, username, email, password_hash, role, is_active, display_timezone
             FROM users WHERE username = %s
         """, (username,))
         
@@ -242,7 +243,8 @@ def login():
                 'id': user['id'],
                 'username': user['username'],
                 'email': user['email'],
-                'role': user['role']
+                'role': user['role'],
+                'display_timezone': user['display_timezone'],
             }
         }), 200
         
@@ -265,7 +267,7 @@ def refresh():
         cursor = db.cursor()
         
         cursor.execute("""
-            SELECT id, username, email, role, is_active
+            SELECT id, username, email, role, is_active, display_timezone
             FROM users WHERE id = %s
         """, (current_user_id,))
         
@@ -290,7 +292,8 @@ def refresh():
                 'id': user['id'],
                 'username': user['username'],
                 'email': user['email'],
-                'role': user['role']
+                'role': user['role'],
+                'display_timezone': user['display_timezone'],
             }
         }), 200
         
@@ -312,7 +315,7 @@ def get_profile():
         cursor = db.cursor()
         
         cursor.execute("""
-            SELECT id, username, email, role, created_at, last_login
+            SELECT id, username, email, role, created_at, last_login, display_timezone
             FROM users WHERE id = %s
         """, (current_user_id,))
         
@@ -343,7 +346,8 @@ def get_profile():
                 'email': user['email'],
                 'role': user['role'],
                 'created_at': user['created_at'],
-                'last_login': user['last_login']
+                'last_login': user['last_login'],
+                'display_timezone': user['display_timezone'],
             },
             'statistics': {
                 'campaigns_created': campaign_count,

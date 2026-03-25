@@ -5,7 +5,7 @@ Handles location management and character location tracking
 
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
-from database import get_db
+from database import get_db, ensure_locations_dice_leniency_floor_column
 from services.health_check import require_llm
 import logging
 from datetime import datetime
@@ -218,7 +218,8 @@ def get_campaign_locations(campaign_id):
                 'created_at': row['created_at'],
                 'is_active': row['is_active'],
                 'creator_name': row['creator_name'],
-                'character_count': row['character_count']
+                'character_count': row['character_count'],
+                'dice_leniency_floor': row.get('dice_leniency_floor'),
             })
         
         return jsonify(locations), 200
@@ -226,6 +227,83 @@ def get_campaign_locations(campaign_id):
     except Exception as e:
         logger.error(f"Error fetching campaign locations: {e}")
         return jsonify({'error': 'Failed to fetch locations'}), 500
+
+
+@locations_bp.route(
+    '/campaigns/<int:campaign_id>/locations/<int:location_id>/dice-leniency',
+    methods=['GET', 'PUT'],
+)
+@jwt_required()
+def location_dice_leniency(campaign_id, location_id):
+    """Site admins: read/update Storyteller leniency floor for this room (2–10 or off)."""
+    try:
+        user_id = int(get_jwt_identity())
+    except (TypeError, ValueError):
+        return jsonify({'error': 'Invalid session'}), 422
+
+    conn = get_db()
+    cursor = conn.cursor()
+    try:
+        ensure_locations_dice_leniency_floor_column(cursor)
+        conn.commit()
+    except Exception:
+        conn.rollback()
+
+    cursor.execute("SELECT role FROM users WHERE id = %s", (user_id,))
+    urow = cursor.fetchone()
+    if not urow or (urow.get('role') or '').strip().lower() != 'admin':
+        cursor.close()
+        conn.close()
+        return jsonify({'error': 'Site admin access required'}), 403
+
+    cursor.execute(
+        """
+        SELECT dice_leniency_floor FROM locations
+        WHERE id = %s AND campaign_id = %s AND is_active = TRUE
+        """,
+        (location_id, campaign_id),
+    )
+    row = cursor.fetchone()
+    if not row:
+        cursor.close()
+        conn.close()
+        return jsonify({'error': 'Location not found'}), 404
+
+    if request.method == 'GET':
+        v = row.get('dice_leniency_floor')
+        cursor.close()
+        conn.close()
+        return jsonify({'dice_leniency_floor': v}), 200
+
+    data = request.get_json() or {}
+    raw = data.get('dice_leniency_floor')
+    if raw is None or raw == '' or (
+        isinstance(raw, str) and raw.strip().lower() in ('null', 'none', 'restore')
+    ):
+        newv = None
+    else:
+        try:
+            newv = int(raw)
+        except (TypeError, ValueError):
+            cursor.close()
+            conn.close()
+            return jsonify({'error': 'dice_leniency_floor must be integer 2–10 or null'}), 400
+        if newv < 2 or newv > 10:
+            cursor.close()
+            conn.close()
+            return jsonify({'error': 'dice_leniency_floor must be 2–10'}), 400
+
+    cursor.execute(
+        """
+        UPDATE locations SET dice_leniency_floor = %s
+        WHERE id = %s AND campaign_id = %s
+        """,
+        (newv, location_id, campaign_id),
+    )
+    conn.commit()
+    cursor.close()
+    conn.close()
+    return jsonify({'dice_leniency_floor': newv, 'message': 'Updated'}), 200
 
 
 @locations_bp.route('/locations/<int:location_id>', methods=['GET'])

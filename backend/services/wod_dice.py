@@ -16,7 +16,7 @@ from __future__ import annotations
 import random
 import re
 from dataclasses import dataclass
-from typing import List, Tuple
+from typing import List, Optional, Tuple
 
 
 @dataclass
@@ -28,6 +28,7 @@ class StorytellerRollResult:
     net_successes: int
     botch: bool
     pool: int
+    leniency_floor: Optional[int] = None
 
 
 def parse_pool_expression(pool_str: str) -> int:
@@ -88,8 +89,41 @@ def parse_roll_expression(expr: str, default_difficulty: int = 6) -> Tuple[int, 
     return pool, difficulty
 
 
-def roll_storyteller_pool(pool: int, difficulty: int) -> StorytellerRollResult:
-    dice = [random.randint(1, 10) for _ in range(pool)]
+def _lenient_d10_pool(pool: int, floor: int) -> List[int]:
+    """
+    Room leniency: no 1s on any die; one die is always in [floor, 10];
+    others are in [2, 10]. Order is shuffled.
+    """
+    f = max(2, min(10, int(floor)))
+    if pool < 1:
+        return []
+    if pool == 1:
+        return [random.randint(f, 10)]
+    dice = [random.randint(f, 10)]
+    dice.extend(random.randint(2, 10) for _ in range(pool - 1))
+    random.shuffle(dice)
+    return dice
+
+
+def roll_storyteller_pool(
+    pool: int,
+    difficulty: int,
+    leniency_floor: Optional[int] = None,
+) -> StorytellerRollResult:
+    lf = None
+    if leniency_floor is not None:
+        try:
+            v = int(leniency_floor)
+            if 2 <= v <= 10:
+                lf = v
+        except (TypeError, ValueError):
+            lf = None
+
+    if lf is not None:
+        dice = _lenient_d10_pool(pool, lf)
+    else:
+        dice = [random.randint(1, 10) for _ in range(pool)]
+
     raw_successes = sum(1 for d in dice if d >= difficulty)
     ones = sum(1 for d in dice if d == 1)
     net = raw_successes - ones
@@ -104,6 +138,7 @@ def roll_storyteller_pool(pool: int, difficulty: int) -> StorytellerRollResult:
         net_successes=net,
         botch=botch,
         pool=pool,
+        leniency_floor=lf,
     )
 
 
@@ -113,6 +148,12 @@ def format_storyteller_roll_markdown(
     sys_note = ""
     if game_system:
         sys_note = f"\n**Campaign system:** {game_system}\n"
+    if result.leniency_floor is not None:
+        sys_note += (
+            f"\n**Room leniency (floor {result.leniency_floor}):** "
+            "no **1**s; with 2+ dice, at least one die is **≥ floor**. "
+            "Botches from 1s cannot occur.\n"
+        )
 
     dice_show = ", ".join(str(d) for d in result.dice)
     if result.botch:

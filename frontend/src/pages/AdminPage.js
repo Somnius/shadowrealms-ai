@@ -2,9 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { api } from '../utils/api';
 import { useToast } from '../components/ToastNotification';
 import ConfirmDialog from '../components/ConfirmDialog';
+import { formatDateTimeInZone } from '../utils/userTimeFormat';
 import '../responsive.css';
 
-function AdminPage({ token, user, onBack }) {
+function AdminPage({ token, user, onBack, displayTimezone = null }) {
   // Initialize toast notification system
   const { showSuccess, ToastContainer } = useToast();
   const [users, setUsers] = useState([]);
@@ -23,6 +24,15 @@ function AdminPage({ token, user, onBack }) {
   const [inviteDescription, setInviteDescription] = useState('');
   const [inviteCustomCode, setInviteCustomCode] = useState('');
   const [inviteLoading, setInviteLoading] = useState(false);
+  /** 'home' | 'invites' | 'users' | 'moderation' */
+  const [adminSection, setAdminSection] = useState('home');
+
+  const adminNavSections = [
+    { id: 'home', label: 'Overview' },
+    { id: 'invites', label: 'Invite codes' },
+    { id: 'users', label: 'User management' },
+    { id: 'moderation', label: 'Moderation log' },
+  ];
 
   // Fetch all users on mount
   useEffect(() => {
@@ -210,20 +220,54 @@ function AdminPage({ token, user, onBack }) {
 
   return (
     <div style={{ minHeight: '100vh', background: '#0f0f1e' }}>
-      {/* Header */}
+      {/* Header: title | centered nav | user + back */}
       <div style={{
         background: 'linear-gradient(135deg, #16213e 0%, #0f1729 100%)',
-        padding: '20px',
+        padding: '16px 20px',
         boxShadow: '0 2px 10px rgba(0,0,0,0.5)',
-        display: 'flex',
-        justifyContent: 'space-between',
+        borderBottom: '2px solid #2a2a4e',
+        display: 'grid',
+        gridTemplateColumns: 'minmax(140px, 1fr) minmax(260px, 2.2fr) minmax(200px, 1fr)',
         alignItems: 'center',
-        borderBottom: '2px solid #2a2a4e'
+        gap: '12px',
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
-          <h1 style={{ color: '#e94560', margin: 0 }}>👑 Admin Panel</h1>
+        <div style={{ minWidth: 0 }}>
+          <h1 style={{ color: '#e94560', margin: 0, fontSize: 'clamp(1.1rem, 2vw, 1.5rem)' }}>👑 Admin Panel</h1>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+        <nav
+          aria-label="Admin sections"
+          style={{
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            flexWrap: 'wrap',
+            gap: '8px',
+          }}
+        >
+          {adminNavSections.map(({ id, label }) => {
+            const active = adminSection === id;
+            return (
+              <button
+                key={id}
+                type="button"
+                onClick={() => setAdminSection(id)}
+                style={{
+                  padding: '8px 14px',
+                  borderRadius: '6px',
+                  border: active ? '2px solid #e94560' : '2px solid #2a2a4e',
+                  background: active ? 'rgba(233, 69, 96, 0.22)' : 'rgba(15, 23, 41, 0.85)',
+                  color: active ? '#fff' : '#b5b5c3',
+                  cursor: 'pointer',
+                  fontWeight: active ? 700 : 500,
+                  fontSize: '13px',
+                }}
+              >
+                {label}
+              </button>
+            );
+          })}
+        </nav>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '12px', flexWrap: 'wrap' }}>
           <span style={{ color: '#b5b5c3', fontWeight: '500' }}>👤 {user?.username}</span>
           <button
             onClick={onBack}
@@ -234,7 +278,8 @@ function AdminPage({ token, user, onBack }) {
               border: '2px solid #e94560',
               borderRadius: '5px',
               cursor: 'pointer',
-              fontWeight: 'bold'
+              fontWeight: 'bold',
+              whiteSpace: 'nowrap',
             }}
           >
             ← Back to Dashboard
@@ -245,7 +290,29 @@ function AdminPage({ token, user, onBack }) {
       {/* Main Content */}
       <div style={{ maxWidth: '1400px', margin: '0 auto', padding: '40px 20px' }}>
 
+        {adminSection === 'home' && (
+          <div style={{
+            textAlign: 'center',
+            maxWidth: '640px',
+            margin: '48px auto 0',
+            padding: '32px 24px',
+            color: '#b5b5c3',
+            lineHeight: 1.65,
+          }}>
+            <h2 style={{ color: '#e94560', marginTop: 0, marginBottom: '16px' }}>You are on the Admin Panel</h2>
+            <p style={{ marginBottom: '20px' }}>
+              This area is for site administrators only. Use the tabs above to open each tool; your changes apply to the whole site (users, invites, and moderation).
+            </p>
+            <ul style={{ textAlign: 'left', display: 'inline-block', margin: '0 auto', paddingLeft: '1.25rem', maxWidth: '520px' }}>
+              <li style={{ marginBottom: '10px' }}><strong style={{ color: '#e0e0e0' }}>Invite codes</strong> — create and copy registration codes; track uses and optional notes.</li>
+              <li style={{ marginBottom: '10px' }}><strong style={{ color: '#e0e0e0' }}>User management</strong> — edit accounts, reset passwords, ban or unban users.</li>
+              <li><strong style={{ color: '#e0e0e0' }}>Moderation log</strong> — recent admin actions for audit and follow-up.</li>
+            </ul>
+          </div>
+        )}
+
         {/* Invite codes — players use these at registration */}
+        {adminSection === 'invites' && (
         <div style={{ marginBottom: '40px' }}>
           <h2 style={{ color: '#e94560', marginBottom: '20px' }}>🎟️ Invite codes (sign-up)</h2>
           <p style={{ color: '#b5b5c3', marginBottom: '20px', lineHeight: 1.6 }}>
@@ -366,7 +433,9 @@ function AdminPage({ token, user, onBack }) {
                       <td style={{ padding: '10px', color: '#b5b5c3' }}>{inv.type}</td>
                       <td style={{ padding: '10px', color: '#b5b5c3' }}>{inv.uses} / {inv.max_uses}</td>
                       <td style={{ padding: '10px', color: '#8b8b9f', maxWidth: '280px' }}>{inv.description || '—'}</td>
-                      <td style={{ padding: '10px', color: '#8b8b9f', fontSize: '12px' }}>{inv.created_at || '—'}</td>
+                      <td style={{ padding: '10px', color: '#8b8b9f', fontSize: '12px' }}>
+                        {inv.created_at ? formatDateTimeInZone(inv.created_at, displayTimezone) : '—'}
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -374,8 +443,10 @@ function AdminPage({ token, user, onBack }) {
             )}
           </div>
         </div>
-        
+        )}
+
         {/* User Management Section */}
+        {adminSection === 'users' && (
         <div style={{ marginBottom: '40px' }}>
           <h2 style={{ color: '#e94560', marginBottom: '20px' }}>👥 User Management</h2>
           
@@ -526,8 +597,10 @@ function AdminPage({ token, user, onBack }) {
             </table>
           </div>
         </div>
+        )}
 
         {/* Moderation Log */}
+        {adminSection === 'moderation' && (
         <div>
           <h2 style={{ color: '#e94560', marginBottom: '20px' }}>📋 Recent Moderation Log</h2>
           
@@ -555,7 +628,7 @@ function AdminPage({ token, user, onBack }) {
                         {log.action.toUpperCase()}
                       </span>
                       <span style={{ color: '#8b8b9f', fontSize: '12px' }}>
-                        {new Date(log.created_at).toLocaleString()}
+                        {formatDateTimeInZone(log.created_at, displayTimezone)}
                       </span>
                     </div>
                     <div style={{ color: '#b5b5c3', fontSize: '14px' }}>
@@ -572,6 +645,7 @@ function AdminPage({ token, user, onBack }) {
             )}
           </div>
         </div>
+        )}
       </div>
 
       {/* Edit User Modal */}

@@ -5,6 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.14] - 2026-03-25 - Dice overlay, hidden rolls and chat sync
+
+### Added
+- **Center-screen dice theatre**: ~3s full-screen overlay (cycling face values, up to **10** dice with a +N more summary) for `/ai roll` and sidebar **Roll dice**; final totals appear in chat after the animation (`frontend/src/SimpleApp.js`).
+- **`/ai roll-hidden`**: Admin slash command (same pool syntax as `/ai roll`) that posts storyteller-only-visible rolls; uses `dice_animation_hidden` / `dice_roll_hidden` message kinds (`backend/services/ai_slash_commands.py`).
+- **Hide roll from others**: Sidebar roll modal option for **site admin**, **helper**, or **campaign owner** (`created_by`); **Profile** in the in-campaign left sidebar only for those roles.
+
+### Changed
+- **Messages API**: `save_message` accepts `ai_message_kind` values for dice markers and results (including `*_hidden` variants with optional `:animationId`); `get_messages` drops hidden rows for non-privileged users; first-unread / read-state paths ignore `dice_animation%` rows (`backend/routes/messages.py`).
+- **Campaign load**: Entering a campaign merges **`created_by`** from `GET /api/campaigns/:id` so the UI can authorize hidden-roll controls.
+- **Polling**: Campaign message polling interval reduced (e.g. **1200 ms**) so peers see dice markers sooner.
+
+### Notes
+- **Next milestone (Phase 3B)**: Prepare **users, players, and characters** for upcoming location and character work; keep campaign and PC records current.
+
 ## [0.7.13] - 2026-03-25 - Chat timestamps, Storyteller dice, admin `/ai` tools 🎲
 
 ### Added

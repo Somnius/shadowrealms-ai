@@ -392,3 +392,69 @@ h1, h2, h3, h4, h5, h6 {
   }
 }
 
+/* Full-page loading veil (login, entering campaign) */
+@keyframes sr-veil-pulse {
+  0%, 100% {
+    opacity: 0.88;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@keyframes sr-veil-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.sr-page-loading-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9998;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(ellipse at center, rgba(15, 15, 30, 0.92) 0%, rgba(5, 5, 12, 0.97) 70%);
+  backdrop-filter: blur(6px);
+  animation: sr-veil-pulse 2.2s ease-in-out infinite;
+}
+
+.sr-page-loading-card {
+  text-align: center;
+  padding: 2rem 2.5rem;
+  max-width: 22rem;
+  border-radius: 12px;
+  border: 1px solid rgba(233, 69, 96, 0.35);
+  background: linear-gradient(165deg, rgba(22, 33, 62, 0.95) 0%, rgba(15, 23, 41, 0.98) 100%);
+  box-shadow:
+    0 0 0 1px rgba(157, 78, 221, 0.12),
+    0 20px 50px rgba(0, 0, 0, 0.55);
+}
+
+.sr-page-loading-rune {
+  width: 48px;
+  height: 48px;
+  margin: 0 auto 1rem;
+  border: 2px solid rgba(157, 78, 221, 0.5);
+  border-top-color: #e94560;
+  border-radius: 50%;
+  animation: sr-veil-spin 0.9s linear infinite;
+}
+
+.sr-page-loading-title {
+  font-family: 'Cinzel', serif;
+  font-size: 1.05rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #e94560;
+  margin-bottom: 0.5rem;
+}
+
+.sr-page-loading-sub {
+  font-family: 'Crimson Text', serif;
+  font-size: 1.05rem;
+  color: #b5b5c3;
+  line-height: 1.45;
+}
+

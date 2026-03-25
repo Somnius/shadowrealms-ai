@@ -8,6 +8,7 @@ from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
 import logging
 from datetime import datetime
+from zoneinfo import ZoneInfo
 
 from database import get_db
 from services.gpu_monitor import gpu_monitor_service
@@ -15,6 +16,127 @@ from services.gpu_monitor import gpu_monitor_service
 logger = logging.getLogger(__name__)
 
 bp = Blueprint('users', __name__)
+
+
+def _parse_display_timezone_payload(raw):
+    """
+    None / empty / 'auto' → None (client uses browser local).
+    Otherwise must be a valid IANA zone name.
+    """
+    if raw is None:
+        return None
+    if isinstance(raw, str) and not raw.strip():
+        return None
+    s = str(raw).strip()
+    if s.lower() in ("auto", "browser", "local", "default", ""):
+        return None
+    try:
+        ZoneInfo(s)
+    except Exception:
+        raise ValueError(f"Invalid IANA timezone: {s}")
+    return s
+
+
+@bp.route('/me', methods=['GET'])
+@jwt_required()
+def get_current_user_me():
+    """Flat user object + stats (used by SPA navbar / profile)."""
+    try:
+        user_id = int(get_jwt_identity())
+    except (TypeError, ValueError):
+        return jsonify({"error": "Invalid session"}), 422
+
+    try:
+        db = get_db()
+        cursor = db.cursor()
+
+        cursor.execute(
+            """
+            SELECT id, username, email, role, created_at, last_login, is_active,
+                   display_timezone
+            FROM users WHERE id = %s
+            """,
+            (user_id,),
+        )
+        user = cursor.fetchone()
+        if not user:
+            return jsonify({"error": "User not found"}), 404
+
+        cursor.execute(
+            "SELECT COUNT(*) as campaign_count FROM campaigns WHERE created_by = %s",
+            (user_id,),
+        )
+        campaign_count = cursor.fetchone()["campaign_count"]
+
+        cursor.execute(
+            "SELECT COUNT(*) as character_count FROM characters WHERE user_id = %s",
+            (user_id,),
+        )
+        character_count = cursor.fetchone()["character_count"]
+
+        return jsonify(
+            {
+                "id": user["id"],
+                "username": user["username"],
+                "email": user["email"],
+                "role": user["role"],
+                "created_at": user["created_at"],
+                "last_login": user["last_login"],
+                "is_active": bool(user["is_active"]),
+                "display_timezone": user["display_timezone"],
+                "statistics": {
+                    "campaigns_created": campaign_count,
+                    "characters_owned": character_count,
+                },
+            }
+        ), 200
+    except Exception as e:
+        logger.error(f"GET /users/me error: {e}")
+        return jsonify({"error": "Failed to load profile"}), 500
+    finally:
+        if "db" in locals():
+            db.close()
+
+
+@bp.route('/me', methods=['PUT'])
+@jwt_required()
+def put_current_user_me():
+    """Update display timezone for the logged-in user."""
+    try:
+        user_id = int(get_jwt_identity())
+    except (TypeError, ValueError):
+        return jsonify({"error": "Invalid session"}), 422
+
+    data = request.get_json()
+    if not data or "display_timezone" not in data:
+        return jsonify(
+            {"error": "JSON body must include display_timezone (string or null)"}
+        ), 400
+
+    try:
+        tz_norm = _parse_display_timezone_payload(data["display_timezone"])
+    except ValueError as ve:
+        return jsonify({"error": str(ve)}), 400
+
+    try:
+        db = get_db()
+        cursor = db.cursor()
+        cursor.execute(
+            "UPDATE users SET display_timezone = %s WHERE id = %s",
+            (tz_norm, user_id),
+        )
+        db.commit()
+    except Exception as e:
+        logger.error(f"PUT /users/me error: {e}")
+        if "db" in locals():
+            db.rollback()
+        return jsonify({"error": "Failed to save timezone"}), 500
+    finally:
+        if "db" in locals():
+            db.close()
+
+    return get_current_user_me()
+
 
 @bp.route('/', methods=['GET'])
 @jwt_required()
@@ -35,7 +157,7 @@ def get_users():
         
         # Get all users
         cursor.execute("""
-            SELECT id, username, email, role, created_at, last_login, is_active
+            SELECT id, username, email, role, created_at, last_login, is_active, display_timezone
             FROM users
             ORDER BY created_at DESC
         """)
@@ -49,7 +171,8 @@ def get_users():
                 'role': row['role'],
                 'created_at': row['created_at'],
                 'last_login': row['last_login'],
-                'is_active': bool(row['is_active'])
+                'is_active': bool(row['is_active']),
+                'display_timezone': row['display_timezone'],
             })
         
         return jsonify({
@@ -87,7 +210,7 @@ def get_user(user_id):
         
         # Get target user
         cursor.execute("""
-            SELECT id, username, email, role, created_at, last_login, is_active
+            SELECT id, username, email, role, created_at, last_login, is_active, display_timezone
             FROM users WHERE id = %s
         """, (user_id,))
         
@@ -119,7 +242,8 @@ def get_user(user_id):
                 'role': user['role'],
                 'created_at': user['created_at'],
                 'last_login': user['last_login'],
-                'is_active': bool(user['is_active'])
+                'is_active': bool(user['is_active']),
+                'display_timezone': user['display_timezone'],
             },
             'statistics': {
                 'campaigns_created': campaign_count,
@@ -208,6 +332,16 @@ def update_user(user_id):
             
             updates.append("is_active = %s")
             params.append(data['is_active'])
+
+        if 'display_timezone' in data:
+            try:
+                tz_norm = _parse_display_timezone_payload(data['display_timezone'])
+            except ValueError as ve:
+                return jsonify({'error': str(ve)}), 400
+            cur_tz = target_user['display_timezone']
+            if tz_norm != cur_tz:
+                updates.append("display_timezone = %s")
+                params.append(tz_norm)
         
         # Apply updates if any
         if updates:

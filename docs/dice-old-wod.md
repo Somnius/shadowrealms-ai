@@ -1,6 +1,6 @@
 # Old World of Darkness (Storyteller) dice in ShadowRealms AI
 
-**Document version:** 0.7.13 (aligned with app release; update when dice or admin `/ai roll` behavior changes.)
+**Document version:** 0.7.14 (aligned with app release; update when dice or admin `/ai roll` behavior changes.)
 
 This document summarizes how **classic / Revised Storyteller**–style **d10 pools** are used in the app, where to find the implementation, and how it relates to published rules. It is not a full replacement for the rulebooks.
 
@@ -8,12 +8,14 @@ This document summarizes how **classic / Revised Storyteller**–style **d10 poo
 
 | Area | Location |
 |------|-----------|
-| Player **Roll dice** UI (sidebar) | `frontend/src/SimpleApp.js` — modal posts to `POST /api/campaigns/:id/roll` |
+| Player **Roll dice** UI (sidebar) | `frontend/src/SimpleApp.js` — modal posts to `POST /api/campaigns/:id/roll`; optional **Hide roll from others** for admin / helper / campaign owner |
+| Dice theatre overlay | `frontend/src/SimpleApp.js` — center-screen animation (~3s, up to **10** dice) for `/ai roll`, `/ai roll-hidden`, and sidebar rolls |
 | Roll API + access control | `backend/routes/dice.py` — `manual_roll` |
 | Core resolution (pool loop) | `backend/services/dice_service.py` — `roll_d10_pool` |
-| `/ai roll` (admin-only) expression parser | `backend/services/wod_dice.py` — `parse_roll_expression`, `roll_storyteller_pool` |
+| `/ai roll` and `/ai roll-hidden` (admin-only) | `backend/services/wod_dice.py` — expressions; `backend/services/ai_slash_commands.py` — slash handlers |
+| Chat rows for dice (markers + results) | `backend/routes/messages.py` — `ai_message_kind` values `dice_animation`, `dice_roll`, `dice_animation_hidden`, `dice_roll_hidden` (optional `:animationId` suffix); hidden kinds omitted for non-privileged users in `get_messages` |
 
-Administrative **`/ai`** commands (including `/ai roll` with `pool@diff` text syntax) are **restricted to site users with `role = admin`** in `POST /api/ai/slash` (`backend/routes/ai.py`). All campaign members may use the **Roll dice** button if they have campaign access.
+Administrative **`/ai`** commands (including `/ai roll` and **`/ai roll-hidden`** with `pool@diff` text syntax) are **restricted to site users with `role = admin`** in `POST /api/ai/slash` (`backend/routes/ai.py`). **Hidden** sidebar rolls are available to **admin**, **helper**, or the **campaign owner** (`campaigns.created_by`). All campaign members may use the **Roll dice** button if they have campaign access.
 
 ## Core mechanics (Storyteller d10)
 

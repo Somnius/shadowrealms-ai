@@ -6,7 +6,7 @@
 
 ### The Ultimate AI-Powered Tabletop RPG Experience
 
-[![Version](https://img.shields.io/badge/version-0.7.13-blue.svg)](https://github.com/Somnius/shadowrealms-ai)
+[![Version](https://img.shields.io/badge/version-0.7.14-blue.svg)](https://github.com/Somnius/shadowrealms-ai)
 [![Phase 2](https://img.shields.io/badge/phase-2%20complete-green.svg)](https://github.com/Somnius/shadowrealms-ai)
 [![Phase 3A](https://img.shields.io/badge/phase-3A%20complete-green.svg)](https://github.com/Somnius/shadowrealms-ai)
 [![Phase 3B](https://img.shields.io/badge/phase-3B%20next-blue.svg)](https://github.com/Somnius/shadowrealms-ai)
@@ -55,7 +55,7 @@ See ShadowRealms AI in action:
 
 *Watch this video to see the login system, gothic theme, campaign management, and admin panel in action!*
 
-> **Version 0.7.13 Preview:** This demo showcases the frontend interface in its current state. Please note that not all features are fully functional yet—this is a first look at the user interface and design direction of ShadowRealms AI.
+> **Version 0.7.14 Preview:** This demo showcases the frontend interface in its current state. Please note that not all features are fully functional yet—this is a first look at the user interface and design direction of ShadowRealms AI.
 
 </div>
 
@@ -137,6 +137,14 @@ docker-compose up -d
 ## Current Development Status
 
 <div align="center">
+
+### Version 0.7.14 - Dice overlay, hidden rolls & Phase 3B prep 🎲
+
+**Latest updates:**
+- **Dice theatre**: Center-screen ~3s animation for **`/ai roll`** and sidebar **Roll dice** (up to 10 dice on screen); chat shows the result after the reveal.
+- **Hidden rolls**: **`/ai roll-hidden`** (admins) and sidebar **Hide roll from others** (admin, helper, or campaign owner); other players do not receive those message rows.
+- **UX**: In-campaign **Profile** in the left rail only when your account can use hidden-roll options; slightly faster message polling so others sync sooner.
+- **Ahead**: We are **preparing users, players, and characters** for the next **Phase 3B** milestone—keep campaigns and PCs up to date for upcoming location and character features.
 
 ### Version 0.7.13 - Chat UX, WoD dice & admin AI tools 🎲
 

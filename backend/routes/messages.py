@@ -5,7 +5,7 @@ Handles saving and retrieving messages for campaigns and locations
 
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
-from database import get_db, ensure_character_portrait_url_column
+from database import get_db, ensure_character_portrait_url_column, ensure_messages_ai_message_kind_column
 from datetime import datetime
 from services.message_time_format import format_message_time
 import logging
@@ -30,6 +30,7 @@ def _message_dict_from_row(row) -> dict:
         'username': row['username'],
         'character_name': row['character_name'],
         'character_portrait_url': row['character_portrait_url'],
+        'ai_message_kind': row.get('ai_message_kind'),
     }
 
 def _ensure_location_reads_table(cursor):
@@ -70,6 +71,7 @@ def get_messages(campaign_id, location_id):
         conn = get_db()
         cursor = conn.cursor()
         ensure_character_portrait_url_column(cursor)
+        ensure_messages_ai_message_kind_column(cursor)
         conn.commit()
 
         # Verify user has access to campaign
@@ -82,6 +84,21 @@ def get_messages(campaign_id, location_id):
         
         if not cursor.fetchone():
             return jsonify({'error': 'Unauthorized or campaign not found'}), 403
+
+        # Determine visibility permissions for hidden dice rolls.
+        # Hidden dice markers/final messages are only visible to:
+        # - site admins/helpers
+        # - campaign creator ("storyteller")
+        cursor.execute("SELECT role FROM users WHERE id = %s", (user_id,))
+        urow = cursor.fetchone() or {}
+        user_role = (urow.get('role') or '').strip().lower()
+
+        cursor.execute("SELECT created_by FROM campaigns WHERE id = %s", (campaign_id,))
+        crow = cursor.fetchone() or {}
+        campaign_creator_id = crow.get('created_by')
+        allow_hidden_dice = user_role in ('admin', 'helper') or (
+            campaign_creator_id is not None and str(campaign_creator_id) == str(user_id)
+        )
         
         base_select = """
             SELECT 
@@ -96,7 +113,8 @@ def get_messages(campaign_id, location_id):
                 m.created_at,
                 u.username,
                 c.name as character_name,
-                c.portrait_url as character_portrait_url
+                c.portrait_url as character_portrait_url,
+                m.ai_message_kind
             FROM messages m
             JOIN users u ON m.user_id = u.id
             LEFT JOIN characters c ON m.character_id = c.id
@@ -127,6 +145,9 @@ def get_messages(campaign_id, location_id):
 
         messages = []
         for row in rows:
+            mk = (row.get('ai_message_kind') or '').strip().lower()
+            if (mk.startswith('dice_animation_hidden') or mk.startswith('dice_roll_hidden')) and not allow_hidden_dice:
+                continue
             messages.append(_message_dict_from_row(row))
         
         return jsonify(messages), 200
@@ -183,7 +204,10 @@ def get_location_read_state(campaign_id, location_id):
             cursor.execute("""
                 SELECT id, created_at
                 FROM messages
-                WHERE campaign_id = %s AND location_id = %s AND id > %s
+                WHERE campaign_id = %s
+                  AND location_id = %s
+                  AND id > %s
+                  AND COALESCE(ai_message_kind, '') NOT LIKE 'dice_animation%'
                 ORDER BY id ASC
                 LIMIT 1
             """, (campaign_id, location_id, last_read_message_id))
@@ -191,7 +215,9 @@ def get_location_read_state(campaign_id, location_id):
             cursor.execute("""
                 SELECT id, created_at
                 FROM messages
-                WHERE campaign_id = %s AND location_id = %s
+                WHERE campaign_id = %s
+                  AND location_id = %s
+                  AND COALESCE(ai_message_kind, '') NOT LIKE 'dice_animation%'
                 ORDER BY id ASC
                 LIMIT 1
             """, (campaign_id, location_id))
@@ -281,7 +307,10 @@ def set_location_read_state(campaign_id, location_id):
         cursor.execute("""
             SELECT id, created_at
             FROM messages
-            WHERE campaign_id = %s AND location_id = %s AND id > %s
+            WHERE campaign_id = %s
+              AND location_id = %s
+              AND id > %s
+              AND COALESCE(ai_message_kind, '') NOT LIKE 'dice_animation%'
             ORDER BY id ASC
             LIMIT 1
         """, (campaign_id, location_id, rs.get('last_read_message_id') or 0))
@@ -316,6 +345,18 @@ def save_message(campaign_id, location_id):
         message_type = data.get('message_type', 'ic')  # ic, ooc, system, action
         role = data.get('role', 'user')  # user or assistant (for AI messages)
         character_id = data.get('character_id')
+        raw_mk = data.get('ai_message_kind')
+        ai_message_kind = None
+        if raw_mk is not None and str(raw_mk).strip():
+            mk = str(raw_mk).strip().lower()
+            # Existing cleanup tags (/ai clean …)
+            if mk in ('slash_user', 'slash_assistant'):
+                ai_message_kind = mk
+            # Dice animation + dice-roll final reveal tags
+            # Format: dice_animation:<animationId>, dice_roll:<animationId>
+            # Hidden variants: dice_animation_hidden:<animationId>, dice_roll_hidden:<animationId>
+            elif mk.startswith('dice_animation') or mk.startswith('dice_roll'):
+                ai_message_kind = mk
         
         if not content.strip():
             return jsonify({'error': 'Message content cannot be empty'}), 400
@@ -323,6 +364,7 @@ def save_message(campaign_id, location_id):
         conn = get_db()
         cursor = conn.cursor()
         ensure_character_portrait_url_column(cursor)
+        ensure_messages_ai_message_kind_column(cursor)
         conn.commit()
 
         # Check if user is currently banned
@@ -425,12 +467,13 @@ def save_message(campaign_id, location_id):
         cursor.execute("""
             INSERT INTO messages (
                 campaign_id, location_id, user_id, character_id,
-                message_type, content, role, created_at
-            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+                message_type, content, role, created_at, ai_message_kind
+            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
             RETURNING id
         """, (
             campaign_id, location_id, user_id, character_id,
-            message_type, content, role, datetime.now().isoformat()
+            message_type, content, role, datetime.now().isoformat(),
+            ai_message_kind,
         ))
         
         result = cursor.fetchone()
@@ -479,7 +522,8 @@ def save_message(campaign_id, location_id):
                 m.created_at,
                 u.username,
                 c.name as character_name,
-                c.portrait_url as character_portrait_url
+                c.portrait_url as character_portrait_url,
+                m.ai_message_kind
             FROM messages m
             JOIN users u ON m.user_id = u.id
             LEFT JOIN characters c ON m.character_id = c.id

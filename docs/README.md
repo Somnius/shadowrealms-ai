@@ -2,7 +2,7 @@
 
 Welcome to the ShadowRealms AI documentation! This directory contains all project documentation, guides, and references.
 
-**Last Updated:** March 25, 2026 — 21 markdown files in `docs/` (includes PostgreSQL migration docs, `dice-old-wod.md`, changelog through **v0.7.13**).
+**Last Updated:** March 25, 2026 — 21 markdown files in `docs/` (includes PostgreSQL migration docs, `dice-old-wod.md`, changelog through **v0.7.14**).
 
 ## 📚 Quick Links
 
@@ -44,7 +44,7 @@ Welcome to the ShadowRealms AI documentation! This directory contains all projec
 - **[Features](FEATURES.md)** - Feature-specific documentation
   - Gothic Horror Theme
   - Invite Code System
-- **[Old WoD / Storyteller dice](dice-old-wod.md)** - d10 pools, sidebar rolls, `/ai roll` (v0.7.13+)
+- **[Old WoD / Storyteller dice](dice-old-wod.md)** - d10 pools, sidebar rolls, dice overlay, `/ai roll` / `/ai roll-hidden` (v0.7.14+)
 
 ### Bug Fixes & Audits
 - **[Bug Fixes & Audits](BUG_FIXES_AND_AUDITS.md)** - Bug fixes and technical audits
@@ -224,6 +224,6 @@ All consolidated files maintain complete content with proper section headers and
 ---
 
 **Last Updated**: March 25, 2026  
-**Documentation Version**: 0.7.13  
+**Documentation Version**: 0.7.14  
 **Total Documentation Files**: 21+ markdown files in `docs/` (includes PostgreSQL migration docs and `dice-old-wod.md`)
 

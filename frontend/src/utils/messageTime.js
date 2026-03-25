@@ -1,12 +1,13 @@
 /**
- * Chat message time labels (user's local timezone).
- * Mirrors backend/services/message_time_format.py.
+ * Chat message time labels. Optional IANA `timeZone` overrides browser local.
+ * Mirrors backend/services/message_time_format.py intent.
  *
  * @param {string|number|Date} createdAt - ISO string or Date
  * @param {Date} [now] - reference instant (for tests / periodic refresh)
+ * @param {string|null|undefined} [timeZone] - user.display_timezone
  * @returns {string}
  */
-export function formatMessageTime(createdAt, now = new Date()) {
+export function formatMessageTime(createdAt, now = new Date(), timeZone = null) {
   const then = createdAt instanceof Date ? createdAt : new Date(createdAt);
   if (Number.isNaN(then.getTime())) {
     return '';
@@ -15,32 +16,63 @@ export function formatMessageTime(createdAt, now = new Date()) {
   const deltaMs = now - then;
   const secs = Math.floor(deltaMs / 1000);
 
-  const startOfDay = (d) => new Date(d.getFullYear(), d.getMonth(), d.getDate());
-
-  const formatTime12h = (d) => {
-    let h = d.getHours() % 12;
-    if (h === 0) h = 12;
-    const ap = d.getHours() < 12 ? 'AM' : 'PM';
-    const m = String(d.getMinutes()).padStart(2, '0');
-    return `${h}:${m} ${ap}`;
+  const calendarDateKeyInTz = (date, tz) => {
+    const d = date instanceof Date ? date : new Date(date);
+    if (!tz) {
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      return `${y}-${m}-${day}`;
+    }
+    const parts = new Intl.DateTimeFormat('en-CA', {
+      timeZone: tz,
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    }).formatToParts(d);
+    const get = (t) => parts.find((p) => p.type === t)?.value;
+    return `${get('year')}-${get('month')}-${get('day')}`;
   };
 
+  const daysBetweenCalendarKeys = (earlierKey, laterKey) => {
+    const da = new Date(`${earlierKey}T12:00:00Z`);
+    const db = new Date(`${laterKey}T12:00:00Z`);
+    return Math.round((db - da) / 86400000);
+  };
+
+  const localeDateOpts = {
+    weekday: 'long',
+    month: 'long',
+    day: 'numeric',
+    year: 'numeric',
+  };
+  if (timeZone) {
+    localeDateOpts.timeZone = timeZone;
+  }
+
+  const localeDateShortOpts = {
+    month: 'long',
+    day: 'numeric',
+    year: 'numeric',
+  };
+  if (timeZone) {
+    localeDateShortOpts.timeZone = timeZone;
+  }
+
+  const formatTime12h = (d) => {
+    const opts = { hour: 'numeric', minute: '2-digit', hour12: true };
+    if (timeZone) opts.timeZone = timeZone;
+    return new Intl.DateTimeFormat(undefined, opts).format(d instanceof Date ? d : new Date(d));
+  };
+
+  const nowKey = calendarDateKeyInTz(now, timeZone);
+  const thenKey = calendarDateKeyInTz(then, timeZone);
+
   if (secs < 0) {
-    const dayDiff = Math.round(
-      (startOfDay(now) - startOfDay(then)) / 86400000
-    );
+    const dayDiff = daysBetweenCalendarKeys(thenKey, nowKey);
     const timeStr = formatTime12h(then);
-    const fullDateStr = then.toLocaleDateString(undefined, {
-      weekday: 'long',
-      month: 'long',
-      day: 'numeric',
-      year: 'numeric',
-    });
-    const dateOnlyStr = then.toLocaleDateString(undefined, {
-      month: 'long',
-      day: 'numeric',
-      year: 'numeric',
-    });
+    const fullDateStr = then.toLocaleDateString(undefined, localeDateOpts);
+    const dateOnlyStr = then.toLocaleDateString(undefined, localeDateShortOpts);
     if (dayDiff === 0) {
       return `${timeStr} · ${fullDateStr}`;
     }
@@ -62,21 +94,10 @@ export function formatMessageTime(createdAt, now = new Date()) {
     return `${minutes} minutes ago`;
   }
 
-  const dayDiff = Math.round(
-    (startOfDay(now) - startOfDay(then)) / 86400000
-  );
+  const dayDiff = daysBetweenCalendarKeys(thenKey, nowKey);
   const timeStr = formatTime12h(then);
-  const fullDateStr = then.toLocaleDateString(undefined, {
-    weekday: 'long',
-    month: 'long',
-    day: 'numeric',
-    year: 'numeric',
-  });
-  const dateOnlyStr = then.toLocaleDateString(undefined, {
-    month: 'long',
-    day: 'numeric',
-    year: 'numeric',
-  });
+  const fullDateStr = then.toLocaleDateString(undefined, localeDateOpts);
+  const dateOnlyStr = then.toLocaleDateString(undefined, localeDateShortOpts);
 
   if (dayDiff === 0) {
     return `${timeStr} · ${fullDateStr}`;
