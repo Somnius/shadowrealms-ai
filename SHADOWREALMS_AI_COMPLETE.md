@@ -293,7 +293,7 @@ This philosophy ensures:
 - [Performance & Scalability](#performance--scalability)
 
 ### **📊 Current Status & Versions**
-- [Version 0.7.11 - Logo & Asset Optimization](#version-0710---logo--asset-optimization-)
+- [Version 0.7.12 - Logo & Asset Optimization](#version-0710---logo--asset-optimization-)
 - [Version 0.7.9 - Project Structure Organization](#version-079---project-structure-organization-)
 - [Version 0.7.8 - Footer Version Display Fix](#version-078---footer-version-display-fix-)
 - [Version 0.7.7 - PostgreSQL Migration Fixes & Remote Access](#version-077---postgresql-migration-fixes--remote-access-)
@@ -327,7 +327,7 @@ This philosophy ensures:
 - [Phase 3A Interface Wireframe (ASCII)](#phase-3a-interface-wireframe-ascii)
 - [Next Steps for Phase 3A](#next-steps-for-phase-3a)
 
-### **🚀 Phase 3B: Advanced Campaign & Character Systems** ✅ STRUCTURE ORGANIZED (v0.7.11)
+### **🚀 Phase 3B: Advanced Campaign & Character Systems** ✅ STRUCTURE ORGANIZED (v0.7.12)
 - [Phase 3B Overview](#phase-3b-overview)
 - [Security & Testing Foundation](#security--testing-foundation)
 - [Location System Design](#location-system-design)
@@ -1312,6 +1312,18 @@ The project now includes comprehensive `.gitignore` rules covering:
 - **Multi-Language**: Global accessibility with translation pipelines
 - **Real-time Collaboration**: Live AI-assisted gaming experiences
 
+## Version 0.7.12 - OOC AI moderation & chat polish 🎭
+
+### What changed from 0.7.11
+
+- **OOC locations** (`locations.type = ooc`): `POST /api/ai/chat` skips the in-character storyteller (efficient / balanced / full). The model uses campaign summary, PC names, and recent OOC-channel messages. For normal meta/OOC chat it returns **`ooc_no_reply: true`** and no assistant line. If the message reads as in-character or belongs in an IC location, it returns a **short moderator warning** only (stored as `message_type: ooc`, `role: assistant`). The server resolves OOC vs IC from the **database** via `location_id`.
+- **Chat UI**: AI storyteller header is **left-aligned** again. User messages can show **character portraits** (`portrait_url` / `character_portrait_url`) with an SVG fallback.
+- **Roadmap (not shipped)**: Per-room **`/ai` ...** slash-commands for explicit AI invokes—see `docs/AI_SYSTEMS.md`.
+
+**See also:** `docs/CHANGELOG.md` (`[0.7.12]`), `docs/AI_SYSTEMS.md` (“OOC channel AI”).
+
+---
+
 ## Version 0.7.11 - Logo & Asset Optimization ⚡
 
 ### What We Accomplished
@@ -2290,7 +2302,7 @@ From extensive user conversation (2025-10-24):
 - ✅ Security best practices documented
 - ✅ User requirements captured
 
-**Version 0.7.11 completes message persistence and API verification! All chat messages now properly save and load. The foundation is solid for Phase 3B's advanced features!**
+**Version 0.7.12 completes message persistence and API verification! All chat messages now properly save and load. The foundation is solid for Phase 3B's advanced features!**
 
 ---
 
@@ -5862,7 +5874,7 @@ After comprehensive testing and debugging, we achieved **100% User Experience Te
 
 ---
 
-## 🚀 Phase 3B: Advanced Campaign & Character Systems (v0.7.11)
+## 🚀 Phase 3B: Advanced Campaign & Character Systems (v0.7.12)
 
 **Status:** 🚧 IN PROGRESS - Structure Organized  
 **Start Date:** 2025-10-24  
@@ -6366,7 +6378,7 @@ Reason: [Admin's stated reason]
 
 ---
 
-### Files Created/Modified (v0.7.11)
+### Files Created/Modified (v0.7.12)
 
 **Backend:**
 - `backend/database.py` - Schema migrations (pending)
@@ -6389,14 +6401,14 @@ Reason: [Admin's stated reason]
 **Documentation:**
 - `docs/PHASE3B_IMPLEMENTATION.md` - Complete specification ✅
 - `docs/PLANNING.md` - Detailed summary ✅
-- `docs/CHANGELOG.md` - Version 0.7.11 entry ✅
+- `docs/CHANGELOG.md` - Version 0.7.12 entry ✅
 - `scripts/run-frontend-tests.sh` - Test runner script ✅
 
 ---
 
 **Last Updated:** 2025-10-24  
 **Next Milestone:** Location System Implementation  
-**Version:** 0.7.11
+**Version:** 0.7.12
 
 ---
 
@@ -7111,7 +7123,7 @@ docker-compose ps
 - **Backend API**: http://localhost:5000
 - **ChromaDB**: http://localhost:8000
 
-### 🎯 **Current Status (v0.7.11)**
+### 🎯 **Current Status (v0.7.12)**
 
 ✅ **Phase 1 Complete** - Foundation & Docker Setup  
 ✅ **Phase 2 Complete** - RAG & Vector Memory System  
@@ -7127,7 +7139,7 @@ docker-compose ps
 ✅ **Message Persistence** - Chat messages save/load correctly, ChromaDB v2 (v0.7.6)  
 ✅ **PostgreSQL Migration** - Full compatibility, remote access, AI integration (v0.7.7)  
 ✅ **Footer Version Display** - Fixed API path, version now displays correctly (v0.7.8)  
-✅ **Project Structure** - Scripts organized in dedicated directory (v0.7.11)  
+✅ **Project Structure** - Scripts organized in dedicated directory (v0.7.12)  
 🎯 **Phase 3B Week 1** - Location CRUD, Character System, Real-time Chat  
 ✅ **Backend APIs** - Campaign updates, README endpoint working  
 ✅ **RAG System** - ChromaDB vector memory fully functional  

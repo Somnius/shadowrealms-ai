@@ -48,6 +48,23 @@ def get_db():
         
         return conn
 
+
+def ensure_character_portrait_url_column(cursor):
+    """Add characters.portrait_url if missing (PostgreSQL and SQLite)."""
+    db_type = os.getenv('DATABASE_TYPE', 'sqlite').lower()
+    if db_type == 'postgresql':
+        cursor.execute(
+            "ALTER TABLE characters ADD COLUMN IF NOT EXISTS portrait_url TEXT"
+        )
+    else:
+        cursor.execute("PRAGMA table_info(characters)")
+        cols = [row['name'] for row in cursor.fetchall()]
+        if 'portrait_url' not in cols:
+            cursor.execute(
+                "ALTER TABLE characters ADD COLUMN portrait_url TEXT"
+            )
+
+
 def migrate_db():
     """Migrate database schema if needed"""
     logger.info("Checking database migrations...")

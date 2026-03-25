@@ -14,6 +14,7 @@ from datetime import datetime, timedelta
 
 from database import get_db
 from services.gpu_monitor import gpu_monitor_service
+from services.mail_service import send_welcome_registration, send_invalid_invite_alert, is_smtp_configured
 
 logger = logging.getLogger(__name__)
 
@@ -38,6 +39,9 @@ def save_invites(data):
 
 def validate_invite_code(code):
     """Validate an invite code and return its type (admin/player) or None"""
+    if not code:
+        return None
+    code = str(code).strip()
     invites_data = load_invites()
     invites = invites_data.get('invites', {})
     
@@ -54,6 +58,7 @@ def validate_invite_code(code):
 
 def use_invite_code(code):
     """Mark an invite code as used"""
+    code = str(code).strip()
     invites_data = load_invites()
     if code in invites_data['invites']:
         invites_data['invites'][code]['uses'] += 1
@@ -72,10 +77,10 @@ def register():
         if not data:
             return jsonify({'error': 'No data provided'}), 400
         
-        username = data.get('username')
-        email = data.get('email')
-        password = data.get('password')
-        invite_code = data.get('invite_code')
+        username = (data.get('username') or '').strip()
+        email = (data.get('email') or '').strip()
+        password = data.get('password') or ''
+        invite_code = (data.get('invite_code') or '').strip()
         
         # Validation
         if not all([username, email, password, invite_code]):
@@ -84,10 +89,30 @@ def register():
         if len(password) < 8:
             return jsonify({'error': 'Password must be at least 8 characters'}), 400
         
-        # Validate invite code
+        # Validate invite code before touching the database (avoid leaking user existence)
         role = validate_invite_code(invite_code)
         if role is None:
-            return jsonify({'error': 'Invalid or expired invite code'}), 403
+            client_ip = request.headers.get('X-Forwarded-For', '').split(',')[0].strip() or request.remote_addr
+            logger.warning(
+                "Invalid or exhausted invite signup attempt code=%s username=%s email=%s ip=%s",
+                invite_code, username, email, client_ip,
+            )
+            admin_alert = os.environ.get("MAIL_ADMIN_ALERT_EMAIL", "").strip()
+            if admin_alert and is_smtp_configured():
+                send_invalid_invite_alert(
+                    admin_alert,
+                    attempted_code=invite_code,
+                    username=username,
+                    email=email,
+                    remote_addr=client_ip,
+                )
+            return jsonify({
+                'error': (
+                    'Invalid invite code. This attempt has been recorded and will be '
+                    'reported to the Administrator.'
+                ),
+                'code': 'INVALID_INVITE',
+            }), 403
         
         # Hash password
         password_hash = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
@@ -95,6 +120,15 @@ def register():
         # Check if user already exists
         db = get_db()
         cursor = db.cursor()
+        
+        cursor.execute(
+            "SELECT id FROM users WHERE username = %s OR email = %s LIMIT 1",
+            (username, email),
+        )
+        if cursor.fetchone():
+            cursor.close()
+            db.close()
+            return jsonify({'error': 'Username or email is already registered'}), 400
         
         cursor.execute("""
             INSERT INTO users (username, email, password_hash, role, created_at)
@@ -109,9 +143,12 @@ def register():
         use_invite_code(invite_code)
         
         # Create access token
-        access_token = create_access_token(identity=user_id)
+        access_token = create_access_token(identity=str(user_id))
         
         logger.info(f"New user registered: {username} ({email}) with role: {role} using invite: {invite_code}")
+
+        if is_smtp_configured():
+            send_welcome_registration(email, username, password)
         
         return jsonify({
             'message': 'User registered successfully',
@@ -126,6 +163,9 @@ def register():
         
     except Exception as e:
         logger.error(f"Registration error: {e}")
+        err = str(e).lower()
+        if 'unique' in err or 'duplicate' in err:
+            return jsonify({'error': 'Username or email is already registered'}), 400
         return jsonify({'error': 'Registration failed'}), 500
     finally:
         if 'db' in locals():

@@ -300,7 +300,7 @@ Ready to begin?
 ## 🚀 Phase 3B: Advanced Campaign & Character Systems
 
 **Status:** 🚧 IN PROGRESS (Week 1: Security & Testing Complete)  
-**Version:** 0.7.11  
+**Version:** 0.7.12  
 **Start Date:** 2025-10-24
 
 ### Overview
@@ -851,5 +851,5 @@ Key user requirements:
 
 **Last Updated:** 2025-10-24  
 **Next Milestone:** Location System Implementation (Week 1)  
-**Version:** 0.7.11
+**Version:** 0.7.12
 

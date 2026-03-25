@@ -17,11 +17,18 @@ function AdminPage({ token, user, onBack }) {
   const [moderationLog, setModerationLog] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [invites, setInvites] = useState([]);
+  const [inviteType, setInviteType] = useState('player');
+  const [inviteMaxUses, setInviteMaxUses] = useState(1);
+  const [inviteDescription, setInviteDescription] = useState('');
+  const [inviteCustomCode, setInviteCustomCode] = useState('');
+  const [inviteLoading, setInviteLoading] = useState(false);
 
   // Fetch all users on mount
   useEffect(() => {
     fetchUsers();
     fetchModerationLog();
+    fetchInvites();
   }, []);
 
   const fetchUsers = async () => {
@@ -46,6 +53,52 @@ function AdminPage({ token, user, onBack }) {
     } catch (err) {
       console.error('Failed to load moderation log');
     }
+  };
+
+  const fetchInvites = async () => {
+    try {
+      const response = await api.listInvites(token);
+      if (response.ok) {
+        const data = await response.json();
+        setInvites(Array.isArray(data) ? data : []);
+      }
+    } catch (err) {
+      console.error('Failed to load invites');
+    }
+  };
+
+  const handleCreateInvite = async (e) => {
+    e.preventDefault();
+    setInviteLoading(true);
+    setError('');
+    try {
+      const payload = {
+        type: inviteType,
+        max_uses: Math.min(500, Math.max(1, parseInt(inviteMaxUses, 10) || 1)),
+        description: inviteDescription.trim(),
+        code: inviteCustomCode.trim() || undefined
+      };
+      const response = await api.createInvite(token, payload);
+      const data = await response.json().catch(() => ({}));
+      if (response.ok) {
+        showSuccess(`✅ Invite created: ${data.invite?.code || 'OK'}`);
+        setInviteCustomCode('');
+        fetchInvites();
+      } else {
+        setError(data.error || 'Failed to create invite');
+      }
+    } catch (err) {
+      setError('Connection error');
+    } finally {
+      setInviteLoading(false);
+    }
+  };
+
+  const copyToClipboard = (text) => {
+    if (!text) return;
+    navigator.clipboard.writeText(text).then(() => {
+      showSuccess('Copied to clipboard');
+    }).catch(() => {});
   };
 
   const handleEditUser = async (e) => {
@@ -191,6 +244,136 @@ function AdminPage({ token, user, onBack }) {
 
       {/* Main Content */}
       <div style={{ maxWidth: '1400px', margin: '0 auto', padding: '40px 20px' }}>
+
+        {/* Invite codes — players use these at registration */}
+        <div style={{ marginBottom: '40px' }}>
+          <h2 style={{ color: '#e94560', marginBottom: '20px' }}>🎟️ Invite codes (sign-up)</h2>
+          <p style={{ color: '#b5b5c3', marginBottom: '20px', lineHeight: 1.6 }}>
+            Create a code and send it to the player. They enter it on the <strong>Register</strong> form with username, email, and password.
+            Invalid attempts are logged; if SMTP and <code style={{ color: '#9d4edd' }}>MAIL_ADMIN_ALERT_EMAIL</code> are set, you get an email alert.
+          </p>
+
+          <div style={{
+            background: '#16213e',
+            borderRadius: '10px',
+            padding: '24px',
+            marginBottom: '24px',
+            border: '1px solid #2a2a4e',
+            boxShadow: '0 2px 10px rgba(0,0,0,0.5)'
+          }}>
+            <form onSubmit={handleCreateInvite} style={{ display: 'grid', gap: '16px', maxWidth: '640px' }}>
+              <div>
+                <label style={{ display: 'block', color: '#b5b5c3', marginBottom: '6px', fontWeight: 600 }}>Role granted by this code</label>
+                <select
+                  value={inviteType}
+                  onChange={(e) => setInviteType(e.target.value)}
+                  style={{ width: '100%', padding: '10px', borderRadius: '6px', background: '#0f1729', color: '#e0e0e0', border: '2px solid #2a2a4e' }}
+                >
+                  <option value="player">Player</option>
+                  <option value="admin">Admin (use sparingly)</option>
+                </select>
+              </div>
+              <div>
+                <label style={{ display: 'block', color: '#b5b5c3', marginBottom: '6px', fontWeight: 600 }}>Max uses</label>
+                <input
+                  type="number"
+                  min={1}
+                  max={500}
+                  value={inviteMaxUses}
+                  onChange={(e) => setInviteMaxUses(e.target.value)}
+                  style={{ width: '100%', padding: '10px', borderRadius: '6px', background: '#0f1729', color: '#e0e0e0', border: '2px solid #2a2a4e' }}
+                />
+              </div>
+              <div>
+                <label style={{ display: 'block', color: '#b5b5c3', marginBottom: '6px', fontWeight: 600 }}>Note (optional)</label>
+                <input
+                  type="text"
+                  value={inviteDescription}
+                  onChange={(e) => setInviteDescription(e.target.value)}
+                  placeholder="e.g. Player: Alex — March 2026"
+                  style={{ width: '100%', padding: '10px', borderRadius: '6px', background: '#0f1729', color: '#e0e0e0', border: '2px solid #2a2a4e' }}
+                />
+              </div>
+              <div>
+                <label style={{ display: 'block', color: '#b5b5c3', marginBottom: '6px', fontWeight: 600 }}>Custom code (optional)</label>
+                <input
+                  type="text"
+                  value={inviteCustomCode}
+                  onChange={(e) => setInviteCustomCode(e.target.value)}
+                  placeholder="Leave empty to auto-generate (e.g. SR-A1B2C3-D4E5)"
+                  style={{ width: '100%', padding: '10px', borderRadius: '6px', background: '#0f1729', color: '#e0e0e0', border: '2px solid #2a2a4e' }}
+                />
+              </div>
+              <button
+                type="submit"
+                disabled={inviteLoading}
+                style={{
+                  padding: '12px 20px',
+                  background: inviteLoading ? '#4a4a5e' : '#9d4edd',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '8px',
+                  fontWeight: 'bold',
+                  cursor: inviteLoading ? 'not-allowed' : 'pointer',
+                  maxWidth: '280px'
+                }}
+              >
+                {inviteLoading ? 'Creating…' : '➕ Create invite code'}
+              </button>
+            </form>
+          </div>
+
+          <div style={{
+            background: '#16213e',
+            borderRadius: '10px',
+            padding: '20px',
+            border: '1px solid #2a2a4e',
+            overflowX: 'auto'
+          }}>
+            <h3 style={{ color: '#b5b5c3', marginTop: 0 }}>Existing codes</h3>
+            {invites.length === 0 ? (
+              <p style={{ color: '#8b8b9f' }}>No invites yet. Create one above.</p>
+            ) : (
+              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                <thead>
+                  <tr style={{ borderBottom: '2px solid #2a2a4e' }}>
+                    <th style={{ padding: '10px', textAlign: 'left', color: '#e94560' }}>Code</th>
+                    <th style={{ padding: '10px', textAlign: 'left', color: '#e94560' }}>Type</th>
+                    <th style={{ padding: '10px', textAlign: 'left', color: '#e94560' }}>Uses</th>
+                    <th style={{ padding: '10px', textAlign: 'left', color: '#e94560' }}>Note</th>
+                    <th style={{ padding: '10px', textAlign: 'left', color: '#e94560' }}>Created</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {invites.map((inv) => (
+                    <tr key={inv.code} style={{ borderBottom: '1px solid #2a2a4e' }}>
+                      <td style={{ padding: '10px', color: '#fff', fontFamily: 'monospace' }}>
+                        <button
+                          type="button"
+                          onClick={() => copyToClipboard(inv.code)}
+                          style={{
+                            background: 'transparent',
+                            border: '1px solid #667eea',
+                            color: '#a5b4fc',
+                            borderRadius: '4px',
+                            padding: '4px 8px',
+                            cursor: 'pointer',
+                            marginRight: '8px'
+                          }}
+                        >Copy</button>
+                        {inv.code}
+                      </td>
+                      <td style={{ padding: '10px', color: '#b5b5c3' }}>{inv.type}</td>
+                      <td style={{ padding: '10px', color: '#b5b5c3' }}>{inv.uses} / {inv.max_uses}</td>
+                      <td style={{ padding: '10px', color: '#8b8b9f', maxWidth: '280px' }}>{inv.description || '—'}</td>
+                      <td style={{ padding: '10px', color: '#8b8b9f', fontSize: '12px' }}>{inv.created_at || '—'}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
+        </div>
         
         {/* User Management Section */}
         <div style={{ marginBottom: '40px' }}>

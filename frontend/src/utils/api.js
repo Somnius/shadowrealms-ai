@@ -110,6 +110,21 @@ export const api = {
   getModerationLog: (token, limit = 50) =>
     fetch(`${API_URL}/admin/moderation-log?limit=${limit}`, {
       headers: { 'Authorization': `Bearer ${token}` }
+    }),
+
+  listInvites: (token) =>
+    fetch(`${API_URL}/admin/invites`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    }),
+
+  createInvite: (token, payload) =>
+    fetch(`${API_URL}/admin/invites`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(payload)
     })
 };
 

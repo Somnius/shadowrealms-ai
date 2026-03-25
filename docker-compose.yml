@@ -43,6 +43,16 @@ services:
       - OLLAMA_URL=http://localhost:11434
       - OLLAMA_MODEL=${OLLAMA_MODEL:-command-r:35b}
       - OLLAMA_TIMEOUT=${OLLAMA_TIMEOUT:-30}
+      # Optional SMTP (copy values from .env)
+      - SMTP_HOST=${SMTP_HOST:-}
+      - SMTP_PORT=${SMTP_PORT:-587}
+      - SMTP_USER=${SMTP_USER:-}
+      - SMTP_PASSWORD=${SMTP_PASSWORD:-}
+      - SMTP_FROM=${SMTP_FROM:-}
+      - SMTP_USE_TLS=${SMTP_USE_TLS:-true}
+      - SMTP_USE_SSL=${SMTP_USE_SSL:-false}
+      - APP_PUBLIC_NAME=${APP_PUBLIC_NAME:-ShadowRealms AI}
+      - MAIL_ADMIN_ALERT_EMAIL=${MAIL_ADMIN_ALERT_EMAIL:-}
     depends_on:
       - chromadb
       - postgresql

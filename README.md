@@ -6,7 +6,7 @@
 
 ### The Ultimate AI-Powered Tabletop RPG Experience
 
-[![Version](https://img.shields.io/badge/version-0.7.11-blue.svg)](https://github.com/Somnius/shadowrealms-ai)
+[![Version](https://img.shields.io/badge/version-0.7.12-blue.svg)](https://github.com/Somnius/shadowrealms-ai)
 [![Phase 2](https://img.shields.io/badge/phase-2%20complete-green.svg)](https://github.com/Somnius/shadowrealms-ai)
 [![Phase 3A](https://img.shields.io/badge/phase-3A%20complete-green.svg)](https://github.com/Somnius/shadowrealms-ai)
 [![Phase 3B](https://img.shields.io/badge/phase-3B%20next-blue.svg)](https://github.com/Somnius/shadowrealms-ai)
@@ -55,7 +55,7 @@ See ShadowRealms AI in action:
 
 *Watch this video to see the login system, gothic theme, campaign management, and admin panel in action!*
 
-> **Version 0.7.11 Preview:** This demo showcases the frontend interface in its current state. Please note that not all features are fully functional yet—this is a first look at the user interface and design direction of ShadowRealms AI.
+> **Version 0.7.12 Preview:** This demo showcases the frontend interface in its current state. Please note that not all features are fully functional yet—this is a first look at the user interface and design direction of ShadowRealms AI.
 
 </div>
 
@@ -137,6 +137,14 @@ docker-compose up -d
 ## Current Development Status
 
 <div align="center">
+
+### Version 0.7.12 - OOC AI moderation & chat polish 🎭
+
+**Latest updates:**
+- **OOC chat**: AI no longer runs the in-character storyteller in OOC rooms; it only posts a short moderator warning when a line looks IC-relevant, otherwise stays silent (`ooc_no_reply`).
+- **Portraits**: Character `portrait_url` and message `character_portrait_url`; sidebar upload; SVG placeholder when missing.
+- **UI**: AI message header aligned left again (matches player rows).
+- **Docs**: `docs/AI_SYSTEMS.md` describes OOC AI; **planned** `/ai` slash-commands in rooms (not shipped yet).
 
 ### Version 0.7.10 - Logo & Asset Optimization ⚡
 

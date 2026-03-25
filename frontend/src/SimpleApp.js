@@ -10,6 +10,35 @@ import './responsive.css';
 
 const API_URL = '/api'; // Use relative URL through nginx proxy
 
+function MessageCharacterAvatar({ url, size = 40 }) {
+  const [broken, setBroken] = React.useState(false);
+  const frame = {
+    width: size,
+    height: size,
+    borderRadius: '8px',
+    flexShrink: 0,
+    border: '1px solid #2a2a4e',
+    background: '#0f1729',
+  };
+  if (url && !broken) {
+    return (
+      <img
+        src={url}
+        alt=""
+        style={{ ...frame, objectFit: 'cover' }}
+        onError={() => setBroken(true)}
+      />
+    );
+  }
+  return (
+    <svg width={size} height={size} viewBox="0 0 40 40" style={frame} aria-hidden>
+      <rect fill="#1e293b" width="40" height="40" rx="8" />
+      <circle cx="20" cy="14" r="6" fill="#64748b" />
+      <ellipse cx="20" cy="30" rx="12" ry="8" fill="#64748b" />
+    </svg>
+  );
+}
+
 function SimpleApp() {
   // Initialize toast notification system
   const { showInfo, showError, showSuccess, ToastContainer } = useToast();
@@ -27,11 +56,22 @@ function SimpleApp() {
   const [currentLocation, setCurrentLocation] = useState(null);
   const [messages, setMessages] = useState([]);
   const [character, setCharacter] = useState(null);
+  const [campaignCharacters, setCampaignCharacters] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   
   // Ref for chat input to maintain focus
   const chatInputRef = React.useRef(null);
+  const messagesRef = React.useRef(messages);
+  const loadingRef = React.useRef(loading);
+
+  useEffect(() => {
+    messagesRef.current = messages;
+  }, [messages]);
+
+  useEffect(() => {
+    loadingRef.current = loading;
+  }, [loading]);
   
   // Campaign editing state
   const [isEditingCampaignName, setIsEditingCampaignName] = useState(false);
@@ -57,6 +97,61 @@ function SimpleApp() {
     locations: 0,
     messages: 0
   });
+  const [locationReadState, setLocationReadState] = useState(null);
+  const [firstUnreadMessageId, setFirstUnreadMessageId] = useState(null);
+
+  const renderMessageContent = (content) => {
+    const text = String(content ?? '');
+
+    // Safe, dependency-free "lite markdown" renderer.
+    // Supports: **bold**, *italic*, `code`, and preserves newlines.
+    const tokenRegex = /(\*\*[^*\n]+?\*\*|\*[^*\n]+?\*|`[^`\n]+?`)/g;
+
+    const renderInline = (line, lineKey) => {
+      const parts = line.split(tokenRegex);
+      return parts.map((part, i) => {
+        const key = `${lineKey}-${i}`;
+        if (!part) return null;
+
+        if (part.startsWith('**') && part.endsWith('**') && part.length >= 4) {
+          return <strong key={key}>{part.slice(2, -2)}</strong>;
+        }
+        if (part.startsWith('*') && part.endsWith('*') && part.length >= 2) {
+          return <em key={key}>{part.slice(1, -1)}</em>;
+        }
+        if (part.startsWith('`') && part.endsWith('`') && part.length >= 2) {
+          return (
+            <code
+              key={key}
+              style={{
+                background: 'rgba(0,0,0,0.35)',
+                padding: '2px 6px',
+                borderRadius: '6px',
+                fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
+                fontSize: '0.95em'
+              }}
+            >
+              {part.slice(1, -1)}
+            </code>
+          );
+        }
+
+        return <React.Fragment key={key}>{part}</React.Fragment>;
+      });
+    };
+
+    const lines = text.split('\n');
+    return (
+      <>
+        {lines.map((line, idx) => (
+          <React.Fragment key={idx}>
+            {renderInline(line, idx)}
+            {idx < lines.length - 1 ? <br /> : null}
+          </React.Fragment>
+        ))}
+      </>
+    );
+  };
   
   // Delete confirmation state
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -299,6 +394,7 @@ function SimpleApp() {
         localStorage.setItem('user', JSON.stringify(data.user)); // Persist user data
         setCurrentPage('dashboard');
         setError('');
+        showSuccess('✅ Account created! Check your email for a welcome message (if SMTP is configured).');
         fetchCampaigns();
       } else {
         setError(data.error || 'Registration failed');
@@ -347,16 +443,18 @@ function SimpleApp() {
       const data = await response.json();
 
       if (response.ok) {
-        // Store campaign data and show location suggestions
         console.log('✅ Campaign created:', data);
-        setNewCampaignData({
-          id: data.campaign_id, // ✅ Backend returns campaign_id, not id
+        const createdCampaign = {
+          id: data.campaign_id, // Backend returns campaign_id
           name: campaignData.name,
           description: campaignData.description,
           game_system: campaignData.game_system
-        });
-        setShowLocationSuggestions(true);
+        };
+        showSuccess('✅ Campaign created successfully!');
         e.target.reset();
+        await fetchCampaigns();
+        setSelectedCampaign(createdCampaign);
+        navigateTo('campaignDetails', createdCampaign);
       } else {
         setError(data.error || 'Failed to create campaign');
       }
@@ -468,10 +566,29 @@ function SimpleApp() {
     showSuccess('New locations added successfully!');
   };
 
+  const fetchCampaignCharactersList = async (campaignId) => {
+    try {
+      const response = await fetch(`${API_URL}/characters/?campaign_id=${campaignId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!response.ok) return [];
+      const data = await response.json();
+      return Array.isArray(data.characters) ? data.characters : [];
+    } catch (err) {
+      console.error('Failed to load campaign characters:', err);
+      return [];
+    }
+  };
+
   // Enter campaign (load locations from database and switch to chat view)
   const enterCampaign = async (campaign) => {
     setSelectedCampaign(campaign);
-    
+
+    const chars = await fetchCampaignCharactersList(campaign.id);
+    setCampaignCharacters(chars);
+    const primary = chars[0] || null;
+    setCharacter(primary);
+
     // Fetch locations from database
     const campaignLocations = await fetchCampaignLocations(campaign.id);
     
@@ -493,7 +610,7 @@ function SimpleApp() {
     
     // Load messages for initial location
     if (initialLocation) {
-      await loadMessages(campaign.id, initialLocation.id);
+      await loadMessages(campaign.id, initialLocation.id, { characterForRead: primary });
     }
     
     navigateTo('chat', campaign); // Use navigateTo for proper browser history
@@ -519,6 +636,8 @@ function SimpleApp() {
     setCurrentLocation(null);
     setLocations([]);
     setMessages([]);
+    setCampaignCharacters([]);
+    setCharacter(null);
     if (pendingNavigation) {
       setPendingNavigation(null);
     }
@@ -556,7 +675,10 @@ function SimpleApp() {
       created_at: new Date().toISOString(),
       location_id: currentLocation.id,
       username: user.username,
-      temp: true  // Mark as temporary
+      character_id: character?.id,
+      character_name: character?.name,
+      character_portrait_url: character?.portrait_url || null,
+      temp: true, // Mark as temporary
     };
     setMessages(prev => [...prev, tempUserMessage]);
     e.target.reset();
@@ -572,7 +694,8 @@ function SimpleApp() {
         body: JSON.stringify({
           content: messageText,
           message_type: 'ic',
-          role: 'user'
+          role: 'user',
+          ...(character?.id ? { character_id: character.id } : {}),
         })
       });
 
@@ -588,7 +711,7 @@ function SimpleApp() {
         console.error('❌ Failed to save message to database');
       }
 
-      // Get AI response
+      // Get AI response (OOC rooms: backend may return ooc_no_reply — no in-game storyteller)
       const aiResponse = await fetch(`${API_URL}/ai/chat`, {
         method: 'POST',
         headers: {
@@ -598,42 +721,51 @@ function SimpleApp() {
         body: JSON.stringify({
           message: messageText,
           campaign_id: selectedCampaign.id,
-          location: currentLocation.id
+          location: currentLocation.id,
+          location_type: currentLocation.type,
         })
       });
 
       const aiData = await aiResponse.json();
 
       if (aiResponse.ok) {
-        const aiMessageContent = aiData.response || aiData.message || 'No response';
-        
-        // Save AI response to database
-        const aiSaveResponse = await fetch(`${API_URL}/campaigns/${selectedCampaign.id}/locations/${currentLocation.id}`, {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            content: aiMessageContent,
-            message_type: 'ic',
-            role: 'assistant'
-          })
-        });
+        const skipOoc = Boolean(aiData.ooc_no_reply);
+        const rawContent = aiData.response ?? aiData.message;
+        const aiMessageContent =
+          rawContent != null && String(rawContent).trim() !== ''
+            ? String(rawContent).trim()
+            : null;
 
-        if (aiSaveResponse.ok) {
-          const aiSaveData = await aiSaveResponse.json();
-          console.log('✅ AI message saved to database:', aiSaveData);
-          setMessages(prev => [...prev, aiSaveData.data]);
+        if (skipOoc || !aiMessageContent) {
+          /* OOC: model chose not to answer, or empty — no assistant line */
         } else {
-          // Fallback: Add AI message to UI even if save failed
-          setMessages(prev => [...prev, {
-            role: 'assistant',
-            content: aiMessageContent,
-            created_at: new Date().toISOString(),
-            location_id: currentLocation.id,
-            username: 'AI'
-          }]);
+          const assistantMsgType = currentLocation?.type === 'ooc' ? 'ooc' : 'ic';
+          const aiSaveResponse = await fetch(`${API_URL}/campaigns/${selectedCampaign.id}/locations/${currentLocation.id}`, {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              content: aiMessageContent,
+              message_type: assistantMsgType,
+              role: 'assistant'
+            })
+          });
+
+          if (aiSaveResponse.ok) {
+            const aiSaveData = await aiSaveResponse.json();
+            console.log('✅ AI message saved to database:', aiSaveData);
+            setMessages(prev => [...prev, aiSaveData.data]);
+          } else {
+            setMessages(prev => [...prev, {
+              role: 'assistant',
+              content: aiMessageContent,
+              created_at: new Date().toISOString(),
+              location_id: currentLocation.id,
+              username: 'AI'
+            }]);
+          }
         }
       } else {
         setError(aiData.error || 'Failed to get AI response');
@@ -654,7 +786,9 @@ function SimpleApp() {
   };
 
   // Load messages for a location
-  const loadMessages = async (campaignId, locationId) => {
+  const loadMessages = async (campaignId, locationId, opts = {}) => {
+    const charForRead =
+      opts.characterForRead !== undefined ? opts.characterForRead : character;
     try {
       console.log(`📨 Loading messages for location ${locationId}...`);
       const response = await fetch(`${API_URL}/campaigns/${campaignId}/locations/${locationId}`, {
@@ -665,20 +799,133 @@ function SimpleApp() {
         const data = await response.json();
         console.log(`✅ Loaded ${data.length} messages for location ${locationId}`);
         setMessages(data);
+
+        // Load per-character read state (for unread marker + jump)
+        if (charForRead?.id) {
+          try {
+            const rs = await fetch(`${API_URL}/campaigns/${campaignId}/locations/${locationId}/read-state?character_id=${charForRead.id}`, {
+              headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (rs.ok) {
+              const readState = await rs.json();
+              setLocationReadState(readState);
+              setFirstUnreadMessageId(readState.first_unread_message_id || null);
+            } else {
+              setLocationReadState(null);
+              setFirstUnreadMessageId(null);
+            }
+          } catch (e) {
+            setLocationReadState(null);
+            setFirstUnreadMessageId(null);
+          }
+        } else {
+          setLocationReadState(null);
+          setFirstUnreadMessageId(null);
+        }
       } else {
         console.error('❌ Failed to load messages:', await response.text());
         setMessages([]);
+        setLocationReadState(null);
+        setFirstUnreadMessageId(null);
       }
     } catch (error) {
       console.error('❌ Error loading messages:', error);
       setMessages([]);
+      setLocationReadState(null);
+      setFirstUnreadMessageId(null);
     }
   };
 
   // Change location
   const changeLocation = async (location) => {
     setCurrentLocation(location);
-    await loadMessages(selectedCampaign.id, location.id);
+    await loadMessages(selectedCampaign.id, location.id, { characterForRead: character });
+  };
+
+  // Near–real-time: poll for new messages while in chat (other sessions / tabs)
+  useEffect(() => {
+    if (currentPage !== 'chat' || !token || !selectedCampaign?.id || !currentLocation?.id) {
+      return undefined;
+    }
+    const campaignId = selectedCampaign.id;
+    const locationId = currentLocation.id;
+
+    const poll = async () => {
+      if (loadingRef.current) return;
+      try {
+        const prev = messagesRef.current;
+        const maxId = prev.reduce(
+          (acc, m) => (m.id && !m.temp ? Math.max(acc, m.id) : acc),
+          0
+        );
+        const hasServerMessages = prev.some((m) => m.id);
+        const url = !hasServerMessages || maxId < 1
+          ? `${API_URL}/campaigns/${campaignId}/locations/${locationId}?recent=1&limit=120`
+          : `${API_URL}/campaigns/${campaignId}/locations/${locationId}?since_id=${maxId}&limit=100`;
+
+        const response = await fetch(url, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        if (!response.ok) return;
+        const incoming = await response.json();
+        if (!Array.isArray(incoming) || incoming.length === 0) return;
+
+        setMessages((prevList) => {
+          if (!prevList.some((m) => m.id)) {
+            const temps = prevList.filter((m) => m.temp);
+            return [...incoming, ...temps];
+          }
+          const existingIds = new Set(prevList.filter((m) => m.id).map((m) => m.id));
+          const toAdd = incoming.filter((m) => m.id && !existingIds.has(m.id));
+          if (toAdd.length === 0) return prevList;
+          const core = [...prevList.filter((m) => m.id), ...toAdd].sort((a, b) => a.id - b.id);
+          const temps = prevList.filter((m) => m.temp);
+          return [...core, ...temps];
+        });
+      } catch (e) {
+        /* ignore transient poll errors */
+      }
+    };
+
+    const kickoff = setTimeout(poll, 400);
+    const intervalId = setInterval(poll, 2500);
+    return () => {
+      clearTimeout(kickoff);
+      clearInterval(intervalId);
+    };
+  }, [currentPage, token, selectedCampaign?.id, currentLocation?.id]);
+
+  const jumpToMessage = (messageId) => {
+    if (!messageId) return;
+    const el = document.getElementById(`msg-${messageId}`);
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+
+  const markLocationRead = async () => {
+    if (!selectedCampaign?.id || !currentLocation?.id || !character?.id) return;
+    const lastMessage = messages[messages.length - 1];
+    if (!lastMessage?.id) return;
+
+    try {
+      const response = await fetch(`${API_URL}/campaigns/${selectedCampaign.id}/locations/${currentLocation.id}/read-state`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          character_id: character.id,
+          last_read_message_id: lastMessage.id
+        })
+      });
+      if (response.ok) {
+        const readState = await response.json();
+        setLocationReadState(readState);
+        setFirstUnreadMessageId(readState.first_unread_message_id || null);
+      }
+    } catch (e) {
+      // ignore
+    }
   };
 
   // Update campaign name
@@ -1463,7 +1710,7 @@ function SimpleApp() {
     <div style={{ minHeight: '100vh', background: '#0f0f1e', padding: '20px' }}>
       <div style={{ maxWidth: '900px', margin: '0 auto' }}>
         <button
-          onClick={() => window.history.back()}
+          onClick={() => navigateTo('dashboard')}
           style={{
             marginBottom: '20px',
             padding: '10px 20px',
@@ -1904,7 +2151,7 @@ function SimpleApp() {
     <div style={{ minHeight: '100vh', background: '#0f0f1e', padding: '20px' }}>
       <div style={{ maxWidth: '700px', margin: '0 auto' }}>
         <button
-          onClick={() => window.history.back()}
+          onClick={() => navigateTo('dashboard')}
           style={{
             marginBottom: '20px',
             padding: '10px 20px',
@@ -2056,17 +2303,12 @@ function SimpleApp() {
     </div>
   );
 
-  // Render Discord-like chat interface
+  // Render in-campaign chat (Gothic "Dark Conclave" style — matches GothicShowcase preview)
   const renderChat = () => {
     const campaignTheme = getCampaignTheme(selectedCampaign);
-    console.log('Chat Theme Debug:', {
-      campaign: selectedCampaign?.name,
-      gameSystem: selectedCampaign?.game_system,
-      detectedTheme: campaignTheme
-    });
-    
+
     return (
-    <div style={{ height: '100vh', display: 'flex', background: '#36393f', position: 'relative' }}>
+    <div style={{ height: '100vh', display: 'flex', background: '#0f0f1e', position: 'relative' }}>
       {/* Mobile Menu Buttons */}
       {isMobile && (
         <>
@@ -2141,10 +2383,10 @@ function SimpleApp() {
       {/* Left Sidebar - Locations/Channels */}
       <div style={{
         width: isMobile ? '280px' : '240px',
-        background: '#2f3136',
+        background: '#16213e',
         display: 'flex',
         flexDirection: 'column',
-        borderRight: '1px solid #202225',
+        borderRight: '2px solid #2a2a4e',
         position: isMobile ? 'fixed' : 'relative',
         left: isMobile ? (leftSidebarOpen ? '0' : '-280px') : 'auto',
         top: isMobile ? '0' : 'auto',
@@ -2156,10 +2398,11 @@ function SimpleApp() {
         {/* Campaign Header */}
         <div style={{
           padding: '15px',
-          borderBottom: '1px solid #202225',
-          color: 'white',
+          borderBottom: '2px solid #2a2a4e',
+          color: '#e94560',
           fontWeight: 'bold',
-          fontSize: '16px'
+          fontSize: '16px',
+          fontFamily: 'Cinzel, serif'
         }}>
           🎲 {selectedCampaign?.name}
         </div>
@@ -2168,11 +2411,13 @@ function SimpleApp() {
         <div style={{ flex: 1, overflowY: 'auto', padding: '10px 0' }}>
           <div style={{
             padding: '5px 15px',
-            color: '#8e9297',
+            color: '#8b8b9f',
             fontSize: '12px',
             fontWeight: '600',
             textTransform: 'uppercase',
-            marginTop: '10px'
+            marginTop: '10px',
+            fontFamily: 'Cinzel, serif',
+            letterSpacing: '0.05em'
           }}>
             Locations
           </div>
@@ -2183,23 +2428,25 @@ function SimpleApp() {
               style={{
                 padding: '8px 15px',
                 margin: '2px 8px',
-                borderRadius: '4px',
+                borderRadius: '6px',
                 cursor: 'pointer',
-                color: currentLocation?.id === loc.id ? 'white' : '#8e9297',
-                background: currentLocation?.id === loc.id ? '#40444b' : 'transparent',
+                color: currentLocation?.id === loc.id ? '#e0e0e0' : '#b5b5c3',
+                background: currentLocation?.id === loc.id ? 'rgba(233, 69, 96, 0.15)' : 'transparent',
+                border: currentLocation?.id === loc.id ? '1px solid rgba(233, 69, 96, 0.35)' : '1px solid transparent',
                 fontSize: '15px',
+                fontFamily: 'Crimson Text, serif',
                 transition: 'all 0.15s'
               }}
               onMouseOver={(e) => {
                 if (currentLocation?.id !== loc.id) {
-                  e.currentTarget.style.background = '#3a3c42';
+                  e.currentTarget.style.background = 'rgba(139, 139, 159, 0.08)';
                   e.currentTarget.style.color = '#dcddde';
                 }
               }}
               onMouseOut={(e) => {
                 if (currentLocation?.id !== loc.id) {
                   e.currentTarget.style.background = 'transparent';
-                  e.currentTarget.style.color = '#8e9297';
+                  e.currentTarget.style.color = '#b5b5c3';
                 }
               }}
             >
@@ -2211,25 +2458,27 @@ function SimpleApp() {
         {/* User Info at Bottom */}
         <div style={{
           padding: '10px',
-          background: '#292b2f',
-          borderTop: '1px solid #202225',
+          background: '#0f1729',
+          borderTop: '2px solid #2a2a4e',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between'
         }}>
-          <div style={{ color: 'white', fontSize: '14px', fontWeight: '500' }}>
-            👤 {user?.username}
+          <div style={{ color: '#b5b5c3', fontSize: '14px', fontWeight: '500', fontFamily: 'Crimson Text, serif' }}>
+            <i className="fas fa-user" style={{ marginRight: '6px', color: '#8b8b9f' }} />
+            {user?.username}
           </div>
           <button
             onClick={handleLeaveCampaign}
             style={{
               padding: '5px 10px',
-              background: '#40444b',
-              color: '#dcddde',
-              border: 'none',
-              borderRadius: '3px',
+              background: 'rgba(233, 69, 96, 0.15)',
+              color: '#e94560',
+              border: '1px solid rgba(233, 69, 96, 0.4)',
+              borderRadius: '4px',
               cursor: 'pointer',
-              fontSize: '12px'
+              fontSize: '12px',
+              fontFamily: 'Cinzel, serif'
             }}
           >
             🚪 Exit
@@ -2241,113 +2490,262 @@ function SimpleApp() {
       <GothicBox theme={campaignTheme} style={{ flex: 1, display: 'flex', flexDirection: 'column', position: 'relative' }}>
         {/* Channel Header */}
         <div style={{
-          height: '48px',
-          borderBottom: '1px solid #202225',
+          minHeight: '52px',
+          borderBottom: '2px solid #2a2a4e',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
           padding: '0 20px',
-          background: '#36393f',
-          boxShadow: '0 1px 0 rgba(0,0,0,0.2)',
+          background: '#16213e',
           fontFamily: 'Cinzel, serif'
         }}>
-          <span style={{ color: 'white', fontSize: '16px', fontWeight: '600' }}>
+          <span style={{ color: '#e94560', fontSize: '17px', fontWeight: '600' }}>
+            <i className="fas fa-comments" style={{ marginRight: '10px', opacity: 0.9 }} />
             {currentLocation?.name || 'Select a location'}
           </span>
-          {/* Debug theme indicator */}
-          <span style={{ 
-            fontSize: '11px', 
-            color: '#72767d',
-            background: '#2f3136',
-            padding: '4px 8px',
+          <span style={{
+            fontSize: '11px',
+            color: '#8b8b9f',
+            background: '#0f1729',
+            padding: '4px 10px',
             borderRadius: '4px',
-            fontFamily: 'monospace'
+            border: '1px solid #2a2a4e',
+            fontFamily: 'Crimson Text, serif'
           }}>
-            Theme: {campaignTheme || 'none'}
+            {campaignTheme || 'gothic'}
           </span>
         </div>
 
-        {/* Messages Area */}
+        {/* Pinned Topic / Room Description */}
+        {currentLocation?.description && currentLocation.description.trim() && (
+          <div style={{
+            padding: '12px 20px',
+            background: '#0f1729',
+            borderBottom: '2px solid #2a2a4e',
+            color: '#b5b5c3',
+            fontSize: '14px',
+            lineHeight: '1.5',
+            fontFamily: 'Crimson Text, serif'
+          }}>
+            <span style={{ color: '#e94560', marginRight: '8px' }}><i className="fas fa-thumbtack" /></span>
+            {currentLocation.description}
+          </div>
+        )}
+
+        {/* Messages Area — Dark Conclave style (matches GothicShowcase) */}
         <div style={{
           flex: 1,
           overflowY: 'auto',
-          padding: '20px',
-          background: '#36393f'
+          padding: '16px 20px',
+          background: '#0f1729',
+          borderLeft: 'none',
+          borderRight: 'none'
         }}>
+          <div style={{
+            background: '#0f1729',
+            border: '2px solid #2a2a4e',
+            borderRadius: '8px',
+            padding: '16px',
+            minHeight: '120px'
+          }}>
           {messages.length === 0 ? (
             <div style={{
               textAlign: 'center',
               padding: '40px 20px',
-              color: '#8e9297'
+              color: '#8b8b9f',
+              fontFamily: 'Crimson Text, serif'
             }}>
-              <div style={{ fontSize: '48px', marginBottom: '10px' }}>💭</div>
-              <div style={{ fontSize: '16px', fontWeight: '600', marginBottom: '5px' }}>
-                No messages yet
+              <div style={{ fontSize: '40px', marginBottom: '10px', opacity: 0.7 }}><i className="fas fa-moon" /></div>
+              <div style={{ fontSize: '17px', fontWeight: '600', marginBottom: '8px', color: '#b5b5c3', fontFamily: 'Cinzel, serif' }}>
+                No whispers yet
               </div>
-              <div style={{ fontSize: '14px' }}>
+              <div style={{ fontSize: '15px' }}>
                 Start the conversation in {currentLocation?.name}!
               </div>
             </div>
           ) : (
-            messages.map((msg, idx) => (
-              <div key={msg.id || idx} style={{ marginBottom: '20px' }}>
-                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '15px' }}>
+            messages.map((msg, idx) => {
+              const isAI = msg.role === 'assistant';
+              const line = isAI
+                ? {
+                    bg: 'rgba(157, 78, 221, 0.1)',
+                    border: '#9d4edd',
+                    nameColor: '#9d4edd',
+                    icon: 'fa-robot',
+                    italic: true,
+                    label: 'AI Storyteller'
+                  }
+                : {
+                    bg: 'rgba(139, 139, 159, 0.05)',
+                    border: '#8b8b9f',
+                    nameColor: '#b5b5c3',
+                    icon: 'fa-user',
+                    italic: false,
+                    label: msg.character_name
+                      ? `${msg.character_name}`
+                      : (msg.username || user?.username || 'Player')
+                  };
+              const subLabel = !isAI && msg.character_name && msg.username
+                ? `@${msg.username}`
+                : null;
+
+              return (
+              <div key={msg.id || idx} style={{ marginBottom: '15px' }}>
+                {firstUnreadMessageId && msg.id === firstUnreadMessageId && (
                   <div style={{
-                    width: '40px',
-                    height: '40px',
-                    borderRadius: '50%',
-                    background: msg.role === 'user' ? '#5865f2' : '#ed4245',
                     display: 'flex',
                     alignItems: 'center',
-                    justifyContent: 'center',
-                    fontSize: '20px',
-                    flexShrink: 0
+                    gap: '10px',
+                    margin: '10px 0 16px',
+                    color: '#e94560',
+                    fontSize: '11px',
+                    fontWeight: '700',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.08em',
+                    fontFamily: 'Cinzel, serif'
                   }}>
-                    {msg.role === 'user' ? '👤' : '🎭'}
+                    <div style={{ flex: 1, height: '1px', background: 'rgba(233, 69, 96, 0.45)' }} />
+                    Unread messages
+                    <div style={{ flex: 1, height: '1px', background: 'rgba(233, 69, 96, 0.45)' }} />
                   </div>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ marginBottom: '5px' }}>
-                      <span style={{ color: msg.role === 'user' ? '#5865f2' : '#ed4245', fontWeight: '600', fontSize: '15px' }}>
-                        {msg.role === 'user' ? (msg.username || user?.username) : 'AI Storyteller'}
+                )}
+                <div style={{
+                  display: 'flex',
+                  gap: '12px',
+                  alignItems: 'flex-start'
+                }}>
+                  {!isAI && (
+                    <div style={{ paddingTop: '4px' }}>
+                      <MessageCharacterAvatar url={msg.character_portrait_url} size={40} />
+                    </div>
+                  )}
+                  <div style={{
+                    flex: 1,
+                    minWidth: 0,
+                    padding: '12px',
+                    background: line.bg,
+                    borderLeft: `3px solid ${line.border}`,
+                    borderRadius: '4px'
+                  }}>
+                    <div style={{
+                      display: 'flex',
+                      flexWrap: 'wrap',
+                      alignItems: 'center',
+                      justifyContent: 'flex-start',
+                      gap: '8px',
+                      marginBottom: '6px',
+                      fontWeight: 'bold',
+                      color: line.nameColor,
+                      fontFamily: 'Cinzel, serif',
+                      fontSize: '14px',
+                    }}>
+                      <span>
+                        <i className={`fas ${line.icon}`} style={{ marginRight: '8px' }} />
+                        {line.label}
                       </span>
-                      <span style={{ color: '#72767d', fontSize: '12px', marginLeft: '8px' }}>
+                      {subLabel && (
+                        <span style={{ fontWeight: '500', color: '#8b8b9f', fontSize: '12px' }}>
+                          {subLabel}
+                        </span>
+                      )}
+                      <span style={{ color: '#8b8b9f', fontSize: '12px', fontWeight: '500', fontFamily: 'Crimson Text, serif' }}>
                         {new Date(msg.created_at).toLocaleTimeString()}
                       </span>
                     </div>
-                    <div style={{ color: '#dcddde', fontSize: '15px', lineHeight: '1.5', whiteSpace: 'pre-wrap' }}>
-                      {msg.content}
+                    <div
+                      id={msg.id ? `msg-${msg.id}` : undefined}
+                      style={{
+                        color: '#d0d0d0',
+                        fontFamily: 'Crimson Text, serif',
+                        fontSize: '16px',
+                        lineHeight: 1.55,
+                        fontStyle: line.italic ? 'italic' : 'normal'
+                      }}
+                    >
+                      {renderMessageContent(msg.content)}
                     </div>
                   </div>
                 </div>
               </div>
-            ))
+              );
+            })
           )}
           {loading && (
-            <div style={{ textAlign: 'center', color: '#72767d', padding: '20px' }}>
-              <div>⏳ AI is thinking...</div>
+            <div style={{ textAlign: 'center', color: '#9d4edd', padding: '20px', fontFamily: 'Cinzel, serif' }}>
+              <div><i className="fas fa-scroll" style={{ marginRight: '8px' }} />The storyteller ponders...</div>
             </div>
           )}
+          </div>
         </div>
 
         {/* Input Area */}
-        <div style={{ padding: '20px', background: '#36393f' }}>
+        <div style={{ padding: '20px', background: '#16213e', borderTop: '2px solid #2a2a4e' }}>
+          {firstUnreadMessageId && (
+            <div style={{
+              marginBottom: '10px',
+              display: 'flex',
+              gap: '10px',
+              alignItems: 'center',
+              justifyContent: 'space-between'
+            }}>
+              <div style={{ color: '#e94560', fontSize: '12px', fontFamily: 'Crimson Text, serif' }}>
+                {locationReadState?.first_unread_at
+                  ? `You have unread messages since ${new Date(locationReadState.first_unread_at).toLocaleString()}`
+                  : 'You have unread messages'}
+              </div>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <button
+                  type="button"
+                  onClick={() => jumpToMessage(firstUnreadMessageId)}
+                  style={{
+                    padding: '6px 10px',
+                    background: '#0f1729',
+                    color: '#b5b5c3',
+                    border: '1px solid #2a2a4e',
+                    borderRadius: '6px',
+                    cursor: 'pointer',
+                    fontSize: '12px',
+                    fontFamily: 'Cinzel, serif'
+                  }}
+                >
+                  Jump to first unread
+                </button>
+                <button
+                  type="button"
+                  onClick={markLocationRead}
+                  style={{
+                    padding: '6px 10px',
+                    background: 'rgba(157, 78, 221, 0.2)',
+                    color: '#d8b4fe',
+                    border: '1px solid rgba(157, 78, 221, 0.45)',
+                    borderRadius: '6px',
+                    cursor: 'pointer',
+                    fontSize: '12px',
+                    fontFamily: 'Cinzel, serif'
+                  }}
+                >
+                  Mark as read
+                </button>
+              </div>
+            </div>
+          )}
           <form onSubmit={handleSendMessage}>
             <div style={{ display: 'flex', gap: '10px' }}>
               <input
                 ref={chatInputRef}
                 type="text"
                 name="message"
-                placeholder={`Message in ${currentLocation?.name || 'this location'}...`}
+                placeholder="Whisper to the darkness..."
                 disabled={loading}
                 autoFocus
                 style={{
                   flex: 1,
                   padding: '12px 16px',
-                  background: '#40444b',
-                  border: 'none',
+                  background: '#0f1729',
+                  border: '2px solid #2a2a4e',
                   borderRadius: '8px',
-                  color: '#dcddde',
-                  fontSize: '15px',
+                  color: '#e0e0e0',
+                  fontSize: '16px',
                   outline: 'none',
                   fontFamily: 'Crimson Text, serif'
                 }}
@@ -2357,17 +2755,18 @@ function SimpleApp() {
                 disabled={loading}
                 style={{
                   padding: '12px 24px',
-                  background: loading ? '#4e5058' : '#5865f2',
+                  background: loading ? '#4a4a5e' : '#e94560',
                   color: 'white',
-                  border: 'none',
+                  border: '2px solid rgba(233, 69, 96, 0.5)',
                   borderRadius: '8px',
                   cursor: loading ? 'not-allowed' : 'pointer',
                   fontWeight: '600',
                   fontSize: '15px',
-                  fontFamily: 'Cinzel, serif'
+                  fontFamily: 'Cinzel, serif',
+                  boxShadow: loading ? 'none' : '0 4px 15px rgba(233, 69, 96, 0.25)'
                 }}
               >
-                {loading ? 'Sending...' : 'Send'}
+                {loading ? 'Sending...' : <><i className="fas fa-paper-plane" style={{ marginRight: '8px' }} />Send</>}
               </button>
             </div>
           </form>
@@ -2375,11 +2774,13 @@ function SimpleApp() {
           {error && (
             <div style={{
               marginTop: '10px',
-              padding: '10px',
-              background: '#ed4245',
-              color: 'white',
-              borderRadius: '5px',
-              fontSize: '14px'
+              padding: '12px',
+              background: 'rgba(233, 69, 96, 0.12)',
+              color: '#e94560',
+              borderRadius: '6px',
+              fontSize: '14px',
+              border: '1px solid rgba(233, 69, 96, 0.35)',
+              fontFamily: 'Crimson Text, serif'
             }}>
               ⚠️ {error}
             </div>
@@ -2390,8 +2791,8 @@ function SimpleApp() {
       {/* Right Sidebar - Character Info */}
       <div style={{
         width: isMobile ? '280px' : '280px',
-        background: '#2f3136',
-        borderLeft: '1px solid #202225',
+        background: '#16213e',
+        borderLeft: '2px solid #2a2a4e',
         padding: '20px',
         position: isMobile ? 'fixed' : 'relative',
         right: isMobile ? (rightSidebarOpen ? '0' : '-280px') : 'auto',
@@ -2402,65 +2803,170 @@ function SimpleApp() {
         height: isMobile ? '100vh' : 'auto',
         overflowY: 'auto'
       }}>
-        <h3 style={{ color: 'white', marginBottom: '15px', fontSize: '16px', fontWeight: '600' }}>
-          📋 Character Info
+        <h3 style={{ color: '#e94560', marginBottom: '15px', fontSize: '16px', fontWeight: '600', fontFamily: 'Cinzel, serif' }}>
+          <i className="fas fa-id-card" style={{ marginRight: '8px' }} />
+          Character Info
         </h3>
         
+        {campaignCharacters.length > 1 && (
+          <div style={{ marginBottom: '14px' }}>
+            <label style={{ display: 'block', color: '#8b8b9f', fontSize: '12px', marginBottom: '6px', fontFamily: 'Cinzel, serif' }}>
+              Active character
+            </label>
+            <select
+              value={character?.id ?? ''}
+              onChange={(e) => {
+                const id = parseInt(e.target.value, 10);
+                const next = campaignCharacters.find((c) => c.id === id) || null;
+                setCharacter(next);
+                if (selectedCampaign?.id && currentLocation?.id) {
+                  loadMessages(selectedCampaign.id, currentLocation.id, { characterForRead: next });
+                }
+              }}
+              style={{
+                width: '100%',
+                padding: '8px 10px',
+                background: '#0f1729',
+                color: '#b5b5c3',
+                border: '1px solid #2a2a4e',
+                borderRadius: '6px',
+                fontSize: '13px',
+                fontFamily: 'Crimson Text, serif',
+              }}
+            >
+              {campaignCharacters.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
+
         {character ? (
           <div>
-            {/* Character details would go here */}
-            <div style={{ color: '#b9bbbe', fontSize: '14px' }}>
-              {character.name}
+            <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-start', marginBottom: '12px' }}>
+              <MessageCharacterAvatar url={character.portrait_url} size={56} />
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ color: '#b5b5c3', fontSize: '16px', fontWeight: '600', fontFamily: 'Cinzel, serif' }}>
+                  {character.name}
+                </div>
+                <label style={{
+                  display: 'inline-block',
+                  marginTop: '8px',
+                  padding: '6px 10px',
+                  background: 'rgba(157, 78, 221, 0.15)',
+                  color: '#d8b4fe',
+                  border: '1px solid rgba(157, 78, 221, 0.35)',
+                  borderRadius: '6px',
+                  fontSize: '12px',
+                  cursor: 'pointer',
+                  fontFamily: 'Cinzel, serif',
+                }}>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    style={{ display: 'none' }}
+                    onChange={(e) => {
+                      const f = e.target.files?.[0];
+                      e.target.value = '';
+                      if (!f || !character?.id) return;
+                      if (f.size > 350000) {
+                        showError('Image is too large (max ~350KB).');
+                        return;
+                      }
+                      const reader = new FileReader();
+                      reader.onload = async () => {
+                        const dataUrl = reader.result;
+                        if (typeof dataUrl !== 'string') return;
+                        try {
+                          const res = await fetch(`${API_URL}/characters/${character.id}`, {
+                            method: 'PUT',
+                            headers: {
+                              Authorization: `Bearer ${token}`,
+                              'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({ portrait_url: dataUrl }),
+                          });
+                          if (!res.ok) {
+                            const err = await res.json().catch(() => ({}));
+                            showError(err.error || 'Could not save portrait.');
+                            return;
+                          }
+                          const body = await res.json();
+                          const updated = body.character;
+                          if (updated) {
+                            setCharacter(updated);
+                            setCampaignCharacters((prev) =>
+                              prev.map((c) => (c.id === updated.id ? { ...c, ...updated } : c))
+                            );
+                            showSuccess('Portrait updated.');
+                          }
+                        } catch (err) {
+                          showError(err.message || 'Could not save portrait.');
+                        }
+                      };
+                      reader.readAsDataURL(f);
+                    }}
+                  />
+                  <i className="fas fa-image" style={{ marginRight: '6px' }} />
+                  Portrait
+                </label>
+              </div>
             </div>
           </div>
         ) : (
-          <div style={{ color: '#72767d', fontSize: '14px', lineHeight: '1.5' }}>
-            <p>No character selected.</p>
+          <div style={{ color: '#8b8b9f', fontSize: '14px', lineHeight: '1.5', fontFamily: 'Crimson Text, serif' }}>
+            <p>No character in this campaign.</p>
             <p style={{ marginTop: '10px' }}>
-              Create a character to see their stats and information here.
+              Create a character (API or tools) to play in-character and set a portrait here.
             </p>
           </div>
         )}
 
-        <div style={{ marginTop: '30px', paddingTop: '20px', borderTop: '1px solid #202225' }}>
-          <h4 style={{ color: 'white', marginBottom: '10px', fontSize: '14px', fontWeight: '600' }}>
-            ⚡ Quick Actions
+        <div style={{ marginTop: '30px', paddingTop: '20px', borderTop: '2px solid #2a2a4e' }}>
+          <h4 style={{ color: '#b5b5c3', marginBottom: '10px', fontSize: '14px', fontWeight: '600', fontFamily: 'Cinzel, serif' }}>
+            <i className="fas fa-bolt" style={{ marginRight: '6px', color: '#9d4edd' }} />
+            Quick Actions
           </h4>
           <button style={{
             width: '100%',
             padding: '8px',
-            background: '#40444b',
-            color: '#dcddde',
-            border: 'none',
+            background: '#0f1729',
+            color: '#b5b5c3',
+            border: '1px solid #2a2a4e',
             borderRadius: '4px',
             cursor: 'pointer',
             fontSize: '13px',
-            marginBottom: '8px'
+            marginBottom: '8px',
+            fontFamily: 'Cinzel, serif'
           }}>
             🎲 Roll Dice
           </button>
           <button style={{
             width: '100%',
             padding: '8px',
-            background: '#40444b',
-            color: '#dcddde',
-            border: 'none',
+            background: '#0f1729',
+            color: '#b5b5c3',
+            border: '1px solid #2a2a4e',
             borderRadius: '4px',
             cursor: 'pointer',
             fontSize: '13px',
-            marginBottom: '8px'
+            marginBottom: '8px',
+            fontFamily: 'Cinzel, serif'
           }}>
             📚 Search Rules
           </button>
           <button style={{
             width: '100%',
             padding: '8px',
-            background: '#40444b',
-            color: '#dcddde',
-            border: 'none',
+            background: '#0f1729',
+            color: '#b5b5c3',
+            border: '1px solid #2a2a4e',
             borderRadius: '4px',
             cursor: 'pointer',
-            fontSize: '13px'
+            fontSize: '13px',
+            fontFamily: 'Cinzel, serif'
           }}>
             👤 View Character
           </button>
@@ -2474,7 +2980,19 @@ function SimpleApp() {
   
   // Show Gothic Showcase if requested
   if (showGothicShowcase) {
-    return <GothicShowcase onBack={() => window.history.back()} />;
+    return (
+      <GothicShowcase
+        onBack={() => {
+          // Gothic showcase is opened via `showShowcase(true)` which pushes a history state.
+          // Prefer going back in history to restore the previous page (login/dashboard/etc).
+          if (window.history.state?.showGothicShowcase) {
+            window.history.back();
+          } else {
+            showShowcase(false);
+          }
+        }}
+      />
+    );
   }
   
   return (

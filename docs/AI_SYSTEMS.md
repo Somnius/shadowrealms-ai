@@ -1,7 +1,7 @@
 # AI & Memory Systems Documentation
 
-**Last Updated**: 2025-10-28  
-**Version**: 0.7.6
+**Last Updated**: 2026-03-25  
+**Version**: 0.7.12
 
 This document consolidates all AI and memory system documentation for ShadowRealms AI.
 
@@ -10,14 +10,30 @@ This document consolidates all AI and memory system documentation for ShadowReal
 ## Table of Contents
 
 1. [Overview](#overview)
-2. [OOC Monitoring System](#ooc-monitoring-system)
-3. [AI Memory Cleanup](#ai-memory-cleanup)
-4. [AI Memory Implementation](#ai-memory-implementation)
-5. [AI Context & Memory Proposal](#ai-context--memory-proposal)
-6. [Complete AI Memory System](#complete-ai-memory-system)
+2. [OOC channel AI (storyteller chat)](#ooc-channel-ai-storyteller-chat)
+3. [OOC Monitoring System](#ooc-monitoring-system)
+4. [AI Memory Cleanup](#ai-memory-cleanup)
+5. [AI Memory Implementation](#ai-memory-implementation)
+6. [AI Context & Memory Proposal](#ai-context--memory-proposal)
+7. [Complete AI Memory System](#complete-ai-memory-system)
 
 ---
 
+## OOC channel AI (storyteller chat)
+
+When a player sends a message from a location whose **database** `type` is `ooc`, `POST /api/ai/chat` does **not** run the normal in-character storyteller (efficient / balanced / full). Instead:
+
+- The model receives campaign summary, known PC names, recent messages in **that OOC room**, and the new line.
+- If the text looks like normal **meta / player** chat, the API returns `ooc_no_reply: true` and `response: null` — **no assistant message** is added.
+- If the text looks **in-character** or like content that belongs in an **in-character** location, the API returns a **short moderator-style warning** only (no scene narration, no NPC voices). The frontend stores that as `message_type: ooc`, `role: assistant`.
+
+The server resolves OOC vs IC using `location_id` and the `locations` table (not client-supplied `location_type` alone), so behavior cannot be spoofed by the browser.
+
+### Planned: `/ai` commands in rooms
+
+**Not implemented yet.** A near-future iteration will add explicit **slash-commands** (for example `/ai ...`) per room so players can trigger AI help on demand. Until then: **IC** locations use the full storyteller pipeline; **OOC** uses the moderation-only behavior above.
+
+---
 
 ## OOC Monitoring System
 

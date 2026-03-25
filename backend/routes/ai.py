@@ -206,13 +206,51 @@ def ai_chat():
             if not campaign:
                 return jsonify({'error': 'Campaign not found or access denied'}), 404
         
-        # Get current performance mode
+        # Resolve location type from DB (authoritative; do not trust client-only hints)
+        location_type = None
+        if campaign_id and location_id:
+            cursor.execute("""
+                SELECT type FROM locations
+                WHERE id = %s AND campaign_id = %s AND is_active = TRUE
+            """, (location_id, campaign_id))
+            loc_row = cursor.fetchone()
+            if loc_row and loc_row['type']:
+                location_type = str(loc_row['type']).strip().lower()
+
         performance_mode = gpu_monitor_service.get_performance_mode()
         ai_config = gpu_monitor_service.get_ai_response_config()
-        
-        # Check if resources are limited
         is_limited = gpu_monitor_service.is_resource_limited()
-        
+
+        # OOC rooms: do not run in-character storyteller; only moderate when content is IC-relevant
+        if campaign_id and location_id and location_type == 'ooc':
+            ooc_text = generate_ooc_room_response(
+                message, campaign_id, location_id, current_user_id
+            )
+            if ooc_text is None:
+                return jsonify({
+                    'response': None,
+                    'ooc_no_reply': True,
+                    'response_type': 'ooc_silent',
+                    'performance_mode': performance_mode.value,
+                    'ai_config': ai_config,
+                    'resource_limited': is_limited,
+                    'timestamp': datetime.utcnow().isoformat()
+                }), 200
+            store_ai_memory(
+                campaign_id, 'conversation', message, ooc_text,
+                {**context, 'ooc_moderation': True}
+            )
+            return jsonify({
+                'response': ooc_text,
+                'ooc_no_reply': False,
+                'response_type': 'ooc_moderation',
+                'performance_mode': performance_mode.value,
+                'ai_config': ai_config,
+                'resource_limited': is_limited,
+                'timestamp': datetime.utcnow().isoformat()
+            }), 200
+
+        # In-character and other locations: full storyteller pipeline
         # Generate AI response based on performance mode
         if performance_mode.value == 'slow':
             # Efficient mode - basic response
@@ -555,6 +593,92 @@ Respond as the AI storyteller, addressing the player character by name, consider
     except Exception as e:
         logger.error(f"Error generating full response: {e}")
         return f"AI Response (Full Mode): {message} [Full quality response with maximum detail]"
+
+def get_campaign_character_names_list(campaign_id: int) -> list:
+    """Active player character names for OOC relevance checks."""
+    try:
+        db = get_db()
+        cursor = db.cursor()
+        cursor.execute("""
+            SELECT name FROM characters
+            WHERE campaign_id = %s AND is_active = TRUE
+            ORDER BY name
+        """, (campaign_id,))
+        return [row['name'] for row in cursor.fetchall() if row.get('name')]
+    except Exception as e:
+        logger.error(f"Error listing character names for campaign {campaign_id}: {e}")
+        return []
+    finally:
+        if 'db' in locals():
+            db.close()
+
+
+def generate_ooc_room_response(
+    message: str, campaign_id: int, location_id: int, user_id: int
+):
+    """
+    OOC channel: return None when no AI reply is needed; otherwise a short moderator warning.
+    Does not advance fiction or speak as storyteller/NPCs.
+    """
+    try:
+        llm_service = get_llm_service()
+        campaign_context = get_campaign_context(campaign_id)
+        if len(campaign_context) > 2800:
+            campaign_context = campaign_context[:2800] + "\n…"
+
+        names = get_campaign_character_names_list(campaign_id)
+        names_str = ", ".join(names) if names else "(none listed yet)"
+
+        msg_data = get_recent_messages(location_id, campaign_id, limit=14)
+        history = msg_data['formatted']
+
+        char_note = ""
+        if user_id and campaign_id:
+            cd = get_character_context(user_id, campaign_id)
+            if cd.get('has_character'):
+                char_note = f"\nThe sending player controls the character: {cd.get('name', 'Unknown')}."
+
+        system_prompt = f"""You monitor the OUT-OF-CHARACTER (OOC) chat room for a tabletop RPG campaign.
+
+Campaign context:
+{campaign_context}
+
+Known PC names: {names_str}
+{char_note}
+
+{history}
+
+Latest message to evaluate:
+---
+{message}
+---
+
+Rules:
+- If the message is normal OOC (scheduling, rules, greetings, casual player chat, brief meta about the game without acting in-scene), reply with exactly one word: SILENT
+- If the message is clearly in-character play (dialogue or narration as the character, advancing a scene, or content that belongs in an in-character location), write a SHORT moderator note (2–4 sentences): politely remind them to use an in-character room for that. Do NOT narrate the world, play NPCs, continue the story, or answer as the DM.
+
+Output ONLY the single word SILENT or your short moderator text. No JSON, no labels."""
+
+        llm_context = {'system_prompt': system_prompt}
+        llm_config = {
+            'max_tokens': 220,
+            'temperature': 0.25,
+            'top_p': 0.85,
+        }
+        raw = llm_service.generate_response(message, llm_context, llm_config)
+        if not raw or not str(raw).strip():
+            return None
+
+        stripped = str(raw).strip().strip('"').strip("'")
+        first_token = stripped.split()[0].upper().rstrip('.,!?;:') if stripped else ''
+        if first_token == 'SILENT' or stripped.upper() == 'NONE':
+            return None
+        return stripped
+
+    except Exception as e:
+        logger.error(f"Error in OOC room AI moderation: {e}")
+        return None
+
 
 class AIContextManager:
     """Smart context manager that prioritizes and assembles context based on token limits"""

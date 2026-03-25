@@ -9,9 +9,12 @@ from flask_jwt_extended import jwt_required, get_jwt_identity
 import bcrypt
 import json
 import logging
+import re
+import secrets
 from datetime import datetime, timedelta
 
 from database import get_db
+from routes.auth import load_invites, save_invites
 
 logger = logging.getLogger(__name__)
 
@@ -428,4 +431,108 @@ def get_moderation_log():
     except Exception as e:
         logger.error(f"Error getting moderation log: {e}")
         return jsonify({'error': 'Failed to get moderation log'}), 500
+
+
+def _generate_unique_invite_code(invites_dict):
+    for _ in range(64):
+        code = f"SR-{secrets.token_hex(3).upper()}-{secrets.token_hex(2).upper()}"
+        if code not in invites_dict:
+            return code
+    return None
+
+
+@bp.route('/invites', methods=['GET'])
+@require_admin()
+def list_invites():
+    """List all invite codes (admin only)."""
+    try:
+        data = load_invites()
+        invites = data.get('invites', {})
+        out = []
+        for code, meta in invites.items():
+            out.append({
+                'code': code,
+                'type': meta.get('type'),
+                'description': meta.get('description', ''),
+                'max_uses': meta.get('max_uses', 1),
+                'uses': meta.get('uses', 0),
+                'created_at': meta.get('created_at'),
+                'created_by': meta.get('created_by'),
+            })
+        out.sort(key=lambda x: (x.get('created_at') or ''), reverse=True)
+        return jsonify(out), 200
+    except Exception as e:
+        logger.error(f"Error listing invites: {e}")
+        return jsonify({'error': 'Failed to list invites'}), 500
+
+
+@bp.route('/invites', methods=['POST'])
+@require_admin()
+def create_invite():
+    """Create a new invite code for players (or admin) to use at signup."""
+    try:
+        admin_id = get_jwt_identity()
+        payload = request.get_json() or {}
+
+        inv_type = (payload.get('type') or 'player').strip().lower()
+        if inv_type not in ('admin', 'player'):
+            return jsonify({'error': 'type must be admin or player'}), 400
+
+        max_uses = int(payload.get('max_uses', 1))
+        if max_uses < 1 or max_uses > 500:
+            return jsonify({'error': 'max_uses must be between 1 and 500'}), 400
+
+        description = (payload.get('description') or '').strip()
+        custom_code = (payload.get('code') or '').strip() or None
+
+        invites_data = load_invites()
+        if 'invites' not in invites_data:
+            invites_data['invites'] = {}
+        invites = invites_data['invites']
+
+        if custom_code:
+            if len(custom_code) < 6 or len(custom_code) > 64:
+                return jsonify({'error': 'Custom code must be 6–64 characters'}), 400
+            if not re.match(r'^[A-Za-z0-9_-]+$', custom_code):
+                return jsonify({
+                    'error': 'Custom code may only contain letters, numbers, underscore, and hyphen'
+                }), 400
+            if custom_code in invites:
+                return jsonify({'error': 'That invite code already exists'}), 400
+            code = custom_code
+        else:
+            code = _generate_unique_invite_code(invites)
+            if not code:
+                return jsonify({'error': 'Could not generate a unique invite code'}), 500
+
+        db = get_db()
+        cursor = db.cursor()
+        cursor.execute("SELECT username FROM users WHERE id = %s", (admin_id,))
+        row = cursor.fetchone()
+        cursor.close()
+        db.close()
+        admin_name = row['username'] if row else str(admin_id)
+
+        invites[code] = {
+            'type': inv_type,
+            'description': description,
+            'max_uses': max_uses,
+            'uses': 0,
+            'created_at': datetime.utcnow().isoformat() + 'Z',
+            'created_by': admin_name,
+        }
+        save_invites(invites_data)
+
+        logger.info("Admin %s created invite %s type=%s max_uses=%s", admin_name, code, inv_type, max_uses)
+
+        invite_out = dict(invites[code])
+        invite_out['code'] = code
+        return jsonify({
+            'message': 'Invite code created',
+            'invite': invite_out,
+        }), 201
+
+    except Exception as e:
+        logger.error(f"Error creating invite: {e}")
+        return jsonify({'error': 'Failed to create invite'}), 500
 

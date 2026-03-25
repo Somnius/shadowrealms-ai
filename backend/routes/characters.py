@@ -10,7 +10,10 @@ import logging
 import json
 from datetime import datetime
 
-from database import get_db
+from database import get_db, ensure_character_portrait_url_column
+
+# Stored as TEXT (URLs or data URLs); cap size to protect the DB.
+MAX_PORTRAIT_URL_LEN = 524288
 from services.gpu_monitor import gpu_monitor_service
 
 logger = logging.getLogger(__name__)
@@ -27,7 +30,9 @@ def get_characters():
         
         db = get_db()
         cursor = db.cursor()
-        
+        ensure_character_portrait_url_column(cursor)
+        db.commit()
+
         # Get current user role
         cursor.execute("SELECT role FROM users WHERE id = %s", (current_user_id,))
         current_user = cursor.fetchone()
@@ -91,7 +96,8 @@ def get_characters():
                 'campaign_id': row['campaign_id'],
                 'campaign_name': row['campaign_name'],
                 'created_at': row['created_at'],
-                'updated_at': row['updated_at']
+                'updated_at': row['updated_at'],
+                'portrait_url': row.get('portrait_url'),
             })
         
         return jsonify({
@@ -130,6 +136,15 @@ def create_character():
         
         db = get_db()
         cursor = db.cursor()
+        ensure_character_portrait_url_column(cursor)
+        db.commit()
+
+        portrait_url = data.get('portrait_url')
+        if portrait_url is not None and portrait_url != '':
+            if not isinstance(portrait_url, str) or len(portrait_url) > MAX_PORTRAIT_URL_LEN:
+                return jsonify({'error': 'portrait_url is invalid or too large'}), 400
+        else:
+            portrait_url = None
         
         # Verify campaign exists and user has access
         cursor.execute("""
@@ -155,8 +170,8 @@ def create_character():
         
         # Create character
         cursor.execute("""
-            INSERT INTO characters (name, system_type, attributes, skills, background, merits_flaws, user_id, campaign_id, created_at, updated_at)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            INSERT INTO characters (name, system_type, attributes, skills, background, merits_flaws, user_id, campaign_id, portrait_url, created_at, updated_at)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             RETURNING id
         """, (
             name,
@@ -167,6 +182,7 @@ def create_character():
             json.dumps(data.get('merits_flaws', {})),
             current_user_id,
             campaign_id,
+            portrait_url,
             datetime.utcnow(),
             datetime.utcnow()
         ))
@@ -199,7 +215,9 @@ def get_character(character_id):
         
         db = get_db()
         cursor = db.cursor()
-        
+        ensure_character_portrait_url_column(cursor)
+        db.commit()
+
         # Get current user role
         cursor.execute("SELECT role FROM users WHERE id = %s", (current_user_id,))
         current_user = cursor.fetchone()
@@ -239,7 +257,8 @@ def get_character(character_id):
                 'campaign_id': character['campaign_id'],
                 'campaign_name': character['campaign_name'],
                 'created_at': character['created_at'],
-                'updated_at': character['updated_at']
+                'updated_at': character['updated_at'],
+                'portrait_url': character.get('portrait_url'),
             }
         }), 200
         
@@ -263,7 +282,9 @@ def update_character(character_id):
         
         db = get_db()
         cursor = db.cursor()
-        
+        ensure_character_portrait_url_column(cursor)
+        db.commit()
+
         # Get current user role
         cursor.execute("SELECT role FROM users WHERE id = %s", (current_user_id,))
         current_user = cursor.fetchone()
@@ -314,6 +335,17 @@ def update_character(character_id):
         if 'merits_flaws' in data:
             updates.append("merits_flaws = %s")
             params.append(json.dumps(data['merits_flaws']))
+
+        if 'portrait_url' in data:
+            pu = data['portrait_url']
+            if pu is not None and pu != '':
+                if not isinstance(pu, str) or len(pu) > MAX_PORTRAIT_URL_LEN:
+                    return jsonify({'error': 'portrait_url is invalid or too large'}), 400
+                updates.append("portrait_url = %s")
+                params.append(pu)
+            else:
+                updates.append("portrait_url = %s")
+                params.append(None)
         
         # Apply updates if any
         if updates:

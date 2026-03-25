@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.12] - 2026-03-25 - OOC AI moderation, chat UI, portraits 🎭
+
+### Added
+- **Character portraits**: `characters.portrait_url` (URLs or data URLs), exposed on character APIs; messages include `character_portrait_url` when a message is tied to a character.
+- **OOC room AI behavior**: For locations with DB `type = ooc`, `POST /api/ai/chat` skips the in-character storyteller. The model uses campaign + PC names + recent OOC lines; it either returns **no assistant message** (`ooc_no_reply: true`) for normal meta chat, or a **short moderator warning** if content reads as in-character / belongs in an IC room. Response type `ooc_moderation` vs `ooc_silent`.
+- **Documentation**: `docs/AI_SYSTEMS.md` section on OOC channel AI; **planned** `/ai` slash-commands in rooms noted (not implemented).
+
+### Changed
+- **Chat UI**: AI storyteller label aligned **left** again (same as player rows); user rows keep optional **avatar** (portrait or SVG placeholder).
+- **Frontend**: Sends `location_type` with AI chat (informational); server uses **authoritative** location type from DB via `location_id`.
+
+### Notes
+- **Future**: Room-level `/ai` commands for explicit AI invokes are planned; see `docs/AI_SYSTEMS.md`.
+
 ## [0.7.11] - 2026-03-25 - Local Setup Reliability & Campaign Stats 🛠️
 
 ### Added
