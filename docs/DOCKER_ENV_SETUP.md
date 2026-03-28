@@ -53,13 +53,33 @@ python3 tests/test_docker_env.py
 ```
 
 ### **Step 4: Start Docker**
+
+**Option A — root helper script (recommended)**  
+From the **repository root**, `docker-up.sh` changes to that directory and runs `docker compose up -d` so every service starts in detached mode:
+
 ```bash
-# Build and start containers
-docker-compose up --build
+chmod +x docker-up.sh   # only needed once if the file is not executable
+./docker-up.sh
+```
+
+Extra Compose CLI arguments are forwarded (for example rebuild images before starting):
+
+```bash
+./docker-up.sh --build
+```
+
+**Option B — Compose CLI**  
+Equivalent manual commands:
+
+```bash
+# Build and start containers (foreground; add -d for detached)
+docker compose up --build
 
 # Check logs for environment variable loading
-docker-compose logs backend
+docker compose logs backend
 ```
+
+Requires Docker with the **Compose V2** plugin (`docker compose`).
 
 ## 🗄️ PostgreSQL Schema Initialization (Tables)
 

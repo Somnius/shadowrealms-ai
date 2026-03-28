@@ -132,6 +132,34 @@ def ensure_locations_dice_leniency_floor_column(cursor):
             )
 
 
+def ensure_locations_player_access_columns(cursor):
+    """Storyteller may close a location to players (is_open=false) with optional closure_reason."""
+    db_type = os.getenv("DATABASE_TYPE", "sqlite").lower()
+    if db_type == "postgresql":
+        cursor.execute(
+            "ALTER TABLE locations ADD COLUMN IF NOT EXISTS is_open BOOLEAN NOT NULL DEFAULT TRUE"
+        )
+        cursor.execute(
+            "ALTER TABLE locations ADD COLUMN IF NOT EXISTS closure_reason TEXT"
+        )
+    else:
+        cursor.execute(
+            "SELECT name FROM sqlite_master WHERE type='table' AND name='locations'"
+        )
+        if not cursor.fetchone():
+            return
+        cursor.execute("PRAGMA table_info(locations)")
+        cols = [row["name"] for row in cursor.fetchall()]
+        if "is_open" not in cols:
+            cursor.execute(
+                "ALTER TABLE locations ADD COLUMN is_open INTEGER NOT NULL DEFAULT 1"
+            )
+        if "closure_reason" not in cols:
+            cursor.execute(
+                "ALTER TABLE locations ADD COLUMN closure_reason TEXT"
+            )
+
+
 def ensure_character_portrait_url_column(cursor):
     """Add characters.portrait_url if missing (PostgreSQL and SQLite)."""
     db_type = os.getenv('DATABASE_TYPE', 'sqlite').lower()
@@ -146,6 +174,113 @@ def ensure_character_portrait_url_column(cursor):
             cursor.execute(
                 "ALTER TABLE characters ADD COLUMN portrait_url TEXT"
             )
+
+
+def ensure_users_player_profile_columns(cursor):
+    """player OOC avatar + globally active character pointer."""
+    db_type = os.getenv("DATABASE_TYPE", "sqlite").lower()
+    if db_type == "postgresql":
+        cursor.execute(
+            "ALTER TABLE users ADD COLUMN IF NOT EXISTS player_avatar_url TEXT"
+        )
+        cursor.execute(
+            "ALTER TABLE users ADD COLUMN IF NOT EXISTS active_character_id INTEGER"
+        )
+    else:
+        cursor.execute("PRAGMA table_info(users)")
+        cols = [row["name"] for row in cursor.fetchall()]
+        if "player_avatar_url" not in cols:
+            cursor.execute("ALTER TABLE users ADD COLUMN player_avatar_url TEXT")
+        if "active_character_id" not in cols:
+            cursor.execute("ALTER TABLE users ADD COLUMN active_character_id INTEGER")
+
+
+def ensure_characters_is_active_column(cursor):
+    """Soft-toggle for character validity (messages routes expect is_active)."""
+    db_type = os.getenv("DATABASE_TYPE", "sqlite").lower()
+    if db_type == "postgresql":
+        cursor.execute(
+            "ALTER TABLE characters ADD COLUMN IF NOT EXISTS is_active BOOLEAN NOT NULL DEFAULT TRUE"
+        )
+    else:
+        cursor.execute(
+            "SELECT name FROM sqlite_master WHERE type='table' AND name='characters'"
+        )
+        if not cursor.fetchone():
+            return
+        cursor.execute("PRAGMA table_info(characters)")
+        cols = [row["name"] for row in cursor.fetchall()]
+        if "is_active" not in cols:
+            cursor.execute(
+                "ALTER TABLE characters ADD COLUMN is_active INTEGER NOT NULL DEFAULT 1"
+            )
+
+
+def ensure_characters_wod_sheet_columns(cursor):
+    """sheet_locked (player edits) + structured WoD chargen metadata JSON."""
+    db_type = os.getenv("DATABASE_TYPE", "sqlite").lower()
+    if db_type == "postgresql":
+        cursor.execute(
+            "ALTER TABLE characters ADD COLUMN IF NOT EXISTS sheet_locked BOOLEAN NOT NULL DEFAULT FALSE"
+        )
+        cursor.execute(
+            "ALTER TABLE characters ADD COLUMN IF NOT EXISTS wod_meta TEXT NOT NULL DEFAULT '{}'"
+        )
+    else:
+        cursor.execute(
+            "SELECT name FROM sqlite_master WHERE type='table' AND name='characters'"
+        )
+        if not cursor.fetchone():
+            return
+        cursor.execute("PRAGMA table_info(characters)")
+        cols = [row["name"] for row in cursor.fetchall()]
+        if "sheet_locked" not in cols:
+            cursor.execute(
+                "ALTER TABLE characters ADD COLUMN sheet_locked INTEGER NOT NULL DEFAULT 0"
+            )
+        if "wod_meta" not in cols:
+            cursor.execute(
+                "ALTER TABLE characters ADD COLUMN wod_meta TEXT NOT NULL DEFAULT '{}'"
+            )
+
+
+def ensure_character_downtime_requests_table(cursor):
+    """Player-submitted downtime; admin approves or rejects with reason."""
+    db_type = os.getenv("DATABASE_TYPE", "sqlite").lower()
+    if db_type == "postgresql":
+        cursor.execute(
+            """
+            CREATE TABLE IF NOT EXISTS character_downtime_requests (
+                id BIGSERIAL PRIMARY KEY,
+                character_id INTEGER NOT NULL REFERENCES characters(id) ON DELETE CASCADE,
+                user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                campaign_id INTEGER NOT NULL REFERENCES campaigns(id) ON DELETE CASCADE,
+                request_text TEXT NOT NULL,
+                status TEXT NOT NULL DEFAULT 'pending',
+                admin_reason TEXT,
+                resolved_at TIMESTAMP,
+                resolved_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+            """
+        )
+    else:
+        cursor.execute(
+            """
+            CREATE TABLE IF NOT EXISTS character_downtime_requests (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                character_id INTEGER NOT NULL REFERENCES characters(id) ON DELETE CASCADE,
+                user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                campaign_id INTEGER NOT NULL REFERENCES campaigns(id) ON DELETE CASCADE,
+                request_text TEXT NOT NULL,
+                status TEXT NOT NULL DEFAULT 'pending',
+                admin_reason TEXT,
+                resolved_at TIMESTAMP,
+                resolved_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+            """
+        )
 
 
 def ensure_dice_tables(cursor, db_kind: str) -> None:
@@ -271,7 +406,12 @@ def migrate_db():
             ensure_users_display_timezone_column(cursor)
             ensure_messages_ai_message_kind_column(cursor)
             ensure_locations_dice_leniency_floor_column(cursor)
+            ensure_locations_player_access_columns(cursor)
             ensure_character_portrait_url_column(cursor)
+            ensure_users_player_profile_columns(cursor)
+            ensure_characters_is_active_column(cursor)
+            ensure_characters_wod_sheet_columns(cursor)
+            ensure_character_downtime_requests_table(cursor)
             ensure_dice_tables(cursor, 'postgresql')
             conn.commit()
         except Exception as e:
@@ -616,8 +756,14 @@ def migrate_db():
             conn.commit()
             logger.info("✅ characters table schema updated")
 
+        ensure_character_portrait_url_column(cursor)
+        ensure_users_player_profile_columns(cursor)
+        ensure_characters_is_active_column(cursor)
+        ensure_characters_wod_sheet_columns(cursor)
+        ensure_character_downtime_requests_table(cursor)
         ensure_messages_ai_message_kind_column(cursor)
         ensure_locations_dice_leniency_floor_column(cursor)
+        ensure_locations_player_access_columns(cursor)
         ensure_dice_tables(cursor, 'sqlite')
         conn.commit()
         conn.close()

@@ -10,12 +10,18 @@ import logging
 from datetime import datetime
 from zoneinfo import ZoneInfo
 
-from database import get_db
+from database import (
+    get_db,
+    ensure_users_player_profile_columns,
+    ensure_character_portrait_url_column,
+)
 from services.gpu_monitor import gpu_monitor_service
 
 logger = logging.getLogger(__name__)
 
 bp = Blueprint('users', __name__)
+
+MAX_PLAYER_AVATAR_URL_LEN = 524288
 
 
 def _parse_display_timezone_payload(raw):
@@ -49,11 +55,14 @@ def get_current_user_me():
     try:
         db = get_db()
         cursor = db.cursor()
+        ensure_users_player_profile_columns(cursor)
+        ensure_character_portrait_url_column(cursor)
+        db.commit()
 
         cursor.execute(
             """
             SELECT id, username, email, role, created_at, last_login, is_active,
-                   display_timezone
+                   display_timezone, player_avatar_url, active_character_id
             FROM users WHERE id = %s
             """,
             (user_id,),
@@ -61,6 +70,35 @@ def get_current_user_me():
         user = cursor.fetchone()
         if not user:
             return jsonify({"error": "User not found"}), 404
+
+        active_character_id = user.get("active_character_id")
+        active_character = None
+        if active_character_id is not None:
+            cursor.execute(
+                """
+                SELECT ch.id, ch.name, ch.campaign_id, ch.portrait_url, c.name AS campaign_name
+                FROM characters ch
+                JOIN campaigns c ON c.id = ch.campaign_id
+                WHERE ch.id = %s AND ch.user_id = %s
+                """,
+                (active_character_id, user_id),
+            )
+            row = cursor.fetchone()
+            if row:
+                active_character = {
+                    "id": row["id"],
+                    "name": row["name"],
+                    "campaign_id": row["campaign_id"],
+                    "campaign_name": row["campaign_name"],
+                    "portrait_url": row.get("portrait_url"),
+                }
+            else:
+                cursor.execute(
+                    "UPDATE users SET active_character_id = NULL WHERE id = %s",
+                    (user_id,),
+                )
+                db.commit()
+                active_character_id = None
 
         cursor.execute(
             "SELECT COUNT(*) as campaign_count FROM campaigns WHERE created_by = %s",
@@ -84,6 +122,9 @@ def get_current_user_me():
                 "last_login": user["last_login"],
                 "is_active": bool(user["is_active"]),
                 "display_timezone": user["display_timezone"],
+                "player_avatar_url": user.get("player_avatar_url"),
+                "active_character_id": active_character_id,
+                "active_character": active_character,
                 "statistics": {
                     "campaigns_created": campaign_count,
                     "characters_owned": character_count,
@@ -101,36 +142,90 @@ def get_current_user_me():
 @bp.route('/me', methods=['PUT'])
 @jwt_required()
 def put_current_user_me():
-    """Update display timezone for the logged-in user."""
+    """Update timezone, OOC player avatar, or globally active character."""
     try:
         user_id = int(get_jwt_identity())
     except (TypeError, ValueError):
         return jsonify({"error": "Invalid session"}), 422
 
     data = request.get_json()
-    if not data or "display_timezone" not in data:
-        return jsonify(
-            {"error": "JSON body must include display_timezone (string or null)"}
-        ), 400
+    if not data:
+        return jsonify({"error": "JSON body required"}), 400
 
-    try:
-        tz_norm = _parse_display_timezone_payload(data["display_timezone"])
-    except ValueError as ve:
-        return jsonify({"error": str(ve)}), 400
+    allowed = ("display_timezone", "player_avatar_url", "active_character_id")
+    if not any(k in data for k in allowed):
+        return jsonify(
+            {
+                "error": (
+                    "Provide at least one of: display_timezone, "
+                    "player_avatar_url, active_character_id"
+                )
+            }
+        ), 400
 
     try:
         db = get_db()
         cursor = db.cursor()
+        ensure_users_player_profile_columns(cursor)
+        db.commit()
+
+        updates = []
+        params = []
+
+        if "display_timezone" in data:
+            try:
+                tz_norm = _parse_display_timezone_payload(data["display_timezone"])
+            except ValueError as ve:
+                return jsonify({"error": str(ve)}), 400
+            updates.append("display_timezone = %s")
+            params.append(tz_norm)
+
+        if "player_avatar_url" in data:
+            pu = data["player_avatar_url"]
+            if pu is not None and pu != "":
+                if (
+                    not isinstance(pu, str)
+                    or len(pu) > MAX_PLAYER_AVATAR_URL_LEN
+                ):
+                    return jsonify({"error": "player_avatar_url is invalid or too large"}), 400
+            else:
+                pu = None
+            updates.append("player_avatar_url = %s")
+            params.append(pu)
+
+        if "active_character_id" in data:
+            ac = data["active_character_id"]
+            if ac is None or ac == "":
+                updates.append("active_character_id = %s")
+                params.append(None)
+            else:
+                try:
+                    ac_int = int(ac)
+                except (TypeError, ValueError):
+                    return jsonify({"error": "active_character_id must be an integer"}), 400
+                cursor.execute(
+                    "SELECT id FROM characters WHERE id = %s AND user_id = %s",
+                    (ac_int, user_id),
+                )
+                if not cursor.fetchone():
+                    return jsonify({"error": "Character not found for this account"}), 404
+                updates.append("active_character_id = %s")
+                params.append(ac_int)
+
+        if not updates:
+            return jsonify({"error": "No valid fields to update"}), 400
+
+        params.append(user_id)
         cursor.execute(
-            "UPDATE users SET display_timezone = %s WHERE id = %s",
-            (tz_norm, user_id),
+            f"UPDATE users SET {', '.join(updates)} WHERE id = %s",
+            params,
         )
         db.commit()
     except Exception as e:
         logger.error(f"PUT /users/me error: {e}")
         if "db" in locals():
             db.rollback()
-        return jsonify({"error": "Failed to save timezone"}), 500
+        return jsonify({"error": "Failed to save profile"}), 500
     finally:
         if "db" in locals():
             db.close()

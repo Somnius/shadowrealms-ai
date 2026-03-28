@@ -2,7 +2,7 @@
 
 Welcome to the ShadowRealms AI documentation! This directory contains all project documentation, guides, and references.
 
-**Last Updated:** March 25, 2026 — 21 markdown files in `docs/` (includes PostgreSQL migration docs, `dice-old-wod.md`, changelog through **v0.7.14**).
+**Last Updated:** March 28, 2026 — changelog through **v0.7.15**; includes WoD character-creation reference, PostgreSQL migration docs, and `dice-old-wod.md`.
 
 ## 📚 Quick Links
 
@@ -10,6 +10,7 @@ Welcome to the ShadowRealms AI documentation! This directory contains all projec
 - **[Main Documentation](../SHADOWREALMS_AI_COMPLETE.md)** - Complete platform documentation
 - **[Project README](../README.md)** - Quick start and project overview
 - **[Docker Setup Guide](DOCKER_ENV_SETUP.md)** - Environment configuration and setup
+- **Start all containers** — run [`docker-up.sh`](../docker-up.sh) from the repo root (see *Step 4* in the Docker setup guide)
 
 ### Development
 - **[Contributing Guidelines](CONTRIBUTING.md)** - How to contribute to the project
@@ -24,8 +25,8 @@ Welcome to the ShadowRealms AI documentation! This directory contains all projec
 - **[Database Migration Planning](DATABASE_MIGRATION_POSTGRESQL.md)** - Technical details and planning
 
 ### Current Phase
-- **[Phase 3B Implementation](PHASE3B_IMPLEMENTATION.md)** - Advanced campaign & character systems (IN PROGRESS)
-- **[Planning Documentation](PLANNING.md)** - Phase planning and summaries
+- **[Phase 3B Implementation](PHASE3B_IMPLEMENTATION.md)** - Full spec (north star); playable core **shipped**, WebSockets / wizard / notifications **planned**
+- **[Planning Documentation](PLANNING.md)** - Refreshed phase map, **delivered vs next** backlog, embedded historical spec
 
 ### AI & Memory Systems
 - **[AI Systems](AI_SYSTEMS.md)** - Complete AI and memory system documentation
@@ -45,6 +46,8 @@ Welcome to the ShadowRealms AI documentation! This directory contains all projec
   - Gothic Horror Theme
   - Invite Code System
 - **[Old WoD / Storyteller dice](dice-old-wod.md)** - d10 pools, sidebar rolls, dice overlay, `/ai roll` / `/ai roll-hidden` (v0.7.14+)
+- **[WoD character creation (reference)](character-creation-world-of-darkness.md)** - Revised-era chargen outline and ShadowRealms field mapping (v0.7.15+)
+- **[WoD location naming (AI + RAG)](location-naming-world-of-darkness.md)** - VtM / WtA / MtA vocabulary for suggested room names; optional Chroma ingest
 
 ### Bug Fixes & Audits
 - **[Bug Fixes & Audits](BUG_FIXES_AND_AUDITS.md)** - Bug fixes and technical audits
@@ -62,6 +65,7 @@ Welcome to the ShadowRealms AI documentation! This directory contains all projec
 ```
 shadowrealms-ai/
 ├── README.md                          # Project overview (root)
+├── docker-up.sh                       # Start all Docker Compose services (`docker compose up -d`)
 ├── SHADOWREALMS_AI_COMPLETE.md       # Complete documentation (root)
 ├── LICENSE                            # MIT License (root)
 ├── scripts/                            # Utility scripts directory
@@ -124,6 +128,7 @@ Legend:
 - **CONTRIBUTING.md**: Code standards, Git workflow, PR process
 - **CHANGELOG.md**: Version history and release notes
 - **VERSION_BUMP_PROCESS.md**: Automated version update workflow
+- **`docker-up.sh`** (repository root): Starts every Compose service in detached mode; documented in **DOCKER_ENV_SETUP.md** (Step 4)
 
 ### AI & Memory Systems
 - **AI_SYSTEMS.md**: Comprehensive AI documentation
@@ -223,7 +228,7 @@ All consolidated files maintain complete content with proper section headers and
 
 ---
 
-**Last Updated**: March 25, 2026  
-**Documentation Version**: 0.7.14  
-**Total Documentation Files**: 21+ markdown files in `docs/` (includes PostgreSQL migration docs and `dice-old-wod.md`)
+**Last Updated**: March 28, 2026  
+**Documentation Version**: 0.7.15  
+**Total Documentation Files**: 22+ markdown files in `docs/` (includes character creation reference, PostgreSQL migration docs, and `dice-old-wod.md`)
 

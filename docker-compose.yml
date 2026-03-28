@@ -11,6 +11,7 @@ services:
       - ./data/logs:/app/logs
       - ./books:/app/books
       - ./README.md:/app/README.md:ro
+      - ./docs:/app/project_docs:ro
     environment:
       - VERSION=${VERSION}
       - FLASK_ENV=development

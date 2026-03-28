@@ -5,6 +5,7 @@ import { GothicBox } from './components/GothicDecorations';
 import ConfirmDialog from './components/ConfirmDialog';
 import Footer from './components/Footer';
 import LocationSuggestions from './components/LocationSuggestions';
+import CharacterCreationWizard from './components/CharacterCreationWizard';
 import { useToast } from './components/ToastNotification';
 import { formatMessageTime } from './utils/messageTime';
 import { formatDateTimeTooltip, formatDateTimeInZone } from './utils/userTimeFormat';
@@ -20,6 +21,25 @@ function parseStorytellerPool(input) {
     throw new Error('Pool must be digits with + or - (e.g. 5, 4+3, 7-1).');
   }
   return t.split(/(?=[+-])/).reduce((sum, p) => sum + parseInt(p, 10), 0);
+}
+
+/** When a room is closed to players, show thematic copy (aligned with backend `location_closed` flavor). */
+function closedLocationPlayerMessage(gameSystem, closureReason, locationName) {
+  const gs = (gameSystem || '').toLowerCase();
+  const reason = (closureReason || '').trim();
+  const label = locationName || 'This location';
+  const lead = reason
+    ? `${label} is sealed — “${reason}”`
+    : `${label} is sealed until the Storyteller reopens it.`;
+  let flavor = 'The table has called cut on this scene.';
+  if (gs.includes('vampire') || gs.includes('masquerade')) {
+    flavor = 'Even the oldest Kindred must wait when the Prince locks Elysium’s doors.';
+  } else if (gs.includes('werewolf') || gs.includes('garou') || gs.includes('apocalypse')) {
+    flavor = 'The caern’s pulse says “hunt elsewhere tonight.”';
+  } else if (gs.includes('mage') || gs.includes('ascension') || gs.includes('awakening')) {
+    flavor = 'The Consensus politely declines your Paradigm until further notice.';
+  }
+  return { title: `${label} — unavailable`, lead, flavor };
 }
 
 /** Strip BOM; bare `/ai` → `/ai help` for admins */
@@ -144,6 +164,12 @@ function SimpleApp() {
     locations: 0,
     messages: 0
   });
+  /** Full membership list for character creation wizard (WoD). */
+  const [wizardCampaigns, setWizardCampaigns] = useState([]);
+  const [playerCharacters, setPlayerCharacters] = useState([]);
+  const [downtimeMine, setDowntimeMine] = useState([]);
+  const [downtimeDraft, setDowntimeDraft] = useState('');
+  const [downtimeSending, setDowntimeSending] = useState(false);
   const [locationReadState, setLocationReadState] = useState(null);
   const [firstUnreadMessageId, setFirstUnreadMessageId] = useState(null);
   /** Set when loadMessages succeeds; must match currentLocation.id before applying scroll. */
@@ -413,6 +439,8 @@ function SimpleApp() {
   const [deleteConfirmText, setDeleteConfirmText] = useState('');
   const [showLocationManager, setShowLocationManager] = useState(false);
   const [campaignLocations, setCampaignLocations] = useState([]);
+  const [locEdits, setLocEdits] = useState({});
+  const [closedRoomModal, setClosedRoomModal] = useState(null);
   const [showLocationDeleteConfirm, setShowLocationDeleteConfirm] = useState(false);
   const [locationToDelete, setLocationToDelete] = useState(null);
 
@@ -508,16 +536,17 @@ function SimpleApp() {
     setShowGothicShowcase(show);
   };
 
-  // Fetch user data
+  // Fetch user data (returns /me JSON or null)
   const fetchUserData = async () => {
     try {
       const response = await fetch(`${API_URL}/users/me`, {
-        headers: { 'Authorization': `Bearer ${token}` }
+        headers: { Authorization: `Bearer ${token}` }
       });
       if (response.ok) {
         const data = await response.json();
         setUser(data);
         localStorage.setItem('user', JSON.stringify(data)); // Persist user data
+        return data;
       } else if (response.status === 401) {
         // Token expired or invalid, force logout
         console.error('Token expired or invalid');
@@ -526,14 +555,17 @@ function SimpleApp() {
     } catch (err) {
       console.error('Failed to fetch user data:', err);
     }
+    return null;
   };
 
-  // Fetch campaigns
-  const fetchCampaigns = async (authToken) => {
+  // Fetch campaigns (for_active_character=1 filters to active PC’s chronicle when set)
+  const fetchCampaigns = async (authToken, opts = {}) => {
     const t = authToken ?? token;
     if (!t) return;
+    const q =
+      opts.forActiveCharacter === true ? '?for_active_character=1' : '';
     try {
-      const response = await fetch(`${API_URL}/campaigns/`, {
+      const response = await fetch(`${API_URL}/campaigns/${q}`, {
         headers: { Authorization: `Bearer ${t}` },
       });
       if (response.ok) {
@@ -544,6 +576,56 @@ function SimpleApp() {
     } catch (err) {
       console.error('Failed to load campaigns:', err);
       setError('Failed to load campaigns');
+    }
+  };
+
+  const hydrateSessionAfterAuth = async (accessToken) => {
+    if (!accessToken) return null;
+    try {
+      const r = await fetch(`${API_URL}/users/me`, {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      });
+      if (!r.ok) return null;
+      const me = await r.json();
+      setUser(me);
+      localStorage.setItem('user', JSON.stringify(me));
+      const owned = me.statistics?.characters_owned ?? 0;
+      if (owned > 0 && (me.active_character_id == null || me.active_character_id === '')) {
+        setCurrentPage('selectCharacter');
+      } else {
+        setCurrentPage('dashboard');
+        await fetchCampaigns(accessToken, { forActiveCharacter: true });
+      }
+      return me;
+    } catch (e) {
+      console.error('hydrateSessionAfterAuth', e);
+      return null;
+    }
+  };
+
+  const applyActiveCharacter = async (characterId) => {
+    if (!token) return;
+    try {
+      const r = await fetch(`${API_URL}/users/me`, {
+        method: 'PUT',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ active_character_id: characterId }),
+      });
+      const errBody = await r.json().catch(() => ({}));
+      if (!r.ok) {
+        showError(errBody.error || 'Could not set active character');
+        return;
+      }
+      setUser(errBody);
+      localStorage.setItem('user', JSON.stringify(errBody));
+      setCurrentPage('dashboard');
+      await fetchCampaigns(token, { forActiveCharacter: true });
+      showSuccess('Active character updated.');
+    } catch (e) {
+      showError('Connection error while saving active character');
     }
   };
 
@@ -572,9 +654,69 @@ function SimpleApp() {
   // Load campaigns when dashboard is shown
   useEffect(() => {
     if (currentPage === 'dashboard' && token) {
-      fetchCampaigns();
+      fetchCampaigns(undefined, { forActiveCharacter: true });
     }
   }, [currentPage, token]);
+
+  // WoD character wizard: need every chronicle the user can join (membership / ownership)
+  useEffect(() => {
+    if (currentPage !== 'characterCreate' || !token) return undefined;
+    let cancelled = false;
+    (async () => {
+      try {
+        const r = await fetch(`${API_URL}/campaigns/`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!r.ok || cancelled) return;
+        const d = await r.json();
+        if (!cancelled) setWizardCampaigns(Array.isArray(d) ? d : []);
+      } catch (_) {}
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [currentPage, token]);
+
+  useEffect(() => {
+    if (!token || !['selectCharacter', 'playerProfile'].includes(currentPage)) return undefined;
+    let cancelled = false;
+    (async () => {
+      try {
+        const r = await fetch(`${API_URL}/characters/`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (r.ok && !cancelled) {
+          const d = await r.json();
+          setPlayerCharacters(Array.isArray(d.characters) ? d.characters : []);
+        }
+        if (currentPage === 'playerProfile') {
+          const r2 = await fetch(`${API_URL}/characters/downtime-requests/mine`, {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          if (r2.ok && !cancelled) {
+            const d2 = await r2.json();
+            setDowntimeMine(Array.isArray(d2.requests) ? d2.requests : []);
+          }
+        }
+      } catch (_) {}
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [currentPage, token]);
+
+  // Require character selection when the account already has PCs but none active
+  useEffect(() => {
+    if (!token || !user) return;
+    const owned = user.statistics?.characters_owned ?? 0;
+    if (
+      owned > 0 &&
+      (user.active_character_id == null || user.active_character_id === '') &&
+      currentPage === 'dashboard'
+    ) {
+      setCurrentPage('selectCharacter');
+    }
+  }, [token, user?.active_character_id, user?.statistics?.characters_owned, currentPage]);
 
   // Auto-focus chat input when entering a location
   useEffect(() => {
@@ -613,12 +755,9 @@ function SimpleApp() {
       if (response.ok) {
         setToken(data.access_token);
         localStorage.setItem('token', data.access_token);
-        setUser(data.user);
-        localStorage.setItem('user', JSON.stringify(data.user)); // Persist user data
-        setCurrentPage('dashboard');
         setError('');
         setPageOverlay({ visible: true, label: 'Summoning your chronicles…' });
-        await fetchCampaigns(data.access_token);
+        await hydrateSessionAfterAuth(data.access_token);
       } else {
         setError(data.error || 'Login failed');
       }
@@ -657,13 +796,10 @@ function SimpleApp() {
       if (response.ok) {
         setToken(data.access_token);
         localStorage.setItem('token', data.access_token);
-        setUser(data.user);
-        localStorage.setItem('user', JSON.stringify(data.user)); // Persist user data
-        setCurrentPage('dashboard');
         setError('');
         showSuccess('✅ Account created! Check your email for a welcome message (if SMTP is configured).');
         setPageOverlay({ visible: true, label: 'Summoning your chronicles…' });
-        await fetchCampaigns(data.access_token);
+        await hydrateSessionAfterAuth(data.access_token);
       } else {
         setError(data.error || 'Registration failed');
       }
@@ -722,7 +858,7 @@ function SimpleApp() {
         };
         showSuccess('✅ Campaign created successfully!');
         e.target.reset();
-        await fetchCampaigns();
+        await fetchCampaigns(undefined, { forActiveCharacter: true });
         setSelectedCampaign(createdCampaign);
         navigateTo('campaignDetails', createdCampaign);
       } else {
@@ -814,6 +950,68 @@ function SimpleApp() {
     }
   };
 
+  const userCanBypassClosedLocation = () => {
+    if (!user || !selectedCampaign) return false;
+    const role = String(user.role || '').toLowerCase();
+    if (role === 'admin' || role === 'helper') return true;
+    const uid = Number(user.id);
+    const st = Number(selectedCampaign.created_by);
+    return Number.isFinite(uid) && Number.isFinite(st) && uid === st;
+  };
+
+  const canEditLocationAccess =
+    !!user &&
+    !!selectedCampaign &&
+    (String(user.role || '').toLowerCase() === 'admin' ||
+      Number(user.id) === Number(selectedCampaign.created_by));
+
+  useEffect(() => {
+    if (!showLocationManager || !campaignLocations.length) return;
+    const next = {};
+    campaignLocations.forEach((l) => {
+      next[l.id] = {
+        is_open: l.is_open !== false && l.is_open !== 0,
+        closure_reason: l.closure_reason || '',
+      };
+    });
+    setLocEdits(next);
+  }, [showLocationManager, campaignLocations]);
+
+  const saveLocationAccess = async (locationId) => {
+    const draft = locEdits[locationId];
+    if (!draft) return;
+    try {
+      setLoading(true);
+      const res = await fetch(`${API_URL}/locations/${locationId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          is_open: draft.is_open,
+          closure_reason: draft.closure_reason || '',
+        }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(data.error || `Save failed (${res.status})`);
+      }
+      showSuccess('Location access updated');
+      await loadCampaignLocationsForManager(selectedCampaign.id);
+      const locs = await fetchCampaignLocations(selectedCampaign.id);
+      setLocations(locs);
+      if (currentLocation?.id === locationId) {
+        const updated = locs.find((x) => x.id === locationId);
+        if (updated) setCurrentLocation(updated);
+      }
+    } catch (e) {
+      showError(e.message || 'Failed to save');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Function to open location manager
   const openLocationManager = async () => {
     await loadCampaignLocationsForManager(selectedCampaign.id);
@@ -873,7 +1071,21 @@ function SimpleApp() {
 
       const chars = await fetchCampaignCharactersList(campaign.id);
       setCampaignCharacters(chars);
-      const primary = chars[0] || null;
+      const aid = user?.active_character_id;
+      let primary = null;
+      if (aid != null && aid !== '') {
+        primary = chars.find((c) => c.id === aid) || null;
+      }
+      if (!primary) {
+        primary = chars[0] || null;
+      }
+      if (aid != null && aid !== '' && !primary) {
+        showError(
+          'Your active character is not part of this chronicle. Open Player Profile and select a character that belongs here.'
+        );
+        setPageOverlay({ visible: false, label: '' });
+        return;
+      }
       setCharacter(primary);
 
       setPageOverlay({ visible: true, label: 'Gathering places and whispers…' });
@@ -1300,7 +1512,27 @@ function SimpleApp() {
           setFirstUnreadMessageId(null);
         }
       } else {
-        console.error('❌ Failed to load messages:', await response.text());
+        const errText = await response.text();
+        let payload = {};
+        try {
+          payload = JSON.parse(errText);
+        } catch (e) {
+          /* not JSON */
+        }
+        if (response.status === 403 && payload.error === 'location_closed') {
+          const loc = locations.find((l) => l.id === locationId);
+          const m = closedLocationPlayerMessage(
+            selectedCampaign?.game_system,
+            payload.message,
+            loc?.name,
+          );
+          setClosedRoomModal({
+            title: m.title,
+            lead: (payload.message && String(payload.message).trim()) || m.lead,
+            flavor: payload.flavor || m.flavor,
+          });
+        }
+        console.error('❌ Failed to load messages:', errText);
         setMessages([]);
         setMessagesSyncedLocationId(null);
         setLocationReadState(null);
@@ -1317,6 +1549,20 @@ function SimpleApp() {
 
   // Change location
   const changeLocation = async (location) => {
+    const open = location.is_open !== false && location.is_open !== 0;
+    if (!open && !userCanBypassClosedLocation()) {
+      const m = closedLocationPlayerMessage(
+        selectedCampaign?.game_system,
+        location.closure_reason,
+        location.name,
+      );
+      setClosedRoomModal({
+        title: m.title,
+        lead: m.lead,
+        flavor: m.flavor,
+      });
+      return;
+    }
     setCurrentLocation(location);
     await loadMessages(selectedCampaign.id, location.id, { characterForRead: character });
   };
@@ -1345,7 +1591,28 @@ function SimpleApp() {
         const response = await fetch(url, {
           headers: { Authorization: `Bearer ${token}` }
         });
-        if (!response.ok) return;
+        if (!response.ok) {
+          if (response.status === 403) {
+            try {
+              const err = await response.json();
+              if (err.error === 'location_closed') {
+                const m = closedLocationPlayerMessage(
+                  selectedCampaign?.game_system,
+                  err.message,
+                  currentLocation?.name,
+                );
+                setClosedRoomModal({
+                  title: m.title,
+                  lead: err.message || m.lead,
+                  flavor: err.flavor || m.flavor,
+                });
+              }
+            } catch (e) {
+              /* ignore */
+            }
+          }
+          return;
+        }
         const incoming = await response.json();
         if (!Array.isArray(incoming) || incoming.length === 0) return;
 
@@ -1489,7 +1756,7 @@ function SimpleApp() {
         setSelectedCampaign({ ...selectedCampaign, name: editedCampaignName });
         setIsEditingCampaignName(false);
         // Refresh campaigns list
-        fetchCampaigns();
+        fetchCampaigns(undefined, { forActiveCharacter: true });
       } else {
         const data = await response.json();
         setError(data.error || 'Failed to update campaign name');
@@ -1525,7 +1792,7 @@ function SimpleApp() {
         setSelectedCampaign({ ...selectedCampaign, description: editedCampaignDesc });
         setIsEditingCampaignDesc(false);
         // Refresh campaigns list
-        fetchCampaigns();
+        fetchCampaigns(undefined, { forActiveCharacter: true });
       } else {
         const data = await response.json();
         setError(data.error || 'Failed to update campaign description');
@@ -2116,6 +2383,492 @@ function SimpleApp() {
     </div>
   );
 
+  const renderSelectCharacter = () => (
+    <div style={{ minHeight: '100vh', background: '#0f0f1e', display: 'flex', flexDirection: 'column' }}>
+      <div
+        style={{
+          background: 'linear-gradient(135deg, #16213e 0%, #0f1729 100%)',
+          padding: isMobile ? '15px' : '20px',
+          boxShadow: '0 2px 10px rgba(0,0,0,0.5)',
+          borderBottom: '2px solid #2a2a4e',
+          display: 'flex',
+          flexWrap: 'wrap',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: '12px',
+        }}
+      >
+        <h1 style={{ color: '#e94560', margin: 0, fontFamily: 'Cinzel, serif', fontSize: isMobile ? '20px' : '24px' }}>
+          Choose your mask
+        </h1>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
+          <button
+            type="button"
+            onClick={() => navigateTo('dashboard')}
+            style={{
+              padding: '8px 16px',
+              background: 'rgba(157, 78, 221, 0.15)',
+              color: '#c4b5fd',
+              border: '2px solid #7c3aed',
+              borderRadius: '5px',
+              cursor: 'pointer',
+              fontWeight: 'bold',
+            }}
+          >
+            Chronicle hall
+          </button>
+          <button
+            type="button"
+            onClick={() => navigateTo('profile')}
+            style={{
+              padding: '8px 16px',
+              background: 'rgba(233, 69, 96, 0.2)',
+              color: '#e94560',
+              border: '2px solid #e94560',
+              borderRadius: '5px',
+              cursor: 'pointer',
+              fontWeight: 'bold',
+            }}
+          >
+            Account
+          </button>
+        </div>
+      </div>
+      <div style={{ flex: 1, maxWidth: '900px', margin: '0 auto', padding: '24px 16px 48px', width: '100%', boxSizing: 'border-box' }}>
+        <GothicBox theme="vampire" style={{ padding: '20px', marginBottom: '24px' }}>
+          <p style={{ color: '#b5b5c3', marginTop: 0, lineHeight: 1.6 }}>
+            Select which character you are playing <strong>right now</strong>. Your chronicle list will only show games
+            that character belongs to. Swap masks anytime from <strong>Player Profile</strong>.
+          </p>
+        </GothicBox>
+        {playerCharacters.length === 0 ? (
+          <GothicBox theme="mage" style={{ padding: '28px', textAlign: 'center' }}>
+            <p style={{ color: '#b5b5c3' }}>You have no characters yet.</p>
+            <button
+              type="button"
+              onClick={() => navigateTo('characterCreate')}
+              style={{
+                marginTop: '16px',
+                padding: '12px 24px',
+                background: 'linear-gradient(135deg, #e94560 0%, #8b0000 100%)',
+                color: 'white',
+                border: 'none',
+                borderRadius: '8px',
+                cursor: 'pointer',
+                fontWeight: 'bold',
+                fontFamily: 'Cinzel, serif',
+              }}
+            >
+              Forge a character
+            </button>
+          </GothicBox>
+        ) : (
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(260px, 1fr))',
+              gap: '16px',
+            }}
+          >
+            {playerCharacters.map((ch) => (
+              <GothicBox key={ch.id} theme="werewolf" style={{ padding: '18px' }}>
+                <div style={{ display: 'flex', gap: '12px', alignItems: 'center', marginBottom: '12px' }}>
+                  <MessageCharacterAvatar url={ch.portrait_url} size={52} />
+                  <div>
+                    <div style={{ color: '#e94560', fontFamily: 'Cinzel, serif', fontWeight: 'bold' }}>{ch.name}</div>
+                    <div style={{ color: '#8b8b9f', fontSize: '13px' }}>{ch.campaign_name}</div>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => applyActiveCharacter(ch.id)}
+                  style={{
+                    width: '100%',
+                    padding: '10px',
+                    background: '#9d4edd',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '8px',
+                    cursor: 'pointer',
+                    fontWeight: 'bold',
+                    fontFamily: 'Cinzel, serif',
+                  }}
+                >
+                  Play as {ch.name}
+                </button>
+              </GothicBox>
+            ))}
+          </div>
+        )}
+        <div style={{ textAlign: 'center', marginTop: '28px' }}>
+          <button
+            type="button"
+            onClick={() => navigateTo('characterCreate')}
+            style={{
+              padding: '10px 20px',
+              background: 'transparent',
+              color: '#c4b5fd',
+              border: '2px solid #7c3aed',
+              borderRadius: '8px',
+              cursor: 'pointer',
+              fontWeight: 'bold',
+            }}
+          >
+            + Create another character
+          </button>
+        </div>
+      </div>
+      <Footer />
+    </div>
+  );
+
+  const renderPlayerProfile = () => {
+    const activeId = user?.active_character_id;
+    const activeChar = playerCharacters.find((c) => c.id === activeId) || user?.active_character;
+    return (
+      <div style={{ minHeight: '100vh', background: '#0f0f1e', display: 'flex', flexDirection: 'column' }}>
+        <div
+          style={{
+            background: 'linear-gradient(135deg, #16213e 0%, #0f1729 100%)',
+            padding: isMobile ? '15px' : '20px',
+            boxShadow: '0 2px 10px rgba(0,0,0,0.5)',
+            borderBottom: '2px solid #2a2a4e',
+            display: 'flex',
+            flexWrap: 'wrap',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: '12px',
+          }}
+        >
+          <h1 style={{ color: '#e94560', margin: 0, fontFamily: 'Cinzel, serif', fontSize: isMobile ? '20px' : '24px' }}>
+            Player Profile
+          </h1>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
+            <button
+              type="button"
+              onClick={() => navigateTo('dashboard')}
+              style={{
+                padding: '8px 16px',
+                background: 'rgba(233, 69, 96, 0.2)',
+                color: '#e94560',
+                border: '2px solid #e94560',
+                borderRadius: '5px',
+                cursor: 'pointer',
+                fontWeight: 'bold',
+              }}
+            >
+              Chronicle hall
+            </button>
+            <button
+              type="button"
+              onClick={() => navigateTo('characterCreate')}
+              style={{
+                padding: '8px 16px',
+                background: 'rgba(157, 78, 221, 0.2)',
+                color: '#c4b5fd',
+                border: '2px solid #9d4edd',
+                borderRadius: '5px',
+                cursor: 'pointer',
+                fontWeight: 'bold',
+              }}
+            >
+              New character
+            </button>
+          </div>
+        </div>
+        <div style={{ flex: 1, maxWidth: '800px', margin: '0 auto', padding: '24px 16px 48px', width: '100%', boxSizing: 'border-box' }}>
+          <GothicBox theme="vampire" style={{ padding: '20px', marginBottom: '20px' }}>
+            <h3 style={{ marginTop: 0, color: '#e94560', fontFamily: 'Cinzel, serif' }}>Active character</h3>
+            {activeChar ? (
+              <div style={{ display: 'flex', gap: '16px', alignItems: 'flex-start', flexWrap: 'wrap' }}>
+                <MessageCharacterAvatar url={activeChar.portrait_url} size={72} />
+                <div style={{ flex: 1, minWidth: '200px' }}>
+                  <div style={{ color: '#e0e0e0', fontWeight: 'bold', fontSize: '18px' }}>{activeChar.name}</div>
+                  <div style={{ color: '#8b8b9f', fontSize: '14px' }}>
+                    {activeChar.campaign_name || activeChar.campaignName || 'Chronicle'}
+                  </div>
+                  <p style={{ color: '#b5b5c3', fontSize: '14px', lineHeight: 1.5 }}>
+                    Sheets are <strong>locked</strong> after creation. Update your portrait here; for anything else, submit a downtime request below or ask the Storyteller.
+                  </p>
+                  <label style={{ color: '#c4b5fd', fontSize: '13px', display: 'block', marginBottom: '6px' }}>
+                    Character portrait (IC locations use this)
+                  </label>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={async (e) => {
+                      const f = e.target.files?.[0];
+                      if (!f || !activeId) return;
+                      if (f.size > 360000) {
+                        showError('Image is too large (max ~350KB).');
+                        return;
+                      }
+                      const reader = new FileReader();
+                      reader.onload = async () => {
+                        const dataUrl = reader.result;
+                        const res = await fetch(`${API_URL}/characters/${activeId}`, {
+                          method: 'PUT',
+                          headers: {
+                            Authorization: `Bearer ${token}`,
+                            'Content-Type': 'application/json',
+                          },
+                          body: JSON.stringify({ portrait_url: dataUrl }),
+                        });
+                        const body = await res.json().catch(() => ({}));
+                        if (res.ok && body.character) {
+                          showSuccess('Portrait updated.');
+                          setPlayerCharacters((prev) =>
+                            prev.map((c) => (c.id === activeId ? { ...c, ...body.character } : c))
+                          );
+                          await fetchUserData();
+                        } else {
+                          showError(body.error || 'Could not update portrait');
+                        }
+                      };
+                      reader.readAsDataURL(f);
+                    }}
+                  />
+                </div>
+              </div>
+            ) : (
+              <p style={{ color: '#b5b5c3' }}>No active character. Visit <strong>Choose your mask</strong> from the chronicle hall or create one.</p>
+            )}
+          </GothicBox>
+
+          <GothicBox theme="mage" style={{ padding: '20px', marginBottom: '20px' }}>
+            <h3 style={{ marginTop: 0, color: '#9d4edd', fontFamily: 'Cinzel, serif' }}>OOC identity</h3>
+            <p style={{ color: '#b5b5c3', fontSize: '14px', lineHeight: 1.5 }}>
+              This portrait appears only in <strong>Out of Character</strong> lobby rooms. In story rooms, others see your character portrait.
+            </p>
+            <MessageCharacterAvatar url={user?.player_avatar_url} size={64} />
+            <input
+              type="file"
+              accept="image/*"
+              style={{ marginTop: '10px' }}
+              onChange={(e) => {
+                const f = e.target.files?.[0];
+                if (!f) return;
+                if (f.size > 360000) {
+                  showError('Image is too large (max ~350KB).');
+                  return;
+                }
+                const reader = new FileReader();
+                reader.onload = async () => {
+                  const dataUrl = reader.result;
+                  const res = await fetch(`${API_URL}/users/me`, {
+                    method: 'PUT',
+                    headers: {
+                      Authorization: `Bearer ${token}`,
+                      'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ player_avatar_url: dataUrl }),
+                  });
+                  const body = await res.json().catch(() => ({}));
+                  if (res.ok) {
+                    setUser(body);
+                    localStorage.setItem('user', JSON.stringify(body));
+                    showSuccess('OOC portrait saved.');
+                  } else {
+                    showError(body.error || 'Could not save OOC portrait');
+                  }
+                };
+                reader.readAsDataURL(f);
+              }}
+            />
+          </GothicBox>
+
+          <GothicBox theme="werewolf" style={{ padding: '20px', marginBottom: '20px' }}>
+            <h3 style={{ marginTop: 0, color: '#e94560', fontFamily: 'Cinzel, serif' }}>Your characters</h3>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              {playerCharacters.map((ch) => (
+                <div
+                  key={ch.id}
+                  style={{
+                    border: ch.id === activeId ? '2px solid #9d4edd' : '1px solid #2a2a4e',
+                    borderRadius: '8px',
+                    padding: '12px',
+                    background: '#0f1729',
+                  }}
+                >
+                  <div style={{ color: '#e0e0e0', fontWeight: 'bold' }}>
+                    {ch.name}
+                    {ch.id === activeId ? (
+                      <span style={{ color: '#9d4edd', marginLeft: '8px', fontSize: '12px' }}>(active)</span>
+                    ) : null}
+                  </div>
+                  <div style={{ color: '#8b8b9f', fontSize: '13px' }}>{ch.campaign_name}</div>
+                  <button
+                    type="button"
+                    disabled={ch.id === activeId}
+                    onClick={() => applyActiveCharacter(ch.id)}
+                    style={{
+                      marginTop: '8px',
+                      padding: '6px 14px',
+                      background: ch.id === activeId ? '#333' : '#2a2a4e',
+                      color: '#e0e0e0',
+                      border: '1px solid #4a4a5e',
+                      borderRadius: '6px',
+                      cursor: ch.id === activeId ? 'not-allowed' : 'pointer',
+                    }}
+                  >
+                    {ch.id === activeId ? 'Currently active' : 'Swap to this character'}
+                  </button>
+                </div>
+              ))}
+            </div>
+          </GothicBox>
+
+          <GothicBox theme="vampire" style={{ padding: '20px', marginBottom: '20px' }}>
+            <h3 style={{ marginTop: 0, color: '#e94560', fontFamily: 'Cinzel, serif' }}>Downtime requests</h3>
+            <p style={{ color: '#8b8b9f', fontSize: '14px' }}>
+              Ask the Storyteller / admin to adjust your locked sheet. They can approve or reject with a reason.
+            </p>
+            <textarea
+              value={downtimeDraft}
+              onChange={(e) => setDowntimeDraft(e.target.value)}
+              rows={4}
+              disabled={!activeId}
+              placeholder={activeId ? 'Describe what should change on your sheet…' : 'Select an active character first.'}
+              style={{
+                width: '100%',
+                boxSizing: 'border-box',
+                padding: '10px',
+                borderRadius: '8px',
+                border: '2px solid #2a2a4e',
+                background: '#0f1729',
+                color: '#e0e0e0',
+                marginBottom: '10px',
+              }}
+            />
+            <button
+              type="button"
+              disabled={!activeId || downtimeSending || !downtimeDraft.trim()}
+              onClick={async () => {
+                if (!activeId || !downtimeDraft.trim()) return;
+                setDowntimeSending(true);
+                try {
+                  const res = await fetch(`${API_URL}/characters/${activeId}/downtime-requests`, {
+                    method: 'POST',
+                    headers: {
+                      Authorization: `Bearer ${token}`,
+                      'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ request_text: downtimeDraft.trim() }),
+                  });
+                  const body = await res.json().catch(() => ({}));
+                  if (res.ok) {
+                    setDowntimeDraft('');
+                    showSuccess('Request sent to the admin queue.');
+                    const r2 = await fetch(`${API_URL}/characters/downtime-requests/mine`, {
+                      headers: { Authorization: `Bearer ${token}` },
+                    });
+                    if (r2.ok) {
+                      const d2 = await r2.json();
+                      setDowntimeMine(Array.isArray(d2.requests) ? d2.requests : []);
+                    }
+                  } else {
+                    showError(body.error || 'Could not submit request');
+                  }
+                } catch (_) {
+                  showError('Network error');
+                } finally {
+                  setDowntimeSending(false);
+                }
+              }}
+              style={{
+                padding: '10px 20px',
+                background: downtimeSending ? '#555' : '#e94560',
+                color: 'white',
+                border: 'none',
+                borderRadius: '8px',
+                cursor: downtimeSending ? 'not-allowed' : 'pointer',
+                fontWeight: 'bold',
+              }}
+            >
+              {downtimeSending ? 'Sending…' : 'Submit request'}
+            </button>
+            <div style={{ marginTop: '20px' }}>
+              <h4 style={{ color: '#b5b5c3', fontSize: '14px' }}>Your recent requests</h4>
+              {downtimeMine.length === 0 ? (
+                <p style={{ color: '#6b6b7f', fontSize: '13px' }}>None yet.</p>
+              ) : (
+                <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
+                  {downtimeMine.map((r) => (
+                    <li
+                      key={r.id}
+                      style={{
+                        borderBottom: '1px solid #2a2a4e',
+                        padding: '10px 0',
+                        color: '#b5b5c3',
+                        fontSize: '13px',
+                      }}
+                    >
+                      <strong style={{ color: '#e0e0e0' }}>{r.status}</strong> — {r.character_name}{' '}
+                      <span style={{ color: '#6b6b7f' }}>({r.campaign_name})</span>
+                      <div style={{ marginTop: '4px' }}>{r.request_text}</div>
+                      {r.admin_reason ? (
+                        <div style={{ marginTop: '6px', color: '#9d4edd' }}>Staff: {r.admin_reason}</div>
+                      ) : null}
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          </GothicBox>
+        </div>
+        <Footer />
+      </div>
+    );
+  };
+
+  const renderCharacterCreate = () => (
+    <div style={{ minHeight: '100vh', background: '#0f0f1e', display: 'flex', flexDirection: 'column' }}>
+      <div
+        style={{
+          background: 'linear-gradient(135deg, #16213e 0%, #0f1729 100%)',
+          padding: isMobile ? '15px' : '20px',
+          borderBottom: '2px solid #2a2a4e',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+        }}
+      >
+        <h1 style={{ color: '#e94560', margin: 0, fontFamily: 'Cinzel, serif', fontSize: '20px' }}>
+          Character creation
+        </h1>
+        <button
+          type="button"
+          onClick={() => navigateTo('playerProfile')}
+          style={{
+            padding: '8px 16px',
+            background: 'rgba(233, 69, 96, 0.2)',
+            color: '#e94560',
+            border: '2px solid #e94560',
+            borderRadius: '5px',
+            cursor: 'pointer',
+            fontWeight: 'bold',
+          }}
+        >
+          Back
+        </button>
+      </div>
+      <CharacterCreationWizard
+        token={token}
+        campaigns={wizardCampaigns}
+        onCancel={() =>
+          navigateTo(playerCharacters.length ? 'playerProfile' : 'selectCharacter')
+        }
+        onDone={async () => {
+          await fetchUserData();
+          navigateTo('playerProfile');
+        }}
+        showError={showError}
+        showSuccess={showSuccess}
+      />
+      <Footer />
+    </div>
+  );
+
   // Render dashboard
   const renderDashboard = () => (
     <div style={{ 
@@ -2160,6 +2913,38 @@ function SimpleApp() {
             }}
           >
             Profile
+          </button>
+          <button
+            type="button"
+            onClick={() => navigateTo('playerProfile')}
+            style={{
+              padding: '8px 16px',
+              background: 'rgba(233, 69, 96, 0.12)',
+              color: '#fda4af',
+              border: '2px solid #e94560',
+              borderRadius: '5px',
+              cursor: 'pointer',
+              fontWeight: 'bold',
+              fontFamily: 'Cinzel, serif',
+            }}
+          >
+            Player Profile
+          </button>
+          <button
+            type="button"
+            onClick={() => navigateTo('selectCharacter')}
+            style={{
+              padding: '8px 16px',
+              background: 'rgba(15, 23, 41, 0.9)',
+              color: '#94a3b8',
+              border: '2px solid #475569',
+              borderRadius: '5px',
+              cursor: 'pointer',
+              fontWeight: 'bold',
+              fontSize: '13px',
+            }}
+          >
+            Switch character
           </button>
           {user?.role === 'admin' && (
             <button
@@ -3468,7 +4253,8 @@ function SimpleApp() {
                 border: currentLocation?.id === loc.id ? '1px solid rgba(233, 69, 96, 0.35)' : '1px solid transparent',
                 fontSize: '15px',
                 fontFamily: 'Crimson Text, serif',
-                transition: 'all 0.15s'
+                transition: 'all 0.15s',
+                opacity: loc.is_open === false || loc.is_open === 0 ? 0.75 : 1,
               }}
               onMouseOver={(e) => {
                 if (currentLocation?.id !== loc.id) {
@@ -3483,6 +4269,7 @@ function SimpleApp() {
                 }
               }}
             >
+              {(loc.is_open === false || loc.is_open === 0 ? '🚫 ' : '')}
               {loc.name}
             </div>
           ))}
@@ -3707,11 +4494,19 @@ function SimpleApp() {
                   gap: '12px',
                   alignItems: 'flex-start'
                 }}>
-                  {!isAI && (
-                    <div style={{ paddingTop: '4px' }}>
-                      <MessageCharacterAvatar url={msg.character_portrait_url} size={40} />
-                    </div>
-                  )}
+                  {!isAI && (() => {
+                    const inOocRoom =
+                      String(currentLocation?.type || '').toLowerCase() === 'ooc';
+                    const avatarUrl =
+                      inOocRoom && msg.player_avatar_url
+                        ? msg.player_avatar_url
+                        : msg.character_portrait_url;
+                    return (
+                      <div style={{ paddingTop: '4px' }}>
+                        <MessageCharacterAvatar url={avatarUrl} size={40} />
+                      </div>
+                    );
+                  })()}
                   <div style={{
                     flex: 1,
                     minWidth: 0,
@@ -4586,6 +5381,9 @@ function SimpleApp() {
       <GothicPageLoadingOverlay visible={pageOverlay.visible} label={pageOverlay.label} />
       {!token && renderLogin()}
       {token && currentPage === 'dashboard' && renderDashboard()}
+      {token && currentPage === 'selectCharacter' && renderSelectCharacter()}
+      {token && currentPage === 'playerProfile' && renderPlayerProfile()}
+      {token && currentPage === 'characterCreate' && renderCharacterCreate()}
       {token && currentPage === 'profile' && renderProfile()}
       {token && currentPage === 'createCampaign' && renderCreateCampaign()}
       {token && currentPage === 'campaignDetails' && renderCampaignDetails()}
@@ -4762,7 +5560,7 @@ function SimpleApp() {
                     if (response.ok) {
                       setShowDeleteConfirm(false);
                       setDeleteConfirmText('');
-                      await fetchCampaigns();
+                      await fetchCampaigns(undefined, { forActiveCharacter: true });
                       setCurrentPage('dashboard');
                       showSuccess('✅ Campaign deleted successfully!');
                     } else {
@@ -4962,7 +5760,7 @@ function SimpleApp() {
                   // New campaign - return to dashboard
                   setShowLocationSuggestions(false);
                   setNewCampaignData(null);
-                  await fetchCampaigns();
+                  await fetchCampaigns(undefined, { forActiveCharacter: true });
                   setCurrentPage('dashboard');
                 }
               }}
@@ -4977,7 +5775,7 @@ function SimpleApp() {
                   // New campaign - return to dashboard
                   setShowLocationSuggestions(false);
                   setNewCampaignData(null);
-                  await fetchCampaigns();
+                  await fetchCampaigns(undefined, { forActiveCharacter: true });
                   setCurrentPage('dashboard');
                 }
               }}
@@ -5140,8 +5938,82 @@ function SimpleApp() {
                             {location.description}
                           </div>
                         )}
+                        {canEditLocationAccess && location.type !== 'ooc' && (
+                          <div style={{ marginTop: '12px', paddingTop: '12px', borderTop: '1px solid #2a2a4e' }}>
+                            <label style={{ display: 'flex', alignItems: 'center', gap: '10px', color: '#b5b5c3', cursor: 'pointer', fontFamily: 'Crimson Text, serif', fontSize: '14px' }}>
+                              <input
+                                type="checkbox"
+                                checked={
+                                  locEdits[location.id]?.is_open
+                                  ?? (location.is_open !== false && location.is_open !== 0)
+                                }
+                                onChange={(e) => {
+                                  const checked = e.target.checked;
+                                  setLocEdits((prev) => ({
+                                    ...prev,
+                                    [location.id]: {
+                                      is_open: checked,
+                                      closure_reason: prev[location.id]?.closure_reason || '',
+                                    },
+                                  }));
+                                }}
+                              />
+                              Open to players (unchecked = 🚫 closed — scene paused)
+                            </label>
+                            {locEdits[location.id] && locEdits[location.id].is_open === false && (
+                              <textarea
+                                value={locEdits[location.id].closure_reason || ''}
+                                onChange={(e) => setLocEdits((prev) => ({
+                                  ...prev,
+                                  [location.id]: {
+                                    ...prev[location.id],
+                                    closure_reason: e.target.value,
+                                  },
+                                }))}
+                                placeholder="Optional reason for players (e.g. “Elysium under repair — check back next session”)"
+                                rows={2}
+                                style={{
+                                  width: '100%',
+                                  marginTop: '10px',
+                                  padding: '8px',
+                                  borderRadius: '6px',
+                                  border: '1px solid #2a2a4e',
+                                  background: '#0f1729',
+                                  color: '#e0e0e0',
+                                  fontFamily: 'Crimson Text, serif',
+                                  fontSize: '14px',
+                                  resize: 'vertical',
+                                }}
+                              />
+                            )}
+                            <button
+                              type="button"
+                              onClick={() => saveLocationAccess(location.id)}
+                              disabled={loading}
+                              style={{
+                                marginTop: '10px',
+                                padding: '8px 14px',
+                                background: '#2d6a4f',
+                                color: 'white',
+                                border: 'none',
+                                borderRadius: '6px',
+                                cursor: loading ? 'not-allowed' : 'pointer',
+                                fontFamily: 'Cinzel, serif',
+                                fontSize: '13px',
+                                fontWeight: '600',
+                              }}
+                            >
+                              Save access
+                            </button>
+                          </div>
+                        )}
+                        {canEditLocationAccess && location.type === 'ooc' && (
+                          <div style={{ marginTop: '10px', color: '#8b8b9f', fontSize: '13px', fontFamily: 'Crimson Text, serif' }}>
+                            The OOC lobby cannot be closed to players.
+                          </div>
+                        )}
                       </div>
-                      <div style={{ marginLeft: '20px', display: 'flex', gap: '10px' }}>
+                      <div style={{ marginLeft: '20px', display: 'flex', gap: '10px', flexShrink: 0 }}>
                         {location.type !== 'ooc' && (
                           <button
                             onClick={() => handleDeleteLocation(location.id)}
@@ -5178,6 +6050,72 @@ function SimpleApp() {
           displayTimezone={user?.display_timezone || null}
           onBack={() => setCurrentPage('dashboard')} 
         />
+      )}
+
+      {closedRoomModal && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(0,0,0,0.82)',
+            zIndex: 2400,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '20px',
+          }}
+          onClick={() => setClosedRoomModal(null)}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="closed-room-title"
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              background: '#16213e',
+              borderRadius: '14px',
+              maxWidth: '440px',
+              width: '100%',
+              border: '2px solid #9d4edd',
+              boxShadow: '0 0 28px rgba(157, 78, 221, 0.35)',
+              padding: '24px',
+            }}
+          >
+            <h2
+              id="closed-room-title"
+              style={{
+                margin: '0 0 12px 0',
+                color: '#e94560',
+                fontFamily: 'Cinzel, serif',
+                fontSize: '20px',
+              }}
+            >
+              {closedRoomModal.title}
+            </h2>
+            <p style={{ color: '#e0e0e0', fontFamily: 'Crimson Text, serif', fontSize: '16px', lineHeight: 1.5, margin: '0 0 12px 0' }}>
+              {closedRoomModal.lead}
+            </p>
+            <p style={{ color: '#9d4edd', fontFamily: 'Crimson Text, serif', fontSize: '15px', fontStyle: 'italic', margin: '0 0 20px 0' }}>
+              {closedRoomModal.flavor}
+            </p>
+            <button
+              type="button"
+              onClick={() => setClosedRoomModal(null)}
+              style={{
+                padding: '10px 20px',
+                background: 'linear-gradient(135deg, #9d4edd 0%, #5a0099 100%)',
+                color: 'white',
+                border: 'none',
+                borderRadius: '8px',
+                cursor: 'pointer',
+                fontFamily: 'Cinzel, serif',
+                fontWeight: '600',
+              }}
+            >
+              Understood
+            </button>
+          </div>
+        </div>
       )}
 
       {/* Custom Exit Confirmation Dialog */}

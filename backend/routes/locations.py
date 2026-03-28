@@ -5,7 +5,17 @@ Handles location management and character location tracking
 
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
-from database import get_db, ensure_locations_dice_leniency_floor_column
+from database import (
+    get_db,
+    ensure_locations_dice_leniency_floor_column,
+    ensure_locations_player_access_columns,
+)
+from services.location_access import (
+    closed_location_error_response,
+    get_location_open_state,
+    user_can_bypass_closed_location,
+)
+from services.location_naming_context import build_enriched_suggestion_prompt
 from services.health_check import require_llm
 import logging
 from datetime import datetime
@@ -51,34 +61,18 @@ def suggest_locations(campaign_id):
         # Get setting description if provided
         setting_description = data.get('setting_description', campaign_desc)
         
-        # AI prompt for location suggestions
         from services.llm_service import get_llm_service
         llm_service = get_llm_service()
-        
-        prompt = f"""You are a storyteller for a {game_system} tabletop RPG campaign.
 
-Campaign: {campaign_name}
-Setting: {setting_description}
+        prompt, system_prompt = build_enriched_suggestion_prompt(
+            game_system=game_system or "World of Darkness",
+            campaign_name=campaign_name,
+            setting_description=setting_description or "",
+        )
 
-Suggest 5 atmospheric locations that are SPECIFIC to this campaign's setting. For each location, provide:
-- Name (short, evocative, fitting the setting)
-- Type (tavern, dungeon, city, temple, custom)
-- Description (2-3 sentences, atmospheric and setting-specific)
-
-IMPORTANT: Make these locations unique to THIS campaign's world, not generic fantasy locations.
-
-Format your response as ONLY a JSON array, nothing else:
-[
-  {{"name": "Location Name", "type": "tavern", "description": "Description here"}},
-  ...
-]
-
-Be specific, evocative, and true to the campaign's setting and theme."""
-
-        # Call LLM service with proper parameters
         llm_context = {
-            'system_prompt': f'You are a creative storyteller for {game_system} RPGs. Generate unique, setting-specific locations.',
-            'campaign_context': f"Campaign: {campaign_name}\nSetting: {setting_description}"
+            "system_prompt": system_prompt,
+            "campaign_context": f"Campaign: {campaign_name}\nSetting: {setting_description}",
         }
         
         llm_config = {
@@ -138,7 +132,9 @@ def batch_create_locations(campaign_id):
         # Verify permission
         conn = get_db()
         cursor = conn.cursor()
-        
+        ensure_locations_player_access_columns(cursor)
+        conn.commit()
+
         cursor.execute("""
             SELECT c.created_by, u.role
             FROM campaigns c
@@ -163,8 +159,8 @@ def batch_create_locations(campaign_id):
         created_ids = []
         for loc in locations_to_create:
             cursor.execute("""
-                INSERT INTO locations (campaign_id, name, type, description, created_by)
-                VALUES (%s, %s, %s, %s, %s)
+                INSERT INTO locations (campaign_id, name, type, description, created_by, is_open, closure_reason)
+                VALUES (%s, %s, %s, %s, %s, TRUE, NULL)
                 RETURNING id
             """, (campaign_id, loc['name'], loc['type'], loc.get('description', ''), user_id))
             result = cursor.fetchone()
@@ -191,7 +187,9 @@ def get_campaign_locations(campaign_id):
     try:
         conn = get_db()
         cursor = conn.cursor()
-        
+        ensure_locations_player_access_columns(cursor)
+        conn.commit()
+
         cursor.execute("""
             SELECT l.*, u.username as creator_name,
                    COUNT(DISTINCT cl.character_id) as character_count
@@ -208,6 +206,8 @@ def get_campaign_locations(campaign_id):
         
         locations = []
         for row in cursor.fetchall():
+            raw_open = row.get("is_open")
+            is_open = True if raw_open is None else bool(raw_open) if not isinstance(raw_open, (int, float)) else raw_open != 0
             locations.append({
                 'id': row['id'],
                 'campaign_id': row['campaign_id'],
@@ -220,6 +220,8 @@ def get_campaign_locations(campaign_id):
                 'creator_name': row['creator_name'],
                 'character_count': row['character_count'],
                 'dice_leniency_floor': row.get('dice_leniency_floor'),
+                'is_open': is_open,
+                'closure_reason': row.get('closure_reason'),
             })
         
         return jsonify(locations), 200
@@ -313,7 +315,9 @@ def get_location(location_id):
     try:
         conn = get_db()
         cursor = conn.cursor()
-        
+        ensure_locations_player_access_columns(cursor)
+        conn.commit()
+
         cursor.execute("""
             SELECT l.*, u.username as creator_name
             FROM locations l
@@ -324,6 +328,9 @@ def get_location(location_id):
         row = cursor.fetchone()
         if not row:
             return jsonify({'error': 'Location not found'}), 404
+
+        raw_open = row.get("is_open")
+        is_open = True if raw_open is None else bool(raw_open) if not isinstance(raw_open, (int, float)) else raw_open != 0
         
         location = {
             'id': row['id'],
@@ -334,7 +341,9 @@ def get_location(location_id):
             'created_by': row['created_by'],
             'created_at': row['created_at'],
             'is_active': row['is_active'],
-            'creator_name': row['creator_name']
+            'creator_name': row['creator_name'],
+            'is_open': is_open,
+            'closure_reason': row.get('closure_reason'),
         }
         
         # Get characters currently in this location
@@ -376,7 +385,9 @@ def create_location(campaign_id):
         # Verify user is admin or campaign creator
         conn = get_db()
         cursor = conn.cursor()
-        
+        ensure_locations_player_access_columns(cursor)
+        conn.commit()
+
         cursor.execute("""
             SELECT c.created_by, u.role
             FROM campaigns c
@@ -402,8 +413,8 @@ def create_location(campaign_id):
         
         # Create location
         cursor.execute("""
-            INSERT INTO locations (campaign_id, name, type, description, created_by)
-            VALUES (%s, %s, %s, %s, %s)
+            INSERT INTO locations (campaign_id, name, type, description, created_by, is_open, closure_reason)
+            VALUES (%s, %s, %s, %s, %s, TRUE, NULL)
             RETURNING id
         """, (campaign_id, name, location_type, description, user_id))
         
@@ -438,10 +449,12 @@ def update_location(location_id):
         
         conn = get_db()
         cursor = conn.cursor()
-        
+        ensure_locations_player_access_columns(cursor)
+        conn.commit()
+
         # Verify location exists and user has permission
         cursor.execute("""
-            SELECT l.campaign_id, l.created_by, c.created_by as campaign_creator, u.role
+            SELECT l.campaign_id, l.created_by, l.type, c.created_by as campaign_creator, u.role
             FROM locations l
             JOIN campaigns c ON l.campaign_id = c.id
             JOIN users u ON u.id = %s
@@ -452,7 +465,7 @@ def update_location(location_id):
         if not row:
             return jsonify({'error': 'Location not found'}), 404
         
-        campaign_id, location_creator, campaign_creator, user_role = row
+        campaign_id, location_creator, loc_type, campaign_creator, user_role = row
         if location_creator != user_id and campaign_creator != user_id and user_role != 'admin':
             return jsonify({'error': 'Unauthorized'}), 403
         
@@ -471,6 +484,22 @@ def update_location(location_id):
         if 'type' in data:
             updates.append('type = %s')
             params.append(data['type'].strip())
+
+        if 'is_open' in data:
+            raw = data['is_open']
+            if isinstance(raw, str):
+                is_open_val = raw.lower() in ('true', '1', 'yes')
+            else:
+                is_open_val = bool(raw)
+            if not is_open_val and str(loc_type or '').lower() == 'ooc':
+                return jsonify({'error': 'The OOC lobby cannot be closed to players'}), 400
+            updates.append('is_open = %s')
+            params.append(is_open_val)
+
+        if 'closure_reason' in data:
+            cr = data['closure_reason']
+            updates.append('closure_reason = %s')
+            params.append((cr or '').strip() if cr is not None else None)
         
         if not updates:
             return jsonify({'error': 'No fields to update'}), 400
@@ -615,7 +644,31 @@ def enter_location(location_id):
         
         conn = get_db()
         cursor = conn.cursor()
-        
+        ensure_locations_player_access_columns(cursor)
+        conn.commit()
+
+        cursor.execute(
+            """
+            SELECT l.campaign_id, l.is_open, l.closure_reason, l.type, c.game_system
+            FROM locations l
+            JOIN campaigns c ON c.id = l.campaign_id
+            WHERE l.id = %s
+            """,
+            (location_id,),
+        )
+        loc_row = cursor.fetchone()
+        if not loc_row:
+            return jsonify({'error': 'Location not found'}), 404
+
+        cid = loc_row['campaign_id']
+        raw_open = loc_row.get('is_open')
+        is_open_loc = True if raw_open is None else bool(raw_open) if not isinstance(raw_open, (int, float)) else raw_open != 0
+        if not is_open_loc and not user_can_bypass_closed_location(cursor, user_id, cid):
+            return closed_location_error_response(
+                loc_row.get('closure_reason'),
+                loc_row.get('game_system'),
+            )
+
         # Verify character belongs to user
         cursor.execute("SELECT id FROM characters WHERE id = %s AND user_id = %s", 
                       (character_id, user_id))

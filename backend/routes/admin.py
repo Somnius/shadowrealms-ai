@@ -13,7 +13,7 @@ import re
 import secrets
 from datetime import datetime, timedelta
 
-from database import get_db
+from database import get_db, ensure_character_downtime_requests_table
 from routes.auth import load_invites, save_invites
 
 logger = logging.getLogger(__name__)
@@ -535,4 +535,109 @@ def create_invite():
     except Exception as e:
         logger.error(f"Error creating invite: {e}")
         return jsonify({'error': 'Failed to create invite'}), 500
+
+
+@bp.route('/downtime-requests', methods=['GET'])
+@require_admin()
+def admin_list_downtime_requests():
+    """List character downtime / sheet-change requests (newest first)."""
+    try:
+        status_filter = (request.args.get('status') or '').strip().lower()
+        db = get_db()
+        cursor = db.cursor()
+        ensure_character_downtime_requests_table(cursor)
+        db.commit()
+
+        q = """
+            SELECT d.id, d.character_id, d.user_id, d.campaign_id, d.request_text,
+                   d.status, d.admin_reason, d.resolved_at, d.resolved_by, d.created_at,
+                   ch.name AS character_name, c.name AS campaign_name, u.username AS player_username
+            FROM character_downtime_requests d
+            JOIN characters ch ON ch.id = d.character_id
+            JOIN campaigns c ON c.id = d.campaign_id
+            JOIN users u ON u.id = d.user_id
+        """
+        params = []
+        if status_filter in ('pending', 'approved', 'rejected'):
+            q += " WHERE LOWER(TRIM(d.status)) = %s"
+            params.append(status_filter)
+        q += " ORDER BY d.created_at DESC LIMIT 500"
+        cursor.execute(q, params)
+        rows = cursor.fetchall()
+        out = []
+        for r in rows:
+            out.append({
+                'id': r['id'],
+                'character_id': r['character_id'],
+                'character_name': r['character_name'],
+                'user_id': r['user_id'],
+                'player_username': r['player_username'],
+                'campaign_id': r['campaign_id'],
+                'campaign_name': r['campaign_name'],
+                'request_text': r['request_text'],
+                'status': r['status'],
+                'admin_reason': r.get('admin_reason'),
+                'resolved_at': r.get('resolved_at'),
+                'resolved_by': r.get('resolved_by'),
+                'created_at': r['created_at'],
+            })
+        cursor.close()
+        db.close()
+        return jsonify({'requests': out, 'total': len(out)}), 200
+    except Exception as e:
+        logger.error(f"admin_list_downtime_requests: {e}")
+        return jsonify({'error': 'Failed to list downtime requests'}), 500
+
+
+@bp.route('/downtime-requests/<int:req_id>', methods=['PATCH'])
+@require_admin()
+def admin_resolve_downtime_request(req_id):
+    """Approve or reject a downtime request (reason recommended for reject)."""
+    try:
+        admin_id = get_jwt_identity()
+        data = request.get_json()
+        if not data:
+            return jsonify({'error': 'JSON body required'}), 400
+        status = (data.get('status') or '').strip().lower()
+        if status not in ('approved', 'rejected'):
+            return jsonify({'error': 'status must be approved or rejected'}), 400
+        reason = (data.get('admin_reason') or '').strip()
+        if status == 'rejected' and not reason:
+            return jsonify({'error': 'admin_reason is required when rejecting'}), 400
+
+        db = get_db()
+        cursor = db.cursor()
+        ensure_character_downtime_requests_table(cursor)
+        db.commit()
+
+        cursor.execute(
+            "SELECT id, status FROM character_downtime_requests WHERE id = %s",
+            (req_id,),
+        )
+        row = cursor.fetchone()
+        if not row:
+            cursor.close()
+            db.close()
+            return jsonify({'error': 'Request not found'}), 404
+        if (row.get('status') or '').lower() != 'pending':
+            cursor.close()
+            db.close()
+            return jsonify({'error': 'Request is already resolved'}), 409
+
+        now = datetime.utcnow()
+        cursor.execute(
+            """
+            UPDATE character_downtime_requests
+            SET status = %s, admin_reason = %s, resolved_at = %s, resolved_by = %s
+            WHERE id = %s
+            """,
+            (status, reason or None, now, admin_id, req_id),
+        )
+        db.commit()
+        cursor.close()
+        db.close()
+        return jsonify({'message': 'Request updated', 'id': req_id, 'status': status}), 200
+    except Exception as e:
+        logger.error(f"admin_resolve_downtime_request: {e}")
+        return jsonify({'error': 'Failed to update request'}), 500
 

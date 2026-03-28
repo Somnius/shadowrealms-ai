@@ -10,7 +10,13 @@ import logging
 import json
 from datetime import datetime
 
-from database import get_db, ensure_character_portrait_url_column
+from database import (
+    get_db,
+    ensure_character_portrait_url_column,
+    ensure_characters_is_active_column,
+    ensure_characters_wod_sheet_columns,
+    ensure_character_downtime_requests_table,
+)
 
 # Stored as TEXT (URLs or data URLs); cap size to protect the DB.
 MAX_PORTRAIT_URL_LEN = 524288
@@ -19,6 +25,63 @@ from services.gpu_monitor import gpu_monitor_service
 logger = logging.getLogger(__name__)
 
 bp = Blueprint('characters', __name__)
+
+ALLOWED_SYSTEM_TYPES = frozenset(
+    {'d20', 'd10', 'besm', 'vampire', 'werewolf', 'mage'}
+)
+
+
+def _ensure_character_schema(cursor):
+    ensure_character_portrait_url_column(cursor)
+    ensure_characters_is_active_column(cursor)
+    ensure_characters_wod_sheet_columns(cursor)
+    ensure_character_downtime_requests_table(cursor)
+
+
+def _wod_meta_parse(raw):
+    if not raw:
+        return {}
+    if isinstance(raw, dict):
+        return raw
+    try:
+        return json.loads(raw) if isinstance(raw, str) else {}
+    except json.JSONDecodeError:
+        return {}
+
+
+def _sheet_locked_bool(val):
+    if val is None:
+        return False
+    if isinstance(val, bool):
+        return val
+    if isinstance(val, (int, float)):
+        return val != 0
+    return bool(val)
+
+
+def _character_public_dict(row, owner_name=None, campaign_name=None):
+    d = {
+        'id': row['id'],
+        'name': row['name'],
+        'system_type': row['system_type'],
+        'attributes': json.loads(row['attributes']) if row['attributes'] else {},
+        'skills': json.loads(row['skills']) if row['skills'] else {},
+        'background': row['background'],
+        'merits_flaws': json.loads(row['merits_flaws']) if row['merits_flaws'] else {},
+        'user_id': row['user_id'],
+        'campaign_id': row['campaign_id'],
+        'created_at': row['created_at'],
+        'updated_at': row['updated_at'],
+        'portrait_url': row.get('portrait_url'),
+        'sheet_locked': _sheet_locked_bool(row.get('sheet_locked')),
+        'wod_meta': _wod_meta_parse(row.get('wod_meta')),
+        'is_active': bool(row.get('is_active', True)),
+    }
+    if owner_name is not None:
+        d['owner_name'] = owner_name
+    if campaign_name is not None:
+        d['campaign_name'] = campaign_name
+    return d
 
 @bp.route('/', methods=['GET'])
 @jwt_required()
@@ -30,7 +93,7 @@ def get_characters():
         
         db = get_db()
         cursor = db.cursor()
-        ensure_character_portrait_url_column(cursor)
+        _ensure_character_schema(cursor)
         db.commit()
 
         # Get current user role
@@ -83,22 +146,10 @@ def get_characters():
         
         characters = []
         for row in cursor.fetchall():
-            characters.append({
-                'id': row['id'],
-                'name': row['name'],
-                'system_type': row['system_type'],
-                'attributes': json.loads(row['attributes']) if row['attributes'] else {},
-                'skills': json.loads(row['skills']) if row['skills'] else {},
-                'background': row['background'],
-                'merits_flaws': json.loads(row['merits_flaws']) if row['merits_flaws'] else {},
-                'user_id': row['user_id'],
-                'owner_name': row['owner_name'],
-                'campaign_id': row['campaign_id'],
-                'campaign_name': row['campaign_name'],
-                'created_at': row['created_at'],
-                'updated_at': row['updated_at'],
-                'portrait_url': row.get('portrait_url'),
-            })
+            ch = _character_public_dict(
+                row, owner_name=row['owner_name'], campaign_name=row['campaign_name']
+            )
+            characters.append(ch)
         
         return jsonify({
             'characters': characters,
@@ -115,96 +166,270 @@ def get_characters():
 @bp.route('/', methods=['POST'])
 @jwt_required()
 def create_character():
-    """Create new character"""
+    """Create new character (WoD lines: system_type must match campaign game_system)."""
     try:
         current_user_id = get_jwt_identity()
         data = request.get_json()
-        
+
         if not data:
             return jsonify({'error': 'No data provided'}), 400
-        
-        # Required fields
-        name = data.get('name')
+
+        name = (data.get('name') or '').strip()
         campaign_id = data.get('campaign_id')
-        system_type = data.get('system_type')
-        
+        system_type = (data.get('system_type') or '').strip().lower()
+
         if not all([name, campaign_id, system_type]):
-            return jsonify({'error': 'Name, campaign ID, and system type are required'}), 400
-        
-        if system_type not in ['d20', 'd10', 'besm']:
+            return jsonify(
+                {'error': 'Name, campaign ID, and system type are required'}
+            ), 400
+
+        if system_type not in ALLOWED_SYSTEM_TYPES:
             return jsonify({'error': 'Invalid system type'}), 400
-        
+
+        wm = data.get('wod_meta')
+        if wm is not None and not isinstance(wm, dict):
+            return jsonify({'error': 'wod_meta must be a JSON object'}), 400
+        wod_meta = json.dumps(wm if isinstance(wm, dict) else {})
+
         db = get_db()
         cursor = db.cursor()
-        ensure_character_portrait_url_column(cursor)
+        _ensure_character_schema(cursor)
         db.commit()
+
+        cursor.execute("SELECT role FROM users WHERE id = %s", (current_user_id,))
+        ur = cursor.fetchone()
+        if not ur:
+            return jsonify({'error': 'User not found'}), 404
+        user_role = ur['role']
+
+        if user_role in ('admin', 'helper'):
+            cursor.execute(
+                "SELECT * FROM campaigns WHERE id = %s AND is_active = 1",
+                (campaign_id,),
+            )
+        else:
+            cursor.execute(
+                """
+                SELECT c.*
+                FROM campaigns c
+                WHERE c.id = %s AND c.is_active = 1
+                  AND (
+                    c.created_by = %s OR EXISTS (
+                      SELECT 1 FROM campaign_players cp
+                      WHERE cp.campaign_id = c.id AND cp.user_id = %s
+                    )
+                  )
+                """,
+                (campaign_id, current_user_id, current_user_id),
+            )
+
+        campaign = cursor.fetchone()
+        if not campaign:
+            return jsonify({'error': 'Campaign not found or access denied'}), 404
+
+        cgs = (campaign.get('game_system') or '').strip().lower()
+        if cgs in ('vampire', 'werewolf', 'mage') and system_type != cgs:
+            return jsonify(
+                {
+                    'error': (
+                        f'Character system_type must match this campaign '
+                        f'({cgs}).'
+                    )
+                }
+            ), 400
 
         portrait_url = data.get('portrait_url')
         if portrait_url is not None and portrait_url != '':
-            if not isinstance(portrait_url, str) or len(portrait_url) > MAX_PORTRAIT_URL_LEN:
+            if (
+                not isinstance(portrait_url, str)
+                or len(portrait_url) > MAX_PORTRAIT_URL_LEN
+            ):
                 return jsonify({'error': 'portrait_url is invalid or too large'}), 400
         else:
             portrait_url = None
-        
-        # Verify campaign exists and user has access
-        cursor.execute("""
-            SELECT c.*, u.role as user_role
-            FROM campaigns c
-            JOIN users u ON u.id = %s
-            WHERE c.id = %s AND c.is_active = 1
-        """, (current_user_id, campaign_id))
-        
-        campaign = cursor.fetchone()
-        
-        if not campaign:
-            return jsonify({'error': 'Campaign not found or access denied'}), 404
-        
-        # Check if character name already exists in this campaign
-        cursor.execute("""
-            SELECT id FROM characters 
+
+        sheet_locked = bool(data.get('sheet_locked', True))
+        is_active = bool(data.get('is_active', True))
+
+        cursor.execute(
+            """
+            SELECT id FROM characters
             WHERE name = %s AND campaign_id = %s
-        """, (name, campaign_id))
-        
+            """,
+            (name, campaign_id),
+        )
         if cursor.fetchone():
-            return jsonify({'error': 'Character name already exists in this campaign'}), 409
-        
-        # Create character
-        cursor.execute("""
-            INSERT INTO characters (name, system_type, attributes, skills, background, merits_flaws, user_id, campaign_id, portrait_url, created_at, updated_at)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            return jsonify(
+                {'error': 'Character name already exists in this campaign'}
+            ), 409
+
+        now = datetime.utcnow()
+        cursor.execute(
+            """
+            INSERT INTO characters (
+                name, system_type, attributes, skills, background, merits_flaws,
+                user_id, campaign_id, portrait_url, is_active, sheet_locked,
+                wod_meta, created_at, updated_at
+            )
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             RETURNING id
-        """, (
-            name,
-            system_type,
-            json.dumps(data.get('attributes', {})),
-            json.dumps(data.get('skills', {})),
-            data.get('background', ''),
-            json.dumps(data.get('merits_flaws', {})),
-            current_user_id,
-            campaign_id,
-            portrait_url,
-            datetime.utcnow(),
-            datetime.utcnow()
-        ))
-        
+            """,
+            (
+                name,
+                system_type,
+                json.dumps(data.get('attributes') or {}),
+                json.dumps(data.get('skills') or {}),
+                data.get('background') or '',
+                json.dumps(data.get('merits_flaws') or {}),
+                current_user_id,
+                campaign_id,
+                portrait_url,
+                is_active,
+                sheet_locked,
+                wod_meta,
+                now,
+                now,
+            ),
+        )
+
         result = cursor.fetchone()
         character_id = result['id']
         db.commit()
-        
-        logger.info(f"Character '{name}' created by user {current_user_id} in campaign {campaign_id}")
-        
-        return jsonify({
-            'message': 'Character created successfully',
-            'character_id': character_id,
-            'name': name
-        }), 201
-        
+
+        logger.info(
+            "Character '%s' created by user %s in campaign %s",
+            name,
+            current_user_id,
+            campaign_id,
+        )
+
+        return jsonify(
+            {
+                'message': 'Character created successfully',
+                'character_id': character_id,
+                'name': name,
+            }
+        ), 201
+
     except Exception as e:
         logger.error(f"Error creating character: {e}")
         return jsonify({'error': 'Failed to create character'}), 500
     finally:
         if 'db' in locals():
             db.close()
+
+
+@bp.route('/downtime-requests/mine', methods=['GET'])
+@jwt_required()
+def list_my_downtime_requests():
+    """Pending and past downtime requests for the logged-in player."""
+    try:
+        current_user_id = get_jwt_identity()
+        db = get_db()
+        cursor = db.cursor()
+        _ensure_character_schema(cursor)
+        db.commit()
+
+        cursor.execute(
+            """
+            SELECT d.id, d.character_id, d.campaign_id, d.request_text, d.status,
+                   d.admin_reason, d.resolved_at, d.created_at,
+                   ch.name AS character_name, c.name AS campaign_name
+            FROM character_downtime_requests d
+            JOIN characters ch ON ch.id = d.character_id
+            JOIN campaigns c ON c.id = d.campaign_id
+            WHERE d.user_id = %s
+            ORDER BY d.created_at DESC
+            LIMIT 200
+            """,
+            (current_user_id,),
+        )
+        rows = cursor.fetchall()
+        out = []
+        for r in rows:
+            out.append(
+                {
+                    'id': r['id'],
+                    'character_id': r['character_id'],
+                    'character_name': r['character_name'],
+                    'campaign_id': r['campaign_id'],
+                    'campaign_name': r['campaign_name'],
+                    'request_text': r['request_text'],
+                    'status': r['status'],
+                    'admin_reason': r.get('admin_reason'),
+                    'resolved_at': r.get('resolved_at'),
+                    'created_at': r['created_at'],
+                }
+            )
+        return jsonify({'requests': out, 'total': len(out)}), 200
+    except Exception as e:
+        logger.error(f"list_my_downtime_requests: {e}")
+        return jsonify({'error': 'Failed to list requests'}), 500
+    finally:
+        if 'db' in locals():
+            db.close()
+
+
+@bp.route('/<int:character_id>/downtime-requests', methods=['POST'])
+@jwt_required()
+def create_character_downtime_request(character_id):
+    """Submit a downtime / sheet-change request for Storyteller review."""
+    try:
+        current_user_id = get_jwt_identity()
+        data = request.get_json()
+        if not data:
+            return jsonify({'error': 'No data provided'}), 400
+        text = (data.get('request_text') or '').strip()
+        if not text:
+            return jsonify({'error': 'request_text is required'}), 400
+        if len(text) > 20000:
+            return jsonify({'error': 'request_text is too long'}), 400
+
+        db = get_db()
+        cursor = db.cursor()
+        _ensure_character_schema(cursor)
+        db.commit()
+
+        cursor.execute(
+            """
+            SELECT id, user_id, campaign_id FROM characters WHERE id = %s
+            """,
+            (character_id,),
+        )
+        ch = cursor.fetchone()
+        if not ch:
+            return jsonify({'error': 'Character not found'}), 404
+        if str(ch['user_id']) != str(current_user_id):
+            return jsonify({'error': 'Access denied'}), 403
+
+        cursor.execute(
+            """
+            INSERT INTO character_downtime_requests (
+                character_id, user_id, campaign_id, request_text, status, created_at
+            )
+            VALUES (%s, %s, %s, %s, 'pending', %s)
+            RETURNING id
+            """,
+            (
+                character_id,
+                current_user_id,
+                ch['campaign_id'],
+                text,
+                datetime.utcnow(),
+            ),
+        )
+        rid = cursor.fetchone()['id']
+        db.commit()
+        return jsonify(
+            {'message': 'Request submitted', 'id': rid}
+        ), 201
+    except Exception as e:
+        logger.error(f"create_character_downtime_request: {e}")
+        return jsonify({'error': 'Failed to submit request'}), 500
+    finally:
+        if 'db' in locals():
+            db.close()
+
 
 @bp.route('/<int:character_id>', methods=['GET'])
 @jwt_required()
@@ -215,7 +440,7 @@ def get_character(character_id):
         
         db = get_db()
         cursor = db.cursor()
-        ensure_character_portrait_url_column(cursor)
+        _ensure_character_schema(cursor)
         db.commit()
 
         # Get current user role
@@ -243,24 +468,12 @@ def get_character(character_id):
         if current_user['role'] not in ['admin', 'helper'] and character['user_id'] != current_user_id:
             return jsonify({'error': 'Access denied'}), 403
         
-        return jsonify({
-            'character': {
-                'id': character['id'],
-                'name': character['name'],
-                'system_type': character['system_type'],
-                'attributes': json.loads(character['attributes']) if character['attributes'] else {},
-                'skills': json.loads(character['skills']) if character['skills'] else {},
-                'background': character['background'],
-                'merits_flaws': json.loads(character['merits_flaws']) if character['merits_flaws'] else {},
-                'user_id': character['user_id'],
-                'owner_name': character['owner_name'],
-                'campaign_id': character['campaign_id'],
-                'campaign_name': character['campaign_name'],
-                'created_at': character['created_at'],
-                'updated_at': character['updated_at'],
-                'portrait_url': character.get('portrait_url'),
-            }
-        }), 200
+        ch = _character_public_dict(
+            character,
+            owner_name=character['owner_name'],
+            campaign_name=character['campaign_name'],
+        )
+        return jsonify({'character': ch}), 200
         
     except Exception as e:
         logger.error(f"Error getting character {character_id}: {e}")
@@ -282,7 +495,7 @@ def update_character(character_id):
         
         db = get_db()
         cursor = db.cursor()
-        ensure_character_portrait_url_column(cursor)
+        _ensure_character_schema(cursor)
         db.commit()
 
         # Get current user role
@@ -302,11 +515,27 @@ def update_character(character_id):
         # Check permissions
         if current_user['role'] not in ['admin', 'helper'] and character['user_id'] != current_user_id:
             return jsonify({'error': 'Access denied'}), 403
-        
+
+        player_locked = current_user['role'] not in (
+            'admin',
+            'helper',
+        ) and _sheet_locked_bool(character.get('sheet_locked'))
+        if player_locked:
+            data = {k: v for k, v in data.items() if k == 'portrait_url'}
+            if not data:
+                return jsonify(
+                    {
+                        'error': (
+                            'Sheet is locked. You may only update portrait_url, '
+                            'or submit a downtime request from Player Profile.'
+                        )
+                    }
+                ), 403
+
         # Update fields
         updates = []
         params = []
-        
+
         if 'name' in data and data['name'] != character['name']:
             # Check if name is already taken in this campaign
             cursor.execute("""
@@ -346,7 +575,21 @@ def update_character(character_id):
             else:
                 updates.append("portrait_url = %s")
                 params.append(None)
-        
+
+        if current_user['role'] in ('admin', 'helper'):
+            if 'sheet_locked' in data:
+                updates.append("sheet_locked = %s")
+                params.append(bool(data['sheet_locked']))
+            if 'wod_meta' in data:
+                wm = data['wod_meta']
+                if wm is not None and not isinstance(wm, dict):
+                    return jsonify({'error': 'wod_meta must be an object'}), 400
+                updates.append("wod_meta = %s")
+                params.append(json.dumps(wm if isinstance(wm, dict) else {}))
+            if 'is_active' in data:
+                updates.append("is_active = %s")
+                params.append(bool(data['is_active']))
+
         # Apply updates if any
         if updates:
             params.append(datetime.utcnow())  # updated_at
@@ -397,7 +640,10 @@ def delete_character(character_id):
         if current_user['role'] not in ['admin', 'helper'] and character['user_id'] != current_user_id:
             return jsonify({'error': 'Access denied'}), 403
         
-        # Delete character
+        cursor.execute(
+            "UPDATE users SET active_character_id = NULL WHERE active_character_id = %s",
+            (character_id,),
+        )
         cursor.execute("DELETE FROM characters WHERE id = %s", (character_id,))
         db.commit()
         

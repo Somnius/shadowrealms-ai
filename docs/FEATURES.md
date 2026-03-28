@@ -1,7 +1,7 @@
 # Feature Documentation
 
 **Last Updated**: 2026-03-25  
-**Version**: 0.7.14
+**Version**: 0.7.15
 
 This document consolidates all feature-specific documentation for ShadowRealms AI.
 

@@ -12,7 +12,7 @@ from flask import Blueprint, request, jsonify, current_app
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from services.rag_service import create_rag_service
 from services.embedding_service import create_embedding_service
-from database import get_db
+from database import get_db, ensure_users_player_profile_columns
 
 logger = logging.getLogger(__name__)
 
@@ -168,21 +168,60 @@ def create_campaign():
 @campaigns_bp.route('/', methods=['GET'])
 @jwt_required()
 def get_campaigns():
-    """Get all campaigns for the user"""
+    """Get campaigns for the user.
+
+    Query: for_active_character=1 — only the campaign tied to the user's
+    globally active character (Player Profile). Omit for full membership list
+    (e.g. character creation picker).
+    """
     try:
         user_id = get_jwt_identity()
-        
+        for_active = str(request.args.get("for_active_character", "")).lower() in (
+            "1",
+            "true",
+            "yes",
+        )
+
         conn = get_db()
         cursor = conn.cursor()
-        
-        cursor.execute("""
-            SELECT id, name, description, game_system, created_at, status
-            FROM campaigns
-            WHERE created_by = %s OR id IN (
-                SELECT campaign_id FROM campaign_players WHERE user_id = %s
+        ensure_users_player_profile_columns(cursor)
+        conn.commit()
+
+        if for_active:
+            cursor.execute(
+                "SELECT active_character_id FROM users WHERE id = %s",
+                (user_id,),
             )
-            ORDER BY created_at DESC
-        """, (user_id, user_id))
+            urow = cursor.fetchone() or {}
+            aid = urow.get("active_character_id")
+            if not aid:
+                # Storytellers often have no PC yet; fall back to full membership list.
+                for_active = False
+        if for_active:
+            cursor.execute(
+                """
+                SELECT c.id, c.name, c.description, c.game_system, c.created_at, c.status
+                FROM campaigns c
+                INNER JOIN characters ch ON ch.campaign_id = c.id
+                WHERE ch.id = %s AND ch.user_id = %s
+                  AND (
+                    c.created_by = %s OR c.id IN (
+                      SELECT campaign_id FROM campaign_players WHERE user_id = %s
+                    )
+                  )
+                ORDER BY c.created_at DESC
+                """,
+                (aid, user_id, user_id, user_id),
+            )
+        else:
+            cursor.execute("""
+                SELECT id, name, description, game_system, created_at, status
+                FROM campaigns
+                WHERE created_by = %s OR id IN (
+                    SELECT campaign_id FROM campaign_players WHERE user_id = %s
+                )
+                ORDER BY created_at DESC
+            """, (user_id, user_id))
         
         campaigns = []
         for row in cursor.fetchall():

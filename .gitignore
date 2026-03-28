@@ -369,9 +369,15 @@ EXTRA_NOTES.txt
 Discussion No1 Local LLM-Powered Tabletop RPG Platform_ Complete.md
 
 # Local development and IDE files
-.cursor/
+# Track agent skills under .cursor/skills/; ignore other Cursor churn
+.cursor/*
+!.cursor/skills/
+!.cursor/skills/**/*
 notes/
 _notes/
+
+# Optional compaction handoff at repo root (see .cursor/skills/compact)
+/memory.md
 
 # Additional sensitive and temporary files
 *.pid

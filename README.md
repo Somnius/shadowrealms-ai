@@ -6,10 +6,10 @@
 
 ### The Ultimate AI-Powered Tabletop RPG Experience
 
-[![Version](https://img.shields.io/badge/version-0.7.14-blue.svg)](https://github.com/Somnius/shadowrealms-ai)
+[![Version](https://img.shields.io/badge/version-0.7.15-blue.svg)](https://github.com/Somnius/shadowrealms-ai)
 [![Phase 2](https://img.shields.io/badge/phase-2%20complete-green.svg)](https://github.com/Somnius/shadowrealms-ai)
 [![Phase 3A](https://img.shields.io/badge/phase-3A%20complete-green.svg)](https://github.com/Somnius/shadowrealms-ai)
-[![Phase 3B](https://img.shields.io/badge/phase-3B%20next-blue.svg)](https://github.com/Somnius/shadowrealms-ai)
+[![Phase 3B](https://img.shields.io/badge/phase-3B%20active-blue.svg)](https://github.com/Somnius/shadowrealms-ai)
 [![Status](https://img.shields.io/badge/status-login%20%26%20theme%20active-yellow.svg)](https://github.com/Somnius/shadowrealms-ai)
 [![License](https://img.shields.io/badge/license-MIT-yellow.svg)](LICENSE)
 
@@ -55,7 +55,7 @@ See ShadowRealms AI in action:
 
 *Watch this video to see the login system, gothic theme, campaign management, and admin panel in action!*
 
-> **Version 0.7.14 Preview:** This demo showcases the frontend interface in its current state. Please note that not all features are fully functional yet—this is a first look at the user interface and design direction of ShadowRealms AI.
+> **Version 0.7.15 Preview:** This demo showcases the frontend interface in its current state. Please note that not all features are fully functional yet—this is a first look at the user interface and design direction of ShadowRealms AI.
 
 </div>
 
@@ -138,13 +138,20 @@ docker-compose up -d
 
 <div align="center">
 
-### Version 0.7.14 - Dice overlay, hidden rolls & Phase 3B prep 🎲
+### Version 0.7.15 - WoD character creation & Player Profile 🎭
 
 **Latest updates:**
-- **Dice theatre**: Center-screen ~3s animation for **`/ai roll`** and sidebar **Roll dice** (up to 10 dice on screen); chat shows the result after the reveal.
-- **Hidden rolls**: **`/ai roll-hidden`** (admins) and sidebar **Hide roll from others** (admin, helper, or campaign owner); other players do not receive those message rows.
-- **UX**: In-campaign **Profile** in the left rail only when your account can use hidden-roll options; slightly faster message polling so others sync sooner.
-- **Ahead**: We are **preparing users, players, and characters** for the next **Phase 3B** milestone—keep campaigns and PCs up to date for upcoming location and character features.
+- **Character creation**: Guided wizard for **Vampire / Werewolf / Mage** chronicles; sheets stored with `wod_meta`, attributes (7/5/3), and locked-by-default `sheet_locked` after submit.
+- **Player Profile**: Swap globally **active character**, edit **character portrait** (when sheet is locked), set **OOC-only player avatar**, submit **downtime requests** for storyteller/admin review.
+- **Dashboard & chat**: Optional campaign filter by active PC; OOC lobby shows **player** avatar, story rooms show **character** portrait; messaging prefers the active character when set.
+- **Admin**: **Downtime requests** section to approve or reject with a reason.
+- **Contributing**: Prefer **`docker compose exec`** for `pip install` / `npm install` (see `docs/CONTRIBUTING.md`).
+
+### Version 0.7.14 - Dice overlay, hidden rolls & Phase 3B prep 🎲
+
+**Highlights (see changelog):**
+- **Dice theatre** and **hidden rolls** for `/ai roll`, sidebar rolls, and storyteller-only visibility.
+- **Faster polling** and campaign **`created_by`** merge for hidden-roll UI.
 
 ### Version 0.7.13 - Chat UX, WoD dice & admin AI tools 🎲
 

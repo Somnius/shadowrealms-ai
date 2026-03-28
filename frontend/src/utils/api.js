@@ -125,6 +125,23 @@ export const api = {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify(payload)
-    })
+    }),
+
+  listDowntimeRequests: (token, status) => {
+    const q = status ? `?status=${encodeURIComponent(status)}` : '';
+    return fetch(`${API_URL}/admin/downtime-requests${q}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+  },
+
+  resolveDowntimeRequest: (token, requestId, payload) =>
+    fetch(`${API_URL}/admin/downtime-requests/${requestId}`, {
+      method: 'PATCH',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+    }),
 };
 

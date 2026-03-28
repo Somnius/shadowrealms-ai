@@ -293,6 +293,7 @@ This philosophy ensures:
 - [Performance & Scalability](#performance--scalability)
 
 ### **📊 Current Status & Versions**
+- [Version 0.7.15 - WoD character creation & Player Profile](#version-0715---wod-character-creation--player-profile-)
 - [Version 0.7.14 - Dice overlay, hidden rolls and Phase 3B prep](#version-0714---dice-overlay-hidden-rolls-and-phase-3b-prep-)
 - [Version 0.7.13 - Chat UX, WoD dice and admin AI tools](#version-0713---chat-ux-wod-dice-and-admin-ai-tools-)
 - [Version 0.7.12 - OOC AI moderation & chat polish](#version-0712---ooc-ai-moderation--chat-polish-)
@@ -330,7 +331,7 @@ This philosophy ensures:
 - [Phase 3A Interface Wireframe (ASCII)](#phase-3a-interface-wireframe-ascii)
 - [Next Steps for Phase 3A](#next-steps-for-phase-3a)
 
-### **🚀 Phase 3B: Advanced Campaign & Character Systems** ✅ STRUCTURE ORGANIZED (v0.7.14)
+### **🚀 Phase 3B: Advanced Campaign & Character Systems** ✅ STRUCTURE ORGANIZED (v0.7.15)
 - [Phase 3B Overview](#phase-3b-overview)
 - [Security & Testing Foundation](#security--testing-foundation)
 - [Location System Design](#location-system-design)
@@ -1314,6 +1315,21 @@ The project now includes comprehensive `.gitignore` rules covering:
 - **Campaign Continuity**: Persistent AI memory across multiple sessions
 - **Multi-Language**: Global accessibility with translation pipelines
 - **Real-time Collaboration**: Live AI-assisted gaming experiences
+
+## Version 0.7.15 - WoD character creation & Player Profile
+
+### What changed from 0.7.14
+
+- **Character creation**: Multi-step wizard for **Vampire / Werewolf / Mage** campaigns; `characters.wod_meta`, **7/5/3** attributes, `sheet_locked` after submit; `system_type` must match the chronicle’s `game_system`.
+- **Player Profile**: Globally **active character**, **character portrait** updates (when locked), **OOC player avatar**, **downtime requests** to admin; dashboard can filter campaigns by active PC (with fallback when none is set).
+- **Chat**: `player_avatar_url` on messages — **OOC** rooms show the player avatar, **IC** rooms the character portrait; user posts use the active character when it belongs to the campaign.
+- **Admin**: Review **downtime** requests (approve / reject with reason).
+- **Contributing**: Documented **container-first** `pip` / `npm` installs (`docs/CONTRIBUTING.md`).
+- **Reference doc**: `docs/character-creation-world-of-darkness.md`.
+
+**See also:** `docs/CHANGELOG.md` (`[0.7.15]`).
+
+---
 
 ## Version 0.7.14 - Dice overlay, hidden rolls and Phase 3B prep
 
@@ -5903,11 +5919,11 @@ After comprehensive testing and debugging, we achieved **100% User Experience Te
 
 ---
 
-## 🚀 Phase 3B: Advanced Campaign & Character Systems (v0.7.14)
+## 🚀 Phase 3B: Advanced Campaign & Character Systems (v0.7.15)
 
 **Status:** 🚧 IN PROGRESS - Structure Organized  
 **Start Date:** 2025-10-24  
-**Current Version:** 0.7.14
+**Current Version:** 0.7.15
 
 ### Phase 3B Overview
 
@@ -5924,7 +5940,7 @@ Phase 3B builds upon Phase 3A's frontend foundation by implementing the core gam
 For complete details, see:
 - **[Phase 3B Implementation Guide](docs/PHASE3B_IMPLEMENTATION.md)** - Full specification (600+ lines)
 - **[Planning Documentation](docs/PLANNING.md)** - Phase planning and summaries
-- **[Changelog](docs/CHANGELOG.md)** - Version history through **v0.7.14**
+- **[Changelog](docs/CHANGELOG.md)** - Version history through **v0.7.15**
 
 ---
 
@@ -6407,7 +6423,7 @@ Reason: [Admin's stated reason]
 
 ---
 
-### Files Created/Modified (v0.7.14)
+### Files Created/Modified (v0.7.15)
 
 **Backend:**
 - `backend/database.py` - Schema migrations (pending)
@@ -6430,14 +6446,14 @@ Reason: [Admin's stated reason]
 **Documentation:**
 - `docs/PHASE3B_IMPLEMENTATION.md` - Complete specification ✅
 - `docs/PLANNING.md` - Detailed summary ✅
-- `docs/CHANGELOG.md` - Version 0.7.14 entry ✅
+- `docs/CHANGELOG.md` - Version 0.7.15 entry ✅
 - `scripts/run-frontend-tests.sh` - Test runner script ✅
 
 ---
 
 **Last Updated:** 2026-03-25  
 **Next Milestone:** Location System Implementation  
-**Version:** 0.7.14
+**Version:** 0.7.15
 
 ---
 
@@ -7152,7 +7168,7 @@ docker-compose ps
 - **Backend API**: http://localhost:5000
 - **ChromaDB**: http://localhost:8000
 
-### 🎯 **Current Status (v0.7.14)**
+### 🎯 **Current Status (v0.7.15)**
 
 ✅ **Phase 1 Complete** - Foundation & Docker Setup  
 ✅ **Phase 2 Complete** - RAG & Vector Memory System  
@@ -7167,7 +7183,7 @@ docker-compose ps
 ✅ **AI Health Checks** - LM Studio, Ollama, ChromaDB validation (v0.7.5)  
 ✅ **Message Persistence** - Chat messages save/load correctly, ChromaDB v2 (v0.7.6)  
 ✅ **Chat timestamps & dice (v0.7.13+)** - `time_display` on messages; sidebar **Roll dice** + `POST .../roll`; admin **`/ai`** tools via `POST /api/ai/slash`
-✅ **Dice theatre & hidden rolls (v0.7.14)** - Center overlay for `/ai roll` and sidebar rolls; `/ai roll-hidden` and storyteller-only sidebar rolls; faster polling  
+✅ **Dice theatre & hidden rolls (v0.7.15)** - Center overlay for `/ai roll` and sidebar rolls; `/ai roll-hidden` and storyteller-only sidebar rolls; faster polling  
 ✅ **PostgreSQL Migration** - Full compatibility, remote access, AI integration (v0.7.7)  
 ✅ **Footer Version Display** - Fixed API path, version now displays correctly (v0.7.8)  
 ✅ **Project Structure** - Scripts organized in dedicated directory (v0.7.9)  

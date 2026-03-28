@@ -12,7 +12,15 @@ import SimpleApp from '../../SimpleApp';
 global.fetch = jest.fn();
 
 describe('User Flow Integration Tests', () => {
-  
+  const mockMePlayer = (overrides = {}) => ({
+    id: 1,
+    username: 'testuser',
+    role: 'player',
+    active_character_id: null,
+    statistics: { characters_owned: 0, campaigns_created: 0 },
+    ...overrides,
+  });
+
   beforeEach(() => {
     // Clear localStorage before each test
     localStorage.clear();
@@ -23,13 +31,20 @@ describe('User Flow Integration Tests', () => {
   
   describe('Authentication Flow', () => {
     it('should allow user to register with valid invite code', async () => {
-      // Mock successful registration
       fetch.mockResolvedValueOnce({
         ok: true,
         json: async () => ({
-          token: 'test-token',
-          user: { id: 1, username: 'testuser', role: 'player' }
-        })
+          access_token: 'test-token',
+          user: { id: 1, username: 'testuser', role: 'player' },
+        }),
+      });
+      fetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockMePlayer(),
+      });
+      fetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => [],
       });
       
       render(<SimpleApp />);
@@ -82,13 +97,20 @@ describe('User Flow Integration Tests', () => {
     });
     
     it('should allow user to login with valid credentials', async () => {
-      // Mock successful login
       fetch.mockResolvedValueOnce({
         ok: true,
         json: async () => ({
-          token: 'test-token',
-          user: { id: 1, username: 'testuser', role: 'player' }
-        })
+          access_token: 'test-token',
+          user: { id: 1, username: 'testuser', role: 'player' },
+        }),
+      });
+      fetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockMePlayer(),
+      });
+      fetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => [],
       });
       
       render(<SimpleApp />);
@@ -115,52 +137,58 @@ describe('User Flow Integration Tests', () => {
   
   describe('Campaign Management Flow', () => {
     beforeEach(() => {
-      // Set up authenticated state
       localStorage.setItem('token', 'test-token');
-      localStorage.setItem('user', JSON.stringify({
-        id: 1,
-        username: 'testuser',
-        role: 'admin'
-      }));
+      localStorage.setItem(
+        'user',
+        JSON.stringify({
+          id: 1,
+          username: 'testuser',
+          role: 'admin',
+          active_character_id: null,
+          statistics: { characters_owned: 0, campaigns_created: 0 },
+        })
+      );
     });
     
     it('should allow admin to create a new campaign', async () => {
-      // Mock user data fetch
-      fetch.mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({
-          id: 1,
-          username: 'testuser',
-          role: 'admin'
-        })
+      const adminMe = mockMePlayer({
+        role: 'admin',
+        statistics: { characters_owned: 0, campaigns_created: 1 },
       });
-      
-      // Mock campaigns fetch (empty)
-      fetch.mockResolvedValueOnce({
-        ok: true,
-        json: async () => []
-      });
-      
-      // Mock campaign creation
-      fetch.mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({
-          id: 1,
-          name: 'Test Campaign',
-          description: 'Test Description',
-          game_system: 'vampire'
-        })
-      });
-      
-      // Mock campaigns fetch (with new campaign)
-      fetch.mockResolvedValueOnce({
-        ok: true,
-        json: async () => [{
-          id: 1,
-          name: 'Test Campaign',
-          description: 'Test Description',
-          game_system: 'vampire'
-        }]
+      const campaignRow = {
+        id: 1,
+        name: 'Test Campaign',
+        description: 'Test Description',
+        game_system: 'vampire',
+      };
+      let campaignsList = [];
+      fetch.mockImplementation((url, options = {}) => {
+        const u = String(url);
+        const method = (options.method || 'GET').toUpperCase();
+        if (u.includes('/users/me')) {
+          return Promise.resolve({
+            ok: true,
+            json: async () => adminMe,
+          });
+        }
+        if (
+          method === 'POST' &&
+          u.includes('/campaigns') &&
+          !/\/campaigns\/\d/.test(u.split('?')[0])
+        ) {
+          campaignsList = [campaignRow];
+          return Promise.resolve({
+            ok: true,
+            json: async () => ({ campaign_id: 1, message: 'ok' }),
+          });
+        }
+        if (method === 'GET' && u.includes('/campaigns')) {
+          return Promise.resolve({
+            ok: true,
+            json: async () => campaignsList,
+          });
+        }
+        return Promise.resolve({ ok: false, json: async () => ({}) });
       });
       
       render(<SimpleApp />);
@@ -190,7 +218,7 @@ describe('User Flow Integration Tests', () => {
       
       await waitFor(() => {
         expect(fetch).toHaveBeenCalledWith(
-          '/api/campaigns/',
+          '/api/campaigns',
           expect.objectContaining({
             method: 'POST',
             body: expect.stringContaining('Test Campaign')
@@ -202,7 +230,8 @@ describe('User Flow Integration Tests', () => {
     it('should prevent XSS in campaign creation', async () => {
       fetch.mockResolvedValue({
         ok: true,
-        json: async () => ({ id: 1, username: 'testuser', role: 'admin' })
+        json: async () =>
+          mockMePlayer({ role: 'admin', statistics: { characters_owned: 0, campaigns_created: 0 } }),
       });
       
       render(<SimpleApp />);
@@ -230,11 +259,7 @@ describe('User Flow Integration Tests', () => {
   describe('Navigation Flow', () => {
     beforeEach(() => {
       localStorage.setItem('token', 'test-token');
-      localStorage.setItem('user', JSON.stringify({
-        id: 1,
-        username: 'testuser',
-        role: 'player'
-      }));
+      localStorage.setItem('user', JSON.stringify(mockMePlayer()));
     });
     
     it('should handle browser back button correctly', async () => {
@@ -266,9 +291,17 @@ describe('User Flow Integration Tests', () => {
       fetch.mockResolvedValueOnce({
         ok: true,
         json: async () => ({
-          token: 'test-token-123',
-          user: { id: 1, username: 'testuser', role: 'player' }
-        })
+          access_token: 'test-token-123',
+          user: { id: 1, username: 'testuser', role: 'player' },
+        }),
+      });
+      fetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockMePlayer(),
+      });
+      fetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => [],
       });
       
       render(<SimpleApp />);

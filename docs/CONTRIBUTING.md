@@ -36,11 +36,11 @@ We are committed to providing a welcoming and inspiring community for all. By pa
 ## 🚀 **Getting Started**
 
 ### **Prerequisites**
-- Python 3.11+ (for backend development)
-- Node.js 18+ (for frontend development)
-- Docker and Docker Compose
+- **Docker and Docker Compose** (primary workflow — Python and Node run inside containers)
 - Git
 - Basic understanding of RPG systems and AI/ML concepts
+
+Optional: local Python 3.11+ / Node 18+ only if you deliberately develop **outside** Docker (not the default path for this repo).
 
 ### **First Steps**
 1. **Fork the repository** on GitHub
@@ -53,29 +53,56 @@ We are committed to providing a welcoming and inspiring community for all. By pa
 
 ## 🛠️ **Development Setup**
 
-### **Quick Setup**
+### **Quick Setup (installs run inside containers)**
+
+Dependencies are installed **in the images** at build time (`backend/Dockerfile` runs `pip install`, `frontend/Dockerfile` runs `npm install`). The compose file bind-mounts source trees; the frontend service keeps `node_modules` in a **container volume** (`/app/node_modules`), so **do not rely on host `npm install`** for the app that Docker serves.
+
 ```bash
 # Clone your fork
 git clone https://github.com/Somnius/shadowrealms-ai.git
 cd shadowrealms-ai
 
-# Set up Python environment
-python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
-pip install -r backend/requirements.txt
-
-# Set up Node.js environment
-cd frontend
-npm install
-cd ..
-
-# Set up environment variables
+# Environment variables (required for compose)
 cp env.template .env
 # Edit .env with your configuration
 
-# Start development environment
-docker-compose up --build
+# Build images and start stack (backend, frontend, DB, etc.)
+docker compose up --build
 ```
+
+### **Adding or refreshing dependencies (inside running containers)**
+
+After you edit `backend/requirements.txt` or `frontend/package.json`:
+
+```bash
+# Backend — reinstall from the updated requirements file
+docker compose exec backend pip install --no-cache-dir -r /app/requirements.txt
+
+# Frontend — refresh node_modules inside the frontend container
+docker compose exec frontend npm install
+```
+
+Then restart the affected service if needed (`docker compose restart backend` / `frontend`), or rebuild for a clean image:
+
+```bash
+docker compose build --no-cache backend frontend
+docker compose up -d
+```
+
+### **Running tests inside containers**
+
+```bash
+# Frontend (example: CI-style, no watch)
+docker compose exec frontend npm run test:ci
+
+# Backend — use the test entrypoints you maintain under backend/tests/
+docker compose exec backend python -m pytest tests/ -q
+# or: docker compose exec backend python -m unittest discover -s tests -p 'test_*.py'
+```
+
+### **Host-only setup (optional, not recommended for parity with production)**
+
+If you must run tools on the host, create a venv and use `backend/requirements.txt` / `frontend` with `npm install` locally — but behavior may differ from the container images; prefer the commands above.
 
 ### **Environment Configuration**
 - Copy `env.template` to `.env`

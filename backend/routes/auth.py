@@ -12,7 +12,7 @@ import json
 import os
 from datetime import datetime, timedelta
 
-from database import get_db
+from database import get_db, ensure_users_player_profile_columns
 from services.gpu_monitor import gpu_monitor_service
 from services.mail_service import send_welcome_registration, send_invalid_invite_alert, is_smtp_configured
 
@@ -159,6 +159,8 @@ def register():
                 'email': email,
                 'role': role,
                 'display_timezone': None,
+                'player_avatar_url': None,
+                'active_character_id': None,
             }
         }), 201
         
@@ -190,9 +192,12 @@ def login():
         # Get user from database
         db = get_db()
         cursor = db.cursor()
-        
+        ensure_users_player_profile_columns(cursor)
+        db.commit()
+
         cursor.execute("""
-            SELECT id, username, email, password_hash, role, is_active, display_timezone
+            SELECT id, username, email, password_hash, role, is_active, display_timezone,
+                   player_avatar_url, active_character_id
             FROM users WHERE username = %s
         """, (username,))
         
@@ -244,7 +249,9 @@ def login():
                 'username': user['username'],
                 'email': user['email'],
                 'role': user['role'],
-                'display_timezone': user['display_timezone'],
+                'display_timezone': user.get('display_timezone'),
+                'player_avatar_url': user.get('player_avatar_url'),
+                'active_character_id': user.get('active_character_id'),
             }
         }), 200
         
@@ -265,9 +272,12 @@ def refresh():
         # Get user info from database
         db = get_db()
         cursor = db.cursor()
-        
+        ensure_users_player_profile_columns(cursor)
+        db.commit()
+
         cursor.execute("""
-            SELECT id, username, email, role, is_active, display_timezone
+            SELECT id, username, email, role, is_active, display_timezone,
+                   player_avatar_url, active_character_id
             FROM users WHERE id = %s
         """, (current_user_id,))
         
@@ -293,7 +303,9 @@ def refresh():
                 'username': user['username'],
                 'email': user['email'],
                 'role': user['role'],
-                'display_timezone': user['display_timezone'],
+                'display_timezone': user.get('display_timezone'),
+                'player_avatar_url': user.get('player_avatar_url'),
+                'active_character_id': user.get('active_character_id'),
             }
         }), 200
         

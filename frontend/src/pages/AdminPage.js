@@ -7,7 +7,7 @@ import '../responsive.css';
 
 function AdminPage({ token, user, onBack, displayTimezone = null }) {
   // Initialize toast notification system
-  const { showSuccess, ToastContainer } = useToast();
+  const { showSuccess, showError, ToastContainer } = useToast();
   const [users, setUsers] = useState([]);
   const [selectedUser, setSelectedUser] = useState(null);
   const [showBanModal, setShowBanModal] = useState(false);
@@ -24,13 +24,16 @@ function AdminPage({ token, user, onBack, displayTimezone = null }) {
   const [inviteDescription, setInviteDescription] = useState('');
   const [inviteCustomCode, setInviteCustomCode] = useState('');
   const [inviteLoading, setInviteLoading] = useState(false);
-  /** 'home' | 'invites' | 'users' | 'moderation' */
+  /** 'home' | 'invites' | 'users' | 'moderation' | 'downtime' */
   const [adminSection, setAdminSection] = useState('home');
+  const [downtimeRows, setDowntimeRows] = useState([]);
+  const [downtimeStatusFilter, setDowntimeStatusFilter] = useState('pending');
 
   const adminNavSections = [
     { id: 'home', label: 'Overview' },
     { id: 'invites', label: 'Invite codes' },
     { id: 'users', label: 'User management' },
+    { id: 'downtime', label: 'Downtime requests' },
     { id: 'moderation', label: 'Moderation log' },
   ];
 
@@ -40,6 +43,28 @@ function AdminPage({ token, user, onBack, displayTimezone = null }) {
     fetchModerationLog();
     fetchInvites();
   }, []);
+
+  useEffect(() => {
+    if (adminSection !== 'downtime') return undefined;
+    let cancelled = false;
+    (async () => {
+      try {
+        const r = await api.listDowntimeRequests(
+          token,
+          downtimeStatusFilter || undefined
+        );
+        if (r.ok && !cancelled) {
+          const d = await r.json();
+          setDowntimeRows(Array.isArray(d.requests) ? d.requests : []);
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [adminSection, downtimeStatusFilter, token]);
 
   const fetchUsers = async () => {
     try {
@@ -637,6 +662,138 @@ function AdminPage({ token, user, onBack, displayTimezone = null }) {
                     {log.details && Object.keys(log.details).length > 0 && (
                       <div style={{ color: '#8b8b9f', fontSize: '12px', marginTop: '4px' }}>
                         {JSON.stringify(log.details)}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+        )}
+
+        {adminSection === 'downtime' && (
+        <div>
+          <h2 style={{ color: '#e94560', marginBottom: '16px' }}>Character downtime requests</h2>
+          <p style={{ color: '#8b8b9f', marginBottom: '16px', maxWidth: '720px' }}>
+            Players submit these from Player Profile when their sheet is locked. Approve or reject with a short reason (required for rejections).
+          </p>
+          <div style={{ marginBottom: '16px', display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+            {['pending', 'approved', 'rejected', ''].map((f) => (
+              <button
+                key={f || 'all'}
+                type="button"
+                onClick={() => setDowntimeStatusFilter(f)}
+                style={{
+                  padding: '8px 14px',
+                  borderRadius: '6px',
+                  border: downtimeStatusFilter === f ? '2px solid #e94560' : '1px solid #2a2a4e',
+                  background: downtimeStatusFilter === f ? 'rgba(233, 69, 96, 0.15)' : '#0f1729',
+                  color: '#e0e0e0',
+                  cursor: 'pointer',
+                }}
+              >
+                {f === '' ? 'All' : f}
+              </button>
+            ))}
+          </div>
+          <div style={{
+            background: '#16213e',
+            borderRadius: '10px',
+            padding: '20px',
+            border: '1px solid #2a2a4e',
+          }}>
+            {downtimeRows.length === 0 ? (
+              <p style={{ color: '#b5b5c3' }}>No requests in this filter.</p>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                {downtimeRows.map((row) => (
+                  <div
+                    key={row.id}
+                    style={{
+                      background: '#0f1729',
+                      borderRadius: '8px',
+                      padding: '14px',
+                      border: '1px solid #2a2a4e',
+                    }}
+                  >
+                    <div style={{ color: '#e94560', fontWeight: 'bold' }}>
+                      {row.character_name} <span style={{ color: '#8b8b9f', fontWeight: 'normal' }}>· @{row.player_username}</span>
+                    </div>
+                    <div style={{ color: '#8b8b9f', fontSize: '13px' }}>{row.campaign_name}</div>
+                    <div style={{ color: '#b5b5c3', marginTop: '8px', whiteSpace: 'pre-wrap' }}>{row.request_text}</div>
+                    <div style={{ marginTop: '8px', color: '#94a3b8', fontSize: '12px' }}>
+                      Status: <strong>{row.status}</strong>
+                      {row.admin_reason ? ` — ${row.admin_reason}` : ''}
+                    </div>
+                    {row.status === 'pending' && (
+                      <div style={{ marginTop: '12px', display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                        <button
+                          type="button"
+                          onClick={async () => {
+                            const note = window.prompt('Optional note to the player:', '') || '';
+                            const r = await api.resolveDowntimeRequest(token, row.id, {
+                              status: 'approved',
+                              admin_reason: note.trim() || undefined,
+                            });
+                            const resBody = await r.json().catch(() => ({}));
+                            if (r.ok) {
+                              showSuccess('Request approved.');
+                              const r2 = await api.listDowntimeRequests(token, downtimeStatusFilter || undefined);
+                              if (r2.ok) {
+                                const d2 = await r2.json();
+                                setDowntimeRows(Array.isArray(d2.requests) ? d2.requests : []);
+                              }
+                            } else {
+                              showError(resBody.error || 'Failed to approve');
+                            }
+                          }}
+                          style={{
+                            padding: '8px 16px',
+                            background: '#15803d',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '6px',
+                            cursor: 'pointer',
+                          }}
+                        >
+                          Approve
+                        </button>
+                        <button
+                          type="button"
+                          onClick={async () => {
+                            const reason = window.prompt('Rejection reason (required):', '');
+                            if (!reason || !reason.trim()) {
+                              showError('Reason is required to reject.');
+                              return;
+                            }
+                            const r = await api.resolveDowntimeRequest(token, row.id, {
+                              status: 'rejected',
+                              admin_reason: reason.trim(),
+                            });
+                            const resBody = await r.json().catch(() => ({}));
+                            if (r.ok) {
+                              showSuccess('Request rejected.');
+                              const r2 = await api.listDowntimeRequests(token, downtimeStatusFilter || undefined);
+                              if (r2.ok) {
+                                const d2 = await r2.json();
+                                setDowntimeRows(Array.isArray(d2.requests) ? d2.requests : []);
+                              }
+                            } else {
+                              showError(resBody.error || 'Failed to reject');
+                            }
+                          }}
+                          style={{
+                            padding: '8px 16px',
+                            background: '#b91c1c',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '6px',
+                            cursor: 'pointer',
+                          }}
+                        >
+                          Reject
+                        </button>
                       </div>
                     )}
                   </div>

@@ -5,7 +5,17 @@ Handles saving and retrieving messages for campaigns and locations
 
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
-from database import get_db, ensure_character_portrait_url_column, ensure_messages_ai_message_kind_column
+from database import (
+    get_db,
+    ensure_character_portrait_url_column,
+    ensure_messages_ai_message_kind_column,
+    ensure_locations_player_access_columns,
+    ensure_users_player_profile_columns,
+)
+from services.location_access import (
+    closed_location_error_response,
+    user_can_bypass_closed_location,
+)
 from datetime import datetime
 from services.message_time_format import format_message_time
 import logging
@@ -30,6 +40,7 @@ def _message_dict_from_row(row) -> dict:
         'username': row['username'],
         'character_name': row['character_name'],
         'character_portrait_url': row['character_portrait_url'],
+        'player_avatar_url': row.get('player_avatar_url'),
         'ai_message_kind': row.get('ai_message_kind'),
     }
 
@@ -72,6 +83,8 @@ def get_messages(campaign_id, location_id):
         cursor = conn.cursor()
         ensure_character_portrait_url_column(cursor)
         ensure_messages_ai_message_kind_column(cursor)
+        ensure_locations_player_access_columns(cursor)
+        ensure_users_player_profile_columns(cursor)
         conn.commit()
 
         # Verify user has access to campaign
@@ -84,6 +97,26 @@ def get_messages(campaign_id, location_id):
         
         if not cursor.fetchone():
             return jsonify({'error': 'Unauthorized or campaign not found'}), 403
+
+        cursor.execute(
+            """
+            SELECT l.is_open, l.closure_reason, c.game_system
+            FROM locations l
+            JOIN campaigns c ON c.id = l.campaign_id
+            WHERE l.id = %s AND l.campaign_id = %s
+            """,
+            (location_id, campaign_id),
+        )
+        loc_row = cursor.fetchone()
+        if not loc_row:
+            return jsonify({'error': 'Location not found'}), 404
+        raw_open = loc_row.get("is_open")
+        is_open_loc = True if raw_open is None else bool(raw_open) if not isinstance(raw_open, (int, float)) else raw_open != 0
+        if not is_open_loc and not user_can_bypass_closed_location(cursor, user_id, campaign_id):
+            return closed_location_error_response(
+                loc_row.get("closure_reason"),
+                loc_row.get("game_system"),
+            )
 
         # Determine visibility permissions for hidden dice rolls.
         # Hidden dice markers/final messages are only visible to:
@@ -112,6 +145,7 @@ def get_messages(campaign_id, location_id):
                 m.role,
                 m.created_at,
                 u.username,
+                u.player_avatar_url as player_avatar_url,
                 c.name as character_name,
                 c.portrait_url as character_portrait_url,
                 m.ai_message_kind
@@ -170,6 +204,8 @@ def get_location_read_state(campaign_id, location_id):
         conn = get_db()
         cursor = conn.cursor()
         _ensure_location_reads_table(cursor)
+        ensure_locations_player_access_columns(cursor)
+        conn.commit()
 
         # Verify user has access to campaign
         cursor.execute("""
@@ -180,6 +216,26 @@ def get_location_read_state(campaign_id, location_id):
         """, (campaign_id, user_id, user_id))
         if not cursor.fetchone():
             return jsonify({'error': 'Unauthorized or campaign not found'}), 403
+
+        cursor.execute(
+            """
+            SELECT l.is_open, l.closure_reason, c.game_system
+            FROM locations l
+            JOIN campaigns c ON c.id = l.campaign_id
+            WHERE l.id = %s AND l.campaign_id = %s
+            """,
+            (location_id, campaign_id),
+        )
+        loc_row = cursor.fetchone()
+        if not loc_row:
+            return jsonify({'error': 'Location not found'}), 404
+        raw_open = loc_row.get("is_open")
+        is_open_loc = True if raw_open is None else bool(raw_open) if not isinstance(raw_open, (int, float)) else raw_open != 0
+        if not is_open_loc and not user_can_bypass_closed_location(cursor, user_id, campaign_id):
+            return closed_location_error_response(
+                loc_row.get("closure_reason"),
+                loc_row.get("game_system"),
+            )
 
         # Verify character belongs to this user and campaign
         cursor.execute("""
@@ -365,6 +421,8 @@ def save_message(campaign_id, location_id):
         cursor = conn.cursor()
         ensure_character_portrait_url_column(cursor)
         ensure_messages_ai_message_kind_column(cursor)
+        ensure_locations_player_access_columns(cursor)
+        ensure_users_player_profile_columns(cursor)
         conn.commit()
 
         # Check if user is currently banned
@@ -396,16 +454,29 @@ def save_message(campaign_id, location_id):
         if not cursor.fetchone():
             return jsonify({'error': 'Unauthorized or campaign not found'}), 403
         
-        # Verify location exists in this campaign AND get location type
-        cursor.execute("""
-            SELECT id, type FROM locations
-            WHERE id = %s AND campaign_id = %s
-        """, (location_id, campaign_id))
-        
+        # Verify location exists in this campaign AND get location type + access
+        cursor.execute(
+            """
+            SELECT l.id, l.type, l.is_open, l.closure_reason, c.game_system
+            FROM locations l
+            JOIN campaigns c ON c.id = l.campaign_id
+            WHERE l.id = %s AND l.campaign_id = %s
+            """,
+            (location_id, campaign_id),
+        )
+
         location_row = cursor.fetchone()
         if not location_row:
             return jsonify({'error': 'Location not found'}), 404
-        
+
+        raw_open = location_row.get("is_open")
+        is_open_loc = True if raw_open is None else bool(raw_open) if not isinstance(raw_open, (int, float)) else raw_open != 0
+        if not is_open_loc and not user_can_bypass_closed_location(cursor, user_id, campaign_id):
+            return closed_location_error_response(
+                location_row.get("closure_reason"),
+                location_row.get("game_system"),
+            )
+
         location_type = location_row['type']
         
         # CHECK FOR OOC VIOLATIONS (only for user messages, not AI)
@@ -445,7 +516,43 @@ def save_message(campaign_id, location_id):
 
         # Resolve / validate character for user-authored messages
         if role == 'user':
-            if character_id is not None:
+            cursor.execute(
+                "SELECT active_character_id FROM users WHERE id = %s",
+                (user_id,),
+            )
+            ac_row = cursor.fetchone() or {}
+            active_cid = ac_row.get("active_character_id")
+
+            if active_cid is not None:
+                cursor.execute(
+                    """
+                    SELECT id FROM characters
+                    WHERE id = %s AND user_id = %s AND campaign_id = %s
+                      AND (is_active IS NULL OR is_active = TRUE OR is_active = 1)
+                    """,
+                    (active_cid, user_id, campaign_id),
+                )
+                if not cursor.fetchone():
+                    return jsonify(
+                        {
+                            'error': (
+                                'Your active character is not in this campaign. '
+                                'Open Player Profile and select the character that '
+                                'belongs here.'
+                            )
+                        }
+                    ), 400
+                if character_id is not None and int(character_id) != int(active_cid):
+                    return jsonify(
+                        {
+                            'error': (
+                                'You can only post as your active character '
+                                '(set in Player Profile).'
+                            )
+                        }
+                    ), 400
+                character_id = active_cid
+            elif character_id is not None:
                 cursor.execute("""
                     SELECT id FROM characters
                     WHERE id = %s AND user_id = %s AND campaign_id = %s AND is_active = TRUE
@@ -521,6 +628,7 @@ def save_message(campaign_id, location_id):
                 m.role,
                 m.created_at,
                 u.username,
+                u.player_avatar_url as player_avatar_url,
                 c.name as character_name,
                 c.portrait_url as character_portrait_url,
                 m.ai_message_kind

@@ -5,6 +5,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.15] - 2026-03-28 - WoD character creation, Player Profile, and container-first dev 🎭
+
+### Added
+- **Active character (global)**: `users.active_character_id`, `player_avatar_url`; `GET`/`PUT /api/users/me` extensions; login/refresh return the new fields (`backend/routes/users.py`, `backend/routes/auth.py`).
+- **Campaign list filter**: `GET /api/campaigns/?for_active_character=1` scopes the dashboard to the active PC’s chronicle when set; if no active character is set, returns full membership so storytellers are not locked out (`backend/routes/campaigns.py`).
+- **WoD character wizard**: `frontend/src/components/CharacterCreationWizard.js` for Vampire / Werewolf / Mage campaigns; `characters.wod_meta`, `sheet_locked`, `is_active`; downtime table `character_downtime_requests` (`backend/database.py`, `backend/routes/characters.py`).
+- **Player flows**: Character selection page, Player Profile (portraits, swap PC, downtime submit), dashboard header actions (`frontend/src/SimpleApp.js`).
+- **Chat**: `player_avatar_url` on messages; OOC rooms use player avatar, IC uses character portrait; posting enforces active character when configured (`backend/routes/messages.py`).
+- **Admin**: Downtime queue `GET`/`PATCH /api/admin/downtime-requests` and Admin UI section (`backend/routes/admin.py`, `frontend/src/pages/AdminPage.js`, `frontend/src/utils/api.js`).
+- **Docs**: `docs/character-creation-world-of-darkness.md` (oWoD reference and app field mapping).
+
+### Changed
+- **Contributing**: Development setup documents **installs inside Docker** (`pip`/`npm` via `docker compose exec`); host venv/npm marked optional (`docs/CONTRIBUTING.md`).
+- **`.gitignore`**: `.cursor/*` with exception for `.cursor/skills/**` (project agent skills).
+
+### Notes
+- **Future work**: Storyteller-only “move character between campaigns” with lock/reason on the old chronicle is **not** in this release; current model remains one character row per campaign unless extended.
+
 ## [0.7.14] - 2026-03-25 - Dice overlay, hidden rolls and chat sync
 
 ### Added

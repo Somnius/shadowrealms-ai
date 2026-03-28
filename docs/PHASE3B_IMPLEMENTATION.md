@@ -1,15 +1,26 @@
 # Phase 3B: Advanced Campaign & Character Systems
 
-**Version:** 0.7.14  
-**Status:** 🚧 IN PROGRESS  
+**Version:** 0.7.15  
+**Status:** 🚧 IN PROGRESS — **playable core shipped**; WebSockets / full wizard / notification matrix **not** done  
 **Start Date:** 2025-10-24  
 **Target Completion:** TBD
 
 ---
 
+## Delivery snapshot (vs this document)
+
+This file is the **full product spec** (“north star”). As of **v0.7.15**, the following are **in production**:
+
+- PostgreSQL-backed **campaigns**, **locations** (CRUD, enter/leave, suggest/batch), **characters** (CRUD, selection), **messages** per location (polling), **read state**, **dice** (API + UI + `/ai` tools), **AI chat** + **OOC moderation**, **admin** tooling.
+- **Not in repo:** WebSocket server, typing indicators, unified notification component, multi-step character wizard as described below—treat those sections as **planned**.
+
+See **`docs/PLANNING.md`** ([Next priorities](PLANNING.md#next-priorities)) for the current backlog order.
+
+---
+
 ## Overview
 
-Phase 3B focuses on implementing the core gameplay systems that transform ShadowRealms AI from a simple dashboard into a fully functional tabletop RPG platform. This phase introduces locations, comprehensive character management, real-time chat with WebSocket, and AI-assisted content creation.
+Phase 3B focuses on the core gameplay systems that turn ShadowRealms AI into a full tabletop platform: **locations**, **character management**, **chat** (target: WebSocket; **today:** REST + polling), and **AI-assisted** creation. The narrative below mixes **delivered** behavior with **future** behavior—use the snapshot above when deciding what to build next.
 
 ---
 
