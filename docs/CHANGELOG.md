@@ -18,7 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - **Contributing**: Development setup documents **installs inside Docker** (`pip`/`npm` via `docker compose exec`); host venv/npm marked optional (`docs/CONTRIBUTING.md`).
-- **`.gitignore`**: `.cursor/*` with exception for `.cursor/skills/**` (project agent skills).
+- **`.gitignore`**: entire **`.cursor/`** directory ignored (local Cursor config is not part of the repository).
 
 ### Notes
 - **Future work**: Storyteller-only “move character between campaigns” with lock/reason on the old chronicle is **not** in this release; current model remains one character row per campaign unless extended.
