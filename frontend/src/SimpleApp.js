@@ -10,6 +10,7 @@ import { useToast } from './components/ToastNotification';
 import { formatMessageTime } from './utils/messageTime';
 import { formatDateTimeTooltip, formatDateTimeInZone } from './utils/userTimeFormat';
 import { getTimezoneSelectOptions } from './utils/timezones';
+import { api } from './utils/api';
 import './responsive.css';
 
 const API_URL = '/api'; // Use relative URL through nginx proxy
@@ -90,6 +91,66 @@ function MessageCharacterAvatar({ url, size = 40 }) {
       <ellipse cx="20" cy="30" rx="12" ry="8" fill="#64748b" />
     </svg>
   );
+}
+
+/** Fixed chat bubble palette: AI Storyteller vs in-character vs neutral (e.g. admin without a mask). */
+const CHAT_BUBBLE_AI = {
+  bg: 'rgba(157, 78, 221, 0.12)',
+  border: '#9d4edd',
+  nameColor: '#c4b5fd',
+  icon: 'fa-robot',
+  italic: true,
+};
+
+const CHAT_BUBBLE_PLAYER = {
+  bg: 'rgba(20, 184, 166, 0.1)',
+  border: '#14b8a6',
+  nameColor: '#5eead4',
+  icon: 'fa-user',
+  italic: false,
+};
+
+const CHAT_BUBBLE_NEUTRAL = {
+  bg: 'rgba(71, 85, 105, 0.14)',
+  border: '#64748b',
+  nameColor: '#cbd5e1',
+  icon: 'fa-user',
+  italic: false,
+};
+
+function getChatMessagePresentation(msg) {
+  const isAI = msg.role === 'assistant';
+  if (isAI) {
+    return {
+      ...CHAT_BUBBLE_AI,
+      label: 'AI Storyteller',
+      subLabel: null,
+    };
+  }
+  const uname = (msg.username || '').trim() || 'Player';
+  const charName = (msg.character_name || '').trim();
+  const hasCharacter =
+    !!charName ||
+    (msg.character_id != null && msg.character_id !== '' && Number(msg.character_id) > 0);
+  const posterRole = String(msg.poster_role || '').toLowerCase();
+
+  if (hasCharacter) {
+    const display = charName || 'Character';
+    return {
+      ...CHAT_BUBBLE_PLAYER,
+      label: `${display} – ${uname}`,
+      subLabel: null,
+    };
+  }
+
+  const isAdminPoster = posterRole === 'admin';
+  return {
+    ...CHAT_BUBBLE_NEUTRAL,
+    icon: isAdminPoster ? 'fa-user-shield' : CHAT_BUBBLE_NEUTRAL.icon,
+    nameColor: isAdminPoster ? '#94a3b8' : CHAT_BUBBLE_NEUTRAL.nameColor,
+    label: uname,
+    subLabel: isAdminPoster ? 'Site admin' : null,
+  };
 }
 
 function SimpleApp() {
@@ -186,6 +247,7 @@ function SimpleApp() {
   const [diceHistoryLoading, setDiceHistoryLoading] = useState(false);
   const [diceHistoryRows, setDiceHistoryRows] = useState([]);
   const [diceHistoryError, setDiceHistoryError] = useState(null);
+  const [discoverCampaignsList, setDiscoverCampaignsList] = useState([]);
 
   // Dice animation overlay (Baldur's Gate-ish feel).
   // We drive it via special marker/final messages stored in `messages.ai_message_kind`.
@@ -616,7 +678,13 @@ function SimpleApp() {
       });
       const errBody = await r.json().catch(() => ({}));
       if (!r.ok) {
-        showError(errBody.error || 'Could not set active character');
+        if (r.status === 403 && errBody.error_code === 'character_suspended') {
+          showError(
+            [errBody.message, errBody.contact_hint].filter(Boolean).join('\n\n')
+          );
+        } else {
+          showError(errBody.error || 'Could not set active character');
+        }
         return;
       }
       setUser(errBody);
@@ -651,11 +719,88 @@ function SimpleApp() {
     }
   };
 
+  const handleJoinDiscoverCampaign = async (campaignId) => {
+    try {
+      const r = await api.joinCampaign(token, campaignId);
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok) {
+        showError(d.error || 'Could not join this chronicle');
+        return;
+      }
+      showSuccess('You have joined this chronicle.');
+      fetchCampaigns(undefined, { forActiveCharacter: true });
+      const r2 = await api.discoverCampaigns(token);
+      if (r2.ok) {
+        const d2 = await r2.json();
+        setDiscoverCampaignsList(Array.isArray(d2) ? d2 : []);
+      }
+    } catch (e) {
+      showError('Connection error');
+    }
+  };
+
+  const handleSaveEnrollmentSettings = async (e) => {
+    e.preventDefault();
+    if (!selectedCampaign?.id) return;
+    const fd = new FormData(e.target);
+    const listing = (fd.get('listing_visibility') || 'private').toString();
+    const accepting = fd.get('accepting_players') === 'on';
+    const maxRaw = fd.get('max_players');
+    let maxPlayers = selectedCampaign.max_players;
+    if (maxRaw !== '' && maxRaw != null) {
+      const n = parseInt(maxRaw, 10);
+      if (Number.isFinite(n) && n >= 0) maxPlayers = n;
+    }
+    try {
+      setLoading(true);
+      const r = await api.updateCampaign(token, selectedCampaign.id, {
+        listing_visibility: listing,
+        accepting_players: accepting,
+        max_players: maxPlayers,
+      });
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok) {
+        showError(d.error || 'Save failed');
+        return;
+      }
+      const r2 = await fetch(`${API_URL}/campaigns/${selectedCampaign.id}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (r2.ok) {
+        const upd = await r2.json();
+        setSelectedCampaign((prev) => ({ ...prev, ...upd }));
+      }
+      showSuccess('Enrollment settings saved');
+    } catch (err) {
+      showError('Save failed');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Load campaigns when dashboard is shown
   useEffect(() => {
     if (currentPage === 'dashboard' && token) {
       fetchCampaigns(undefined, { forActiveCharacter: true });
     }
+  }, [currentPage, token]);
+
+  useEffect(() => {
+    if (currentPage !== 'dashboard' || !token) return undefined;
+    let cancelled = false;
+    (async () => {
+      try {
+        const r = await api.discoverCampaigns(token);
+        if (!r.ok || cancelled) return;
+        const d = await r.json();
+        if (!cancelled) setDiscoverCampaignsList(Array.isArray(d) ? d : []);
+      } catch (_) {
+        if (!cancelled) setDiscoverCampaignsList([]);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, [currentPage, token]);
 
   // WoD character wizard: need every chronicle the user can join (membership / ownership)
@@ -1060,6 +1205,16 @@ function SimpleApp() {
         const detailRes = await fetch(`${API_URL}/campaigns/${campaign.id}`, {
           headers: { 'Authorization': `Bearer ${token}` },
         });
+        if (detailRes.status === 403) {
+          const errBody = await detailRes.json().catch(() => ({}));
+          if (errBody.error_code === 'character_suspended') {
+            showError(
+              [errBody.message, errBody.contact_hint].filter(Boolean).join('\n\n')
+            );
+            setPageOverlay({ visible: false, label: '' });
+            return;
+          }
+        }
         if (detailRes.ok) {
           const detail = await detailRes.json();
           campaignWithCreator = { ...campaign, ...detail };
@@ -1188,6 +1343,7 @@ function SimpleApp() {
       created_at: new Date().toISOString(),
       location_id: currentLocation.id,
       username: user.username,
+      poster_role: user?.role || '',
       character_id: character?.id,
       character_name: character?.name,
       character_portrait_url: character?.portrait_url || null,
@@ -1945,6 +2101,134 @@ function SimpleApp() {
     };
   };
 
+  const appHeaderButton = (variant) => {
+    const base = {
+      padding: '8px 16px',
+      borderRadius: '5px',
+      cursor: 'pointer',
+      fontWeight: 'bold',
+      border: '2px solid',
+      fontSize: '14px',
+    };
+    if (variant === 'violet') {
+      return {
+        ...base,
+        background: 'rgba(157, 78, 221, 0.15)',
+        color: '#c4b5fd',
+        borderColor: '#7c3aed',
+      };
+    }
+    if (variant === 'rose') {
+      return {
+        ...base,
+        background: 'rgba(233, 69, 96, 0.12)',
+        color: '#fda4af',
+        borderColor: '#e94560',
+        fontFamily: 'Cinzel, serif',
+      };
+    }
+    if (variant === 'muted') {
+      return {
+        ...base,
+        background: 'rgba(15, 23, 41, 0.9)',
+        color: '#94a3b8',
+        borderColor: '#475569',
+        fontSize: '13px',
+      };
+    }
+    if (variant === 'admin') {
+      return {
+        ...base,
+        background: 'rgba(233, 69, 96, 0.3)',
+        color: '#e94560',
+        borderColor: '#e94560',
+      };
+    }
+    return {
+      ...base,
+      background: 'rgba(233, 69, 96, 0.2)',
+      color: '#e94560',
+      borderColor: '#e94560',
+    };
+  };
+
+  /** Shared top bar after login: Chronicle hall (logo), account nav, logout — same on every sub-page. */
+  const renderAppPageHeader = ({ title }) => (
+      <div
+        style={{
+          background: 'linear-gradient(135deg, #16213e 0%, #0f1729 100%)',
+          padding: isMobile ? '15px' : '20px',
+          boxShadow: '0 2px 10px rgba(0,0,0,0.5)',
+          display: 'flex',
+          flexDirection: isMobile ? 'column' : 'row',
+          justifyContent: 'space-between',
+          alignItems: isMobile ? 'stretch' : 'center',
+          gap: isMobile ? '15px' : '0',
+          borderBottom: '2px solid #2a2a4e',
+        }}
+      >
+        <button
+          type="button"
+          onClick={() => navigateTo('dashboard')}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '15px',
+            background: 'none',
+            border: 'none',
+            padding: 0,
+            cursor: 'pointer',
+            textAlign: isMobile ? 'center' : 'left',
+            justifyContent: isMobile ? 'center' : 'flex-start',
+            width: isMobile ? '100%' : 'auto',
+          }}
+          aria-label="Chronicle hall (dashboard)"
+        >
+          <img src="/logo-header.png" alt="" style={{ width: isMobile ? '40px' : '50px', height: 'auto' }} />
+          <h1
+            style={{
+              color: '#e94560',
+              margin: 0,
+              fontSize: isMobile ? '20px' : '24px',
+              fontFamily: 'Cinzel, serif',
+            }}
+          >
+            {title}
+          </h1>
+        </button>
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: isMobile ? '10px' : '15px',
+            justifyContent: isMobile ? 'center' : 'flex-end',
+            flexWrap: 'wrap',
+          }}
+        >
+          <span style={{ color: '#b5b5c3', fontWeight: '500', fontSize: isMobile ? '14px' : '16px' }}>
+            👤 {user?.username}
+          </span>
+          <button type="button" onClick={() => navigateTo('profile')} style={appHeaderButton('violet')}>
+            Profile
+          </button>
+          <button type="button" onClick={() => navigateTo('playerProfile')} style={appHeaderButton('rose')}>
+            Player Profile
+          </button>
+          <button type="button" onClick={() => navigateTo('selectCharacter')} style={appHeaderButton('muted')}>
+            Switch character
+          </button>
+          {user?.role === 'admin' && (
+            <button type="button" onClick={() => navigateTo('admin')} style={appHeaderButton('admin')}>
+              👑 Admin Panel
+            </button>
+          )}
+          <button type="button" onClick={handleLogout} style={appHeaderButton('logout')}>
+            🚪 Logout
+          </button>
+        </div>
+      </div>
+  );
+
   // ========== RENDER FUNCTIONS ==========
 
   // Render login page
@@ -2290,34 +2574,7 @@ function SimpleApp() {
       display: 'flex',
       flexDirection: 'column',
     }}>
-      <div style={{
-        background: 'linear-gradient(135deg, #16213e 0%, #0f1729 100%)',
-        padding: isMobile ? '15px' : '20px',
-        boxShadow: '0 2px 10px rgba(0,0,0,0.5)',
-        display: 'flex',
-        flexDirection: isMobile ? 'column' : 'row',
-        justifyContent: 'space-between',
-        alignItems: isMobile ? 'stretch' : 'center',
-        gap: isMobile ? '12px' : '0',
-        borderBottom: '2px solid #2a2a4e',
-      }}>
-        <h1 style={{ color: '#e94560', margin: 0, fontSize: isMobile ? '20px' : '24px' }}>Profile</h1>
-        <button
-          type="button"
-          onClick={() => navigateTo('dashboard')}
-          style={{
-            padding: '8px 16px',
-            background: 'rgba(233, 69, 96, 0.2)',
-            color: '#e94560',
-            border: '2px solid #e94560',
-            borderRadius: '5px',
-            cursor: 'pointer',
-            fontWeight: 'bold',
-          }}
-        >
-          Back to dashboard
-        </button>
-      </div>
+      {renderAppPageHeader({ title: 'Profile' })}
       <div style={{ flex: 1, maxWidth: '560px', margin: '0 auto', padding: isMobile ? '20px 15px' : '40px 20px', width: '100%', boxSizing: 'border-box' }}>
         <div style={{
           background: '#16213e',
@@ -2385,55 +2642,7 @@ function SimpleApp() {
 
   const renderSelectCharacter = () => (
     <div style={{ minHeight: '100vh', background: '#0f0f1e', display: 'flex', flexDirection: 'column' }}>
-      <div
-        style={{
-          background: 'linear-gradient(135deg, #16213e 0%, #0f1729 100%)',
-          padding: isMobile ? '15px' : '20px',
-          boxShadow: '0 2px 10px rgba(0,0,0,0.5)',
-          borderBottom: '2px solid #2a2a4e',
-          display: 'flex',
-          flexWrap: 'wrap',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          gap: '12px',
-        }}
-      >
-        <h1 style={{ color: '#e94560', margin: 0, fontFamily: 'Cinzel, serif', fontSize: isMobile ? '20px' : '24px' }}>
-          Choose your mask
-        </h1>
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
-          <button
-            type="button"
-            onClick={() => navigateTo('dashboard')}
-            style={{
-              padding: '8px 16px',
-              background: 'rgba(157, 78, 221, 0.15)',
-              color: '#c4b5fd',
-              border: '2px solid #7c3aed',
-              borderRadius: '5px',
-              cursor: 'pointer',
-              fontWeight: 'bold',
-            }}
-          >
-            Chronicle hall
-          </button>
-          <button
-            type="button"
-            onClick={() => navigateTo('profile')}
-            style={{
-              padding: '8px 16px',
-              background: 'rgba(233, 69, 96, 0.2)',
-              color: '#e94560',
-              border: '2px solid #e94560',
-              borderRadius: '5px',
-              cursor: 'pointer',
-              fontWeight: 'bold',
-            }}
-          >
-            Account
-          </button>
-        </div>
-      </div>
+      {renderAppPageHeader({ title: 'Choose your mask' })}
       <div style={{ flex: 1, maxWidth: '900px', margin: '0 auto', padding: '24px 16px 48px', width: '100%', boxSizing: 'border-box' }}>
         <GothicBox theme="vampire" style={{ padding: '20px', marginBottom: '24px' }}>
           <p style={{ color: '#b5b5c3', marginTop: 0, lineHeight: 1.6 }}>
@@ -2479,22 +2688,36 @@ function SimpleApp() {
                     <div style={{ color: '#8b8b9f', fontSize: '13px' }}>{ch.campaign_name}</div>
                   </div>
                 </div>
+                {ch.play_suspended && (
+                  <p style={{ color: '#f87171', fontSize: '13px', marginBottom: '10px', lineHeight: 1.5 }}>
+                    <strong>Unavailable for play</strong>
+                    {ch.play_suspension_reason_code
+                      ? ` (${String(ch.play_suspension_reason_code).replace(/_/g, ' ')})`
+                      : ''}
+                    {ch.play_suspension_message ? ` — ${ch.play_suspension_message}` : ''}
+                    <br />
+                    <span style={{ color: '#94a3b8' }}>
+                      Contact your Storyteller or a site administrator.
+                    </span>
+                  </p>
+                )}
                 <button
                   type="button"
+                  disabled={!!ch.play_suspended}
                   onClick={() => applyActiveCharacter(ch.id)}
                   style={{
                     width: '100%',
                     padding: '10px',
-                    background: '#9d4edd',
+                    background: ch.play_suspended ? '#475569' : '#9d4edd',
                     color: 'white',
                     border: 'none',
                     borderRadius: '8px',
-                    cursor: 'pointer',
+                    cursor: ch.play_suspended ? 'not-allowed' : 'pointer',
                     fontWeight: 'bold',
                     fontFamily: 'Cinzel, serif',
                   }}
                 >
-                  Play as {ch.name}
+                  {ch.play_suspended ? 'Unavailable' : `Play as ${ch.name}`}
                 </button>
               </GothicBox>
             ))}
@@ -2527,38 +2750,9 @@ function SimpleApp() {
     const activeChar = playerCharacters.find((c) => c.id === activeId) || user?.active_character;
     return (
       <div style={{ minHeight: '100vh', background: '#0f0f1e', display: 'flex', flexDirection: 'column' }}>
-        <div
-          style={{
-            background: 'linear-gradient(135deg, #16213e 0%, #0f1729 100%)',
-            padding: isMobile ? '15px' : '20px',
-            boxShadow: '0 2px 10px rgba(0,0,0,0.5)',
-            borderBottom: '2px solid #2a2a4e',
-            display: 'flex',
-            flexWrap: 'wrap',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            gap: '12px',
-          }}
-        >
-          <h1 style={{ color: '#e94560', margin: 0, fontFamily: 'Cinzel, serif', fontSize: isMobile ? '20px' : '24px' }}>
-            Player Profile
-          </h1>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
-            <button
-              type="button"
-              onClick={() => navigateTo('dashboard')}
-              style={{
-                padding: '8px 16px',
-                background: 'rgba(233, 69, 96, 0.2)',
-                color: '#e94560',
-                border: '2px solid #e94560',
-                borderRadius: '5px',
-                cursor: 'pointer',
-                fontWeight: 'bold',
-              }}
-            >
-              Chronicle hall
-            </button>
+        {renderAppPageHeader({ title: 'Player Profile' })}
+        <div style={{ flex: 1, maxWidth: '800px', margin: '0 auto', padding: '24px 16px 48px', width: '100%', boxSizing: 'border-box' }}>
+          <div style={{ marginBottom: '20px', display: 'flex', justifyContent: 'flex-end' }}>
             <button
               type="button"
               onClick={() => navigateTo('characterCreate')}
@@ -2570,13 +2764,12 @@ function SimpleApp() {
                 borderRadius: '5px',
                 cursor: 'pointer',
                 fontWeight: 'bold',
+                fontFamily: 'Cinzel, serif',
               }}
             >
               New character
             </button>
           </div>
-        </div>
-        <div style={{ flex: 1, maxWidth: '800px', margin: '0 auto', padding: '24px 16px 48px', width: '100%', boxSizing: 'border-box' }}>
           <GothicBox theme="vampire" style={{ padding: '20px', marginBottom: '20px' }}>
             <h3 style={{ marginTop: 0, color: '#e94560', fontFamily: 'Cinzel, serif' }}>Active character</h3>
             {activeChar ? (
@@ -2823,35 +3016,7 @@ function SimpleApp() {
 
   const renderCharacterCreate = () => (
     <div style={{ minHeight: '100vh', background: '#0f0f1e', display: 'flex', flexDirection: 'column' }}>
-      <div
-        style={{
-          background: 'linear-gradient(135deg, #16213e 0%, #0f1729 100%)',
-          padding: isMobile ? '15px' : '20px',
-          borderBottom: '2px solid #2a2a4e',
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-        }}
-      >
-        <h1 style={{ color: '#e94560', margin: 0, fontFamily: 'Cinzel, serif', fontSize: '20px' }}>
-          Character creation
-        </h1>
-        <button
-          type="button"
-          onClick={() => navigateTo('playerProfile')}
-          style={{
-            padding: '8px 16px',
-            background: 'rgba(233, 69, 96, 0.2)',
-            color: '#e94560',
-            border: '2px solid #e94560',
-            borderRadius: '5px',
-            cursor: 'pointer',
-            fontWeight: 'bold',
-          }}
-        >
-          Back
-        </button>
-      </div>
+      {renderAppPageHeader({ title: 'Character creation' })}
       <CharacterCreationWizard
         token={token}
         campaigns={wizardCampaigns}
@@ -2877,107 +3042,7 @@ function SimpleApp() {
       display: 'flex',
       flexDirection: 'column'
     }}>
-      {/* Header */}
-      <div style={{
-        background: 'linear-gradient(135deg, #16213e 0%, #0f1729 100%)',
-        padding: isMobile ? '15px' : '20px',
-        boxShadow: '0 2px 10px rgba(0,0,0,0.5)',
-        display: 'flex',
-        flexDirection: isMobile ? 'column' : 'row',
-        justifyContent: 'space-between',
-        alignItems: isMobile ? 'stretch' : 'center',
-        gap: isMobile ? '15px' : '0',
-        borderBottom: '2px solid #2a2a4e'
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '15px', justifyContent: isMobile ? 'center' : 'flex-start' }}>
-          <img 
-            src="/logo-header.png" 
-            alt="ShadowRealms AI" 
-            style={{ width: isMobile ? '40px' : '50px', height: 'auto' }}
-          />
-          <h1 style={{ color: '#e94560', margin: 0, fontSize: isMobile ? '20px' : '24px' }}>ShadowRealms AI</h1>
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '10px' : '15px', justifyContent: isMobile ? 'center' : 'flex-end', flexWrap: 'wrap' }}>
-          <span style={{ color: '#b5b5c3', fontWeight: '500', fontSize: isMobile ? '14px' : '16px' }}>👤 {user?.username}</span>
-          <button
-            type="button"
-            onClick={() => navigateTo('profile')}
-            style={{
-              padding: '8px 16px',
-              background: 'rgba(157, 78, 221, 0.15)',
-              color: '#c4b5fd',
-              border: '2px solid #7c3aed',
-              borderRadius: '5px',
-              cursor: 'pointer',
-              fontWeight: 'bold',
-            }}
-          >
-            Profile
-          </button>
-          <button
-            type="button"
-            onClick={() => navigateTo('playerProfile')}
-            style={{
-              padding: '8px 16px',
-              background: 'rgba(233, 69, 96, 0.12)',
-              color: '#fda4af',
-              border: '2px solid #e94560',
-              borderRadius: '5px',
-              cursor: 'pointer',
-              fontWeight: 'bold',
-              fontFamily: 'Cinzel, serif',
-            }}
-          >
-            Player Profile
-          </button>
-          <button
-            type="button"
-            onClick={() => navigateTo('selectCharacter')}
-            style={{
-              padding: '8px 16px',
-              background: 'rgba(15, 23, 41, 0.9)',
-              color: '#94a3b8',
-              border: '2px solid #475569',
-              borderRadius: '5px',
-              cursor: 'pointer',
-              fontWeight: 'bold',
-              fontSize: '13px',
-            }}
-          >
-            Switch character
-          </button>
-          {user?.role === 'admin' && (
-            <button
-              onClick={() => navigateTo('admin')}
-              style={{
-                padding: '8px 16px',
-                background: 'rgba(233, 69, 96, 0.3)',
-                color: '#e94560',
-                border: '2px solid #e94560',
-                borderRadius: '5px',
-                cursor: 'pointer',
-                fontWeight: 'bold'
-              }}
-            >
-              👑 Admin Panel
-            </button>
-          )}
-          <button
-            onClick={handleLogout}
-            style={{
-              padding: '8px 16px',
-              background: 'rgba(233, 69, 96, 0.2)',
-              color: '#e94560',
-              border: '2px solid #e94560',
-              borderRadius: '5px',
-              cursor: 'pointer',
-              fontWeight: 'bold'
-            }}
-          >
-            🚪 Logout
-          </button>
-        </div>
-      </div>
+      {renderAppPageHeader({ title: 'ShadowRealms AI' })}
 
       {/* Main content - takes up available space */}
       <div style={{ flex: 1 }}>
@@ -3018,6 +3083,67 @@ function SimpleApp() {
             ✚ New Campaign
           </button>
         </div>
+
+        {discoverCampaignsList.length > 0 && (
+          <div style={{
+            marginBottom: '28px',
+            padding: '20px',
+            background: '#16213e',
+            borderRadius: '10px',
+            border: '1px solid #2a2a4e',
+          }}
+          >
+            <h3 style={{ color: '#e94560', marginTop: 0, marginBottom: '12px', fontFamily: 'Cinzel, serif' }}>
+              Open chronicles you can join
+            </h3>
+            <p style={{ color: '#94a3b8', fontSize: '14px', marginBottom: '16px' }}>
+              These games are listed by their Storyteller and accept new players. Joining adds you to the chronicle so you can create a character for that setting.
+            </p>
+            <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
+              {discoverCampaignsList.map((dc) => (
+                <li
+                  key={dc.id}
+                  style={{
+                    display: 'flex',
+                    flexWrap: 'wrap',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    gap: '12px',
+                    padding: '12px 0',
+                    borderBottom: '1px solid #2a2a4e',
+                  }}
+                >
+                  <div>
+                    <strong style={{ color: '#e0e0e8' }}>{dc.name}</strong>
+                    <span style={{ color: '#64748b', marginLeft: '10px', fontSize: '13px' }}>
+                      {dc.game_system}
+                    </span>
+                    {dc.max_players != null && (
+                      <span style={{ color: '#64748b', marginLeft: '8px', fontSize: '12px' }}>
+                        · max {dc.max_players} players
+                      </span>
+                    )}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleJoinDiscoverCampaign(dc.id)}
+                    style={{
+                      padding: '8px 16px',
+                      background: '#0ea5e9',
+                      color: '#fff',
+                      border: 'none',
+                      borderRadius: '6px',
+                      cursor: 'pointer',
+                      fontWeight: '600',
+                    }}
+                  >
+                    Join
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
 
         {campaigns.length === 0 ? (
           <div style={{
@@ -3184,24 +3310,10 @@ function SimpleApp() {
 
   // Render campaign details/settings page
   const renderCampaignDetails = () => (
-    <div style={{ minHeight: '100vh', background: '#0f0f1e', padding: '20px' }}>
+    <div style={{ minHeight: '100vh', background: '#0f0f1e', display: 'flex', flexDirection: 'column' }}>
+      {renderAppPageHeader({ title: 'Campaign settings' })}
+      <div style={{ flex: 1, padding: '20px' }}>
       <div style={{ maxWidth: '900px', margin: '0 auto' }}>
-        <button
-          onClick={() => navigateTo('dashboard')}
-          style={{
-            marginBottom: '20px',
-            padding: '10px 20px',
-            background: '#16213e',
-            border: '2px solid #e94560',
-            color: '#e94560',
-            borderRadius: '5px',
-            cursor: 'pointer',
-            fontWeight: 'bold'
-          }}
-        >
-          ← Back to Dashboard
-        </button>
-
         <div style={{
           background: '#16213e',
           padding: '40px',
@@ -3441,6 +3553,96 @@ function SimpleApp() {
             )}
           </div>
 
+          {(String(user?.id) === String(selectedCampaign?.created_by) ||
+            user?.role === 'admin') && (
+            <div style={{
+              marginBottom: '30px',
+              padding: '20px',
+              background: 'rgba(14, 165, 233, 0.08)',
+              border: '1px solid #0ea5e9',
+              borderRadius: '8px',
+            }}
+            >
+              <h3 style={{ color: '#e94560', fontSize: '18px', marginBottom: '12px', fontFamily: 'Cinzel, serif' }}>
+                Open enrollment
+              </h3>
+              <p style={{ color: '#94a3b8', fontSize: '14px', marginBottom: '16px' }}>
+                List this chronicle on the dashboard so players can self-join (subject to max players). You can still add people via the site admin if needed.
+              </p>
+              <form
+                key={`enroll-${selectedCampaign?.id}`}
+                onSubmit={handleSaveEnrollmentSettings}
+                style={{ display: 'flex', flexDirection: 'column', gap: '12px', maxWidth: '420px' }}
+              >
+                <label style={{ color: '#b5b5c3', fontSize: '14px' }}>
+                  Visibility
+                  <select
+                    name="listing_visibility"
+                    defaultValue={selectedCampaign?.listing_visibility || 'private'}
+                    style={{
+                      display: 'block',
+                      width: '100%',
+                      marginTop: '6px',
+                      padding: '10px',
+                      background: '#0f1729',
+                      border: '1px solid #2a2a4e',
+                      borderRadius: '6px',
+                      color: '#fff',
+                    }}
+                  >
+                    <option value="private">Private (invite / admin only)</option>
+                    <option value="listed">Listed on &quot;Open chronicles&quot;</option>
+                  </select>
+                </label>
+                <label style={{ color: '#b5b5c3', fontSize: '14px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <input
+                    type="checkbox"
+                    name="accepting_players"
+                    defaultChecked={!!selectedCampaign?.accepting_players}
+                  />
+                  Accepting new players (self-serve join)
+                </label>
+                <label style={{ color: '#b5b5c3', fontSize: '14px' }}>
+                  Max players (0 = no limit enforced here)
+                  <input
+                    type="number"
+                    name="max_players"
+                    min={0}
+                    defaultValue={
+                      selectedCampaign?.max_players != null ? selectedCampaign.max_players : 6
+                    }
+                    style={{
+                      display: 'block',
+                      width: '100%',
+                      marginTop: '6px',
+                      padding: '10px',
+                      background: '#0f1729',
+                      border: '1px solid #2a2a4e',
+                      borderRadius: '6px',
+                      color: '#fff',
+                    }}
+                  />
+                </label>
+                <button
+                  type="submit"
+                  disabled={loading}
+                  style={{
+                    padding: '10px 18px',
+                    background: loading ? '#475569' : '#0ea5e9',
+                    color: '#fff',
+                    border: 'none',
+                    borderRadius: '6px',
+                    cursor: loading ? 'not-allowed' : 'pointer',
+                    fontWeight: '600',
+                    alignSelf: 'flex-start',
+                  }}
+                >
+                  Save enrollment
+                </button>
+              </form>
+            </div>
+          )}
+
           {/* Admin Actions */}
           <div style={{ marginBottom: '30px' }}>
             <h3 style={{ color: '#e94560', fontSize: '18px', marginBottom: '15px' }}>
@@ -3620,29 +3822,17 @@ function SimpleApp() {
           </div>
         </div>
       </div>
+      </div>
+      <Footer />
     </div>
   );
 
   // Render create campaign page
   const renderCreateCampaign = () => (
-    <div style={{ minHeight: '100vh', background: '#0f0f1e', padding: '20px' }}>
+    <div style={{ minHeight: '100vh', background: '#0f0f1e', display: 'flex', flexDirection: 'column' }}>
+      {renderAppPageHeader({ title: 'Create campaign' })}
+      <div style={{ flex: 1, padding: '20px' }}>
       <div style={{ maxWidth: '700px', margin: '0 auto' }}>
-        <button
-          onClick={() => navigateTo('dashboard')}
-          style={{
-            marginBottom: '20px',
-            padding: '10px 20px',
-            background: '#16213e',
-            border: '2px solid #e94560',
-            color: '#e94560',
-            borderRadius: '5px',
-            cursor: 'pointer',
-            fontWeight: 'bold'
-          }}
-        >
-          ← Back to Dashboard
-        </button>
-
         <div style={{
           background: '#16213e',
           padding: '40px',
@@ -3777,6 +3967,8 @@ function SimpleApp() {
           )}
         </div>
       </div>
+      </div>
+      <Footer />
     </div>
   );
 
@@ -4445,29 +4637,9 @@ function SimpleApp() {
                 }
               }
 
+              const line = getChatMessagePresentation(msg);
               const isAI = msg.role === 'assistant';
-              const line = isAI
-                ? {
-                    bg: 'rgba(157, 78, 221, 0.1)',
-                    border: '#9d4edd',
-                    nameColor: '#9d4edd',
-                    icon: 'fa-robot',
-                    italic: true,
-                    label: 'AI Storyteller'
-                  }
-                : {
-                    bg: 'rgba(139, 139, 159, 0.05)',
-                    border: '#8b8b9f',
-                    nameColor: '#b5b5c3',
-                    icon: 'fa-user',
-                    italic: false,
-                    label: msg.character_name
-                      ? `${msg.character_name}`
-                      : (msg.username || user?.username || 'Player')
-                  };
-              const subLabel = !isAI && msg.character_name && msg.username
-                ? `@${msg.username}`
-                : null;
+              const subLabel = line.subLabel;
 
               return (
               <div key={msg.id || idx} style={{ marginBottom: '15px' }}>
@@ -6044,12 +6216,12 @@ function SimpleApp() {
       )}
 
       {token && currentPage === 'admin' && (
-        <AdminPage 
-          token={token} 
-          user={user} 
-          displayTimezone={user?.display_timezone || null}
-          onBack={() => setCurrentPage('dashboard')} 
-        />
+        <div style={{ minHeight: '100vh', background: '#0f0f1e', display: 'flex', flexDirection: 'column' }}>
+          {renderAppPageHeader({ title: 'Admin panel' })}
+          <div style={{ flex: 1, minHeight: 0, overflow: 'auto' }}>
+            <AdminPage token={token} user={user} displayTimezone={user?.display_timezone || null} />
+          </div>
+        </div>
       )}
 
       {closedRoomModal && (

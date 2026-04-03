@@ -12,7 +12,13 @@ from flask import Blueprint, request, jsonify, current_app
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from services.rag_service import create_rag_service
 from services.embedding_service import create_embedding_service
-from database import get_db, ensure_users_player_profile_columns
+from database import (
+    get_db,
+    ensure_users_player_profile_columns,
+    ensure_characters_play_suspension_columns,
+    ensure_campaigns_listing_columns,
+)
+from services.play_suspension import suspended_json
 
 logger = logging.getLogger(__name__)
 
@@ -124,6 +130,25 @@ def create_campaign():
         
         result = cursor.fetchone()
         campaign_id = result['id']
+
+        # Creator is a member for all access checks that use campaign_players
+        try:
+            cursor.execute(
+                """
+                INSERT INTO campaign_players (campaign_id, user_id, joined_at, role)
+                VALUES (%s, %s, %s, 'owner')
+                ON CONFLICT (campaign_id, user_id) DO NOTHING
+                """
+                if os.getenv("DATABASE_TYPE", "sqlite").lower() == "postgresql"
+                else """
+                INSERT OR IGNORE INTO campaign_players (campaign_id, user_id, joined_at, role)
+                VALUES (%s, %s, %s, 'owner')
+                """,
+                (campaign_id, user_id, datetime.now()),
+            )
+        except Exception as ins_e:
+            logger.warning("campaign_players insert for creator: %s", ins_e)
+
         conn.commit()
         
         # Auto-create OOC room for the campaign
@@ -185,6 +210,7 @@ def get_campaigns():
         conn = get_db()
         cursor = conn.cursor()
         ensure_users_player_profile_columns(cursor)
+        ensure_campaigns_listing_columns(cursor)
         conn.commit()
 
         if for_active:
@@ -200,7 +226,8 @@ def get_campaigns():
         if for_active:
             cursor.execute(
                 """
-                SELECT c.id, c.name, c.description, c.game_system, c.created_at, c.status
+                SELECT c.id, c.name, c.description, c.game_system, c.created_at, c.status,
+                       c.max_players, c.listing_visibility, c.accepting_players
                 FROM campaigns c
                 INNER JOIN characters ch ON ch.campaign_id = c.id
                 WHERE ch.id = %s AND ch.user_id = %s
@@ -215,7 +242,8 @@ def get_campaigns():
             )
         else:
             cursor.execute("""
-                SELECT id, name, description, game_system, created_at, status
+                SELECT id, name, description, game_system, created_at, status,
+                       max_players, listing_visibility, accepting_players
                 FROM campaigns
                 WHERE created_by = %s OR id IN (
                     SELECT campaign_id FROM campaign_players WHERE user_id = %s
@@ -225,13 +253,21 @@ def get_campaigns():
         
         campaigns = []
         for row in cursor.fetchall():
+            acc = row.get("accepting_players")
+            if isinstance(acc, str):
+                acc = acc.lower() in ("1", "true", "yes")
+            else:
+                acc = bool(acc)
             campaigns.append({
                 'id': row['id'],
                 'name': row['name'],
                 'description': row['description'],
                 'game_system': row['game_system'],
                 'created_at': row['created_at'],
-                'status': row['status']
+                'status': row['status'],
+                'max_players': row.get('max_players'),
+                'listing_visibility': row.get('listing_visibility') or 'private',
+                'accepting_players': acc,
             })
         
         cursor.close()
@@ -242,6 +278,161 @@ def get_campaigns():
     except Exception as e:
         logger.error(f"Error getting campaigns: {e}")
         return jsonify({'error': 'Failed to get campaigns'}), 500
+
+
+@campaigns_bp.route('/discover', methods=['GET'])
+@jwt_required()
+def discover_campaigns():
+    """List campaigns open for self-serve join that the user is not yet in."""
+    try:
+        user_id = get_jwt_identity()
+        conn = get_db()
+        cursor = conn.cursor()
+        ensure_campaigns_listing_columns(cursor)
+        conn.commit()
+
+        cursor.execute(
+            """
+            SELECT c.id, c.name, c.description, c.game_system, c.created_at, c.status,
+                   c.max_players, c.listing_visibility, c.accepting_players
+            FROM campaigns c
+            WHERE c.is_active = 1
+              AND c.listing_visibility = 'listed'
+              AND c.accepting_players = 1
+              AND c.id NOT IN (
+                  SELECT campaign_id FROM campaign_players WHERE user_id = %s
+              )
+              AND c.created_by != %s
+            ORDER BY c.created_at DESC
+            """
+            if os.getenv("DATABASE_TYPE", "sqlite").lower() != "postgresql"
+            else """
+            SELECT c.id, c.name, c.description, c.game_system, c.created_at, c.status,
+                   c.max_players, c.listing_visibility, c.accepting_players
+            FROM campaigns c
+            WHERE c.is_active = TRUE
+              AND c.listing_visibility = 'listed'
+              AND c.accepting_players = TRUE
+              AND c.id NOT IN (
+                  SELECT campaign_id FROM campaign_players WHERE user_id = %s
+              )
+              AND c.created_by IS DISTINCT FROM %s
+            ORDER BY c.created_at DESC
+            """,
+            (user_id, user_id),
+        )
+        out = []
+        for row in cursor.fetchall():
+            out.append(
+                {
+                    "id": row["id"],
+                    "name": row["name"],
+                    "description": row["description"],
+                    "game_system": row["game_system"],
+                    "created_at": row["created_at"],
+                    "status": row["status"],
+                    "max_players": row.get("max_players"),
+                }
+            )
+        cursor.close()
+        conn.close()
+        return jsonify(out), 200
+    except Exception as e:
+        logger.error(f"discover_campaigns: {e}")
+        return jsonify({"error": "Failed to list campaigns"}), 500
+
+
+@campaigns_bp.route('/<int:campaign_id>/join', methods=['POST'])
+@jwt_required()
+def join_campaign(campaign_id):
+    """Player self-join when campaign is listed and accepting players."""
+    try:
+        user_id = get_jwt_identity()
+        conn = get_db()
+        cursor = conn.cursor()
+        ensure_campaigns_listing_columns(cursor)
+        conn.commit()
+
+        cursor.execute(
+            """
+            SELECT id, max_players, listing_visibility, accepting_players, is_active, created_by
+            FROM campaigns WHERE id = %s
+            """,
+            (campaign_id,),
+        )
+        c = cursor.fetchone()
+        if not c:
+            cursor.close()
+            conn.close()
+            return jsonify({"error": "Campaign not found"}), 404
+
+        vis = (c.get("listing_visibility") or "private").strip().lower()
+        acc = c.get("accepting_players")
+        if isinstance(acc, str):
+            acc = acc.lower() in ("1", "true", "yes")
+        else:
+            acc = bool(acc)
+        active = c.get("is_active")
+        if isinstance(active, str):
+            active = active.lower() in ("1", "true", "yes")
+        else:
+            active = bool(active) if active is not None else True
+
+        if not active or vis != "listed" or not acc:
+            cursor.close()
+            conn.close()
+            return jsonify({"error": "This campaign is not open for joining"}), 403
+
+        cursor.execute(
+            "SELECT 1 FROM campaign_players WHERE campaign_id = %s AND user_id = %s",
+            (campaign_id, user_id),
+        )
+        if cursor.fetchone():
+            cursor.close()
+            conn.close()
+            return jsonify({"message": "Already a member", "campaign_id": campaign_id}), 200
+
+        max_p = c.get("max_players")
+        if max_p is not None and int(max_p) > 0:
+            cursor.execute(
+                """
+                SELECT COUNT(*) AS n FROM campaign_players WHERE campaign_id = %s
+                """,
+                (campaign_id,),
+            )
+            n = int(cursor.fetchone()["n"])
+            if n >= int(max_p):
+                cursor.close()
+                conn.close()
+                return jsonify({"error": "Campaign is full"}), 409
+
+        now = datetime.utcnow()
+        if os.getenv("DATABASE_TYPE", "sqlite").lower() == "postgresql":
+            cursor.execute(
+                """
+                INSERT INTO campaign_players (campaign_id, user_id, joined_at, role)
+                VALUES (%s, %s, %s, 'player')
+                ON CONFLICT (campaign_id, user_id) DO NOTHING
+                """,
+                (campaign_id, user_id, now),
+            )
+        else:
+            cursor.execute(
+                """
+                INSERT OR IGNORE INTO campaign_players (campaign_id, user_id, joined_at, role)
+                VALUES (%s, %s, %s, 'player')
+                """,
+                (campaign_id, user_id, now),
+            )
+
+        conn.commit()
+        cursor.close()
+        conn.close()
+        return jsonify({"message": "Joined campaign", "campaign_id": campaign_id}), 200
+    except Exception as e:
+        logger.error(f"join_campaign: {e}")
+        return jsonify({"error": "Failed to join campaign"}), 500
+
 
 @campaigns_bp.route('/<int:campaign_id>', methods=['GET', 'PUT', 'DELETE'])
 @jwt_required()
@@ -257,10 +448,15 @@ def get_or_update_campaign(campaign_id):
         
         conn = get_db()
         cursor = conn.cursor()
+        ensure_users_player_profile_columns(cursor)
+        ensure_characters_play_suspension_columns(cursor)
+        ensure_campaigns_listing_columns(cursor)
+        conn.commit()
         
         # Check if user has access to campaign
         cursor.execute("""
-            SELECT id, name, description, game_system, created_by, created_at, status
+            SELECT id, name, description, game_system, created_by, created_at, status,
+                   max_players, listing_visibility, accepting_players
             FROM campaigns
             WHERE id = %s AND (created_by = %s OR id IN (
                 SELECT campaign_id FROM campaign_players WHERE user_id = %s
@@ -269,8 +465,16 @@ def get_or_update_campaign(campaign_id):
         
         row = cursor.fetchone()
         if not row:
+            cursor.close()
+            conn.close()
             return jsonify({'error': 'Campaign not found'}), 404
         
+        acc = row.get("accepting_players")
+        if isinstance(acc, str):
+            acc = acc.lower() in ("1", "true", "yes")
+        else:
+            acc = bool(acc)
+
         campaign = {
             'id': row['id'],
             'name': row['name'],
@@ -278,8 +482,45 @@ def get_or_update_campaign(campaign_id):
             'game_system': row['game_system'],
             'created_by': row['created_by'],
             'created_at': row['created_at'],
-            'status': row['status']
+            'status': row['status'],
+            'max_players': row.get('max_players'),
+            'listing_visibility': row.get('listing_visibility') or 'private',
+            'accepting_players': acc,
         }
+
+        cursor.execute(
+            "SELECT active_character_id FROM users WHERE id = %s",
+            (user_id,),
+        )
+        urow = cursor.fetchone() or {}
+        aid = urow.get("active_character_id")
+        if aid:
+            cursor.execute(
+                """
+                SELECT campaign_id, play_suspended, play_suspension_reason_code,
+                       play_suspension_message
+                FROM characters
+                WHERE id = %s AND user_id = %s
+                """,
+                (aid, user_id),
+            )
+            ch = cursor.fetchone()
+            if (
+                ch
+                and int(ch["campaign_id"]) == int(campaign_id)
+                and bool(ch.get("play_suspended") or False)
+            ):
+                cursor.close()
+                conn.close()
+                return (
+                    jsonify(
+                        suspended_json(
+                            ch.get("play_suspension_reason_code") or "custom",
+                            ch.get("play_suspension_message"),
+                        )
+                    ),
+                    403,
+                )
         
         # Get campaign context from RAG
         rag_service = get_rag_service()
@@ -434,9 +675,13 @@ def update_campaign(campaign_id):
     try:
         user_id = get_jwt_identity()
         data = request.get_json()
+        if not data:
+            return jsonify({'error': 'JSON body required'}), 400
         
         conn = get_db()
         cursor = conn.cursor()
+        ensure_campaigns_listing_columns(cursor)
+        conn.commit()
         
         # Check if user is admin or campaign creator
         cursor.execute("""
@@ -453,7 +698,9 @@ def update_campaign(campaign_id):
         """, (user_id,))
         user_row = cursor.fetchone()
         
-        if row['created_by'] != user_id and (not user_row or user_row['role'] != 'admin'):
+        if str(row['created_by']) != str(user_id) and (
+            not user_row or user_row['role'] != 'admin'
+        ):
             return jsonify({'error': 'Unauthorized'}), 403
         
         # Update campaign fields if provided
@@ -467,6 +714,32 @@ def update_campaign(campaign_id):
         if 'description' in data:
             updates.append('description = %s')
             params.append(data['description'])
+
+        if 'listing_visibility' in data:
+            lv = (data['listing_visibility'] or '').strip().lower()
+            if lv not in ('private', 'listed'):
+                return jsonify({'error': 'listing_visibility must be private or listed'}), 400
+            updates.append('listing_visibility = %s')
+            params.append(lv)
+
+        if 'accepting_players' in data:
+            updates.append('accepting_players = %s')
+            params.append(bool(data['accepting_players']))
+
+        if 'max_players' in data:
+            mp = data['max_players']
+            if mp is None:
+                updates.append('max_players = %s')
+                params.append(None)
+            else:
+                try:
+                    mpi = int(mp)
+                except (TypeError, ValueError):
+                    return jsonify({'error': 'max_players must be an integer'}), 400
+                if mpi < 0:
+                    return jsonify({'error': 'max_players must be >= 0'}), 400
+                updates.append('max_players = %s')
+                params.append(mpi)
         
         if updates:
             params.append(campaign_id)
@@ -506,7 +779,9 @@ def delete_campaign(campaign_id):
         """, (user_id,))
         user_row = cursor.fetchone()
         
-        if campaign_creator != user_id and (not user_row or user_row['role'] != 'admin'):
+        if str(campaign_creator) != str(user_id) and (
+            not user_row or user_row['role'] != 'admin'
+        ):
             return jsonify({'error': 'Unauthorized'}), 403
         
         # Count what will be deleted for audit

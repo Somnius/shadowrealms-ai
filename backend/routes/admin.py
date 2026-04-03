@@ -9,12 +9,20 @@ from flask_jwt_extended import jwt_required, get_jwt_identity
 import bcrypt
 import json
 import logging
+import os
 import re
 import secrets
 from datetime import datetime, timedelta
 
-from database import get_db, ensure_character_downtime_requests_table
+from database import (
+    get_db,
+    ensure_character_downtime_requests_table,
+    ensure_characters_play_suspension_columns,
+    ensure_users_allow_multi_campaign_play_column,
+    ensure_campaigns_listing_columns,
+)
 from routes.auth import load_invites, save_invites
+from services.play_suspension import ALLOWED_REASON_CODES
 
 logger = logging.getLogger(__name__)
 
@@ -61,9 +69,12 @@ def get_all_users():
         db = get_db()
         cursor = db.cursor()
         
+        ensure_users_allow_multi_campaign_play_column(cursor)
+        db.commit()
         cursor.execute("""
             SELECT id, username, email, role, is_active, created_at, last_login,
-                   ban_type, ban_until, ban_reason, banned_by, banned_at
+                   ban_type, ban_until, ban_reason, banned_by, banned_at,
+                   allow_multi_campaign_play
             FROM users
             ORDER BY created_at DESC
         """)
@@ -82,7 +93,10 @@ def get_all_users():
                 'ban_until': row['ban_until'],
                 'ban_reason': row['ban_reason'],
                 'banned_by': row['banned_by'],
-                'banned_at': row['banned_at']
+                'banned_at': row['banned_at'],
+                'allow_multi_campaign_play': bool(
+                    row.get('allow_multi_campaign_play') or False
+                ),
             }
             
             # Check if temp ban has expired
@@ -142,6 +156,12 @@ def update_user(user_id):
         if 'role' in data and data['role'] in ['admin', 'player']:
             updates.append("role = %s")
             params.append(data['role'])
+
+        if 'allow_multi_campaign_play' in data:
+            ensure_users_allow_multi_campaign_play_column(cursor)
+            db.commit()
+            updates.append("allow_multi_campaign_play = %s")
+            params.append(bool(data['allow_multi_campaign_play']))
         
         if not updates:
             return jsonify({'error': 'No valid fields to update'}), 400
@@ -291,9 +311,15 @@ def get_user_characters(user_id):
     try:
         db = get_db()
         cursor = db.cursor()
-        
+        ensure_characters_play_suspension_columns(cursor)
+        db.commit()
+
         cursor.execute("""
-            SELECT id, name, character_type, campaign_id, is_npc, is_active, created_at
+            SELECT id, name, system_type, campaign_id, is_npc, is_active, created_at,
+                   sheet_locked,
+                   play_suspended,
+                   play_suspension_reason_code, play_suspension_message,
+                   play_suspended_at, play_suspended_by
             FROM characters
             WHERE user_id = %s
             ORDER BY created_at DESC
@@ -304,11 +330,18 @@ def get_user_characters(user_id):
             characters.append({
                 'id': row['id'],
                 'name': row['name'],
-                'character_type': row['character_type'],
+                'character_type': row.get('system_type'),
+                'system_type': row.get('system_type'),
                 'campaign_id': row['campaign_id'],
-                'is_npc': bool(row['is_npc']),
+                'is_npc': bool(row.get('is_npc')),
                 'is_active': bool(row['is_active']),
-                'created_at': row['created_at']
+                'created_at': row['created_at'],
+                'sheet_locked': bool(row.get('sheet_locked')),
+                'play_suspended': bool(row.get('play_suspended') or False),
+                'play_suspension_reason_code': row.get('play_suspension_reason_code'),
+                'play_suspension_message': row.get('play_suspension_message'),
+                'play_suspended_at': row.get('play_suspended_at'),
+                'play_suspended_by': row.get('play_suspended_by'),
             })
         
         cursor.close()
@@ -640,4 +673,336 @@ def admin_resolve_downtime_request(req_id):
     except Exception as e:
         logger.error(f"admin_resolve_downtime_request: {e}")
         return jsonify({'error': 'Failed to update request'}), 500
+
+
+@bp.route('/characters/<int:character_id>/play-status', methods=['PATCH'])
+@require_admin()
+def admin_patch_character_play_status(character_id):
+    """Suspend or clear suspension for a player character (storytelling / admin hold)."""
+    admin_id = int(get_jwt_identity())
+    data = request.get_json()
+    if not data or 'suspended' not in data:
+        return jsonify({'error': 'JSON body with suspended (boolean) is required'}), 400
+    suspended = bool(data['suspended'])
+
+    try:
+        db = get_db()
+        cursor = db.cursor()
+        ensure_characters_play_suspension_columns(cursor)
+        db.commit()
+
+        cursor.execute(
+            """
+            SELECT id, user_id, name, campaign_id, is_npc
+            FROM characters WHERE id = %s
+            """,
+            (character_id,),
+        )
+        ch = cursor.fetchone()
+        if not ch:
+            cursor.close()
+            db.close()
+            return jsonify({'error': 'Character not found'}), 404
+        if ch.get('is_npc'):
+            cursor.close()
+            db.close()
+            return jsonify({'error': 'Cannot suspend NPC rows this way'}), 400
+
+        owner_id = ch['user_id']
+        now = datetime.utcnow()
+
+        if not suspended:
+            cursor.execute(
+                """
+                UPDATE characters SET
+                    play_suspended = FALSE,
+                    play_suspension_reason_code = NULL,
+                    play_suspension_message = NULL,
+                    play_suspended_at = NULL,
+                    play_suspended_by = NULL,
+                    play_suspension_updated_at = %s
+                WHERE id = %s
+                """,
+                (now, character_id),
+            )
+            log_moderation_action(owner_id, admin_id, 'character_play_clear', {
+                'character_id': character_id,
+            })
+        else:
+            reason = (data.get('reason_code') or '').strip()
+            if reason not in ALLOWED_REASON_CODES:
+                cursor.close()
+                db.close()
+                return jsonify({
+                    'error': 'reason_code must be one of: '
+                    + ', '.join(sorted(ALLOWED_REASON_CODES)),
+                }), 400
+            message = (data.get('message') or '').strip()
+            cursor.execute(
+                """
+                UPDATE characters SET
+                    play_suspended = TRUE,
+                    play_suspension_reason_code = %s,
+                    play_suspension_message = %s,
+                    play_suspended_at = %s,
+                    play_suspended_by = %s,
+                    play_suspension_updated_at = %s
+                WHERE id = %s
+                """,
+                (reason, message or None, now, admin_id, now, character_id),
+            )
+            log_moderation_action(owner_id, admin_id, 'character_play_suspend', {
+                'character_id': character_id,
+                'reason_code': reason,
+                'message': message,
+            })
+
+        db.commit()
+        cursor.close()
+        db.close()
+        return jsonify({'message': 'Play status updated', 'character_id': character_id}), 200
+    except Exception as e:
+        logger.error(f"admin_patch_character_play_status: {e}")
+        return jsonify({'error': 'Failed to update play status'}), 500
+
+
+def _wod_meta_summary(raw):
+    if not raw:
+        return {}
+    try:
+        meta = json.loads(raw) if isinstance(raw, str) else dict(raw)
+    except (json.JSONDecodeError, TypeError):
+        return {}
+    out = {}
+    for k in ('clan', 'auspice', 'tradition', 'template', 'sect'):
+        if meta.get(k):
+            out[k] = meta[k]
+    return out
+
+
+@bp.route('/users/<int:user_id>/debug', methods=['GET'])
+@require_admin()
+def admin_get_user_debug(user_id):
+    """Aggregate user / membership / characters / downtime / moderation (admin tooling)."""
+    try:
+        db = get_db()
+        cursor = db.cursor()
+        ensure_users_allow_multi_campaign_play_column(cursor)
+        ensure_characters_play_suspension_columns(cursor)
+        ensure_character_downtime_requests_table(cursor)
+        db.commit()
+
+        cursor.execute(
+            """
+            SELECT id, username, email, role, is_active, created_at, last_login,
+                   display_timezone, player_avatar_url, active_character_id,
+                   ban_type, ban_until, ban_reason, banned_by, banned_at,
+                   allow_multi_campaign_play
+            FROM users WHERE id = %s
+            """,
+            (user_id,),
+        )
+        u = cursor.fetchone()
+        if not u:
+            cursor.close()
+            db.close()
+            return jsonify({'error': 'User not found'}), 404
+
+        user_out = {k: u[k] for k in u.keys()}
+        user_out['is_active'] = bool(user_out.get('is_active'))
+        user_out['allow_multi_campaign_play'] = bool(
+            user_out.get('allow_multi_campaign_play') or False
+        )
+
+        cursor.execute(
+            """
+            SELECT cp.campaign_id, cp.joined_at, cp.role AS member_role, c.name AS campaign_name,
+                   c.game_system, c.created_by
+            FROM campaign_players cp
+            JOIN campaigns c ON c.id = cp.campaign_id
+            WHERE cp.user_id = %s
+            ORDER BY cp.joined_at DESC
+            """,
+            (user_id,),
+        )
+        memberships = []
+        for row in cursor.fetchall():
+            memberships.append({
+                'campaign_id': row['campaign_id'],
+                'campaign_name': row['campaign_name'],
+                'game_system': row['game_system'],
+                'joined_at': row['joined_at'],
+                'member_role': row.get('member_role'),
+                'is_owner': str(row.get('created_by')) == str(user_id),
+            })
+
+        cursor.execute(
+            """
+            SELECT id, name, game_system, created_at, created_by
+            FROM campaigns
+            WHERE created_by = %s
+            ORDER BY created_at DESC
+            """,
+            (user_id,),
+        )
+        owned = [dict(row) for row in cursor.fetchall()]
+
+        cursor.execute(
+            """
+            SELECT id, name, system_type, campaign_id, is_active, sheet_locked, created_at,
+                   wod_meta,
+                   play_suspended,
+                   play_suspension_reason_code, play_suspension_message,
+                   play_suspended_at, play_suspended_by
+            FROM characters
+            WHERE user_id = %s
+            ORDER BY created_at DESC
+            """,
+            (user_id,),
+        )
+        characters_out = []
+        for row in cursor.fetchall():
+            characters_out.append({
+                'id': row['id'],
+                'name': row['name'],
+                'system_type': row['system_type'],
+                'campaign_id': row['campaign_id'],
+                'is_active': bool(row['is_active']),
+                'sheet_locked': bool(row.get('sheet_locked')),
+                'created_at': row['created_at'],
+                'play_suspended': bool(row.get('play_suspended') or False),
+                'play_suspension_reason_code': row.get('play_suspension_reason_code'),
+                'play_suspension_message': row.get('play_suspension_message'),
+                'play_suspended_at': row.get('play_suspended_at'),
+                'play_suspended_by': row.get('play_suspended_by'),
+                'wod_meta_summary': _wod_meta_summary(row.get('wod_meta')),
+            })
+
+        cursor.execute(
+            """
+            SELECT d.id, d.character_id, d.campaign_id, d.request_text, d.status,
+                   d.admin_reason, d.resolved_at, d.created_at
+            FROM character_downtime_requests d
+            WHERE d.user_id = %s
+            ORDER BY d.created_at DESC
+            LIMIT 100
+            """,
+            (user_id,),
+        )
+        downtime = [dict(r) for r in cursor.fetchall()]
+
+        cursor.execute(
+            """
+            SELECT id, admin_id, action, details, created_at
+            FROM user_moderation_log
+            WHERE user_id = %s
+            ORDER BY created_at DESC
+            LIMIT 100
+            """,
+            (user_id,),
+        )
+        mod_log = [dict(r) for r in cursor.fetchall()]
+
+        char_mod = []
+        try:
+            ids = [c['id'] for c in characters_out]
+            if ids:
+                ph = ','.join(['%s'] * len(ids))
+                cursor.execute(
+                    f"""
+                    SELECT * FROM character_moderation
+                    WHERE character_id IN ({ph})
+                    ORDER BY moderated_at DESC
+                    LIMIT 100
+                    """,
+                    tuple(ids),
+                )
+                char_mod = [dict(r) for r in cursor.fetchall()]
+        except Exception:
+            char_mod = []
+
+        cursor.close()
+        db.close()
+
+        return jsonify({
+            'user': user_out,
+            'campaign_memberships': memberships,
+            'campaigns_owned': owned,
+            'characters': characters_out,
+            'downtime_requests': downtime,
+            'user_moderation_log': mod_log,
+            'character_moderation': char_mod,
+        }), 200
+    except Exception as e:
+        logger.error(f"admin_get_user_debug: {e}")
+        return jsonify({'error': 'Failed to load debug profile'}), 500
+
+
+@bp.route('/users/<int:user_id>/campaigns/<int:campaign_id>/membership', methods=['POST'])
+@require_admin()
+def admin_user_campaign_membership(user_id, campaign_id):
+    """Add or remove campaign_players row (admin-only campaign access override)."""
+    admin_id = int(get_jwt_identity())
+    data = request.get_json() or {}
+    action = (data.get('action') or '').strip().lower()
+    if action not in ('add', 'remove'):
+        return jsonify({'error': 'action must be "add" or "remove"'}), 400
+
+    try:
+        db = get_db()
+        cursor = db.cursor()
+        cursor.execute("SELECT id FROM users WHERE id = %s", (user_id,))
+        if not cursor.fetchone():
+            cursor.close()
+            db.close()
+            return jsonify({'error': 'User not found'}), 404
+        cursor.execute("SELECT id FROM campaigns WHERE id = %s", (campaign_id,))
+        if not cursor.fetchone():
+            cursor.close()
+            db.close()
+            return jsonify({'error': 'Campaign not found'}), 404
+
+        now = datetime.utcnow()
+        db_type = os.getenv('DATABASE_TYPE', 'sqlite').lower()
+        if action == 'add':
+            if db_type == 'postgresql':
+                cursor.execute(
+                    """
+                    INSERT INTO campaign_players (campaign_id, user_id, joined_at, role)
+                    VALUES (%s, %s, %s, 'player')
+                    ON CONFLICT (campaign_id, user_id) DO NOTHING
+                    """,
+                    (campaign_id, user_id, now),
+                )
+            else:
+                cursor.execute(
+                    """
+                    INSERT OR IGNORE INTO campaign_players (campaign_id, user_id, joined_at, role)
+                    VALUES (%s, %s, %s, 'player')
+                    """,
+                    (campaign_id, user_id, now),
+                )
+        else:
+            cursor.execute(
+                """
+                DELETE FROM campaign_players
+                WHERE campaign_id = %s AND user_id = %s
+                """,
+                (campaign_id, user_id),
+            )
+
+        log_moderation_action(user_id, admin_id, f'campaign_membership_{action}', {
+            'campaign_id': campaign_id,
+        })
+        db.commit()
+        cursor.close()
+        db.close()
+        return jsonify({
+            'message': f'Membership {action}ed',
+            'user_id': user_id,
+            'campaign_id': campaign_id,
+        }), 200
+    except Exception as e:
+        logger.error(f"admin_user_campaign_membership: {e}")
+        return jsonify({'error': 'Failed to update membership'}), 500
 

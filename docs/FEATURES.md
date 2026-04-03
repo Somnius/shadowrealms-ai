@@ -1,7 +1,7 @@
 # Feature Documentation
 
-**Last Updated**: 2026-03-25  
-**Version**: 0.7.15
+**Last Updated**: 2026-03-28  
+**Version**: 0.7.16+
 
 This document consolidates all feature-specific documentation for ShadowRealms AI.
 
@@ -11,8 +11,22 @@ This document consolidates all feature-specific documentation for ShadowRealms A
 
 1. [Overview](#overview)
 2. [Dice theatre and hidden rolls (v0.7.14)](#dice-theatre-and-hidden-rolls-v0714)
-3. [Gothic Horror Theme](#gothic-horror-theme)
-4. [Invite Code System](#invite-code-system)
+3. [Admin user management, play suspension, discover/join](#admin-user-management-play-suspension-discoverjoin)
+4. [Gothic Horror Theme](#gothic-horror-theme)
+5. [Invite Code System](#invite-code-system)
+
+---
+
+## Admin user management, play suspension, discover/join
+
+**Status:** Shipped (see `docs/CHANGELOG.md` **[Unreleased]**)  
+**Scope:** Site admin panel, player dashboard, campaign settings
+
+- **Suspend character play**: Staff can set a hold with reason templates and a player-visible message; the player cannot activate that PC or open its chronicle until cleared.
+- **Admin debug profile**: JSON aggregate of user, memberships, characters, downtime, and moderation slices.
+- **Campaign membership override**: Admins can add or remove `campaign_players` rows by user and campaign ID.
+- **Listed chronicles**: Storytellers mark a game **listed** and **accepting players**; others see it under “Open chronicles” and can self-join (subject to `max_players`).
+- **Single locked sheet rule**: By default a player may only commit one locked character across chronicles; admins can grant `allow_multi_campaign_play` per account.
 
 ---
 

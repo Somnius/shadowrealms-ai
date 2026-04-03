@@ -61,7 +61,7 @@ Garou characters usually pick:
 |---------------------|-----------------------------------------------|
 | Concept, clan, etc. | `characters.wod_meta` (JSON)                |
 | Attribute dots      | `characters.attributes` (JSON map)          |
-| Abilities           | `characters.skills` (JSON; notes + structure) |
+| Abilities           | `characters.skills` (JSON: `talents`, `skills`, `knowledges` maps + optional `allocation` / `notes`) |
 | Bio / history       | `characters.background` (text)               |
 | Merits / flaws      | `characters.merits_flaws` (JSON)            |
 | Portrait            | `characters.portrait_url`                    |

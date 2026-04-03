@@ -32,6 +32,27 @@ export const api = {
       },
       body: JSON.stringify(campaignData)
     }),
+
+  discoverCampaigns: (token) =>
+    fetch(`${API_URL}/campaigns/discover`, {
+      headers: { Authorization: `Bearer ${token}` },
+    }),
+
+  joinCampaign: (token, campaignId) =>
+    fetch(`${API_URL}/campaigns/${campaignId}/join`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}` },
+    }),
+
+  updateCampaign: (token, campaignId, payload) =>
+    fetch(`${API_URL}/campaigns/${campaignId}`, {
+      method: 'PUT',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+    }),
   
   // AI Chat
   sendMessage: (token, messageData) =>
@@ -89,6 +110,31 @@ export const api = {
   getUserCharacters: (token, userId) =>
     fetch(`${API_URL}/admin/users/${userId}/characters`, {
       headers: { 'Authorization': `Bearer ${token}` }
+    }),
+
+  getUserDebug: (token, userId) =>
+    fetch(`${API_URL}/admin/users/${userId}/debug`, {
+      headers: { Authorization: `Bearer ${token}` },
+    }),
+
+  patchCharacterPlayStatus: (token, characterId, payload) =>
+    fetch(`${API_URL}/admin/characters/${characterId}/play-status`, {
+      method: 'PATCH',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+    }),
+
+  adminUserCampaignMembership: (token, userId, campaignId, action) =>
+    fetch(`${API_URL}/admin/users/${userId}/campaigns/${campaignId}/membership`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ action }),
     }),
   
   convertCharacterToNPC: (token, characterId) =>

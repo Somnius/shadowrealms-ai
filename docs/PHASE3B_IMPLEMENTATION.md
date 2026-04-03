@@ -1,6 +1,6 @@
 # Phase 3B: Advanced Campaign & Character Systems
 
-**Version:** 0.7.15  
+**Version:** 0.7.16  
 **Status:** 🚧 IN PROGRESS — **playable core shipped**; WebSockets / full wizard / notification matrix **not** done  
 **Start Date:** 2025-10-24  
 **Target Completion:** TBD
@@ -9,7 +9,7 @@
 
 ## Delivery snapshot (vs this document)
 
-This file is the **full product spec** (“north star”). As of **v0.7.15**, the following are **in production**:
+This file is the **full product spec** (“north star”). As of **v0.7.16**, the following are **in production**:
 
 - PostgreSQL-backed **campaigns**, **locations** (CRUD, enter/leave, suggest/batch), **characters** (CRUD, selection), **messages** per location (polling), **read state**, **dice** (API + UI + `/ai` tools), **AI chat** + **OOC moderation**, **admin** tooling.
 - **Not in repo:** WebSocket server, typing indicators, unified notification component, multi-step character wizard as described below—treat those sections as **planned**.

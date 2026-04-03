@@ -6,7 +6,7 @@
 
 ### The Ultimate AI-Powered Tabletop RPG Experience
 
-[![Version](https://img.shields.io/badge/version-0.7.15-blue.svg)](https://github.com/Somnius/shadowrealms-ai)
+[![Version](https://img.shields.io/badge/version-0.7.16-blue.svg)](https://github.com/Somnius/shadowrealms-ai)
 [![Phase 2](https://img.shields.io/badge/phase-2%20complete-green.svg)](https://github.com/Somnius/shadowrealms-ai)
 [![Phase 3A](https://img.shields.io/badge/phase-3A%20complete-green.svg)](https://github.com/Somnius/shadowrealms-ai)
 [![Phase 3B](https://img.shields.io/badge/phase-3B%20active-blue.svg)](https://github.com/Somnius/shadowrealms-ai)
@@ -55,7 +55,7 @@ See ShadowRealms AI in action:
 
 *Watch this video to see the login system, gothic theme, campaign management, and admin panel in action!*
 
-> **Version 0.7.15 Preview:** This demo showcases the frontend interface in its current state. Please note that not all features are fully functional yet—this is a first look at the user interface and design direction of ShadowRealms AI.
+> **Version 0.7.16 Preview:** This demo showcases the frontend interface in its current state. Please note that not all features are fully functional yet—this is a first look at the user interface and design direction of ShadowRealms AI.
 
 </div>
 
@@ -138,9 +138,18 @@ docker-compose up -d
 
 <div align="center">
 
+### Version 0.7.16 - Data layout, chargen polish, and character API hardening 📦
+
+**Latest updates (from v0.7.15):**
+- **WoD data layout**: Large **`World_of_Darkness.tar`** belongs under **`data/`** (gitignored); use **`scripts/move-wod-archive-to-data.sh`** after ensuring `data/` is writable (see `books/README.md`).
+- **Character creation**: Template step **Nature & Demeanor** — preset **oWoD** archetypes, optional **Custom** + free text; stored in `wod_meta` for all three supported lines; stricter **chronicle ID** validation before submit.
+- **`POST /api/characters/`**: Clearer errors — invalid campaign/session ids return **400**/**401**; database conflicts return **409** (`character_create_integrity`) instead of an opaque **500**.
+- **Shipped with this version** (see changelog): play suspension, campaign **discover/join**, admin user debug & membership tools, **one locked PC** rule (with admin multi-campaign bypass), dashboard **open chronicles** / **open enrollment**.
+- **Next milestone**: Keep **users**, **players**, and **characters** ready—accurate accounts, memberships, active PC, and sheets—for upcoming Phase **3B** location and character depth work.
+
 ### Version 0.7.15 - WoD character creation & Player Profile 🎭
 
-**Latest updates:**
+**Highlights:**
 - **Character creation**: Guided wizard for **Vampire / Werewolf / Mage** chronicles; sheets stored with `wod_meta`, attributes (7/5/3), and locked-by-default `sheet_locked` after submit.
 - **Player Profile**: Swap globally **active character**, edit **character portrait** (when sheet is locked), set **OOC-only player avatar**, submit **downtime requests** for storyteller/admin review.
 - **Dashboard & chat**: Optional campaign filter by active PC; OOC lobby shows **player** avatar, story rooms show **character** portrait; messaging prefers the active character when set.

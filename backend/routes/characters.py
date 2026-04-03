@@ -4,6 +4,8 @@ ShadowRealms AI - Characters Routes
 Character management and character sheets
 """
 
+import os
+
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
 import logging
@@ -15,12 +17,27 @@ from database import (
     ensure_character_portrait_url_column,
     ensure_characters_is_active_column,
     ensure_characters_wod_sheet_columns,
+    ensure_characters_play_suspension_columns,
     ensure_character_downtime_requests_table,
+    ensure_users_allow_multi_campaign_play_column,
 )
 
 # Stored as TEXT (URLs or data URLs); cap size to protect the DB.
 MAX_PORTRAIT_URL_LEN = 524288
-from services.gpu_monitor import gpu_monitor_service
+
+try:
+    import sqlite3
+
+    _INTEGRITY_ERRORS = (sqlite3.IntegrityError,)
+except ImportError:
+    _INTEGRITY_ERRORS = ()
+
+try:
+    from psycopg2 import IntegrityError as _PsycopgIntegrityError
+
+    _INTEGRITY_ERRORS = _INTEGRITY_ERRORS + (_PsycopgIntegrityError,)
+except ImportError:
+    pass
 
 logger = logging.getLogger(__name__)
 
@@ -31,11 +48,21 @@ ALLOWED_SYSTEM_TYPES = frozenset(
 )
 
 
+def _campaign_is_active_sql(alias: str = "c") -> str:
+    """PostgreSQL uses BOOLEAN; SQLite often uses 0/1."""
+    p = f"{alias}." if alias else ""
+    if os.getenv("DATABASE_TYPE", "sqlite").lower() == "postgresql":
+        return f"{p}is_active IS TRUE"
+    return f"{p}is_active = 1"
+
+
 def _ensure_character_schema(cursor):
     ensure_character_portrait_url_column(cursor)
     ensure_characters_is_active_column(cursor)
     ensure_characters_wod_sheet_columns(cursor)
+    ensure_characters_play_suspension_columns(cursor)
     ensure_character_downtime_requests_table(cursor)
+    ensure_users_allow_multi_campaign_play_column(cursor)
 
 
 def _wod_meta_parse(raw):
@@ -76,6 +103,11 @@ def _character_public_dict(row, owner_name=None, campaign_name=None):
         'sheet_locked': _sheet_locked_bool(row.get('sheet_locked')),
         'wod_meta': _wod_meta_parse(row.get('wod_meta')),
         'is_active': bool(row.get('is_active', True)),
+        'play_suspended': _sheet_locked_bool(row.get('play_suspended')),
+        'play_suspension_reason_code': row.get('play_suspension_reason_code'),
+        'play_suspension_message': row.get('play_suspension_message'),
+        'play_suspended_at': row.get('play_suspended_at'),
+        'play_suspended_by': row.get('play_suspended_by'),
     }
     if owner_name is not None:
         d['owner_name'] = owner_name
@@ -168,17 +200,25 @@ def get_characters():
 def create_character():
     """Create new character (WoD lines: system_type must match campaign game_system)."""
     try:
-        current_user_id = get_jwt_identity()
+        try:
+            current_user_id = int(get_jwt_identity())
+        except (TypeError, ValueError):
+            return jsonify({'error': 'Invalid session'}), 401
+
         data = request.get_json()
 
         if not data:
             return jsonify({'error': 'No data provided'}), 400
 
         name = (data.get('name') or '').strip()
-        campaign_id = data.get('campaign_id')
+        raw_cid = data.get('campaign_id')
+        try:
+            campaign_id = int(raw_cid)
+        except (TypeError, ValueError):
+            return jsonify({'error': 'Invalid campaign ID'}), 400
         system_type = (data.get('system_type') or '').strip().lower()
 
-        if not all([name, campaign_id, system_type]):
+        if not all([name, system_type]):
             return jsonify(
                 {'error': 'Name, campaign ID, and system type are required'}
             ), 400
@@ -204,15 +244,15 @@ def create_character():
 
         if user_role in ('admin', 'helper'):
             cursor.execute(
-                "SELECT * FROM campaigns WHERE id = %s AND is_active = 1",
+                f"SELECT * FROM campaigns WHERE id = %s AND {_campaign_is_active_sql('')}",
                 (campaign_id,),
             )
         else:
             cursor.execute(
-                """
+                f"""
                 SELECT c.*
                 FROM campaigns c
-                WHERE c.id = %s AND c.is_active = 1
+                WHERE c.id = %s AND {_campaign_is_active_sql('c')}
                   AND (
                     c.created_by = %s OR EXISTS (
                       SELECT 1 FROM campaign_players cp
@@ -263,6 +303,42 @@ def create_character():
                 {'error': 'Character name already exists in this campaign'}
             ), 409
 
+        if sheet_locked and user_role == 'player':
+            cursor.execute(
+                """
+                SELECT allow_multi_campaign_play FROM users WHERE id = %s
+                """,
+                (current_user_id,),
+            )
+            uallow = cursor.fetchone() or {}
+            allow_multi = bool(uallow.get('allow_multi_campaign_play') or False)
+            if not allow_multi:
+                cursor.execute(
+                    """
+                    SELECT id, campaign_id, sheet_locked, is_active
+                    FROM characters
+                    WHERE user_id = %s
+                    """,
+                    (current_user_id,),
+                )
+                for er in cursor.fetchall():
+                    if not bool(er.get('is_active', True)):
+                        continue
+                    if not _sheet_locked_bool(er.get('sheet_locked')):
+                        continue
+                    if int(er['campaign_id']) != int(campaign_id):
+                        cursor.close()
+                        db.close()
+                        return jsonify({
+                            'error': (
+                                'You already have a locked character in another '
+                                'chronicle. Only a site administrator can grant '
+                                'access to additional campaigns or multiple '
+                                'locked characters.'
+                            ),
+                            'error_code': 'single_locked_pc_conflict',
+                        }), 409
+
         now = datetime.utcnow()
         cursor.execute(
             """
@@ -311,8 +387,19 @@ def create_character():
             }
         ), 201
 
+    except _INTEGRITY_ERRORS as e:
+        logger.exception("Error creating character (integrity): %s", e)
+        return jsonify(
+            {
+                'error': (
+                    'Could not create character. The name may already be taken, '
+                    'or the chronicle reference is no longer valid.'
+                ),
+                'error_code': 'character_create_integrity',
+            }
+        ), 409
     except Exception as e:
-        logger.error(f"Error creating character: {e}")
+        logger.exception("Error creating character: %s", e)
         return jsonify({'error': 'Failed to create character'}), 500
     finally:
         if 'db' in locals():

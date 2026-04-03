@@ -24,9 +24,9 @@ def get_db():
         # PostgreSQL connection
         logger.info("Connecting to PostgreSQL database...")
         conn = psycopg2.connect(
-            dbname=os.getenv('DATABASE_NAME', 'shadowrealms_db'),
-            user=os.getenv('DATABASE_USER', 'shadowrealms'),
-            password=os.getenv('DATABASE_PASSWORD', ''),
+            dbname=os.getenv('DATABASE_NAME') or os.getenv('POSTGRES_DB', 'shadowrealms_db'),
+            user=os.getenv('DATABASE_USER') or os.getenv('POSTGRES_USER', 'shadowrealms'),
+            password=os.getenv('DATABASE_PASSWORD') or os.getenv('POSTGRES_PASSWORD', ''),
             host=os.getenv('DATABASE_HOST', 'localhost'),
             port=os.getenv('DATABASE_PORT', '5432'),
         )
@@ -221,6 +221,24 @@ def ensure_characters_wod_sheet_columns(cursor):
     db_type = os.getenv("DATABASE_TYPE", "sqlite").lower()
     if db_type == "postgresql":
         cursor.execute(
+            "ALTER TABLE characters ADD COLUMN IF NOT EXISTS system_type TEXT NOT NULL DEFAULT 'd20'"
+        )
+        cursor.execute(
+            "ALTER TABLE characters ADD COLUMN IF NOT EXISTS attributes TEXT NOT NULL DEFAULT '{}'"
+        )
+        cursor.execute(
+            "ALTER TABLE characters ADD COLUMN IF NOT EXISTS skills TEXT NOT NULL DEFAULT '{}'"
+        )
+        cursor.execute(
+            "ALTER TABLE characters ADD COLUMN IF NOT EXISTS background TEXT NOT NULL DEFAULT ''"
+        )
+        cursor.execute(
+            "ALTER TABLE characters ADD COLUMN IF NOT EXISTS merits_flaws TEXT NOT NULL DEFAULT '{}'"
+        )
+        cursor.execute(
+            "ALTER TABLE characters ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP"
+        )
+        cursor.execute(
             "ALTER TABLE characters ADD COLUMN IF NOT EXISTS sheet_locked BOOLEAN NOT NULL DEFAULT FALSE"
         )
         cursor.execute(
@@ -241,6 +259,106 @@ def ensure_characters_wod_sheet_columns(cursor):
         if "wod_meta" not in cols:
             cursor.execute(
                 "ALTER TABLE characters ADD COLUMN wod_meta TEXT NOT NULL DEFAULT '{}'"
+            )
+
+
+def ensure_characters_play_suspension_columns(cursor):
+    """Admin can suspend a PC (downtime / need info); players see reason when blocked."""
+    db_type = os.getenv("DATABASE_TYPE", "sqlite").lower()
+    if db_type == "postgresql":
+        cursor.execute(
+            "ALTER TABLE characters ADD COLUMN IF NOT EXISTS play_suspended BOOLEAN NOT NULL DEFAULT FALSE"
+        )
+        cursor.execute(
+            "ALTER TABLE characters ADD COLUMN IF NOT EXISTS play_suspension_reason_code TEXT"
+        )
+        cursor.execute(
+            "ALTER TABLE characters ADD COLUMN IF NOT EXISTS play_suspension_message TEXT"
+        )
+        cursor.execute(
+            "ALTER TABLE characters ADD COLUMN IF NOT EXISTS play_suspended_at TIMESTAMP"
+        )
+        cursor.execute(
+            "ALTER TABLE characters ADD COLUMN IF NOT EXISTS play_suspended_by INTEGER REFERENCES users(id) ON DELETE SET NULL"
+        )
+        cursor.execute(
+            "ALTER TABLE characters ADD COLUMN IF NOT EXISTS play_suspension_updated_at TIMESTAMP"
+        )
+    else:
+        cursor.execute(
+            "SELECT name FROM sqlite_master WHERE type='table' AND name='characters'"
+        )
+        if not cursor.fetchone():
+            return
+        cursor.execute("PRAGMA table_info(characters)")
+        cols = [row["name"] for row in cursor.fetchall()]
+        if "play_suspended" not in cols:
+            cursor.execute(
+                "ALTER TABLE characters ADD COLUMN play_suspended INTEGER NOT NULL DEFAULT 0"
+            )
+        if "play_suspension_reason_code" not in cols:
+            cursor.execute(
+                "ALTER TABLE characters ADD COLUMN play_suspension_reason_code TEXT"
+            )
+        if "play_suspension_message" not in cols:
+            cursor.execute(
+                "ALTER TABLE characters ADD COLUMN play_suspension_message TEXT"
+            )
+        if "play_suspended_at" not in cols:
+            cursor.execute(
+                "ALTER TABLE characters ADD COLUMN play_suspended_at TIMESTAMP"
+            )
+        if "play_suspended_by" not in cols:
+            cursor.execute(
+                "ALTER TABLE characters ADD COLUMN play_suspended_by INTEGER REFERENCES users(id)"
+            )
+        if "play_suspension_updated_at" not in cols:
+            cursor.execute(
+                "ALTER TABLE characters ADD COLUMN play_suspension_updated_at TIMESTAMP"
+            )
+
+
+def ensure_users_allow_multi_campaign_play_column(cursor):
+    """When true, player may have sheet_locked PCs in more than one campaign (admin grant)."""
+    db_type = os.getenv("DATABASE_TYPE", "sqlite").lower()
+    if db_type == "postgresql":
+        cursor.execute(
+            "ALTER TABLE users ADD COLUMN IF NOT EXISTS allow_multi_campaign_play BOOLEAN NOT NULL DEFAULT FALSE"
+        )
+    else:
+        cursor.execute("PRAGMA table_info(users)")
+        cols = [row["name"] for row in cursor.fetchall()]
+        if "allow_multi_campaign_play" not in cols:
+            cursor.execute(
+                "ALTER TABLE users ADD COLUMN allow_multi_campaign_play INTEGER NOT NULL DEFAULT 0"
+            )
+
+
+def ensure_campaigns_listing_columns(cursor):
+    """listed campaigns appear in discover; accepting_players allows self-serve join."""
+    db_type = os.getenv("DATABASE_TYPE", "sqlite").lower()
+    if db_type == "postgresql":
+        cursor.execute(
+            "ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS listing_visibility TEXT NOT NULL DEFAULT 'private'"
+        )
+        cursor.execute(
+            "ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS accepting_players BOOLEAN NOT NULL DEFAULT FALSE"
+        )
+    else:
+        cursor.execute(
+            "SELECT name FROM sqlite_master WHERE type='table' AND name='campaigns'"
+        )
+        if not cursor.fetchone():
+            return
+        cursor.execute("PRAGMA table_info(campaigns)")
+        cols = [row["name"] for row in cursor.fetchall()]
+        if "listing_visibility" not in cols:
+            cursor.execute(
+                "ALTER TABLE campaigns ADD COLUMN listing_visibility TEXT NOT NULL DEFAULT 'private'"
+            )
+        if "accepting_players" not in cols:
+            cursor.execute(
+                "ALTER TABLE campaigns ADD COLUMN accepting_players INTEGER NOT NULL DEFAULT 0"
             )
 
 
@@ -411,6 +529,9 @@ def migrate_db():
             ensure_users_player_profile_columns(cursor)
             ensure_characters_is_active_column(cursor)
             ensure_characters_wod_sheet_columns(cursor)
+            ensure_characters_play_suspension_columns(cursor)
+            ensure_users_allow_multi_campaign_play_column(cursor)
+            ensure_campaigns_listing_columns(cursor)
             ensure_character_downtime_requests_table(cursor)
             ensure_dice_tables(cursor, 'postgresql')
             conn.commit()
@@ -760,6 +881,9 @@ def migrate_db():
         ensure_users_player_profile_columns(cursor)
         ensure_characters_is_active_column(cursor)
         ensure_characters_wod_sheet_columns(cursor)
+        ensure_characters_play_suspension_columns(cursor)
+        ensure_users_allow_multi_campaign_play_column(cursor)
+        ensure_campaigns_listing_columns(cursor)
         ensure_character_downtime_requests_table(cursor)
         ensure_messages_ai_message_kind_column(cursor)
         ensure_locations_dice_leniency_floor_column(cursor)

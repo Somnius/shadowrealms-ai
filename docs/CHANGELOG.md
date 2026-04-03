@@ -5,6 +5,26 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+## [0.7.16] - 2026-04-03 - WoD data layout, chargen polish, and character API hardening 📦
+
+### Added
+- **Character play suspension**: `characters.play_suspended`, reason codes (`pending_downtime`, `pending_more_information`, `custom`), admin message; `PATCH /api/admin/characters/<id>/play-status`; blocks `PUT /api/users/me` active PC and `GET /api/campaigns/<id>` when the active character is held (`backend/services/play_suspension.py`, `backend/routes/admin.py`, `backend/routes/users.py`, `backend/routes/campaigns.py`).
+- **Campaign discover & join**: `campaigns.listing_visibility` (`private` | `listed`), `accepting_players`, `GET /api/campaigns/discover`, `POST /api/campaigns/<id>/join`; creators inserted into `campaign_players` on campaign create (`backend/database.py`, `backend/routes/campaigns.py`).
+- **Admin user tooling**: `GET /api/admin/users/<id>/debug`, `POST /api/admin/users/<id>/campaigns/<campaign_id>/membership`, richer `GET /api/admin/users/<id>/characters`; user table `allow_multi_campaign_play` for bypassing the one-locked-PC rule (`backend/routes/admin.py`, `frontend/src/pages/AdminPage.js`).
+- **One locked PC per player**: non-admin players cannot create a second `sheet_locked` character in another chronicle unless `allow_multi_campaign_play` is set (`backend/routes/characters.py`).
+- **Dashboard**: “Open chronicles you can join” and campaign settings **Open enrollment** for storytellers (`frontend/src/SimpleApp.js`).
+- **WoD bulk archive helper**: `scripts/move-wod-archive-to-data.sh` — moves `books/World_of_Darkness.tar` to **`data/World_of_Darkness.tar`** when `data/` is writable (run `sudo chown -R "$USER:$USER" data` first if Docker created `data/` as root). Documented in `books/README.md`.
+
+### Changed
+- **Local WoD mirror path**: Canonical location for a large **`World_of_Darkness.tar`** is **`data/`** (gitignored), not under the tracked `books/` tree.
+- **WoD character wizard — Nature & Demeanor**: Template step uses **classic oWoD archetype lists** plus **Custom** and free-text fields; values are stored in `wod_meta` for Vampire, Werewolf, and Mage (`frontend/src/components/CharacterCreationWizard.js`).
+- **`POST /api/characters/`**: Validates integer **`campaign_id`** and session user id; database **`IntegrityError`** returns **409** with `error_code: character_create_integrity` instead of a generic **500** (`backend/routes/characters.py`).
+
+### Notes
+- **Next milestone**: Prepare **users**, **players**, and **characters** (accounts, chronicle membership, active character, locked sheets, and downtime flow) for the upcoming Phase **3B** drop—locations, deeper character tooling, and real-time features build on accurate PC and campaign state.
+
 ## [0.7.15] - 2026-03-28 - WoD character creation, Player Profile, and container-first dev 🎭
 
 ### Added

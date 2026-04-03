@@ -6,6 +6,15 @@ This directory contains the World of Darkness books synchronized from a configur
 
 No manual setup required! The sync script automatically creates and manages its own virtual environment.
 
+### Local bulk archive (`World_of_Darkness.tar`)
+
+If you keep a **full offline mirror** as a single tarball, store it at **`data/World_of_Darkness.tar`** (the entire `data/` tree is gitignored). Do not commit large archives under `books/`.
+
+- If you still have `books/World_of_Darkness.tar` from an older layout, run from the repo root:
+  - Ensure `data/` is writable by your user (Docker sometimes creates it as root):  
+    `sudo chown -R "$USER:$USER" data`
+  - Then: `./scripts/move-wod-archive-to-data.sh`
+
 Requirements:
 - Python 3.7 or higher
 - `python3-venv` package (usually included with Python)

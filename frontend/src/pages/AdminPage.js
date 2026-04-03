@@ -5,7 +5,7 @@ import ConfirmDialog from '../components/ConfirmDialog';
 import { formatDateTimeInZone } from '../utils/userTimeFormat';
 import '../responsive.css';
 
-function AdminPage({ token, user, onBack, displayTimezone = null }) {
+function AdminPage({ token, user, displayTimezone = null }) {
   // Initialize toast notification system
   const { showSuccess, showError, ToastContainer } = useToast();
   const [users, setUsers] = useState([]);
@@ -28,6 +28,20 @@ function AdminPage({ token, user, onBack, displayTimezone = null }) {
   const [adminSection, setAdminSection] = useState('home');
   const [downtimeRows, setDowntimeRows] = useState([]);
   const [downtimeStatusFilter, setDowntimeStatusFilter] = useState('pending');
+  const [showUserCharsModal, setShowUserCharsModal] = useState(false);
+  const [charsTargetUser, setCharsTargetUser] = useState(null);
+  const [userCharsList, setUserCharsList] = useState([]);
+  const [userCharsLoading, setUserCharsLoading] = useState(false);
+  const [showDebugModal, setShowDebugModal] = useState(false);
+  const [debugTargetUser, setDebugTargetUser] = useState(null);
+  const [debugPayload, setDebugPayload] = useState(null);
+  const [debugLoading, setDebugLoading] = useState(false);
+  const [suspendTargetChar, setSuspendTargetChar] = useState(null);
+  const [suspendReason, setSuspendReason] = useState('pending_downtime');
+  const [suspendMessage, setSuspendMessage] = useState('');
+  const [membershipModalUser, setMembershipModalUser] = useState(null);
+  const [membershipCampaignId, setMembershipCampaignId] = useState('');
+  const [membershipAction, setMembershipAction] = useState('add');
 
   const adminNavSections = [
     { id: 'home', label: 'Overview' },
@@ -90,6 +104,110 @@ function AdminPage({ token, user, onBack, displayTimezone = null }) {
     }
   };
 
+  const refreshUserCharsList = async (userId) => {
+    setUserCharsLoading(true);
+    try {
+      const r = await api.getUserCharacters(token, userId);
+      const data = await r.json().catch(() => []);
+      setUserCharsList(Array.isArray(data) ? data : []);
+    } catch (e) {
+      showError('Failed to load characters');
+    } finally {
+      setUserCharsLoading(false);
+    }
+  };
+
+  const openUserCharacters = async (u) => {
+    setCharsTargetUser(u);
+    setShowUserCharsModal(true);
+    setUserCharsList([]);
+    await refreshUserCharsList(u.id);
+  };
+
+  const openUserDebug = async (u) => {
+    setDebugTargetUser(u);
+    setShowDebugModal(true);
+    setDebugLoading(true);
+    setDebugPayload(null);
+    try {
+      const r = await api.getUserDebug(token, u.id);
+      const data = await r.json().catch(() => null);
+      if (r.ok) setDebugPayload(data);
+      else showError(data?.error || 'Failed to load debug profile');
+    } catch (e) {
+      showError('Failed to load debug profile');
+    } finally {
+      setDebugLoading(false);
+    }
+  };
+
+  const submitSuspend = async (e) => {
+    e.preventDefault();
+    if (!suspendTargetChar) return;
+    try {
+      const r = await api.patchCharacterPlayStatus(token, suspendTargetChar.id, {
+        suspended: true,
+        reason_code: suspendReason,
+        message: suspendMessage,
+      });
+      const d = await r.json().catch(() => ({}));
+      if (r.ok) {
+        showSuccess('Character suspended');
+        setSuspendTargetChar(null);
+        setSuspendMessage('');
+        if (charsTargetUser) refreshUserCharsList(charsTargetUser.id);
+      } else {
+        showError(d.error || 'Failed');
+      }
+    } catch (err) {
+      showError('Request failed');
+    }
+  };
+
+  const clearCharacterSuspension = async (characterId) => {
+    try {
+      const r = await api.patchCharacterPlayStatus(token, characterId, {
+        suspended: false,
+      });
+      const d = await r.json().catch(() => ({}));
+      if (r.ok) {
+        showSuccess('Suspension cleared');
+        if (charsTargetUser) refreshUserCharsList(charsTargetUser.id);
+      } else {
+        showError(d.error || 'Failed');
+      }
+    } catch (err) {
+      showError('Request failed');
+    }
+  };
+
+  const submitMembershipOverride = async (e) => {
+    e.preventDefault();
+    if (!membershipModalUser) return;
+    const cid = parseInt(membershipCampaignId, 10);
+    if (!cid) {
+      showError('Enter a numeric campaign ID');
+      return;
+    }
+    try {
+      const r = await api.adminUserCampaignMembership(
+        token,
+        membershipModalUser.id,
+        cid,
+        membershipAction
+      );
+      const d = await r.json().catch(() => ({}));
+      if (r.ok) {
+        showSuccess(d.message || 'Updated');
+        setMembershipCampaignId('');
+      } else {
+        showError(d.error || 'Failed');
+      }
+    } catch (err) {
+      showError('Request failed');
+    }
+  };
+
   const fetchInvites = async () => {
     try {
       const response = await api.listInvites(token);
@@ -144,7 +262,8 @@ function AdminPage({ token, user, onBack, displayTimezone = null }) {
     try {
       const response = await api.updateUser(token, selectedUser.id, {
         username: formData.get('username'),
-        email: formData.get('email')
+        email: formData.get('email'),
+        allow_multi_campaign_play: formData.get('allow_multi') === 'on',
       });
       
       if (response.ok) {
@@ -244,21 +363,16 @@ function AdminPage({ token, user, onBack, displayTimezone = null }) {
   };
 
   return (
-    <div style={{ minHeight: '100vh', background: '#0f0f1e' }}>
-      {/* Header: title | centered nav | user + back */}
-      <div style={{
-        background: 'linear-gradient(135deg, #16213e 0%, #0f1729 100%)',
-        padding: '16px 20px',
-        boxShadow: '0 2px 10px rgba(0,0,0,0.5)',
-        borderBottom: '2px solid #2a2a4e',
-        display: 'grid',
-        gridTemplateColumns: 'minmax(140px, 1fr) minmax(260px, 2.2fr) minmax(200px, 1fr)',
-        alignItems: 'center',
-        gap: '12px',
-      }}>
-        <div style={{ minWidth: 0 }}>
-          <h1 style={{ color: '#e94560', margin: 0, fontSize: 'clamp(1.1rem, 2vw, 1.5rem)' }}>👑 Admin Panel</h1>
-        </div>
+    <div style={{ minHeight: '100%', background: '#0f0f1e' }}>
+      {/* Section tabs (site nav is on the parent shell) */}
+      <div
+        style={{
+          background: 'linear-gradient(135deg, #16213e 0%, #0f1729 100%)',
+          padding: '12px 20px',
+          boxShadow: '0 2px 10px rgba(0,0,0,0.5)',
+          borderBottom: '2px solid #2a2a4e',
+        }}
+      >
         <nav
           aria-label="Admin sections"
           style={{
@@ -292,24 +406,6 @@ function AdminPage({ token, user, onBack, displayTimezone = null }) {
             );
           })}
         </nav>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '12px', flexWrap: 'wrap' }}>
-          <span style={{ color: '#b5b5c3', fontWeight: '500' }}>👤 {user?.username}</span>
-          <button
-            onClick={onBack}
-            style={{
-              padding: '8px 16px',
-              background: 'rgba(233, 69, 96, 0.2)',
-              color: '#e94560',
-              border: '2px solid #e94560',
-              borderRadius: '5px',
-              cursor: 'pointer',
-              fontWeight: 'bold',
-              whiteSpace: 'nowrap',
-            }}
-          >
-            ← Back to Dashboard
-          </button>
-        </div>
       </div>
 
       {/* Main Content */}
@@ -491,6 +587,7 @@ function AdminPage({ token, user, onBack, displayTimezone = null }) {
                   <th style={{ padding: '12px', textAlign: 'left', color: '#e94560' }}>Email</th>
                   <th style={{ padding: '12px', textAlign: 'left', color: '#e94560' }}>Role</th>
                   <th style={{ padding: '12px', textAlign: 'left', color: '#e94560' }}>Status</th>
+                  <th style={{ padding: '12px', textAlign: 'left', color: '#e94560' }}>Last login</th>
                   <th style={{ padding: '12px', textAlign: 'left', color: '#e94560' }}>Actions</th>
                 </tr>
               </thead>
@@ -540,8 +637,64 @@ function AdminPage({ token, user, onBack, displayTimezone = null }) {
                         </span>
                       )}
                     </td>
+                    <td style={{ padding: '12px', color: '#8b8b9f', fontSize: '12px' }}>
+                      {u.last_login
+                        ? formatDateTimeInZone(u.last_login, displayTimezone)
+                        : '—'}
+                    </td>
                     <td style={{ padding: '12px' }}>
                       <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                        <button
+                          type="button"
+                          onClick={() => openUserCharacters(u)}
+                          style={{
+                            padding: '6px 12px',
+                            background: '#0ea5e9',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '4px',
+                            cursor: 'pointer',
+                            fontSize: '12px',
+                            fontWeight: '600',
+                          }}
+                        >
+                          PCs
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => openUserDebug(u)}
+                          style={{
+                            padding: '6px 12px',
+                            background: '#6366f1',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '4px',
+                            cursor: 'pointer',
+                            fontSize: '12px',
+                            fontWeight: '600',
+                          }}
+                        >
+                          Debug
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setMembershipModalUser(u);
+                            setMembershipCampaignId('');
+                          }}
+                          style={{
+                            padding: '6px 12px',
+                            background: '#8b5cf6',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '4px',
+                            cursor: 'pointer',
+                            fontSize: '12px',
+                            fontWeight: '600',
+                          }}
+                        >
+                          Campaign
+                        </button>
                         <button
                           onClick={() => { setSelectedUser(u); setShowEditModal(true); }}
                           style={{
@@ -863,6 +1016,16 @@ function AdminPage({ token, user, onBack, displayTimezone = null }) {
                   }}
                 />
               </div>
+              <div style={{ marginBottom: '20px' }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '10px', color: '#b5b5c3', cursor: 'pointer' }}>
+                  <input
+                    type="checkbox"
+                    name="allow_multi"
+                    defaultChecked={!!selectedUser.allow_multi_campaign_play}
+                  />
+                  Allow multiple locked characters / campaigns (admin override)
+                </label>
+              </div>
               <div style={{ display: 'flex', gap: '10px' }}>
                 <button
                   type="submit"
@@ -1122,6 +1285,264 @@ function AdminPage({ token, user, onBack, displayTimezone = null }) {
                     borderRadius: '8px',
                     cursor: 'pointer',
                     fontWeight: 'bold'
+                  }}
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {showUserCharsModal && charsTargetUser && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+          background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center',
+          justifyContent: 'center', zIndex: 1000,
+        }}>
+          <div style={{
+            background: '#16213e', padding: '24px', borderRadius: '10px',
+            width: '92%', maxWidth: '720px', maxHeight: '85vh', overflow: 'auto',
+            border: '2px solid #2a2a4e',
+          }}>
+            <h3 style={{ color: '#e94560', marginBottom: '16px' }}>
+              Characters — {charsTargetUser.username}
+            </h3>
+            {userCharsLoading ? (
+              <p style={{ color: '#b5b5c3' }}>Loading…</p>
+            ) : userCharsList.length === 0 ? (
+              <p style={{ color: '#b5b5c3' }}>No characters</p>
+            ) : (
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+                <thead>
+                  <tr style={{ borderBottom: '1px solid #2a2a4e' }}>
+                    <th style={{ textAlign: 'left', padding: '8px', color: '#e94560' }}>ID</th>
+                    <th style={{ textAlign: 'left', padding: '8px', color: '#e94560' }}>Name</th>
+                    <th style={{ textAlign: 'left', padding: '8px', color: '#e94560' }}>Campaign</th>
+                    <th style={{ textAlign: 'left', padding: '8px', color: '#e94560' }}>Locked</th>
+                    <th style={{ textAlign: 'left', padding: '8px', color: '#e94560' }}>Suspended</th>
+                    <th style={{ textAlign: 'left', padding: '8px', color: '#e94560' }} />
+                  </tr>
+                </thead>
+                <tbody>
+                  {userCharsList.map((ch) => (
+                    <tr key={ch.id} style={{ borderBottom: '1px solid #2a2a4e' }}>
+                      <td style={{ padding: '8px', color: '#b5b5c3' }}>{ch.id}</td>
+                      <td style={{ padding: '8px', color: '#fff' }}>{ch.name}</td>
+                      <td style={{ padding: '8px', color: '#b5b5c3' }}>{ch.campaign_id}</td>
+                      <td style={{ padding: '8px', color: '#b5b5c3' }}>{ch.sheet_locked ? 'Yes' : 'No'}</td>
+                      <td style={{ padding: '8px', color: '#b5b5c3' }}>
+                        {ch.play_suspended ? (ch.play_suspension_reason_code || 'yes') : '—'}
+                      </td>
+                      <td style={{ padding: '8px' }}>
+                        {ch.play_suspended ? (
+                          <button
+                            type="button"
+                            onClick={() => clearCharacterSuspension(ch.id)}
+                            style={{
+                              padding: '4px 10px', background: '#28a745', color: '#fff',
+                              border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '12px',
+                            }}
+                          >
+                            Clear hold
+                          </button>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setSuspendTargetChar(ch);
+                              setSuspendReason('pending_downtime');
+                              setSuspendMessage('');
+                            }}
+                            style={{
+                              padding: '4px 10px', background: '#dc3545', color: '#fff',
+                              border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '12px',
+                            }}
+                          >
+                            Suspend
+                          </button>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+            <button
+              type="button"
+              onClick={() => {
+                setShowUserCharsModal(false);
+                setCharsTargetUser(null);
+                setSuspendTargetChar(null);
+              }}
+              style={{
+                marginTop: '20px', padding: '10px 20px', background: '#667eea',
+                color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer',
+              }}
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      )}
+
+      {suspendTargetChar && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+          background: 'rgba(0,0,0,0.9)', display: 'flex', alignItems: 'center',
+          justifyContent: 'center', zIndex: 1100,
+        }}>
+          <div style={{
+            background: '#16213e', padding: '24px', borderRadius: '10px',
+            width: '90%', maxWidth: '440px', border: '2px solid #2a2a4e',
+          }}>
+            <h3 style={{ color: '#e94560', marginBottom: '16px' }}>
+              Suspend play — {suspendTargetChar.name}
+            </h3>
+            <form onSubmit={submitSuspend}>
+              <label style={{ display: 'block', color: '#b5b5c3', marginBottom: '8px' }}>Reason</label>
+              <select
+                value={suspendReason}
+                onChange={(e) => setSuspendReason(e.target.value)}
+                style={{
+                  width: '100%', padding: '10px', marginBottom: '12px',
+                  background: '#0f1729', border: '2px solid #2a2a4e', borderRadius: '5px', color: '#fff',
+                }}
+              >
+                <option value="pending_downtime">Pending downtime</option>
+                <option value="pending_more_information">Pending more information</option>
+                <option value="custom">Custom (use message)</option>
+              </select>
+              <label style={{ display: 'block', color: '#b5b5c3', marginBottom: '8px' }}>Message to player</label>
+              <textarea
+                value={suspendMessage}
+                onChange={(e) => setSuspendMessage(e.target.value)}
+                rows={4}
+                style={{
+                  width: '100%', padding: '10px', marginBottom: '16px', boxSizing: 'border-box',
+                  background: '#0f1729', border: '2px solid #2a2a4e', borderRadius: '5px', color: '#fff',
+                }}
+                placeholder="Shown when they try to use this character in play."
+              />
+              <div style={{ display: 'flex', gap: '10px' }}>
+                <button type="submit" style={{
+                  flex: 1, padding: '12px', background: '#dc3545', color: '#fff',
+                  border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold',
+                }}
+                >
+                  Confirm suspend
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSuspendTargetChar(null)}
+                  style={{
+                    flex: 1, padding: '12px', background: '#667eea', color: '#fff',
+                    border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold',
+                  }}
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {showDebugModal && debugTargetUser && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+          background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center',
+          justifyContent: 'center', zIndex: 1000,
+        }}>
+          <div style={{
+            background: '#16213e', padding: '24px', borderRadius: '10px',
+            width: '94%', maxWidth: '900px', maxHeight: '88vh', overflow: 'auto',
+            border: '2px solid #2a2a4e',
+          }}>
+            <h3 style={{ color: '#e94560', marginBottom: '12px' }}>
+              Debug profile — {debugTargetUser.username} (id {debugTargetUser.id})
+            </h3>
+            {debugLoading ? (
+              <p style={{ color: '#b5b5c3' }}>Loading…</p>
+            ) : debugPayload ? (
+              <pre style={{
+                background: '#0f1729', padding: '16px', borderRadius: '8px',
+                color: '#c4c4d4', fontSize: '12px', overflow: 'auto', maxHeight: '70vh',
+                border: '1px solid #2a2a4e',
+              }}
+              >
+                {JSON.stringify(debugPayload, null, 2)}
+              </pre>
+            ) : null}
+            <button
+              type="button"
+              onClick={() => {
+                setShowDebugModal(false);
+                setDebugTargetUser(null);
+                setDebugPayload(null);
+              }}
+              style={{
+                marginTop: '16px', padding: '10px 20px', background: '#667eea',
+                color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer',
+              }}
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      )}
+
+      {membershipModalUser && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+          background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center',
+          justifyContent: 'center', zIndex: 1000,
+        }}>
+          <div style={{
+            background: '#16213e', padding: '24px', borderRadius: '10px',
+            width: '90%', maxWidth: '420px', border: '2px solid #2a2a4e',
+          }}>
+            <h3 style={{ color: '#e94560', marginBottom: '16px' }}>
+              Campaign membership — {membershipModalUser.username}
+            </h3>
+            <form onSubmit={submitMembershipOverride}>
+              <label style={{ display: 'block', color: '#b5b5c3', marginBottom: '6px' }}>Campaign ID</label>
+              <input
+                type="number"
+                value={membershipCampaignId}
+                onChange={(e) => setMembershipCampaignId(e.target.value)}
+                style={{
+                  width: '100%', padding: '10px', marginBottom: '12px', boxSizing: 'border-box',
+                  background: '#0f1729', border: '2px solid #2a2a4e', borderRadius: '5px', color: '#fff',
+                }}
+              />
+              <label style={{ display: 'block', color: '#b5b5c3', marginBottom: '6px' }}>Action</label>
+              <select
+                value={membershipAction}
+                onChange={(e) => setMembershipAction(e.target.value)}
+                style={{
+                  width: '100%', padding: '10px', marginBottom: '16px',
+                  background: '#0f1729', border: '2px solid #2a2a4e', borderRadius: '5px', color: '#fff',
+                }}
+              >
+                <option value="add">Add to campaign_players</option>
+                <option value="remove">Remove from campaign_players</option>
+              </select>
+              <div style={{ display: 'flex', gap: '10px' }}>
+                <button type="submit" style={{
+                  flex: 1, padding: '12px', background: '#28a745', color: '#fff',
+                  border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold',
+                }}
+                >
+                  Apply
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setMembershipModalUser(null)}
+                  style={{
+                    flex: 1, padding: '12px', background: '#dc3545', color: '#fff',
+                    border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold',
                   }}
                 >
                   Cancel

@@ -2,7 +2,7 @@
 
 Welcome to the ShadowRealms AI documentation! This directory contains all project documentation, guides, and references.
 
-**Last Updated:** March 28, 2026 — changelog through **v0.7.15**; includes WoD character-creation reference, PostgreSQL migration docs, and `dice-old-wod.md`.
+**Last Updated:** April 3, 2026 — changelog through **v0.7.16**; includes WoD character-creation reference, PostgreSQL migration docs, and `dice-old-wod.md`.
 
 ## 📚 Quick Links
 
@@ -46,7 +46,7 @@ Welcome to the ShadowRealms AI documentation! This directory contains all projec
   - Gothic Horror Theme
   - Invite Code System
 - **[Old WoD / Storyteller dice](dice-old-wod.md)** - d10 pools, sidebar rolls, dice overlay, `/ai roll` / `/ai roll-hidden` (v0.7.14+)
-- **[WoD character creation (reference)](character-creation-world-of-darkness.md)** - Revised-era chargen outline and ShadowRealms field mapping (v0.7.15+)
+- **[WoD character creation (reference)](character-creation-world-of-darkness.md)** - Revised-era chargen outline and ShadowRealms field mapping (v0.7.16+)
 - **[WoD location naming (AI + RAG)](location-naming-world-of-darkness.md)** - VtM / WtA / MtA vocabulary for suggested room names; optional Chroma ingest
 
 ### Bug Fixes & Audits
@@ -229,6 +229,6 @@ All consolidated files maintain complete content with proper section headers and
 ---
 
 **Last Updated**: March 28, 2026  
-**Documentation Version**: 0.7.15  
+**Documentation Version**: 0.7.16  
 **Total Documentation Files**: 22+ markdown files in `docs/` (includes character creation reference, PostgreSQL migration docs, and `dice-old-wod.md`)
 

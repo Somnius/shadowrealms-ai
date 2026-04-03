@@ -14,7 +14,9 @@ from database import (
     get_db,
     ensure_users_player_profile_columns,
     ensure_character_portrait_url_column,
+    ensure_characters_play_suspension_columns,
 )
+from services.play_suspension import suspended_json
 from services.gpu_monitor import gpu_monitor_service
 
 logger = logging.getLogger(__name__)
@@ -57,6 +59,7 @@ def get_current_user_me():
         cursor = db.cursor()
         ensure_users_player_profile_columns(cursor)
         ensure_character_portrait_url_column(cursor)
+        ensure_characters_play_suspension_columns(cursor)
         db.commit()
 
         cursor.execute(
@@ -76,7 +79,9 @@ def get_current_user_me():
         if active_character_id is not None:
             cursor.execute(
                 """
-                SELECT ch.id, ch.name, ch.campaign_id, ch.portrait_url, c.name AS campaign_name
+                SELECT ch.id, ch.name, ch.campaign_id, ch.portrait_url, c.name AS campaign_name,
+                       ch.play_suspended, ch.play_suspension_reason_code,
+                       ch.play_suspension_message
                 FROM characters ch
                 JOIN campaigns c ON c.id = ch.campaign_id
                 WHERE ch.id = %s AND ch.user_id = %s
@@ -91,6 +96,11 @@ def get_current_user_me():
                     "campaign_id": row["campaign_id"],
                     "campaign_name": row["campaign_name"],
                     "portrait_url": row.get("portrait_url"),
+                    "play_suspended": bool(row.get("play_suspended") or False),
+                    "play_suspension_reason_code": row.get(
+                        "play_suspension_reason_code"
+                    ),
+                    "play_suspension_message": row.get("play_suspension_message"),
                 }
             else:
                 cursor.execute(
@@ -167,6 +177,7 @@ def put_current_user_me():
         db = get_db()
         cursor = db.cursor()
         ensure_users_player_profile_columns(cursor)
+        ensure_characters_play_suspension_columns(cursor)
         db.commit()
 
         updates = []
@@ -204,11 +215,28 @@ def put_current_user_me():
                 except (TypeError, ValueError):
                     return jsonify({"error": "active_character_id must be an integer"}), 400
                 cursor.execute(
-                    "SELECT id FROM characters WHERE id = %s AND user_id = %s",
+                    """
+                    SELECT id, play_suspended, play_suspension_reason_code,
+                           play_suspension_message
+                    FROM characters WHERE id = %s AND user_id = %s
+                    """,
                     (ac_int, user_id),
                 )
-                if not cursor.fetchone():
+                crow = cursor.fetchone()
+                if not crow:
                     return jsonify({"error": "Character not found for this account"}), 404
+                if bool(crow.get("play_suspended") or False):
+                    cursor.close()
+                    db.close()
+                    return (
+                        jsonify(
+                            suspended_json(
+                                crow.get("play_suspension_reason_code") or "custom",
+                                crow.get("play_suspension_message"),
+                            )
+                        ),
+                        403,
+                    )
                 updates.append("active_character_id = %s")
                 params.append(ac_int)
 

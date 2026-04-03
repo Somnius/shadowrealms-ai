@@ -3,6 +3,8 @@ Message routes for ShadowRealms AI
 Handles saving and retrieving messages for campaigns and locations
 """
 
+import os
+
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from database import (
@@ -42,6 +44,8 @@ def _message_dict_from_row(row) -> dict:
         'character_portrait_url': row['character_portrait_url'],
         'player_avatar_url': row.get('player_avatar_url'),
         'ai_message_kind': row.get('ai_message_kind'),
+        # Site role of the message author (for UI: plain admin bubble vs in-character)
+        'poster_role': (row.get('poster_role') or row.get('user_role') or ''),
     }
 
 def _ensure_location_reads_table(cursor):
@@ -145,6 +149,7 @@ def get_messages(campaign_id, location_id):
                 m.role,
                 m.created_at,
                 u.username,
+                u.role as poster_role,
                 u.player_avatar_url as player_avatar_url,
                 c.name as character_name,
                 c.portrait_url as character_portrait_url,
@@ -524,11 +529,16 @@ def save_message(campaign_id, location_id):
             active_cid = ac_row.get("active_character_id")
 
             if active_cid is not None:
+                _ichar = (
+                    "(is_active IS NULL OR is_active IS TRUE)"
+                    if os.getenv("DATABASE_TYPE", "sqlite").lower() == "postgresql"
+                    else "(is_active IS NULL OR is_active = 1)"
+                )
                 cursor.execute(
-                    """
+                    f"""
                     SELECT id FROM characters
                     WHERE id = %s AND user_id = %s AND campaign_id = %s
-                      AND (is_active IS NULL OR is_active = TRUE OR is_active = 1)
+                      AND {_ichar}
                     """,
                     (active_cid, user_id, campaign_id),
                 )
@@ -628,6 +638,7 @@ def save_message(campaign_id, location_id):
                 m.role,
                 m.created_at,
                 u.username,
+                u.role as poster_role,
                 u.player_avatar_url as player_avatar_url,
                 c.name as character_name,
                 c.portrait_url as character_portrait_url,

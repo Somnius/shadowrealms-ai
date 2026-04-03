@@ -16,6 +16,9 @@ This directory contains all test scripts for the ShadowRealms AI project.
 | `test_modules.py` | Module-level unit tests | `python3 tests/test_modules.py` |
 | `test_flask_config.py` | Flask configuration tests | `python3 tests/test_flask_config.py` |
 | `test_docker_env.py` | Docker environment tests | `python3 tests/test_docker_env.py` |
+| `test_security_and_features.py` | Auth boundaries, discover/join, `poster_role` on messages (PostgreSQL) | `python3 tests/test_security_and_features.py` or `./scripts/run_security_tests.sh` |
+
+**Security testing guide:** [docs/SECURITY_AND_TESTING.md](../docs/SECURITY_AND_TESTING.md)
 
 ### Shell Test Scripts
 
@@ -24,6 +27,7 @@ This directory contains all test scripts for the ShadowRealms AI project.
 | `test-auth-docker.sh` | Frontend authentication tests in Docker | `./tests/test-auth-docker.sh` |
 | `test_docker.sh` | Docker environment verification | `./tests/test_docker.sh` |
 | `validate-test-structure.sh` | Validate test structure | `./tests/validate-test-structure.sh` |
+| `scripts/run_security_tests.sh` | Run security/feature API tests (PostgreSQL) | `./scripts/run_security_tests.sh` |
 
 ## 🚀 Running Tests
 

@@ -305,6 +305,53 @@ class TestAPIEndpoints(unittest.TestCase):
         print("  ✅ Trailing slash test complete")
     
     # =====================================================================
+    # CAMPAIGN DISCOVER / ADMIN PLAY STATUS
+    # =====================================================================
+
+    def test_campaign_discover_endpoint(self):
+        """GET /api/campaigns/discover returns JSON array."""
+        print("\n🔎 Testing /api/campaigns/discover...")
+        response = self.client.get(
+            '/api/campaigns/discover',
+            headers=self.get_auth_headers(),
+        )
+        self.assertEqual(response.status_code, 200, response.data)
+        data = json.loads(response.data)
+        self.assertIsInstance(data, list)
+        print(f"  ✅ GET /api/campaigns/discover - {response.status_code}")
+
+    def test_campaign_join_route_registered(self):
+        """POST /api/campaigns/<id>/join is registered (may 403/404 without setup)."""
+        print("\n🚪 Testing /api/campaigns/<id>/join...")
+        response = self.client.post(
+            '/api/campaigns/999999/join',
+            headers=self.get_auth_headers(),
+        )
+        self.assertIn(response.status_code, [403, 404, 400])
+        print(f"  ✅ POST /api/campaigns/<id>/join - {response.status_code}")
+
+    def test_admin_play_status_route(self):
+        """PATCH /api/admin/characters/<id>/play-status exists."""
+        print("\n🛡️ Testing PATCH /api/admin/characters/.../play-status...")
+        r = self.client.patch(
+            '/api/admin/characters/999999/play-status',
+            headers=self.get_auth_headers(),
+            json={'suspended': False},
+        )
+        self.assertIn(r.status_code, [403, 404])
+        print(f"  ✅ PATCH play-status - {r.status_code}")
+
+    def test_admin_user_debug_route(self):
+        """GET /api/admin/users/<id>/debug exists."""
+        print("\n🔬 Testing GET /api/admin/users/.../debug...")
+        r = self.client.get(
+            '/api/admin/users/1/debug',
+            headers=self.get_auth_headers(),
+        )
+        self.assertIn(r.status_code, [200, 403, 404])
+        print(f"  ✅ GET user debug - {r.status_code}")
+
+    # =====================================================================
     # REPORT GENERATION
     # =====================================================================
     

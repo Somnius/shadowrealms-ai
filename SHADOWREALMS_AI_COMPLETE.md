@@ -293,6 +293,7 @@ This philosophy ensures:
 - [Performance & Scalability](#performance--scalability)
 
 ### **📊 Current Status & Versions**
+- [Version 0.7.16 - Data layout, chargen polish, and API hardening](#version-0716---data-layout-chargen-polish-and-api-hardening-)
 - [Version 0.7.15 - WoD character creation & Player Profile](#version-0715---wod-character-creation--player-profile-)
 - [Version 0.7.14 - Dice overlay, hidden rolls and Phase 3B prep](#version-0714---dice-overlay-hidden-rolls-and-phase-3b-prep-)
 - [Version 0.7.13 - Chat UX, WoD dice and admin AI tools](#version-0713---chat-ux-wod-dice-and-admin-ai-tools-)
@@ -331,7 +332,7 @@ This philosophy ensures:
 - [Phase 3A Interface Wireframe (ASCII)](#phase-3a-interface-wireframe-ascii)
 - [Next Steps for Phase 3A](#next-steps-for-phase-3a)
 
-### **🚀 Phase 3B: Advanced Campaign & Character Systems** ✅ STRUCTURE ORGANIZED (v0.7.15)
+### **🚀 Phase 3B: Advanced Campaign & Character Systems** ✅ STRUCTURE ORGANIZED (v0.7.16)
 - [Phase 3B Overview](#phase-3b-overview)
 - [Security & Testing Foundation](#security--testing-foundation)
 - [Location System Design](#location-system-design)
@@ -1315,6 +1316,20 @@ The project now includes comprehensive `.gitignore` rules covering:
 - **Campaign Continuity**: Persistent AI memory across multiple sessions
 - **Multi-Language**: Global accessibility with translation pipelines
 - **Real-time Collaboration**: Live AI-assisted gaming experiences
+
+## Version 0.7.16 - Data layout, chargen polish, and API hardening
+
+### What changed from 0.7.15
+
+- **WoD bulk archive**: Prefer **`data/World_of_Darkness.tar`** (gitignored). Helper script **`scripts/move-wod-archive-to-data.sh`**; if `data/` is root-owned (common with Docker), run `sudo chown -R "$USER:$USER" data` first (`books/README.md`).
+- **Character creation**: **Nature & Demeanor** on the Template step — **classic oWoD** archetype dropdowns, **Custom** + free text; `wod_meta` for Vampire, Werewolf, and Mage; validates **chronicle ID** before `POST` (`CharacterCreationWizard.js`).
+- **`POST /api/characters/`**: Integer **`campaign_id`** and user id checks; **`IntegrityError`** → **409** + `character_create_integrity` (`backend/routes/characters.py`).
+- **Also in this release** (see `docs/CHANGELOG.md` `[0.7.16]`): play suspension, campaign discover/join, admin user debug & membership, one locked PC per player (with `allow_multi_campaign_play` bypass), dashboard open chronicles.
+- **Next milestone**: Prepare **users**, **players**, and **characters** for continued Phase **3B** work—keep accounts, memberships, active PC, and locked sheets accurate.
+
+**See also:** `docs/CHANGELOG.md` (`[0.7.16]`).
+
+---
 
 ## Version 0.7.15 - WoD character creation & Player Profile
 
@@ -5919,11 +5934,11 @@ After comprehensive testing and debugging, we achieved **100% User Experience Te
 
 ---
 
-## 🚀 Phase 3B: Advanced Campaign & Character Systems (v0.7.15)
+## 🚀 Phase 3B: Advanced Campaign & Character Systems (v0.7.16)
 
 **Status:** 🚧 IN PROGRESS - Structure Organized  
 **Start Date:** 2025-10-24  
-**Current Version:** 0.7.15
+**Current Version:** 0.7.16
 
 ### Phase 3B Overview
 
@@ -5940,7 +5955,7 @@ Phase 3B builds upon Phase 3A's frontend foundation by implementing the core gam
 For complete details, see:
 - **[Phase 3B Implementation Guide](docs/PHASE3B_IMPLEMENTATION.md)** - Full specification (600+ lines)
 - **[Planning Documentation](docs/PLANNING.md)** - Phase planning and summaries
-- **[Changelog](docs/CHANGELOG.md)** - Version history through **v0.7.15**
+- **[Changelog](docs/CHANGELOG.md)** - Version history through **v0.7.16**
 
 ---
 
@@ -6423,7 +6438,7 @@ Reason: [Admin's stated reason]
 
 ---
 
-### Files Created/Modified (v0.7.15)
+### Files Created/Modified (v0.7.16)
 
 **Backend:**
 - `backend/database.py` - Schema migrations (pending)
@@ -6446,14 +6461,14 @@ Reason: [Admin's stated reason]
 **Documentation:**
 - `docs/PHASE3B_IMPLEMENTATION.md` - Complete specification ✅
 - `docs/PLANNING.md` - Detailed summary ✅
-- `docs/CHANGELOG.md` - Version 0.7.15 entry ✅
+- `docs/CHANGELOG.md` - Version 0.7.16 entry ✅
 - `scripts/run-frontend-tests.sh` - Test runner script ✅
 
 ---
 
 **Last Updated:** 2026-03-25  
 **Next Milestone:** Location System Implementation  
-**Version:** 0.7.15
+**Version:** 0.7.16
 
 ---
 
@@ -7168,7 +7183,7 @@ docker-compose ps
 - **Backend API**: http://localhost:5000
 - **ChromaDB**: http://localhost:8000
 
-### 🎯 **Current Status (v0.7.15)**
+### 🎯 **Current Status (v0.7.16)**
 
 ✅ **Phase 1 Complete** - Foundation & Docker Setup  
 ✅ **Phase 2 Complete** - RAG & Vector Memory System  
@@ -7183,7 +7198,8 @@ docker-compose ps
 ✅ **AI Health Checks** - LM Studio, Ollama, ChromaDB validation (v0.7.5)  
 ✅ **Message Persistence** - Chat messages save/load correctly, ChromaDB v2 (v0.7.6)  
 ✅ **Chat timestamps & dice (v0.7.13+)** - `time_display` on messages; sidebar **Roll dice** + `POST .../roll`; admin **`/ai`** tools via `POST /api/ai/slash`
-✅ **Dice theatre & hidden rolls (v0.7.15)** - Center overlay for `/ai roll` and sidebar rolls; `/ai roll-hidden` and storyteller-only sidebar rolls; faster polling  
+✅ **Dice theatre & hidden rolls (v0.7.14)** - Center overlay for `/ai roll` and sidebar rolls; `/ai roll-hidden` and storyteller-only sidebar rolls; faster polling  
+✅ **WoD sheets & campaign loop (v0.7.15–v0.7.16)** - Character wizard + Player Profile; discover/join; play suspension; Nature/Demeanor presets; local **`data/World_of_Darkness.tar`** layout (`books/README.md`); clearer **`POST /api/characters/`** errors  
 ✅ **PostgreSQL Migration** - Full compatibility, remote access, AI integration (v0.7.7)  
 ✅ **Footer Version Display** - Fixed API path, version now displays correctly (v0.7.8)  
 ✅ **Project Structure** - Scripts organized in dedicated directory (v0.7.9)  
