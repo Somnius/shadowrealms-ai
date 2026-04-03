@@ -6,7 +6,7 @@
 
 ### The Ultimate AI-Powered Tabletop RPG Experience
 
-[![Version](https://img.shields.io/badge/version-0.7.16-blue.svg)](https://github.com/Somnius/shadowrealms-ai)
+[![Version](https://img.shields.io/badge/version-0.7.17-blue.svg)](https://github.com/Somnius/shadowrealms-ai)
 [![Phase 2](https://img.shields.io/badge/phase-2%20complete-green.svg)](https://github.com/Somnius/shadowrealms-ai)
 [![Phase 3A](https://img.shields.io/badge/phase-3A%20complete-green.svg)](https://github.com/Somnius/shadowrealms-ai)
 [![Phase 3B](https://img.shields.io/badge/phase-3B%20active-blue.svg)](https://github.com/Somnius/shadowrealms-ai)
@@ -55,7 +55,7 @@ See ShadowRealms AI in action:
 
 *Watch this video to see the login system, gothic theme, campaign management, and admin panel in action!*
 
-> **Version 0.7.16 Preview:** This demo showcases the frontend interface in its current state. Please note that not all features are fully functional yet—this is a first look at the user interface and design direction of ShadowRealms AI.
+> **Version 0.7.17 Preview:** This demo showcases the frontend interface in its current state. Please note that not all features are fully functional yet—this is a first look at the user interface and design direction of ShadowRealms AI.
 
 </div>
 
@@ -137,6 +137,12 @@ docker-compose up -d
 ## Current Development Status
 
 <div align="center">
+
+### Version 0.7.17 - Documentation alignment and Phase 3B readiness 📚
+
+**What changed from v0.7.16:**
+- **Docs & version stamps**: All indexed documentation and config footers aligned to **v0.7.17** (see `docs/CHANGELOG.md` `[0.7.17]`).
+- **Next milestone**: Same focus as **0.7.16**—keep **users**, **players**, and **characters** (memberships, active PC, locked sheets, portraits, downtime) accurate before deeper Phase **3B** work.
 
 ### Version 0.7.16 - Data layout, chargen polish, and character API hardening 📦
 

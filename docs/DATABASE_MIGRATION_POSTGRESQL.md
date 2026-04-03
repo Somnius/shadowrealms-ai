@@ -1,7 +1,7 @@
 # PostgreSQL Migration - Decision & Plan
 
 **Date**: 2025-10-28  
-**Version**: 0.7.16 current (original plan written at 0.7.6; post-migration target remains 0.8.0+ when Phase 3B completes)  
+**Version**: 0.7.17 current (original plan written at 0.7.6; post-migration target remains 0.8.0+ when Phase 3B completes)  
 **Status**: 🚧 IN PROGRESS
 
 ---
@@ -267,7 +267,7 @@ Migration is successful when:
 > "I have postgreSQL in very high regard generally used it in many projects, and yes it is battle tested rock sold and stable solution in general."
 
 **Migration Timing Rationale:**
-- Phase 3B is early stage (v0.7.16 as of 2026-03-28)
+- Phase 3B is early stage (v0.7.17 as of 2026-03-28)
 - Character system not yet implemented
 - Minimal production data
 - Clean migration window

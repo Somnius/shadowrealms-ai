@@ -293,6 +293,7 @@ This philosophy ensures:
 - [Performance & Scalability](#performance--scalability)
 
 ### **📊 Current Status & Versions**
+- [Version 0.7.17 - Documentation alignment and Phase 3B readiness](#version-0717---documentation-alignment-and-phase-3b-readiness-)
 - [Version 0.7.16 - Data layout, chargen polish, and API hardening](#version-0716---data-layout-chargen-polish-and-api-hardening-)
 - [Version 0.7.15 - WoD character creation & Player Profile](#version-0715---wod-character-creation--player-profile-)
 - [Version 0.7.14 - Dice overlay, hidden rolls and Phase 3B prep](#version-0714---dice-overlay-hidden-rolls-and-phase-3b-prep-)
@@ -332,7 +333,7 @@ This philosophy ensures:
 - [Phase 3A Interface Wireframe (ASCII)](#phase-3a-interface-wireframe-ascii)
 - [Next Steps for Phase 3A](#next-steps-for-phase-3a)
 
-### **🚀 Phase 3B: Advanced Campaign & Character Systems** ✅ STRUCTURE ORGANIZED (v0.7.16)
+### **🚀 Phase 3B: Advanced Campaign & Character Systems** ✅ STRUCTURE ORGANIZED (v0.7.17)
 - [Phase 3B Overview](#phase-3b-overview)
 - [Security & Testing Foundation](#security--testing-foundation)
 - [Location System Design](#location-system-design)
@@ -1316,6 +1317,17 @@ The project now includes comprehensive `.gitignore` rules covering:
 - **Campaign Continuity**: Persistent AI memory across multiple sessions
 - **Multi-Language**: Global accessibility with translation pipelines
 - **Real-time Collaboration**: Live AI-assisted gaming experiences
+
+## Version 0.7.17 - Documentation alignment and Phase 3B readiness
+
+### What changed from 0.7.16
+
+- **Documentation & versions**: Project-wide alignment to **v0.7.17** (badges, `VERSION`, package metadata, indexed docs, PostgreSQL migration footers); no functional app changes in this tag beyond that housekeeping.
+- **Next milestone**: Reiterate readiness for **users**, **players**, and **characters**—stable accounts, chronicle membership, **active character**, **locked** sheets, and **downtime**—before the next Phase **3B** push (locations depth, real-time messaging, richer character tooling).
+
+**See also:** `docs/CHANGELOG.md` (`[0.7.17]`).
+
+---
 
 ## Version 0.7.16 - Data layout, chargen polish, and API hardening
 
@@ -5934,11 +5946,11 @@ After comprehensive testing and debugging, we achieved **100% User Experience Te
 
 ---
 
-## 🚀 Phase 3B: Advanced Campaign & Character Systems (v0.7.16)
+## 🚀 Phase 3B: Advanced Campaign & Character Systems (v0.7.17)
 
 **Status:** 🚧 IN PROGRESS - Structure Organized  
 **Start Date:** 2025-10-24  
-**Current Version:** 0.7.16
+**Current Version:** 0.7.17
 
 ### Phase 3B Overview
 
@@ -5955,7 +5967,7 @@ Phase 3B builds upon Phase 3A's frontend foundation by implementing the core gam
 For complete details, see:
 - **[Phase 3B Implementation Guide](docs/PHASE3B_IMPLEMENTATION.md)** - Full specification (600+ lines)
 - **[Planning Documentation](docs/PLANNING.md)** - Phase planning and summaries
-- **[Changelog](docs/CHANGELOG.md)** - Version history through **v0.7.16**
+- **[Changelog](docs/CHANGELOG.md)** - Version history through **v0.7.17**
 
 ---
 
@@ -6438,7 +6450,7 @@ Reason: [Admin's stated reason]
 
 ---
 
-### Files Created/Modified (v0.7.16)
+### Files Created/Modified (v0.7.17)
 
 **Backend:**
 - `backend/database.py` - Schema migrations (pending)
@@ -6461,14 +6473,14 @@ Reason: [Admin's stated reason]
 **Documentation:**
 - `docs/PHASE3B_IMPLEMENTATION.md` - Complete specification ✅
 - `docs/PLANNING.md` - Detailed summary ✅
-- `docs/CHANGELOG.md` - Version 0.7.16 entry ✅
+- `docs/CHANGELOG.md` - Version 0.7.17 entry ✅
 - `scripts/run-frontend-tests.sh` - Test runner script ✅
 
 ---
 
 **Last Updated:** 2026-03-25  
 **Next Milestone:** Location System Implementation  
-**Version:** 0.7.16
+**Version:** 0.7.17
 
 ---
 
@@ -7183,7 +7195,9 @@ docker-compose ps
 - **Backend API**: http://localhost:5000
 - **ChromaDB**: http://localhost:8000
 
-### 🎯 **Current Status (v0.7.16)**
+### 🎯 **Current Status (v0.7.17)**
+
+📚 **v0.7.17** — Documentation and version-stamp alignment; **next milestone** narrative for **users / players / characters** (see `docs/CHANGELOG.md` `[0.7.17]`).
 
 ✅ **Phase 1 Complete** - Foundation & Docker Setup  
 ✅ **Phase 2 Complete** - RAG & Vector Memory System  

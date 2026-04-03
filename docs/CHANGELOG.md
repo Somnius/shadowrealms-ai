@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.17] - 2026-04-03 - Documentation alignment and Phase 3B readiness 📚
+
+### Changed
+- **Documentation**: Repository-wide version references advanced to **v0.7.17** (`VERSION` / `env.template`, `frontend/package.json`, badges, indexed docs, migration footers) using `scripts/version-bump.sh`.
+
+### Notes
+- **Next milestone**: Continue preparing **users**, **players**, and **characters**—accounts, chronicle membership, globally **active character**, **locked** sheets, portraits, and **downtime** state—so the next Phase **3B** features (locations depth, real-time layer, richer sheets) land on trustworthy campaign and PC data. No application behavior change is required for this tag beyond refreshed docs and version strings.
+
 ## [0.7.16] - 2026-04-03 - WoD data layout, chargen polish, and character API hardening 📦
 
 ### Added

@@ -1,7 +1,7 @@
 # Planning & Phase Documentation
 
 **Last Updated**: 2026-04-03  
-**Version**: 0.7.16
+**Version**: 0.7.17
 
 This document consolidates planning documentation and phase summaries.
 
@@ -11,7 +11,7 @@ This document consolidates planning documentation and phase summaries.
 
 1. [Overview](#overview)
 2. [Phase model (refreshed)](#phase-model-refreshed)
-3. [Delivered through v0.7.16](#delivered-through-v0716)
+3. [Delivered through v0.7.17](#delivered-through-v0717)
 4. [Next priorities](#next-priorities)
 5. [Phase 3B specification (north star)](#phase-3b-specification-north-star)
 
@@ -21,7 +21,7 @@ This document consolidates planning documentation and phase summaries.
 
 **Phase 2** (RAG, ChromaDB, books) and **Phase 3A** (auth, React shell, campaigns, themes) are **complete**. **Phase 3B** is the ongoing “tabletop platform” track.
 
-Older text in this file claimed locations were **hardcoded** and APIs **missing**. That is **obsolete**: the app now uses **PostgreSQL**, **REST routes** for locations, characters, messages, dice, and AI, and a **polling-based** chat UI. The long sections below are a **north-star** spec; trust the [Delivered](#delivered-through-v0716) section and [CHANGELOG](CHANGELOG.md) for what actually ships.
+Older text in this file claimed locations were **hardcoded** and APIs **missing**. That is **obsolete**: the app now uses **PostgreSQL**, **REST routes** for locations, characters, messages, dice, and AI, and a **polling-based** chat UI. The long sections below are a **north-star** spec; trust the [Delivered](#delivered-through-v0717) section and [CHANGELOG](CHANGELOG.md) for what actually ships.
 
 ---
 
@@ -32,15 +32,16 @@ Older text in this file claimed locations were **hardcoded** and APIs **missing*
 | **Phase 2** | RAG, vector memory, rule-book pipeline | Complete |
 | **Phase 3A** | Login/register, dashboard, campaign CRUD, gothic UI, admin shell | Complete |
 | **3B — Foundation** | Security helpers, Jest tests, Postgres migration, Docker stack, `docker-up.sh` | Complete |
-| **3B — Core loop (shipped)** | DB **locations** (CRUD, suggest/batch, enter/leave), **characters** (CRUD + selection + portraits), **location-scoped messages** + read state, **OOC AI moderation**, **IC storyteller**, **campaign stats**, **WoD dice** (sidebar + `/ai` + overlay + hidden rolls), **message timestamps** | **Delivered** (v0.7.16) |
+| **3B — Core loop (shipped)** | DB **locations** (CRUD, suggest/batch, enter/leave), **characters** (CRUD + selection + portraits), **location-scoped messages** + read state, **OOC AI moderation**, **IC storyteller**, **campaign stats**, **WoD dice** (sidebar + `/ai` + overlay + hidden rolls), **message timestamps** | **Delivered** (through v0.7.16) |
 | **3B — Next** | **WebSockets** (or SSE) for live chat, typing/presence, notification layer, multi-step character wizard / sheet depth, campaign setting UX polish | **In planning** |
 
 Chat uses **HTTP polling** today; there is **no** WebSocket server in the repository yet.
 
 ---
 
-## Delivered through v0.7.16
+## Delivered through v0.7.17
 
+- **v0.7.17 (docs)**: Version-stamp alignment across the repo; release notes emphasize **next milestone** readiness for **users**, **players**, and **characters** before deeper Phase **3B** features (see `docs/CHANGELOG.md` `[0.7.17]`).
 - **Stack**: Docker Compose; PostgreSQL; backend `backend/routes/*` for campaigns, locations, characters, messages, dice, AI, admin.
 - **Locations**: `locations.py` — list/create/update/delete, AI suggest/batch, enter/leave; OOC behavior documented in `AI_SYSTEMS.md`.
 - **Characters**: `characters.py` — campaign character lists, CRUD; **WoD wizard** (vampire/werewolf/mage), `wod_meta`, **7/5/3** attributes, `sheet_locked`, `is_active`; **Nature/Demeanor** presets + custom text; stricter create payload validation; portraits on messages where applicable.
@@ -77,7 +78,7 @@ The sections below (from the next heading onward) are the **original Phase 3B de
 ## 🚀 Phase 3B: Advanced Campaign & Character Systems
 
 **Status:** 🚧 IN PROGRESS — **core loop shipped** (locations, characters, chat, dice, AI); **WebSockets & advanced UX** not yet  
-**Version:** 0.7.16  
+**Version:** 0.7.17  
 **Start Date:** 2025-10-24
 
 ### Overview
@@ -546,7 +547,7 @@ GET    /api/admin/campaigns/:id/stats        - Campaign statistics
 
 ### 📅 Rolling roadmap (replaces fixed “Week N” schedule)
 
-**Done (v0.7.16):** Security baseline, PostgreSQL, locations, characters, messages, dice, AI chat + slash commands, OOC moderation, timestamps, docker-up workflow.
+**Done (v0.7.17):** Security baseline, PostgreSQL, locations, characters, messages, dice, AI chat + slash commands, OOC moderation, timestamps, docker-up workflow.
 
 **Next (typical order):**
 1. **WebSockets** (or SSE) for chat + presence hooks
@@ -601,7 +602,7 @@ Older “Week 1–4” labels below in this file are **historical**; do not use 
 
 From extensive user conversation (2025-10-24), all specifications archived in:
 - `docs/PHASE3B_IMPLEMENTATION.md` (full details)
-- `docs/CHANGELOG.md` through **v0.7.16** (summary)
+- `docs/CHANGELOG.md` through **v0.7.17** (summary)
 - This document (integration into main planning)
 
 Key user requirements:
@@ -618,5 +619,5 @@ Key user requirements:
 
 **Last Updated:** 2026-04-03  
 **Next milestone:** Real-time messaging layer (WebSockets or SSE); keep **users / players / characters** data accurate for upcoming location and sheet-depth work; see [Next priorities](#next-priorities).  
-**Version:** 0.7.16
+**Version:** 0.7.17
 

@@ -1,6 +1,6 @@
 # Security practices and automated tests
 
-**Document version:** 0.7.16 (see `docs/CHANGELOG.md`).
+**Document version:** 0.7.17 (see `docs/CHANGELOG.md`).
 
 This document describes how we test security-sensitive behavior, how to run those tests safely, and how to keep dependencies under control.
 

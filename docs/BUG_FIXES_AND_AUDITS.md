@@ -1,7 +1,7 @@
 # Bug Fixes & Technical Audits
 
 **Last Updated**: 2026-03-25  
-**Version**: 0.7.16
+**Version**: 0.7.17
 
 This document consolidates bug fix documentation and technical audit reports.
 
