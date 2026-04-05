@@ -1,7 +1,7 @@
 # Quality Assurance & Testing Documentation
 
 **Last Updated**: 2026-04-05  
-**Version**: 0.7.18
+**Version**: 0.8.0
 
 This document consolidates all quality assurance, auditing, and testing documentation.
 

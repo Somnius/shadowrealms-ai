@@ -336,3 +336,64 @@
   }
 }
 
+/* Admin panel: sidebar + main (AdminPage.js) */
+.admin-panel-root {
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+  min-height: 100%;
+}
+
+.admin-panel-sidebar {
+  width: 220px;
+  flex-shrink: 0;
+  box-sizing: border-box;
+}
+
+.admin-panel-main {
+  flex: 1;
+  min-width: 0;
+}
+
+@media (max-width: 767px) {
+  .admin-panel-root {
+    flex-direction: column;
+  }
+  .admin-panel-sidebar {
+    width: 100%;
+    border-right: none !important;
+    border-bottom: 2px solid #2a2a4e;
+  }
+}
+
+/* Player Profile hub: sidebar + main (SimpleApp.js) */
+.player-profile-root {
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+  flex: 1;
+  min-height: 0;
+}
+
+.player-profile-sidebar {
+  width: 240px;
+  flex-shrink: 0;
+  box-sizing: border-box;
+}
+
+.player-profile-main {
+  flex: 1;
+  min-width: 0;
+}
+
+@media (max-width: 767px) {
+  .player-profile-root {
+    flex-direction: column;
+  }
+  .player-profile-sidebar {
+    width: 100%;
+    border-right: none !important;
+    border-bottom: 2px solid #2a2a4e;
+  }
+}
+

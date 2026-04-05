@@ -93,6 +93,22 @@ export const api = {
       },
       body: JSON.stringify(payload),
     }),
+
+  getCampaign: (token, campaignId) =>
+    fetch(`${API_URL}/campaigns/${campaignId}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    }),
+
+  getCampaignStats: (token, campaignId) =>
+    fetch(`${API_URL}/campaigns/${campaignId}/stats`, {
+      headers: { Authorization: `Bearer ${token}` },
+    }),
+
+  deleteCampaign: (token, campaignId) =>
+    fetch(`${API_URL}/campaigns/${campaignId}`, {
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${token}` },
+    }),
   
   // AI Chat
   sendMessage: (token, messageData) =>

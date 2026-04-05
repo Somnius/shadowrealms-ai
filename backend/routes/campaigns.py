@@ -15,11 +15,16 @@ from services.embedding_service import create_embedding_service
 from database import (
     get_db,
     ensure_users_player_profile_columns,
+    ensure_character_portrait_url_column,
+    ensure_characters_is_active_column,
     ensure_characters_play_suspension_columns,
     ensure_campaigns_listing_columns,
+    ensure_campaigns_staff_pause_columns,
     ensure_users_restrict_self_join_new_chronicles_column,
+    ensure_users_self_switch_playing_character_column,
     ensure_campaign_players_active_character_id_column,
 )
+from services.moderation_audit import log_moderation_action_cursor
 from services.play_suspension import suspended_json
 from services.playing_character import (
     effective_playing_character_id,
@@ -201,9 +206,10 @@ def create_campaign():
 def get_campaigns():
     """Get campaigns for the user.
 
-    Query: for_active_character=1 — only the campaign tied to the user's
-    globally active character (Player Profile). Omit for full membership list
-    (e.g. character creation picker).
+    Query: for_active_character=1 — only the chronicle tied to the user's
+    globally active character (Player Profile). Clients should omit this when
+    the player has allow_multi_campaign_play so the dashboard can list every
+    membership. Omit for full membership list (e.g. character creation picker).
     """
     try:
         raw_uid = get_jwt_identity()
@@ -222,6 +228,8 @@ def get_campaigns():
         ensure_users_player_profile_columns(cursor)
         ensure_campaigns_listing_columns(cursor)
         ensure_campaign_players_active_character_id_column(cursor)
+        ensure_character_portrait_url_column(cursor)
+        ensure_characters_is_active_column(cursor)
         conn.commit()
 
         if for_active:
@@ -239,10 +247,14 @@ def get_campaigns():
                 """
                 SELECT c.id, c.name, c.description, c.game_system, c.created_at, c.status,
                        c.max_players, c.listing_visibility, c.accepting_players,
-                       cp.active_character_id AS my_playing_character_id
+                       cp.active_character_id AS my_playing_character_id,
+                       ch_my.name AS my_playing_character_name,
+                       ch_my.portrait_url AS my_playing_character_portrait_url
                 FROM campaigns c
                 INNER JOIN characters ch ON ch.campaign_id = c.id
                 LEFT JOIN campaign_players cp ON cp.campaign_id = c.id AND cp.user_id = %s
+                LEFT JOIN characters ch_my ON ch_my.id = cp.active_character_id
+                    AND ch_my.user_id = %s AND ch_my.campaign_id = c.id
                 WHERE ch.id = %s AND ch.user_id = %s
                   AND (
                     c.created_by = %s OR c.id IN (
@@ -251,20 +263,24 @@ def get_campaigns():
                   )
                 ORDER BY c.created_at DESC
                 """,
-                (user_id, aid, user_id, user_id, user_id),
+                (user_id, user_id, aid, user_id, user_id, user_id),
             )
         else:
             cursor.execute("""
                 SELECT c.id, c.name, c.description, c.game_system, c.created_at, c.status,
                        c.max_players, c.listing_visibility, c.accepting_players,
-                       cp.active_character_id AS my_playing_character_id
+                       cp.active_character_id AS my_playing_character_id,
+                       ch_my.name AS my_playing_character_name,
+                       ch_my.portrait_url AS my_playing_character_portrait_url
                 FROM campaigns c
                 LEFT JOIN campaign_players cp ON cp.campaign_id = c.id AND cp.user_id = %s
+                LEFT JOIN characters ch_my ON ch_my.id = cp.active_character_id
+                    AND ch_my.user_id = %s AND ch_my.campaign_id = c.id
                 WHERE c.created_by = %s OR c.id IN (
                     SELECT campaign_id FROM campaign_players WHERE user_id = %s
                 )
                 ORDER BY c.created_at DESC
-            """, (user_id, user_id, user_id))
+            """, (user_id, user_id, user_id, user_id))
         
         campaigns = []
         for row in cursor.fetchall():
@@ -284,8 +300,35 @@ def get_campaigns():
                 'listing_visibility': row.get('listing_visibility') or 'private',
                 'accepting_players': acc,
                 'my_playing_character_id': row.get('my_playing_character_id'),
+                'my_playing_character_name': row.get('my_playing_character_name'),
+                'my_playing_character_portrait_url': row.get(
+                    'my_playing_character_portrait_url'
+                ),
             })
-        
+
+        # Dashboard card: show a character whenever the user has any PC in the
+        # chronicle, not only when campaign_players.active_character_id is set.
+        for c in campaigns:
+            name = (c.get("my_playing_character_name") or "").strip()
+            if name:
+                continue
+            eid = effective_playing_character_id(cursor, user_id, c["id"])
+            if eid is None:
+                continue
+            cursor.execute(
+                """
+                SELECT id, name, portrait_url FROM characters
+                WHERE id = %s AND user_id = %s AND campaign_id = %s
+                """,
+                (eid, user_id, c["id"]),
+            )
+            ch = cursor.fetchone()
+            if not ch:
+                continue
+            c["my_playing_character_id"] = ch["id"]
+            c["my_playing_character_name"] = ch.get("name")
+            c["my_playing_character_portrait_url"] = ch.get("portrait_url")
+
         cursor.close()
         conn.close()
         
@@ -753,6 +796,7 @@ def update_campaign(campaign_id):
         conn = get_db()
         cursor = conn.cursor()
         ensure_campaigns_listing_columns(cursor)
+        ensure_campaigns_staff_pause_columns(cursor)
         conn.commit()
         
         # Check if user is admin or campaign creator
@@ -812,6 +856,22 @@ def update_campaign(campaign_id):
                     return jsonify({'error': 'max_players must be >= 0'}), 400
                 updates.append('max_players = %s')
                 params.append(mpi)
+
+        if 'is_active' in data:
+            active_flag = bool(data['is_active'])
+            updates.append('is_active = %s')
+            params.append(active_flag)
+            if active_flag:
+                updates.append('admin_inactive_reason = %s')
+                params.append(None)
+                updates.append('admin_inactive_at = %s')
+                params.append(None)
+            else:
+                reason = (data.get('admin_inactive_reason') or data.get('staff_pause_reason') or '').strip()
+                updates.append('admin_inactive_reason = %s')
+                params.append(reason or None)
+                updates.append('admin_inactive_at = %s')
+                params.append(datetime.utcnow())
         
         if updates:
             params.append(campaign_id)
@@ -887,6 +947,24 @@ def delete_campaign(campaign_id):
         except Exception as e:
             logger.warning(f"⚠️ ChromaDB cleanup error: {e}")
         
+        try:
+            actor_id = int(user_id)
+            creator_id = int(campaign_creator)
+            log_moderation_action_cursor(
+                cursor,
+                creator_id,
+                actor_id,
+                "campaign_deleted",
+                {
+                    "campaign_id": campaign_id,
+                    "campaign_name": campaign_name,
+                    "locations_removed": location_count,
+                    "messages_removed": message_count,
+                },
+            )
+        except Exception as e:
+            logger.warning("Moderation log insert failed (campaign delete continues): %s", e)
+
         # SQLite's ON DELETE CASCADE will handle related records
         # (locations, characters, messages, dice_rolls, etc.)
         cursor.execute("DELETE FROM campaigns WHERE id = %s", (campaign_id,))
@@ -1210,7 +1288,7 @@ def detach_from_campaign(campaign_id):
 @campaigns_bp.route("/<int:campaign_id>/my-playing-character", methods=["PUT"])
 @jwt_required()
 def put_my_playing_character(campaign_id):
-    """Set this chronicle's playing character (first bind free; switch requires ST)."""
+    """Set this chronicle's playing character (first bind free; switch needs ST unless self_switch_playing_character)."""
     try:
         user_id = int(get_jwt_identity())
     except (TypeError, ValueError):
@@ -1228,6 +1306,7 @@ def put_my_playing_character(campaign_id):
     conn = get_db()
     cursor = conn.cursor()
     ensure_campaign_players_active_character_id_column(cursor)
+    ensure_users_self_switch_playing_character_column(cursor)
     conn.commit()
 
     cursor.execute(
@@ -1263,20 +1342,31 @@ def put_my_playing_character(campaign_id):
         return jsonify({"error": "Character not in this campaign"}), 404
 
     if current is not None and int(current) != int(character_id):
-        cursor.close()
-        conn.close()
-        return (
-            jsonify(
-                {
-                    "error": (
-                        "Switching to another character in this chronicle requires "
-                        "storyteller approval."
-                    ),
-                    "error_code": "playing_character_switch_requires_storyteller",
-                }
-            ),
-            403,
+        cursor.execute(
+            """
+            SELECT self_switch_playing_character FROM users WHERE id = %s
+            """,
+            (user_id,),
         )
+        uflags = cursor.fetchone()
+        can_self_switch = bool(
+            uflags and (uflags.get("self_switch_playing_character") or False)
+        )
+        if not can_self_switch:
+            cursor.close()
+            conn.close()
+            return (
+                jsonify(
+                    {
+                        "error": (
+                            "Switching to another character in this chronicle requires "
+                            "storyteller approval."
+                        ),
+                        "error_code": "playing_character_switch_requires_storyteller",
+                    }
+                ),
+                403,
+            )
 
     cursor.execute(
         """

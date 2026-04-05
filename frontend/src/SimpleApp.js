@@ -11,9 +11,18 @@ import { formatMessageTime } from './utils/messageTime';
 import { formatDateTimeTooltip, formatDateTimeInZone } from './utils/userTimeFormat';
 import { getTimezoneSelectOptions } from './utils/timezones';
 import { api } from './utils/api';
+import { GothicPageLoadingOverlay, SessionRevealOverlay } from './components/ThemeOverlays';
 import './responsive.css';
 
 const API_URL = '/api'; // Use relative URL through nginx proxy
+
+/** Sidebar entries for the Player Profile hub (`playerProfileSection`). */
+const PLAYER_PROFILE_NAV = [
+  { id: 'home', label: 'Overview' },
+  { id: 'accountSettings', label: 'Account Settings' },
+  { id: 'playableCharacters', label: 'Playable Characters' },
+  { id: 'downtime', label: 'Downtime requests' },
+];
 
 /** Storyteller (oWoD) pool: `5`, `4+3`, `7-1` — digits with +/− between. */
 function parseStorytellerPool(input) {
@@ -49,19 +58,6 @@ function normalizeChatMessageInput(raw, isAdmin) {
   if (!s) return s;
   if (isAdmin && /^\s*\/ai\s*$/i.test(s)) return '/ai help';
   return s;
-}
-
-function GothicPageLoadingOverlay({ visible, label }) {
-  if (!visible) return null;
-  return (
-    <div className="sr-page-loading-overlay" role="status" aria-live="polite" aria-busy="true">
-      <div className="sr-page-loading-card">
-        <div className="sr-page-loading-rune" aria-hidden />
-        <div className="sr-page-loading-title">ShadowRealms</div>
-        <div className="sr-page-loading-sub">{label || 'One moment…'}</div>
-      </div>
-    </div>
-  );
 }
 
 function MessageCharacterAvatar({ url, size = 40 }) {
@@ -129,11 +125,47 @@ function getChatMessagePresentation(msg) {
   }
   const uname = (msg.username || '').trim() || 'Player';
   const charName = (msg.character_name || '').trim();
-  const hasCharacter =
-    !!charName ||
-    (msg.character_id != null && msg.character_id !== '' && Number(msg.character_id) > 0);
   const posterRole = String(msg.poster_role || '').toLowerCase();
+  const cid =
+    msg.character_id != null && msg.character_id !== '' ? Number(msg.character_id) : null;
+  const smRaw = msg.speaker_mode;
+  const sm =
+    smRaw === 'staff' || smRaw === 'player' || smRaw === 'character'
+      ? smRaw
+      : cid
+        ? 'character'
+        : 'player';
 
+  if (sm === 'staff') {
+    const sk = msg.staff_kind;
+    let sub = 'Staff';
+    if (sk === 'admin') {
+      sub = posterRole === 'helper' ? 'Site staff' : 'Site admin';
+    } else if (sk === 'storyteller') {
+      sub = 'Storyteller';
+    }
+    return {
+      ...CHAT_BUBBLE_NEUTRAL,
+      icon: sk === 'storyteller' ? 'fa-scroll' : 'fa-user-shield',
+      nameColor: sk === 'storyteller' ? '#c4b5fd' : '#94a3b8',
+      label: uname,
+      subLabel: sub,
+    };
+  }
+
+  if (sm === 'player') {
+    return {
+      ...CHAT_BUBBLE_NEUTRAL,
+      icon: 'fa-user',
+      nameColor: '#cbd5e1',
+      label: uname,
+      subLabel: null,
+    };
+  }
+
+  const hasCharacter =
+    sm === 'character' &&
+    (!!charName || (cid != null && !Number.isNaN(cid) && cid > 0));
   if (hasCharacter) {
     const display = charName || 'Character';
     return {
@@ -151,6 +183,22 @@ function getChatMessagePresentation(msg) {
     label: uname,
     subLabel: isAdminPoster ? 'Site admin' : null,
   };
+}
+
+function getChatMessageAvatarUrl(msg) {
+  const cid =
+    msg.character_id != null && msg.character_id !== '' ? Number(msg.character_id) : null;
+  const smRaw = msg.speaker_mode;
+  const sm =
+    smRaw === 'staff' || smRaw === 'player' || smRaw === 'character'
+      ? smRaw
+      : cid
+        ? 'character'
+        : 'player';
+  if (sm === 'character') {
+    return msg.character_portrait_url || msg.player_avatar_url || null;
+  }
+  return msg.player_avatar_url || null;
 }
 
 function SimpleApp() {
@@ -173,6 +221,11 @@ function SimpleApp() {
   const [campaignCharacters, setCampaignCharacters] = useState([]);
   const [loading, setLoading] = useState(false);
   const [pageOverlay, setPageOverlay] = useState({ visible: false, label: '' });
+  const [sessionReveal, setSessionReveal] = useState({
+    visible: false,
+    title: '',
+    subtitle: '',
+  });
   const [error, setError] = useState('');
   
   // Ref for chat input to maintain focus
@@ -236,6 +289,8 @@ function SimpleApp() {
   /** Set when loadMessages succeeds; must match currentLocation.id before applying scroll. */
   const [messagesSyncedLocationId, setMessagesSyncedLocationId] = useState(null);
   const [chatNow, setChatNow] = useState(() => new Date());
+  /** In chat: post as character mask, as player (OOC self), or as staff (ST / site). */
+  const [chatSpeakAs, setChatSpeakAs] = useState('character');
   const [showRollModal, setShowRollModal] = useState(false);
   const [rollPoolInput, setRollPoolInput] = useState('5');
   const [rollDifficulty, setRollDifficulty] = useState(6);
@@ -279,6 +334,10 @@ function SimpleApp() {
   const [adminDiceSaving, setAdminDiceSaving] = useState(false);
   const [profileTzDraft, setProfileTzDraft] = useState('');
   const [profileTzSaving, setProfileTzSaving] = useState(false);
+  /** Sub-section when `currentPage === 'playerProfile'` (sidebar hub). */
+  const [playerProfileSection, setPlayerProfileSection] = useState('home');
+  /** In Playable Characters: main roster vs character creation guide (before wizard). */
+  const [playableCharactersView, setPlayableCharactersView] = useState('main');
 
   const renderMessageContent = (content) => {
     const text = String(content ?? '');
@@ -562,6 +621,11 @@ function SimpleApp() {
         if (event.state.selectedCampaign) {
           setSelectedCampaign(event.state.selectedCampaign);
         }
+        if (event.state.playerProfileSection) {
+          setPlayerProfileSection(event.state.playerProfileSection);
+        } else if (event.state.page === 'playerProfile') {
+          setPlayerProfileSection('home');
+        }
       }
     };
 
@@ -576,16 +640,23 @@ function SimpleApp() {
   }, [currentPage, currentLocation, selectedCampaign]);
 
   // Navigate with browser history support
-  const navigateTo = (page, campaign = null) => {
-    const state = { 
-      page, 
+  const navigateTo = (page, campaign = null, opts = null) => {
+    const o = opts && typeof opts === 'object' ? opts : {};
+    const nextProfileSec =
+      page === 'playerProfile' ? o.playerProfileSection ?? 'home' : undefined;
+    const state = {
+      page,
       showGothicShowcase: false,
-      selectedCampaign: campaign 
+      selectedCampaign: campaign ?? undefined,
+      ...(nextProfileSec != null ? { playerProfileSection: nextProfileSec } : {}),
     };
     window.history.pushState(state, '', window.location.pathname);
     setCurrentPage(page);
     if (campaign) {
       setSelectedCampaign(campaign);
+    }
+    if (page === 'playerProfile') {
+      setPlayerProfileSection(nextProfileSec);
     }
   };
 
@@ -623,12 +694,16 @@ function SimpleApp() {
     return null;
   };
 
-  // Fetch campaigns (for_active_character=1 filters to active PC’s chronicle when set)
+  // Fetch campaigns (for_active_character=1 focuses on active PC’s chronicle — skipped when
+  // allow_multi_campaign_play so the player sees every chronicle they are in)
   const fetchCampaigns = async (authToken, opts = {}) => {
     const t = authToken ?? token;
     if (!t) return;
-    const q =
-      opts.forActiveCharacter === true ? '?for_active_character=1' : '';
+    const profile = opts.user ?? user;
+    const allowMulti = !!(profile && profile.allow_multi_campaign_play);
+    const useActiveOnly =
+      opts.forActiveCharacter === true && !allowMulti;
+    const q = useActiveOnly ? '?for_active_character=1' : '';
     try {
       const response = await fetch(`${API_URL}/campaigns/${q}`, {
         headers: { Authorization: `Bearer ${t}` },
@@ -655,11 +730,39 @@ function SimpleApp() {
       setUser(me);
       localStorage.setItem('user', JSON.stringify(me));
       const owned = me.statistics?.characters_owned ?? 0;
+      const displayName = (me.username || 'Traveler').trim();
+
+      const showWelcomeReveal = (title, subtitle) => {
+        setSessionReveal({ visible: true, title, subtitle });
+        window.setTimeout(() => {
+          setSessionReveal({ visible: false, title: '', subtitle: '' });
+        }, 1550);
+      };
+
       if (owned > 0 && (me.active_character_id == null || me.active_character_id === '')) {
-        setCurrentPage('selectCharacter');
+        setPlayerProfileSection('playableCharacters');
+        setPlayableCharactersView('main');
+        setCurrentPage('playerProfile');
+        window.history.replaceState(
+          {
+            page: 'playerProfile',
+            playerProfileSection: 'playableCharacters',
+            showGothicShowcase: false,
+          },
+          '',
+          window.location.pathname
+        );
+        showWelcomeReveal(
+          `Welcome, ${displayName}`,
+          'Choose the mask you wear in the chronicle hall.'
+        );
       } else {
         setCurrentPage('dashboard');
-        await fetchCampaigns(accessToken, { forActiveCharacter: true });
+        await fetchCampaigns(accessToken, { forActiveCharacter: true, user: me });
+        showWelcomeReveal(
+          `Welcome back, ${displayName}`,
+          'Your chronicles stir in the dark.'
+        );
       }
       return me;
     } catch (e) {
@@ -693,7 +796,15 @@ function SimpleApp() {
       setUser(errBody);
       localStorage.setItem('user', JSON.stringify(errBody));
       setCurrentPage('dashboard');
-      await fetchCampaigns(token, { forActiveCharacter: true });
+      await fetchCampaigns(token, { forActiveCharacter: true, user: errBody });
+      setSessionReveal({
+        visible: true,
+        title: 'The hall remembers you',
+        subtitle: 'Your chronicles await in the dark.',
+      });
+      window.setTimeout(() => {
+        setSessionReveal({ visible: false, title: '', subtitle: '' });
+      }, 1450);
       showSuccess('Active character updated.');
     } catch (e) {
       showError('Connection error while saving active character');
@@ -736,7 +847,7 @@ function SimpleApp() {
         return;
       }
       showSuccess('You have joined this chronicle.');
-      fetchCampaigns(undefined, { forActiveCharacter: true });
+      fetchCampaigns(undefined, { forActiveCharacter: true, user });
       const r2 = await api.discoverCampaigns(token);
       if (r2.ok) {
         const d2 = await r2.json();
@@ -807,14 +918,16 @@ function SimpleApp() {
       const me = await fetch(`${API_URL}/users/me`, {
         headers: { Authorization: `Bearer ${token}` },
       });
+      let profile = user;
       if (me.ok) {
         const u = await me.json();
         setUser(u);
         localStorage.setItem('user', JSON.stringify(u));
+        profile = u;
       }
       setSelectedCampaign(null);
       setCurrentPage('dashboard');
-      fetchCampaigns(undefined, { forActiveCharacter: true });
+      fetchCampaigns(undefined, { forActiveCharacter: true, user: profile });
     } catch (e) {
       showError('Connection error');
     } finally {
@@ -874,12 +987,12 @@ function SimpleApp() {
     }
   };
 
-  // Load campaigns when dashboard is shown
+  // Load campaigns when dashboard is shown (re-fetch when multi-chronicle flag appears on /me)
   useEffect(() => {
     if (currentPage === 'dashboard' && token) {
-      fetchCampaigns(undefined, { forActiveCharacter: true });
+      fetchCampaigns(undefined, { forActiveCharacter: true, user });
     }
-  }, [currentPage, token]);
+  }, [currentPage, token, user?.allow_multi_campaign_play, user?.id]);
 
   useEffect(() => {
     if (currentPage !== 'dashboard' || !token) return undefined;
@@ -898,6 +1011,33 @@ function SimpleApp() {
       cancelled = true;
     };
   }, [currentPage, token]);
+
+  useEffect(() => {
+    if (!selectedCampaign?.id || currentPage !== 'chat') return undefined;
+    const key = `sr_chat_speak_as_${selectedCampaign.id}`;
+    try {
+      const v = sessionStorage.getItem(key);
+      if (v === 'character' || v === 'player' || v === 'staff') {
+        setChatSpeakAs(v);
+      } else {
+        setChatSpeakAs(character ? 'character' : 'player');
+      }
+    } catch (_) {
+      setChatSpeakAs(character ? 'character' : 'player');
+    }
+    return undefined;
+  }, [selectedCampaign?.id, currentPage, character?.id]);
+
+  useEffect(() => {
+    if (!selectedCampaign?.id || currentPage !== 'chat') return undefined;
+    if (chatSpeakAs === 'character' && !character) {
+      setChatSpeakAs('player');
+      try {
+        sessionStorage.setItem(`sr_chat_speak_as_${selectedCampaign.id}`, 'player');
+      } catch (_) {}
+    }
+    return undefined;
+  }, [character, chatSpeakAs, selectedCampaign?.id, currentPage]);
 
   // WoD character wizard: need every chronicle the user can join (membership / ownership)
   useEffect(() => {
@@ -919,7 +1059,7 @@ function SimpleApp() {
   }, [currentPage, token]);
 
   useEffect(() => {
-    if (!token || !['selectCharacter', 'playerProfile'].includes(currentPage)) return undefined;
+    if (!token || currentPage !== 'playerProfile') return undefined;
     let cancelled = false;
     (async () => {
       try {
@@ -955,7 +1095,18 @@ function SimpleApp() {
       (user.active_character_id == null || user.active_character_id === '') &&
       currentPage === 'dashboard'
     ) {
-      setCurrentPage('selectCharacter');
+      setPlayerProfileSection('playableCharacters');
+      setPlayableCharactersView('main');
+      setCurrentPage('playerProfile');
+      window.history.replaceState(
+        {
+          page: 'playerProfile',
+          playerProfileSection: 'playableCharacters',
+          showGothicShowcase: false,
+        },
+        '',
+        window.location.pathname
+      );
     }
   }, [token, user?.active_character_id, user?.statistics?.characters_owned, currentPage]);
 
@@ -1058,6 +1209,7 @@ function SimpleApp() {
     localStorage.removeItem('token');
     localStorage.removeItem('user'); // Clear persisted user data
     setUser(null);
+    setSessionReveal({ visible: false, title: '', subtitle: '' });
     setCurrentPage('dashboard');
     setCampaigns([]);
     setSelectedCampaign(null);
@@ -1099,7 +1251,7 @@ function SimpleApp() {
         };
         showSuccess('✅ Campaign created successfully!');
         e.target.reset();
-        await fetchCampaigns(undefined, { forActiveCharacter: true });
+        await fetchCampaigns(undefined, { forActiveCharacter: true, user });
         setSelectedCampaign(createdCampaign);
         navigateTo('campaignDetails', createdCampaign);
       } else {
@@ -1332,7 +1484,7 @@ function SimpleApp() {
       }
       if (aid != null && aid !== '' && !primary) {
         showError(
-          'Your active character is not part of this chronicle. Open Player Profile and select a character that belongs here.'
+          'Your active character is not part of this chronicle. Open Player Profile → Switch character and pick a character that belongs here.'
         );
         setPageOverlay({ visible: false, label: '' });
         return;
@@ -1432,6 +1584,25 @@ function SimpleApp() {
     setLoading(true);
     setError('');
 
+    const sm =
+      chatSpeakAs === 'staff'
+        ? 'staff'
+        : chatSpeakAs === 'player'
+          ? 'player'
+          : 'character';
+    const isCampaignOwnerSend =
+      selectedCampaign?.created_by != null &&
+      user?.id != null &&
+      String(selectedCampaign.created_by) === String(user.id);
+    const staffKindOptimistic =
+      sm === 'staff'
+        ? user?.role === 'admin' || user?.role === 'helper'
+          ? 'admin'
+          : isCampaignOwnerSend
+            ? 'storyteller'
+            : 'staff'
+        : null;
+
     // Add user message to UI immediately (optimistic update)
     const tempUserMessage = {
       role: 'user',
@@ -1440,9 +1611,12 @@ function SimpleApp() {
       location_id: currentLocation.id,
       username: user.username,
       poster_role: user?.role || '',
-      character_id: character?.id,
-      character_name: character?.name,
-      character_portrait_url: character?.portrait_url || null,
+      speaker_mode: sm,
+      staff_kind: staffKindOptimistic,
+      player_avatar_url: user?.player_avatar_url || null,
+      character_id: sm === 'character' && character?.id ? character.id : null,
+      character_name: sm === 'character' ? character?.name : null,
+      character_portrait_url: sm === 'character' ? character?.portrait_url || null : null,
       temp: true, // Mark as temporary
     };
     setMessages(prev => [...prev, tempUserMessage]);
@@ -1464,7 +1638,8 @@ function SimpleApp() {
           message_type:
             String(currentLocation?.type || '').toLowerCase() === 'ooc' ? 'ooc' : 'ic',
           role: 'user',
-          ...(character?.id ? { character_id: character.id } : {}),
+          speak_as: chatSpeakAs,
+          ...(chatSpeakAs === 'character' && character?.id ? { character_id: character.id } : {}),
           ...(slashMatch ? { ai_message_kind: 'slash_user' } : {}),
         })
       });
@@ -2008,7 +2183,7 @@ function SimpleApp() {
         setSelectedCampaign({ ...selectedCampaign, name: editedCampaignName });
         setIsEditingCampaignName(false);
         // Refresh campaigns list
-        fetchCampaigns(undefined, { forActiveCharacter: true });
+        fetchCampaigns(undefined, { forActiveCharacter: true, user });
       } else {
         const data = await response.json();
         setError(data.error || 'Failed to update campaign name');
@@ -2044,7 +2219,7 @@ function SimpleApp() {
         setSelectedCampaign({ ...selectedCampaign, description: editedCampaignDesc });
         setIsEditingCampaignDesc(false);
         // Refresh campaigns list
-        fetchCampaigns(undefined, { forActiveCharacter: true });
+        fetchCampaigns(undefined, { forActiveCharacter: true, user });
       } else {
         const data = await response.json();
         setError(data.error || 'Failed to update campaign description');
@@ -2301,17 +2476,22 @@ function SimpleApp() {
             flexWrap: 'wrap',
           }}
         >
+          <button
+            type="button"
+            onClick={() => navigateTo('dashboard')}
+            style={appHeaderButton('muted')}
+          >
+            Home
+          </button>
           <span style={{ color: '#b5b5c3', fontWeight: '500', fontSize: isMobile ? '14px' : '16px' }}>
             👤 {user?.username}
           </span>
-          <button type="button" onClick={() => navigateTo('profile')} style={appHeaderButton('violet')}>
-            Profile
-          </button>
-          <button type="button" onClick={() => navigateTo('playerProfile')} style={appHeaderButton('rose')}>
+          <button
+            type="button"
+            onClick={() => navigateTo('playerProfile', null, { playerProfileSection: 'home' })}
+            style={appHeaderButton('rose')}
+          >
             Player Profile
-          </button>
-          <button type="button" onClick={() => navigateTo('selectCharacter')} style={appHeaderButton('muted')}>
-            Switch character
           </button>
           {user?.role === 'admin' && (
             <button type="button" onClick={() => navigateTo('admin')} style={appHeaderButton('admin')}>
@@ -2329,38 +2509,42 @@ function SimpleApp() {
 
   // Render login page
   const renderLogin = () => (
-    <div style={{
-      minHeight: '100vh',
-      background: 'linear-gradient(135deg, #1a1a2e 0%, #0f0f1e 100%)',
-      display: 'flex',
-      flexDirection: 'column'
-    }}>
+    <div className="sr-login-gate">
+      <div className="sr-login-gate-bg" aria-hidden />
+      <div className="sr-login-gate-vignette" aria-hidden />
+      <div className="sr-login-gate-orbs" aria-hidden />
       {/* Main Content - takes up available space */}
-      <div style={{
-        flex: 1,
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: '20px'
-      }}>
+      <div className="sr-login-gate-content">
       {/* Logo and Title */}
-      <div style={{ textAlign: 'center', marginBottom: '40px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-        <img 
-          src="/logo-login.png" 
-          alt="ShadowRealms AI" 
-          style={{ 
-            width: '240px', 
-            height: 'auto', 
+      <div
+        className="sr-login-brand"
+        style={{ textAlign: 'center', marginBottom: '40px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}
+      >
+        <img
+          className="sr-login-logo"
+          src="/logo-login.png"
+          alt="ShadowRealms AI"
+          style={{
+            width: '240px',
+            height: 'auto',
             marginBottom: '20px',
-            filter: 'drop-shadow(0 0 20px rgba(233, 69, 96, 0.5))'
+            filter: 'drop-shadow(0 0 24px rgba(233, 69, 96, 0.55)) drop-shadow(0 0 40px rgba(157, 78, 221, 0.25))',
           }}
         />
-        <h1 style={{ color: '#e94560', marginBottom: '10px', fontSize: '32px', fontWeight: 'bold' }}>
+        <h1
+          style={{
+            color: '#e94560',
+            marginBottom: '10px',
+            fontSize: '32px',
+            fontWeight: 'bold',
+            fontFamily: 'Cinzel, serif',
+            textShadow: '0 0 28px rgba(233, 69, 96, 0.35)',
+          }}
+        >
           ShadowRealms AI
         </h1>
-        <p style={{ color: '#8b8b9f', marginBottom: '0', fontSize: '16px' }}>
-          Immersive Tabletop RPG with AI
+        <p style={{ color: '#94a3b8', marginBottom: '0', fontSize: '17px', fontFamily: 'Crimson Text, serif', lineHeight: 1.5 }}>
+          Step through the veil — chronicles, dice, and an AI Storyteller await.
         </p>
         
         {/* Gothic Theme Preview Button */}
@@ -2385,14 +2569,17 @@ function SimpleApp() {
       </div>
 
       {/* Login and Register Side by Side (stacks on mobile) */}
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)',
-        gap: isMobile ? '20px' : '30px',
-        width: '100%',
-        maxWidth: isMobile ? '100%' : '950px',
-        padding: isMobile ? '0 10px' : '0'
-      }}>
+      <div
+        className="sr-login-forms"
+        style={{
+          display: 'grid',
+          gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)',
+          gap: isMobile ? '20px' : '30px',
+          width: '100%',
+          maxWidth: isMobile ? '100%' : '950px',
+          padding: isMobile ? '0 10px' : '0',
+        }}
+      >
 
         {/* Login Box with Blood Theme */}
         <GothicBox theme="vampire" style={{
@@ -2629,7 +2816,6 @@ function SimpleApp() {
       )}
       </div>
 
-      {/* Footer - sticks to bottom */}
       <Footer />
     </div>
   );
@@ -2663,453 +2849,706 @@ function SimpleApp() {
     }
   };
 
-  const renderProfile = () => (
-    <div style={{
-      minHeight: '100vh',
-      background: '#0f0f1e',
-      display: 'flex',
-      flexDirection: 'column',
-    }}>
-      {renderAppPageHeader({ title: 'Profile' })}
-      <div style={{ flex: 1, maxWidth: '560px', margin: '0 auto', padding: isMobile ? '20px 15px' : '40px 20px', width: '100%', boxSizing: 'border-box' }}>
-        <div style={{
-          background: '#16213e',
-          borderRadius: '10px',
-          padding: '24px',
-          border: '1px solid #2a2a4e',
-          boxShadow: '0 2px 10px rgba(0,0,0,0.5)',
-        }}>
-          <p style={{ color: '#b5b5c3', marginTop: 0 }}>
-            <strong style={{ color: '#e0e0e0' }}>Username:</strong> {user?.username}
-          </p>
-          <p style={{ color: '#b5b5c3' }}>
-            <strong style={{ color: '#e0e0e0' }}>Email:</strong> {user?.email}
-          </p>
-          <p style={{ color: '#b5b5c3' }}>
-            <strong style={{ color: '#e0e0e0' }}>Role:</strong> {user?.role}
-          </p>
-          <label htmlFor="profile-timezone" style={{ display: 'block', color: '#e94560', fontWeight: 600, marginTop: '20px', marginBottom: '8px' }}>
-            Display time zone
-          </label>
-          <p style={{ color: '#8b8b9f', fontSize: '13px', marginTop: 0, marginBottom: '10px', lineHeight: 1.5 }}>
-            Message times, dice history, and admin timestamps follow this zone. Leave as browser default to use your device clock.
-          </p>
-          <select
-            id="profile-timezone"
-            value={profileTzDraft}
-            onChange={(e) => setProfileTzDraft(e.target.value)}
-            style={{
-              width: '100%',
-              maxWidth: '100%',
-              padding: '10px',
-              borderRadius: '6px',
-              background: '#0f1729',
-              color: '#e0e0e0',
-              border: '2px solid #2a2a4e',
-              marginBottom: '16px',
-            }}
-          >
-            <option value="">Browser default (device local time)</option>
-            {getTimezoneSelectOptions().map((o) => (
-              <option key={o.value} value={o.value}>{o.label}</option>
-            ))}
-          </select>
-          <button
-            type="button"
-            onClick={saveProfileTimezone}
-            disabled={profileTzSaving}
-            style={{
-              padding: '10px 20px',
-              background: profileTzSaving ? '#4a4a5e' : '#9d4edd',
-              color: 'white',
-              border: 'none',
-              borderRadius: '8px',
-              fontWeight: 'bold',
-              cursor: profileTzSaving ? 'not-allowed' : 'pointer',
-            }}
-          >
-            {profileTzSaving ? 'Saving…' : 'Save time zone'}
-          </button>
-        </div>
-      </div>
-      <Footer />
-    </div>
-  );
-
-  const renderSelectCharacter = () => (
-    <div style={{ minHeight: '100vh', background: '#0f0f1e', display: 'flex', flexDirection: 'column' }}>
-      {renderAppPageHeader({ title: 'Choose your mask' })}
-      <div style={{ flex: 1, maxWidth: '900px', margin: '0 auto', padding: '24px 16px 48px', width: '100%', boxSizing: 'border-box' }}>
-        <GothicBox theme="vampire" style={{ padding: '20px', marginBottom: '24px' }}>
-          <p style={{ color: '#b5b5c3', marginTop: 0, lineHeight: 1.6 }}>
-            Select which character you are playing <strong>right now</strong>. Your chronicle list will only show games
-            that character belongs to. Swap masks anytime from <strong>Player Profile</strong>.
-          </p>
-        </GothicBox>
-        {playerCharacters.length === 0 ? (
-          <GothicBox theme="mage" style={{ padding: '28px', textAlign: 'center' }}>
-            <p style={{ color: '#b5b5c3' }}>You have no characters yet.</p>
-            <button
-              type="button"
-              onClick={() => navigateTo('characterCreate')}
-              style={{
-                marginTop: '16px',
-                padding: '12px 24px',
-                background: 'linear-gradient(135deg, #e94560 0%, #8b0000 100%)',
-                color: 'white',
-                border: 'none',
-                borderRadius: '8px',
-                cursor: 'pointer',
-                fontWeight: 'bold',
-                fontFamily: 'Cinzel, serif',
-              }}
-            >
-              Forge a character
-            </button>
-          </GothicBox>
-        ) : (
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(260px, 1fr))',
-              gap: '16px',
-            }}
-          >
-            {playerCharacters.map((ch) => (
-              <GothicBox key={ch.id} theme="werewolf" style={{ padding: '18px' }}>
-                <div style={{ display: 'flex', gap: '12px', alignItems: 'center', marginBottom: '12px' }}>
-                  <MessageCharacterAvatar url={ch.portrait_url} size={52} />
-                  <div>
-                    <div style={{ color: '#e94560', fontFamily: 'Cinzel, serif', fontWeight: 'bold' }}>{ch.name}</div>
-                    <div style={{ color: '#8b8b9f', fontSize: '13px' }}>{ch.campaign_name}</div>
-                  </div>
-                </div>
-                {ch.play_suspended && (
-                  <p style={{ color: '#f87171', fontSize: '13px', marginBottom: '10px', lineHeight: 1.5 }}>
-                    <strong>Unavailable for play</strong>
-                    {ch.play_suspension_reason_code
-                      ? ` (${String(ch.play_suspension_reason_code).replace(/_/g, ' ')})`
-                      : ''}
-                    {ch.play_suspension_message ? ` — ${ch.play_suspension_message}` : ''}
-                    <br />
-                    <span style={{ color: '#94a3b8' }}>
-                      Contact your Storyteller or a site administrator.
-                    </span>
-                  </p>
-                )}
-                <button
-                  type="button"
-                  disabled={!!ch.play_suspended}
-                  onClick={() => applyActiveCharacter(ch.id)}
-                  style={{
-                    width: '100%',
-                    padding: '10px',
-                    background: ch.play_suspended ? '#475569' : '#9d4edd',
-                    color: 'white',
-                    border: 'none',
-                    borderRadius: '8px',
-                    cursor: ch.play_suspended ? 'not-allowed' : 'pointer',
-                    fontWeight: 'bold',
-                    fontFamily: 'Cinzel, serif',
-                  }}
-                >
-                  {ch.play_suspended ? 'Unavailable' : `Play as ${ch.name}`}
-                </button>
-              </GothicBox>
-            ))}
-          </div>
-        )}
-        <div style={{ textAlign: 'center', marginTop: '28px' }}>
-          <button
-            type="button"
-            onClick={() => navigateTo('characterCreate')}
-            style={{
-              padding: '10px 20px',
-              background: 'transparent',
-              color: '#c4b5fd',
-              border: '2px solid #7c3aed',
-              borderRadius: '8px',
-              cursor: 'pointer',
-              fontWeight: 'bold',
-            }}
-          >
-            + Create another character
-          </button>
-        </div>
-      </div>
-      <Footer />
-    </div>
-  );
-
   const renderPlayerProfile = () => {
     const activeId = user?.active_character_id;
     const activeChar = playerCharacters.find((c) => c.id === activeId) || user?.active_character;
+
+    const goProfileSection = (id) => {
+      window.history.pushState(
+        { page: 'playerProfile', playerProfileSection: id, showGothicShowcase: false },
+        '',
+        window.location.pathname
+      );
+      setPlayerProfileSection(id);
+      setPlayableCharactersView('main');
+    };
+
+    const openCharacterCreationGuide = () => {
+      setPlayerProfileSection('playableCharacters');
+      setPlayableCharactersView('creationGuide');
+    };
+
+    const sectionShell = (child) => (
+      <div style={{ maxWidth: '900px', margin: '0 auto' }}>{child}</div>
+    );
+
     return (
       <div style={{ minHeight: '100vh', background: '#0f0f1e', display: 'flex', flexDirection: 'column' }}>
         {renderAppPageHeader({ title: 'Player Profile' })}
-        <div style={{ flex: 1, maxWidth: '800px', margin: '0 auto', padding: '24px 16px 48px', width: '100%', boxSizing: 'border-box' }}>
-          <div style={{ marginBottom: '20px', display: 'flex', justifyContent: 'flex-end' }}>
-            <button
-              type="button"
-              onClick={() => navigateTo('characterCreate')}
+        <div className="player-profile-root" style={{ flex: 1, background: '#0f0f1e' }}>
+          <aside
+            className="player-profile-sidebar"
+            style={{
+              background: 'linear-gradient(180deg, #16213e 0%, #0f1729 100%)',
+              borderRight: '2px solid #2a2a4e',
+              padding: '16px 12px 24px',
+              boxShadow: '2px 0 12px rgba(0,0,0,0.35)',
+            }}
+          >
+            <div
               style={{
-                padding: '8px 16px',
-                background: 'rgba(157, 78, 221, 0.2)',
-                color: '#c4b5fd',
-                border: '2px solid #9d4edd',
-                borderRadius: '5px',
-                cursor: 'pointer',
-                fontWeight: 'bold',
-                fontFamily: 'Cinzel, serif',
+                color: '#e94560',
+                fontWeight: 800,
+                fontSize: '12px',
+                letterSpacing: '0.12em',
+                marginBottom: '14px',
+                paddingLeft: '4px',
               }}
             >
-              New character
-            </button>
-          </div>
-          <GothicBox theme="vampire" style={{ padding: '20px', marginBottom: '20px' }}>
-            <h3 style={{ marginTop: 0, color: '#e94560', fontFamily: 'Cinzel, serif' }}>Active character</h3>
-            {user?.restrict_self_join_new_chronicles ? (
-              <p style={{ color: '#fbbf24', fontSize: '14px', marginBottom: '12px', lineHeight: 1.5 }}>
-                You left a chronicle: joining a <strong>new</strong> one requires your Storyteller or site staff to
-                add you. You can still rejoin a chronicle where you already have a character.
-              </p>
-            ) : null}
-            {activeChar ? (
-              <div style={{ display: 'flex', gap: '16px', alignItems: 'flex-start', flexWrap: 'wrap' }}>
-                <MessageCharacterAvatar url={activeChar.portrait_url} size={72} />
-                <div style={{ flex: 1, minWidth: '200px' }}>
-                  <div style={{ color: '#e0e0e0', fontWeight: 'bold', fontSize: '18px' }}>{activeChar.name}</div>
-                  <div style={{ color: '#8b8b9f', fontSize: '14px' }}>
-                    {activeChar.campaign_name || activeChar.campaignName || 'Chronicle'}
-                  </div>
-                  <p style={{ color: '#b5b5c3', fontSize: '14px', lineHeight: 1.5 }}>
-                    Sheets are <strong>locked</strong> after creation. Update your portrait here; for anything else, submit a downtime request below or ask the Storyteller.
-                  </p>
-                  <label style={{ color: '#c4b5fd', fontSize: '13px', display: 'block', marginBottom: '6px' }}>
-                    Character portrait (IC locations use this)
-                  </label>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={async (e) => {
-                      const f = e.target.files?.[0];
-                      if (!f || !activeId) return;
-                      if (f.size > 360000) {
-                        showError('Image is too large (max ~350KB).');
-                        return;
-                      }
-                      const reader = new FileReader();
-                      reader.onload = async () => {
-                        const dataUrl = reader.result;
-                        const res = await fetch(`${API_URL}/characters/${activeId}`, {
-                          method: 'PUT',
-                          headers: {
-                            Authorization: `Bearer ${token}`,
-                            'Content-Type': 'application/json',
-                          },
-                          body: JSON.stringify({ portrait_url: dataUrl }),
-                        });
-                        const body = await res.json().catch(() => ({}));
-                        if (res.ok && body.character) {
-                          showSuccess('Portrait updated.');
-                          setPlayerCharacters((prev) =>
-                            prev.map((c) => (c.id === activeId ? { ...c, ...body.character } : c))
-                          );
-                          await fetchUserData();
-                        } else {
-                          showError(body.error || 'Could not update portrait');
-                        }
-                      };
-                      reader.readAsDataURL(f);
-                    }}
-                  />
-                </div>
-              </div>
-            ) : (
-              <p style={{ color: '#b5b5c3' }}>No active character. Visit <strong>Choose your mask</strong> from the chronicle hall or create one.</p>
-            )}
-          </GothicBox>
-
-          <GothicBox theme="mage" style={{ padding: '20px', marginBottom: '20px' }}>
-            <h3 style={{ marginTop: 0, color: '#9d4edd', fontFamily: 'Cinzel, serif' }}>OOC identity</h3>
-            <p style={{ color: '#b5b5c3', fontSize: '14px', lineHeight: 1.5 }}>
-              This portrait appears only in <strong>Out of Character</strong> lobby rooms. In story rooms, others see your character portrait.
-            </p>
-            <MessageCharacterAvatar url={user?.player_avatar_url} size={64} />
-            <input
-              type="file"
-              accept="image/*"
-              style={{ marginTop: '10px' }}
-              onChange={(e) => {
-                const f = e.target.files?.[0];
-                if (!f) return;
-                if (f.size > 360000) {
-                  showError('Image is too large (max ~350KB).');
-                  return;
-                }
-                const reader = new FileReader();
-                reader.onload = async () => {
-                  const dataUrl = reader.result;
-                  const res = await fetch(`${API_URL}/users/me`, {
-                    method: 'PUT',
-                    headers: {
-                      Authorization: `Bearer ${token}`,
-                      'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ player_avatar_url: dataUrl }),
-                  });
-                  const body = await res.json().catch(() => ({}));
-                  if (res.ok) {
-                    setUser(body);
-                    localStorage.setItem('user', JSON.stringify(body));
-                    showSuccess('OOC portrait saved.');
-                  } else {
-                    showError(body.error || 'Could not save OOC portrait');
-                  }
-                };
-                reader.readAsDataURL(f);
-              }}
-            />
-          </GothicBox>
-
-          <GothicBox theme="werewolf" style={{ padding: '20px', marginBottom: '20px' }}>
-            <h3 style={{ marginTop: 0, color: '#e94560', fontFamily: 'Cinzel, serif' }}>Your characters</h3>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              {playerCharacters.map((ch) => (
-                <div
-                  key={ch.id}
-                  style={{
-                    border: ch.id === activeId ? '2px solid #9d4edd' : '1px solid #2a2a4e',
-                    borderRadius: '8px',
-                    padding: '12px',
-                    background: '#0f1729',
-                  }}
-                >
-                  <div style={{ color: '#e0e0e0', fontWeight: 'bold' }}>
-                    {ch.name}
-                    {ch.id === activeId ? (
-                      <span style={{ color: '#9d4edd', marginLeft: '8px', fontSize: '12px' }}>(active)</span>
-                    ) : null}
-                  </div>
-                  <div style={{ color: '#8b8b9f', fontSize: '13px' }}>{ch.campaign_name}</div>
+              PLAYER PROFILE
+            </div>
+            <nav aria-label="Player profile sections" style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              {PLAYER_PROFILE_NAV.map(({ id, label }) => {
+                const active = playerProfileSection === id;
+                return (
                   <button
+                    key={id}
                     type="button"
-                    disabled={ch.id === activeId}
-                    onClick={() => applyActiveCharacter(ch.id)}
+                    onClick={() => goProfileSection(id)}
                     style={{
-                      marginTop: '8px',
-                      padding: '6px 14px',
-                      background: ch.id === activeId ? '#333' : '#2a2a4e',
-                      color: '#e0e0e0',
-                      border: '1px solid #4a4a5e',
-                      borderRadius: '6px',
-                      cursor: ch.id === activeId ? 'not-allowed' : 'pointer',
+                      padding: '10px 12px',
+                      borderRadius: '8px',
+                      border: active ? '2px solid #e94560' : '2px solid #2a2a4e',
+                      background: active ? 'rgba(233, 69, 96, 0.22)' : 'rgba(15, 23, 41, 0.85)',
+                      color: active ? '#fff' : '#b5b5c3',
+                      cursor: 'pointer',
+                      fontWeight: active ? 700 : 500,
+                      fontSize: '13px',
+                      textAlign: 'left',
+                      width: '100%',
                     }}
                   >
-                    {ch.id === activeId ? 'Currently active' : 'Swap to this character'}
+                    {label}
                   </button>
+                );
+              })}
+            </nav>
+          </aside>
+          <div className="player-profile-main" style={{ padding: isMobile ? '20px 14px 40px' : '32px 24px 48px' }}>
+            {playerProfileSection === 'home' &&
+              sectionShell(
+                <div>
+                  <h2 style={{ color: '#e94560', fontFamily: 'Cinzel, serif', marginTop: 0, marginBottom: '16px' }}>
+                    Welcome to your profile hub
+                  </h2>
+                  <p style={{ color: '#b5b5c3', lineHeight: 1.65, marginBottom: '16px' }}>
+                    Use the sidebar for account settings (including your OOC portrait), playable characters (switch mask,
+                    roster, IC portrait, and new character with an optional prep guide), and downtime requests. Return to
+                    the chronicle hall from the header <strong>Home</strong> button or the title link.
+                  </p>
+                  <ul style={{ color: '#b5b5c3', lineHeight: 1.65, paddingLeft: '1.25rem', margin: 0 }}>
+                    <li style={{ marginBottom: '10px' }}>
+                      <strong style={{ color: '#e0e0e0' }}>Account Settings</strong> — username, email, role, display time
+                      zone, and OOC lobby portrait.
+                    </li>
+                    <li style={{ marginBottom: '10px' }}>
+                      <strong style={{ color: '#e0e0e0' }}>Playable Characters</strong> — choose your active mask, manage
+                      portraits, open the character creation guide, then start the wizard when you are ready.
+                    </li>
+                    <li>
+                      <strong style={{ color: '#e0e0e0' }}>Downtime requests</strong> — sheet changes after creation.
+                    </li>
+                  </ul>
                 </div>
-              ))}
-            </div>
-          </GothicBox>
+              )}
 
-          <GothicBox theme="vampire" style={{ padding: '20px', marginBottom: '20px' }}>
-            <h3 style={{ marginTop: 0, color: '#e94560', fontFamily: 'Cinzel, serif' }}>Downtime requests</h3>
-            <p style={{ color: '#8b8b9f', fontSize: '14px' }}>
-              Ask the Storyteller / admin to adjust your locked sheet. They can approve or reject with a reason.
-            </p>
-            <textarea
-              value={downtimeDraft}
-              onChange={(e) => setDowntimeDraft(e.target.value)}
-              rows={4}
-              disabled={!activeId}
-              placeholder={activeId ? 'Describe what should change on your sheet…' : 'Select an active character first.'}
-              style={{
-                width: '100%',
-                boxSizing: 'border-box',
-                padding: '10px',
-                borderRadius: '8px',
-                border: '2px solid #2a2a4e',
-                background: '#0f1729',
-                color: '#e0e0e0',
-                marginBottom: '10px',
-              }}
-            />
-            <button
-              type="button"
-              disabled={!activeId || downtimeSending || !downtimeDraft.trim()}
-              onClick={async () => {
-                if (!activeId || !downtimeDraft.trim()) return;
-                setDowntimeSending(true);
-                try {
-                  const res = await fetch(`${API_URL}/characters/${activeId}/downtime-requests`, {
-                    method: 'POST',
-                    headers: {
-                      Authorization: `Bearer ${token}`,
-                      'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ request_text: downtimeDraft.trim() }),
-                  });
-                  const body = await res.json().catch(() => ({}));
-                  if (res.ok) {
-                    setDowntimeDraft('');
-                    showSuccess('Request sent to the admin queue.');
-                    const r2 = await fetch(`${API_URL}/characters/downtime-requests/mine`, {
-                      headers: { Authorization: `Bearer ${token}` },
-                    });
-                    if (r2.ok) {
-                      const d2 = await r2.json();
-                      setDowntimeMine(Array.isArray(d2.requests) ? d2.requests : []);
-                    }
-                  } else {
-                    showError(body.error || 'Could not submit request');
-                  }
-                } catch (_) {
-                  showError('Network error');
-                } finally {
-                  setDowntimeSending(false);
-                }
-              }}
-              style={{
-                padding: '10px 20px',
-                background: downtimeSending ? '#555' : '#e94560',
-                color: 'white',
-                border: 'none',
-                borderRadius: '8px',
-                cursor: downtimeSending ? 'not-allowed' : 'pointer',
-                fontWeight: 'bold',
-              }}
-            >
-              {downtimeSending ? 'Sending…' : 'Submit request'}
-            </button>
-            <div style={{ marginTop: '20px' }}>
-              <h4 style={{ color: '#b5b5c3', fontSize: '14px' }}>Your recent requests</h4>
-              {downtimeMine.length === 0 ? (
-                <p style={{ color: '#6b6b7f', fontSize: '13px' }}>None yet.</p>
-              ) : (
-                <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
-                  {downtimeMine.map((r) => (
-                    <li
-                      key={r.id}
+            {playerProfileSection === 'accountSettings' &&
+              sectionShell(
+                <div>
+                  <p style={{ color: '#94a3b8', lineHeight: 1.65, marginTop: 0, marginBottom: '20px' }}>
+                    Your sign-in identity, how dates and times appear in chat and logs, and the portrait shown in{' '}
+                    <strong>OOC lobby</strong> rooms (story rooms use your character portrait from Playable Characters).
+                  </p>
+                  <div
+                    style={{
+                      background: '#16213e',
+                      borderRadius: '10px',
+                      padding: '24px',
+                      border: '1px solid #2a2a4e',
+                      boxShadow: '0 2px 10px rgba(0,0,0,0.5)',
+                      marginBottom: '20px',
+                    }}
+                  >
+                    <h3 style={{ marginTop: 0, color: '#e94560', fontFamily: 'Cinzel, serif', fontSize: '17px' }}>
+                      Account
+                    </h3>
+                    <p style={{ color: '#b5b5c3', marginTop: 0 }}>
+                      <strong style={{ color: '#e0e0e0' }}>Username:</strong> {user?.username}
+                    </p>
+                    <p style={{ color: '#b5b5c3' }}>
+                      <strong style={{ color: '#e0e0e0' }}>Email:</strong> {user?.email}
+                    </p>
+                    <p style={{ color: '#b5b5c3' }}>
+                      <strong style={{ color: '#e0e0e0' }}>Role:</strong> {user?.role}
+                    </p>
+                    <label
+                      htmlFor="profile-timezone"
+                      style={{ display: 'block', color: '#e94560', fontWeight: 600, marginTop: '20px', marginBottom: '8px' }}
+                    >
+                      Display time zone
+                    </label>
+                    <p style={{ color: '#8b8b9f', fontSize: '13px', marginTop: 0, marginBottom: '10px', lineHeight: 1.5 }}>
+                      Message times, dice history, and admin timestamps follow this zone. Leave as browser default to use
+                      your device clock.
+                    </p>
+                    <select
+                      id="profile-timezone"
+                      value={profileTzDraft}
+                      onChange={(e) => setProfileTzDraft(e.target.value)}
                       style={{
-                        borderBottom: '1px solid #2a2a4e',
-                        padding: '10px 0',
-                        color: '#b5b5c3',
+                        width: '100%',
+                        maxWidth: '100%',
+                        padding: '10px',
+                        borderRadius: '6px',
+                        background: '#0f1729',
+                        color: '#e0e0e0',
+                        border: '2px solid #2a2a4e',
+                        marginBottom: '16px',
+                      }}
+                    >
+                      <option value="">Browser default (device local time)</option>
+                      {getTimezoneSelectOptions().map((o) => (
+                        <option key={o.value} value={o.value}>
+                          {o.label}
+                        </option>
+                      ))}
+                    </select>
+                    <button
+                      type="button"
+                      onClick={saveProfileTimezone}
+                      disabled={profileTzSaving}
+                      style={{
+                        padding: '10px 20px',
+                        background: profileTzSaving ? '#4a4a5e' : '#9d4edd',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '8px',
+                        fontWeight: 'bold',
+                        cursor: profileTzSaving ? 'not-allowed' : 'pointer',
+                      }}
+                    >
+                      {profileTzSaving ? 'Saving…' : 'Save time zone'}
+                    </button>
+                  </div>
+                  <GothicBox theme="mage" style={{ padding: '20px', marginBottom: '20px' }}>
+                    <h3 style={{ marginTop: 0, color: '#9d4edd', fontFamily: 'Cinzel, serif' }}>OOC identity</h3>
+                    <p style={{ color: '#b5b5c3', fontSize: '14px', lineHeight: 1.5 }}>
+                      This portrait represents <strong>you</strong> in Out of Character lobby chat. In story locations,
+                      others see your character portrait.
+                    </p>
+                    <p style={{ color: '#8b8b9f', fontSize: '13px' }}>Keep files under ~350KB.</p>
+                    <MessageCharacterAvatar url={user?.player_avatar_url} size={64} />
+                    <input
+                      type="file"
+                      accept="image/*"
+                      style={{ marginTop: '10px' }}
+                      onChange={(e) => {
+                        const f = e.target.files?.[0];
+                        if (!f) return;
+                        if (f.size > 360000) {
+                          showError('Image is too large (max ~350KB).');
+                          return;
+                        }
+                        const reader = new FileReader();
+                        reader.onload = async () => {
+                          const dataUrl = reader.result;
+                          const res = await fetch(`${API_URL}/users/me`, {
+                            method: 'PUT',
+                            headers: {
+                              Authorization: `Bearer ${token}`,
+                              'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({ player_avatar_url: dataUrl }),
+                          });
+                          const body = await res.json().catch(() => ({}));
+                          if (res.ok) {
+                            setUser(body);
+                            localStorage.setItem('user', JSON.stringify(body));
+                            showSuccess('OOC portrait saved.');
+                          } else {
+                            showError(body.error || 'Could not save OOC portrait');
+                          }
+                        };
+                        reader.readAsDataURL(f);
+                      }}
+                    />
+                  </GothicBox>
+                </div>
+              )}
+
+            {playerProfileSection === 'playableCharacters' &&
+              sectionShell(
+                playableCharactersView === 'creationGuide' ? (
+                  <div>
+                    <button
+                      type="button"
+                      onClick={() => setPlayableCharactersView('main')}
+                      style={{
+                        marginBottom: '20px',
+                        padding: '8px 14px',
+                        background: '#0f1729',
+                        color: '#c4b5fd',
+                        border: '1px solid #6b21a8',
+                        borderRadius: '8px',
+                        cursor: 'pointer',
+                        fontFamily: 'Cinzel, serif',
                         fontSize: '13px',
                       }}
                     >
-                      <strong style={{ color: '#e0e0e0' }}>{r.status}</strong> — {r.character_name}{' '}
-                      <span style={{ color: '#6b6b7f' }}>({r.campaign_name})</span>
-                      <div style={{ marginTop: '4px' }}>{r.request_text}</div>
-                      {r.admin_reason ? (
-                        <div style={{ marginTop: '6px', color: '#9d4edd' }}>Staff: {r.admin_reason}</div>
+                      ← Back to playable characters
+                    </button>
+                    <h2 style={{ color: '#e94560', fontFamily: 'Cinzel, serif', marginTop: 0, marginBottom: '12px' }}>
+                      Before you forge a character
+                    </h2>
+                    <p style={{ color: '#94a3b8', lineHeight: 1.65, marginBottom: '20px' }}>
+                      Read this checklist first, then start the wizard when you are ready. The in-app wizard walks you
+                      through chronicle choice, game line, and sheet fields. Your Storyteller may add house rules on top of
+                      what is listed here.
+                    </p>
+                    <GothicBox theme="vampire" style={{ padding: '20px', marginBottom: '16px' }}>
+                      <h3 style={{ marginTop: 0, color: '#e94560', fontFamily: 'Cinzel, serif' }}>Typical flow</h3>
+                      <ol style={{ color: '#b5b5c3', lineHeight: 1.6, paddingLeft: '1.25rem', margin: 0 }}>
+                        <li style={{ marginBottom: '8px' }}>Join or create a chronicle (chronicle hall), then return here.</li>
+                        <li style={{ marginBottom: '8px' }}>
+                          Pick the <strong>game line</strong> that matches the table (Vampire, Werewolf, Mage, etc.).
+                        </li>
+                        <li style={{ marginBottom: '8px' }}>Name and concept — you can refine later only through downtime or ST.</li>
+                        <li style={{ marginBottom: '8px' }}>
+                          Complete <strong>attributes, skills, and powers</strong> as the wizard prompts; pools derive from
+                          these values.
+                        </li>
+                        <li>Add <strong>background, description, ties, and gear</strong> in the fields provided.</li>
+                        <li>Submit — the sheet <strong>locks</strong> after creation; further changes go through downtime.</li>
+                      </ol>
+                    </GothicBox>
+                    <GothicBox theme="werewolf" style={{ padding: '20px', marginBottom: '16px' }}>
+                      <h3 style={{ marginTop: 0, color: '#ea580c', fontFamily: 'Cinzel, serif' }}>What to have ready</h3>
+                      <ul style={{ color: '#b5b5c3', lineHeight: 1.6, paddingLeft: '1.25rem', margin: 0 }}>
+                        <li style={{ marginBottom: '8px' }}>
+                          <strong style={{ color: '#e0e0e0' }}>Concept &amp; chronicle fit</strong> — how your PC fits the
+                          setting and tone the ST announced.
+                        </li>
+                        <li style={{ marginBottom: '8px' }}>
+                          <strong style={{ color: '#e0e0e0' }}>Background &amp; history</strong> — formative events, sect or
+                          pack ties, sins or oaths that matter at the table.
+                        </li>
+                        <li style={{ marginBottom: '8px' }}>
+                          <strong style={{ color: '#e0e0e0' }}>Physical description</strong> — height, bearing, scars, style;
+                          enough for others to picture you in fiction.
+                        </li>
+                        <li style={{ marginBottom: '8px' }}>
+                          <strong style={{ color: '#e0e0e0' }}>Relationships</strong> — allies, rivals, mentors, sires, pack or
+                          cabal members the ST can hook into plots.
+                        </li>
+                        <li style={{ marginBottom: '8px' }}>
+                          <strong style={{ color: '#e0e0e0' }}>Equipment &amp; assets</strong> — weapons, tools, haven, tokens,
+                          or fetishes as allowed by the chronicle.
+                        </li>
+                        <li>
+                          <strong style={{ color: '#e0e0e0' }}>Portrait idea</strong> — after creation, upload a small image
+                          under Playable Characters (keep under ~350KB).
+                        </li>
+                      </ul>
+                    </GothicBox>
+                    <GothicBox theme="mage" style={{ padding: '20px', marginBottom: '24px' }}>
+                      <h3 style={{ marginTop: 0, color: '#9d4edd', fontFamily: 'Cinzel, serif' }}>Requirements &amp; table contract</h3>
+                      <ul style={{ color: '#b5b5c3', lineHeight: 1.6, paddingLeft: '1.25rem', margin: 0 }}>
+                        <li style={{ marginBottom: '8px' }}>Follow the Storyteller&rsquo;s limits on disciplines, merits, starting dots, and chronicle power level.</li>
+                        <li style={{ marginBottom: '8px' }}>Content that touches other players&rsquo; concepts should be agreed OOC first when needed.</li>
+                        <li style={{ marginBottom: '8px' }}>
+                          Locked sheets mean mistakes or rebuilds need a <strong>downtime request</strong> or direct ST
+                          approval — plan before you click finalize.
+                        </li>
+                      </ul>
+                    </GothicBox>
+                    <div
+                      style={{
+                        display: 'flex',
+                        flexWrap: 'wrap',
+                        gap: '12px',
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                      }}
+                    >
+                      <button
+                        type="button"
+                        onClick={() => setPlayableCharactersView('main')}
+                        style={{
+                          padding: '12px 22px',
+                          background: '#0f1729',
+                          color: '#c4b5fd',
+                          border: '2px solid #7c3aed',
+                          borderRadius: '8px',
+                          cursor: 'pointer',
+                          fontWeight: 'bold',
+                          fontFamily: 'Cinzel, serif',
+                        }}
+                      >
+                        Back
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => navigateTo('characterCreate')}
+                        style={{
+                          padding: '12px 28px',
+                          background: 'linear-gradient(135deg, #e94560 0%, #8b0000 100%)',
+                          color: 'white',
+                          border: 'none',
+                          borderRadius: '8px',
+                          cursor: 'pointer',
+                          fontWeight: 'bold',
+                          fontFamily: 'Cinzel, serif',
+                        }}
+                      >
+                        Start character creation
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div>
+                    <p style={{ color: '#94a3b8', lineHeight: 1.65, marginTop: 0, marginBottom: '16px' }}>
+                      Set your <strong>active mask</strong> for the chronicle hall, manage IC portraits and roster, and add
+                      a new PC. Use <strong>New character</strong> to read the prep guide before you open the wizard.
+                    </p>
+                    <div style={{ marginBottom: '20px', display: 'flex', justifyContent: 'flex-end' }}>
+                      <button
+                        type="button"
+                        onClick={openCharacterCreationGuide}
+                        style={{
+                          padding: '8px 16px',
+                          background: 'rgba(157, 78, 221, 0.2)',
+                          color: '#c4b5fd',
+                          border: '2px solid #9d4edd',
+                          borderRadius: '5px',
+                          cursor: 'pointer',
+                          fontWeight: 'bold',
+                          fontFamily: 'Cinzel, serif',
+                        }}
+                      >
+                        New character
+                      </button>
+                    </div>
+                    <p style={{ color: '#94a3b8', lineHeight: 1.65, marginBottom: '20px' }}>
+                      Choose which character you are playing <strong>right now</strong>. The chronicle hall focuses on the
+                      chronicles tied to that mask.
+                    </p>
+                    <GothicBox theme="vampire" style={{ padding: '20px', marginBottom: '24px' }}>
+                      <p style={{ color: '#b5b5c3', marginTop: 0, lineHeight: 1.6 }}>
+                        If you use <strong>multi-chronicle</strong> privileges, your dashboard may list every game you are in;
+                        your <strong>active character</strong> still drives profile and hall context unless you switch here.
+                      </p>
+                    </GothicBox>
+                    {playerCharacters.length === 0 ? (
+                      <GothicBox theme="mage" style={{ padding: '28px', textAlign: 'center' }}>
+                        <p style={{ color: '#b5b5c3' }}>You have no characters yet.</p>
+                        <button
+                          type="button"
+                          onClick={openCharacterCreationGuide}
+                          style={{
+                            marginTop: '16px',
+                            padding: '12px 24px',
+                            background: 'linear-gradient(135deg, #e94560 0%, #8b0000 100%)',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '8px',
+                            cursor: 'pointer',
+                            fontWeight: 'bold',
+                            fontFamily: 'Cinzel, serif',
+                          }}
+                        >
+                          Forge a character
+                        </button>
+                      </GothicBox>
+                    ) : (
+                      <div
+                        style={{
+                          display: 'grid',
+                          gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(260px, 1fr))',
+                          gap: '16px',
+                          marginBottom: '24px',
+                        }}
+                      >
+                        {playerCharacters.map((ch) => (
+                          <GothicBox key={ch.id} theme="werewolf" style={{ padding: '18px' }}>
+                            <div style={{ display: 'flex', gap: '12px', alignItems: 'center', marginBottom: '12px' }}>
+                              <MessageCharacterAvatar url={ch.portrait_url} size={52} />
+                              <div>
+                                <div style={{ color: '#e94560', fontFamily: 'Cinzel, serif', fontWeight: 'bold' }}>
+                                  {ch.name}
+                                </div>
+                                <div style={{ color: '#8b8b9f', fontSize: '13px' }}>{ch.campaign_name}</div>
+                              </div>
+                            </div>
+                            {ch.play_suspended && (
+                              <p style={{ color: '#f87171', fontSize: '13px', marginBottom: '10px', lineHeight: 1.5 }}>
+                                <strong>Unavailable for play</strong>
+                                {ch.play_suspension_reason_code
+                                  ? ` (${String(ch.play_suspension_reason_code).replace(/_/g, ' ')})`
+                                  : ''}
+                                {ch.play_suspension_message ? ` — ${ch.play_suspension_message}` : ''}
+                                <br />
+                                <span style={{ color: '#94a3b8' }}>Contact your Storyteller or a site administrator.</span>
+                              </p>
+                            )}
+                            <button
+                              type="button"
+                              disabled={!!ch.play_suspended}
+                              onClick={() => applyActiveCharacter(ch.id)}
+                              style={{
+                                width: '100%',
+                                padding: '10px',
+                                background: ch.play_suspended ? '#475569' : '#9d4edd',
+                                color: 'white',
+                                border: 'none',
+                                borderRadius: '8px',
+                                cursor: ch.play_suspended ? 'not-allowed' : 'pointer',
+                                fontWeight: 'bold',
+                                fontFamily: 'Cinzel, serif',
+                              }}
+                            >
+                              {ch.play_suspended ? 'Unavailable' : `Play as ${ch.name}`}
+                            </button>
+                          </GothicBox>
+                        ))}
+                      </div>
+                    )}
+                    {playerCharacters.length > 0 ? (
+                      <div style={{ textAlign: 'center', marginBottom: '28px' }}>
+                        <button
+                          type="button"
+                          onClick={openCharacterCreationGuide}
+                          style={{
+                            padding: '10px 20px',
+                            background: 'transparent',
+                            color: '#c4b5fd',
+                            border: '2px solid #7c3aed',
+                            borderRadius: '8px',
+                            cursor: 'pointer',
+                            fontWeight: 'bold',
+                          }}
+                        >
+                          + Create another character
+                        </button>
+                      </div>
+                    ) : null}
+                    <h3 style={{ color: '#e94560', fontFamily: 'Cinzel, serif', fontSize: '17px', marginBottom: '12px' }}>
+                      Roster &amp; portraits
+                    </h3>
+                    <GothicBox theme="vampire" style={{ padding: '20px', marginBottom: '20px' }}>
+                      <h3 style={{ marginTop: 0, color: '#e94560', fontFamily: 'Cinzel, serif' }}>Active character</h3>
+                      {user?.restrict_self_join_new_chronicles ? (
+                        <p style={{ color: '#fbbf24', fontSize: '14px', marginBottom: '12px', lineHeight: 1.5 }}>
+                          You left a chronicle: joining a <strong>new</strong> one requires your Storyteller or site staff to
+                          add you. You can still rejoin a chronicle where you already have a character.
+                        </p>
                       ) : null}
-                    </li>
-                  ))}
-                </ul>
+                      {activeChar ? (
+                        <div style={{ display: 'flex', gap: '16px', alignItems: 'flex-start', flexWrap: 'wrap' }}>
+                          <MessageCharacterAvatar url={activeChar.portrait_url} size={72} />
+                          <div style={{ flex: 1, minWidth: '200px' }}>
+                            <div style={{ color: '#e0e0e0', fontWeight: 'bold', fontSize: '18px' }}>{activeChar.name}</div>
+                            <div style={{ color: '#8b8b9f', fontSize: '14px' }}>
+                              {activeChar.campaign_name || activeChar.campaignName || 'Chronicle'}
+                            </div>
+                            <p style={{ color: '#b5b5c3', fontSize: '14px', lineHeight: 1.5 }}>
+                              Sheets are <strong>locked</strong> after creation. Update your portrait here; for anything else,
+                              submit a downtime request or ask the Storyteller.
+                            </p>
+                            <label style={{ color: '#c4b5fd', fontSize: '13px', display: 'block', marginBottom: '6px' }}>
+                              Character portrait (IC locations use this)
+                            </label>
+                            <input
+                              type="file"
+                              accept="image/*"
+                              onChange={async (e) => {
+                                const f = e.target.files?.[0];
+                                if (!f || !activeId) return;
+                                if (f.size > 360000) {
+                                  showError('Image is too large (max ~350KB).');
+                                  return;
+                                }
+                                const reader = new FileReader();
+                                reader.onload = async () => {
+                                  const dataUrl = reader.result;
+                                  const res = await fetch(`${API_URL}/characters/${activeId}`, {
+                                    method: 'PUT',
+                                    headers: {
+                                      Authorization: `Bearer ${token}`,
+                                      'Content-Type': 'application/json',
+                                    },
+                                    body: JSON.stringify({ portrait_url: dataUrl }),
+                                  });
+                                  const body = await res.json().catch(() => ({}));
+                                  if (res.ok && body.character) {
+                                    showSuccess('Portrait updated.');
+                                    setPlayerCharacters((prev) =>
+                                      prev.map((c) => (c.id === activeId ? { ...c, ...body.character } : c))
+                                    );
+                                    await fetchUserData();
+                                  } else {
+                                    showError(body.error || 'Could not update portrait');
+                                  }
+                                };
+                                reader.readAsDataURL(f);
+                              }}
+                            />
+                          </div>
+                        </div>
+                      ) : (
+                        <p style={{ color: '#b5b5c3' }}>
+                          No active character. Pick a mask above or forge one with <strong>New character</strong>.
+                        </p>
+                      )}
+                    </GothicBox>
+                    <GothicBox theme="werewolf" style={{ padding: '20px', marginBottom: '20px' }}>
+                      <h3 style={{ marginTop: 0, color: '#e94560', fontFamily: 'Cinzel, serif' }}>Your characters</h3>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                        {playerCharacters.map((ch) => (
+                          <div
+                            key={ch.id}
+                            style={{
+                              border: ch.id === activeId ? '2px solid #9d4edd' : '1px solid #2a2a4e',
+                              borderRadius: '8px',
+                              padding: '12px',
+                              background: '#0f1729',
+                            }}
+                          >
+                            <div style={{ color: '#e0e0e0', fontWeight: 'bold' }}>
+                              {ch.name}
+                              {ch.id === activeId ? (
+                                <span style={{ color: '#9d4edd', marginLeft: '8px', fontSize: '12px' }}>(active)</span>
+                              ) : null}
+                            </div>
+                            <div style={{ color: '#8b8b9f', fontSize: '13px' }}>{ch.campaign_name}</div>
+                            <button
+                              type="button"
+                              disabled={ch.id === activeId}
+                              onClick={() => applyActiveCharacter(ch.id)}
+                              style={{
+                                marginTop: '8px',
+                                padding: '6px 14px',
+                                background: ch.id === activeId ? '#333' : '#2a2a4e',
+                                color: '#e0e0e0',
+                                border: '1px solid #4a4a5e',
+                                borderRadius: '6px',
+                                cursor: ch.id === activeId ? 'not-allowed' : 'pointer',
+                              }}
+                            >
+                              {ch.id === activeId ? 'Currently active' : 'Swap to this character'}
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    </GothicBox>
+                  </div>
+                )
               )}
-            </div>
-          </GothicBox>
+
+            {playerProfileSection === 'downtime' &&
+              sectionShell(
+                <div>
+                  <p style={{ color: '#94a3b8', lineHeight: 1.65, marginTop: 0, marginBottom: '20px' }}>
+                    After creation your sheet is <strong>locked</strong>. Use this form to ask site staff or the
+                    Storyteller to adjust stats, merits, or narrative flags. They approve or reject with a reason.
+                  </p>
+                  <GothicBox theme="vampire" style={{ padding: '20px', marginBottom: '20px' }}>
+                    <h3 style={{ marginTop: 0, color: '#e94560', fontFamily: 'Cinzel, serif' }}>Downtime requests</h3>
+                    <textarea
+                      value={downtimeDraft}
+                      onChange={(e) => setDowntimeDraft(e.target.value)}
+                      rows={4}
+                      disabled={!activeId}
+                      placeholder={activeId ? 'Describe what should change on your sheet…' : 'Select an active character first (Playable Characters).'}
+                      style={{
+                        width: '100%',
+                        boxSizing: 'border-box',
+                        padding: '10px',
+                        borderRadius: '8px',
+                        border: '2px solid #2a2a4e',
+                        background: '#0f1729',
+                        color: '#e0e0e0',
+                        marginBottom: '10px',
+                      }}
+                    />
+                    <button
+                      type="button"
+                      disabled={!activeId || downtimeSending || !downtimeDraft.trim()}
+                      onClick={async () => {
+                        if (!activeId || !downtimeDraft.trim()) return;
+                        setDowntimeSending(true);
+                        try {
+                          const res = await fetch(`${API_URL}/characters/${activeId}/downtime-requests`, {
+                            method: 'POST',
+                            headers: {
+                              Authorization: `Bearer ${token}`,
+                              'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({ request_text: downtimeDraft.trim() }),
+                          });
+                          const body = await res.json().catch(() => ({}));
+                          if (res.ok) {
+                            setDowntimeDraft('');
+                            showSuccess('Request sent to the admin queue.');
+                            const r2 = await fetch(`${API_URL}/characters/downtime-requests/mine`, {
+                              headers: { Authorization: `Bearer ${token}` },
+                            });
+                            if (r2.ok) {
+                              const d2 = await r2.json();
+                              setDowntimeMine(Array.isArray(d2.requests) ? d2.requests : []);
+                            }
+                          } else {
+                            showError(body.error || 'Could not submit request');
+                          }
+                        } catch (_) {
+                          showError('Network error');
+                        } finally {
+                          setDowntimeSending(false);
+                        }
+                      }}
+                      style={{
+                        padding: '10px 20px',
+                        background: downtimeSending ? '#555' : '#e94560',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '8px',
+                        cursor: downtimeSending ? 'not-allowed' : 'pointer',
+                        fontWeight: 'bold',
+                      }}
+                    >
+                      {downtimeSending ? 'Sending…' : 'Submit request'}
+                    </button>
+                    <div style={{ marginTop: '20px' }}>
+                      <h4 style={{ color: '#b5b5c3', fontSize: '14px' }}>Your recent requests</h4>
+                      {downtimeMine.length === 0 ? (
+                        <p style={{ color: '#6b6b7f', fontSize: '13px' }}>None yet.</p>
+                      ) : (
+                        <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
+                          {downtimeMine.map((r) => (
+                            <li
+                              key={r.id}
+                              style={{
+                                borderBottom: '1px solid #2a2a4e',
+                                padding: '10px 0',
+                                color: '#b5b5c3',
+                                fontSize: '13px',
+                              }}
+                            >
+                              <strong style={{ color: '#e0e0e0' }}>{r.status}</strong> — {r.character_name}{' '}
+                              <span style={{ color: '#6b6b7f' }}>({r.campaign_name})</span>
+                              <div style={{ marginTop: '4px' }}>{r.request_text}</div>
+                              {r.admin_reason ? (
+                                <div style={{ marginTop: '6px', color: '#9d4edd' }}>Staff: {r.admin_reason}</div>
+                              ) : null}
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
+                  </GothicBox>
+                </div>
+              )}
+
+          </div>
         </div>
         <Footer />
       </div>
@@ -3122,12 +3561,14 @@ function SimpleApp() {
       <CharacterCreationWizard
         token={token}
         campaigns={wizardCampaigns}
-        onCancel={() =>
-          navigateTo(playerCharacters.length ? 'playerProfile' : 'selectCharacter')
-        }
+        onCancel={() => {
+          setPlayableCharactersView('main');
+          navigateTo('playerProfile', null, { playerProfileSection: 'playableCharacters' });
+        }}
         onDone={async () => {
           await fetchUserData();
-          navigateTo('playerProfile');
+          setPlayableCharactersView('main');
+          navigateTo('playerProfile', null, { playerProfileSection: 'playableCharacters' });
         }}
         showError={showError}
         showSuccess={showSuccess}
@@ -3138,12 +3579,15 @@ function SimpleApp() {
 
   // Render dashboard
   const renderDashboard = () => (
-    <div style={{ 
-      minHeight: '100vh', 
-      background: '#0f0f1e',
-      display: 'flex',
-      flexDirection: 'column'
-    }}>
+    <div
+      className="sr-dashboard-shell"
+      style={{
+        minHeight: '100vh',
+        background: '#0f0f1e',
+        display: 'flex',
+        flexDirection: 'column',
+      }}
+    >
       {renderAppPageHeader({ title: 'ShadowRealms AI' })}
 
       {/* Main content - takes up available space */}
@@ -3268,7 +3712,8 @@ function SimpleApp() {
           }}>
             {campaigns.map(campaign => {
               // Extract first line or truncate description
-              const firstLine = campaign.description.split('\n')[0];
+              const rawDesc = campaign.description || '';
+              const firstLine = rawDesc.split('\n')[0];
               const shortDesc = firstLine.length > 100 
                 ? firstLine.substring(0, 100) + '...' 
                 : firstLine;
@@ -3335,11 +3780,54 @@ function SimpleApp() {
                     <h3 style={{ color: themeColor.primary, marginBottom: '10px', fontSize: '20px', fontFamily: 'Cinzel, serif' }}>
                       {campaign.name}
                     </h3>
-                    <p style={{ color: '#b5b5c3', marginBottom: '15px', fontSize: '14px', lineHeight: '1.5', fontFamily: 'Crimson Text, serif' }}>
+                    <p style={{ color: '#b5b5c3', marginBottom: '0', fontSize: '14px', lineHeight: '1.5', fontFamily: 'Crimson Text, serif' }}>
                       {shortDesc}
                     </p>
                   </div>
-                  <div style={{ display: 'flex', gap: '10px', alignItems: 'center', marginTop: '10px' }}>
+                  <div
+                    style={{
+                      marginTop: '12px',
+                      paddingTop: '12px',
+                      borderTop: '1px solid #2a2a4e',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '10px',
+                      minHeight: '40px',
+                    }}
+                  >
+                    {(campaign.my_playing_character_name || '').trim() ? (
+                      <>
+                        <MessageCharacterAvatar
+                          url={campaign.my_playing_character_portrait_url}
+                          size={36}
+                        />
+                        <span
+                          style={{
+                            color: '#e2e8f0',
+                            fontSize: '14px',
+                            fontFamily: 'Crimson Text, serif',
+                            fontWeight: 600,
+                            lineHeight: 1.3,
+                          }}
+                        >
+                          {campaign.my_playing_character_name}
+                        </span>
+                      </>
+                    ) : (
+                      <span
+                        style={{
+                          color: '#64748b',
+                          fontSize: '13px',
+                          fontStyle: 'italic',
+                          fontFamily: 'Crimson Text, serif',
+                          lineHeight: 1.4,
+                        }}
+                      >
+                        No character attached to chronicle
+                      </span>
+                    )}
+                  </div>
+                  <div style={{ display: 'flex', gap: '10px', alignItems: 'center', marginTop: '12px' }}>
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
@@ -4241,7 +4729,8 @@ function SimpleApp() {
           pool_size: poolSize,
           difficulty: d,
           specialty: rollSpecialty,
-          character_id: character?.id ?? undefined,
+          speak_as: chatSpeakAs,
+          ...(chatSpeakAs === 'character' && character?.id ? { character_id: character.id } : {}),
           action_description: rollReason.trim() || 'Dice roll',
           location_id: currentLocation.id,
         }),
@@ -4328,7 +4817,8 @@ function SimpleApp() {
             message_type: 'action',
             role: 'user',
             ai_message_kind: finalKind,
-            ...(character?.id ? { character_id: character.id } : {}),
+            speak_as: chatSpeakAs,
+            ...(chatSpeakAs === 'character' && character?.id ? { character_id: character.id } : {}),
           }),
         }
       );
@@ -4450,6 +4940,15 @@ function SimpleApp() {
       String(selectedCampaign.created_by) === String(user.id);
     const canHideRollToOthers =
       user?.role === 'admin' || user?.role === 'helper' || isCampaignOwner;
+
+    const persistChatSpeakAs = (v) => {
+      setChatSpeakAs(v);
+      if (selectedCampaign?.id) {
+        try {
+          sessionStorage.setItem(`sr_chat_speak_as_${selectedCampaign.id}`, v);
+        } catch (_) {}
+      }
+    };
 
     return (
     <div style={{
@@ -4717,7 +5216,7 @@ function SimpleApp() {
             {canHideRollToOthers && (
               <button
                 type="button"
-                onClick={() => navigateTo('profile')}
+                onClick={() => navigateTo('playerProfile', null, { playerProfileSection: 'accountSettings' })}
                 style={{
                   padding: '5px 10px',
                   background: 'rgba(157, 78, 221, 0.12)',
@@ -4729,7 +5228,7 @@ function SimpleApp() {
                   fontFamily: 'Cinzel, serif',
                 }}
               >
-                Profile
+                Account
               </button>
             )}
             <button
@@ -4898,19 +5397,11 @@ function SimpleApp() {
                   gap: '12px',
                   alignItems: 'flex-start'
                 }}>
-                  {!isAI && (() => {
-                    const inOocRoom =
-                      String(currentLocation?.type || '').toLowerCase() === 'ooc';
-                    const avatarUrl =
-                      inOocRoom && msg.player_avatar_url
-                        ? msg.player_avatar_url
-                        : msg.character_portrait_url;
-                    return (
-                      <div style={{ paddingTop: '4px' }}>
-                        <MessageCharacterAvatar url={avatarUrl} size={40} />
-                      </div>
-                    );
-                  })()}
+                  {!isAI && (
+                    <div style={{ paddingTop: '4px' }}>
+                      <MessageCharacterAvatar url={getChatMessageAvatarUrl(msg)} size={40} />
+                    </div>
+                  )}
                   <div style={{
                     flex: 1,
                     minWidth: 0,
@@ -5102,6 +5593,84 @@ function SimpleApp() {
         overflowY: 'auto',
         overscrollBehavior: 'contain'
       }}>
+        <div style={{ marginBottom: '20px', paddingBottom: '16px', borderBottom: '2px solid #2a2a4e' }}>
+          <h3 style={{ color: '#e94560', marginBottom: '10px', fontSize: '16px', fontWeight: '600', fontFamily: 'Cinzel, serif' }}>
+            <i className="fas fa-theater-masks" style={{ marginRight: '8px' }} />
+            Who is speaking?
+          </h3>
+          <p style={{ color: '#8b8b9f', fontSize: '12px', lineHeight: 1.5, marginBottom: '12px', marginTop: 0 }}>
+            Choose how your messages and dice appear in every room of this chronicle. Saved in this browser.
+          </p>
+          {character ? (
+            <label
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '10px',
+                marginBottom: '10px',
+                cursor: 'pointer',
+              }}
+            >
+              <input
+                type="radio"
+                name="chatSpeakAs"
+                checked={chatSpeakAs === 'character'}
+                onChange={() => persistChatSpeakAs('character')}
+              />
+              <MessageCharacterAvatar url={character.portrait_url} size={32} />
+              <span style={{ color: '#e0e0e0', fontSize: '13px', fontFamily: 'Crimson Text, serif' }}>
+                As {character.name}
+              </span>
+            </label>
+          ) : null}
+          <label
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '10px',
+              marginBottom: '10px',
+              cursor: 'pointer',
+            }}
+          >
+            <input
+              type="radio"
+              name="chatSpeakAs"
+              checked={chatSpeakAs === 'player'}
+              onChange={() => persistChatSpeakAs('player')}
+            />
+            <MessageCharacterAvatar url={user?.player_avatar_url} size={32} />
+            <span style={{ color: '#e0e0e0', fontSize: '13px', fontFamily: 'Crimson Text, serif' }}>
+              As yourself (player)
+            </span>
+          </label>
+          {canHideRollToOthers ? (
+            <label
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '10px',
+                marginBottom: '4px',
+                cursor: 'pointer',
+              }}
+            >
+              <input
+                type="radio"
+                name="chatSpeakAs"
+                checked={chatSpeakAs === 'staff'}
+                onChange={() => persistChatSpeakAs('staff')}
+              />
+              <span style={{ color: '#94a3b8', fontSize: '16px', width: 32, textAlign: 'center' }}>
+                <i className="fas fa-user-shield" />
+              </span>
+              <span style={{ color: '#e0e0e0', fontSize: '13px', fontFamily: 'Crimson Text, serif' }}>
+                {user?.role === 'admin' || user?.role === 'helper'
+                  ? 'Site staff (admin / helper)'
+                  : 'Storyteller (chronicle owner)'}
+              </span>
+            </label>
+          ) : null}
+        </div>
+
         <h3 style={{ color: '#e94560', marginBottom: '15px', fontSize: '16px', fontWeight: '600', fontFamily: 'Cinzel, serif' }}>
           <i className="fas fa-id-card" style={{ marginRight: '8px' }} />
           Character Info
@@ -5783,12 +6352,15 @@ function SimpleApp() {
   return (
     <div className="App">
       <GothicPageLoadingOverlay visible={pageOverlay.visible} label={pageOverlay.label} />
+      <SessionRevealOverlay
+        visible={sessionReveal.visible}
+        title={sessionReveal.title}
+        subtitle={sessionReveal.subtitle}
+      />
       {!token && renderLogin()}
       {token && currentPage === 'dashboard' && renderDashboard()}
-      {token && currentPage === 'selectCharacter' && renderSelectCharacter()}
       {token && currentPage === 'playerProfile' && renderPlayerProfile()}
       {token && currentPage === 'characterCreate' && renderCharacterCreate()}
-      {token && currentPage === 'profile' && renderProfile()}
       {token && currentPage === 'createCampaign' && renderCreateCampaign()}
       {token && currentPage === 'campaignDetails' && renderCampaignDetails()}
       {token && currentPage === 'chat' && renderChat()}
@@ -5964,7 +6536,7 @@ function SimpleApp() {
                     if (response.ok) {
                       setShowDeleteConfirm(false);
                       setDeleteConfirmText('');
-                      await fetchCampaigns(undefined, { forActiveCharacter: true });
+                      await fetchCampaigns(undefined, { forActiveCharacter: true, user });
                       setCurrentPage('dashboard');
                       showSuccess('✅ Campaign deleted successfully!');
                     } else {
@@ -6164,7 +6736,7 @@ function SimpleApp() {
                   // New campaign - return to dashboard
                   setShowLocationSuggestions(false);
                   setNewCampaignData(null);
-                  await fetchCampaigns(undefined, { forActiveCharacter: true });
+                  await fetchCampaigns(undefined, { forActiveCharacter: true, user });
                   setCurrentPage('dashboard');
                 }
               }}
@@ -6179,7 +6751,7 @@ function SimpleApp() {
                   // New campaign - return to dashboard
                   setShowLocationSuggestions(false);
                   setNewCampaignData(null);
-                  await fetchCampaigns(undefined, { forActiveCharacter: true });
+                  await fetchCampaigns(undefined, { forActiveCharacter: true, user });
                   setCurrentPage('dashboard');
                 }
               }}

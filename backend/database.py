@@ -90,6 +90,25 @@ def ensure_users_display_timezone_column(cursor):
             )
 
 
+def ensure_messages_speaker_mode_column(cursor):
+    """Who is speaking: character (IC mask), player (OOC self), staff (ST/site)."""
+    db_type = os.getenv("DATABASE_TYPE", "sqlite").lower()
+    if db_type == "postgresql":
+        cursor.execute(
+            "ALTER TABLE messages ADD COLUMN IF NOT EXISTS speaker_mode TEXT"
+        )
+    else:
+        cursor.execute(
+            "SELECT name FROM sqlite_master WHERE type='table' AND name='messages'"
+        )
+        if not cursor.fetchone():
+            return
+        cursor.execute("PRAGMA table_info(messages)")
+        cols = [row["name"] for row in cursor.fetchall()]
+        if "speaker_mode" not in cols:
+            cursor.execute("ALTER TABLE messages ADD COLUMN speaker_mode TEXT")
+
+
 def ensure_messages_ai_message_kind_column(cursor):
     """Tag /ai slash user+assistant rows for cleanup (messages.ai_message_kind)."""
     db_type = os.getenv("DATABASE_TYPE", "sqlite").lower()
@@ -355,6 +374,24 @@ def ensure_users_allow_multi_campaign_play_column(cursor):
             )
 
 
+def ensure_users_self_switch_playing_character_column(cursor):
+    """When true, player may change active PC in a chronicle without storyteller approval."""
+    db_type = os.getenv("DATABASE_TYPE", "sqlite").lower()
+    if db_type == "postgresql":
+        cursor.execute(
+            "ALTER TABLE users ADD COLUMN IF NOT EXISTS self_switch_playing_character "
+            "BOOLEAN NOT NULL DEFAULT FALSE"
+        )
+    else:
+        cursor.execute("PRAGMA table_info(users)")
+        cols = [row["name"] for row in cursor.fetchall()]
+        if "self_switch_playing_character" not in cols:
+            cursor.execute(
+                "ALTER TABLE users ADD COLUMN self_switch_playing_character "
+                "INTEGER NOT NULL DEFAULT 0"
+            )
+
+
 def ensure_users_restrict_self_join_new_chronicles_column(cursor):
     """After voluntary campaign detach, block self-join to new chronicles until ST/admin adds them."""
     db_type = os.getenv("DATABASE_TYPE", "sqlite").lower()
@@ -456,6 +493,30 @@ def ensure_campaigns_listing_columns(cursor):
             cursor.execute(
                 "ALTER TABLE campaigns ADD COLUMN accepting_players INTEGER NOT NULL DEFAULT 0"
             )
+
+
+def ensure_campaigns_staff_pause_columns(cursor):
+    """Optional note when staff sets campaigns.is_active false (discover/join gate)."""
+    db_type = os.getenv("DATABASE_TYPE", "sqlite").lower()
+    if db_type == "postgresql":
+        cursor.execute(
+            "ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS admin_inactive_reason TEXT"
+        )
+        cursor.execute(
+            "ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS admin_inactive_at TIMESTAMP"
+        )
+    else:
+        cursor.execute(
+            "SELECT name FROM sqlite_master WHERE type='table' AND name='campaigns'"
+        )
+        if not cursor.fetchone():
+            return
+        cursor.execute("PRAGMA table_info(campaigns)")
+        cols = [row["name"] for row in cursor.fetchall()]
+        if "admin_inactive_reason" not in cols:
+            cursor.execute("ALTER TABLE campaigns ADD COLUMN admin_inactive_reason TEXT")
+        if "admin_inactive_at" not in cols:
+            cursor.execute("ALTER TABLE campaigns ADD COLUMN admin_inactive_at TIMESTAMP")
 
 
 def ensure_character_downtime_requests_table(cursor):
@@ -619,6 +680,7 @@ def migrate_db():
             cursor = conn.cursor()
             ensure_users_display_timezone_column(cursor)
             ensure_messages_ai_message_kind_column(cursor)
+            ensure_messages_speaker_mode_column(cursor)
             ensure_locations_dice_leniency_floor_column(cursor)
             ensure_locations_player_access_columns(cursor)
             ensure_character_portrait_url_column(cursor)
@@ -627,6 +689,7 @@ def migrate_db():
             ensure_characters_wod_sheet_columns(cursor)
             ensure_characters_play_suspension_columns(cursor)
             ensure_users_allow_multi_campaign_play_column(cursor)
+            ensure_users_self_switch_playing_character_column(cursor)
             ensure_users_restrict_self_join_new_chronicles_column(cursor)
             ensure_campaign_players_active_character_id_column(cursor)
             ensure_campaigns_listing_columns(cursor)
@@ -985,11 +1048,13 @@ def migrate_db():
         ensure_characters_wod_sheet_columns(cursor)
         ensure_characters_play_suspension_columns(cursor)
         ensure_users_allow_multi_campaign_play_column(cursor)
+        ensure_users_self_switch_playing_character_column(cursor)
         ensure_users_restrict_self_join_new_chronicles_column(cursor)
         ensure_campaign_players_active_character_id_column(cursor)
         ensure_campaigns_listing_columns(cursor)
         ensure_character_downtime_requests_table(cursor)
         ensure_messages_ai_message_kind_column(cursor)
+        ensure_messages_speaker_mode_column(cursor)
         ensure_locations_dice_leniency_floor_column(cursor)
         ensure_locations_player_access_columns(cursor)
         ensure_dice_tables(cursor, 'sqlite')

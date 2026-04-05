@@ -1,6 +1,6 @@
 # PostgreSQL Migration Package - Pre-Flight Checklist
 
-**Version**: 0.7.18  
+**Version**: 0.8.0  
 **Created**: 2025-10-28  
 **Status**: Ready for Execution
 
@@ -30,7 +30,7 @@ Run this checklist before starting the migration to ensure all files are in plac
 ### Documentation
 
 - [ ] `docs/DATABASE_MIGRATION_POSTGRESQL.md` exists (technical details)
-- [ ] `README.md` up to date (version 0.7.18)
+- [ ] `README.md` up to date (version 0.8.0)
 
 ---
 

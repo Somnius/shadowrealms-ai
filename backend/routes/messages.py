@@ -12,6 +12,7 @@ from database import (
     get_db,
     ensure_character_portrait_url_column,
     ensure_messages_ai_message_kind_column,
+    ensure_messages_speaker_mode_column,
     ensure_locations_player_access_columns,
     ensure_users_player_profile_columns,
     ensure_campaign_players_active_character_id_column,
@@ -56,7 +57,29 @@ def _campaign_accessible_to_viewer(cursor, campaign_id: int, user_id: int) -> bo
     return cursor.fetchone() is not None
 
 
+def _staff_kind_from_row(row) -> Optional[str]:
+    """When speaker_mode is staff: site admin/helper vs chronicle storyteller."""
+    pr = (row.get('poster_role') or row.get('user_role') or '').lower()
+    if pr in ('admin', 'helper'):
+        return 'admin'
+    cb = row.get('campaign_created_by')
+    uid = row.get('user_id')
+    if cb is not None and uid is not None and str(cb) == str(uid):
+        return 'storyteller'
+    return 'staff'
+
+
 def _message_dict_from_row(row) -> dict:
+    cid = row.get('character_id')
+    raw_sm = row.get('speaker_mode')
+    if raw_sm:
+        sm = str(raw_sm).strip().lower()
+    else:
+        sm = 'character' if cid else 'player'
+    staff_kind = None
+    if sm == 'staff':
+        staff_kind = _staff_kind_from_row(row)
+
     return {
         'id': row['id'],
         'campaign_id': row['campaign_id'],
@@ -73,8 +96,9 @@ def _message_dict_from_row(row) -> dict:
         'character_portrait_url': row['character_portrait_url'],
         'player_avatar_url': row.get('player_avatar_url'),
         'ai_message_kind': row.get('ai_message_kind'),
-        # Site role of the message author (for UI: plain admin bubble vs in-character)
         'poster_role': (row.get('poster_role') or row.get('user_role') or ''),
+        'speaker_mode': sm,
+        'staff_kind': staff_kind,
     }
 
 def _ensure_location_reads_table(cursor):
@@ -118,6 +142,7 @@ def get_messages(campaign_id, location_id):
         cursor = conn.cursor()
         ensure_character_portrait_url_column(cursor)
         ensure_messages_ai_message_kind_column(cursor)
+        ensure_messages_speaker_mode_column(cursor)
         ensure_locations_player_access_columns(cursor)
         ensure_users_player_profile_columns(cursor)
         conn.commit()
@@ -176,9 +201,12 @@ def get_messages(campaign_id, location_id):
                 u.player_avatar_url as player_avatar_url,
                 c.name as character_name,
                 c.portrait_url as character_portrait_url,
-                m.ai_message_kind
+                m.ai_message_kind,
+                m.speaker_mode,
+                camp.created_by as campaign_created_by
             FROM messages m
             JOIN users u ON m.user_id = u.id
+            JOIN campaigns camp ON m.campaign_id = camp.id
             LEFT JOIN characters c ON m.character_id = c.id
             WHERE m.campaign_id = %s AND m.location_id = %s
         """
@@ -460,6 +488,7 @@ def save_message(campaign_id, location_id):
         ensure_locations_player_access_columns(cursor)
         ensure_users_player_profile_columns(cursor)
         ensure_campaign_players_active_character_id_column(cursor)
+        ensure_messages_speaker_mode_column(cursor)
         conn.commit()
 
         # Check if user is currently banned
@@ -543,75 +572,124 @@ def save_message(campaign_id, location_id):
                 logger.error(f"Error checking OOC violation: {e}")
                 # Continue if OOC check fails - don't block legitimate messages
 
+        speaker_mode = None
         # Resolve / validate character for user-authored messages
         if role == 'user':
-            active_cid = effective_playing_character_id(
-                cursor, int(user_id), int(campaign_id)
-            )
+            speak_as = (data.get('speak_as') or data.get('voice') or 'character').strip().lower()
+            if speak_as not in ('character', 'player', 'staff'):
+                speak_as = 'character'
 
-            if active_cid is not None:
-                _ichar = (
-                    "(is_active IS NULL OR is_active IS TRUE)"
-                    if os.getenv("DATABASE_TYPE", "sqlite").lower() == "postgresql"
-                    else "(is_active IS NULL OR is_active = 1)"
-                )
-                cursor.execute(
-                    f"""
-                    SELECT id FROM characters
-                    WHERE id = %s AND user_id = %s AND campaign_id = %s
-                      AND {_ichar}
-                    """,
-                    (active_cid, user_id, campaign_id),
-                )
-                if not cursor.fetchone():
+            cursor.execute("SELECT created_by FROM campaigns WHERE id = %s", (campaign_id,))
+            cr = cursor.fetchone() or {}
+            campaign_created_by = cr.get('created_by')
+            cursor.execute("SELECT role FROM users WHERE id = %s", (user_id,))
+            ur = cursor.fetchone() or {}
+            site_role = (ur.get('role') or '').lower()
+            is_campaign_st = (
+                campaign_created_by is not None
+                and str(campaign_created_by) == str(user_id)
+            )
+            can_staff_voice = site_role in ('admin', 'helper') or is_campaign_st
+
+            if speak_as == 'staff':
+                if not can_staff_voice:
                     return jsonify(
                         {
                             'error': (
-                                'Your playing character is not set for this campaign. '
-                                'Open Player Profile or chronicle settings.'
+                                'Only the chronicle Storyteller or site staff can post with staff voice.'
                             )
-                        }
-                    ), 400
-                if character_id is not None and int(character_id) != int(active_cid):
-                    return jsonify(
-                        {
-                            'error': (
-                                'You can only post as your playing character '
-                                '(set in Player Profile or chronicle).'
-                            )
-                        }
-                    ), 400
-                character_id = active_cid
-            elif character_id is not None:
-                cursor.execute("""
-                    SELECT id FROM characters
-                    WHERE id = %s AND user_id = %s AND campaign_id = %s AND is_active = TRUE
-                """, (character_id, user_id, campaign_id))
-                if not cursor.fetchone():
-                    return jsonify({'error': 'Invalid character for this campaign'}), 400
+                        },
+                    ), 403
+                character_id = None
+                speaker_mode = 'staff'
+            elif speak_as == 'player':
+                character_id = None
+                speaker_mode = 'player'
             else:
-                cursor.execute("""
-                    SELECT id FROM characters
-                    WHERE user_id = %s AND campaign_id = %s AND is_active = TRUE
-                    ORDER BY id ASC
-                    LIMIT 1
-                """, (user_id, campaign_id))
-                fallback = cursor.fetchone()
-                if fallback:
-                    character_id = fallback['id']
-        
+                speaker_mode = 'character'
+                active_cid = effective_playing_character_id(
+                    cursor, int(user_id), int(campaign_id)
+                )
+
+                if active_cid is not None:
+                    _ichar = (
+                        "(is_active IS NULL OR is_active IS TRUE)"
+                        if os.getenv("DATABASE_TYPE", "sqlite").lower() == "postgresql"
+                        else "(is_active IS NULL OR is_active = 1)"
+                    )
+                    cursor.execute(
+                        f"""
+                        SELECT id FROM characters
+                        WHERE id = %s AND user_id = %s AND campaign_id = %s
+                          AND {_ichar}
+                        """,
+                        (active_cid, user_id, campaign_id),
+                    )
+                    if not cursor.fetchone():
+                        return jsonify(
+                            {
+                                'error': (
+                                    'Your playing character is not set for this campaign. '
+                                    'Open Player Profile or chronicle settings.'
+                                )
+                            }
+                        ), 400
+                    if character_id is not None and int(character_id) != int(active_cid):
+                        return jsonify(
+                            {
+                                'error': (
+                                    'You can only post as your playing character '
+                                    '(set in Player Profile or chronicle).'
+                                )
+                            }
+                        ), 400
+                    character_id = active_cid
+                elif character_id is not None:
+                    cursor.execute(
+                        """
+                        SELECT id FROM characters
+                        WHERE id = %s AND user_id = %s AND campaign_id = %s AND is_active = TRUE
+                        """,
+                        (character_id, user_id, campaign_id),
+                    )
+                    if not cursor.fetchone():
+                        return jsonify({'error': 'Invalid character for this campaign'}), 400
+                else:
+                    cursor.execute(
+                        """
+                        SELECT id FROM characters
+                        WHERE user_id = %s AND campaign_id = %s AND is_active = TRUE
+                        ORDER BY id ASC
+                        LIMIT 1
+                        """,
+                        (user_id, campaign_id),
+                    )
+                    fallback = cursor.fetchone()
+                    if fallback:
+                        character_id = fallback['id']
+
         # Insert message
-        cursor.execute("""
+        cursor.execute(
+            """
             INSERT INTO messages (
                 campaign_id, location_id, user_id, character_id,
-                message_type, content, role, created_at, ai_message_kind
-            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+                message_type, content, role, created_at, ai_message_kind, speaker_mode
+            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             RETURNING id
-        """, (
-            campaign_id, location_id, user_id, character_id,
-            message_type, content, role, datetime.now().isoformat(),
-            ai_message_kind,
-        ))
+            """,
+            (
+                campaign_id,
+                location_id,
+                user_id,
+                character_id,
+                message_type,
+                content,
+                role,
+                datetime.now().isoformat(),
+                ai_message_kind,
+                speaker_mode,
+            ),
+        )
         
         result = cursor.fetchone()
         message_id = result['id']
@@ -646,7 +724,8 @@ def save_message(campaign_id, location_id):
             logger.warning(f"Failed to embed message: {e}")
         
         # Fetch the saved message with joined data
-        cursor.execute("""
+        cursor.execute(
+            """
             SELECT 
                 m.id,
                 m.campaign_id,
@@ -662,12 +741,17 @@ def save_message(campaign_id, location_id):
                 u.player_avatar_url as player_avatar_url,
                 c.name as character_name,
                 c.portrait_url as character_portrait_url,
-                m.ai_message_kind
+                m.ai_message_kind,
+                m.speaker_mode,
+                camp.created_by as campaign_created_by
             FROM messages m
             JOIN users u ON m.user_id = u.id
+            JOIN campaigns camp ON m.campaign_id = camp.id
             LEFT JOIN characters c ON m.character_id = c.id
             WHERE m.id = %s
-        """, (message_id,))
+            """,
+            (message_id,),
+        )
         
         row = cursor.fetchone()
         saved_message = _message_dict_from_row(row)

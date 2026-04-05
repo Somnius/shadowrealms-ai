@@ -1,7 +1,7 @@
 # Planning & Phase Documentation
 
 **Last Updated**: 2026-04-05  
-**Version**: 0.7.18
+**Version**: 0.8.0
 
 This document consolidates planning documentation and phase summaries.
 
@@ -11,7 +11,7 @@ This document consolidates planning documentation and phase summaries.
 
 1. [Overview](#overview)
 2. [Phase model (refreshed)](#phase-model-refreshed)
-3. [Delivered through v0.7.18](#delivered-through-v0718)
+3. [Delivered through v0.8.0](#delivered-through-v080)
 4. [Next priorities](#next-priorities)
 5. [Phase 3B specification (north star)](#phase-3b-specification-north-star)
 
@@ -21,7 +21,7 @@ This document consolidates planning documentation and phase summaries.
 
 **Phase 2** (RAG, ChromaDB, books) and **Phase 3A** (auth, React shell, campaigns, themes) are **complete**. **Phase 3B** is the ongoing “tabletop platform” track.
 
-Older text in this file claimed locations were **hardcoded** and APIs **missing**. That is **obsolete**: the app now uses **PostgreSQL**, **REST routes** for locations, characters, messages, dice, and AI, and a **polling-based** chat UI. The long sections below are a **north-star** spec; trust the [Delivered](#delivered-through-v0718) section and [CHANGELOG](CHANGELOG.md) for what actually ships.
+Older text in this file claimed locations were **hardcoded** and APIs **missing**. That is **obsolete**: the app now uses **PostgreSQL**, **REST routes** for locations, characters, messages, dice, and AI, and a **polling-based** chat UI. The long sections below are a **north-star** spec; trust the [Delivered](#delivered-through-v080) section and [CHANGELOG](CHANGELOG.md) for what actually ships.
 
 ---
 
@@ -39,8 +39,9 @@ Chat uses **HTTP polling** today; there is **no** WebSocket server in the reposi
 
 ---
 
-## Delivered through v0.7.18
+## Delivered through v0.8.0
 
+- **v0.8.0 (player hub & UX)**: **Player Profile** reorganized—**Account Settings** (time zone + OOC identity/portrait), **Playable Characters** (switch PC, roster, **guide before chargen**), **Downtime**; **Home** in the app header; redundant profile **Campaigns** shortcut removed (see `docs/CHANGELOG.md` `[0.8.0]`).
 - **v0.7.18 (admin & data integrity)**: Admin **All chronicles** tab; site-admin access to any campaign for chat/messages/dice/read-state; preserve-chat user deletion reassigns `locations.created_by`; admin character list hardening (see `docs/CHANGELOG.md` `[0.7.18]`).
 - **v0.7.17 (docs)**: Version-stamp alignment across the repo; release notes emphasize **next milestone** readiness for **users**, **players**, and **characters** before deeper Phase **3B** features (see `docs/CHANGELOG.md` `[0.7.17]`).
 - **Stack**: Docker Compose; PostgreSQL; backend `backend/routes/*` for campaigns, locations, characters, messages, dice, AI, admin.
@@ -79,7 +80,7 @@ The sections below (from the next heading onward) are the **original Phase 3B de
 ## 🚀 Phase 3B: Advanced Campaign & Character Systems
 
 **Status:** 🚧 IN PROGRESS — **core loop shipped** (locations, characters, chat, dice, AI); **WebSockets & advanced UX** not yet  
-**Version:** 0.7.18  
+**Version:** 0.8.0  
 **Start Date:** 2025-10-24
 
 ### Overview
@@ -551,7 +552,7 @@ GET    /api/campaigns/:id/stats              - Campaign statistics (member / cre
 
 ### 📅 Rolling roadmap (replaces fixed “Week N” schedule)
 
-**Done (v0.7.18):** Security baseline, PostgreSQL, locations, characters, messages, dice, AI chat + slash commands, OOC moderation, timestamps, docker-up workflow; admin **All chronicles** list; site-admin chronicle access for support; preserve-chat delete transfers `locations.created_by`.
+**Done (v0.8.0):** Security baseline, PostgreSQL, locations, characters, messages, dice, AI chat + slash commands, OOC moderation, timestamps, docker-up workflow; admin **All chronicles** list; site-admin chronicle access for support; preserve-chat delete transfers `locations.created_by`; **Player Profile** hub (Account Settings, Playable Characters with guide-before-chargen, Downtime; header **Home**).
 
 **Next (typical order):**
 1. **WebSockets** (or SSE) for chat + presence hooks
@@ -606,7 +607,7 @@ Older “Week 1–4” labels below in this file are **historical**; do not use 
 
 From extensive user conversation (2025-10-24), all specifications archived in:
 - `docs/PHASE3B_IMPLEMENTATION.md` (full details)
-- `docs/CHANGELOG.md` through **v0.7.17** (summary)
+- `docs/CHANGELOG.md` through **v0.8.0** (summary)
 - This document (integration into main planning)
 
 Key user requirements:
@@ -621,7 +622,7 @@ Key user requirements:
 
 ---
 
-**Last Updated:** 2026-04-03  
+**Last Updated:** 2026-04-05  
 **Next milestone:** Real-time messaging layer (WebSockets or SSE); keep **users / players / characters** data accurate for upcoming location and sheet-depth work; see [Next priorities](#next-priorities).  
-**Version:** 0.7.18
+**Version:** 0.8.0
 

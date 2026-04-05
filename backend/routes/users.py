@@ -15,6 +15,8 @@ from database import (
     ensure_users_player_profile_columns,
     ensure_character_portrait_url_column,
     ensure_characters_play_suspension_columns,
+    ensure_users_allow_multi_campaign_play_column,
+    ensure_users_self_switch_playing_character_column,
     ensure_users_restrict_self_join_new_chronicles_column,
     ensure_campaign_players_active_character_id_column,
 )
@@ -62,6 +64,8 @@ def get_current_user_me():
         ensure_users_player_profile_columns(cursor)
         ensure_character_portrait_url_column(cursor)
         ensure_characters_play_suspension_columns(cursor)
+        ensure_users_allow_multi_campaign_play_column(cursor)
+        ensure_users_self_switch_playing_character_column(cursor)
         ensure_users_restrict_self_join_new_chronicles_column(cursor)
         ensure_campaign_players_active_character_id_column(cursor)
         db.commit()
@@ -70,7 +74,8 @@ def get_current_user_me():
             """
             SELECT id, username, email, role, created_at, last_login, is_active,
                    display_timezone, player_avatar_url, active_character_id,
-                   restrict_self_join_new_chronicles
+                   restrict_self_join_new_chronicles,
+                   allow_multi_campaign_play, self_switch_playing_character
             FROM users WHERE id = %s
             """,
             (user_id,),
@@ -142,6 +147,12 @@ def get_current_user_me():
                 "active_character": active_character,
                 "restrict_self_join_new_chronicles": bool(
                     user.get("restrict_self_join_new_chronicles") or False
+                ),
+                "allow_multi_campaign_play": bool(
+                    user.get("allow_multi_campaign_play") or False
+                ),
+                "self_switch_playing_character": bool(
+                    user.get("self_switch_playing_character") or False
                 ),
                 "statistics": {
                     "campaigns_created": campaign_count,

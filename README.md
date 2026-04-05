@@ -6,7 +6,7 @@
 
 ### The Ultimate AI-Powered Tabletop RPG Experience
 
-[![Version](https://img.shields.io/badge/version-0.7.18-blue.svg)](https://github.com/Somnius/shadowrealms-ai)
+[![Version](https://img.shields.io/badge/version-0.8.0-blue.svg)](https://github.com/Somnius/shadowrealms-ai)
 [![Phase 2](https://img.shields.io/badge/phase-2%20complete-green.svg)](https://github.com/Somnius/shadowrealms-ai)
 [![Phase 3A](https://img.shields.io/badge/phase-3A%20complete-green.svg)](https://github.com/Somnius/shadowrealms-ai)
 [![Phase 3B](https://img.shields.io/badge/phase-3B%20active-blue.svg)](https://github.com/Somnius/shadowrealms-ai)
@@ -55,7 +55,7 @@ See ShadowRealms AI in action:
 
 *Watch this video to see the login system, gothic theme, campaign management, and admin panel in action!*
 
-> **Version 0.7.18 Preview:** This demo showcases the frontend interface in its current state. Please note that not all features are fully functional yet—this is a first look at the user interface and design direction of ShadowRealms AI.
+> **Version 0.8.0 Preview:** This demo showcases the frontend interface in its current state. Please note that not all features are fully functional yet—this is a first look at the user interface and design direction of ShadowRealms AI.
 
 </div>
 
@@ -137,6 +137,13 @@ docker-compose up -d
 ## Current Development Status
 
 <div align="center">
+
+### Version 0.8.0 - Player account, character & profile hub milestone 🎯
+
+**What changed from v0.7.18:**
+- **Player Profile**: Single hub with **Overview**, **Account Settings** (time zone + merged **OOC identity** / portrait), **Playable Characters** (switch PC, roster, portraits, and **character creation guide** before the wizard), and **Downtime requests**. The profile **Campaigns** shortcut is removed—use the **chronicle hall** (home) for chronicles.
+- **Header**: **Home** button to the left of the username on logged-in pages; logo/title still links home.
+- **Docs**: Indexed documentation and version stamps advanced to **v0.8.0** (see `docs/CHANGELOG.md` `[0.8.0]`).
 
 ### Version 0.7.18 - Admin chronicles, support access, account-delete fixes 🛡️
 

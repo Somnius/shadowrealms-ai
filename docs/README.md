@@ -2,7 +2,7 @@
 
 Welcome to the ShadowRealms AI documentation! This directory contains all project documentation, guides, and references.
 
-**Last Updated:** April 4, 2026 — changelog through **v0.7.18**; includes admin chronicle listing, site-admin campaign access for support, preserve-chat account deletion (`locations.created_by`), WoD character-creation reference, PostgreSQL migration docs, and [chronicle membership / playing character](CAMPAIGN_MEMBERSHIP_AND_PLAYING_CHARACTER.md).
+**Last Updated:** April 5, 2026 — changelog through **v0.8.0**; milestone release for **player account** and **character** management UX (Player Profile hub: Account Settings, Playable Characters with guide-before-wizard, Downtime; header **Home**; chronicles from the hall). Earlier **v0.7.18** shipped admin **All chronicles**, site-admin campaign access, and preserve-chat deletion. See also WoD character-creation reference, PostgreSQL migration docs, and [chronicle membership / playing character](CAMPAIGN_MEMBERSHIP_AND_PLAYING_CHARACTER.md).
 
 ## 📚 Quick Links
 
@@ -49,7 +49,7 @@ Welcome to the ShadowRealms AI documentation! This directory contains all projec
   - Invite Code System
 - **[Chronicle membership & playing character](CAMPAIGN_MEMBERSHIP_AND_PLAYING_CHARACTER.md)** - Detach, join restrictions, per-campaign PC, API summary
 - **[Old WoD / Storyteller dice](dice-old-wod.md)** - d10 pools, sidebar rolls, dice overlay, `/ai roll` / `/ai roll-hidden` (v0.7.14+)
-- **[WoD character creation (reference)](character-creation-world-of-darkness.md)** - Revised-era chargen outline and ShadowRealms field mapping (v0.7.17+; admin chronicles v0.7.18+)
+- **[WoD character creation (reference)](character-creation-world-of-darkness.md)** - Revised-era chargen outline and ShadowRealms field mapping (v0.7.17+; admin chronicles v0.7.18+; Player Profile hub v0.8.0+)
 - **[WoD location naming (AI + RAG)](location-naming-world-of-darkness.md)** - VtM / WtA / MtA vocabulary for suggested room names; optional Chroma ingest
 
 ### Bug Fixes & Audits
@@ -233,6 +233,6 @@ All consolidated files maintain complete content with proper section headers and
 ---
 
 **Last Updated**: April 5, 2026  
-**Documentation Version**: 0.7.18  
+**Documentation Version**: 0.8.0  
 **Total Documentation Files**: 22+ markdown files in `docs/` (includes character creation reference, PostgreSQL migration docs, and `dice-old-wod.md`)
 

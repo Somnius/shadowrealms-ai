@@ -1,6 +1,6 @@
 # Phase 3B: Advanced Campaign & Character Systems
 
-**Version:** 0.7.18  
+**Version:** 0.8.0  
 **Status:** 🚧 IN PROGRESS — **playable core shipped**; WebSockets / full wizard / notification matrix **not** done  
 **Start Date:** 2025-10-24  
 **Target Completion:** TBD
@@ -9,9 +9,10 @@
 
 ## Delivery snapshot (vs this document)
 
-This file is the **full product spec** (“north star”). As of **v0.7.18**, the following are **in production**:
+This file is the **full product spec** (“north star”). As of **v0.8.0**, the following are **in production**:
 
 - PostgreSQL-backed **campaigns**, **locations** (CRUD, enter/leave, suggest/batch), **characters** (CRUD, selection), **messages** per location (polling), **read state**, **dice** (API + UI + `/ai` tools), **AI chat** + **OOC moderation**, **admin** tooling (including **All chronicles** list, preserve-chat account deletion, site-admin support access to any chronicle—see `docs/CHANGELOG.md`).
+- **Player Profile hub** (v0.8.0): **Account Settings** (time zone + OOC identity/portrait), **Playable Characters** (switch PC, roster, guide before chargen), **Downtime**; **Home** in the app header; chronicles opened from the hall rather than a redundant profile tab.
 - **Not in repo:** WebSocket server, typing indicators, unified notification component, multi-step character wizard as described below—treat those sections as **planned**.
 
 See **`docs/PLANNING.md`** ([Next priorities](PLANNING.md#next-priorities)) for the current backlog order.

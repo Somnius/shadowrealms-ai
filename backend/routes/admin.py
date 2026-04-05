@@ -23,9 +23,12 @@ from database import (
     ensure_characters_wod_sheet_columns,
     ensure_character_portrait_url_column,
     ensure_users_allow_multi_campaign_play_column,
+    ensure_users_self_switch_playing_character_column,
     ensure_users_restrict_self_join_new_chronicles_column,
     ensure_campaigns_listing_columns,
+    ensure_campaigns_staff_pause_columns,
 )
+from services.moderation_audit import log_moderation_action, moderation_entry_kind
 from routes.auth import load_invites, save_invites
 from services.play_suspension import ALLOWED_REASON_CODES
 
@@ -58,18 +61,6 @@ def require_admin():
         return wrapper
     return decorator
 
-def log_moderation_action(user_id, admin_id, action, details):
-    """Log a moderation action"""
-    db = get_db()
-    cursor = db.cursor()
-    cursor.execute("""
-        INSERT INTO user_moderation_log (user_id, admin_id, action, details, created_at)
-        VALUES (%s, %s, %s, %s, %s)
-    """, (user_id, admin_id, action, json.dumps(details), datetime.now()))
-    db.commit()
-    cursor.close()
-    db.close()
-
 @bp.route('/users', methods=['GET'])
 @require_admin()
 def get_all_users():
@@ -79,11 +70,12 @@ def get_all_users():
         cursor = db.cursor()
         
         ensure_users_allow_multi_campaign_play_column(cursor)
+        ensure_users_self_switch_playing_character_column(cursor)
         db.commit()
         cursor.execute("""
             SELECT id, username, email, role, is_active, created_at, last_login,
                    ban_type, ban_until, ban_reason, banned_by, banned_at,
-                   allow_multi_campaign_play
+                   allow_multi_campaign_play, self_switch_playing_character
             FROM users
             ORDER BY created_at DESC
         """)
@@ -105,6 +97,9 @@ def get_all_users():
                 'banned_at': row['banned_at'],
                 'allow_multi_campaign_play': bool(
                     row.get('allow_multi_campaign_play') or False
+                ),
+                'self_switch_playing_character': bool(
+                    row.get('self_switch_playing_character') or False
                 ),
             }
             
@@ -171,6 +166,12 @@ def update_user(user_id):
             db.commit()
             updates.append("allow_multi_campaign_play = %s")
             params.append(bool(data['allow_multi_campaign_play']))
+
+        if 'self_switch_playing_character' in data:
+            ensure_users_self_switch_playing_character_column(cursor)
+            db.commit()
+            updates.append("self_switch_playing_character = %s")
+            params.append(bool(data['self_switch_playing_character']))
 
         if 'restrict_self_join_new_chronicles' in data:
             ensure_users_restrict_self_join_new_chronicles_column(cursor)
@@ -448,32 +449,39 @@ def kill_character(character_id):
 def get_moderation_log():
     """Get moderation action log"""
     try:
-        limit = request.args.get('limit', 50, type=int)
+        limit = request.args.get('limit', 100, type=int)
+        limit = max(1, min(limit, 500))
         
         db = get_db()
         cursor = db.cursor()
         
         cursor.execute("""
-            SELECT ml.id, ml.user_id, u.username as username, ml.admin_id, a.username as admin_username, 
+            SELECT ml.id, ml.user_id, u.username AS target_username, ml.admin_id,
+                   a.username AS actor_username,
                    ml.action, ml.details, ml.created_at
             FROM user_moderation_log ml
-            JOIN users u ON ml.user_id = u.id
-            JOIN users a ON ml.admin_id = a.id
+            LEFT JOIN users u ON ml.user_id = u.id
+            LEFT JOIN users a ON ml.admin_id = a.id
             ORDER BY ml.created_at DESC
             LIMIT %s
         """, (limit,))
         
         logs = []
         for row in cursor.fetchall():
+            details = json.loads(row['details']) if row['details'] else {}
+            uid = row['user_id']
+            aid = row['admin_id']
+            action = row['action']
             logs.append({
                 'id': row['id'],
-                'user_id': row['user_id'],
-                'username': row['username'],
-                'admin_id': row['admin_id'],
-                'admin_username': row['admin_username'],
-                'action': row['action'],
-                'details': json.loads(row['details']) if row['details'] else {},
-                'created_at': row['created_at']
+                'user_id': uid,
+                'username': row['target_username'],
+                'admin_id': aid,
+                'admin_username': row['actor_username'],
+                'action': action,
+                'details': details,
+                'created_at': row['created_at'],
+                'entry_kind': moderation_entry_kind(action, uid, aid, details),
             })
         
         cursor.close()
@@ -969,6 +977,26 @@ def _row_get(row, key, default=None):
         return default
 
 
+def _truthy_db_bool(val, default=False):
+    if val is None:
+        return default
+    if isinstance(val, bool):
+        return val
+    if isinstance(val, (int, float)):
+        return val != 0
+    s = str(val).strip().lower()
+    if s in ("", "none"):
+        return default
+    return s in ("1", "true", "yes", "t")
+
+
+def _campaign_is_active(raw):
+    """Campaigns.is_active: default True when column missing or null."""
+    if raw is None:
+        return True
+    return _truthy_db_bool(raw, default=True)
+
+
 @bp.route('/campaigns', methods=['GET'])
 @require_admin()
 def list_all_campaigns():
@@ -977,10 +1005,13 @@ def list_all_campaigns():
         db = get_db()
         cursor = db.cursor()
         ensure_campaigns_listing_columns(cursor)
+        ensure_campaigns_staff_pause_columns(cursor)
         db.commit()
         cursor.execute(
             """
-            SELECT c.id, c.name, c.game_system, c.status, c.created_at, c.created_by,
+            SELECT c.id, c.name, c.description, c.game_system, c.status, c.created_at, c.created_by,
+                   c.is_active, c.listing_visibility, c.accepting_players, c.max_players,
+                   c.admin_inactive_reason, c.admin_inactive_at,
                    u.username AS creator_username
             FROM campaigns c
             LEFT JOIN users u ON u.id = c.created_by
@@ -990,14 +1021,23 @@ def list_all_campaigns():
         rows = cursor.fetchall() or []
         out = []
         for row in rows:
+            acc_players = _truthy_db_bool(_row_get(row, "accepting_players"), default=False)
+            is_act = _campaign_is_active(_row_get(row, "is_active", True))
             out.append({
                 'id': row['id'],
                 'name': _row_get(row, 'name', ''),
+                'description': _row_get(row, 'description', '') or '',
                 'game_system': _row_get(row, 'game_system', '') or '',
                 'status': _row_get(row, 'status', 'active') or 'active',
                 'created_at': _row_get(row, 'created_at'),
                 'created_by': _row_get(row, 'created_by'),
                 'creator_username': _row_get(row, 'creator_username', '') or '',
+                'is_active': is_act,
+                'listing_visibility': _row_get(row, 'listing_visibility', 'private') or 'private',
+                'accepting_players': acc_players,
+                'max_players': _row_get(row, 'max_players'),
+                'admin_inactive_reason': _row_get(row, 'admin_inactive_reason', '') or '',
+                'admin_inactive_at': _row_get(row, 'admin_inactive_at'),
             })
         cursor.close()
         db.close()

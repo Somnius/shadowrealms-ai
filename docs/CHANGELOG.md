@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.8.0] - 2026-04-05 - Player account, character & profile hub milestone 🎯
+
+### Added
+- **App header — Home**: On logged-in pages, a **Home** button appears to the **left of the username** so players can return to the chronicle hall quickly; the logo/title block still links home (`frontend/src/SimpleApp.js`).
+
+### Changed
+- **Player Profile hub**: Sidebar is streamlined to **Overview**, **Account Settings**, **Playable Characters**, and **Downtime requests**. The extra **Campaigns** profile shortcut is removed—chronicles are opened from the **dashboard / chronicle hall** (home).
+- **Account Settings**: Combines the former account & time zone area with **OOC identity** (including **OOC portrait** upload) in one place.
+- **Playable Characters**: Merges **switch active character**, **roster & portraits**, and the **character creation guide** into a single flow. **New character** / forge paths show the **guide first**; **Start character creation** opens the wizard. Cancelling or finishing the wizard returns to **Playable Characters**.
+- **Documentation & version stamps**: Repository aligned to **v0.8.0** (`VERSION` / `env.template`, `frontend/package.json` / lockfile, README badge, indexed docs).
+
+### Notes
+- This milestone is a **UX and information-architecture** release on top of **v0.7.18** capabilities (admin **All chronicles**, site-admin chronicle access for support, preserve-chat account deletion, admin character list hardening—see `[0.7.18]`).
+
 ## [0.7.18] - 2026-04-05 - Admin chronicles, campaign access, and account-delete data fixes 🛡️
 
 ### Added

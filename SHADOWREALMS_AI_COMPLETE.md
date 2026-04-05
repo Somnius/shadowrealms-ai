@@ -293,6 +293,7 @@ This philosophy ensures:
 - [Performance & Scalability](#performance--scalability)
 
 ### **📊 Current Status & Versions**
+- [Version 0.8.0 - Player account and character management milestone](#version-080---player-account-and-character-management-milestone)
 - [Version 0.7.18 - Admin chronicles, site admin access, account-delete hardening](#version-0718---admin-chronicles-site-admin-access-account-delete-hardening-)
 - [Version 0.7.17 - Documentation alignment and Phase 3B readiness](#version-0717---documentation-alignment-and-phase-3b-readiness-)
 - [Version 0.7.16 - Data layout, chargen polish, and API hardening](#version-0716---data-layout-chargen-polish-and-api-hardening-)
@@ -334,7 +335,7 @@ This philosophy ensures:
 - [Phase 3A Interface Wireframe (ASCII)](#phase-3a-interface-wireframe-ascii)
 - [Next Steps for Phase 3A](#next-steps-for-phase-3a)
 
-### **🚀 Phase 3B: Advanced Campaign & Character Systems** ✅ STRUCTURE ORGANIZED (v0.7.18)
+### **🚀 Phase 3B: Advanced Campaign & Character Systems** ✅ STRUCTURE ORGANIZED (v0.8.0)
 - [Phase 3B Overview](#phase-3b-overview)
 - [Security & Testing Foundation](#security--testing-foundation)
 - [Location System Design](#location-system-design)
@@ -1318,6 +1319,19 @@ The project now includes comprehensive `.gitignore` rules covering:
 - **Campaign Continuity**: Persistent AI memory across multiple sessions
 - **Multi-Language**: Global accessibility with translation pipelines
 - **Real-time Collaboration**: Live AI-assisted gaming experiences
+
+## Version 0.8.0 - Player account and character management milestone
+
+### What changed from 0.7.18
+
+- **Player Profile hub**: **Overview**, **Account Settings** (time zone plus merged **OOC identity** / **OOC portrait**), **Playable Characters** (active character switch, roster & portraits, character-creation **guide** before the wizard), and **Downtime requests**. The profile **Campaigns** shortcut is removed—chronicles are reached from the **chronicle hall** (home).
+- **Header**: **Home** control to the **left of the username** on logged-in pages; the logo/title still navigates to the dashboard.
+- **Character creation**: **New character** / forge flows surface the **guide** first; **Start character creation** opens the wizard; cancel/done returns to **Playable Characters**.
+- **Documentation**: Version stamps and the changelog entry **`[0.8.0]`** describe this milestone; see `docs/CHANGELOG.md`.
+
+**See also:** `docs/CHANGELOG.md` (`[0.8.0]`).
+
+---
 
 ## Version 0.7.18 - Admin chronicles, site admin access, account-delete hardening
 
@@ -5960,11 +5974,11 @@ After comprehensive testing and debugging, we achieved **100% User Experience Te
 
 ---
 
-## 🚀 Phase 3B: Advanced Campaign & Character Systems (v0.7.18)
+## 🚀 Phase 3B: Advanced Campaign & Character Systems (v0.8.0)
 
 **Status:** 🚧 IN PROGRESS - Structure Organized  
 **Start Date:** 2025-10-24  
-**Current Version:** 0.7.18
+**Current Version:** 0.8.0
 
 ### Phase 3B Overview
 
@@ -5981,7 +5995,7 @@ Phase 3B builds upon Phase 3A's frontend foundation by implementing the core gam
 For complete details, see:
 - **[Phase 3B Implementation Guide](docs/PHASE3B_IMPLEMENTATION.md)** - Full specification (600+ lines)
 - **[Planning Documentation](docs/PLANNING.md)** - Phase planning and summaries
-- **[Changelog](docs/CHANGELOG.md)** - Version history through **v0.7.18**
+- **[Changelog](docs/CHANGELOG.md)** - Version history through **v0.8.0**
 
 ---
 
@@ -6464,7 +6478,7 @@ Reason: [Admin's stated reason]
 
 ---
 
-### Files Created/Modified (v0.7.18)
+### Files Created/Modified (v0.8.0)
 
 **Backend:**
 - `backend/database.py` - Schema migrations (pending)
@@ -6475,6 +6489,7 @@ Reason: [Admin's stated reason]
 - `backend/services/notification_service.py` - Notification dispatch (pending)
 
 **Frontend:**
+- `frontend/src/SimpleApp.js` - Player Profile hub, header **Home**, guide-before-chargen flow (v0.8.0) ✅
 - `frontend/src/utils/security.js` - Security utilities ✅
 - `frontend/src/utils/__tests__/security.test.js` - Security tests ✅
 - `frontend/src/__tests__/integration/userFlow.test.js` - Integration tests ✅
@@ -6487,14 +6502,14 @@ Reason: [Admin's stated reason]
 **Documentation:**
 - `docs/PHASE3B_IMPLEMENTATION.md` - Complete specification ✅
 - `docs/PLANNING.md` - Detailed summary ✅
-- `docs/CHANGELOG.md` - Version 0.7.18 entry ✅
+- `docs/CHANGELOG.md` - Version 0.8.0 entry ✅
 - `scripts/run-frontend-tests.sh` - Test runner script ✅
 
 ---
 
 **Last Updated:** 2026-03-25  
 **Next Milestone:** Location System Implementation  
-**Version:** 0.7.18
+**Version:** 0.8.0
 
 ---
 
@@ -7209,9 +7224,9 @@ docker-compose ps
 - **Backend API**: http://localhost:5000
 - **ChromaDB**: http://localhost:8000
 
-### 🎯 **Current Status (v0.7.18)**
+### 🎯 **Current Status (v0.8.0)**
 
-🛡️ **v0.7.18** — Admin **All chronicles**, site-admin chronicle access for support, preserve-chat delete (`locations.created_by`), admin character list hardening (see `docs/CHANGELOG.md` `[0.7.18]`). Earlier **v0.7.17** was documentation and version-stamp alignment (`[0.7.17]`).
+🎯 **v0.8.0** — **Player Profile** hub milestone: **Account Settings** (time zone + OOC identity/portrait), **Playable Characters** (switch PC, roster, guide-before-wizard), **Downtime**; **Home** in the header; chronicles from the hall, not a redundant profile tab (see `docs/CHANGELOG.md` `[0.8.0]`). Builds on **v0.7.18** (admin **All chronicles**, site-admin chronicle access, preserve-chat delete, admin character list fixes—`[0.7.18]`).
 
 ✅ **Phase 1 Complete** - Foundation & Docker Setup  
 ✅ **Phase 2 Complete** - RAG & Vector Memory System  

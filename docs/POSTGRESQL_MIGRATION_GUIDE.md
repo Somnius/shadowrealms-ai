@@ -1,6 +1,6 @@
 # PostgreSQL Migration - Complete Execution Guide
 
-**Version**: 0.7.18  
+**Version**: 0.8.0  
 **Date**: 2025-10-28 (guide); metadata refresh 2026-03-25  
 **Status**: Ready for Execution
 
@@ -206,7 +206,7 @@ Expected: `✅ PostgreSQL connection successful`
 curl http://localhost:5000/health
 ```
 
-Expected: JSON response with `version: "0.7.18"` (or your deployed `VERSION` from `.env`) and `database_type: "postgresql"`
+Expected: JSON response with `version: "0.8.0"` (or your deployed `VERSION` from `.env`) and `database_type: "postgresql"`
 
 ### Test 3: Login to Frontend
 1. Open browser: `http://localhost:3000`

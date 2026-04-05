@@ -1,6 +1,6 @@
 # Security practices and automated tests
 
-**Document version:** 0.7.18 (see `docs/CHANGELOG.md`).
+**Document version:** 0.8.0 (see `docs/CHANGELOG.md`).
 
 This document describes how we test security-sensitive behavior, how to run those tests safely, and how to keep dependencies under control.
 
@@ -99,7 +99,7 @@ Stay aware of public advisories (e.g. compromised package versions). If a packag
 
 - **SQL**: Prefer parameterized queries (`%s` or `?` with bound parameters, depending on DB driver). Do not concatenate user input into SQL strings.
 - **Auth**: Admin routes use `@require_admin()` and JWT identity; compare resource ownership with **`str(id)`** where JWT identities are strings and DB ids may be integers.
-- **Site admin scope**: Users with **`users.role = 'admin'`** may open any chronicle for support (campaign detail, messages, dice, read-state rules as implemented in v0.7.18+). This is intentional; restrict who receives the admin role. Helpers and players do not receive this bypass unless separately documented.
+- **Site admin scope**: Users with **`users.role = 'admin'`** may open any chronicle for support (campaign detail, messages, dice, read-state rules as implemented in v0.7.18+; Player Profile hub changes are UX-only in v0.8.0). This is intentional; restrict who receives the admin role. Helpers and players do not receive this bypass unless separately documented.
 - **PostgreSQL booleans**: Comparisons like `is_active = 1` against `BOOLEAN` columns can error; routes use `IS TRUE` / dialect-specific helpers where needed.
 - **XSS**: Avoid injecting untrusted HTML. `ReadmeModal` uses `dangerouslySetInnerHTML` only for **trusted** README content served by the app—do not reuse that pattern for user chat or arbitrary uploads.
 

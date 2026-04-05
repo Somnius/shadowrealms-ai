@@ -1,7 +1,7 @@
 # Feature Documentation
 
 **Last Updated**: 2026-04-05  
-**Version**: 0.7.18+
+**Version**: 0.8.0+
 
 This document consolidates all feature-specific documentation for ShadowRealms AI.
 
@@ -30,6 +30,12 @@ This document consolidates all feature-specific documentation for ShadowRealms A
 - **Preserve-chat account delete**: Removes a user while keeping location IC history; related rows reassigned per `docs/CHANGELOG.md` `[0.7.18]`.
 - **Listed chronicles**: Storytellers mark a game **listed** and **accepting players**; others see it under “Open chronicles” and can self-join (subject to `max_players`).
 - **Single locked sheet rule**: By default a player may only commit one locked character across chronicles; admins can grant `allow_multi_campaign_play` per account.
+
+### Player Profile hub (v0.8.0+)
+
+- **Overview / Account Settings / Playable Characters / Downtime** — Sidebar replaces older split sections; **Account Settings** merges time zone with **OOC identity** (including OOC portrait).
+- **Playable Characters** — Switch active PC, roster & IC portraits, and **character creation guide** before starting the wizard; redundant profile **Campaigns** tab removed (use the **chronicle hall**).
+- **Header** — **Home** control to the left of the username on logged-in pages (logo/title still links home).
 
 ---
 

@@ -19,6 +19,7 @@ function AdminPage({ token, user, displayTimezone = null, onAdminOpenCampaign = 
   const [userToDeleteAccount, setUserToDeleteAccount] = useState(null);
   const [deleteAccountLoading, setDeleteAccountLoading] = useState(false);
   const [moderationLog, setModerationLog] = useState([]);
+  const [moderationLogLimit, setModerationLogLimit] = useState(100);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [invites, setInvites] = useState([]);
@@ -40,6 +41,20 @@ function AdminPage({ token, user, displayTimezone = null, onAdminOpenCampaign = 
   const [chroniclesLoading, setChroniclesLoading] = useState(false);
   const [chroniclesError, setChroniclesError] = useState(null);
   const [chroniclesOpeningId, setChroniclesOpeningId] = useState(null);
+  const [chronicleBusyId, setChronicleBusyId] = useState(null);
+  const [chronicleEditTarget, setChronicleEditTarget] = useState(null);
+  const [chEdName, setChEdName] = useState('');
+  const [chEdDescription, setChEdDescription] = useState('');
+  const [chEdListing, setChEdListing] = useState('private');
+  const [chEdAccepting, setChEdAccepting] = useState(false);
+  const [chEdMaxPlayers, setChEdMaxPlayers] = useState('');
+  const [chronicleStatsTarget, setChronicleStatsTarget] = useState(null);
+  const [chronicleStatsData, setChronicleStatsData] = useState(null);
+  const [chronicleStatsLoading, setChronicleStatsLoading] = useState(false);
+  const [chroniclePauseTarget, setChroniclePauseTarget] = useState(null);
+  const [chroniclePauseReason, setChroniclePauseReason] = useState('');
+  const [chronicleDeleteTarget, setChronicleDeleteTarget] = useState(null);
+  const [chronicleDeleteLoading, setChronicleDeleteLoading] = useState(false);
   const [showDebugModal, setShowDebugModal] = useState(false);
   const [debugTargetUser, setDebugTargetUser] = useState(null);
   const [debugPayload, setDebugPayload] = useState(null);
@@ -71,52 +86,54 @@ function AdminPage({ token, user, displayTimezone = null, onAdminOpenCampaign = 
     { id: 'users', label: 'User management' },
     { id: 'downtime', label: 'Downtime requests' },
     { id: 'moderation', label: 'Moderation log' },
-    { id: 'ai', label: 'AI & LM Studio' },
+    { id: 'ai', label: 'Ai System' },
   ];
 
   // Fetch all users on mount
   useEffect(() => {
     fetchUsers();
-    fetchModerationLog();
     fetchInvites();
   }, []);
 
   useEffect(() => {
-    if (adminSection !== 'chronicles' || !token) return undefined;
-    let cancelled = false;
+    if (!token || adminSection !== 'moderation') return undefined;
+    fetchModerationLog();
+    return undefined;
+  }, [token, adminSection, moderationLogLimit]);
+
+  const reloadChronicles = async () => {
+    if (!token) return;
     setChroniclesLoading(true);
     setChroniclesError(null);
-    (async () => {
-      try {
-        const r = await api.listAdminCampaigns(token);
-        const data = await r.json().catch(() => null);
-        if (cancelled) return;
-        if (r.ok && Array.isArray(data)) {
-          setChroniclesList(data);
-          setChroniclesError(null);
-        } else {
-          setChroniclesList([]);
-          const msg =
-            (data && data.error) ||
-            (r.status === 404
-              ? 'Admin campaigns API not found. Restart the backend.'
-              : 'Could not load chronicles');
-          setChroniclesError(msg);
-          showError(msg);
-        }
-      } catch (e) {
-        if (!cancelled) {
-          setChroniclesList([]);
-          setChroniclesError('Could not load chronicles');
-          showError('Could not load chronicles');
-        }
-      } finally {
-        if (!cancelled) setChroniclesLoading(false);
+    try {
+      const r = await api.listAdminCampaigns(token);
+      const data = await r.json().catch(() => null);
+      if (r.ok && Array.isArray(data)) {
+        setChroniclesList(data);
+        setChroniclesError(null);
+      } else {
+        setChroniclesList([]);
+        const msg =
+          (data && data.error) ||
+          (r.status === 404
+            ? 'Admin campaigns API not found. Restart the backend.'
+            : 'Could not load chronicles');
+        setChroniclesError(msg);
+        showError(msg);
       }
-    })();
-    return () => {
-      cancelled = true;
-    };
+    } catch (e) {
+      setChroniclesList([]);
+      setChroniclesError('Could not load chronicles');
+      showError('Could not load chronicles');
+    } finally {
+      setChroniclesLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (adminSection !== 'chronicles' || !token) return undefined;
+    reloadChronicles();
+    return undefined;
   }, [adminSection, token]);
 
   useEffect(() => {
@@ -251,7 +268,7 @@ function AdminPage({ token, user, displayTimezone = null, onAdminOpenCampaign = 
       }
     } catch (e) {
       console.error(e);
-      showError('Failed to load AI / LM Studio settings');
+      showError('Failed to load Ai System settings');
     } finally {
       setAiSectionLoading(false);
     }
@@ -277,10 +294,10 @@ function AdminPage({ token, user, displayTimezone = null, onAdminOpenCampaign = 
 
   const fetchModerationLog = async () => {
     try {
-      const response = await api.getModerationLog(token, 20);
+      const response = await api.getModerationLog(token, moderationLogLimit);
       if (response.ok) {
         const data = await response.json();
-        setModerationLog(data);
+        setModerationLog(Array.isArray(data) ? data : []);
       }
     } catch (err) {
       console.error('Failed to load moderation log');
@@ -338,6 +355,155 @@ function AdminPage({ token, user, displayTimezone = null, onAdminOpenCampaign = 
       showError('Could not open chronicle');
     } finally {
       setChroniclesOpeningId(null);
+    }
+  };
+
+  const openChronicleEdit = async (c) => {
+    if (!c?.id) return;
+    setChronicleBusyId(c.id);
+    try {
+      const r = await api.getCampaign(token, c.id);
+      const d = await r.json().catch(() => null);
+      if (!r.ok) {
+        showError((d && d.error) || 'Could not load chronicle');
+        return;
+      }
+      setChEdName(d.name || c.name || '');
+      setChEdDescription(d.description || c.description || '');
+      setChEdListing(d.listing_visibility || c.listing_visibility || 'private');
+      setChEdAccepting(!!d.accepting_players);
+      const mp = d.max_players != null ? d.max_players : c.max_players;
+      setChEdMaxPlayers(mp != null && mp !== '' ? String(mp) : '');
+      setChronicleEditTarget(c);
+    } catch (e) {
+      showError('Could not load chronicle');
+    } finally {
+      setChronicleBusyId(null);
+    }
+  };
+
+  const submitChronicleEdit = async (e) => {
+    e.preventDefault();
+    if (!chronicleEditTarget) return;
+    const name = chEdName.trim();
+    if (!name) {
+      showError('Name is required');
+      return;
+    }
+    setChronicleBusyId(chronicleEditTarget.id);
+    try {
+      let maxVal = null;
+      if (chEdMaxPlayers !== '') {
+        const n = parseInt(chEdMaxPlayers, 10);
+        if (Number.isNaN(n) || n < 0) {
+          showError('Max players must be a non-negative integer or empty');
+          setChronicleBusyId(null);
+          return;
+        }
+        maxVal = n;
+      }
+      const r = await api.updateCampaign(token, chronicleEditTarget.id, {
+        name,
+        description: chEdDescription,
+        listing_visibility: chEdListing,
+        accepting_players: chEdAccepting,
+        max_players: maxVal,
+      });
+      const d = await r.json().catch(() => ({}));
+      if (r.ok) {
+        showSuccess('Chronicle updated');
+        setChronicleEditTarget(null);
+        await reloadChronicles();
+      } else {
+        showError(d.error || 'Update failed');
+      }
+    } catch (err) {
+      showError('Request failed');
+    } finally {
+      setChronicleBusyId(null);
+    }
+  };
+
+  const openChronicleStats = async (c) => {
+    if (!c?.id) return;
+    setChronicleStatsTarget(c);
+    setChronicleStatsData(null);
+    setChronicleStatsLoading(true);
+    try {
+      const r = await api.getCampaignStats(token, c.id);
+      const d = await r.json().catch(() => null);
+      if (r.ok) setChronicleStatsData(d);
+      else showError((d && d.error) || 'Could not load stats');
+    } catch (e) {
+      showError('Could not load stats');
+    } finally {
+      setChronicleStatsLoading(false);
+    }
+  };
+
+  const submitChroniclePause = async (e) => {
+    e.preventDefault();
+    if (!chroniclePauseTarget) return;
+    setChronicleBusyId(chroniclePauseTarget.id);
+    try {
+      const r = await api.updateCampaign(token, chroniclePauseTarget.id, {
+        is_active: false,
+        admin_inactive_reason: chroniclePauseReason.trim() || undefined,
+      });
+      const d = await r.json().catch(() => ({}));
+      if (r.ok) {
+        showSuccess('Chronicle paused (hidden from discovery; rolls may be blocked until resumed)');
+        setChroniclePauseTarget(null);
+        setChroniclePauseReason('');
+        await reloadChronicles();
+      } else {
+        showError(d.error || 'Could not pause');
+      }
+    } catch (e) {
+      showError('Request failed');
+    } finally {
+      setChronicleBusyId(null);
+    }
+  };
+
+  const resumeChronicle = async (c) => {
+    if (!c?.id) return;
+    setChronicleBusyId(c.id);
+    try {
+      const r = await api.updateCampaign(token, c.id, { is_active: true });
+      const d = await r.json().catch(() => ({}));
+      if (r.ok) {
+        showSuccess('Chronicle resumed');
+        await reloadChronicles();
+      } else {
+        showError(d.error || 'Could not resume');
+      }
+    } catch (e) {
+      showError('Request failed');
+    } finally {
+      setChronicleBusyId(null);
+    }
+  };
+
+  const confirmDeleteChronicle = async () => {
+    if (!chronicleDeleteTarget) return;
+    setChronicleDeleteLoading(true);
+    setChronicleBusyId(chronicleDeleteTarget.id);
+    try {
+      const r = await api.deleteCampaign(token, chronicleDeleteTarget.id);
+      const d = await r.json().catch(() => ({}));
+      if (r.ok) {
+        showSuccess(d.message || 'Chronicle deleted');
+        setChronicleDeleteTarget(null);
+        await reloadChronicles();
+      } else {
+        showError(d.error || 'Delete failed');
+      }
+    } catch (e) {
+      showError('Delete failed');
+    } finally {
+      setChronicleDeleteLoading(false);
+      setChronicleBusyId(null);
     }
   };
 
@@ -481,6 +647,7 @@ function AdminPage({ token, user, displayTimezone = null, onAdminOpenCampaign = 
         username: formData.get('username'),
         email: formData.get('email'),
         allow_multi_campaign_play: formData.get('allow_multi') === 'on',
+        self_switch_playing_character: formData.get('self_switch_pc') === 'on',
       });
       
       if (response.ok) {
@@ -614,24 +781,37 @@ function AdminPage({ token, user, displayTimezone = null, onAdminOpenCampaign = 
   };
 
   return (
-    <div style={{ minHeight: '100%', background: '#0f0f1e' }}>
-      {/* Section tabs (site nav is on the parent shell) */}
-      <div
+    <div
+      className="admin-panel-root"
+      style={{ background: '#0f0f1e' }}
+    >
+      <aside
+        className="admin-panel-sidebar"
         style={{
-          background: 'linear-gradient(135deg, #16213e 0%, #0f1729 100%)',
-          padding: '12px 20px',
-          boxShadow: '0 2px 10px rgba(0,0,0,0.5)',
-          borderBottom: '2px solid #2a2a4e',
+          background: 'linear-gradient(180deg, #16213e 0%, #0f1729 100%)',
+          borderRight: '2px solid #2a2a4e',
+          padding: '16px 12px 24px',
+          boxShadow: '2px 0 12px rgba(0,0,0,0.35)',
         }}
       >
+        <div
+          style={{
+            color: '#e94560',
+            fontWeight: 800,
+            fontSize: '12px',
+            letterSpacing: '0.12em',
+            marginBottom: '14px',
+            paddingLeft: '4px',
+          }}
+        >
+          ADMIN PANEL
+        </div>
         <nav
           aria-label="Admin sections"
           style={{
             display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
-            flexWrap: 'wrap',
-            gap: '8px',
+            flexDirection: 'column',
+            gap: '6px',
           }}
         >
           {adminNavSections.map(({ id, label }) => {
@@ -642,14 +822,16 @@ function AdminPage({ token, user, displayTimezone = null, onAdminOpenCampaign = 
                 type="button"
                 onClick={() => setAdminSection(id)}
                 style={{
-                  padding: '8px 14px',
-                  borderRadius: '6px',
+                  padding: '10px 12px',
+                  borderRadius: '8px',
                   border: active ? '2px solid #e94560' : '2px solid #2a2a4e',
                   background: active ? 'rgba(233, 69, 96, 0.22)' : 'rgba(15, 23, 41, 0.85)',
                   color: active ? '#fff' : '#b5b5c3',
                   cursor: 'pointer',
                   fontWeight: active ? 700 : 500,
                   fontSize: '13px',
+                  textAlign: 'left',
+                  width: '100%',
                 }}
               >
                 {label}
@@ -657,9 +839,10 @@ function AdminPage({ token, user, displayTimezone = null, onAdminOpenCampaign = 
             );
           })}
         </nav>
-      </div>
+      </aside>
 
       {/* Main Content */}
+      <div className="admin-panel-main">
       <div style={{ maxWidth: '1400px', margin: '0 auto', padding: '40px 20px' }}>
 
         {adminSection === 'home' && (
@@ -673,14 +856,14 @@ function AdminPage({ token, user, displayTimezone = null, onAdminOpenCampaign = 
           }}>
             <h2 style={{ color: '#e94560', marginTop: 0, marginBottom: '16px' }}>You are on the Admin Panel</h2>
             <p style={{ marginBottom: '20px' }}>
-              This area is for site administrators only. Use the tabs above to open each tool; your changes apply to the whole site (users, invites, and moderation).
+              This area is for site administrators only. Use the sidebar to open each tool; your changes apply to the whole site (users, invites, and moderation).
             </p>
             <ul style={{ textAlign: 'left', display: 'inline-block', margin: '0 auto', paddingLeft: '1.25rem', maxWidth: '520px' }}>
               <li style={{ marginBottom: '10px' }}><strong style={{ color: '#e0e0e0' }}>Invite codes</strong> — create and copy registration codes; track uses and optional notes.</li>
               <li style={{ marginBottom: '10px' }}><strong style={{ color: '#e0e0e0' }}>All chronicles</strong> — every campaign in the database; open one in the main app to visit locations and chat (site admins only).</li>
-              <li style={{ marginBottom: '10px' }}><strong style={{ color: '#e0e0e0' }}>User management</strong> — edit accounts, reset passwords, ban or unban users.</li>
+              <li style={{ marginBottom: '10px' }}><strong style={{ color: '#e0e0e0' }}>User management</strong> — edit accounts, grant Helper ST privileges (multi-chronicle + self-switch PC), reset passwords, ban or unban users.</li>
               <li style={{ marginBottom: '10px' }}><strong style={{ color: '#e0e0e0' }}>Moderation log</strong> — recent admin actions for audit and follow-up.</li>
-              <li><strong style={{ color: '#e0e0e0' }}>AI &amp; LM Studio</strong> — pick the local model id, optional global master system prompt.</li>
+              <li><strong style={{ color: '#e0e0e0' }}>Ai System</strong> — pick the local model id, optional global master system prompt.</li>
             </ul>
           </div>
         )}
@@ -822,10 +1005,10 @@ function AdminPage({ token, user, displayTimezone = null, onAdminOpenCampaign = 
         {adminSection === 'chronicles' && (
         <div style={{ marginBottom: '40px' }}>
           <h2 style={{ color: '#e94560', marginBottom: '12px' }}>All chronicles</h2>
-          <p style={{ color: '#b5b5c3', marginBottom: '20px', lineHeight: 1.65, maxWidth: '720px' }}>
-            Every campaign in the system (same data as <code style={{ color: '#9d4edd', fontSize: '12px' }}>GET /api/admin/campaigns</code>).
-            Use <strong style={{ color: '#e0e0e0' }}>Open in app</strong> to jump into the main chronicle view, locations, and chat.
-            Only users with the site admin role can open this panel.
+          <p style={{ color: '#b5b5c3', marginBottom: '20px', lineHeight: 1.65, maxWidth: '860px' }}>
+            Complete list from <code style={{ color: '#9d4edd', fontSize: '12px' }}>GET /api/admin/campaigns</code>.
+            <strong style={{ color: '#e0e0e0' }}> Pause</strong> sets the chronicle inactive (players won’t see it in discovery; manual dice in that game may be blocked until you <strong style={{ color: '#e0e0e0' }}>Resume</strong>).
+            <strong style={{ color: '#e0e0e0' }}> Delete</strong> removes the campaign and related data—use with care.
           </p>
           <div style={{
             background: '#16213e',
@@ -840,7 +1023,16 @@ function AdminPage({ token, user, displayTimezone = null, onAdminOpenCampaign = 
             ) : chroniclesError ? (
               <p style={{ color: '#f87171' }}>{chroniclesError}</p>
             ) : chroniclesList.length === 0 ? (
-              <p style={{ color: '#8b8b9f' }}>No campaigns in the database.</p>
+              <div style={{ color: '#94a3b8', lineHeight: 1.7, maxWidth: '520px' }}>
+                <p style={{ marginTop: 0, fontSize: '16px', color: '#cbd5e1' }}>
+                  There are no campaigns in the system.
+                </p>
+                <p style={{ marginBottom: 0 }}>
+                  When storytellers or players create a chronicle from the main app, it will appear here.
+                  If you expected something listed, confirm the database and that site admins can reach{' '}
+                  <code style={{ color: '#9d4edd', fontSize: '12px' }}>/api/admin/campaigns</code>.
+                </p>
+              </div>
             ) : (
               <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
                 <thead>
@@ -848,53 +1040,143 @@ function AdminPage({ token, user, displayTimezone = null, onAdminOpenCampaign = 
                     <th style={{ padding: '10px', textAlign: 'left', color: '#e94560' }}>ID</th>
                     <th style={{ padding: '10px', textAlign: 'left', color: '#e94560' }}>Name</th>
                     <th style={{ padding: '10px', textAlign: 'left', color: '#e94560' }}>System</th>
-                    <th style={{ padding: '10px', textAlign: 'left', color: '#e94560' }}>Status</th>
+                    <th style={{ padding: '10px', textAlign: 'left', color: '#e94560' }}>State</th>
+                    <th style={{ padding: '10px', textAlign: 'left', color: '#e94560' }}>Listing</th>
+                    <th style={{ padding: '10px', textAlign: 'left', color: '#e94560' }}>Max pl.</th>
                     <th style={{ padding: '10px', textAlign: 'left', color: '#e94560' }}>Created by</th>
-                    <th style={{ padding: '10px', textAlign: 'left', color: '#e94560' }} />
+                    <th style={{ padding: '10px', textAlign: 'left', color: '#e94560' }}>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {chroniclesList.map((c) => (
-                    <tr key={c.id} style={{ borderBottom: '1px solid #2a2a4e' }}>
-                      <td style={{ padding: '10px', color: '#b5b5c3' }}>{c.id}</td>
-                      <td style={{ padding: '10px', color: '#fff', fontWeight: 600 }}>
-                        {c.name || `Campaign ${c.id}`}
-                      </td>
-                      <td style={{ padding: '10px', color: '#b5b5c3' }}>{c.game_system || '—'}</td>
-                      <td style={{ padding: '10px', color: '#b5b5c3' }}>{c.status || '—'}</td>
-                      <td style={{ padding: '10px', color: '#b5b5c3' }}>
-                        {c.creator_username || '—'}
-                        {c.created_by != null ? (
-                          <span style={{ color: '#64748b' }}>{' '}(user #{c.created_by})</span>
-                        ) : null}
-                      </td>
-                      <td style={{ padding: '10px' }}>
-                        <button
-                          type="button"
-                          disabled={!onAdminOpenCampaign || chroniclesOpeningId === c.id}
-                          onClick={() => handleOpenChronicleFromAdmin(c)}
-                          style={{
-                            padding: '8px 14px',
-                            background:
-                              !onAdminOpenCampaign || chroniclesOpeningId === c.id
-                                ? '#3d3d52'
-                                : '#667eea',
-                            color: '#fff',
-                            border: 'none',
-                            borderRadius: '6px',
-                            cursor:
-                              !onAdminOpenCampaign || chroniclesOpeningId === c.id
-                                ? 'not-allowed'
-                                : 'pointer',
-                            fontWeight: 'bold',
-                            fontSize: '12px',
-                          }}
-                        >
-                          {chroniclesOpeningId === c.id ? 'Opening…' : 'Open in app'}
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
+                  {chroniclesList.map((c) => {
+                    const busy = chronicleBusyId === c.id;
+                    const paused = c.is_active === false;
+                    return (
+                      <tr key={c.id} style={{ borderBottom: '1px solid #2a2a4e' }}>
+                        <td style={{ padding: '10px', color: '#b5b5c3' }}>{c.id}</td>
+                        <td style={{ padding: '10px', color: '#fff', fontWeight: 600 }}>
+                          {c.name || `Campaign ${c.id}`}
+                        </td>
+                        <td style={{ padding: '10px', color: '#b5b5c3' }}>{c.game_system || '—'}</td>
+                        <td style={{ padding: '10px', color: '#b5b5c3', maxWidth: '200px' }}>
+                          <div style={{ fontSize: '12px' }}>{c.status || '—'}</div>
+                          {paused ? (
+                            <div style={{ marginTop: '6px' }}>
+                              <span style={{
+                                padding: '3px 8px', borderRadius: '8px', fontSize: '11px', fontWeight: 600,
+                                background: 'rgba(251, 191, 36, 0.2)', color: '#fbbf24', border: '1px solid #fbbf24',
+                              }}
+                              >
+                                Paused
+                              </span>
+                              {c.admin_inactive_reason ? (
+                                <div style={{ marginTop: '6px', color: '#64748b', fontSize: '11px', wordBreak: 'break-word' }} title={c.admin_inactive_reason}>
+                                  {c.admin_inactive_reason.length > 80 ? `${c.admin_inactive_reason.slice(0, 80)}…` : c.admin_inactive_reason}
+                                </div>
+                              ) : null}
+                            </div>
+                          ) : (
+                            <div style={{ marginTop: '6px' }}>
+                              <span style={{
+                                padding: '3px 8px', borderRadius: '8px', fontSize: '11px', fontWeight: 600,
+                                background: 'rgba(34, 197, 94, 0.15)', color: '#4ade80', border: '1px solid #22c55e',
+                              }}
+                              >
+                                Active
+                              </span>
+                            </div>
+                          )}
+                        </td>
+                        <td style={{ padding: '10px', color: '#b5b5c3', fontSize: '12px' }}>
+                          {c.listing_visibility || 'private'}
+                          {c.accepting_players ? <span style={{ color: '#86efac' }}> · open join</span> : null}
+                        </td>
+                        <td style={{ padding: '10px', color: '#b5b5c3' }}>
+                          {c.max_players != null && c.max_players !== '' ? c.max_players : '—'}
+                        </td>
+                        <td style={{ padding: '10px', color: '#b5b5c3' }}>
+                          {c.creator_username || '—'}
+                          {c.created_by != null ? (
+                            <span style={{ color: '#64748b' }}>{' '}(#{c.created_by})</span>
+                          ) : null}
+                        </td>
+                        <td style={{ padding: '10px' }}>
+                          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', maxWidth: '340px' }}>
+                            <button
+                              type="button"
+                              disabled={!onAdminOpenCampaign || chroniclesOpeningId === c.id || busy}
+                              onClick={() => handleOpenChronicleFromAdmin(c)}
+                              style={{
+                                padding: '6px 12px', background: '#667eea', color: '#fff', border: 'none',
+                                borderRadius: '4px', cursor: (!onAdminOpenCampaign || chroniclesOpeningId === c.id || busy) ? 'not-allowed' : 'pointer',
+                                fontSize: '12px', fontWeight: 600, opacity: busy ? 0.6 : 1,
+                              }}
+                            >
+                              {chroniclesOpeningId === c.id ? 'Opening…' : 'Open'}
+                            </button>
+                            <button
+                              type="button"
+                              disabled={busy}
+                              onClick={() => openChronicleEdit(c)}
+                              style={{
+                                padding: '6px 12px', background: '#0ea5e9', color: '#fff', border: 'none',
+                                borderRadius: '4px', cursor: busy ? 'not-allowed' : 'pointer', fontSize: '12px', fontWeight: 600,
+                              }}
+                            >
+                              Edit
+                            </button>
+                            <button
+                              type="button"
+                              disabled={busy}
+                              onClick={() => openChronicleStats(c)}
+                              style={{
+                                padding: '6px 12px', background: '#6366f1', color: '#fff', border: 'none',
+                                borderRadius: '4px', cursor: busy ? 'not-allowed' : 'pointer', fontSize: '12px', fontWeight: 600,
+                              }}
+                            >
+                              Stats
+                            </button>
+                            {paused ? (
+                              <button
+                                type="button"
+                                disabled={busy}
+                                onClick={() => resumeChronicle(c)}
+                                style={{
+                                  padding: '6px 12px', background: '#22c55e', color: '#fff', border: 'none',
+                                  borderRadius: '4px', cursor: busy ? 'not-allowed' : 'pointer', fontSize: '12px', fontWeight: 600,
+                                }}
+                              >
+                                Resume
+                              </button>
+                            ) : (
+                              <button
+                                type="button"
+                                disabled={busy}
+                                onClick={() => { setChroniclePauseTarget(c); setChroniclePauseReason(''); }}
+                                style={{
+                                  padding: '6px 12px', background: '#ca8a04', color: '#fff', border: 'none',
+                                  borderRadius: '4px', cursor: busy ? 'not-allowed' : 'pointer', fontSize: '12px', fontWeight: 600,
+                                }}
+                              >
+                                Pause
+                              </button>
+                            )}
+                            <button
+                              type="button"
+                              disabled={busy}
+                              onClick={() => setChronicleDeleteTarget(c)}
+                              style={{
+                                padding: '6px 12px', background: '#b91c1c', color: '#fff', border: 'none',
+                                borderRadius: '4px', cursor: busy ? 'not-allowed' : 'pointer', fontSize: '12px', fontWeight: 600,
+                              }}
+                            >
+                              Delete
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             )}
@@ -922,6 +1204,7 @@ function AdminPage({ token, user, displayTimezone = null, onAdminOpenCampaign = 
                   <th style={{ padding: '12px', textAlign: 'left', color: '#e94560' }}>Username</th>
                   <th style={{ padding: '12px', textAlign: 'left', color: '#e94560' }}>Email</th>
                   <th style={{ padding: '12px', textAlign: 'left', color: '#e94560' }}>Role</th>
+                  <th style={{ padding: '12px', textAlign: 'left', color: '#e94560' }}>Privileges</th>
                   <th style={{ padding: '12px', textAlign: 'left', color: '#e94560' }}>Status</th>
                   <th style={{ padding: '12px', textAlign: 'left', color: '#e94560' }}>Last login</th>
                   <th style={{ padding: '12px', textAlign: 'left', color: '#e94560' }}>Actions</th>
@@ -935,6 +1218,10 @@ function AdminPage({ token, user, displayTimezone = null, onAdminOpenCampaign = 
                     <td style={{ padding: '12px', color: '#b5b5c3' }}>{u.email}</td>
                     <td style={{ padding: '12px' }}>
                       <span style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        whiteSpace: 'nowrap',
                         padding: '4px 12px',
                         borderRadius: '12px',
                         fontSize: '12px',
@@ -943,12 +1230,75 @@ function AdminPage({ token, user, displayTimezone = null, onAdminOpenCampaign = 
                         color: u.role === 'admin' ? '#e94560' : '#28a745',
                         border: `1px solid ${u.role === 'admin' ? '#e94560' : '#28a745'}`
                       }}>
-                        {u.role === 'admin' ? '👑 Admin' : '🎮 Player'}
+                        <span aria-hidden="true" style={{ lineHeight: 1, fontSize: '14px' }}>{u.role === 'admin' ? '👑' : '🎮'}</span>
+                        <span>{u.role === 'admin' ? 'Admin' : 'Player'}</span>
                       </span>
+                    </td>
+                    <td style={{ padding: '12px', maxWidth: '140px' }}>
+                      {!u.allow_multi_campaign_play && !u.self_switch_playing_character ? (
+                        <span style={{ color: '#64748b', fontSize: '12px' }}>—</span>
+                      ) : u.allow_multi_campaign_play && u.self_switch_playing_character ? (
+                        <span
+                          title="Site-granted: multiple locked chronicles + self-switch playing character without ST approval"
+                          style={{
+                            display: 'inline-block',
+                            padding: '4px 10px',
+                            borderRadius: '10px',
+                            fontSize: '11px',
+                            fontWeight: 700,
+                            background: 'rgba(167, 139, 250, 0.2)',
+                            color: '#e9d5ff',
+                            border: '1px solid #a78bfa',
+                          }}
+                        >
+                          Helper ST
+                        </span>
+                      ) : (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                          {u.allow_multi_campaign_play && (
+                            <span
+                              style={{
+                                display: 'inline-block',
+                                padding: '2px 8px',
+                                borderRadius: '8px',
+                                fontSize: '10px',
+                                fontWeight: 600,
+                                background: 'rgba(56, 189, 248, 0.15)',
+                                color: '#7dd3fc',
+                                border: '1px solid #38bdf8',
+                              }}
+                              title="May have locked PCs in more than one chronicle"
+                            >
+                              Multi
+                            </span>
+                          )}
+                          {u.self_switch_playing_character && (
+                            <span
+                              style={{
+                                display: 'inline-block',
+                                padding: '2px 8px',
+                                borderRadius: '8px',
+                                fontSize: '10px',
+                                fontWeight: 600,
+                                background: 'rgba(52, 211, 153, 0.15)',
+                                color: '#6ee7b7',
+                                border: '1px solid #34d399',
+                              }}
+                              title="May switch active PC in a chronicle without storyteller approval"
+                            >
+                              Self-switch
+                            </span>
+                          )}
+                        </div>
+                      )}
                     </td>
                     <td style={{ padding: '12px' }}>
                       {u.is_banned ? (
                         <span style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '6px',
+                          whiteSpace: 'nowrap',
                           padding: '4px 12px',
                           borderRadius: '12px',
                           fontSize: '12px',
@@ -957,10 +1307,15 @@ function AdminPage({ token, user, displayTimezone = null, onAdminOpenCampaign = 
                           color: '#ff4444',
                           border: '1px solid #ff4444'
                         }}>
-                          🚫 {u.ban_type === 'permanent' ? 'PERMA BAN' : 'TEMP BAN'}
+                          <span aria-hidden="true" style={{ lineHeight: 1, fontSize: '14px' }}>🚫</span>
+                          <span>{u.ban_type === 'permanent' ? 'PERMA BAN' : 'TEMP BAN'}</span>
                         </span>
                       ) : (
                         <span style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '6px',
+                          whiteSpace: 'nowrap',
                           padding: '4px 12px',
                           borderRadius: '12px',
                           fontSize: '12px',
@@ -969,7 +1324,8 @@ function AdminPage({ token, user, displayTimezone = null, onAdminOpenCampaign = 
                           color: '#28a745',
                           border: '1px solid #28a745'
                         }}>
-                          ✅ Active
+                          <span aria-hidden="true" style={{ lineHeight: 1, fontSize: '14px' }}>✅</span>
+                          <span>Active</span>
                         </span>
                       )}
                     </td>
@@ -1141,7 +1497,44 @@ function AdminPage({ token, user, displayTimezone = null, onAdminOpenCampaign = 
         {/* Moderation Log */}
         {adminSection === 'moderation' && (
         <div>
-          <h2 style={{ color: '#e94560', marginBottom: '20px' }}>📋 Recent Moderation Log</h2>
+          <h2 style={{ color: '#e94560', marginBottom: '12px' }}>Recent activity log</h2>
+          <p style={{ color: '#8b8b9f', marginBottom: '16px', maxWidth: '720px' }}>
+            Audit trail: staff actions (red), a user acting on their own account (green), automated or system-tagged events (blue). Rows remain visible when a user account was removed (names may show as missing).
+          </p>
+          <div style={{ marginBottom: '16px', display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '12px' }}>
+            <label style={{ color: '#b5b5c3', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              Rows:
+              <select
+                value={moderationLogLimit}
+                onChange={(e) => setModerationLogLimit(Number(e.target.value))}
+                style={{
+                  padding: '8px 12px',
+                  borderRadius: '6px',
+                  background: '#0f1729',
+                  border: '1px solid #2a2a4e',
+                  color: '#e0e0e0',
+                }}
+              >
+                {[50, 100, 200, 500].map((n) => (
+                  <option key={n} value={n}>{n}</option>
+                ))}
+              </select>
+            </label>
+            <button
+              type="button"
+              onClick={() => fetchModerationLog()}
+              style={{
+                padding: '8px 14px',
+                borderRadius: '6px',
+                border: '1px solid #2a2a4e',
+                background: '#0f1729',
+                color: '#e0e0e0',
+                cursor: 'pointer',
+              }}
+            >
+              Refresh
+            </button>
+          </div>
           
           <div style={{
             background: '#16213e',
@@ -1151,35 +1544,56 @@ function AdminPage({ token, user, displayTimezone = null, onAdminOpenCampaign = 
             border: '1px solid #2a2a4e'
           }}>
             {moderationLog.length === 0 ? (
-              <p style={{ color: '#b5b5c3', textAlign: 'center' }}>No moderation actions yet</p>
+              <p style={{ color: '#b5b5c3', textAlign: 'center' }}>No logged actions yet</p>
             ) : (
-              <div style={{ maxHeight: '400px', overflowY: 'auto' }}>
-                {moderationLog.map(log => (
+              <div style={{ maxHeight: '560px', overflowY: 'auto' }}>
+                {moderationLog.map((log) => {
+                  const kind = log.entry_kind || 'admin';
+                  const borderColor =
+                    kind === 'user' ? '#22c55e' : kind === 'system' ? '#3b82f6' : '#e94560';
+                  const actor =
+                    log.admin_username ||
+                    (log.admin_id != null && log.admin_id !== ''
+                      ? `#${log.admin_id}`
+                      : '—');
+                  const target =
+                    log.username ||
+                    (log.user_id != null && log.user_id !== ''
+                      ? `user #${log.user_id}`
+                      : '—');
+                  return (
                   <div key={log.id} style={{
                     padding: '12px',
                     marginBottom: '10px',
                     background: '#0f1729',
                     borderRadius: '8px',
-                    border: '1px solid #2a2a4e'
+                    border: '1px solid #2a2a4e',
+                    borderLeft: `4px solid ${borderColor}`,
                   }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-                      <span style={{ color: '#e94560', fontWeight: '600' }}>
-                        {log.action.toUpperCase()}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', flexWrap: 'wrap', gap: '8px' }}>
+                      <span style={{ color: '#e0e0e0', fontWeight: '600' }}>
+                        {String(log.action || '').toUpperCase()}
+                        <span style={{ color: '#6b7280', fontWeight: 'normal', fontSize: '12px', marginLeft: '8px' }}>
+                          ({kind})
+                        </span>
                       </span>
                       <span style={{ color: '#8b8b9f', fontSize: '12px' }}>
                         {formatDateTimeInZone(log.created_at, displayTimezone)}
                       </span>
                     </div>
                     <div style={{ color: '#b5b5c3', fontSize: '14px' }}>
-                      <strong>{log.admin_username}</strong> → <strong>{log.username}</strong>
+                      <strong style={{ color: '#cbd5e1' }}>{actor}</strong>
+                      <span style={{ color: '#64748b', margin: '0 6px' }}>→</span>
+                      <strong style={{ color: '#cbd5e1' }}>{target}</strong>
                     </div>
                     {log.details && Object.keys(log.details).length > 0 && (
-                      <div style={{ color: '#8b8b9f', fontSize: '12px', marginTop: '4px' }}>
+                      <div style={{ color: '#8b8b9f', fontSize: '12px', marginTop: '6px', wordBreak: 'break-word' }}>
                         {JSON.stringify(log.details)}
                       </div>
                     )}
                   </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>
@@ -1320,7 +1734,7 @@ function AdminPage({ token, user, displayTimezone = null, onAdminOpenCampaign = 
 
         {adminSection === 'ai' && (
         <div style={{ maxWidth: '900px', margin: '0 auto' }}>
-          <h2 style={{ color: '#e94560', marginBottom: '12px' }}>AI &amp; LM Studio</h2>
+          <h2 style={{ color: '#e94560', marginBottom: '12px' }}>Ai System</h2>
           <p style={{ color: '#b5b5c3', marginBottom: '20px', lineHeight: 1.65 }}>
             Choose which model id the backend sends to LM Studio&apos;s OpenAI-compatible API, or leave default to follow{' '}
             <code style={{ color: '#9d4edd' }}>LM_STUDIO_MODEL</code> in the environment and the model LM Studio reports as loaded.
@@ -1519,14 +1933,30 @@ function AdminPage({ token, user, displayTimezone = null, onAdminOpenCampaign = 
                   }}
                 />
               </div>
-              <div style={{ marginBottom: '20px' }}>
-                <label style={{ display: 'flex', alignItems: 'center', gap: '10px', color: '#b5b5c3', cursor: 'pointer' }}>
+              <div style={{ marginBottom: '16px' }}>
+                <label style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', color: '#b5b5c3', cursor: 'pointer' }}>
                   <input
                     type="checkbox"
                     name="allow_multi"
                     defaultChecked={!!selectedUser.allow_multi_campaign_play}
+                    style={{ marginTop: '4px' }}
                   />
-                  Allow multiple locked characters / campaigns (admin override)
+                  <span>
+                    Multiple chronicles at once (locked sheets in more than one campaign). Without this, joining a second locked chronicle is blocked.
+                  </span>
+                </label>
+              </div>
+              <div style={{ marginBottom: '20px' }}>
+                <label style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', color: '#b5b5c3', cursor: 'pointer' }}>
+                  <input
+                    type="checkbox"
+                    name="self_switch_pc"
+                    defaultChecked={!!selectedUser.self_switch_playing_character}
+                    style={{ marginTop: '4px' }}
+                  />
+                  <span>
+                    Self-switch playing character (trusted player): change which character is active in a chronicle without storyteller approval. Other campaigns are unchanged; you can still switch PCs separately per chronicle.
+                  </span>
                 </label>
               </div>
               <div style={{ display: 'flex', gap: '10px' }}>
@@ -2156,6 +2586,225 @@ function AdminPage({ token, user, displayTimezone = null, onAdminOpenCampaign = 
         </div>
       )}
 
+      {chronicleEditTarget && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+          background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center',
+          justifyContent: 'center', zIndex: 1000,
+        }}
+        >
+          <div style={{
+            background: '#16213e', padding: '24px', borderRadius: '10px',
+            width: '92%', maxWidth: '520px', border: '2px solid #2a2a4e', maxHeight: '90vh', overflow: 'auto',
+          }}
+          >
+            <h3 style={{ color: '#e94560', marginTop: 0 }}>Edit chronicle</h3>
+            <p style={{ color: '#8b8b9f', fontSize: '13px', marginTop: '-8px' }}>
+              {chronicleEditTarget.name} (id {chronicleEditTarget.id})
+            </p>
+            <form onSubmit={submitChronicleEdit} style={{ display: 'grid', gap: '14px' }}>
+              <label style={{ color: '#b5b5c3' }}>
+                Name
+                <input
+                  value={chEdName}
+                  onChange={(e) => setChEdName(e.target.value)}
+                  required
+                  style={{
+                    display: 'block', width: '100%', marginTop: '6px', padding: '10px', boxSizing: 'border-box',
+                    background: '#0f1729', border: '2px solid #2a2a4e', borderRadius: '6px', color: '#fff',
+                  }}
+                />
+              </label>
+              <label style={{ color: '#b5b5c3' }}>
+                Description
+                <textarea
+                  value={chEdDescription}
+                  onChange={(e) => setChEdDescription(e.target.value)}
+                  rows={4}
+                  style={{
+                    display: 'block', width: '100%', marginTop: '6px', padding: '10px', boxSizing: 'border-box',
+                    background: '#0f1729', border: '2px solid #2a2a4e', borderRadius: '6px', color: '#fff',
+                    fontFamily: 'inherit',
+                  }}
+                />
+              </label>
+              <label style={{ color: '#b5b5c3' }}>
+                Listing visibility
+                <select
+                  value={chEdListing}
+                  onChange={(e) => setChEdListing(e.target.value)}
+                  style={{
+                    display: 'block', width: '100%', marginTop: '6px', padding: '10px',
+                    background: '#0f1729', border: '2px solid #2a2a4e', borderRadius: '6px', color: '#fff',
+                  }}
+                >
+                  <option value="private">private</option>
+                  <option value="listed">listed</option>
+                </select>
+              </label>
+              <label style={{ color: '#b5b5c3', display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer' }}>
+                <input
+                  type="checkbox"
+                  checked={chEdAccepting}
+                  onChange={(e) => setChEdAccepting(e.target.checked)}
+                />
+                Accepting new players
+              </label>
+              <label style={{ color: '#b5b5c3' }}>
+                Max players (empty = no limit)
+                <input
+                  type="number"
+                  min={0}
+                  value={chEdMaxPlayers}
+                  onChange={(e) => setChEdMaxPlayers(e.target.value)}
+                  placeholder="e.g. 6"
+                  style={{
+                    display: 'block', width: '100%', marginTop: '6px', padding: '10px', boxSizing: 'border-box',
+                    background: '#0f1729', border: '2px solid #2a2a4e', borderRadius: '6px', color: '#fff',
+                  }}
+                />
+              </label>
+              <div style={{ display: 'flex', gap: '10px', marginTop: '8px' }}>
+                <button
+                  type="submit"
+                  disabled={!!chronicleBusyId}
+                  style={{
+                    flex: 1, padding: '12px', background: chronicleBusyId ? '#4a4a5e' : '#28a745',
+                    color: '#fff', border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: chronicleBusyId ? 'not-allowed' : 'pointer',
+                  }}
+                >
+                  Save
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setChronicleEditTarget(null)}
+                  style={{
+                    flex: 1, padding: '12px', background: '#64748b', color: '#fff',
+                    border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer',
+                  }}
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {chronicleStatsTarget && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+          background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center',
+          justifyContent: 'center', zIndex: 1000,
+        }}
+        >
+          <div style={{
+            background: '#16213e', padding: '24px', borderRadius: '10px',
+            width: '92%', maxWidth: '560px', border: '2px solid #2a2a4e', maxHeight: '88vh', overflow: 'auto',
+          }}
+          >
+            <h3 style={{ color: '#e94560', marginTop: 0 }}>
+              Stats — {chronicleStatsTarget.name} (id {chronicleStatsTarget.id})
+            </h3>
+            {chronicleStatsLoading ? (
+              <p style={{ color: '#b5b5c3' }}>Loading…</p>
+            ) : chronicleStatsData ? (
+              <dl style={{ color: '#cbd5e1', display: 'grid', gap: '10px' }}>
+                <div><dt style={{ color: '#e94560', display: 'inline' }}>Active players</dt><dd style={{ display: 'inline', marginLeft: '8px' }}>{chronicleStatsData.active_players}</dd></div>
+                <div><dt style={{ color: '#e94560', display: 'inline' }}>Characters</dt><dd style={{ display: 'inline', marginLeft: '8px' }}>{chronicleStatsData.characters}</dd></div>
+                <div><dt style={{ color: '#e94560', display: 'inline' }}>Locations</dt><dd style={{ display: 'inline', marginLeft: '8px' }}>{chronicleStatsData.locations}</dd></div>
+                <div><dt style={{ color: '#e94560', display: 'inline' }}>Story messages</dt><dd style={{ display: 'inline', marginLeft: '8px' }}>{chronicleStatsData.messages}</dd></div>
+              </dl>
+            ) : (
+              <p style={{ color: '#b5b5c3' }}>No data</p>
+            )}
+            <button
+              type="button"
+              onClick={() => { setChronicleStatsTarget(null); setChronicleStatsData(null); }}
+              style={{
+                marginTop: '16px', padding: '10px 20px', background: '#667eea',
+                color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold',
+              }}
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      )}
+
+      {chroniclePauseTarget && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+          background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center',
+          justifyContent: 'center', zIndex: 1000,
+        }}
+        >
+          <div style={{
+            background: '#16213e', padding: '24px', borderRadius: '10px',
+            width: '92%', maxWidth: '480px', border: '2px solid #ca8a04',
+          }}
+          >
+            <h3 style={{ color: '#fbbf24', marginTop: 0 }}>Pause chronicle?</h3>
+            <p style={{ color: '#b5b5c3', fontSize: '14px', lineHeight: 1.55 }}>
+              <strong>{chroniclePauseTarget.name}</strong> will be marked inactive: it disappears from discovery / join lists and manual dice calls that require an active campaign may fail until you resume.
+            </p>
+            <form onSubmit={submitChroniclePause}>
+              <label style={{ color: '#b5b5c3', display: 'block', marginBottom: '16px' }}>
+                Reason (optional, visible to staff in this list)
+                <textarea
+                  value={chroniclePauseReason}
+                  onChange={(e) => setChroniclePauseReason(e.target.value)}
+                  rows={3}
+                  placeholder="e.g. hiatus until March, content review…"
+                  style={{
+                    display: 'block', width: '100%', marginTop: '8px', padding: '10px', boxSizing: 'border-box',
+                    background: '#0f1729', border: '2px solid #2a2a4e', borderRadius: '6px', color: '#fff',
+                    fontFamily: 'inherit',
+                  }}
+                />
+              </label>
+              <div style={{ display: 'flex', gap: '10px' }}>
+                <button
+                  type="submit"
+                  disabled={!!chronicleBusyId}
+                  style={{
+                    flex: 1, padding: '12px', background: chronicleBusyId ? '#4a4a5e' : '#ca8a04',
+                    color: '#fff', border: 'none', borderRadius: '8px', fontWeight: 'bold',
+                    cursor: chronicleBusyId ? 'not-allowed' : 'pointer',
+                  }}
+                >
+                  Pause
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setChroniclePauseTarget(null); setChroniclePauseReason(''); }}
+                  style={{
+                    flex: 1, padding: '12px', background: '#64748b', color: '#fff',
+                    border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer',
+                  }}
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      <ConfirmDialog
+        isOpen={!!chronicleDeleteTarget}
+        title="⚠️ Delete chronicle permanently?"
+        message={
+          chronicleDeleteTarget
+            ? `Delete "${chronicleDeleteTarget.name}" (id ${chronicleDeleteTarget.id}) and all related locations, messages, and data?\n\nThis cannot be undone.`
+            : ''
+        }
+        onConfirm={confirmDeleteChronicle}
+        onCancel={() => { if (!chronicleDeleteLoading) setChronicleDeleteTarget(null); }}
+        confirmText={chronicleDeleteLoading ? 'Deleting…' : 'Yes, delete'}
+        cancelText="Cancel"
+      />
+
       {/* Unban Confirmation Dialog */}
       <ConfirmDialog
         isOpen={showUnbanConfirm}
@@ -2191,6 +2840,7 @@ function AdminPage({ token, user, displayTimezone = null, onAdminOpenCampaign = 
       />
 
       {/* Toast Notifications */}
+      </div>
       <ToastContainer />
     </div>
   );

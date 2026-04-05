@@ -22,7 +22,7 @@ These were consolidated on 2025-10-28 for better organization.
 ## Current Project Status (Summary)
 
 **Phase:** 3B - Advanced Campaign & Character Systems  
-**Version:** v0.7.18+ (index refreshed 2026-04-05; narrative below is historical)  
+**Version:** v0.8.0+ (index refreshed 2026-04-05; narrative below is historical)  
 **Status:** In Progress
 
 ### ✅ Completed Features
