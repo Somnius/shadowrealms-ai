@@ -11,10 +11,30 @@ import requests
 from typing import Dict, Any, Optional, List
 from abc import ABC, abstractmethod
 from datetime import datetime
+from .lm_studio_model import get_effective_lm_studio_model_id, resolve_lm_studio_model_id
 from .smart_model_router import SmartModelRouter, create_smart_model_router
 from .rag_service import RAGService, create_rag_service
 
 logger = logging.getLogger(__name__)
+
+
+def _merge_master_system_prompt(context: Dict[str, Any]) -> Dict[str, Any]:
+    """Prepend admin-configured master system prompt to route-specific system_prompt."""
+    from services.ai_runtime_settings import get_app_setting
+
+    if not isinstance(context, dict):
+        return context
+    master = (get_app_setting("ai_master_system_prompt") or "").strip()
+    if not master:
+        return context
+    ctx = dict(context)
+    base = (ctx.get("system_prompt") or "").strip()
+    if base:
+        ctx["system_prompt"] = f"{master}\n\n---\n\n{base}"
+    else:
+        ctx["system_prompt"] = master
+    return ctx
+
 
 class LLMProvider(ABC):
     """Abstract base class for LLM providers"""
@@ -38,10 +58,14 @@ class LMStudioProvider(LLMProvider):
     """LM Studio LLM provider implementation"""
     
     def __init__(self, config: Dict[str, Any]):
+        self.config = config
         self.base_url = config.get('LM_STUDIO_URL', 'http://localhost:1234')
         self.api_key = config.get('LM_STUDIO_API_KEY', '')
-        self.model = config.get('LM_STUDIO_MODEL', 'mythomakise-merged-13b')
-        self.timeout = config.get('LM_STUDIO_TIMEOUT', 30)
+        # Previously: self.model = config.get('LM_STUDIO_MODEL', 'gemma-4-e2b-it')
+        self.model = resolve_lm_studio_model_id(
+            self.base_url, config.get('LM_STUDIO_MODEL'), config.get('LM_STUDIO_API_KEY')
+        )
+        self.timeout = int(config.get('LM_STUDIO_TIMEOUT', 120) or 120)
     
     def is_available(self) -> bool:
         """Check if LM Studio is available"""
@@ -79,7 +103,7 @@ class LMStudioProvider(LLMProvider):
         try:
             # Prepare the request payload
             payload = {
-                "model": self.model,
+                "model": get_effective_lm_studio_model_id(self.config),
                 "messages": [
                     {
                         "role": "system",
@@ -103,14 +127,14 @@ class LMStudioProvider(LLMProvider):
                 })
             
             # Make request to LM Studio
+            hdrs = {'Content-Type': 'application/json'}
+            if (self.api_key or '').strip():
+                hdrs['Authorization'] = f'Bearer {self.api_key.strip()}'
             response = requests.post(
                 f"{self.base_url}/v1/chat/completions",
                 json=payload,
                 timeout=self.timeout,
-                headers={
-                    'Content-Type': 'application/json',
-                    'Authorization': f'Bearer {self.api_key}' if self.api_key else ''
-                }
+                headers=hdrs,
             )
             
             if response.status_code == 200:
@@ -238,6 +262,7 @@ class LLMService:
     
     def generate_response(self, prompt: str, context: Dict[str, Any], config: Dict[str, Any]) -> str:
         """Generate response using smart model routing with RAG augmentation"""
+        context = _merge_master_system_prompt(context)
         # Get campaign context for RAG augmentation
         campaign_id = context.get('campaign_id')
         user_id = context.get('user_id')

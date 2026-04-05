@@ -48,8 +48,9 @@ def create_app(config_class=Config):
         llm_service = initialize_llm_service({
             'LM_STUDIO_URL': os.environ.get('LM_STUDIO_URL', 'http://localhost:1234'),
             'LM_STUDIO_API_KEY': os.environ.get('LM_STUDIO_API_KEY', ''),
-            'LM_STUDIO_MODEL': os.environ.get('LM_STUDIO_MODEL', 'mythomakise-merged-13b'),
-            'LM_STUDIO_TIMEOUT': int(os.environ.get('LM_STUDIO_TIMEOUT', '30')),
+            # Empty or "auto" => resolve from LM Studio GET /v1/models (see services/lm_studio_model.py)
+            'LM_STUDIO_MODEL': os.environ.get('LM_STUDIO_MODEL', '') or '',
+            'LM_STUDIO_TIMEOUT': int(os.environ.get('LM_STUDIO_TIMEOUT', '120')),
             'OLLAMA_URL': os.environ.get('OLLAMA_URL', 'http://localhost:11434'),
             'OLLAMA_MODEL': os.environ.get('OLLAMA_MODEL', 'command-r:35b'),
             'OLLAMA_TIMEOUT': int(os.environ.get('OLLAMA_TIMEOUT', '30'))
@@ -230,8 +231,14 @@ def main():
     logger.info(f"🐛 Debug: {debug}")
     logger.info(f"🎮 Version: 0.2.1")
     
+    # Auto-reload on code changes when FLASK_ENV=development (or FLASK_DEBUG=true)
+    dev = os.getenv('FLASK_ENV', '').lower() == 'development'
+    disable_reload = os.getenv('FLASK_DISABLE_RELOADER', '').lower() in ('1', 'true', 'yes')
+    use_reloader = (debug or (dev and not disable_reload))
+    if use_reloader and not debug:
+        logger.info('File watcher enabled (FLASK_ENV=development); code changes reload the server')
     # Start the application
-    app.run(host=host, port=port, debug=debug)
+    app.run(host=host, port=port, debug=debug, use_reloader=use_reloader)
 
 if __name__ == "__main__":
     """Run standalone tests or start the application"""

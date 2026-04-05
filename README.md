@@ -6,7 +6,7 @@
 
 ### The Ultimate AI-Powered Tabletop RPG Experience
 
-[![Version](https://img.shields.io/badge/version-0.7.17-blue.svg)](https://github.com/Somnius/shadowrealms-ai)
+[![Version](https://img.shields.io/badge/version-0.7.18-blue.svg)](https://github.com/Somnius/shadowrealms-ai)
 [![Phase 2](https://img.shields.io/badge/phase-2%20complete-green.svg)](https://github.com/Somnius/shadowrealms-ai)
 [![Phase 3A](https://img.shields.io/badge/phase-3A%20complete-green.svg)](https://github.com/Somnius/shadowrealms-ai)
 [![Phase 3B](https://img.shields.io/badge/phase-3B%20active-blue.svg)](https://github.com/Somnius/shadowrealms-ai)
@@ -55,7 +55,7 @@ See ShadowRealms AI in action:
 
 *Watch this video to see the login system, gothic theme, campaign management, and admin panel in action!*
 
-> **Version 0.7.17 Preview:** This demo showcases the frontend interface in its current state. Please note that not all features are fully functional yet—this is a first look at the user interface and design direction of ShadowRealms AI.
+> **Version 0.7.18 Preview:** This demo showcases the frontend interface in its current state. Please note that not all features are fully functional yet—this is a first look at the user interface and design direction of ShadowRealms AI.
 
 </div>
 
@@ -137,6 +137,14 @@ docker-compose up -d
 ## Current Development Status
 
 <div align="center">
+
+### Version 0.7.18 - Admin chronicles, support access, account-delete fixes 🛡️
+
+**What changed from v0.7.17:**
+- **Admin — All chronicles**: Lists every campaign from `GET /api/admin/campaigns`; **Open in app** enters the main UI for locations and chat.
+- **Site admin support access**: Admins may open any chronicle (campaign detail, messages, dice, read-state rules per `docs/CHANGELOG.md` `[0.7.18]`).
+- **Preserve-chat deletion**: Transfers `locations.created_by` to the acting admin before removing the user; admin-facing errors stay readable while details log server-side.
+- **Admin character list**: Safer schema ensures and clearer API error display when loading a user’s characters.
 
 ### Version 0.7.17 - Documentation alignment and Phase 3B readiness 📚
 

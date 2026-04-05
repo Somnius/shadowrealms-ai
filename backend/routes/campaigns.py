@@ -17,8 +17,14 @@ from database import (
     ensure_users_player_profile_columns,
     ensure_characters_play_suspension_columns,
     ensure_campaigns_listing_columns,
+    ensure_users_restrict_self_join_new_chronicles_column,
+    ensure_campaign_players_active_character_id_column,
 )
 from services.play_suspension import suspended_json
+from services.playing_character import (
+    effective_playing_character_id,
+    is_campaign_storyteller_or_staff,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -200,7 +206,11 @@ def get_campaigns():
     (e.g. character creation picker).
     """
     try:
-        user_id = get_jwt_identity()
+        raw_uid = get_jwt_identity()
+        try:
+            user_id = int(raw_uid)
+        except (TypeError, ValueError):
+            return jsonify({"error": "Invalid session"}), 401
         for_active = str(request.args.get("for_active_character", "")).lower() in (
             "1",
             "true",
@@ -211,6 +221,7 @@ def get_campaigns():
         cursor = conn.cursor()
         ensure_users_player_profile_columns(cursor)
         ensure_campaigns_listing_columns(cursor)
+        ensure_campaign_players_active_character_id_column(cursor)
         conn.commit()
 
         if for_active:
@@ -227,9 +238,11 @@ def get_campaigns():
             cursor.execute(
                 """
                 SELECT c.id, c.name, c.description, c.game_system, c.created_at, c.status,
-                       c.max_players, c.listing_visibility, c.accepting_players
+                       c.max_players, c.listing_visibility, c.accepting_players,
+                       cp.active_character_id AS my_playing_character_id
                 FROM campaigns c
                 INNER JOIN characters ch ON ch.campaign_id = c.id
+                LEFT JOIN campaign_players cp ON cp.campaign_id = c.id AND cp.user_id = %s
                 WHERE ch.id = %s AND ch.user_id = %s
                   AND (
                     c.created_by = %s OR c.id IN (
@@ -238,18 +251,20 @@ def get_campaigns():
                   )
                 ORDER BY c.created_at DESC
                 """,
-                (aid, user_id, user_id, user_id),
+                (user_id, aid, user_id, user_id, user_id),
             )
         else:
             cursor.execute("""
-                SELECT id, name, description, game_system, created_at, status,
-                       max_players, listing_visibility, accepting_players
-                FROM campaigns
-                WHERE created_by = %s OR id IN (
+                SELECT c.id, c.name, c.description, c.game_system, c.created_at, c.status,
+                       c.max_players, c.listing_visibility, c.accepting_players,
+                       cp.active_character_id AS my_playing_character_id
+                FROM campaigns c
+                LEFT JOIN campaign_players cp ON cp.campaign_id = c.id AND cp.user_id = %s
+                WHERE c.created_by = %s OR c.id IN (
                     SELECT campaign_id FROM campaign_players WHERE user_id = %s
                 )
-                ORDER BY created_at DESC
-            """, (user_id, user_id))
+                ORDER BY c.created_at DESC
+            """, (user_id, user_id, user_id))
         
         campaigns = []
         for row in cursor.fetchall():
@@ -268,6 +283,7 @@ def get_campaigns():
                 'max_players': row.get('max_players'),
                 'listing_visibility': row.get('listing_visibility') or 'private',
                 'accepting_players': acc,
+                'my_playing_character_id': row.get('my_playing_character_id'),
             })
         
         cursor.close()
@@ -351,6 +367,8 @@ def join_campaign(campaign_id):
         conn = get_db()
         cursor = conn.cursor()
         ensure_campaigns_listing_columns(cursor)
+        ensure_users_restrict_self_join_new_chronicles_column(cursor)
+        ensure_campaign_players_active_character_id_column(cursor)
         conn.commit()
 
         cursor.execute(
@@ -391,6 +409,44 @@ def join_campaign(campaign_id):
             cursor.close()
             conn.close()
             return jsonify({"message": "Already a member", "campaign_id": campaign_id}), 200
+
+        cursor.execute(
+            "SELECT restrict_self_join_new_chronicles FROM users WHERE id = %s",
+            (user_id,),
+        )
+        urow = cursor.fetchone() or {}
+        restricted = bool(urow.get("restrict_self_join_new_chronicles") or False)
+        if restricted:
+            dbp = os.getenv("DATABASE_TYPE", "sqlite").lower()
+            active_sql = (
+                "(is_active IS NULL OR is_active IS TRUE)"
+                if dbp == "postgresql"
+                else "(is_active IS NULL OR is_active = 1)"
+            )
+            cursor.execute(
+                f"""
+                SELECT 1 FROM characters
+                WHERE user_id = %s AND campaign_id = %s AND {active_sql}
+                LIMIT 1
+                """,
+                (user_id, campaign_id),
+            )
+            if not cursor.fetchone():
+                cursor.close()
+                conn.close()
+                return (
+                    jsonify(
+                        {
+                            "error": (
+                                "Joining a new chronicle requires storyteller or site "
+                                "staff approval. Ask them to add you, or rejoin a "
+                                "chronicle where you still have a character."
+                            ),
+                            "error_code": "join_requires_storyteller_approval",
+                        }
+                    ),
+                    403,
+                )
 
         max_p = c.get("max_players")
         if max_p is not None and int(max_p) > 0:
@@ -444,25 +500,41 @@ def get_or_update_campaign(campaign_id):
         return delete_campaign(campaign_id)
     
     try:
-        user_id = get_jwt_identity()
-        
+        raw_uid = get_jwt_identity()
+        try:
+            user_id = int(raw_uid)
+        except (TypeError, ValueError):
+            return jsonify({'error': 'Invalid session'}), 401
+
         conn = get_db()
         cursor = conn.cursor()
         ensure_users_player_profile_columns(cursor)
         ensure_characters_play_suspension_columns(cursor)
         ensure_campaigns_listing_columns(cursor)
         conn.commit()
-        
-        # Check if user has access to campaign
-        cursor.execute("""
-            SELECT id, name, description, game_system, created_by, created_at, status,
-                   max_players, listing_visibility, accepting_players
-            FROM campaigns
-            WHERE id = %s AND (created_by = %s OR id IN (
-                SELECT campaign_id FROM campaign_players WHERE user_id = %s
-            ))
-        """, (campaign_id, user_id, user_id))
-        
+
+        cursor.execute("SELECT role FROM users WHERE id = %s", (user_id,))
+        viewer = cursor.fetchone()
+        is_site_admin = bool(viewer and viewer.get("role") == "admin")
+
+        # Members and creators always; site admins may open any chronicle (for moderation / ST tools).
+        if is_site_admin:
+            cursor.execute("""
+                SELECT id, name, description, game_system, created_by, created_at, status,
+                       max_players, listing_visibility, accepting_players
+                FROM campaigns
+                WHERE id = %s
+            """, (campaign_id,))
+        else:
+            cursor.execute("""
+                SELECT id, name, description, game_system, created_by, created_at, status,
+                       max_players, listing_visibility, accepting_players
+                FROM campaigns
+                WHERE id = %s AND (created_by = %s OR id IN (
+                    SELECT campaign_id FROM campaign_players WHERE user_id = %s
+                ))
+            """, (campaign_id, user_id, user_id))
+
         row = cursor.fetchone()
         if not row:
             cursor.close()
@@ -1031,3 +1103,330 @@ def store_interaction(campaign_id):
     except Exception as e:
         logger.error(f"Error storing interaction: {e}")
         return jsonify({'error': 'Failed to store interaction'}), 500
+
+
+@campaigns_bp.route("/<int:campaign_id>/detach", methods=["POST"])
+@jwt_required()
+def detach_from_campaign(campaign_id):
+    """Leave campaign membership. Sets restrict_self_join_new_chronicles on the removed user."""
+    try:
+        actor_id = int(get_jwt_identity())
+    except (TypeError, ValueError):
+        return jsonify({"error": "Invalid session"}), 422
+
+    data = request.get_json(silent=True) or {}
+    target_user_id = data.get("user_id")
+    if target_user_id is not None:
+        try:
+            target_user_id = int(target_user_id)
+        except (TypeError, ValueError):
+            return jsonify({"error": "user_id must be an integer"}), 400
+    else:
+        target_user_id = actor_id
+
+    conn = get_db()
+    cursor = conn.cursor()
+    ensure_users_restrict_self_join_new_chronicles_column(cursor)
+    ensure_users_player_profile_columns(cursor)
+    ensure_campaign_players_active_character_id_column(cursor)
+    conn.commit()
+
+    cursor.execute(
+        "SELECT created_by FROM campaigns WHERE id = %s",
+        (campaign_id,),
+    )
+    camp = cursor.fetchone()
+    if not camp:
+        cursor.close()
+        conn.close()
+        return jsonify({"error": "Campaign not found"}), 404
+
+    cursor.execute("SELECT role FROM users WHERE id = %s", (actor_id,))
+    actor = cursor.fetchone() or {}
+    actor_role = actor.get("role") or "player"
+
+    if target_user_id != actor_id:
+        if actor_role not in ("admin", "helper") and str(camp.get("created_by")) != str(
+            actor_id
+        ):
+            cursor.close()
+            conn.close()
+            return jsonify({"error": "Only the chronicle storyteller or staff may remove players"}), 403
+    else:
+        if str(camp.get("created_by")) == str(actor_id):
+            pass
+
+    cursor.execute(
+        """
+        SELECT 1 FROM campaign_players WHERE campaign_id = %s AND user_id = %s
+        """,
+        (campaign_id, target_user_id),
+    )
+    if not cursor.fetchone():
+        cursor.close()
+        conn.close()
+        return jsonify({"error": "Not a member of this campaign"}), 404
+
+    cursor.execute(
+        """
+        DELETE FROM campaign_players WHERE campaign_id = %s AND user_id = %s
+        """,
+        (campaign_id, target_user_id),
+    )
+    cursor.execute(
+        """
+        UPDATE users SET restrict_self_join_new_chronicles = TRUE
+        WHERE id = %s
+        """
+        if os.getenv("DATABASE_TYPE", "sqlite").lower() == "postgresql"
+        else """
+        UPDATE users SET restrict_self_join_new_chronicles = 1
+        WHERE id = %s
+        """,
+        (target_user_id,),
+    )
+    cursor.execute(
+        """
+        UPDATE users SET active_character_id = NULL
+        WHERE id = %s
+          AND active_character_id IN (
+            SELECT id FROM characters WHERE campaign_id = %s AND user_id = %s
+          )
+        """,
+        (target_user_id, campaign_id, target_user_id),
+    )
+    conn.commit()
+    cursor.close()
+    conn.close()
+    return jsonify(
+        {
+            "message": "Left campaign",
+            "campaign_id": campaign_id,
+            "user_id": target_user_id,
+        }
+    ), 200
+
+
+@campaigns_bp.route("/<int:campaign_id>/my-playing-character", methods=["PUT"])
+@jwt_required()
+def put_my_playing_character(campaign_id):
+    """Set this chronicle's playing character (first bind free; switch requires ST)."""
+    try:
+        user_id = int(get_jwt_identity())
+    except (TypeError, ValueError):
+        return jsonify({"error": "Invalid session"}), 422
+
+    data = request.get_json()
+    if not data or "character_id" not in data:
+        return jsonify({"error": "character_id is required"}), 400
+    raw = data["character_id"]
+    try:
+        character_id = int(raw) if raw is not None else None
+    except (TypeError, ValueError):
+        return jsonify({"error": "character_id must be an integer or null"}), 400
+
+    conn = get_db()
+    cursor = conn.cursor()
+    ensure_campaign_players_active_character_id_column(cursor)
+    conn.commit()
+
+    cursor.execute(
+        """
+        SELECT active_character_id FROM campaign_players
+        WHERE campaign_id = %s AND user_id = %s
+        """,
+        (campaign_id, user_id),
+    )
+    cp = cursor.fetchone()
+    if not cp:
+        cursor.close()
+        conn.close()
+        return jsonify({"error": "Not a member of this campaign"}), 403
+
+    current = cp.get("active_character_id")
+
+    if character_id is None:
+        cursor.close()
+        conn.close()
+        return jsonify({"error": "Use storyteller tools to clear playing character"}), 400
+
+    cursor.execute(
+        """
+        SELECT id FROM characters
+        WHERE id = %s AND user_id = %s AND campaign_id = %s
+        """,
+        (character_id, user_id, campaign_id),
+    )
+    if not cursor.fetchone():
+        cursor.close()
+        conn.close()
+        return jsonify({"error": "Character not in this campaign"}), 404
+
+    if current is not None and int(current) != int(character_id):
+        cursor.close()
+        conn.close()
+        return (
+            jsonify(
+                {
+                    "error": (
+                        "Switching to another character in this chronicle requires "
+                        "storyteller approval."
+                    ),
+                    "error_code": "playing_character_switch_requires_storyteller",
+                }
+            ),
+            403,
+        )
+
+    cursor.execute(
+        """
+        UPDATE campaign_players SET active_character_id = %s
+        WHERE campaign_id = %s AND user_id = %s
+        """,
+        (character_id, campaign_id, user_id),
+    )
+    conn.commit()
+    cursor.close()
+    conn.close()
+    return jsonify(
+        {
+            "message": "Playing character updated",
+            "campaign_id": campaign_id,
+            "character_id": character_id,
+        }
+    ), 200
+
+
+@campaigns_bp.route(
+    "/<int:campaign_id>/players/<int:target_user_id>/playing-character",
+    methods=["PUT"],
+)
+@jwt_required()
+def put_player_playing_character(campaign_id, target_user_id):
+    """Storyteller or site staff sets a member's playing character for this chronicle."""
+    try:
+        actor_id = int(get_jwt_identity())
+    except (TypeError, ValueError):
+        return jsonify({"error": "Invalid session"}), 422
+
+    data = request.get_json()
+    if not data or "character_id" not in data:
+        return jsonify({"error": "character_id is required"}), 400
+    raw = data["character_id"]
+    try:
+        character_id = int(raw) if raw is not None else None
+    except (TypeError, ValueError):
+        return jsonify({"error": "character_id must be an integer or null"}), 400
+
+    conn = get_db()
+    cursor = conn.cursor()
+    ensure_campaign_players_active_character_id_column(cursor)
+    conn.commit()
+
+    if not is_campaign_storyteller_or_staff(cursor, actor_id, campaign_id):
+        cursor.close()
+        conn.close()
+        return jsonify({"error": "Storyteller or staff only"}), 403
+
+    cursor.execute(
+        """
+        SELECT 1 FROM campaign_players WHERE campaign_id = %s AND user_id = %s
+        """,
+        (campaign_id, target_user_id),
+    )
+    if not cursor.fetchone():
+        cursor.close()
+        conn.close()
+        return jsonify({"error": "User is not a member of this campaign"}), 404
+
+    if character_id is not None:
+        cursor.execute(
+            """
+            SELECT id FROM characters
+            WHERE id = %s AND user_id = %s AND campaign_id = %s
+            """,
+            (character_id, target_user_id, campaign_id),
+        )
+        if not cursor.fetchone():
+            cursor.close()
+            conn.close()
+            return jsonify({"error": "Character not in this campaign for this user"}), 404
+
+    cursor.execute(
+        """
+        UPDATE campaign_players SET active_character_id = %s
+        WHERE campaign_id = %s AND user_id = %s
+        """,
+        (character_id, campaign_id, target_user_id),
+    )
+    conn.commit()
+    cursor.close()
+    conn.close()
+    return jsonify(
+        {
+            "message": "Playing character set",
+            "campaign_id": campaign_id,
+            "user_id": target_user_id,
+            "character_id": character_id,
+        }
+    ), 200
+
+
+@campaigns_bp.route("/<int:campaign_id>/members", methods=["POST"])
+@jwt_required()
+def post_campaign_add_member(campaign_id):
+    """Storyteller or site staff adds a user to campaign_players (invite substitute)."""
+    try:
+        actor_id = int(get_jwt_identity())
+    except (TypeError, ValueError):
+        return jsonify({"error": "Invalid session"}), 422
+
+    data = request.get_json()
+    if not data or "user_id" not in data:
+        return jsonify({"error": "user_id is required"}), 400
+    try:
+        new_member_id = int(data["user_id"])
+    except (TypeError, ValueError):
+        return jsonify({"error": "user_id must be an integer"}), 400
+
+    conn = get_db()
+    cursor = conn.cursor()
+    ensure_campaigns_listing_columns(cursor)
+    ensure_campaign_players_active_character_id_column(cursor)
+    conn.commit()
+
+    if not is_campaign_storyteller_or_staff(cursor, actor_id, campaign_id):
+        cursor.close()
+        conn.close()
+        return jsonify({"error": "Storyteller or staff only"}), 403
+
+    cursor.execute("SELECT id FROM users WHERE id = %s", (new_member_id,))
+    if not cursor.fetchone():
+        cursor.close()
+        conn.close()
+        return jsonify({"error": "User not found"}), 404
+
+    now = datetime.utcnow()
+    if os.getenv("DATABASE_TYPE", "sqlite").lower() == "postgresql":
+        cursor.execute(
+            """
+            INSERT INTO campaign_players (campaign_id, user_id, joined_at, role)
+            VALUES (%s, %s, %s, 'player')
+            ON CONFLICT (campaign_id, user_id) DO NOTHING
+            """,
+            (campaign_id, new_member_id, now),
+        )
+    else:
+        cursor.execute(
+            """
+            INSERT OR IGNORE INTO campaign_players (campaign_id, user_id, joined_at, role)
+            VALUES (%s, %s, %s, 'player')
+            """,
+            (campaign_id, new_member_id, now),
+        )
+    conn.commit()
+    cursor.close()
+    conn.close()
+    return jsonify(
+        {"message": "Member added", "campaign_id": campaign_id, "user_id": new_member_id}
+    ), 200

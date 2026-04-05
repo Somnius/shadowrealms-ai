@@ -1549,10 +1549,18 @@ def get_character_context(user_id: int, campaign_id: int) -> dict:
     """Get character context for AI responses"""
     try:
         import json
+        from services.playing_character import effective_playing_character_id
+
         db = get_db()
         cursor = db.cursor()
-        
-        # Get character for this user in this campaign
+
+        eid = effective_playing_character_id(cursor, user_id, campaign_id)
+        if eid is None:
+            return {
+                'has_character': False,
+                'formatted': 'No character found for this campaign.'
+            }
+
         cursor.execute("""
             SELECT 
                 c.id,
@@ -1563,9 +1571,8 @@ def get_character_context(user_id: int, campaign_id: int) -> dict:
                 cam.game_system
             FROM characters c
             JOIN campaigns cam ON c.campaign_id = cam.id
-            WHERE c.user_id = %s AND c.campaign_id = %s
-            LIMIT 1
-        """, (user_id, campaign_id))
+            WHERE c.id = %s AND c.user_id = %s AND c.campaign_id = %s
+        """, (eid, user_id, campaign_id))
         
         character = cursor.fetchone()
         if not character:

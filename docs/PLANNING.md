@@ -1,7 +1,7 @@
 # Planning & Phase Documentation
 
-**Last Updated**: 2026-04-03  
-**Version**: 0.7.17
+**Last Updated**: 2026-04-05  
+**Version**: 0.7.18
 
 This document consolidates planning documentation and phase summaries.
 
@@ -11,7 +11,7 @@ This document consolidates planning documentation and phase summaries.
 
 1. [Overview](#overview)
 2. [Phase model (refreshed)](#phase-model-refreshed)
-3. [Delivered through v0.7.17](#delivered-through-v0717)
+3. [Delivered through v0.7.18](#delivered-through-v0718)
 4. [Next priorities](#next-priorities)
 5. [Phase 3B specification (north star)](#phase-3b-specification-north-star)
 
@@ -21,7 +21,7 @@ This document consolidates planning documentation and phase summaries.
 
 **Phase 2** (RAG, ChromaDB, books) and **Phase 3A** (auth, React shell, campaigns, themes) are **complete**. **Phase 3B** is the ongoing “tabletop platform” track.
 
-Older text in this file claimed locations were **hardcoded** and APIs **missing**. That is **obsolete**: the app now uses **PostgreSQL**, **REST routes** for locations, characters, messages, dice, and AI, and a **polling-based** chat UI. The long sections below are a **north-star** spec; trust the [Delivered](#delivered-through-v0717) section and [CHANGELOG](CHANGELOG.md) for what actually ships.
+Older text in this file claimed locations were **hardcoded** and APIs **missing**. That is **obsolete**: the app now uses **PostgreSQL**, **REST routes** for locations, characters, messages, dice, and AI, and a **polling-based** chat UI. The long sections below are a **north-star** spec; trust the [Delivered](#delivered-through-v0718) section and [CHANGELOG](CHANGELOG.md) for what actually ships.
 
 ---
 
@@ -39,8 +39,9 @@ Chat uses **HTTP polling** today; there is **no** WebSocket server in the reposi
 
 ---
 
-## Delivered through v0.7.17
+## Delivered through v0.7.18
 
+- **v0.7.18 (admin & data integrity)**: Admin **All chronicles** tab; site-admin access to any campaign for chat/messages/dice/read-state; preserve-chat user deletion reassigns `locations.created_by`; admin character list hardening (see `docs/CHANGELOG.md` `[0.7.18]`).
 - **v0.7.17 (docs)**: Version-stamp alignment across the repo; release notes emphasize **next milestone** readiness for **users**, **players**, and **characters** before deeper Phase **3B** features (see `docs/CHANGELOG.md` `[0.7.17]`).
 - **Stack**: Docker Compose; PostgreSQL; backend `backend/routes/*` for campaigns, locations, characters, messages, dice, AI, admin.
 - **Locations**: `locations.py` — list/create/update/delete, AI suggest/batch, enter/leave; OOC behavior documented in `AI_SYSTEMS.md`.
@@ -78,7 +79,7 @@ The sections below (from the next heading onward) are the **original Phase 3B de
 ## 🚀 Phase 3B: Advanced Campaign & Character Systems
 
 **Status:** 🚧 IN PROGRESS — **core loop shipped** (locations, characters, chat, dice, AI); **WebSockets & advanced UX** not yet  
-**Version:** 0.7.17  
+**Version:** 0.7.18  
 **Start Date:** 2025-10-24
 
 ### Overview
@@ -502,13 +503,16 @@ GET    /api/locations/:id/messages?since=:ts - Get messages since timestamp
 WS     /ws/locations/:id                     - WebSocket connection
 ```
 
-#### Admin
+#### Admin (representative; see OpenAPI / routes for full set)
 ```
-POST   /api/admin/characters/:id/move        - Move character to location
-POST   /api/admin/characters/:id/status      - Set character status
-POST   /api/admin/notifications/broadcast    - Send global notification
-GET    /api/admin/activity                   - View player activity
-GET    /api/admin/campaigns/:id/stats        - Campaign statistics
+GET    /api/admin/users                        - List users
+GET    /api/admin/users/:id/characters         - List user’s characters (schema-safe)
+GET    /api/admin/users/:id/debug              - Debug bundle (admin only)
+POST   /api/admin/users/:id/delete-account     - Delete account, preserve location IC chat (reassigns rows; transfers locations/campaigns ownership)
+GET    /api/admin/campaigns                    - List all campaigns (picker + “All chronicles” UI; includes creator fields)
+POST   /api/admin/users/:id/campaigns/:cid/membership - Add/remove roster row
+GET    /api/admin/activity                   - (if enabled) player activity
+GET    /api/campaigns/:id/stats              - Campaign statistics (member / creator / site admin per route)
 ```
 
 ---
@@ -547,7 +551,7 @@ GET    /api/admin/campaigns/:id/stats        - Campaign statistics
 
 ### 📅 Rolling roadmap (replaces fixed “Week N” schedule)
 
-**Done (v0.7.17):** Security baseline, PostgreSQL, locations, characters, messages, dice, AI chat + slash commands, OOC moderation, timestamps, docker-up workflow.
+**Done (v0.7.18):** Security baseline, PostgreSQL, locations, characters, messages, dice, AI chat + slash commands, OOC moderation, timestamps, docker-up workflow; admin **All chronicles** list; site-admin chronicle access for support; preserve-chat delete transfers `locations.created_by`.
 
 **Next (typical order):**
 1. **WebSockets** (or SSE) for chat + presence hooks
@@ -619,5 +623,5 @@ Key user requirements:
 
 **Last Updated:** 2026-04-03  
 **Next milestone:** Real-time messaging layer (WebSockets or SSE); keep **users / players / characters** data accurate for upcoming location and sheet-depth work; see [Next priorities](#next-priorities).  
-**Version:** 0.7.17
+**Version:** 0.7.18
 

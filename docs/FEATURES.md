@@ -1,7 +1,7 @@
 # Feature Documentation
 
-**Last Updated**: 2026-03-28  
-**Version**: 0.7.17+
+**Last Updated**: 2026-04-05  
+**Version**: 0.7.18+
 
 This document consolidates all feature-specific documentation for ShadowRealms AI.
 
@@ -12,8 +12,9 @@ This document consolidates all feature-specific documentation for ShadowRealms A
 1. [Overview](#overview)
 2. [Dice theatre and hidden rolls (v0.7.14)](#dice-theatre-and-hidden-rolls-v0714)
 3. [Admin user management, play suspension, discover/join](#admin-user-management-play-suspension-discoverjoin)
-4. [Gothic Horror Theme](#gothic-horror-theme)
-5. [Invite Code System](#invite-code-system)
+4. [Chronicle detach, join restrictions, per-campaign playing character](#chronicle-detach-join-restrictions-per-campaign-playing-character)
+5. [Gothic Horror Theme](#gothic-horror-theme)
+6. [Invite Code System](#invite-code-system)
 
 ---
 
@@ -25,8 +26,23 @@ This document consolidates all feature-specific documentation for ShadowRealms A
 - **Suspend character play**: Staff can set a hold with reason templates and a player-visible message; the player cannot activate that PC or open its chronicle until cleared.
 - **Admin debug profile**: JSON aggregate of user, memberships, characters, downtime, and moderation slices.
 - **Campaign membership override**: Admins can add or remove `campaign_players` rows by user and campaign ID.
+- **All chronicles (v0.7.18+)**: Admin tab lists every campaign (`GET /api/admin/campaigns`) with creator metadata; **Open in app** enters the main chronicle UI. Site **`admin`** may open any chronicle for support (messages, dice, read-state)—not granted to helpers or players by default.
+- **Preserve-chat account delete**: Removes a user while keeping location IC history; related rows reassigned per `docs/CHANGELOG.md` `[0.7.18]`.
 - **Listed chronicles**: Storytellers mark a game **listed** and **accepting players**; others see it under “Open chronicles” and can self-join (subject to `max_players`).
 - **Single locked sheet rule**: By default a player may only commit one locked character across chronicles; admins can grant `allow_multi_campaign_play` per account.
+
+---
+
+## Chronicle detach, join restrictions, per-campaign playing character
+
+**Status:** Shipped  
+**Scope:** Campaign API, `users` / `campaign_players` columns, dashboard campaign details, player profile
+
+**Full reference:** [CAMPAIGN_MEMBERSHIP_AND_PLAYING_CHARACTER.md](CAMPAIGN_MEMBERSHIP_AND_PLAYING_CHARACTER.md)
+
+- **Leave chronicle (`POST .../detach`)** — Removes `campaign_players` membership; does not delete characters. Sets `restrict_self_join_new_chronicles` on that user so **self-join to a new chronicle** requires storyteller/staff add or an existing sheet for **rejoin** to the same campaign.
+- **Per-campaign playing character** — `campaign_players.active_character_id`; IC messages use `effective_playing_character_id()` (not only global `users.active_character_id`). Switching to another PC **in the same chronicle** requires storyteller or admin/helper approval.
+- **Storyteller tools** — Chronicle creator, site admin, or helper can `POST .../members` to add a user; `PUT .../players/<id>/playing-character` to set or clear the live PC.
 
 ---
 

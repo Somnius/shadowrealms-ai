@@ -15,6 +15,8 @@ from database import (
     ensure_users_player_profile_columns,
     ensure_character_portrait_url_column,
     ensure_characters_play_suspension_columns,
+    ensure_users_restrict_self_join_new_chronicles_column,
+    ensure_campaign_players_active_character_id_column,
 )
 from services.play_suspension import suspended_json
 from services.gpu_monitor import gpu_monitor_service
@@ -60,12 +62,15 @@ def get_current_user_me():
         ensure_users_player_profile_columns(cursor)
         ensure_character_portrait_url_column(cursor)
         ensure_characters_play_suspension_columns(cursor)
+        ensure_users_restrict_self_join_new_chronicles_column(cursor)
+        ensure_campaign_players_active_character_id_column(cursor)
         db.commit()
 
         cursor.execute(
             """
             SELECT id, username, email, role, created_at, last_login, is_active,
-                   display_timezone, player_avatar_url, active_character_id
+                   display_timezone, player_avatar_url, active_character_id,
+                   restrict_self_join_new_chronicles
             FROM users WHERE id = %s
             """,
             (user_id,),
@@ -135,6 +140,9 @@ def get_current_user_me():
                 "player_avatar_url": user.get("player_avatar_url"),
                 "active_character_id": active_character_id,
                 "active_character": active_character,
+                "restrict_self_join_new_chronicles": bool(
+                    user.get("restrict_self_join_new_chronicles") or False
+                ),
                 "statistics": {
                     "campaigns_created": campaign_count,
                     "characters_owned": character_count,
@@ -178,6 +186,7 @@ def put_current_user_me():
         cursor = db.cursor()
         ensure_users_player_profile_columns(cursor)
         ensure_characters_play_suspension_columns(cursor)
+        ensure_campaign_players_active_character_id_column(cursor)
         db.commit()
 
         updates = []
@@ -216,7 +225,7 @@ def put_current_user_me():
                     return jsonify({"error": "active_character_id must be an integer"}), 400
                 cursor.execute(
                     """
-                    SELECT id, play_suspended, play_suspension_reason_code,
+                    SELECT id, campaign_id, play_suspended, play_suspension_reason_code,
                            play_suspension_message
                     FROM characters WHERE id = %s AND user_id = %s
                     """,
@@ -237,6 +246,33 @@ def put_current_user_me():
                         ),
                         403,
                     )
+                ch_cid = crow.get("campaign_id")
+                if ch_cid is not None:
+                    cursor.execute(
+                        """
+                        SELECT active_character_id FROM campaign_players
+                        WHERE campaign_id = %s AND user_id = %s
+                        """,
+                        (ch_cid, user_id),
+                    )
+                    cp_row = cursor.fetchone()
+                    cp_ac = cp_row.get("active_character_id") if cp_row else None
+                    if cp_ac is not None and int(cp_ac) != int(ac_int):
+                        cursor.close()
+                        db.close()
+                        return (
+                            jsonify(
+                                {
+                                    "error": (
+                                        "Switching to another character in that chronicle "
+                                        "requires storyteller approval (use chronicle settings "
+                                        "or ask your ST)."
+                                    ),
+                                    "error_code": "playing_character_switch_requires_storyteller",
+                                }
+                            ),
+                            403,
+                        )
                 updates.append("active_character_id = %s")
                 params.append(ac_int)
 
@@ -248,6 +284,28 @@ def put_current_user_me():
             f"UPDATE users SET {', '.join(updates)} WHERE id = %s",
             params,
         )
+        if "active_character_id" in data and data.get("active_character_id") not in (
+            None,
+            "",
+        ):
+            try:
+                sync_ac = int(data["active_character_id"])
+            except (TypeError, ValueError):
+                sync_ac = None
+            else:
+                cursor.execute(
+                    "SELECT campaign_id FROM characters WHERE id = %s AND user_id = %s",
+                    (sync_ac, user_id),
+                )
+                srow = cursor.fetchone()
+                if srow and srow.get("campaign_id") is not None:
+                    cursor.execute(
+                        """
+                        UPDATE campaign_players SET active_character_id = %s
+                        WHERE campaign_id = %s AND user_id = %s
+                        """,
+                        (sync_ac, srow["campaign_id"], user_id),
+                    )
         db.commit()
     except Exception as e:
         logger.error(f"PUT /users/me error: {e}")

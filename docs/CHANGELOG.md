@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.18] - 2026-04-05 - Admin chronicles, campaign access, and account-delete data fixes 🛡️
+
+### Added
+- **Admin panel — All chronicles**: Tab lists every campaign via `GET /api/admin/campaigns` (includes `created_by`, `creator_username`). **Open in app** enters the main chronicle UI for location and chat work (`frontend/src/pages/AdminPage.js`, `frontend/src/SimpleApp.js`).
+- **Schema helper**: `ensure_characters_is_npc_column` for `characters.is_npc` (PostgreSQL / SQLite) used by admin character tooling (`backend/database.py`).
+
+### Changed
+- **Site admin chronicle access**: Users with role `admin` may load any campaign with `GET /api/campaigns/<id>` (not only creator or `campaign_players`). Messages (`get_messages`, `save_message`) and location read-state honor the same scope; site admins may use read-state for any **active character in that chronicle**. Manual dice: admins may access any active campaign; `character_id` must belong to the chronicle (`backend/routes/campaigns.py`, `backend/routes/messages.py`, `backend/routes/dice.py`).
+- **Preserve-chats account deletion**: Before removing a user, `locations.created_by` is reassigned to the acting admin (alongside existing campaign ownership transfer), avoiding PostgreSQL `locations_created_by_fkey` violations. Client-facing delete errors use short admin-safe text; full detail remains in logs (`backend/services/user_account_delete.py`).
+- **Admin user characters API**: Ensures portrait / WoD / `is_npc` / suspension columns before listing; SQLite uses `?` placeholders where applicable (`backend/routes/admin.py`). Admin UI shows API errors instead of a silent empty list (`frontend/src/pages/AdminPage.js`).
+
+### Security / operations
+- Normal players are unchanged: extended campaign and message access applies only to **site admin** JWTs or existing admin-only routes. Do not share admin accounts; use strong credentials (see `docs/POSTGRESQL_ENV_SETUP.md`).
+
 ## [0.7.17] - 2026-04-03 - Documentation alignment and Phase 3B readiness 📚
 
 ### Changed
@@ -99,7 +113,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Campaign settings UI wiring**: "Active Players / Characters / Locations / Messages" tiles now display live counts (instead of hardcoded zeros).
 
 ### Changed
-- **LM Studio default model selection**: `.env` now points to `LM_STUDIO_MODEL=qwen3-8b` (matches LM Studio `/v1/models` id).
+- **LM Studio default model selection**: `.env` now points to `LM_STUDIO_MODEL=gemma-4-e2b-it` (matches LM Studio `/v1/models` id).
 - **Documentation**: clarified local access points and Postgres schema initialization requirements after cloning:
   - Recommended entry: `http://localhost` (Nginx proxy) vs `http://localhost:3000` (dev server, no API proxy)
   - Added table verification via `\dt` and troubleshooting for missing init SQL.

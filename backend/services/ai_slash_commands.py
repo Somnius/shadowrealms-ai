@@ -228,11 +228,21 @@ def execute_health_command(user_id: int) -> Dict[str, Any]:
 def execute_model_command(user_id: int) -> Dict[str, Any]:
     """Active routing snapshot + env-configured model ids."""
     from services.llm_service import get_llm_service
+    from services.ai_runtime_settings import get_app_setting
+    from services.lm_studio_model import get_effective_lm_studio_model_id
 
     lm_model = os.environ.get("LM_STUDIO_MODEL", "")
     ollama_model = os.environ.get("OLLAMA_MODEL", "")
     lm_url = os.environ.get("LM_STUDIO_URL", "http://localhost:1234")
     ollama_url = os.environ.get("OLLAMA_URL", "http://localhost:11434")
+    lm_cfg = {
+        "LM_STUDIO_URL": lm_url,
+        "LM_STUDIO_API_KEY": os.environ.get("LM_STUDIO_API_KEY", ""),
+        "LM_STUDIO_MODEL": os.environ.get("LM_STUDIO_MODEL", "") or "",
+        "LM_STUDIO_TIMEOUT": int(os.environ.get("LM_STUDIO_TIMEOUT", "120") or 120),
+    }
+    effective_lm = get_effective_lm_studio_model_id(lm_cfg)
+    admin_model = (get_app_setting("lm_studio_model") or "").strip()
 
     llm = get_llm_service()
     status = llm.get_system_status()
@@ -242,6 +252,11 @@ def execute_model_command(user_id: int) -> Dict[str, Any]:
     lines = [
         "**`/ai model`** — configured models & provider snapshot\n",
         f"- **Env LM_STUDIO_MODEL:** `{lm_model or '—'}` @ `{lm_url}`",
+        f"- **Effective LM Studio model (requests):** `{effective_lm}`",
+    ]
+    if admin_model:
+        lines.append(f"- **Admin panel override:** `{admin_model}` (empty override = use env + auto-loaded)")
+    lines += [
         f"- **Env OLLAMA_MODEL:** `{ollama_model or '—'}` @ `{ollama_url}`",
         f"- **First available provider (legacy list):** `{primary}`",
         f"- **Router loaded models:** {', '.join(router.get('loaded_models', [])) or '—'}",

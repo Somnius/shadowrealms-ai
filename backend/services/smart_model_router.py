@@ -8,6 +8,12 @@ import os
 import json
 import logging
 import requests
+
+from services.lm_studio_model import (
+    LM_STUDIO_ROUTE_KEY,
+    get_effective_lm_studio_model_id,
+    resolve_lm_studio_model_id,
+)
 import time
 from typing import Dict, Any, Optional, List
 from enum import Enum
@@ -37,13 +43,16 @@ class SmartModelRouter:
     def __init__(self, config: Dict[str, Any]):
         self.config = config
         
-        # Model configurations with VRAM requirements - Simplified to 2 models
-        # Get LM Studio model name from config
-        lm_studio_model = config.get('LM_STUDIO_MODEL', 'mythomax-l2-13b')
-        
+        # LM Studio uses a stable route key; OpenAI "model" id is resolved per request
+        # (admin override + loaded model — see get_effective_lm_studio_model_id).
+        resolve_lm_studio_model_id(
+            config.get('LM_STUDIO_URL', 'http://localhost:1234'),
+            config.get('LM_STUDIO_MODEL'),
+            config.get('LM_STUDIO_API_KEY'),
+        )
+
         self.model_configs = {
-            # Primary model (always available)
-            lm_studio_model: {
+            LM_STUDIO_ROUTE_KEY: {
                 'provider': ModelProvider.LM_STUDIO,
                 'base_url': config.get('LM_STUDIO_URL', 'http://localhost:1234'),
                 'specialties': [TaskType.ROLEPLAY, TaskType.CHARACTER_CREATION, TaskType.STORYTELLING, TaskType.WORLD_BUILDING, TaskType.GENERAL],
@@ -68,14 +77,14 @@ class SmartModelRouter:
         
         # Task routing priorities (simplified to 2 models)
         self.task_routing = {
-            TaskType.ROLEPLAY: [lm_studio_model, 'llama3.2:3b'],
-            TaskType.WORLD_BUILDING: [lm_studio_model, 'llama3.2:3b'],
-            TaskType.STORYTELLING: [lm_studio_model, 'llama3.2:3b'],
-            TaskType.CREATIVE: [lm_studio_model, 'llama3.2:3b'],
-            TaskType.DICE_ROLLING: ['llama3.2:3b', lm_studio_model],
-            TaskType.COMBAT: ['llama3.2:3b', lm_studio_model],
-            TaskType.CHARACTER_CREATION: [lm_studio_model, 'llama3.2:3b'],
-            TaskType.GENERAL: [lm_studio_model, 'llama3.2:3b']
+            TaskType.ROLEPLAY: [LM_STUDIO_ROUTE_KEY, 'llama3.2:3b'],
+            TaskType.WORLD_BUILDING: [LM_STUDIO_ROUTE_KEY, 'llama3.2:3b'],
+            TaskType.STORYTELLING: [LM_STUDIO_ROUTE_KEY, 'llama3.2:3b'],
+            TaskType.CREATIVE: [LM_STUDIO_ROUTE_KEY, 'llama3.2:3b'],
+            TaskType.DICE_ROLLING: ['llama3.2:3b', LM_STUDIO_ROUTE_KEY],
+            TaskType.COMBAT: ['llama3.2:3b', LM_STUDIO_ROUTE_KEY],
+            TaskType.CHARACTER_CREATION: [LM_STUDIO_ROUTE_KEY, 'llama3.2:3b'],
+            TaskType.GENERAL: [LM_STUDIO_ROUTE_KEY, 'llama3.2:3b']
         }
         
         # Model state tracking
@@ -240,10 +249,14 @@ class SmartModelRouter:
             
             # Update last used time
             self.model_last_used[model_name] = time.time()
-            
+            display_model = (
+                get_effective_lm_studio_model_id(self.config)
+                if model_name == LM_STUDIO_ROUTE_KEY
+                else model_name
+            )
             return {
                 'response': response,
-                'model_used': model_name,
+                'model_used': display_model,
                 'task_type': task_type.value,
                 'provider': model_config['provider'].value,
                 'vram_usage': self.get_current_vram_usage(),
@@ -252,9 +265,14 @@ class SmartModelRouter:
             
         except Exception as e:
             logger.error(f"Error generating response with {model_name}: {e}")
+            err_model = (
+                get_effective_lm_studio_model_id(self.config)
+                if model_name == LM_STUDIO_ROUTE_KEY
+                else model_name
+            )
             return {
                 'response': f'Error generating response: {str(e)}',
-                'model_used': model_name,
+                'model_used': err_model,
                 'task_type': task_type.value,
                 'error': str(e)
             }
@@ -286,21 +304,24 @@ class SmartModelRouter:
             'content': prompt
         })
         
-        # Prepare payload
+        # Prepare payload (model id from admin + env + LM Studio loaded state)
         payload = {
-            'model': model_name,
+            'model': get_effective_lm_studio_model_id(self.config),
             'messages': messages,
             'max_tokens': config.get('max_tokens', model_config.get('max_tokens', 1024)),
             'temperature': config.get('temperature', model_config.get('temperature', 0.7)),
             'stream': False
         }
         
-        # Make request
+        hdrs = {'Content-Type': 'application/json'}
+        ak = (self.config.get('LM_STUDIO_API_KEY') or '').strip()
+        if ak:
+            hdrs['Authorization'] = f'Bearer {ak}'
         response = requests.post(
             f"{base_url}/v1/chat/completions",
             json=payload,
             timeout=config.get('timeout', 30),
-            headers={'Content-Type': 'application/json'}
+            headers=hdrs,
         )
         
         if response.status_code == 200:
@@ -361,16 +382,18 @@ class SmartModelRouter:
         for model_name, model_config in self.model_configs.items():
             is_available = model_name in available_models
             is_loaded = model_name in self.loaded_models
-            
-            status['models'][model_name] = {
+            entry = {
                 'available': is_available,
                 'loaded': is_loaded,
                 'provider': model_config['provider'].value,
                 'specialties': [t.value for t in model_config['specialties']],
                 'vram_usage': model_config['vram_usage'],
                 'priority': model_config['priority'],
-                'description': model_config['description']
+                'description': model_config['description'],
             }
+            if model_name == LM_STUDIO_ROUTE_KEY:
+                entry['effective_openai_model_id'] = get_effective_lm_studio_model_id(self.config)
+            status['models'][model_name] = entry
         
         return status
     
@@ -383,10 +406,8 @@ class SmartModelRouter:
             response = requests.get(f"{self.config.get('LM_STUDIO_URL', 'http://localhost:1234')}/v1/models", timeout=5)
             if response.status_code == 200:
                 models = response.json().get('data', [])
-                for model in models:
-                    model_id = model.get('id')
-                    if model_id in self.model_configs:
-                        available.append(model_id)
+                if models:
+                    available.append(LM_STUDIO_ROUTE_KEY)
         except Exception as e:
             logger.warning(f"Error checking LM Studio models: {e}")
         

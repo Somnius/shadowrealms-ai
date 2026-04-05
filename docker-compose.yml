@@ -39,8 +39,9 @@ services:
       # LLM Service Configuration
       - LM_STUDIO_URL=http://localhost:1234
       - LM_STUDIO_API_KEY=${LM_STUDIO_API_KEY:-}
-      - LM_STUDIO_MODEL=${LM_STUDIO_MODEL:-mythomakise-merged-13b}
-      - LM_STUDIO_TIMEOUT=${LM_STUDIO_TIMEOUT:-30}
+      # auto / empty = prefer loaded LLM via GET /api/v1/models, else GET /v1/models (see lm_studio_model.py)
+      - LM_STUDIO_MODEL=${LM_STUDIO_MODEL:-auto}
+      - LM_STUDIO_TIMEOUT=${LM_STUDIO_TIMEOUT:-120}
       - OLLAMA_URL=http://localhost:11434
       - OLLAMA_MODEL=${OLLAMA_MODEL:-command-r:35b}
       - OLLAMA_TIMEOUT=${OLLAMA_TIMEOUT:-30}

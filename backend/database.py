@@ -262,6 +262,27 @@ def ensure_characters_wod_sheet_columns(cursor):
             )
 
 
+def ensure_characters_is_npc_column(cursor):
+    """Player vs NPC flag (admin tooling)."""
+    db_type = os.getenv("DATABASE_TYPE", "sqlite").lower()
+    if db_type == "postgresql":
+        cursor.execute(
+            "ALTER TABLE characters ADD COLUMN IF NOT EXISTS is_npc BOOLEAN NOT NULL DEFAULT FALSE"
+        )
+    else:
+        cursor.execute(
+            "SELECT name FROM sqlite_master WHERE type='table' AND name='characters'"
+        )
+        if not cursor.fetchone():
+            return
+        cursor.execute("PRAGMA table_info(characters)")
+        cols = [row["name"] for row in cursor.fetchall()]
+        if "is_npc" not in cols:
+            cursor.execute(
+                "ALTER TABLE characters ADD COLUMN is_npc INTEGER NOT NULL DEFAULT 0"
+            )
+
+
 def ensure_characters_play_suspension_columns(cursor):
     """Admin can suspend a PC (downtime / need info); players see reason when blocked."""
     db_type = os.getenv("DATABASE_TYPE", "sqlite").lower()
@@ -332,6 +353,81 @@ def ensure_users_allow_multi_campaign_play_column(cursor):
             cursor.execute(
                 "ALTER TABLE users ADD COLUMN allow_multi_campaign_play INTEGER NOT NULL DEFAULT 0"
             )
+
+
+def ensure_users_restrict_self_join_new_chronicles_column(cursor):
+    """After voluntary campaign detach, block self-join to new chronicles until ST/admin adds them."""
+    db_type = os.getenv("DATABASE_TYPE", "sqlite").lower()
+    if db_type == "postgresql":
+        cursor.execute(
+            "ALTER TABLE users ADD COLUMN IF NOT EXISTS restrict_self_join_new_chronicles "
+            "BOOLEAN NOT NULL DEFAULT FALSE"
+        )
+    else:
+        cursor.execute("PRAGMA table_info(users)")
+        cols = [row["name"] for row in cursor.fetchall()]
+        if "restrict_self_join_new_chronicles" not in cols:
+            cursor.execute(
+                "ALTER TABLE users ADD COLUMN restrict_self_join_new_chronicles "
+                "INTEGER NOT NULL DEFAULT 0"
+            )
+
+
+def ensure_campaign_players_active_character_id_column(cursor):
+    """Per-membership: which PC is live for this chronicle (ST approval to switch)."""
+    db_type = os.getenv("DATABASE_TYPE", "sqlite").lower()
+    if db_type == "postgresql":
+        cursor.execute(
+            """
+            ALTER TABLE campaign_players
+            ADD COLUMN IF NOT EXISTS active_character_id INTEGER
+            REFERENCES characters(id) ON DELETE SET NULL
+            """
+        )
+    else:
+        cursor.execute(
+            "SELECT name FROM sqlite_master WHERE type='table' AND name='campaign_players'"
+        )
+        if not cursor.fetchone():
+            return
+        cursor.execute("PRAGMA table_info(campaign_players)")
+        cols = [row["name"] for row in cursor.fetchall()]
+        if "active_character_id" not in cols:
+            cursor.execute(
+                "ALTER TABLE campaign_players ADD COLUMN active_character_id INTEGER"
+            )
+
+
+def backfill_campaign_players_active_character(cursor):
+    """One-time align membership active PC with users.active_character_id when campaign matches."""
+    db_type = os.getenv("DATABASE_TYPE", "sqlite").lower()
+    if db_type == "postgresql":
+        cursor.execute(
+            """
+            UPDATE campaign_players AS cp
+            SET active_character_id = u.active_character_id
+            FROM users AS u
+            INNER JOIN characters AS ch ON ch.id = u.active_character_id
+            WHERE cp.user_id = u.id
+              AND cp.campaign_id = ch.campaign_id
+              AND cp.active_character_id IS NULL
+              AND (ch.is_active IS NULL OR ch.is_active IS TRUE)
+            """
+        )
+    else:
+        cursor.execute(
+            """
+            UPDATE campaign_players AS cp
+            SET active_character_id = u.active_character_id
+            FROM users AS u, characters AS ch
+            WHERE u.id = cp.user_id
+              AND ch.id = u.active_character_id
+              AND ch.user_id = u.id
+              AND ch.campaign_id = cp.campaign_id
+              AND cp.active_character_id IS NULL
+              AND (ch.is_active IS NULL OR ch.is_active = 1)
+            """
+        )
 
 
 def ensure_campaigns_listing_columns(cursor):
@@ -531,9 +627,15 @@ def migrate_db():
             ensure_characters_wod_sheet_columns(cursor)
             ensure_characters_play_suspension_columns(cursor)
             ensure_users_allow_multi_campaign_play_column(cursor)
+            ensure_users_restrict_self_join_new_chronicles_column(cursor)
+            ensure_campaign_players_active_character_id_column(cursor)
             ensure_campaigns_listing_columns(cursor)
             ensure_character_downtime_requests_table(cursor)
             ensure_dice_tables(cursor, 'postgresql')
+            backfill_campaign_players_active_character(cursor)
+            from services.ai_runtime_settings import ensure_app_settings_table
+
+            ensure_app_settings_table(cursor)
             conn.commit()
         except Exception as e:
             logger.error(f"PostgreSQL schema ensure failed: {e}")
@@ -883,12 +985,18 @@ def migrate_db():
         ensure_characters_wod_sheet_columns(cursor)
         ensure_characters_play_suspension_columns(cursor)
         ensure_users_allow_multi_campaign_play_column(cursor)
+        ensure_users_restrict_self_join_new_chronicles_column(cursor)
+        ensure_campaign_players_active_character_id_column(cursor)
         ensure_campaigns_listing_columns(cursor)
         ensure_character_downtime_requests_table(cursor)
         ensure_messages_ai_message_kind_column(cursor)
         ensure_locations_dice_leniency_floor_column(cursor)
         ensure_locations_player_access_columns(cursor)
         ensure_dice_tables(cursor, 'sqlite')
+        backfill_campaign_players_active_character(cursor)
+        from services.ai_runtime_settings import ensure_app_settings_table
+
+        ensure_app_settings_table(cursor)
         conn.commit()
         conn.close()
         logger.info("✅ Database migration completed")

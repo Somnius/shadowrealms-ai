@@ -17,8 +17,11 @@ This directory contains all test scripts for the ShadowRealms AI project.
 | `test_flask_config.py` | Flask configuration tests | `python3 tests/test_flask_config.py` |
 | `test_docker_env.py` | Docker environment tests | `python3 tests/test_docker_env.py` |
 | `test_security_and_features.py` | Auth boundaries, discover/join, `poster_role` on messages (PostgreSQL) | `python3 tests/test_security_and_features.py` or `./scripts/run_security_tests.sh` |
+| `test_campaign_membership.py` | Detach, join restriction, per-campaign playing character (PostgreSQL) | `python3 -m pytest tests/test_campaign_membership.py -v` (set `DATABASE_*` / `DATABASE_TYPE=postgresql`) |
 
 **Security testing guide:** [docs/SECURITY_AND_TESTING.md](../docs/SECURITY_AND_TESTING.md)
+
+**Chronicle membership behavior:** [docs/CAMPAIGN_MEMBERSHIP_AND_PLAYING_CHARACTER.md](../docs/CAMPAIGN_MEMBERSHIP_AND_PLAYING_CHARACTER.md)
 
 ### Shell Test Scripts
 

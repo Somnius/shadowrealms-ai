@@ -27,6 +27,17 @@ def _json_field(value, default):
 
 
 def _user_can_access_campaign(cursor, user_id: int, campaign_id: int) -> bool:
+    cursor.execute("SELECT role FROM users WHERE id = %s", (user_id,))
+    u = cursor.fetchone()
+    if u and u.get("role") == "admin":
+        cursor.execute(
+            """
+            SELECT 1 FROM campaigns c
+            WHERE c.id = %s AND c.is_active = TRUE
+            """,
+            (campaign_id,),
+        )
+        return cursor.fetchone() is not None
     cursor.execute(
         """
         SELECT 1 FROM campaigns c
@@ -45,6 +56,17 @@ def _user_can_access_campaign(cursor, user_id: int, campaign_id: int) -> bool:
 
 
 def _character_ok_for_user_campaign(cursor, character_id: int, user_id: int, campaign_id: int) -> bool:
+    cursor.execute("SELECT role FROM users WHERE id = %s", (user_id,))
+    u = cursor.fetchone()
+    if u and u.get("role") == "admin":
+        cursor.execute(
+            """
+            SELECT 1 FROM characters
+            WHERE id = %s AND campaign_id = %s
+            """,
+            (character_id, campaign_id),
+        )
+        return cursor.fetchone() is not None
     cursor.execute(
         """
         SELECT 1 FROM characters

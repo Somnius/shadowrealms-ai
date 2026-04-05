@@ -4,7 +4,7 @@
 **Duration:** ~25 minutes  
 **Status:** COMPLETE AND VERIFIED
 
-**Doc note (2026-03-28):** Current app release is **v0.7.17**. The health JSON below is the **archival** response captured on migration day (still shows `0.7.6`).
+**Doc note (2026-04-05):** Current app release is **v0.7.18**. The health JSON below is the **archival** response captured on migration day (still shows `0.7.6`).
 
 ---
 

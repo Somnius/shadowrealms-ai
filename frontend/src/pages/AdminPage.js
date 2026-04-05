@@ -5,7 +5,7 @@ import ConfirmDialog from '../components/ConfirmDialog';
 import { formatDateTimeInZone } from '../utils/userTimeFormat';
 import '../responsive.css';
 
-function AdminPage({ token, user, displayTimezone = null }) {
+function AdminPage({ token, user, displayTimezone = null, onAdminOpenCampaign = null }) {
   // Initialize toast notification system
   const { showSuccess, showError, ToastContainer } = useToast();
   const [users, setUsers] = useState([]);
@@ -15,6 +15,9 @@ function AdminPage({ token, user, displayTimezone = null }) {
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [showUnbanConfirm, setShowUnbanConfirm] = useState(false);
   const [userToUnban, setUserToUnban] = useState(null);
+  const [showDeleteAccountConfirm, setShowDeleteAccountConfirm] = useState(false);
+  const [userToDeleteAccount, setUserToDeleteAccount] = useState(null);
+  const [deleteAccountLoading, setDeleteAccountLoading] = useState(false);
   const [moderationLog, setModerationLog] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -24,7 +27,7 @@ function AdminPage({ token, user, displayTimezone = null }) {
   const [inviteDescription, setInviteDescription] = useState('');
   const [inviteCustomCode, setInviteCustomCode] = useState('');
   const [inviteLoading, setInviteLoading] = useState(false);
-  /** 'home' | 'invites' | 'users' | 'moderation' | 'downtime' */
+  /** 'home' | 'invites' | 'users' | 'chronicles' | 'moderation' | 'downtime' */
   const [adminSection, setAdminSection] = useState('home');
   const [downtimeRows, setDowntimeRows] = useState([]);
   const [downtimeStatusFilter, setDowntimeStatusFilter] = useState('pending');
@@ -32,6 +35,11 @@ function AdminPage({ token, user, displayTimezone = null }) {
   const [charsTargetUser, setCharsTargetUser] = useState(null);
   const [userCharsList, setUserCharsList] = useState([]);
   const [userCharsLoading, setUserCharsLoading] = useState(false);
+  const [userCharsError, setUserCharsError] = useState(null);
+  const [chroniclesList, setChroniclesList] = useState([]);
+  const [chroniclesLoading, setChroniclesLoading] = useState(false);
+  const [chroniclesError, setChroniclesError] = useState(null);
+  const [chroniclesOpeningId, setChroniclesOpeningId] = useState(null);
   const [showDebugModal, setShowDebugModal] = useState(false);
   const [debugTargetUser, setDebugTargetUser] = useState(null);
   const [debugPayload, setDebugPayload] = useState(null);
@@ -42,13 +50,28 @@ function AdminPage({ token, user, displayTimezone = null }) {
   const [membershipModalUser, setMembershipModalUser] = useState(null);
   const [membershipCampaignId, setMembershipCampaignId] = useState('');
   const [membershipAction, setMembershipAction] = useState('add');
+  const [adminCampaignsList, setAdminCampaignsList] = useState([]);
+  const [adminCampaignsLoading, setAdminCampaignsLoading] = useState(false);
+  const [adminCampaignsLoadError, setAdminCampaignsLoadError] = useState(null);
+  /** True when /api/admin/campaigns failed and we used GET /api/campaigns/ instead */
+  const [adminCampaignsFromFallback, setAdminCampaignsFromFallback] = useState(false);
+  const [membershipTargetChronicles, setMembershipTargetChronicles] = useState([]);
+  const [aiSettings, setAiSettings] = useState(null);
+  const [lmOpenaiModels, setLmOpenaiModels] = useState([]);
+  const [lmListError, setLmListError] = useState(null);
+  const [aiSectionLoading, setAiSectionLoading] = useState(false);
+  const [aiModelSelect, setAiModelSelect] = useState('');
+  const [masterPromptDraft, setMasterPromptDraft] = useState('');
+  const [aiSaveLoading, setAiSaveLoading] = useState(false);
 
   const adminNavSections = [
     { id: 'home', label: 'Overview' },
     { id: 'invites', label: 'Invite codes' },
+    { id: 'chronicles', label: 'All chronicles' },
     { id: 'users', label: 'User management' },
     { id: 'downtime', label: 'Downtime requests' },
     { id: 'moderation', label: 'Moderation log' },
+    { id: 'ai', label: 'AI & LM Studio' },
   ];
 
   // Fetch all users on mount
@@ -57,6 +80,44 @@ function AdminPage({ token, user, displayTimezone = null }) {
     fetchModerationLog();
     fetchInvites();
   }, []);
+
+  useEffect(() => {
+    if (adminSection !== 'chronicles' || !token) return undefined;
+    let cancelled = false;
+    setChroniclesLoading(true);
+    setChroniclesError(null);
+    (async () => {
+      try {
+        const r = await api.listAdminCampaigns(token);
+        const data = await r.json().catch(() => null);
+        if (cancelled) return;
+        if (r.ok && Array.isArray(data)) {
+          setChroniclesList(data);
+          setChroniclesError(null);
+        } else {
+          setChroniclesList([]);
+          const msg =
+            (data && data.error) ||
+            (r.status === 404
+              ? 'Admin campaigns API not found. Restart the backend.'
+              : 'Could not load chronicles');
+          setChroniclesError(msg);
+          showError(msg);
+        }
+      } catch (e) {
+        if (!cancelled) {
+          setChroniclesList([]);
+          setChroniclesError('Could not load chronicles');
+          showError('Could not load chronicles');
+        }
+      } finally {
+        if (!cancelled) setChroniclesLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [adminSection, token]);
 
   useEffect(() => {
     if (adminSection !== 'downtime') return undefined;
@@ -79,6 +140,128 @@ function AdminPage({ token, user, displayTimezone = null }) {
       cancelled = true;
     };
   }, [adminSection, downtimeStatusFilter, token]);
+
+  useEffect(() => {
+    if (!membershipModalUser || !token) {
+      setAdminCampaignsList([]);
+      setAdminCampaignsLoadError(null);
+      setAdminCampaignsFromFallback(false);
+      setMembershipTargetChronicles([]);
+      return undefined;
+    }
+    let cancelled = false;
+    setAdminCampaignsLoading(true);
+    setAdminCampaignsLoadError(null);
+    setAdminCampaignsFromFallback(false);
+    (async () => {
+      try {
+        const r = await api.listAdminCampaigns(token);
+        const data = await r.json().catch(() => null);
+        if (!cancelled && r.ok && Array.isArray(data)) {
+          setAdminCampaignsList(data);
+          setAdminCampaignsFromFallback(false);
+          return;
+        }
+        if (!cancelled) {
+          const r2 = await api.getCampaigns(token);
+          const data2 = await r2.json().catch(() => []);
+          if (r2.ok && Array.isArray(data2)) {
+            setAdminCampaignsList(
+              data2.map((c) => ({
+                id: c.id,
+                name: c.name,
+                game_system: c.game_system,
+                status: c.status,
+                created_at: c.created_at,
+              }))
+            );
+            setAdminCampaignsFromFallback(true);
+            setAdminCampaignsLoadError(null);
+          } else {
+            setAdminCampaignsList([]);
+            const msg =
+              (data && data.error) ||
+              (data2 && data2.error) ||
+              'Could not load campaigns (restart backend to enable /api/admin/campaigns)';
+            setAdminCampaignsLoadError(msg);
+            showError(msg);
+          }
+        }
+      } catch (e) {
+        if (!cancelled) {
+          setAdminCampaignsList([]);
+          setAdminCampaignsLoadError('Could not load campaigns');
+        }
+      } finally {
+        if (!cancelled) setAdminCampaignsLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [membershipModalUser, token]);
+
+  useEffect(() => {
+    if (!membershipModalUser || !token) {
+      setMembershipTargetChronicles([]);
+      return undefined;
+    }
+    let cancelled = false;
+    (async () => {
+      try {
+        const r = await api.getAdminUserCampaignMemberships(token, membershipModalUser.id);
+        const data = await r.json().catch(() => []);
+        if (!cancelled && r.ok && Array.isArray(data)) {
+          setMembershipTargetChronicles(data);
+        } else if (!cancelled) {
+          setMembershipTargetChronicles([]);
+        }
+      } catch (e) {
+        if (!cancelled) setMembershipTargetChronicles([]);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [membershipModalUser, token]);
+
+  const loadAiSection = async () => {
+    if (!token) return;
+    setAiSectionLoading(true);
+    setLmListError(null);
+    try {
+      const r = await api.getAiSettings(token);
+      const d = await r.json().catch(() => null);
+      if (r.ok && d) {
+        setAiSettings(d);
+        setAiModelSelect(d.lm_studio_model || '');
+        setMasterPromptDraft(d.ai_master_system_prompt || '');
+      } else {
+        setAiSettings(null);
+        showError((d && d.error) || 'Could not load AI settings');
+      }
+      const r2 = await api.listLmStudioModels(token);
+      const d2 = await r2.json().catch(() => null);
+      if (r2.ok && d2) {
+        setLmOpenaiModels(Array.isArray(d2.openai_models) ? d2.openai_models : []);
+        setLmListError(d2.error || null);
+      } else {
+        setLmOpenaiModels([]);
+        setLmListError((d2 && d2.error) || 'Could not list LM Studio models');
+      }
+    } catch (e) {
+      console.error(e);
+      showError('Failed to load AI / LM Studio settings');
+    } finally {
+      setAiSectionLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (adminSection !== 'ai') return undefined;
+    loadAiSection();
+    return undefined;
+  }, [adminSection, token]);
 
   const fetchUsers = async () => {
     try {
@@ -106,11 +289,24 @@ function AdminPage({ token, user, displayTimezone = null }) {
 
   const refreshUserCharsList = async (userId) => {
     setUserCharsLoading(true);
+    setUserCharsError(null);
     try {
       const r = await api.getUserCharacters(token, userId);
-      const data = await r.json().catch(() => []);
-      setUserCharsList(Array.isArray(data) ? data : []);
+      const data = await r.json().catch(() => null);
+      if (r.ok && Array.isArray(data)) {
+        setUserCharsList(data);
+        setUserCharsError(null);
+      } else {
+        setUserCharsList([]);
+        const msg =
+          (data && typeof data === 'object' && data.error) ||
+          `Could not load characters (${r.status})`;
+        setUserCharsError(msg);
+        showError(msg);
+      }
     } catch (e) {
+      setUserCharsList([]);
+      setUserCharsError('Failed to load characters');
       showError('Failed to load characters');
     } finally {
       setUserCharsLoading(false);
@@ -121,7 +317,28 @@ function AdminPage({ token, user, displayTimezone = null }) {
     setCharsTargetUser(u);
     setShowUserCharsModal(true);
     setUserCharsList([]);
+    setUserCharsError(null);
     await refreshUserCharsList(u.id);
+  };
+
+  const handleOpenChronicleFromAdmin = async (c) => {
+    if (!onAdminOpenCampaign || !c?.id) {
+      showError('Open-in-app is not available from this screen.');
+      return;
+    }
+    setChroniclesOpeningId(c.id);
+    try {
+      await onAdminOpenCampaign({
+        id: c.id,
+        name: c.name,
+        game_system: c.game_system,
+        status: c.status,
+      });
+    } catch (e) {
+      showError('Could not open chronicle');
+    } finally {
+      setChroniclesOpeningId(null);
+    }
   };
 
   const openUserDebug = async (u) => {
@@ -186,7 +403,7 @@ function AdminPage({ token, user, displayTimezone = null }) {
     if (!membershipModalUser) return;
     const cid = parseInt(membershipCampaignId, 10);
     if (!cid) {
-      showError('Enter a numeric campaign ID');
+      showError('Select a campaign');
       return;
     }
     try {
@@ -344,6 +561,40 @@ function AdminPage({ token, user, displayTimezone = null }) {
     setShowUnbanConfirm(true);
   };
 
+  const confirmDeleteAccount = async () => {
+    if (!userToDeleteAccount || !token || deleteAccountLoading) return;
+    if (userToDeleteAccount.id == null || userToDeleteAccount.id === '') {
+      showError('Invalid user id; refresh the user list and try again.');
+      return;
+    }
+    setDeleteAccountLoading(true);
+    try {
+      const uid = userToDeleteAccount.id;
+      const r = await api.deleteUserAccountPreserveChats(token, uid);
+      const d = await r.json().catch(() => ({}));
+      if (r.ok) {
+        showSuccess(d.message || 'Account removed; chat history preserved.');
+        setShowDeleteAccountConfirm(false);
+        setUserToDeleteAccount(null);
+        fetchUsers();
+        fetchModerationLog();
+      } else {
+        const msg = d.error || 'Delete failed';
+        if (r.status === 404 && msg === 'Not found') {
+          showError(
+            'Delete API not found (404). Restart the backend so it loads the latest routes, then try again.',
+          );
+        } else {
+          showError(msg);
+        }
+      }
+    } catch (e) {
+      showError('Delete failed');
+    } finally {
+      setDeleteAccountLoading(false);
+    }
+  };
+
   const confirmUnban = async () => {
     if (!userToUnban) return;
     
@@ -426,8 +677,10 @@ function AdminPage({ token, user, displayTimezone = null }) {
             </p>
             <ul style={{ textAlign: 'left', display: 'inline-block', margin: '0 auto', paddingLeft: '1.25rem', maxWidth: '520px' }}>
               <li style={{ marginBottom: '10px' }}><strong style={{ color: '#e0e0e0' }}>Invite codes</strong> — create and copy registration codes; track uses and optional notes.</li>
+              <li style={{ marginBottom: '10px' }}><strong style={{ color: '#e0e0e0' }}>All chronicles</strong> — every campaign in the database; open one in the main app to visit locations and chat (site admins only).</li>
               <li style={{ marginBottom: '10px' }}><strong style={{ color: '#e0e0e0' }}>User management</strong> — edit accounts, reset passwords, ban or unban users.</li>
-              <li><strong style={{ color: '#e0e0e0' }}>Moderation log</strong> — recent admin actions for audit and follow-up.</li>
+              <li style={{ marginBottom: '10px' }}><strong style={{ color: '#e0e0e0' }}>Moderation log</strong> — recent admin actions for audit and follow-up.</li>
+              <li><strong style={{ color: '#e0e0e0' }}>AI &amp; LM Studio</strong> — pick the local model id, optional global master system prompt.</li>
             </ul>
           </div>
         )}
@@ -556,6 +809,89 @@ function AdminPage({ token, user, displayTimezone = null }) {
                       <td style={{ padding: '10px', color: '#8b8b9f', maxWidth: '280px' }}>{inv.description || '—'}</td>
                       <td style={{ padding: '10px', color: '#8b8b9f', fontSize: '12px' }}>
                         {inv.created_at ? formatDateTimeInZone(inv.created_at, displayTimezone) : '—'}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
+        </div>
+        )}
+
+        {adminSection === 'chronicles' && (
+        <div style={{ marginBottom: '40px' }}>
+          <h2 style={{ color: '#e94560', marginBottom: '12px' }}>All chronicles</h2>
+          <p style={{ color: '#b5b5c3', marginBottom: '20px', lineHeight: 1.65, maxWidth: '720px' }}>
+            Every campaign in the system (same data as <code style={{ color: '#9d4edd', fontSize: '12px' }}>GET /api/admin/campaigns</code>).
+            Use <strong style={{ color: '#e0e0e0' }}>Open in app</strong> to jump into the main chronicle view, locations, and chat.
+            Only users with the site admin role can open this panel.
+          </p>
+          <div style={{
+            background: '#16213e',
+            borderRadius: '10px',
+            padding: '20px',
+            border: '1px solid #2a2a4e',
+            overflowX: 'auto',
+          }}
+          >
+            {chroniclesLoading ? (
+              <p style={{ color: '#8b8b9f' }}>Loading chronicles…</p>
+            ) : chroniclesError ? (
+              <p style={{ color: '#f87171' }}>{chroniclesError}</p>
+            ) : chroniclesList.length === 0 ? (
+              <p style={{ color: '#8b8b9f' }}>No campaigns in the database.</p>
+            ) : (
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+                <thead>
+                  <tr style={{ borderBottom: '2px solid #2a2a4e' }}>
+                    <th style={{ padding: '10px', textAlign: 'left', color: '#e94560' }}>ID</th>
+                    <th style={{ padding: '10px', textAlign: 'left', color: '#e94560' }}>Name</th>
+                    <th style={{ padding: '10px', textAlign: 'left', color: '#e94560' }}>System</th>
+                    <th style={{ padding: '10px', textAlign: 'left', color: '#e94560' }}>Status</th>
+                    <th style={{ padding: '10px', textAlign: 'left', color: '#e94560' }}>Created by</th>
+                    <th style={{ padding: '10px', textAlign: 'left', color: '#e94560' }} />
+                  </tr>
+                </thead>
+                <tbody>
+                  {chroniclesList.map((c) => (
+                    <tr key={c.id} style={{ borderBottom: '1px solid #2a2a4e' }}>
+                      <td style={{ padding: '10px', color: '#b5b5c3' }}>{c.id}</td>
+                      <td style={{ padding: '10px', color: '#fff', fontWeight: 600 }}>
+                        {c.name || `Campaign ${c.id}`}
+                      </td>
+                      <td style={{ padding: '10px', color: '#b5b5c3' }}>{c.game_system || '—'}</td>
+                      <td style={{ padding: '10px', color: '#b5b5c3' }}>{c.status || '—'}</td>
+                      <td style={{ padding: '10px', color: '#b5b5c3' }}>
+                        {c.creator_username || '—'}
+                        {c.created_by != null ? (
+                          <span style={{ color: '#64748b' }}>{' '}(user #{c.created_by})</span>
+                        ) : null}
+                      </td>
+                      <td style={{ padding: '10px' }}>
+                        <button
+                          type="button"
+                          disabled={!onAdminOpenCampaign || chroniclesOpeningId === c.id}
+                          onClick={() => handleOpenChronicleFromAdmin(c)}
+                          style={{
+                            padding: '8px 14px',
+                            background:
+                              !onAdminOpenCampaign || chroniclesOpeningId === c.id
+                                ? '#3d3d52'
+                                : '#667eea',
+                            color: '#fff',
+                            border: 'none',
+                            borderRadius: '6px',
+                            cursor:
+                              !onAdminOpenCampaign || chroniclesOpeningId === c.id
+                                ? 'not-allowed'
+                                : 'pointer',
+                            fontWeight: 'bold',
+                            fontSize: '12px',
+                          }}
+                        >
+                          {chroniclesOpeningId === c.id ? 'Opening…' : 'Open in app'}
+                        </button>
                       </td>
                     </tr>
                   ))}
@@ -734,38 +1070,63 @@ function AdminPage({ token, user, displayTimezone = null }) {
                           }}>
                             (You)
                           </span>
-                        ) : u.is_banned ? (
-                          <button
-                            onClick={() => handleUnbanUser(u.id)}
-                            style={{
-                              padding: '6px 12px',
-                              background: '#28a745',
-                              color: 'white',
-                              border: 'none',
-                              borderRadius: '4px',
-                              cursor: 'pointer',
-                              fontSize: '12px',
-                              fontWeight: '600'
-                            }}
-                          >
-                            ✅ Unban
-                          </button>
                         ) : (
-                          <button
-                            onClick={() => { setSelectedUser(u); setShowBanModal(true); }}
-                            style={{
-                              padding: '6px 12px',
-                              background: '#dc3545',
-                              color: 'white',
-                              border: 'none',
-                              borderRadius: '4px',
-                              cursor: 'pointer',
-                              fontSize: '12px',
-                              fontWeight: '600'
-                            }}
-                          >
-                            🚫 Ban
-                          </button>
+                          <>
+                            {u.username !== 'ic_history_archive' && (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setUserToDeleteAccount(u);
+                                  setShowDeleteAccountConfirm(true);
+                                }}
+                                style={{
+                                  padding: '6px 12px',
+                                  background: '#7f1d1d',
+                                  color: 'white',
+                                  border: '1px solid #991b1b',
+                                  borderRadius: '4px',
+                                  cursor: 'pointer',
+                                  fontSize: '12px',
+                                  fontWeight: '600',
+                                }}
+                              >
+                                🗑️ Delete
+                              </button>
+                            )}
+                            {u.is_banned ? (
+                              <button
+                                onClick={() => handleUnbanUser(u.id)}
+                                style={{
+                                  padding: '6px 12px',
+                                  background: '#28a745',
+                                  color: 'white',
+                                  border: 'none',
+                                  borderRadius: '4px',
+                                  cursor: 'pointer',
+                                  fontSize: '12px',
+                                  fontWeight: '600',
+                                }}
+                              >
+                                ✅ Unban
+                              </button>
+                            ) : (
+                              <button
+                                onClick={() => { setSelectedUser(u); setShowBanModal(true); }}
+                                style={{
+                                  padding: '6px 12px',
+                                  background: '#dc3545',
+                                  color: 'white',
+                                  border: 'none',
+                                  borderRadius: '4px',
+                                  cursor: 'pointer',
+                                  fontSize: '12px',
+                                  fontWeight: '600',
+                                }}
+                              >
+                                🚫 Ban
+                              </button>
+                            )}
+                          </>
                         )}
                       </div>
                     </td>
@@ -954,6 +1315,148 @@ function AdminPage({ token, user, displayTimezone = null }) {
               </div>
             )}
           </div>
+        </div>
+        )}
+
+        {adminSection === 'ai' && (
+        <div style={{ maxWidth: '900px', margin: '0 auto' }}>
+          <h2 style={{ color: '#e94560', marginBottom: '12px' }}>AI &amp; LM Studio</h2>
+          <p style={{ color: '#b5b5c3', marginBottom: '20px', lineHeight: 1.65 }}>
+            Choose which model id the backend sends to LM Studio&apos;s OpenAI-compatible API, or leave default to follow{' '}
+            <code style={{ color: '#9d4edd' }}>LM_STUDIO_MODEL</code> in the environment and the model LM Studio reports as loaded.
+            The master system prompt is prepended to every route-specific system prompt for chat / AI features.
+          </p>
+          {aiSectionLoading ? (
+            <p style={{ color: '#8b8b9f' }}>Loading…</p>
+          ) : (
+            <div style={{
+              background: '#16213e',
+              borderRadius: '10px',
+              padding: '24px',
+              border: '1px solid #2a2a4e',
+              display: 'grid',
+              gap: '20px',
+            }}>
+              {aiSettings && (
+                <div style={{ color: '#94a3b8', fontSize: '14px', lineHeight: 1.6 }}>
+                  <div><strong style={{ color: '#e0e0e0' }}>LM Studio URL:</strong> {aiSettings.lm_studio_url || '—'}</div>
+                  <div><strong style={{ color: '#e0e0e0' }}>Env LM_STUDIO_MODEL:</strong> {aiSettings.env_lm_studio_model || '(empty / auto)'}</div>
+                  <div><strong style={{ color: '#e0e0e0' }}>Effective model id (in use):</strong>{' '}
+                    <code style={{ color: '#7dd3fc' }}>{aiSettings.effective_lm_studio_model || '—'}</code>
+                  </div>
+                </div>
+              )}
+              {lmListError && (
+                <div style={{ color: '#ffb74d', fontSize: '14px' }}>
+                  {lmListError} — Is LM Studio running and reachable from the backend host?
+                </div>
+              )}
+              <div>
+                <label style={{ display: 'block', color: '#b5b5c3', marginBottom: '8px', fontWeight: 600 }}>
+                  Chat model (OpenAI id from LM Studio)
+                </label>
+                <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', alignItems: 'center' }}>
+                  <select
+                    value={aiModelSelect}
+                    onChange={(e) => setAiModelSelect(e.target.value)}
+                    style={{
+                      flex: '1 1 280px',
+                      minWidth: '220px',
+                      padding: '10px',
+                      borderRadius: '6px',
+                      background: '#0f1729',
+                      color: '#e0e0e0',
+                      border: '2px solid #2a2a4e',
+                    }}
+                  >
+                    <option value="">Default — use env + loaded model resolution</option>
+                    {lmOpenaiModels.map((m) => (
+                      <option key={m.id || JSON.stringify(m)} value={m.id}>
+                        {m.id}
+                      </option>
+                    ))}
+                  </select>
+                  <button
+                    type="button"
+                    onClick={() => loadAiSection()}
+                    style={{
+                      padding: '10px 16px',
+                      borderRadius: '6px',
+                      border: '1px solid #2a2a4e',
+                      background: '#0f1729',
+                      color: '#e0e0e0',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    Refresh list
+                  </button>
+                </div>
+                <p style={{ color: '#8b8b9f', fontSize: '13px', marginTop: '8px', marginBottom: 0 }}>
+                  Pick a model from the list (from GET /v1/models), or default to match whatever you load in LM Studio without pinning an id here.
+                </p>
+              </div>
+              <div>
+                <label style={{ display: 'block', color: '#b5b5c3', marginBottom: '8px', fontWeight: 600 }}>
+                  Master system prompt (global)
+                </label>
+                <textarea
+                  value={masterPromptDraft}
+                  onChange={(e) => setMasterPromptDraft(e.target.value)}
+                  rows={12}
+                  placeholder="Optional. Applied before each feature-specific system prompt (e.g. chat, locations, moderation). Describe your assistant’s tone, safety, and setting."
+                  style={{
+                    width: '100%',
+                    boxSizing: 'border-box',
+                    padding: '12px',
+                    borderRadius: '8px',
+                    background: '#0f1729',
+                    color: '#e8e8e8',
+                    border: '2px solid #2a2a4e',
+                    fontFamily: 'ui-monospace, monospace',
+                    fontSize: '13px',
+                    lineHeight: 1.5,
+                  }}
+                />
+              </div>
+              <div>
+                <button
+                  type="button"
+                  disabled={aiSaveLoading}
+                  onClick={async () => {
+                    setAiSaveLoading(true);
+                    try {
+                      const r = await api.putAiSettings(token, {
+                        lm_studio_model: aiModelSelect.trim(),
+                        ai_master_system_prompt: masterPromptDraft,
+                      });
+                      const d = await r.json().catch(() => ({}));
+                      if (r.ok) {
+                        showSuccess('AI settings saved.');
+                        await loadAiSection();
+                      } else {
+                        showError(d.error || 'Save failed');
+                      }
+                    } catch (e) {
+                      showError('Save failed');
+                    } finally {
+                      setAiSaveLoading(false);
+                    }
+                  }}
+                  style={{
+                    padding: '12px 24px',
+                    background: aiSaveLoading ? '#4a4a5e' : 'linear-gradient(135deg, #e94560 0%, #8b0000 100%)',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '8px',
+                    cursor: aiSaveLoading ? 'not-allowed' : 'pointer',
+                    fontWeight: 'bold',
+                  }}
+                >
+                  {aiSaveLoading ? 'Saving…' : 'Save AI settings'}
+                </button>
+              </div>
+            </div>
+          )}
         </div>
         )}
       </div>
@@ -1311,6 +1814,8 @@ function AdminPage({ token, user, displayTimezone = null }) {
             </h3>
             {userCharsLoading ? (
               <p style={{ color: '#b5b5c3' }}>Loading…</p>
+            ) : userCharsError ? (
+              <p style={{ color: '#f87171' }}>{userCharsError}</p>
             ) : userCharsList.length === 0 ? (
               <p style={{ color: '#b5b5c3' }}>No characters</p>
             ) : (
@@ -1506,17 +2011,69 @@ function AdminPage({ token, user, displayTimezone = null }) {
             <h3 style={{ color: '#e94560', marginBottom: '16px' }}>
               Campaign membership — {membershipModalUser.username}
             </h3>
+            <div style={{ marginBottom: '16px', fontSize: '13px', color: '#94a3b8' }}>
+              <strong style={{ color: '#c4b5fd' }}>This user&apos;s chronicles</strong>
+              {membershipTargetChronicles.length === 0 ? (
+                <p style={{ margin: '8px 0 0', color: '#64748b' }}>
+                  {adminCampaignsLoading ? 'Loading…' : 'None listed (no roster row and not sole creator of an orphan campaign).'}
+                </p>
+              ) : (
+                <ul style={{ margin: '8px 0 0', paddingLeft: '18px', color: '#d1d5db' }}>
+                  {membershipTargetChronicles.map((c) => (
+                    <li key={`${c.id}-${c.via || 'm'}`}>
+                      <strong style={{ color: '#e8e8ef' }}>{c.name || `Campaign ${c.id}`}</strong>
+                      {' · '}
+                      {c.game_system || '—'} · {c.member_role || 'member'}
+                      {c.via === 'created_by_only' ? (
+                        <span style={{ color: '#fbbf24' }}> (creator only — use Add below to write roster row)</span>
+                      ) : null}
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
             <form onSubmit={submitMembershipOverride}>
-              <label style={{ display: 'block', color: '#b5b5c3', marginBottom: '6px' }}>Campaign ID</label>
-              <input
-                type="number"
-                value={membershipCampaignId}
-                onChange={(e) => setMembershipCampaignId(e.target.value)}
-                style={{
-                  width: '100%', padding: '10px', marginBottom: '12px', boxSizing: 'border-box',
-                  background: '#0f1729', border: '2px solid #2a2a4e', borderRadius: '5px', color: '#fff',
-                }}
-              />
+              <label style={{ display: 'block', color: '#b5b5c3', marginBottom: '6px' }}>
+                Campaign
+              </label>
+              {adminCampaignsLoading ? (
+                <p style={{ color: '#8b8b9f', marginBottom: '12px' }}>Loading campaigns…</p>
+              ) : adminCampaignsLoadError ? (
+                <p style={{ color: '#f87171', marginBottom: '12px' }}>{adminCampaignsLoadError}</p>
+              ) : adminCampaignsList.length === 0 ? (
+                <p style={{ color: '#8b8b9f', marginBottom: '12px' }}>
+                  No campaigns in the database yet. Create a campaign first.
+                </p>
+              ) : (
+                <select
+                  value={membershipCampaignId}
+                  onChange={(e) => setMembershipCampaignId(e.target.value)}
+                  required
+                  style={{
+                    width: '100%',
+                    padding: '10px',
+                    marginBottom: '12px',
+                    boxSizing: 'border-box',
+                    background: '#0f1729',
+                    border: '2px solid #2a2a4e',
+                    borderRadius: '5px',
+                    color: '#fff',
+                  }}
+                >
+                  <option value="">— Select campaign —</option>
+                  {adminCampaignsList.map((c) => (
+                    <option key={c.id} value={String(c.id)}>
+                      {c.name || `Campaign ${c.id}`} · {c.game_system || '—'} (id {c.id})
+                    </option>
+                  ))}
+                </select>
+              )}
+              {adminCampaignsFromFallback && adminCampaignsList.length > 0 ? (
+                <p style={{ fontSize: '12px', color: '#fbbf24', marginBottom: '10px', lineHeight: 1.4 }}>
+                  Full admin list unavailable (old backend?). Showing <strong>your</strong> chronicles only.
+                  Restart the backend so <code style={{ fontSize: '11px' }}>GET /api/admin/campaigns</code> loads.
+                </p>
+              ) : null}
               <label style={{ display: 'block', color: '#b5b5c3', marginBottom: '6px' }}>Action</label>
               <select
                 value={membershipAction}
@@ -1530,16 +2087,44 @@ function AdminPage({ token, user, displayTimezone = null }) {
                 <option value="remove">Remove from campaign_players</option>
               </select>
               <div style={{ display: 'flex', gap: '10px' }}>
-                <button type="submit" style={{
-                  flex: 1, padding: '12px', background: '#28a745', color: '#fff',
-                  border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold',
-                }}
+                <button
+                  type="submit"
+                  disabled={
+                    adminCampaignsLoading ||
+                    !!adminCampaignsLoadError ||
+                    adminCampaignsList.length === 0
+                  }
+                  style={{
+                    flex: 1,
+                    padding: '12px',
+                    background:
+                      adminCampaignsLoading ||
+                      adminCampaignsLoadError ||
+                      adminCampaignsList.length === 0
+                        ? '#3d5a40'
+                        : '#28a745',
+                    color: '#fff',
+                    border: 'none',
+                    borderRadius: '8px',
+                    cursor:
+                      adminCampaignsLoading ||
+                      adminCampaignsLoadError ||
+                      adminCampaignsList.length === 0
+                        ? 'not-allowed'
+                        : 'pointer',
+                    fontWeight: 'bold',
+                  }}
                 >
                   Apply
                 </button>
                 <button
                   type="button"
-                  onClick={() => setMembershipModalUser(null)}
+                  onClick={() => {
+                    setMembershipModalUser(null);
+                    setMembershipCampaignId('');
+                    setMembershipTargetChronicles([]);
+                    setAdminCampaignsFromFallback(false);
+                  }}
                   style={{
                     flex: 1, padding: '12px', background: '#dc3545', color: '#fff',
                     border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold',
@@ -1582,6 +2167,26 @@ function AdminPage({ token, user, displayTimezone = null }) {
           setUserToUnban(null);
         }}
         confirmText="Yes, Unban"
+        cancelText="Cancel"
+      />
+
+      <ConfirmDialog
+        isOpen={showDeleteAccountConfirm}
+        title="⚠️ Delete account permanently?"
+        message={
+          userToDeleteAccount
+            ? `Delete "${userToDeleteAccount.username}" and ALL of their characters?\n\n` +
+              'Location in-character chat lines will stay in the chronicle, but will show as posted by the system archive account (message text is unchanged). ' +
+              'Dice rolls they made may also be reassigned to that archive account. ' +
+              'If they created any campaigns, ownership will be transferred to you.'
+            : ''
+        }
+        onConfirm={confirmDeleteAccount}
+        onCancel={() => {
+          setShowDeleteAccountConfirm(false);
+          setUserToDeleteAccount(null);
+        }}
+        confirmText={deleteAccountLoading ? 'Working…' : 'Yes, delete account'}
         cancelText="Cancel"
       />
 

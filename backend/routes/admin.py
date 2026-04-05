@@ -17,8 +17,13 @@ from datetime import datetime, timedelta
 from database import (
     get_db,
     ensure_character_downtime_requests_table,
+    ensure_characters_is_active_column,
+    ensure_characters_is_npc_column,
     ensure_characters_play_suspension_columns,
+    ensure_characters_wod_sheet_columns,
+    ensure_character_portrait_url_column,
     ensure_users_allow_multi_campaign_play_column,
+    ensure_users_restrict_self_join_new_chronicles_column,
     ensure_campaigns_listing_columns,
 )
 from routes.auth import load_invites, save_invites
@@ -27,6 +32,10 @@ from services.play_suspension import ALLOWED_REASON_CODES
 logger = logging.getLogger(__name__)
 
 bp = Blueprint('admin', __name__, url_prefix='/api/admin')
+
+
+def _sql_ph() -> str:
+    return "%s" if os.getenv("DATABASE_TYPE", "sqlite").lower() == "postgresql" else "?"
 
 def require_admin():
     """Decorator to ensure user is admin"""
@@ -162,6 +171,12 @@ def update_user(user_id):
             db.commit()
             updates.append("allow_multi_campaign_play = %s")
             params.append(bool(data['allow_multi_campaign_play']))
+
+        if 'restrict_self_join_new_chronicles' in data:
+            ensure_users_restrict_self_join_new_chronicles_column(cursor)
+            db.commit()
+            updates.append("restrict_self_join_new_chronicles = %s")
+            params.append(bool(data['restrict_self_join_new_chronicles']))
         
         if not updates:
             return jsonify({'error': 'No valid fields to update'}), 400
@@ -309,19 +324,24 @@ def unban_user(user_id):
 def get_user_characters(user_id):
     """Get all characters for a user"""
     try:
+        ph = _sql_ph()
         db = get_db()
         cursor = db.cursor()
+        ensure_character_portrait_url_column(cursor)
+        ensure_characters_is_active_column(cursor)
+        ensure_characters_wod_sheet_columns(cursor)
+        ensure_characters_is_npc_column(cursor)
         ensure_characters_play_suspension_columns(cursor)
         db.commit()
 
-        cursor.execute("""
+        cursor.execute(f"""
             SELECT id, name, system_type, campaign_id, is_npc, is_active, created_at,
                    sheet_locked,
                    play_suspended,
                    play_suspension_reason_code, play_suspension_message,
                    play_suspended_at, play_suspended_by
             FROM characters
-            WHERE user_id = %s
+            WHERE user_id = {ph}
             ORDER BY created_at DESC
         """, (user_id,))
         
@@ -689,12 +709,14 @@ def admin_patch_character_play_status(character_id):
         db = get_db()
         cursor = db.cursor()
         ensure_characters_play_suspension_columns(cursor)
+        ensure_characters_is_npc_column(cursor)
         db.commit()
 
+        ph = _sql_ph()
         cursor.execute(
-            """
+            f"""
             SELECT id, user_id, name, campaign_id, is_npc
-            FROM characters WHERE id = %s
+            FROM characters WHERE id = {ph}
             """,
             (character_id,),
         )
@@ -938,6 +960,123 @@ def admin_get_user_debug(user_id):
         return jsonify({'error': 'Failed to load debug profile'}), 500
 
 
+def _row_get(row, key, default=None):
+    """sqlite3.Row has no .get; RealDictCursor rows do."""
+    try:
+        val = row[key]
+        return val if val is not None else default
+    except (KeyError, TypeError, IndexError):
+        return default
+
+
+@bp.route('/campaigns', methods=['GET'])
+@require_admin()
+def list_all_campaigns():
+    """List every campaign for admin UI pickers (e.g. membership override)."""
+    try:
+        db = get_db()
+        cursor = db.cursor()
+        ensure_campaigns_listing_columns(cursor)
+        db.commit()
+        cursor.execute(
+            """
+            SELECT c.id, c.name, c.game_system, c.status, c.created_at, c.created_by,
+                   u.username AS creator_username
+            FROM campaigns c
+            LEFT JOIN users u ON u.id = c.created_by
+            ORDER BY LOWER(COALESCE(c.name, ''))
+            """
+        )
+        rows = cursor.fetchall() or []
+        out = []
+        for row in rows:
+            out.append({
+                'id': row['id'],
+                'name': _row_get(row, 'name', ''),
+                'game_system': _row_get(row, 'game_system', '') or '',
+                'status': _row_get(row, 'status', 'active') or 'active',
+                'created_at': _row_get(row, 'created_at'),
+                'created_by': _row_get(row, 'created_by'),
+                'creator_username': _row_get(row, 'creator_username', '') or '',
+            })
+        cursor.close()
+        db.close()
+        return jsonify(out), 200
+    except Exception as e:
+        logger.error(f"list_all_campaigns: {e}")
+        return jsonify({'error': 'Failed to list campaigns'}), 500
+
+
+@bp.route('/users/<int:user_id>/campaign-memberships', methods=['GET'])
+@require_admin()
+def admin_user_campaign_memberships_list(user_id):
+    """Chronicles this user is tied to: roster + created-but-missing-from-roster (legacy)."""
+    try:
+        db = get_db()
+        cursor = db.cursor()
+        ensure_campaigns_listing_columns(cursor)
+        db.commit()
+        cursor.execute("SELECT id FROM users WHERE id = %s", (user_id,))
+        if not cursor.fetchone():
+            cursor.close()
+            db.close()
+            return jsonify({'error': 'User not found'}), 404
+
+        cursor.execute(
+            """
+            SELECT c.id, c.name, c.game_system, cp.role AS member_role
+            FROM campaign_players cp
+            INNER JOIN campaigns c ON c.id = cp.campaign_id
+            WHERE cp.user_id = %s
+            ORDER BY LOWER(COALESCE(c.name, ''))
+            """,
+            (user_id,),
+        )
+        seen = set()
+        out = []
+        for row in cursor.fetchall() or []:
+            cid = row['id']
+            seen.add(cid)
+            out.append({
+                'id': cid,
+                'name': _row_get(row, 'name', ''),
+                'game_system': _row_get(row, 'game_system', '') or '',
+                'member_role': _row_get(row, 'member_role', 'player') or 'player',
+                'via': 'campaign_players',
+            })
+
+        cursor.execute(
+            """
+            SELECT c.id, c.name, c.game_system
+            FROM campaigns c
+            WHERE c.created_by = %s
+              AND c.id NOT IN (
+                  SELECT campaign_id FROM campaign_players WHERE user_id = %s
+              )
+            ORDER BY LOWER(COALESCE(c.name, ''))
+            """,
+            (user_id, user_id),
+        )
+        for row in cursor.fetchall() or []:
+            cid = row['id']
+            if cid in seen:
+                continue
+            out.append({
+                'id': cid,
+                'name': _row_get(row, 'name', ''),
+                'game_system': _row_get(row, 'game_system', '') or '',
+                'member_role': 'owner',
+                'via': 'created_by_only',
+            })
+
+        cursor.close()
+        db.close()
+        return jsonify(out), 200
+    except Exception as e:
+        logger.error(f"admin_user_campaign_memberships_list: {e}")
+        return jsonify({'error': 'Failed to load memberships'}), 500
+
+
 @bp.route('/users/<int:user_id>/campaigns/<int:campaign_id>/membership', methods=['POST'])
 @require_admin()
 def admin_user_campaign_membership(user_id, campaign_id):
@@ -1005,4 +1144,118 @@ def admin_user_campaign_membership(user_id, campaign_id):
     except Exception as e:
         logger.error(f"admin_user_campaign_membership: {e}")
         return jsonify({'error': 'Failed to update membership'}), 500
+
+
+def _runtime_llm_config():
+    return {
+        'LM_STUDIO_URL': os.environ.get('LM_STUDIO_URL', 'http://localhost:1234'),
+        'LM_STUDIO_API_KEY': os.environ.get('LM_STUDIO_API_KEY', ''),
+        'LM_STUDIO_MODEL': os.environ.get('LM_STUDIO_MODEL', '') or '',
+        'LM_STUDIO_TIMEOUT': int(os.environ.get('LM_STUDIO_TIMEOUT', '120') or 120),
+    }
+
+
+@bp.route('/ai-settings', methods=['GET', 'PUT'])
+@require_admin()
+def ai_settings():
+    """Admin: LM Studio model override + global master system prompt."""
+    from services.ai_runtime_settings import get_app_setting, set_app_setting
+    from services.lm_studio_model import get_effective_lm_studio_model_id, invalidate_lm_studio_model_cache
+
+    cfg = _runtime_llm_config()
+    if request.method == 'GET':
+        return jsonify({
+            'lm_studio_model': get_app_setting('lm_studio_model') or '',
+            'ai_master_system_prompt': get_app_setting('ai_master_system_prompt') or '',
+            'effective_lm_studio_model': get_effective_lm_studio_model_id(cfg),
+            'env_lm_studio_model': cfg['LM_STUDIO_MODEL'],
+            'lm_studio_url': cfg['LM_STUDIO_URL'],
+        }), 200
+
+    data = request.get_json(silent=True) or {}
+    out = {}
+    if 'lm_studio_model' in data:
+        v = data['lm_studio_model']
+        if v is None or str(v).strip() == '':
+            set_app_setting('lm_studio_model', None)
+            out['lm_studio_model'] = ''
+        else:
+            s = str(v).strip()
+            set_app_setting('lm_studio_model', s)
+            out['lm_studio_model'] = s
+        invalidate_lm_studio_model_cache()
+    if 'ai_master_system_prompt' in data:
+        v = data['ai_master_system_prompt']
+        if v is None:
+            set_app_setting('ai_master_system_prompt', None)
+        else:
+            set_app_setting('ai_master_system_prompt', str(v))
+        out['ai_master_system_prompt'] = get_app_setting('ai_master_system_prompt') or ''
+
+    out['effective_lm_studio_model'] = get_effective_lm_studio_model_id(_runtime_llm_config())
+    out['ok'] = True
+    return jsonify(out), 200
+
+
+@bp.route('/lm-studio/models', methods=['GET'])
+@require_admin()
+def list_lm_studio_models_admin():
+    """List models from LM Studio OpenAI + native APIs (admin only)."""
+    import requests as req
+
+    base = (os.environ.get('LM_STUDIO_URL') or 'http://localhost:1234').rstrip('/')
+    ak = (os.environ.get('LM_STUDIO_API_KEY') or '').strip()
+    hdrs = {'Content-Type': 'application/json'}
+    if ak:
+        hdrs['Authorization'] = f'Bearer {ak}'
+    openai_data = []
+    native_data = []
+    err = None
+    try:
+        r = req.get(f'{base}/v1/models', timeout=15, headers=hdrs)
+        if r.status_code == 200:
+            openai_data = r.json().get('data') or []
+        else:
+            err = f'GET /v1/models: {r.status_code}'
+    except Exception as e:
+        err = str(e)
+    try:
+        r2 = req.get(f'{base}/api/v1/models', timeout=15, headers=hdrs)
+        if r2.status_code == 200:
+            native_data = r2.json().get('models') or []
+    except Exception:
+        pass
+    return jsonify({
+        'lm_studio_url': base,
+        'openai_models': openai_data,
+        'native_models': native_data,
+        'error': err,
+    }), 200
+
+
+@bp.route('/users/<int:user_id>/delete-account', methods=['POST'])
+@require_admin()
+def delete_user_account_preserve_chats(user_id):
+    """Remove a player account and all their characters; keep location chat rows (reassign to archive user)."""
+    from services.user_account_delete import delete_player_account_preserving_chats
+
+    try:
+        admin_id = int(get_jwt_identity())
+    except (TypeError, ValueError):
+        return jsonify({'error': 'Invalid admin session'}), 401
+
+    db = get_db()
+    try:
+        ok, err, stats = delete_player_account_preserving_chats(db, user_id, admin_id)
+        if not ok:
+            return jsonify({'error': err or 'Delete failed'}), 400
+        return jsonify({
+            'message': 'User and characters removed. Location chat history is preserved under the archive account.',
+            'stats': stats,
+        }), 200
+    except Exception as e:
+        logger.error(f"delete_user_account_preserve_chats: {e}")
+        return jsonify({'error': 'Server error during account deletion'}), 500
+    finally:
+        db.close()
 

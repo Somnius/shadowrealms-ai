@@ -4,6 +4,7 @@ ShadowRealms AI - Deep Verification System
 Comprehensive testing with database inspection, performance monitoring, and error analysis
 """
 
+import os
 import requests
 import json
 import time
@@ -19,6 +20,7 @@ import logging
 BASE_URL = "http://localhost:5000"
 API_BASE = f"{BASE_URL}/api"
 CHROMADB_URL = "http://localhost:8000"
+LM_STUDIO_BASE = os.environ.get("LM_STUDIO_URL", "http://localhost:1234").rstrip("/")
 
 # Setup logging
 logging.basicConfig(
@@ -322,7 +324,7 @@ class DeepVerificationTester:
             chromadb_ok = chromadb_response.status_code == 200
             
             # Test Backend ↔ LLM Services
-            lm_response = requests.get("http://localhost:1234/v1/models", timeout=5)
+            lm_response = requests.get(f"{LM_STUDIO_BASE}/v1/models", timeout=5)
             lm_ok = lm_response.status_code == 200
             
             ollama_response = requests.get("http://localhost:11434/api/tags", timeout=5)

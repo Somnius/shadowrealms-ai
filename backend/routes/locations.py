@@ -16,8 +16,10 @@ from services.location_access import (
     user_can_bypass_closed_location,
 )
 from services.location_naming_context import build_enriched_suggestion_prompt
+from services.location_suggestion_parse import parse_location_suggestions
 from services.health_check import require_llm
 import logging
+import os
 from datetime import datetime
 
 logger = logging.getLogger(__name__)
@@ -76,39 +78,35 @@ def suggest_locations(campaign_id):
         }
         
         llm_config = {
-            'max_tokens': 1000,
-            'temperature': 0.9,  # Higher temp for more creativity
-            'top_p': 0.95
+            'max_tokens': 5500,
+            'temperature': 0.9,
+            'top_p': 0.95,
+            'timeout': min(int(os.environ.get('LM_STUDIO_TIMEOUT', '120') or 120), 300),
         }
         
         response = llm_service.generate_response(prompt, llm_context, llm_config)
-        
-        # Parse AI response
-        try:
-            # Try to extract JSON from response
-            import re
-            import json
-            
-            logger.info(f"AI Response: {response[:200]}...")  # Log first 200 chars
-            
-            json_match = re.search(r'\[[\s\S]*\]', response)
-            if json_match:
-                suggestions = json.loads(json_match.group())
-                logger.info(f"✅ Successfully parsed {len(suggestions)} AI-generated location suggestions")
-            else:
-                logger.warning(f"⚠️ No JSON array found in AI response, using fallbacks")
-                raise ValueError("No JSON array in response")
-                
-        except Exception as e:
-            logger.error(f"❌ Failed to parse AI suggestions: {e}. Response was: {response[:500]}")
-            # Return error to frontend so it knows AI failed
+
+        logger.info("AI location response (first 240 chars): %s...", (response or "")[:240])
+
+        suggestions = parse_location_suggestions(response or "")
+        if not suggestions:
+            logger.warning("Location parse failed once; retrying generation once")
+            response = llm_service.generate_response(prompt, llm_context, llm_config)
+            logger.info("AI location retry (first 240 chars): %s...", (response or "")[:240])
+            suggestions = parse_location_suggestions(response or "")
+
+        if not suggestions:
+            logger.error(
+                "Failed to parse location JSON after retry. Raw tail (500 chars): %s",
+                (response or "")[-500:],
+            )
             return jsonify({
-                'error': 'AI service failed to generate suggestions',
+                'error': 'AI service failed to parse location suggestions',
                 'suggestions': [],
-                'debug_info': str(e)
+                'hint': 'Model output was not valid JSON. Try again; if it persists, check LM Studio has an LLM loaded.',
             }), 500
-        
-        logger.info(f"AI suggested {len(suggestions)} locations for campaign {campaign_id}")
+
+        logger.info("Successfully parsed %s AI-generated location suggestions", len(suggestions))
         
         return jsonify({
             'suggestions': suggestions,

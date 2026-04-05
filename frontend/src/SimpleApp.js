@@ -248,6 +248,9 @@ function SimpleApp() {
   const [diceHistoryRows, setDiceHistoryRows] = useState([]);
   const [diceHistoryError, setDiceHistoryError] = useState(null);
   const [discoverCampaignsList, setDiscoverCampaignsList] = useState([]);
+  const [stAddMemberId, setStAddMemberId] = useState('');
+  const [stSetPcUserId, setStSetPcUserId] = useState('');
+  const [stSetPcCharId, setStSetPcCharId] = useState('');
 
   // Dice animation overlay (Baldur's Gate-ish feel).
   // We drive it via special marker/final messages stored in `messages.ai_message_kind`.
@@ -724,7 +727,12 @@ function SimpleApp() {
       const r = await api.joinCampaign(token, campaignId);
       const d = await r.json().catch(() => ({}));
       if (!r.ok) {
-        showError(d.error || 'Could not join this chronicle');
+        showError(
+          d.error ||
+            (d.error_code === 'join_requires_storyteller_approval'
+              ? 'Joining a new chronicle needs storyteller approval (or rejoin one where you already have a character).'
+              : 'Could not join this chronicle')
+        );
         return;
       }
       showSuccess('You have joined this chronicle.');
@@ -773,6 +781,94 @@ function SimpleApp() {
       showSuccess('Enrollment settings saved');
     } catch (err) {
       showError('Save failed');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDetachChronicle = async () => {
+    if (!selectedCampaign?.id) return;
+    if (
+      !window.confirm(
+        'Leave this chronicle? Your character sheet stays saved. You will need storyteller or staff approval to join a different chronicle, but you can rejoin this one if it stays open and you still have a character here.'
+      )
+    ) {
+      return;
+    }
+    setLoading(true);
+    try {
+      const r = await api.detachCampaign(token, selectedCampaign.id);
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok) {
+        showError(d.error || 'Could not leave chronicle');
+        return;
+      }
+      showSuccess('You left the chronicle.');
+      const me = await fetch(`${API_URL}/users/me`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (me.ok) {
+        const u = await me.json();
+        setUser(u);
+        localStorage.setItem('user', JSON.stringify(u));
+      }
+      setSelectedCampaign(null);
+      setCurrentPage('dashboard');
+      fetchCampaigns(undefined, { forActiveCharacter: true });
+    } catch (e) {
+      showError('Connection error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleStAddMember = async (e) => {
+    e.preventDefault();
+    if (!selectedCampaign?.id) return;
+    const uid = parseInt(stAddMemberId, 10);
+    if (!Number.isFinite(uid)) {
+      showError('Enter a numeric user ID');
+      return;
+    }
+    setLoading(true);
+    try {
+      const r = await api.addCampaignMember(token, selectedCampaign.id, uid);
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok) {
+        showError(d.error || 'Could not add member');
+        return;
+      }
+      showSuccess('Member added.');
+      setStAddMemberId('');
+    } catch (err) {
+      showError('Connection error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleStSetPlayingCharacter = async (e) => {
+    e.preventDefault();
+    if (!selectedCampaign?.id) return;
+    const uid = parseInt(stSetPcUserId, 10);
+    const cid = parseInt(stSetPcCharId, 10);
+    if (!Number.isFinite(uid) || !Number.isFinite(cid)) {
+      showError('Enter numeric user ID and character ID');
+      return;
+    }
+    setLoading(true);
+    try {
+      const r = await api.setPlayerPlayingCharacter(token, selectedCampaign.id, uid, cid);
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok) {
+        showError(d.error || 'Could not set playing character');
+        return;
+      }
+      showSuccess('Playing character updated for that player.');
+      setStSetPcUserId('');
+      setStSetPcCharId('');
+    } catch (err) {
+      showError('Connection error');
     } finally {
       setLoading(false);
     }
@@ -2772,6 +2868,12 @@ function SimpleApp() {
           </div>
           <GothicBox theme="vampire" style={{ padding: '20px', marginBottom: '20px' }}>
             <h3 style={{ marginTop: 0, color: '#e94560', fontFamily: 'Cinzel, serif' }}>Active character</h3>
+            {user?.restrict_self_join_new_chronicles ? (
+              <p style={{ color: '#fbbf24', fontSize: '14px', marginBottom: '12px', lineHeight: 1.5 }}>
+                You left a chronicle: joining a <strong>new</strong> one requires your Storyteller or site staff to
+                add you. You can still rejoin a chronicle where you already have a character.
+              </p>
+            ) : null}
             {activeChar ? (
               <div style={{ display: 'flex', gap: '16px', alignItems: 'flex-start', flexWrap: 'wrap' }}>
                 <MessageCharacterAvatar url={activeChar.portrait_url} size={72} />
@@ -3553,6 +3655,46 @@ function SimpleApp() {
             )}
           </div>
 
+          <div
+            style={{
+              marginBottom: '30px',
+              padding: '20px',
+              background: 'rgba(100, 116, 139, 0.12)',
+              border: '1px solid #475569',
+              borderRadius: '8px',
+            }}
+          >
+            <h3 style={{ color: '#e94560', fontSize: '18px', marginBottom: '12px', fontFamily: 'Cinzel, serif' }}>
+              Chronicle membership
+            </h3>
+            <p style={{ color: '#94a3b8', fontSize: '14px', marginBottom: '12px', lineHeight: 1.5 }}>
+              Leave this chronicle without deleting your sheet. You will need approval to join a <strong>different</strong>{' '}
+              chronicle later; you can rejoin this one if it stays listed and you still have a character here.
+            </p>
+            {selectedCampaign?.my_playing_character_id != null ? (
+              <p style={{ color: '#b5b5c3', fontSize: '13px', marginBottom: '10px' }}>
+                Playing character ID for this chronicle:{' '}
+                <strong style={{ color: '#e0e0e0' }}>{selectedCampaign.my_playing_character_id}</strong>
+              </p>
+            ) : null}
+            <button
+              type="button"
+              onClick={handleDetachChronicle}
+              disabled={loading}
+              style={{
+                padding: '10px 18px',
+                background: loading ? '#475569' : '#334155',
+                color: '#f1f5f9',
+                border: '1px solid #64748b',
+                borderRadius: '6px',
+                cursor: loading ? 'not-allowed' : 'pointer',
+                fontWeight: '600',
+              }}
+            >
+              Leave chronicle
+            </button>
+          </div>
+
           {(String(user?.id) === String(selectedCampaign?.created_by) ||
             user?.role === 'admin') && (
             <div style={{
@@ -3676,20 +3818,110 @@ function SimpleApp() {
               >
                 ✏️ Edit Campaign Info
               </button>
-              <button 
-                onClick={() => showInfo('👥 Player management UI coming soon!\n\nFor now, players can join campaigns through invite codes.', 6000)}
+              {(String(user?.id) === String(selectedCampaign?.created_by) ||
+                user?.role === 'admin' ||
+                user?.role === 'helper') && (
+              <div
                 style={{
-                  padding: '12px',
-                  background: '#e94560',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '5px',
-                  cursor: 'pointer',
-                  fontWeight: '600'
+                  gridColumn: '1 / -1',
+                  padding: '14px',
+                  background: 'rgba(15, 23, 42, 0.6)',
+                  borderRadius: '8px',
+                  border: '1px solid #2a2a4e',
                 }}
               >
-                👥 Manage Players
-              </button>
+                <div style={{ color: '#e2e8f0', fontWeight: '600', marginBottom: '10px', fontFamily: 'Cinzel, serif' }}>
+                  Storyteller: add member by user ID
+                </div>
+                <form onSubmit={handleStAddMember} style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', alignItems: 'center' }}>
+                  <input
+                    type="number"
+                    min={1}
+                    placeholder="User ID"
+                    value={stAddMemberId}
+                    onChange={(e) => setStAddMemberId(e.target.value)}
+                    style={{
+                      padding: '8px',
+                      width: '120px',
+                      background: '#0f1729',
+                      border: '1px solid #2a2a4e',
+                      borderRadius: '6px',
+                      color: '#fff',
+                    }}
+                  />
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    style={{
+                      padding: '8px 14px',
+                      background: '#0ea5e9',
+                      color: '#fff',
+                      border: 'none',
+                      borderRadius: '6px',
+                      cursor: loading ? 'not-allowed' : 'pointer',
+                      fontWeight: '600',
+                    }}
+                  >
+                    Add to chronicle
+                  </button>
+                </form>
+                <div style={{ color: '#94a3b8', fontSize: '12px', marginTop: '8px' }}>
+                  Player switches between characters in this chronicle only with your approval — set their playing character below.
+                </div>
+                <form onSubmit={handleStSetPlayingCharacter} style={{ marginTop: '12px' }}>
+                  <div style={{ color: '#e2e8f0', fontWeight: '600', marginBottom: '8px', fontFamily: 'Cinzel, serif' }}>
+                    Set player&apos;s playing character
+                  </div>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', alignItems: 'center' }}>
+                    <input
+                      type="number"
+                      min={1}
+                      placeholder="Player user ID"
+                      value={stSetPcUserId}
+                      onChange={(e) => setStSetPcUserId(e.target.value)}
+                      style={{
+                        padding: '8px',
+                        width: '130px',
+                        background: '#0f1729',
+                        border: '1px solid #2a2a4e',
+                        borderRadius: '6px',
+                        color: '#fff',
+                      }}
+                    />
+                    <input
+                      type="number"
+                      min={1}
+                      placeholder="Character ID"
+                      value={stSetPcCharId}
+                      onChange={(e) => setStSetPcCharId(e.target.value)}
+                      style={{
+                        padding: '8px',
+                        width: '130px',
+                        background: '#0f1729',
+                        border: '1px solid #2a2a4e',
+                        borderRadius: '6px',
+                        color: '#fff',
+                      }}
+                    />
+                    <button
+                      type="submit"
+                      disabled={loading}
+                      style={{
+                        padding: '8px 14px',
+                        background: '#e94560',
+                        color: '#fff',
+                        border: 'none',
+                        borderRadius: '6px',
+                        cursor: loading ? 'not-allowed' : 'pointer',
+                        fontWeight: '600',
+                      }}
+                    >
+                      Apply
+                    </button>
+                  </div>
+                </form>
+              </div>
+              )}
               <button 
                 onClick={openLocationManager}
                 style={{
@@ -6219,7 +6451,12 @@ function SimpleApp() {
         <div style={{ minHeight: '100vh', background: '#0f0f1e', display: 'flex', flexDirection: 'column' }}>
           {renderAppPageHeader({ title: 'Admin panel' })}
           <div style={{ flex: 1, minHeight: 0, overflow: 'auto' }}>
-            <AdminPage token={token} user={user} displayTimezone={user?.display_timezone || null} />
+            <AdminPage
+              token={token}
+              user={user}
+              displayTimezone={user?.display_timezone || null}
+              onAdminOpenCampaign={enterCampaign}
+            />
           </div>
         </div>
       )}

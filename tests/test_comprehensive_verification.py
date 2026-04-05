@@ -4,6 +4,7 @@ ShadowRealms AI - Comprehensive Phase 1 + 2 Verification
 Tests all systems with timing, error scenarios, and data integrity checks
 """
 
+import os
 import requests
 import json
 import time
@@ -14,6 +15,7 @@ from pathlib import Path
 # Configuration
 BASE_URL = "http://localhost:5000"
 API_BASE = f"{BASE_URL}/api"
+LM_STUDIO_BASE = os.environ.get("LM_STUDIO_URL", "http://localhost:1234").rstrip("/")
 
 class TestTimer:
     """Context manager for timing operations"""
@@ -114,7 +116,7 @@ class ComprehensiveTester:
         with TestTimer("LLM Services Check"):
             try:
                 # Test LM Studio
-                lm_response = requests.get("http://localhost:1234/v1/models", timeout=5)
+                lm_response = requests.get(f"{LM_STUDIO_BASE}/v1/models", timeout=5)
                 lm_working = lm_response.status_code == 200
                 print(f"   🤖 LM Studio: {'✅' if lm_working else '❌'} ({lm_response.status_code})")
                 

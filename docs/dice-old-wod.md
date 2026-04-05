@@ -1,6 +1,6 @@
 # Old World of Darkness (Storyteller) dice in ShadowRealms AI
 
-**Document version:** 0.7.17 (aligned with app release; update when dice or admin `/ai roll` behavior changes.)
+**Document version:** 0.7.18 (aligned with app release; v0.7.18 allows site **admin** campaign access for rolls—update when dice or admin `/ai roll` behavior changes.)
 
 This document summarizes how **classic / Revised Storyteller**–style **d10 pools** are used in the app, where to find the implementation, and how it relates to published rules. It is not a full replacement for the rulebooks.
 

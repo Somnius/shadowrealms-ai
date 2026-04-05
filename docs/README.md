@@ -2,7 +2,7 @@
 
 Welcome to the ShadowRealms AI documentation! This directory contains all project documentation, guides, and references.
 
-**Last Updated:** April 3, 2026 — changelog through **v0.7.17**; includes WoD character-creation reference, PostgreSQL migration docs, and `dice-old-wod.md`.
+**Last Updated:** April 4, 2026 — changelog through **v0.7.18**; includes admin chronicle listing, site-admin campaign access for support, preserve-chat account deletion (`locations.created_by`), WoD character-creation reference, PostgreSQL migration docs, and [chronicle membership / playing character](CAMPAIGN_MEMBERSHIP_AND_PLAYING_CHARACTER.md).
 
 ## 📚 Quick Links
 
@@ -40,13 +40,16 @@ Welcome to the ShadowRealms AI documentation! This directory contains all projec
   - Quality Audits
   - Testing Guides
   - Audit Findings
+- **[Security & testing (API)](SECURITY_AND_TESTING.md)** - Security/feature tests, dependency hygiene
+- **[Database test data cleanup](DATABASE_TEST_DATA_CLEANUP.md)** - Identify and remove integration-test rows; scripted cleanup
 
 ### Features
 - **[Features](FEATURES.md)** - Feature-specific documentation
   - Gothic Horror Theme
   - Invite Code System
+- **[Chronicle membership & playing character](CAMPAIGN_MEMBERSHIP_AND_PLAYING_CHARACTER.md)** - Detach, join restrictions, per-campaign PC, API summary
 - **[Old WoD / Storyteller dice](dice-old-wod.md)** - d10 pools, sidebar rolls, dice overlay, `/ai roll` / `/ai roll-hidden` (v0.7.14+)
-- **[WoD character creation (reference)](character-creation-world-of-darkness.md)** - Revised-era chargen outline and ShadowRealms field mapping (v0.7.17+)
+- **[WoD character creation (reference)](character-creation-world-of-darkness.md)** - Revised-era chargen outline and ShadowRealms field mapping (v0.7.17+; admin chronicles v0.7.18+)
 - **[WoD location naming (AI + RAG)](location-naming-world-of-darkness.md)** - VtM / WtA / MtA vocabulary for suggested room names; optional Chroma ingest
 
 ### Bug Fixes & Audits
@@ -74,7 +77,7 @@ shadowrealms-ai/
 │   ├── git_workflow.sh                # Git workflow helper
 │   └── ...                            # Other utility scripts
 │
-├── docs/                              # All documentation files (21+ markdown files)
+├── docs/                              # All documentation files (22+ markdown files)
 │   ├── README.md                      # This file (index)
 │   │
 │   ├── CHANGELOG.md                   # Version history ⭐
@@ -90,6 +93,7 @@ shadowrealms-ai/
 │   ├── dice-old-wod.md               # Storyteller (oWoD) dice in-app 📦
 │   ├── QUALITY_AND_TESTING.md        # Quality & testing 📦
 │   ├── FEATURES.md                   # Features 📦
+│   ├── CAMPAIGN_MEMBERSHIP_AND_PLAYING_CHARACTER.md  # Chronicle detach / PC scope 📦
 │   ├── BUG_FIXES_AND_AUDITS.md       # Bug fixes & audits 📦
 │   │
 │   ├── DATABASE_MIGRATION_POSTGRESQL.md  # PostgreSQL migration planning ⭐
@@ -228,7 +232,7 @@ All consolidated files maintain complete content with proper section headers and
 
 ---
 
-**Last Updated**: April 3, 2026  
-**Documentation Version**: 0.7.17  
+**Last Updated**: April 5, 2026  
+**Documentation Version**: 0.7.18  
 **Total Documentation Files**: 22+ markdown files in `docs/` (includes character creation reference, PostgreSQL migration docs, and `dice-old-wod.md`)
 

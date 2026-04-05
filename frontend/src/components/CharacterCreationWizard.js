@@ -1,469 +1,72 @@
 import React, { useMemo, useState } from 'react';
 import { GothicBox } from './GothicDecorations';
+import DotTrack from './characterCreation/DotTrack';
+import SheetSection from './characterCreation/SheetSection';
+import PoolSummary from './characterCreation/PoolSummary';
+import AttributeColumns from './characterCreation/AttributeColumns';
+import AbilityColumns from './characterCreation/AbilityColumns';
+import MeritFlawRows from './characterCreation/MeritFlawRows';
+import ResponsiveSheetBlock from './characterCreation/ResponsiveSheetBlock';
+import {
+  ARCHETYPE_CUSTOM,
+  DISCIPLINE_PRESETS,
+  KNOWLEDGES,
+  MTA_SPHERES,
+  MTA_TRADITIONS,
+  SHEET_SECTION_IDS,
+  SKILLS,
+  TALENTS,
+  VAMPIRE_CLANS,
+  WOD_ARCHETYPES,
+  WTA_AUSPICES,
+  WTA_BREEDS,
+  WTA_TRIBES,
+} from '../characterSheet/constants';
+import { buildMeritsFlawsPayload, createEmptyMeritRow } from '../characterSheet/meritsFlaws';
+import {
+  emptyAbilityMap,
+  emptyAttrMap,
+  emptySphereMap,
+  validateAbilitySpread,
+  validateAttributeSpread,
+  validateSpheres,
+  validateVirtues,
+} from '../characterSheet/validation';
 
 const API_URL = '/api';
 
-const PHYSICAL = ['strength', 'dexterity', 'stamina'];
-const SOCIAL = ['charisma', 'manipulation', 'appearance'];
-const MENTAL = ['perception', 'intelligence', 'wits'];
-
-/** Revised-era ability columns (labels match common sheets; keys are snake_case in JSON). */
-const TALENTS = [
-  ['alertness', 'Alertness'],
-  ['athletics', 'Athletics'],
-  ['brawl', 'Brawl'],
-  ['dodge', 'Dodge'],
-  ['empathy', 'Empathy'],
-  ['expression', 'Expression'],
-  ['intimidation', 'Intimidation'],
-  ['leadership', 'Leadership'],
-  ['streetwise', 'Streetwise'],
-  ['subterfuge', 'Subterfuge'],
+const SECTION_ORDER = [
+  { id: SHEET_SECTION_IDS.identity, label: 'Identity' },
+  { id: SHEET_SECTION_IDS.template, label: 'Template' },
+  { id: SHEET_SECTION_IDS.nature, label: 'Nature' },
+  { id: SHEET_SECTION_IDS.attributes, label: 'Attributes' },
+  { id: SHEET_SECTION_IDS.abilities, label: 'Abilities' },
+  { id: SHEET_SECTION_IDS.advantages, label: 'Advantages' },
+  { id: SHEET_SECTION_IDS.story, label: 'Story' },
 ];
 
-const SKILLS = [
-  ['animal_ken', 'Animal Ken'],
-  ['crafts', 'Crafts'],
-  ['drive', 'Drive'],
-  ['etiquette', 'Etiquette'],
-  ['firearms', 'Firearms'],
-  ['melee', 'Melee'],
-  ['performance', 'Performance'],
-  ['security', 'Security'],
-  ['stealth', 'Stealth'],
-  ['survival', 'Survival'],
-];
-
-const KNOWLEDGES = [
-  ['academics', 'Academics'],
-  ['computer', 'Computer'],
-  ['finance', 'Finance'],
-  ['investigation', 'Investigation'],
-  ['law', 'Law'],
-  ['linguistics', 'Linguistics'],
-  ['medicine', 'Medicine'],
-  ['occult', 'Occult'],
-  ['politics', 'Politics'],
-  ['science', 'Science'],
-];
-
-const VAMPIRE_CLANS = [
-  'Brujah', 'Gangrel', 'Malkavian', 'Nosferatu', 'Toreador', 'Tremere', 'Ventrue',
-  'Lasombra', 'Tzimisce', 'Ravnos', 'Assamite', 'Followers of Set', 'Giovanni',
-];
-
-const WTA_BREEDS = ['Homid', 'Metis', 'Lupus'];
-const WTA_AUSPICES = ['Ahroun', 'Galliard', 'Philodox', 'Ragabash', 'Theurge'];
-const WTA_TRIBES = [
-  'Black Furies', 'Bone Gnawers', 'Children of Gaia', 'Fianna', 'Get of Fenris',
-  'Glass Walkers', 'Red Talons', 'Shadow Lords', 'Silent Striders', 'Silver Fangs',
-  'Uktena', 'Wendigo', 'Stargazers',
-];
-
-const MTA_TRADITIONS = [
-  'Akashic Brotherhood', 'Celestial Chorus', 'Cult of Ecstasy', 'Dream Speakers',
-  'Euthanatos', 'Order of Hermes', 'Sons of Ether', 'Verbena', 'Virtual Adepts',
-];
-
-/** Classic oWoD-style Nature / Demeanor archetypes (Revised-era sheet lists). */
-const WOD_ARCHETYPES = [
-  'Architect',
-  'Autocrat',
-  'Bon Vivant',
-  'Bravo',
-  'Bureaucrat',
-  'Caregiver',
-  'Celebrant',
-  'Child',
-  'Competitor',
-  'Conformist',
-  'Conniver',
-  'Curmudgeon',
-  'Deviant',
-  'Director',
-  'Fanatic',
-  'Gallant',
-  'Judge',
-  'Loner',
-  'Martyr',
-  'Masochist',
-  'Monster',
-  'Pedagogue',
-  'Penitent',
-  'Perfectionist',
-  'Rebel',
-  'Rogue',
-  'Sadist',
-  'Scientist',
-  'Sociopath',
-  'Survivor',
-  'Thrill-Seeker',
-  'Traditionalist',
-  'Trickster',
-  'Visionary',
-];
-
-const ARCHETYPE_CUSTOM = '__custom__';
-
-const MTA_SPHERES = [
-  ['correspondence', 'Correspondence'],
-  ['entropy', 'Entropy'],
-  ['forces', 'Forces'],
-  ['life', 'Life'],
-  ['matter', 'Matter'],
-  ['mind', 'Mind'],
-  ['prime', 'Prime'],
-  ['spirit', 'Spirit'],
-  ['time', 'Time'],
-];
-
-const DISCIPLINE_PRESETS = [
-  'Animalism',
-  'Auspex',
-  'Celerity',
-  'Chimerstry',
-  'Daimoinon',
-  'Dementation',
-  'Dominate',
-  'Fortitude',
-  'Melpominee',
-  'Mortis',
-  'Mytherceria',
-  'Necromancy',
-  'Obfuscate',
-  'Obeah',
-  'Potence',
-  'Presence',
-  'Protean',
-  'Quietus',
-  'Sanguinus',
-  'Serpentis',
-  'Spiritus',
-  'Temporis',
-  'Thaumaturgy',
-  'Valeren',
-  'Vicissitude',
-];
-
-function emptyAttrMap() {
-  const o = {};
-  [...PHYSICAL, ...SOCIAL, ...MENTAL].forEach((k) => {
-    o[k] = 1;
-  });
-  return o;
+function scrollToSection(sectionDomId) {
+  const el = typeof document !== 'undefined' ? document.getElementById(sectionDomId) : null;
+  el?.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
-function emptyAbilityMap() {
-  const o = {};
-  [...TALENTS, ...SKILLS, ...KNOWLEDGES].forEach(([k]) => {
-    o[k] = 0;
-  });
-  return o;
-}
-
-function emptySphereMap() {
-  const o = {};
-  MTA_SPHERES.forEach(([k]) => {
-    o[k] = 0;
-  });
-  return o;
-}
-
-function validateAttributeSpread(attrs, pools) {
-  const sum = (keys) => keys.reduce((s, k) => s + (parseInt(attrs[k], 10) || 0), 0);
-  const p = sum(PHYSICAL);
-  const s = sum(SOCIAL);
-  const m = sum(MENTAL);
-  if (p !== pools.physical) return `Physical attributes must total ${pools.physical} (currently ${p}).`;
-  if (s !== pools.social) return `Social attributes must total ${pools.social} (currently ${s}).`;
-  if (m !== pools.mental) return `Mental attributes must total ${pools.mental} (currently ${m}).`;
-  for (const k of [...PHYSICAL, ...SOCIAL, ...MENTAL]) {
-    const v = parseInt(attrs[k], 10);
-    if (Number.isNaN(v) || v < 1 || v > 5) {
-      return `Each attribute must be between 1 and 5 (${k}).`;
+function buildCustomSkillsPayload(customAbilities) {
+  const out = {};
+  for (const cat of ['talents', 'skills', 'knowledges']) {
+    const rows = (customAbilities[cat] || []).filter((r) => String(r.label || '').trim());
+    if (rows.length) {
+      out[cat] = rows.map((r) => ({
+        key: `custom_${cat}_${r.id}`,
+        label: String(r.label).trim(),
+        dots: Math.min(5, Math.max(0, parseInt(r.dots, 10) || 0)),
+      }));
     }
   }
-  return null;
-}
-
-function sumAbilitiesInCategory(abilities, keys) {
-  return keys.reduce((s, [k]) => s + (parseInt(abilities[k], 10) || 0), 0);
-}
-
-function validateAbilitySpread(abilities, pools) {
-  const t = sumAbilitiesInCategory(abilities, TALENTS);
-  const sk = sumAbilitiesInCategory(abilities, SKILLS);
-  const kn = sumAbilitiesInCategory(abilities, KNOWLEDGES);
-  if (t !== pools.talents) return `Talents must total ${pools.talents} dots (currently ${t}).`;
-  if (sk !== pools.skills) return `Skills must total ${pools.skills} dots (currently ${sk}).`;
-  if (kn !== pools.knowledges) return `Knowledges must total ${pools.knowledges} dots (currently ${kn}).`;
-  for (const [k] of [...TALENTS, ...SKILLS, ...KNOWLEDGES]) {
-    const v = parseInt(abilities[k], 10);
-    if (Number.isNaN(v) || v < 0 || v > 5) {
-      return `Each ability must be between 0 and 5 (${k}).`;
-    }
-  }
-  return null;
-}
-
-function validateVirtues(v) {
-  const c = parseInt(v.conscience, 10) || 0;
-  const sc = parseInt(v.self_control, 10) || 0;
-  const co = parseInt(v.courage, 10) || 0;
-  if (c < 1 || c > 5 || sc < 1 || sc > 5 || co < 1 || co > 5) {
-    return 'Each virtue must be between 1 and 5.';
-  }
-  if (c + sc + co !== 7) {
-    return 'Virtues must total exactly 7 dots (Revised neonate spread), each at least 1.';
-  }
-  return null;
-}
-
-function validateSpheres(spheres) {
-  let t = 0;
-  for (const [k] of MTA_SPHERES) {
-    const v = parseInt(spheres[k], 10) || 0;
-    if (v < 0 || v > 5) return `Sphere ${k} must be 0–5.`;
-    t += v;
-  }
-  if (t !== 6) return `Allocate exactly 6 sphere dots at creation (currently ${t}).`;
-  return null;
+  return Object.keys(out).length ? out : null;
 }
 
 /**
- * Clickable WoD-style dot track (filled circles). `maxRank` is usually 5.
- */
-function DotTrack({ value, maxRank, onChange, disabled, accent }) {
-  const rank = Math.max(0, Math.min(maxRank, parseInt(value, 10) || 0));
-  const a = accent || '#c4b5fd';
-  return (
-    <div
-      role="group"
-      aria-label={`Rating ${rank} of ${maxRank}`}
-      style={{ display: 'flex', alignItems: 'center', gap: '5px', flexWrap: 'nowrap' }}
-    >
-      {Array.from({ length: maxRank }, (_, i) => {
-        const n = i + 1;
-        const filled = n <= rank;
-        return (
-          <button
-            key={n}
-            type="button"
-            disabled={disabled}
-            onClick={() => onChange(filled && n === rank ? n - 1 : n)}
-            title={`Set to ${n}`}
-            style={{
-              width: '18px',
-              height: '18px',
-              minWidth: '18px',
-              padding: 0,
-              borderRadius: '50%',
-              border: `2px solid ${filled ? a : '#4b5568'}`,
-              background: filled
-                ? `radial-gradient(circle at 30% 30%, ${a}, #5b21b6)`
-                : 'transparent',
-              cursor: disabled ? 'not-allowed' : 'pointer',
-              boxShadow: filled ? `0 0 8px ${a}55` : 'none',
-              transition: 'transform 0.12s ease, box-shadow 0.12s ease',
-            }}
-            onMouseDown={(e) => e.preventDefault()}
-          />
-        );
-      })}
-    </div>
-  );
-}
-
-function SheetSection({ title, subtitle, children, accent }) {
-  return (
-    <div
-      style={{
-        marginBottom: '22px',
-        padding: '16px 14px',
-        background: 'linear-gradient(165deg, rgba(15,23,41,0.95) 0%, rgba(22,33,62,0.85) 100%)',
-        border: '1px solid #2a2a4e',
-        borderRadius: '10px',
-        boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.04)',
-      }}
-    >
-      <div
-        style={{
-          borderBottom: `1px solid ${accent || '#e94560'}44`,
-          paddingBottom: '10px',
-          marginBottom: '14px',
-        }}
-      >
-        <h3
-          style={{
-            margin: 0,
-            fontFamily: 'Cinzel, serif',
-            fontSize: '16px',
-            color: accent || '#e94560',
-            letterSpacing: '0.06em',
-            textTransform: 'uppercase',
-          }}
-        >
-          {title}
-        </h3>
-        {subtitle ? (
-          <p style={{ margin: '6px 0 0', fontSize: '12px', color: '#8b8b9f' }}>{subtitle}</p>
-        ) : null}
-      </div>
-      {children}
-    </div>
-  );
-}
-
-function AttributeColumns({ attrs, setAttrs, pools }) {
-  const col = (title, keys, pool, accent) => (
-    <div style={{ flex: '1 1 200px', minWidth: 0 }}>
-      <div
-        style={{
-          textAlign: 'center',
-          fontFamily: 'Cinzel, serif',
-          fontSize: '12px',
-          color: accent,
-          marginBottom: '12px',
-          letterSpacing: '0.08em',
-        }}
-      >
-        {title}
-        <span style={{ color: '#6b7280', fontFamily: 'system-ui', marginLeft: '6px' }}>
-          ({pool} pts)
-        </span>
-      </div>
-      {keys.map((k) => (
-        <div
-          key={k}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            gap: '10px',
-            marginBottom: '10px',
-            padding: '6px 8px',
-            background: 'rgba(0,0,0,0.2)',
-            borderRadius: '6px',
-          }}
-        >
-          <span
-            style={{
-              color: '#d1d5db',
-              fontSize: '13px',
-              textTransform: 'capitalize',
-              flex: '1 1 auto',
-            }}
-          >
-            {k}
-          </span>
-          <DotTrack
-            value={attrs[k]}
-            maxRank={5}
-            accent={accent}
-            onChange={(n) => {
-              const keysAll = [...PHYSICAL, ...SOCIAL, ...MENTAL];
-              const catKeys =
-                title === 'Physical' ? PHYSICAL : title === 'Social' ? SOCIAL : MENTAL;
-              const poolSize =
-                title === 'Physical'
-                  ? pools.physical
-                  : title === 'Social'
-                    ? pools.social
-                    : pools.mental;
-              const old = parseInt(attrs[k], 10) || 1;
-              const next = Math.max(1, Math.min(5, n));
-              const delta = next - old;
-              const sum = catKeys.reduce((s, key) => s + (parseInt(attrs[key], 10) || 1), 0);
-              if (sum + delta > poolSize) return;
-              setAttrs((prev) => ({ ...prev, [k]: next }));
-            }}
-          />
-        </div>
-      ))}
-    </div>
-  );
-
-  return (
-    <div
-      style={{
-        display: 'flex',
-        flexWrap: 'wrap',
-        gap: '18px',
-        justifyContent: 'space-between',
-      }}
-    >
-      {col('Physical', PHYSICAL, pools.physical, '#f87171')}
-      {col('Social', SOCIAL, pools.social, '#a78bfa')}
-      {col('Mental', MENTAL, pools.mental, '#38bdf8')}
-    </div>
-  );
-}
-
-function AbilityColumns({ abilities, setAbilities, pools }) {
-  const setDot = (key, catKeys, poolSize, n) => {
-    const old = parseInt(abilities[key], 10) || 0;
-    const next = Math.max(0, Math.min(5, n));
-    const delta = next - old;
-    const sum = catKeys.reduce((s, [kk]) => s + (parseInt(abilities[kk], 10) || 0), 0);
-    if (sum + delta > poolSize) return;
-    setAbilities((prev) => ({ ...prev, [key]: next }));
-  };
-
-  const col = (title, list, pool, colAccent) => (
-    <div style={{ flex: '1 1 220px', minWidth: 0 }}>
-      <div
-        style={{
-          textAlign: 'center',
-          fontFamily: 'Cinzel, serif',
-          fontSize: '12px',
-          color: colAccent,
-          marginBottom: '12px',
-          letterSpacing: '0.08em',
-        }}
-      >
-        {title}
-        <span style={{ color: '#6b7280', fontFamily: 'system-ui', marginLeft: '6px' }}>
-          ({pool} dots)
-        </span>
-      </div>
-      {list.map(([k, label]) => (
-        <div
-          key={k}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            gap: '8px',
-            marginBottom: '8px',
-            padding: '5px 6px',
-            background: 'rgba(0,0,0,0.18)',
-            borderRadius: '6px',
-          }}
-        >
-          <span style={{ color: '#c4c4d4', fontSize: '12px', flex: '1 1 auto' }}>{label}</span>
-          <DotTrack
-            value={abilities[k]}
-            maxRank={5}
-            accent={colAccent}
-            onChange={(n) => setDot(k, list, pool, n)}
-          />
-        </div>
-      ))}
-    </div>
-  );
-
-  return (
-    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '18px', justifyContent: 'space-between' }}>
-      {col('Talents', TALENTS, pools.talents, '#fbbf24')}
-      {col('Skills', SKILLS, pools.skills, '#34d399')}
-      {col('Knowledges', KNOWLEDGES, pools.knowledges, '#818cf8')}
-    </div>
-  );
-}
-
-/**
- * Multi-step oWoD-oriented character creator (Vampire / Werewolf / Mage campaigns).
- * Dot-pool UX and three-column abilities inspired by classic Revised-era sheets.
+ * Single-page oWoD character forge: scrollable sheet, section nav, pool summaries, structured merits.
  */
 export default function CharacterCreationWizard({
   token,
@@ -481,9 +84,6 @@ export default function CharacterCreationWizard({
     [campaigns]
   );
 
-  const maxStep = 4;
-
-  const [step, setStep] = useState(0);
   const [campaignId, setCampaignId] = useState(
     eligible[0]?.id != null ? String(eligible[0].id) : ''
   );
@@ -493,8 +93,14 @@ export default function CharacterCreationWizard({
   const [attrs, setAttrs] = useState(() => emptyAttrMap());
   const [abilityPriority, setAbilityPriority] = useState('talents');
   const [abilities, setAbilities] = useState(() => emptyAbilityMap());
+  const [customAbilities, setCustomAbilities] = useState({
+    talents: [],
+    skills: [],
+    knowledges: [],
+  });
   const [background, setBackground] = useState('');
-  const [meritsFlawsNotes, setMeritsFlawsNotes] = useState('');
+  const [meritRows, setMeritRows] = useState(() => [createEmptyMeritRow()]);
+  const [meritsGlobalNotes, setMeritsGlobalNotes] = useState('');
 
   const [clan, setClan] = useState(VAMPIRE_CLANS[0]);
   const [naturePick, setNaturePick] = useState(WOD_ARCHETYPES[0]);
@@ -521,11 +127,15 @@ export default function CharacterCreationWizard({
   const [breed, setBreed] = useState(WTA_BREEDS[0]);
   const [auspice, setAuspice] = useState(WTA_AUSPICES[0]);
   const [tribe, setTribe] = useState(WTA_TRIBES[0]);
+  const [werewolfRage, setWerewolfRage] = useState('1');
+  const [werewolfGnosis, setWerewolfGnosis] = useState('1');
+  const [giftsNotes, setGiftsNotes] = useState('');
 
   const [tradition, setTradition] = useState(MTA_TRADITIONS[0]);
   const [spheres, setSpheres] = useState(() => emptySphereMap());
 
   const [submitting, setSubmitting] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState({});
 
   const campaign = eligible.find((c) => String(c.id) === String(campaignId));
   const gs = String(campaign?.game_system || '').toLowerCase();
@@ -565,10 +175,16 @@ export default function CharacterCreationWizard({
     if (systemType === 'vampire') {
       const discClean = disciplines
         .filter((d) => d.name && String(d.name).trim())
-        .map((d) => ({ name: String(d.name).trim(), dots: Math.min(5, Math.max(0, parseInt(d.dots, 10) || 0)) }));
+        .map((d) => ({
+          name: String(d.name).trim(),
+          dots: Math.min(5, Math.max(0, parseInt(d.dots, 10) || 0)),
+        }));
       const bgClean = backgrounds
         .filter((b) => b.name && String(b.name).trim())
-        .map((b) => ({ name: String(b.name).trim(), dots: Math.min(5, Math.max(0, parseInt(b.dots, 10) || 0)) }));
+        .map((b) => ({
+          name: String(b.name).trim(),
+          dots: Math.min(5, Math.max(0, parseInt(b.dots, 10) || 0)),
+        }));
       return {
         ...base,
         clan,
@@ -585,7 +201,15 @@ export default function CharacterCreationWizard({
       };
     }
     if (systemType === 'werewolf') {
-      return { ...base, breed, auspice, tribe };
+      return {
+        ...base,
+        breed,
+        auspice,
+        tribe,
+        rage: Math.max(0, parseInt(werewolfRage, 10) || 0),
+        gnosis: Math.max(0, parseInt(werewolfGnosis, 10) || 0),
+        gifts_notes: giftsNotes.trim(),
+      };
     }
     if (systemType === 'mage') {
       const sp = {};
@@ -597,82 +221,88 @@ export default function CharacterCreationWizard({
     return base;
   };
 
-  const handleSubmit = async () => {
-    if (!campaign) {
-      showError?.('Choose a chronicle.');
-      return;
-    }
+  const runValidation = () => {
+    const err = {};
+    if (!campaign) err[SHEET_SECTION_IDS.identity] = 'Choose a chronicle.';
     const cidNum = parseInt(campaignId, 10);
     if (!Number.isFinite(cidNum) || cidNum < 1) {
-      showError?.('Choose a valid chronicle.');
-      return;
+      err[SHEET_SECTION_IDS.identity] = 'Choose a valid chronicle.';
     }
-    const nm = name.trim();
-    if (!nm) {
-      showError?.('Character name is required.');
-      return;
-    }
+    if (!name.trim()) err[SHEET_SECTION_IDS.identity] = 'Character name is required.';
+
     if (['vampire', 'werewolf', 'mage'].includes(systemType)) {
+      const natureMsgs = [];
       if (naturePick === ARCHETYPE_CUSTOM && !(natureCustom || '').trim()) {
-        showError?.('Enter your Nature (free text), or pick a preset archetype.');
-        return;
+        natureMsgs.push('Enter your Nature (free text), or pick a preset archetype.');
       }
       if (demeanorPick === ARCHETYPE_CUSTOM && !(demeanorCustom || '').trim()) {
-        showError?.('Enter your Demeanor (free text), or pick a preset archetype.');
-        return;
+        natureMsgs.push('Enter your Demeanor (free text), or pick a preset archetype.');
       }
-    }
-    const errA = validateAttributeSpread(attrs, pools);
-    if (errA) {
-      showError?.(errA);
-      return;
-    }
-    const errAb = validateAbilitySpread(abilities, abilityPools);
-    if (errAb) {
-      showError?.(errAb);
-      return;
+      if (natureMsgs.length) err[SHEET_SECTION_IDS.nature] = natureMsgs.join(' ');
     }
 
+    const errA = validateAttributeSpread(attrs, pools);
+    if (errA) err[SHEET_SECTION_IDS.attributes] = errA;
+
+    const errAb = validateAbilitySpread(abilities, abilityPools, customAbilities);
+    if (errAb) err[SHEET_SECTION_IDS.abilities] = errAb;
+
     if (systemType === 'vampire') {
+      const advMsgs = [];
       const vErr = validateVirtues(virtues);
-      if (vErr) {
-        showError?.(vErr);
-        return;
-      }
+      if (vErr) advMsgs.push(vErr);
       const dSum = disciplines.reduce((s, d) => s + (parseInt(d.dots, 10) || 0), 0);
       if (dSum > 3) {
-        showError?.('Discipline dots at creation are usually 3 total for a neonate — lower some ratings or clear extras.');
-        return;
+        advMsgs.push(
+          'Discipline dots at creation are usually 3 total for a neonate — lower some ratings or clear extras.'
+        );
       }
       const bgSum = backgrounds.reduce((s, b) => s + (parseInt(b.dots, 10) || 0), 0);
       if (bgSum > 5) {
-        showError?.('Background dots total more than 5 (typical starting pool). Adjust before sealing the sheet.');
-        return;
+        advMsgs.push(
+          'Background dots total more than 5 (typical starting pool). Adjust before sealing the sheet.'
+        );
       }
+      if (advMsgs.length) err[SHEET_SECTION_IDS.advantages] = advMsgs.join(' ');
     }
 
     if (systemType === 'mage') {
       const sErr = validateSpheres(spheres);
-      if (sErr) {
-        showError?.(sErr);
-        return;
-      }
+      if (sErr) err[SHEET_SECTION_IDS.advantages] = sErr;
+    }
+
+    return err;
+  };
+
+  const handleSubmit = async () => {
+    const err = runValidation();
+    setFieldErrors(err);
+    const firstKey = SECTION_ORDER.find((s) => err[s.id])?.id;
+    if (firstKey) {
+      showError?.(err[firstKey]);
+      scrollToSection(firstKey);
+      return;
     }
 
     const skillsPayload = {
       talents: Object.fromEntries(TALENTS.map(([k]) => [k, parseInt(abilities[k], 10) || 0])),
       skills: Object.fromEntries(SKILLS.map(([k]) => [k, parseInt(abilities[k], 10) || 0])),
-      knowledges: Object.fromEntries(KNOWLEDGES.map(([k]) => [k, parseInt(abilities[k], 10) || 0])),
+      knowledges: Object.fromEntries(
+        KNOWLEDGES.map(([k]) => [k, parseInt(abilities[k], 10) || 0])
+      ),
       allocation: {
         primary: abilityPriority,
         pools: abilityPools,
       },
       notes: '',
     };
+    const customPart = buildCustomSkillsPayload(customAbilities);
+    if (customPart) skillsPayload.custom = customPart;
 
-    const meritsPayload = meritsFlawsNotes.trim()
-      ? { notes: meritsFlawsNotes.trim() }
-      : {};
+    const meritsPayload = buildMeritsFlawsPayload(meritRows, meritsGlobalNotes);
+
+    const nm = name.trim();
+    const cidNum = parseInt(campaignId, 10);
 
     setSubmitting(true);
     try {
@@ -709,38 +339,10 @@ export default function CharacterCreationWizard({
     }
   };
 
-  const miniHeader = step >= 2 && (
-    <div
-      style={{
-        display: 'flex',
-        flexWrap: 'wrap',
-        gap: '12px 24px',
-        padding: '12px 14px',
-        marginBottom: '16px',
-        background: 'rgba(233,69,96,0.08)',
-        border: '1px solid #2a2a4e',
-        borderRadius: '8px',
-        fontSize: '13px',
-        color: '#b5b5c3',
-      }}
-    >
-      <span>
-        <strong style={{ color: '#e8e8ef' }}>{name || '—'}</strong>
-        {concept ? ` · ${concept}` : ''}
-      </span>
-      {systemType === 'vampire' && clan ? (
-        <span style={{ color: themeAccent }}>Clan {clan}</span>
-      ) : null}
-      {systemType === 'werewolf' ? (
-        <span style={{ color: themeAccent }}>
-          {auspice} · {tribe}
-        </span>
-      ) : null}
-      {systemType === 'mage' && tradition ? (
-        <span style={{ color: themeAccent }}>{tradition}</span>
-      ) : null}
-    </div>
-  );
+  const inlineErr = (sectionId) =>
+    fieldErrors[sectionId] ? (
+      <p style={{ color: '#f87171', fontSize: '13px', marginBottom: '12px' }}>{fieldErrors[sectionId]}</p>
+    ) : null;
 
   if (!eligible.length) {
     return (
@@ -769,7 +371,7 @@ export default function CharacterCreationWizard({
   }
 
   return (
-    <div style={{ maxWidth: '960px', margin: '0 auto', padding: '20px 16px 60px' }}>
+    <div style={{ maxWidth: '1040px', margin: '0 auto', padding: '20px 16px 60px' }}>
       <GothicBox
         theme={systemType === 'werewolf' ? 'werewolf' : systemType === 'mage' ? 'mage' : 'vampire'}
       >
@@ -786,97 +388,153 @@ export default function CharacterCreationWizard({
           </h2>
           <p style={{ color: '#8b8b9f', fontSize: '14px', lineHeight: 1.5 }}>
             Build a <strong>Classic World of Darkness</strong>–style sheet with dot pools and
-            three-column abilities (Revised-era style). This is not a full replacement for your
-            corebook—your Storyteller has final say on numbers and templates.
+            three-column abilities (Revised-era style). Scroll the sheet in order, or jump with the
+            nav. Your Storyteller has final say on numbers and templates.
           </p>
-          <div style={{ marginTop: '10px', display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-            {['Identity', 'Template', 'Attributes', 'Abilities', 'Advantages & seal'].map(
-              (label, i) => (
-                <span
-                  key={label}
-                  style={{
-                    fontSize: '11px',
-                    padding: '4px 10px',
-                    borderRadius: '999px',
-                    background: step === i ? `${themeAccent}33` : '#1e293b',
-                    color: step === i ? themeAccent : '#64748b',
-                    border: `1px solid ${step === i ? themeAccent : '#334155'}`,
-                  }}
-                >
-                  {i + 1}. {label}
-                </span>
-              )
-            )}
+        </div>
+
+        <div
+          style={{
+            position: 'sticky',
+            top: 0,
+            zIndex: 20,
+            padding: '12px 16px',
+            margin: '0 -4px 8px',
+            background: 'linear-gradient(180deg, rgba(15,23,41,0.98) 70%, transparent)',
+            borderBottom: '1px solid #2a2a4e',
+          }}
+        >
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', alignItems: 'center' }}>
+            {SECTION_ORDER.map((s) => (
+              <button
+                key={s.id}
+                type="button"
+                onClick={() => scrollToSection(s.id)}
+                style={{
+                  fontSize: '11px',
+                  padding: '6px 12px',
+                  borderRadius: '999px',
+                  background: fieldErrors[s.id] ? 'rgba(248,113,113,0.15)' : '#1e293b',
+                  color: fieldErrors[s.id] ? '#fca5a5' : themeAccent,
+                  border: `1px solid ${fieldErrors[s.id] ? '#b91c1c' : '#334155'}`,
+                  cursor: 'pointer',
+                  fontFamily: 'Cinzel, serif',
+                }}
+              >
+                {s.label}
+              </button>
+            ))}
+          </div>
+          <div
+            style={{
+              marginTop: '10px',
+              display: 'flex',
+              flexWrap: 'wrap',
+              gap: '12px',
+              fontSize: '12px',
+              color: '#b5b5c3',
+            }}
+          >
+            <span>
+              <strong style={{ color: '#e8e8ef' }}>{name || '—'}</strong>
+              {concept ? ` · ${concept}` : ''}
+            </span>
+            {systemType === 'vampire' && clan ? (
+              <span style={{ color: themeAccent }}>Clan {clan}</span>
+            ) : null}
+            {systemType === 'werewolf' ? (
+              <span style={{ color: themeAccent }}>
+                {auspice} · {tribe}
+              </span>
+            ) : null}
+            {systemType === 'mage' && tradition ? (
+              <span style={{ color: themeAccent }}>{tradition}</span>
+            ) : null}
           </div>
         </div>
 
-        <div style={{ padding: '16px' }}>
-          {miniHeader}
+        <div style={{ padding: '8px 16px 24px' }}>
+          <ResponsiveSheetBlock
+            sectionId={SHEET_SECTION_IDS.identity}
+            title="Identity"
+            subtitle="Chronicle and character hook"
+            accent={themeAccent}
+          >
+            {inlineErr(SHEET_SECTION_IDS.identity)}
+            <label style={{ color: '#c4b5fd', display: 'block', marginBottom: '8px' }}>
+              Chronicle
+            </label>
+            <select
+              value={campaignId}
+              onChange={(e) => setCampaignId(e.target.value)}
+              style={{
+                width: '100%',
+                padding: '10px',
+                marginBottom: '20px',
+                background: '#0f1729',
+                color: '#e0e0e0',
+                border: '2px solid #2a2a4e',
+                borderRadius: '8px',
+              }}
+            >
+              {eligible.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name} — {c.game_system}
+                </option>
+              ))}
+            </select>
+            <label style={{ color: '#c4b5fd', display: 'block', marginBottom: '8px' }}>
+              Character name
+            </label>
+            <input
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              style={{
+                width: '100%',
+                padding: '10px',
+                marginBottom: '16px',
+                background: '#0f1729',
+                color: '#e0e0e0',
+                border: '2px solid #2a2a4e',
+                borderRadius: '8px',
+              }}
+            />
+            <label style={{ color: '#c4b5fd', display: 'block', marginBottom: '8px' }}>
+              Concept
+            </label>
+            <input
+              value={concept}
+              onChange={(e) => setConcept(e.target.value)}
+              placeholder="e.g. weary homicide detective"
+              style={{
+                width: '100%',
+                padding: '10px',
+                background: '#0f1729',
+                color: '#e0e0e0',
+                border: '2px solid #2a2a4e',
+                borderRadius: '8px',
+              }}
+            />
+          </ResponsiveSheetBlock>
 
-          {step === 0 && (
-            <SheetSection title="Identity" subtitle="Chronicle and character hook" accent={themeAccent}>
-              <label style={{ color: '#c4b5fd', display: 'block', marginBottom: '8px' }}>
-                Chronicle
-              </label>
-              <select
-                value={campaignId}
-                onChange={(e) => setCampaignId(e.target.value)}
+          <ResponsiveSheetBlock
+            sectionId={SHEET_SECTION_IDS.template}
+            title="Template"
+            subtitle="Clan, breed, or tradition — your chronicle’s baseline"
+            accent={themeAccent}
+          >
+            {systemType === 'vampire' && (
+              <div
                 style={{
-                  width: '100%',
-                  padding: '10px',
-                  marginBottom: '20px',
-                  background: '#0f1729',
-                  color: '#e0e0e0',
-                  border: '2px solid #2a2a4e',
-                  borderRadius: '8px',
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))',
+                  gap: '14px',
                 }}
               >
-                {eligible.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.name} — {c.game_system}
-                  </option>
-                ))}
-              </select>
-              <label style={{ color: '#c4b5fd', display: 'block', marginBottom: '8px' }}>
-                Character name
-              </label>
-              <input
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                style={{
-                  width: '100%',
-                  padding: '10px',
-                  marginBottom: '16px',
-                  background: '#0f1729',
-                  color: '#e0e0e0',
-                  border: '2px solid #2a2a4e',
-                  borderRadius: '8px',
-                }}
-              />
-              <label style={{ color: '#c4b5fd', display: 'block', marginBottom: '8px' }}>
-                Concept
-              </label>
-              <input
-                value={concept}
-                onChange={(e) => setConcept(e.target.value)}
-                placeholder="e.g. weary homicide detective"
-                style={{
-                  width: '100%',
-                  padding: '10px',
-                  background: '#0f1729',
-                  color: '#e0e0e0',
-                  border: '2px solid #2a2a4e',
-                  borderRadius: '8px',
-                }}
-              />
-            </SheetSection>
-          )}
-
-          {step === 1 && systemType === 'vampire' && (
-            <SheetSection title="Kindred template" accent={themeAccent}>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '14px' }}>
                 <div>
-                  <label style={{ color: '#c4b5fd', display: 'block', marginBottom: '6px' }}>Clan</label>
+                  <label style={{ color: '#c4b5fd', display: 'block', marginBottom: '6px' }}>
+                    Clan
+                  </label>
                   <select
                     value={clan}
                     onChange={(e) => setClan(e.target.value)}
@@ -897,7 +555,9 @@ export default function CharacterCreationWizard({
                   </select>
                 </div>
                 <div>
-                  <label style={{ color: '#c4b5fd', display: 'block', marginBottom: '6px' }}>Generation</label>
+                  <label style={{ color: '#c4b5fd', display: 'block', marginBottom: '6px' }}>
+                    Generation
+                  </label>
                   <input
                     value={generation}
                     onChange={(e) => setGeneration(e.target.value)}
@@ -913,561 +573,657 @@ export default function CharacterCreationWizard({
                   />
                 </div>
               </div>
-            </SheetSection>
-          )}
+            )}
 
-          {step === 1 && systemType === 'werewolf' && (
-            <SheetSection title="Garou template" accent={themeAccent}>
-              <label style={{ color: '#c4b5fd', display: 'block', marginBottom: '8px' }}>Breed</label>
-              <select
-                value={breed}
-                onChange={(e) => setBreed(e.target.value)}
-                style={{
-                  width: '100%',
-                  padding: '10px',
-                  marginBottom: '12px',
-                  background: '#0f1729',
-                  color: '#e0e0e0',
-                  border: '2px solid #2a2a4e',
-                  borderRadius: '8px',
-                }}
-              >
-                {WTA_BREEDS.map((b) => (
-                  <option key={b} value={b}>
-                    {b}
-                  </option>
-                ))}
-              </select>
-              <label style={{ color: '#c4b5fd', display: 'block', marginBottom: '8px' }}>Auspice</label>
-              <select
-                value={auspice}
-                onChange={(e) => setAuspice(e.target.value)}
-                style={{
-                  width: '100%',
-                  padding: '10px',
-                  marginBottom: '12px',
-                  background: '#0f1729',
-                  color: '#e0e0e0',
-                  border: '2px solid #2a2a4e',
-                  borderRadius: '8px',
-                }}
-              >
-                {WTA_AUSPICES.map((a) => (
-                  <option key={a} value={a}>
-                    {a}
-                  </option>
-                ))}
-              </select>
-              <label style={{ color: '#c4b5fd', display: 'block', marginBottom: '8px' }}>Tribe</label>
-              <select
-                value={tribe}
-                onChange={(e) => setTribe(e.target.value)}
-                style={{
-                  width: '100%',
-                  padding: '10px',
-                  background: '#0f1729',
-                  color: '#e0e0e0',
-                  border: '2px solid #2a2a4e',
-                  borderRadius: '8px',
-                }}
-              >
-                {WTA_TRIBES.map((t) => (
-                  <option key={t} value={t}>
-                    {t}
-                  </option>
-                ))}
-              </select>
-            </SheetSection>
-          )}
+            {systemType === 'werewolf' && (
+              <>
+                <label style={{ color: '#c4b5fd', display: 'block', marginBottom: '8px' }}>
+                  Breed
+                </label>
+                <select
+                  value={breed}
+                  onChange={(e) => setBreed(e.target.value)}
+                  style={{
+                    width: '100%',
+                    padding: '10px',
+                    marginBottom: '12px',
+                    background: '#0f1729',
+                    color: '#e0e0e0',
+                    border: '2px solid #2a2a4e',
+                    borderRadius: '8px',
+                  }}
+                >
+                  {WTA_BREEDS.map((b) => (
+                    <option key={b} value={b}>
+                      {b}
+                    </option>
+                  ))}
+                </select>
+                <label style={{ color: '#c4b5fd', display: 'block', marginBottom: '8px' }}>
+                  Auspice
+                </label>
+                <select
+                  value={auspice}
+                  onChange={(e) => setAuspice(e.target.value)}
+                  style={{
+                    width: '100%',
+                    padding: '10px',
+                    marginBottom: '12px',
+                    background: '#0f1729',
+                    color: '#e0e0e0',
+                    border: '2px solid #2a2a4e',
+                    borderRadius: '8px',
+                  }}
+                >
+                  {WTA_AUSPICES.map((a) => (
+                    <option key={a} value={a}>
+                      {a}
+                    </option>
+                  ))}
+                </select>
+                <label style={{ color: '#c4b5fd', display: 'block', marginBottom: '8px' }}>
+                  Tribe
+                </label>
+                <select
+                  value={tribe}
+                  onChange={(e) => setTribe(e.target.value)}
+                  style={{
+                    width: '100%',
+                    padding: '10px',
+                    background: '#0f1729',
+                    color: '#e0e0e0',
+                    border: '2px solid #2a2a4e',
+                    borderRadius: '8px',
+                  }}
+                >
+                  {WTA_TRIBES.map((t) => (
+                    <option key={t} value={t}>
+                      {t}
+                    </option>
+                  ))}
+                </select>
+              </>
+            )}
 
-          {step === 1 && systemType === 'mage' && (
-            <SheetSection title="Mage template" accent={themeAccent}>
-              <label style={{ color: '#c4b5fd', display: 'block', marginBottom: '8px' }}>Tradition</label>
-              <select
-                value={tradition}
-                onChange={(e) => setTradition(e.target.value)}
-                style={{
-                  width: '100%',
-                  padding: '10px',
-                  background: '#0f1729',
-                  color: '#e0e0e0',
-                  border: '2px solid #2a2a4e',
-                  borderRadius: '8px',
-                }}
-              >
-                {MTA_TRADITIONS.map((t) => (
-                  <option key={t} value={t}>
-                    {t}
-                  </option>
-                ))}
-              </select>
-              <p style={{ color: '#8b8b9f', fontSize: '13px', marginTop: '12px' }}>
-                Arete starts at 1. You will assign six sphere dots on the last step.
-              </p>
-            </SheetSection>
-          )}
+            {systemType === 'mage' && (
+              <>
+                <label style={{ color: '#c4b5fd', display: 'block', marginBottom: '8px' }}>
+                  Tradition
+                </label>
+                <select
+                  value={tradition}
+                  onChange={(e) => setTradition(e.target.value)}
+                  style={{
+                    width: '100%',
+                    padding: '10px',
+                    background: '#0f1729',
+                    color: '#e0e0e0',
+                    border: '2px solid #2a2a4e',
+                    borderRadius: '8px',
+                  }}
+                >
+                  {MTA_TRADITIONS.map((t) => (
+                    <option key={t} value={t}>
+                      {t}
+                    </option>
+                  ))}
+                </select>
+                <p style={{ color: '#8b8b9f', fontSize: '13px', marginTop: '12px' }}>
+                  Arete starts at 1. You will assign six sphere dots in Advantages.
+                </p>
+              </>
+            )}
+          </ResponsiveSheetBlock>
 
-          {step === 1 && ['vampire', 'werewolf', 'mage'].includes(systemType) && (
-            <SheetSection
-              title="Nature & demeanor"
-              subtitle="Classic oWoD-style archetypes (Revised-era lists). Pick Custom to type your own — for another game line or a Storyteller-specific list."
-              accent={themeAccent}
+          <ResponsiveSheetBlock
+            sectionId={SHEET_SECTION_IDS.nature}
+            title="Nature & demeanor"
+            subtitle="Classic oWoD-style archetypes (Revised-era lists). Pick Custom to type your own."
+            accent={themeAccent}
+          >
+            {inlineErr(SHEET_SECTION_IDS.nature)}
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))',
+                gap: '16px',
+              }}
             >
-              <div
-                style={{
-                  display: 'grid',
-                  gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))',
-                  gap: '16px',
-                }}
-              >
-                <div>
-                  <label style={{ color: '#c4b5fd', display: 'block', marginBottom: '6px' }}>Nature</label>
-                  <select
-                    value={naturePick}
-                    onChange={(e) => setNaturePick(e.target.value)}
-                    style={{
-                      width: '100%',
-                      padding: '10px',
-                      marginBottom: '8px',
-                      background: '#0f1729',
-                      color: '#e0e0e0',
-                      border: '2px solid #2a2a4e',
-                      borderRadius: '8px',
-                    }}
-                  >
-                    {WOD_ARCHETYPES.map((a) => (
-                      <option key={a} value={a}>
-                        {a}
-                      </option>
-                    ))}
-                    <option value={ARCHETYPE_CUSTOM}>Custom (enter below)</option>
-                  </select>
-                  <input
-                    value={natureCustom}
-                    onChange={(e) => setNatureCustom(e.target.value)}
-                    placeholder={
-                      naturePick === ARCHETYPE_CUSTOM
-                        ? 'Your Nature (free text)'
-                        : 'Optional: extra detail, or wording for another system'
-                    }
-                    style={{
-                      width: '100%',
-                      padding: '10px',
-                      background: '#0f1729',
-                      color: '#e0e0e0',
-                      border: '2px solid #2a2a4e',
-                      borderRadius: '8px',
-                    }}
-                  />
-                </div>
-                <div>
-                  <label style={{ color: '#c4b5fd', display: 'block', marginBottom: '6px' }}>Demeanor</label>
-                  <select
-                    value={demeanorPick}
-                    onChange={(e) => setDemeanorPick(e.target.value)}
-                    style={{
-                      width: '100%',
-                      padding: '10px',
-                      marginBottom: '8px',
-                      background: '#0f1729',
-                      color: '#e0e0e0',
-                      border: '2px solid #2a2a4e',
-                      borderRadius: '8px',
-                    }}
-                  >
-                    {WOD_ARCHETYPES.map((a) => (
-                      <option key={a} value={a}>
-                        {a}
-                      </option>
-                    ))}
-                    <option value={ARCHETYPE_CUSTOM}>Custom (enter below)</option>
-                  </select>
-                  <input
-                    value={demeanorCustom}
-                    onChange={(e) => setDemeanorCustom(e.target.value)}
-                    placeholder={
-                      demeanorPick === ARCHETYPE_CUSTOM
-                        ? 'Your Demeanor (free text)'
-                        : 'Optional: extra detail, or wording for another system'
-                    }
-                    style={{
-                      width: '100%',
-                      padding: '10px',
-                      background: '#0f1729',
-                      color: '#e0e0e0',
-                      border: '2px solid #2a2a4e',
-                      borderRadius: '8px',
-                    }}
-                  />
-                </div>
+              <div>
+                <label style={{ color: '#c4b5fd', display: 'block', marginBottom: '6px' }}>
+                  Nature
+                </label>
+                <select
+                  value={naturePick}
+                  onChange={(e) => setNaturePick(e.target.value)}
+                  style={{
+                    width: '100%',
+                    padding: '10px',
+                    marginBottom: '8px',
+                    background: '#0f1729',
+                    color: '#e0e0e0',
+                    border: '2px solid #2a2a4e',
+                    borderRadius: '8px',
+                  }}
+                >
+                  {WOD_ARCHETYPES.map((a) => (
+                    <option key={a} value={a}>
+                      {a}
+                    </option>
+                  ))}
+                  <option value={ARCHETYPE_CUSTOM}>Custom (enter below)</option>
+                </select>
+                <input
+                  value={natureCustom}
+                  onChange={(e) => setNatureCustom(e.target.value)}
+                  placeholder={
+                    naturePick === ARCHETYPE_CUSTOM
+                      ? 'Your Nature (free text)'
+                      : 'Optional: extra detail, or wording for another system'
+                  }
+                  style={{
+                    width: '100%',
+                    padding: '10px',
+                    background: '#0f1729',
+                    color: '#e0e0e0',
+                    border: '2px solid #2a2a4e',
+                    borderRadius: '8px',
+                  }}
+                />
               </div>
-            </SheetSection>
-          )}
-
-          {step === 2 && (
-            <SheetSection
-              title="Attributes"
-              subtitle="7 / 5 / 3 across Physical, Social, Mental — click dots to set each trait (minimum 1)."
-              accent={themeAccent}
-            >
-              <label style={{ color: '#c4b5fd', display: 'block', marginBottom: '8px' }}>
-                Which category is primary (7 dots)?
-              </label>
-              <select
-                value={priority}
-                onChange={(e) => setPriority(e.target.value)}
-                style={{
-                  width: '100%',
-                  maxWidth: '320px',
-                  padding: '10px',
-                  marginBottom: '20px',
-                  background: '#0f1729',
-                  color: '#e0e0e0',
-                  border: '2px solid #2a2a4e',
-                  borderRadius: '8px',
-                }}
-              >
-                <option value="physical">Physical primary (7) · Social (5) · Mental (3)</option>
-                <option value="social">Social primary (7) · Physical (5) · Mental (3)</option>
-                <option value="mental">Mental primary (7) · Social (5) · Physical (3)</option>
-              </select>
-              <AttributeColumns attrs={attrs} setAttrs={setAttrs} pools={pools} />
-            </SheetSection>
-          )}
-
-          {step === 3 && (
-            <SheetSection
-              title="Abilities"
-              subtitle="11 / 7 / 4 across Talents, Skills, Knowledges (Revised-style). Click dots; pool caps prevent overspending."
-              accent={themeAccent}
-            >
-              <label style={{ color: '#c4b5fd', display: 'block', marginBottom: '8px' }}>
-                Which column is primary (11 dots)?
-              </label>
-              <select
-                value={abilityPriority}
-                onChange={(e) => setAbilityPriority(e.target.value)}
-                style={{
-                  width: '100%',
-                  maxWidth: '400px',
-                  padding: '10px',
-                  marginBottom: '20px',
-                  background: '#0f1729',
-                  color: '#e0e0e0',
-                  border: '2px solid #2a2a4e',
-                  borderRadius: '8px',
-                }}
-              >
-                <option value="talents">Talents 11 · Skills 7 · Knowledges 4</option>
-                <option value="skills">Skills 11 · Talents 7 · Knowledges 4</option>
-                <option value="knowledges">Knowledges 11 · Skills 7 · Talents 4</option>
-              </select>
-              <AbilityColumns
-                abilities={abilities}
-                setAbilities={setAbilities}
-                pools={abilityPools}
-              />
-            </SheetSection>
-          )}
-
-          {step === 4 && (
-            <>
-              {systemType === 'vampire' && (
-                <SheetSection
-                  title="Advantages — Vampire"
-                  subtitle="Neonate defaults: 3 discipline dots, 5 background dots, virtues total 7 (each 1–5). Willpower and Humanity are editable for your table."
-                  accent={themeAccent}
+              <div>
+                <label style={{ color: '#c4b5fd', display: 'block', marginBottom: '6px' }}>
+                  Demeanor
+                </label>
+                <select
+                  value={demeanorPick}
+                  onChange={(e) => setDemeanorPick(e.target.value)}
+                  style={{
+                    width: '100%',
+                    padding: '10px',
+                    marginBottom: '8px',
+                    background: '#0f1729',
+                    color: '#e0e0e0',
+                    border: '2px solid #2a2a4e',
+                    borderRadius: '8px',
+                  }}
                 >
-                  <div style={{ marginBottom: '20px' }}>
-                    <div style={{ color: '#94a3b8', fontSize: '12px', marginBottom: '8px' }}>
-                      Disciplines (max 3 dots total at creation)
-                    </div>
-                    {disciplines.map((d, i) => (
-                      <div
-                        key={i}
-                        style={{
-                          display: 'flex',
-                          flexWrap: 'wrap',
-                          alignItems: 'center',
-                          gap: '10px',
-                          marginBottom: '10px',
-                        }}
-                      >
-                        <select
-                          value={DISCIPLINE_PRESETS.includes(d.name) ? d.name : d.name ? '__custom' : ''}
-                          onChange={(e) => {
-                            const v = e.target.value;
-                            const next = [...disciplines];
-                            if (v === '__custom') next[i] = { ...next[i], name: '' };
-                            else next[i] = { ...next[i], name: v };
-                            setDisciplines(next);
-                          }}
-                          style={{
-                            flex: '1 1 180px',
-                            padding: '8px',
-                            background: '#0f1729',
-                            color: '#e0e0e0',
-                            border: '1px solid #2a2a4e',
-                            borderRadius: '6px',
-                          }}
-                        >
-                          <option value="">—</option>
-                          {DISCIPLINE_PRESETS.map((p) => (
-                            <option key={p} value={p}>
-                              {p}
-                            </option>
-                          ))}
-                          <option value="__custom">Custom name…</option>
-                        </select>
-                        {(!d.name || !DISCIPLINE_PRESETS.includes(d.name)) && (
-                          <input
-                            placeholder="Discipline name"
-                            value={DISCIPLINE_PRESETS.includes(d.name) ? '' : d.name}
-                            onChange={(e) => {
-                              const next = [...disciplines];
-                              next[i] = { ...next[i], name: e.target.value };
-                              setDisciplines(next);
-                            }}
-                            style={{
-                              flex: '1 1 140px',
-                              padding: '8px',
-                              background: '#0f1729',
-                              color: '#e0e0e0',
-                              border: '1px solid #2a2a4e',
-                              borderRadius: '6px',
-                            }}
-                          />
-                        )}
-                        <DotTrack
-                          value={d.dots}
-                          maxRank={5}
-                          accent={themeAccent}
-                          onChange={(n) => {
-                            const next = [...disciplines];
-                            const others = next.reduce((s, x, j) => (j === i ? s : s + (parseInt(x.dots, 10) || 0)), 0);
-                            if (others + n > 3) return;
-                            next[i] = { ...next[i], dots: n };
-                            setDisciplines(next);
-                          }}
-                        />
-                      </div>
-                    ))}
-                  </div>
+                  {WOD_ARCHETYPES.map((a) => (
+                    <option key={a} value={a}>
+                      {a}
+                    </option>
+                  ))}
+                  <option value={ARCHETYPE_CUSTOM}>Custom (enter below)</option>
+                </select>
+                <input
+                  value={demeanorCustom}
+                  onChange={(e) => setDemeanorCustom(e.target.value)}
+                  placeholder={
+                    demeanorPick === ARCHETYPE_CUSTOM
+                      ? 'Your Demeanor (free text)'
+                      : 'Optional: extra detail, or wording for another system'
+                  }
+                  style={{
+                    width: '100%',
+                    padding: '10px',
+                    background: '#0f1729',
+                    color: '#e0e0e0',
+                    border: '2px solid #2a2a4e',
+                    borderRadius: '8px',
+                  }}
+                />
+              </div>
+            </div>
+          </ResponsiveSheetBlock>
 
-                  <div style={{ marginBottom: '20px' }}>
-                    <div style={{ color: '#94a3b8', fontSize: '12px', marginBottom: '8px' }}>
-                      Backgrounds (max 5 dots total)
-                    </div>
-                    {backgrounds.map((b, i) => (
-                      <div
-                        key={i}
-                        style={{
-                          display: 'flex',
-                          flexWrap: 'wrap',
-                          alignItems: 'center',
-                          gap: '10px',
-                          marginBottom: '8px',
-                        }}
-                      >
-                        <input
-                          placeholder="e.g. Resources"
-                          value={b.name}
-                          onChange={(e) => {
-                            const next = [...backgrounds];
-                            next[i] = { ...next[i], name: e.target.value };
-                            setBackgrounds(next);
-                          }}
-                          style={{
-                            flex: '1 1 160px',
-                            padding: '8px',
-                            background: '#0f1729',
-                            color: '#e0e0e0',
-                            border: '1px solid #2a2a4e',
-                            borderRadius: '6px',
-                          }}
-                        />
-                        <DotTrack
-                          value={b.dots}
-                          maxRank={5}
-                          accent="#a78bfa"
-                          onChange={(n) => {
-                            const next = [...backgrounds];
-                            const others = next.reduce((s, x, j) => (j === i ? s : s + (parseInt(x.dots, 10) || 0)), 0);
-                            if (others + n > 5) return;
-                            next[i] = { ...next[i], dots: n };
-                            setBackgrounds(next);
-                          }}
-                        />
-                      </div>
-                    ))}
-                  </div>
+          <ResponsiveSheetBlock
+            sectionId={SHEET_SECTION_IDS.attributes}
+            title="Attributes"
+            subtitle="7 / 5 / 3 across Physical, Social, Mental — minimum 1 in each trait."
+            accent={themeAccent}
+          >
+            {inlineErr(SHEET_SECTION_IDS.attributes)}
+            <PoolSummary variant="attributes" attrs={attrs} pools={pools} />
+            <label style={{ color: '#c4b5fd', display: 'block', marginBottom: '8px' }}>
+              Which category is primary (7 dots)?
+            </label>
+            <select
+              value={priority}
+              onChange={(e) => setPriority(e.target.value)}
+              style={{
+                width: '100%',
+                maxWidth: '320px',
+                padding: '10px',
+                marginBottom: '20px',
+                background: '#0f1729',
+                color: '#e0e0e0',
+                border: '2px solid #2a2a4e',
+                borderRadius: '8px',
+              }}
+            >
+              <option value="physical">Physical primary (7) · Social (5) · Mental (3)</option>
+              <option value="social">Social primary (7) · Physical (5) · Mental (3)</option>
+              <option value="mental">Mental primary (7) · Social (5) · Physical (3)</option>
+            </select>
+            <AttributeColumns attrs={attrs} setAttrs={setAttrs} pools={pools} />
+          </ResponsiveSheetBlock>
 
-                  <div style={{ marginBottom: '16px' }}>
-                    <div style={{ color: '#94a3b8', fontSize: '12px', marginBottom: '8px' }}>
-                      Virtues (7 dots, each 1–5)
-                    </div>
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '16px' }}>
-                      {[
-                        ['conscience', 'Conscience / Conviction'],
-                        ['self_control', 'Self-Control / Instinct'],
-                        ['courage', 'Courage'],
-                      ].map(([key, label]) => (
-                        <div key={key} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                          <span style={{ color: '#c4c4d4', fontSize: '12px', width: '140px' }}>{label}</span>
-                          <DotTrack
-                            value={virtues[key]}
-                            maxRank={5}
-                            accent="#f472b6"
-                            onChange={(n) => {
-                              const next = { ...virtues, [key]: String(n) };
-                              setVirtues(next);
-                            }}
-                          />
-                        </div>
-                      ))}
-                    </div>
-                  </div>
+          <ResponsiveSheetBlock
+            sectionId={SHEET_SECTION_IDS.abilities}
+            title="Abilities"
+            subtitle="11 / 7 / 4 across Talents, Skills, Knowledges. Custom rows share the same column pools."
+            accent={themeAccent}
+          >
+            {inlineErr(SHEET_SECTION_IDS.abilities)}
+            <PoolSummary
+              variant="abilities"
+              abilities={abilities}
+              abilityPools={abilityPools}
+              customAbilities={customAbilities}
+            />
+            <label style={{ color: '#c4b5fd', display: 'block', marginBottom: '8px' }}>
+              Which column is primary (11 dots)?
+            </label>
+            <select
+              value={abilityPriority}
+              onChange={(e) => setAbilityPriority(e.target.value)}
+              style={{
+                width: '100%',
+                maxWidth: '400px',
+                padding: '10px',
+                marginBottom: '20px',
+                background: '#0f1729',
+                color: '#e0e0e0',
+                border: '2px solid #2a2a4e',
+                borderRadius: '8px',
+              }}
+            >
+              <option value="talents">Talents 11 · Skills 7 · Knowledges 4</option>
+              <option value="skills">Skills 11 · Talents 7 · Knowledges 4</option>
+              <option value="knowledges">Knowledges 11 · Skills 7 · Talents 4</option>
+            </select>
+            <AbilityColumns
+              abilities={abilities}
+              setAbilities={setAbilities}
+              pools={abilityPools}
+              customAbilities={customAbilities}
+              setCustomAbilities={setCustomAbilities}
+            />
+          </ResponsiveSheetBlock>
 
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: '12px' }}>
-                    <div>
-                      <label style={{ color: '#c4b5fd', fontSize: '12px' }}>Humanity</label>
-                      <input
-                        type="number"
-                        min={0}
-                        max={10}
-                        value={humanity}
-                        onChange={(e) => setHumanity(e.target.value)}
-                        style={{
-                          width: '100%',
-                          marginTop: '4px',
-                          padding: '8px',
-                          background: '#0f1729',
-                          color: '#e0e0e0',
-                          border: '1px solid #2a2a4e',
-                          borderRadius: '6px',
-                        }}
-                      />
-                    </div>
-                    <div>
-                      <label style={{ color: '#c4b5fd', fontSize: '12px' }}>Willpower</label>
-                      <input
-                        type="number"
-                        min={1}
-                        max={10}
-                        value={willpowerVampire}
-                        onChange={(e) => setWillpowerVampire(e.target.value)}
-                        style={{
-                          width: '100%',
-                          marginTop: '4px',
-                          padding: '8px',
-                          background: '#0f1729',
-                          color: '#e0e0e0',
-                          border: '1px solid #2a2a4e',
-                          borderRadius: '6px',
-                        }}
-                      />
-                    </div>
-                  </div>
-                </SheetSection>
-              )}
+          <ResponsiveSheetBlock
+            sectionId={SHEET_SECTION_IDS.advantages}
+            title="Advantages"
+            subtitle="Line-specific pools — virtues, spheres, or Garou energy."
+            accent={themeAccent}
+          >
+            {inlineErr(SHEET_SECTION_IDS.advantages)}
 
-              {systemType === 'mage' && (
-                <SheetSection
-                  title="Spheres"
-                  subtitle="Allocate exactly 6 dots among the nine spheres (Arete remains 1 at this stage)."
-                  accent={themeAccent}
-                >
-                  {MTA_SPHERES.map(([k, label]) => (
+            {systemType === 'vampire' && (
+              <SheetSection
+                title="Kindred advantages"
+                subtitle="Neonate defaults: 3 discipline dots, 5 background dots, virtues total 7."
+                accent={themeAccent}
+              >
+                <div style={{ marginBottom: '20px' }}>
+                  <div style={{ color: '#94a3b8', fontSize: '12px', marginBottom: '8px' }}>
+                    Disciplines (max 3 dots total at creation)
+                  </div>
+                  {disciplines.map((d, i) => (
                     <div
-                      key={k}
+                      key={i}
                       style={{
                         display: 'flex',
+                        flexWrap: 'wrap',
                         alignItems: 'center',
-                        justifyContent: 'space-between',
-                        marginBottom: '8px',
-                        padding: '6px 8px',
-                        background: 'rgba(0,0,0,0.2)',
-                        borderRadius: '6px',
+                        gap: '10px',
+                        marginBottom: '10px',
                       }}
                     >
-                      <span style={{ color: '#c4c4d4', fontSize: '13px' }}>{label}</span>
+                      <select
+                        value={DISCIPLINE_PRESETS.includes(d.name) ? d.name : d.name ? '__custom' : ''}
+                        onChange={(e) => {
+                          const v = e.target.value;
+                          const next = [...disciplines];
+                          if (v === '__custom') next[i] = { ...next[i], name: '' };
+                          else next[i] = { ...next[i], name: v };
+                          setDisciplines(next);
+                        }}
+                        style={{
+                          flex: '1 1 180px',
+                          padding: '8px',
+                          background: '#0f1729',
+                          color: '#e0e0e0',
+                          border: '1px solid #2a2a4e',
+                          borderRadius: '6px',
+                        }}
+                      >
+                        <option value="">—</option>
+                        {DISCIPLINE_PRESETS.map((p) => (
+                          <option key={p} value={p}>
+                            {p}
+                          </option>
+                        ))}
+                        <option value="__custom">Custom name…</option>
+                      </select>
+                      {(!d.name || !DISCIPLINE_PRESETS.includes(d.name)) && (
+                        <input
+                          placeholder="Discipline name"
+                          value={DISCIPLINE_PRESETS.includes(d.name) ? '' : d.name}
+                          onChange={(e) => {
+                            const next = [...disciplines];
+                            next[i] = { ...next[i], name: e.target.value };
+                            setDisciplines(next);
+                          }}
+                          style={{
+                            flex: '1 1 140px',
+                            padding: '8px',
+                            background: '#0f1729',
+                            color: '#e0e0e0',
+                            border: '1px solid #2a2a4e',
+                            borderRadius: '6px',
+                          }}
+                        />
+                      )}
                       <DotTrack
-                        value={spheres[k]}
+                        value={d.dots}
                         maxRank={5}
                         accent={themeAccent}
                         onChange={(n) => {
-                          setSpheres((prev) => {
-                            const old = parseInt(prev[k], 10) || 0;
-                            const delta = n - old;
-                            const sum = MTA_SPHERES.reduce(
-                              (s, [kk]) => s + (parseInt(prev[kk], 10) || 0),
-                              0
-                            );
-                            if (sum + delta > 6) return prev;
-                            return { ...prev, [k]: n };
-                          });
+                          const next = [...disciplines];
+                          const others = next.reduce(
+                            (s, x, j) => (j === i ? s : s + (parseInt(x.dots, 10) || 0)),
+                            0
+                          );
+                          if (others + n > 3) return;
+                          next[i] = { ...next[i], dots: n };
+                          setDisciplines(next);
                         }}
                       />
                     </div>
                   ))}
-                </SheetSection>
-              )}
+                </div>
 
-              {systemType === 'werewolf' && (
-                <SheetSection
-                  title="Garou notes"
-                  subtitle="Gifts, Rage, and Gnosis follow your Storyteller and corebook—record anything you have already agreed on."
-                  accent={themeAccent}
+                <div style={{ marginBottom: '20px' }}>
+                  <div style={{ color: '#94a3b8', fontSize: '12px', marginBottom: '8px' }}>
+                    Backgrounds (max 5 dots total)
+                  </div>
+                  {backgrounds.map((b, i) => (
+                    <div
+                      key={i}
+                      style={{
+                        display: 'flex',
+                        flexWrap: 'wrap',
+                        alignItems: 'center',
+                        gap: '10px',
+                        marginBottom: '8px',
+                      }}
+                    >
+                      <input
+                        placeholder="e.g. Resources"
+                        value={b.name}
+                        onChange={(e) => {
+                          const next = [...backgrounds];
+                          next[i] = { ...next[i], name: e.target.value };
+                          setBackgrounds(next);
+                        }}
+                        style={{
+                          flex: '1 1 160px',
+                          padding: '8px',
+                          background: '#0f1729',
+                          color: '#e0e0e0',
+                          border: '1px solid #2a2a4e',
+                          borderRadius: '6px',
+                        }}
+                      />
+                      <DotTrack
+                        value={b.dots}
+                        maxRank={5}
+                        accent="#a78bfa"
+                        onChange={(n) => {
+                          const next = [...backgrounds];
+                          const others = next.reduce(
+                            (s, x, j) => (j === i ? s : s + (parseInt(x.dots, 10) || 0)),
+                            0
+                          );
+                          if (others + n > 5) return;
+                          next[i] = { ...next[i], dots: n };
+                          setBackgrounds(next);
+                        }}
+                      />
+                    </div>
+                  ))}
+                </div>
+
+                <div style={{ marginBottom: '16px' }}>
+                  <div style={{ color: '#94a3b8', fontSize: '12px', marginBottom: '8px' }}>
+                    Virtues (7 dots, each 1–5)
+                  </div>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '16px' }}>
+                    {[
+                      ['conscience', 'Conscience / Conviction'],
+                      ['self_control', 'Self-Control / Instinct'],
+                      ['courage', 'Courage'],
+                    ].map(([key, label]) => (
+                      <div key={key} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <span style={{ color: '#c4c4d4', fontSize: '12px', width: '140px' }}>
+                          {label}
+                        </span>
+                        <DotTrack
+                          value={virtues[key]}
+                          maxRank={5}
+                          accent="#f472b6"
+                          onChange={(n) => {
+                            setVirtues((prev) => ({ ...prev, [key]: String(n) }));
+                          }}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div
+                  style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))',
+                    gap: '12px',
+                  }}
                 >
-                  <p style={{ color: '#8b8b9f', fontSize: '14px' }}>
-                    Use the narrative box below for rank, starting Rage/Gnosis, or gift names once your table assigns them.
-                  </p>
-                </SheetSection>
-              )}
+                  <div>
+                    <label style={{ color: '#c4b5fd', fontSize: '12px' }}>Humanity</label>
+                    <input
+                      type="number"
+                      min={0}
+                      max={10}
+                      value={humanity}
+                      onChange={(e) => setHumanity(e.target.value)}
+                      style={{
+                        width: '100%',
+                        marginTop: '4px',
+                        padding: '8px',
+                        background: '#0f1729',
+                        color: '#e0e0e0',
+                        border: '1px solid #2a2a4e',
+                        borderRadius: '6px',
+                      }}
+                    />
+                  </div>
+                  <div>
+                    <label style={{ color: '#c4b5fd', fontSize: '12px' }}>Willpower</label>
+                    <input
+                      type="number"
+                      min={1}
+                      max={10}
+                      value={willpowerVampire}
+                      onChange={(e) => setWillpowerVampire(e.target.value)}
+                      style={{
+                        width: '100%',
+                        marginTop: '4px',
+                        padding: '8px',
+                        background: '#0f1729',
+                        color: '#e0e0e0',
+                        border: '1px solid #2a2a4e',
+                        borderRadius: '6px',
+                      }}
+                    />
+                  </div>
+                </div>
+              </SheetSection>
+            )}
 
-              <SheetSection title="Story & optional merits" accent="#9d4edd">
+            {systemType === 'mage' && (
+              <SheetSection
+                title="Spheres"
+                subtitle="Allocate exactly 6 dots among the nine spheres (Arete remains 1)."
+                accent={themeAccent}
+              >
+                {MTA_SPHERES.map(([k, label]) => (
+                  <div
+                    key={k}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      marginBottom: '8px',
+                      padding: '6px 8px',
+                      background: 'rgba(0,0,0,0.2)',
+                      borderRadius: '6px',
+                    }}
+                  >
+                    <span style={{ color: '#c4c4d4', fontSize: '13px' }}>{label}</span>
+                    <DotTrack
+                      value={spheres[k]}
+                      maxRank={5}
+                      accent={themeAccent}
+                      onChange={(n) => {
+                        setSpheres((prev) => {
+                          const old = parseInt(prev[k], 10) || 0;
+                          const delta = n - old;
+                          const sum = MTA_SPHERES.reduce(
+                            (s, [kk]) => s + (parseInt(prev[kk], 10) || 0),
+                            0
+                          );
+                          if (sum + delta > 6) return prev;
+                          return { ...prev, [k]: n };
+                        });
+                      }}
+                    />
+                  </div>
+                ))}
+              </SheetSection>
+            )}
+
+            {systemType === 'werewolf' && (
+              <SheetSection
+                title="Garou advantages"
+                subtitle="Starting Rage, Gnosis, and gifts — set with your Storyteller."
+                accent={themeAccent}
+              >
+                <div
+                  style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))',
+                    gap: '12px',
+                    marginBottom: '14px',
+                  }}
+                >
+                  <div>
+                    <label style={{ color: '#c4b5fd', fontSize: '12px' }}>Rage</label>
+                    <input
+                      type="number"
+                      min={0}
+                      max={10}
+                      value={werewolfRage}
+                      onChange={(e) => setWerewolfRage(e.target.value)}
+                      style={{
+                        width: '100%',
+                        marginTop: '4px',
+                        padding: '8px',
+                        background: '#0f1729',
+                        color: '#e0e0e0',
+                        border: '1px solid #2a2a4e',
+                        borderRadius: '6px',
+                      }}
+                    />
+                  </div>
+                  <div>
+                    <label style={{ color: '#c4b5fd', fontSize: '12px' }}>Gnosis</label>
+                    <input
+                      type="number"
+                      min={0}
+                      max={10}
+                      value={werewolfGnosis}
+                      onChange={(e) => setWerewolfGnosis(e.target.value)}
+                      style={{
+                        width: '100%',
+                        marginTop: '4px',
+                        padding: '8px',
+                        background: '#0f1729',
+                        color: '#e0e0e0',
+                        border: '1px solid #2a2a4e',
+                        borderRadius: '6px',
+                      }}
+                    />
+                  </div>
+                </div>
                 <label style={{ color: '#c4b5fd', display: 'block', marginBottom: '8px' }}>
-                  Background & hooks
+                  Gifts & rank notes
                 </label>
                 <textarea
-                  value={background}
-                  onChange={(e) => setBackground(e.target.value)}
-                  rows={6}
-                  placeholder="History, coterie, pack, cabal, goals…"
+                  value={giftsNotes}
+                  onChange={(e) => setGiftsNotes(e.target.value)}
+                  rows={4}
+                  placeholder="Gift names, rank, or table agreements…"
                   style={{
                     width: '100%',
                     padding: '12px',
-                    marginBottom: '16px',
                     background: '#0f1729',
                     color: '#e0e0e0',
                     border: '2px solid #2a2a4e',
                     borderRadius: '8px',
                     resize: 'vertical',
                     fontFamily: 'Crimson Text, Georgia, serif',
-                    lineHeight: 1.6,
-                  }}
-                />
-                <label style={{ color: '#c4b5fd', display: 'block', marginBottom: '8px' }}>
-                  Merits & flaws (free text)
-                </label>
-                <textarea
-                  value={meritsFlawsNotes}
-                  onChange={(e) => setMeritsFlawsNotes(e.target.value)}
-                  rows={3}
-                  placeholder="e.g. Eidetic Memory +2, Phobia (fire) -1 — ST-approved only"
-                  style={{
-                    width: '100%',
-                    padding: '12px',
-                    background: '#0f1729',
-                    color: '#e0e0e0',
-                    border: '2px solid #2a2a4e',
-                    borderRadius: '8px',
-                    resize: 'vertical',
+                    lineHeight: 1.5,
                   }}
                 />
               </SheetSection>
-            </>
-          )}
+            )}
+          </ResponsiveSheetBlock>
+
+          <ResponsiveSheetBlock
+            sectionId={SHEET_SECTION_IDS.story}
+            title="Story & merits"
+            subtitle="Background narrative and structured merits / flaws."
+            accent="#9d4edd"
+          >
+            <label style={{ color: '#c4b5fd', display: 'block', marginBottom: '8px' }}>
+              Background & hooks
+            </label>
+            <textarea
+              value={background}
+              onChange={(e) => setBackground(e.target.value)}
+              rows={6}
+              placeholder="History, coterie, pack, cabal, goals…"
+              style={{
+                width: '100%',
+                padding: '12px',
+                marginBottom: '20px',
+                background: '#0f1729',
+                color: '#e0e0e0',
+                border: '2px solid #2a2a4e',
+                borderRadius: '8px',
+                resize: 'vertical',
+                fontFamily: 'Crimson Text, Georgia, serif',
+                lineHeight: 1.6,
+              }}
+            />
+            <MeritFlawRows
+              rows={meritRows}
+              setRows={setMeritRows}
+              globalNotes={meritsGlobalNotes}
+              setGlobalNotes={setMeritsGlobalNotes}
+            />
+          </ResponsiveSheetBlock>
 
           <div
             style={{
@@ -1480,7 +1236,7 @@ export default function CharacterCreationWizard({
           >
             <button
               type="button"
-              onClick={step === 0 ? onCancel : () => setStep((s) => Math.max(0, s - 1))}
+              onClick={onCancel}
               style={{
                 padding: '10px 18px',
                 background: '#1e293b',
@@ -1490,44 +1246,25 @@ export default function CharacterCreationWizard({
                 cursor: 'pointer',
               }}
             >
-              {step === 0 ? 'Cancel' : 'Back'}
+              Cancel
             </button>
-            {step < maxStep ? (
-              <button
-                type="button"
-                onClick={() => setStep((s) => s + 1)}
-                style={{
-                  padding: '10px 22px',
-                  background: `linear-gradient(135deg, ${themeAccent} 0%, #5b21b6 100%)`,
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '8px',
-                  cursor: 'pointer',
-                  fontWeight: 'bold',
-                  fontFamily: 'Cinzel, serif',
-                }}
-              >
-                Next
-              </button>
-            ) : (
-              <button
-                type="button"
-                disabled={submitting}
-                onClick={handleSubmit}
-                style={{
-                  padding: '10px 22px',
-                  background: submitting ? '#4a4a5e' : '#9d4edd',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '8px',
-                  cursor: submitting ? 'not-allowed' : 'pointer',
-                  fontWeight: 'bold',
-                  fontFamily: 'Cinzel, serif',
-                }}
-              >
-                {submitting ? 'Sealing sheet…' : 'Create character'}
-              </button>
-            )}
+            <button
+              type="button"
+              disabled={submitting}
+              onClick={handleSubmit}
+              style={{
+                padding: '10px 22px',
+                background: submitting ? '#4a4a5e' : '#9d4edd',
+                color: 'white',
+                border: 'none',
+                borderRadius: '8px',
+                cursor: submitting ? 'not-allowed' : 'pointer',
+                fontWeight: 'bold',
+                fontFamily: 'Cinzel, serif',
+              }}
+            >
+              {submitting ? 'Sealing sheet…' : 'Create character'}
+            </button>
           </div>
         </div>
       </GothicBox>

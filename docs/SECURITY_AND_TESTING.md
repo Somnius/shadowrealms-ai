@@ -1,10 +1,15 @@
 # Security practices and automated tests
 
-**Document version:** 0.7.17 (see `docs/CHANGELOG.md`).
+**Document version:** 0.7.18 (see `docs/CHANGELOG.md`).
 
 This document describes how we test security-sensitive behavior, how to run those tests safely, and how to keep dependencies under control.
 
 ## What the security / feature tests cover
+
+The file [`tests/test_campaign_membership.py`](../tests/test_campaign_membership.py) exercises (PostgreSQL):
+
+- **Detach / join gate**: After leaving a chronicle, self-join to another listed game is rejected (`join_requires_storyteller_approval`) unless rejoining with an existing sheet.
+- **Playing character**: Player cannot switch to another PC in the same chronicle without storyteller approval; storyteller `PUT` succeeds.
 
 The file `tests/test_security_and_features.py` exercises:
 
@@ -23,6 +28,8 @@ Tests register **synthetic users** with unique names (UUID suffix). They **mock*
 - Campaign RAG writes when creating campaigns (`get_rag_service` on the campaigns route).
 
 They **do not** mock the database: they require **PostgreSQL** with the same credentials as normal development (see below).
+
+**Cleaning up rows left in the DB after tests:** see [DATABASE_TEST_DATA_CLEANUP.md](DATABASE_TEST_DATA_CLEANUP.md), [`scripts/cleanup_integration_test_data.py`](../scripts/cleanup_integration_test_data.py), and [`scripts/sql/test_data_candidates.sql`](../scripts/sql/test_data_candidates.sql) (read-only `SELECT`s first).
 
 ## Prerequisites
 
@@ -90,13 +97,16 @@ Stay aware of public advisories (e.g. compromised package versions). If a packag
 
 ## Application security (high level)
 
-- **SQL**: Prefer parameterized queries (`%s` placeholders with bound parameters). Do not concatenate user input into SQL strings.
+- **SQL**: Prefer parameterized queries (`%s` or `?` with bound parameters, depending on DB driver). Do not concatenate user input into SQL strings.
 - **Auth**: Admin routes use `@require_admin()` and JWT identity; compare resource ownership with **`str(id)`** where JWT identities are strings and DB ids may be integers.
+- **Site admin scope**: Users with **`users.role = 'admin'`** may open any chronicle for support (campaign detail, messages, dice, read-state rules as implemented in v0.7.18+). This is intentional; restrict who receives the admin role. Helpers and players do not receive this bypass unless separately documented.
 - **PostgreSQL booleans**: Comparisons like `is_active = 1` against `BOOLEAN` columns can error; routes use `IS TRUE` / dialect-specific helpers where needed.
 - **XSS**: Avoid injecting untrusted HTML. `ReadmeModal` uses `dangerouslySetInnerHTML` only for **trusted** README content served by the app—do not reuse that pattern for user chat or arbitrary uploads.
 
 ## Related files
 
 - `tests/test_security_and_features.py` — security / feature regression tests.
+- `tests/test_campaign_membership.py` — detach, join gate, playing-character rules (PostgreSQL).
 - `scripts/run_security_tests.sh` — convenience runner with `.env` handling.
+- `scripts/cleanup_integration_test_data.py` — optional DB cleanup for `sec_*` / `@test.local` test rows (see [DATABASE_TEST_DATA_CLEANUP.md](DATABASE_TEST_DATA_CLEANUP.md)).
 - `tests/README.md` — full test suite index.

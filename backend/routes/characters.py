@@ -20,6 +20,7 @@ from database import (
     ensure_characters_play_suspension_columns,
     ensure_character_downtime_requests_table,
     ensure_users_allow_multi_campaign_play_column,
+    ensure_campaign_players_active_character_id_column,
 )
 
 # Stored as TEXT (URLs or data URLs); cap size to protect the DB.
@@ -370,6 +371,15 @@ def create_character():
 
         result = cursor.fetchone()
         character_id = result['id']
+        ensure_campaign_players_active_character_id_column(cursor)
+        cursor.execute(
+            """
+            UPDATE campaign_players SET active_character_id = %s
+            WHERE campaign_id = %s AND user_id = %s
+              AND active_character_id IS NULL
+            """,
+            (character_id, campaign_id, current_user_id),
+        )
         db.commit()
 
         logger.info(

@@ -293,6 +293,7 @@ This philosophy ensures:
 - [Performance & Scalability](#performance--scalability)
 
 ### **📊 Current Status & Versions**
+- [Version 0.7.18 - Admin chronicles, site admin access, account-delete hardening](#version-0718---admin-chronicles-site-admin-access-account-delete-hardening-)
 - [Version 0.7.17 - Documentation alignment and Phase 3B readiness](#version-0717---documentation-alignment-and-phase-3b-readiness-)
 - [Version 0.7.16 - Data layout, chargen polish, and API hardening](#version-0716---data-layout-chargen-polish-and-api-hardening-)
 - [Version 0.7.15 - WoD character creation & Player Profile](#version-0715---wod-character-creation--player-profile-)
@@ -333,7 +334,7 @@ This philosophy ensures:
 - [Phase 3A Interface Wireframe (ASCII)](#phase-3a-interface-wireframe-ascii)
 - [Next Steps for Phase 3A](#next-steps-for-phase-3a)
 
-### **🚀 Phase 3B: Advanced Campaign & Character Systems** ✅ STRUCTURE ORGANIZED (v0.7.17)
+### **🚀 Phase 3B: Advanced Campaign & Character Systems** ✅ STRUCTURE ORGANIZED (v0.7.18)
 - [Phase 3B Overview](#phase-3b-overview)
 - [Security & Testing Foundation](#security--testing-foundation)
 - [Location System Design](#location-system-design)
@@ -1317,6 +1318,19 @@ The project now includes comprehensive `.gitignore` rules covering:
 - **Campaign Continuity**: Persistent AI memory across multiple sessions
 - **Multi-Language**: Global accessibility with translation pipelines
 - **Real-time Collaboration**: Live AI-assisted gaming experiences
+
+## Version 0.7.18 - Admin chronicles, site admin access, account-delete hardening
+
+### What changed from 0.7.17
+
+- **Admin — All chronicles**: Lists every campaign (`GET /api/admin/campaigns`); **Open in app** switches to the main chronicle UI for locations and chat.
+- **Site admin scope**: Role **`admin`** may open any campaign (detail, messages, dice, read-state) for support; see `docs/SECURITY_AND_TESTING.md` and `docs/CHANGELOG.md` `[0.7.18]`—restrict who holds admin credentials.
+- **Preserve-chat user deletion**: Reassigns **`locations.created_by`** (and existing campaign ownership rules) before removing the user; admin-facing errors stay short while details are logged server-side.
+- **Admin character list**: Additional schema ensures (including **`is_npc`**), safer SQLite placeholders, and clearer API error display in the admin UI.
+
+**See also:** `docs/CHANGELOG.md` (`[0.7.18]`).
+
+---
 
 ## Version 0.7.17 - Documentation alignment and Phase 3B readiness
 
@@ -5946,11 +5960,11 @@ After comprehensive testing and debugging, we achieved **100% User Experience Te
 
 ---
 
-## 🚀 Phase 3B: Advanced Campaign & Character Systems (v0.7.17)
+## 🚀 Phase 3B: Advanced Campaign & Character Systems (v0.7.18)
 
 **Status:** 🚧 IN PROGRESS - Structure Organized  
 **Start Date:** 2025-10-24  
-**Current Version:** 0.7.17
+**Current Version:** 0.7.18
 
 ### Phase 3B Overview
 
@@ -5967,7 +5981,7 @@ Phase 3B builds upon Phase 3A's frontend foundation by implementing the core gam
 For complete details, see:
 - **[Phase 3B Implementation Guide](docs/PHASE3B_IMPLEMENTATION.md)** - Full specification (600+ lines)
 - **[Planning Documentation](docs/PLANNING.md)** - Phase planning and summaries
-- **[Changelog](docs/CHANGELOG.md)** - Version history through **v0.7.17**
+- **[Changelog](docs/CHANGELOG.md)** - Version history through **v0.7.18**
 
 ---
 
@@ -6450,7 +6464,7 @@ Reason: [Admin's stated reason]
 
 ---
 
-### Files Created/Modified (v0.7.17)
+### Files Created/Modified (v0.7.18)
 
 **Backend:**
 - `backend/database.py` - Schema migrations (pending)
@@ -6473,14 +6487,14 @@ Reason: [Admin's stated reason]
 **Documentation:**
 - `docs/PHASE3B_IMPLEMENTATION.md` - Complete specification ✅
 - `docs/PLANNING.md` - Detailed summary ✅
-- `docs/CHANGELOG.md` - Version 0.7.17 entry ✅
+- `docs/CHANGELOG.md` - Version 0.7.18 entry ✅
 - `scripts/run-frontend-tests.sh` - Test runner script ✅
 
 ---
 
 **Last Updated:** 2026-03-25  
 **Next Milestone:** Location System Implementation  
-**Version:** 0.7.17
+**Version:** 0.7.18
 
 ---
 
@@ -7195,9 +7209,9 @@ docker-compose ps
 - **Backend API**: http://localhost:5000
 - **ChromaDB**: http://localhost:8000
 
-### 🎯 **Current Status (v0.7.17)**
+### 🎯 **Current Status (v0.7.18)**
 
-📚 **v0.7.17** — Documentation and version-stamp alignment; **next milestone** narrative for **users / players / characters** (see `docs/CHANGELOG.md` `[0.7.17]`).
+🛡️ **v0.7.18** — Admin **All chronicles**, site-admin chronicle access for support, preserve-chat delete (`locations.created_by`), admin character list hardening (see `docs/CHANGELOG.md` `[0.7.18]`). Earlier **v0.7.17** was documentation and version-stamp alignment (`[0.7.17]`).
 
 ✅ **Phase 1 Complete** - Foundation & Docker Setup  
 ✅ **Phase 2 Complete** - RAG & Vector Memory System  

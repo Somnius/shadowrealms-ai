@@ -4,6 +4,7 @@ Handles saving and retrieving messages for campaigns and locations
 """
 
 import os
+from typing import Optional
 
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
@@ -13,11 +14,13 @@ from database import (
     ensure_messages_ai_message_kind_column,
     ensure_locations_player_access_columns,
     ensure_users_player_profile_columns,
+    ensure_campaign_players_active_character_id_column,
 )
 from services.location_access import (
     closed_location_error_response,
     user_can_bypass_closed_location,
 )
+from services.playing_character import effective_playing_character_id
 from datetime import datetime
 from services.message_time_format import format_message_time
 import logging
@@ -25,6 +28,32 @@ import logging
 logger = logging.getLogger(__name__)
 
 messages_bp = Blueprint('messages', __name__)
+
+
+def _int_jwt_user_id(raw) -> Optional[int]:
+    try:
+        return int(raw)
+    except (TypeError, ValueError):
+        return None
+
+
+def _campaign_accessible_to_viewer(cursor, campaign_id: int, user_id: int) -> bool:
+    """Creator / roster member, or site admin (any active campaign)."""
+    cursor.execute("SELECT role FROM users WHERE id = %s", (user_id,))
+    u = cursor.fetchone()
+    if u and u.get("role") == "admin":
+        cursor.execute("SELECT id FROM campaigns WHERE id = %s", (campaign_id,))
+        return cursor.fetchone() is not None
+    cursor.execute(
+        """
+        SELECT id FROM campaigns
+        WHERE id = %s AND (created_by = %s OR id IN (
+            SELECT campaign_id FROM campaign_players WHERE user_id = %s
+        ))
+        """,
+        (campaign_id, user_id, user_id),
+    )
+    return cursor.fetchone() is not None
 
 
 def _message_dict_from_row(row) -> dict:
@@ -76,8 +105,10 @@ def get_messages(campaign_id, location_id):
     - recent=1: last N messages by id (newest first in DB, returned ascending).
     """
     try:
-        user_id = get_jwt_identity()
-        
+        user_id = _int_jwt_user_id(get_jwt_identity())
+        if user_id is None:
+            return jsonify({'error': 'Invalid session'}), 401
+
         limit = request.args.get('limit', 50, type=int)
         offset = request.args.get('offset', 0, type=int)
         since_id = request.args.get('since_id', type=int)
@@ -91,15 +122,7 @@ def get_messages(campaign_id, location_id):
         ensure_users_player_profile_columns(cursor)
         conn.commit()
 
-        # Verify user has access to campaign
-        cursor.execute("""
-            SELECT id FROM campaigns
-            WHERE id = %s AND (created_by = %s OR id IN (
-                SELECT campaign_id FROM campaign_players WHERE user_id = %s
-            ))
-        """, (campaign_id, user_id, user_id))
-        
-        if not cursor.fetchone():
+        if not _campaign_accessible_to_viewer(cursor, campaign_id, user_id):
             return jsonify({'error': 'Unauthorized or campaign not found'}), 403
 
         cursor.execute(
@@ -201,7 +224,9 @@ def get_messages(campaign_id, location_id):
 def get_location_read_state(campaign_id, location_id):
     """Get per-character read state + first unread message marker."""
     try:
-        user_id = get_jwt_identity()
+        user_id = _int_jwt_user_id(get_jwt_identity())
+        if user_id is None:
+            return jsonify({'error': 'Invalid session'}), 401
         character_id = request.args.get('character_id', type=int)
         if not character_id:
             return jsonify({'error': 'character_id is required'}), 400
@@ -212,14 +237,7 @@ def get_location_read_state(campaign_id, location_id):
         ensure_locations_player_access_columns(cursor)
         conn.commit()
 
-        # Verify user has access to campaign
-        cursor.execute("""
-            SELECT id FROM campaigns
-            WHERE id = %s AND (created_by = %s OR id IN (
-                SELECT campaign_id FROM campaign_players WHERE user_id = %s
-            ))
-        """, (campaign_id, user_id, user_id))
-        if not cursor.fetchone():
+        if not _campaign_accessible_to_viewer(cursor, campaign_id, user_id):
             return jsonify({'error': 'Unauthorized or campaign not found'}), 403
 
         cursor.execute(
@@ -242,11 +260,19 @@ def get_location_read_state(campaign_id, location_id):
                 loc_row.get("game_system"),
             )
 
-        # Verify character belongs to this user and campaign
-        cursor.execute("""
-            SELECT id FROM characters
-            WHERE id = %s AND user_id = %s AND campaign_id = %s AND is_active = TRUE
-        """, (character_id, user_id, campaign_id))
+        cursor.execute("SELECT role FROM users WHERE id = %s", (user_id,))
+        viewer = cursor.fetchone() or {}
+        is_site_admin = viewer.get("role") == "admin"
+        if is_site_admin:
+            cursor.execute("""
+                SELECT id FROM characters
+                WHERE id = %s AND campaign_id = %s AND is_active = TRUE
+            """, (character_id, campaign_id))
+        else:
+            cursor.execute("""
+                SELECT id FROM characters
+                WHERE id = %s AND user_id = %s AND campaign_id = %s AND is_active = TRUE
+            """, (character_id, user_id, campaign_id))
         if not cursor.fetchone():
             return jsonify({'error': 'Character not found'}), 404
 
@@ -304,7 +330,9 @@ def get_location_read_state(campaign_id, location_id):
 def set_location_read_state(campaign_id, location_id):
     """Set per-character last read message for a location."""
     try:
-        user_id = get_jwt_identity()
+        user_id = _int_jwt_user_id(get_jwt_identity())
+        if user_id is None:
+            return jsonify({'error': 'Invalid session'}), 401
         data = request.get_json() or {}
         character_id = data.get('character_id')
         last_read_message_id = data.get('last_read_message_id')
@@ -316,21 +344,22 @@ def set_location_read_state(campaign_id, location_id):
         cursor = conn.cursor()
         _ensure_location_reads_table(cursor)
 
-        # Verify user has access to campaign
-        cursor.execute("""
-            SELECT id FROM campaigns
-            WHERE id = %s AND (created_by = %s OR id IN (
-                SELECT campaign_id FROM campaign_players WHERE user_id = %s
-            ))
-        """, (campaign_id, user_id, user_id))
-        if not cursor.fetchone():
+        if not _campaign_accessible_to_viewer(cursor, campaign_id, user_id):
             return jsonify({'error': 'Unauthorized or campaign not found'}), 403
 
-        # Verify character belongs to this user and campaign
-        cursor.execute("""
-            SELECT id FROM characters
-            WHERE id = %s AND user_id = %s AND campaign_id = %s AND is_active = TRUE
-        """, (character_id, user_id, campaign_id))
+        cursor.execute("SELECT role FROM users WHERE id = %s", (user_id,))
+        viewer = cursor.fetchone() or {}
+        is_site_admin = viewer.get("role") == "admin"
+        if is_site_admin:
+            cursor.execute("""
+                SELECT id FROM characters
+                WHERE id = %s AND campaign_id = %s AND is_active = TRUE
+            """, (character_id, campaign_id))
+        else:
+            cursor.execute("""
+                SELECT id FROM characters
+                WHERE id = %s AND user_id = %s AND campaign_id = %s AND is_active = TRUE
+            """, (character_id, user_id, campaign_id))
         if not cursor.fetchone():
             return jsonify({'error': 'Character not found'}), 404
 
@@ -396,7 +425,9 @@ def set_location_read_state(campaign_id, location_id):
 def save_message(campaign_id, location_id):
     """Save a new message"""
     try:
-        user_id = get_jwt_identity()
+        user_id = _int_jwt_user_id(get_jwt_identity())
+        if user_id is None:
+            return jsonify({'error': 'Invalid session'}), 401
         data = request.get_json()
         
         if not data or 'content' not in data:
@@ -428,6 +459,7 @@ def save_message(campaign_id, location_id):
         ensure_messages_ai_message_kind_column(cursor)
         ensure_locations_player_access_columns(cursor)
         ensure_users_player_profile_columns(cursor)
+        ensure_campaign_players_active_character_id_column(cursor)
         conn.commit()
 
         # Check if user is currently banned
@@ -448,15 +480,7 @@ def save_message(campaign_id, location_id):
             logger.error(f"Error checking ban status: {e}")
             # Continue if ban check fails
         
-        # Verify user has access to campaign
-        cursor.execute("""
-            SELECT id FROM campaigns
-            WHERE id = %s AND (created_by = %s OR id IN (
-                SELECT campaign_id FROM campaign_players WHERE user_id = %s
-            ))
-        """, (campaign_id, user_id, user_id))
-        
-        if not cursor.fetchone():
+        if not _campaign_accessible_to_viewer(cursor, campaign_id, user_id):
             return jsonify({'error': 'Unauthorized or campaign not found'}), 403
         
         # Verify location exists in this campaign AND get location type + access
@@ -521,12 +545,9 @@ def save_message(campaign_id, location_id):
 
         # Resolve / validate character for user-authored messages
         if role == 'user':
-            cursor.execute(
-                "SELECT active_character_id FROM users WHERE id = %s",
-                (user_id,),
+            active_cid = effective_playing_character_id(
+                cursor, int(user_id), int(campaign_id)
             )
-            ac_row = cursor.fetchone() or {}
-            active_cid = ac_row.get("active_character_id")
 
             if active_cid is not None:
                 _ichar = (
@@ -546,9 +567,8 @@ def save_message(campaign_id, location_id):
                     return jsonify(
                         {
                             'error': (
-                                'Your active character is not in this campaign. '
-                                'Open Player Profile and select the character that '
-                                'belongs here.'
+                                'Your playing character is not set for this campaign. '
+                                'Open Player Profile or chronicle settings.'
                             )
                         }
                     ), 400
@@ -556,8 +576,8 @@ def save_message(campaign_id, location_id):
                     return jsonify(
                         {
                             'error': (
-                                'You can only post as your active character '
-                                '(set in Player Profile).'
+                                'You can only post as your playing character '
+                                '(set in Player Profile or chronicle).'
                             )
                         }
                     ), 400
