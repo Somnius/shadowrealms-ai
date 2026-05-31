@@ -1,28 +1,16 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import ReadmeModal from './ReadmeModal';
+import packageJson from '../../package.json';
+
+/**
+ * SPA build version — from `frontend/package.json`, bumped by `scripts/version-bump.sh`.
+ * We do not call `/api/version` here: backend `VERSION` in `.env` can lag behind the
+ * built bundle and was overwriting this badge with stale values (e.g. v0.7.17).
+ */
+const displayVersion = `v${packageJson.version}`;
 
 function Footer() {
-  const [version, setVersion] = useState("v0.0.0"); // Will be fetched from backend
   const [showReadme, setShowReadme] = useState(false);
-
-  // Fetch version from backend on mount
-  useEffect(() => {
-    const fetchVersion = async () => {
-      try {
-        const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
-        const response = await fetch(`${API_URL}/version`);
-        if (response.ok) {
-          const data = await response.json();
-          setVersion(data.version);
-        }
-      } catch (error) {
-        console.error('Failed to fetch version:', error);
-        // Keep default version on error
-      }
-    };
-
-    fetchVersion();
-  }, []);
 
   return (
     <>
@@ -84,7 +72,7 @@ function Footer() {
             }}
             title="Click to view README"
           >
-            {version}
+            {displayVersion}
           </span>
         </div>
 

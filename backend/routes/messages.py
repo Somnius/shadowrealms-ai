@@ -469,8 +469,8 @@ def save_message(campaign_id, location_id):
         ai_message_kind = None
         if raw_mk is not None and str(raw_mk).strip():
             mk = str(raw_mk).strip().lower()
-            # Existing cleanup tags (/ai clean …)
-            if mk in ('slash_user', 'slash_assistant'):
+            # Existing cleanup tags (/ai clean …, /chat …)
+            if mk in ('slash_user', 'slash_assistant', 'chat_user', 'chat_assistant'):
                 ai_message_kind = mk
             # Dice animation + dice-roll final reveal tags
             # Format: dice_animation:<animationId>, dice_roll:<animationId>

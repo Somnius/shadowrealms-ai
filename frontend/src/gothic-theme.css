@@ -496,6 +496,14 @@ h1, h2, h3, h4, h5, h6 {
   }
 }
 
+/* Wraps login gate + footer so the gate’s full-bleed layers do not stack over the footer */
+.sr-login-page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: #07070f;
+}
+
 .sr-login-gate {
   position: relative;
   min-height: 100vh;
@@ -505,10 +513,17 @@ h1, h2, h3, h4, h5, h6 {
   background: #07070f;
 }
 
+/* Must follow .sr-login-gate so min-height:0 overrides min-height:100vh */
+.sr-login-page > .sr-login-gate {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
 .sr-login-gate-bg {
   position: absolute;
   inset: 0;
   z-index: 0;
+  pointer-events: none;
   background:
     radial-gradient(ellipse 80% 60% at 50% -10%, rgba(157, 78, 221, 0.22) 0%, transparent 55%),
     radial-gradient(ellipse 70% 50% at 100% 50%, rgba(233, 69, 96, 0.12) 0%, transparent 50%),

@@ -41,6 +41,9 @@ class OOCMonitor:
         # Admin /ai diagnostics — never treat as IC roleplay for OOC moderation
         if re.match(r"^\s*/ai(\s|$)", message or "", re.IGNORECASE):
             return (False, '', False)
+        # `/chat …` — explicit assistant prompt; not IC chatter for moderation
+        if re.match(r"^\s*/chat(\s|$)", message or "", re.IGNORECASE):
+            return (False, '', False)
         
         # Check if message is in-character using AI
         is_violation = self._detect_ic_content(message, campaign_id)

@@ -4,6 +4,7 @@ import GothicShowcase from './pages/GothicShowcase';
 import { GothicBox } from './components/GothicDecorations';
 import ConfirmDialog from './components/ConfirmDialog';
 import Footer from './components/Footer';
+import CharacterSheetModal from './components/CharacterSheetModal';
 import LocationSuggestions from './components/LocationSuggestions';
 import CharacterCreationWizard from './components/CharacterCreationWizard';
 import { useToast } from './components/ToastNotification';
@@ -231,7 +232,8 @@ function SimpleApp() {
   // Ref for chat input to maintain focus
   const chatInputRef = React.useRef(null);
   const chatMessagesScrollRef = React.useRef(null);
-  const chatScrollAppliedForLocationRef = React.useRef(null);
+  /** Composite key `${locationId}:${firstUnread|null}` — avoids locking scroll before read-state returns. */
+  const chatScrollAppliedKeyRef = React.useRef('');
   const messagesRef = React.useRef(messages);
   const loadingRef = React.useRef(loading);
 
@@ -286,6 +288,9 @@ function SimpleApp() {
   const [downtimeSending, setDowntimeSending] = useState(false);
   const [locationReadState, setLocationReadState] = useState(null);
   const [firstUnreadMessageId, setFirstUnreadMessageId] = useState(null);
+  /** After GET read-state finishes (or skipped); scroll waits for this === current location. */
+  const [locationReadStateReadyForId, setLocationReadStateReadyForId] = useState(null);
+  const [characterSheetModal, setCharacterSheetModal] = useState(null);
   /** Set when loadMessages succeeds; must match currentLocation.id before applying scroll. */
   const [messagesSyncedLocationId, setMessagesSyncedLocationId] = useState(null);
   const [chatNow, setChatNow] = useState(() => new Date());
@@ -1581,6 +1586,12 @@ function SimpleApp() {
       return;
     }
 
+    const chatMatch = messageText.match(/^\s*\/chat(?:\s+([\s\S]*))?$/i);
+    if (chatMatch && !(chatMatch[1] || '').trim()) {
+      setError('Usage: /chat followed by your message to the AI assistant.');
+      return;
+    }
+
     setLoading(true);
     setError('');
 
@@ -1640,7 +1651,11 @@ function SimpleApp() {
           role: 'user',
           speak_as: chatSpeakAs,
           ...(chatSpeakAs === 'character' && character?.id ? { character_id: character.id } : {}),
-          ...(slashMatch ? { ai_message_kind: 'slash_user' } : {}),
+          ...(slashMatch
+            ? { ai_message_kind: 'slash_user' }
+            : chatMatch
+              ? { ai_message_kind: 'chat_user' }
+              : {}),
         })
       });
 
@@ -1822,6 +1837,68 @@ function SimpleApp() {
             console.info('/ai commands:', slashData.future_commands_suggestion);
           }
         }
+      } else if (chatMatch) {
+        const chatPayload = (chatMatch[1] || '').trim();
+        const aiResponse = await fetch(`${API_URL}/ai/chat`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            message: chatPayload,
+            campaign_id: selectedCampaign.id,
+            location: currentLocation.id,
+            location_type: currentLocation.type,
+            assistant_direct: true,
+          })
+        });
+
+        const aiData = await aiResponse.json();
+
+        if (aiResponse.ok) {
+          const skipOoc = Boolean(aiData.ooc_no_reply);
+          const rawContent = aiData.response ?? aiData.message;
+          const aiMessageContent =
+            rawContent != null && String(rawContent).trim() !== ''
+              ? String(rawContent).trim()
+              : null;
+
+          if (skipOoc || !aiMessageContent) {
+            /* Empty or unexpected silent path */
+          } else {
+            const assistantMsgType = inOocRoom ? 'ooc' : 'ic';
+            const aiSaveResponse = await fetch(`${API_URL}/campaigns/${selectedCampaign.id}/locations/${currentLocation.id}`, {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({
+                content: aiMessageContent,
+                message_type: assistantMsgType,
+                role: 'assistant',
+                ai_message_kind: 'chat_assistant',
+              })
+            });
+
+            if (aiSaveResponse.ok) {
+              const aiSaveData = await aiSaveResponse.json();
+              console.log('✅ AI message saved to database:', aiSaveData);
+              setMessages(prev => [...prev, aiSaveData.data]);
+            } else {
+              setMessages(prev => [...prev, {
+                role: 'assistant',
+                content: aiMessageContent,
+                created_at: new Date().toISOString(),
+                location_id: currentLocation.id,
+                username: 'AI'
+              }]);
+            }
+          }
+        } else {
+          setError(aiData.error || 'Failed to get AI response');
+        }
       } else {
       // Get AI response (OOC rooms: backend may return ooc_no_reply — no in-game storyteller)
       const aiResponse = await fetch(`${API_URL}/ai/chat`, {
@@ -1904,6 +1981,9 @@ function SimpleApp() {
     const charForRead =
       opts.characterForRead !== undefined ? opts.characterForRead : character;
     setMessagesSyncedLocationId(null);
+    setFirstUnreadMessageId(null);
+    setLocationReadState(null);
+    setLocationReadStateReadyForId(null);
     try {
       console.log(`📨 Loading messages for location ${locationId}...`);
       const response = await fetch(`${API_URL}/campaigns/${campaignId}/locations/${locationId}`, {
@@ -1933,10 +2013,13 @@ function SimpleApp() {
           } catch (e) {
             setLocationReadState(null);
             setFirstUnreadMessageId(null);
+          } finally {
+            setLocationReadStateReadyForId(locationId);
           }
         } else {
           setLocationReadState(null);
           setFirstUnreadMessageId(null);
+          setLocationReadStateReadyForId(locationId);
         }
       } else {
         const errText = await response.text();
@@ -1964,6 +2047,7 @@ function SimpleApp() {
         setMessagesSyncedLocationId(null);
         setLocationReadState(null);
         setFirstUnreadMessageId(null);
+        setLocationReadStateReadyForId(locationId);
       }
     } catch (error) {
       console.error('❌ Error loading messages:', error);
@@ -1971,6 +2055,7 @@ function SimpleApp() {
       setMessagesSyncedLocationId(null);
       setLocationReadState(null);
       setFirstUnreadMessageId(null);
+      setLocationReadStateReadyForId(locationId);
     }
   };
 
@@ -2077,20 +2162,22 @@ function SimpleApp() {
   }, [currentPage, currentLocation?.id]);
 
   useEffect(() => {
-    chatScrollAppliedForLocationRef.current = null;
+    chatScrollAppliedKeyRef.current = '';
   }, [currentLocation?.id, character?.id]);
 
   useEffect(() => {
     if (currentPage !== 'chat') return;
     const lid = currentLocation?.id;
     if (!lid || messagesSyncedLocationId !== lid) return;
-    if (chatScrollAppliedForLocationRef.current === lid) return;
+    if (locationReadStateReadyForId !== lid) return;
+    const scrollKey = `${lid}:${firstUnreadMessageId ?? 'none'}`;
+    if (chatScrollAppliedKeyRef.current === scrollKey) return;
     const scrollEl = chatMessagesScrollRef.current;
     if (!scrollEl) return;
 
     const run = () => {
       if (messages.length === 0) {
-        chatScrollAppliedForLocationRef.current = lid;
+        chatScrollAppliedKeyRef.current = scrollKey;
         return;
       }
       if (firstUnreadMessageId) {
@@ -2105,7 +2192,7 @@ function SimpleApp() {
       } else {
         scrollEl.scrollTop = scrollEl.scrollHeight;
       }
-      chatScrollAppliedForLocationRef.current = lid;
+      chatScrollAppliedKeyRef.current = scrollKey;
     };
 
     requestAnimationFrame(() => requestAnimationFrame(run));
@@ -2113,6 +2200,7 @@ function SimpleApp() {
     currentPage,
     currentLocation?.id,
     messagesSyncedLocationId,
+    locationReadStateReadyForId,
     firstUnreadMessageId,
     messages
   ]);
@@ -2157,6 +2245,35 @@ function SimpleApp() {
       // ignore
     }
   };
+
+  const openCharacterSheet = React.useCallback(
+    async (characterId) => {
+      if (!characterId || !token) return;
+      try {
+        const res = await fetch(`${API_URL}/characters/${characterId}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const body = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          showError(body.error || 'Could not load character sheet.');
+          return;
+        }
+        const ch = body.character;
+        if (!ch) {
+          showError('Invalid character response.');
+          return;
+        }
+        const camp = campaigns.find((c) => c.id === ch.campaign_id) || selectedCampaign || {};
+        setCharacterSheetModal({
+          character: ch,
+          gameSystem: camp.game_system || ch.system_type,
+        });
+      } catch (e) {
+        showError('Could not load character sheet.');
+      }
+    },
+    [token, campaigns, selectedCampaign, showError]
+  );
 
   // Update campaign name
   const handleUpdateCampaignName = async () => {
@@ -2507,9 +2624,10 @@ function SimpleApp() {
 
   // ========== RENDER FUNCTIONS ==========
 
-  // Render login page
+  // Render login page (footer is outside .sr-login-gate so decorative layers do not cover or dim it)
   const renderLogin = () => (
-    <div className="sr-login-gate">
+    <div className="sr-login-page">
+      <div className="sr-login-gate">
       <div className="sr-login-gate-bg" aria-hidden />
       <div className="sr-login-gate-vignette" aria-hidden />
       <div className="sr-login-gate-orbs" aria-hidden />
@@ -2814,6 +2932,7 @@ function SimpleApp() {
           ⚠️ {error}
         </div>
       )}
+      </div>
       </div>
 
       <Footer />
@@ -3240,24 +3359,10 @@ function SimpleApp() {
                     </GothicBox>
                     {playerCharacters.length === 0 ? (
                       <GothicBox theme="mage" style={{ padding: '28px', textAlign: 'center' }}>
-                        <p style={{ color: '#b5b5c3' }}>You have no characters yet.</p>
-                        <button
-                          type="button"
-                          onClick={openCharacterCreationGuide}
-                          style={{
-                            marginTop: '16px',
-                            padding: '12px 24px',
-                            background: 'linear-gradient(135deg, #e94560 0%, #8b0000 100%)',
-                            color: 'white',
-                            border: 'none',
-                            borderRadius: '8px',
-                            cursor: 'pointer',
-                            fontWeight: 'bold',
-                            fontFamily: 'Cinzel, serif',
-                          }}
-                        >
-                          Forge a character
-                        </button>
+                        <p style={{ color: '#b5b5c3', margin: 0, lineHeight: 1.65 }}>
+                          You have no characters yet. When you are ready, use <strong>New character</strong> at the top to
+                          read the prep guide and open the wizard.
+                        </p>
                       </GothicBox>
                     ) : (
                       <div
@@ -3308,29 +3413,29 @@ function SimpleApp() {
                             >
                               {ch.play_suspended ? 'Unavailable' : `Play as ${ch.name}`}
                             </button>
+                            <button
+                              type="button"
+                              onClick={() => openCharacterSheet(ch.id)}
+                              style={{
+                                width: '100%',
+                                marginTop: '10px',
+                                padding: '8px',
+                                background: '#0f1729',
+                                color: '#c4b5fd',
+                                border: '1px solid #6b21a8',
+                                borderRadius: '8px',
+                                cursor: 'pointer',
+                                fontWeight: '600',
+                                fontFamily: 'Cinzel, serif',
+                                fontSize: '13px',
+                              }}
+                            >
+                              View character sheet
+                            </button>
                           </GothicBox>
                         ))}
                       </div>
                     )}
-                    {playerCharacters.length > 0 ? (
-                      <div style={{ textAlign: 'center', marginBottom: '28px' }}>
-                        <button
-                          type="button"
-                          onClick={openCharacterCreationGuide}
-                          style={{
-                            padding: '10px 20px',
-                            background: 'transparent',
-                            color: '#c4b5fd',
-                            border: '2px solid #7c3aed',
-                            borderRadius: '8px',
-                            cursor: 'pointer',
-                            fontWeight: 'bold',
-                          }}
-                        >
-                          + Create another character
-                        </button>
-                      </div>
-                    ) : null}
                     <h3 style={{ color: '#e94560', fontFamily: 'Cinzel, serif', fontSize: '17px', marginBottom: '12px' }}>
                       Roster &amp; portraits
                     </h3>
@@ -3399,46 +3504,6 @@ function SimpleApp() {
                           No active character. Pick a mask above or forge one with <strong>New character</strong>.
                         </p>
                       )}
-                    </GothicBox>
-                    <GothicBox theme="werewolf" style={{ padding: '20px', marginBottom: '20px' }}>
-                      <h3 style={{ marginTop: 0, color: '#e94560', fontFamily: 'Cinzel, serif' }}>Your characters</h3>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                        {playerCharacters.map((ch) => (
-                          <div
-                            key={ch.id}
-                            style={{
-                              border: ch.id === activeId ? '2px solid #9d4edd' : '1px solid #2a2a4e',
-                              borderRadius: '8px',
-                              padding: '12px',
-                              background: '#0f1729',
-                            }}
-                          >
-                            <div style={{ color: '#e0e0e0', fontWeight: 'bold' }}>
-                              {ch.name}
-                              {ch.id === activeId ? (
-                                <span style={{ color: '#9d4edd', marginLeft: '8px', fontSize: '12px' }}>(active)</span>
-                              ) : null}
-                            </div>
-                            <div style={{ color: '#8b8b9f', fontSize: '13px' }}>{ch.campaign_name}</div>
-                            <button
-                              type="button"
-                              disabled={ch.id === activeId}
-                              onClick={() => applyActiveCharacter(ch.id)}
-                              style={{
-                                marginTop: '8px',
-                                padding: '6px 14px',
-                                background: ch.id === activeId ? '#333' : '#2a2a4e',
-                                color: '#e0e0e0',
-                                border: '1px solid #4a4a5e',
-                                borderRadius: '6px',
-                                cursor: ch.id === activeId ? 'not-allowed' : 'pointer',
-                              }}
-                            >
-                              {ch.id === activeId ? 'Currently active' : 'Swap to this character'}
-                            </button>
-                          </div>
-                        ))}
-                      </div>
                     </GothicBox>
                   </div>
                 )
@@ -5373,7 +5438,11 @@ function SimpleApp() {
               const subLabel = line.subLabel;
 
               return (
-              <div key={msg.id || idx} style={{ marginBottom: '15px' }}>
+              <div
+                key={msg.id || idx}
+                id={msg.id ? `msg-${msg.id}` : undefined}
+                style={{ marginBottom: '15px' }}
+              >
                 {firstUnreadMessageId && msg.id === firstUnreadMessageId && (
                   <div style={{
                     display: 'flex',
@@ -5439,7 +5508,6 @@ function SimpleApp() {
                       </span>
                     </div>
                     <div
-                      id={msg.id ? `msg-${msg.id}` : undefined}
                       style={{
                         color: '#d0d0d0',
                         fontFamily: 'Crimson Text, serif',
@@ -5855,18 +5923,23 @@ function SimpleApp() {
           }}>
             📚 Search Rules
           </button>
-          <button style={{
-            width: '100%',
-            padding: '8px',
-            background: '#0f1729',
-            color: '#b5b5c3',
-            border: '1px solid #2a2a4e',
-            borderRadius: '4px',
-            cursor: 'pointer',
-            fontSize: '13px',
-            fontFamily: 'Cinzel, serif'
-          }}>
-            👤 View Character
+          <button
+            type="button"
+            disabled={!character?.id}
+            onClick={() => character?.id && openCharacterSheet(character.id)}
+            style={{
+              width: '100%',
+              padding: '8px',
+              background: character?.id ? '#0f1729' : '#1e293b',
+              color: character?.id ? '#b5b5c3' : '#64748b',
+              border: '1px solid #2a2a4e',
+              borderRadius: '4px',
+              cursor: character?.id ? 'pointer' : 'not-allowed',
+              fontSize: '13px',
+              fontFamily: 'Cinzel, serif',
+            }}
+          >
+            👤 View character sheet
           </button>
         </div>
       </div>
@@ -6357,6 +6430,13 @@ function SimpleApp() {
         title={sessionReveal.title}
         subtitle={sessionReveal.subtitle}
       />
+      {characterSheetModal ? (
+        <CharacterSheetModal
+          character={characterSheetModal.character}
+          gameSystem={characterSheetModal.gameSystem}
+          onClose={() => setCharacterSheetModal(null)}
+        />
+      ) : null}
       {!token && renderLogin()}
       {token && currentPage === 'dashboard' && renderDashboard()}
       {token && currentPage === 'playerProfile' && renderPlayerProfile()}
@@ -7030,6 +7110,7 @@ function SimpleApp() {
               onAdminOpenCampaign={enterCampaign}
             />
           </div>
+          <Footer />
         </div>
       )}
 

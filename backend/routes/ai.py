@@ -192,6 +192,8 @@ def ai_chat():
         campaign_id = data.get('campaign_id')
         location_id = data.get('location')  # Get location from request
         context = data.get('context', {})
+        # From `/chat …` in UI: use full storyteller pipeline even in OOC rooms (not moderation-only path)
+        assistant_direct = bool(data.get('assistant_direct') or data.get('direct_chat'))
         
         if not message:
             return jsonify({'error': 'Message is required'}), 400
@@ -229,7 +231,7 @@ def ai_chat():
         is_limited = gpu_monitor_service.is_resource_limited()
 
         # OOC rooms: do not run in-character storyteller; only moderate when content is IC-relevant
-        if campaign_id and location_id and location_type == 'ooc':
+        if campaign_id and location_id and location_type == 'ooc' and not assistant_direct:
             ooc_text = generate_ooc_room_response(
                 message, campaign_id, location_id, current_user_id
             )
