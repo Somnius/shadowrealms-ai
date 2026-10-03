@@ -1211,7 +1211,7 @@ def test_database_module():
             # Test 3: Test table creation
             print("  ✓ Testing table creation...")
             cursor = conn.cursor()
-            db_type = get_database_type()
+            db_type = os.getenv('DATABASE_TYPE', 'sqlite').lower()
             if db_type == 'postgresql':
                 cursor.execute("SELECT tablename FROM pg_tables WHERE schemaname='public'")
                 tables = [row['tablename'] for row in cursor.fetchall()]
