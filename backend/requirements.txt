@@ -18,7 +18,7 @@ cryptography>=41.0.0
 
 # AI/LLM Integration
 openai>=1.0.0
-chromadb>=0.4.0
+chromadb>=1.5.9
 sentence-transformers>=2.2.0
 torch>=2.0.0
 numpy>=1.24.0

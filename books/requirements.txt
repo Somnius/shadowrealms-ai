@@ -19,5 +19,5 @@ urllib3>=2.0.0
 #   CPU: pip install torch --index-url https://download.pytorch.org/whl/cpu && pip install sentence-transformers
 
 # For importing to ChromaDB
-chromadb>=0.4.0
+chromadb>=1.5.9
 
