@@ -24,7 +24,7 @@ module.exports = {
   
   // Run setupTests.ts before each test file to configure the testing environment
   // This file contains global mocks and test utilities
-  setupFilesAfterEnv: ['<rootDir>/src/setupTests.ts'],
+  setupFilesAfterEnv: ['<rootDir>/src/setupTests.js'],
   
   // Module name mapping for cleaner imports
   // Allows us to use '@/components/Button' instead of '../../../components/Button'

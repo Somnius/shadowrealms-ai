@@ -36,7 +36,9 @@ describe('Security Utilities', () => {
     it('should escape dangerous characters', () => {
       const input = '<img src=x onerror="alert(1)">';
       const result = sanitizeHtml(input);
-      expect(result).not.toContain('onerror');
+      // Escaped into inert text: no real tag left, so the handler can't fire
+      expect(result).not.toContain('<img');
+      expect(result).toContain('&lt;img');
     });
   });
   
@@ -109,7 +111,8 @@ describe('Security Utilities', () => {
       const input = 'Marcus<script>alert(1)</script>';
       const result = sanitizeName(input);
       expect(result).not.toContain('<script>');
-      expect(result).toBe('Marcusalert1');
+      // Parentheses are allowed punctuation in names
+      expect(result).toBe('Marcusalert(1)');
     });
     
     it('should allow basic punctuation', () => {
