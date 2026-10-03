@@ -42,6 +42,8 @@ services:
       # auto / empty = prefer loaded LLM via GET /api/v1/models, else GET /v1/models (see lm_studio_model.py)
       - LM_STUDIO_MODEL=${LM_STUDIO_MODEL:-auto}
       - LM_STUDIO_TIMEOUT=${LM_STUDIO_TIMEOUT:-120}
+      # "none" disables thinking on reasoning models (Gemma 4); empty = model default
+      - LM_STUDIO_REASONING_EFFORT=${LM_STUDIO_REASONING_EFFORT:-}
       - OLLAMA_URL=http://localhost:11434
       - OLLAMA_MODEL=${OLLAMA_MODEL:-command-r:35b}
       - OLLAMA_TIMEOUT=${OLLAMA_TIMEOUT:-30}

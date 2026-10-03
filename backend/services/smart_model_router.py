@@ -312,7 +312,10 @@ class SmartModelRouter:
             'temperature': config.get('temperature', model_config.get('temperature', 0.7)),
             'stream': False
         }
-        
+        reasoning_effort = (self.config.get('LM_STUDIO_REASONING_EFFORT') or '').strip()
+        if reasoning_effort:
+            payload['reasoning_effort'] = reasoning_effort
+
         hdrs = {'Content-Type': 'application/json'}
         ak = (self.config.get('LM_STUDIO_API_KEY') or '').strip()
         if ak:

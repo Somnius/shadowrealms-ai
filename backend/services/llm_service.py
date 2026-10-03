@@ -118,7 +118,10 @@ class LMStudioProvider(LLMProvider):
                 "temperature": config.get('temperature', 0.7),
                 "stream": False
             }
-            
+            reasoning_effort = (self.config.get('LM_STUDIO_REASONING_EFFORT') or '').strip()
+            if reasoning_effort:
+                payload['reasoning_effort'] = reasoning_effort
+
             # Add context if available
             if context.get('campaign_context'):
                 payload['messages'].insert(1, {
