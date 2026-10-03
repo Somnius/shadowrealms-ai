@@ -273,6 +273,8 @@ docker-volumes/
 # Database dumps
 *.dump
 *.sql
+# The schema is source, not a dump (it was lost once because of the rule above)
+!backend/init_postgresql_schema.sql
 
 # =============================================================================
 # LOGS
