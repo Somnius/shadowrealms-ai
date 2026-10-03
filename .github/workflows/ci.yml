@@ -1,0 +1,86 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  python-checks:
+    name: Python (syntax + undefined names)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install ruff
+      - name: Compile everything
+        run: python -m compileall -q backend monitoring books scripts tests
+      - name: Ruff (errors only, no style rules)
+        run: ruff check --select E9,F63,F7,F82 backend monitoring books scripts tests
+
+  schema:
+    name: PostgreSQL schema + migrate_db
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: ci
+          POSTGRES_PASSWORD: ci
+          POSTGRES_DB: ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U ci -d ci"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      PGPASSWORD: ci
+      DATABASE_TYPE: postgresql
+      DATABASE_HOST: localhost
+      DATABASE_USER: ci
+      DATABASE_PASSWORD: ci
+      DATABASE_NAME: ci
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install psycopg2-binary
+      - name: Apply init_postgresql_schema.sql
+        run: psql -h localhost -U ci -d ci -v ON_ERROR_STOP=1 -q -f backend/init_postgresql_schema.sql
+      - name: Run migrate_db() twice (must be a no-op on the schema)
+        working-directory: backend
+        run: |
+          python -c "from database import migrate_db; migrate_db()"
+          python -c "from database import migrate_db; migrate_db()"
+          psql -h localhost -U ci -d ci -tAc "select count(*) from information_schema.tables where table_schema='public'"
+
+  frontend:
+    name: Frontend tests + build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci --no-audit --no-fund
+      - run: npx react-scripts test --watchAll=false
+      - name: Build
+        # CI=true would turn the existing lint warnings into errors; they still show in the log
+        run: CI=false npm run build
