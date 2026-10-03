@@ -586,7 +586,7 @@ def delete_user(user_id):
             return jsonify({'error': 'User not found'}), 404
         
         # Soft delete - mark as inactive instead of removing
-        cursor.execute("UPDATE users SET is_active = 0, updated_at = %s WHERE id = %s", 
+        cursor.execute("UPDATE users SET is_active = FALSE, updated_at = %s WHERE id = %s", 
                       (datetime.utcnow(), user_id))
         
         db.commit()
@@ -623,11 +623,11 @@ def get_user_stats():
         cursor.execute("""
             SELECT 
                 COUNT(*) as total_users,
-                COUNT(CASE WHEN is_active = 1 THEN 1 END) as active_users,
+                COUNT(CASE WHEN is_active THEN 1 END) as active_users,
                 COUNT(CASE WHEN role = 'admin' THEN 1 END) as admin_count,
                 COUNT(CASE WHEN role = 'helper' THEN 1 END) as helper_count,
                 COUNT(CASE WHEN role = 'player' THEN 1 END) as player_count,
-                COUNT(CASE WHEN last_login > datetime('now', '-7 days') THEN 1 END) as active_this_week
+                COUNT(CASE WHEN last_login > NOW() - INTERVAL '7 days' THEN 1 END) as active_this_week
             FROM users
         """)
         

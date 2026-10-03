@@ -377,7 +377,7 @@ def get_location(location_id):
 def create_location(campaign_id):
     """Create a new location (admin only)"""
     try:
-        user_id = get_jwt_identity()
+        user_id = int(get_jwt_identity())
         data = request.get_json()
         
         # Verify user is admin or campaign creator
@@ -397,7 +397,7 @@ def create_location(campaign_id):
         if not row:
             return jsonify({'error': 'Campaign not found'}), 404
         
-        campaign_creator, user_role = row
+        campaign_creator, user_role = row['created_by'], row['role']
         if campaign_creator != user_id and user_role != 'admin':
             return jsonify({'error': 'Unauthorized - admin only'}), 403
         
@@ -442,7 +442,7 @@ def create_location(campaign_id):
 def update_location(location_id):
     """Update location details (admin only)"""
     try:
-        user_id = get_jwt_identity()
+        user_id = int(get_jwt_identity())
         data = request.get_json()
         
         conn = get_db()
@@ -463,7 +463,9 @@ def update_location(location_id):
         if not row:
             return jsonify({'error': 'Location not found'}), 404
         
-        campaign_id, location_creator, loc_type, campaign_creator, user_role = row
+        campaign_id, location_creator, loc_type, campaign_creator, user_role = (
+            row['campaign_id'], row['created_by'], row['type'], row['campaign_creator'], row['role']
+        )
         if location_creator != user_id and campaign_creator != user_id and user_role != 'admin':
             return jsonify({'error': 'Unauthorized'}), 403
         
@@ -521,7 +523,7 @@ def update_location(location_id):
 def delete_location(campaign_id, location_id):
     """Delete location with AI memory cleanup and audit trail"""
     try:
-        user_id = get_jwt_identity()
+        user_id = int(get_jwt_identity())
         
         conn = get_db()
         cursor = conn.cursor()
@@ -539,7 +541,9 @@ def delete_location(campaign_id, location_id):
         if not row:
             return jsonify({'error': 'Location not found or already deleted'}), 404
         
-        location_type, location_name, location_desc, campaign_id, campaign_creator, user_role = row
+        location_type, location_name, location_desc, campaign_id, campaign_creator, user_role = (
+            row['type'], row['name'], row['description'], row['campaign_id'], row['created_by'], row['role']
+        )
         
         # Can't delete OOC room
         if location_type == 'ooc':
@@ -549,8 +553,8 @@ def delete_location(campaign_id, location_id):
             return jsonify({'error': 'Unauthorized'}), 403
         
         # Count messages that will be affected
-        cursor.execute("SELECT COUNT(*) FROM messages WHERE location_id = %s", (location_id,))
-        message_count = cursor.fetchone()[0]
+        cursor.execute("SELECT COUNT(*) AS n FROM messages WHERE location_id = %s", (location_id,))
+        message_count = cursor.fetchone()['n']
         
         logger.info(f"🗑️ Deleting location {location_id} ({location_name}) - {message_count} messages will be removed")
         
@@ -587,6 +591,11 @@ def delete_location(campaign_id, location_id):
             logger.warning(f"⚠️ ChromaDB cleanup failed (non-critical): {e}")
         
         # 3. SOFT DELETE LOCATION (marks as inactive, keeps for audit trail)
+        cursor.execute("""
+            UPDATE locations SET is_active = FALSE
+            WHERE id = %s AND campaign_id = %s
+        """, (location_id, campaign_id))
+
         cursor.execute("""
             SELECT id FROM locations 
             WHERE campaign_id = %s AND type = 'ooc' AND is_active = TRUE

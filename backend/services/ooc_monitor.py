@@ -104,9 +104,9 @@ class OOCMonitor:
             if not campaign:
                 return False
             
-            campaign_name = campaign[0]
-            campaign_desc = campaign[1]
-            game_system = campaign[2]
+            campaign_name = campaign['name']
+            campaign_desc = campaign['description']
+            game_system = campaign['game_system']
             
             # Build AI prompt to detect IC content
             prompt = f"""You are monitoring an OOC (Out of Character) chat room for the campaign "{campaign_name}" ({game_system} system).
@@ -148,7 +148,7 @@ Answer:"""
                 }
             )
             
-            response_text = response.get('text', '').strip().upper()
+            response_text = (response or '').strip().upper()
             
             # Check if response indicates violation
             is_violation = response_text.startswith('YES')
@@ -178,18 +178,7 @@ Answer:"""
             conn = get_db()
             cursor = conn.cursor()
             
-            # Create violations table if it doesn't exist
-            cursor.execute("""
-                CREATE TABLE IF NOT EXISTS ooc_violations (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    user_id INTEGER NOT NULL,
-                    campaign_id INTEGER NOT NULL,
-                    violated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    FOREIGN KEY (user_id) REFERENCES users(id),
-                    FOREIGN KEY (campaign_id) REFERENCES campaigns(id)
-                )
-            """)
-            
+            # ooc_violations is created by backend/init_postgresql_schema.sql
             # Log this violation
             cursor.execute("""
                 INSERT INTO ooc_violations (user_id, campaign_id)
@@ -199,14 +188,14 @@ Answer:"""
             # Count violations in last 7 days
             seven_days_ago = (datetime.now() - timedelta(days=7)).isoformat()
             cursor.execute("""
-                SELECT COUNT(*)
+                SELECT COUNT(*) AS n
                 FROM ooc_violations
                 WHERE user_id = %s 
                 AND campaign_id = %s
                 AND violated_at > %s
             """, (user_id, campaign_id, seven_days_ago))
             
-            warning_count = cursor.fetchone()[0]
+            warning_count = cursor.fetchone()['n']
             
             conn.commit()
             conn.close()
@@ -272,14 +261,15 @@ Answer:"""
             row = cursor.fetchone()
             conn.close()
             
-            if not row or not row['ban_until']:
+            if not row or not row['banned_until']:
                 return (False, '')
             
-            banned_until_str = row['ban_until']
+            banned_until = row['banned_until']
             ban_reason = row['ban_reason']
             
-            # Parse ban expiry
-            banned_until = datetime.fromisoformat(banned_until_str)
+            # PostgreSQL returns a datetime; older rows may hold ISO text
+            if isinstance(banned_until, str):
+                banned_until = datetime.fromisoformat(banned_until)
             
             # Check if ban has expired
             if datetime.now() >= banned_until:

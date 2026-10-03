@@ -494,9 +494,9 @@ def save_message(campaign_id, location_id):
         # Check if user is currently banned
         try:
             from services.ooc_monitor import create_ooc_monitor
-            from services.llm_service import create_llm_service
+            from services.llm_service import get_llm_service
             
-            llm_service = create_llm_service()
+            llm_service = get_llm_service()
             ooc_monitor = create_ooc_monitor(llm_service)
             is_banned, ban_message = ooc_monitor.check_user_ban(user_id)
             
@@ -542,9 +542,9 @@ def save_message(campaign_id, location_id):
         if role == 'user':
             try:
                 from services.ooc_monitor import create_ooc_monitor
-                from services.llm_service import create_llm_service
+                from services.llm_service import get_llm_service
                 
-                llm_service = create_llm_service()
+                llm_service = get_llm_service()
                 ooc_monitor = create_ooc_monitor(llm_service)
                 
                 is_violation, warning_msg, should_ban = ooc_monitor.check_message(
@@ -779,7 +779,7 @@ def save_message(campaign_id, location_id):
 def delete_message(message_id):
     """Delete a message (admin or message author only)"""
     try:
-        user_id = get_jwt_identity()
+        user_id = int(get_jwt_identity())
         
         conn = get_db()
         cursor = conn.cursor()
@@ -797,7 +797,7 @@ def delete_message(message_id):
         if not row:
             return jsonify({'error': 'Message not found'}), 404
         
-        message_owner_id, campaign_creator_id, user_role = row
+        message_owner_id, campaign_creator_id, user_role = row['user_id'], row['created_by'], row['role']
         
         # Only message owner, campaign creator, or admin can delete
         if user_id != message_owner_id and user_id != campaign_creator_id and user_role != 'admin':

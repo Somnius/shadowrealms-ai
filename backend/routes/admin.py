@@ -268,7 +268,7 @@ def ban_user(user_id):
         
         cursor.execute("""
             UPDATE users 
-            SET ban_type = %s, ban_until = %s, ban_reason = %s, banned_by = %s, banned_at = %s, is_active = 0
+            SET ban_type = %s, ban_until = %s, ban_reason = %s, banned_by = %s, banned_at = %s, is_active = FALSE
             WHERE id = %s
         """, (ban_type, ban_until.isoformat() if ban_until else None, ban_reason, admin_id, datetime.now(), user_id))
         
@@ -302,7 +302,7 @@ def unban_user(user_id):
         
         cursor.execute("""
             UPDATE users 
-            SET ban_type = NULL, ban_until = NULL, ban_reason = NULL, banned_by = NULL, banned_at = NULL, is_active = 1
+            SET ban_type = NULL, ban_until = NULL, ban_reason = NULL, banned_by = NULL, banned_at = NULL, is_active = TRUE
             WHERE id = %s
         """, (user_id,))
         
