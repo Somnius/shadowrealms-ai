@@ -23,7 +23,7 @@ pandas>=2.0.0
 
 # Logging and configuration
 python-dotenv>=1.0.0
-loguru>=0.7.0
+loguru>=0.7.3
 
 # Health checks
 healthcheck>=1.0.0
