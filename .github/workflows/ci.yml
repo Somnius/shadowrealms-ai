@@ -3,7 +3,18 @@ name: CI
 on:
   push:
     branches: [main]
+    paths: &code
+      - "backend/**"
+      - "frontend/**"
+      - "monitoring/**"
+      - "books/*.py"
+      - "scripts/**"
+      - "tests/**"
+      - "docker-compose.yml"
+      - ".github/workflows/ci.yml"
   pull_request:
+    paths: *code
+  workflow_dispatch:
 
 permissions:
   contents: read

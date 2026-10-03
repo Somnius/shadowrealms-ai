@@ -3,7 +3,7 @@ updates:
   - package-ecosystem: pip
     directories: ["/", "/backend", "/monitoring", "/books"]
     schedule:
-      interval: weekly
+      interval: monthly
     groups:
       python-minor-patch:
         update-types: [minor, patch]
@@ -11,7 +11,7 @@ updates:
   - package-ecosystem: npm
     directory: /frontend
     schedule:
-      interval: weekly
+      interval: monthly
     groups:
       npm-minor-patch:
         update-types: [minor, patch]
@@ -19,9 +19,9 @@ updates:
   - package-ecosystem: docker
     directories: ["/backend", "/frontend", "/monitoring"]
     schedule:
-      interval: weekly
+      interval: monthly
 
   - package-ecosystem: github-actions
     directory: /
     schedule:
-      interval: weekly
+      interval: monthly
