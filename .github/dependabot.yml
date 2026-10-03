@@ -1,9 +1,14 @@
 version: 2
+# Quiet mode: monthly minor/patch only. Major upgrades are done on purpose, not
+# from a bot PR. Security fixes still come in right away (repo setting).
 updates:
   - package-ecosystem: pip
     directories: ["/", "/backend", "/monitoring", "/books"]
     schedule:
       interval: monthly
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
     groups:
       python-minor-patch:
         update-types: [minor, patch]
@@ -12,6 +17,9 @@ updates:
     directory: /frontend
     schedule:
       interval: monthly
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
     groups:
       npm-minor-patch:
         update-types: [minor, patch]
@@ -20,8 +28,14 @@ updates:
     directories: ["/backend", "/frontend", "/monitoring"]
     schedule:
       interval: monthly
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
 
   - package-ecosystem: github-actions
     directory: /
     schedule:
       interval: monthly
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
