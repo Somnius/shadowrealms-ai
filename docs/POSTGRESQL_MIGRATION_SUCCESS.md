@@ -48,8 +48,8 @@
 5. ✅ Setup guide created: `docs/POSTGRESQL_ENV_SETUP.md`
 
 **Generated Credentials:**
-- Username: `sr_7e2be1f1`
-- Password: `TFJtU#d1EJasT3cK`
+- Username: `<your POSTGRES_USER>`
+- Password: `<your POSTGRES_PASSWORD>`
 - Database: `shadowrealms_db`
 
 ---
@@ -72,8 +72,8 @@
 ```bash
 # Added to .env:
 POSTGRES_DB=shadowrealms_db
-POSTGRES_USER=sr_7e2be1f1
-POSTGRES_PASSWORD=TFJtU#d1EJasT3cK
+POSTGRES_USER=<your POSTGRES_USER>
+POSTGRES_PASSWORD=<your POSTGRES_PASSWORD>
 DATABASE_TYPE=postgresql
 DATABASE_HOST=localhost
 DATABASE_PORT=5432
@@ -186,7 +186,7 @@ If you encounter any issues:
 
 1. Check logs: `docker compose logs backend`
 2. Verify PostgreSQL: `docker compose ps postgresql`
-3. Test connection: `docker compose exec postgresql psql -U sr_7e2be1f1 -d shadowrealms_db -c "\dt"`
+3. Test connection: `docker compose exec postgresql psql -U <your POSTGRES_USER> -d shadowrealms_db -c "\dt"`
 4. Rollback if needed (see instructions above)
 
 ---
