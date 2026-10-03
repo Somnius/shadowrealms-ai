@@ -39,7 +39,7 @@ python-dotenv>=1.0.0
 # Development & Testing
 pytest>=7.4.0
 pytest-cov>=4.1.0
-mypy>=1.5.0
+mypy>=2.3.1
 
 # Production Server
 gunicorn>=21.0.0
