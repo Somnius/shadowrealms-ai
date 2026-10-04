@@ -12,10 +12,16 @@ import time
 from typing import Dict, Any, List, Optional
 from datetime import datetime
 import chromadb
-from chromadb.config import Settings
 import requests
 
 logger = logging.getLogger(__name__)
+
+def connect_chroma(config: Dict[str, Any]):
+    """ChromaDB HTTP client from config/env (CHROMADB_HOST / CHROMADB_PORT)."""
+    host = config.get('CHROMADB_HOST') or os.environ.get('CHROMADB_HOST') or 'localhost'
+    port = int(config.get('CHROMADB_PORT') or os.environ.get('CHROMADB_PORT') or 8000)
+    return chromadb.HttpClient(host=host, port=port)
+
 
 class RAGService:
     """Retrieval-Augmented Generation service for campaign memory"""
@@ -32,11 +38,7 @@ class RAGService:
         
         for attempt in range(max_retries):
             try:
-                # Try to connect with minimal settings
-                self.client = chromadb.HttpClient(
-                    host=self.chroma_host,
-                    port=self.chroma_port
-                )
+                self.client = connect_chroma(config)
                 logger.info(f"✅ Connected to ChromaDB at {self.chroma_host}:{self.chroma_port}")
                 break
             except Exception as e:
@@ -55,7 +57,8 @@ class RAGService:
             'world': 'world_memory',
             'sessions': 'session_memory',
             'rules': 'rules_memory',
-            'rule_books': 'rule_books'
+            'rule_books': 'rule_books',
+            'messages': 'message_memory',
         }
         
         # Initialize collections
@@ -64,24 +67,24 @@ class RAGService:
         logger.info("RAG Service initialized with ChromaDB")
     
     def _initialize_collections(self):
-        """Initialize all required collections"""
+        """Get or create every collection with the shared embedder (services/vector_store.py)."""
+        from services.vector_store import get_rag_collection
+
         for collection_name in self.collections.values():
             try:
-                # Try to get existing collection
-                self.client.get_collection(collection_name)
-                logger.info(f"Collection {collection_name} already exists")
-            except:
-                # Create new collection
-                self.client.create_collection(
-                    name=collection_name,
-                    metadata={"description": f"Memory collection for {collection_name}"}
-                )
-                logger.info(f"Created collection {collection_name}")
+                get_rag_collection(self.client, collection_name)
+            except ValueError as e:
+                # Built with another embedder: the startup / admin re-embed rebuilds it.
+                logger.warning(f"Collection {collection_name} needs re-embedding: {e}")
+            except Exception as e:
+                logger.error(f"Could not open collection {collection_name}: {e}")
     
     def _get_collection(self, memory_type: str):
-        """Get collection by memory type"""
+        """Get collection by memory type (shared embedder; ValueError if it needs re-embedding)."""
+        from services.vector_store import get_rag_collection
+
         collection_name = self.collections.get(memory_type, 'campaign_memory')
-        return self.client.get_collection(collection_name)
+        return get_rag_collection(self.client, collection_name)
     
     def _generate_id(self, content: str, context: Dict[str, Any]) -> str:
         """Generate unique ID for memory entry"""
@@ -183,13 +186,8 @@ class RAGService:
                                   user_id: int, content: str, role: str, character_name: str = None) -> str:
         """Store a chat message embedding for semantic search"""
         try:
-            # Create a message collection if it doesn't exist
             if 'messages' not in self.collections:
                 self.collections['messages'] = 'message_memory'
-                try:
-                    self.client.get_or_create_collection(name='message_memory')
-                except:
-                    pass
             
             # Build metadata
             metadata = {
@@ -232,9 +230,10 @@ class RAGService:
             collection = self._get_collection('messages')
             
             # Build where clause
+            # Chroma wants one operator per where: several fields go under $and.
             where_clause = {"campaign_id": campaign_id}
             if location_id:
-                where_clause["location_id"] = location_id
+                where_clause = {"$and": [{"campaign_id": campaign_id}, {"location_id": location_id}]}
             
             # Query for relevant messages
             results = collection.query(
@@ -440,19 +439,21 @@ class RAGService:
             logger.info("Tagged %s untagged rule book chunks with rules_edition", tagged)
         return tagged
     
-    def augment_prompt(self, prompt: str, campaign_id: int, user_id: int = None, include_rule_books: bool = True, n_rule_book_chunks: int = 5, rules_edition: Optional[str] = None) -> str:
-        """Augment prompt with relevant context from memory"""
+    def augment_prompt(self, prompt: str, campaign_id: int, user_id: int = None, include_rule_books: bool = True,
+                       n_rule_book_chunks: int = 5, rules_edition: Optional[str] = None,
+                       max_tokens: Optional[int] = None) -> str:
+        """
+        Augment prompt with relevant context from memory.
+
+        The campaign record itself is not added: callers put the campaign header in the
+        system prompt already. max_tokens caps the added sections (whole sections/chunks are
+        dropped from the end, the last one is cut); the request itself is always kept.
+        """
         # Get campaign context
         context = self.get_campaign_context(campaign_id, prompt)
         
         # Build context string
         context_parts = []
-        
-        # Add campaign data
-        if context['campaign_data']:
-            context_parts.append("=== CAMPAIGN CONTEXT ===")
-            for memory in context['campaign_data']:
-                context_parts.append(memory['content'])
         
         # Add character data
         if context['characters']:
@@ -489,6 +490,23 @@ class RAGService:
                     source = f"[{chunk['metadata'].get('filename', 'Unknown')} p.{chunk['metadata'].get('page_number', '?')}]"
                     context_parts.append(f"{source}\n{chunk['content']}")
         
+        if max_tokens is not None and context_parts:
+            from services.storyteller_prompt import estimate_tokens, truncate_to_tokens
+
+            kept, used = [], 0
+            for part in context_parts:
+                cost = estimate_tokens(part) + 1
+                if used + cost > max_tokens:
+                    room = max_tokens - used
+                    if room > 80 and not part.startswith("==="):
+                        kept.append(truncate_to_tokens(part, room))
+                    break
+                kept.append(part)
+                used += cost
+            while kept and kept[-1].startswith("==="):  # no dangling section header
+                kept.pop()
+            context_parts = kept
+
         # Combine with original prompt
         if context_parts:
             context_string = "\n\n".join(context_parts)
@@ -515,8 +533,11 @@ class RAGService:
     
     def get_system_status(self) -> Dict[str, Any]:
         """Get RAG system status"""
+        from services.embedding_service import configured_embedding_model
+
         status = {
             'chromadb_connected': False,
+            'embedding_model': configured_embedding_model(),
             'collections': {},
             'total_memories': 0
         }
@@ -529,7 +550,7 @@ class RAGService:
             # Get collection info
             for memory_type, collection_name in self.collections.items():
                 try:
-                    collection = self.client.get_collection(collection_name)
+                    collection = self.client.get_collection(collection_name)  # count only: any embedder
                     count = collection.count()
                     status['collections'][memory_type] = {
                         'name': collection_name,

@@ -11,6 +11,15 @@ from typing import List, Dict, Any
 import chromadb
 from chromadb.config import Settings
 
+# Same embedder as the app (EMBEDDING_MODEL via LM Studio): backend/services/vector_store.py.
+# Repo checkout: <repo>/backend/services. Backend container (books mounted at /app/books):
+# /app/services, so /app itself goes on the path too.
+_ROOT = Path(__file__).resolve().parents[1]
+for _p in (_ROOT / "backend", _ROOT):
+    if (_p / "services" / "vector_store.py").is_file() and str(_p) not in sys.path:
+        sys.path.insert(0, str(_p))
+from services.vector_store import get_rag_collection  # noqa: E402
+
 # Book set configurations for different campaign types
 CAMPAIGN_BOOK_SETS = {
     'core_only': {
@@ -176,13 +185,10 @@ class SmartBookImporter:
             print(f"   Embeddings: {'✓' if has_embeddings else '✗'}")
             
             # Get or create collection
-            try:
-                collection = self.client.get_collection(self.collection_name)
-            except:
-                collection = self.client.create_collection(
-                    name=self.collection_name,
-                    metadata={"description": "World of Darkness rule books"}
-                )
+            collection = get_rag_collection(self.client, self.collection_name)
+            # Precomputed vectors in the JSON were made with an older embedder; let the
+            # collection's embedder embed the text instead so everything shares one space.
+            has_embeddings = False
             
             # Prepare data for batch insert
             ids = []

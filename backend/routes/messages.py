@@ -23,6 +23,7 @@ from services.location_access import (
     user_can_bypass_closed_location,
 )
 from services.playing_character import effective_playing_character_id
+from services.assistant_grants import ALLOWED_ROLES, assistant_post_allowed
 from datetime import datetime
 from services.message_time_format import format_message_time
 import logging
@@ -446,8 +447,14 @@ def save_message(campaign_id, location_id):
             return jsonify({'error': 'Message content is required'}), 400
         
         content = data.get('content')
+        if not isinstance(content, str):
+            return jsonify({'error': 'Message content must be a string'}), 400
         message_type = data.get('message_type', 'ic')  # ic, ooc, system, action
-        role = data.get('role', 'user')  # user or assistant (for AI messages)
+        # 'user', or 'assistant' for AI Storyteller lines; assistant is checked below
+        # (services/assistant_grants.py): only text the AI endpoints handed this user, or admins.
+        role = str(data.get('role') or 'user').strip().lower()
+        if role not in ALLOWED_ROLES:
+            return jsonify({'error': 'Invalid message role'}), 400
         character_id = data.get('character_id')
         raw_mk = data.get('ai_message_kind')
         ai_message_kind = None
@@ -475,14 +482,12 @@ def save_message(campaign_id, location_id):
         ensure_messages_speaker_mode_column(cursor)
         conn.commit()
 
-        # Check if user is currently banned
+        # Campaign ban from the OOC monitor (campaign_bans; site bans are separate)
         try:
             from services.ooc_monitor import create_ooc_monitor
-            from services.llm_service import get_llm_service
-            
-            llm_service = get_llm_service()
-            ooc_monitor = create_ooc_monitor(llm_service)
-            is_banned, ban_message = ooc_monitor.check_user_ban(user_id)
+
+            ooc_monitor = create_ooc_monitor()
+            is_banned, ban_message = ooc_monitor.check_user_ban(user_id, campaign_id)
             
             if is_banned:
                 return jsonify({
@@ -520,22 +525,47 @@ def save_message(campaign_id, location_id):
             )
 
         location_type = location_row['type']
+
+        if role == 'assistant':
+            cursor.execute("SELECT role FROM users WHERE id = %s", (user_id,))
+            poster = cursor.fetchone() or {}
+            if not assistant_post_allowed(
+                cursor, user_id, campaign_id, location_id, content, ai_message_kind,
+                poster.get('role') or '',
+            ):
+                conn.rollback()
+                logger.warning(
+                    f"Refused assistant-role message from user {user_id} in campaign {campaign_id} "
+                    f"(not an AI reply issued to them)"
+                )
+                return jsonify({'error': 'Only the AI Storyteller can post as the Storyteller.'}), 403
         
-        # CHECK FOR OOC VIOLATIONS (only for user messages, not AI)
+        # CHECK FOR OOC VIOLATIONS (only for user messages, not AI; never for staff)
         ooc_warning = None
         if role == 'user':
             try:
                 from services.ooc_monitor import create_ooc_monitor
-                from services.llm_service import get_llm_service
-                
-                llm_service = get_llm_service()
-                ooc_monitor = create_ooc_monitor(llm_service)
+
+                cursor.execute(
+                    "SELECT u.role, c.created_by FROM users u, campaigns c WHERE u.id = %s AND c.id = %s",
+                    (user_id, campaign_id),
+                )
+                who = cursor.fetchone() or {}
+                requested_voice = str(data.get('speak_as') or data.get('voice') or '').strip().lower()
+                ooc_monitor = create_ooc_monitor()
                 
                 is_violation, warning_msg, should_ban = ooc_monitor.check_message(
                     message=content,
                     user_id=user_id,
                     campaign_id=campaign_id,
-                    location_type=location_type
+                    location_type=location_type,
+                    site_role=who.get('role'),
+                    is_campaign_owner=(
+                        who.get('created_by') is not None and int(who['created_by']) == int(user_id)
+                    ),
+                    # staff voice is validated below (only admin/helper/owner may use it, and
+                    # they are exempt anyway)
+                    speaker_mode=requested_voice,
                 )
                 
                 if is_violation:

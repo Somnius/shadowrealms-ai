@@ -954,7 +954,7 @@ def delete_campaign(campaign_id):
             
             if message_count > 0 and hasattr(rag_service, 'client'):
                 try:
-                    collection = rag_service.client.get_or_create_collection(name='message_memory')
+                    collection = rag_service._get_collection('messages')
                     # Get all message IDs for this campaign
                     cursor.execute("SELECT id FROM messages WHERE campaign_id = %s", (campaign_id,))
                     message_ids = [row['id'] for row in cursor.fetchall()]

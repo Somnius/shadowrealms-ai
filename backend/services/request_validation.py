@@ -78,3 +78,14 @@ def optional_str(value: Any, name: str, default: str = "", max_len: Optional[int
     if max_len is not None and len(s) > max_len:
         raise ValueError(f"{name} must be at most {max_len} characters")
     return s
+
+
+def chat_text(value: Any, name: str = "message", max_len: int = 8000) -> str:
+    """A required chat text: a non-blank string of at most ``max_len`` characters (returned as is)."""
+    if not isinstance(value, str):
+        raise ValueError(f"{name} must be a string")
+    if not value.strip():
+        raise ValueError(f"{name} is required")
+    if len(value) > max_len:
+        raise ValueError(f"{name} is too long (max {max_len} characters)")
+    return value

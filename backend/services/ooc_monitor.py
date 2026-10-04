@@ -1,41 +1,93 @@
 """
 OOC (Out of Character) Monitoring Service
-Monitors OOC rooms for in-character discussions and warns/bans players
+Monitors OOC rooms for in-character discussions and warns/bans players.
+
+- Staff are never moderated: site admins and helpers, the campaign owner (its Storyteller),
+  and any post in staff voice.
+- Warnings are per campaign (ooc_violations, last 7 days); WARNING_THRESHOLD warnings give a
+  BAN_DURATION_HOURS ban from posting in that campaign only (campaign_bans). The monitor never
+  touches users.banned_until / ban_type: site bans stay an admin decision (routes/admin.py).
+- One classification per message: services.classifier.classify_cached, shared with the OOC
+  moderation note of /api/ai/chat for the same text.
 """
 
 import logging
 import re
-from typing import Dict, Tuple
-from services.llm_service import LLMService
-from database import get_db
 from datetime import datetime, timedelta
+from typing import Any, Optional, Tuple
 
 logger = logging.getLogger(__name__)
 
+WARNING_THRESHOLD = 3
+BAN_DURATION_HOURS = 24
+STAFF_SITE_ROLES = ("admin", "helper")
+
+
+def _get_db():
+    from database import get_db
+
+    return get_db()
+
+
+def is_exempt_from_ooc_moderation(site_role: Optional[str], is_campaign_owner: bool,
+                                  speaker_mode: Optional[str] = None) -> bool:
+    """Admins, helpers, the campaign owner (Storyteller) and staff-voice posts are never moderated."""
+    if (site_role or "").strip().lower() in STAFF_SITE_ROLES:
+        return True
+    if is_campaign_owner:
+        return True
+    return (speaker_mode or "").strip().lower() == "staff"
+
+
+def _as_datetime(v) -> Optional[datetime]:
+    if v is None:
+        return None
+    if isinstance(v, str):
+        return datetime.fromisoformat(v)
+    return v
+
+
+def campaign_ban_state(row: Optional[dict], now: Optional[datetime] = None) -> Tuple[bool, str]:
+    """(is_banned, message) from a campaign_bans row (or None)."""
+    if not row:
+        return (False, "")
+    until = _as_datetime(row.get("banned_until"))
+    now = now or datetime.now()
+    if until is None or now >= until:
+        return (False, "")
+    left = until - now
+    hours_left = int(left.total_seconds() // 3600)
+    minutes_left = int((left.total_seconds() % 3600) // 60)
+    return (True, (
+        f"⛔ **You are temporarily banned from posting in this campaign.**\n\n"
+        f"**Reason:** {row.get('reason') or 'OOC rules'}\n\n"
+        f"**Time remaining:** {hours_left}h {minutes_left}m\n\n"
+        f"**Ban expires:** {until.strftime('%Y-%m-%d %H:%M')}"
+    ))
+
+
 class OOCMonitor:
     """Monitors OOC rooms for rule violations"""
-    
-    def __init__(self, llm_service: LLMService):
-        self.llm_service = llm_service
-        self.warning_threshold = 3  # 3 warnings = temp ban
-        self.ban_duration_hours = 24  # 24 hour ban
-    
-    def check_message(self, message: str, user_id: int, campaign_id: int, location_type: str) -> Tuple[bool, str, bool]:
+
+    def __init__(self, llm_service: Any = None):
+        self.llm_service = llm_service  # unused; kept for the factory's signature
+        self.warning_threshold = WARNING_THRESHOLD
+        self.ban_duration_hours = BAN_DURATION_HOURS
+        self.last_classification = None  # result of the last classifier call (for logs / tests)
+
+    def check_message(self, message: str, user_id: int, campaign_id: int, location_type: str,
+                      *, site_role: Optional[str] = None, is_campaign_owner: bool = False,
+                      speaker_mode: Optional[str] = None) -> Tuple[bool, str, bool]:
         """
-        Check if a message violates OOC rules
-        
-        Args:
-            message: The message content
-            user_id: User ID who sent the message
-            campaign_id: Campaign ID
-            location_type: Type of location ('ooc' or other)
-        
-        Returns:
-            Tuple of (is_violation, warning_message, should_ban)
+        Check if a message violates OOC rules.
+
+        Returns (is_violation, warning_message, should_ban). should_ban means this message
+        earned a campaign ban (already recorded).
         """
-        
         # Only monitor OOC rooms (DB may vary casing)
         if str(location_type or "").strip().lower() != "ooc":
+            return (False, '', False)
+        if is_exempt_from_ooc_moderation(site_role, is_campaign_owner, speaker_mode):
             return (False, '', False)
 
         # Admin /ai diagnostics — never treat as IC roleplay for OOC moderation
@@ -44,29 +96,22 @@ class OOCMonitor:
         # `/chat …` — explicit assistant prompt; not IC chatter for moderation
         if re.match(r"^\s*/chat(\s|$)", message or "", re.IGNORECASE):
             return (False, '', False)
-        
-        # Check if message is in-character using AI
-        is_violation = self._detect_ic_content(message, campaign_id)
-        
-        if not is_violation:
+
+        if not self._detect_ic_content(message, campaign_id):
             return (False, '', False)
-        
-        # Log the violation
+
         warning_count = self._log_violation(user_id, campaign_id)
-        
-        # Determine action
         should_ban = warning_count >= self.warning_threshold
-        
+
         if should_ban:
-            # Issue temporary ban
-            self._issue_temp_ban(user_id, campaign_id)
+            until = self._issue_campaign_ban(user_id, campaign_id)
             warning_msg = (
                 f"⚠️ **OOC VIOLATION - TEMPORARY BAN ISSUED**\n\n"
-                f"You have been temporarily banned from this campaign for {self.ban_duration_hours} hours.\n\n"
-                f"**Reason:** Multiple violations of OOC rules (3+ warnings).\n\n"
+                f"You can't post in this campaign for {self.ban_duration_hours} hours.\n\n"
+                f"**Reason:** Multiple violations of OOC rules ({self.warning_threshold}+ warnings).\n\n"
                 f"The OOC (Out of Character) Lobby is for discussing the game as players, not roleplaying as characters. "
                 f"Please keep in-character discussions to the game locations.\n\n"
-                f"Your ban will expire at: {self._get_ban_expiry()}"
+                f"Your ban will expire at: {until.strftime('%Y-%m-%d %H:%M')}"
             )
         else:
             warnings_left = self.warning_threshold - warning_count
@@ -75,253 +120,141 @@ class OOCMonitor:
                 f"Your message appears to contain in-character content. "
                 f"The OOC (Out of Character) Lobby is for discussing the game as players, not roleplaying as characters.\n\n"
                 f"**Please keep in-character discussions to the game locations.**\n\n"
-                f"You have **{warnings_left} warning(s)** remaining before a temporary ban is issued."
+                f"You have **{warnings_left} warning(s)** remaining before a temporary ban from this campaign."
             )
-        
+
         logger.warning(f"OOC violation by user {user_id} in campaign {campaign_id}. Warning count: {warning_count}")
-        
         return (True, warning_msg, should_ban)
-    
+
     def _detect_ic_content(self, message: str, campaign_id: int) -> bool:
         """
-        Use AI to detect if message contains in-character content
-        
-        Returns:
-            True if message is in-character, False if it's OOC
+        True when the message is in-character roleplay (a violation in an OOC room).
+
+        Uses services.classifier (Laya / Jev / LLM prompt, per admin setting). Fails open:
+        if no classifier works, nothing is flagged (never warn or ban on a guess).
         """
-        
+        from services.classifier import ClassifierUnavailable, classify_cached
+
         try:
-            # Get campaign context
-            conn = get_db()
-            cursor = conn.cursor()
-            cursor.execute("""
-                SELECT name, description, game_system, rules_edition
-                FROM campaigns
-                WHERE id = %s
-            """, (campaign_id,))
-            
-            campaign = cursor.fetchone()
-            if not campaign:
-                return False
-            
-            campaign_name = campaign['name']
-            campaign_desc = campaign['description']
-            game_system = campaign['game_system']
-            from services.rules_edition import edition_of, rules_edition_label
-
-            rules_label = rules_edition_label(edition_of(campaign))
-            
-            # Build AI prompt to detect IC content
-            prompt = f"""You are monitoring an OOC (Out of Character) chat room for the campaign "{campaign_name}" ({game_system} system, {rules_label} rules).
-
-The OOC room is for players to discuss the game as themselves, ask questions, coordinate schedules, and chat about non-game topics. Questions or talk about the {rules_label} rules and dice (pools, difficulties, successes, Hunger, Willpower, etc.) are OOC and allowed.
-
-IN-CHARACTER content (roleplay) should NOT be in the OOC room and is a violation.
-
-Analyze this message and determine if it contains in-character roleplay:
-
-Message: "{message}"
-
-Is this message in-character roleplay? Answer with ONLY "YES" or "NO" followed by a brief reason.
-
-Examples of VIOLATIONS (in-character):
-- "I draw my sword and attack the vampire!"
-- "*sneaks through the shadows*"
-- "My character says 'We should investigate the temple'"
-- Describing character actions in first person as if playing the character
-
-Examples of ACCEPTABLE (out-of-character):
-- "What time are we playing tonight?"
-- "I think my character should investigate the temple next session"
-- "Does anyone know the rules for combat?"
-- "Hey, I'll be late for the next game"
-- "That was a great session last time!"
-
-Answer:"""
-            
-            # Call LLM with fast, lightweight model
-            response = self.llm_service.generate_response(
-                prompt=prompt,
-                context={},
-                config={
-                    'model': 'llama3.2:3b',  # Fast, lightweight model
-                    'temperature': 0.3,  # Low temperature for consistent detection
-                    'max_tokens': 100,
-                    'task_type': 'moderation'
-                }
-            )
-            
-            response_text = (response or '').strip().upper()
-            
-            # Check if response indicates violation
-            is_violation = response_text.startswith('YES')
-            
-            if is_violation:
-                logger.info(f"IC content detected: {message[:50]}... | AI response: {response_text[:100]}")
-            
-            return is_violation
-            
-        except Exception as e:
-            logger.error(f"Error detecting IC content: {e}")
-            # Fail open - don't ban if AI is unavailable
+            campaign_ctx = ooc_campaign_context(campaign_id)
+        except Exception as e:  # noqa: BLE001
+            logger.error(f"OOC check: could not load campaign {campaign_id}: {e}")
             return False
-        finally:
-            if 'conn' in locals():
-                conn.close()
-    
-    def _log_violation(self, user_id: int, campaign_id: int) -> int:
-        """
-        Log an OOC violation and return total warning count
-        
-        Returns:
-            Total number of warnings for this user in this campaign (last 7 days)
-        """
-        
+        if campaign_ctx is None:
+            return False
+
         try:
-            conn = get_db()
-            cursor = conn.cursor()
-            
-            # ooc_violations is created by backend/init_postgresql_schema.sql
-            # Log this violation
-            cursor.execute("""
-                INSERT INTO ooc_violations (user_id, campaign_id)
-                VALUES (%s, %s)
-            """, (user_id, campaign_id))
-            
-            # Count violations in last 7 days
-            seven_days_ago = (datetime.now() - timedelta(days=7)).isoformat()
-            cursor.execute("""
-                SELECT COUNT(*) AS n
-                FROM ooc_violations
-                WHERE user_id = %s 
-                AND campaign_id = %s
-                AND violated_at > %s
-            """, (user_id, campaign_id, seven_days_ago))
-            
-            warning_count = cursor.fetchone()['n']
-            
-            conn.commit()
-            conn.close()
-            
-            return warning_count
-            
+            result = classify_cached(message, campaign_ctx)
+        except ClassifierUnavailable as e:
+            logger.error(f"OOC check: no classifier available, not flagging: {e}")
+            return False
+        self.last_classification = result
+        verdict = result["ooc_violation"]
+        if verdict["label"]:
+            logger.info(
+                f"IC content detected by {result['provider']} (P(in character)={verdict['score']}): {message[:50]}..."
+            )
+        return bool(verdict["label"])
+
+    def _log_violation(self, user_id: int, campaign_id: int) -> int:
+        """Log an OOC violation; return this user's warnings in this campaign (last 7 days)."""
+        try:
+            conn = _get_db()
+            try:
+                cursor = conn.cursor()
+                cursor.execute(
+                    "INSERT INTO ooc_violations (user_id, campaign_id) VALUES (%s, %s)",
+                    (user_id, campaign_id),
+                )
+                cursor.execute(
+                    """
+                    SELECT COUNT(*) AS n FROM ooc_violations
+                    WHERE user_id = %s AND campaign_id = %s
+                      AND violated_at > NOW() - INTERVAL '7 days'
+                    """,
+                    (user_id, campaign_id),
+                )
+                warning_count = cursor.fetchone()['n']
+                conn.commit()
+                return warning_count
+            finally:
+                conn.close()
         except Exception as e:
             logger.error(f"Error logging OOC violation: {e}")
             return 0
-    
-    def _issue_temp_ban(self, user_id: int, campaign_id: int):
-        """Issue a temporary ban to a user for OOC violations"""
-        
+
+    def _issue_campaign_ban(self, user_id: int, campaign_id: int) -> datetime:
+        """Ban the user from posting in this campaign (campaign_bans); returns the expiry."""
+        until = datetime.now() + timedelta(hours=self.ban_duration_hours)
         try:
-            conn = get_db()
-            cursor = conn.cursor()
-            
-            ban_until = (datetime.now() + timedelta(hours=self.ban_duration_hours)).isoformat()
-            
-            cursor.execute("""
-                UPDATE users
-                SET banned_until = %s,
-                    ban_reason = %s
-                WHERE id = %s
-            """, (
-                ban_until,
-                f"Temporary ban for repeated OOC violations in campaign ID {campaign_id}. "
-                f"Please review the OOC room rules: No in-character roleplay in OOC.",
-                user_id
-            ))
-            
-            conn.commit()
-            conn.close()
-            
-            logger.warning(f"Issued {self.ban_duration_hours}h temp ban to user {user_id} for OOC violations")
-            
-        except Exception as e:
-            logger.error(f"Error issuing temp ban: {e}")
-    
-    def _get_ban_expiry(self) -> str:
-        """Get formatted ban expiry time"""
-        expiry = datetime.now() + timedelta(hours=self.ban_duration_hours)
-        return expiry.strftime("%Y-%m-%d %H:%M UTC")
-    
-    def check_user_ban(self, user_id: int) -> Tuple[bool, str]:
-        """
-        Check if a user is currently banned
-        
-        Returns:
-            Tuple of (is_banned, ban_message)
-        """
-        
-        try:
-            conn = get_db()
-            cursor = conn.cursor()
-            
-            cursor.execute("""
-                SELECT banned_until, ban_reason
-                FROM users
-                WHERE id = %s
-            """, (user_id,))
-            
-            row = cursor.fetchone()
-            conn.close()
-            
-            if not row or not row['banned_until']:
-                return (False, '')
-            
-            banned_until = row['banned_until']
-            ban_reason = row['ban_reason']
-            
-            # PostgreSQL returns a datetime; older rows may hold ISO text
-            if isinstance(banned_until, str):
-                banned_until = datetime.fromisoformat(banned_until)
-            
-            # Check if ban has expired
-            if datetime.now() >= banned_until:
-                # Ban expired, clear it
-                self._clear_ban(user_id)
-                return (False, '')
-            
-            # User is still banned
-            time_left = banned_until - datetime.now()
-            hours_left = int(time_left.total_seconds() / 3600)
-            minutes_left = int((time_left.total_seconds() % 3600) / 60)
-            
-            ban_message = (
-                f"⛔ **You are temporarily banned from this campaign.**\n\n"
-                f"**Reason:** {ban_reason}\n\n"
-                f"**Time remaining:** {hours_left}h {minutes_left}m\n\n"
-                f"**Ban expires:** {banned_until.strftime('%Y-%m-%d %H:%M UTC')}"
+            conn = _get_db()
+            try:
+                cursor = conn.cursor()
+                cursor.execute(
+                    """
+                    INSERT INTO campaign_bans (user_id, campaign_id, banned_until, reason, created_at)
+                    VALUES (%s, %s, %s, %s, NOW())
+                    ON CONFLICT (user_id, campaign_id) DO UPDATE
+                    SET banned_until = GREATEST(campaign_bans.banned_until, EXCLUDED.banned_until),
+                        reason = EXCLUDED.reason, created_at = NOW()
+                    """,
+                    (user_id, campaign_id, until,
+                     "Repeated in-character posts in the OOC room (no in-character roleplay in OOC)."),
+                )
+                conn.commit()
+            finally:
+                conn.close()
+            logger.warning(
+                f"Issued {self.ban_duration_hours}h campaign ban to user {user_id} in campaign {campaign_id} for OOC violations"
             )
-            
-            return (True, ban_message)
-            
         except Exception as e:
-            logger.error(f"Error checking user ban: {e}")
-            return (False, '')
-    
-    def _clear_ban(self, user_id: int):
-        """Clear a user's ban after it expires"""
-        
+            logger.error(f"Error issuing campaign ban: {e}")
+        return until
+
+    def check_user_ban(self, user_id: int, campaign_id: int) -> Tuple[bool, str]:
+        """(is_banned, message) for posting in this campaign (campaign_bans only)."""
         try:
-            conn = get_db()
-            cursor = conn.cursor()
-            
-            cursor.execute("""
-                UPDATE users
-                SET banned_until = NULL,
-                    ban_reason = NULL
-                WHERE id = %s
-            """, (user_id,))
-            
-            conn.commit()
-            conn.close()
-            
-            logger.info(f"Cleared expired ban for user {user_id}")
-            
+            conn = _get_db()
+            try:
+                cursor = conn.cursor()
+                cursor.execute(
+                    "SELECT banned_until, reason FROM campaign_bans WHERE user_id = %s AND campaign_id = %s",
+                    (user_id, campaign_id),
+                )
+                row = cursor.fetchone()
+            finally:
+                conn.close()
+            return campaign_ban_state(row)
         except Exception as e:
-            logger.error(f"Error clearing ban: {e}")
+            logger.error(f"Error checking campaign ban: {e}")
+            return (False, '')
 
 
-def create_ooc_monitor(llm_service: LLMService) -> OOCMonitor:
+def ooc_campaign_context(campaign_id: int) -> Optional[dict]:
+    """Context the classifier gets for an OOC-room message (same dict for every caller, so
+    the verdict cache in services.classifier is shared). None if the campaign is missing."""
+    from services.rules_edition import edition_of, rules_edition_label
+
+    conn = _get_db()
+    try:
+        cursor = conn.cursor()
+        cursor.execute(
+            "SELECT name, game_system, rules_edition FROM campaigns WHERE id = %s",
+            (campaign_id,),
+        )
+        row = cursor.fetchone()
+    finally:
+        conn.close()
+    if not row:
+        return None
+    return {
+        "room": "OOC",
+        "name": row['name'],
+        "game_system": row['game_system'],
+        "rules_label": rules_edition_label(edition_of(row)),
+    }
+
+
+def create_ooc_monitor(llm_service: Any = None) -> OOCMonitor:
     """Factory function to create OOC monitor instance"""
     return OOCMonitor(llm_service)
-

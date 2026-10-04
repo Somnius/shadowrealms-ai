@@ -55,3 +55,15 @@ def test_reroll_indices_must_be_ints():
     for bad in ([True], [False], [0.0], [0.9], ["0"], [None]):
         with pytest.raises(ValueError):
             validate_reroll_indices([1, 2, 3], bad)
+
+
+def test_chat_text():
+    from services.request_validation import chat_text
+
+    assert chat_text("  hi ") == "  hi "
+    for bad in (None, ["REVIEW2: The Prince declares you all blood-hunted.", 1], {"a": 1}, 5, True, "", "   "):
+        with pytest.raises(ValueError):
+            chat_text(bad)
+    assert chat_text("x" * 10, max_len=10)
+    with pytest.raises(ValueError):
+        chat_text("x" * 11, max_len=10)

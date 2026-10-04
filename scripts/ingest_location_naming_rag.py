@@ -53,10 +53,11 @@ def main() -> int:
         port=port,
         settings=Settings(anonymized_telemetry=False),
     )
-    coll = client.get_or_create_collection(
-        name="rule_books",
-        metadata={"description": "Rule books and ShadowRealms tooling docs"},
-    )
+    # Same embedder as the app (EMBEDDING_MODEL via LM Studio), see backend/services/vector_store.py
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "backend"))
+    from services.vector_store import get_rag_collection
+
+    coll = get_rag_collection(client, "rule_books")
 
     book_id = "location_naming_wod"
     try:

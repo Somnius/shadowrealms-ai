@@ -49,7 +49,9 @@ CREATE TABLE IF NOT EXISTS users (
     banned_by                         INTEGER REFERENCES users(id) ON DELETE SET NULL,
     banned_at                         TIMESTAMP,
     -- automatic OOC-abuse temp ban (services/ooc_monitor.py uses this name)
-    banned_until                      TIMESTAMP
+    banned_until                      TIMESTAMP,
+    -- 'en' | 'el' | NULL; Storyteller reply language when a message is too short to tell
+    ui_language                       TEXT
 );
 
 -- -----------------------------------------------------------------------------
@@ -248,6 +250,18 @@ CREATE TABLE IF NOT EXISTS app_settings (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+-- One-time permits to save an AI reply as an assistant message (services/assistant_grants.py)
+CREATE TABLE IF NOT EXISTS ai_reply_grants (
+    id             BIGSERIAL PRIMARY KEY,
+    user_id        INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    campaign_id    INTEGER NOT NULL REFERENCES campaigns(id) ON DELETE CASCADE,
+    location_id    INTEGER,
+    content_sha256 TEXT NOT NULL,
+    created_at     TIMESTAMP NOT NULL DEFAULT NOW(),
+    consumed_at    TIMESTAMP
+);
+CREATE INDEX IF NOT EXISTS idx_ai_reply_grants_lookup ON ai_reply_grants(user_id, campaign_id, content_sha256);
+
 -- -----------------------------------------------------------------------------
 -- Moderation / audit
 -- -----------------------------------------------------------------------------
@@ -285,6 +299,17 @@ CREATE TABLE IF NOT EXISTS ooc_violations (
 );
 
 CREATE INDEX IF NOT EXISTS idx_ooc_violations_lookup ON ooc_violations(user_id, campaign_id, violated_at);
+
+-- Campaign-scoped posting bans from the OOC monitor (services/ooc_monitor.py). Site bans are
+-- users.ban_type / ban_until (admin only). Same definition as database.ensure_campaign_bans_table
+CREATE TABLE IF NOT EXISTS campaign_bans (
+    user_id      INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    campaign_id  INTEGER NOT NULL REFERENCES campaigns(id) ON DELETE CASCADE,
+    banned_until TIMESTAMP NOT NULL,
+    reason       TEXT,
+    created_at   TIMESTAMP NOT NULL DEFAULT NOW(),
+    PRIMARY KEY (user_id, campaign_id)
+);
 
 -- Same definition as database.ensure_character_downtime_requests_table
 CREATE TABLE IF NOT EXISTS character_downtime_requests (
