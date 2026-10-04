@@ -29,6 +29,7 @@ from services.rules_edition import (
     storyteller_rules_brief,
 )
 from services.character_prompt import format_character_for_prompt
+from services import dice_pools
 from services.assistant_grants import grant_assistant_reply
 from services.request_validation import RequestValidationError, chat_text, strict_int
 
@@ -324,6 +325,10 @@ def ai_chat():
             response = generate_full_response(message, context, campaign_id, location_id, current_user_id)
             response_type = 'full'
 
+        roll_requests = []
+        if response is not None and campaign_id:
+            response, roll_requests = resolve_roll_tags(response, current_user_id, campaign_id)
+
         if response is None:
             # Every model failed: fixed text, no AI memory, no grant (not saveable as Storyteller).
             return jsonify({
@@ -341,6 +346,7 @@ def ai_chat():
         
         return jsonify({
             'response': response,
+            'roll_requests': roll_requests,
             'response_type': response_type,
             'ai_meta': _public_ai_meta(),
             'performance_mode': performance_mode.value,
@@ -749,10 +755,14 @@ def _storyteller_reply(mode: str, message: str, campaign_id: int, location_id: i
 
         campaign_context = get_campaign_context(campaign_id)
         fixed = [cfg['intro'], campaign_context]
+        roll_rule = ''
         if user_id and campaign_id:
             char_data = get_character_context(user_id, campaign_id)
             if char_data['has_character']:
                 fixed.append(char_data['formatted'])
+                # Pools from the sheet, and roll tags instead of invented pools (services/dice_pools.py).
+                fixed.append(dice_pools.prompt_block(char_data['row'], char_data['rules_edition']))
+                roll_rule = dice_pools.roll_instruction(char_data['rules_edition'])
         history_rows = []
         if location_id:
             fixed.append(get_location_context(location_id, campaign_id)['formatted'])
@@ -768,6 +778,8 @@ def _storyteller_reply(mode: str, message: str, campaign_id: int, location_id: i
             history_rows = get_recent_messages(location_id, campaign_id, limit=cfg['history_rows'])['messages']
         fixed.append(cfg['outro'])
         fixed.append(sp.IN_WORLD_RULE)
+        if roll_rule:  # last, with the in-world rule: the roll tag is its one exception
+            fixed[-1] += "\n" + roll_rule
 
         used = sum(sp.estimate_tokens(x) for x in fixed) + sp.estimate_tokens(message) + rag_budget
         semantic_text = ''
@@ -803,6 +815,25 @@ def _storyteller_reply(mode: str, message: str, campaign_id: int, location_id: i
     except Exception as e:
         logger.error(f"Error generating {mode} response: {e}")
         return None
+
+
+def resolve_roll_tags(response: str, user_id: int, campaign_id: int):
+    """
+    The Storyteller's [[roll: …]] tags resolved against the requester's sheet: (text, requests).
+
+    Runs before the assistant grant and AI memory, so the saved message is exactly the text
+    returned. Without a character the tags become plain text (no chip). Never raises.
+    """
+    if not response or '[' not in response:
+        return response, []
+    try:
+        char = get_character_context(user_id, campaign_id)
+        if char.get('has_character'):
+            return dice_pools.apply_roll_tags(response, char['row'], char['rules_edition'], char['id'])
+        return dice_pools.apply_roll_tags(response, None, get_campaign_rules_edition(campaign_id))
+    except Exception as e:  # noqa: BLE001 - a reply without chips beats no reply
+        logger.error("Could not resolve roll tags: %s", e)
+        return response, []
 
 
 def generate_efficient_response(message: str, context: dict, campaign_id: int, location_id: int = None, user_id: int = None) -> Optional[str]:
@@ -1630,7 +1661,8 @@ def get_character_context(user_id: int, campaign_id: int) -> dict:
             'game_system': game_system,
             'rules_edition': edition,
             'data': character_data,
-            'formatted': formatted
+            'formatted': formatted,
+            'row': dict(character),
         }
         
     except Exception as e:
