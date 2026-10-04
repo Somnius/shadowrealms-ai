@@ -814,6 +814,37 @@ $$
 
 
 @once_per_process
+def ensure_laya_eval_tables(cursor):
+    """Laya labels + evaluation reports (services/laya_eval.py; also in init_postgresql_schema.sql)."""
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS laya_labels (
+            message_id     INTEGER PRIMARY KEY REFERENCES messages(id) ON DELETE CASCADE,
+            in_character   BOOLEAN NOT NULL,
+            intent         TEXT NOT NULL,
+            content_sha256 TEXT NOT NULL,
+            labelled_by    INTEGER REFERENCES users(id) ON DELETE SET NULL,
+            created_at     TIMESTAMP NOT NULL DEFAULT NOW(),
+            updated_at     TIMESTAMP NOT NULL DEFAULT NOW()
+        )
+    """)
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS laya_eval_reports (
+            id          SERIAL PRIMARY KEY,
+            status      TEXT NOT NULL DEFAULT 'running',
+            source      TEXT NOT NULL DEFAULT 'admin',
+            started_by  INTEGER REFERENCES users(id) ON DELETE SET NULL,
+            started_at  TIMESTAMP NOT NULL DEFAULT NOW(),
+            finished_at TIMESTAMP,
+            report      TEXT
+        )
+    """)
+    cursor.execute(
+        "CREATE UNIQUE INDEX IF NOT EXISTS idx_laya_eval_reports_one_running "
+        "ON laya_eval_reports(status) WHERE status = 'running'"
+    )
+
+
+@once_per_process
 def ensure_auth_security_schema(cursor):
     """Phase 5 auth: token_version + trigger, revoked jtis, rotating refresh tokens, auth_events
     (also in init_postgresql_schema.sql; services/auth_tokens.py)."""
@@ -1091,6 +1122,7 @@ def migrate_db():
                 ensure_users_ui_language_column(cursor)
                 ensure_ai_reply_grants_table(cursor)
                 ensure_campaign_bans_table(cursor)
+                ensure_laya_eval_tables(cursor)
                 ensure_auth_security_schema(cursor)
                 ensure_campaign_activity_schema(cursor)
                 ensure_dice_tables(cursor, 'postgresql')

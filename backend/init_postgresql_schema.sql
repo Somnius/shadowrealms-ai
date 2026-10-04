@@ -266,6 +266,32 @@ CREATE TABLE IF NOT EXISTS ai_reply_grants (
 );
 CREATE INDEX IF NOT EXISTS idx_ai_reply_grants_lookup ON ai_reply_grants(user_id, campaign_id, content_sha256);
 
+-- Laya evaluation (services/laya_eval.py, admin "Laya" tab). Same definitions as
+-- database.ensure_laya_eval_tables. One human label per chat message: is it in character, and
+-- its intent. content_sha256 is the message text at labelling time (a changed text = stale label).
+CREATE TABLE IF NOT EXISTS laya_labels (
+    message_id     INTEGER PRIMARY KEY REFERENCES messages(id) ON DELETE CASCADE,
+    in_character   BOOLEAN NOT NULL,
+    intent         TEXT NOT NULL,
+    content_sha256 TEXT NOT NULL,
+    labelled_by    INTEGER REFERENCES users(id) ON DELETE SET NULL,
+    created_at     TIMESTAMP NOT NULL DEFAULT NOW(),
+    updated_at     TIMESTAMP NOT NULL DEFAULT NOW()
+);
+
+-- Evaluation runs; report is JSON text (message ids only, never message text).
+CREATE TABLE IF NOT EXISTS laya_eval_reports (
+    id          SERIAL PRIMARY KEY,
+    status      TEXT NOT NULL DEFAULT 'running',   -- running | done | failed
+    source      TEXT NOT NULL DEFAULT 'admin',     -- admin | cli
+    started_by  INTEGER REFERENCES users(id) ON DELETE SET NULL,
+    started_at  TIMESTAMP NOT NULL DEFAULT NOW(),
+    finished_at TIMESTAMP,
+    report      TEXT
+);
+-- At most one run at a time.
+CREATE UNIQUE INDEX IF NOT EXISTS idx_laya_eval_reports_one_running ON laya_eval_reports(status) WHERE status = 'running';
+
 -- -----------------------------------------------------------------------------
 -- Moderation / audit
 -- -----------------------------------------------------------------------------
