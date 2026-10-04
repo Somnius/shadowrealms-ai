@@ -162,7 +162,7 @@ MIT, see [LICENSE](LICENSE).
 ## Credits
 
 - Made with ❤️ for tabletop RPG games by **Lefteris Iliadis** ([Somnius](https://github.com/Somnius), @SomniusX).
-- Built with the help of [Cursor AI](https://cursor.sh).
+- Built with the help of AI coding tools: [Cursor AI](https://cursor.sh), [OpenCode](https://opencode.ai), and [Claude Code](https://claude.com/claude-code) with Claude Opus 5.5 and Claude Fable 5.1.
 - Greek Storyteller model: Llama-Krikri by ILSP. Embeddings: bge-m3 by BAAI.
 
 ## Disclaimer
