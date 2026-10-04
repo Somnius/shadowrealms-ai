@@ -71,7 +71,11 @@
     "vampire": "Vampire: The Masquerade",
     "werewolf": "Werewolf: The Apocalypse",
     "mage": "Mage: The Ascension",
-    "custom": "Custom system"
+    "custom": "Custom system",
+    "vampireRevised": "Vampire: The Masquerade (Revised)",
+    "werewolfRevised": "Werewolf: The Apocalypse (Revised)",
+    "mageRevised": "Mage: The Ascension (Revised)",
+    "vampireV5": "Vampire: The Masquerade (5th Edition)"
   },
   "hunger": "Hunger"
 }

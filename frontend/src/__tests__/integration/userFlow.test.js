@@ -152,6 +152,21 @@ describe('Chronicle management', () => {
     expect(await screen.findByRole('link', { name: /enter chronicle/i })).toHaveAttribute('href', '/c/42');
   });
 
+  it('picks the edition first and only offers that edition\'s game lines', async () => {
+    mockFetch({ 'GET /api/users/me': () => [200, { ...ME_PLAYER, role: 'admin' }] });
+    const u = setupUser();
+    renderAt('/chronicles/new');
+    const lineSelect = await screen.findByLabelText(/game line/i);
+    const optionValues = () => Array.from(lineSelect.querySelectorAll('option')).map((o) => o.value);
+    // Classic (default): the Revised lines plus a custom system
+    expect(optionValues()).toEqual(['vampire', 'werewolf', 'mage', 'custom']);
+    await u.selectOptions(lineSelect, 'werewolf');
+    // V5: Vampire only, and an unavailable line falls back to it
+    await u.click(within(screen.getByTestId('rules-edition-choice')).getByLabelText(/v5/i));
+    expect(optionValues()).toEqual(['vampire']);
+    expect(lineSelect).toHaveValue('vampire');
+  });
+
   it('renders hostile chronicle names as text', async () => {
     mockFetch({
       'GET /api/users/me': () => [200, ME_PLAYER],

@@ -59,7 +59,8 @@
     "description": "Κόσμος και σκηνικό",
     "descriptionHint": "Ο AI Storyteller το διαβάζει ως τον κόσμο του χρονικού. Μπορείς να το αλλάξεις αργότερα.",
     "system": "Σειρά παιχνιδιού",
-    "edition": "Έκδοση"
+    "edition": "Έκδοση",
+    "systemV5Hint": "Η V5 προς το παρόν υποστηρίζει μόνο το Vampire: The Masquerade."
   },
   "youAreST": "Είσαι ο Storyteller",
   "stats": {

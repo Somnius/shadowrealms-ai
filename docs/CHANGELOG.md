@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.1] - 2026-10-04 - Morning after
+
+### Changed
+- **New chronicle**: pick the edition first (Classic or V5), then a game line from that edition: Classic offers Vampire / Werewolf / Mage (Revised) and a custom system, V5 offers Vampire: The Masquerade (5th Edition).
+- **V5 Willpower reroll** now costs 1 Superficial Willpower on the sheet (a full track turns a box Aggravated; a track full of Aggravated refuses the reroll).
+- The public instance at `srai.srv-box.com` is open; the preview gate was removed. Everything sits behind the app's own login.
+- Documentation sweep: new README with screenshots, docs index, CONTRIBUTING, Docker setup with every env variable, testing docs, issue and PR templates; 15 historical docs moved to `docs/archive/`; `scripts/version-bump.sh` only touches version markers now.
+
+### Fixed
+- API responses could carry internal error text (CodeQL `py/stack-trace-exposure`); validation now uses fixed public messages. README rendering sanitised with DOMPurify, regex HTML stripping removed.
+- OOC moderation warning showed raw Markdown in English; it's a translated notice now. Rouse lines translated, no emoji in dice text.
+- The Storyteller no longer comments on the player's dice or the interface.
+- Chronicle hall footer sits at the bottom of the window on short pages.
+- Theme preview dice controls fit on phones; Greek glyph search ignores accents; lining figures in display fonts; contrast fixes.
+- `env.template` pointed `DATABASE_HOST` at the compose service name, which the host-network backend can't resolve.
+
 ## [0.9.0] - 2026-10-04 - Into the Night: editions, new shell, Greek, hardened public site
 
 Full plan and progress: `docs/ROADMAP_v0.9.md`.
