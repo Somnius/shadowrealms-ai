@@ -169,3 +169,16 @@ test('an OOC ban (403) shows the ban notice', async () => {
   expect(c.onNotice.mock.calls[0][0]).toMatchObject({ tone: 'danger', title: 'Temporarily barred from this chronicle' });
   expect(c.onNotice.mock.calls[0][0].body).toContain('24 hours');
 });
+
+test('roll requests from /ai/chat ride along on the saved reply; the saved text is the API text', async () => {
+  const text = 'Go. [[roll: Dexterity + Stealth | 4 dice | 2 hunger | difficulty 3]]';
+  const reqs = [{ edition: 'v5', label: 'Dexterity + Stealth', pool: 4, hunger: 2, difficulty: 3, specialty: null, character_id: 9 }];
+  const { api, calls } = fakeApi({
+    'POST /campaigns/3/locations/7': (body) => ({ ok: true, status: 201, data: { data: { id: body.role === 'assistant' ? 31 : 30, ...body } } }),
+    'POST /ai/chat': () => ({ ok: true, status: 200, data: { response: text, roll_requests: reqs } }),
+  });
+  const c = ctx({ api });
+  await sendChatMessage(c, 'I sneak.');
+  expect(calls[2].body).toEqual({ content: text, message_type: 'ic', role: 'assistant' });
+  expect(c.onAppend).toHaveBeenCalledWith([expect.objectContaining({ id: 31, content: text, roll_requests: reqs })]);
+});

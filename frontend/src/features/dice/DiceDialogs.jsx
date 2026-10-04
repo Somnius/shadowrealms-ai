@@ -14,8 +14,10 @@ function sheetHunger(character) {
 /**
  * Roll dialog (phase 1 roll modal on the design system Modal: Esc, focus trap, return focus).
  * Classic: pool, difficulty, specialty, Willpower. V5: pool, successes needed, Hunger + Rouse check.
+ * prefill (a Storyteller roll request, features/dice/rollRequests.js rollPrefill): the fields to
+ * open with; V5 Hunger still follows the sheet when the character has one.
  */
-export function RollDialog({ open, onClose, campaign, location, character, speakAs, canHide, isAdmin, dice, onOpenHistory }) {
+export function RollDialog({ open, onClose, campaign, location, character, speakAs, canHide, isAdmin, dice, onOpenHistory, prefill }) {
   const edition = editionOf(campaign);
   const [pool, setPool] = useState('5');
   const [difficulty, setDifficulty] = useState(6);
@@ -27,9 +29,22 @@ export function RollDialog({ open, onClose, campaign, location, character, speak
   const [reason, setReason] = useState('');
   const poolRef = useRef(null);
 
-  // V5: prefill Hunger from the sheet each time the dialog opens.
+  // V5: prefill Hunger from the sheet each time the dialog opens; a roll request fills the rest.
   useEffect(() => {
-    if (open && edition === V5) setHunger(sheetHunger(character));
+    if (!open) return;
+    if (edition === V5) {
+      const fromSheet = character?.wod_meta?.hunger != null;
+      setHunger(fromSheet || !prefill ? sheetHunger(character) : Math.max(0, Math.min(5, Number(prefill.hunger) || 0)));
+    }
+    if (!prefill) return;
+    setPool(prefill.pool);
+    setReason(prefill.reason || '');
+    if (edition === V5) {
+      if (prefill.v5Difficulty != null) setV5Difficulty(Math.max(0, Math.min(10, prefill.v5Difficulty)));
+    } else {
+      setDifficulty(Math.max(2, Math.min(10, Number(prefill.difficulty) || 6)));
+      setSpecialty(!!prefill.specialty);
+    }
   }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const busy = dice.rolling;

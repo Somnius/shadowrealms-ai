@@ -160,12 +160,16 @@ export async function sendChatMessage(ctx, rawText, opts = {}) {
     cb.onError(t('chat:ooc.warningFallback', 'This line reads as in-character. Keep roleplay to the story rooms.'));
   }
 
-  const postAssistant = async (content, kind) => {
+  // rollRequests: the structured rolls /api/ai/chat resolved from the sheet (features/dice/rollRequests.js).
+  const postAssistant = async (content, kind, rollRequests) => {
     const r = await api(roomPath, {
       method: 'POST',
       body: { content, message_type: roomType, role: 'assistant', ...(kind ? { ai_message_kind: kind } : {}) },
     });
-    if (r.ok && r.data.data) cb.onAppend([r.data.data]);
+    if (r.ok && r.data.data) {
+      const saved = Array.isArray(rollRequests) && rollRequests.length ? { ...r.data.data, roll_requests: rollRequests } : r.data.data;
+      cb.onAppend([saved]);
+    }
     else cb.onError(r.data.error || t('chat:error.aiSaveFailed', 'The Storyteller’s reply could not be saved.'));
   };
 
@@ -254,7 +258,7 @@ export async function sendChatMessage(ctx, rawText, opts = {}) {
       const raw = ai.data.response != null ? ai.data.response : ai.data.message;
       const reply = raw != null && String(raw).trim() !== '' ? String(raw).trim() : null;
       if (!ai.data.ooc_no_reply && reply) {
-        await postAssistant(reply, chatMatch ? 'chat_assistant' : null);
+        await postAssistant(reply, chatMatch ? 'chat_assistant' : null, ai.data.roll_requests);
       }
     };
     await askAi();

@@ -178,5 +178,17 @@
     "classic_one": "{{count}} success at difficulty {{difficulty}}",
     "classic_other": "{{count}} successes at difficulty {{difficulty}}",
     "diceSr": "Dice: {{dice}}"
+  },
+  "request": {
+    "group": "Rolls asked for",
+    "open": "Open the roll dialog with this pool",
+    "roll": "Roll: {{text}}",
+    "withSpecialty": "{{label}}, {{specialty}} specialty",
+    "v5Dice_one": "{{count}} die, {{hunger}} Hunger",
+    "v5Dice_other": "{{count}} dice, {{hunger}} Hunger",
+    "v5": "{{dice}}, {{difficulty}} needed",
+    "classicDice_one": "{{count}} die",
+    "classicDice_other": "{{count}} dice",
+    "classic": "{{dice}}, diff {{difficulty}}"
   }
 }

@@ -4,6 +4,8 @@ import { overlayFromMarker } from '../../dice/diceMarker';
 import { classicOutcome, classifyClassicDie } from '../../dice/classicDiceDisplay';
 import { classifyV5Die, v5Badges } from '../../dice/v5DiceDisplay';
 import Markdown from './markdown';
+import RollRequestChips from '../dice/RollRequestChips';
+import { rollRequestsOf, stripRollTags } from '../dice/rollRequests';
 import { diceAnimationId, messageTime, parseRouseLine, presentSpeaker } from './messageModel';
 import { formatClock, formatFull, formatShort, isoOf } from './timeFormat';
 import { t } from '../../i18n';
@@ -117,7 +119,16 @@ export function RouseLine({ rouse }) {
 
 function MessageBody({ message }) {
   const rouse = parseRouseLine(message);
-  return rouse ? <RouseLine rouse={rouse} /> : <Markdown text={message.content} />;
+  if (rouse) return <RouseLine rouse={rouse} />;
+  if (message.role === 'assistant' && rollRequestsOf(message).length) {
+    return (
+      <>
+        <Markdown text={stripRollTags(message.content)} />
+        <RollRequestChips message={message} />
+      </>
+    );
+  }
+  return <Markdown text={message.content} />;
 }
 
 function diceFaces(marker) {
