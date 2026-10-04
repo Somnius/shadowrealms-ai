@@ -1,5 +1,5 @@
-# ShadowRealms AI Backend - Alpine-based Dockerfile
-FROM python:3.11-slim
+# ShadowRealms AI Backend (Python 3.12, same as CI)
+FROM python:3.12-slim
 
 # Set environment variables
 ENV PYTHONDONTWRITEBYTECODE=1
