@@ -77,6 +77,7 @@ def create_app(config_class=Config):
     app.register_blueprint(dice.dice_bp, url_prefix='/api')
     app.register_blueprint(messages.messages_bp, url_prefix='/api')
     from routes.events import events_bp; app.register_blueprint(events_bp, url_prefix='/api')  # v0.9 live updates (SSE), unread, roster
+    from routes.laya_eval import laya_eval_bp; app.register_blueprint(laya_eval_bp)  # admin: Laya labels + evaluation
     
     # Version endpoint
     @app.route('/api/version')
