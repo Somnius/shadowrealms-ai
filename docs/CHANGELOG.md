@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - Frontend builds with Vite instead of Create React App (`react-scripts` removed). `npm start`, `npm run build` and `npm test` work as before; output still goes to `frontend/build/`, with no inline scripts and no source maps. Jest runs on its own with one config (`jest.config.js`), and `npm run lint` uses a plain ESLint 9 config. Node 22 in the frontend image and CI. `npm audit --omit=dev` went from 69 findings to 2 (react-router 6). Rebuild the dev image once: `docker compose --profile dev build frontend`.
+- ChromaDB is pinned: the `chromadb/chroma:1.5.9` image (was `:latest`) and the `chromadb>=1.5.9,<2` client move together. Existing data opens in place, nothing to migrate; take a copy of `data/vector_db` first (see [DOCKER_ENV_SETUP.md](DOCKER_ENV_SETUP.md#upgrading-an-existing-install)).
+- Backend image on Python 3.12 (was 3.11), same as CI. Requirement floors raised to the versions now tested (Flask 3.1, bcrypt 5, Flask-CORS 6, numpy 2.5, openai 3, ...). redis stays on 7.x because Flask-Limiter's `limits[redis]` needs `redis<8`.
+- CI: `actions/checkout` v7, `actions/setup-python` v7, `github/codeql-action` v4 (v3 is deprecated in December 2026).
 
 ## [0.9.4] - 2026-10-04 - At the table
 
