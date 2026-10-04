@@ -1,5 +1,5 @@
 /* Gothic Horror Theme for ShadowRealms AI */
-/* Cinzel / Crimson Text + Font Awesome load from public/index.html — no @import (reduces FOUC) */
+/* Cinzel / Crimson Text load from public/index.html (no @import, reduces FOUC). Icons are the design glyphs (src/design), no icon font. */
 
 /* Global Gothic Styles */
 body {

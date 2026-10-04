@@ -4,6 +4,8 @@ import OutcomeBadges from './OutcomeBadges';
 import { canSelectForReroll, v5SummaryLine } from '../../dice/v5DiceDisplay';
 import { V5_WILLPOWER_REROLL_MAX } from '../../rules/v5Rules';
 import { t } from '../../i18n';
+import { Button, Glyph, IconButton } from '../../design';
+import './dice.css';
 
 /**
  * After a V5 roll by this player: pick up to 3 NORMAL dice and reroll them once
@@ -25,79 +27,47 @@ export default function V5RerollPanel({ roll, onReroll, onDismiss, busy, elsewhe
     });
   };
   return (
-    <div
-      role="region"
-      aria-label={t('dice:reroll.region', 'Willpower reroll')}
-      data-testid="v5-reroll-panel"
-      style={{
-        boxSizing: 'border-box',
-        width: '100%',
-        maxHeight: '40vh',
-        overflowY: 'auto',
-        marginBottom: '12px',
-        background: 'rgba(15, 23, 41, 0.97)',
-        border: '1px solid #dc2626',
-        borderRadius: '12px',
-        padding: '10px 14px',
-      }}
-    >
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-        <strong style={{ color: '#fecaca', fontFamily: 'Cinzel, serif', fontSize: '14px' }}>{t('dice:reroll.title', 'Your V5 roll')}</strong>
-        <button
-          type="button"
-          onClick={onDismiss}
-          aria-label={t('common:close', 'Close')}
-          style={{ background: 'transparent', color: '#94a3b8', border: 'none', cursor: 'pointer', fontSize: '18px' }}
-        >
-          ×
-        </button>
+    <div role="region" aria-label={t('dice:reroll.region', 'Willpower reroll')} data-testid="v5-reroll-panel" className="sr-reroll">
+      <div className="sr-reroll__head">
+        <strong className="sr-reroll__title">
+          <Glyph name="d10-hunger" size={18} /> {t('dice:reroll.title', 'Your V5 roll')}
+        </strong>
+        <IconButton icon="close" size="sm" label={t('common:close', 'Close')} tooltip={false} onClick={onDismiss} />
       </div>
-      {elsewhere ? (
-        <div style={{ color: '#fbbf24', fontSize: '12px', textAlign: 'center', marginBottom: '6px' }}>
-          {t('dice:reroll.elsewhere', 'Rolled in another room; the reroll is posted there.')}
-        </div>
-      ) : null}
+      {elsewhere ? <div className="sr-reroll__elsewhere">{t('dice:reroll.elsewhere', 'Rolled in another room; the reroll is posted there.')}</div> : null}
       <OutcomeBadges result={{ rules_edition: 'v5', ...roll }} />
-      <div style={{ color: '#94a3b8', fontSize: '12px', textAlign: 'center', margin: '6px 0 10px' }}>
-        {v5SummaryLine(roll)}
-      </div>
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', justifyContent: 'center' }}>
+      <div className="sr-reroll__summary">{v5SummaryLine(roll)}</div>
+      <div className="sr-reroll__dice">
         {(roll.normal_dice || []).map((v, i) => (
           <DiceFace
             key={`n${i}`}
             value={v}
             edition="v5"
-            size={36}
+            size={40}
             selected={selected.includes(i)}
             onClick={busy ? undefined : () => toggle(i)}
             title={t('dice:reroll.normalDie', 'Normal die {{value}}: click to pick it for the reroll', { value: v })}
           />
         ))}
         {(roll.hunger_dice || []).map((v, i) => (
-          <DiceFace key={`h${i}`} value={v} edition="v5" hunger size={36} title={t('dice:reroll.hungerDie', 'Hunger die {{value}} (can’t be rerolled)', { value: v })} />
+          <DiceFace key={`h${i}`} value={v} edition="v5" hunger size={40} title={t('dice:reroll.hungerDie', 'Hunger die {{value}} (can’t be rerolled)', { value: v })} />
         ))}
       </div>
-      <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end', alignItems: 'center', marginTop: '12px' }}>
-        <span style={{ color: '#64748b', fontSize: '12px', marginRight: 'auto' }}>
+      <div className="sr-reroll__foot">
+        <span className="sr-reroll__picked">
           {t('dice:reroll.picked', '{{n}}/{{max}} picked', { n: selected.length, max: V5_WILLPOWER_REROLL_MAX })}
         </span>
-        <button
-          type="button"
-          disabled={busy || selected.length === 0}
+        <Button
+          variant="arcane"
+          size="sm"
+          icon="reroll"
+          disabled={selected.length === 0}
+          loading={busy}
+          loadingLabel={t('dice:reroll.busy', 'Rerolling…')}
           onClick={() => onReroll(selected)}
-          style={{
-            padding: '8px 12px',
-            background: busy || selected.length === 0 ? '#4a4a5e' : '#9d4edd',
-            color: 'white',
-            border: 'none',
-            borderRadius: '6px',
-            cursor: busy || selected.length === 0 ? 'not-allowed' : 'pointer',
-            fontFamily: 'Cinzel, serif',
-            fontSize: '12px',
-          }}
         >
-          {busy ? t('dice:reroll.busy', 'Rerolling…') : t('dice:reroll.submit', 'Reroll with Willpower')}
-        </button>
+          {t('dice:reroll.submit', 'Reroll with Willpower')}
+        </Button>
       </div>
     </div>
   );

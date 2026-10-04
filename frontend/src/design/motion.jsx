@@ -12,7 +12,11 @@ import { MotionConfig } from 'framer-motion';
 import './components/forms.css'; // MotionToggle reuses the Switch styles
 
 const STORAGE_KEY = 'sr_motion';
+const ATMOSPHERE_KEY = 'sr_atmosphere';
 const QUERY = '(prefers-reduced-motion: reduce)';
+
+/** Atmosphere levels: full ambience, subtle (no ambient loops, short one-shots stay), off (= reduced motion). */
+export const ATMOSPHERE_LEVELS = ['full', 'subtle', 'off'];
 
 function readStored() {
   try {
@@ -23,12 +27,23 @@ function readStored() {
   }
 }
 
-function writeStored(value) {
+function writeStored(value, key = STORAGE_KEY) {
   try {
-    window.localStorage.setItem(STORAGE_KEY, value);
+    window.localStorage.setItem(key, value);
   } catch (e) {
     /* private mode etc. */
   }
+}
+
+/** Stored atmosphere; an older "reduce motion" choice (sr_motion=reduced) reads as 'off'. */
+function readAtmosphere() {
+  try {
+    const v = window.localStorage.getItem(ATMOSPHERE_KEY);
+    if (ATMOSPHERE_LEVELS.includes(v)) return v;
+  } catch (e) {
+    /* ignore */
+  }
+  return readStored() === 'reduced' ? 'off' : 'full';
 }
 
 /** True when the OS asks for reduced motion. Live-updates. */
@@ -74,21 +89,45 @@ export function DesignProvider({
 }) {
   const system = useSystemReducedMotion();
   const [own, setOwn] = useState(() => readStored() || 'system');
-  const preference = motion || own;
+  const [atmosphereChoice, setAtmosphereChoice] = useState(readAtmosphere);
+  const preference = motion || (atmosphereChoice === 'off' ? 'reduced' : own === 'reduced' ? 'system' : own);
   const reduced = system || preference === 'reduced';
+  // What actually plays: the OS setting (or a controlled 'reduced') always means 'off'.
+  const atmosphere = reduced ? 'off' : atmosphereChoice;
+
+  const setAtmosphere = useCallback(
+    (next) => {
+      if (!ATMOSPHERE_LEVELS.includes(next)) return;
+      setAtmosphereChoice(next);
+      writeStored(next, ATMOSPHERE_KEY);
+      const pref = next === 'off' ? 'reduced' : 'full';
+      if (!motion) setOwn(pref);
+      writeStored(pref);
+      if (onMotionChange) onMotionChange(pref);
+    },
+    [motion, onMotionChange]
+  );
 
   const setPreference = useCallback(
     (next) => {
       if (onMotionChange) onMotionChange(next);
       if (!motion) setOwn(next);
       writeStored(next);
+      // Keep the atmosphere setting in step: reducing motion = atmosphere off.
+      if (next === 'reduced') {
+        setAtmosphereChoice('off');
+        writeStored('off', ATMOSPHERE_KEY);
+      } else if (atmosphereChoice === 'off') {
+        setAtmosphereChoice('full');
+        writeStored('full', ATMOSPHERE_KEY);
+      }
     },
-    [motion, onMotionChange]
+    [motion, onMotionChange, atmosphereChoice]
   );
 
   const value = useMemo(
-    () => ({ reduced, preference, systemReduced: system, setPreference }),
-    [reduced, preference, system, setPreference]
+    () => ({ reduced, preference, systemReduced: system, setPreference, atmosphere, atmosphereChoice, setAtmosphere }),
+    [reduced, preference, system, setPreference, atmosphere, atmosphereChoice, setAtmosphere]
   );
 
   return (
@@ -97,6 +136,7 @@ export function DesignProvider({
         <Tag
           className={`sr-app ${className}`.trim()}
           data-motion={reduced ? 'reduced' : 'full'}
+          data-atmosphere={atmosphere}
           data-line={line || undefined}
           lang={lang}
           {...rest}
@@ -116,7 +156,24 @@ export function useMotionPreference() {
   const ctx = useContext(MotionContext);
   const system = useSystemReducedMotion();
   if (ctx) return ctx;
-  return { reduced: system, preference: 'system', systemReduced: system, setPreference: () => {} };
+  return {
+    reduced: system,
+    preference: 'system',
+    systemReduced: system,
+    setPreference: () => {},
+    atmosphere: system ? 'off' : 'full',
+    atmosphereChoice: 'full',
+    setAtmosphere: () => {},
+  };
+}
+
+/**
+ * { level, choice, setLevel, systemReduced }: level is what plays ('full' | 'subtle' | 'off'),
+ * choice is the user's stored setting (the OS reduced-motion setting forces level 'off').
+ */
+export function useAtmosphere() {
+  const { atmosphere, atmosphereChoice, setAtmosphere, systemReduced } = useMotionPreference();
+  return { level: atmosphere, choice: atmosphereChoice, setLevel: setAtmosphere, systemReduced };
 }
 
 /** Shortcut: should animations be reduced right now? */
@@ -164,11 +221,13 @@ export function useInView(ref, rootMargin = '0px') {
  * Returns { active, reduced, paused } — use `paused` for data-paused.
  */
 export function useAmbient(ref) {
-  const reduced = useReducedMotionPref();
+  const { atmosphere } = useMotionPreference();
+  // 'subtle' keeps ambient layers but holds them still; 'off' (reduced motion) too.
+  const still = atmosphere !== 'full';
   const visible = useDocumentVisible();
   const inView = useInView(ref);
-  const active = !reduced && visible && inView;
-  return { active, reduced, paused: !reduced && !active };
+  const active = !still && visible && inView;
+  return { active, reduced: still, paused: !still && !active };
 }
 
 /** Tiny segmented control for the manual reduce-motion toggle (for a user menu / settings). */

@@ -45,7 +45,7 @@ import { t } from '../../i18n';
 import { Term } from '../../i18n/glossary';
 
 const API_URL = '/api';
-const ACCENT = '#e94560';
+const ACCENT = 'var(--sr-blood-500)';
 
 // Labels are functions so t() runs at render time. Game terms stay English.
 const SECTION_ORDER = [
@@ -63,12 +63,12 @@ const SECTION_ORDER = [
 const inputStyle = {
   width: '100%',
   padding: '10px',
-  background: '#0f1729',
-  color: '#e0e0e0',
-  border: '2px solid #2a2a4e',
+  background: 'var(--sr-night-850)',
+  color: 'var(--sr-bone-100)',
+  border: '2px solid var(--sr-night-700)',
   borderRadius: '8px',
 };
-const labelStyle = { color: '#c4b5fd', display: 'block', marginBottom: '6px', fontSize: '13px' };
+const labelStyle = { color: 'var(--sr-arcane-300)', display: 'block', marginBottom: '6px', fontSize: '13px' };
 const rowStyle = {
   display: 'flex',
   alignItems: 'center',
@@ -103,7 +103,7 @@ function SpreadChips({ status }) {
               padding: '4px 10px',
               borderRadius: '6px',
               background: ok ? 'rgba(34,197,94,0.12)' : 'rgba(248,113,113,0.08)',
-              color: ok ? '#86efac' : '#fca5a5',
+              color: ok ? 'var(--sr-ok-400)' : 'var(--sr-blood-300)',
               border: `1px solid ${ok ? '#16653444' : '#991b1b33'}`,
             }}
           >
@@ -278,7 +278,7 @@ export default function V5CharacterCreationWizard({
 
   const inlineErr = (id) =>
     fieldErrors[id] ? (
-      <p style={{ color: '#f87171', fontSize: '13px', marginBottom: '12px' }}>{fieldErrors[id]}</p>
+      <p style={{ color: 'var(--sr-danger-400)', fontSize: '13px', marginBottom: '12px' }}>{fieldErrors[id]}</p>
     ) : null;
 
   const textField = (idKey, label, value, setter, placeholder) => {
@@ -323,7 +323,7 @@ export default function V5CharacterCreationWizard({
                 type="button"
                 aria-label={t('wizard:v5.removeThin', 'Remove thin-blood {{kind}} {{n}}', { kind: kind.replace(/s$/, ''), n: i + 1 })}
                 onClick={() => setRows((prev) => prev.filter((_, j) => j !== i))}
-                style={{ padding: '6px 10px', background: '#1e293b', color: '#94a3b8', border: '1px solid #475569', borderRadius: '6px', cursor: 'pointer' }}
+                style={{ padding: '6px 10px', background: 'var(--sr-night-800)', color: 'var(--sr-bone-300)', border: '1px solid var(--sr-night-600)', borderRadius: '6px', cursor: 'pointer' }}
               >
                 ×
               </button>
@@ -334,7 +334,7 @@ export default function V5CharacterCreationWizard({
           <button
             type="button"
             onClick={() => setRows((prev) => [...prev, { name: '' }])}
-            style={{ padding: '6px 12px', fontSize: '12px', background: 'transparent', color: '#c4b5fd', border: '1px dashed #6d28d9', borderRadius: '6px', cursor: 'pointer' }}
+            style={{ padding: '6px 12px', fontSize: '12px', background: 'transparent', color: 'var(--sr-arcane-300)', border: '1px dashed var(--sr-arcane-700)', borderRadius: '6px', cursor: 'pointer' }}
           >
             {kind === 'Merits' ? t('wizard:v5.addMerit', '+ Add Merit') : t('wizard:v5.addFlaw', '+ Add Flaw')}
           </button>
@@ -347,10 +347,10 @@ export default function V5CharacterCreationWizard({
     <div style={{ maxWidth: '1040px', margin: '0 auto', padding: '20px 16px 60px' }}>
       <GothicBox theme="vampire">
         <div style={{ padding: '8px 8px 0' }}>
-          <h2 style={{ fontFamily: 'Cinzel, serif', color: ACCENT, marginTop: 0, fontSize: '22px' }}>
+          <h2 style={{ fontFamily: 'var(--sr-font-display)', color: ACCENT, marginTop: 0, fontSize: '22px' }}>
             {t('wizard:v5.title', 'Character sheet forge · V5')}
           </h2>
-          <p style={{ color: '#8b8b9f', fontSize: '14px', lineHeight: 1.5 }}>
+          <p style={{ color: 'var(--sr-bone-500)', fontSize: '14px', lineHeight: 1.5 }}>
             {t('wizard:v5.intro', 'Vampire: The Masquerade 5th Edition creation: fixed attribute spread, a skill distribution, 2 + 1 Discipline dots, a predator type, 7 Advantage dots and at least 2 Flaw dots. No freebie points in V5.')}
           </p>
         </div>
@@ -363,7 +363,7 @@ export default function V5CharacterCreationWizard({
             padding: '12px 16px',
             margin: '0 -4px 8px',
             background: 'linear-gradient(180deg, rgba(15,23,41,0.98) 70%, transparent)',
-            borderBottom: '1px solid #2a2a4e',
+            borderBottom: '1px solid var(--sr-night-700)',
           }}
         >
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
@@ -376,20 +376,20 @@ export default function V5CharacterCreationWizard({
                   fontSize: '11px',
                   padding: '6px 12px',
                   borderRadius: '999px',
-                  background: fieldErrors[id] ? 'rgba(248,113,113,0.15)' : '#1e293b',
-                  color: fieldErrors[id] ? '#fca5a5' : ACCENT,
-                  border: `1px solid ${fieldErrors[id] ? '#b91c1c' : '#334155'}`,
+                  background: fieldErrors[id] ? 'rgba(248,113,113,0.15)' : 'var(--sr-night-800)',
+                  color: fieldErrors[id] ? 'var(--sr-blood-300)' : ACCENT,
+                  border: `1px solid ${fieldErrors[id] ? 'var(--sr-blood-700)' : 'var(--sr-night-600)'}`,
                   cursor: 'pointer',
-                  fontFamily: 'Cinzel, serif',
+                  fontFamily: 'var(--sr-font-display)',
                 }}
               >
                 {label()}
               </button>
             ))}
           </div>
-          <div style={{ marginTop: '10px', display: 'flex', flexWrap: 'wrap', gap: '12px', fontSize: '12px', color: '#b5b5c3' }}>
+          <div style={{ marginTop: '10px', display: 'flex', flexWrap: 'wrap', gap: '12px', fontSize: '12px', color: 'var(--sr-bone-300)' }}>
             <span>
-              <strong style={{ color: '#e8e8ef' }}>{name || '—'}</strong>
+              <strong style={{ color: 'var(--sr-bone-100)' }}>{name || '—'}</strong>
               {concept ? ` · ${concept}` : ''}
             </span>
             <span style={{ color: ACCENT }}>{clan}</span>
@@ -474,20 +474,20 @@ export default function V5CharacterCreationWizard({
               </div>
             </div>
             {clanRow ? (
-              <p style={{ color: '#94a3b8', fontSize: '13px', marginTop: '12px', lineHeight: 1.5 }}>
+              <p style={{ color: 'var(--sr-bone-300)', fontSize: '13px', marginTop: '12px', lineHeight: 1.5 }}>
                 {clanRow.disciplines.length ? (
                   <>
-                    <strong style={{ color: '#c4b5fd' }}>Disciplines:</strong> {clanRow.disciplines.join(', ')}.{' '}
+                    <strong style={{ color: 'var(--sr-arcane-300)' }}>Disciplines:</strong> {clanRow.disciplines.join(', ')}.{' '}
                   </>
                 ) : null}
                 {clanRow.bane_summary ? (
                   <>
-                    <strong style={{ color: '#c4b5fd' }}>Bane:</strong> {clanRow.bane_summary}.{' '}
+                    <strong style={{ color: 'var(--sr-arcane-300)' }}>Bane:</strong> {clanRow.bane_summary}.{' '}
                   </>
                 ) : null}
                 {clanRow.compulsion ? (
                   <>
-                    <strong style={{ color: '#c4b5fd' }}>Compulsion:</strong> {clanRow.compulsion}.
+                    <strong style={{ color: 'var(--sr-arcane-300)' }}>Compulsion:</strong> {clanRow.compulsion}.
                   </>
                 ) : null}
               </p>
@@ -505,12 +505,12 @@ export default function V5CharacterCreationWizard({
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '18px' }}>
               {['physical', 'social', 'mental'].map((cat) => (
                 <div key={cat} style={{ flex: '1 1 200px', minWidth: 0 }}>
-                  <div style={{ textAlign: 'center', fontFamily: 'Cinzel, serif', fontSize: '12px', color: ACCENT, marginBottom: '10px', textTransform: 'capitalize' }}>
+                  <div style={{ textAlign: 'center', fontFamily: 'var(--sr-font-display)', fontSize: '12px', color: ACCENT, marginBottom: '10px', textTransform: 'capitalize' }}>
                     {cat}
                   </div>
                   {V5_ATTRIBUTES[cat].map(([k, label]) => (
                     <div key={k} style={rowStyle}>
-                      <span style={{ color: '#d1d5db', fontSize: '13px' }}>{label}</span>
+                      <span style={{ color: 'var(--sr-bone-100)', fontSize: '13px' }}>{label}</span>
                       <DotTrack
                         label={label}
                         value={attributes[k]}
@@ -554,17 +554,17 @@ export default function V5CharacterCreationWizard({
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '18px' }}>
               {['physical', 'social', 'mental'].map((cat) => (
                 <div key={cat} style={{ flex: '1 1 220px', minWidth: 0 }}>
-                  <div style={{ textAlign: 'center', fontFamily: 'Cinzel, serif', fontSize: '12px', color: ACCENT, marginBottom: '10px', textTransform: 'capitalize' }}>
+                  <div style={{ textAlign: 'center', fontFamily: 'var(--sr-font-display)', fontSize: '12px', color: ACCENT, marginBottom: '10px', textTransform: 'capitalize' }}>
                     {cat}
                   </div>
                   {V5_SKILLS[cat].map(([k, label]) => (
                     <div key={k} style={rowStyle}>
-                      <span style={{ color: '#c4c4d4', fontSize: '12px' }}>{label}</span>
+                      <span style={{ color: 'var(--sr-bone-300)', fontSize: '12px' }}>{label}</span>
                       <DotTrack
                         label={label}
                         value={skills[k]}
                         maxRank={skillMax}
-                        accent="#fbbf24"
+                        accent="var(--sr-gold-400)"
                         onChange={(n) => setSkills((prev) => ({ ...prev, [k]: n }))}
                       />
                     </div>
@@ -573,7 +573,7 @@ export default function V5CharacterCreationWizard({
               ))}
             </div>
             <div style={{ marginTop: '16px' }}>
-              <div style={{ color: '#94a3b8', fontSize: '12px', marginBottom: '8px' }}>
+              <div style={{ color: 'var(--sr-bone-300)', fontSize: '12px', marginBottom: '8px' }}>
                 {t('wizard:v5.specialtiesHelp', 'Specialties: {{n}} free (one each for rated Academics, Craft, Performance, Science, plus one of your choice). The predator type adds one more below.', { n: freeSpecialtyCount(skills) })}
               </div>
               {specialties.map((sp, i) => (
@@ -606,7 +606,7 @@ export default function V5CharacterCreationWizard({
                     type="button"
                     onClick={() => setSpecialties((prev) => prev.filter((_, j) => j !== i))}
                     aria-label={t('wizard:v5.removeSpecialty', 'Remove specialty {{n}}', { n: i + 1 })}
-                    style={{ padding: '6px 10px', background: '#1e293b', color: '#94a3b8', border: '1px solid #475569', borderRadius: '6px', cursor: 'pointer' }}
+                    style={{ padding: '6px 10px', background: 'var(--sr-night-800)', color: 'var(--sr-bone-300)', border: '1px solid var(--sr-night-600)', borderRadius: '6px', cursor: 'pointer' }}
                   >
                     ×
                   </button>
@@ -616,7 +616,7 @@ export default function V5CharacterCreationWizard({
                 <button
                   type="button"
                   onClick={() => setSpecialties((prev) => [...prev, { skill: '', name: '' }])}
-                  style={{ padding: '6px 12px', fontSize: '12px', background: 'transparent', color: '#c4b5fd', border: '1px dashed #6d28d9', borderRadius: '6px', cursor: 'pointer' }}
+                  style={{ padding: '6px 12px', fontSize: '12px', background: 'transparent', color: 'var(--sr-arcane-300)', border: '1px dashed var(--sr-arcane-700)', borderRadius: '6px', cursor: 'pointer' }}
                 >
                   {t('wizard:v5.addSpecialty', '+ Add specialty')}
                 </button>
@@ -703,8 +703,8 @@ export default function V5CharacterCreationWizard({
               ))}
             </select>
             {pred ? (
-              <div style={{ color: '#cbd5e1', fontSize: '13px', display: 'grid', gap: '10px' }}>
-                <div style={{ color: '#94a3b8' }}>{t('wizard:v5.huntingPool', 'Hunting pool: {{pool}}', { pool: pred.pool })}</div>
+              <div style={{ color: 'var(--sr-bone-300)', fontSize: '13px', display: 'grid', gap: '10px' }}>
+                <div style={{ color: 'var(--sr-bone-300)' }}>{t('wizard:v5.huntingPool', 'Hunting pool: {{pool}}', { pool: pred.pool })}</div>
                 <div role="radiogroup" aria-labelledby="v5-predator-specialty-label">
                   <span id="v5-predator-specialty-label" style={labelStyle}><Term id="specialty" /></span>
                   {pred.specialty_choice.map((sc, i) => (
@@ -737,7 +737,7 @@ export default function V5CharacterCreationWizard({
                     </select>
                   </div>
                 ) : null}
-                <div style={{ color: '#94a3b8' }}>
+                <div style={{ color: 'var(--sr-bone-300)' }}>
                   {(pred.advantages || []).map((a) => `${a.name} ${'●'.repeat(a.dots)}`).join(', ') || t('wizard:v5.noAdvantages', 'No advantages')}
                   {' · '}
                   {(pred.flaws || []).map((f) => `${f.name} ${'●'.repeat(f.dots)}`).join(', ') || t('wizard:v5.noFlaws', 'no flaws')}
@@ -755,7 +755,7 @@ export default function V5CharacterCreationWizard({
             accent={ACCENT}
           >
             {inlineErr(V5_SECTION_IDS.advantages)}
-            <p style={{ color: advDots > derived.advantage_dots || flawDots < derived.flaw_min_dots ? '#fca5a5' : '#86efac', fontSize: '12px', margin: '0 0 10px' }}>
+            <p style={{ color: advDots > derived.advantage_dots || flawDots < derived.flaw_min_dots ? 'var(--sr-blood-300)' : 'var(--sr-ok-400)', fontSize: '12px', margin: '0 0 10px' }}>
               {t('wizard:v5.advantagesCount', 'Advantages {{adv}}/{{advMax}} · Flaws {{flaws}} (min {{flawMin}})', { adv: advDots, advMax: derived.advantage_dots, flaws: flawDots, flawMin: derived.flaw_min_dots })}
             </p>
             <MeritFlawRows
@@ -765,8 +765,8 @@ export default function V5CharacterCreationWizard({
               setGlobalNotes={setMeritNotes}
             />
             {clan === THIN_BLOOD ? (
-              <div style={{ marginTop: '16px', paddingTop: '12px', borderTop: '1px solid #2a2a4e' }}>
-                <p style={{ color: '#94a3b8', fontSize: '12px', margin: '0 0 10px', lineHeight: 1.5 }}>
+              <div style={{ marginTop: '16px', paddingTop: '12px', borderTop: '1px solid var(--sr-night-700)' }}>
+                <p style={{ color: 'var(--sr-bone-300)', fontSize: '12px', margin: '0 0 10px', lineHeight: 1.5 }}>
                   {t('wizard:v5.thinHelp', "Thin-bloods also take {{lo}}–{{hi}} thin-blood Merits and the same number of thin-blood Flaws (core p. 182). They have no dot value and don't count toward the totals above. The rules file has no list of them, so write the names from the book.", { lo: V5_THIN_BLOOD_MERITS[0], hi: V5_THIN_BLOOD_MERITS[1] })}
                 </p>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '16px' }}>
@@ -784,22 +784,22 @@ export default function V5CharacterCreationWizard({
             accent={ACCENT}
           >
             {inlineErr(V5_SECTION_IDS.humanity)}
-            <div style={{ ...gridStyle, gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', marginBottom: '16px', color: '#e2e8f0', fontSize: '13px' }}>
-              <div><Term id="health" /> <strong>{derived.health}</strong> <span style={{ color: '#94a3b8' }}>(Stamina + 3)</span></div>
-              <div><Term id="willpower" /> <strong>{derived.willpower}</strong> <span style={{ color: '#94a3b8' }}>(Composure + Resolve)</span></div>
+            <div style={{ ...gridStyle, gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', marginBottom: '16px', color: 'var(--sr-bone-100)', fontSize: '13px' }}>
+              <div><Term id="health" /> <strong>{derived.health}</strong> <span style={{ color: 'var(--sr-bone-300)' }}>(Stamina + 3)</span></div>
+              <div><Term id="willpower" /> <strong>{derived.willpower}</strong> <span style={{ color: 'var(--sr-bone-300)' }}>(Composure + Resolve)</span></div>
               <div><Term id="humanity" /> <strong>{derived.humanity}</strong></div>
               <div><Term id="hunger" /> <strong>{derived.hunger}</strong></div>
               <div>
                 <Term id="bloodPotency" /> <strong>{derived.blood_potency}</strong>
                 {derived.blood_potency_range ? (
-                  <span style={{ color: '#94a3b8' }}> ({derived.blood_potency_range[0]}–{derived.blood_potency_range[1]})</span>
+                  <span style={{ color: 'var(--sr-bone-300)' }}> ({derived.blood_potency_range[0]}–{derived.blood_potency_range[1]})</span>
                 ) : null}
               </div>
             </div>
             {fledglingHumanityAllowed(sheet) ? (
               <label
                 htmlFor="v5-field-fledgling-humanity"
-                style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#cbd5e1', fontSize: '13px', marginBottom: '14px', cursor: 'pointer' }}
+                style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--sr-bone-300)', fontSize: '13px', marginBottom: '14px', cursor: 'pointer' }}
               >
                 <input
                   id="v5-field-fledgling-humanity"
@@ -835,7 +835,7 @@ export default function V5CharacterCreationWizard({
                     type="button"
                     onClick={() => setConvictions((prev) => prev.filter((_, j) => j !== i))}
                     aria-label={t('wizard:v5.removeConviction', 'Remove conviction {{n}}', { n: i + 1 })}
-                    style={{ padding: '6px 10px', background: '#1e293b', color: '#94a3b8', border: '1px solid #475569', borderRadius: '6px', cursor: 'pointer' }}
+                    style={{ padding: '6px 10px', background: 'var(--sr-night-800)', color: 'var(--sr-bone-300)', border: '1px solid var(--sr-night-600)', borderRadius: '6px', cursor: 'pointer' }}
                   >
                     ×
                   </button>
@@ -846,7 +846,7 @@ export default function V5CharacterCreationWizard({
               <button
                 type="button"
                 onClick={() => setConvictions((prev) => [...prev, { conviction: '', touchstone: '' }])}
-                style={{ padding: '6px 12px', fontSize: '12px', background: 'transparent', color: '#c4b5fd', border: '1px dashed #6d28d9', borderRadius: '6px', cursor: 'pointer' }}
+                style={{ padding: '6px 12px', fontSize: '12px', background: 'transparent', color: 'var(--sr-arcane-300)', border: '1px dashed var(--sr-arcane-700)', borderRadius: '6px', cursor: 'pointer' }}
               >
                 {t('wizard:v5.addConviction', '+ Add conviction')}
               </button>
@@ -855,14 +855,14 @@ export default function V5CharacterCreationWizard({
             <textarea id="v5-field-tenets" value={tenets} onChange={(e) => setTenets(e.target.value)} rows={2} style={{ ...inputStyle, resize: 'vertical' }} />
           </ResponsiveSheetBlock>
 
-          <ResponsiveSheetBlock sectionId={V5_SECTION_IDS.story} title={t('wizard:section.story', 'Story')} subtitle={t('wizard:v5.storySub', 'Background narrative.')} accent="#9d4edd">
+          <ResponsiveSheetBlock sectionId={V5_SECTION_IDS.story} title={t('wizard:section.story', 'Story')} subtitle={t('wizard:v5.storySub', 'Background narrative.')} accent="var(--sr-arcane-500)">
             <textarea
               aria-label={t('wizard:v5.storySub', 'Background narrative.')}
               value={background}
               onChange={(e) => setBackground(e.target.value)}
               rows={6}
               placeholder={t('wizard:v5.storyPlaceholder', 'History, coterie, goals…')}
-              style={{ ...inputStyle, resize: 'vertical', fontFamily: 'Crimson Text, Georgia, serif', lineHeight: 1.6 }}
+              style={{ ...inputStyle, resize: 'vertical', fontFamily: 'var(--sr-font-body)', lineHeight: 1.6 }}
             />
           </ResponsiveSheetBlock>
 
@@ -870,7 +870,7 @@ export default function V5CharacterCreationWizard({
             <button
               type="button"
               onClick={onCancel}
-              style={{ padding: '10px 18px', background: '#1e293b', color: '#e2e8f0', border: '1px solid #475569', borderRadius: '8px', cursor: 'pointer' }}
+              style={{ padding: '10px 18px', background: 'var(--sr-night-800)', color: 'var(--sr-bone-100)', border: '1px solid var(--sr-night-600)', borderRadius: '8px', cursor: 'pointer' }}
             >
               {t('wizard:cancel', 'Cancel')}
             </button>
@@ -880,13 +880,13 @@ export default function V5CharacterCreationWizard({
               onClick={handleSubmit}
               style={{
                 padding: '10px 22px',
-                background: submitting ? '#4a4a5e' : '#9d4edd',
+                background: submitting ? 'var(--sr-night-500)' : 'var(--sr-arcane-500)',
                 color: 'white',
                 border: 'none',
                 borderRadius: '8px',
                 cursor: submitting ? 'not-allowed' : 'pointer',
                 fontWeight: 'bold',
-                fontFamily: 'Cinzel, serif',
+                fontFamily: 'var(--sr-font-display)',
               }}
             >
               {submitting ? t('wizard:submitting', 'Sealing sheet…') : t('wizard:submit', 'Create character')}

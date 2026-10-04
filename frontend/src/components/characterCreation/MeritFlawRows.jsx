@@ -14,7 +14,7 @@ export default function MeritFlawRows({ rows, setRows, globalNotes, setGlobalNot
 
   return (
     <div>
-      <div style={{ color: '#94a3b8', fontSize: '12px', marginBottom: '10px' }}>
+      <div style={{ color: 'var(--sr-bone-300)', fontSize: '12px', marginBottom: '10px' }}>
         {t('wizard:merits.intro', 'Named merits and flaws (points + for merits, − for flaws). Add rows as on a paper sheet.')}
       </div>
       {rows.map((r) => (
@@ -35,9 +35,9 @@ export default function MeritFlawRows({ rows, setRows, globalNotes, setGlobalNot
             style={{
               flex: '2 1 160px',
               padding: '8px',
-              background: '#0f1729',
-              color: '#e0e0e0',
-              border: '1px solid #2a2a4e',
+              background: 'var(--sr-night-850)',
+              color: 'var(--sr-bone-100)',
+              border: '1px solid var(--sr-night-700)',
               borderRadius: '6px',
             }}
           />
@@ -54,9 +54,9 @@ export default function MeritFlawRows({ rows, setRows, globalNotes, setGlobalNot
             style={{
               width: '80px',
               padding: '8px',
-              background: '#0f1729',
-              color: '#e0e0e0',
-              border: '1px solid #2a2a4e',
+              background: 'var(--sr-night-850)',
+              color: 'var(--sr-bone-100)',
+              border: '1px solid var(--sr-night-700)',
               borderRadius: '6px',
             }}
           />
@@ -67,9 +67,9 @@ export default function MeritFlawRows({ rows, setRows, globalNotes, setGlobalNot
             style={{
               flex: '2 1 140px',
               padding: '8px',
-              background: '#0f1729',
-              color: '#e0e0e0',
-              border: '1px solid #2a2a4e',
+              background: 'var(--sr-night-850)',
+              color: 'var(--sr-bone-100)',
+              border: '1px solid var(--sr-night-700)',
               borderRadius: '6px',
             }}
           />
@@ -80,9 +80,9 @@ export default function MeritFlawRows({ rows, setRows, globalNotes, setGlobalNot
             style={{
               padding: '8px 12px',
               fontSize: '12px',
-              background: '#1e293b',
-              color: rows.length <= 1 ? '#475569' : '#94a3b8',
-              border: '1px solid #475569',
+              background: 'var(--sr-night-800)',
+              color: rows.length <= 1 ? 'var(--sr-night-600)' : 'var(--sr-bone-300)',
+              border: '1px solid var(--sr-night-600)',
               borderRadius: '6px',
               cursor: rows.length <= 1 ? 'not-allowed' : 'pointer',
             }}
@@ -99,15 +99,15 @@ export default function MeritFlawRows({ rows, setRows, globalNotes, setGlobalNot
           padding: '8px 14px',
           fontSize: '12px',
           background: 'transparent',
-          color: '#c4b5fd',
-          border: '1px dashed #6d28d9',
+          color: 'var(--sr-arcane-300)',
+          border: '1px dashed var(--sr-arcane-700)',
           borderRadius: '6px',
           cursor: 'pointer',
         }}
       >
         {t('wizard:merits.addRow', '+ Add row')}
       </button>
-      <label style={{ color: '#c4b5fd', display: 'block', marginTop: '18px', marginBottom: '8px' }}>
+      <label style={{ color: 'var(--sr-arcane-300)', display: 'block', marginTop: '18px', marginBottom: '8px' }}>
         {t('wizard:merits.extraNotes', 'Extra notes (optional)')}
       </label>
       <textarea
@@ -118,9 +118,9 @@ export default function MeritFlawRows({ rows, setRows, globalNotes, setGlobalNot
         style={{
           width: '100%',
           padding: '12px',
-          background: '#0f1729',
-          color: '#e0e0e0',
-          border: '2px solid #2a2a4e',
+          background: 'var(--sr-night-850)',
+          color: 'var(--sr-bone-100)',
+          border: '2px solid var(--sr-night-700)',
           borderRadius: '8px',
           resize: 'vertical',
         }}

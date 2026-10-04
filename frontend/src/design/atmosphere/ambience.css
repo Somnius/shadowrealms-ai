@@ -1,0 +1,254 @@
+/* Phase 4 atmosphere layer. Only transform / opacity / stroke-dashoffset animate.
+   Durations come from the motion tokens; reduced motion (data-motion=reduced, the OS setting)
+   is cut globally in tokens.css, and every loop here also has an explicit static state. */
+
+/* ---- vignette + grain ---- */
+.sr-vignette {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(ellipse at 50% 45%, transparent 45%, rgba(4, 4, 10, calc(var(--vignette, 0.6) * 0.9)) 100%);
+  z-index: 0;
+}
+.sr-grain {
+  position: absolute;
+  inset: -40px;
+  pointer-events: none;
+  opacity: var(--grain-opacity, 0.06);
+  z-index: 0;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 .9 0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size: 160px 160px;
+  animation: sr-grain-jitter 0.9s steps(5, end) infinite;
+  will-change: transform;
+}
+.sr-grain.is-static { animation: none; }
+@keyframes sr-grain-jitter {
+  0% { transform: translate3d(0, 0, 0); }
+  20% { transform: translate3d(-18px, 12px, 0); }
+  40% { transform: translate3d(14px, -22px, 0); }
+  60% { transform: translate3d(-26px, -8px, 0); }
+  80% { transform: translate3d(22px, 18px, 0); }
+  100% { transform: translate3d(0, 0, 0); }
+}
+
+/* ---- candle halo (Storyteller avatar while the AI writes) ---- */
+.sr-halo {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  width: var(--halo-size);
+  height: var(--halo-size);
+  flex: none;
+}
+.sr-halo__content { position: relative; z-index: 1; display: inline-grid; place-items: center; }
+.sr-halo__light {
+  position: absolute;
+  inset: -55%;
+  border-radius: 50%;
+  pointer-events: none;
+  background: radial-gradient(circle, rgba(255, 149, 0, 0.42) 0%, rgba(255, 149, 0, 0.14) 38%, transparent 68%);
+  animation:
+    sr-halo-flicker 1.7s steps(7, end) infinite,
+    sr-halo-sway 3.1s ease-in-out infinite;
+  will-change: opacity, transform;
+}
+.sr-halo--arcane .sr-halo__light {
+  inset: -75%;
+  background:
+    radial-gradient(circle at 50% 56%, rgba(255, 149, 0, 0.55) 0%, rgba(255, 149, 0, 0.18) 30%, transparent 52%),
+    radial-gradient(circle, rgba(157, 78, 221, 0.4) 0%, rgba(157, 78, 221, 0.12) 42%, transparent 70%);
+}
+.sr-halo.is-lit .sr-halo__content { border-radius: 50%; box-shadow: 0 0 0 1px rgba(255, 149, 0, 0.45); }
+.sr-halo.is-static .sr-halo__light { animation: none; opacity: 0.85; }
+@keyframes sr-halo-flicker {
+  0%, 100% { opacity: 1; }
+  18% { opacity: 0.78; }
+  33% { opacity: 0.95; }
+  52% { opacity: 0.7; }
+  70% { opacity: 0.92; }
+  86% { opacity: 0.82; }
+}
+@keyframes sr-halo-sway {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  30% { transform: translate(-1.5px, -1px) scale(1.04); }
+  65% { transform: translate(1px, 0.5px) scale(0.97); }
+}
+
+/* ---- crack ---- */
+.sr-crack {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  overflow: visible;
+}
+.sr-crack path {
+  fill: none;
+  stroke: rgba(255, 107, 129, 0.55);
+  stroke-linecap: round;
+  stroke-linejoin: miter;
+  vector-effect: non-scaling-stroke;
+  filter: drop-shadow(0 0 2px rgba(139, 0, 0, 0.9));
+}
+
+/* ---- roll effects ---- */
+.sr-rollfx {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  border-radius: inherit;
+  overflow: hidden;
+  z-index: 2;
+}
+.sr-rollfx .sr-blood-drip { z-index: 3; }
+.sr-rollfx__flash {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at 50% 30%, rgba(194, 51, 77, 0.35), rgba(59, 10, 20, 0.15) 60%, transparent 85%);
+  opacity: 0;
+  animation: sr-rollfx-flash var(--sr-dur-ritual) var(--sr-ease-out) forwards;
+}
+.sr-rollfx.is-static .sr-rollfx__flash { animation: none; opacity: 0.55; }
+@keyframes sr-rollfx-flash {
+  0% { opacity: 0; }
+  12% { opacity: 1; }
+  100% { opacity: 0.55; }
+}
+.sr-rollfx__sweep {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(100deg, transparent 20%, rgba(251, 191, 36, 0.28) 42%, rgba(233, 69, 96, 0.34) 58%, transparent 80%);
+  transform: translateX(-100%);
+  animation: sr-rollfx-sweep 900ms var(--sr-ease-in-out) 150ms forwards;
+}
+.sr-rollfx.is-static .sr-rollfx__sweep {
+  animation: none;
+  transform: none;
+  background: linear-gradient(90deg, rgba(251, 191, 36, 0.08), rgba(233, 69, 96, 0.12));
+}
+@keyframes sr-rollfx-sweep {
+  0% { transform: translateX(-100%); opacity: 1; }
+  80% { opacity: 1; }
+  100% { transform: translateX(100%); opacity: 0; }
+}
+.sr-rollfx__flare {
+  position: absolute;
+  left: 50%;
+  top: 40%;
+  width: 160%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(251, 191, 36, 0.32) 0%, rgba(251, 191, 36, 0.08) 35%, transparent 60%);
+  transform: translate(-50%, -50%) scale(0.2);
+  opacity: 0;
+  animation: sr-rollfx-flare 1100ms var(--sr-ease-out) forwards;
+}
+.sr-rollfx.is-static .sr-rollfx__flare { animation: none; opacity: 0.5; transform: translate(-50%, -50%) scale(1); }
+@keyframes sr-rollfx-flare {
+  0% { opacity: 0; transform: translate(-50%, -50%) scale(0.2); }
+  30% { opacity: 1; }
+  100% { opacity: 0.45; transform: translate(-50%, -50%) scale(1); }
+}
+.sr-rollfx__static-drips { position: absolute; left: 0; right: 0; top: 0; height: 3px; background: var(--sr-blood-700); }
+.sr-rollfx__static-drips span {
+  position: absolute;
+  top: 0;
+  width: 4px;
+  margin-left: -2px;
+  border-radius: 0 0 4px 4px;
+  background: linear-gradient(var(--sr-blood-800), var(--sr-blood-600));
+}
+
+/* ---- chronicle sigil ---- */
+.sr-csigil {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  color: var(--sr-accent-text);
+}
+.sr-csigil__ring { position: absolute; inset: 0; overflow: visible; }
+.sr-csigil__ring path,
+.sr-csigil__ring circle { fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; }
+.sr-csigil__outer { stroke-width: 1.3; opacity: 0.85; }
+.sr-csigil__inner { stroke-width: 0.9; opacity: 0.55; }
+.sr-csigil__spin { transform-origin: 0 0; transform-box: view-box; }
+.sr-csigil__mark { position: relative; display: grid; place-items: center; color: var(--sr-text); }
+
+/* draw-on once (stroke-dashoffset, pathLength = 1) */
+.sr-csigil .sr-csigil__outer,
+.sr-csigil .sr-csigil__inner { stroke-dasharray: 1; stroke-dashoffset: 1; }
+.sr-csigil.is-drawn .sr-csigil__outer { animation: sr-csigil-draw var(--sr-dur-ritual) var(--sr-ease-in-out) forwards; }
+.sr-csigil.is-drawn .sr-csigil__inner { animation: sr-csigil-draw var(--sr-dur-ritual) var(--sr-ease-in-out) 200ms forwards; }
+.sr-csigil.is-static .sr-csigil__outer,
+.sr-csigil.is-static .sr-csigil__inner { stroke-dashoffset: 0; animation: none; }
+@keyframes sr-csigil-draw { to { stroke-dashoffset: 0; } }
+
+/* line motifs: hidden at rest, played on hover / focus of the host card */
+.sr-csigil__drop { fill: var(--sr-blood-500) !important; stroke: none !important; opacity: 0; }
+.sr-csigil__moon { fill: rgba(217, 119, 6, 0.12) !important; stroke: none !important; transform: scale(0.4); transform-box: fill-box; transform-origin: center; opacity: 0; }
+.sr-csigil__orbit { transform-box: view-box; transform-origin: 0 0; opacity: 0; }
+.sr-csigil__spark { fill: var(--sr-arcane-300) !important; stroke: none !important; }
+.sr-csigil__veil { stroke-width: 1; opacity: 0; }
+
+.sr-sigil-host:hover .sr-csigil:not(.is-static) .sr-csigil__spin,
+.sr-sigil-host:focus-within .sr-csigil:not(.is-static) .sr-csigil__spin { animation: sr-csigil-turn 14s linear infinite; }
+.sr-sigil-host:hover .sr-csigil:not(.is-static) .sr-csigil__drop,
+.sr-sigil-host:focus-within .sr-csigil:not(.is-static) .sr-csigil__drop { animation: sr-csigil-drop 1.9s var(--sr-ease-drip) infinite; }
+.sr-sigil-host:hover .sr-csigil:not(.is-static) .sr-csigil__moon,
+.sr-sigil-host:focus-within .sr-csigil:not(.is-static) .sr-csigil__moon { animation: sr-csigil-wax 2.4s var(--sr-ease-in-out) forwards; }
+.sr-sigil-host:hover .sr-csigil:not(.is-static) .sr-csigil__orbit,
+.sr-sigil-host:focus-within .sr-csigil:not(.is-static) .sr-csigil__orbit { opacity: 1; animation: sr-csigil-turn 3.2s linear infinite; }
+.sr-sigil-host:hover .sr-csigil:not(.is-static) .sr-csigil__veil,
+.sr-sigil-host:focus-within .sr-csigil:not(.is-static) .sr-csigil__veil { animation: sr-csigil-veil 3.6s ease-in-out infinite; }
+.sr-sigil-host:hover .sr-csigil--changeling:not(.is-static) .sr-csigil__mark,
+.sr-sigil-host:focus-within .sr-csigil--changeling:not(.is-static) .sr-csigil__mark { animation: sr-csigil-sway 2.8s ease-in-out infinite; transform-origin: 50% 90%; }
+.sr-sigil-host:hover .sr-csigil:not(.is-static) .sr-csigil__mark .sr-glyph { filter: drop-shadow(0 0 4px var(--sr-accent)); }
+
+@keyframes sr-csigil-turn { to { transform: rotate(360deg); } }
+@keyframes sr-csigil-drop {
+  0% { opacity: 0; transform: translateY(-2px) scale(0.5); }
+  25% { opacity: 1; transform: translateY(0) scale(1); }
+  60% { opacity: 1; transform: translateY(1px) scale(1, 1.15); }
+  100% { opacity: 0; transform: translateY(14px) scale(0.8, 1.2); }
+}
+@keyframes sr-csigil-wax { to { opacity: 1; transform: scale(1); } }
+@keyframes sr-csigil-veil {
+  0%, 100% { opacity: 0; transform: translateX(-4px); }
+  50% { opacity: 0.7; transform: translateX(4px); }
+}
+@keyframes sr-csigil-sway {
+  0%, 100% { transform: rotate(0deg); }
+  30% { transform: rotate(-4deg); }
+  70% { transform: rotate(3deg); }
+}
+
+/* ---- atmosphere 'subtle': no ambient loops (hover / one-shots still play) ---- */
+[data-atmosphere='subtle'] .sr-glyph--animate:not(.sr-glyph--essential) *,
+[data-atmosphere='subtle'] .sr-grain,
+[data-atmosphere='subtle'] .sr-fog__sheet,
+[data-atmosphere='subtle'] .sr-candle-glow__core {
+  animation: none !important;
+}
+
+/* ---- atmosphere 'off' / reduced: nothing moves, hover motifs included ---- */
+[data-motion='reduced'] .sr-csigil *,
+[data-motion='reduced'] .sr-halo__light,
+[data-motion='reduced'] .sr-grain,
+[data-motion='reduced'] .sr-rollfx * {
+  animation: none !important;
+}
+[data-motion='reduced'] .sr-csigil__outer,
+[data-motion='reduced'] .sr-csigil__inner { stroke-dashoffset: 0 !important; }
+@media (prefers-reduced-motion: reduce) {
+  .sr-csigil *,
+  .sr-halo__light,
+  .sr-grain,
+  .sr-rollfx * { animation: none !important; }
+  .sr-csigil__outer,
+  .sr-csigil__inner { stroke-dashoffset: 0 !important; }
+}
+
+/* ---- route wrapper (RouteTransition) ---- */
+.sr-route { flex: 1; min-height: 0; min-width: 0; display: flex; flex-direction: column; }

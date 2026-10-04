@@ -5,7 +5,7 @@ import { V5_ATTRIBUTES, V5_SKILLS, V5_SKILL_LABELS } from '../characterSheet/v5/
 import { t } from '../i18n';
 import { Term } from '../i18n/glossary';
 
-const ACCENT = '#e94560';
+const ACCENT = 'var(--sr-blood-500)';
 const obj = (v) => (v && typeof v === 'object' ? v : {});
 const n = (v) => {
   const x = parseInt(v, 10);
@@ -24,7 +24,7 @@ function TrackerBoxes({ termId, label, track, fallbackMax }) {
   const sup = Math.min(max - agg, n(tr.superficial));
   return (
     <div style={{ marginBottom: '10px' }}>
-      <div style={{ color: '#c4b5fd', fontSize: '12px', marginBottom: '4px' }}>
+      <div style={{ color: 'var(--sr-arcane-300)', fontSize: '12px', marginBottom: '4px' }}>
         <Term id={termId}>{label}</Term> {max ? `(${max})` : ''}
       </div>
       <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }} aria-label={t('sheet:v5.trackerAria', '{{label}}: {{sup}} superficial, {{agg}} aggravated of {{max}}', { label, sup, agg, max })}>
@@ -36,12 +36,12 @@ function TrackerBoxes({ termId, label, track, fallbackMax }) {
               style={{
                 width: '20px',
                 height: '20px',
-                border: '1px solid #64748b',
+                border: '1px solid var(--sr-bone-500)',
                 borderRadius: '3px',
                 display: 'inline-flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                color: mark === 'X' ? '#f87171' : '#fbbf24',
+                color: mark === 'X' ? 'var(--sr-danger-400)' : 'var(--sr-gold-400)',
                 fontWeight: 700,
                 fontSize: '13px',
               }}
@@ -61,7 +61,7 @@ function HumanityTrack({ humanity, stains }) {
   const s = n(stains);
   return (
     <div style={{ marginBottom: '10px' }}>
-      <div style={{ color: '#c4b5fd', fontSize: '12px', marginBottom: '4px' }}>
+      <div style={{ color: 'var(--sr-arcane-300)', fontSize: '12px', marginBottom: '4px' }}>
         <Term id="humanity">Humanity {h}</Term>
         {s ? ` · ${t('sheet:v5.stains', { one: '{{count}} Stain', other: '{{count}} Stains' }, { count: s })}` : ''}
       </div>
@@ -76,9 +76,9 @@ function HumanityTrack({ humanity, stains }) {
                 width: '16px',
                 height: '16px',
                 borderRadius: '50%',
-                border: `2px solid ${filled ? ACCENT : '#4b5568'}`,
+                border: `2px solid ${filled ? ACCENT : 'var(--sr-night-600)'}`,
                 background: filled ? ACCENT : 'transparent',
-                color: '#fbbf24',
+                color: 'var(--sr-gold-400)',
                 fontSize: '11px',
                 lineHeight: '12px',
                 textAlign: 'center',
@@ -95,8 +95,8 @@ function HumanityTrack({ humanity, stains }) {
 
 const p = (label, value) =>
   value != null && String(value).trim() !== '' ? (
-    <p style={{ margin: '0 0 6px', color: '#e0e0e0' }}>
-      <strong style={{ color: '#c4b5fd' }}>{label}:</strong> {String(value)}
+    <p style={{ margin: '0 0 6px', color: 'var(--sr-bone-100)' }}>
+      <strong style={{ color: 'var(--sr-arcane-300)' }}>{label}:</strong> {String(value)}
     </p>
   ) : null;
 
@@ -115,7 +115,7 @@ export default function V5CharacterSheetView({ character }) {
 
   const column = (title, rows, values) => (
     <div style={{ flex: '1 1 200px', minWidth: 0 }}>
-      <div style={{ textAlign: 'center', fontFamily: 'Cinzel, serif', fontSize: '12px', color: ACCENT, marginBottom: '10px', textTransform: 'capitalize' }}>
+      <div style={{ textAlign: 'center', fontFamily: 'var(--sr-font-display)', fontSize: '12px', color: ACCENT, marginBottom: '10px', textTransform: 'capitalize' }}>
         {title}
       </div>
       {rows.map(([k, label]) => {
@@ -125,9 +125,9 @@ export default function V5CharacterSheetView({ character }) {
             key={k}
             style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px', marginBottom: '8px', padding: '4px 6px', background: 'rgba(0,0,0,0.15)', borderRadius: '6px' }}
           >
-            <span style={{ color: '#cbd5e1', fontSize: '12px', flex: 1 }}>
+            <span style={{ color: 'var(--sr-bone-300)', fontSize: '12px', flex: 1 }}>
               {label}
-              {sp.length ? <span style={{ color: '#94a3b8' }}> ({sp.join(', ')})</span> : null}
+              {sp.length ? <span style={{ color: 'var(--sr-bone-300)' }}> ({sp.join(', ')})</span> : null}
             </span>
             <StaticDots value={values[k]} />
           </div>
@@ -138,7 +138,7 @@ export default function V5CharacterSheetView({ character }) {
 
   return (
     <>
-      <p style={{ color: '#8b8b9f', fontSize: '13px', marginTop: 0, lineHeight: 1.5 }}>
+      <p style={{ color: 'var(--sr-bone-500)', fontSize: '13px', marginTop: 0, lineHeight: 1.5 }}>
         {t('sheet:v5.intro', 'Vampire: The Masquerade 5th Edition sheet (read-only).')}
       </p>
 
@@ -168,9 +168,9 @@ export default function V5CharacterSheetView({ character }) {
           </div>
           <div>
             <HumanityTrack humanity={wm.humanity} stains={wm.stains} />
-            <div style={{ color: '#c4b5fd', fontSize: '12px', marginBottom: '4px' }}><Term id="hunger">Hunger {n(wm.hunger)}</Term></div>
-            <StaticDots value={wm.hunger} maxRank={5} accent="#dc2626" />
-            <div style={{ color: '#c4b5fd', fontSize: '12px', margin: '10px 0 4px' }}><Term id="bloodPotency">Blood Potency {n(wm.blood_potency)}</Term></div>
+            <div style={{ color: 'var(--sr-arcane-300)', fontSize: '12px', marginBottom: '4px' }}><Term id="hunger">Hunger {n(wm.hunger)}</Term></div>
+            <StaticDots value={wm.hunger} maxRank={5} accent="var(--sr-blood-600)" />
+            <div style={{ color: 'var(--sr-arcane-300)', fontSize: '12px', margin: '10px 0 4px' }}><Term id="bloodPotency">Blood Potency {n(wm.blood_potency)}</Term></div>
             <StaticDots value={wm.blood_potency} maxRank={10} />
           </div>
         </div>
@@ -191,7 +191,7 @@ export default function V5CharacterSheetView({ character }) {
           ))}
         </div>
         {specialties.some((s) => s && !V5_SKILL_LABELS[s.skill]) ? (
-          <p style={{ color: '#94a3b8', fontSize: '12px' }}>
+          <p style={{ color: 'var(--sr-bone-300)', fontSize: '12px' }}>
             {t('sheet:v5.otherSpecialties', 'Other specialties:')}{' '}
             {specialties.filter((s) => s && !V5_SKILL_LABELS[s.skill]).map((s) => `${s.skill}: ${s.name}`).join(', ')}
           </p>
@@ -201,13 +201,13 @@ export default function V5CharacterSheetView({ character }) {
       {disciplines.length ? (
         <ResponsiveSheetBlock sectionId="v5-view-disciplines" title={<Term id="discipline">Disciplines</Term>} accent={ACCENT}>
           {disciplines.map((d, i) => (
-            <div key={i} style={{ marginBottom: '10px', color: '#e0e0e0' }}>
+            <div key={i} style={{ marginBottom: '10px', color: 'var(--sr-bone-100)' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                 <strong style={{ minWidth: '140px' }}>{d.name}</strong>
                 <StaticDots value={d.level} />
               </div>
               {Array.isArray(d.powers) && d.powers.length ? (
-                <div style={{ color: '#94a3b8', fontSize: '12px', marginTop: '2px' }}>{d.powers.join(' · ')}</div>
+                <div style={{ color: 'var(--sr-bone-300)', fontSize: '12px', marginTop: '2px' }}>{d.powers.join(' · ')}</div>
               ) : null}
             </div>
           ))}
@@ -217,16 +217,16 @@ export default function V5CharacterSheetView({ character }) {
       {advantages.length || flaws.length ? (
         <ResponsiveSheetBlock sectionId="v5-view-advantages" title="Advantages & Flaws" accent={ACCENT}>
           {[...advantages, ...flaws.map((f) => ({ ...f, flaw: true }))].map((a, i) => (
-            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '6px', color: a.flaw ? '#fca5a5' : '#e0e0e0' }}>
+            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '6px', color: a.flaw ? 'var(--sr-blood-300)' : 'var(--sr-bone-100)' }}>
               <span style={{ flex: 1 }}>
                 {a.name}
-                <span style={{ color: '#94a3b8', fontSize: '12px' }}>
+                <span style={{ color: 'var(--sr-bone-300)', fontSize: '12px' }}>
                   {' '}
                   {a.flaw ? 'Flaw' : a.kind || ''}
                   {a.kind === 'predator' && a.flaw ? ` ${t('sheet:v5.fromPredator', '(predator type)')}` : ''}
                 </span>
               </span>
-              <StaticDots value={a.dots} accent={a.flaw ? '#f87171' : ACCENT} />
+              <StaticDots value={a.dots} accent={a.flaw ? 'var(--sr-danger-400)' : ACCENT} />
             </div>
           ))}
         </ResponsiveSheetBlock>
@@ -235,8 +235,8 @@ export default function V5CharacterSheetView({ character }) {
       {touchstones.length || wm.chronicle_tenets ? (
         <ResponsiveSheetBlock sectionId="v5-view-convictions" title={<Term id="convictions" />} accent={ACCENT}>
           {touchstones.map((ts, i) => (
-            <p key={i} style={{ margin: '0 0 6px', color: '#e0e0e0' }}>
-              <strong style={{ color: '#c4b5fd' }}>{ts.conviction}</strong> — {ts.name}
+            <p key={i} style={{ margin: '0 0 6px', color: 'var(--sr-bone-100)' }}>
+              <strong style={{ color: 'var(--sr-arcane-300)' }}>{ts.conviction}</strong> — {ts.name}
             </p>
           ))}
           {p(t('sheet:v5.tenets', 'Chronicle tenets'), wm.chronicle_tenets)}
@@ -245,7 +245,7 @@ export default function V5CharacterSheetView({ character }) {
 
       {character?.background != null && String(character.background).trim() ? (
         <ResponsiveSheetBlock sectionId="v5-view-story" title={t('sheet:backgroundNotes', 'Background & notes')} accent={ACCENT}>
-          <p style={{ color: '#d1d5db', whiteSpace: 'pre-wrap', lineHeight: 1.55, margin: 0 }}>{String(character.background)}</p>
+          <p style={{ color: 'var(--sr-bone-100)', whiteSpace: 'pre-wrap', lineHeight: 1.55, margin: 0 }}>{String(character.background)}</p>
         </ResponsiveSheetBlock>
       ) : null}
     </>

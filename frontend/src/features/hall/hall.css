@@ -17,15 +17,20 @@
 .sr-app .sr-hall__card-head { display: flex; gap: var(--sr-space-3); align-items: center; }
 .sr-app .sr-hall__sigil {
   flex: none;
-  width: 48px;
-  height: 48px;
-  border-radius: var(--sr-radius-lg);
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
   display: grid;
   place-items: center;
   color: var(--sr-accent-text);
-  background: var(--sr-surface-sunken);
-  border: 1px solid var(--sr-border);
+  background: radial-gradient(circle, var(--sr-surface-sunken) 55%, transparent 72%);
 }
+.sr-app .sr-hall__card { transition: transform var(--sr-dur-base) var(--sr-ease-out), box-shadow var(--sr-dur-base) var(--sr-ease-out), border-color var(--sr-dur-base); }
+.sr-app .sr-hall__card:hover { transform: translateY(-2px); box-shadow: var(--sr-shadow-2), 0 0 24px color-mix(in srgb, var(--sr-accent) 18%, transparent); }
+.sr-app .sr-hall__grid > li { animation: sr-rise-in var(--sr-dur-slow) var(--sr-ease-out) both; }
+.sr-app .sr-hall__grid > li:nth-child(2) { animation-delay: 60ms; }
+.sr-app .sr-hall__grid > li:nth-child(3) { animation-delay: 120ms; }
+.sr-app .sr-hall__grid > li:nth-child(n + 4) { animation-delay: 180ms; }
 .sr-app .sr-hall__card-title { min-width: 0; }
 .sr-app .sr-hall__name { font-size: var(--sr-text-lg); margin: 0 0 2px; }
 .sr-app .sr-hall__link { color: var(--sr-text); text-decoration: none; }

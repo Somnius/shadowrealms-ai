@@ -6,6 +6,8 @@
   "readme": {
     "failed": "Failed to load README.md: {{error}}",
     "close": "Close",
-    "loading": "Loading the README…"
-  }
+    "loading": "Loading the README…",
+    "title": "ShadowRealms AI: README"
+  },
+  "love": "love"
 }

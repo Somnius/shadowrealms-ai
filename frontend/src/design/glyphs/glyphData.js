@@ -472,6 +472,16 @@ export const GLYPHS = {
   'chevron-right': { label: 'Next', group: 'ui', shapes: [{ d: 'M9 6l6 6-6 6' }] },
   check: { label: 'Done', group: 'ui', shapes: [{ d: 'M4.5 12.5l5 5L19.5 7' }] },
   plus: { label: 'Add', group: 'ui', shapes: [{ d: 'M12 5v14M5 12h14' }] },
+  reroll: { label: 'Reroll', group: 'ui', shapes: [{ d: 'M18.6 9.2A7 7 0 1 0 19 13.6' }, { d: 'M19.2 4.6v4.8h-4.8' }] },
+  dice: {
+    label: 'Dice',
+    group: 'dice',
+    shapes: [
+      { d: 'M9.6 3.2L15.6 8.2L15 11.8L9.6 16.2L4.2 11.8L3.6 8.2Z' },
+      { d: 'M3.6 8.2L6.7 9.7M15.6 8.2L12.5 9.7M9.6 12V16.2', o: 0.6 },
+      { d: 'M17 10.6L20.6 13.6L20 17L15.2 20.8L11.4 17.8', o: 0.85 },
+    ],
+  },
   minus: { label: 'Remove', group: 'ui', shapes: [{ d: 'M5 12h14' }] },
   trash: {
     label: 'Delete',

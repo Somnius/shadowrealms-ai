@@ -1,15 +1,15 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Avatar, Glyph, useMotionPreference } from '../design';
+import { Avatar, Glyph, useAtmosphere } from '../design';
 import MenuButton from './Menu';
 import { useAuth } from './AuthContext';
 import { LANGUAGE_NAMES, setLanguage, t, useLanguage } from '../i18n';
 
-/** The one user menu of the app: profile, language, motion, admin, theme preview, logout. */
+/** The one user menu of the app: profile, language, atmosphere (motion), admin, theme preview, logout. */
 export default function UserMenu({ compact = false }) {
   const { user, isAdmin, logout } = useAuth();
   const navigate = useNavigate();
-  const { reduced, systemReduced, setPreference } = useMotionPreference();
+  const { choice, level, setLevel, systemReduced } = useAtmosphere();
   const name = user?.username || '';
   const lang = useLanguage();
 
@@ -27,15 +27,24 @@ export default function UserMenu({ compact = false }) {
     })),
     { divider: true },
     {
-      id: 'motion',
+      id: 'atmosphere',
       icon: 'candle',
-      label: systemReduced
-        ? t('shell:menu.motionSystem', 'Reduced motion (system setting)')
-        : t('shell:menu.motion', 'Reduce motion'),
-      checked: reduced,
-      disabled: systemReduced,
-      onSelect: () => setPreference(reduced ? 'full' : 'reduced'),
+      heading: t('shell:menu.atmosphere', 'Atmosphere'),
     },
+    ...[
+      ['full', t('shell:menu.atmosphereFull', 'Full'), t('shell:menu.atmosphereFullHint', 'Fog, candlelight, animated sigils')],
+      ['subtle', t('shell:menu.atmosphereSubtle', 'Subtle'), t('shell:menu.atmosphereSubtleHint', 'Still ambience, short transitions')],
+      ['off', t('shell:menu.atmosphereOff', 'Off'), t('shell:menu.atmosphereOffHint', 'No motion at all')],
+    ].map(([value, label, hint]) => ({
+      id: `atmosphere-${value}`,
+      label,
+      hint: systemReduced && value !== 'off' ? t('shell:menu.atmosphereSystem', 'Motion is off in your system settings') : hint,
+      radio: true,
+      checked: systemReduced ? value === 'off' : choice === value,
+      disabled: systemReduced,
+      onSelect: () => setLevel(value),
+    })),
+    { divider: true },
     ...(isAdmin ? [{ id: 'admin', icon: 'crown', label: t('shell:menu.admin', 'Admin panel'), onSelect: () => navigate('/admin') }] : []),
     { id: 'showcase', icon: 'eye', label: t('shell:menu.showcase', 'Theme preview'), onSelect: () => navigate('/showcase') },
     { divider: true },
@@ -48,7 +57,7 @@ export default function UserMenu({ compact = false }) {
       menuLabel={t('shell:menu.title', 'Account')}
       items={items}
       renderButton={(props, open) => (
-        <button {...props} className={`sr-usermenu__btn${open ? ' is-open' : ''}`}>
+        <button {...props} className={`sr-usermenu__btn${open ? ' is-open' : ''}`} data-atmosphere-level={level}>
           <Avatar src={user?.player_avatar_url} name={name} size={32} alt="" />
           {!compact ? <span className="sr-usermenu__name">{name}</span> : null}
           <Glyph name="chevron-down" size={16} />

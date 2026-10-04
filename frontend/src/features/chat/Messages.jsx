@@ -1,5 +1,5 @@
-import React from 'react';
-import { Avatar, Badge, DieFace, Glyph } from '../../design';
+import React, { useState } from 'react';
+import { Avatar, Badge, DieFace, Glyph, RollFx, rollMood } from '../../design';
 import { overlayFromMarker } from '../../dice/diceMarker';
 import { classicOutcome, classifyClassicDie } from '../../dice/classicDiceDisplay';
 import { classifyV5Die, v5Badges } from '../../dice/v5DiceDisplay';
@@ -118,14 +118,24 @@ function diceFaces(marker) {
   return { faces, badges, v5, parsed };
 }
 
-/** A roll: dice faces + outcome from the marker, the server's text line below. */
+/** Rolls newer than this still play their landing / effect when the card appears. */
+export const FRESH_ROLL_MS = 20000;
+
+/**
+ * A roll: dice faces + outcome from the marker, the server's text line below.
+ * A fresh roll (just revealed) lands its dice one by one and plays its outcome effect once;
+ * history cards are static (a botch / bestial failure keeps a few dried drips).
+ */
 export function DiceCard({ message, marker, timeZone, now }) {
   const ms = messageTime(message);
   const hidden = String(message.ai_message_kind || '').startsWith('dice_roll_hidden');
   const info = marker ? diceFaces(marker) : null;
+  // Decided once when the card mounts, so a re-render never replays the effect.
+  const [fresh] = useState(() => !Number.isNaN(ms) && Date.now() - ms < FRESH_ROLL_MS);
+  const mood = info ? rollMood(info.parsed.result) : null;
   return (
     <div className="sr-card-row" id={message.id != null ? `msg-${message.id}` : undefined} data-message-id={message.id}>
-      <figure className={`sr-dicecard${hidden ? ' sr-dicecard--hidden' : ''}`}>
+      <figure className={`sr-dicecard${hidden ? ' sr-dicecard--hidden' : ''}${fresh ? ' is-fresh' : ''}`} data-mood={mood || undefined}>
         <figcaption className="sr-dicecard__head">
           <SpeakerAvatar msg={message} size={24} />
           <SpeakerName msg={message} />
@@ -140,7 +150,9 @@ export function DiceCard({ message, marker, timeZone, now }) {
           <>
             <div className="sr-dicecard__dice" aria-hidden="true">
               {info.faces.map((f, i) => (
-                <DieFace key={i} value={f.value} hunger={f.hunger} state={f.state} size={34} decorative />
+                <span key={i} className="sr-dicecard__die" style={{ '--i': i }} data-state={f.state}>
+                  <DieFace value={f.value} hunger={f.hunger} state={f.state} size={34} decorative />
+                </span>
               ))}
               {info.parsed.extraDiceCount > 0 ? <span className="sr-dicecard__more">+{info.parsed.extraDiceCount}</span> : null}
             </div>
@@ -156,6 +168,7 @@ export function DiceCard({ message, marker, timeZone, now }) {
         <div className="sr-dicecard__text">
           <Markdown text={message.content} />
         </div>
+        {info ? <RollFx mood={mood} play={fresh} compact playKey={typeof message.id === 'number' ? message.id : 0} /> : null}
       </figure>
     </div>
   );

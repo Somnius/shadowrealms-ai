@@ -32,7 +32,7 @@ const useIsoLayoutEffect = typeof window !== 'undefined' ? useLayoutEffect : use
  * get the design tokens/base styles even though they live outside the shell's DOM tree.
  */
 export function Portal({ children }) {
-  const { reduced } = useMotionPreference();
+  const { reduced, atmosphere } = useMotionPreference();
   // Created during render so children (and their refs) exist on the first commit;
   // attached in a layout effect, i.e. before any passive effect (focus management) runs.
   const [node] = useState(() => {
@@ -51,8 +51,10 @@ export function Portal({ children }) {
     };
   }, [node]);
   useIsoLayoutEffect(() => {
-    if (node) node.setAttribute('data-motion', reduced ? 'reduced' : 'full');
-  }, [node, reduced]);
+    if (!node) return;
+    node.setAttribute('data-motion', reduced ? 'reduced' : 'full');
+    node.setAttribute('data-atmosphere', atmosphere || (reduced ? 'off' : 'full'));
+  }, [node, reduced, atmosphere]);
   return node ? createPortal(children, node) : null;
 }
 

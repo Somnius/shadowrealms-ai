@@ -182,3 +182,27 @@
 @media (max-width: 479px) {
   .sr-toasts { left: var(--sr-space-2); right: var(--sr-space-2); width: auto; top: calc(var(--sr-space-2) + env(safe-area-inset-top)); bottom: auto; }
 }
+
+/* Phase 4: a blood seam draws across the modal's top edge as it opens; toast glyphs ink in. */
+.sr-modal::before {
+  content: '';
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  top: -2px;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--sr-accent-text, #ff6b81) 30%, var(--sr-accent, #e94560) 70%, transparent);
+  transform-origin: 50% 50%;
+  animation: sr-modal-seam var(--sr-dur-slow) var(--sr-ease-out) 80ms both;
+  pointer-events: none;
+}
+@keyframes sr-modal-seam {
+  from { transform: scaleX(0); opacity: 0; }
+  60% { opacity: 1; }
+  to { transform: scaleX(1); opacity: 0.85; }
+}
+.sr-toast__glyph { animation: sr-toast-ink var(--sr-dur-slow) var(--sr-ease-out) 120ms both; }
+@keyframes sr-toast-ink {
+  from { opacity: 0; transform: scale(0.6) rotate(-20deg); }
+  to { opacity: 1; transform: none; }
+}

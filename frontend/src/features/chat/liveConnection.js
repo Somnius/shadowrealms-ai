@@ -29,7 +29,13 @@ export class LiveConnection {
     onPoll, // () => void  (fallback tick)
     onModeChange, // ('connecting' | 'live' | 'polling' | 'closed') => void
     EventSourceImpl = typeof window !== 'undefined' ? window.EventSource : undefined,
-    timers = { setTimeout, clearTimeout, setInterval, clearInterval },
+    // Wrapped: calling window.setTimeout as a method of another object throws "Illegal invocation".
+    timers = {
+      setTimeout: (fn, ms) => setTimeout(fn, ms),
+      clearTimeout: (h) => clearTimeout(h),
+      setInterval: (fn, ms) => setInterval(fn, ms),
+      clearInterval: (h) => clearInterval(h),
+    },
     options = {},
   }) {
     this.getTicket = getTicket;

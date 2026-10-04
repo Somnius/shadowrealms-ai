@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import ReadmeModal from './ReadmeModal';
 import packageJson from '../../package.json';
 import { t } from '../i18n';
+import { Glyph } from '../design';
 
 /**
  * SPA build version — from `frontend/package.json`, bumped by `scripts/version-bump.sh`.
@@ -16,8 +17,8 @@ function Footer() {
   return (
     <>
     <footer style={{
-      background: 'linear-gradient(135deg, #0f1729 0%, #16213e 100%)',
-      borderTop: '2px solid #2a2a4e',
+      background: 'linear-gradient(135deg, var(--sr-night-850) 0%, var(--sr-night-800) 100%)',
+      borderTop: '2px solid var(--sr-night-700)',
       padding: '20px',
       textAlign: 'center',
       boxShadow: '0 -2px 10px rgba(0, 0, 0, 0.5)',
@@ -36,14 +37,14 @@ function Footer() {
       }}>
         {/* Version & Project Info */}
         <div style={{
-          color: '#8b8b9f',
+          color: 'var(--sr-bone-500)',
           fontSize: '14px',
-          fontFamily: 'Crimson Text, serif'
+          fontFamily: 'var(--sr-font-body)'
         }}>
           <span style={{ 
-            color: '#e94560', 
+            color: 'var(--sr-blood-500)', 
             fontWeight: 'bold',
-            fontFamily: 'Cinzel, serif'
+            fontFamily: 'var(--sr-font-display)'
           }}>
             ShadowRealms AI
           </span>
@@ -51,12 +52,12 @@ function Footer() {
           <span 
             onClick={() => setShowReadme(true)}
             style={{ 
-              color: '#9d4edd',
+              color: 'var(--sr-arcane-500)',
               fontSize: '12px',
               padding: '2px 8px',
               background: 'rgba(157, 78, 221, 0.2)',
               borderRadius: '10px',
-              border: '1px solid #9d4edd',
+              border: '1px solid var(--sr-arcane-500)',
               cursor: 'pointer',
               transition: 'all 0.2s',
               display: 'inline-block'
@@ -79,15 +80,15 @@ function Footer() {
 
         {/* Creator Info */}
         <div style={{
-          color: '#b5b5c3',
+          color: 'var(--sr-bone-300)',
           fontSize: '14px',
-          fontFamily: 'Crimson Text, serif'
+          fontFamily: 'var(--sr-font-body)'
         }}>
-          {t('footer:madeWith', 'Made with')} <span style={{ color: '#e94560' }}>♥</span> {t('footer:madeFor', 'for tabletop RPG games by')}{' '}
+          {t('footer:madeWith', 'Made with')} <Glyph name="blood-drop" size={14} title={t('footer:love', 'love')} style={{ color: 'var(--sr-blood-500)', verticalAlign: '-2px' }} /> {t('footer:madeFor', 'for tabletop RPG games by')}{' '}
           <span style={{ 
-            color: '#e94560',
+            color: 'var(--sr-blood-500)',
             fontWeight: 'bold',
-            fontFamily: 'Cinzel, serif'
+            fontFamily: 'var(--sr-font-display)'
           }}>
             Lefteris Iliadis
           </span>
@@ -104,20 +105,20 @@ function Footer() {
             target="_blank"
             rel="noopener noreferrer"
             style={{
-              color: '#b5b5c3',
+              color: 'var(--sr-bone-300)',
               textDecoration: 'none',
               fontSize: '14px',
-              fontFamily: 'Crimson Text, serif',
+              fontFamily: 'var(--sr-font-body)',
               transition: 'color 0.2s',
               display: 'flex',
               alignItems: 'center',
               gap: '5px'
             }}
             onMouseOver={(e) => {
-              e.target.style.color = '#e94560';
+              e.target.style.color = 'var(--sr-blood-500)';
             }}
             onMouseOut={(e) => {
-              e.target.style.color = '#b5b5c3';
+              e.target.style.color = 'var(--sr-bone-300)';
             }}
           >
             <svg 
@@ -132,12 +133,12 @@ function Footer() {
             Somnius
           </a>
           
-          <span style={{ color: '#2a2a4e' }}>|</span>
+          <span style={{ color: 'var(--sr-night-700)' }}>|</span>
           
           <span style={{
-            color: '#8b8b9f',
+            color: 'var(--sr-bone-500)',
             fontSize: '14px',
-            fontFamily: 'Crimson Text, serif'
+            fontFamily: 'var(--sr-font-body)'
           }}>
             @SomniusX
           </span>
@@ -148,10 +149,10 @@ function Footer() {
       <div style={{
         marginTop: '15px',
         paddingTop: '15px',
-        borderTop: '1px solid #2a2a4e',
+        borderTop: '1px solid var(--sr-night-700)',
         color: '#72767d',
         fontSize: '12px',
-        fontFamily: 'Crimson Text, serif'
+        fontFamily: 'var(--sr-font-body)'
       }}>
         {t('footer:builtWith', 'Built with the help of')}{' '}
         <a 
@@ -159,21 +160,21 @@ function Footer() {
           target="_blank" 
           rel="noopener noreferrer"
           style={{
-            color: '#9d4edd',
+            color: 'var(--sr-arcane-500)',
             textDecoration: 'none',
             fontWeight: 'bold',
             transition: 'color 0.2s'
           }}
           onMouseOver={(e) => {
-            e.target.style.color = '#b57edc';
+            e.target.style.color = 'var(--sr-arcane-400)';
           }}
           onMouseOut={(e) => {
-            e.target.style.color = '#9d4edd';
+            e.target.style.color = 'var(--sr-arcane-500)';
           }}
         >
           Cursor AI
         </a>
-        {' '}🤖
+        {' '}<Glyph name="ai-sigil" size={14} style={{ color: 'var(--sr-arcane-400)', verticalAlign: '-2px' }} />
       </div>
     </footer>
 

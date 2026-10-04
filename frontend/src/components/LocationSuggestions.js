@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { t } from '../i18n';
+import { AiSigil, Glyph } from '../design';
 
 function LocationSuggestions({ campaignId, settingDescription, onComplete, onSkip }) {
   const [suggestions, setSuggestions] = useState([]);
@@ -136,8 +137,8 @@ function LocationSuggestions({ campaignId, settingDescription, onComplete, onSki
   return (
     <div style={{
       position: 'relative',
-      background: 'linear-gradient(135deg, #16213e 0%, #0f1729 100%)',
-      border: '2px solid #2a2a4e',
+      background: 'linear-gradient(135deg, var(--sr-night-800) 0%, var(--sr-night-850) 100%)',
+      border: '2px solid var(--sr-night-700)',
       borderRadius: '15px',
       padding: '30px',
       marginTop: '20px',
@@ -153,7 +154,7 @@ function LocationSuggestions({ campaignId, settingDescription, onComplete, onSki
             bottom: 0,
             zIndex: 20,
             borderRadius: '13px',
-            background: '#0a0e18',
+            background: 'var(--sr-night-950)',
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
@@ -163,17 +164,12 @@ function LocationSuggestions({ campaignId, settingDescription, onComplete, onSki
             boxShadow: 'inset 0 0 80px rgba(157, 78, 221, 0.08)',
           }}
         >
-          <div style={{
-            fontSize: '64px',
-            marginBottom: '25px',
-            animation: 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
-          }}
-          >
-            🎲
+          <div style={{ marginBottom: '25px', color: 'var(--sr-arcane-300)' }}>
+            <AiSigil size={64} className="sr-glyph--essential" />
           </div>
           <h3 style={{
-            color: '#e94560',
-            fontFamily: 'Cinzel, serif',
+            color: 'var(--sr-blood-500)',
+            fontFamily: 'var(--sr-font-display)',
             marginBottom: '15px',
             fontSize: '26px',
           }}
@@ -181,8 +177,8 @@ function LocationSuggestions({ campaignId, settingDescription, onComplete, onSki
             {t('locations:loading.title', 'Generating location ideas…')}
           </h3>
           <p style={{
-            color: '#b5b5c3',
-            fontFamily: 'Crimson Text, serif',
+            color: 'var(--sr-bone-300)',
+            fontFamily: 'var(--sr-font-body)',
             fontSize: '16px',
             marginBottom: '20px',
             lineHeight: '1.6',
@@ -205,7 +201,7 @@ function LocationSuggestions({ campaignId, settingDescription, onComplete, onSki
                   width: '12px',
                   height: '12px',
                   borderRadius: '50%',
-                  background: '#9d4edd',
+                  background: 'var(--sr-arcane-500)',
                   animation: `bounce 1.4s ease-in-out ${i * 0.16}s infinite`,
                   boxShadow: '0 0 10px rgba(157, 78, 221, 0.5)',
                 }}
@@ -213,8 +209,8 @@ function LocationSuggestions({ campaignId, settingDescription, onComplete, onSki
             ))}
           </div>
           <p style={{
-            color: '#8b8b9f',
-            fontFamily: 'Crimson Text, serif',
+            color: 'var(--sr-bone-500)',
+            fontFamily: 'var(--sr-font-body)',
             fontSize: '13px',
             marginTop: '28px',
             marginBottom: 0,
@@ -228,12 +224,13 @@ function LocationSuggestions({ campaignId, settingDescription, onComplete, onSki
       )}
       <div style={{ filter: loading ? 'blur(6px)' : 'none', opacity: loading ? 0.25 : 1, pointerEvents: loading ? 'none' : 'auto', userSelect: loading ? 'none' : 'auto' }}>
       <h2 style={{
-        color: '#e94560',
-        fontFamily: 'Cinzel, serif',
+        color: 'var(--sr-blood-500)',
+        fontFamily: 'var(--sr-font-display)',
         marginBottom: '10px',
         fontSize: '24px'
       }}>
-        🏰 {t('locations:title', 'Suggested locations')}
+        <Glyph name="room-elysium" size={24} style={{ verticalAlign: '-3px', marginRight: '8px' }} />
+        {t('locations:title', 'Suggested locations')}
       </h2>
 
       {error && (
@@ -249,19 +246,20 @@ function LocationSuggestions({ campaignId, settingDescription, onComplete, onSki
           <p
             style={{
               color: '#ffb74d',
-              fontFamily: 'Crimson Text, serif',
+              fontFamily: 'var(--sr-font-body)',
               fontSize: '15px',
               margin: 0,
             }}
           >
-            ⚠️ {error}
+            <Glyph name="warning" size={16} style={{ verticalAlign: '-3px', marginRight: '6px' }} />
+            {error}
           </p>
         </div>
       )}
       
       <p style={{
-        color: '#b5b5c3',
-        fontFamily: 'Crimson Text, serif',
+        color: 'var(--sr-bone-300)',
+        fontFamily: 'var(--sr-font-body)',
         marginBottom: '25px',
         fontSize: '16px'
       }}>
@@ -278,8 +276,8 @@ function LocationSuggestions({ campaignId, settingDescription, onComplete, onSki
             key={idx}
             onClick={() => handleToggle(idx)}
             style={{
-              background: selected[idx] ? 'rgba(233, 69, 96, 0.15)' : '#0f1729',
-              border: selected[idx] ? '2px solid #e94560' : '2px solid #2a2a4e',
+              background: selected[idx] ? 'rgba(233, 69, 96, 0.15)' : 'var(--sr-night-850)',
+              border: selected[idx] ? '2px solid var(--sr-blood-500)' : '2px solid var(--sr-night-700)',
               borderRadius: '10px',
               padding: '20px',
               cursor: 'pointer',
@@ -302,44 +300,45 @@ function LocationSuggestions({ campaignId, settingDescription, onComplete, onSki
             <div style={{
               width: '24px',
               height: '24px',
-              border: '2px solid ' + (selected[idx] ? '#e94560' : '#555'),
+              border: '2px solid ' + (selected[idx] ? 'var(--sr-blood-500)' : '#555'),
               borderRadius: '5px',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               flexShrink: 0,
-              background: selected[idx] ? '#e94560' : 'transparent',
+              background: selected[idx] ? 'var(--sr-blood-500)' : 'transparent',
               marginTop: '2px'
             }}>
-              {selected[idx] && <span style={{ color: 'white', fontSize: '16px' }}>✓</span>}
+              {selected[idx] && <Glyph name="check" size={16} strokeWidth={2.4} style={{ color: 'white' }} />}
             </div>
             
             <div style={{ flex: 1 }}>
               <h3 style={{
-                color: selected[idx] ? '#e94560' : '#d0d0e0',
-                fontFamily: 'Cinzel, serif',
+                color: selected[idx] ? 'var(--sr-blood-500)' : 'var(--sr-bone-100)',
+                fontFamily: 'var(--sr-font-display)',
                 fontSize: '18px',
                 marginBottom: '8px'
               }}>
-                📍 {loc.name}
+                <Glyph name={/haven|home/i.test(String(loc.type || '')) ? 'room-haven' : /elysium/i.test(String(loc.type || '')) ? 'room-elysium' : 'room-street'} size={18} style={{ verticalAlign: '-3px', marginRight: '6px' }} />
+                {loc.name}
               </h3>
               <div style={{
                 display: 'inline-block',
                 padding: '4px 12px',
                 background: 'rgba(157, 78, 221, 0.2)',
-                border: '1px solid #9d4edd',
+                border: '1px solid var(--sr-arcane-500)',
                 borderRadius: '12px',
                 fontSize: '12px',
-                color: '#9d4edd',
-                fontFamily: 'Cinzel, serif',
+                color: 'var(--sr-arcane-500)',
+                fontFamily: 'var(--sr-font-display)',
                 marginBottom: '10px',
                 textTransform: 'capitalize'
               }}>
                 {loc.type}
               </div>
               <p style={{
-                color: '#b5b5c3',
-                fontFamily: 'Crimson Text, serif',
+                color: 'var(--sr-bone-300)',
+                fontFamily: 'var(--sr-font-body)',
                 fontSize: '15px',
                 lineHeight: '1.6',
                 margin: 0
@@ -357,7 +356,7 @@ function LocationSuggestions({ campaignId, settingDescription, onComplete, onSki
         justifyContent: 'space-between',
         alignItems: 'center'
       }}>
-        <div style={{ color: '#8b8b9f', fontSize: '14px' }}>
+        <div style={{ color: 'var(--sr-bone-500)', fontSize: '14px' }}>
           {t('locations:selected', '{{n}} of {{total}} selected', { n: Object.values(selected).filter(Boolean).length, total: suggestions.length })}
         </div>
         
@@ -374,7 +373,7 @@ function LocationSuggestions({ campaignId, settingDescription, onComplete, onSki
               cursor: creating ? 'not-allowed' : 'pointer',
               fontWeight: 'bold',
               fontSize: '14px',
-              fontFamily: 'Cinzel, serif',
+              fontFamily: 'var(--sr-font-display)',
               transition: 'all 0.2s'
             }}
             onMouseOver={(e) => !creating && (e.target.style.background = '#6c757d')}
@@ -388,14 +387,14 @@ function LocationSuggestions({ campaignId, settingDescription, onComplete, onSki
             disabled={creating || Object.values(selected).filter(Boolean).length === 0}
             style={{
               padding: '12px 30px',
-              background: creating ? '#555' : 'linear-gradient(135deg, #e94560 0%, #8b0000 100%)',
+              background: creating ? '#555' : 'linear-gradient(135deg, var(--sr-blood-500) 0%, var(--sr-blood-700) 100%)',
               color: 'white',
               border: 'none',
               borderRadius: '8px',
               cursor: creating ? 'not-allowed' : 'pointer',
               fontWeight: 'bold',
               fontSize: '14px',
-              fontFamily: 'Cinzel, serif',
+              fontFamily: 'var(--sr-font-display)',
               boxShadow: creating ? 'none' : '0 4px 15px rgba(233, 69, 96, 0.4)',
               transition: 'all 0.2s'
             }}

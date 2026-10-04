@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Navigate, useNavigate, useParams } from 'react-router-dom';
-import { AiSigil, Button, Drawer, EmptyState, Glyph, IconButton, Modal, Spinner, useToast } from '../../design';
+import { AiSigil, Button, CandleHalo, Drawer, EmptyState, Glyph, IconButton, Modal, Spinner, useToast } from '../../design';
 import { TopBar } from '../../app/AppShell';
 import ChronicleRail from '../../app/ChronicleRail';
 import ButtonLink from '../../app/ButtonLink';
@@ -62,7 +62,7 @@ export function PlayRedirect() {
       <div className="sr-loading">
         {state === 'loading' ? <Spinner variant="candle" label={t('common:loading', 'Loading')} /> : null}
         {state === 'empty' ? (
-          <EmptyState glyph="room-street" title={t('play:noRooms', 'This chronicle has no rooms yet')}>
+          <EmptyState glyph="room-street" title={t('play:noRooms', 'This chronicle has no rooms yet')} ambient>
             <ButtonLink to={`/chronicles/${id}`} variant="secondary">
               {t('play:openSettings', 'Open chronicle settings')}
             </ButtonLink>
@@ -391,6 +391,7 @@ export default function PlayPage() {
           icon={location ? roomGlyph(location.type) : 'logo-mark'}
           onMenu={() => setNavOpen(true)}
           menuLabel={t('play:nav.open', 'Chronicles and rooms')}
+          ambient
           actions={
             <>
               {liveMode === 'polling' ? (
@@ -411,7 +412,7 @@ export default function PlayPage() {
           <div className="sr-chat">
             {closed ? (
               <div className="sr-chat__closed">
-                <EmptyState glyph="lock-chain" title={closedCopy.title}>
+                <EmptyState glyph="lock-chain" title={closedCopy.title} ambient>
                   <p>{closedCopy.lead}</p>
                   <p className="sr-chat__flavor">{room.closedInfo?.flavor || closedCopy.flavor}</p>
                 </EmptyState>
@@ -433,8 +434,12 @@ export default function PlayPage() {
               <div className="sr-chat__typing" aria-live="polite">
                 {aiPending ? (
                   <>
-                    <AiSigil size={18} />
-                    <span>{t('chat:weaving', 'The Storyteller is weaving…')}</span>
+                    <CandleHalo lit size={26} tone="arcane" className="sr-chat__typing-avatar">
+                      <span className="sr-msg__ai-avatar" style={{ width: 26, height: 26 }}>
+                        <AiSigil size={20} className="sr-glyph--essential" />
+                      </span>
+                    </CandleHalo>
+                    <span className="sr-chat__typing-text">{t('chat:weaving', 'The Storyteller is weaving…')}</span>
                   </>
                 ) : null}
               </div>

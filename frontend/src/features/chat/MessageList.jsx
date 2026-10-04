@@ -144,7 +144,7 @@ export default function MessageList({ roomKey, roomName, messages, status, first
             <EmptyState glyph="warning" title={t('chat:loadFailed', 'Could not load this room')} />
           ) : null}
           {status === 'ready' && rows.length === 0 ? (
-            <EmptyState glyph="moon-crescent" title={t('chat:empty.title', 'No whispers yet')}>
+            <EmptyState glyph="moon-crescent" title={t('chat:empty.title', 'No whispers yet')} ambient className="sr-chat__empty">
               {t('chat:empty.body', 'Start the conversation in {{room}}.', { room: roomName || '' })}
             </EmptyState>
           ) : null}

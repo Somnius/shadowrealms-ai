@@ -14,6 +14,8 @@ export {
   useDocumentVisible,
   useInView,
   useAmbient,
+  useAtmosphere,
+  ATMOSPHERE_LEVELS,
 } from './motion';
 
 /* glyphs */
@@ -35,5 +37,17 @@ export { Portal } from './components/internal';
 /* atmosphere */
 export { FogLayer, CandleGlow, BloodDrip } from './atmosphere/Atmosphere';
 export { default as SigilReveal, buildSigilPaths } from './atmosphere/SigilReveal';
+export {
+  Vignette,
+  Grain,
+  CandleHalo,
+  CrackOverlay,
+  RollFx,
+  rollMood,
+  FOUL_MOODS,
+  GLORY_MOODS,
+  ChronicleSigil,
+  RouteTransition,
+} from './atmosphere/Ambience';
 export { default as DiceRollViz, describeRoll } from './atmosphere/DiceRollViz';
 export { analyzeV5, analyzeClassic, OUTCOME_LABELS, outcomeLabels } from './atmosphere/diceAnalysis';

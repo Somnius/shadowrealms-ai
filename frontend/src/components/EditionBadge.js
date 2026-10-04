@@ -29,8 +29,8 @@ export default function EditionBadge({ campaign, style }) {
         lineHeight: '16px',
         verticalAlign: 'middle',
         background: v5 ? 'rgba(220, 38, 38, 0.18)' : 'rgba(148, 163, 184, 0.15)',
-        color: v5 ? '#fca5a5' : '#cbd5e1',
-        border: `1px solid ${v5 ? '#dc2626' : '#64748b'}`,
+        color: v5 ? 'var(--sr-blood-300)' : 'var(--sr-bone-300)',
+        border: `1px solid ${v5 ? 'var(--sr-blood-600)' : 'var(--sr-bone-500)'}`,
         ...style,
       }}
     >

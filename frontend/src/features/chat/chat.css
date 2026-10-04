@@ -142,6 +142,29 @@
 .sr-app .sr-dicecard__more { color: var(--sr-text-muted); font-family: var(--sr-font-mono); font-size: var(--sr-text-sm); }
 .sr-app .sr-dicecard__outcome { display: flex; flex-wrap: wrap; gap: var(--sr-space-2); margin-bottom: var(--sr-space-2); }
 .sr-app .sr-dicecard__text { color: var(--sr-text-2); font-size: var(--sr-text-sm); line-height: 1.5; }
+/* phase 4: roll moods + landing (fresh cards only; history stays still) */
+.sr-app .sr-dicecard { position: relative; overflow: hidden; }
+.sr-app .sr-dicecard__head,
+.sr-app .sr-dicecard__outcome,
+.sr-app .sr-dicecard__text { position: relative; z-index: 3; }
+.sr-app .sr-dicecard__dice { position: relative; z-index: 1; }
+.sr-app .sr-dicecard__die { display: inline-grid; place-items: center; }
+.sr-app .sr-dicecard[data-mood='botch'],
+.sr-app .sr-dicecard[data-mood='bestial'] { border-left-color: var(--sr-blood-700); background: linear-gradient(180deg, rgba(59, 10, 20, 0.35), var(--sr-surface) 60%); }
+.sr-app .sr-dicecard[data-mood='critical'],
+.sr-app .sr-dicecard[data-mood='exceptional'] { border-left-color: var(--sr-gold-400); }
+.sr-app .sr-dicecard[data-mood='messy'] { border-left-color: var(--sr-gold-400); background: linear-gradient(100deg, rgba(251, 191, 36, 0.06), rgba(233, 69, 96, 0.08) 60%, var(--sr-surface)); }
+.sr-app .sr-dicecard.is-fresh .sr-dicecard__die {
+  animation: sr-card-die-land 480ms var(--sr-ease-out) both;
+  animation-delay: calc(var(--i, 0) * 60ms);
+}
+.sr-app .sr-dicecard.is-fresh .sr-dicecard__outcome { animation: sr-rise-in var(--sr-dur-slow) var(--sr-ease-out) 300ms both; }
+@keyframes sr-card-die-land {
+  0% { opacity: 0; transform: translateY(-12px) rotate(-160deg) scale(0.7); }
+  60% { opacity: 1; transform: translateY(2px) rotate(8deg) scale(1.08); }
+  100% { opacity: 1; transform: none; }
+}
+.sr-app .sr-dicecard .sr-rollfx { border-radius: var(--sr-radius-lg); }
 .sr-app .sr-diag {
   max-width: 640px;
   border: 1px solid var(--sr-border);
@@ -340,3 +363,4 @@
 }
 .sr-app .sr-msg__secondary--shown { opacity: 1; }
 .sr-app .sr-composer__input::placeholder { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sr-app .sr-dicecard .sr-crack path { stroke: rgba(255, 107, 129, 0.32); }

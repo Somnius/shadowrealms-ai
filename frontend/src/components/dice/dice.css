@@ -1,0 +1,304 @@
+/* Dice UI on design tokens: legacy-facing die buttons, outcome pills, the roll overlay,
+   the V5 reroll panel and the roll dialog's edition fields. Motion: transform / opacity only;
+   reduced motion is cut globally (tokens.css) and every loop has a static end state here. */
+
+/* ---- outcome pills ---- */
+.sr-outcomes { display: flex; flex-wrap: wrap; gap: var(--sr-space-2); justify-content: center; }
+.sr-outcomes--lg .sr-outcome {
+  font-family: var(--sr-font-display);
+  font-size: var(--sr-text-md);
+  letter-spacing: var(--sr-tracking-display);
+  padding: 4px 12px;
+}
+.sr-outcomes--lg .sr-outcome .sr-glyph { width: 16px; height: 16px; }
+
+/* ---- one die (DiceFace) ---- */
+.sr-ldie {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  width: var(--die-size, 54px);
+  height: var(--die-size, 54px);
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  flex: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+.sr-ldie__body { position: relative; z-index: 1; display: grid; place-items: center; }
+.sr-ldie .sr-die { display: block; filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.55)); }
+.sr-ldie__shadow {
+  position: absolute;
+  left: 18%;
+  right: 18%;
+  bottom: -2px;
+  height: 6px;
+  border-radius: 50%;
+  background: radial-gradient(ellipse, rgba(0, 0, 0, 0.55), transparent 70%);
+  z-index: 0;
+}
+.sr-ldie.is-hunger .sr-die { filter: drop-shadow(0 0 6px rgba(194, 51, 77, 0.55)); }
+.sr-ldie[data-state='crit'] .sr-die { filter: drop-shadow(0 0 7px rgba(251, 191, 36, 0.55)); }
+.sr-ldie__mark {
+  position: absolute;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  line-height: 0;
+}
+.sr-ldie__mark--reroll {
+  top: -4px;
+  right: -4px;
+  padding: 2px;
+  background: var(--sr-gold-400);
+  color: var(--sr-night-950);
+}
+.sr-ldie__mark--bestial {
+  bottom: -4px;
+  right: -4px;
+  padding: 2px;
+  background: var(--sr-blood-900);
+  color: var(--sr-blood-300);
+  border: 1px solid var(--sr-blood-500);
+}
+.sr-ldie.is-reroll::before {
+  content: '';
+  position: absolute;
+  inset: -3px;
+  border: 1px dashed var(--sr-gold-400);
+  border-radius: var(--sr-radius-md);
+}
+/* selectable (V5 Willpower reroll) */
+.sr-ldie.is-button { cursor: pointer; border-radius: var(--sr-radius-md); transition: transform var(--sr-dur-fast) var(--sr-ease-out); }
+.sr-ldie.is-button:hover:not(:disabled) { transform: translateY(-2px); }
+.sr-ldie.is-button:focus-visible { outline: 2px solid var(--sr-focus, var(--sr-blood-500)); outline-offset: 3px; }
+.sr-ldie.is-selected::after {
+  content: '';
+  position: absolute;
+  inset: -4px;
+  border: 2px solid var(--sr-arcane-400);
+  border-radius: var(--sr-radius-md);
+  box-shadow: 0 0 10px rgba(157, 78, 221, 0.5);
+}
+.sr-ldie:disabled { cursor: default; }
+
+/* tumble while rolling: each die desynced by its index */
+.sr-ldie.is-rolling .sr-ldie__body {
+  animation: sr-die-tumble 560ms linear infinite;
+  animation-delay: calc(var(--i, 0) * -137ms);
+}
+.sr-ldie.is-rolling .sr-ldie__shadow {
+  animation: sr-die-shadow 560ms linear infinite;
+  animation-delay: calc(var(--i, 0) * -137ms);
+}
+@keyframes sr-die-tumble {
+  0% { transform: translateY(0) rotate(0deg) scale(1); }
+  25% { transform: translateY(-12px) rotate(95deg) scale(0.9); }
+  50% { transform: translateY(0) rotate(180deg) scale(1.02); }
+  75% { transform: translateY(-7px) rotate(268deg) scale(0.94); }
+  100% { transform: translateY(0) rotate(360deg) scale(1); }
+}
+@keyframes sr-die-shadow {
+  0%, 50%, 100% { transform: scaleX(1); opacity: 1; }
+  25% { transform: scaleX(0.6); opacity: 0.5; }
+  75% { transform: scaleX(0.75); opacity: 0.7; }
+}
+/* landing: drop in one after another, overshoot, settle */
+.sr-ldie.is-landed .sr-ldie__body {
+  animation: sr-die-land 520ms var(--sr-ease-out) both;
+  animation-delay: calc(var(--i, 0) * 70ms);
+}
+@keyframes sr-die-land {
+  0% { transform: translateY(-22px) rotate(-210deg) scale(0.7); opacity: 0.3; }
+  55% { transform: translateY(3px) rotate(10deg) scale(1.1); opacity: 1; }
+  78% { transform: translateY(-2px) rotate(-3deg) scale(0.98); }
+  100% { transform: none; opacity: 1; }
+}
+/* crits glow once they land */
+.sr-ldie.is-landed[data-state='crit']::before {
+  content: '';
+  position: absolute;
+  inset: -40%;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(251, 191, 36, 0.38), transparent 65%);
+  opacity: 0;
+  animation: sr-die-glow 900ms var(--sr-ease-out) forwards;
+  animation-delay: calc(var(--i, 0) * 70ms + 380ms);
+}
+.sr-ldie.is-landed.is-hunger[data-state='one']::before {
+  content: '';
+  position: absolute;
+  inset: -35%;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(194, 51, 77, 0.45), transparent 65%);
+  opacity: 0;
+  animation: sr-die-glow 900ms var(--sr-ease-out) forwards;
+  animation-delay: calc(var(--i, 0) * 70ms + 380ms);
+}
+@keyframes sr-die-glow { 0% { opacity: 0; transform: scale(0.6); } 40% { opacity: 1; } 100% { opacity: 0.7; transform: scale(1); } }
+
+[data-motion='reduced'] .sr-ldie *,
+[data-motion='reduced'] .sr-ldie::before { animation: none !important; }
+[data-motion='reduced'] .sr-ldie.is-landed::before { opacity: 0.7; }
+@media (prefers-reduced-motion: reduce) {
+  .sr-ldie *, .sr-ldie::before { animation: none !important; }
+  .sr-ldie.is-landed::before { opacity: 0.7; }
+}
+
+/* ---- overlay ---- */
+.sr-diceov {
+  position: fixed;
+  inset: 0;
+  z-index: var(--sr-z-dice, 80);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--sr-space-4);
+}
+.sr-diceov__backdrop {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse at 50% 50%, rgba(59, 10, 20, 0.35), rgba(4, 4, 10, 0.72) 70%);
+  animation: sr-fade-in var(--sr-dur-base) var(--sr-ease-out);
+}
+.sr-diceov.is-settled { cursor: pointer; }
+.sr-diceov__panel {
+  position: relative;
+  width: min(760px, 100%);
+  padding: var(--sr-space-4) var(--sr-space-5) var(--sr-space-4);
+  background:
+    radial-gradient(ellipse at 50% -20%, rgba(233, 69, 96, 0.14), transparent 60%),
+    linear-gradient(180deg, var(--sr-night-800), var(--sr-night-850));
+  border: 1px solid var(--sr-border-strong);
+  border-top: 2px solid var(--sr-accent, var(--sr-blood-500));
+  border-radius: var(--sr-radius-lg);
+  box-shadow: var(--sr-shadow-3), 0 0 60px rgba(139, 0, 0, 0.25);
+  color: var(--sr-text);
+  overflow: hidden;
+  animation: sr-diceov-in var(--sr-dur-slow) var(--sr-ease-out);
+  cursor: default;
+}
+@keyframes sr-diceov-in {
+  from { opacity: 0; transform: translateY(10px) scale(0.97); }
+  to { opacity: 1; transform: none; }
+}
+.sr-diceov__panel[data-mood='botch'],
+.sr-diceov__panel[data-mood='bestial'] { border-color: var(--sr-blood-700); border-top-color: var(--sr-blood-600); box-shadow: var(--sr-shadow-3), 0 0 70px rgba(139, 0, 0, 0.5); }
+.sr-diceov__panel[data-mood='critical'],
+.sr-diceov__panel[data-mood='exceptional'] { border-top-color: var(--sr-gold-400); box-shadow: var(--sr-shadow-3), 0 0 60px rgba(251, 191, 36, 0.18); }
+.sr-diceov__panel[data-mood='messy'] { border-top-color: var(--sr-gold-400); box-shadow: var(--sr-shadow-3), 0 0 60px rgba(233, 69, 96, 0.3); }
+.sr-diceov__head {
+  position: relative;
+  z-index: 3;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--sr-space-2) var(--sr-space-3);
+  margin-bottom: var(--sr-space-3);
+}
+.sr-diceov__title {
+  display: flex;
+  align-items: center;
+  gap: var(--sr-space-2);
+  font-family: var(--sr-font-display);
+  font-size: var(--sr-text-xl);
+  font-weight: 700;
+  letter-spacing: var(--sr-tracking-display);
+  color: var(--sr-text);
+}
+.sr-diceov__title-glyph { color: var(--sr-accent-text, var(--sr-blood-400)); }
+.sr-diceov.is-rolling .sr-diceov__title-glyph { animation: sr-spin 1.6s linear infinite; }
+.sr-diceov__summary { color: var(--sr-text-2); font-family: var(--sr-font-mono); font-size: var(--sr-text-sm); }
+.sr-diceov__tray {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sr-space-3);
+  justify-content: center;
+  align-items: center;
+  min-height: 84px;
+  padding: var(--sr-space-4) var(--sr-space-2);
+  border-radius: var(--sr-radius-md);
+  background: radial-gradient(ellipse at 50% 60%, rgba(15, 23, 41, 0.9), rgba(7, 7, 15, 0.6));
+  box-shadow: inset 0 2px 14px rgba(0, 0, 0, 0.6);
+}
+.sr-diceov__rerolls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sr-space-2);
+  align-items: center;
+  padding-left: var(--sr-space-3);
+  border-left: 1px dashed var(--sr-gold-400);
+}
+.sr-diceov__rerolls-label { display: inline-flex; align-items: center; gap: 4px; color: var(--sr-gold-400); font-size: var(--sr-text-sm); }
+.sr-diceov__more { align-self: center; color: var(--sr-text-muted); font-family: var(--sr-font-mono); font-size: var(--sr-text-sm); }
+.sr-diceov__foot { position: relative; z-index: 3; margin-top: var(--sr-space-3); min-height: 32px; display: grid; place-items: center; }
+.sr-diceov.is-settled .sr-diceov__foot { animation: sr-rise-in var(--sr-dur-slow) var(--sr-ease-out) 350ms both; }
+.sr-diceov__hint { color: var(--sr-text-2); font-family: var(--sr-font-body); font-size: var(--sr-text-sm); text-align: center; font-style: italic; }
+.sr-diceov .sr-rollfx { border-radius: var(--sr-radius-lg); }
+@media (max-width: 480px) {
+  .sr-diceov { padding: var(--sr-space-2); align-items: flex-end; padding-bottom: calc(var(--sr-space-6) + env(safe-area-inset-bottom)); }
+  .sr-diceov__panel { padding: var(--sr-space-3); }
+  .sr-diceov__tray { gap: var(--sr-space-2); }
+}
+
+/* ---- V5 Willpower reroll panel (in the chat flow, above the composer) ---- */
+.sr-reroll {
+  box-sizing: border-box;
+  width: 100%;
+  max-height: 40vh;
+  overflow-y: auto;
+  margin-bottom: var(--sr-space-3);
+  padding: var(--sr-space-2) var(--sr-space-4) var(--sr-space-3);
+  background:
+    radial-gradient(ellipse at 50% 0%, rgba(194, 51, 77, 0.14), transparent 70%),
+    var(--sr-night-850);
+  border: 1px solid var(--sr-blood-700);
+  border-top: 2px solid var(--sr-blood-500);
+  border-radius: var(--sr-radius-lg);
+  box-shadow: var(--sr-shadow-2);
+  animation: sr-rise-in var(--sr-dur-base) var(--sr-ease-out);
+}
+.sr-reroll__head { display: flex; justify-content: space-between; align-items: center; gap: var(--sr-space-2); margin-bottom: var(--sr-space-1); }
+.sr-reroll__title {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sr-space-2);
+  color: var(--sr-blood-300);
+  font-family: var(--sr-font-display);
+  font-size: var(--sr-text-md);
+  letter-spacing: var(--sr-tracking-display);
+}
+.sr-reroll__elsewhere { color: var(--sr-gold-400); font-size: var(--sr-text-sm); text-align: center; margin-bottom: var(--sr-space-1); }
+.sr-reroll__summary { color: var(--sr-text-2); font-family: var(--sr-font-mono); font-size: var(--sr-text-sm); text-align: center; margin: var(--sr-space-2) 0 var(--sr-space-3); }
+.sr-reroll__dice { display: flex; flex-wrap: wrap; gap: var(--sr-space-2); justify-content: center; }
+.sr-reroll__foot { display: flex; flex-wrap: wrap; gap: var(--sr-space-2); justify-content: flex-end; align-items: center; margin-top: var(--sr-space-3); }
+.sr-reroll__picked { color: var(--sr-text-muted); font-size: var(--sr-text-sm); margin-right: auto; font-family: var(--sr-font-mono); }
+
+/* ---- roll dialog: edition fields ---- */
+.sr-roll__help {
+  margin: 0;
+  color: var(--sr-text-2);
+  font-family: var(--sr-font-body);
+  font-size: var(--sr-text-base);
+  line-height: var(--sr-leading-body);
+  padding: var(--sr-space-2) var(--sr-space-3);
+  border-left: 2px solid var(--sr-accent);
+  background: var(--sr-surface-sunken);
+  border-radius: 0 var(--sr-radius-md) var(--sr-radius-md) 0;
+}
+.sr-roll__help-glyph { color: var(--sr-accent-text); margin-right: 6px; vertical-align: -3px; }
+.sr-roll__hunger { display: flex; flex-wrap: wrap; align-items: flex-end; gap: var(--sr-space-3); }
+.sr-roll__hunger-field { min-width: 110px; flex: 0 0 auto; }
+.sr-roll__source { color: var(--sr-text-muted); font-weight: 400; }
+.sr-roll__hunger-track { display: inline-flex; gap: 2px; align-items: center; min-height: 44px; }
+.sr-roll__hunger-track .sr-glyph.is-full { color: var(--sr-blood-500); --sr-glyph-fill: var(--sr-blood-600); }
+.sr-roll__hunger-track .sr-glyph.is-full .sr-glyph-fillable { fill: var(--sr-blood-600); }
+.sr-roll__hunger-track .sr-glyph.is-empty { color: var(--sr-night-600); }
+.sr-roll__rouse { margin-left: auto; margin-bottom: 2px; }
