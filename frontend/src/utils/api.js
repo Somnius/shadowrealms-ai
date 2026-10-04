@@ -239,6 +239,29 @@ export const api = {
       headers: { 'Authorization': `Bearer ${token}` }
     }),
 
+  /** Clear failed-login counters and locks for a username and/or one IP address. */
+  unlockLogin: (token, { username = '', ip = '' } = {}) =>
+    authFetch(`${API_URL}/admin/auth/unlock`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ username, ip }),
+    }),
+
+  /** Login audit page: { limit, offset, username, event, ip } (empty values are left out). */
+  getAuthEvents: (token, params = {}) => {
+    const q = new URLSearchParams();
+    Object.entries(params).forEach(([k, v]) => {
+      if (v !== undefined && v !== null && String(v).trim() !== '') q.set(k, String(v).trim());
+    });
+    const qs = q.toString();
+    return authFetch(`${API_URL}/admin/auth-events${qs ? `?${qs}` : ''}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+  },
+
   listInvites: (token) =>
     authFetch(`${API_URL}/admin/invites`, {
       headers: { 'Authorization': `Bearer ${token}` }
