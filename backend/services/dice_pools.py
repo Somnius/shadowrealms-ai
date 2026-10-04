@@ -308,14 +308,15 @@ class Sheet:
             for k, v in virtues.items():
                 if _num(v) is not None:
                     self.traits.setdefault(norm(k), ("virtue", k, _label(k), _num(v), ""))
-        # Trackers: classic rolls the permanent rating; V5 the current undamaged boxes (p. 119).
+        # Trackers: classic rolls the permanent rating; V5 Willpower the current undamaged boxes (p. 119).
         wp = self.src.get("willpower")
         if self.edition == V5:
             self.traits[norm("willpower")] = ("tracker", "willpower", "Willpower", self._v5_track_left(wp, self._v5_wp_max()), "")
+            # Humanity isn't a tracker pool in V5 (only Health and Willpower are, p. 118): a roll
+            # uses the rating, Stains don't lower it (Remorse is a separate end-of-session roll).
             hum = _num(self.meta.get("humanity"))
             if hum is not None:
-                left = max(0, hum - max(0, _num(self.meta.get("stains")) or 0))
-                self.traits[norm("humanity")] = ("tracker", "humanity", "Humanity", left, "")
+                self.traits[norm("humanity")] = ("tracker", "humanity", "Humanity", max(0, hum), "")
         else:
             if _num(wp) is not None:
                 self.traits[norm("willpower")] = ("tracker", "willpower", "Willpower", _num(wp), "")
@@ -571,7 +572,10 @@ def canonical_tag(req: Dict[str, Any]) -> str:
         parts.append(f"difficulty {req['difficulty']}")
     for n in req.get("notes") or []:
         parts.append(n)
-    return "[[roll: " + " | ".join(p.replace("|", "/").replace("]", ")").replace("[", "(") for p in parts) + "]]"
+    # Sheet text (specialty names, custom labels) is one plain line here, or the UI can't parse the tag.
+    return "[[roll: " + " | ".join(
+        _clean(p, 120).replace("|", "/").replace("]", ")").replace("[", "(") for p in parts
+    ) + "]]"
 
 
 def resolve_tag(body: str, row: Optional[Dict[str, Any]], edition: str,

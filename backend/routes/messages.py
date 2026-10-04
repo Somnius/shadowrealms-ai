@@ -792,30 +792,42 @@ def save_message(campaign_id, location_id):
                     'code': reply_err,
                 }), 400
 
-        # Insert message
-        cursor.execute(
-            """
-            INSERT INTO messages (
-                campaign_id, location_id, user_id, character_id,
-                message_type, content, role, created_at, ai_message_kind, speaker_mode,
-                reply_to_id
-            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-            RETURNING id
-            """,
-            (
-                campaign_id,
-                location_id,
-                user_id,
-                character_id,
-                message_type,
-                content,
-                role,
-                datetime.now().isoformat(),
-                ai_message_kind,
-                speaker_mode,
-                reply_to_id,
-            ),
-        )
+        # Insert message. The quoted message can be deleted between the check above and here;
+        # the foreign key then refuses the row, which is the same "not found" answer.
+        try:
+            cursor.execute(
+                """
+                INSERT INTO messages (
+                    campaign_id, location_id, user_id, character_id,
+                    message_type, content, role, created_at, ai_message_kind, speaker_mode,
+                    reply_to_id
+                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                RETURNING id
+                """,
+                (
+                    campaign_id,
+                    location_id,
+                    user_id,
+                    character_id,
+                    message_type,
+                    content,
+                    role,
+                    datetime.now().isoformat(),
+                    ai_message_kind,
+                    speaker_mode,
+                    reply_to_id,
+                ),
+            )
+        except Exception as e:  # noqa: BLE001
+            constraint = getattr(getattr(e, 'diag', None), 'constraint_name', None) or ''
+            if (reply_to_id is None or type(e).__name__ not in ('ForeignKeyViolation', 'IntegrityError')
+                    or (constraint and 'reply_to' not in constraint)):
+                raise
+            conn.rollback()
+            return jsonify({
+                'error': 'The message you are replying to is not in this room any more.',
+                'code': 'reply_target_not_found',
+            }), 400
 
         result = cursor.fetchone()
         message_id = result['id']
@@ -916,6 +928,12 @@ def delete_message(message_id):
 
         # Not a member and not staff: same answer as a missing message (no probing of ids).
         if not _campaign_accessible_to_viewer(cursor, row['campaign_id'], user_id):
+            return jsonify({'error': 'Message not found', 'code': 'message_not_found'}), 404
+
+        # A hidden roll doesn't exist for a player who can't see it (no 403 that confirms it).
+        if is_hidden_kind(row.get('ai_message_kind')) and site_role not in ('admin', 'helper') and (
+            row.get('created_by') is None or str(row.get('created_by')) != str(user_id)
+        ):
             return jsonify({'error': 'Message not found', 'code': 'message_not_found'}), 404
 
         allowed, code = delete_decision(row, user_id, site_role, row.get('created_by'))
