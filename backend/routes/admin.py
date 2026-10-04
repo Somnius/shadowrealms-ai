@@ -33,6 +33,12 @@ from services.auth_security import check_password_policy, hash_password
 from routes.auth import _invites_locked, load_invites, save_invites
 from services.play_suspension import ALLOWED_REASON_CODES
 from services.request_validation import RequestValidationError
+from services.auth_events_query import (
+    build_auth_events_sql,
+    parse_auth_events_query,
+    parse_ip,
+    public_auth_event,
+)
 from services.log_safety import safe_log_value
 
 logger = logging.getLogger(__name__)
@@ -1487,7 +1493,11 @@ def unlock_login():
 
     data = request.get_json(silent=True) or {}
     username = str(data.get('username') or '').strip()[:150]
-    ip = str(data.get('ip') or '').strip()[:64]
+    try:
+        # One exact address: the store deletes by glob pattern, so "*" must never get through.
+        ip = parse_ip(data.get('ip'))
+    except RequestValidationError as e:
+        return jsonify({'error': e.public_message}), 400
     if not username and not ip:
         return jsonify({'error': 'username or ip required'}), 400
     throttle = get_throttle()
@@ -1505,42 +1515,24 @@ def unlock_login():
 @bp.route('/auth-events', methods=['GET'])
 @require_admin()
 def list_auth_events():
-    """Recent auth audit rows (logins, failures, lockouts, logouts, refresh reuse)."""
+    """Auth audit rows (logins, failures, lockouts, logouts, refresh reuse), newest first.
+
+    Query: limit (1-500, default 100), offset, user_id, username (exact, any case), event, ip.
+    Returns {events, limit, offset, has_more}; details carry only non-secret fields.
+    """
     try:
-        limit = min(max(int(request.args.get('limit', 100)), 1), 500)
-    except (TypeError, ValueError):
-        limit = 100
-    params = []
-    where = []
-    if request.args.get('user_id'):
-        try:
-            params.append(int(request.args['user_id']))
-            where.append('user_id = %s')
-        except ValueError:
-            return jsonify({'error': 'user_id must be an integer'}), 400
-    if request.args.get('event'):
-        params.append(str(request.args['event'])[:64])
-        where.append('event = %s')
-    params.append(limit)
+        query = parse_auth_events_query(request.args)
+    except RequestValidationError as e:
+        return jsonify({'error': e.public_message}), 400
+    sql, params = build_auth_events_sql(query)
     db = get_db()
     try:
         cursor = db.cursor()
-        cursor.execute(
-            "SELECT id, created_at, event, user_id, username, ip, user_agent, details FROM auth_events "
-            + ("WHERE " + " AND ".join(where) + " " if where else "")
-            + "ORDER BY created_at DESC LIMIT %s",
-            params,
-        )
+        cursor.execute(sql, params)
         rows = cursor.fetchall()
     finally:
         db.close()
-    out = []
-    for r in rows:
-        d = dict(r)
-        d['created_at'] = d['created_at'].isoformat() if d.get('created_at') else None
-        try:
-            d['details'] = json.loads(d['details']) if d.get('details') else None
-        except ValueError:
-            pass
-        out.append(d)
-    return jsonify({'events': out}), 200
+    has_more = len(rows) > query['limit']
+    out = [public_auth_event(dict(r)) for r in rows[:query['limit']]]
+    return jsonify({'events': out, 'limit': query['limit'], 'offset': query['offset'],
+                    'has_more': has_more}), 200
