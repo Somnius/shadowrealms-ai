@@ -235,6 +235,34 @@ def ensure_messages_ai_message_kind_column(cursor):
 
 
 @once_per_process
+def ensure_messages_reply_to_column(cursor):
+    """messages.reply_to_id: the message a chat line replies to (NULL once that one is deleted)."""
+    db_type = os.getenv("DATABASE_TYPE", "sqlite").lower()
+    if db_type == "postgresql":
+        cursor.execute(
+            "ALTER TABLE messages ADD COLUMN IF NOT EXISTS reply_to_id INTEGER "
+            "REFERENCES messages(id) ON DELETE SET NULL"
+        )
+        cursor.execute(
+            "CREATE INDEX IF NOT EXISTS idx_messages_reply_to ON messages(reply_to_id) "
+            "WHERE reply_to_id IS NOT NULL"
+        )
+    else:
+        cursor.execute(
+            "SELECT name FROM sqlite_master WHERE type='table' AND name='messages'"
+        )
+        if not cursor.fetchone():
+            return
+        cursor.execute("PRAGMA table_info(messages)")
+        cols = [row["name"] for row in cursor.fetchall()]
+        if "reply_to_id" not in cols:
+            cursor.execute(
+                "ALTER TABLE messages ADD COLUMN reply_to_id INTEGER "
+                "REFERENCES messages(id) ON DELETE SET NULL"
+            )
+
+
+@once_per_process
 def ensure_locations_dice_leniency_floor_column(cursor):
     """Per-room Storyteller leniency (minimum die floor); NULL = normal RNG."""
     db_type = os.getenv("DATABASE_TYPE", "sqlite").lower()
@@ -1042,6 +1070,7 @@ def migrate_db():
                 ensure_users_display_timezone_column(cursor)
                 ensure_messages_ai_message_kind_column(cursor)
                 ensure_messages_speaker_mode_column(cursor)
+                ensure_messages_reply_to_column(cursor)
                 ensure_locations_dice_leniency_floor_column(cursor)
                 ensure_locations_player_access_columns(cursor)
                 ensure_character_portrait_url_column(cursor)
@@ -1427,6 +1456,7 @@ def migrate_db():
         ensure_character_downtime_requests_table(cursor)
         ensure_messages_ai_message_kind_column(cursor)
         ensure_messages_speaker_mode_column(cursor)
+        ensure_messages_reply_to_column(cursor)
         ensure_locations_dice_leniency_floor_column(cursor)
         ensure_locations_player_access_columns(cursor)
         ensure_dice_tables(cursor, 'sqlite')

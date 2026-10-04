@@ -218,7 +218,19 @@ class RAGService:
         except Exception as e:
             logger.error(f"Error storing message embedding: {e}")
             return None
-    
+
+    def delete_message_embeddings(self, message_ids: List[int], campaign_id: int) -> None:
+        """Drop the embeddings of deleted chat messages (ids as store_message_embedding made them)."""
+        if not message_ids:
+            return
+        try:
+            if 'messages' not in self.collections:
+                self.collections['messages'] = 'message_memory'
+            collection = self._get_collection('messages')
+            collection.delete(ids=[f"msg_{int(mid)}_{int(campaign_id)}" for mid in message_ids])
+        except Exception as e:
+            logger.warning(f"Could not delete message embeddings: {e}")
+
     def retrieve_relevant_messages(self, query: str, campaign_id: int, location_id: int = None, 
                                      limit: int = 5, min_relevance: float = 0.7) -> List[Dict[str, Any]]:
         """Retrieve semantically relevant messages from conversation history"""

@@ -17,6 +17,7 @@ from database import (
     ensure_locations_player_access_columns,
     ensure_users_player_profile_columns,
     ensure_campaign_players_active_character_id_column,
+    ensure_messages_reply_to_column,
 )
 from services.location_access import (
     closed_location_error_response,
@@ -25,6 +26,16 @@ from services.location_access import (
 from services.playing_character import effective_playing_character_id
 from services.assistant_grants import ALLOWED_ROLES, assistant_post_allowed
 from services.dice_markers import is_dice_kind, sanitize_marker
+from services.message_actions import (
+    delete_decision,
+    dice_pair_kinds,
+    hidden_dice_sql_filter,
+    is_hidden_kind,
+    older_page,
+    parse_older_page,
+    reply_payload,
+    reply_target_error,
+)
 from datetime import datetime
 from services.message_time_format import format_message_time
 import logging
@@ -73,7 +84,44 @@ def _staff_kind_from_row(row) -> Optional[str]:
     return 'staff'
 
 
-def _message_dict_from_row(row) -> dict:
+# One chat row + its author, character and the message it replies to (if any).
+_MESSAGE_SELECT = """
+    SELECT
+        m.id,
+        m.campaign_id,
+        m.location_id,
+        m.user_id,
+        m.character_id,
+        m.message_type,
+        m.content,
+        m.role,
+        m.created_at,
+        u.username,
+        u.role as poster_role,
+        u.player_avatar_url as player_avatar_url,
+        c.name as character_name,
+        c.portrait_url as character_portrait_url,
+        m.ai_message_kind,
+        m.speaker_mode,
+        camp.created_by as campaign_created_by,
+        rm.id as reply_id,
+        SUBSTR(rm.content, 1, 400) as reply_content,
+        rm.role as reply_role,
+        rm.speaker_mode as reply_speaker_mode,
+        rm.ai_message_kind as reply_kind,
+        ru.username as reply_username,
+        rc.name as reply_character_name
+    FROM messages m
+    JOIN users u ON m.user_id = u.id
+    JOIN campaigns camp ON m.campaign_id = camp.id
+    LEFT JOIN characters c ON m.character_id = c.id
+    LEFT JOIN messages rm ON rm.id = m.reply_to_id
+    LEFT JOIN users ru ON ru.id = rm.user_id
+    LEFT JOIN characters rc ON rc.id = rm.character_id
+"""
+
+
+def _message_dict_from_row(row, allow_hidden: bool = True) -> dict:
     cid = row.get('character_id')
     raw_sm = row.get('speaker_mode')
     if raw_sm:
@@ -103,6 +151,7 @@ def _message_dict_from_row(row) -> dict:
         'poster_role': (row.get('poster_role') or row.get('user_role') or ''),
         'speaker_mode': sm,
         'staff_kind': staff_kind,
+        'reply_to': reply_payload(row, allow_hidden),
     }
 
 @messages_bp.route('/campaigns/<int:campaign_id>/locations/<int:location_id>', methods=['GET'])
@@ -114,6 +163,9 @@ def get_messages(campaign_id, location_id):
     - limit / offset: classic pagination (default limit 50).
     - since_id: only messages with id > since_id (for real-time polling).
     - recent=1: last N messages by id (newest first in DB, returned ascending).
+    - before_id=<id>&limit=<n> (n <= 100, default 50): older history, the n messages before
+      before_id in chronological order, as {"messages": [...], "has_more": bool}.
+    Every message carries reply_to: {id, author, excerpt, role} or null.
     """
     try:
         user_id = _int_jwt_user_id(get_jwt_identity())
@@ -124,12 +176,14 @@ def get_messages(campaign_id, location_id):
         offset = request.args.get('offset', 0, type=int)
         since_id = request.args.get('since_id', type=int)
         recent = request.args.get('recent', type=int) == 1
-        
+        before_id = request.args.get('before_id')
+
         conn = get_db()
         cursor = conn.cursor()
         ensure_character_portrait_url_column(cursor)
         ensure_messages_ai_message_kind_column(cursor)
         ensure_messages_speaker_mode_column(cursor)
+        ensure_messages_reply_to_column(cursor)
         ensure_locations_player_access_columns(cursor)
         ensure_users_player_profile_columns(cursor)
         conn.commit()
@@ -172,32 +226,28 @@ def get_messages(campaign_id, location_id):
             campaign_creator_id is not None and str(campaign_creator_id) == str(user_id)
         )
         
-        base_select = """
-            SELECT 
-                m.id,
-                m.campaign_id,
-                m.location_id,
-                m.user_id,
-                m.character_id,
-                m.message_type,
-                m.content,
-                m.role,
-                m.created_at,
-                u.username,
-                u.role as poster_role,
-                u.player_avatar_url as player_avatar_url,
-                c.name as character_name,
-                c.portrait_url as character_portrait_url,
-                m.ai_message_kind,
-                m.speaker_mode,
-                camp.created_by as campaign_created_by
-            FROM messages m
-            JOIN users u ON m.user_id = u.id
-            JOIN campaigns camp ON m.campaign_id = camp.id
-            LEFT JOIN characters c ON m.character_id = c.id
-            WHERE m.campaign_id = %s AND m.location_id = %s
-        """
-        
+        base_select = _MESSAGE_SELECT + " WHERE m.campaign_id = %s AND m.location_id = %s"
+        # Hidden rolls are filtered in SQL, so LIMIT counts only rows this viewer sees.
+        if not allow_hidden_dice:
+            base_select += hidden_dice_sql_filter()
+
+        older = parse_older_page(before_id, request.args.get('limit')) if before_id is not None else None
+        if before_id is not None and older is None:
+            return jsonify({'error': 'before_id must be a positive message id', 'code': 'invalid_before_id'}), 400
+
+        if older is not None:
+            # Older history: the page before before_id, chronological, plus whether more exist.
+            b_id, lim = older
+            cursor.execute(
+                base_select + " AND m.id < %s ORDER BY m.id DESC LIMIT %s",
+                (campaign_id, location_id, b_id, lim + 1),
+            )
+            page, has_more = older_page(cursor.fetchall(), lim)
+            return jsonify({
+                'messages': [_message_dict_from_row(r, allow_hidden_dice) for r in page],
+                'has_more': has_more,
+            }), 200
+
         if since_id is not None and since_id > 0:
             lim = min(max(request.args.get('limit', 100, type=int), 1), 200)
             cursor.execute(
@@ -215,18 +265,17 @@ def get_messages(campaign_id, location_id):
                 base_select + " ORDER BY m.created_at ASC LIMIT %s OFFSET %s",
                 (campaign_id, location_id, limit, offset),
             )
-        
+
         rows = cursor.fetchall()
         if recent:
             rows = list(reversed(rows))
 
         messages = []
         for row in rows:
-            mk = (row.get('ai_message_kind') or '').strip().lower()
-            if (mk.startswith('dice_animation_hidden') or mk.startswith('dice_roll_hidden')) and not allow_hidden_dice:
+            if is_hidden_kind(row.get('ai_message_kind')) and not allow_hidden_dice:
                 continue
-            messages.append(_message_dict_from_row(row))
-        
+            messages.append(_message_dict_from_row(row, allow_hidden_dice))
+
         return jsonify(messages), 200
         
     except Exception as e:
@@ -475,6 +524,18 @@ def save_message(campaign_id, location_id):
         
         if not content.strip():
             return jsonify({'error': 'Message content cannot be empty'}), 400
+
+        raw_reply = data.get('reply_to_id')
+        reply_to_id = None
+        if raw_reply is not None and raw_reply != '':
+            if isinstance(raw_reply, bool):
+                return jsonify({'error': 'reply_to_id must be a message id', 'code': 'invalid_reply_to'}), 400
+            try:
+                reply_to_id = int(raw_reply)
+            except (TypeError, ValueError):
+                return jsonify({'error': 'reply_to_id must be a message id', 'code': 'invalid_reply_to'}), 400
+            if reply_to_id <= 0:
+                return jsonify({'error': 'reply_to_id must be a message id', 'code': 'invalid_reply_to'}), 400
         
         conn = get_db()
         cursor = conn.cursor()
@@ -484,6 +545,7 @@ def save_message(campaign_id, location_id):
         ensure_users_player_profile_columns(cursor)
         ensure_campaign_players_active_character_id_column(cursor)
         ensure_messages_speaker_mode_column(cursor)
+        ensure_messages_reply_to_column(cursor)
         conn.commit()
 
         # Campaign ban from the OOC monitor (campaign_bans; site bans are separate)
@@ -707,13 +769,37 @@ def save_message(campaign_id, location_id):
                     if fallback:
                         character_id = fallback['id']
 
+        if reply_to_id is not None:
+            # Same room, still there, and visible to the poster (hidden rolls: staff only).
+            cursor.execute(
+                "SELECT id, campaign_id, location_id, ai_message_kind FROM messages WHERE id = %s",
+                (reply_to_id,),
+            )
+            target = cursor.fetchone()
+            cursor.execute(
+                "SELECT u.role, c.created_by FROM users u, campaigns c WHERE u.id = %s AND c.id = %s",
+                (user_id, campaign_id),
+            )
+            vr = cursor.fetchone() or {}
+            sees_hidden = (vr.get('role') or '').strip().lower() in ('admin', 'helper') or (
+                vr.get('created_by') is not None and str(vr.get('created_by')) == str(user_id)
+            )
+            reply_err = reply_target_error(target, campaign_id, location_id, sees_hidden)
+            if reply_err:
+                conn.rollback()
+                return jsonify({
+                    'error': 'The message you are replying to is not in this room any more.',
+                    'code': reply_err,
+                }), 400
+
         # Insert message
         cursor.execute(
             """
             INSERT INTO messages (
                 campaign_id, location_id, user_id, character_id,
-                message_type, content, role, created_at, ai_message_kind, speaker_mode
-            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                message_type, content, role, created_at, ai_message_kind, speaker_mode,
+                reply_to_id
+            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             RETURNING id
             """,
             (
@@ -727,9 +813,10 @@ def save_message(campaign_id, location_id):
                 datetime.now().isoformat(),
                 ai_message_kind,
                 speaker_mode,
+                reply_to_id,
             ),
         )
-        
+
         result = cursor.fetchone()
         message_id = result['id']
         conn.commit()
@@ -763,35 +850,8 @@ def save_message(campaign_id, location_id):
             logger.warning(f"Failed to embed message: {e}")
         
         # Fetch the saved message with joined data
-        cursor.execute(
-            """
-            SELECT 
-                m.id,
-                m.campaign_id,
-                m.location_id,
-                m.user_id,
-                m.character_id,
-                m.message_type,
-                m.content,
-                m.role,
-                m.created_at,
-                u.username,
-                u.role as poster_role,
-                u.player_avatar_url as player_avatar_url,
-                c.name as character_name,
-                c.portrait_url as character_portrait_url,
-                m.ai_message_kind,
-                m.speaker_mode,
-                camp.created_by as campaign_created_by
-            FROM messages m
-            JOIN users u ON m.user_id = u.id
-            JOIN campaigns camp ON m.campaign_id = camp.id
-            LEFT JOIN characters c ON m.character_id = c.id
-            WHERE m.id = %s
-            """,
-            (message_id,),
-        )
-        
+        cursor.execute(_MESSAGE_SELECT + " WHERE m.id = %s", (message_id,))
+
         row = cursor.fetchone()
         saved_message = _message_dict_from_row(row)
         
@@ -819,41 +879,82 @@ def save_message(campaign_id, location_id):
 @messages_bp.route('/messages/<int:message_id>', methods=['DELETE'])
 @jwt_required()
 def delete_message(message_id):
-    """Delete a message (admin or message author only)"""
+    """
+    Delete a message (services/message_actions.py delete_decision):
+    - the chronicle's owner (Storyteller) and site admins: any message;
+    - players: their own messages, but not dice rows or AI (Storyteller) messages.
+    Deleting a roll's result line or marker removes both rows of that roll.
+    Returns {"deleted_ids": [...]}; 403 with code message_not_yours / dice_message_staff_only /
+    ai_message_staff_only. The messages trigger bumps the room's reset counter, so other clients
+    refetch the room (SSE "changed" with deleted=true).
+    """
     try:
-        user_id = int(get_jwt_identity())
-        
+        user_id = _int_jwt_user_id(get_jwt_identity())
+        if user_id is None:
+            return jsonify({'error': 'Invalid session'}), 401
+
         conn = get_db()
         cursor = conn.cursor()
-        
-        # Check if user is admin or message owner
-        cursor.execute("""
-            SELECT m.user_id, c.created_by, u.role
+
+        cursor.execute(
+            """
+            SELECT m.id, m.user_id, m.role, m.ai_message_kind, m.campaign_id, m.location_id,
+                   c.created_by
             FROM messages m
             JOIN campaigns c ON m.campaign_id = c.id
-            JOIN users u ON u.id = %s
             WHERE m.id = %s
-        """, (user_id, message_id))
-        
+            """,
+            (message_id,),
+        )
         row = cursor.fetchone()
         if not row:
-            return jsonify({'error': 'Message not found'}), 404
-        
-        message_owner_id, campaign_creator_id, user_role = row['user_id'], row['created_by'], row['role']
-        
-        # Only message owner, campaign creator, or admin can delete
-        if user_id != message_owner_id and user_id != campaign_creator_id and user_role != 'admin':
-            return jsonify({'error': 'Unauthorized'}), 403
-        
-        # Delete the message
-        cursor.execute("DELETE FROM messages WHERE id = %s", (message_id,))
+            return jsonify({'error': 'Message not found', 'code': 'message_not_found'}), 404
+
+        cursor.execute("SELECT role FROM users WHERE id = %s", (user_id,))
+        actor = cursor.fetchone() or {}
+        site_role = (actor.get('role') or '').strip().lower()
+
+        # Not a member and not staff: same answer as a missing message (no probing of ids).
+        if not _campaign_accessible_to_viewer(cursor, row['campaign_id'], user_id):
+            return jsonify({'error': 'Message not found', 'code': 'message_not_found'}), 404
+
+        allowed, code = delete_decision(row, user_id, site_role, row.get('created_by'))
+        if not allowed:
+            text = {
+                'dice_message_staff_only': 'Only the Storyteller or an admin can delete dice rolls.',
+                'ai_message_staff_only': 'Only the Storyteller or an admin can delete Storyteller messages.',
+            }.get(code, 'You can only delete your own messages.')
+            return jsonify({'error': text, 'code': code}), 403
+
+        pair = dice_pair_kinds(row.get('ai_message_kind'))
+        if pair:
+            placeholders = ', '.join(['%s'] * len(pair))
+            cursor.execute(
+                f"""
+                DELETE FROM messages
+                WHERE campaign_id = %s AND location_id = %s
+                  AND LOWER(COALESCE(ai_message_kind, '')) IN ({placeholders})
+                RETURNING id
+                """,
+                (row['campaign_id'], row['location_id'], *pair),
+            )
+        else:
+            cursor.execute("DELETE FROM messages WHERE id = %s RETURNING id", (message_id,))
+        deleted_ids = sorted(int(r['id']) for r in cursor.fetchall())
         conn.commit()
-        
-        logger.info(f"Message deleted: ID={safe_log_value(message_id)} by User={safe_log_value(user_id)}")
-        
-        return jsonify({'message': 'Message deleted successfully'}), 200
-        
+
+        logger.info("Messages deleted: IDs=%s by User=%s", deleted_ids, user_id)
+
+        # A deleted line shouldn't come back as AI memory (best effort; never fails the delete).
+        try:
+            from services.rag_service import get_rag_service
+
+            get_rag_service().delete_message_embeddings(deleted_ids, row['campaign_id'])
+        except Exception as e:
+            logger.warning("Failed to drop message embeddings: %s", safe_log_value(e))
+
+        return jsonify({'message': 'Message deleted successfully', 'deleted_ids': deleted_ids}), 200
+
     except Exception as e:
         logger.error(f"Error deleting message: {e}")
         return jsonify({'error': 'Failed to delete message'}), 500
-
