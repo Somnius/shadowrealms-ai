@@ -4,12 +4,14 @@ import { Badge, Button, Checkbox, EmptyState, Input, Modal, Panel, Select, Tabs,
 import { api } from '../utils/api';
 import EditionBadge from '../components/EditionBadge';
 import { editionLabel } from '../rules/rulesEdition';
-import { getLanguage, getLocale, t } from '../i18n';
+import { t } from '../i18n';
 import AiProvidersPanel from './admin/AiProvidersPanel';
+import SecurityPanel from './admin/SecurityPanel';
+import formatWhen from './admin/formatWhen';
 import './admin/admin.css';
 
 /** Admin sections, in tab order; each is a sub-route (/admin/<id>, overview at /admin). */
-export const ADMIN_SECTIONS = ['home', 'invites', 'chronicles', 'users', 'downtime', 'moderation', 'ai'];
+export const ADMIN_SECTIONS = ['home', 'invites', 'chronicles', 'users', 'downtime', 'moderation', 'security', 'ai'];
 
 export const sectionLabels = () => ({
   home: t('admin:nav.home', 'Overview'),
@@ -18,6 +20,7 @@ export const sectionLabels = () => ({
   users: t('admin:nav.users', 'Users'),
   downtime: t('admin:nav.downtime', 'Downtime requests'),
   moderation: t('admin:nav.moderation', 'Moderation log'),
+  security: t('admin:nav.security', 'Logins & lockouts'),
   ai: t('admin:nav.ai', 'AI system'),
 });
 
@@ -28,24 +31,9 @@ const SECTION_ICONS = {
   users: 'users',
   downtime: 'hourglass',
   moderation: 'scroll',
+  security: 'lock-chain',
   ai: 'ai-sigil',
 };
-
-/** Date + time in the admin's display timezone (browser zone when unset), in the UI language. */
-function formatWhen(value, timeZone) {
-  if (!value) return '—';
-  const d = value instanceof Date ? value : new Date(value);
-  if (Number.isNaN(d.getTime())) return '—';
-  const opts = { year: 'numeric', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', second: '2-digit' };
-  if (getLanguage() === 'el') opts.hourCycle = 'h23';
-  else opts.hour12 = true;
-  if (timeZone) opts.timeZone = timeZone;
-  try {
-    return new Intl.DateTimeFormat(getLocale(), opts).format(d);
-  } catch (e) {
-    return d.toLocaleString();
-  }
-}
 
 /** Yes/No confirmation in the design-system modal (replaces the legacy ConfirmDialog here). */
 function AdminConfirm({ open, title, message, confirmText, onConfirm, onCancel, busy = false }) {
@@ -946,6 +934,7 @@ function AdminPage({ token, user, displayTimezone = null, onAdminOpenCampaign = 
         <li><strong>{t('admin:nav.users', 'Users')}</strong> — {t('admin:home.users', 'edit accounts, grant Helper ST privileges (multi-chronicle + self-switch PC), reset passwords, ban or unban users.')}</li>
         <li><strong>{t('admin:nav.downtime', 'Downtime requests')}</strong> — {t('admin:home.downtime', 'sheet change requests from players; approve or reject with a reason.')}</li>
         <li><strong>{t('admin:nav.moderation', 'Moderation log')}</strong> — {t('admin:home.moderation', 'recent admin actions for audit and follow-up.')}</li>
+        <li><strong>{t('admin:nav.security', 'Logins & lockouts')}</strong> — {t('admin:home.security', 'unlock an account or address after failed sign-ins; read the login audit (sign-ins, failures, lockouts, logouts).')}</li>
         <li><strong>{t('admin:nav.ai', 'AI system')}</strong> — {t('admin:home.ai', 'local model, global master prompt, model per role, cloud keys, classifier and embeddings.')}</li>
       </ul>
     </div>
@@ -1398,6 +1387,7 @@ function AdminPage({ token, user, displayTimezone = null, onAdminOpenCampaign = 
     users: renderUsers,
     downtime: renderDowntime,
     moderation: renderModeration,
+    security: () => <SecurityPanel token={token} displayTimezone={displayTimezone} showSuccess={showSuccess} showError={showError} />,
     ai: renderAi,
   };
   const labels = sectionLabels();

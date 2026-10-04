@@ -7,6 +7,7 @@
     "users": "Users",
     "downtime": "Downtime requests",
     "moderation": "Moderation log",
+    "security": "Logins & lockouts",
     "ai": "AI system",
     "label": "Admin sections"
   },
@@ -419,6 +420,72 @@
     "empty": "No logged actions yet",
     "userN": "user #{{id}}"
   },
+  "security": {
+    "lead": "Failed sign-ins lock an account and an address for a short time. Unlock someone who is locked out below, and check the login audit when something looks wrong.",
+    "ipInvalid": "Enter one exact IPv4 or IPv6 address (no wildcards or ranges).",
+    "unlock": {
+      "title": "Unlock sign-in",
+      "lead": "After too many failed sign-ins the account and the address are locked for a while. Unlocking clears the failure counters and locks right away. It does not change the password and does not unban a banned user.",
+      "username": "Username",
+      "ip": "IP address",
+      "ipHint": "One exact address, e.g. 203.0.113.7 or 2001:db8::1.",
+      "submit": "Unlock",
+      "needOne": "Enter a username, an IP address, or both.",
+      "failed": "Unlock failed",
+      "cleared_one": "Cleared {{count}} lock or failure counter.",
+      "cleared_other": "Cleared {{count}} locks and failure counters.",
+      "nothing": "Nothing was locked for that username or address.",
+      "done": "Unlock applied."
+    },
+    "audit": {
+      "title": "Login audit",
+      "lead": "Sign-ins, failures, lockouts, sign-outs and password changes, newest first. Rows are kept for 180 days. Passwords and tokens are never logged.",
+      "filters": "Filter the login audit",
+      "username": "Username",
+      "usernameHint": "Exact name, any case.",
+      "event": "Event",
+      "allEvents": "All events",
+      "ip": "IP address",
+      "pageSize": "Rows per page",
+      "reset": "Clear filters",
+      "empty": "No events match these filters.",
+      "loadFailed": "Could not load the login audit",
+      "unlockThis": "Unlock…",
+      "pages": "Login audit pages",
+      "prev": "Newer",
+      "next": "Older",
+      "range": "Rows {{from}}–{{to}}",
+      "col": {
+        "when": "When",
+        "event": "Event",
+        "user": "User",
+        "ip": "IP address",
+        "device": "Browser / device",
+        "details": "Details"
+      }
+    },
+    "event": {
+      "login": "Signed in",
+      "login_failed": "Failed sign-in",
+      "login_blocked": "Sign-in blocked (locked)",
+      "login_disabled": "Sign-in refused (account disabled)",
+      "lockout": "Locked out",
+      "logout": "Signed out",
+      "logout_all": "Signed out everywhere",
+      "refresh_reuse": "Reused session token (sessions revoked)",
+      "register": "Registered",
+      "invite_invalid": "Invalid invite code",
+      "password_changed": "Password changed",
+      "password_change_failed": "Password change failed"
+    },
+    "details": {
+      "knownUser": "existing account",
+      "unknownUser": "no such account",
+      "lockedFor": "locked for {{minutes}} min",
+      "retryAfter": "retry in {{seconds}} s",
+      "role": "role: {{role}}"
+    }
+  },
   "home": {
     "title": "Admin panel",
     "lead": "This area is for site administrators only. Each tab opens one tool; your changes apply to the whole site (users, invites and moderation).",
@@ -427,6 +494,7 @@
     "users": "edit accounts, grant Helper ST privileges (multi-chronicle + self-switch PC), reset passwords, ban or unban users.",
     "downtime": "sheet change requests from players; approve or reject with a reason.",
     "moderation": "recent admin actions for audit and follow-up.",
+    "security": "unlock an account or address after failed sign-ins; read the login audit (sign-ins, failures, lockouts, logouts).",
     "ai": "local model, global master prompt, model per role, cloud keys, classifier and embeddings."
   },
   "loading": "Loading…"

@@ -96,3 +96,14 @@ test('the admin tabs are translated to Greek', async () => {
   expect(screen.getByRole('tab', { name: 'Ημερολόγιο ελέγχου' })).toHaveAttribute('aria-selected', 'true');
   await waitFor(() => expect(global.fetch).toHaveBeenCalled());
 });
+
+test('the Logins & lockouts tab opens the unlock form and the login audit', async () => {
+  global.fetch = jest.fn(async () => ({ ok: true, status: 200, json: async () => ({ events: [], has_more: false }) }));
+  mount('/admin/security');
+  await flush();
+  expect(screen.getByRole('tab', { name: 'Logins & lockouts' })).toHaveAttribute('aria-selected', 'true');
+  expect(screen.getByTestId('security-panel')).toBeInTheDocument();
+  expect(screen.getByRole('heading', { name: 'Unlock sign-in' })).toBeInTheDocument();
+  expect(screen.getByRole('heading', { name: 'Login audit' })).toBeInTheDocument();
+  expect(global.fetch.mock.calls.some(([u]) => String(u).startsWith('/api/admin/auth-events?'))).toBe(true);
+});
