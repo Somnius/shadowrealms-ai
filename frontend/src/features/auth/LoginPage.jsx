@@ -4,7 +4,7 @@ import { Button, Card, CandleGlow, FogLayer, Glyph, Grain, Input, SigilReveal, T
 import { useAuth } from '../../app/AuthContext';
 import { afterLoginPath } from '../../app/guards';
 import Footer from '../../components/Footer';
-import PasswordRules, { passwordProblem } from './PasswordRules';
+import PasswordRules, { brokenRule, passwordProblem } from './PasswordRules';
 import LanguageSwitch from '../../app/LanguageSwitch';
 import { t } from '../../i18n';
 import './auth.css';
@@ -14,6 +14,7 @@ const SESSION_NOTICE = {
   revoked: () => t('auth:session.revoked', 'You were signed out, for example because the password changed or someone chose “Sign out everywhere”. Sign in again.'),
   invalid: () => t('auth:session.invalid', 'Your sign-in is no longer valid. Sign in again.'),
   elsewhere: () => t('auth:session.elsewhere', 'You signed out in another tab.'),
+  signedOutAll: () => t('auth:session.signedOutAll', 'You were signed out on all devices.'),
 };
 
 function LoginForm({ onDone }) {
@@ -59,6 +60,7 @@ function RegisterForm({ onDone }) {
   const [pwError, setPwError] = useState('');
   const [pw, setPw] = useState('');
   const [names, setNames] = useState({ username: '', email: '' });
+  const [pwRule, setPwRule] = useState(null);
   const submit = async (e) => {
     e.preventDefault();
     const fd = new FormData(e.currentTarget);
@@ -69,9 +71,11 @@ function RegisterForm({ onDone }) {
     setError('');
     if (local) {
       setPwError(local);
+      setPwRule(brokenRule(String(fd.get('password') || ''), { username: String(fd.get('username') || ''), email: String(fd.get('email') || '') }));
       return;
     }
     setPwError('');
+    setPwRule(null);
     setBusy(true);
     const r = await register({
       username: String(fd.get('username') || '').trim(),
@@ -83,8 +87,10 @@ function RegisterForm({ onDone }) {
     if (r.ok) {
       toast({ tone: 'ok', title: t('auth:register.done', 'Account created. Welcome to the shadows.') });
       onDone();
-    } else if (r.code && String(r.code).startsWith('PASSWORD_')) setPwError(r.error);
-    else setError(r.error);
+    } else if (r.code && String(r.code).startsWith('PASSWORD_')) {
+      setPwError(r.error);
+      setPwRule(brokenRule('', null, r.code));
+    } else setError(r.error);
   };
   const onNames = (e) => {
     const { name, value } = e.target;
@@ -104,9 +110,10 @@ function RegisterForm({ onDone }) {
         onChange={(e) => {
           setPw(e.target.value);
           if (pwError) setPwError('');
+          if (pwRule) setPwRule(null);
         }}
         error={pwError || undefined}
-        hint={<PasswordRules password={pw} username={names.username} email={names.email} />}
+        hint={<PasswordRules password={pw} username={names.username} email={names.email} broken={pwRule} />}
       />
       <Input
         name="invite_code"

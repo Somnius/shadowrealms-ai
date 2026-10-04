@@ -135,3 +135,37 @@ test('a Storyteller outage gives one retryable failure (no toast); retry asks ag
   expect(saves()).toHaveLength(1);
   expect(calls.some((x) => x.body && x.body.role === 'assistant' && x.body.content === 'At last.')).toBe(true);
 });
+
+test('an OOC warning is shown as a translated notice, not the server markdown', async () => {
+  const { api } = fakeApi({
+    'POST /campaigns/3/locations/4': () => ({
+      ok: true,
+      status: 201,
+      data: { data: { id: 10 }, ooc_warning: '⚠️ **OOC VIOLATION WARNING (1/3)**', ooc_warning_info: { count: 1, threshold: 3, banned: false } },
+    }),
+    'POST /ai/chat': () => ({ ok: true, status: 200, data: { response: null, ooc_no_reply: true } }),
+  });
+  const c = ctx({ api, location: ooc, speakAs: 'player', onNotice: jest.fn() });
+  await sendChatMessage(c, '*hisses*');
+  expect(c.onNotice).toHaveBeenCalledTimes(1);
+  const n = c.onNotice.mock.calls[0][0];
+  expect(n.tone).toBe('warn');
+  expect(n.title).toBe('Out-of-character room: warning 1 of 3');
+  expect(n.body).toContain('Warnings left before a temporary bar from this chronicle: 2.');
+  expect(`${n.title} ${n.body}`).not.toMatch(/\*\*|⚠/);
+  expect(c.onError).not.toHaveBeenCalled();
+});
+
+test('an OOC ban (403) shows the ban notice', async () => {
+  const { api } = fakeApi({
+    'POST /campaigns/3/locations/4': () => ({
+      ok: false,
+      status: 403,
+      data: { error: 'OOC violation - temporarily banned', ooc_warning_info: { count: 3, threshold: 3, banned: true, ban_hours: 24, until: '2026-10-05T07:00:00' } },
+    }),
+  });
+  const c = ctx({ api, location: ooc, speakAs: 'player', onNotice: jest.fn() });
+  await expect(sendChatMessage(c, '*hisses*')).resolves.toBe(false);
+  expect(c.onNotice.mock.calls[0][0]).toMatchObject({ tone: 'danger', title: 'Temporarily barred from this chronicle' });
+  expect(c.onNotice.mock.calls[0][0].body).toContain('24 hours');
+});

@@ -9,7 +9,8 @@ import { errorText } from '../../app/http';
 import { getTimezoneSelectOptions } from '../../utils/timezones';
 import { formatDateTimeInZone } from '../../utils/userTimeFormat';
 import { t } from '../../i18n';
-import PasswordRules, { passwordProblem } from '../auth/PasswordRules';
+import { useSignOutEverywhere } from '../../app/SignOutEverywhere';
+import PasswordRules, { brokenRule, passwordProblem } from '../auth/PasswordRules';
 import './profile.css';
 
 const MAX_IMAGE = 360000;
@@ -85,7 +86,10 @@ function ChangePasswordPanel() {
     const errs = {};
     if (!current) errs.current = t('auth:pw.currentRequired', 'Enter your current password.');
     const problem = passwordProblem(next, { username: user?.username, email: user?.email });
-    if (problem) errs.next = problem;
+    if (problem) {
+      errs.next = problem;
+      errs.nextRule = brokenRule(next, { username: user?.username, email: user?.email });
+    }
     else if (next === current) errs.next = t('auth:pw.unchanged', 'The new password must differ from the current one.');
     if (!errs.next && again !== next) errs.again = t('auth:pw.mismatch', 'The two new passwords do not match.');
     setErrors(errs);
@@ -95,7 +99,7 @@ function ChangePasswordPanel() {
     setBusy(false);
     if (!r.ok) {
       if (r.code === 'INVALID_CREDENTIALS') setErrors({ current: r.error });
-      else if (r.code && String(r.code).startsWith('PASSWORD_')) setErrors({ next: r.error });
+      else if (r.code && String(r.code).startsWith('PASSWORD_')) setErrors({ next: r.error, nextRule: brokenRule('', null, r.code) });
       else toast({ tone: 'danger', title: r.error });
       return;
     }
@@ -135,9 +139,12 @@ function ChangePasswordPanel() {
           autoComplete="new-password"
           required
           value={next}
-          onChange={(e) => setNext(e.target.value)}
+          onChange={(e) => {
+            setNext(e.target.value);
+            if (errors.nextRule) setErrors((x) => ({ ...x, nextRule: null }));
+          }}
           error={errors.next}
-          hint={<PasswordRules password={next} username={user?.username} email={user?.email} />}
+          hint={<PasswordRules password={next} username={user?.username} email={user?.email} broken={errors.nextRule} />}
         />
         <Input
           type="password"
@@ -159,36 +166,20 @@ function ChangePasswordPanel() {
   );
 }
 
-/** Sign out everywhere (POST /auth/logout-all). */
+/** Sign out everywhere (POST /auth/logout-all), after a confirmation. */
 function SessionsPanel() {
-  const { logout } = useAuth();
-  const { toast } = useToast();
-  const navigate = useNavigate();
-  const [busy, setBusy] = useState(false);
+  const everywhere = useSignOutEverywhere();
   return (
     <Panel title={t('profile:sessions.title', 'Sessions')} icon="lock-chain">
       <p className="sr-muted">
         {t('profile:sessions.body', 'Lost a device or signed in on a shared computer? Sign out everywhere ends every session of your account, this one included.')}
       </p>
       <div className="sr-form__actions">
-        <Button
-          variant="danger"
-          icon="logout"
-          loading={busy}
-          onClick={async () => {
-            setBusy(true);
-            const r = await logout({ everywhere: true });
-            setBusy(false);
-            if (r && r.ok === false) {
-              toast({ tone: 'danger', title: t('shell:menu.logoutAllFailed', 'Could not sign out the other devices. Try again in a moment.') });
-              return;
-            }
-            navigate('/login');
-          }}
-        >
+        <Button variant="danger" icon="logout" onClick={everywhere.ask}>
           {t('shell:menu.logoutAll', 'Sign out everywhere')}
         </Button>
       </div>
+      {everywhere.dialog}
     </Panel>
   );
 }

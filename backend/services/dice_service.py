@@ -70,15 +70,15 @@ class DiceService:
         """Turn a wod_dice.StorytellerRollResult into the API roll_result dict."""
         successes = r.net_successes
         if r.botch:
-            message = "💀 **BOTCH!** No die succeeded and a 1 showed."
+            message = "**BOTCH!** No die succeeded and a 1 showed."
         elif successes == 0:
-            message = "❌ **Failure** - No successes"
+            message = "**Failure** - No successes"
         elif r.exceptional:
-            message = f"🌟 **Exceptional success!** {successes} successes"
+            message = f"**Exceptional success!** {successes} successes"
         elif successes == 1:
-            message = f"✅ Success ({successes} success)"
+            message = f"Success ({successes} success)"
         else:
-            message = f"✅ Success ({successes} successes)"
+            message = f"Success ({successes} successes)"
         return {
             'rules_edition': 'classic',
             'results': list(r.dice),
@@ -119,22 +119,14 @@ class DiceService:
         label = outcome_label(res)
         n = res['successes']
         succ = f"{n} success{'es' if n != 1 else ''}"
-        icons = {
-            'Messy critical': '🩸',
-            'Critical win': '🌟',
-            'Win': '✅',
-            'Bestial failure': '🐺',
-            'Total failure': '❌',
-            'Failure': '❌',
-        }
-        return f"{icons.get(label, '')} **{label}** ({succ} vs difficulty {res['difficulty']})".strip()
+        return f"**{label}** ({succ} vs difficulty {res['difficulty']})"
 
     @staticmethod
     def format_v5_roll_for_chat(roll_data: Dict, character_name: str = None,
                                 action_description: str = None) -> str:
-        header = "🎲 **Dice Roll** (V5)"
+        header = "**Dice Roll** (V5)"
         if character_name:
-            header = f"🎲 **{character_name}** rolls (V5)"
+            header = f"**{character_name}** rolls (V5)"
         if action_description:
             header += f" for **{action_description}**"
         lf = roll_data.get('leniency_floor')
@@ -142,14 +134,11 @@ class DiceService:
             header += f"\n_Leniency floor **{lf}** (no 1s; with 2+ dice, one die ≥ {lf})._\n"
 
         def show(d, hunger):
-            mark = '🩸' if hunger else ''
-            if d == 10:
-                return f"[{mark}⭐{d}]"
             if d >= 6:
-                return f"[{mark}✓{d}]"
+                return f"[✓{d}]"
             if hunger and d == 1:
-                return f"[{mark}💀{d}]"
-            return f"[{mark}{d}]"
+                return f"[✗{d}]"
+            return f"[{d}]"
 
         normal = " ".join(show(d, False) for d in roll_data.get('normal_dice', []))
         hunger = " ".join(show(d, True) for d in roll_data.get('hunger_dice', []))
@@ -206,23 +195,23 @@ class DiceService:
         if attacker_roll['is_botch']:
             winner = 'defender'
             margin = defender_success
-            message = "💀 Attacker botched! Defender wins automatically!"
+            message = "Attacker botched! Defender wins automatically!"
         elif defender_roll['is_botch']:
             winner = 'attacker'
             margin = attacker_success
-            message = "💀 Defender botched! Attacker wins automatically!"
+            message = "Defender botched! Attacker wins automatically!"
         elif attacker_success > defender_success:
             winner = 'attacker'
             margin = attacker_success - defender_success
-            message = f"⚔️ Attacker wins by {margin} success{'es' if margin != 1 else ''}!"
+            message = f"Attacker wins by {margin} success{'es' if margin != 1 else ''}!"
         elif defender_success > attacker_success:
             winner = 'defender'
             margin = defender_success - attacker_success
-            message = f"🛡️ Defender wins by {margin} success{'es' if margin != 1 else ''}!"
+            message = f"Defender wins by {margin} success{'es' if margin != 1 else ''}!"
         else:
             winner = 'tie'
             margin = 0
-            message = "⚖️ Tie! Both sides have equal successes."
+            message = "Tie! Both sides have equal successes."
         
         return {
             'rules_edition': 'classic',
@@ -260,12 +249,8 @@ class DiceService:
         if res['is_total_failure'] and won:
             label = 'Win (0 successes)'
         n = res['successes']
-        icons = {
-            'Messy critical': '🩸', 'Critical win': '🌟', 'Win': '✅',
-            'Bestial failure': '🐺', 'Total failure': '❌', 'Failure': '❌',
-        }
         res['message'] = (
-            f"{icons.get(label, '✅')} **{label}** ({n} success{'es' if n != 1 else ''} "
+            f"**{label}** ({n} success{'es' if n != 1 else ''} "
             f"vs {opponent_successes})"
         )
         return res
@@ -286,12 +271,12 @@ class DiceService:
         if attacker_wins:
             winner, margin = 'attacker', a - d
             if margin == 0:
-                message = "⚔️ Tie on successes: the attacker (acting character) wins with margin 0."
+                message = "Tie on successes: the attacker (acting character) wins with margin 0."
             else:
-                message = f"⚔️ Attacker wins by {margin} success{'es' if margin != 1 else ''}!"
+                message = f"Attacker wins by {margin} success{'es' if margin != 1 else ''}!"
         else:
             winner, margin = 'defender', d - a
-            message = f"🛡️ Defender wins by {margin} success{'es' if margin != 1 else ''}!"
+            message = f"Defender wins by {margin} success{'es' if margin != 1 else ''}!"
         extras = []
         for side, r in (('Attacker', attacker_roll), ('Defender', defender_roll)):
             if r['is_messy_critical']:
@@ -341,7 +326,7 @@ class DiceService:
                     'target_reached': False,
                     'botched': True,
                     'roll_count': roll_num,
-                    'message': f"💀 **BOTCH on roll {roll_num}!** Extended action failed!"
+                    'message': f"**BOTCH on roll {roll_num}!** Extended action failed!"
                 }
             
             total_successes += roll_result['successes']
@@ -353,7 +338,7 @@ class DiceService:
                     'target_reached': True,
                     'botched': False,
                     'roll_count': roll_num,
-                    'message': f"✅ Success! Reached {total_successes} successes in {roll_num} roll{'s' if roll_num != 1 else ''}!"
+                    'message': f"Success! Reached {total_successes} successes in {roll_num} roll{'s' if roll_num != 1 else ''}!"
                 }
         
         # Ran out of rolls
@@ -363,7 +348,7 @@ class DiceService:
             'target_reached': False,
             'botched': False,
             'roll_count': max_rolls,
-            'message': f"❌ Failed to reach target. Only {total_successes}/{target_successes} successes after {max_rolls} rolls."
+            'message': f"Failed to reach target. Only {total_successes}/{target_successes} successes after {max_rolls} rolls."
         }
     
     @staticmethod
@@ -473,9 +458,9 @@ class DiceService:
         Returns:
             Formatted string for chat display
         """
-        header = "🎲 **Dice Roll**"
+        header = "**Dice Roll**"
         if character_name:
-            header = f"🎲 **{character_name}** rolls"
+            header = f"**{character_name}** rolls"
         if action_description:
             header += f" for **{action_description}**"
 
@@ -490,9 +475,9 @@ class DiceService:
         dice_display = []
         for die in roll_data['results']:
             if die == 1:
-                dice_display.append(f"[💀{die}]")  # Botch
+                dice_display.append(f"[✗{die}]")  # Botch
             elif die == 10:
-                dice_display.append(f"[⭐{die}]")  # Perfect
+                dice_display.append(f"[✓{die}]")  # Perfect
             elif die >= roll_data['difficulty']:
                 dice_display.append(f"[✓{die}]")  # Success
             else:

@@ -89,6 +89,7 @@ html, body { height: 100%; }
 .sr-app .sr-rail__initials {
   position: absolute;
   font-family: var(--sr-font-display);
+  font-variant-numeric: lining-nums;
   font-weight: 700;
   font-size: 15px;
   letter-spacing: 0.02em;
@@ -122,6 +123,7 @@ html, body { height: 100%; }
 .sr-app .sr-topbar__text { min-width: 0; }
 .sr-app .sr-topbar__h {
   font-family: var(--sr-font-display);
+  font-variant-numeric: lining-nums;
   font-size: var(--sr-text-lg);
   margin: 0;
   white-space: nowrap;
@@ -272,3 +274,4 @@ html, body { height: 100%; }
 .sr-app .sr-topbar--ambient { position: relative; isolation: isolate; }
 .sr-app .sr-topbar--ambient > :not(.sr-topbar__fog) { position: relative; z-index: 1; }
 .sr-app .sr-topbar__fog { z-index: 0; }
+.sr-app .sr-rail__placeholder .sr-rail__icon { opacity: 0.45; }

@@ -196,7 +196,7 @@ export default function ChronicleSettingsPage() {
   return (
     <div className="sr-chronicle" data-line={lineOf(campaign.game_system) || undefined}>
       <TopBar
-        title={campaign.name}
+        title={<span className="sr-usertitle">{campaign.name}</span>}
         subtitle={t('chronicle:subtitle', 'Details & settings')}
         icon={lineGlyph(campaign.game_system)}
         actions={
@@ -227,7 +227,7 @@ export default function ChronicleSettingsPage() {
               </form>
             ) : (
               <div className="sr-row">
-                <h2 className="sr-chronicle__name">{campaign.name}</h2>
+                <h2 className="sr-chronicle__name sr-usertitle">{campaign.name}</h2>
                 {canManage ? (
                   <Button size="sm" variant="ghost" icon="quill" onClick={() => setEditName(campaign.name || '')}>
                     {t('chronicle:name.edit', 'Rename')}

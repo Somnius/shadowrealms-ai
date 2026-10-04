@@ -102,6 +102,7 @@ class OOCMonitor:
 
         warning_count = self._log_violation(user_id, campaign_id)
         should_ban = warning_count >= self.warning_threshold
+        until = None
 
         if should_ban:
             until = self._issue_campaign_ban(user_id, campaign_id)
@@ -123,6 +124,14 @@ class OOCMonitor:
                 f"You have **{warnings_left} warning(s)** remaining before a temporary ban from this campaign."
             )
 
+        # Structured form for the UI (translated there); warning_msg stays as the legacy text.
+        self.last_warning = {
+            'count': warning_count,
+            'threshold': self.warning_threshold,
+            'banned': bool(should_ban),
+            'ban_hours': self.ban_duration_hours,
+            'until': until.isoformat() if until else None,
+        }
         logger.warning(f"OOC violation by user {user_id} in campaign {campaign_id}. Warning count: {warning_count}")
         return (True, warning_msg, should_ban)
 

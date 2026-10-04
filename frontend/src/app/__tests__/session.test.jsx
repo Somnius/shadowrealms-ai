@@ -100,4 +100,5 @@ test('sign out everywhere only clears the session when the server confirmed it',
   expect(r.ok).toBe(true);
   expect(global.fetch).toHaveBeenCalledWith('/api/auth/logout-all', expect.objectContaining({ method: 'POST' }));
   expect(ref.current.token).toBeNull();
+  expect(ref.current.sessionNotice).toBe('signedOutAll');
 });

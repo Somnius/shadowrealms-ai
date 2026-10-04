@@ -102,7 +102,7 @@ export default function ChannelList({ campaign, locations, currentId, unread, ca
     <nav className="sr-rooms" aria-label={t('play:rooms.label', 'Rooms of {{name}}', { name: campaign?.name || '' })}>
       <header className="sr-rooms__header">
         <div className="sr-rooms__title">
-          <h2 className="sr-rooms__name">{campaign?.name}</h2>
+          <h2 className="sr-rooms__name sr-usertitle">{campaign?.name}</h2>
           <Badge edition={editionLabel(campaign)} tone="neutral" />
         </div>
         <Tooltip content={t('play:rooms.settings', 'Chronicle details & settings')} describe={false} placement="bottom">

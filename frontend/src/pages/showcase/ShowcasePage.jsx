@@ -2,9 +2,9 @@
  * Public theme preview (/showcase): a guided tour of the design system with live components and
  * sample data only (no API calls), so it works signed out. Lazy-loaded from app/App.jsx.
  */
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Button, Card, Glyph, useAtmosphere } from '../../design';
+import { Button, Card, Glyph, useAmbient, useAtmosphere } from '../../design';
 import { useT } from '../../i18n';
 import ChatPreview from './ChatPreview';
 import ComponentsSection from './ComponentsSection';
@@ -66,8 +66,10 @@ function TopBar() {
 
 function FooterCta({ onBack }) {
   const t = useT();
+  const ref = useRef(null);
+  const { paused } = useAmbient(ref); // the candle flickers only while on screen
   return (
-    <footer className="sc-end" data-testid="showcase-section-cta">
+    <footer className="sc-end" data-testid="showcase-section-cta" ref={ref} data-paused={paused ? 'true' : undefined}>
       <Card ornate glow className="sc-end__card">
         <Glyph name="candle" animate size={40} className="sc-end__candle" />
         <h2 className="sc-end__title">{t('showcase:cta.title', 'The night is young.')}</h2>
@@ -113,11 +115,22 @@ export default function ShowcasePage({ onBack }) {
 
   return (
     <div className="sc-page" id="sc-top" data-atmo={level} data-testid="showcase">
-      <a className="sc-skip" href="#sc-main">
+      <a
+        className="sc-skip"
+        href="#sc-main"
+        onClick={(e) => {
+          // Move focus, not just the scroll position, so the next Tab starts inside the tour.
+          const main = document.getElementById('sc-main');
+          if (!main) return;
+          e.preventDefault();
+          main.focus({ preventScroll: true });
+          main.scrollIntoView({ block: 'start' });
+        }}
+      >
         {t('showcase:skip', 'Skip to the tour')}
       </a>
       <TopBar />
-      <main id="sc-main">
+      <main id="sc-main" tabIndex={-1}>
         <Hero />
         <div className="sc-chapters">
           <Editions />

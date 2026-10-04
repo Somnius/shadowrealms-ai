@@ -62,6 +62,7 @@
   gap: var(--sr-space-2);
   margin: 0;
   font-family: var(--sr-font-display);
+  font-variant-numeric: lining-nums;
   font-size: var(--sr-text-lg);
   letter-spacing: var(--sr-tracking-display);
   color: var(--sr-text);
@@ -85,6 +86,7 @@
   background: var(--badge-bg);
   color: var(--badge-fg);
   font-family: var(--sr-font-ui);
+  font-variant-numeric: lining-nums;
   font-size: var(--sr-text-xs);
   font-weight: 600;
   line-height: 1.3;
@@ -109,6 +111,7 @@
   border-radius: var(--sr-radius-sm);
   padding: 2px 8px 2px 6px;
   font-family: var(--sr-font-display);
+  font-variant-numeric: lining-nums;
   letter-spacing: var(--sr-tracking-display);
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(0, 0, 0, 0.2)),
@@ -138,6 +141,7 @@
 .sr-avatar__initials {
   position: relative;
   font-family: var(--sr-font-display);
+  font-variant-numeric: lining-nums;
   font-weight: 700;
   font-size: calc(var(--avatar-size) * 0.36);
   letter-spacing: 0.02em;
@@ -175,6 +179,7 @@
 .sr-divider__text {
   color: var(--sr-text-muted);
   font-family: var(--sr-font-display);
+  font-variant-numeric: lining-nums;
   font-size: var(--sr-text-sm);
   letter-spacing: var(--sr-tracking-display);
 }
@@ -190,7 +195,7 @@
   color: var(--sr-text-2);
 }
 .sr-empty__glyph { color: var(--sr-border-strong); margin-bottom: var(--sr-space-2); }
-.sr-empty__title { margin: 0; font-family: var(--sr-font-display); font-size: var(--sr-text-lg); color: var(--sr-text); }
+.sr-empty__title { margin: 0; font-family: var(--sr-font-display); font-variant-numeric: lining-nums; font-size: var(--sr-text-lg); color: var(--sr-text); }
 .sr-empty__body { max-width: 42ch; font-family: var(--sr-font-body); font-size: var(--sr-text-base); line-height: var(--sr-leading-body); }
 .sr-empty__action { margin-top: var(--sr-space-3); }
 
@@ -274,6 +279,10 @@
   border-radius: var(--sr-radius-full);
 }
 .sr-dots__track:focus-visible { outline: none; box-shadow: var(--sr-focus); }
+@media (max-width: 480px) {
+  .sr-dots { flex-wrap: wrap; max-width: 100%; gap: var(--sr-space-2); }
+  .sr-dots__track { flex-wrap: wrap; gap: 1px; max-width: 100%; }
+}
 .sr-dots__dot {
   --dot-size: 14px;
   display: inline-block;

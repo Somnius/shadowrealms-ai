@@ -57,6 +57,7 @@ export default function V5RerollPanel({ roll, onReroll, onDismiss, busy, elsewhe
         <span className="sr-reroll__picked">
           {t('dice:reroll.picked', '{{n}}/{{max}} picked', { n: selected.length, max: V5_WILLPOWER_REROLL_MAX })}
         </span>
+        <span className="sr-reroll__cost">{t('dice:reroll.cost', 'Costs 1 Willpower')}</span>
         <Button
           variant="arcane"
           size="sm"

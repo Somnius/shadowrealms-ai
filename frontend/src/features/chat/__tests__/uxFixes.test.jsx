@@ -55,3 +55,54 @@ test('in Greek: V5 discipline errors and the default OOC lobby are translated', 
     });
   }
 });
+
+describe('Rouse check lines', () => {
+  const { parseRouseLine } = require('../messageModel');
+  const kind = { ai_message_kind: 'dice_rouse:5' };
+  test('parse the server template, old (emoji) and new', () => {
+    expect(parseRouseLine({ ...kind, content: '🩸 **Yorika** makes a Rouse check: rolled **7** — success, no Hunger gain (Hunger stays **2**).' }))
+      .toEqual({ die: 7, success: true, hungerBefore: 2, hungerAfter: 2, atMax: false });
+    expect(parseRouseLine({ ...kind, content: '**Yorika** makes a Rouse check: rolled **3** — failure, Hunger **2 → 3**.' }))
+      .toEqual({ die: 3, success: false, hungerBefore: 2, hungerAfter: 3, atMax: false });
+    expect(parseRouseLine({ ...kind, content: '**Rouse check**: rolled **1** — failure, failed at Hunger **5** — Hunger cannot rise further; test for **hunger frenzy**.' }))
+      .toMatchObject({ die: 1, success: false, atMax: true });
+    expect(parseRouseLine({ ...kind, content: 'something else' })).toBeNull();
+    expect(parseRouseLine({ ai_message_kind: 'chat_user', content: '**A** makes a Rouse check: rolled **7** — success, no Hunger gain (Hunger stays **2**).' })).toBeNull();
+  });
+});
+
+test('in Greek: a Rouse line renders translated with the blood drop, no emoji or markdown', async () => {
+  const { RouseLine } = require('../Messages');
+  await act(async () => {
+    await setLanguage('el', { remember: false, save: false });
+  });
+  try {
+    const { container } = render(
+      <DesignProvider>
+        <RouseLine rouse={{ die: 3, success: false, hungerBefore: 2, hungerAfter: 3, atMax: false }} />
+      </DesignProvider>
+    );
+    expect(container.textContent).toContain('έριξε 3: αποτυχία, Hunger 2 → 3.');
+    expect(container.textContent).not.toMatch(/\*\*|🩸/);
+    expect(container.querySelector('.sr-rouse-line__glyph')).not.toBeNull();
+  } finally {
+    await act(async () => {
+      await setLanguage('en', { remember: false, save: false });
+    });
+  }
+});
+
+test('a password the server rejected for containing the username marks that rule red', () => {
+  const { default: PasswordRules, brokenRule } = require('../../auth/PasswordRules');
+  expect(brokenRule('', null, 'PASSWORD_CONTAINS_USERNAME')).toBe('name');
+  expect(brokenRule('', null, 'PASSWORD_TOO_SIMPLE')).toBeNull();
+  expect(brokenRule('lefteris-is-here-123', { username: 'lefteris' })).toBe('name');
+  const { container } = render(
+    <DesignProvider>
+      <PasswordRules password="lefteris-is-here-123" username="" broken="name" />
+    </DesignProvider>
+  );
+  const broken = container.querySelectorAll('li.is-broken');
+  expect(broken).toHaveLength(1);
+  expect(broken[0].textContent).toContain('Does not contain your username or email');
+});

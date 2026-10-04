@@ -22,6 +22,14 @@ export function parseStorytellerPool(input) {
  * marker row starts the overlay through useDiceOverlay. Older backends (no server_posted) still get
  * the two rows posted from here (postRollToRoom).
  */
+/** "Willpower −1 (Superficial damage)" from a reroll response, or undefined when none was spent. */
+export function willpowerSpentText(data) {
+  if (!data || !data.willpower_spent) return undefined;
+  const cost = (data.roll_result && data.roll_result.willpower_cost) || '';
+  if (cost === 'aggravated') return t('dice:reroll.spentAggravated', 'Willpower −1 (Aggravated damage: the track was full of Superficial).');
+  return t('dice:reroll.spentSuperficial', 'Willpower −1 (Superficial damage).');
+}
+
 export function useDiceActions({
   api,
   campaign,
@@ -211,6 +219,7 @@ export function useDiceActions({
               String(last.locationId) === String(location?.id)
                 ? t('dice:reroll.done', 'Willpower reroll posted.')
                 : t('dice:reroll.doneElsewhere', 'Willpower reroll posted to the room you rolled in.'),
+            body: willpowerSpentText(r.data),
           });
         }
         setLastV5Roll(null);
@@ -259,7 +268,8 @@ export function useDiceActions({
             ? t('dice:rouse.ok', 'Rouse check: {{die}}, no Hunger gain.', { die: d.die })
             : t('dice:rouse.fail', 'Rouse check: {{die}}, Hunger {{before}} → {{after}}.', { die: d.die, before: d.hunger_before, after: d.hunger_after }),
         });
-        return Number.isFinite(after) ? after : null;
+        // undefined (not null) = posted, but no new Hunger value to show
+        return Number.isFinite(after) ? after : undefined;
       } finally {
         setRousing(false);
       }

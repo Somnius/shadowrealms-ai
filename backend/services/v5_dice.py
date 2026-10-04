@@ -349,5 +349,7 @@ def format_rouse_markdown(res: Dict[str, Any], character_name: Optional[str] = N
         tail = "failed at Hunger **5** — Hunger cannot rise further; test for **hunger frenzy**."
     else:
         tail = f"Hunger **{res['hunger_before']} → {res['hunger_after']}**."
-    prefix = f"🩸 {who} makes a Rouse check" if character_name else "🩸 **Rouse check**"
+    # Fixed English template: the frontend parses it (chat/messageModel.js parseRouseLine) to show
+    # a translated line, so keep the wording in sync with that parser.
+    prefix = f"{who} makes a Rouse check" if character_name else "**Rouse check**"
     return f"{prefix}: rolled **{res['die']}** — {'success' if res['success'] else 'failure'}, {tail}"

@@ -49,7 +49,7 @@ const call = (path, opts) => apiFetch(getCurrentToken(), path, opts);
 /**
  * Session state: short-lived access token in localStorage, refresh token in an HttpOnly cookie
  * (http.js refreshes it on 401 TOKEN_EXPIRED), the /users/me profile, login/register/logout.
- * sessionNotice: why the last session ended on its own ('expired' | 'revoked' | 'invalid' | 'elsewhere').
+ * sessionNotice: why the last session ended on its own ('expired' | 'revoked' | 'invalid' | 'elsewhere' | 'signedOutAll' after a confirmed sign out everywhere).
  */
 export function AuthProvider({ children }) {
   const [token, setToken] = useState(() => {
@@ -102,7 +102,7 @@ export function AuthProvider({ children }) {
       }
       // Sign out everywhere only counts when the server confirmed it; plain logout always clears.
       if (everywhere && !ok) return { ok: false };
-      clearLocal(null);
+      clearLocal(everywhere ? 'signedOutAll' : null);
       return { ok };
     },
     [clearLocal]

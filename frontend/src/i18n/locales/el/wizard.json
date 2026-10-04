@@ -111,7 +111,7 @@
     "backgroundStoryPlaceholder": "Παρελθόν, coterie, pack, cabal, στόχοι…",
     "freebiesSub": "15 πόντοι (+ έως 7 από Flaws) για να ανεβάσεις οτιδήποτε πάνω από τα όρια της δημιουργίας."
   },
-  "created": "Ο χαρακτήρας σφυρηλατήθηκε. Μπες στο χρονικό για να παίξεις.",
+  "created": "Ο χαρακτήρας σφυρηλατήθηκε. Είσαι στο χρονικό: μπορείς να παίξεις αμέσως.",
   "noChronicle": "Για να χρησιμοποιήσεις τη σφυρηλάτηση πρέπει να είσαι μέλος σε τουλάχιστον ένα χρονικό Vampire, Werewolf ή Mage.",
   "back": "Πίσω",
   "field": {
@@ -159,7 +159,7 @@
     "extraNotesPlaceholder": "House rules, έγκριση ST, παραπομπές σε σελίδες…"
   },
   "v5": {
-    "created": "Ο χαρακτήρας έλαβε το Embrace. Μπες στο χρονικό για να παίξεις.",
+    "created": "Ο χαρακτήρας έλαβε το Embrace. Είσαι στο χρονικό: μπορείς να παίξεις αμέσως.",
     "thinMeritPlaceholder": "π.χ. Day Drinker",
     "thinFlawPlaceholder": "π.χ. Baby Teeth",
     "removeThin": "Αφαίρεση thin-blood {{kind}} {{n}}",

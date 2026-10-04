@@ -203,6 +203,7 @@
 
 .sr-app :where(h1, h2, h3, h4) {
   font-family: var(--sr-font-display);
+  font-variant-numeric: lining-nums;
   font-weight: 700;
   line-height: var(--sr-leading-tight);
   letter-spacing: var(--sr-tracking-display);
@@ -256,7 +257,7 @@
 }
 
 /* Text helpers */
-.sr-app .sr-display { font-family: var(--sr-font-display); letter-spacing: var(--sr-tracking-display); }
+.sr-app .sr-display { font-family: var(--sr-font-display); font-variant-numeric: lining-nums; letter-spacing: var(--sr-tracking-display); }
 .sr-app .sr-prose { font-family: var(--sr-font-body); font-size: var(--sr-text-chat); line-height: var(--sr-leading-body); }
 .sr-app .sr-mono { font-family: var(--sr-font-mono); }
 .sr-app .sr-muted { color: var(--sr-text-muted); }
@@ -291,6 +292,15 @@
   font-variant: normal;
 }
 .sr-app .sr-smallcaps { font-variant: small-caps; letter-spacing: 0.04em; }
+/* User-written titles (chronicle names): Cinzel is caps-only, so it would turn a typed name into
+   small caps. Show them as typed, in the display face that has lowercase (and Greek). */
+.sr-app .sr-usertitle {
+  font-family: 'Alegreya', 'EB Garamond', Georgia, serif;
+  font-variant: normal;
+  font-variant-numeric: lining-nums;
+  text-transform: none;
+  letter-spacing: normal;
+}
 
 /* ------------------------------------------------------------------ */
 /* Motion                                                              */

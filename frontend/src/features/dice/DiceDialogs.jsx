@@ -46,9 +46,10 @@ export function RollDialog({ open, onClose, campaign, location, character, speak
     const asChar = speakAs === 'character' && character?.id;
     const before = sheetHunger(character);
     const after = await dice.rouse(hunger);
-    if (after == null) return;
+    if (after === null) return; // failed: keep the dialog open with the error
     // Follow the sheet only if the dialog still showed the sheet's value (a typed-in Hunger stays).
-    if (!asChar || Number(hunger) === before) setHunger(after);
+    if (after !== undefined && (!asChar || Number(hunger) === before)) setHunger(after);
+    onClose(); // the Rouse line is in the chat and the toast shows the result
   };
 
   return (

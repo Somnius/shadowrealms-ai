@@ -118,6 +118,7 @@
   margin-bottom: var(--sr-space-2);
   color: var(--sr-text-2);
   font-family: var(--sr-font-display);
+  font-variant-numeric: lining-nums;
   letter-spacing: var(--sr-tracking-display);
 }
 .sr-dice-viz__stage { position: relative; }
@@ -139,6 +140,7 @@
   gap: var(--sr-space-2);
   margin-top: var(--sr-space-2);
   font-family: var(--sr-font-display);
+  font-variant-numeric: lining-nums;
   font-size: var(--sr-text-lg);
   letter-spacing: var(--sr-tracking-display);
 }

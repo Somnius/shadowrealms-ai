@@ -86,8 +86,10 @@ def test_third_warning_bans_from_that_campaign_only(db, verdict):
     for i in (1, 2):
         v, msg, ban = m.check_message("*hisses*", 7, 5, "OOC", site_role="player")
         assert v and not ban and f"({i}/3)" in msg
+        assert m.last_warning == {"count": i, "threshold": 3, "banned": False, "ban_hours": m.ban_duration_hours, "until": None}
     v, msg, ban = m.check_message("*hisses*", 7, 5, "ooc", site_role="player")
     assert v and ban and "this campaign" in msg
+    assert m.last_warning["banned"] is True and m.last_warning["count"] == 3 and m.last_warning["until"]
     assert set(db["bans"]) == {(7, 5)}
     assert not any("UPDATE USERS" in " ".join(s.split()).upper() for s in db["sql"])
     assert m.check_user_ban(7, 5)[0] is True

@@ -414,7 +414,7 @@ export default function CharacterCreationWizard({
         showError?.(body.error || t('wizard:error.createFailed', 'Could not create character.'));
         return;
       }
-      showSuccess?.(t('wizard:created', 'Character forged. Enter the chronicle to play.'));
+      showSuccess?.(t('wizard:created', 'Character forged. Here is the chronicle: you can play right away.'));
       onDone?.(body, cidNum);
     } catch (e) {
       showError?.(t('wizard:error.network', 'Network error while creating character.'));
@@ -511,7 +511,8 @@ export default function CharacterCreationWizard({
                   padding: '6px 12px',
                   borderRadius: '999px',
                   background: fieldErrors[s.id] ? 'rgba(248,113,113,0.15)' : 'var(--sr-night-800)',
-                  color: fieldErrors[s.id] ? 'var(--sr-blood-300)' : themeAccent,
+                  // small text: blood-400 (4.5:1+) instead of blood-500 for vampire chronicles
+                  color: fieldErrors[s.id] ? 'var(--sr-blood-300)' : themeAccent === 'var(--sr-blood-500)' ? 'var(--sr-blood-400)' : themeAccent,
                   border: `1px solid ${fieldErrors[s.id] ? 'var(--sr-blood-700)' : 'var(--sr-night-600)'}`,
                   cursor: 'pointer',
                   fontFamily: 'var(--sr-font-display)',

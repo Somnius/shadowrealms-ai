@@ -32,5 +32,9 @@
   },
   "language": {
     "label": "Language"
+  },
+  "logoutAll": {
+    "title": "Sign out everywhere?",
+    "body": "This ends every session of your account, on every device and browser, this one included. You will need your password to sign in again."
   }
 }

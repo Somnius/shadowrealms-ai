@@ -38,7 +38,7 @@
   color: var(--sr-accent-text);
 }
 .sr-app .sr-stat .sr-glyph { grid-row: span 2; }
-.sr-app .sr-stat__value { font-family: var(--sr-font-display); font-size: var(--sr-text-xl); color: var(--sr-text); }
+.sr-app .sr-stat__value { font-family: var(--sr-font-display); font-variant-numeric: lining-nums; font-size: var(--sr-text-xl); color: var(--sr-text); }
 .sr-app .sr-stat__label { font-size: var(--sr-text-xs); color: var(--sr-text-muted); text-transform: uppercase; letter-spacing: 0.06em; }
 .sr-app .sr-danger { border-color: rgba(248, 113, 113, 0.4); }
 .sr-app .sr-locs { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--sr-space-3); }

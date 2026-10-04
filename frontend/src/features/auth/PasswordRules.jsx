@@ -39,8 +39,28 @@ export function passwordProblem(password, ctx) {
   return null;
 }
 
-/** The rules under a new-password field; met rules get a check mark as the user types. */
-export default function PasswordRules({ password, username, email }) {
+const CODE_RULE = {
+  PASSWORD_TOO_SHORT: 'length',
+  PASSWORD_TOO_LONG: 'bytes',
+  PASSWORD_COMMON: 'common',
+  PASSWORD_CONTAINS_USERNAME: 'name',
+};
+
+/** Which rule a failed password broke: from the server's error code, else the browser's checks. */
+export function brokenRule(password, ctx, code) {
+  if (code && CODE_RULE[code]) return CODE_RULE[code];
+  if (code) return null;
+  const pw = String(password || '');
+  if (!pw) return null;
+  const c = passwordChecks(pw, ctx);
+  return ['length', 'bytes', 'name'].find((k) => !c[k]) || null;
+}
+
+/**
+ * The rules under a new-password field; met rules get a check mark as the user types, and the
+ * rule that the last submit broke (`broken`, from brokenRule) is shown in red.
+ */
+export default function PasswordRules({ password, username, email, broken }) {
   const c = passwordChecks(password, { username, email });
   const typed = !!password;
   const rules = [
@@ -54,12 +74,14 @@ export default function PasswordRules({ password, username, email }) {
       <span className="sr-pwrules__title">{t('auth:pw.rulesTitle', 'Password rules:')}</span>
       <ul className="sr-pwrules__list">
         {rules.map(([id, label, ok]) => {
-          const met = typed && ok === true;
+          const bad = broken === id;
+          const met = !bad && typed && ok === true;
           return (
-            <li key={id} className={met ? 'is-met' : undefined}>
-              <Glyph name={met ? 'check' : 'minus'} size={12} />
+            <li key={id} className={bad ? 'is-broken' : met ? 'is-met' : undefined}>
+              <Glyph name={bad ? 'warning' : met ? 'check' : 'minus'} size={12} />
               <span>{label}</span>
               {met ? <span className="sr-visually-hidden"> ({t('auth:pw.ruleMet', 'met')})</span> : null}
+              {bad ? <span className="sr-visually-hidden"> ({t('auth:pw.ruleBroken', 'not met')})</span> : null}
             </li>
           );
         })}

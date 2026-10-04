@@ -86,5 +86,20 @@
   "aiFailed": {
     "title": "The Storyteller could not answer.",
     "retry": "Ask again"
+  },
+  "ooc": {
+    "bannedTitle": "Temporarily barred from this chronicle",
+    "bannedBody": "You can’t post in this chronicle for {{hours}} hours: too many in-character lines in the out-of-character room.",
+    "bannedUntil": "You can post again after {{when}}.",
+    "warningTitle": "Out-of-character room: warning {{count}} of {{threshold}}",
+    "warningBody": "This line reads as in-character. Keep roleplay to the story rooms; this room is for talking as players.",
+    "warningsLeft": "Warnings left before a temporary bar from this chronicle: {{left}}.",
+    "warningFallback": "This line reads as in-character. Keep roleplay to the story rooms."
+  },
+  "rouseLine": {
+    "label": "Rouse check",
+    "success": "rolled {{die}}: success, Hunger stays {{hunger}}.",
+    "atMax": "rolled {{die}}: failure at Hunger 5. Hunger cannot rise further; test for hunger frenzy.",
+    "failure": "rolled {{die}}: failure, Hunger {{before}} → {{after}}."
   }
 }

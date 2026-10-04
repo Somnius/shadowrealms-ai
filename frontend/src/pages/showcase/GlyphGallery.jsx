@@ -47,7 +47,7 @@ export function glyphLabel(name) {
   return GAME_TERM_GROUPS.includes(def.group) ? def.label : t(`showcase:glyph.${name}`, def.label);
 }
 
-function Tile({ name, selected, onSelect }) {
+function Tile({ name, selected, onSelect, tabStop }) {
   const [pulse, setPulse] = useState(0);
   const [hot, setHot] = useState(false);
   const label = glyphLabel(name);
@@ -61,6 +61,7 @@ function Tile({ name, selected, onSelect }) {
         type="button"
         className={`sc-glyph${selected ? ' is-selected' : ''}`}
         aria-pressed={selected}
+        tabIndex={tabStop ? 0 : -1}
         onClick={() => onSelect(name)}
         onMouseEnter={wake}
         onMouseLeave={() => setHot(false)}
@@ -156,6 +157,11 @@ function Featured() {
   );
 }
 
+/** Accent- and case-insensitive search key (Greek tonos, final sigma). */
+export function foldSearch(s) {
+  return String(s || '').normalize('NFD').replace(/\p{M}/gu, '').toLowerCase().replace(/ς/g, 'σ');
+}
+
 export default function GlyphGallery() {
   const [query, setQuery] = useState('');
   const [group, setGroup] = useState('all');
@@ -163,15 +169,37 @@ export default function GlyphGallery() {
   const [selected, setSelected] = useState('candle');
 
   const groups = useMemo(() => {
-    const q = query.trim().toLowerCase();
+    const q = foldSearch(query.trim());
     return GROUP_ORDER.filter((g) => GLYPH_GROUPS[g] && (group === 'all' || group === g))
       .map((g) => ({
         id: g,
-        names: GLYPH_GROUPS[g].filter((n) => !q || n.includes(q) || glyphLabel(n).toLowerCase().includes(q) || GLYPHS[n].label.toLowerCase().includes(q)),
+        names: GLYPH_GROUPS[g].filter((n) => !q || foldSearch(n).includes(q) || foldSearch(glyphLabel(n)).includes(q) || foldSearch(GLYPHS[n].label).includes(q)),
       }))
       .filter((g) => g.names.length);
   }, [query, group]);
   const shown = groups.reduce((n, g) => n + g.names.length, 0);
+  // Roving tabindex: the grid is one Tab stop (the selected glyph, else the first shown);
+  // arrow keys, Home and End move between glyphs.
+  const flat = useMemo(() => groups.flatMap((g) => g.names), [groups]);
+  const [cursor, setCursor] = useState(null);
+  const tabStop = flat.includes(cursor) ? cursor : flat.includes(selected) ? selected : flat[0];
+  const onGridKey = (e) => {
+    const tile = e.target.closest && e.target.closest('[data-glyph-tile]');
+    if (!tile) return;
+    const tiles = Array.from(e.currentTarget.querySelectorAll('[data-glyph-tile]'));
+    const i = tiles.indexOf(tile);
+    if (i < 0) return;
+    const top = tile.offsetTop;
+    const row = Array.from(tile.closest('ul').querySelectorAll('[data-glyph-tile]')).filter((b) => b.offsetTop === top);
+    const cols = Math.max(1, row.length);
+    const next = { ArrowRight: i + 1, ArrowLeft: i - 1, ArrowDown: i + cols, ArrowUp: i - cols, Home: 0, End: tiles.length - 1 }[e.key];
+    if (next === undefined) return;
+    e.preventDefault();
+    const target = tiles[Math.min(tiles.length - 1, Math.max(0, next))];
+    if (!target) return;
+    setCursor(target.getAttribute('data-glyph-tile'));
+    target.focus();
+  };
   const total = Object.keys(GLYPHS).length;
 
   return (
@@ -211,7 +239,7 @@ export default function GlyphGallery() {
           </p>
         </div>
         <div className="sc-glyphs__body">
-          <div className="sc-glyphs__groups">
+          <div className="sc-glyphs__groups" onKeyDown={onGridKey}>
             {groups.length === 0 ? (
               <EmptyState glyph="web" title={t('showcase:glyphs.none', 'Nothing in the dark matches “{{q}}”', { q: query })} />
             ) : (
@@ -225,7 +253,7 @@ export default function GlyphGallery() {
                   </h3>
                   <ul className="sc-glyphs__grid">
                     {g.names.map((n) => (
-                      <Tile key={n} name={n} selected={selected === n} onSelect={setSelected} />
+                      <Tile key={n} name={n} selected={selected === n} onSelect={(x) => { setSelected(x); setCursor(x); }} tabStop={tabStop === n} />
                     ))}
                   </ul>
                 </section>

@@ -294,6 +294,7 @@ export default function PlayPage() {
           onSaved: room.resolveOptimistic,
           onAppend: room.appendMessages,
           onError: (msg) => toast({ tone: 'danger', title: msg }),
+          onNotice: (n) => toast({ tone: n.tone, title: n.title, body: n.body, duration: 0 }),
           onAiPending: setAiPending,
           onAiFailed: (f) => setAiFailure({ ...f, locationId: location ? location.id : null }),
           onDiceMarker: dice.startFromMarker,

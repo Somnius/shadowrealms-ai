@@ -31,6 +31,7 @@
   align-items: baseline;
   gap: 0.35em;
   font-family: var(--sr-font-display);
+  font-variant-numeric: lining-nums;
   font-weight: 700;
   font-size: clamp(1.6rem, 5vw, 2.25rem);
   letter-spacing: var(--sr-tracking-display);
@@ -113,6 +114,9 @@
 }
 .sr-app .sr-pwrules__list li.is-met {
   color: var(--sr-ok-400, var(--sr-text));
+}
+.sr-app .sr-pwrules__list li.is-broken {
+  color: var(--sr-danger-400);
 }
 .sr-app .sr-auth__notice {
   display: flex;

@@ -27,7 +27,7 @@ function ChronicleCard({ c }) {
             <ChronicleSigil line={lineOf(c.game_system)} edition={editionOf(c)} size={52} />
           </span>
           <div className="sr-hall__card-title">
-            <h2 className="sr-hall__name">
+            <h2 className="sr-hall__name sr-usertitle">
               <Link to={`/c/${c.id}`} className="sr-hall__link">
                 {c.name}
               </Link>
@@ -75,7 +75,7 @@ function ChronicleCard({ c }) {
 export default function ChronicleHallPage() {
   const api = useApi();
   const { toast } = useToast();
-  const { chronicles, loaded, reload } = useChronicles();
+  const { chronicles, loaded, reload, expectedCount } = useChronicles();
   const [open, setOpen] = useState([]);
   const [joining, setJoining] = useState(null);
 
@@ -125,7 +125,17 @@ export default function ChronicleHallPage() {
             {t('hall:mine', 'Your chronicles')}
           </h2>
           {!loaded ? (
-            <Spinner label={t('common:loading', 'Loading')} />
+            // Placeholders the size of the cards (count from the last visit): no layout shift.
+            <ul className="sr-hall__grid sr-hall__grid--loading" aria-busy="true">
+              <li className="sr-visually-hidden">
+                <Spinner label={t('common:loading', 'Loading')} />
+              </li>
+              {Array.from({ length: Math.max(1, expectedCount) }, (_, i) => (
+                <li key={i} aria-hidden="true">
+                  <div className="sr-hall__placeholder" />
+                </li>
+              ))}
+            </ul>
           ) : chronicles.length === 0 ? (
             <EmptyState
               glyph="web"
