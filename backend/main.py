@@ -51,6 +51,15 @@ def create_app(config_class=Config):
     except Exception as e:  # noqa: BLE001
         logger.warning("Could not start rule book edition backfill: %s", e)
 
+    # Idempotent: rebuild ChromaDB collections embedded with another model than EMBEDDING_MODEL
+    # (services/vector_store.py). Background thread; skipped when the embedder is down.
+    try:
+        from services.vector_store import reembed_in_background
+
+        reembed_in_background(app.config)
+    except Exception as e:  # noqa: BLE001
+        logger.warning("Could not start RAG re-embed: %s", e)
+
     # Initialize LLM service
     with app.app_context():
         from services.llm_service import initialize_llm_service
@@ -79,6 +88,7 @@ def create_app(config_class=Config):
     app.register_blueprint(locations.locations_bp, url_prefix='/api')
     app.register_blueprint(dice.dice_bp, url_prefix='/api')
     app.register_blueprint(messages.messages_bp, url_prefix='/api')
+    from routes.events import events_bp; app.register_blueprint(events_bp, url_prefix='/api')  # v0.9 live updates (SSE), unread, roster
     
     # Version endpoint
     @app.route('/api/version')
