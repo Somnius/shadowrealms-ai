@@ -63,7 +63,7 @@
 .sr-app .sr-radio-group legend { padding: 0 var(--sr-space-2); color: var(--sr-text-2); font-weight: 600; }
 .sr-app .sr-radio { display: flex; gap: var(--sr-space-2); align-items: baseline; padding: var(--sr-space-1) 0; cursor: pointer; }
 .sr-app .sr-radio input { accent-color: var(--sr-accent); width: 18px; height: 18px; }
-.sr-app .sr-hall__footer { margin-top: var(--sr-space-9); border-radius: var(--sr-radius-lg); overflow: hidden; }
+.sr-app .sr-hall__footer { margin-top: auto; border-radius: var(--sr-radius-lg); overflow: hidden; }
 /* Loading placeholders: same grid and about the card height, so the page does not jump. */
 .sr-app .sr-hall__placeholder {
   height: 100%;

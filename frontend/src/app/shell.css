@@ -248,6 +248,11 @@ html, body { height: 100%; }
 .sr-app .sr-page__inner { max-width: 1200px; margin: 0 auto; padding: var(--sr-space-6) var(--sr-space-5) var(--sr-space-9); }
 .sr-app .sr-page--narrow .sr-page__inner { max-width: 760px; }
 .sr-app .sr-page--legacy .sr-page__inner { max-width: none; padding: 0; }
+/* Pages with a footer: the inner column is at least as tall as the scroll area, so on short
+   pages the footer sits at the bottom of the window instead of right under the content. */
+.sr-app .sr-page--with-footer .sr-page__inner { min-height: 100%; display: flex; flex-direction: column; box-sizing: border-box; }
+.sr-app .sr-page--with-footer .sr-page__inner > * { flex-shrink: 0; }
+.sr-app .sr-page--with-footer .sr-page__inner > :nth-last-child(2) { margin-bottom: var(--sr-space-9); }
 @media (max-width: 767px) {
   .sr-app .sr-page__inner { padding: var(--sr-space-4) var(--sr-space-3) var(--sr-space-8); }
 }
