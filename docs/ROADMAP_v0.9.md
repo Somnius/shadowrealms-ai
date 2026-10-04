@@ -5,11 +5,11 @@ Started 2026-10-04. Each phase: research → build → at least 2 reviews → co
 | # | Phase | Status |
 |---|---|---|
 | 1 | Rules: classic oWoD done properly + V5 per campaign | **done** (merged 2026-10-04 ~03:25) |
-| 2 | AI: better local models, optional cloud providers, Laya/Jev classification, Greek replies | in progress |
-| 3 | UI/UX: one clear navigation, Discord-style chat, EN/EL interface | todo |
-| 4 | Gothic theme redesign: animated SVG glyphs, motion, atmosphere | todo |
-| 5 | Security + public site: hardened login, production server, srai.srv-box.com behind a gate | infra done, app hardening todo |
-| 6 | Theme preview page rebuilt (last on purpose) | todo |
+| 2 | AI: better local models, optional cloud providers, Laya/Jev classification, Greek replies | **done** |
+| 3 | UI/UX: one clear navigation, Discord-style chat, EN/EL interface | **done** |
+| 4 | Gothic theme redesign: animated SVG glyphs, motion, atmosphere | **done** |
+| 5 | Security + public site: hardened login, production server, srai.srv-box.com behind a gate | **done** (gate still on until tested) |
+| 6 | Theme preview page rebuilt (last on purpose) | **done** |
 
 ## Decisions
 
@@ -63,3 +63,19 @@ Details: `docs/SECURITY_MODEL.md`.
 ### Dependency security (2026-10-04)
 - 8 Python security PRs from Dependabot merged (all checks green).
 - npm: `npm audit fix` applied (lockfile only, tested with a clean install, tests and build). The remaining npm audit findings are react-scripts (Create React App) build tooling that never ships to the browser. Proper fix: move the frontend from CRA to Vite (planned, after v0.9).
+
+### Phase 2 — closing checks (2026-10-04 ~05:25)
+- Laya classifier live in the backend (gunicorn workers load it lazily, ~0.23 s/message): IC "*draws my fangs…*" → 0.965, OOC "what time do we play friday?" → 0.034.
+- Krikri verified live through `/api/ai/chat`: a Greek message got a natural, grammatical Greek reply (no foreign-script characters, no fallback); English works too. With ComfyUI holding ~7 GB of VRAM, LM Studio runs **Krikri as the only chat model** (plus bge-m3), and the English role follows the loaded model.
+
+
+### Phase 5 — production frontend (2026-10-04 ~06:10)
+- nginx serves the static build (`./scripts/build-frontend.sh`) instead of the React dev server, with a strict CSP (scripts only from the site), gzip, and long caching for hashed assets. Checked in Chromium with no CSP violations.
+
+## Open / next
+- Remove the preview gate once tested (one block in the DietPi's `proxy-srai.conf`).
+- Label 300–500 real chat messages and re-check the Laya thresholds on them.
+- Server-computed dice pools from the character sheet; message actions (reply/copy/delete) and older-history paging in chat.
+- Move the frontend from Create React App to Vite (most remaining npm audit findings are CRA build tooling).
+- `JWT_ACCESS_TOKEN_MINUTES=30` now that the frontend refreshes tokens (compose still has 360).
+- Have a person compare the 16 original clan sigils side by side with the official marks.
