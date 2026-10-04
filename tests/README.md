@@ -1,181 +1,51 @@
-# ShadowRealms AI - Test Suite
+# ShadowRealms AI - Tests
 
-This directory contains all test scripts for the ShadowRealms AI project.
+## Where the tests are
 
-## 📋 Test Files Overview
+| Suite | Location | Runs in CI | How to run locally |
+|-------|----------|-----------|--------------------|
+| Backend unit tests (291 at v0.9.0) | `backend/tests/unit/` | yes | `docker compose exec backend python -m pytest -q tests/unit` |
+| Frontend tests (Jest, 385 at v0.9.0) | `frontend/src/**/*.test.js(x)`, `__tests__/` folders | yes | `./scripts/run-frontend-tests.sh` |
+| PostgreSQL schema check | `.github/workflows/ci.yml` (job `schema`) | yes | see the workflow |
+| Legacy integration scripts | this folder (`tests/`) | no | see below |
 
-### Python Test Scripts
+The CI checks are described in [docs/CONTRIBUTING.md](../docs/CONTRIBUTING.md#tests-and-ci) and [docs/SECURITY_AND_TESTING.md](../docs/SECURITY_AND_TESTING.md). The frontend suites are listed in [frontend/TESTING.md](../frontend/TESTING.md).
 
-| Script | Purpose | Usage |
-|--------|---------|-------|
-| `test_phase2.py` | Phase 2 RAG & Vector Memory System tests | `python3 tests/test_phase2.py` |
-| `test_user_experience.py` | End-to-end user experience tests | `python3 tests/test_user_experience.py` |
-| `test_comprehensive_verification.py` | Comprehensive system verification | `python3 tests/test_comprehensive_verification.py` |
-| `test_deep_verification.py` | Deep system verification | `python3 tests/test_deep_verification.py` |
-| `test_rule_books.py` | Rule book integration tests | `python3 tests/test_rule_books.py` |
-| `test_modules.py` | Module-level unit tests | `python3 tests/test_modules.py` |
-| `test_flask_config.py` | Flask configuration tests | `python3 tests/test_flask_config.py` |
-| `test_docker_env.py` | Docker environment tests | `python3 tests/test_docker_env.py` |
-| `test_security_and_features.py` | Auth boundaries, discover/join, `poster_role` on messages (PostgreSQL) | `python3 tests/test_security_and_features.py` or `./scripts/run_security_tests.sh` |
-| `test_campaign_membership.py` | Detach, join restriction, per-campaign playing character (PostgreSQL) | `python3 -m pytest tests/test_campaign_membership.py -v` (set `DATABASE_*` / `DATABASE_TYPE=postgresql`) |
+## This folder: legacy integration scripts
 
-**Security testing guide:** [docs/SECURITY_AND_TESTING.md](../docs/SECURITY_AND_TESTING.md)
+The scripts here are older integration and verification scripts from v0.4 to v0.8. They are not part of CI, most need the full stack running (PostgreSQL, ChromaDB, LM Studio), and several were written for the pre-PostgreSQL setup or the old frontend. CI still compiles them and checks them for syntax errors and undefined names. Treat their results as a smoke test, not a pass/fail gate.
 
-**Chronicle membership behavior:** [docs/CAMPAIGN_MEMBERSHIP_AND_PLAYING_CHARACTER.md](../docs/CAMPAIGN_MEMBERSHIP_AND_PLAYING_CHARACTER.md)
-
-### Shell Test Scripts
+Still useful (PostgreSQL integration, kept current):
 
 | Script | Purpose | Usage |
 |--------|---------|-------|
-| `test-auth-docker.sh` | Frontend authentication tests in Docker | `./tests/test-auth-docker.sh` |
-| `test_docker.sh` | Docker environment verification | `./tests/test_docker.sh` |
-| `validate-test-structure.sh` | Validate test structure | `./tests/validate-test-structure.sh` |
-| `scripts/run_security_tests.sh` | Run security/feature API tests (PostgreSQL) | `./scripts/run_security_tests.sh` |
+| `test_security_and_features.py` | Auth boundaries, discover/join, `poster_role` on messages | `./scripts/run_security_tests.sh` |
+| `test_campaign_membership.py` | Detach, join restriction, per-campaign playing character | `python3 -m pytest tests/test_campaign_membership.py -v` (with `DATABASE_*` set and `DATABASE_TYPE=postgresql`) |
 
-## 🚀 Running Tests
+Both create test users; clean them up with [docs/DATABASE_TEST_DATA_CLEANUP.md](../docs/DATABASE_TEST_DATA_CLEANUP.md).
 
-### Quick Test Commands
+Legacy (may not match the current app):
 
-```bash
-# Run from project root
+| Script | Purpose |
+|--------|---------|
+| `test_phase2.py` | Phase 2 RAG and vector memory |
+| `test_user_experience.py` | End-to-end API workflows |
+| `test_comprehensive_verification.py`, `test_deep_verification.py` | System verification |
+| `test_rule_books.py`, `test_core_books_rag.py`, `test_rag_imported_books.py`, `test_rag_game_scenarios.py`, `test_lm_studio_rag_integration.py` | Rule books and RAG |
+| `test_ai_memory_system.py` | AI memory |
+| `test_api_endpoints.py`, `test_frontend_backend_integration.py` | API checks |
+| `test_modules.py` | Backend module imports |
+| `test_flask_config.py`, `test_docker_env.py`, `test_docker.sh` | Configuration and Docker environment |
+| `test_postgresql_migration.py` | The SQLite to PostgreSQL migration (v0.7.6) |
+| `check_deleted_locations.py`, `fix_missing_ooc_rooms.py` | One-off maintenance helpers |
+| `validate-test-structure.sh` | Checks this folder's layout |
+| `test-auth-docker.sh` | Wrapper around `scripts/run-frontend-tests.sh` for the auth/session tests (`all` runs the whole frontend suite) |
 
-# Phase 2 tests (RAG & Vector Memory)
-python3 tests/test_phase2.py
+[MIGRATION_SUMMARY.md](MIGRATION_SUMMARY.md) records when the scripts were moved into this folder (2025-10-24).
 
-# User experience tests (End-to-end)
-python3 tests/test_user_experience.py
+## Adding tests
 
-# Frontend authentication tests (in Docker)
-./tests/test-auth-docker.sh
+New tests go into the suites CI runs:
 
-# Docker environment tests
-./tests/test_docker.sh
-```
-
-### Running All Tests
-
-```bash
-# From project root
-cd /path/to/shadowrealms-ai
-
-# Run all Python tests
-for test in tests/test_*.py; do
-    echo "Running $test..."
-    python3 "$test"
-done
-
-# Run all shell tests
-for test in tests/*.sh; do
-    echo "Running $test..."
-    bash "$test"
-done
-```
-
-## 📊 Test Categories
-
-### Phase Tests
-- **Phase 2**: RAG & Vector Memory System
-  - Tests campaign management
-  - Tests memory search
-  - Tests context retrieval
-  - Tests AI generation with RAG
-
-### System Tests
-- **Comprehensive Verification**: Full system health check
-- **Deep Verification**: Detailed component testing
-- **Docker Environment**: Container and service validation
-
-### Integration Tests
-- **User Experience**: End-to-end user workflows
-- **Rule Books**: PDF processing and RAG integration
-- **Authentication**: Frontend auth system (Docker-based)
-
-### Unit Tests
-- **Modules**: Individual backend module tests
-- **Flask Config**: Configuration loading and validation
-
-## 🔧 Test Requirements
-
-### Prerequisites
-
-```bash
-# Python dependencies (already in requirements.txt)
-pip install requests pytest pytest-cov
-
-# For frontend tests
-cd frontend
-npm install
-```
-
-### Environment Setup
-
-```bash
-# Ensure .env file exists
-cp env.template .env
-
-# Edit .env with your configuration
-nano .env
-
-# Ensure Docker services are running
-docker compose up -d
-```
-
-## ✅ Expected Results
-
-All tests should pass with the following results:
-
-| Test Suite | Expected Status |
-|------------|----------------|
-| Phase 2 | 8/9 tests passing (88.9% - Campaign retrieval has test structure issue) |
-| User Experience | 7/7 tests passing |
-| Docker Environment | All checks passing |
-| Frontend Auth | 61/61 tests passing |
-
-## 🐛 Troubleshooting
-
-### Common Issues
-
-**Tests can't import backend modules:**
-```bash
-# Make sure you're running from project root
-cd /path/to/shadowrealms-ai
-python3 tests/test_phase2.py
-```
-
-**Docker tests fail:**
-```bash
-# Ensure Docker is running
-docker compose ps
-
-# Restart services if needed
-docker compose restart
-```
-
-**LM Studio tests fail:**
-```bash
-# Ensure LM Studio is running with model loaded
-curl http://localhost:1234/v1/models
-```
-
-## 📝 Adding New Tests
-
-1. Create test file in `tests/` directory
-2. Follow naming convention: `test_*.py` or `test*.sh`
-3. Import from backend with: `sys.path.insert(0, '../backend')`
-4. Update this README with test description
-5. Run tests to verify they work
-
-## 🎯 Best Practices
-
-- ✅ Always run tests from project root
-- ✅ Ensure services are running before testing
-- ✅ Check `.env` configuration is correct
-- ✅ Use descriptive test names
-- ✅ Add comments explaining complex tests
-- ✅ Clean up test data after tests complete
-
----
-
-**Test Suite Status:** ✅ All organizational structure complete
-**Last Updated:** 2025-10-24
-
+- Backend logic that doesn't need a database, Redis or AI: `backend/tests/unit/test_*.py` (pytest).
+- Frontend: a `*.test.js(x)` file next to the code or in a `__tests__/` folder (Jest + Testing Library).
