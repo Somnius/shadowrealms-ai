@@ -11,7 +11,7 @@ Every pull request and every push to `main` that touches code runs `.github/work
 - **Python**: `compileall` over `backend monitoring books scripts tests`, and `ruff check --select E9,F63,F7,F82` (syntax errors and undefined names).
 - **Backend unit tests**: `python -m pytest -q backend/tests/unit`, 291 tests that need no database, Redis or AI: dice (classic and V5), rules editions, character and Storyteller prompts, AI providers and secret storage, the classifier and OOC monitor, live events, request validation, and authentication security (`test_auth_security.py`, see below).
 - **PostgreSQL schema**: applies `backend/init_postgresql_schema.sql` to an empty database, runs `migrate_db()` twice, and fails if the schema differs.
-- **Frontend**: the Jest suite (`npx react-scripts test --watchAll=false`, 385 tests in 38 files at v0.9.0) and a production build.
+- **Frontend**: the Jest suite (`npx jest --ci`, 418 tests in 40 files), `npm run lint` (warnings don't fail it) and a production build (`npm run build`, Vite).
 
 Also on GitHub:
 
@@ -97,7 +97,7 @@ docker compose --profile dev run --rm --no-deps frontend npm run audit
 
 Review `npm audit` output; upgrade or replace packages with confirmed fixes.
 
-At v0.9.0, after `npm audit fix`, the remaining findings are all in the Create React App build tooling (`react-scripts` and its dependencies). That code runs only at build time and never ships to the browser. The proper fix is moving the frontend from Create React App to Vite, which is planned after v0.9.
+The frontend moved from Create React App to Vite, which removed 67 of the 69 `npm audit --omit=dev` findings (react-scripts was a runtime dependency, so its build tooling counted). The 2 left are react-router 6 (fixed in 7, a separate upgrade); the dev-only findings are `braces` under Jest and Tailwind, build and test tooling that never ships to the browser.
 
 ### pip (backend)
 

@@ -1,6 +1,6 @@
 # Frontend Testing
 
-The frontend tests use Jest and React Testing Library through `react-scripts test` (Create React App). At v0.9.0 there are 385 tests in 38 files, and all of them run in CI.
+The frontend tests use Jest and React Testing Library. There are 418 tests in 40 files, and all of them run in CI.
 
 ## Running the tests
 
@@ -14,13 +14,15 @@ From the repository root, in a one-off container of the dev frontend service (th
 
 Extra arguments go to Jest. `JEST_WORKERS` (default 4) caps the parallel workers.
 
-CI (`.github/workflows/ci.yml`, job "Frontend tests + build") runs `npm ci`, then `npx react-scripts test --watchAll=false`, then `CI=false npm run build`.
+Inside `frontend/`: `npm test` (add `-- --watch` to watch), `npm run test:ci` (with coverage).
+
+CI (`.github/workflows/ci.yml`, job "Frontend tests + build") runs `npm ci`, then `npx jest --ci`, `npm run lint` and `npm run build`.
 
 ## Configuration
 
-- Jest settings come from `react-scripts` plus the `jest` key in `package.json` (`transformIgnorePatterns` for the d3 packages).
+- All Jest settings are in `jest.config.js`: jsdom, Babel (`@babel/preset-env`, `@babel/preset-react`) for the code and the d3 packages, CSS and file stubs, `resetMocks`. Vite isn't involved in the tests.
+- `jest/polyfills.js` adds a `fetch` stub (jsdom has none) so tests can mock it.
 - `src/setupTests.js` runs before every test file (jest-dom matchers, and `matchMedia` / `crypto` stubs that jsdom lacks).
-- `jest.config.js` in this folder is **not** used by `react-scripts test` (its coverage threshold and `@/` alias don't apply). It is left over from an earlier setup.
 
 ## What is tested
 
