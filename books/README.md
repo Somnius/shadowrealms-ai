@@ -127,9 +127,11 @@ To reset your choices, simply delete `.duplicate_choices.json` in the books dire
 
 After syncing books, you can parse them for ingestion into your RAG system.
 
-### Setup GPU Support (Optional but Recommended)
+> **Embeddings at import time.** Since v0.9 every ChromaDB collection is embedded by the app's own embedder (`EMBEDDING_MODEL`, default `text-embedding-bge-m3` in LM Studio, good for English and Greek). `import_to_rag.py` ignores any vectors stored in the parsed JSON and lets the collection embed the text, so `parse_books.py --embeddings` is no longer needed. The options below are kept for the parser itself.
 
-For GPU-accelerated embedding generation (10-50x faster):
+### Setup GPU Support (optional, only for `--embeddings`)
+
+For GPU-accelerated embedding generation in the parser:
 
 ```bash
 cd books/
@@ -151,17 +153,14 @@ source venv/bin/activate
 # Parse all PDFs (text only)
 python parse_books.py
 
-# Parse with GPU-accelerated embeddings (RECOMMENDED!)
-python parse_books.py --embeddings
-
 # Use specific number of workers
-python parse_books.py --workers 8 --embeddings
+python parse_books.py --workers 8
 
 # Larger chunks for more context
-python parse_books.py --chunk-size 1500 --overlap 300 --embeddings
+python parse_books.py --chunk-size 1500 --overlap 300
 
-# Reprocess everything with embeddings
-python parse_books.py --force --embeddings
+# Reprocess everything
+python parse_books.py --force
 ```
 
 ### Parser Options
@@ -178,10 +177,7 @@ python parse_books.py --force --embeddings
 - `--force` - Reprocess all PDFs even if cached
 - `--output-dir DIR` - Custom output directory (default: books/parsed)
 
-**Embedding Models (alternatives):**
-- `sentence-transformers/all-MiniLM-L6-v2` - Fast, 384 dims (default)
-- `sentence-transformers/all-mpnet-base-v2` - Better quality, 768 dims, slower
-- `nomic-ai/nomic-embed-text-v1.5` - Optimized for retrieval, 768 dims
+**Embedding models:** the parser's `--embedding-model` only affects vectors stored in the JSON, which the importer ignores. What ends up in ChromaDB is always embedded with `EMBEDDING_MODEL` (bge-m3 by default); see [docs/AI_SYSTEMS.md](../docs/AI_SYSTEMS.md).
 
 ### Output Format
 
@@ -217,7 +213,7 @@ Parsed books are saved as JSON in `books/parsed/`:
 }
 ```
 
-**With Embeddings:** Files include 384-dimensional (or 768 for larger models) vector embeddings ready for direct ChromaDB/vector database insertion.
+**With `--embeddings`:** files also carry vectors from the parser's model. The importer ignores them (see the note above).
 
 ## Importing to RAG/Vector Database
 
@@ -247,28 +243,32 @@ Campaign-Specific (campaign_id: 1, 2, 3...)
 
 ### Import Books Selectively
 
+Run the importer inside the backend container: it uses the app's embedder (LM Studio must be running with the embedding model available) and reaches ChromaDB on `localhost:8000`. `books/` is mounted at `/app/books`, so parsed files in `books/parsed/` are visible there.
+
 ```bash
-cd books/
-source venv/bin/activate
-
 # List available parsed books
-python import_to_rag.py --list
+docker compose exec backend python books/import_to_rag.py --list
 
-# List predefined book sets
-python import_to_rag.py --list-sets
+# List predefined book sets (with their rules edition)
+docker compose exec backend python books/import_to_rag.py --list-sets
 
 # Import core rules globally (available to all campaigns)
-python import_to_rag.py --import-set core_only --campaign-id 0
+docker compose exec backend python books/import_to_rag.py --import-set core_only --campaign-id 0
+
+# Import the V5 core globally (chunks stamped rules_edition=v5)
+docker compose exec backend python books/import_to_rag.py --import-set vampire_v5_core --campaign-id 0
 
 # Import Vampire books for campaign #1
-python import_to_rag.py --import-set vampire_basic --campaign-id 1
+docker compose exec backend python books/import_to_rag.py --import-set vampire_basic --campaign-id 1
 
 # Import Werewolf books for campaign #2
-python import_to_rag.py --import-set werewolf_full --campaign-id 2
+docker compose exec backend python books/import_to_rag.py --import-set werewolf_full --campaign-id 2
 
-# Check what's imported
-python import_to_rag.py --list-imported
+# Check what's imported (optionally --campaign-id N)
+docker compose exec backend python books/import_to_rag.py --list-imported
 ```
+
+Every imported chunk is stamped with a `rules_edition` (`classic`, `v5` or `nwod`), and the Storyteller's rule-book search only uses chunks of the campaign's edition. The edition comes from the book set; for `--import-file`, from the book's category (`V5` gives `v5`, `nWoD` gives `nwod`, everything else `classic`). `--rules-edition classic|v5|nwod` overrides it.
 
 ### Available Book Sets
 
@@ -278,6 +278,10 @@ python import_to_rag.py --list-imported
 - **`werewolf_full`** - Complete Werewolf game
 - **`mage_basic`** - Core Mage rules
 - **`crossover`** - Multi-game campaigns (start minimal)
+- **`vampire_v5_core`** - V5 corebook (2019 errata printing) + rules errata (`rules_edition: v5`)
+- **`vampire_v5_full`** - V5 core plus the main rules supplements (`rules_edition: v5`)
+
+All sets except the two V5 ones are `classic`.
 
 ### Model Compatibility
 
@@ -393,8 +397,8 @@ books/
 
 **Workflow:**
 1. `./sync.sh` → Download PDFs
-2. `python parse_books.py --embeddings` → Parse + generate embeddings (GPU accelerated)
-3. `python import_to_rag.py --import-set vampire_basic --campaign-id 1` → Import selectively
+2. `python parse_books.py` → Parse PDFs into `books/parsed/`
+3. `docker compose exec backend python books/import_to_rag.py --import-set vampire_basic --campaign-id 1` → Import selectively
 
 Note: The `venv/` directory is automatically created and managed by the sync script.
 
