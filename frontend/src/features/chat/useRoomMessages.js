@@ -4,20 +4,21 @@ import { isMarker } from './messageModel';
 
 export const INITIAL_LIMIT = 150;
 
-const seenKey = (cid, lid) => `sr_seen_${cid}_${lid}`;
+// Per user, so a shared browser doesn't carry one account's read state over to another.
+const seenKey = (uid, cid, lid) => `sr_seen_${uid == null ? 'anon' : uid}_${cid}_${lid}`;
 
-export function readSeen(campaignId, locationId) {
-  const v = parseInt(readLocal(seenKey(campaignId, locationId), '0'), 10);
+export function readSeen(userId, campaignId, locationId) {
+  const v = parseInt(readLocal(seenKey(userId, campaignId, locationId), '0'), 10);
   return Number.isFinite(v) ? v : 0;
 }
 
-export function writeSeen(campaignId, locationId, id) {
-  if (id > readSeen(campaignId, locationId)) writeLocal(seenKey(campaignId, locationId), id);
+export function writeSeen(userId, campaignId, locationId, id) {
+  if (id > readSeen(userId, campaignId, locationId)) writeLocal(seenKey(userId, campaignId, locationId), id);
 }
 
 /** "12:340,13:0" for GET /unread?seen= (players without a character keep read state in this browser). */
-export function seenParam(campaignId, locations) {
-  return (locations || []).map((l) => `${l.id}:${readSeen(campaignId, l.id)}`).join(',');
+export function seenParam(userId, campaignId, locations) {
+  return (locations || []).map((l) => `${l.id}:${readSeen(userId, campaignId, l.id)}`).join(',');
 }
 
 /** Merge server rows into the list: unique by id, ascending, optimistic rows kept at the end. */
@@ -50,6 +51,7 @@ export function useRoomMessages({ api, campaignId, locationId, characterId, user
   messagesRef.current = messages;
   const roomRef = useRef(`${campaignId}:${locationId}`);
   const inflight = useRef(false);
+  const again = useRef(false);
   const lastMarked = useRef(0);
 
   const roomPath = `/campaigns/${campaignId}/locations/${locationId}`;
@@ -81,7 +83,7 @@ export function useRoomMessages({ api, campaignId, locationId, characterId, user
         lastMarked.current = rs.data.last_read_message_id || 0;
       }
     } else {
-      const seen = readSeen(campaignId, locationId);
+      const seen = readSeen(userId, campaignId, locationId);
       lastMarked.current = seen;
       if (seen > 0) {
         const next = list.find((m) => m.id > seen && !isMarker(m) && String(m.user_id) !== String(userId));
@@ -101,18 +103,35 @@ export function useRoomMessages({ api, campaignId, locationId, characterId, user
     else setStatus('loading');
   }, [load, enabled, locationId]);
 
-  /** Fetch rows newer than what we have (SSE "changed" / poll tick). */
+  /**
+   * Fetch rows newer than what we have (SSE "changed" / poll tick). A call that arrives while a
+   * fetch is running isn't dropped: it marks a re-run, done once the current fetch finishes (so a
+   * message saved during the fetch still shows up without waiting for the next event).
+   */
   const fetchSince = useCallback(async () => {
-    if (inflight.current || !enabled) return;
-    const key = roomRef.current;
-    const since = lastServerId(messagesRef.current);
+    if (!enabled) return;
+    if (inflight.current) {
+      again.current = true;
+      return;
+    }
     inflight.current = true;
     try {
-      const r = await api(since > 0 ? `${roomPath}?since_id=${since}&limit=200` : `${roomPath}?recent=1&limit=${INITIAL_LIMIT}`);
-      if (roomRef.current !== key || !r.ok || !Array.isArray(r.data) || r.data.length === 0) return;
-      setMessages((prev) => mergeMessages(prev, r.data));
+      do {
+        again.current = false;
+        const key = roomRef.current;
+        const since = lastServerId(messagesRef.current);
+        // eslint-disable-next-line no-await-in-loop
+        const r = await api(since > 0 ? `${roomPath}?since_id=${since}&limit=200` : `${roomPath}?recent=1&limit=${INITIAL_LIMIT}`);
+        if (roomRef.current !== key) break;
+        if (r.ok && Array.isArray(r.data) && r.data.length > 0) {
+          // Update the ref now so a re-run asks only for what came after these rows.
+          messagesRef.current = mergeMessages(messagesRef.current, r.data);
+          setMessages((prev) => mergeMessages(prev, r.data));
+        }
+      } while (again.current);
     } finally {
       inflight.current = false;
+      again.current = false;
     }
   }, [api, roomPath, enabled]);
 
@@ -141,10 +160,10 @@ export function useRoomMessages({ api, campaignId, locationId, characterId, user
     if (characterId) {
       await api(`${roomPath}/read-state`, { method: 'POST', body: { character_id: characterId, last_read_message_id: last } });
     } else {
-      writeSeen(campaignId, locationId, last);
+      writeSeen(userId, campaignId, locationId, last);
     }
     return true;
-  }, [api, roomPath, characterId, campaignId, locationId]);
+  }, [api, roomPath, characterId, campaignId, locationId, userId]);
 
   return {
     messages,

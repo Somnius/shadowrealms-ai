@@ -43,7 +43,10 @@
     "v5DiscDots": "One Discipline at 2 dots and one at 1 dot.",
     "v5DiscClan": "{{name}} is not a {{clan}} clan Discipline.",
     "v5ThinMerits": "Thin-bloods take {{lo}}–{{hi}} thin-blood Merits (you have {{n}}).",
-    "v5ThinFlaws": "Take as many thin-blood Flaws as thin-blood Merits ({{m}} Merits, {{f}} Flaws)."
+    "v5ThinFlaws": "Take as many thin-blood Flaws as thin-blood Merits ({{m}} Merits, {{f}} Flaws).",
+    "v5ThinNoDisc": "Thin-bloods start with no Disciplines.",
+    "v5DiscPickAny": "Pick two Disciplines: one at 2 dots and one at 1 dot.",
+    "v5DiscPickClan": "Pick two clan Disciplines: one at 2 dots and one at 1 dot."
   },
   "error": {
     "name": "Character name is required.",
@@ -108,7 +111,7 @@
     "backgroundStoryPlaceholder": "History, coterie, pack, cabal, goals…",
     "freebiesSub": "15 points (+ up to 7 from Flaws) to raise anything above the creation budgets."
   },
-  "created": "Character forged. Select them in Player Profile if needed.",
+  "created": "Character forged. Enter the chronicle to play.",
   "noChronicle": "You need to be a member of at least one Vampire, Werewolf, or Mage chronicle before using this forge.",
   "back": "Back",
   "field": {
@@ -156,7 +159,7 @@
     "extraNotesPlaceholder": "House rules, ST approval, page refs…"
   },
   "v5": {
-    "created": "Character embraced. Select them in Player Profile if needed.",
+    "created": "Character embraced. Enter the chronicle to play.",
     "thinMeritPlaceholder": "e.g. Day Drinker",
     "thinFlawPlaceholder": "e.g. Baby Teeth",
     "removeThin": "Remove thin-blood {{kind}} {{n}}",

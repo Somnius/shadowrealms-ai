@@ -13,6 +13,26 @@ export function roomGlyph(type) {
   return 'room-street';
 }
 
+const DEFAULT_OOC_NAME = 'Out of Character Lobby';
+const DEFAULT_OOC_DESC =
+  'A place for players to discuss the campaign, ask questions, and chat as themselves (not as characters). This is the default meeting place before entering the game world.';
+
+/**
+ * The server creates every chronicle's OOC lobby with a fixed English name and description
+ * (backend/routes/locations.py). Show those defaults in the interface language; anything the
+ * Storyteller renamed or rewrote is shown as written.
+ */
+export function localizeRoom(loc) {
+  if (!loc) return loc;
+  const name = loc.name === DEFAULT_OOC_NAME ? t('play:room.oocDefaultName', 'Out of Character Lobby') : loc.name;
+  const description = loc.description === DEFAULT_OOC_DESC
+    ? t('play:room.oocDefaultDescription', 'A place for players to discuss the chronicle, ask questions and chat as themselves (not as characters). This is the meeting place before entering the game world.')
+    : loc.description;
+  return name === loc.name && description === loc.description ? loc : { ...loc, name, description };
+}
+
+export const localizeRooms = (list) => (Array.isArray(list) ? list.map(localizeRoom) : list);
+
 export const isOpenRoom = (loc) => loc && loc.is_open !== false && loc.is_open !== 0;
 
 /** OOC rooms first, then story locations, in server order. */

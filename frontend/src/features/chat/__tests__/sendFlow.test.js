@@ -101,3 +101,37 @@ test('normalizeInput: BOM stripped, bare /ai becomes /ai help for admins', () =>
   expect(normalizeInput('/ai', true)).toBe('/ai help');
   expect(normalizeInput('/ai', false)).toBe('/ai');
 });
+
+test('/ai commands are saved in the staff voice, never as the character', async () => {
+  const { api, calls } = fakeApi({
+    'POST /campaigns/3/locations/7': (body) => ({ ok: true, status: 201, data: { data: { id: 50, ...body } } }),
+    'POST /ai/slash': () => ({ ok: true, status: 200, data: { command: 'help', display_markdown: 'help text' } }),
+  });
+  await sendChatMessage(ctx({ api, user: admin }), '/ai help');
+  expect(calls[0].body).toMatchObject({ speak_as: 'staff', ai_message_kind: 'slash_user' });
+  expect(calls[0].body).not.toHaveProperty('character_id');
+});
+
+test('a Storyteller outage gives one retryable failure (no toast); retry asks again without re-saving', async () => {
+  let aiCalls = 0;
+  const { api, calls } = fakeApi({
+    'POST /campaigns/3/locations/7': (body) => ({ ok: true, status: 201, data: { data: { id: 60, ...body } } }),
+    'POST /ai/chat': () => {
+      aiCalls += 1;
+      return aiCalls === 1
+        ? { ok: false, status: 503, data: { error: 'The server is busy for a moment. Try again in a moment.' } }
+        : { ok: true, status: 200, data: { response: 'At last.' } };
+    },
+  });
+  const onAiFailed = jest.fn();
+  const c = ctx({ api, onAiFailed });
+  await sendChatMessage(c, 'Hello?');
+  expect(c.onError).not.toHaveBeenCalled();
+  expect(onAiFailed).toHaveBeenCalledWith(expect.objectContaining({ reason: 'The server is busy for a moment. Try again in a moment.' }));
+  const saves = () => calls.filter((x) => x.path === '/campaigns/3/locations/7' && x.body.role === 'user');
+  expect(saves()).toHaveLength(1);
+  await onAiFailed.mock.calls[0][0].retry();
+  expect(aiCalls).toBe(2);
+  expect(saves()).toHaveLength(1);
+  expect(calls.some((x) => x.body && x.body.role === 'assistant' && x.body.content === 'At last.')).toBe(true);
+});

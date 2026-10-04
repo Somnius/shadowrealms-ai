@@ -25,7 +25,10 @@
     "atmosphereSubtleHint": "Still ambience, short transitions",
     "atmosphereOff": "Off",
     "atmosphereOffHint": "No motion at all",
-    "atmosphereSystem": "Motion is off in your system settings"
+    "atmosphereSystem": "Motion is off in your system settings",
+    "logoutAll": "Sign out everywhere",
+    "logoutAllHint": "Ends your sessions on every device, this one too",
+    "logoutAllFailed": "Could not sign out the other devices. Try again in a moment."
   },
   "language": {
     "label": "Language"

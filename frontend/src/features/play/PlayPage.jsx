@@ -19,7 +19,7 @@ import { useLiveUpdates } from '../chat/useLiveUpdates';
 import { useDiceOverlay } from '../dice/useDiceOverlay';
 import { useDiceActions } from '../dice/useDiceActions';
 import { DiceHistoryDialog, DiceRulesDialog, RollDialog } from '../dice/DiceDialogs';
-import ChannelList, { isOpenRoom, roomGlyph, sortRooms } from './ChannelList';
+import ChannelList, { isOpenRoom, localizeRooms, roomGlyph, sortRooms } from './ChannelList';
 import MemberPanel from './MemberPanel';
 import QuickSwitcher from './QuickSwitcher';
 import { closedRoomCopy } from './closedRoom';
@@ -82,7 +82,7 @@ function usePlayData(campaignId) {
 
   const loadLocations = useCallback(async () => {
     const r = await api(`/campaigns/${campaignId}/locations`);
-    if (r.ok && Array.isArray(r.data)) setData((d) => ({ ...d, locations: r.data }));
+    if (r.ok && Array.isArray(r.data)) setData((d) => ({ ...d, locations: localizeRooms(r.data) }));
   }, [api, campaignId]);
 
   useEffect(() => {
@@ -103,7 +103,7 @@ function usePlayData(campaignId) {
       setData({
         status: 'ready',
         campaign: detail.data,
-        locations: locs.ok && Array.isArray(locs.data) ? locs.data : [],
+        locations: locs.ok && Array.isArray(locs.data) ? localizeRooms(locs.data) : [],
         characters: chars.ok && Array.isArray(chars.data.characters) ? chars.data.characters : [],
         members: roster.ok && Array.isArray(roster.data.members) ? roster.data.members : [],
       });
@@ -157,6 +157,7 @@ export default function PlayPage() {
   const [closedModal, setClosedModal] = useState(null);
   const [sending, setSending] = useState(false);
   const [aiPending, setAiPending] = useState(false);
+  const [aiFailure, setAiFailure] = useState(null);
   const [unread, setUnread] = useState({});
   const [atBottom, setAtBottom] = useState(true);
   const composerRef = useRef(null);
@@ -199,17 +200,18 @@ export default function PlayPage() {
     onCharacterHunger: (h) => character && play.updateCharacter(character.id, { wod_meta: { ...(character.wod_meta || {}), hunger: h } }),
     startFromMarker: dice.startFromMarker,
     appendMessages: room.appendMessages,
+    fetchRoom: room.fetchSince,
     toast,
   });
 
   const refreshUnread = useCallback(async () => {
     if (playStatus !== 'ready') return;
-    const r = await api(`/campaigns/${campaignId}/unread?seen=${encodeURIComponent(seenParam(campaignId, locations))}`);
+    const r = await api(`/campaigns/${campaignId}/unread?seen=${encodeURIComponent(seenParam(user ? user.id : null, campaignId, locations))}`);
     if (!r.ok || !Array.isArray(r.data.locations)) return;
     const map = {};
     for (const row of r.data.locations) map[row.location_id] = row;
     setUnread(map);
-  }, [api, campaignId, locations, playStatus]);
+  }, [api, campaignId, locations, playStatus, user]);
 
   const unreadTimer = useRef(null);
   const scheduleUnread = useCallback(() => {
@@ -277,6 +279,7 @@ export default function PlayPage() {
   // ---- send ----
   const onSend = async (text, local) => {
     if (!ready) return false;
+    setAiFailure(null);
     setSending(true);
     try {
       return await sendChatMessage(
@@ -292,6 +295,7 @@ export default function PlayPage() {
           onAppend: room.appendMessages,
           onError: (msg) => toast({ tone: 'danger', title: msg }),
           onAiPending: setAiPending,
+          onAiFailed: (f) => setAiFailure({ ...f, locationId: location ? location.id : null }),
           onDiceMarker: dice.startFromMarker,
           onRoomReload: room.refresh,
           onLocationsChanged: play.loadLocations,
@@ -441,6 +445,27 @@ export default function PlayPage() {
                     </CandleHalo>
                     <span className="sr-chat__typing-text">{t('chat:weaving', 'The Storyteller is weaving…')}</span>
                   </>
+                ) : aiFailure && String(aiFailure.locationId) === String(location?.id) ? (
+                  <div className="sr-chat__aifail">
+                    <Glyph name="warning" size={18} />
+                    <span className="sr-chat__typing-text">
+                      {t('chat:aiFailed.title', 'The Storyteller could not answer.')}
+                      {aiFailure.reason ? ` ${aiFailure.reason}` : ''}
+                    </span>
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      icon="reroll"
+                      onClick={() => {
+                        const { retry } = aiFailure;
+                        setAiFailure(null);
+                        retry();
+                      }}
+                    >
+                      {t('chat:aiFailed.retry', 'Ask again')}
+                    </Button>
+                    <IconButton icon="close" size="sm" label={t('common:dismiss', 'Dismiss')} onClick={() => setAiFailure(null)} />
+                  </div>
                 ) : null}
               </div>
               {reroll && String(reroll.campaignId) === String(campaign?.id) ? (
@@ -455,7 +480,7 @@ export default function PlayPage() {
               ) : null}
               <Composer
                 inputRef={composerRef}
-                draftKey={`${campaignId}:${locationId}`}
+                draftKey={`${user ? user.id : 'anon'}:${campaignId}:${locationId}`}
                 roomName={location?.name || ''}
                 speakAs={speakAs}
                 voices={voices}

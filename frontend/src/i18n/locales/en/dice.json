@@ -168,5 +168,12 @@
   "hint": {
     "criticalWin": "A win with at least one pair of 10s: each pair counts as 4 successes.",
     "totalFailure": "Not a single success: the worst kind of failure in V5."
+  },
+  "card": {
+    "v5_one": "{{count}} success vs difficulty {{difficulty}} · margin {{margin}}",
+    "v5_other": "{{count}} successes vs difficulty {{difficulty}} · margin {{margin}}",
+    "classic_one": "{{count}} success at difficulty {{difficulty}}",
+    "classic_other": "{{count}} successes at difficulty {{difficulty}}",
+    "diceSr": "Dice: {{dice}}"
   }
 }

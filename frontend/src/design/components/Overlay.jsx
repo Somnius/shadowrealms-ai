@@ -281,6 +281,11 @@ function ToastRegion({ toasts, dismiss, label, closeLabel, onPause, onResume }) 
   );
 }
 
+/** Like useToast(), but null instead of throwing when there is no <ToastProvider> (optional notices). */
+export function useOptionalToast() {
+  return useContext(ToastContext);
+}
+
 export function useToast() {
   const ctx = useContext(ToastContext);
   if (!ctx) throw new Error('useToast() needs a <ToastProvider> above it');

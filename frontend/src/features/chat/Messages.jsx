@@ -118,6 +118,43 @@ function diceFaces(marker) {
   return { faces, badges, v5, parsed };
 }
 
+/**
+ * Reason of a roll from the server's text line ("… rolls (V5) for **Brawl**"), and whether it was a
+ * Willpower reroll. The text line itself is English; the card is built from the marker instead.
+ */
+export function rollReasonFrom(content) {
+  const first = String(content || '').split('\n')[0];
+  const m = /\bfor \*\*(.+?)\*\*\s*$/.exec(first);
+  let reason = m ? m[1].trim() : '';
+  let reroll = false;
+  if (/\s*\(Willpower reroll\)$/.test(reason)) {
+    reroll = true;
+    reason = reason.replace(/\s*\(Willpower reroll\)$/, '').trim();
+  }
+  if (!reason || reason === 'Dice roll') reason = '';
+  return { reason, reroll };
+}
+
+/** Translated one-line summary of a roll from its marker. */
+export function rollSummary(marker, v5) {
+  const count = Number(marker.successes) || 0;
+  const difficulty = Number(marker.difficulty) || 0;
+  if (v5) {
+    const margin = Number(marker.margin);
+    const signed = Number.isFinite(margin) ? (margin > 0 ? `+${margin}` : String(margin)) : '';
+    return t(
+      'dice:card.v5',
+      { one: '{{count}} success vs difficulty {{difficulty}} · margin {{margin}}', other: '{{count}} successes vs difficulty {{difficulty}} · margin {{margin}}' },
+      { count, difficulty, margin: signed }
+    );
+  }
+  return t(
+    'dice:card.classic',
+    { one: '{{count}} success at difficulty {{difficulty}}', other: '{{count}} successes at difficulty {{difficulty}}' },
+    { count, difficulty }
+  );
+}
+
 /** Rolls newer than this still play their landing / effect when the card appears. */
 export const FRESH_ROLL_MS = 20000;
 
@@ -130,6 +167,7 @@ export function DiceCard({ message, marker, timeZone, now }) {
   const ms = messageTime(message);
   const hidden = String(message.ai_message_kind || '').startsWith('dice_roll_hidden');
   const info = marker ? diceFaces(marker) : null;
+  const reasonInfo = rollReasonFrom(message.content);
   // Decided once when the card mounts, so a re-render never replays the effect.
   const [fresh] = useState(() => !Number.isNaN(ms) && Date.now() - ms < FRESH_ROLL_MS);
   const mood = info ? rollMood(info.parsed.result) : null;
@@ -165,9 +203,27 @@ export function DiceCard({ message, marker, timeZone, now }) {
             </div>
           </>
         ) : null}
-        <div className="sr-dicecard__text">
-          <Markdown text={message.content} />
-        </div>
+        {info ? (
+          <div className="sr-dicecard__text">
+            <p className="sr-dicecard__reason">
+              {reasonInfo.reason ? <bdi>{reasonInfo.reason}</bdi> : t('dice:defaultReason', 'Dice roll')}
+              {reasonInfo.reroll || marker.roll_kind === 'reroll' ? (
+                <>
+                  {' · '}
+                  {t('dice:history.wpReroll', 'Willpower reroll')}
+                </>
+              ) : null}
+            </p>
+            <p className="sr-dicecard__summary">{rollSummary(marker, info.v5)}</p>
+            <p className="sr-visually-hidden">
+              {t('dice:card.diceSr', 'Dice: {{dice}}', { dice: info.faces.map((f) => (f.hunger ? `${f.value}H` : String(f.value))).join(', ') })}
+            </p>
+          </div>
+        ) : (
+          <div className="sr-dicecard__text">
+            <Markdown text={message.content} />
+          </div>
+        )}
         {info ? <RollFx mood={mood} play={fresh} compact playKey={typeof message.id === 'number' ? message.id : 0} /> : null}
       </figure>
     </div>

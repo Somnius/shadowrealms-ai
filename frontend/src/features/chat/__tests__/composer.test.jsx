@@ -7,6 +7,8 @@ import Composer, { voiceOptions } from '../Composer';
 const user = { id: 1, username: 'lef' };
 const character = { id: 7, name: 'Yorika' };
 
+beforeEach(() => sessionStorage.clear());
+
 function renderComposer(props = {}) {
   const onSend = props.onSend || jest.fn().mockResolvedValue(true);
   const onRoll = props.onRoll || jest.fn();
@@ -21,7 +23,7 @@ function renderComposer(props = {}) {
         onSend={onSend}
         onRoll={onRoll}
         isAdmin={!!props.isAdmin}
-        draftKey="r1"
+        draftKey={props.draftKey || "r1"}
       />
     </DesignProvider>
   );
@@ -114,6 +116,23 @@ test('the speaking-as control switches voice from the menu', async () => {
   const onSpeakAsChange = jest.fn();
   renderComposer({ onSpeakAsChange });
   await u.click(screen.getByRole('button', { name: /speaking as yorika/i }));
-  await u.click(screen.getByRole('menuitemcheckbox', { name: /lef \(out of character\)/i }));
+  await u.click(screen.getByRole('menuitemradio', { name: /lef \(out of character\)/i }));
   expect(onSpeakAsChange).toHaveBeenCalledWith('player');
+});
+
+test('the unsent draft survives a remount (language switch) and is per room; sending clears it', async () => {
+  const u = setupUser();
+  const first = renderComposer({ draftKey: '1:3:7' });
+  await u.type(first.input, 'half a thought');
+  first.unmount();
+  const second = renderComposer({ draftKey: '1:3:7' });
+  expect(second.input.value).toBe('half a thought');
+  second.unmount();
+  const other = renderComposer({ draftKey: '1:3:8' });
+  expect(other.input.value).toBe('');
+  other.unmount();
+  const again = renderComposer({ draftKey: '1:3:7' });
+  await u.type(again.input, '{Enter}');
+  await waitFor(() => expect(again.input.value).toBe(''));
+  expect(sessionStorage.getItem('sr_draft_1:3:7')).toBeNull();
 });

@@ -139,7 +139,18 @@ html, body { height: 100%; }
 @media (max-width: 767px) {
   .sr-app .sr-topbar { padding: var(--sr-space-2); gap: var(--sr-space-2); }
   .sr-app .sr-topbar__h { font-size: var(--sr-text-base); }
-  .sr-app .sr-topbar__actions .sr-btn__label { display: none; }
+  /* Visually hidden, not display:none, so icon buttons keep their accessible name. */
+  .sr-app .sr-topbar__actions .sr-btn__label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+    border: 0;
+  }
 }
 
 /* ---------- user menu / menus ---------- */

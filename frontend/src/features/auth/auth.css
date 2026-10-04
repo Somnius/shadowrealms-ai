@@ -93,3 +93,31 @@
   justify-content: center;
   gap: var(--sr-space-3) var(--sr-space-5);
 }
+
+/* Password rules under new-password fields (register, change password) */
+.sr-app .sr-pwrules__title {
+  display: block;
+  margin-bottom: var(--sr-space-1);
+}
+.sr-app .sr-pwrules__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 2px;
+}
+.sr-app .sr-pwrules__list li {
+  display: flex;
+  gap: var(--sr-space-2);
+  align-items: center;
+}
+.sr-app .sr-pwrules__list li.is-met {
+  color: var(--sr-ok-400, var(--sr-text));
+}
+.sr-app .sr-auth__notice {
+  display: flex;
+  gap: var(--sr-space-2);
+  align-items: flex-start;
+  margin: 0 0 var(--sr-space-3);
+  color: var(--sr-text);
+}

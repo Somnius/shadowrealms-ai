@@ -5,7 +5,10 @@
   "edit": "Edit",
   "delete": "Delete",
   "error": {
-    "network": "Network error: the server could not be reached."
+    "network": "Network error: the server could not be reached.",
+    "loginLocked": "Too many failed sign-in attempts. Try again {{when}}.",
+    "rateLimited": "You are going a little fast. Try again {{when}}.",
+    "unavailable": "The server is busy for a moment. Try again {{when}}."
   },
   "dots": {
     "value": "{{value}} of {{max}}"
@@ -18,5 +21,12 @@
     "minutesAgo_one": "{{count}} minute ago",
     "minutesAgo_other": "{{count}} minutes ago",
     "yesterdayAt": "Yesterday · {{time}} · {{date}}"
+  },
+  "wait": {
+    "moment": "in a moment",
+    "seconds_one": "in {{count}} second",
+    "seconds_other": "in {{count}} seconds",
+    "minutes_one": "in {{count}} minute",
+    "minutes_other": "in {{count}} minutes"
   }
 }

@@ -70,6 +70,8 @@ export default function DiceFace({
           : `${v}`)
       }
       aria-pressed={onClick ? selected : undefined}
+      /* A clickable die is a toggle button: its title is its accessible name (the face is decorative). */
+      aria-label={onClick && !hidden && title ? title : undefined}
     >
       <span className="sr-ldie__shadow" aria-hidden="true" />
       <span className="sr-ldie__body">

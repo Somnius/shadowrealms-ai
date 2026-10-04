@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { t } from '../i18n';
 import { AiSigil, Glyph } from '../design';
+import { authFetch } from '../app/http';
 
 function LocationSuggestions({ campaignId, settingDescription, onComplete, onSkip }) {
   const [suggestions, setSuggestions] = useState([]);
@@ -26,7 +27,7 @@ function LocationSuggestions({ campaignId, settingDescription, onComplete, onSki
         const token = localStorage.getItem('token');
         console.log(`🎲 Requesting AI location suggestions for campaign ${campaignId}...`);
 
-        const response = await fetch(`/api/campaigns/${campaignId}/locations/suggest`, {
+        const response = await authFetch(`/api/campaigns/${campaignId}/locations/suggest`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -39,7 +40,9 @@ function LocationSuggestions({ campaignId, settingDescription, onComplete, onSki
         if (!alive) return;
 
         if (!response.ok) {
-          setError(data.error || t('locations:error.server', 'Server error: {{status}}', { status: response.status }));
+          setError(response.status === 403
+            ? t('chronicle:rooms.forbidden', 'Only the Storyteller of this chronicle or an admin can change its locations.')
+            : data.error || t('locations:error.server', 'Server error: {{status}}', { status: response.status }));
           setSuggestions([]);
           setSelected({});
           return;
@@ -107,7 +110,7 @@ function LocationSuggestions({ campaignId, settingDescription, onComplete, onSki
       const token = localStorage.getItem('token');
       console.log(`🎲 Creating ${selectedLocations.length} locations for campaign ${campaignId}...`);
       
-      const response = await fetch(`/api/campaigns/${campaignId}/locations/batch`, {
+      const response = await authFetch(`/api/campaigns/${campaignId}/locations/batch`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -124,7 +127,9 @@ function LocationSuggestions({ campaignId, settingDescription, onComplete, onSki
       } else {
         const errorData = await response.json();
         console.error('❌ Failed to create locations:', errorData);
-        setError(t('locations:error.createFailedWith', 'Failed to create locations: {{error}}', { error: errorData.error || t('locations:error.unknown', 'Unknown error') }));
+        setError(response.status === 403
+          ? t('chronicle:rooms.forbidden', 'Only the Storyteller of this chronicle or an admin can change its locations.')
+          : t('locations:error.createFailedWith', 'Failed to create locations: {{error}}', { error: errorData.error || t('locations:error.unknown', 'Unknown error') }));
       }
     } catch (error) {
       console.error('❌ Error creating locations:', error);

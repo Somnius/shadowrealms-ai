@@ -194,9 +194,12 @@ export default function CharacterSheetModal({ character, gameSystem, onClose }) 
                   {wm.virtues && typeof wm.virtues === 'object' ? (
                     <p style={{ margin: 0 }}>
                       <strong style={{ color: 'var(--sr-arcane-300)' }}><Term id="virtues" />:</strong>{' '}
-                      {['conscience', 'self_control', 'courage']
-                        .map((k) => `${k}: ${wm.virtues[k] ?? '—'}`)
-                        .join(' · ')}
+                      {/* Virtue names are game terms and stay English (see i18n/glossary). */}
+                      <span lang="en">
+                        {[['conscience', 'Conscience'], ['self_control', 'Self-Control'], ['courage', 'Courage']]
+                          .map(([k, label]) => `${label}: ${wm.virtues[k] ?? '—'}`)
+                          .join(' · ')}
+                      </span>
                     </p>
                   ) : null}
                   {Array.isArray(wm.disciplines) && wm.disciplines.length ? (

@@ -26,7 +26,7 @@
     "button": "Delete chronicle",
     "title": "Delete “{{name}}”?",
     "confirm": "Delete forever",
-    "type": "Type CONFIRM to proceed"
+    "typeName": "Type the chronicle’s name, {{name}}, to confirm"
   },
   "members": {
     "addFailed": "Could not add the member",
@@ -35,15 +35,17 @@
     "pcDone": "Playing character updated.",
     "title": "Members",
     "plays": "plays {{name}}",
-    "addLabel": "Add a member by user ID",
     "add": "Add",
     "pcPlayer": "Player",
     "pickPlayer": "Choose a player",
     "pcCharacter": "Playing character",
     "pickCharacter": "Choose a character",
-    "pcCharacterId": "Character ID",
     "pcApply": "Set playing character",
-    "pcHint": "Players switch characters in this chronicle only with Storyteller approval."
+    "pcHint": "Players switch characters in this chronicle only with Storyteller approval.",
+    "notFound": "No account called “{{name}}”.",
+    "forbidden": "Only the Storyteller or staff can add members.",
+    "addByName": "Add a member (username)",
+    "pcNone": "This player has no character in this chronicle yet."
   },
   "title": "Chronicle",
   "subtitle": "Details & settings",
@@ -91,7 +93,24 @@
     "deleteTitle": "Delete {{name}}?",
     "deleteBody": "All messages in this room are deleted too. This cannot be undone.",
     "deleteConfirm": "Delete room",
-    "added": "New locations added."
+    "added": "New locations added.",
+    "type": {
+      "ooc": "Out of character",
+      "elysium": "Elysium",
+      "haven": "Haven",
+      "street": "Street / city",
+      "custom": "Other"
+    },
+    "forbidden": "Only the Storyteller of this chronicle or an admin can change its locations.",
+    "nameRequired": "Give the location a name.",
+    "createFailed": "Could not create the location.",
+    "name": "Name",
+    "typeLabel": "Type",
+    "description": "Description (optional)",
+    "descriptionHint": "Shown under the room name; the AI Storyteller reads it too.",
+    "create": "Create location",
+    "new": "New location",
+    "created": "Location “{{name}}” created."
   },
   "create": {
     "failed": "Could not create the chronicle",

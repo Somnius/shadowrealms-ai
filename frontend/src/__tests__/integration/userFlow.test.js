@@ -72,7 +72,7 @@ describe('Authentication flow', () => {
     await u.click(screen.getByRole('tab', { name: /register/i }));
     await u.type(screen.getByLabelText(/username/i), 'x');
     await u.type(screen.getByLabelText(/email/i), 'x@example.com');
-    await u.type(screen.getByLabelText(/^password/i), 'pw');
+    await u.type(screen.getByLabelText(/^password/i), 'long enough passphrase');
     await u.type(screen.getByLabelText(/invite code/i), 'NOPE');
     await u.click(screen.getByRole('button', { name: /create account/i }));
     expect(await screen.findByRole('alert')).toHaveTextContent('Invalid invite code');

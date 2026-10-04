@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Avatar, Glyph, useAtmosphere } from '../design';
+import { Avatar, Glyph, useAtmosphere, useOptionalToast } from '../design';
 import MenuButton from './Menu';
 import { useAuth } from './AuthContext';
 import { LANGUAGE_NAMES, setLanguage, t, useLanguage } from '../i18n';
@@ -12,6 +12,16 @@ export default function UserMenu({ compact = false }) {
   const { choice, level, setLevel, systemReduced } = useAtmosphere();
   const name = user?.username || '';
   const lang = useLanguage();
+  const toasts = useOptionalToast();
+
+  const signOut = async (everywhere) => {
+    const r = await logout(everywhere ? { everywhere: true } : undefined);
+    if (everywhere && r && r.ok === false) {
+      if (toasts) toasts.toast({ tone: 'danger', title: t('shell:menu.logoutAllFailed', 'Could not sign out the other devices. Try again in a moment.') });
+      return;
+    }
+    navigate('/login');
+  };
 
   const items = [
     { id: 'profile', icon: 'user', label: t('shell:menu.profile', 'Profile & characters'), onSelect: () => navigate('/profile') },
@@ -48,7 +58,15 @@ export default function UserMenu({ compact = false }) {
     ...(isAdmin ? [{ id: 'admin', icon: 'crown', label: t('shell:menu.admin', 'Admin panel'), onSelect: () => navigate('/admin') }] : []),
     { id: 'showcase', icon: 'eye', label: t('shell:menu.showcase', 'Theme preview'), onSelect: () => navigate('/showcase') },
     { divider: true },
-    { id: 'logout', icon: 'logout', label: t('shell:menu.logout', 'Log out'), danger: true, onSelect: () => { logout(); navigate('/login'); } },
+    { id: 'logout', icon: 'logout', label: t('shell:menu.logout', 'Log out'), danger: true, onSelect: () => signOut(false) },
+    {
+      id: 'logout-all',
+      icon: 'logout',
+      label: t('shell:menu.logoutAll', 'Sign out everywhere'),
+      hint: t('shell:menu.logoutAllHint', 'Ends your sessions on every device, this one too'),
+      danger: true,
+      onSelect: () => signOut(true),
+    },
   ];
 
   return (

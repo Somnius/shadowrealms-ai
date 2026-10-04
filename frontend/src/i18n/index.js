@@ -18,6 +18,9 @@ export const LANGUAGES = ['en', 'el'];
 /** Each language named in itself (never translated). */
 export const LANGUAGE_NAMES = { en: 'English', el: 'Ελληνικά' };
 export const STORAGE_KEY = 'sr_lang';
+/** Who made the stored choice: a user id, or 'anon' when it was made while signed out. */
+export const OWNER_KEY = 'sr_lang_owner';
+let languageOwner = null;
 
 export function normalizeLanguage(value) {
   const v = String(value || '').trim().toLowerCase();
@@ -36,8 +39,13 @@ function readStored() {
 
 function writeStored(lang) {
   try {
-    if (lang) window.localStorage.setItem(STORAGE_KEY, lang);
-    else window.localStorage.removeItem(STORAGE_KEY);
+    if (lang) {
+      window.localStorage.setItem(STORAGE_KEY, lang);
+      window.localStorage.setItem(OWNER_KEY, languageOwner || 'anon');
+    } else {
+      window.localStorage.removeItem(STORAGE_KEY);
+      window.localStorage.removeItem(OWNER_KEY);
+    }
   } catch (e) {
     /* private mode: the choice lasts for this page only */
   }
@@ -182,6 +190,26 @@ export function setLanguage(lang, { remember = true, save = remember } = {}) {
 /** The manual choice stored in this browser, or null when the language follows the browser. */
 export function storedLanguage() {
   return readStored();
+}
+
+/** User id that made the stored choice, 'anon' (made while signed out) or null (unknown/older). */
+export function storedLanguageOwner() {
+  try {
+    return window.localStorage.getItem(OWNER_KEY);
+  } catch (e) {
+    return null;
+  }
+}
+
+/** AuthProvider tells us who is signed in, so a stored choice is tagged with its owner. */
+export function setLanguageOwner(userId) {
+  languageOwner = userId == null ? null : String(userId);
+}
+
+/** Forget the stored choice and follow the browser again (used when it belonged to someone else). */
+export function forgetStoredLanguage() {
+  writeStored(null);
+  return setLanguage(browserLanguage(), { remember: false, save: false });
 }
 
 /** Re-renders on language change; returns the same t(key, default, vars). */

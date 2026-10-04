@@ -364,3 +364,6 @@
 .sr-app .sr-msg__secondary--shown { opacity: 1; }
 .sr-app .sr-composer__input::placeholder { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .sr-app .sr-dicecard .sr-crack path { stroke: rgba(255, 107, 129, 0.32); }
+.sr-app .sr-dicecard__reason { margin: 0; color: var(--sr-text); font-weight: 600; }
+.sr-app .sr-dicecard__summary { margin: 0; }
+.sr-app .sr-chat__aifail { display: flex; align-items: center; gap: var(--sr-space-2); flex-wrap: wrap; color: var(--sr-warn-400, var(--sr-text-2)); }

@@ -13,12 +13,14 @@
   "mine": "Your chronicles",
   "empty": {
     "title": "No chronicles yet",
-    "body": "Create one, or join an open chronicle below."
+    "body": "Create one, or join an open chronicle below.",
+    "bodyNoOpen": "Create one, or ask a Storyteller to add you to theirs."
   },
   "open": {
     "title": "Open chronicles you can join",
     "body": "Listed by their Storyteller and accepting players. Joining lets you create a character there.",
     "max": "max {{n}} players",
     "join": "Join"
-  }
+  },
+  "createCharacter": "Create character"
 }

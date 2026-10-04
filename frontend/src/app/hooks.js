@@ -62,6 +62,20 @@ export function lineOf(gameSystem) {
   return null;
 }
 
+const LINE_TITLES = {
+  vampire: 'Vampire: The Masquerade',
+  werewolf: 'Werewolf: The Apocalypse',
+  mage: 'Mage: The Ascension',
+  wraith: 'Wraith: The Oblivion',
+  changeling: 'Changeling: The Dreaming',
+};
+
+/** Game line title for a game_system value ("vampire" → "Vampire: The Masquerade"; titles stay English). */
+export function gameSystemTitle(gameSystem) {
+  const line = lineOf(gameSystem);
+  return line ? LINE_TITLES[line] : String(gameSystem || '');
+}
+
 export function lineGlyph(gameSystem) {
   const line = lineOf(gameSystem);
   return line ? `line-${line}` : 'logo-mark';
@@ -75,3 +89,39 @@ export function isStoryteller(user, campaign) {
 export function canUseStaffVoice(user, campaign) {
   return !!user && (user.role === 'admin' || user.role === 'helper' || isStoryteller(user, campaign));
 }
+
+/** Best-effort sessionStorage helpers (this tab only; survives remounts and reloads). */
+export function readSession(key, fallback = null) {
+  try {
+    const v = window.sessionStorage.getItem(key);
+    return v == null ? fallback : v;
+  } catch (e) {
+    return fallback;
+  }
+}
+
+export function writeSession(key, value) {
+  try {
+    if (value == null || value === '') window.sessionStorage.removeItem(key);
+    else window.sessionStorage.setItem(key, String(value));
+  } catch (e) {
+    /* ignore */
+  }
+}
+
+/** Removes every sessionStorage key starting with `prefix` (e.g. drafts at logout). */
+export function clearSessionPrefix(prefix) {
+  try {
+    const keys = [];
+    for (let i = 0; i < window.sessionStorage.length; i += 1) {
+      const k = window.sessionStorage.key(i);
+      if (k && k.startsWith(prefix)) keys.push(k);
+    }
+    keys.forEach((k) => window.sessionStorage.removeItem(k));
+  } catch (e) {
+    /* ignore */
+  }
+}
+
+/** Composer drafts: one per user and room, in this tab only. */
+export const DRAFT_PREFIX = 'sr_draft_';
