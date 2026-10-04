@@ -1,0 +1,158 @@
+# Separate demo copy of the ShadowRealms AI stack, used only to record the trailer.
+# Own project name, own data (data/trailer/demo-data/), own ports; never touches the live stack.
+#
+#   tools/trailer/demo-up.sh     start it (http://127.0.0.1:8180)
+#   tools/trailer/demo-down.sh   remove it (containers + demo data)
+#
+# Ports (all loopback): nginx 8180, backend 5100, postgres 5433, redis 6380, chroma 8100.
+# The backend runs a snapshot of backend/ (data/trailer/demo-data/backend-src, made by demo-up.sh)
+# so its invites.json and any files it writes stay in the demo folder.
+name: srdemo
+
+x-cpus: &cpus
+  cpus: 8
+
+services:
+  backend:
+    image: shadowrealms-ai-backend
+    <<: *cpus
+    user: "${DEMO_UID:-1000}:${DEMO_GID:-1000}"
+    network_mode: host
+    volumes:
+      - ../../data/trailer/demo-data/backend-src:/app
+      - ../../data/trailer/demo-data/appdata:/app/data
+      - ../../data/trailer/demo-data/logs:/app/logs
+      # read-only: the GPU status the live monitoring service writes (entrypoint waits for it)
+      - ../../data/logs/system_status.json:/app/logs/system_status.json:ro
+      - ../../data/laya:/app/data/laya:ro
+      - ../../ml/laya:/app/ml/laya:ro
+      - ../../books:/app/books:ro
+      - ../../README.md:/app/README.md:ro
+      - ../../docs:/app/project_docs:ro
+    environment:
+      - HOME=/tmp
+      - VERSION=${VERSION}
+      - APP_SERVER=gunicorn
+      - FLASK_ENV=production
+      - GUNICORN_WORKERS=2
+      - GUNICORN_THREADS=48
+      - GUNICORN_BIND=127.0.0.1:5100
+      - SR_EVENTS_MAX_STREAMS=20
+      - SR_EVENTS_MAX_STREAMS_PER_USER=4
+      - JWT_ACCESS_TOKEN_MINUTES=30
+      - JWT_REFRESH_TOKEN_DAYS=14
+      - JWT_SESSION_MAX_DAYS=30
+      - BCRYPT_ROUNDS=12
+      - PASSWORD_MIN_LENGTH=12
+      - CORS_ORIGINS=
+      - TRUSTED_PROXY_HOPS=1
+      # Scripted logins/registrations from one address would trip the limits during setup
+      - RATELIMIT_ENABLED=false
+      - FLASK_APP=main.py
+      - FLASK_HOST=127.0.0.1
+      - FLASK_PORT=5100
+      - FLASK_DEBUG=false
+      - FLASK_SECRET_KEY=${FLASK_SECRET_KEY}
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY}
+      - DATABASE_TYPE=postgresql
+      - DATABASE_HOST=localhost
+      - DATABASE_PORT=5433
+      - DATABASE_NAME=${POSTGRES_DB}
+      - DATABASE_USER=${POSTGRES_USER}
+      - DATABASE_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - CHROMADB_HOST=localhost
+      - CHROMADB_PORT=8100
+      - REDIS_HOST=localhost
+      - REDIS_PORT=6380
+      - GPU_THRESHOLD_HIGH=80
+      - GPU_THRESHOLD_MEDIUM=60
+      - LOG_LEVEL=INFO
+      - LOG_FILE=/app/logs/backend.log
+      - LM_STUDIO_URL=http://localhost:1234
+      - LM_STUDIO_API_KEY=${LM_STUDIO_API_KEY:-}
+      - LM_STUDIO_MODEL=${LM_STUDIO_MODEL:-auto}
+      - LM_STUDIO_TIMEOUT=${LM_STUDIO_TIMEOUT:-120}
+      - LM_STUDIO_REASONING_EFFORT=${LM_STUDIO_REASONING_EFFORT:-}
+      - OLLAMA_URL=http://localhost:11434
+      - OLLAMA_MODEL=${OLLAMA_MODEL:-llama3.2:3b}
+      - OLLAMA_TIMEOUT=${OLLAMA_TIMEOUT:-30}
+      - STORYTELLER_EL_MODEL=${STORYTELLER_EL_MODEL:-llama-krikri-8b-instruct}
+      - UTILITY_PROVIDER=${UTILITY_PROVIDER:-ollama}
+      - UTILITY_MODEL=${UTILITY_MODEL:-llama3.2:3b}
+      - EMBEDDING_MODEL=${EMBEDDING_MODEL:-text-embedding-bge-m3}
+      - OOC_VIOLATION_THRESHOLD=${OOC_VIOLATION_THRESHOLD:-0.8}
+      - OPENAI_REASONING_EFFORT=${OPENAI_REASONING_EFFORT:-none}
+      - STORYTELLER_ATTEMPT_TIMEOUT=${STORYTELLER_ATTEMPT_TIMEOUT:-45}
+      - STORYTELLER_TIME_BUDGET=${STORYTELLER_TIME_BUDGET:-55}
+      - STORYTELLER_CONTEXT_TOKENS=${STORYTELLER_CONTEXT_TOKENS:-8192}
+      - JEV_MODEL=${JEV_MODEL:-jev-latest}
+      - LAYA_RUNTIME=/app/ml/laya/infer.py
+      # No outbound mail from the demo
+      - SMTP_HOST=
+      - MAIL_ADMIN_ALERT_EMAIL=
+      - APP_PUBLIC_NAME=ShadowRealms AI
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://127.0.0.1:5100/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    depends_on:
+      - postgresql
+      - chromadb
+      - redis
+    restart: unless-stopped
+
+  postgresql:
+    image: postgres:16-alpine
+    <<: *cpus
+    user: "${DEMO_UID:-1000}:${DEMO_GID:-1000}"
+    ports:
+      - "127.0.0.1:5433:5432"
+    environment:
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - PGDATA=/var/lib/postgresql/data/pgdata
+    volumes:
+      - ../../data/trailer/demo-data/pg:/var/lib/postgresql/data
+      - ../../backend/init_postgresql_schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  chromadb:
+    image: chromadb/chroma:1.5.9
+    <<: *cpus
+    user: "${DEMO_UID:-1000}:${DEMO_GID:-1000}"
+    ports:
+      - "127.0.0.1:8100:8000"
+    volumes:
+      - ../../data/trailer/demo-data/chroma:/data
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    <<: *cpus
+    user: "${DEMO_UID:-1000}:${DEMO_GID:-1000}"
+    ports:
+      - "127.0.0.1:6380:6379"
+    volumes:
+      - ../../data/trailer/demo-data/redis:/data
+    restart: unless-stopped
+
+  nginx:
+    image: nginx:alpine
+    <<: *cpus
+    network_mode: host
+    volumes:
+      - ./demo-nginx.conf:/etc/nginx/nginx.conf:ro
+      - ../../frontend/build:/usr/share/nginx/html:ro
+    depends_on:
+      - backend
+    restart: unless-stopped

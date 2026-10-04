@@ -1,0 +1,161 @@
+{
+  "_doc": "Edit timeline, encoded from tools/trailer/CUES.md (the binding contract). Times in seconds on the 120.0 s timeline. Read by cards.mjs (text) and edit.py (everything). How to run: the docstring at the top of tools/trailer/edit.py. A shot is one or more pieces; each piece shows a clip with a source time pinned to a timeline time ('align': a shots.json key + offset, or 'src' per language), at 'speed', optionally 'crop' [x, y, w] (static zoom, 16:9). 'until' ends a piece (the last one ends with the shot).",
+  "duration": 120.0,
+  "fps": 60,
+  "width": 1920,
+  "height": 1080,
+
+  "shots": [
+    { "id": "01", "start": 0.0, "end": 8.0, "kind": "intro", "scene": "Intro: the login page's own sigil draws (sigil_clean.mp4), zoomed; app wordmark is the title",
+      "pieces": [
+        { "clip": "sigil_clean", "align": { "src": 0.0, "at": 1.0 }, "crop": [396, 33, 1128], "fade_in": 1.2 }
+      ] },
+    { "id": "02", "start": 8.0, "end": 15.0, "scene": "Login",
+      "transition_in": { "type": "fade", "frames": 30 },
+      "pieces": [ { "clip": "shot02", "align": { "key": "hall_at", "at": 11.5 } } ] },
+    { "id": "03", "start": 15.0, "end": 27.0, "scene": "New chronicle: Classic 19.2, V5 22.3, create click on the 24.5 chord",
+      "transition_in": { "type": "fadeblack", "frames": 12 },
+      "pieces": [ { "clip": "shot03", "align": { "key": "create_click_at", "at": 24.5 } } ] },
+    { "id": "04", "start": 27.0, "end": 41.0, "scene": "Forge: five moderate speed-ups with dissolves, ends on the finished sheet",
+      "transition_in": { "type": "fade", "frames": 10 },
+      "pieces": [
+        { "until": 29.6, "clip": "shot04", "align": { "key": "clan_at", "offset": -0.2, "at": 27.0 }, "speed": 2.0 },
+        { "until": 32.6, "clip": "shot04", "align": { "key": "skills_at", "offset": 0.45, "at": 29.6 }, "speed": 2.5,
+          "transition": { "type": "fade", "frames": 8 } },
+        { "until": 35.4, "clip": "shot04", "align": { "key": "disciplines_at", "offset": 0.6, "at": 32.6 }, "speed": 2.2,
+          "transition": { "type": "fade", "frames": 8 } },
+        { "until": 37.6, "clip": "shot04", "align": { "key": "humanity_at", "offset": 0.0, "at": 35.4 }, "speed": 2.4,
+          "transition": { "type": "fade", "frames": 8 } },
+        { "clip": "shot04", "align": { "key": "sheet_open_at", "offset": 0.25, "at": 37.6 }, "speed": 1.0,
+          "transition": { "type": "fade", "frames": 10 } }
+      ] },
+    { "id": "05", "start": 41.0, "end": 60.0, "scene": "Play: typing, Storyteller reply with roll chip (~4.7 s readable), Stavros quotes",
+      "transition_in": { "type": "fadeblack", "frames": 12 },
+      "pieces": [
+        { "until": 44.5, "clip": "shot05", "align": { "key": "send_at", "offset": -6.05, "at": 41.0 }, "speed": 1.5 },
+        { "until": 51.5, "clip": "shot05", "align": { "key": "send_at", "offset": -0.8, "at": 44.5 }, "speed": 1.0,
+          "transition": { "type": "fade", "frames": 8 } },
+        { "until": 56.6, "clip": "shot05", "align": { "key": "switch_to_stavros_at", "offset": -0.1, "at": 51.5 }, "speed": 1.42,
+          "transition": { "type": "fade", "frames": 8 } },
+        { "clip": "shot05", "align": { "key": "quote_sent_at", "offset": -0.45, "at": 56.6 }, "speed": 1.0,
+          "transition": { "type": "fade", "frames": 8 } }
+      ] },
+    { "id": "06", "start": 60.0, "end": 76.0, "scene": "Dice: V5 'Result' frame on the 68.0 hit, Classic 'Result' frame on the 73.0 hit (frame-checked by eye)",
+      "transition_in": { "type": "fade", "frames": 10 },
+      "pieces": [
+        { "until": 70.4, "clip": "shot06_v5", "align": { "src": { "en": 8.7167, "el": 8.7167 }, "at": 68.0 } },
+        { "clip": "shot06_classic", "align": { "src": { "en": 12.5167, "el": 12.7667 }, "at": 73.0 },
+          "transition": { "type": "fadeblack", "frames": 8 } }
+      ] },
+    { "id": "07", "start": 76.0, "end": 86.0, "scene": "Two languages (Greek reply), last 10.2 s of the take",
+      "transition_in": { "type": "fade", "frames": 14 },
+      "pieces": [ { "clip": "shot07", "align": { "key": "duration", "offset": -0.02, "at": 86.1 } } ] },
+    { "id": "08", "start": 86.0, "end": 98.0, "scene": "Laya warning (~3 s readable), then admin glimpses",
+      "transition_in": { "type": "fadeblack", "frames": 12 },
+      "pieces": [
+        { "until": 91.4, "clip": "shot08", "align": { "key": "laya_warning_at", "offset": 0.0, "at": 88.3 } },
+        { "until": 93.7, "clip": "shot08", "align": { "key": "security_at", "offset": -0.2, "at": 91.4 },
+          "transition": { "type": "fade", "frames": 8 } },
+        { "until": 95.9, "clip": "shot08", "align": { "key": "ai_roles_at", "offset": -0.1, "at": 93.7 },
+          "transition": { "type": "fade", "frames": 8 } },
+        { "clip": "shot08", "align": { "key": "ai_roles_models_at", "offset": -0.1, "at": 95.9 },
+          "transition": { "type": "fade", "frames": 8 } }
+      ] },
+    { "id": "09", "start": 98.0, "end": 112.0, "scene": "Theme showcase: glyphs, clan sigils, Subtle, Off, Full",
+      "transition_in": { "type": "fade", "frames": 12 },
+      "pieces": [
+        { "until": 101.2, "clip": "shot09", "align": { "key": "glyphs_at", "offset": -0.4, "at": 98.0 } },
+        { "until": 104.4, "clip": "shot09", "align": { "key": "clans_at", "offset": -0.2, "at": 101.2 },
+          "transition": { "type": "fade", "frames": 10 } },
+        { "until": 106.6, "clip": "shot09", "align": { "key": "atmosphere_subtle_at", "offset": -0.3, "at": 104.4 },
+          "transition": { "type": "fade", "frames": 10 } },
+        { "until": 108.6, "clip": "shot09", "align": { "key": "atmosphere_off_at", "offset": -0.3, "at": 106.6 },
+          "transition": { "type": "fade", "frames": 10 } },
+        { "clip": "shot09", "align": { "key": "atmosphere_full_at", "offset": -0.5, "at": 108.6 },
+          "transition": { "type": "fade", "frames": 10 } }
+      ] },
+    { "id": "10", "start": 112.0, "end": 120.0, "kind": "outro", "scene": "Outro: login page sigil + wordmark (sigil_clean), Enter the night, lines",
+      "transition_in": { "type": "fadeblack", "frames": 30 },
+      "pieces": [ { "clip": "sigil_clean", "align": { "src": 5.0, "at": 111.75 }, "crop": [125, 0, 1670] } ] }
+  ],
+
+  "captions": [
+    { "id": "02", "in": 9.0,   "out": 14.6,
+      "en": "Your chronicles. Your Storyteller. Your machine.",
+      "el": "Τα χρονικά σου. Ο Αφηγητής σου. Στο δικό σου μηχάνημα." },
+    { "id": "03", "in": 15.6,  "out": 23.6,
+      "en": "Classic or V5. Chosen per chronicle.",
+      "el": "Classic ή V5. Ξεχωριστά για κάθε χρονικό." },
+    { "id": "04", "in": 27.8,  "out": 40.4,
+      "en": "Forge your character by the book.",
+      "el": "Φτιάξε τον χαρακτήρα σου όπως ορίζουν οι κανόνες." },
+    { "id": "05", "in": 41.8,  "out": 59.2, "pos": "top",
+      "en": "An AI Storyteller that remembers, and calls for the right roll.",
+      "el": "Ένας Αφηγητής AI που θυμάται και ζητά τη σωστή ζαριά." },
+    { "id": "06", "in": 69.4,  "out": 75.6, "accent": true, "pos": "top",
+      "en": "Hunger. Messy criticals. Botches.",
+      "el": "Hunger. Messy criticals. Botches." },
+    { "id": "07", "in": 76.8,  "out": 85.4, "pos": "top",
+      "en": "Speaks English and Greek.",
+      "el": "Μιλά Ελληνικά και Αγγλικά." },
+    { "id": "08", "in": 91.0,  "out": 97.4,
+      "en": "Moderated by Laya, a classifier trained for this table.",
+      "el": "Με επίβλεψη από το Laya, έναν ταξινομητή εκπαιδευμένο γι’ αυτό το τραπέζι." },
+    { "id": "09", "in": 98.8,  "out": 111.0,
+      "en": "Gothic down to the last glyph.",
+      "el": "Γοτθικό ως την τελευταία λεπτομέρεια." }
+  ],
+  "caption_fade": 0.5,
+
+  "intro": {
+    "title": "ShadowRealms AI",
+    "subtitle": { "en": "An AI Storyteller for World of Darkness",
+                  "el": "Ένας Αφηγητής AI για τον World of Darkness" },
+    "_times": "local seconds in the 8 s intro. Own-sigil card (no recording): sigil draws (heartbeat at 2.0), title on the bell at 6.0. Recorded card: subtitle only, under the app's wordmark.",
+    "sigil_draw": [0.8, 4.6],
+    "title_in": 5.6,
+    "subtitle_in": 6.0,
+    "recorded_subtitle_top": 578
+  },
+  "outro": {
+    "headline": { "en": "Enter the night.", "el": "Πέρνα στη νύχτα." },
+    "line":     { "en": "Run it on your own server, under your own domain.",
+                  "el": "Στήσ’ το στον δικό σου server, στο δικό σου domain." },
+    "tags": "Self-hosted · Open source · MIT",
+    "url": "github.com/Somnius/shadowrealms-ai",
+    "_times": "local seconds in the 8 s outro (starts at 112.0; last bell at 113.0)",
+    "headline_in": 0.9,
+    "line_in": 2.2,
+    "tags_in": 3.3,
+    "url_in": 3.9,
+    "recorded_top": 470,
+    "fade_to_black": [119.0, 120.0]
+  },
+
+  "flashes": [
+    { "at": 68.0, "color": "0x8b0000", "opacity": 0.55, "attack": 0.04, "release": 0.55 },
+    { "at": 73.0, "color": "0x8b0000", "opacity": 0.35, "attack": 0.04, "release": 0.45 }
+  ],
+
+  "fog": [
+    { "start": 0.0,   "end": 8.2,   "opacity": 0.4, "fade_in": 2.0, "fade_out": 0.4 },
+    { "start": 111.8, "end": 120.0, "opacity": 0.4, "fade_in": 0.6, "fade_out": 1.0 }
+  ],
+
+  "audio": { "fade_in": 0.5, "fade_out": 0.5 },
+
+  "grade": {
+    "_note": "kept light on purpose: the app's navy #0f0f1e must stay navy (measured 10,10,24 vs 12,13,26 ungraded)",
+    "curves": "all='0/0 0.06/0.05 0.5/0.5 0.8/0.81 1/1'",
+    "colorbalance": "rs=-0.005:bs=0.01:rh=0.012",
+    "saturation": 1.0,
+    "vignette": "PI/8",
+    "grain": 7
+  },
+
+  "posters": [
+    { "name": "poster",       "at": 70.0 },
+    { "name": "poster_sigil", "at": 7.6 }
+  ],
+  "preview": { "start": 64.5, "end": 71.5, "width": 960, "fps": 20 }
+}
