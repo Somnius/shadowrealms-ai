@@ -1,5 +1,5 @@
 import React from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router';
 import { useToast } from '../../design';
 import CharacterCreationWizard from '../../components/CharacterCreationWizard';
 import { PageBody, TopBar } from '../../app/AppShell';

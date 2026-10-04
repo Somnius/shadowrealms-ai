@@ -1,6 +1,6 @@
 import React from 'react';
 import { act, fireEvent, render, screen, within } from '@testing-library/react';
-import { MemoryRouter } from 'react-router-dom';
+import { MemoryRouter } from 'react-router';
 import { DesignProvider, ToastProvider } from '../../../design';
 import { setLanguage } from '../../../i18n';
 import ShowcasePage from '../ShowcasePage';

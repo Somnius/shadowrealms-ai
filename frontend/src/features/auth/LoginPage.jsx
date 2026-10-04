@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router';
 import { Button, Card, CandleGlow, FogLayer, Glyph, Grain, Input, SigilReveal, Tabs, Vignette, useToast } from '../../design';
 import { useAuth } from '../../app/AuthContext';
 import { afterLoginPath } from '../../app/guards';

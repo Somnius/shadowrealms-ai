@@ -1,5 +1,5 @@
 import React, { Suspense, lazy } from 'react';
-import { Navigate, Route, Routes, useNavigate } from 'react-router-dom';
+import { Navigate, Route, Routes, useNavigate } from 'react-router';
 import { DesignProvider, Spinner, ToastProvider } from '../design';
 import { AuthProvider, useAuth } from './AuthContext';
 import { ChroniclesProvider } from './ChroniclesContext';

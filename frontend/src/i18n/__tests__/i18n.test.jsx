@@ -1,6 +1,6 @@
 import React from 'react';
 import { act, render, screen, waitFor } from '@testing-library/react';
-import { MemoryRouter } from 'react-router-dom';
+import { MemoryRouter } from 'react-router';
 import setupUser from '../../design/testing/setupUser';
 import App from '../../app/App';
 import {
@@ -94,7 +94,7 @@ test('game terms stay English with an explanation in the active language', async
 test('the login page language switch translates the whole page', async () => {
   const user = setupUser();
   render(
-    <MemoryRouter initialEntries={['/login']} future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+    <MemoryRouter initialEntries={['/login']}>
       <App />
     </MemoryRouter>
   );

@@ -1,6 +1,6 @@
 import React from 'react';
 import { act, render, screen, waitFor } from '@testing-library/react';
-import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
+import { MemoryRouter, Route, Routes, useLocation } from 'react-router';
 import { ToastProvider } from '../../design';
 import setupUser from '../../design/testing/setupUser';
 import { setLanguage } from '../../i18n';
@@ -13,7 +13,7 @@ function Where() {
 function mount(path) {
   return render(
     <ToastProvider>
-      <MemoryRouter initialEntries={[path]} future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+      <MemoryRouter initialEntries={[path]}>
         <Routes>
           <Route
             path="/admin/*"

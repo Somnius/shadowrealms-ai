@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router';
 import { Button, Modal, useOptionalToast } from '../design';
 import { useAuth } from './AuthContext';
 import { t } from '../i18n';

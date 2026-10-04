@@ -3,7 +3,7 @@
  * sample data only (no API calls), so it works signed out. Lazy-loaded from app/App.jsx.
  */
 import React, { useEffect, useRef } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router';
 import { Button, Card, Glyph, useAmbient, useAtmosphere } from '../../design';
 import { useT } from '../../i18n';
 import ChatPreview from './ChatPreview';

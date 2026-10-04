@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Link, useNavigate, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams } from 'react-router';
 import { Avatar, Badge, Button, Card, EmptyState, Glyph, Input, Panel, Select, Tabs, Textarea, useToast } from '../../design';
 import { PageBody, TopBar } from '../../app/AppShell';
 import ButtonLink from '../../app/ButtonLink';

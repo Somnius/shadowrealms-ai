@@ -1,5 +1,5 @@
 import React, { createContext, useCallback, useContext, useMemo, useState } from 'react';
-import { Outlet, useLocation } from 'react-router-dom';
+import { Outlet, useLocation } from 'react-router';
 import { Drawer, FogLayer, Glyph, IconButton, RouteTransition } from '../design';
 import ChronicleRail from './ChronicleRail';
 import UserMenu from './UserMenu';

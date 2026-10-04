@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router';
 import { Badge, Button, Checkbox, EmptyState, Input, Modal, Panel, Select, Tabs, Textarea, useToast } from '../design';
 import { api } from '../utils/api';
 import EditionBadge from '../components/EditionBadge';
