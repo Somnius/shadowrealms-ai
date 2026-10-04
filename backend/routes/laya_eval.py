@@ -90,26 +90,34 @@ def label(message_id):
 
 
 def _run_in_background(run_id: int) -> None:
+    """Read the gold set, close that connection, run the model (minutes for big sets) with no
+    connection open, then store the result over a fresh connection."""
     from services.classifier import laya_provider, ooc_threshold
 
     report, status = None, 'failed'
-    db = get_db()
     try:
+        db = get_db()
+        try:
+            gold = laya_eval.fetch_labelled(db.cursor())
+            db.rollback()
+        finally:
+            db.close()
         provider = laya_provider()
-        report = laya_eval.evaluate(db.cursor(), laya_eval.laya_predictor(provider),
-                                    model=laya_eval.model_info(provider.model_dir), ooc_threshold=ooc_threshold())
-        db.rollback()  # the evaluation only read; end that transaction
+        report = laya_eval.build_report(gold['items'], laya_eval.laya_predictor(provider),
+                                        model=laya_eval.model_info(provider.model_dir),
+                                        ooc_threshold=ooc_threshold(), stale=gold['stale'])
         status = 'done'
     except Exception as e:  # noqa: BLE001
-        db.rollback()
         logger.error('Laya evaluation %s failed: %s', run_id, type(e).__name__)
     try:
-        laya_eval.finish_run(db.cursor(), run_id, report, status)
-        db.commit()
+        db = get_db()
+        try:
+            laya_eval.finish_run(db.cursor(), run_id, report, status)
+            db.commit()
+        finally:
+            db.close()
     except Exception as e:  # noqa: BLE001
         logger.error('Laya evaluation %s: could not store the result: %s', run_id, type(e).__name__)
-    finally:
-        db.close()
     logger.info('Laya evaluation %s %s (n=%s)', run_id, status, report and report.get('n'))
 
 
@@ -149,15 +157,14 @@ def report():
     db = get_db()
     try:
         cur = db.cursor()
+        # A run whose process died stays 'running'; mark it failed here so the UI stops waiting.
+        laya_eval.reap_stale_runs(cur)
+        stale_after = laya_eval.stale_after_seconds(cur)
+        db.commit()
         history = laya_eval.latest_runs(cur, 10)
         row = None
         if run_id:
-            row = next((h for h in history if h['id'] == run_id), None)
-            if row is None:
-                cur.execute("SELECT r.id, r.status, r.source, r.started_at, r.finished_at, r.report, NULL AS started_by "
-                            "FROM laya_eval_reports r WHERE r.id = %s", (run_id,))
-                found = cur.fetchone()
-                row = dict(found) if found else None
+            row = laya_eval.get_run(cur, run_id)
             if row is None:
                 return jsonify({'error': 'Report not found'}), 404
         elif history:
@@ -178,4 +185,5 @@ def report():
         'run': laya_eval.run_summary(row) if row else None,
         'report': body,
         'history': [laya_eval.run_summary(h) for h in history],
+        'stale_after_sec': stale_after,
     }), 200
