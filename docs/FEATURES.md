@@ -78,7 +78,7 @@ Feature notes for ShadowRealms AI that don't have their own document. The full l
 ## Chat message actions and older history
 
 **Status:** v0.10 phase 3  
-**Scope:** Play view (`frontend/src/features/chat/MessageActions.jsx`, `backend/routes/messages.py`, `backend/services/message_actions.py`)
+**Scope:** Play view (`frontend/src/features/chat/MessageActions.jsx` and `messageRules.js`, `backend/routes/messages.py`, `backend/services/message_actions.py`)
 
 - **Actions on a message:** hover or keyboard focus shows a small toolbar (Copy, Reply, Delete). On touch screens each message has a **…** button, and a long press opens the toolbar too. Every button has a label for screen readers; Esc closes an open toolbar.
 - **Copy** puts the message text on the clipboard (the Storyteller's roll tags are copied as their label).

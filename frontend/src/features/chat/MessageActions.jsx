@@ -9,7 +9,7 @@
 import React, { createContext, useCallback, useContext, useMemo, useRef, useState } from 'react';
 import { Button, Glyph, IconButton, Modal } from '../../design';
 import { errorText } from '../../app/http';
-import { canDeleteMessage, copyTextOf, copyToClipboard, isActionable, replyTargetOf } from './messageActions';
+import { canDeleteMessage, copyTextOf, copyToClipboard, isActionable, replyTargetOf } from './messageRules';
 import { t } from '../../i18n';
 
 export const MessageActionsContext = createContext(null);
