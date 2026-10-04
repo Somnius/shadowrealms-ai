@@ -12,6 +12,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - ChromaDB is pinned: the `chromadb/chroma:1.5.9` image (was `:latest`) and the `chromadb>=1.5.9,<2` client move together. Existing data opens in place, nothing to migrate; take a copy of `data/vector_db` first (see [DOCKER_ENV_SETUP.md](DOCKER_ENV_SETUP.md#upgrading-an-existing-install)).
 - Backend image on Python 3.12 (was 3.11), same as CI. Requirement floors raised to the versions the live image already ran (Flask 3.1, bcrypt 5, Flask-CORS 6, openai 3, ...); numpy goes 2.4.6 → 2.5.3 with the Python move (2.5 needs 3.12). redis stays on 7.x because Flask-Limiter's `limits[redis]` needs `redis<8`.
 - CI: `actions/checkout` v7, `actions/setup-python` v7, `github/codeql-action` v4 (v3 is deprecated in December 2026).
+- Frontend dependencies: react-router 7 (replaces react-router-dom 6; fixes the last 2 `npm audit --omit=dev` findings, now 0), motion 14 (was framer-motion 10), i18next 26 and react-i18next 17, Jest 30, React Testing Library 16 and jest-dom 7. Unused zustand, Headless UI, Heroicons, React Query and TypeScript are gone. React stays on 18 and Tailwind on 3.
+- `npm run lint` is clean (it had 204 warnings) and now fails on any warning, in CI too.
 
 ## [0.9.4] - 2026-10-04 - At the table
 
