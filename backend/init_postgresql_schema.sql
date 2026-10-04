@@ -525,4 +525,67 @@ CREATE TABLE IF NOT EXISTS auth_events (
 CREATE INDEX IF NOT EXISTS idx_auth_events_created ON auth_events(created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_auth_events_user ON auth_events(user_id, created_at DESC);
 
+-- -----------------------------------------------------------------------------
+-- Chat activity counters for the live-update stream (routes/events.py, v0.9 phase 2).
+-- A trigger on messages bumps one tiny row per campaign and per room; each SSE stream polls
+-- campaign_activity (primary-key lookup) instead of scanning messages. No FKs on purpose:
+-- the trigger also fires for messages removed by a campaign/room cascade delete.
+-- reset_version counts UPDATE/DELETE (clients refetch the room instead of appending).
+-- -----------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS campaign_activity (
+    campaign_id INTEGER PRIMARY KEY,
+    version     BIGINT NOT NULL DEFAULT 0,
+    updated_at  TIMESTAMP NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS campaign_location_activity (
+    location_id     INTEGER PRIMARY KEY,
+    campaign_id     INTEGER NOT NULL,
+    version         BIGINT NOT NULL DEFAULT 0,
+    last_message_id INTEGER NOT NULL DEFAULT 0,
+    reset_version   BIGINT NOT NULL DEFAULT 0,
+    updated_at      TIMESTAMP NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_campaign_location_activity_campaign ON campaign_location_activity(campaign_id);
+
+CREATE OR REPLACE FUNCTION messages_bump_activity() RETURNS trigger
+LANGUAGE plpgsql AS $$
+DECLARE
+    r RECORD;
+    is_reset BOOLEAN := TG_OP <> 'INSERT';
+BEGIN
+    IF TG_OP = 'DELETE' THEN
+        r := OLD;
+    ELSE
+        r := NEW;
+    END IF;
+    -- Campaign row first, then the room row: every writer locks in the same order (no deadlocks).
+    INSERT INTO campaign_activity AS a (campaign_id, version, updated_at)
+    VALUES (r.campaign_id, 1, NOW())
+    ON CONFLICT (campaign_id) DO UPDATE SET version = a.version + 1, updated_at = NOW();
+    INSERT INTO campaign_location_activity AS a
+        (location_id, campaign_id, version, last_message_id, reset_version, updated_at)
+    VALUES (r.location_id, r.campaign_id, 1, CASE WHEN is_reset THEN 0 ELSE r.id END,
+            CASE WHEN is_reset THEN 1 ELSE 0 END, NOW())
+    ON CONFLICT (location_id) DO UPDATE SET
+        campaign_id = EXCLUDED.campaign_id,
+        version = a.version + 1,
+        last_message_id = GREATEST(a.last_message_id, EXCLUDED.last_message_id),
+        reset_version = a.reset_version + EXCLUDED.reset_version,
+        updated_at = NOW();
+    IF TG_OP = 'UPDATE' AND OLD.location_id IS DISTINCT FROM NEW.location_id THEN
+        UPDATE campaign_location_activity
+           SET version = version + 1, reset_version = reset_version + 1, updated_at = NOW()
+         WHERE location_id = OLD.location_id;
+    END IF;
+    RETURN NULL;
+END;
+$$;
+
+CREATE OR REPLACE TRIGGER trg_messages_activity
+    AFTER INSERT OR UPDATE OR DELETE ON messages
+    FOR EACH ROW EXECUTE FUNCTION messages_bump_activity();
+
+
 COMMIT;

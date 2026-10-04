@@ -41,7 +41,7 @@ Administrative `/ai` commands are restricted to site admins in `POST /api/ai/sla
   "character_id": 12, "location_id": 3, "action_description": "Sneak past the guard" }
 ```
 
-`pool_expression` (e.g. `"4+3"`) can replace `pool_size`. The response is `{roll_id, rules_edition: "classic", roll_result, chat_message}`, where `roll_result` holds:
+`pool_expression` (e.g. `"4+3"`) can replace `pool_size`. With `location_id` the server also posts the roll to that room itself (animation marker + result line, attributed to the roller with the `speak_as` voice, `hidden: true` for a hidden roll) and the response adds `server_posted: true`, `message_ids` and `messages`; clients no longer post dice rows themselves, and the messages API refuses `dice_*` kinds from non-admins. Details in `dice-v5.md` → "Posting to chat" (same for both editions). The response is `{roll_id, rules_edition: "classic", roll_result, chat_message, server_posted, message_ids[, messages]}`, where `roll_result` holds:
 
 - `results`: the original dice
 - `specialty_rerolls`: the extra dice rolled for 10s

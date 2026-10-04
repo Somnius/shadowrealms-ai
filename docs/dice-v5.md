@@ -13,6 +13,7 @@ V5 is only available for `game_system = vampire`. It's chosen when the campaign 
 | V5 rules (pure, rng injectable) | `backend/services/v5_dice.py`: `resolve_v5`, `roll_v5`, `willpower_reroll`, `resolve_rouse` / `rouse_check`, `parse_v5_roll_expression` |
 | API wrapper and chat text | `backend/services/dice_service.py`: `roll_v5_pool`, `format_v5_roll_for_chat` |
 | Routes | `backend/routes/dice.py`: `manual_roll`, `willpower_reroll`, `rouse_check_route`, `contested_roll`, `ai_roll` |
+| Posting rolls to chat (marker + result line) | `backend/services/dice_chat.py`, `backend/services/dice_markers.py` |
 | `/ai roll`, `/ai roll-hidden`, `/ai rouse` | `backend/services/ai_slash_commands.py` |
 | Unit tests | `backend/tests/unit/test_v5_dice.py` |
 
@@ -44,7 +45,9 @@ V5 is only available for `game_system = vampire`. It's chosen when the campaign 
 - If `hunger` is sent with a `character_id` and differs from the sheet, the roll uses the sent value and says so: `roll_result` gets `hunger_override`, `sheet_hunger` and `hunger_note` ("Hunger override: 3 (sheet 1)"), the same note is added to `chat_message`, and `modifiers` stores `hunger_override` and `sheet_hunger`.
 - `specialty` and `willpower` are ignored in V5. Willpower is the reroll below.
 
-Response: `{roll_id, rules_edition: "v5", roll_result, chat_message}`, with `roll_result`:
+Optional `speak_as` (`"character"`, `"player"` or `"staff"`) and `hidden` (boolean) control how the roll is posted to chat (see "Posting to chat" below).
+
+Response: `{roll_id, rules_edition: "v5", roll_result, chat_message, server_posted, message_ids, messages}`, with `roll_result`:
 
 | Field | Meaning |
 |-------|---------|
@@ -56,24 +59,35 @@ Response: `{roll_id, rules_edition: "v5", roll_result, chat_message}`, with `rol
 | `is_botch` | always `false` |
 | `leniency_floor`, `roll_id`, `can_reroll` | `can_reroll` is true when there are normal dice |
 
-The roll is stored in `dice_rolls`. `difficulty` holds the successes needed, `is_critical` holds the V5 critical, and the `modifiers` JSON holds `rules_edition`, `hunger`, `normal_dice`, `hunger_dice` and `rerolled`.
+The roll is stored in `dice_rolls`. `difficulty` holds the successes needed, `is_critical` holds the V5 critical, and the `modifiers` JSON holds `rules_edition`, `hunger`, `normal_dice`, `hunger_dice` and `rerolled` (plus `posted: {hidden, speak_as}` when it was posted to a room).
 
 ### `POST /api/campaigns/:id/roll/:roll_id/reroll`
 
 ```json
-{ "indices": [0, 2] }
+{ "indices": [0, 2], "location_id": 4 }
 ```
 
-`indices` are positions in `normal_dice` (0-based, 1–3 of them, no repeats). Only the user who made the roll can reroll it, and only once: a second try returns **409**. Only V5 `manual` rolls can be rerolled. The stored row is updated, and the response has the same shape as a roll, plus `rerolled: true`, `rerolled_indices` and `rerolled_from`.
+`indices` are positions in `normal_dice` (0-based, 1–3 of them, no repeats). Only the user who made the roll can reroll it, and only once: a second try returns **409**. Only V5 `manual` rolls can be rerolled. The stored row is updated, and the response has the same shape as a roll, plus `rerolled: true`, `rerolled_indices` and `rerolled_from`. With `location_id` (it must be the room of the original roll, else **400**) the reroll is posted to chat like a roll; `speak_as` and `hidden` default to what the original roll was posted with.
 
 ### `POST /api/campaigns/:id/rouse`
 
 ```json
 { "character_id": 12, "location_id": 4 }
-{ "hunger": 3, "location_id": 4 }
+{ "hunger": 3, "location_id": 4, "speak_as": "player" }
 ```
 
-With `character_id` (it must be the caller's own character, or any character in the campaign for a site admin), Hunger is read from the sheet and the new value is written back to `wod_meta.hunger`; a `hunger` in the body is ignored. Without one (for example a storyteller rousing for an NPC, or a player not speaking as their character), the optional `hunger` (an integer 0–5, default 0; booleans and fractions are refused with **400**) is the Hunger before the check, and nothing is saved. Response: `{die, success, hunger_before, hunger_after, at_max_hunger, roll_id, chat_message}`. The check is also logged in `dice_rolls` with `roll_type = 'rouse'`.
+With `character_id` (it must be the caller's own character, or any character in the campaign for a site admin), Hunger is read from the sheet and the new value is written back to `wod_meta.hunger`; a `hunger` in the body is ignored. Without one (for example a storyteller rousing for an NPC, or a player not speaking as their character), the optional `hunger` (an integer 0–5, default 0; booleans and fractions are refused with **400**) is the Hunger before the check, and nothing is saved. Response: `{die, success, hunger_before, hunger_after, at_max_hunger, roll_id, chat_message, server_posted, message_ids, messages}`. The check is also logged in `dice_rolls` with `roll_type = 'rouse'`, and its line is posted to the room (always; `location_id` is required here). `speak_as` defaults to `character` with a `character_id`, else `player`.
+
+### Posting to chat
+
+Since v0.9 phase 2 the dice API posts its own results. When `/roll`, `/roll/:id/reroll` or `/rouse` gets a `location_id`, the server saves, in the same transaction as the `dice_rolls` row (`backend/services/dice_chat.py`):
+
+1. the animation marker (not for Rouse checks): role `assistant`, `message_type` `system`, `ai_message_kind` `dice_animation:<animation_id>` (`dice_animation_hidden:` with `hidden: true`), content = the marker JSON built by `backend/services/dice_markers.py` (same fields as `frontend/src/dice/diceMarker.js`, plus `roll_id` and `roll_kind` `manual` / `reroll`; `duration_ms` 3000, `started_at_ms` = server time);
+2. the result line: role `user`, `message_type` `action`, attributed to the roller, `speaker_mode` from `speak_as` (`staff` only for admins, helpers and the campaign's storyteller, else **403**; `character` uses `character_id` or the playing character, and falls back to `player` without one), `ai_message_kind` `dice_roll[_hidden]:<animation_id>`, or `dice_rouse:<roll_id>` for a Rouse check.
+
+Before rolling, the room must be active and in the campaign (**400**), open or the caller allowed into closed rooms (**403** `location_closed`), and the caller not banned in the campaign (**403**). The response then has `server_posted: true`, `message_ids` (marker first, then the line) and `messages` (the saved rows in the `GET /campaigns/:id/locations/:lid` shape), so the client appends them instead of posting anything. Without `location_id` nothing is posted (`server_posted: false`, `message_ids: []`).
+
+`POST /campaigns/:id/locations/:lid` refuses any `ai_message_kind` starting with `dice_animation`, `dice_roll` or `dice_rouse` from everyone except site admins (**403**), so players can't post fake dice cards. Admin-posted markers (the admin-only `/ai roll` flow) are checked against the marker key whitelist and their timing is clamped: `duration_ms` at most 8000, `started_at_ms` within ±60 s of the server clock. Hidden rolls keep their visibility rules: `dice_*_hidden` rows are returned only to admins, helpers and the campaign's storyteller.
 
 ### Contested and AI rolls
 

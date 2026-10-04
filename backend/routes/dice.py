@@ -7,6 +7,14 @@ from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from database import get_db
 from services.dice_service import dice_service
+from services.dice_chat import (
+    DicePostError,
+    check_room,
+    embed_line,
+    fetch_messages,
+    post_roll,
+    resolve_speaker,
+)
 from services.rules_edition import CLASSIC, V5, edition_of
 from services.wod_dice import parse_pool_expression
 from services.request_validation import body_object, optional_str, strict_bool, strict_int
@@ -139,6 +147,17 @@ def _json_body():
     return body_object(request.get_json(silent=True))
 
 
+def _with_posted(body: dict, cursor, message_ids) -> dict:
+    """Add server_posted / message_ids / messages (the saved rows) to a dice response."""
+    body['server_posted'] = bool(message_ids)
+    body['message_ids'] = list(message_ids)
+    if message_ids:
+        rows = fetch_messages(cursor, message_ids)
+        body['messages'] = rows
+        embed_line(rows[-1] if rows else None)
+    return body
+
+
 @dice_bp.route('/campaigns/<int:campaign_id>/roll', methods=['POST'])
 @jwt_required()
 def manual_roll(campaign_id):
@@ -150,7 +169,11 @@ def manual_roll(campaign_id):
         pool_expression: str (optional) - e.g. "4+3", "7-1"
         character_id: int (optional) - Character making the roll
         action_description: str (optional) - What the roll is for
-        location_id: int (optional) - Where the roll is happening
+        location_id: int (optional) - Where the roll is happening. When given, the server
+            saves the dice animation marker and the result line to that room itself
+            (services/dice_chat.py) and answers server_posted: true, message_ids, messages.
+        speak_as: 'character' | 'player' | 'staff' (optional) - voice of the result line
+        hidden: bool (optional) - post as dice_*_hidden (storyteller/staff only can read it)
     Classic:
         difficulty: int - Target number 2-10 (default 6)
         specialty: bool - natural 10s count and are rerolled
@@ -173,6 +196,8 @@ def manual_roll(campaign_id):
             hunger_arg = _int_arg(data, 'hunger')
             specialty_arg = strict_bool(data.get('specialty'), 'specialty')
             willpower_arg = strict_bool(data.get('willpower'), 'willpower')
+            hidden = strict_bool(data.get('hidden'), 'hidden')
+            speak_as = optional_str(data.get('speak_as'), 'speak_as')
             action_description = optional_str(
                 data.get('action_description'), 'action_description', 'Dice roll'
             )
@@ -208,10 +233,16 @@ def manual_roll(campaign_id):
                 return jsonify({'error': 'Character not found or not yours in this campaign'}), 400
 
         leniency_floor = None
+        speaker = None
         if location_id is not None:
             ok, leniency_floor = _location_leniency(cursor, campaign_id, location_id)
             if not ok:
                 return jsonify({'error': 'Location not found in this campaign'}), 400
+            try:
+                check_room(cursor, user_id, campaign_id, location_id)
+                speaker = resolve_speaker(cursor, user_id, campaign_id, speak_as, character_id)
+            except DicePostError as e:
+                return jsonify(e.payload), e.status
 
         if edition == V5:
             sheet_hunger = None
@@ -258,6 +289,9 @@ def manual_roll(campaign_id):
                 'pool_expression': pool_expression or None,
                 'leniency_floor': roll_result.get('leniency_floor'),
             }
+        if speaker is not None:
+            # Defaults for a later Willpower reroll's chat line.
+            modifiers['posted'] = {'hidden': hidden, 'speak_as': speaker[0]}
 
         cursor.execute("""
             INSERT INTO dice_rolls (
@@ -274,7 +308,6 @@ def manual_roll(campaign_id):
             json.dumps(modifiers),
         ))
         roll_id = cursor.fetchone()['id']
-        conn.commit()
 
         roll_result['roll_id'] = roll_id
         if edition == V5:
@@ -298,14 +331,23 @@ def manual_roll(campaign_id):
                 roll_result, character_name, action_description
             )
 
+        message_ids = []
+        if speaker is not None:
+            message_ids = post_roll(
+                cursor, campaign_id=campaign_id, location_id=location_id, user_id=user_id,
+                roll_id=roll_id, roll_kind='manual', roll_result=roll_result,
+                chat_text=chat_message, hidden=hidden, speaker=speaker,
+            )
+        conn.commit()
+
         logger.info("Manual %s roll by user %s: %s successes", edition, user_id, roll_result['successes'])
 
-        return jsonify({
+        return jsonify(_with_posted({
             'roll_id': roll_id,
             'rules_edition': edition,
             'roll_result': roll_result,
             'chat_message': chat_message
-        }), 200
+        }, cursor, message_ids)), 200
 
     except ValueError as e:
         return jsonify({'error': str(e)}), 400
@@ -327,7 +369,9 @@ def willpower_reroll(campaign_id, roll_id):
     Only the user who made the roll may reroll it.
 
     Body: indices: [int] - positions in roll_result.normal_dice (0-based), 1-3 entries
-          location_id: int (optional) - leniency of that room applies to the new dice
+          location_id: int (optional) - the room of the original roll; when given, the server
+              posts the marker + result line there (server_posted: true, message_ids, messages)
+          speak_as / hidden (optional) - default to what the original roll was posted with
     """
     conn = None
     cursor = None
@@ -335,7 +379,10 @@ def willpower_reroll(campaign_id, roll_id):
         user_id = int(get_jwt_identity())
         try:
             data = _json_body()
-        except ValueError as e:
+            location_id = _int_arg(data, 'location_id')
+            hidden_arg = None if data.get('hidden') is None else strict_bool(data.get('hidden'), 'hidden')
+            speak_as_arg = optional_str(data.get('speak_as'), 'speak_as') or None
+        except (TypeError, ValueError) as e:
             return jsonify({'error': str(e)}), 400
         conn = get_db()
         cursor = conn.cursor()
@@ -360,6 +407,21 @@ def willpower_reroll(campaign_id, roll_id):
             return jsonify({'error': 'Only V5 manual rolls can be rerolled'}), 400
         if mods.get('rerolled'):
             return jsonify({'error': 'This roll has already been rerolled'}), 409
+
+        speaker = None
+        posted = mods.get('posted') if isinstance(mods.get('posted'), dict) else {}
+        hidden = bool(posted.get('hidden')) if hidden_arg is None else hidden_arg
+        if location_id is not None:
+            if row.get('location_id') is not None and int(row['location_id']) != location_id:
+                return jsonify({'error': 'A reroll is posted to the room of the original roll'}), 400
+            try:
+                check_room(cursor, user_id, campaign_id, location_id)
+                speaker = resolve_speaker(
+                    cursor, user_id, campaign_id,
+                    speak_as_arg or posted.get('speak_as'), row.get('character_id'),
+                )
+            except DicePostError as e:
+                return jsonify(e.payload), e.status
 
         normal = mods.get('normal_dice') or []
         hunger = mods.get('hunger_dice') or []
@@ -394,7 +456,6 @@ def willpower_reroll(campaign_id, roll_id):
         if cursor.rowcount != 1:
             conn.rollback()
             return jsonify({'error': 'This roll has already been rerolled'}), 409
-        conn.commit()
 
         character_name = None
         if row.get('character_id'):
@@ -407,12 +468,20 @@ def willpower_reroll(campaign_id, roll_id):
         chat_message = dice_service.format_v5_roll_for_chat(
             res, character_name, f"{row['action_description']} (Willpower reroll)"
         )
-        return jsonify({
+        message_ids = []
+        if speaker is not None:
+            message_ids = post_roll(
+                cursor, campaign_id=campaign_id, location_id=location_id, user_id=user_id,
+                roll_id=roll_id, roll_kind='reroll', roll_result=res,
+                chat_text=chat_message, hidden=hidden, speaker=speaker,
+            )
+        conn.commit()
+        return jsonify(_with_posted({
             'roll_id': roll_id,
             'rules_edition': V5,
             'roll_result': res,
             'chat_message': chat_message,
-        }), 200
+        }, cursor, message_ids)), 200
     except Exception as e:
         logger.exception("Error processing reroll: %s", e)
         return jsonify({'error': 'Failed to process reroll'}), 500
@@ -431,7 +500,9 @@ def rouse_check_route(campaign_id):
 
     Body: character_id: int (optional) - Hunger read from / written to wod_meta.hunger
           hunger: int 0-5 (optional, used when no character_id)
-          location_id: int - room the check is made in
+          location_id: int - room the check is made in; the server posts the result line there
+              (ai_message_kind dice_rouse:<roll_id>) and answers server_posted, message_ids, messages
+          speak_as: 'character' | 'player' | 'staff' (optional) - voice of that line
     """
     conn = None
     cursor = None
@@ -443,6 +514,7 @@ def rouse_check_route(campaign_id):
             location_id = _int_arg(data, 'location_id')
             # Used only without character_id (e.g. a storyteller rousing for an NPC).
             hunger_arg = strict_int(data.get('hunger'), 'hunger', None, 0, 5)
+            speak_as = optional_str(data.get('speak_as'), 'speak_as') or None
         except (TypeError, ValueError) as e:
             return jsonify({'error': f'Invalid input: {e}'}), 400
 
@@ -465,6 +537,15 @@ def rouse_check_route(campaign_id):
         if character_id is not None:
             if not _character_ok_for_user_campaign(cursor, character_id, user_id, campaign_id):
                 return jsonify({'error': 'Character not found or not yours in this campaign'}), 400
+        try:
+            check_room(cursor, user_id, campaign_id, location_id)
+            speaker = resolve_speaker(
+                cursor, user_id, campaign_id,
+                speak_as or ('character' if character_id is not None else 'player'), character_id,
+            )
+        except DicePostError as e:
+            return jsonify(e.payload), e.status
+        if character_id is not None:
             cursor.execute(
                 "SELECT name, wod_meta FROM characters WHERE id = %s FOR UPDATE",
                 (character_id,),
@@ -517,13 +598,18 @@ def rouse_check_route(campaign_id):
             ),
         )
         roll_id = cursor.fetchone()['id']
-        conn.commit()
 
         res['roll_id'] = roll_id
         res['character_id'] = character_id
         res['rules_edition'] = V5
         res['chat_message'] = format_rouse_markdown(res, character_name)
-        return jsonify(res), 200
+        message_ids = post_roll(
+            cursor, campaign_id=campaign_id, location_id=location_id, user_id=user_id,
+            roll_id=roll_id, roll_kind='rouse', roll_result=None,
+            chat_text=res['chat_message'], hidden=False, speaker=speaker,
+        )
+        conn.commit()
+        return jsonify(_with_posted(res, cursor, message_ids)), 200
     except Exception as e:
         logger.exception("Error processing rouse check: %s", e)
         return jsonify({'error': 'Failed to process rouse check'}), 500

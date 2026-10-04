@@ -14,6 +14,7 @@ from services.location_access import (
     closed_location_error_response,
     get_location_open_state,
     user_can_bypass_closed_location,
+    user_is_campaign_viewer,
 )
 from services.location_naming_context import build_enriched_suggestion_prompt
 from services.location_suggestion_parse import parse_location_suggestions
@@ -33,7 +34,7 @@ locations_bp = Blueprint('locations', __name__)
 def suggest_locations(campaign_id):
     """AI suggests locations based on campaign setting"""
     try:
-        user_id = get_jwt_identity()
+        user_id = int(get_jwt_identity())
         data = request.get_json()
         
         # Verify user is admin or campaign creator
@@ -127,7 +128,7 @@ def suggest_locations(campaign_id):
 def batch_create_locations(campaign_id):
     """Create multiple locations at once from AI suggestions"""
     try:
-        user_id = get_jwt_identity()
+        user_id = int(get_jwt_identity())
         data = request.get_json()
         
         # Verify permission
@@ -184,12 +185,17 @@ def batch_create_locations(campaign_id):
 @locations_bp.route('/campaigns/<int:campaign_id>/locations', methods=['GET'])
 @jwt_required()
 def get_campaign_locations(campaign_id):
-    """Get all locations for a campaign"""
+    """Get all locations for a campaign (creator, roster member or site admin)."""
+    conn = None
     try:
+        user_id = int(get_jwt_identity())
         conn = get_db()
         cursor = conn.cursor()
         ensure_locations_player_access_columns(cursor)
         conn.commit()
+
+        if not user_is_campaign_viewer(cursor, user_id, campaign_id):
+            return jsonify({'error': 'Unauthorized or campaign not found'}), 403
 
         cursor.execute("""
             SELECT l.*, u.username as creator_name,
@@ -230,6 +236,9 @@ def get_campaign_locations(campaign_id):
     except Exception as e:
         logger.error(f"Error fetching campaign locations: {e}")
         return jsonify({'error': 'Failed to fetch locations'}), 500
+    finally:
+        if conn is not None:
+            conn.close()
 
 
 @locations_bp.route(
@@ -312,8 +321,10 @@ def location_dice_leniency(campaign_id, location_id):
 @locations_bp.route('/locations/<int:location_id>', methods=['GET'])
 @jwt_required()
 def get_location(location_id):
-    """Get specific location details"""
+    """Get specific location details (members of its campaign and site admins only)."""
+    conn = None
     try:
+        user_id = int(get_jwt_identity())
         conn = get_db()
         cursor = conn.cursor()
         ensure_locations_player_access_columns(cursor)
@@ -329,6 +340,8 @@ def get_location(location_id):
         row = cursor.fetchone()
         if not row:
             return jsonify({'error': 'Location not found'}), 404
+        if not user_is_campaign_viewer(cursor, user_id, row['campaign_id']):
+            return jsonify({'error': 'Unauthorized or campaign not found'}), 403
 
         raw_open = row.get("is_open")
         is_open = True if raw_open is None else bool(raw_open) if not isinstance(raw_open, (int, float)) else raw_open != 0
@@ -373,6 +386,9 @@ def get_location(location_id):
     except Exception as e:
         logger.error(f"Error fetching location: {e}")
         return jsonify({'error': 'Failed to fetch location'}), 500
+    finally:
+        if conn is not None:
+            conn.close()
 
 
 @locations_bp.route('/campaigns/<int:campaign_id>/locations', methods=['POST'])
@@ -643,7 +659,7 @@ def delete_location(campaign_id, location_id):
 def enter_location(location_id):
     """Character enters a location"""
     try:
-        user_id = get_jwt_identity()
+        user_id = int(get_jwt_identity())
         data = request.get_json()
         
         character_id = data.get('character_id')
@@ -721,7 +737,7 @@ def enter_location(location_id):
 def leave_location(location_id):
     """Character leaves a location"""
     try:
-        user_id = get_jwt_identity()
+        user_id = int(get_jwt_identity())
         data = request.get_json()
         
         character_id = data.get('character_id')

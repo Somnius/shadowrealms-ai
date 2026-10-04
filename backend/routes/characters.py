@@ -125,7 +125,7 @@ def _character_public_dict(row, owner_name=None, campaign_name=None):
 def get_characters():
     """Get characters (filtered by user and campaign)"""
     try:
-        current_user_id = get_jwt_identity()
+        current_user_id = int(get_jwt_identity())
         campaign_id = request.args.get('campaign_id', type=int)
         
         db = get_db()
@@ -440,7 +440,7 @@ def create_character():
 def list_my_downtime_requests():
     """Pending and past downtime requests for the logged-in player."""
     try:
-        current_user_id = get_jwt_identity()
+        current_user_id = int(get_jwt_identity())
         db = get_db()
         cursor = db.cursor()
         _ensure_character_schema(cursor)
@@ -491,7 +491,7 @@ def list_my_downtime_requests():
 def create_character_downtime_request(character_id):
     """Submit a downtime / sheet-change request for Storyteller review."""
     try:
-        current_user_id = get_jwt_identity()
+        current_user_id = int(get_jwt_identity())
         data = request.get_json()
         if not data:
             return jsonify({'error': 'No data provided'}), 400
@@ -552,7 +552,7 @@ def create_character_downtime_request(character_id):
 def get_character(character_id):
     """Get specific character details"""
     try:
-        current_user_id = get_jwt_identity()
+        current_user_id = int(get_jwt_identity())
         
         db = get_db()
         cursor = db.cursor()
@@ -603,7 +603,7 @@ def get_character(character_id):
 def update_character(character_id):
     """Update character (owner, admin, or helper only)"""
     try:
-        current_user_id = get_jwt_identity()
+        current_user_id = int(get_jwt_identity())
         data = request.get_json()
         
         if not data:
@@ -753,7 +753,7 @@ def update_character(character_id):
 def delete_character(character_id):
     """Delete character (owner, admin, or helper only)"""
     try:
-        current_user_id = get_jwt_identity()
+        current_user_id = int(get_jwt_identity())
         
         db = get_db()
         cursor = db.cursor()

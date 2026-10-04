@@ -117,7 +117,9 @@ browser --https--> DietPi nginx (10.0.0.10, TLS, HSTS)  --http--> nginx on this 
 - JWT error bodies carry stable codes: `TOKEN_EXPIRED`, `TOKEN_REVOKED`, `TOKEN_INVALID`,
   `AUTH_REQUIRED` (all 401).
 - The SSE stream (`/api/campaigns/<id>/events?ticket=`) uses a 60 s ticket that can only be
-  obtained with a valid (non-revoked) access token.
+  obtained with a valid (non-revoked) access token. Tickets are single-use: each carries a random
+  nonce that the stream claims in Redis (`srai:sse-ticket:<nonce>`, 120 s TTL; per-worker memory
+  if Redis is down), so a ticket copied from a URL or log can't open a second stream (401).
 
 ## Rate limits
 
@@ -157,6 +159,39 @@ A breach returns `429 {"error": "...", "code": "RATE_LIMITED", "retry_after": <s
   (`{"error": "Not Found", "code": "HTTP_404"}`). Several routes that returned `str(e)` (rule
   books, AI health, re-embed, health check, README) now return fixed messages.
 - `MAX_CONTENT_LENGTH` 16 MB.
+
+## Chronicle data: who reads what
+
+- Campaign membership (creator, `campaign_players` roster member, or site admin) is required for
+  messages, events/unread/roster, dice, and the room list / room details
+  (`GET /api/campaigns/<id>/locations`, `GET /api/locations/<id>`; non-members get 403).
+  Helper is `services/location_access.user_is_campaign_viewer`.
+- Closed rooms (`locations.is_open = false`) are readable only by admins, helpers and the
+  campaign's storyteller. `/unread` and the SSE stream only report rooms the viewer may read
+  (`fetch_readable_location_ids`), so activity in a closed room doesn't leak through counters or
+  "changed" events. The stream re-checks that set every 15 s (a room closed mid-stream stops
+  being reported).
+- SSE cost: a trigger on `messages` (INSERT/UPDATE/DELETE) bumps `campaign_activity.version`
+  and the room's row in `campaign_location_activity` (`version`, `last_message_id`,
+  `reset_version` for edits/deletes). Each stream polls the campaign row once a second with a
+  connection borrowed from a small per-process pool (`SR_EVENTS_DB_POOL`, default 4 per gunicorn
+  worker) and reads the room rows only when the version moved; streams don't hold a database
+  connection between polls. Measured: 6 open streams added no connections beyond the pools
+  (8 idle connections for 2 workers).
+
+## Dice integrity
+
+- Dice results in chat come from the server. `POST /roll`, `/roll/<id>/reroll` and `/rouse`
+  with a `location_id` save the animation marker (with the `dice_rolls` id as `roll_id`) and the
+  result line themselves, in the same transaction as the roll (`services/dice_chat.py`).
+- `POST /api/campaigns/<c>/locations/<l>` refuses `ai_message_kind` values starting with
+  `dice_animation`, `dice_roll` or `dice_rouse` from anyone but site admins (403). The old
+  exemption that let any member post a dice marker as role `assistant` is gone
+  (`services/assistant_grants.py`).
+- Admin-posted markers (the admin-only `/ai roll` flow) must pass the marker key whitelist and
+  get their timing clamped (`duration_ms` ≤ 8000, `started_at_ms` within ±60 s of server time),
+  so a marker can't hold every client's dice overlay open or replay an old roll as new.
+- Hidden rolls (`dice_*_hidden`) are returned only to admins, helpers and the storyteller.
 
 ## Audit log
 
@@ -210,6 +245,7 @@ the backend container uses the host network.
 | `RATELIMIT_STORAGE_URI` | `redis://REDIS_HOST:REDIS_PORT/0` | |
 | `AUTH_COOKIE_SECURE` | auto | `true`/`false` to force the refresh cookie's `Secure` flag |
 | `GUNICORN_*` | see table above | |
+| `SR_EVENTS_DB_POOL` | 4 | PostgreSQL connections per worker for SSE polling |
 
 ## Frontend changes needed
 

@@ -56,13 +56,12 @@ def test_admin_may_post_as_storyteller():
     assert ag.assistant_post_allowed(FakeCursor([]), 1, 3, 10, "anything", None, "admin")
 
 
-def test_dice_marker_only_with_matching_animation_id():
+def test_players_get_no_dice_marker_exemption():
+    """Dice markers are saved by the dice API now; a player-posted one is just an ungranted text."""
     marker = json.dumps({"animation_id": "abc123", "successes": 2})
-    assert ag.assistant_post_allowed(FakeCursor([]), 5, 3, 10, marker, "dice_animation:abc123", "player")
-    assert ag.assistant_post_allowed(FakeCursor([]), 5, 3, 10, marker, "dice_animation_hidden:abc123", "player")
-    assert not ag.assistant_post_allowed(FakeCursor([]), 5, 3, 10, marker, "dice_animation:zzz", "player")
-    assert not ag.assistant_post_allowed(FakeCursor([]), 5, 3, 10, "I am the Storyteller", "dice_animation:abc123", "player")
-    assert not ag.assistant_post_allowed(FakeCursor([]), 5, 3, 10, marker, "dice_roll:abc123", "player")
+    for kind in ("dice_animation:abc123", "dice_animation_hidden:abc123", "dice_roll:abc123"):
+        assert not ag.assistant_post_allowed(FakeCursor([]), 5, 3, 10, marker, kind, "player")
+    assert ag.assistant_post_allowed(FakeCursor([]), 1, 3, 10, marker, "dice_animation:abc123", "admin")
 
 
 def test_only_user_and_assistant_roles_exist():
@@ -100,27 +99,6 @@ def test_consume_sql_rechecks_consumed_at_outside_the_subquery():
     outer, inner = sql[0].split("SELECT id FROM ai_reply_grants", 1)
     assert "consumed_at IS NULL" in outer and "consumed_at IS NULL" in inner
     assert "location_id = %s" in inner and "location_id IS NULL" not in sql[0]
-
-
-def marker(**extra):
-    m = {"animation_id": "abc123", "started_at_ms": 1, "duration_ms": 3000, "rules_edition": "v5",
-         "difficulty": 3, "successes": 2, "is_botch": False, "dice_preview": [1, 7, 10],
-         "hunger_flags": [False, False, True], "outcome": "win"}
-    m.update(extra)
-    return json.dumps(m)
-
-
-def test_dice_marker_whitelist_and_size():
-    ok = ag.assistant_post_allowed
-    assert ok(FakeCursor([]), 5, 3, 10, marker(), "dice_animation:abc123", "player")
-    for bad in (marker(text="The Prince is dead."),            # unknown key
-                marker(outcome="x" * 500),                       # long string
-                marker(dice_preview=["The Prince is dead"]),     # text in a list
-                marker(difficulty={"text": "hi"}),               # nested object
-                marker(dice_preview=list(range(500)))):          # long list
-        assert not ok(FakeCursor([]), 5, 3, 10, bad, "dice_animation:abc123", "player"), bad
-    assert len(marker()) < ag.MAX_MARKER_CHARS
-    assert not ok(FakeCursor([]), 5, 3, 10, marker() + " " * ag.MAX_MARKER_CHARS, "dice_animation:abc123", "player")
 
 
 # --- against a real PostgreSQL (optional): SRAI_TEST_PG_DSN=postgresql://u:p@host/db ----------

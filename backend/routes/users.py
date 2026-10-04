@@ -406,7 +406,7 @@ def put_my_ui_language():
 def get_users():
     """Get all users (admin only)"""
     try:
-        current_user_id = get_jwt_identity()
+        current_user_id = int(get_jwt_identity())
         
         # Check if current user is admin
         db = get_db()
@@ -455,7 +455,7 @@ def get_users():
 def get_user(user_id):
     """Get specific user by ID"""
     try:
-        current_user_id = get_jwt_identity()
+        current_user_id = int(get_jwt_identity())
         
         db = get_db()
         cursor = db.cursor()
@@ -526,7 +526,7 @@ def get_user(user_id):
 def update_user(user_id):
     """Update user information (admin or self)"""
     try:
-        current_user_id = get_jwt_identity()
+        current_user_id = int(get_jwt_identity())
         data = request.get_json()
         
         if not data:
@@ -633,7 +633,7 @@ def update_user(user_id):
 def delete_user(user_id):
     """Delete user (admin only)"""
     try:
-        current_user_id = get_jwt_identity()
+        current_user_id = int(get_jwt_identity())
         
         db = get_db()
         cursor = db.cursor()
@@ -678,7 +678,7 @@ def delete_user(user_id):
 def get_user_stats():
     """Get user statistics (admin only)"""
     try:
-        current_user_id = get_jwt_identity()
+        current_user_id = int(get_jwt_identity())
         
         db = get_db()
         cursor = db.cursor()
