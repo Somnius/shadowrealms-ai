@@ -9,38 +9,43 @@ function newCustomRow() {
 /**
  * Three-column abilities + optional custom rows per column (count toward same pools).
  */
+/**
+ * Without `freebieMode`: no ability above 3 and each column stops at its budget (13/9/5).
+ * With it: any rating 0–5; extra dots are priced as freebies by the wizard.
+ */
 export default function AbilityColumns({
   abilities,
   setAbilities,
   pools,
   customAbilities,
   setCustomAbilities,
+  freebieMode = false,
 }) {
+  const cap = freebieMode ? 5 : 3;
   const sumCustom = (rows) => (rows || []).reduce((s, r) => s + (parseInt(r.dots, 10) || 0), 0);
 
   const setDot = (key, list, poolSize, n) => {
     const old = parseInt(abilities[key], 10) || 0;
-    const next = Math.max(0, Math.min(5, n));
+    const next = Math.max(0, Math.min(cap, n));
     const delta = next - old;
     const cat = list === TALENTS ? 'talents' : list === SKILLS ? 'skills' : 'knowledges';
     const customRows = customAbilities?.[cat] || [];
     const sum =
       list.reduce((s, [kk]) => s + (parseInt(abilities[kk], 10) || 0), 0) + sumCustom(customRows);
-    if (sum + delta > poolSize) return;
+    if (!freebieMode && delta > 0 && sum + delta > poolSize) return;
     setAbilities((prev) => ({ ...prev, [key]: next }));
   };
 
   const setCustomDot = (cat, id, poolSize, list, n) => {
-    const nextVal = Math.max(0, Math.min(5, n));
+    const nextVal = Math.max(0, Math.min(cap, n));
     const rows = customAbilities?.[cat] || [];
     const row = rows.find((r) => r.id === id);
     if (!row) return;
     const old = parseInt(row.dots, 10) || 0;
-    const delta = nextVal - old;
     const baseList = list === TALENTS ? TALENTS : list === SKILLS ? SKILLS : KNOWLEDGES;
     const baseSum = baseList.reduce((s, [k]) => s + (parseInt(abilities[k], 10) || 0), 0);
     const otherCustom = rows.filter((r) => r.id !== id).reduce((s, r) => s + (parseInt(r.dots, 10) || 0), 0);
-    if (baseSum + otherCustom + nextVal > poolSize) return;
+    if (!freebieMode && nextVal > old && baseSum + otherCustom + nextVal > poolSize) return;
     setCustomAbilities((prev) => ({
       ...prev,
       [cat]: rows.map((r) => (r.id === id ? { ...r, dots: nextVal } : r)),

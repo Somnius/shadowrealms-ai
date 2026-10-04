@@ -1,5 +1,8 @@
 import React from 'react';
-import { KNOWLEDGES, MENTAL, PHYSICAL, SKILLS, SOCIAL, TALENTS } from '../../characterSheet/constants';
+import {
+  abilityPoolRemainders,
+  attributePoolRemainders,
+} from '../../characterSheet/validation';
 
 const chip = (label, rem, color) => (
   <span
@@ -20,12 +23,20 @@ const chip = (label, rem, color) => (
 /**
  * Sticky strip showing remaining dots for attribute or ability pools.
  */
-export default function PoolSummary({ variant, attrs, pools, abilities, abilityPools, customAbilities }) {
+export default function PoolSummary({
+  variant,
+  attrs,
+  pools,
+  abilities,
+  abilityPools,
+  customAbilities,
+  nosferatu = false,
+}) {
   if (variant === 'attributes') {
-    const sum = (keys) => keys.reduce((s, k) => s + (parseInt(attrs[k], 10) || 0), 0);
-    const rp = pools.physical - sum(PHYSICAL);
-    const rs = pools.social - sum(SOCIAL);
-    const rm = pools.mental - sum(MENTAL);
+    const rem = attributePoolRemainders(attrs, pools, { nosferatu });
+    const rp = Math.max(0, rem.physical);
+    const rs = Math.max(0, rem.social);
+    const rm = Math.max(0, rem.mental);
     return (
       <div
         style={{
@@ -49,12 +60,10 @@ export default function PoolSummary({ variant, attrs, pools, abilities, abilityP
   }
 
   if (variant === 'abilities') {
-    const sumCat = (pairs) =>
-      pairs.reduce((s, [k]) => s + (parseInt(abilities[k], 10) || 0), 0);
-    const sumCustom = (rows) => (rows || []).reduce((s, r) => s + (parseInt(r.dots, 10) || 0), 0);
-    const rt = abilityPools.talents - sumCat(TALENTS) - sumCustom(customAbilities?.talents);
-    const rsk = abilityPools.skills - sumCat(SKILLS) - sumCustom(customAbilities?.skills);
-    const rkn = abilityPools.knowledges - sumCat(KNOWLEDGES) - sumCustom(customAbilities?.knowledges);
+    const rem = abilityPoolRemainders(abilities, abilityPools, customAbilities);
+    const rt = rem.talents;
+    const rsk = rem.skills;
+    const rkn = rem.knowledges;
     return (
       <div
         style={{

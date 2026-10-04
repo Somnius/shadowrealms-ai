@@ -1,30 +1,38 @@
 import React, { useState } from 'react';
 import { GothicBox } from './GothicDecorations';
+import { classicOutcome, resolveClassicDice } from '../dice/classicDiceDisplay';
 
-/** Client-side WoD-style pool roll for showcase / readme — no API. */
+const d10 = () => Math.floor(Math.random() * 10) + 1;
+
+/**
+ * Client-side classic (Revised) pool roll for showcase / readme — no API.
+ * Math comes from dice/classicDiceDisplay (mirrors backend wod_dice.resolve_classic):
+ * 1s cancel successes; botch only if no die succeeded and a 1 showed;
+ * specialty: natural 10s are rerolled (and explode), reroll 1s don't cancel.
+ */
 function rollStorytellerPool(poolSize, difficulty, specialty) {
-  const results = [];
-  for (let i = 0; i < poolSize; i += 1) {
-    results.push(Math.floor(Math.random() * 10) + 1);
+  const results = Array.from({ length: poolSize }, d10);
+  const rerolls = [];
+  if (specialty) {
+    let pending = results.filter((d) => d === 10).length;
+    while (pending > 0) {
+      const r = d10();
+      rerolls.push(r);
+      pending -= 1;
+      if (r === 10) pending += 1;
+    }
   }
-  let successes = 0;
-  for (const d of results) {
-    if (d === 1) continue;
-    if (d >= difficulty) successes += 1;
-    if (specialty && d === 10) successes += 1;
-  }
-  const ones = results.filter((d) => d === 1).length;
-  const isBotch = successes === 0 && ones > 0;
-  const isCritical = successes >= 5;
-  let message = `${successes} success${successes === 1 ? '' : 'es'}`;
-  if (isBotch) message = 'Botch — no successes and at least one 1!';
-  else if (isCritical) message = `${message} — exceptional!`;
+  const r = resolveClassicDice(results, difficulty, { specialtyRerolls: rerolls });
+  const out = classicOutcome(r);
+  let message = out.label;
+  if (r.is_botch) message = 'Botch — no die succeeded and at least one 1!';
   return {
     results,
-    successes,
+    rerolls,
+    successes: r.successes,
     message,
-    is_botch: isBotch,
-    is_critical: isCritical,
+    is_botch: r.is_botch,
+    is_critical: r.is_exceptional,
   };
 }
 
@@ -141,7 +149,7 @@ export default function DemoDiceRollerModal({ onClose }) {
             checked={specialty}
             onChange={(e) => setSpecialty(e.target.checked)}
           />
-          Specialty (10s add an extra success)
+          Specialty (10s are rerolled for extra successes)
         </label>
         <div style={{ marginBottom: '16px' }}>
           <label style={{ color: '#b5b5c3', display: 'block', marginBottom: '6px', fontSize: '14px' }}>Action</label>
@@ -212,6 +220,23 @@ export default function DemoDiceRollerModal({ onClose }) {
                   }}
                 >
                   {die}
+                </span>
+              ))}
+              {(lastRoll.rerolls || []).map((die, idx) => (
+                <span
+                  key={`r${idx}`}
+                  title="Specialty reroll (1s here don't cancel)"
+                  style={{
+                    padding: '6px 12px',
+                    background: die >= lastRoll.difficulty ? '#14532d' : '#475569',
+                    color: 'white',
+                    border: '1px dashed #fde047',
+                    borderRadius: '6px',
+                    fontWeight: 'bold',
+                    fontSize: '15px',
+                  }}
+                >
+                  ↻{die}
                 </span>
               ))}
             </div>

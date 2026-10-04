@@ -7,6 +7,13 @@ import Footer from './components/Footer';
 import CharacterSheetModal from './components/CharacterSheetModal';
 import LocationSuggestions from './components/LocationSuggestions';
 import CharacterCreationWizard from './components/CharacterCreationWizard';
+import EditionBadge from './components/EditionBadge';
+import DiceRollOverlay from './components/dice/DiceRollOverlay';
+import RollEditionFields, { RollHelp } from './components/dice/RollEditionFields';
+import V5RerollPanel from './components/dice/V5RerollPanel';
+import { buildDiceMarker, overlayFromMarker } from './dice/diceMarker';
+import { describeRollRow } from './dice/historyRow';
+import { editionLabel, editionOf, isV5Allowed, V5 } from './rules/rulesEdition';
 import { useToast } from './components/ToastNotification';
 import { formatMessageTime } from './utils/messageTime';
 import { formatDateTimeTooltip, formatDateTimeInZone } from './utils/userTimeFormat';
@@ -300,6 +307,18 @@ function SimpleApp() {
   const [rollPoolInput, setRollPoolInput] = useState('5');
   const [rollDifficulty, setRollDifficulty] = useState(6);
   const [rollSpecialty, setRollSpecialty] = useState(false);
+  /** Classic: spend Willpower for +1 automatic success (declared before rolling). */
+  const [rollWillpower, setRollWillpower] = useState(false);
+  /** V5: difficulty = successes needed (0–10), Hunger dice 0–5. */
+  const [rollV5Difficulty, setRollV5Difficulty] = useState(1);
+  const [rollHunger, setRollHunger] = useState(0);
+  const [rousing, setRousing] = useState(false);
+  /** Last V5 roll by this player that can still take a Willpower reroll. */
+  const [lastV5Roll, setLastV5Roll] = useState(null);
+  const [rerollBusy, setRerollBusy] = useState(false);
+  /** Create-campaign form (controlled so the Edition choice can follow the game system). */
+  const [createGameSystem, setCreateGameSystem] = useState('vampire');
+  const [createRulesEdition, setCreateRulesEdition] = useState('classic');
   const [rollReason, setRollReason] = useState('');
   const [rollHideOthers, setRollHideOthers] = useState(false);
   const [rollSubmitting, setRollSubmitting] = useState(false);
@@ -328,11 +347,16 @@ function SimpleApp() {
     isBotch: false,
     isCritical: false,
     poolSize: 0,
+    settled: false,
+    rulesEdition: 'classic',
+    hungerFlags: [],
+    result: {},
   });
   const [pendingDiceAnimations, setPendingDiceAnimations] = useState({});
   const processedDiceAnimationsRef = React.useRef(new Set());
   const diceRollingIntervalRef = React.useRef(null);
   const diceRevealTimeoutRef = React.useRef(null);
+  const diceSettleTimeoutRef = React.useRef(null);
   const dicePendingTimeoutsRef = React.useRef({});
   const [showAdminDiceRulesModal, setShowAdminDiceRulesModal] = useState(false);
   const [adminDiceFloorDraft, setAdminDiceFloorDraft] = useState('');
@@ -452,20 +476,20 @@ function SimpleApp() {
       delete dicePendingTimeoutsRef.current[animId];
     }, Math.max(0, remainingMs));
 
+    const parsed = overlayFromMarker(markerObj);
     setDiceOverlay({
       visible: true,
+      settled: false,
       animationId: animId,
       startedAtMs,
       revealAtMs,
       durationMs,
-      difficulty: Number(markerObj.difficulty || 6),
+      ...parsed,
       diceFinal,
       diceRolling: diceFinal.map(() => _randomD10()),
       extraDiceCount,
-      successes: Number(markerObj.successes || 0),
-      isBotch: Boolean(markerObj.is_botch || markerObj.isBotch || false),
-      isCritical: Boolean(markerObj.is_critical || markerObj.isCritical || false),
-      poolSize: Number(markerObj.pool_size || markerObj.poolSize || diceFinal.length),
+      isBotch: parsed.result.is_botch,
+      isCritical: parsed.result.is_critical,
     });
   };
 
@@ -481,6 +505,7 @@ function SimpleApp() {
     // Clear any previous animation timers.
     if (diceRollingIntervalRef.current) clearInterval(diceRollingIntervalRef.current);
     if (diceRevealTimeoutRef.current) clearTimeout(diceRevealTimeoutRef.current);
+    if (diceSettleTimeoutRef.current) clearTimeout(diceSettleTimeoutRef.current);
 
     const remainingMs = revealAtMs - Date.now();
     const rollIntervalMs = 90;
@@ -494,18 +519,23 @@ function SimpleApp() {
 
     diceRevealTimeoutRef.current = setTimeout(() => {
       if (diceRollingIntervalRef.current) clearInterval(diceRollingIntervalRef.current);
+      // Settle: show the final dice + outcome badges briefly, then hide.
       setDiceOverlay((prev) => ({
         ...prev,
-        visible: false,
+        settled: true,
         diceRolling: finalValues,
       }));
       // After reveal, ensure the final dice roll line is in view.
       scrollChatToBottomSoon();
+      diceSettleTimeoutRef.current = setTimeout(() => {
+        setDiceOverlay((prev) => (prev.animationId === animId ? { ...prev, visible: false } : prev));
+      }, 2200);
     }, Math.max(0, remainingMs));
 
     return () => {
       if (diceRollingIntervalRef.current) clearInterval(diceRollingIntervalRef.current);
       if (diceRevealTimeoutRef.current) clearTimeout(diceRevealTimeoutRef.current);
+      if (diceSettleTimeoutRef.current) clearTimeout(diceSettleTimeoutRef.current);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [diceOverlay.animationId]);
@@ -1231,7 +1261,9 @@ function SimpleApp() {
     const campaignData = {
       name: formData.get('campaignName'),
       description: formData.get('description'),
-      game_system: formData.get('game_system')
+      game_system: createGameSystem,
+      // Locked after creation; V5 only exists for Vampire.
+      rules_edition: isV5Allowed(createGameSystem) ? createRulesEdition : 'classic',
     };
 
     try {
@@ -1252,10 +1284,13 @@ function SimpleApp() {
           id: data.campaign_id, // Backend returns campaign_id
           name: campaignData.name,
           description: campaignData.description,
-          game_system: campaignData.game_system
+          game_system: campaignData.game_system,
+          rules_edition: data.rules_edition || campaignData.rules_edition,
         };
         showSuccess('✅ Campaign created successfully!');
         e.target.reset();
+        setCreateGameSystem('vampire');
+        setCreateRulesEdition('classic');
         await fetchCampaigns(undefined, { forActiveCharacter: true, user });
         setSelectedCampaign(createdCampaign);
         navigateTo('campaignDetails', createdCampaign);
@@ -1709,26 +1744,12 @@ function SimpleApp() {
             const isHidden = slashData.command === 'roll-hidden';
 
             const roll = slashData.roll || {};
-            const allDice = Array.isArray(roll.dice) ? roll.dice : [];
-            const preview = allDice.slice(0, 10);
-            const extraDiceCount = Math.max(0, allDice.length - preview.length);
-
-            const startedAtMs = Date.now();
-            const durationMs = 3000;
             const animationId = _makeDiceAnimationId();
-
-            const markerObj = {
-              animation_id: animationId,
-              started_at_ms: startedAtMs,
-              duration_ms: durationMs,
-              difficulty: Number(roll.difficulty || 6),
-              dice_preview: preview,
-              extra_dice_count: extraDiceCount,
-              successes: Number(roll.net_successes || 0),
-              is_botch: Boolean(roll.botch),
-              is_critical: false,
-              pool_size: allDice.length,
-            };
+            const markerObj = buildDiceMarker(roll, {
+              animationId,
+              startedAtMs: Date.now(),
+              durationMs: 3000,
+            });
 
             startDiceAnimationFromMarker(markerObj);
 
@@ -3729,6 +3750,7 @@ function SimpleApp() {
                     <span style={{ color: '#64748b', marginLeft: '10px', fontSize: '13px' }}>
                       {dc.game_system}
                     </span>
+                    <EditionBadge campaign={dc} />
                     {dc.max_players != null && (
                       <span style={{ color: '#64748b', marginLeft: '8px', fontSize: '12px' }}>
                         · max {dc.max_players} players
@@ -3839,6 +3861,7 @@ function SimpleApp() {
                   }}>
                     <span style={{ fontSize: '18px', lineHeight: '1' }}>{getCampaignEmoji(campaign)}</span>
                     <span>{campaign.game_system}</span>
+                    <EditionBadge campaign={campaign} style={{ marginLeft: 0, background: '#0f1729' }} />
                   </div>
 
                   <div onClick={() => enterCampaign(campaign)} style={{ marginTop: '45px' }}>
@@ -4105,6 +4128,7 @@ function SimpleApp() {
               fontFamily: 'Crimson Text, serif'
             }}>
               {selectedCampaign?.game_system}
+              <EditionBadge campaign={selectedCampaign} />
             </div>
           </div>
 
@@ -4698,6 +4722,8 @@ function SimpleApp() {
               <select
                 name="game_system"
                 required
+                value={createGameSystem}
+                onChange={(e) => setCreateGameSystem(e.target.value)}
                 style={{
                   width: '100%',
                   padding: '12px',
@@ -4715,6 +4741,39 @@ function SimpleApp() {
                 <option value="mage">✨ Mage: The Ascension</option>
                 <option value="custom">🎲 Custom System</option>
               </select>
+              {isV5Allowed(createGameSystem) && (
+                <fieldset
+                  data-testid="rules-edition-choice"
+                  style={{ border: '1px solid #2a2a4e', borderRadius: '5px', padding: '10px 12px', marginTop: '14px' }}
+                >
+                  <legend style={{ color: '#b5b5c3', fontWeight: '600', fontSize: '15px', padding: '0 6px' }}>
+                    Edition
+                  </legend>
+                  {[
+                    ['classic', 'Classic (Revised)', 'd10 vs target number, 1s cancel, botches'],
+                    ['v5', 'V5 (5th Edition)', 'successes needed, Hunger dice, criticals'],
+                  ].map(([value, label, hint]) => (
+                    <label
+                      key={value}
+                      style={{ display: 'flex', alignItems: 'baseline', gap: '8px', color: '#e0e0e0', cursor: 'pointer', marginBottom: '4px' }}
+                    >
+                      <input
+                        type="radio"
+                        name="rules_edition"
+                        value={value}
+                        checked={createRulesEdition === value}
+                        onChange={() => setCreateRulesEdition(value)}
+                      />
+                      <span>
+                        {label} <span style={{ color: '#8b8b9f', fontSize: '13px' }}>— {hint}</span>
+                      </span>
+                    </label>
+                  ))}
+                  <p style={{ color: '#8b8b9f', fontSize: '13px', margin: '6px 0 0' }}>
+                    The edition is locked once the chronicle is created.
+                  </p>
+                </fieldset>
+              )}
             </div>
 
             <button
@@ -4757,6 +4816,100 @@ function SimpleApp() {
     </div>
   );
 
+  const rollEdition = editionOf(selectedCampaign);
+
+  /** Open the roll modal; V5 prefills Hunger from the active character's sheet. */
+  const openRollModal = () => {
+    if (rollEdition === V5) {
+      const h = parseInt(character?.wod_meta?.hunger, 10);
+      setRollHunger(Number.isFinite(h) ? Math.max(0, Math.min(5, h)) : 0);
+    }
+    setShowRollModal(true);
+  };
+
+  const canHideRollsInRoom = () => {
+    const isCampaignOwner =
+      selectedCampaign?.created_by != null &&
+      user?.id != null &&
+      String(selectedCampaign.created_by) === String(user.id);
+    return user?.role === 'admin' || user?.role === 'helper' || isCampaignOwner;
+  };
+
+  /**
+   * Post the dice animation marker + the final chat line for a roll result to a room.
+   * `locationId` defaults to the current room; a reroll passes the room it was rolled in.
+   * `speakAs` / `characterId` default to the current speaker (a reroll keeps the original).
+   * Returns true on success.
+   */
+  const postRollToRoom = async (
+    rollResult,
+    chatBody,
+    {
+      hidden = false,
+      locationId = currentLocation?.id,
+      speakAs = chatSpeakAs,
+      characterId = chatSpeakAs === 'character' ? character?.id : undefined,
+    } = {}
+  ) => {
+    if (locationId == null) {
+      showError('Join a campaign room first.');
+      return false;
+    }
+    const inCurrentRoom = String(locationId) === String(currentLocation?.id);
+    const animationId = _makeDiceAnimationId();
+    const markerObj = buildDiceMarker(rollResult, {
+      animationId,
+      startedAtMs: Date.now(),
+      durationMs: 3000,
+    });
+    const markerKind = hidden ? `dice_animation_hidden:${animationId}` : `dice_animation:${animationId}`;
+    const finalKind = hidden ? `dice_roll_hidden:${animationId}` : `dice_roll:${animationId}`;
+
+    // Start local animation immediately; the final chat line is hidden until the timer completes.
+    startDiceAnimationFromMarker(markerObj);
+
+    const roomUrl = `${API_URL}/campaigns/${selectedCampaign.id}/locations/${locationId}`;
+    const headers = { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' };
+    const markerRes = await fetch(roomUrl, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({
+        content: JSON.stringify(markerObj),
+        message_type: 'system',
+        role: 'assistant',
+        ai_message_kind: markerKind,
+      }),
+    });
+    const markerData = await markerRes.json().catch(() => ({}));
+    if (!markerRes.ok) {
+      showError(markerData.error || 'Could not post dice animation marker.');
+      return false;
+    }
+    const msgRes = await fetch(roomUrl, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({
+        content: chatBody,
+        message_type: 'action',
+        role: 'user',
+        ai_message_kind: finalKind,
+        speak_as: speakAs,
+        ...(speakAs === 'character' && characterId ? { character_id: characterId } : {}),
+      }),
+    });
+    const msgData = await msgRes.json().catch(() => ({}));
+    if (!msgRes.ok) {
+      showError(msgData.error || 'Roll saved but could not post to chat.');
+      return false;
+    }
+    // Only the room on screen shows the new lines; another room picks them up on load.
+    if (inCurrentRoom) {
+      setMessages((prev) => [...prev, markerData.data, msgData.data]);
+      scrollChatToBottomSoon();
+    }
+    return true;
+  };
+
   const submitSidebarRoll = async () => {
     if (!token || !selectedCampaign?.id || !currentLocation?.id) {
       showError('Join a campaign room first.');
@@ -4777,11 +4930,15 @@ function SimpleApp() {
       showError('Pool cannot exceed 50 dice.');
       return;
     }
-    const d = Number(rollDifficulty);
-    if (Number.isNaN(d) || d < 2 || d > 10) {
-      showError('Difficulty must be between 2 and 10.');
+    const isV5Roll = rollEdition === V5;
+    const d = Number(isV5Roll ? rollV5Difficulty : rollDifficulty);
+    if (isV5Roll ? Number.isNaN(d) || d < 0 || d > 10 : Number.isNaN(d) || d < 2 || d > 10) {
+      showError(isV5Roll ? 'Difficulty must be between 0 and 10.' : 'Difficulty must be between 2 and 10.');
       return;
     }
+    const editionFields = isV5Roll
+      ? { difficulty: d, hunger: rollHunger }
+      : { difficulty: d, specialty: rollSpecialty, willpower: rollWillpower };
     setRollSubmitting(true);
     try {
       const rollRes = await fetch(`${API_URL}/campaigns/${selectedCampaign.id}/roll`, {
@@ -4792,8 +4949,7 @@ function SimpleApp() {
         },
         body: JSON.stringify({
           pool_size: poolSize,
-          difficulty: d,
-          specialty: rollSpecialty,
+          ...editionFields,
           speak_as: chatSpeakAs,
           ...(chatSpeakAs === 'character' && character?.id ? { character_id: character.id } : {}),
           action_description: rollReason.trim() || 'Dice roll',
@@ -4806,102 +4962,149 @@ function SimpleApp() {
         return;
       }
       const rollResult = rollData.roll_result || {};
-      const chatBody = rollData.chat_message || '';
-
-      const results = Array.isArray(rollResult.results) ? rollResult.results : [];
-      const preview = results.slice(0, 10);
-      const extraDiceCount = Math.max(0, results.length - preview.length);
-
-      const startedAtMs = Date.now();
-      const durationMs = 3000;
-      const animationId = _makeDiceAnimationId();
-
-      const isCampaignOwner =
-        selectedCampaign?.created_by != null &&
-        user?.id != null &&
-        String(selectedCampaign.created_by) === String(user.id);
-      const canHideRollToOthers =
-        user?.role === 'admin' || user?.role === 'helper' || isCampaignOwner;
-      const hiddenToOthers = canHideRollToOthers && rollHideOthers;
-
-      const markerKind = hiddenToOthers
-        ? `dice_animation_hidden:${animationId}`
-        : `dice_animation:${animationId}`;
-      const finalKind = hiddenToOthers
-        ? `dice_roll_hidden:${animationId}`
-        : `dice_roll:${animationId}`;
-
-      const markerObj = {
-        animation_id: animationId,
-        started_at_ms: startedAtMs,
-        duration_ms: durationMs,
-        difficulty: Number(rollResult.difficulty || d),
-        dice_preview: preview,
-        extra_dice_count: extraDiceCount,
-        successes: Number(rollResult.successes || 0),
-        is_botch: Boolean(rollResult.is_botch),
-        is_critical: Boolean(rollResult.is_critical),
-        pool_size: results.length,
-      };
-
-      // Start local animation immediately; the final chat line is hidden until the timer completes.
-      startDiceAnimationFromMarker(markerObj);
-
-      const markerRes = await fetch(
-        `${API_URL}/campaigns/${selectedCampaign.id}/locations/${currentLocation.id}`,
-        {
-          method: 'POST',
-          headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            content: JSON.stringify(markerObj),
-            message_type: 'system',
-            role: 'assistant',
-            ai_message_kind: markerKind,
-          }),
-        }
-      );
-      const markerData = await markerRes.json().catch(() => ({}));
-      if (!markerRes.ok) {
-        showError(markerData.error || 'Could not post dice animation marker.');
-        return;
-      }
-
-      const msgRes = await fetch(
-        `${API_URL}/campaigns/${selectedCampaign.id}/locations/${currentLocation.id}`,
-        {
-          method: 'POST',
-          headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            content: chatBody,
-            message_type: 'action',
-            role: 'user',
-            ai_message_kind: finalKind,
-            speak_as: chatSpeakAs,
-            ...(chatSpeakAs === 'character' && character?.id ? { character_id: character.id } : {}),
-          }),
-        }
-      );
-      const msgData = await msgRes.json().catch(() => ({}));
-      if (!msgRes.ok) {
-        showError(msgData.error || 'Roll saved but could not post to chat.');
-        return;
-      }
-
-      setMessages((prev) => [...prev, markerData.data, msgData.data]);
-      scrollChatToBottomSoon();
+      const hiddenToOthers = canHideRollsInRoom() && rollHideOthers;
+      const ok = await postRollToRoom(rollResult, rollData.chat_message || '', { hidden: hiddenToOthers });
+      if (!ok) return;
       setShowRollModal(false);
+      setRollWillpower(false);
+      if (editionOf(rollResult) === V5 && rollResult.can_reroll) {
+        setLastV5Roll({
+          ...rollResult,
+          roll_id: rollResult.roll_id ?? rollData.roll_id,
+          hidden: hiddenToOthers,
+          campaignId: selectedCampaign.id,
+          locationId: currentLocation.id,
+          speakAs: chatSpeakAs,
+          characterId: chatSpeakAs === 'character' ? character?.id : undefined,
+        });
+      } else {
+        setLastV5Roll(null);
+      }
       showSuccess(hiddenToOthers ? 'Private roll posted to this room.' : 'Roll posted to this room.');
     } catch (err) {
       console.error(err);
       showError('Network error while rolling.');
     } finally {
       setRollSubmitting(false);
+    }
+  };
+
+  /** V5 Willpower reroll of up to 3 normal dice of `lastV5Roll`. */
+  const submitV5Reroll = async (indices) => {
+    const roll = lastV5Roll;
+    if (!roll || !token) return;
+    if (!selectedCampaign?.id || String(selectedCampaign.id) !== String(roll.campaignId)) {
+      showError('Go back to the chronicle where you rolled to reroll.');
+      return;
+    }
+    setRerollBusy(true);
+    try {
+      const res = await fetch(
+        `${API_URL}/campaigns/${roll.campaignId}/roll/${roll.roll_id}/reroll`,
+        {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ indices, location_id: roll.locationId }),
+        }
+      );
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        showError(data.error || 'Reroll failed.');
+        if (res.status === 409) setLastV5Roll(null);
+        return;
+      }
+      // Post to the room the roll was made in, as the same speaker, even if the
+      // player has since moved to another room.
+      const ok = await postRollToRoom(data.roll_result || {}, data.chat_message || '', {
+        hidden: roll.hidden,
+        locationId: roll.locationId,
+        speakAs: roll.speakAs,
+        characterId: roll.characterId,
+      });
+      if (ok) {
+        showSuccess(
+          String(roll.locationId) === String(currentLocation?.id)
+            ? 'Willpower reroll posted.'
+            : 'Willpower reroll posted to the room you rolled in.'
+        );
+      }
+      setLastV5Roll(null);
+    } catch (e) {
+      console.error(e);
+      showError('Network error while rerolling.');
+    } finally {
+      setRerollBusy(false);
+    }
+  };
+
+  /** V5 Rouse check: one die, 6+ no Hunger gain, else Hunger +1 (saved on the character). */
+  const submitRouseCheck = async () => {
+    if (!token || !selectedCampaign?.id || !currentLocation?.id) {
+      showError('Join a campaign room first.');
+      return;
+    }
+    // The sheet's Hunger is used (and updated) only when speaking as the character;
+    // otherwise the Hunger typed in the roll modal is sent.
+    const asCharacter = chatSpeakAs === 'character' && character?.id;
+    const sheetHunger = parseInt(character?.wod_meta?.hunger, 10);
+    setRousing(true);
+    try {
+      const res = await fetch(`${API_URL}/campaigns/${selectedCampaign.id}/rouse`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          location_id: currentLocation.id,
+          ...(asCharacter ? { character_id: character.id } : { hunger: rollHunger }),
+        }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        showError(data.error || 'Rouse check failed.');
+        return;
+      }
+      const after = Number(data.hunger_after);
+      if (Number.isFinite(after)) {
+        if (asCharacter) {
+          // Follow the sheet only if the modal still showed the sheet's value; a Hunger
+          // the user typed in by hand is left alone.
+          const sheetValue = Number.isFinite(sheetHunger) ? Math.max(0, Math.min(5, sheetHunger)) : 0;
+          if (Number(rollHunger) === sheetValue) setRollHunger(after);
+          setCharacter((prev) =>
+            prev && prev.id === character.id
+              ? { ...prev, wod_meta: { ...(prev.wod_meta || {}), hunger: after } }
+              : prev
+          );
+        } else {
+          // The modal value was the Rouse input, so it follows the result.
+          setRollHunger(after);
+        }
+      }
+      const msgRes = await fetch(
+        `${API_URL}/campaigns/${selectedCampaign.id}/locations/${currentLocation.id}`,
+        {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            content: data.chat_message || `Rouse check: ${data.die}`,
+            message_type: 'action',
+            role: 'user',
+            speak_as: chatSpeakAs,
+            ...(chatSpeakAs === 'character' && character?.id ? { character_id: character.id } : {}),
+          }),
+        }
+      );
+      const msgData = await msgRes.json().catch(() => ({}));
+      if (msgRes.ok && msgData.data) {
+        setMessages((prev) => [...prev, msgData.data]);
+        scrollChatToBottomSoon();
+      }
+      if (data.success) showSuccess(`Rouse check: ${data.die} — no Hunger gain.`);
+      else showInfo(`Rouse check: ${data.die} — Hunger ${data.hunger_before} → ${data.hunger_after}.`);
+    } catch (e) {
+      console.error(e);
+      showError('Network error during the Rouse check.');
+    } finally {
+      setRousing(false);
     }
   };
 
@@ -5026,91 +5229,10 @@ function SimpleApp() {
       background: '#0f0f1e',
       position: 'relative'
     }}>
-      {diceOverlay.visible && (
-        <div
-          role="presentation"
-          style={{
-            position: 'fixed',
-            inset: 0,
-            zIndex: 3000,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            background: 'rgba(0,0,0,0.35)',
-            padding: '16px',
-          }}
-        >
-          <div
-            role="dialog"
-            aria-modal="true"
-            style={{
-              width: 'min(760px, 100%)',
-              background: 'linear-gradient(135deg, rgba(157, 78, 221, 0.18) 0%, rgba(233, 69, 96, 0.12) 100%)',
-              border: '2px solid rgba(233, 69, 96, 0.35)',
-              borderRadius: '14px',
-              boxShadow: '0 20px 70px rgba(0,0,0,0.65)',
-              padding: '18px 18px 16px',
-            }}
-          >
-            <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: '12px', marginBottom: '10px' }}>
-              <div style={{ color: '#e94560', fontFamily: 'Cinzel, serif', fontSize: '18px', fontWeight: 700 }}>
-                <i className="fas fa-dice" style={{ marginRight: '10px' }} />
-                Rolling…
-              </div>
-              <div style={{ color: '#b5b5c3', fontFamily: 'Crimson Text, serif', fontSize: '12px' }}>
-                TN {diceOverlay.difficulty} · {diceOverlay.successes} net
-              </div>
-            </div>
-
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', justifyContent: 'center' }}>
-              {diceOverlay.diceFinal.map((_, i) => {
-                const v = diceOverlay.diceRolling[i] ?? diceOverlay.diceFinal[i] ?? 1;
-                const isSuccess = v >= diceOverlay.difficulty;
-                const isBotchDie = v === 1;
-                const bg = isBotchDie
-                  ? '#8b0000'
-                  : v === 10
-                    ? '#ffd700'
-                    : isSuccess
-                      ? '#2d7a3e'
-                      : '#374151';
-                return (
-                  <div
-                    key={`${diceOverlay.animationId}-die-${i}`}
-                    style={{
-                      width: '54px',
-                      height: '54px',
-                      borderRadius: '12px',
-                      border: '1px solid rgba(255,255,255,0.12)',
-                      background: `linear-gradient(180deg, ${bg} 0%, rgba(15, 23, 41, 0.2) 100%)`,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      boxShadow: '0 10px 35px rgba(0,0,0,0.45)',
-                      color: v === 10 ? '#1b1b1b' : 'white',
-                      fontFamily: 'Cinzel, serif',
-                      fontSize: '18px',
-                      fontWeight: 900,
-                      userSelect: 'none',
-                    }}
-                  >
-                    {v}
-                  </div>
-                );
-              })}
-              {diceOverlay.extraDiceCount > 0 && (
-                <div style={{ alignSelf: 'center', color: '#8b8b9f', fontFamily: 'Crimson Text, serif', fontSize: '14px', marginLeft: '4px' }}>
-                  +{diceOverlay.extraDiceCount} more
-                </div>
-              )}
-            </div>
-
-            <div style={{ marginTop: '12px', color: '#b5b5c3', fontFamily: 'Crimson Text, serif', fontSize: '12px', textAlign: 'center' }}>
-              The roll resolves right after the dice stop.
-            </div>
-          </div>
-        </div>
-      )}
+      <DiceRollOverlay
+        overlay={diceOverlay}
+        onDismiss={() => setDiceOverlay((prev) => ({ ...prev, visible: false }))}
+      />
       {/* Mobile Menu Buttons */}
       {isMobile && (
         <>
@@ -5583,6 +5705,17 @@ function SimpleApp() {
               </div>
             </div>
           )}
+          {/* Docked in the composer area (in the layout flow), so it never covers Send. */}
+          {lastV5Roll && String(lastV5Roll.campaignId) === String(selectedCampaign?.id) && (
+            <V5RerollPanel
+              key={lastV5Roll.roll_id}
+              roll={lastV5Roll}
+              busy={rerollBusy}
+              onReroll={submitV5Reroll}
+              onDismiss={() => setLastV5Roll(null)}
+              elsewhere={String(lastV5Roll.locationId) !== String(currentLocation?.id)}
+            />
+          )}
           <form onSubmit={handleSendMessage}>
             <div style={{ display: 'flex', gap: '10px' }}>
               <input
@@ -5867,7 +6000,7 @@ function SimpleApp() {
           </h4>
           <button
             type="button"
-            onClick={() => setShowRollModal(true)}
+            onClick={openRollModal}
             style={{
               width: '100%',
               padding: '8px',
@@ -5989,7 +6122,10 @@ function SimpleApp() {
                   }}
                 >
                   <i className="fas fa-dice" style={{ marginRight: '8px' }} />
-                  Roll dice (Storyteller)
+                  Roll dice
+                  <span style={{ marginLeft: '8px', fontSize: '12px', color: '#94a3b8' }}>
+                    {editionLabel(selectedCampaign, { long: true })}
+                  </span>
                 </h3>
                 {user?.role === 'admin' && (
                   <button
@@ -6013,11 +6149,7 @@ function SimpleApp() {
                   </button>
                 )}
               </div>
-              <p style={{ color: '#8b8b9f', fontSize: '13px', marginBottom: '16px', fontFamily: 'Crimson Text, serif', lineHeight: 1.5 }}>
-                Old World of Darkness style: pool of <strong>d10</strong>, difficulty (target number) usually 6–9.
-                Each die ≥ difficulty is a success; <strong>1s cancel</strong> successes. Optional: specialty (10s = 2 successes).
-                See <code style={{ color: '#d8b4fe' }}>docs/dice-old-wod.md</code> for details.
-              </p>
+              <RollHelp edition={rollEdition} />
               <label style={{ display: 'block', color: '#b5b5c3', fontSize: '12px', marginBottom: '6px', fontFamily: 'Cinzel, serif' }}>
                 Dice pool
               </label>
@@ -6039,52 +6171,27 @@ function SimpleApp() {
                   fontFamily: 'Crimson Text, serif',
                 }}
               />
-              <label style={{ display: 'block', color: '#b5b5c3', fontSize: '12px', marginBottom: '6px', fontFamily: 'Cinzel, serif' }}>
-                Difficulty (target number, 2–10)
-              </label>
-              <select
-                value={rollDifficulty}
-                onChange={(e) => setRollDifficulty(Number(e.target.value))}
+              <RollEditionFields
+                edition={rollEdition}
                 disabled={rollSubmitting}
-                style={{
-                  width: '100%',
-                  marginBottom: '12px',
-                  padding: '10px 12px',
-                  background: '#0f1729',
-                  border: '1px solid #2a2a4e',
-                  borderRadius: '6px',
-                  color: '#e0e0e0',
-                  fontSize: '15px',
-                  fontFamily: 'Crimson Text, serif',
-                }}
-              >
-                {[2, 3, 4, 5, 6, 7, 8, 9, 10].map((n) => (
-                  <option key={n} value={n}>
-                    {n}
-                    {n === 6 ? ' (common default)' : ''}
-                  </option>
-                ))}
-              </select>
-              <label
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '10px',
-                  color: '#b5b5c3',
-                  fontSize: '13px',
-                  marginBottom: '12px',
-                  cursor: rollSubmitting ? 'default' : 'pointer',
-                  fontFamily: 'Crimson Text, serif',
-                }}
-              >
-                <input
-                  type="checkbox"
-                  checked={rollSpecialty}
-                  onChange={(e) => setRollSpecialty(e.target.checked)}
-                  disabled={rollSubmitting}
-                />
-                Specialty (10s count as 2 successes)
-              </label>
+                classicDifficulty={rollDifficulty}
+                setClassicDifficulty={setRollDifficulty}
+                specialty={rollSpecialty}
+                setSpecialty={setRollSpecialty}
+                willpower={rollWillpower}
+                setWillpower={setRollWillpower}
+                v5Difficulty={rollV5Difficulty}
+                setV5Difficulty={setRollV5Difficulty}
+                hunger={rollHunger}
+                setHunger={setRollHunger}
+                hungerSource={
+                  character?.wod_meta?.hunger != null && character?.name
+                    ? `${character.name}'s sheet: ${character.wod_meta.hunger}`
+                    : null
+                }
+                onRouse={submitRouseCheck}
+                rousing={rousing}
+              />
               {canHideRollToOthers && (
                 <label
                   style={{
@@ -6363,8 +6470,6 @@ function SimpleApp() {
                     {diceHistoryRows.map((r) => {
                       const who =
                         [r.username, r.character_name].filter(Boolean).join(' · ') || `user #${r.user_id}`;
-                      const diceStr = Array.isArray(r.results) ? r.results.join(', ') : String(r.results ?? '');
-                      const tag = r.is_botch ? ' · BOTCH' : r.is_critical ? ' · critical' : '';
                       return (
                         <li
                           key={r.id}
@@ -6384,11 +6489,7 @@ function SimpleApp() {
                             <strong style={{ color: '#e2e8f0' }}>{who}</strong>
                             {r.action_description ? ` — ${r.action_description}` : ''}
                           </div>
-                          <div style={{ marginTop: '4px', color: '#b5b5c3' }}>
-                            Pool {r.dice_pool}, diff {r.difficulty}
-                            {r.modifiers?.specialty ? ', specialty' : ''}
-                            {' → '}[{diceStr}] → <strong>{r.successes}</strong> successes{tag}
-                          </div>
+                          <div style={{ marginTop: '4px', color: '#b5b5c3' }}>{describeRollRow(r)}</div>
                         </li>
                       );
                     })}

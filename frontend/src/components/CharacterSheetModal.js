@@ -2,6 +2,8 @@ import React from 'react';
 import { GothicBox } from './GothicDecorations';
 import DotTrack from './characterCreation/DotTrack';
 import ResponsiveSheetBlock from './characterCreation/ResponsiveSheetBlock';
+import V5CharacterSheetView from './V5CharacterSheetView';
+import { editionLabel, editionOf, V5 } from '../rules/rulesEdition';
 import {
   KNOWLEDGES,
   PHYSICAL,
@@ -29,6 +31,7 @@ export default function CharacterSheetModal({ character, gameSystem, onClose }) 
   if (!character) return null;
 
   const gs = String(gameSystem || character.system_type || '').toLowerCase();
+  const isV5Sheet = editionOf(character) === V5;
   const wm = character.wod_meta && typeof character.wod_meta === 'object' ? character.wod_meta : {};
   const attrs = character.attributes && typeof character.attributes === 'object' ? character.attributes : {};
   const skillsRoot = character.skills && typeof character.skills === 'object' ? character.skills : {};
@@ -174,6 +177,12 @@ export default function CharacterSheetModal({ character, gameSystem, onClose }) 
                   · {character.campaign_name}
                 </span>
               ) : null}
+              {gs === 'vampire' || isV5Sheet ? (
+                <span style={{ color: '#94a3b8', fontWeight: 'normal', fontSize: '0.8rem' }}>
+                  {' '}
+                  · {editionLabel(character)}
+                </span>
+              ) : null}
             </h2>
             <button
               type="button"
@@ -193,6 +202,10 @@ export default function CharacterSheetModal({ character, gameSystem, onClose }) 
           </div>
 
           <div style={{ overflow: 'auto', padding: '12px 16px 24px', flex: 1 }}>
+            {isV5Sheet ? (
+              <V5CharacterSheetView character={character} />
+            ) : (
+            <>
             <p style={{ color: '#8b8b9f', fontSize: '13px', marginTop: 0, lineHeight: 1.5 }}>
               Classic WoD–style sheet (read-only). Numbers match your sealed chronicle record.
             </p>
@@ -376,6 +389,8 @@ export default function CharacterSheetModal({ character, gameSystem, onClose }) 
                 ) : null}
               </ResponsiveSheetBlock>
             ) : null}
+            </>
+            )}
           </div>
         </GothicBox>
       </div>

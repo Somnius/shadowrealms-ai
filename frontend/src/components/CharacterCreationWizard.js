@@ -7,6 +7,9 @@ import AttributeColumns from './characterCreation/AttributeColumns';
 import AbilityColumns from './characterCreation/AbilityColumns';
 import MeritFlawRows from './characterCreation/MeritFlawRows';
 import ResponsiveSheetBlock from './characterCreation/ResponsiveSheetBlock';
+import FreebieSummary from './characterCreation/FreebieSummary';
+import V5CharacterCreationWizard from './characterCreation/V5CharacterCreationWizard';
+import { editionLabel, editionOf, V5 } from '../rules/rulesEdition';
 import {
   ARCHETYPE_CUSTOM,
   DISCIPLINE_PRESETS,
@@ -24,14 +27,25 @@ import {
 } from '../characterSheet/constants';
 import { buildMeritsFlawsPayload, createEmptyMeritRow } from '../characterSheet/meritsFlaws';
 import {
+  abilityPools as abilityPoolsFor,
+  attributePools,
+  computeClassicFreebies,
+  deriveClassicMorality,
   emptyAbilityMap,
+  emptyVirtueFreebies,
+  finalVirtues,
+  isNosferatu,
   emptyAttrMap,
   emptySphereMap,
+  emptyVirtues,
+  VIRTUE_TOTAL_AT_CREATION,
   validateAbilitySpread,
   validateAttributeSpread,
+  validateFreebies,
   validateSpheres,
   validateVirtues,
 } from '../characterSheet/validation';
+import { BACKGROUND_DOTS, DISCIPLINE_DOTS } from '../rules/classicRules';
 
 const API_URL = '/api';
 
@@ -43,6 +57,7 @@ const SECTION_ORDER = [
   { id: SHEET_SECTION_IDS.abilities, label: 'Abilities' },
   { id: SHEET_SECTION_IDS.advantages, label: 'Advantages' },
   { id: SHEET_SECTION_IDS.story, label: 'Story' },
+  { id: SHEET_SECTION_IDS.freebies, label: 'Freebies' },
 ];
 
 function scrollToSection(sectionDomId) {
@@ -67,6 +82,7 @@ function buildCustomSkillsPayload(customAbilities) {
 
 /**
  * Single-page oWoD character forge: scrollable sheet, section nav, pool summaries, structured merits.
+ * Classic (Revised) rules; a V5 chronicle renders the V5 forge instead.
  */
 export default function CharacterCreationWizard({
   token,
@@ -84,13 +100,20 @@ export default function CharacterCreationWizard({
     [campaigns]
   );
 
-  const [campaignId, setCampaignId] = useState(
+  const [campaignIdState, setCampaignId] = useState(
     eligible[0]?.id != null ? String(eligible[0].id) : ''
   );
+  // Campaigns can arrive after mount: fall back to the first eligible one so the state
+  // always matches what the <select> shows.
+  const campaignId = eligible.some((c) => String(c.id) === String(campaignIdState))
+    ? String(campaignIdState)
+    : eligible[0]?.id != null
+      ? String(eligible[0].id)
+      : '';
   const [name, setName] = useState('');
   const [concept, setConcept] = useState('');
   const [priority, setPriority] = useState('physical');
-  const [attrs, setAttrs] = useState(() => emptyAttrMap());
+  const [attrsRaw, setAttrs] = useState(() => emptyAttrMap());
   const [abilityPriority, setAbilityPriority] = useState('talents');
   const [abilities, setAbilities] = useState(() => emptyAbilityMap());
   const [customAbilities, setCustomAbilities] = useState({
@@ -108,9 +131,14 @@ export default function CharacterCreationWizard({
   const [demeanorPick, setDemeanorPick] = useState(WOD_ARCHETYPES[0]);
   const [demeanorCustom, setDemeanorCustom] = useState('');
   const [generation, setGeneration] = useState('13');
-  const [humanity, setHumanity] = useState('7');
-  const [willpowerVampire, setWillpowerVampire] = useState('5');
-  const [virtues, setVirtues] = useState({ conscience: '3', self_control: '3', courage: '1' });
+  // Humanity / Willpower are derived from Virtues; these are extra dots bought with freebies.
+  const [humanityBonus, setHumanityBonus] = useState(0);
+  const [willpowerBonus, setWillpowerBonus] = useState(0);
+  // Creation Virtues (1 free each + 7) and freebie Virtue dots, kept apart: only the
+  // creation dots set Humanity / Willpower.
+  const [virtues, setVirtues] = useState(() => emptyVirtues());
+  const [virtueFreebies, setVirtueFreebies] = useState(() => emptyVirtueFreebies());
+  const [freebieMode, setFreebieMode] = useState(false);
   const [disciplines, setDisciplines] = useState([
     { name: '', dots: 0 },
     { name: '', dots: 0 },
@@ -140,22 +168,71 @@ export default function CharacterCreationWizard({
   const campaign = eligible.find((c) => String(c.id) === String(campaignId));
   const gs = String(campaign?.game_system || '').toLowerCase();
   const systemType = gs;
+  // Nosferatu Appearance is always 0; other clans keep at least the free dot. The raw
+  // state is left alone so switching clan back restores the previous Appearance.
+  const nosferatu = isNosferatu(systemType, clan);
+  const attrs = useMemo(
+    () => ({
+      ...attrsRaw,
+      appearance: nosferatu ? 0 : Math.max(1, parseInt(attrsRaw.appearance, 10) || 1),
+    }),
+    [attrsRaw, nosferatu]
+  );
 
-  const pools = useMemo(() => {
-    if (priority === 'physical') {
-      return { physical: 7, social: 5, mental: 3 };
-    }
-    if (priority === 'social') {
-      return { physical: 5, social: 7, mental: 3 };
-    }
-    return { physical: 3, social: 5, mental: 7 };
-  }, [priority]);
+  // Dots ADDED on top of the free dot per attribute (Revised 7/5/3), abilities 13/9/5.
+  const pools = useMemo(() => attributePools(priority), [priority]);
+  const abilityPools = useMemo(() => abilityPoolsFor(abilityPriority), [abilityPriority]);
 
-  const abilityPools = useMemo(() => {
-    if (abilityPriority === 'talents') return { talents: 11, skills: 7, knowledges: 4 };
-    if (abilityPriority === 'skills') return { talents: 7, skills: 11, knowledges: 4 };
-    return { talents: 4, skills: 7, knowledges: 11 };
-  }, [abilityPriority]);
+  const morality = deriveClassicMorality(virtues, virtueFreebies);
+  const humanityFinal = Math.min(10, morality.humanityBase + humanityBonus);
+  const willpowerFinal = Math.min(10, morality.willpowerBase + willpowerBonus);
+  const virtuesFinal = finalVirtues(virtues, virtueFreebies);
+  const virtueTotal = ['conscience', 'self_control', 'courage'].reduce(
+    (sum, k) => sum + (parseInt(virtues[k], 10) || 0),
+    0
+  );
+
+  /**
+   * Set a Virtue's final rating. Raising fills the creation budget (10) first, then
+   * (freebie mode only) buys freebie dots; lowering removes freebie dots first.
+   */
+  const setVirtueFinal = (key, n) => {
+    const creation = parseInt(virtues[key], 10) || 1;
+    const bought = parseInt(virtueFreebies[key], 10) || 0;
+    const target = Math.max(1, Math.min(5, n));
+    const current = creation + bought;
+    if (target === current) return;
+    if (target < current) {
+      const drop = current - target;
+      const fromBought = Math.min(bought, drop);
+      setVirtueFreebies((prev) => ({ ...prev, [key]: bought - fromBought }));
+      setVirtues((prev) => ({ ...prev, [key]: Math.max(1, creation - (drop - fromBought)) }));
+      return;
+    }
+    const up = target - current;
+    const toCreation = Math.min(up, Math.max(0, VIRTUE_TOTAL_AT_CREATION - virtueTotal));
+    const toBought = up - toCreation;
+    if (toBought > 0 && !freebieMode) return;
+    setVirtues((prev) => ({ ...prev, [key]: creation + toCreation }));
+    if (toBought > 0) setVirtueFreebies((prev) => ({ ...prev, [key]: bought + toBought }));
+  };
+
+  const freebies = computeClassicFreebies({
+    systemType,
+    attrs,
+    attrPools: pools,
+    abilities,
+    abilityPoolsSel: abilityPools,
+    customAbilities,
+    disciplines,
+    backgrounds,
+    virtues,
+    virtueFreebies,
+    humanityBonus,
+    willpowerBonus,
+    meritRows,
+    nosferatu,
+  });
 
   const themeAccent =
     systemType === 'werewolf' ? '#4ade80' : systemType === 'mage' ? '#38bdf8' : '#e94560';
@@ -189,13 +266,9 @@ export default function CharacterCreationWizard({
         ...base,
         clan,
         generation,
-        humanity: parseInt(humanity, 10) || 7,
-        willpower: parseInt(willpowerVampire, 10) || 5,
-        virtues: {
-          conscience: parseInt(virtues.conscience, 10) || 0,
-          self_control: parseInt(virtues.self_control, 10) || 0,
-          courage: parseInt(virtues.courage, 10) || 0,
-        },
+        humanity: humanityFinal,
+        willpower: willpowerFinal,
+        virtues: virtuesFinal,
         disciplines: discClean,
         backgrounds: bgClean,
       };
@@ -241,30 +314,33 @@ export default function CharacterCreationWizard({
       if (natureMsgs.length) err[SHEET_SECTION_IDS.nature] = natureMsgs.join(' ');
     }
 
-    const errA = validateAttributeSpread(attrs, pools);
+    // Final sheets may hold freebie dots; the freebie ledger prices and caps them.
+    const errA = validateAttributeSpread(attrs, pools, { allowFreebies: true, nosferatu });
     if (errA) err[SHEET_SECTION_IDS.attributes] = errA;
 
-    const errAb = validateAbilitySpread(abilities, abilityPools, customAbilities);
+    const errAb = validateAbilitySpread(abilities, abilityPools, customAbilities, {
+      allowFreebies: true,
+    });
     if (errAb) err[SHEET_SECTION_IDS.abilities] = errAb;
 
     if (systemType === 'vampire') {
       const advMsgs = [];
+      // Creation Virtues must be exactly 10; extra dots live in virtueFreebies.
       const vErr = validateVirtues(virtues);
       if (vErr) advMsgs.push(vErr);
       const dSum = disciplines.reduce((s, d) => s + (parseInt(d.dots, 10) || 0), 0);
-      if (dSum > 3) {
-        advMsgs.push(
-          'Discipline dots at creation are usually 3 total for a neonate — lower some ratings or clear extras.'
-        );
+      if (dSum < DISCIPLINE_DOTS) {
+        advMsgs.push(`Place all ${DISCIPLINE_DOTS} Discipline dots (clan Disciplines; Caitiff any).`);
       }
       const bgSum = backgrounds.reduce((s, b) => s + (parseInt(b.dots, 10) || 0), 0);
-      if (bgSum > 5) {
-        advMsgs.push(
-          'Background dots total more than 5 (typical starting pool). Adjust before sealing the sheet.'
-        );
+      if (bgSum < BACKGROUND_DOTS) {
+        advMsgs.push(`Place all ${BACKGROUND_DOTS} Background dots.`);
       }
       if (advMsgs.length) err[SHEET_SECTION_IDS.advantages] = advMsgs.join(' ');
     }
+
+    const fErr = validateFreebies(freebies);
+    if (fErr) err[SHEET_SECTION_IDS.freebies] = fErr;
 
     if (systemType === 'mage') {
       const sErr = validateSpheres(spheres);
@@ -344,6 +420,21 @@ export default function CharacterCreationWizard({
       <p style={{ color: '#f87171', fontSize: '13px', marginBottom: '12px' }}>{fieldErrors[sectionId]}</p>
     ) : null;
 
+  if (campaign && editionOf(campaign) === V5) {
+    return (
+      <V5CharacterCreationWizard
+        token={token}
+        campaigns={eligible}
+        campaignId={campaignId}
+        onCampaignChange={setCampaignId}
+        onDone={onDone}
+        onCancel={onCancel}
+        showError={showError}
+        showSuccess={showSuccess}
+      />
+    );
+  }
+
   if (!eligible.length) {
     return (
       <GothicBox theme="vampire" style={{ padding: '24px', maxWidth: '560px', margin: '0 auto' }}>
@@ -387,9 +478,9 @@ export default function CharacterCreationWizard({
             Character sheet forge
           </h2>
           <p style={{ color: '#8b8b9f', fontSize: '14px', lineHeight: 1.5 }}>
-            Build a <strong>Classic World of Darkness</strong>–style sheet with dot pools and
-            three-column abilities (Revised-era style). Scroll the sheet in order, or jump with the
-            nav. Your Storyteller has final say on numbers and templates.
+            Build a <strong>Classic World of Darkness</strong> (Revised) sheet: place your creation
+            dots, then spend 15 freebie points. Scroll the sheet in order, or jump with the nav.
+            Your Storyteller has final say on numbers and templates.
           </p>
         </div>
 
@@ -450,6 +541,22 @@ export default function CharacterCreationWizard({
             {systemType === 'mage' && tradition ? (
               <span style={{ color: themeAccent }}>{tradition}</span>
             ) : null}
+            <label
+              style={{
+                color: freebies.remaining < 0 ? '#fca5a5' : '#94a3b8',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                cursor: 'pointer',
+              }}
+            >
+              <input
+                type="checkbox"
+                checked={freebieMode}
+                onChange={(e) => setFreebieMode(e.target.checked)}
+              />
+              Freebie mode · {freebies.spent}/{freebies.available} spent
+            </label>
           </div>
         </div>
 
@@ -480,6 +587,7 @@ export default function CharacterCreationWizard({
               {eligible.map((c) => (
                 <option key={c.id} value={c.id}>
                   {c.name} — {c.game_system}
+                  {String(c.game_system || '').toLowerCase() === 'vampire' ? ` (${editionLabel(c)})` : ''}
                 </option>
               ))}
             </select>
@@ -779,13 +887,13 @@ export default function CharacterCreationWizard({
           <ResponsiveSheetBlock
             sectionId={SHEET_SECTION_IDS.attributes}
             title="Attributes"
-            subtitle="7 / 5 / 3 across Physical, Social, Mental — minimum 1 in each trait."
+            subtitle="Every attribute starts at 1. Add 7 / 5 / 3 dots across Physical, Social, Mental."
             accent={themeAccent}
           >
             {inlineErr(SHEET_SECTION_IDS.attributes)}
-            <PoolSummary variant="attributes" attrs={attrs} pools={pools} />
+            <PoolSummary variant="attributes" attrs={attrs} pools={pools} nosferatu={nosferatu} />
             <label style={{ color: '#c4b5fd', display: 'block', marginBottom: '8px' }}>
-              Which category is primary (7 dots)?
+              Which category is primary (+7 dots)?
             </label>
             <select
               value={priority}
@@ -801,17 +909,23 @@ export default function CharacterCreationWizard({
                 borderRadius: '8px',
               }}
             >
-              <option value="physical">Physical primary (7) · Social (5) · Mental (3)</option>
-              <option value="social">Social primary (7) · Physical (5) · Mental (3)</option>
-              <option value="mental">Mental primary (7) · Social (5) · Physical (3)</option>
+              <option value="physical">Physical primary (+7) · Social (+5) · Mental (+3)</option>
+              <option value="social">Social primary (+7) · Physical (+5) · Mental (+3)</option>
+              <option value="mental">Mental primary (+7) · Social (+5) · Physical (+3)</option>
             </select>
-            <AttributeColumns attrs={attrs} setAttrs={setAttrs} pools={pools} />
+            <AttributeColumns
+              attrs={attrs}
+              setAttrs={setAttrs}
+              pools={pools}
+              freebieMode={freebieMode}
+              nosferatu={nosferatu}
+            />
           </ResponsiveSheetBlock>
 
           <ResponsiveSheetBlock
             sectionId={SHEET_SECTION_IDS.abilities}
             title="Abilities"
-            subtitle="11 / 7 / 4 across Talents, Skills, Knowledges. Custom rows share the same column pools."
+            subtitle="13 / 9 / 5 across Talents, Skills, Knowledges; no ability above 3 before freebies. Custom rows share the column pools."
             accent={themeAccent}
           >
             {inlineErr(SHEET_SECTION_IDS.abilities)}
@@ -822,7 +936,7 @@ export default function CharacterCreationWizard({
               customAbilities={customAbilities}
             />
             <label style={{ color: '#c4b5fd', display: 'block', marginBottom: '8px' }}>
-              Which column is primary (11 dots)?
+              Which column is primary (13 dots)?
             </label>
             <select
               value={abilityPriority}
@@ -838,9 +952,9 @@ export default function CharacterCreationWizard({
                 borderRadius: '8px',
               }}
             >
-              <option value="talents">Talents 11 · Skills 7 · Knowledges 4</option>
-              <option value="skills">Skills 11 · Talents 7 · Knowledges 4</option>
-              <option value="knowledges">Knowledges 11 · Skills 7 · Talents 4</option>
+              <option value="talents">Talents 13 · Skills 9 · Knowledges 5</option>
+              <option value="skills">Skills 13 · Talents 9 · Knowledges 5</option>
+              <option value="knowledges">Knowledges 13 · Skills 9 · Talents 5</option>
             </select>
             <AbilityColumns
               abilities={abilities}
@@ -848,6 +962,7 @@ export default function CharacterCreationWizard({
               pools={abilityPools}
               customAbilities={customAbilities}
               setCustomAbilities={setCustomAbilities}
+              freebieMode={freebieMode}
             />
           </ResponsiveSheetBlock>
 
@@ -862,12 +977,12 @@ export default function CharacterCreationWizard({
             {systemType === 'vampire' && (
               <SheetSection
                 title="Kindred advantages"
-                subtitle="Neonate defaults: 3 discipline dots, 5 background dots, virtues total 7."
+                subtitle="3 Discipline dots, 5 Background dots, Virtues 1 free each + 7. Humanity and Willpower follow from your Virtues."
                 accent={themeAccent}
               >
                 <div style={{ marginBottom: '20px' }}>
                   <div style={{ color: '#94a3b8', fontSize: '12px', marginBottom: '8px' }}>
-                    Disciplines (max 3 dots total at creation)
+                    Disciplines ({DISCIPLINE_DOTS} dots at creation; more with freebies)
                   </div>
                   {disciplines.map((d, i) => (
                     <div
@@ -935,7 +1050,7 @@ export default function CharacterCreationWizard({
                             (s, x, j) => (j === i ? s : s + (parseInt(x.dots, 10) || 0)),
                             0
                           );
-                          if (others + n > 3) return;
+                          if (!freebieMode && n > (parseInt(d.dots, 10) || 0) && others + n > DISCIPLINE_DOTS) return;
                           next[i] = { ...next[i], dots: n };
                           setDisciplines(next);
                         }}
@@ -946,7 +1061,7 @@ export default function CharacterCreationWizard({
 
                 <div style={{ marginBottom: '20px' }}>
                   <div style={{ color: '#94a3b8', fontSize: '12px', marginBottom: '8px' }}>
-                    Backgrounds (max 5 dots total)
+                    Backgrounds ({BACKGROUND_DOTS} dots at creation; more with freebies)
                   </div>
                   {backgrounds.map((b, i) => (
                     <div
@@ -986,7 +1101,7 @@ export default function CharacterCreationWizard({
                             (s, x, j) => (j === i ? s : s + (parseInt(x.dots, 10) || 0)),
                             0
                           );
-                          if (others + n > 5) return;
+                          if (!freebieMode && n > (parseInt(b.dots, 10) || 0) && others + n > BACKGROUND_DOTS) return;
                           next[i] = { ...next[i], dots: n };
                           setBackgrounds(next);
                         }}
@@ -997,7 +1112,11 @@ export default function CharacterCreationWizard({
 
                 <div style={{ marginBottom: '16px' }}>
                   <div style={{ color: '#94a3b8', fontSize: '12px', marginBottom: '8px' }}>
-                    Virtues (7 dots, each 1–5)
+                    Virtues (1 free each + 7 = {VIRTUE_TOTAL_AT_CREATION}; placed {virtueTotal}
+                    {morality.virtueFreebieDots > 0
+                      ? ` + ${morality.virtueFreebieDots} bought with freebies; those don't change Humanity or Willpower`
+                      : ''}
+                    )
                   </div>
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: '16px' }}>
                     {[
@@ -1010,63 +1129,56 @@ export default function CharacterCreationWizard({
                           {label}
                         </span>
                         <DotTrack
-                          value={virtues[key]}
+                          value={virtuesFinal[key]}
                           maxRank={5}
                           accent="#f472b6"
-                          onChange={(n) => {
-                            setVirtues((prev) => ({ ...prev, [key]: String(n) }));
-                          }}
+                          onChange={(n) => setVirtueFinal(key, n)}
                         />
+                        {virtueFreebies[key] > 0 ? (
+                          <span style={{ color: '#94a3b8', fontSize: '11px' }}>
+                            {virtues[key]} + {virtueFreebies[key]} freebie
+                          </span>
+                        ) : null}
                       </div>
                     ))}
                   </div>
                 </div>
 
-                <div
-                  style={{
-                    display: 'grid',
-                    gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))',
-                    gap: '12px',
-                  }}
-                >
-                  <div>
-                    <label style={{ color: '#c4b5fd', fontSize: '12px' }}>Humanity</label>
-                    <input
-                      type="number"
-                      min={0}
-                      max={10}
-                      value={humanity}
-                      onChange={(e) => setHumanity(e.target.value)}
-                      style={{
-                        width: '100%',
-                        marginTop: '4px',
-                        padding: '8px',
-                        background: '#0f1729',
-                        color: '#e0e0e0',
-                        border: '1px solid #2a2a4e',
-                        borderRadius: '6px',
-                      }}
-                    />
-                  </div>
-                  <div>
-                    <label style={{ color: '#c4b5fd', fontSize: '12px' }}>Willpower</label>
-                    <input
-                      type="number"
-                      min={1}
-                      max={10}
-                      value={willpowerVampire}
-                      onChange={(e) => setWillpowerVampire(e.target.value)}
-                      style={{
-                        width: '100%',
-                        marginTop: '4px',
-                        padding: '8px',
-                        background: '#0f1729',
-                        color: '#e0e0e0',
-                        border: '1px solid #2a2a4e',
-                        borderRadius: '6px',
-                      }}
-                    />
-                  </div>
+                <div style={{ display: 'grid', gap: '10px' }}>
+                  {[
+                    ['Humanity', humanityFinal, morality.humanityBase, 'Conscience + Self-Control', humanityBonus, setHumanityBonus],
+                    ['Willpower', willpowerFinal, morality.willpowerBase, 'Courage', willpowerBonus, setWillpowerBonus],
+                  ].map(([label, value, baseValue, from, bonus, setBonus]) => (
+                    <div key={label} style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '10px' }}>
+                      <span style={{ color: '#c4b5fd', fontSize: '12px', width: '80px' }}>{label}</span>
+                      <DotTrack value={value} maxRank={10} accent="#f472b6" disabled onChange={() => {}} />
+                      <span style={{ color: '#94a3b8', fontSize: '12px' }}>
+                        {value} = {from} ({baseValue}){bonus > 0 ? ` + ${bonus} freebie` : ''}
+                      </span>
+                      {freebieMode ? (
+                        <span style={{ display: 'inline-flex', gap: '4px' }}>
+                          <button
+                            type="button"
+                            aria-label={`Lower ${label} freebie dots`}
+                            disabled={bonus <= 0}
+                            onClick={() => setBonus(Math.max(0, bonus - 1))}
+                            style={{ padding: '2px 8px', background: '#1e293b', color: '#e2e8f0', border: '1px solid #475569', borderRadius: '6px', cursor: 'pointer' }}
+                          >
+                            −
+                          </button>
+                          <button
+                            type="button"
+                            aria-label={`Raise ${label} with freebies`}
+                            disabled={value >= 10}
+                            onClick={() => setBonus(bonus + 1)}
+                            style={{ padding: '2px 8px', background: '#1e293b', color: '#e2e8f0', border: '1px solid #475569', borderRadius: '6px', cursor: 'pointer' }}
+                          >
+                            +
+                          </button>
+                        </span>
+                      ) : null}
+                    </div>
+                  ))}
                 </div>
               </SheetSection>
             )}
@@ -1222,6 +1334,21 @@ export default function CharacterCreationWizard({
               setRows={setMeritRows}
               globalNotes={meritsGlobalNotes}
               setGlobalNotes={setMeritsGlobalNotes}
+            />
+          </ResponsiveSheetBlock>
+
+          <ResponsiveSheetBlock
+            sectionId={SHEET_SECTION_IDS.freebies}
+            title="Freebie points"
+            subtitle="15 points (+ up to 7 from Flaws) to raise anything above the creation budgets."
+            accent={themeAccent}
+          >
+            {inlineErr(SHEET_SECTION_IDS.freebies)}
+            <FreebieSummary
+              freebies={freebies}
+              freebieMode={freebieMode}
+              setFreebieMode={setFreebieMode}
+              isVampire={systemType === 'vampire'}
             />
           </ResponsiveSheetBlock>
 
