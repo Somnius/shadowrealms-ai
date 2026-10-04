@@ -137,7 +137,8 @@ For development, `docker compose --profile dev up -d frontend` starts the live-r
 - [docs/README.md](docs/README.md): index of everything in `docs/`
 - Wiki: [Installation](https://github.com/Somnius/shadowrealms-ai/wiki/Installation), [Configuration](https://github.com/Somnius/shadowrealms-ai/wiki/Configuration), [Rules Editions](https://github.com/Somnius/shadowrealms-ai/wiki/Rules-Editions), [AI Models](https://github.com/Somnius/shadowrealms-ai/wiki/AI-Models), [Architecture](https://github.com/Somnius/shadowrealms-ai/wiki/Architecture), [Security](https://github.com/Somnius/shadowrealms-ai/wiki/Security), [Troubleshooting](https://github.com/Somnius/shadowrealms-ai/wiki/Troubleshooting)
 - [docs/CHANGELOG.md](docs/CHANGELOG.md): every release
-- [docs/ROADMAP_v0.9.md](docs/ROADMAP_v0.9.md): the v0.9 plan and what's next
+- [docs/ROADMAP_v0.10.md](docs/ROADMAP_v0.10.md): the plan from v0.9.2 to v0.10
+- [docs/ROADMAP_v0.9.md](docs/ROADMAP_v0.9.md): the v0.9 plan
 
 ---
 

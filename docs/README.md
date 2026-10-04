@@ -1,6 +1,6 @@
 # ShadowRealms AI Documentation
 
-Index of the documentation in this folder (current release: v0.9.0, "Into the Night"). The [project wiki](https://github.com/Somnius/shadowrealms-ai/wiki) has step-by-step pages for installation, configuration, AI models, rules editions, books, architecture and troubleshooting.
+Index of the documentation in this folder (current release: v0.9.1). The [project wiki](https://github.com/Somnius/shadowrealms-ai/wiki) has step-by-step pages for installation, configuration, AI models, rules editions, books, architecture and troubleshooting.
 
 ## Getting started
 
@@ -43,7 +43,8 @@ Index of the documentation in this folder (current release: v0.9.0, "Into the Ni
 ## Project history and plans
 
 - [CHANGELOG.md](CHANGELOG.md): every release
-- [ROADMAP_v0.9.md](ROADMAP_v0.9.md): the v0.9 plan, decisions, and what's next
+- [ROADMAP_v0.10.md](ROADMAP_v0.10.md): the plan from v0.9.2 to v0.10, decisions and progress log
+- [ROADMAP_v0.9.md](ROADMAP_v0.9.md): the v0.9 plan and its decisions
 - [../SHADOWREALMS_AI_COMPLETE.md](../SHADOWREALMS_AI_COMPLETE.md): the long-form project history, release by release
 - [archive/](archive/): historical reports and plans up to v0.8 (PostgreSQL migration, Phase 3B spec, old planning, quality audits, the v0.6 theme). Kept for reference; they don't describe the current app.
 
