@@ -1,0 +1,68 @@
+name: Bug report
+description: Something doesn't work the way the docs say it should.
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting. For security problems, please use the Security tab ("Report a vulnerability") instead of a public issue.
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: What you did, what you expected, and what you got instead.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Open a chronicle as a player
+        2. Roll ...
+        3. ...
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Version or commit
+      description: The footer shows the version; `git rev-parse --short HEAD` gives the commit.
+      placeholder: v0.9.0 / abc1234
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Chat / Storyteller AI
+        - Dice
+        - Characters / character sheet
+        - Chronicles (campaigns) / locations
+        - Admin panel
+        - Login / accounts
+        - Translations (EN/EL)
+        - Docker / setup
+        - Other
+    validations:
+      required: true
+  - type: dropdown
+    id: edition
+    attributes:
+      label: Rules edition (if it's about a chronicle)
+      options:
+        - Not related to a chronicle
+        - Classic (Revised)
+        - V5
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs or screenshots
+      description: For example `docker compose logs backend --tail 100`, or the browser console. Remove secrets, tokens and passwords first.
+      render: text
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: OS, browser, and which AI provider/model if it's AI related (LM Studio, Ollama, cloud).
