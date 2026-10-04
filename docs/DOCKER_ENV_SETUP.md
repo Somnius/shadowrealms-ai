@@ -156,7 +156,7 @@ Cloud keys (Anthropic, OpenAI) and the Typesafe Jev key are not environment vari
 
 - **Fixed in `docker-compose.yml`:** `FLASK_HOST`, `FLASK_PORT`, `FLASK_DEBUG`, `LM_STUDIO_URL`, `OLLAMA_URL`, `CHROMADB_HOST`, `CHROMADB_PORT`, `REDIS_HOST`, `REDIS_PORT`, `GPU_THRESHOLD_HIGH`, `GPU_THRESHOLD_MEDIUM`, `LOG_LEVEL`, `LOG_FILE`. Edit `docker-compose.yml` to change them.
 - **Code defaults only** (not in `docker-compose.yml`; add them there to change them): `AUTH_COOKIE_SECURE` (`auto`: Secure refresh cookie only over HTTPS), `GUNICORN_TIMEOUT`, `GUNICORN_GRACEFUL_TIMEOUT`, `GUNICORN_KEEPALIVE`, `GUNICORN_LOGLEVEL`, `FORWARDED_ALLOW_IPS`, `RATELIMIT_STORAGE_URI`, `LM_STUDIO_MODEL_FALLBACK`, `LAYA_MODEL_DIR`.
-- **Legacy, unused in v0.9:** everything under "Legacy / unused" in `env.template` (for example `DATABASE`, the SQLite path from before PostgreSQL, `OPENAI_API_KEY`, `LLM_*`, `AI_MAX_TOKENS_*`, `JWT_ACCESS_TOKEN_EXPIRES`).
+- **Removed in v0.9.2:** the old "Legacy / unused" block of `env.template` (`DATABASE`, the SQLite path from before PostgreSQL, `OPENAI_API_KEY`, `LLM_*`, `AI_MAX_TOKENS_*`, `AI_TEMPERATURE_*`, `CHROMADB_COLLECTION`, `REDIS_DB`, `REDIS_PASSWORD`, `JWT_ACCESS_TOKEN_EXPIRES`, `JWT_REFRESH_TOKEN_EXPIRES`, `LOG_FORMAT`, `ALLOWED_HOSTS`, `GREEK_*`, `BACKUP_*`, `DEFAULT_RPG_SYSTEM`, `DEVELOPMENT_MODE`, `TESTING_MODE`, `MOCK_AI_RESPONSES`). Nothing passed them to the backend; if your `.env` still has them, they are ignored and can be deleted.
 - **Host scripts:** `BOOK_SOURCE_URL` is read from `.env` by `books/sync_wod_books.py` only (see [books/README.md](../books/README.md)).
 
 ---
