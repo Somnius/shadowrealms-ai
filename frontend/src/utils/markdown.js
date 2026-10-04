@@ -58,12 +58,45 @@ export const resolveImage = (url) => {
 
 /* ------------------------------------------------------------------ inline */
 
-const CODE_SPAN_RE = /(`+)([\s\S]*?[^`])\1(?!`)/g;
 const AUTOLINK_RE = /<((?:https?:\/\/|mailto:)[^\s<>]+)>/gi;
-const IMAGE_RE = /!\[([^\]]*)\]\(\s*<?([^\s)>]+)>?(?:\s+"([^"]*)")?\s*\)/g;
-const LINK_RE = /\[((?:[^[\]]|\[[^\]]*\])*)\]\(\s*<?([^\s)>]+)>?(?:\s+"([^"]*)")?\s*\)/g;
+// URLs can't contain "(" and are length-capped: an unclosed "(" can't make these backtrack for seconds.
+const IMAGE_RE = /!\[([^\]]*)\]\(\s*<?([^\s()>]{1,2048})>?(?:\s+"([^"]*)")?\s*\)/g;
+const LINK_RE = /\[((?:[^[\]]|\[[^\]]*\])*)\]\(\s*<?([^\s()>]{1,2048})>?(?:\s+"([^"]*)")?\s*\)/g;
 const SLOT_RE = /\uE000(\d+)\uE000/g;
 const HAS_SLOT_RE = /\uE000\d+\uE000/;
+// Slots only belong in text; inside an attribute (href, alt, title) they are dropped.
+const noSlots = (s) => (s ? String(s).replace(SLOT_RE, '') : s);
+
+// Code spans: a run of backticks up to the next run of the same length. A linear scan
+// instead of a backreference regex, which backtracks for seconds on long backtick runs.
+const replaceCodeSpans = (s, onSpan) => {
+  const runs = [];
+  const runRe = /`+/g;
+  let m;
+  while ((m = runRe.exec(s))) runs.push({ start: m.index, len: m[0].length });
+  const nextSame = new Array(runs.length).fill(-1);
+  const lastByLen = new Map();
+  for (let j = runs.length - 1; j >= 0; j -= 1) {
+    nextSame[j] = lastByLen.has(runs[j].len) ? lastByLen.get(runs[j].len) : -1;
+    lastByLen.set(runs[j].len, j);
+  }
+  let out = '';
+  let pos = 0;
+  let j = 0;
+  while (j < runs.length) {
+    const close = nextSame[j];
+    if (close < 0) {
+      j += 1;
+      continue;
+    }
+    const open = runs[j];
+    const end = runs[close];
+    out += s.slice(pos, open.start) + onSpan(s.slice(open.start + open.len, end.start));
+    pos = end.start + end.len;
+    j = close + 1;
+  }
+  return out + s.slice(pos);
+};
 
 const linkHtml = (href, inner, title) => {
   const external = !href.startsWith('#');
@@ -99,16 +132,18 @@ export const renderInline = (src) => {
   const keep = (html) => `\uE000${slots.push(html) - 1}\uE000`;
   let s = String(src).replace(/\uE000/g, '');
 
-  s = s.replace(CODE_SPAN_RE, (m, ticks, code) => {
+  s = replaceCodeSpans(s, (code) => {
     const body = /^ [\s\S]* $/.test(code) && code.trim() ? code.slice(1, -1) : code;
     return keep(`<code>${escapeHtml(body.replace(/\n/g, ' '))}</code>`);
   });
   s = s.replace(AUTOLINK_RE, (m, url) => keep(linkHtml(url, escapeText(url))));
-  s = s.replace(IMAGE_RE, (m, alt, url, title) => keep(imageHtml(alt, url, title)));
+  s = s.replace(IMAGE_RE, (m, alt, url, title) =>
+    keep(imageHtml(noSlots(alt), noSlots(url), noSlots(title))),
+  );
   s = s.replace(LINK_RE, (m, label, url, title) => {
     const inner = formatText(label);
-    const href = resolveLink(url);
-    return keep(href ? linkHtml(href, inner, title) : inner);
+    const href = resolveLink(noSlots(url));
+    return keep(href ? linkHtml(href, inner, noSlots(title)) : inner);
   });
   s = formatText(s);
 
@@ -129,6 +164,8 @@ const LIST_RE = /^( *)([-*+]|\d{1,9}[.)])(?:[ \t]+(.*))?$/;
 const HTML_BLOCK_RE = /^ {0,3}<\/?[a-zA-Z][\w-]*(?:\s[^>]*)?\/?>/;
 const COMMENT_RE = /^ {0,3}<!--/;
 const TABLE_SEP_RE = /^ {0,3}\|?[ \t]*:?-+:?[ \t]*(?:\|[ \t]*:?-+:?[ \t]*)*\|?[ \t]*$/;
+
+const MAX_NESTING = 32;
 
 const isBlank = (line) => /^\s*$/.test(line);
 const indentOf = (line) => line.match(/^ */)[0].length;
@@ -180,6 +217,7 @@ const slugify = (text) =>
 class BlockParser {
   constructor() {
     this.slugs = new Map();
+    this.depth = 0;
   }
 
   headingId(text) {
@@ -191,6 +229,20 @@ class BlockParser {
 
   /** Render a list of lines as block HTML. tight: paragraphs without <p> (list items). */
   blocks(lines, tight = false) {
+    // Lists and quotes nest by recursion; past this depth the rest is plain text, so a line
+    // like "- - - - …" can't overflow the stack.
+    if (this.depth >= MAX_NESTING) {
+      return `<p>${escapeText(lines.join(' ').trim())}</p>`;
+    }
+    this.depth += 1;
+    try {
+      return this.blocksAt(lines, tight);
+    } finally {
+      this.depth -= 1;
+    }
+  }
+
+  blocksAt(lines, tight) {
     const out = [];
     let i = 0;
     while (i < lines.length) {

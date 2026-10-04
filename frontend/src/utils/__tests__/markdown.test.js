@@ -247,3 +247,29 @@ describe('renderMarkdown details', () => {
     delete window.__mdXss;
   });
 });
+
+describe('renderMarkdown on hostile input', () => {
+  test('long backtick runs and unclosed links render quickly', () => {
+    const started = Date.now();
+    renderMarkdown(`a ${'`'.repeat(6000)}`);
+    renderMarkdown('![a]('.repeat(12500));
+    renderMarkdown('[a]('.repeat(16000));
+    expect(Date.now() - started).toBeLessThan(2000);
+  });
+
+  test('code spans still pair runs of the same length', () => {
+    expect(renderInline('a ``x ` y`` b `z`')).toBe('a <code>x ` y</code> b <code>z</code>');
+    expect(renderInline('only ` one')).toBe('only ` one');
+  });
+
+  test('deep nesting stops instead of overflowing the stack', () => {
+    expect(() => renderMarkdown('- '.repeat(1250))).not.toThrow();
+    expect(() => renderMarkdown('> '.repeat(5000))).not.toThrow();
+  });
+
+  test('nested markup never ends up inside an attribute', () => {
+    const html = renderInline('[x](https://e.com/a![i](https://e.com/i.png)b) ![`alt`](https://e.com/p.png)');
+    expect(html).not.toMatch(/href="[^"]*</);
+    expect(html).not.toMatch(/alt="[^"]*</);
+  });
+});
