@@ -1,0 +1,5 @@
+numpy>=1.26
+scipy>=1.11
+soundfile>=0.12
+pyloudnorm>=0.1.1
+matplotlib>=3.8   # analyze.py only (spectrogram)
