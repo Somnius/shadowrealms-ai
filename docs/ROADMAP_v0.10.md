@@ -9,9 +9,9 @@ How each phase runs: build in its own git worktree → two independent reviews (
 | # | Phase | Parts | Version | Status |
 |---|---|---|---|---|
 | 1 | Small loose ends | test data cleanup · `OLLAMA_MODEL` default · in-app README code blocks · `env.template` legacy variables · GitHub social preview (manual, see below) | 0.9.2 | **done** (released 0.9.2) |
-| 2 | Security and maintenance | Dependabot alerts and PRs · CodeQL log-injection alerts · admin screens for account unlock and login audit · 30-minute access tokens · branch protection on `main` | 0.9.3 | built, in review (30-min tokens + branch protection live) |
-| 3 | Playing | dice pools computed from the character sheet · chat message actions and older history · Laya labelling tool and evaluation | 0.9.4 | in progress (dice pools) |
-| 4 | Bigger projects | Create React App → Vite · major dependency upgrades (react-router 7, chromadb 1.x, Node LTS, …) · React lint warnings | 0.10.0 | todo |
+| 2 | Security and maintenance | Dependabot alerts and PRs · CodeQL log-injection alerts · admin screens for account unlock and login audit · 30-minute access tokens · branch protection on `main` | 0.9.3 | **done** (released 0.9.3) |
+| 3 | Playing | dice pools computed from the character sheet · chat message actions and older history · Laya labelling tool and evaluation | 0.9.4 | dice pools + chat actions built, in review · Laya tool being built |
+| 4 | Bigger projects | Create React App → Vite · major dependency upgrades (react-router 7, chromadb 1.x, Node LTS, …) · React lint warnings | 0.10.0 | in progress (CRA → Vite started) |
 | — | Later | rule-book import into RAG (Classic + V5, deduplicated) · showcase video | — | postponed |
 
 ## Decisions (2026-10-04)
@@ -30,3 +30,5 @@ How each phase runs: build in its own git worktree → two independent reviews (
 - 09:19 — Phase 1 built (OLLAMA default, in-app README renderer rewritten, unused env variables removed, docs index); first review done, second review (different model) running.
 - 09:29 — Phase 2 built (dependency fixes, log-injection escaping: CodeQL alerts 47 → 0 locally, login audit paging and filters, admin "Logins & lockouts" tab, unlock takes one exact IP). First review done, nothing blocking; second review running.
 - 09:36 — Phase 1 second review: no XSS, but hostile Markdown could hang the README viewer (backtick runs, unclosed links) or overflow the stack (deep nesting), and nested markup could end up inside an attribute. All fixed with tests, CI green, merged, **0.9.2 released and live**.
+- 09:47 — Phase 2 second review: no regressions; the unlock fix was real (on the old code, unlocking `*` cleared every lockout). Fixed what it found: exception messages inside tracebacks are escaped now, the last f-string log calls use the helper, each Unlock button in the audit says who it unlocks, and fast paging can't show an older page. CI green, merged, **0.9.3 released and live** (checked: paging, `*` refused, bad limit → 400). Dependabot PR #31 closed (applied), #32 (react-router 7) waits for phase 4.
+- 09:52 — Phase 3: chat message actions and older history built (delete rules per role, replies, `before_id` paging); second review running together with the dice pools. Laya labelling tool being built. Phase 4 started early in its own worktree: CRA → Vite.
