@@ -1,5 +1,5 @@
 /**
- * Finds t('ns:key', default, vars) calls in src/ with @babel/parser (a react-scripts dependency).
+ * Finds t('ns:key', default, vars) calls in src/ with @babel/parser (a dev dependency).
  * Shared by scripts/i18n-extract.js and src/i18n/__tests__/locales.test.js (lives in src/ so the
  * test container, which mounts only src/, can load it). Not imported by the app.
  */
