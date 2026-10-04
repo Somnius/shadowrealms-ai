@@ -64,7 +64,7 @@ export function staffKindFor(user, campaign) {
 }
 
 /** Optimistic row shown until the server echoes the saved message. */
-export function optimisticMessage({ text, user, campaign, location, speakAs, character, messageType }) {
+export function optimisticMessage({ text, user, campaign, location, speakAs, character, messageType, replyTo = null }) {
   tempSeq += 1;
   const asChar = speakAs === 'character' && character?.id;
   return {
@@ -84,6 +84,7 @@ export function optimisticMessage({ text, user, campaign, location, speakAs, cha
     character_id: asChar ? character.id : null,
     character_name: asChar ? character.name : null,
     character_portrait_url: asChar ? character.portrait_url || null : null,
+    reply_to: replyTo ? { id: replyTo.id, author: replyTo.author || '', excerpt: replyTo.excerpt || '', role: replyTo.role || 'user' } : null,
   };
 }
 
@@ -91,9 +92,11 @@ export function optimisticMessage({ text, user, campaign, location, speakAs, cha
  * @param {object} ctx
  *  api(path, opts) → {ok,status,data}; campaign; location; user; speakAs; character;
  *  callbacks: onOptimistic(msg), onSaved(clientId, msg|null), onAppend(msgs), onError(text),
- *             onAiPending(bool), onDiceMarker(marker), onRoomReload(), onLocationsChanged()
+ *             onAiPending(bool), onDiceMarker(marker), onRoomReload(), onLocationsChanged(),
+ *             onReplyGone() (the replied-to message was deleted meanwhile)
  * @param {string} rawText
- * @param {{ messageType?: 'action' }} [opts]
+ * @param {{ messageType?: 'action', replyTo?: {id, author, excerpt, role} }} [opts]
+ *   replyTo: the message this line answers (reply_to_id; shown as a quote above it)
  * @returns {Promise<boolean>} true when the user's line was saved
  */
 export async function sendChatMessage(ctx, rawText, opts = {}) {
@@ -107,6 +110,7 @@ export async function sendChatMessage(ctx, rawText, opts = {}) {
     onDiceMarker: () => {},
     onRoomReload: () => {},
     onLocationsChanged: () => {},
+    onReplyGone: () => {},
     ...ctx,
   };
   const isAdmin = user?.role === 'admin';
@@ -128,7 +132,8 @@ export async function sendChatMessage(ctx, rawText, opts = {}) {
   const messageType = opts.messageType || roomType;
   const roomPath = `/campaigns/${campaign.id}/locations/${location.id}`;
 
-  const temp = optimisticMessage({ text, user, campaign, location, speakAs: slashMatch ? 'staff' : speakAs, character, messageType });
+  const replyTo = opts.replyTo && opts.replyTo.id != null ? opts.replyTo : null;
+  const temp = optimisticMessage({ text, user, campaign, location, speakAs: slashMatch ? 'staff' : speakAs, character, messageType, replyTo });
   cb.onOptimistic(temp);
 
   const save = await api(roomPath, {
@@ -141,6 +146,7 @@ export async function sendChatMessage(ctx, rawText, opts = {}) {
       speak_as: slashMatch ? 'staff' : speakAs,
       ...(!slashMatch && speakAs === 'character' && character?.id ? { character_id: character.id } : {}),
       ...(slashMatch ? { ai_message_kind: 'slash_user' } : chatMatch ? { ai_message_kind: 'chat_user' } : {}),
+      ...(replyTo ? { reply_to_id: replyTo.id } : {}),
     },
   });
   const notifyOoc = (data) => {
@@ -152,7 +158,12 @@ export async function sendChatMessage(ctx, rawText, opts = {}) {
   };
   if (!save.ok) {
     cb.onSaved(temp.client_id, null);
-    if (!notifyOoc(save.data)) cb.onError(save.data.error || t('chat:error.saveFailed', 'Your message could not be saved.'));
+    const replyGone = /^(reply_target_|invalid_reply_to)/.test(String((save.data && save.data.code) || ''));
+    if (replyGone) {
+      cb.onReplyGone();
+      cb.onError(t('chat:reply.gone', 'The message you replied to is gone. Your text is still in the box.'));
+    }
+    else if (!notifyOoc(save.data)) cb.onError(save.data.error || t('chat:error.saveFailed', 'Your message could not be saved.'));
     return false;
   }
   cb.onSaved(temp.client_id, save.data.data || null);

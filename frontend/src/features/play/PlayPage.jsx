@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Navigate, useNavigate, useParams } from 'react-router-dom';
-import { AiSigil, Button, CandleHalo, Drawer, EmptyState, Glyph, IconButton, Modal, Spinner, useToast } from '../../design';
+import { AiSigil, Button, CandleHalo, Drawer, EmptyState, Glyph, IconButton, Modal, Spinner, useReducedMotionPref, useToast } from '../../design';
 import { TopBar } from '../../app/AppShell';
 import ChronicleRail from '../../app/ChronicleRail';
 import ButtonLink from '../../app/ButtonLink';
@@ -16,6 +16,7 @@ import Composer, { voiceOptions } from '../chat/Composer';
 import { sendChatMessage } from '../chat/sendFlow';
 import { seenParam, useRoomMessages } from '../chat/useRoomMessages';
 import { useLiveUpdates } from '../chat/useLiveUpdates';
+import { MessageActionsContext, useMessageActions } from '../chat/MessageActions';
 import { useDiceOverlay } from '../dice/useDiceOverlay';
 import { useDiceActions } from '../dice/useDiceActions';
 import { DiceHistoryDialog, DiceRulesDialog, RollDialog } from '../dice/DiceDialogs';
@@ -140,6 +141,7 @@ export default function PlayPage() {
   const { openSheet } = useSheet();
   const isMobile = useIsMobile();
   const isWide = useIsWide();
+  const reducedMotion = useReducedMotionPref();
   const play = usePlayData(campaignId);
   const { campaign, locations = [], members = [], character, status: playStatus } = play;
 
@@ -195,6 +197,20 @@ export default function PlayPage() {
     enabled: ready,
   });
   const dice = useDiceOverlay(room.messages);
+  // Copy / Reply / Delete on messages (features/chat/MessageActions.jsx).
+  const actions = useMessageActions({
+    api,
+    user,
+    campaign,
+    room,
+    toast,
+    reduced: reducedMotion,
+    onReplyStart: () => requestAnimationFrame(() => composerRef.current && composerRef.current.focus()),
+  });
+  const { clearReply } = actions;
+  useEffect(() => {
+    clearReply();
+  }, [locationId]); // eslint-disable-line react-hooks/exhaustive-deps
   const diceActions = useDiceActions({
     api,
     campaign,
@@ -300,7 +316,7 @@ export default function PlayPage() {
     setAiFailure(null);
     setSending(true);
     try {
-      return await sendChatMessage(
+      const ok = await sendChatMessage(
         {
           api,
           campaign,
@@ -318,10 +334,13 @@ export default function PlayPage() {
           onDiceMarker: dice.startFromMarker,
           onRoomReload: room.refresh,
           onLocationsChanged: play.loadLocations,
+          onReplyGone: actions.clearReply,
         },
         local && local.type === 'me' ? local.text : text,
-        local && local.type === 'me' ? { messageType: 'action' } : {}
+        { ...(local && local.type === 'me' ? { messageType: 'action' } : {}), replyTo: actions.replyTo }
       );
+      if (ok) actions.clearReply();
+      return ok;
     } finally {
       setSending(false);
     }
@@ -442,17 +461,22 @@ export default function PlayPage() {
               </div>
             ) : (
               <RollRequestContext.Provider value={rollRequestCtx}>
-                <MessageList
-                  roomKey={`${campaignId}:${locationId}`}
-                  roomName={location?.name}
-                  messages={room.messages}
-                  status={ready ? room.status : 'loading'}
-                  firstUnreadId={room.firstUnreadId}
-                  hiddenIds={dice.hiddenMessageIds}
-                  timeZone={user?.display_timezone || null}
-                  onAtBottomChange={setAtBottom}
-                  userId={user?.id}
-                />
+                <MessageActionsContext.Provider value={actions.value}>
+                  <MessageList
+                    roomKey={`${campaignId}:${locationId}`}
+                    roomName={location?.name}
+                    messages={room.messages}
+                    status={ready ? room.status : 'loading'}
+                    firstUnreadId={room.firstUnreadId}
+                    hiddenIds={dice.hiddenMessageIds}
+                    timeZone={user?.display_timezone || null}
+                    onAtBottomChange={setAtBottom}
+                    userId={user?.id}
+                    hasMore={room.hasMore}
+                    loadingOlder={room.loadingOlder}
+                    onLoadOlder={room.loadOlder}
+                  />
+                </MessageActionsContext.Provider>
               </RollRequestContext.Provider>
             )}
             <div className="sr-chat__bottom">
@@ -512,6 +536,8 @@ export default function PlayPage() {
                 busy={sending}
                 disabled={!ready || closed}
                 isAdmin={isAdmin}
+                replyTo={closed ? null : actions.replyTo}
+                onCancelReply={actions.clearReply}
               />
             </div>
           </div>
@@ -558,6 +584,7 @@ export default function PlayPage() {
           <DiceHistoryDialog open={historyOpen} onClose={() => setHistoryOpen(false)} api={api} campaign={campaign} location={location} timeZone={user?.display_timezone || null} />
         </>
       ) : null}
+      {actions.dialog}
       <QuickSwitcher
         open={switcherOpen}
         onClose={() => setSwitcherOpen(false)}
