@@ -4,9 +4,6 @@
   "description": "ShadowRealms AI - React Frontend",
   "private": true,
   "dependencies": {
-    "@headlessui/react": "^1.7.0",
-    "@heroicons/react": "^2.0.0",
-    "@tanstack/react-query": "^4.24.0",
     "d3-scale": "^4.0.2",
     "d3-shape": "^3.2.0",
     "dompurify": "^3.4.16",
@@ -15,8 +12,7 @@
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-i18next": "^14.1.3",
-    "react-router": "^7.18.4",
-    "zustand": "^4.3.0"
+    "react-router": "^7.18.4"
   },
   "devDependencies": {
     "@babel/core": "^7.29.7",
@@ -41,7 +37,6 @@
     "jest-environment-jsdom": "^29.7.0",
     "postcss": "^8.4.0",
     "tailwindcss": "^3.2.0",
-    "typescript": "^4.9.0",
     "vite": "^8.3.2"
   },
   "scripts": {
