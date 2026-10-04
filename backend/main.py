@@ -9,8 +9,6 @@ import json
 import logging
 from datetime import datetime
 from flask import Flask, jsonify, request
-from flask_cors import CORS
-from flask_jwt_extended import JWTManager
 
 # Import our modules
 from config import Config
@@ -31,10 +29,12 @@ def create_app(config_class=Config):
     """Application factory pattern for Flask"""
     app = Flask(__name__)
     app.config.from_object(config_class)
-    
-    # Initialize extensions
-    CORS(app)
-    JWTManager(app)
+    config_class.validate_secrets()
+
+    # Proxy trust, CORS allow-list, JWT revocation, rate limits, headers, error handlers
+    # (services/app_security.py, docs/SECURITY_MODEL.md)
+    from services.app_security import init_app_security, apply_route_limits
+    init_app_security(app)
     
     # Initialize database
     with app.app_context():
@@ -42,23 +42,10 @@ def create_app(config_class=Config):
         from database import migrate_db
         migrate_db()
 
-    # One-off, idempotent: stamp rules_edition on untagged rule book chunks so classic
-    # campaigns never get V5 chunks. Background thread; failures never block startup.
-    try:
-        from services.rag_service import backfill_rule_book_editions_in_background
-
-        backfill_rule_book_editions_in_background(app.config)
-    except Exception as e:  # noqa: BLE001
-        logger.warning("Could not start rule book edition backfill: %s", e)
-
-    # Idempotent: rebuild ChromaDB collections embedded with another model than EMBEDDING_MODEL
-    # (services/vector_store.py). Background thread; skipped when the embedder is down.
-    try:
-        from services.vector_store import reembed_in_background
-
-        reembed_in_background(app.config)
-    except Exception as e:  # noqa: BLE001
-        logger.warning("Could not start RAG re-embed: %s", e)
+    # Under gunicorn --preload the app is built in the master before forking; threads must not
+    # be started there (gunicorn.conf.py starts them in the first worker instead).
+    if os.environ.get('SR_DEFER_BACKGROUND_JOBS', '').lower() not in ('1', 'true', 'yes'):
+        start_background_jobs(app)
 
     # Initialize LLM service
     with app.app_context():
@@ -128,7 +115,6 @@ def create_app(config_class=Config):
             logger.error(f"Health check failed: {e}")
             return jsonify({
                 'status': 'unhealthy',
-                'error': str(e),
                 'timestamp': datetime.utcnow().isoformat()
             }), 500
     
@@ -143,7 +129,7 @@ def create_app(config_class=Config):
             return content, 200, {'Content-Type': 'text/plain; charset=utf-8'}
         except Exception as e:
             logger.error(f"Error reading README.md: {e}")
-            return jsonify({'error': f'Failed to load README.md: {str(e)}'}), 500
+            return jsonify({'error': 'Failed to load README.md'}), 500
     
     # Root endpoint
     @app.route('/')
@@ -169,12 +155,30 @@ def create_app(config_class=Config):
     @app.errorhandler(404)
     def not_found(error):
         return jsonify({'error': 'Not found'}), 404
-    
-    @app.errorhandler(500)
-    def internal_error(error):
-        return jsonify({'error': 'Internal server error'}), 500
-    
+
+    apply_route_limits(app)  # after every route exists
     return app
+
+
+def start_background_jobs(app):
+    """Startup jobs in daemon threads; failures never block startup."""
+    # One-off, idempotent: stamp rules_edition on untagged rule book chunks so classic
+    # campaigns never get V5 chunks.
+    try:
+        from services.rag_service import backfill_rule_book_editions_in_background
+
+        backfill_rule_book_editions_in_background(app.config)
+    except Exception as e:  # noqa: BLE001
+        logger.warning("Could not start rule book edition backfill: %s", e)
+
+    # Idempotent: rebuild ChromaDB collections embedded with another model than EMBEDDING_MODEL
+    # (services/vector_store.py). Skipped when the embedder is down; pg advisory lock inside.
+    try:
+        from services.vector_store import reembed_in_background
+
+        reembed_in_background(app.config)
+    except Exception as e:  # noqa: BLE001
+        logger.warning("Could not start RAG re-embed: %s", e)
 
 def test_main_application():
     """Standalone test function for Main Application"""

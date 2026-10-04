@@ -5,7 +5,7 @@ FROM python:3.11-slim
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 ENV FLASK_APP=main.py
-ENV FLASK_ENV=development
+ENV FLASK_ENV=production
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y \

@@ -72,7 +72,8 @@ def _send_raw(to_addrs: List[str], subject: str, body: str) -> bool:
         return False
 
 
-def send_welcome_registration(to_email: str, username: str, password_plain: str) -> bool:
+def send_welcome_registration(to_email: str, username: str, password_plain: Optional[str] = None) -> bool:
+    """Welcome mail. Never includes the password (password_plain is ignored; kept for old callers)."""
     app_name = os.environ.get("APP_PUBLIC_NAME", "ShadowRealms AI").strip()
     body = f"""Welcome to {app_name}
 
@@ -80,9 +81,8 @@ Your account has been created successfully.
 
 Username: {username}
 Email: {to_email}
-Password: {password_plain}
 
-Please sign in and change your password if you wish.
+Sign in with the password you chose. If you did not create this account, contact the administrator.
 
 — {app_name}
 """

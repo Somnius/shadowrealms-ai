@@ -51,7 +51,9 @@ CREATE TABLE IF NOT EXISTS users (
     -- automatic OOC-abuse temp ban (services/ooc_monitor.py uses this name)
     banned_until                      TIMESTAMP,
     -- 'en' | 'el' | NULL; Storyteller reply language when a message is too short to tell
-    ui_language                       TEXT
+    ui_language                       TEXT,
+    -- bumped on password/role change and deactivation (trigger below); JWTs carry it (phase 5)
+    token_version                     INTEGER NOT NULL DEFAULT 0
 );
 
 -- -----------------------------------------------------------------------------
@@ -464,5 +466,63 @@ CREATE TABLE IF NOT EXISTS location_connections (
 
 CREATE INDEX IF NOT EXISTS idx_location_connections_1 ON location_connections(location1_id);
 CREATE INDEX IF NOT EXISTS idx_location_connections_2 ON location_connections(location2_id);
+
+-- -----------------------------------------------------------------------------
+-- Auth hardening (v0.9 phase 5; services/auth_tokens.py, docs/SECURITY_MODEL.md)
+-- users.token_version is bumped whenever a password hash or role changes or an account is
+-- deactivated, from any code path; JWTs carry the version they were issued with.
+-- -----------------------------------------------------------------------------
+CREATE OR REPLACE FUNCTION users_bump_token_version() RETURNS trigger
+LANGUAGE plpgsql AS $$
+BEGIN
+    IF (NEW.password_hash IS DISTINCT FROM OLD.password_hash
+            AND COALESCE(current_setting('srai.rehash', true), '') <> 'on')
+        OR NEW.role IS DISTINCT FROM OLD.role
+        OR (COALESCE(OLD.is_active, TRUE) AND NOT COALESCE(NEW.is_active, TRUE)) THEN
+        NEW.token_version := COALESCE(OLD.token_version, 0) + 1;
+    END IF;
+    RETURN NEW;
+END;
+$$;
+
+CREATE OR REPLACE TRIGGER trg_users_token_version
+    BEFORE UPDATE ON users
+    FOR EACH ROW EXECUTE FUNCTION users_bump_token_version();
+
+CREATE TABLE IF NOT EXISTS auth_revoked_tokens (
+    jti        TEXT PRIMARY KEY,
+    user_id    INTEGER REFERENCES users(id) ON DELETE CASCADE,
+    expires_at TIMESTAMP NOT NULL,
+    revoked_at TIMESTAMP NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_auth_revoked_tokens_expires ON auth_revoked_tokens(expires_at);
+
+CREATE TABLE IF NOT EXISTS auth_refresh_tokens (
+    jti        TEXT PRIMARY KEY,
+    user_id    INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    family_id  TEXT NOT NULL,                 -- one login's rotation chain
+    expires_at TIMESTAMP NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    used_at    TIMESTAMP,                     -- set on rotation; a second use = reuse => family revoked
+    revoked_at TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_auth_refresh_tokens_family ON auth_refresh_tokens(family_id);
+CREATE INDEX IF NOT EXISTS idx_auth_refresh_tokens_user ON auth_refresh_tokens(user_id);
+
+CREATE TABLE IF NOT EXISTS auth_events (
+    id         BIGSERIAL PRIMARY KEY,
+    created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    event      TEXT NOT NULL,                 -- login | login_failed | lockout | login_blocked | logout | ...
+    user_id    INTEGER,
+    username   TEXT,
+    ip         TEXT,
+    user_agent TEXT,
+    details    TEXT                           -- JSON string
+);
+
+CREATE INDEX IF NOT EXISTS idx_auth_events_created ON auth_events(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_auth_events_user ON auth_events(user_id, created_at DESC);
 
 COMMIT;

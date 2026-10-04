@@ -13,6 +13,8 @@ psycopg2-binary>=2.9.9  # PostgreSQL driver
 
 # Authentication & Security
 bcrypt>=4.0.0
+Flask-Limiter[redis]>=4.1.1  # rate limits (services/app_security.py), Redis storage
+redis>=5.0.0                 # login lockout counters (services/auth_security.py)
 PyJWT>=2.8.0
 cryptography>=41.0.0
 
@@ -22,6 +24,8 @@ chromadb>=0.4.0
 sentence-transformers>=2.2.0
 torch>=2.14.1
 numpy>=1.24.0
+onnxruntime>=1.30.0  # Laya classifier (services/classifier.py, ml/laya/infer.py)
+tokenizers>=0.23.2   # Laya tokenizer
 requests>=2.31.0
 
 # PDF Processing
@@ -42,7 +46,7 @@ pytest-cov>=4.1.0
 mypy>=1.5.0
 
 # Production Server
-gunicorn>=21.0.0
+gunicorn>=23.0.0  # APP_SERVER=gunicorn (backend/gunicorn.conf.py)
 uvicorn>=0.23.0
 
 # System Monitoring

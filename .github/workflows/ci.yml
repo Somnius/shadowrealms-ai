@@ -46,8 +46,8 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - run: pip install pytest cryptography itsdangerous
-      - name: Pure unit tests (dice, rules edition, character prompt, AI providers, classifier)
+      - run: pip install pytest cryptography itsdangerous flask flask-jwt-extended "flask-limiter>=4.1.1" bcrypt
+      - name: Pure unit tests (dice, rules edition, character prompt, AI providers, classifier, auth security)
         run: python -m pytest -q backend/tests/unit
 
   schema:

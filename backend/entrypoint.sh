@@ -41,6 +41,13 @@ else
     echo "✅ Database created successfully"
 fi
 
-# Start Flask application
-echo "🌐 Starting Flask application..."
-exec python main.py --run
+# Start the application server.
+#   APP_SERVER=gunicorn (default): production server, backend/gunicorn.conf.py
+#   APP_SERVER=flask: Flask's development server with the code reloader (python main.py --run)
+APP_SERVER=${APP_SERVER:-gunicorn}
+if [ "$APP_SERVER" = "flask" ]; then
+    echo "🌐 Starting Flask development server (APP_SERVER=flask)..."
+    exec python main.py --run
+fi
+echo "🌐 Starting gunicorn (APP_SERVER=$APP_SERVER)..."
+exec gunicorn -c gunicorn.conf.py wsgi:app

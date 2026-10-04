@@ -25,8 +25,14 @@ class Config:
     # Flask Configuration
     SECRET_KEY = os.environ.get('FLASK_SECRET_KEY') or 'dev-secret-key-change-in-production'
     JWT_SECRET_KEY = os.environ.get('JWT_SECRET_KEY') or 'jwt-secret-key-change-in-production'
-    JWT_ACCESS_TOKEN_EXPIRES = timedelta(hours=6)  # 6 hours of inactivity before re-login required
-    JWT_REFRESH_TOKEN_EXPIRES = timedelta(days=30)
+    # Lifetimes are set per token in services/auth_tokens.py (JWT_ACCESS_TOKEN_MINUTES,
+    # JWT_REFRESH_TOKEN_DAYS, JWT_SESSION_MAX_DAYS); these are the library defaults to match.
+    JWT_ACCESS_TOKEN_EXPIRES = timedelta(minutes=max(5, int(os.environ.get('JWT_ACCESS_TOKEN_MINUTES') or 30)))
+    JWT_REFRESH_TOKEN_EXPIRES = timedelta(days=max(1, int(os.environ.get('JWT_REFRESH_TOKEN_DAYS') or 14)))
+    JWT_TOKEN_LOCATION = ['headers']   # refresh cookie is read explicitly by /api/auth/refresh only
+    JWT_ALGORITHM = 'HS256'
+    JWT_DECODE_ALGORITHMS = ['HS256']
+    MAX_CONTENT_LENGTH = int(os.environ.get('MAX_CONTENT_LENGTH') or 16 * 1024 * 1024)
     
     # Flask Application Settings
     FLASK_HOST = os.environ.get('FLASK_HOST') or '0.0.0.0'
@@ -96,12 +102,27 @@ class Config:
         logger.info(f"JWT Secret Key: {'*' * 10 if cls.JWT_SECRET_KEY != 'jwt-secret-key-change-in-production' else 'DEFAULT (CHANGE THIS)'}")
     
     @classmethod
+    def validate_secrets(cls):
+        """Refuse to start in production with default or short signing keys (tokens could be forged)."""
+        if os.environ.get('FLASK_ENV', 'production').lower() == 'development' or cls.FLASK_DEBUG:
+            return
+        weak = [name for name, val, default in (
+            ('JWT_SECRET_KEY', cls.JWT_SECRET_KEY, 'jwt-secret-key-change-in-production'),
+            ('FLASK_SECRET_KEY', cls.SECRET_KEY, 'dev-secret-key-change-in-production'),
+        ) if not val or val == default or len(val) < 32]
+        if weak:
+            raise RuntimeError(
+                f"Refusing to start: {', '.join(weak)} missing, default or shorter than 32 characters. "
+                "Generate one with: python -c 'import secrets; print(secrets.token_urlsafe(48))'"
+            )
+
+    @classmethod
     def debug_env_vars(cls):
         """Debug method to show environment variable loading"""
         print("🔧 Flask Configuration Debug:")
         print("=" * 40)
-        print(f"FLASK_SECRET_KEY: {os.environ.get('FLASK_SECRET_KEY', 'NOT SET')}")
-        print(f"JWT_SECRET_KEY: {os.environ.get('JWT_SECRET_KEY', 'NOT SET')}")
+        print(f"FLASK_SECRET_KEY: {'set' if os.environ.get('FLASK_SECRET_KEY') else 'NOT SET'}")
+        print(f"JWT_SECRET_KEY: {'set' if os.environ.get('JWT_SECRET_KEY') else 'NOT SET'}")
         print(f"FLASK_HOST: {os.environ.get('FLASK_HOST', 'NOT SET')}")
         print(f"FLASK_PORT: {os.environ.get('FLASK_PORT', 'NOT SET')}")
         print(f"FLASK_DEBUG: {os.environ.get('FLASK_DEBUG', 'NOT SET')}")

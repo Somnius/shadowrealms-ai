@@ -82,7 +82,7 @@ def check_ai_health():
         logger.error(f"Error checking AI health: {e}")
         return jsonify({
             'status': 'error',
-            'error': str(e),
+            'error': 'AI health check failed',
             'timestamp': datetime.utcnow().isoformat()
         }), 500
 

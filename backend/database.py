@@ -714,6 +714,75 @@ def ensure_campaign_bans_table(cursor):
     """)
 
 
+# users.token_version is bumped by this trigger whenever a password hash or role changes or an
+# account is deactivated/banned, from ANY code path (routes/users.py, routes/admin.py, scripts).
+# JWTs carry the version they were issued with (services/auth_tokens.py), so the bump logs the
+# user out everywhere. A login-time bcrypt rehash sets srai.rehash = 'on' to skip it.
+AUTH_TOKEN_VERSION_FUNCTION_SQL = """
+CREATE OR REPLACE FUNCTION users_bump_token_version() RETURNS trigger
+LANGUAGE plpgsql AS $$
+BEGIN
+    IF (NEW.password_hash IS DISTINCT FROM OLD.password_hash
+            AND COALESCE(current_setting('srai.rehash', true), '') <> 'on')
+        OR NEW.role IS DISTINCT FROM OLD.role
+        OR (COALESCE(OLD.is_active, TRUE) AND NOT COALESCE(NEW.is_active, TRUE)) THEN
+        NEW.token_version := COALESCE(OLD.token_version, 0) + 1;
+    END IF;
+    RETURN NEW;
+END;
+$$
+"""
+
+
+@once_per_process
+def ensure_auth_security_schema(cursor):
+    """Phase 5 auth: token_version + trigger, revoked jtis, rotating refresh tokens, auth_events
+    (also in init_postgresql_schema.sql; services/auth_tokens.py)."""
+    cursor.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS token_version INTEGER NOT NULL DEFAULT 0")
+    cursor.execute(AUTH_TOKEN_VERSION_FUNCTION_SQL)
+    cursor.execute("""
+        CREATE OR REPLACE TRIGGER trg_users_token_version
+            BEFORE UPDATE ON users
+            FOR EACH ROW EXECUTE FUNCTION users_bump_token_version()
+    """)
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS auth_revoked_tokens (
+            jti        TEXT PRIMARY KEY,
+            user_id    INTEGER REFERENCES users(id) ON DELETE CASCADE,
+            expires_at TIMESTAMP NOT NULL,
+            revoked_at TIMESTAMP NOT NULL DEFAULT NOW()
+        )
+    """)
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_auth_revoked_tokens_expires ON auth_revoked_tokens(expires_at)")
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS auth_refresh_tokens (
+            jti        TEXT PRIMARY KEY,
+            user_id    INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+            family_id  TEXT NOT NULL,
+            expires_at TIMESTAMP NOT NULL,
+            created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+            used_at    TIMESTAMP,
+            revoked_at TIMESTAMP
+        )
+    """)
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_auth_refresh_tokens_family ON auth_refresh_tokens(family_id)")
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_auth_refresh_tokens_user ON auth_refresh_tokens(user_id)")
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS auth_events (
+            id         BIGSERIAL PRIMARY KEY,
+            created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+            event      TEXT NOT NULL,
+            user_id    INTEGER,
+            username   TEXT,
+            ip         TEXT,
+            user_agent TEXT,
+            details    TEXT
+        )
+    """)
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_auth_events_created ON auth_events(created_at DESC)")
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_auth_events_user ON auth_events(user_id, created_at DESC)")
+
+
 @once_per_process
 def ensure_dice_tables(cursor, db_kind: str) -> None:
     """
@@ -859,6 +928,7 @@ def migrate_db():
                 ensure_users_ui_language_column(cursor)
                 ensure_ai_reply_grants_table(cursor)
                 ensure_campaign_bans_table(cursor)
+                ensure_auth_security_schema(cursor)
                 ensure_dice_tables(cursor, 'postgresql')
                 backfill_campaign_players_active_character(cursor)
                 from services.ai_runtime_settings import ensure_app_settings_table
