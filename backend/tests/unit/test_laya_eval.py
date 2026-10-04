@@ -8,11 +8,6 @@ from services import laya_eval as le
 from services.request_validation import RequestValidationError
 
 
-def close(a, b, tol):
-    # not pytest.approx: other unit tests stub numpy in sys.modules, which approx then trips on
-    return a is not None and abs(a - b) <= tol
-
-
 def test_intents_match_the_classifier():
     from services.classifier import INTENTS
 
@@ -24,17 +19,17 @@ def test_metrics_known_numbers():
     pred = ["a", "a", "b", "b", "a", "c"]
     m = le.classification_metrics(gold, pred, ["a", "b", "c"], min_n=2)
     assert m["n"] == 6 and m["correct"] == 4
-    assert close(m["accuracy"], 4 / 6, 1e-4)
+    assert abs(m["accuracy"] - (4 / 6)) <= 1e-4
     a = m["per_label"]["a"]
     assert (a["n"], a["predicted"], a["correct"]) == (3, 3, 2)
-    assert close(a["precision"], 0.6667, 1e-4)
-    assert close(a["recall"], 0.6667, 1e-4)
-    assert close(a["f1"], 0.6667, 1e-4)
+    assert abs(a["precision"] - (0.6667)) <= 1e-4
+    assert abs(a["recall"] - (0.6667)) <= 1e-4
+    assert abs(a["f1"] - (0.6667)) <= 1e-4
     b = m["per_label"]["b"]
     assert b["precision"] == 0.5 and b["recall"] == 0.5
     assert m["per_label"]["c"]["f1"] == 1.0
     assert m["confusion"] == {"labels": ["a", "b", "c"], "matrix": [[2, 1, 0], [1, 1, 0], [0, 0, 1]]}
-    assert close(m["macro_f1"], (0.6667 + 0.5 + 1.0) / 3, 1e-3)
+    assert abs(m["macro_f1"] - ((0.6667 + 0.5 + 1.0) / 3)) <= 1e-3
     assert m["per_label"]["c"]["too_small"] is True  # n=1 < 2
     assert m["too_small"] is True  # total 6 < MIN_N_TOTAL
 
@@ -73,9 +68,9 @@ def test_too_small_flags_follow_thresholds():
 def test_wilson_interval():
     assert le.wilson_interval(0, 0) is None
     lo, hi = le.wilson_interval(8, 8)
-    assert close(lo, 0.6756, 1e-3) and hi == 1.0
+    assert abs(lo - (0.6756)) <= 1e-3 and hi == 1.0
     lo, hi = le.wilson_interval(50, 100)
-    assert close(lo, 0.4038, 1e-3) and close(hi, 0.5962, 1e-3)
+    assert abs(lo - (0.4038)) <= 1e-3 and abs(hi - (0.5962)) <= 1e-3
 
 
 def _items():

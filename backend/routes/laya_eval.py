@@ -22,6 +22,7 @@ from routes.admin import require_admin
 from services import laya_eval
 from services.request_validation import RequestValidationError, strict_int
 
+from services.log_safety import safe_log_value
 logger = logging.getLogger(__name__)
 
 laya_eval_bp = Blueprint('laya_eval', __name__, url_prefix='/api/admin/laya')
@@ -63,6 +64,7 @@ def list_messages():
 @laya_eval_bp.route('/labels/<int:message_id>', methods=['PUT', 'DELETE'])
 @require_admin()
 def label(message_id):
+    body = None
     if request.method == 'PUT':
         try:
             body = laya_eval.parse_label_body(request.get_json(silent=True))
@@ -83,7 +85,7 @@ def label(message_id):
         return jsonify({'ok': True, 'message_id': message_id, 'label': body}), 200
     except Exception as e:  # noqa: BLE001
         db.rollback()
-        logger.error('Laya label %s failed: %s', message_id, type(e).__name__)
+        logger.error('Laya label %s failed: %s', safe_log_value(message_id), type(e).__name__)
         return jsonify({'error': 'Could not save the label'}), 500
     finally:
         db.close()
