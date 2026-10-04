@@ -1,0 +1,331 @@
+{"id": "seed-el-0000", "lang": "el", "greeklish": false, "text": "/roll 5d10 diff 6", "in_character": false, "intent": "dice", "split": "train", "source": "hand"}
+{"id": "seed-el-0001", "lang": "el", "greeklish": false, "text": "ρίχνω Dex + Firearms, 6 ζάρια δυσκολία 7", "in_character": false, "intent": "dice", "split": "train", "source": "hand"}
+{"id": "seed-el-0002", "lang": "el", "greeklish": false, "text": "μπορώ να ρίξω Wits + Awareness να δω αν τον προσέχω;", "in_character": false, "intent": "dice", "split": "train", "source": "hand"}
+{"id": "seed-el-0003", "lang": "el", "greeklish": false, "text": "ST θες ρίψη Perception γι' αυτό;", "in_character": false, "intent": "dice", "split": "test", "source": "hand"}
+{"id": "seed-el-0004", "lang": "el", "greeklish": false, "text": "3 επιτυχίες, φτάνουν;", "in_character": false, "intent": "dice", "split": "dev", "source": "hand"}
+{"id": "seed-el-0005", "lang": "el", "greeklish": false, "text": "πάλι botch ρε φίλε", "in_character": false, "intent": "dice", "split": "train", "source": "hand"}
+{"id": "seed-el-0006", "lang": "el", "greeklish": false, "text": "έφερα messy critical χαχα", "in_character": false, "intent": "dice", "split": "dev", "source": "hand"}
+{"id": "seed-el-0007", "lang": "el", "greeklish": false, "text": "δύο ζάρια πείνας ήρθαν δεκάρια... messy;", "in_character": false, "intent": "dice", "split": "train", "source": "hand"}
+{"id": "seed-el-0008", "lang": "el", "greeklish": false, "text": "bestial failure, τέλεια. τι γίνεται τώρα;", "in_character": false, "intent": "dice", "split": "test", "source": "hand"}
+{"id": "seed-el-0009", "lang": "el", "greeklish": false, "text": "να ξοδέψω Θέληση για μια επιτυχία παραπάνω;", "in_character": false, "intent": "dice", "split": "test", "source": "hand"}
+{"id": "seed-el-0010", "lang": "el", "greeklish": false, "text": "ξοδεύω ένα πόντο Willpower και ξαναρίχνω 3 ζάρια", "in_character": false, "intent": "dice", "split": "train", "source": "hand"}
+{"id": "seed-el-0011", "lang": "el", "greeklish": false, "text": "πόσα ζάρια ρίχνω για Manipulation + Subterfuge; έχω 3 και 2", "in_character": false, "intent": "dice", "split": "dev", "source": "hand"}
+{"id": "seed-el-0012", "lang": "el", "greeklish": false, "text": "4 επιτυχίες στο Stealth", "in_character": false, "intent": "dice", "split": "test", "source": "hand"}
+{"id": "seed-el-0013", "lang": "el", "greeklish": false, "text": "κάποιος να ρίξει για μένα, δεν μου φορτώνει το dice roller", "in_character": false, "intent": "dice", "split": "test", "source": "hand"}
+{"id": "seed-el-0014", "lang": "el", "greeklish": false, "text": "το bot με τα ζάρια χάλασε πάλι", "in_character": false, "intent": "dice", "split": "train", "source": "hand"}
+{"id": "seed-el-0015", "lang": "el", "greeklish": false, "text": "δυσκολία 6 ή 7 για το σκαρφάλωμα;", "in_character": false, "intent": "dice", "split": "dev", "source": "hand"}
+{"id": "seed-el-0016", "lang": "el", "greeklish": false, "text": "rouse check: 4, δεν ανεβαίνει η πείνα", "in_character": false, "intent": "dice", "split": "dev", "source": "hand"}
+{"id": "seed-el-0017", "lang": "el", "greeklish": false, "text": "απέτυχε το rouse check, πείνα 3 τώρα", "in_character": false, "intent": "dice", "split": "test", "source": "hand"}
+{"id": "seed-el-0018", "lang": "el", "greeklish": false, "text": "ρίχνω Self-Control δυσκολία 7 για το frenzy", "in_character": false, "intent": "dice", "split": "train", "source": "hand"}
+{"id": "seed-el-0019", "lang": "el", "greeklish": false, "text": "Courage για Rötschreck, 3 ζάρια", "in_character": false, "intent": "dice", "split": "test", "source": "hand"}
+{"id": "seed-el-0020", "lang": "el", "greeklish": false, "text": "το pool μου για Dominate είναι Cha + Dominate = 7", "in_character": false, "intent": "dice", "split": "train", "source": "hand"}
+{"id": "seed-el-0021", "lang": "el", "greeklish": false, "text": "ρίχνω Composure + Resolve για να αντισταθώ", "in_character": false, "intent": "dice", "split": "train", "source": "hand"}
+{"id": "seed-el-0022", "lang": "el", "greeklish": false, "text": "Intelligence + Occult να καταλάβω τι είναι το σύμβολο", "in_character": false, "intent": "dice", "split": "test", "source": "hand"}
+{"id": "seed-el-0023", "lang": "el", "greeklish": false, "text": "έριξα 10 ζάρια, 6 επιτυχίες!! κρίσιμη!", "in_character": false, "intent": "dice", "split": "test", "source": "hand"}
+{"id": "seed-el-0024", "lang": "el", "greeklish": false, "text": "δύο δεκάρια = critical, σωστά;", "in_character": false, "intent": "dice", "split": "train", "source": "hand"}
+{"id": "seed-el-0025", "lang": "el", "greeklish": false, "text": "ποιος ρίχνει για τον NPC;", "in_character": false, "intent": "dice", "split": "test", "source": "hand"}
+{"id": "seed-el-0026", "lang": "el", "greeklish": false, "text": "ST ρίξε κρυφά το Awareness του Σερίφη", "in_character": false, "intent": "dice", "split": "dev", "source": "hand"}
+{"id": "seed-el-0027", "lang": "el", "greeklish": false, "text": "/roll 1d10", "in_character": false, "intent": "dice", "split": "train", "source": "hand"}
+{"id": "seed-el-0028", "lang": "el", "greeklish": false, "text": "ένα d10 παρακαλώ", "in_character": false, "intent": "dice", "split": "train", "source": "hand"}
+{"id": "seed-el-0029", "lang": "el", "greeklish": false, "text": "θα ρίξω Charisma + Persuasion να ηρεμήσω το πλήθος", "in_character": false, "intent": "dice", "split": "train", "source": "hand"}
+{"id": "seed-el-0030", "lang": "el", "greeklish": false, "text": "η ρίψη μου: 7 3 2 9 10 6 → 4 επιτυχίες", "in_character": false, "intent": "dice", "split": "test", "source": "hand"}
+{"id": "seed-el-0031", "lang": "el", "greeklish": false, "text": "ρίχνω για κυνήγι: Wits + Streetwise", "in_character": false, "intent": "dice", "split": "train", "source": "hand"}
+{"id": "seed-el-0032", "lang": "el", "greeklish": false, "text": "όλοι ρίξτε Resolve + Awareness", "in_character": false, "intent": "dice", "split": "train", "source": "hand"}
+{"id": "seed-el-0033", "lang": "el", "greeklish": false, "text": "Γιώργο ρίξε Strength + Athletics για την πόρτα", "in_character": false, "intent": "dice", "split": "test", "source": "hand"}
+{"id": "seed-el-0034", "lang": "el", "greeklish": false, "text": "ξαναέριξα. 1 επιτυχία. ωραία", "in_character": false, "intent": "dice", "split": "train", "source": "hand"}
+{"id": "seed-el-0035", "lang": "el", "greeklish": false, "text": "4 ζάρια δυσκολία 8, 0 επιτυχίες. φανταστικά", "in_character": false, "intent": "dice", "split": "train", "source": "hand"}
+{"id": "seed-el-0036", "lang": "el", "greeklish": false, "text": "το έριξα στο Roll20, 3 επιτυχίες", "in_character": false, "intent": "dice", "split": "dev", "source": "hand"}
+{"id": "seed-el-0037", "lang": "el", "greeklish": false, "text": "αποτέλεσμα: botch 😭", "in_character": false, "intent": "dice", "split": "train", "source": "hand"}
+{"id": "seed-el-0038", "lang": "el", "greeklish": false, "text": "🎲🎲🎲 έλα έλα", "in_character": false, "intent": "dice", "split": "test", "source": "hand"}
+{"id": "seed-el-0039", "lang": "el", "greeklish": false, "text": "εντάξει ρίχνω τώρα", "in_character": false, "intent": "dice", "split": "train", "source": "hand"}
+{"id": "seed-el-0040", "lang": "el", "greeklish": false, "text": "λάθος pool έριξα, έπρεπε Manipulation όχι Charisma, ξαναρίχνω;", "in_character": false, "intent": "dice", "split": "train", "source": "hand"}
+{"id": "seed-el-0041", "lang": "el", "greeklish": false, "text": "θα ρίξω Dex+Drive να ξεφύγω από τους μπάτσους", "in_character": false, "intent": "dice", "split": "train", "source": "hand"}
+{"id": "seed-el-0042", "lang": "el", "greeklish": false, "text": "ρίψη Ανθρωπιάς για τον φόνο;", "in_character": false, "intent": "dice", "split": "test", "source": "hand"}
+{"id": "seed-el-0043", "lang": "el", "greeklish": false, "text": "Conscience 3, δυσκολία 7, ρίχνω", "in_character": false, "intent": "dice", "split": "train", "source": "hand"}
+{"id": "seed-el-0044", "lang": "el", "greeklish": false, "text": "ρίχνω Willpower δυσκολία 6 να αντισταθώ στο Dominate", "in_character": false, "intent": "dice", "split": "train", "source": "hand"}
+{"id": "seed-el-0045", "lang": "el", "greeklish": false, "text": "αντιμαχόμενη ρίψη: Wits+Subterfuge μου εναντίον Perception+Empathy της", "in_character": false, "intent": "dice", "split": "test", "source": "hand"}
+{"id": "seed-el-0046", "lang": "el", "greeklish": false, "text": "5 έναντι 3 επιτυχίες, κέρδισα;", "in_character": false, "intent": "dice", "split": "train", "source": "hand"}
+{"id": "seed-el-0047", "lang": "el", "greeklish": false, "text": "/roll 6d10>6", "in_character": false, "intent": "dice", "split": "test", "source": "hand"}
+{"id": "seed-el-0048", "lang": "el", "greeklish": false, "text": "ρίχνω Auspex να δω την αύρα του", "in_character": false, "intent": "dice", "split": "test", "source": "hand"}
+{"id": "seed-el-0049", "lang": "el", "greeklish": false, "text": "θέλω ένα 7 και πάνω, σωστά;", "in_character": false, "intent": "dice", "split": "dev", "source": "hand"}
+{"id": "seed-el-0050", "lang": "el", "greeklish": true, "text": "rixnw 5 zaria diff 6", "in_character": false, "intent": "dice", "split": "train", "source": "hand"}
+{"id": "seed-el-0051", "lang": "el", "greeklish": true, "text": "ri3e Wits + Awareness re", "in_character": false, "intent": "dice", "split": "train", "source": "hand"}
+{"id": "seed-el-0052", "lang": "el", "greeklish": true, "text": "3 epityxies, ftanoun?", "in_character": false, "intent": "dice", "split": "test", "source": "hand"}
+{"id": "seed-el-0053", "lang": "el", "greeklish": true, "text": "pali botch 😂", "in_character": false, "intent": "dice", "split": "dev", "source": "hand"}
+{"id": "seed-el-0054", "lang": "el", "greeklish": true, "text": "ri3e kapoios gia mena, den mou anoigei to roller", "in_character": false, "intent": "dice", "split": "train", "source": "hand"}
+{"id": "seed-el-0055", "lang": "el", "greeklish": true, "text": "rouse check 7, ok", "in_character": false, "intent": "dice", "split": "dev", "source": "hand"}
+{"id": "seed-el-0056", "lang": "el", "greeklish": true, "text": "posa zaria gia Dex+Brawl? exw 3 kai 2", "in_character": false, "intent": "dice", "split": "dev", "source": "hand"}
+{"id": "seed-el-0057", "lang": "el", "greeklish": true, "text": "8a ri3w Charisma + Persuasion", "in_character": false, "intent": "dice", "split": "train", "source": "hand"}
+{"id": "seed-el-0058", "lang": "el", "greeklish": true, "text": "2 epityxies mono... na 3odepsw willpower?", "in_character": false, "intent": "dice", "split": "dev", "source": "hand"}
+{"id": "seed-el-0059", "lang": "el", "greeklish": true, "text": "diskolia 7 h 8 gia auto?", "in_character": false, "intent": "dice", "split": "test", "source": "hand"}
+{"id": "seed-el-0060", "lang": "el", "greeklish": true, "text": "ola ta zaria 1 kai 2 lol", "in_character": false, "intent": "dice", "split": "train", "source": "hand"}
+{"id": "seed-el-0061", "lang": "el", "greeklish": true, "text": "/r 4d10 hunger 2", "in_character": false, "intent": "dice", "split": "dev", "source": "hand"}
+{"id": "seed-el-0062", "lang": "el", "greeklish": true, "text": "rixnw Stealth na mpw kryfa", "in_character": false, "intent": "dice", "split": "train", "source": "hand"}
+{"id": "seed-el-0063", "lang": "el", "greeklish": true, "text": "ekana critical!! 2 dekaria", "in_character": false, "intent": "dice", "split": "train", "source": "hand"}
+{"id": "seed-el-0064", "lang": "el", "greeklish": false, "text": "Πώς δουλεύει το Blood Surge;", "in_character": false, "intent": "rules_question", "split": "train", "source": "hand"}
+{"id": "seed-el-0065", "lang": "el", "greeklish": false, "text": "Το Celerity προσθέτει στο Dex ή δίνει extra ενέργειες στο V5;", "in_character": false, "intent": "rules_question", "split": "train", "source": "hand"}
+{"id": "seed-el-0066", "lang": "el", "greeklish": false, "text": "ποια η διαφορά superficial και aggravated ζημιάς;", "in_character": false, "intent": "rules_question", "split": "train", "source": "hand"}
+{"id": "seed-el-0067", "lang": "el", "greeklish": false, "text": "Πόσο XP κοστίζει να ανέβει μια Πειθαρχία φυλής στο 3;", "in_character": false, "intent": "rules_question", "split": "test", "source": "hand"}
+{"id": "seed-el-0068", "lang": "el", "greeklish": false, "text": "Το Fortitude απορροφά αυτόματα ή πρέπει να το ενεργοποιήσω;", "in_character": false, "intent": "rules_question", "split": "train", "source": "hand"}
+{"id": "seed-el-0069", "lang": "el", "greeklish": false, "text": "Στο V20 οι άσσοι ακυρώνουν επιτυχίες;", "in_character": false, "intent": "rules_question", "split": "train", "source": "hand"}
+{"id": "seed-el-0070", "lang": "el", "greeklish": false, "text": "Τι γίνεται όταν φτάσεις Πείνα 5;", "in_character": false, "intent": "rules_question", "split": "train", "source": "hand"}
+{"id": "seed-el-0071", "lang": "el", "greeklish": false, "text": "Πότε πρέπει να κάνω rouse check;", "in_character": false, "intent": "rules_question", "split": "test", "source": "hand"}
+{"id": "seed-el-0072", "lang": "el", "greeklish": false, "text": "Το Dominate δουλεύει μέσω τηλεφώνου;", "in_character": false, "intent": "rules_question", "split": "train", "source": "hand"}
+{"id": "seed-el-0073", "lang": "el", "greeklish": false, "text": "Το Presence πιάνει σε άλλους βρικόλακες;", "in_character": false, "intent": "rules_question", "split": "train", "source": "hand"}
+{"id": "seed-el-0074", "lang": "el", "greeklish": false, "text": "Ένας Nosferatu μπορεί να περάσει για άνθρωπος χωρίς Obfuscate;", "in_character": false, "intent": "rules_question", "split": "train", "source": "hand"}
+{"id": "seed-el-0075", "lang": "el", "greeklish": false, "text": "Τι είναι το blood bond και πόσες φορές πρέπει να πιεις;", "in_character": false, "intent": "rules_question", "split": "train", "source": "hand"}
+{"id": "seed-el-0076", "lang": "el", "greeklish": false, "text": "Επιτρέπονται thin-bloods σε αυτό το chronicle;", "in_character": false, "intent": "rules_question", "split": "train", "source": "hand"}
+{"id": "seed-el-0077", "lang": "el", "greeklish": false, "text": "Πόσα health levels έχει ένας βρικόλακας;", "in_character": false, "intent": "rules_question", "split": "dev", "source": "hand"}
+{"id": "seed-el-0078", "lang": "el", "greeklish": false, "text": "Μπορώ να πάρω Resources 4 στη δημιουργία χαρακτήρα;", "in_character": false, "intent": "rules_question", "split": "train", "source": "hand"}
+{"id": "seed-el-0079", "lang": "el", "greeklish": false, "text": "Τι κάνει τελικά το Blood Potency;", "in_character": false, "intent": "rules_question", "split": "train", "source": "hand"}
+{"id": "seed-el-0080", "lang": "el", "greeklish": false, "text": "Μπορώ να μάθω Πειθαρχία εκτός φυλής χωρίς δάσκαλο;", "in_character": false, "intent": "rules_question", "split": "train", "source": "hand"}
+{"id": "seed-el-0081", "lang": "el", "greeklish": false, "text": "Πόσο καιρό θέλει να γιατρευτεί η aggravated ζημιά;", "in_character": false, "intent": "rules_question", "split": "train", "source": "hand"}
+{"id": "seed-el-0082", "lang": "el", "greeklish": false, "text": "Το παλούκι στην καρδιά παραλύει στο V5 ή είναι μύθος;", "in_character": false, "intent": "rules_question", "split": "test", "source": "hand"}
+{"id": "seed-el-0083", "lang": "el", "greeklish": false, "text": "Η diablerie επιτρέπεται για παίκτες ή κατευθείαν ban χαχα", "in_character": false, "intent": "rules_question", "split": "test", "source": "hand"}
+{"id": "seed-el-0084", "lang": "el", "greeklish": false, "text": "Ποιο είναι το max σε τελείες για 13η γενιά;", "in_character": false, "intent": "rules_question", "split": "dev", "source": "hand"}
+{"id": "seed-el-0085", "lang": "el", "greeklish": false, "text": "Τι μετράει σαν παραβίαση της Μασκαράδας;", "in_character": false, "intent": "rules_question", "split": "test", "source": "hand"}
+{"id": "seed-el-0086", "lang": "el", "greeklish": false, "text": "Πού είναι ο πίνακας για το frenzy στο βιβλίο;", "in_character": false, "intent": "rules_question", "split": "train", "source": "hand"}
+{"id": "seed-el-0087", "lang": "el", "greeklish": false, "text": "Μπορεί κάποιος να εξηγήσει τα stains και την απώλεια Ανθρωπιάς;", "in_character": false, "intent": "rules_question", "split": "train", "source": "hand"}
+{"id": "seed-el-0088", "lang": "el", "greeklish": false, "text": "Το Auspex βλέπει αυτόματα όσους έχουν Obfuscate;", "in_character": false, "intent": "rules_question", "split": "train", "source": "hand"}
+{"id": "seed-el-0089", "lang": "el", "greeklish": false, "text": "Μπορώ να χρησιμοποιήσω Celerity και Potence στον ίδιο γύρο;", "in_character": false, "intent": "rules_question", "split": "test", "source": "hand"}
+{"id": "seed-el-0090", "lang": "el", "greeklish": false, "text": "Υπάρχει όριο πόσες φορές ξοδεύω Θέληση ανά σκηνή;", "in_character": false, "intent": "rules_question", "split": "test", "source": "hand"}
+{"id": "seed-el-0091", "lang": "el", "greeklish": false, "text": "Πώς δουλεύει η ζημιά από τον ήλιο, ανά γύρο;", "in_character": false, "intent": "rules_question", "split": "dev", "source": "hand"}
+{"id": "seed-el-0092", "lang": "el", "greeklish": false, "text": "Οι θνητοί ρίχνουν για να προσέξουν κάποιον με Obfuscate;", "in_character": false, "intent": "rules_question", "split": "test", "source": "hand"}
+{"id": "seed-el-0093", "lang": "el", "greeklish": false, "text": "Πιάνει το Animalism σε λυκανθρώπους;", "in_character": false, "intent": "rules_question", "split": "dev", "source": "hand"}
+{"id": "seed-el-0094", "lang": "el", "greeklish": false, "text": "Πώς δουλεύουν τα Predator types;", "in_character": false, "intent": "rules_question", "split": "test", "source": "hand"}
+{"id": "seed-el-0095", "lang": "el", "greeklish": false, "text": "Ποιο predator type δίνει Herd;", "in_character": false, "intent": "rules_question", "split": "train", "source": "hand"}
+{"id": "seed-el-0096", "lang": "el", "greeklish": false, "text": "Μπορώ να αλλάξω specialty αργότερα;", "in_character": false, "intent": "rules_question", "split": "test", "source": "hand"}
+{"id": "seed-el-0097", "lang": "el", "greeklish": false, "text": "Ποιος είναι πάνω από τον Πρίγκιπα στην ιεραρχία της Καμαρίλα;", "in_character": false, "intent": "rules_question", "split": "test", "source": "hand"}
+{"id": "seed-el-0098", "lang": "el", "greeklish": false, "text": "Ποιες είναι οι Παραδόσεις;", "in_character": false, "intent": "rules_question", "split": "test", "source": "hand"}
+{"id": "seed-el-0099", "lang": "el", "greeklish": false, "text": "Επιτρέπονται Caitiff στο παιχνίδι;", "in_character": false, "intent": "rules_question", "split": "train", "source": "hand"}
+{"id": "seed-el-0100", "lang": "el", "greeklish": false, "text": "Μπορώ να ξοδέψω XP ανάμεσα στα sessions;", "in_character": false, "intent": "rules_question", "split": "test", "source": "hand"}
+{"id": "seed-el-0101", "lang": "el", "greeklish": false, "text": "Το Blush of Life θέλει rouse check;", "in_character": false, "intent": "rules_question", "split": "train", "source": "hand"}
+{"id": "seed-el-0102", "lang": "el", "greeklish": false, "text": "Μπορούν οι γκουλ να μάθουν Πειθαρχίες;", "in_character": false, "intent": "rules_question", "split": "train", "source": "hand"}
+{"id": "seed-el-0103", "lang": "el", "greeklish": false, "text": "Τι σημαίνει messy critical μέσα στην ιστορία;", "in_character": false, "intent": "rules_question", "split": "train", "source": "hand"}
+{"id": "seed-el-0104", "lang": "el", "greeklish": false, "text": "Αν με καρφώσουν με παλούκι βλέπω τι γίνεται γύρω μου;", "in_character": false, "intent": "rules_question", "split": "test", "source": "hand"}
+{"id": "seed-el-0105", "lang": "el", "greeklish": false, "text": "Οι βρικόλακες φαίνονται στις κάμερες στο V5;", "in_character": false, "intent": "rules_question", "split": "dev", "source": "hand"}
+{"id": "seed-el-0106", "lang": "el", "greeklish": false, "text": "Είναι μεγάλο θέμα η Ανθρωπιά 4;", "in_character": false, "intent": "rules_question", "split": "dev", "source": "hand"}
+{"id": "seed-el-0107", "lang": "el", "greeklish": false, "text": "Τι γίνεται αν γεμίσει το Willpower track με superficial;", "in_character": false, "intent": "rules_question", "split": "train", "source": "hand"}
+{"id": "seed-el-0108", "lang": "el", "greeklish": false, "text": "Πώς ακριβώς δουλεύει το bane των Toreador;", "in_character": false, "intent": "rules_question", "split": "test", "source": "hand"}
+{"id": "seed-el-0109", "lang": "el", "greeklish": false, "text": "Η κατάρα των Malkavian ισχύει συνέχεια;", "in_character": false, "intent": "rules_question", "split": "dev", "source": "hand"}
+{"id": "seed-el-0110", "lang": "el", "greeklish": false, "text": "Μπορεί βρικόλακας να πιει αλκοόλ;", "in_character": false, "intent": "rules_question", "split": "train", "source": "hand"}
+{"id": "seed-el-0111", "lang": "el", "greeklish": false, "text": "Το Potence προσθέτει στη ζημιά ή μόνο στη ρίψη;", "in_character": false, "intent": "rules_question", "split": "test", "source": "hand"}
+{"id": "seed-el-0112", "lang": "el", "greeklish": false, "text": "Πόσο κοστίζει σε XP ένα νέο Merit;", "in_character": false, "intent": "rules_question", "split": "train", "source": "hand"}
+{"id": "seed-el-0113", "lang": "el", "greeklish": false, "text": "Ποιοι είναι οι Anarchs και τι θέλουν;", "in_character": false, "intent": "rules_question", "split": "dev", "source": "hand"}
+{"id": "seed-el-0114", "lang": "el", "greeklish": false, "text": "Οι Tremere σε ποιον είναι πιστοί;", "in_character": false, "intent": "rules_question", "split": "train", "source": "hand"}
+{"id": "seed-el-0115", "lang": "el", "greeklish": false, "text": "Τι είναι ακριβώς το Elysium, επιτρέπεται βία εκεί;", "in_character": false, "intent": "rules_question", "split": "train", "source": "hand"}
+{"id": "seed-el-0116", "lang": "el", "greeklish": false, "text": "Πόσες ενέργειες έχω σε έναν γύρο;", "in_character": false, "intent": "rules_question", "split": "test", "source": "hand"}
+{"id": "seed-el-0117", "lang": "el", "greeklish": false, "text": "Η Θέληση αναπληρώνεται κάθε session;", "in_character": false, "intent": "rules_question", "split": "train", "source": "hand"}
+{"id": "seed-el-0118", "lang": "el", "greeklish": true, "text": "pws douleuei to Blood Surge?", "in_character": false, "intent": "rules_question", "split": "test", "source": "hand"}
+{"id": "seed-el-0119", "lang": "el", "greeklish": true, "text": "to Celerity ti kanei akrivws sto V5?", "in_character": false, "intent": "rules_question", "split": "test", "source": "hand"}
+{"id": "seed-el-0120", "lang": "el", "greeklish": true, "text": "posa XP gia na anevei to Dominate sto 3?", "in_character": false, "intent": "rules_question", "split": "train", "source": "hand"}
+{"id": "seed-el-0121", "lang": "el", "greeklish": true, "text": "oi assoi akyrwnoun epityxies sto V20?", "in_character": false, "intent": "rules_question", "split": "dev", "source": "hand"}
+{"id": "seed-el-0122", "lang": "el", "greeklish": true, "text": "ti ginetai otan h peina ftasei 5?", "in_character": false, "intent": "rules_question", "split": "dev", "source": "hand"}
+{"id": "seed-el-0123", "lang": "el", "greeklish": true, "text": "to Presence piasei se allous vampires?", "in_character": false, "intent": "rules_question", "split": "dev", "source": "hand"}
+{"id": "seed-el-0124", "lang": "el", "greeklish": true, "text": "mporw na parw Resources 4 sthn arxh?", "in_character": false, "intent": "rules_question", "split": "train", "source": "hand"}
+{"id": "seed-el-0125", "lang": "el", "greeklish": true, "text": "ti einai to blood bond akrivws?", "in_character": false, "intent": "rules_question", "split": "test", "source": "hand"}
+{"id": "seed-el-0126", "lang": "el", "greeklish": true, "text": "epitrepontai thin-bloods?", "in_character": false, "intent": "rules_question", "split": "train", "source": "hand"}
+{"id": "seed-el-0127", "lang": "el", "greeklish": true, "text": "to Auspex vlepei to Obfuscate?", "in_character": false, "intent": "rules_question", "split": "dev", "source": "hand"}
+{"id": "seed-el-0128", "lang": "el", "greeklish": true, "text": "pote kanw rouse check?", "in_character": false, "intent": "rules_question", "split": "train", "source": "hand"}
+{"id": "seed-el-0129", "lang": "el", "greeklish": true, "text": "posa health levels exoume?", "in_character": false, "intent": "rules_question", "split": "train", "source": "hand"}
+{"id": "seed-el-0130", "lang": "el", "greeklish": true, "text": "ti metraei san paraviasi ths Maskaradas?", "in_character": false, "intent": "rules_question", "split": "dev", "source": "hand"}
+{"id": "seed-el-0131", "lang": "el", "greeklish": false, "text": "Παίζουμε κανονικά Παρασκευή στις 9;", "in_character": false, "intent": "general", "split": "train", "source": "hand"}
+{"id": "seed-el-0132", "lang": "el", "greeklish": false, "text": "Δεν μπορώ την άλλη βδομάδα, ταξίδι για δουλειά 😞", "in_character": false, "intent": "general", "split": "dev", "source": "hand"}
+{"id": "seed-el-0133", "lang": "el", "greeklish": false, "text": "brb, ήρθε το delivery", "in_character": false, "intent": "general", "split": "train", "source": "hand"}
+{"id": "seed-el-0134", "lang": "el", "greeklish": false, "text": "γύρισα", "in_character": false, "intent": "general", "split": "test", "source": "hand"}
+{"id": "seed-el-0135", "lang": "el", "greeklish": false, "text": "χαχαχα", "in_character": false, "intent": "general", "split": "train", "source": "hand"}
+{"id": "seed-el-0136", "lang": "el", "greeklish": false, "text": "οκ", "in_character": false, "intent": "general", "split": "dev", "source": "hand"}
+{"id": "seed-el-0137", "lang": "el", "greeklish": false, "text": "+1", "in_character": false, "intent": "general", "split": "dev", "source": "hand"}
+{"id": "seed-el-0138", "lang": "el", "greeklish": false, "text": "gg παιδιά, τέλειο session απόψε", "in_character": false, "intent": "general", "split": "dev", "source": "hand"}
+{"id": "seed-el-0139", "lang": "el", "greeklish": false, "text": "ποιος το φιλοξενεί την επόμενη φορά;", "in_character": false, "intent": "general", "split": "test", "source": "hand"}
+{"id": "seed-el-0140", "lang": "el", "greeklish": false, "text": "μου πέθανε το μικρόφωνο, θα γράφω απόψε", "in_character": false, "intent": "general", "split": "test", "source": "hand"}
+{"id": "seed-el-0141", "lang": "el", "greeklish": false, "text": "με ακούτε; το discord κολλάει", "in_character": false, "intent": "general", "split": "train", "source": "hand"}
+{"id": "seed-el-0142", "lang": "el", "greeklish": false, "text": "χαχα όταν ο Μάρκος είπε «δεν φοβάμαι τον Σερίφη» και μετά έτρεξε", "in_character": false, "intent": "general", "split": "dev", "source": "hand"}
+{"id": "seed-el-0143", "lang": "el", "greeklish": false, "text": "η ατάκα της Έλενας «δεν είσαι ευπρόσδεκτος εδώ» ήταν παγωμένη 😂", "in_character": false, "intent": "general", "split": "train", "source": "hand"}
+{"id": "seed-el-0144", "lang": "el", "greeklish": false, "text": "μου άρεσε πολύ πώς περιέγραψε ο ST το Elysium", "in_character": false, "intent": "general", "split": "dev", "source": "hand"}
+{"id": "seed-el-0145", "lang": "el", "greeklish": false, "text": "συγγνώμη που άργησα, κίνηση", "in_character": false, "intent": "general", "split": "test", "source": "hand"}
+{"id": "seed-el-0146", "lang": "el", "greeklish": false, "text": "πρέπει να φύγω νωρίς απόψε, 11:30 το αργότερο", "in_character": false, "intent": "general", "split": "train", "source": "hand"}
+{"id": "seed-el-0147", "lang": "el", "greeklish": false, "text": "χρόνια πολλά Νίκο!! 🎂", "in_character": false, "intent": "general", "split": "test", "source": "hand"}
+{"id": "seed-el-0148", "lang": "el", "greeklish": false, "text": "ευχαριστώ για το recap, έχασα πολλά", "in_character": false, "intent": "general", "split": "test", "source": "hand"}
+{"id": "seed-el-0149", "lang": "el", "greeklish": false, "text": "μπορεί κάποιος να ανεβάσει τις σημειώσεις του session;", "in_character": false, "intent": "general", "split": "test", "source": "hand"}
+{"id": "seed-el-0150", "lang": "el", "greeklish": false, "text": "το link για το character sheet είναι στα pinned", "in_character": false, "intent": "general", "split": "train", "source": "hand"}
+{"id": "seed-el-0151", "lang": "el", "greeklish": false, "text": "να κάνουμε session zero για τους καινούργιους;", "in_character": false, "intent": "general", "split": "train", "source": "hand"}
+{"id": "seed-el-0152", "lang": "el", "greeklish": false, "text": "Καλώς ήρθες στην ομάδα Μαρία!", "in_character": false, "intent": "general", "split": "dev", "source": "hand"}
+{"id": "seed-el-0153", "lang": "el", "greeklish": false, "text": "καληνύχτα σε όλους", "in_character": false, "intent": "general", "split": "train", "source": "hand"}
+{"id": "seed-el-0154", "lang": "el", "greeklish": false, "text": "είμαι πτώμα, 3 ώρες ύπνο", "in_character": false, "intent": "general", "split": "test", "source": "hand"}
+{"id": "seed-el-0155", "lang": "el", "greeklish": false, "text": "λαγκάρει κανείς άλλος;", "in_character": false, "intent": "general", "split": "test", "source": "hand"}
+{"id": "seed-el-0156", "lang": "el", "greeklish": false, "text": "αυτή η ανατροπή με τον Πρίγκιπα... έπαθα πλάκα", "in_character": false, "intent": "general", "split": "train", "source": "hand"}
+{"id": "seed-el-0157", "lang": "el", "greeklish": false, "text": "brb 5 λεπτά", "in_character": false, "intent": "general", "split": "train", "source": "hand"}
+{"id": "seed-el-0158", "lang": "el", "greeklish": false, "text": "γύρισα, τι έχασα;", "in_character": false, "intent": "general", "split": "train", "source": "hand"}
+{"id": "seed-el-0159", "lang": "el", "greeklish": false, "text": "πρέπει να μιλήσουμε για τον ρυθμό, τα δύο τελευταία sessions ήταν αργά", "in_character": false, "intent": "general", "split": "test", "source": "hand"}
+{"id": "seed-el-0160", "lang": "el", "greeklish": false, "text": "κάνουμε ένα διάλειμμα 10 λεπτά;", "in_character": false, "intent": "general", "split": "train", "source": "hand"}
+{"id": "seed-el-0161", "lang": "el", "greeklish": false, "text": "θα φέρω σνακ την επόμενη φορά", "in_character": false, "intent": "general", "split": "train", "source": "hand"}
+{"id": "seed-el-0162", "lang": "el", "greeklish": false, "text": "παιδιά τα IC στο κανάλι της σκηνής παρακαλώ", "in_character": false, "intent": "general", "split": "test", "source": "hand"}
+{"id": "seed-el-0163", "lang": "el", "greeklish": false, "text": "τι;;", "in_character": false, "intent": "general", "split": "dev", "source": "hand"}
+{"id": "seed-el-0164", "lang": "el", "greeklish": false, "text": "κι εγώ", "in_character": false, "intent": "general", "split": "dev", "source": "hand"}
+{"id": "seed-el-0165", "lang": "el", "greeklish": false, "text": "ωραίος!", "in_character": false, "intent": "general", "split": "test", "source": "hand"}
+{"id": "seed-el-0166", "lang": "el", "greeklish": false, "text": "👍", "in_character": false, "intent": "general", "split": "train", "source": "hand"}
+{"id": "seed-el-0167", "lang": "el", "greeklish": false, "text": "ευχαριστώ", "in_character": false, "intent": "general", "split": "train", "source": "hand"}
+{"id": "seed-el-0168", "lang": "el", "greeklish": false, "text": "τίποτα", "in_character": false, "intent": "general", "split": "train", "source": "hand"}
+{"id": "seed-el-0169", "lang": "el", "greeklish": false, "text": "ο Nosferatu NPC είναι ο νέος μου αγαπημένος", "in_character": false, "intent": "general", "split": "test", "source": "hand"}
+{"id": "seed-el-0170", "lang": "el", "greeklish": false, "text": "έκανα fan art με την παρέα μας, το ανεβάζω στο #art", "in_character": false, "intent": "general", "split": "dev", "source": "hand"}
+{"id": "seed-el-0171", "lang": "el", "greeklish": false, "text": "ψηφίζουμε για το επόμενο chronicle: Anarchs ή Sabbat;", "in_character": false, "intent": "general", "split": "test", "source": "hand"}
+{"id": "seed-el-0172", "lang": "el", "greeklish": false, "text": "μπορούμε να το πάμε Σάββατο;", "in_character": false, "intent": "general", "split": "train", "source": "hand"}
+{"id": "seed-el-0173", "lang": "el", "greeklish": false, "text": "είμαι άρρωστος αυτή τη βδομάδα, sorry", "in_character": false, "intent": "general", "split": "test", "source": "hand"}
+{"id": "seed-el-0174", "lang": "el", "greeklish": false, "text": "ST είσαι τέρας με αυτό το cliffhanger 😂", "in_character": false, "intent": "general", "split": "dev", "source": "hand"}
+{"id": "seed-el-0175", "lang": "el", "greeklish": false, "text": "πρέπει να φύγω σε 20 λεπτά", "in_character": false, "intent": "general", "split": "dev", "source": "hand"}
+{"id": "seed-el-0176", "lang": "el", "greeklish": false, "text": "παίζουμε αυτή τη βδομάδα ή είναι γιορτή;", "in_character": false, "intent": "general", "split": "train", "source": "hand"}
+{"id": "seed-el-0177", "lang": "el", "greeklish": false, "text": "καλημέρα σε όλους ☕", "in_character": false, "intent": "general", "split": "train", "source": "hand"}
+{"id": "seed-el-0178", "lang": "el", "greeklish": false, "text": "κακόμοιρε Γιάννη, τα ζάρια σε μισούν απόψε", "in_character": false, "intent": "general", "split": "test", "source": "hand"}
+{"id": "seed-el-0179", "lang": "el", "greeklish": false, "text": "θα γράψω backstory για τον χαρακτήρα μου το σαββατοκύριακο", "in_character": false, "intent": "general", "split": "train", "source": "hand"}
+{"id": "seed-el-0180", "lang": "el", "greeklish": false, "text": "μπορώ να φέρω έναν φίλο να δει το session;", "in_character": false, "intent": "general", "split": "train", "source": "hand"}
+{"id": "seed-el-0181", "lang": "el", "greeklish": false, "text": "η γάτα μου πάτησε το πληκτρολόγιο, sorry", "in_character": false, "intent": "general", "split": "train", "source": "hand"}
+{"id": "seed-el-0182", "lang": "el", "greeklish": false, "text": "είδε κανείς τη νέα σειρά με βρικόλακες;", "in_character": false, "intent": "general", "split": "train", "source": "hand"}
+{"id": "seed-el-0183", "lang": "el", "greeklish": true, "text": "paizoume kanonika Paraskevi?", "in_character": false, "intent": "general", "split": "dev", "source": "hand"}
+{"id": "seed-el-0184", "lang": "el", "greeklish": true, "text": "brb fagito", "in_character": false, "intent": "general", "split": "train", "source": "hand"}
+{"id": "seed-el-0185", "lang": "el", "greeklish": true, "text": "xaxaxa", "in_character": false, "intent": "general", "split": "train", "source": "hand"}
+{"id": "seed-el-0186", "lang": "el", "greeklish": true, "text": "kalinixta paidia", "in_character": false, "intent": "general", "split": "train", "source": "hand"}
+{"id": "seed-el-0187", "lang": "el", "greeklish": true, "text": "sorry argisa", "in_character": false, "intent": "general", "split": "test", "source": "hand"}
+{"id": "seed-el-0188", "lang": "el", "greeklish": true, "text": "den mporw auth th vdomada, douleia", "in_character": false, "intent": "general", "split": "train", "source": "hand"}
+{"id": "seed-el-0189", "lang": "el", "greeklish": true, "text": "gg teleio session", "in_character": false, "intent": "general", "split": "test", "source": "hand"}
+{"id": "seed-el-0190", "lang": "el", "greeklish": true, "text": "lol o Markos otan eipe \"den fovamai\" kai meta etrekse", "in_character": false, "intent": "general", "split": "train", "source": "hand"}
+{"id": "seed-el-0191", "lang": "el", "greeklish": true, "text": "me akoute?", "in_character": false, "intent": "general", "split": "test", "source": "hand"}
+{"id": "seed-el-0192", "lang": "el", "greeklish": true, "text": "pote paizoume pali?", "in_character": false, "intent": "general", "split": "train", "source": "hand"}
+{"id": "seed-el-0193", "lang": "el", "greeklish": true, "text": "kalimera ☕", "in_character": false, "intent": "general", "split": "test", "source": "hand"}
+{"id": "seed-el-0194", "lang": "el", "greeklish": true, "text": "epestrepsa, ti exasa?", "in_character": false, "intent": "general", "split": "train", "source": "hand"}
+{"id": "seed-el-0195", "lang": "el", "greeklish": true, "text": "re paidia exei kanei update to discord?", "in_character": false, "intent": "general", "split": "train", "source": "hand"}
+{"id": "seed-el-0196", "lang": "el", "greeklish": false, "text": "*βγάζει τους κυνόδοντες και ορμάει στον γκουλ*", "in_character": true, "intent": "combat", "split": "dev", "source": "hand"}
+{"id": "seed-el-0197", "lang": "el", "greeklish": false, "text": "Κοπανάω τον κυνηγό στον τοίχο και πάω για τον λαιμό του", "in_character": true, "intent": "combat", "split": "train", "source": "hand"}
+{"id": "seed-el-0198", "lang": "el", "greeklish": false, "text": "Ορμάω στον Πρίγκιπα!", "in_character": true, "intent": "combat", "split": "test", "source": "hand"}
+{"id": "seed-el-0199", "lang": "el", "greeklish": false, "text": "Ο Μάρκος αρπάζει το παλούκι από το τραπέζι και το καρφώνει στο στήθος του Lasombra", "in_character": true, "intent": "combat", "split": "train", "source": "hand"}
+{"id": "seed-el-0200", "lang": "el", "greeklish": false, "text": "*σκύβει πίσω από το αμάξι και πυροβολεί δύο φορές τη σκιά*", "in_character": true, "intent": "combat", "split": "train", "source": "hand"}
+{"id": "seed-el-0201", "lang": "el", "greeklish": false, "text": "Βυθίζω τα νύχια μου στο χέρι του και το στρίβω", "in_character": true, "intent": "combat", "split": "dev", "source": "hand"}
+{"id": "seed-el-0202", "lang": "el", "greeklish": false, "text": "Η Έλενα γυρίζει απότομα και του κλωτσάει το όπλο από το χέρι", "in_character": true, "intent": "combat", "split": "train", "source": "hand"}
+{"id": "seed-el-0203", "lang": "el", "greeklish": false, "text": "*του δίνει μια ανάποδη και τον στέλνει στην άλλη άκρη του δωματίου*", "in_character": true, "intent": "combat", "split": "train", "source": "hand"}
+{"id": "seed-el-0204", "lang": "el", "greeklish": false, "text": "Τον ρίχνω κάτω πριν φτάσει στην πόρτα", "in_character": true, "intent": "combat", "split": "test", "source": "hand"}
+{"id": "seed-el-0205", "lang": "el", "greeklish": false, "text": "«Έπρεπε να μείνεις σπίτι σου» γρυλίζω και του χτυπάω τα γόνατα με τον λοστό", "in_character": true, "intent": "combat", "split": "train", "source": "hand"}
+{"id": "seed-el-0206", "lang": "el", "greeklish": false, "text": "*θολώνει μπροστά με Celerity, το μαχαίρι αστράφτει*", "in_character": true, "intent": "combat", "split": "test", "source": "hand"}
+{"id": "seed-el-0207", "lang": "el", "greeklish": false, "text": "Ο Βίκτορ βρυχάται και πέφτει πάνω στον λυκάνθρωπο", "in_character": true, "intent": "combat", "split": "train", "source": "hand"}
+{"id": "seed-el-0208", "lang": "el", "greeklish": false, "text": "Πιάνω τον Σερίφη από τον γιακά και του δίνω κουτουλιά", "in_character": true, "intent": "combat", "split": "dev", "source": "hand"}
+{"id": "seed-el-0209", "lang": "el", "greeklish": false, "text": "*σπάει την πόρτα με μια κλωτσιά και ανοίγει πυρ*", "in_character": true, "intent": "combat", "split": "test", "source": "hand"}
+{"id": "seed-el-0210", "lang": "el", "greeklish": false, "text": "Πετάω την καρέκλα στο παράθυρο και πηδάω έξω", "in_character": true, "intent": "combat", "split": "train", "source": "hand"}
+{"id": "seed-el-0211", "lang": "el", "greeklish": false, "text": "*δαγκώνει δυνατά τον λαιμό του και δεν τον αφήνει*", "in_character": true, "intent": "combat", "split": "train", "source": "hand"}
+{"id": "seed-el-0212", "lang": "el", "greeklish": false, "text": "Σπρώχνω τον κυνηγό από την ταράτσα", "in_character": true, "intent": "combat", "split": "test", "source": "hand"}
+{"id": "seed-el-0213", "lang": "el", "greeklish": false, "text": "Κάτω!! *ρίχνεται πάνω στη Σοφία και τη βγάζει από τη γραμμή πυρός*", "in_character": true, "intent": "combat", "split": "train", "source": "hand"}
+{"id": "seed-el-0214", "lang": "el", "greeklish": false, "text": "Αποκρούω τη λεπίδα με τον πήχη και του ρίχνω μπουνιά στο πρόσωπο", "in_character": true, "intent": "combat", "split": "train", "source": "hand"}
+{"id": "seed-el-0215", "lang": "el", "greeklish": false, "text": "*τραβάει αργά την κατάνα* Έλα λοιπόν.", "in_character": true, "intent": "combat", "split": "train", "source": "hand"}
+{"id": "seed-el-0216", "lang": "el", "greeklish": false, "text": "Ο Ντμίτρι σπάει τη λάμπα στο κεφάλι του γκουλ", "in_character": true, "intent": "combat", "split": "train", "source": "hand"}
+{"id": "seed-el-0217", "lang": "el", "greeklish": false, "text": "Του αρπάζω την καραμπίνα και τη σπάω στα δύο", "in_character": true, "intent": "combat", "split": "dev", "source": "hand"}
+{"id": "seed-el-0218", "lang": "el", "greeklish": false, "text": "*καρφώνει τον Brujah στο πάτωμα και του σκίζει τον λαιμό*", "in_character": true, "intent": "combat", "split": "dev", "source": "hand"}
+{"id": "seed-el-0219", "lang": "el", "greeklish": false, "text": "Τρέχω. Απλά τρέχω όσο πιο γρήγορα μπορώ μακριά από τη φωτιά", "in_character": true, "intent": "combat", "split": "train", "source": "hand"}
+{"id": "seed-el-0220", "lang": "el", "greeklish": false, "text": "*αποφεύγει τη γροθιά και του χώνει μια στα πλευρά*", "in_character": true, "intent": "combat", "split": "test", "source": "hand"}
+{"id": "seed-el-0221", "lang": "el", "greeklish": false, "text": "Η Άννα αρπάζει τον πυροσβεστήρα και ψεκάζει τους κυνηγούς στα μούτρα", "in_character": true, "intent": "combat", "split": "test", "source": "hand"}
+{"id": "seed-el-0222", "lang": "el", "greeklish": false, "text": "«Όχι απόψε.» *του καρφώνει το παλούκι στην καρδιά*", "in_character": true, "intent": "combat", "split": "test", "source": "hand"}
+{"id": "seed-el-0223", "lang": "el", "greeklish": false, "text": "*σφυρίζει με τους κυνόδοντες έξω και του γδέρνει τα μάτια*", "in_character": true, "intent": "combat", "split": "train", "source": "hand"}
+{"id": "seed-el-0224", "lang": "el", "greeklish": false, "text": "Ο Λουκάς αναποδογυρίζει το τραπέζι για κάλυψη και ανταποδίδει τα πυρά", "in_character": true, "intent": "combat", "split": "dev", "source": "hand"}
+{"id": "seed-el-0225", "lang": "el", "greeklish": true, "text": "*vgazei ta dontia kai ormaei ston ghoul*", "in_character": true, "intent": "combat", "split": "train", "source": "hand"}
+{"id": "seed-el-0226", "lang": "el", "greeklish": true, "text": "ton xtypaw me ton losto sto kefali", "in_character": true, "intent": "combat", "split": "train", "source": "hand"}
+{"id": "seed-el-0227", "lang": "el", "greeklish": true, "text": "ormaw ston kynigo kai ton rixnw katw", "in_character": true, "intent": "combat", "split": "test", "source": "hand"}
+{"id": "seed-el-0228", "lang": "el", "greeklish": true, "text": "*pyrovolei 2 fores sto skotadi*", "in_character": true, "intent": "combat", "split": "test", "source": "hand"}
+{"id": "seed-el-0229", "lang": "el", "greeklish": true, "text": "tou dagkwnw to xeri mexri na afhsei to maxairi", "in_character": true, "intent": "combat", "split": "dev", "source": "hand"}
+{"id": "seed-el-0230", "lang": "el", "greeklish": true, "text": "trexw makria apo th fwtia!!", "in_character": true, "intent": "combat", "split": "train", "source": "hand"}
+{"id": "seed-el-0231", "lang": "el", "greeklish": false, "text": "επίθεση στον γκουλ: Str + Brawl, 7 ζάρια, δυσκολία 6", "in_character": false, "intent": "combat", "split": "train", "source": "hand"}
+{"id": "seed-el-0232", "lang": "el", "greeklish": false, "text": "τι initiative έχω; έφερα 8", "in_character": false, "intent": "combat", "split": "train", "source": "hand"}
+{"id": "seed-el-0233", "lang": "el", "greeklish": false, "text": "σειρά: Μάρκος, γκουλ, Έλενα, μετά εγώ", "in_character": false, "intent": "combat", "split": "dev", "source": "hand"}
+{"id": "seed-el-0234", "lang": "el", "greeklish": false, "text": "είμαι Injured, -1 σε όλα τα pools", "in_character": false, "intent": "combat", "split": "dev", "source": "hand"}
+{"id": "seed-el-0235", "lang": "el", "greeklish": false, "text": "απορροφώ 4 με Fortitude", "in_character": false, "intent": "combat", "split": "dev", "source": "hand"}
+{"id": "seed-el-0236", "lang": "el", "greeklish": false, "text": "έφαγα 3 aggravated από τη φωτιά, άουτς", "in_character": false, "intent": "combat", "split": "train", "source": "hand"}
+{"id": "seed-el-0237", "lang": "el", "greeklish": false, "text": "ο χαρακτήρας μου θέλει να τον αρπάξει αυτόν τον γύρο, Str+Brawl;", "in_character": false, "intent": "combat", "split": "dev", "source": "hand"}
+{"id": "seed-el-0238", "lang": "el", "greeklish": false, "text": "σχέδιο: η Έλενα αποσπά, ο Μάρκος από αριστερά, ο δικός μου στον αρχηγό", "in_character": false, "intent": "combat", "split": "test", "source": "hand"}
+{"id": "seed-el-0239", "lang": "el", "greeklish": false, "text": "health: 4 superficial 2 aggravated, είμαι impaired", "in_character": false, "intent": "combat", "split": "dev", "source": "hand"}
+{"id": "seed-el-0240", "lang": "el", "greeklish": false, "text": "θα ξοδέψω αίμα να γιατρευτώ πριν τον επόμενο γύρο", "in_character": false, "intent": "combat", "split": "test", "source": "hand"}
+{"id": "seed-el-0241", "lang": "el", "greeklish": false, "text": "η σειρά μου είναι;", "in_character": false, "intent": "combat", "split": "train", "source": "hand"}
+{"id": "seed-el-0242", "lang": "el", "greeklish": false, "text": "ποιος είναι επόμενος στο initiative;", "in_character": false, "intent": "combat", "split": "train", "source": "hand"}
+{"id": "seed-el-0243", "lang": "el", "greeklish": false, "text": "βάζω Potence στη γροθιά, +2 ζάρια", "in_character": false, "intent": "combat", "split": "train", "source": "hand"}
+{"id": "seed-el-0244", "lang": "el", "greeklish": false, "text": "ζημιά: 5 επιτυχίες + 2 Potence = 7 superficial", "in_character": false, "intent": "combat", "split": "train", "source": "hand"}
+{"id": "seed-el-0245", "lang": "el", "greeklish": false, "text": "full dodge αυτόν τον γύρο", "in_character": false, "intent": "combat", "split": "test", "source": "hand"}
+{"id": "seed-el-0246", "lang": "el", "greeklish": false, "text": "στοχευμένη βολή στο κεφάλι, +2 δυσκολία σωστά;", "in_character": false, "intent": "combat", "split": "test", "source": "hand"}
+{"id": "seed-el-0247", "lang": "el", "greeklish": false, "text": "ο χαρακτήρας μου φεύγει από τη μάχη προς το αμάξι, τι ρίχνω;", "in_character": false, "intent": "combat", "split": "test", "source": "hand"}
+{"id": "seed-el-0248", "lang": "el", "greeklish": false, "text": "πόσοι κυνηγοί έχουν μείνει όρθιοι;", "in_character": false, "intent": "combat", "split": "test", "source": "hand"}
+{"id": "seed-el-0249", "lang": "el", "greeklish": false, "text": "ST ο γκουλ έχει ακόμα το όπλο;", "in_character": false, "intent": "combat", "split": "train", "source": "hand"}
+{"id": "seed-el-0250", "lang": "el", "greeklish": false, "text": "να κλείσουμε τη μάχη, κρατάει 40 λεπτά χαχα", "in_character": false, "intent": "combat", "split": "train", "source": "hand"}
+{"id": "seed-el-0251", "lang": "el", "greeklish": false, "text": "η μάχη σε αυτό το σύστημα κρατάει αιώνες 😅", "in_character": false, "intent": "combat", "split": "train", "source": "hand"}
+{"id": "seed-el-0252", "lang": "el", "greeklish": false, "text": "παιδιά να υποχωρήσουμε, μας διαλύουν", "in_character": false, "intent": "combat", "split": "train", "source": "hand"}
+{"id": "seed-el-0253", "lang": "el", "greeklish": false, "text": "όλοι στον Tzimisce, focus fire", "in_character": false, "intent": "combat", "split": "train", "source": "hand"}
+{"id": "seed-el-0254", "lang": "el", "greeklish": false, "text": "έχω 1 health level, γιατρεύομαι τον επόμενο γύρο αλλιώς τελείωσα", "in_character": false, "intent": "combat", "split": "dev", "source": "hand"}
+{"id": "seed-el-0255", "lang": "el", "greeklish": false, "text": "γύρος 3: ο χαρακτήρας μου συνεχίζει να πυροβολεί", "in_character": false, "intent": "combat", "split": "test", "source": "hand"}
+{"id": "seed-el-0256", "lang": "el", "greeklish": true, "text": "initiative 7, poios paei prwtos?", "in_character": false, "intent": "combat", "split": "train", "source": "hand"}
+{"id": "seed-el-0257", "lang": "el", "greeklish": true, "text": "exw 2 aggravated, eimai hurt", "in_character": false, "intent": "combat", "split": "train", "source": "hand"}
+{"id": "seed-el-0258", "lang": "el", "greeklish": true, "text": "epithesi me Str+Brawl, 6 zaria", "in_character": false, "intent": "combat", "split": "test", "source": "hand"}
+{"id": "seed-el-0259", "lang": "el", "greeklish": true, "text": "pame oloi ston arxhgo tous", "in_character": false, "intent": "combat", "split": "test", "source": "hand"}
+{"id": "seed-el-0260", "lang": "el", "greeklish": true, "text": "posoi exoun meinei?", "in_character": false, "intent": "combat", "split": "train", "source": "hand"}
+{"id": "seed-el-0261", "lang": "el", "greeklish": false, "text": "*φτιάχνει τη γραβάτα του και μπαίνει στο Elysium*", "in_character": true, "intent": "roleplay", "split": "dev", "source": "hand"}
+{"id": "seed-el-0262", "lang": "el", "greeklish": false, "text": "Καλησπέρα, Primogen. Ελπίζω η νύχτα να σας βρίσκει καλά.", "in_character": true, "intent": "roleplay", "split": "test", "source": "hand"}
+{"id": "seed-el-0263", "lang": "el", "greeklish": false, "text": "«Δεν ήρθα εδώ για να παρακαλέσω» λέει ήσυχα η Έλενα, κοιτώντας τον Πρίγκιπα στα μάτια.", "in_character": true, "intent": "roleplay", "split": "train", "source": "hand"}
+{"id": "seed-el-0264", "lang": "el", "greeklish": false, "text": "*ανάβει ένα τσιγάρο και κοιτάζει τη βροχή*", "in_character": true, "intent": "roleplay", "split": "train", "source": "hand"}
+{"id": "seed-el-0265", "lang": "el", "greeklish": false, "text": "Ο Μάρκος ακουμπάει στο μπαρ. «Λοιπόν, ποιος κερνάει;»", "in_character": true, "intent": "roleplay", "split": "test", "source": "hand"}
+{"id": "seed-el-0266", "lang": "el", "greeklish": false, "text": "Γονατίζω μπροστά στον Πρίγκιπα και του δίνω την αναφορά μου", "in_character": true, "intent": "roleplay", "split": "test", "source": "hand"}
+{"id": "seed-el-0267", "lang": "el", "greeklish": false, "text": "*χαμογελάει, οι κυνόδοντες μόλις φαίνονται* Φαίνεσαι νόστιμη απόψε.", "in_character": true, "intent": "roleplay", "split": "train", "source": "hand"}
+{"id": "seed-el-0268", "lang": "el", "greeklish": false, "text": "Τριγυρίζω στο κλαμπ ψάχνοντας εύκολο γεύμα", "in_character": true, "intent": "roleplay", "split": "dev", "source": "hand"}
+{"id": "seed-el-0269", "lang": "el", "greeklish": false, "text": "«Πού ήσουν χθες βράδυ, Δημιουργέ;»", "in_character": true, "intent": "roleplay", "split": "test", "source": "hand"}
+{"id": "seed-el-0270", "lang": "el", "greeklish": false, "text": "Αναστενάζει και σφίγγει το παλτό της. «Αυτή η πόλη δεν κοιμάται ποτέ.»", "in_character": true, "intent": "roleplay", "split": "test", "source": "hand"}
+{"id": "seed-el-0271", "lang": "el", "greeklish": false, "text": "*ρίχνει μια νευρική ματιά στον Σερίφη*", "in_character": true, "intent": "roleplay", "split": "train", "source": "hand"}
+{"id": "seed-el-0272", "lang": "el", "greeklish": false, "text": "Ψιθυρίζω στη Σοφία: πρέπει να φύγουμε. Τώρα.", "in_character": true, "intent": "roleplay", "split": "test", "source": "hand"}
+{"id": "seed-el-0273", "lang": "el", "greeklish": false, "text": "Ο Βίκτορ δοκιμάζει το αίμα και μορφάζει. «Πολύ ουίσκι σε αυτόν.»", "in_character": true, "intent": "roleplay", "split": "train", "source": "hand"}
+{"id": "seed-el-0274", "lang": "el", "greeklish": false, "text": "*κοιτάζει το κινητό, τρεις αναπάντητες από τη θνητή αδερφή του*", "in_character": true, "intent": "roleplay", "split": "dev", "source": "hand"}
+{"id": "seed-el-0275", "lang": "el", "greeklish": false, "text": "Ακολουθώ τη γυναίκα στο σοκάκι, μένοντας στις σκιές", "in_character": true, "intent": "roleplay", "split": "train", "source": "hand"}
+{"id": "seed-el-0276", "lang": "el", "greeklish": false, "text": "«Μη με αγγίζεις» σφυρίζω.", "in_character": true, "intent": "roleplay", "split": "test", "source": "hand"}
+{"id": "seed-el-0277", "lang": "el", "greeklish": false, "text": "*υποκλίνεται βαθιά* Πρίγκιπά μου.", "in_character": true, "intent": "roleplay", "split": "dev", "source": "hand"}
+{"id": "seed-el-0278", "lang": "el", "greeklish": false, "text": "Η Άννα κάθεται στο πιάνο και παίζει κάτι λυπητερό.", "in_character": true, "intent": "roleplay", "split": "train", "source": "hand"}
+{"id": "seed-el-0279", "lang": "el", "greeklish": false, "text": "Λέω στον Nosferatu ότι θα του χρωστάω χάρη αν βρει το κορίτσι", "in_character": true, "intent": "roleplay", "split": "test", "source": "hand"}
+{"id": "seed-el-0280", "lang": "el", "greeklish": false, "text": "«Μυρίζεις φόβο, μικρέ γκουλ.»", "in_character": true, "intent": "roleplay", "split": "train", "source": "hand"}
+{"id": "seed-el-0281", "lang": "el", "greeklish": false, "text": "*πηγαινοέρχεται στο καταφύγιο μουρμουρίζοντας*", "in_character": true, "intent": "roleplay", "split": "dev", "source": "hand"}
+{"id": "seed-el-0282", "lang": "el", "greeklish": false, "text": "Δίνω τον φάκελο στον Seneschal χωρίς λέξη", "in_character": true, "intent": "roleplay", "split": "train", "source": "hand"}
+{"id": "seed-el-0283", "lang": "el", "greeklish": false, "text": "Ο Λουκάς γελάει. «Νομίζεις ότι οι Anarchs νοιάζονται για τις Παραδόσεις σου;»", "in_character": true, "intent": "roleplay", "split": "test", "source": "hand"}
+{"id": "seed-el-0284", "lang": "el", "greeklish": false, "text": "*κοιτάζει τον καθρέφτη όπου δεν υπάρχει είδωλο*", "in_character": true, "intent": "roleplay", "split": "train", "source": "hand"}
+{"id": "seed-el-0285", "lang": "el", "greeklish": false, "text": "Παίρνω τηλέφωνο τον γκουλ μου και του λέω να φέρει το αμάξι", "in_character": true, "intent": "roleplay", "split": "train", "source": "hand"}
+{"id": "seed-el-0286", "lang": "el", "greeklish": false, "text": "«Θυμάμαι όταν αυτή η πόλη ήταν λάσπη και φανοστάτες με γκάζι.»", "in_character": true, "intent": "roleplay", "split": "train", "source": "hand"}
+{"id": "seed-el-0287", "lang": "el", "greeklish": false, "text": "*μυρίζει τον αέρα* Κάποιος ήταν εδώ. Πρόσφατα.", "in_character": true, "intent": "roleplay", "split": "train", "source": "hand"}
+{"id": "seed-el-0288", "lang": "el", "greeklish": false, "text": "Ο Ντμίτρι σπρώχνει μια στοίβα χαρτονομίσματα στο τραπέζι. «Για τη σιωπή σου.»", "in_character": true, "intent": "roleplay", "split": "train", "source": "hand"}
+{"id": "seed-el-0289", "lang": "el", "greeklish": false, "text": "Πλησιάζω τον μπράβο και χρησιμοποιώ Presence για να μπω", "in_character": true, "intent": "roleplay", "split": "dev", "source": "hand"}
+{"id": "seed-el-0290", "lang": "el", "greeklish": false, "text": "*σκύβει κοντά* Πες μου ό,τι ξέρεις για το chantry των Tremere.", "in_character": true, "intent": "roleplay", "split": "train", "source": "hand"}
+{"id": "seed-el-0291", "lang": "el", "greeklish": false, "text": "«Γιατί με έκανες βρικόλακα;» ρωτάει, με τρεμάμενη φωνή.", "in_character": true, "intent": "roleplay", "split": "test", "source": "hand"}
+{"id": "seed-el-0292", "lang": "el", "greeklish": false, "text": "Κάθομαι στην ταράτσα και κοιτάζω τον ουρανό να ξανοίγει, αναρωτιέμαι αν πρέπει να μείνω", "in_character": true, "intent": "roleplay", "split": "train", "source": "hand"}
+{"id": "seed-el-0293", "lang": "el", "greeklish": false, "text": "*σερβίρει ένα ποτήρι αίμα στον καλεσμένο*", "in_character": true, "intent": "roleplay", "split": "dev", "source": "hand"}
+{"id": "seed-el-0294", "lang": "el", "greeklish": false, "text": "«Ο Πρίγκιπας πέθανε. Ζήτω ο Πρίγκιπας.»", "in_character": true, "intent": "roleplay", "split": "dev", "source": "hand"}
+{"id": "seed-el-0295", "lang": "el", "greeklish": false, "text": "Ψάχνω τις τσέπες του νεκρού κυνηγού", "in_character": true, "intent": "roleplay", "split": "train", "source": "hand"}
+{"id": "seed-el-0296", "lang": "el", "greeklish": false, "text": "Ο Μάρκος φεύγει θυμωμένος από το Elysium και βροντάει την πόρτα.", "in_character": true, "intent": "roleplay", "split": "test", "source": "hand"}
+{"id": "seed-el-0297", "lang": "el", "greeklish": false, "text": "«Ήρεμα, φίλε. Δεν χρειάζεται να πληγωθεί κανείς απόψε.»", "in_character": true, "intent": "roleplay", "split": "train", "source": "hand"}
+{"id": "seed-el-0298", "lang": "el", "greeklish": false, "text": "*τρέφεται αργά, προσέχει να μην τη σκοτώσει*", "in_character": true, "intent": "roleplay", "split": "test", "source": "hand"}
+{"id": "seed-el-0299", "lang": "el", "greeklish": false, "text": "Κάνω τον χαμένο τουρίστα και ρωτάω τον αστυνομικό για δρόμο", "in_character": true, "intent": "roleplay", "split": "test", "source": "hand"}
+{"id": "seed-el-0300", "lang": "el", "greeklish": false, "text": "«Μεγαλειότατε, οι Sabbat είναι στις πύλες.»", "in_character": true, "intent": "roleplay", "split": "test", "source": "hand"}
+{"id": "seed-el-0301", "lang": "el", "greeklish": false, "text": "*γουρλώνει τα μάτια* Φυσικά ο Ventrue θέλει συνάντηση.", "in_character": true, "intent": "roleplay", "split": "test", "source": "hand"}
+{"id": "seed-el-0302", "lang": "el", "greeklish": false, "text": "«Το έχω δει το τέλος. Τελειώνει με φωτιά.» *γελάει νευρικά*", "in_character": true, "intent": "roleplay", "split": "test", "source": "hand"}
+{"id": "seed-el-0303", "lang": "el", "greeklish": false, "text": "*ανοίγει το καπάκι του φέρετρου και βγαίνει με το σούρουπο*", "in_character": true, "intent": "roleplay", "split": "train", "source": "hand"}
+{"id": "seed-el-0304", "lang": "el", "greeklish": false, "text": "Η Σοφία αγκαλιάζει το τρομαγμένο κορίτσι. «Είσαι ασφαλής τώρα.»", "in_character": true, "intent": "roleplay", "split": "dev", "source": "hand"}
+{"id": "seed-el-0305", "lang": "el", "greeklish": false, "text": "Δωροδοκώ τον ιατροδικαστή να εξαφανίσει το πτώμα", "in_character": true, "intent": "roleplay", "split": "train", "source": "hand"}
+{"id": "seed-el-0306", "lang": "el", "greeklish": false, "text": "«Γονάτισε.» *χρησιμοποιεί Dominate στον φύλακα*", "in_character": true, "intent": "roleplay", "split": "train", "source": "hand"}
+{"id": "seed-el-0307", "lang": "el", "greeklish": false, "text": "Ρωτάω την μπαργούμαν αν είδε έναν ψηλό άντρα με κόκκινο παλτό", "in_character": true, "intent": "roleplay", "split": "dev", "source": "hand"}
+{"id": "seed-el-0308", "lang": "el", "greeklish": false, "text": "Ο Βίκτορ χαμογελάει. «Απόψε κυνηγάμε.»", "in_character": true, "intent": "roleplay", "split": "train", "source": "hand"}
+{"id": "seed-el-0309", "lang": "el", "greeklish": false, "text": "Τι θέλεις, Nosferatu; Μίλα γρήγορα.", "in_character": true, "intent": "roleplay", "split": "train", "source": "hand"}
+{"id": "seed-el-0310", "lang": "el", "greeklish": true, "text": "*kathetai sto bar kai paraggelnei ena krasi pou den 8a piei*", "in_character": true, "intent": "roleplay", "split": "train", "source": "hand"}
+{"id": "seed-el-0311", "lang": "el", "greeklish": true, "text": "\"Ti 8eleis edw?\" rwtaw me pagwmenh fwnh", "in_character": true, "intent": "roleplay", "split": "train", "source": "hand"}
+{"id": "seed-el-0312", "lang": "el", "greeklish": true, "text": "psaxnw ton Marko mesa sto club", "in_character": true, "intent": "roleplay", "split": "train", "source": "hand"}
+{"id": "seed-el-0313", "lang": "el", "greeklish": true, "text": "*xamogelaei* kalws hr8es sto Elysium", "in_character": true, "intent": "roleplay", "split": "train", "source": "hand"}
+{"id": "seed-el-0314", "lang": "el", "greeklish": true, "text": "Kalispera Prigkipa mou. *ypoklinetai*", "in_character": true, "intent": "roleplay", "split": "train", "source": "hand"}
+{"id": "seed-el-0315", "lang": "el", "greeklish": true, "text": "pigainw sto spiti ths adelfhs mou na th dw apo makria", "in_character": true, "intent": "roleplay", "split": "dev", "source": "hand"}
+{"id": "seed-el-0316", "lang": "el", "greeklish": false, "text": "νομίζω ο χαρακτήρας μου πρέπει να τα βάλει με τον Σερίφη το επόμενο session", "in_character": false, "intent": "roleplay", "split": "test", "source": "hand"}
+{"id": "seed-el-0317", "lang": "el", "greeklish": false, "text": "ο χαρακτήρας μου σίγουρα θα αρνιόταν αυτή τη συμφωνία", "in_character": false, "intent": "roleplay", "split": "test", "source": "hand"}
+{"id": "seed-el-0318", "lang": "el", "greeklish": false, "text": "ο Μάρκος θα προσπαθήσει να καλοπιάσει τον μπράβο, οκ;", "in_character": false, "intent": "roleplay", "split": "train", "source": "hand"}
+{"id": "seed-el-0319", "lang": "el", "greeklish": false, "text": "θέλω η Έλενα να έχει μια σκηνή με τον δημιουργό της κάποια στιγμή", "in_character": false, "intent": "roleplay", "split": "train", "source": "hand"}
+{"id": "seed-el-0320", "lang": "el", "greeklish": false, "text": "μπορούμε να κάνουμε μια downtime σκηνή να τραφεί ο χαρακτήρας μου;", "in_character": false, "intent": "roleplay", "split": "dev", "source": "hand"}
+{"id": "seed-el-0321", "lang": "el", "greeklish": false, "text": "ST μπορείς να περιγράψεις το κλαμπ όταν μπαίνουμε;", "in_character": false, "intent": "roleplay", "split": "train", "source": "hand"}
+{"id": "seed-el-0322", "lang": "el", "greeklish": false, "text": "συνεχίζουμε τη σκηνή από εκεί που μείναμε", "in_character": false, "intent": "roleplay", "split": "test", "source": "hand"}
+{"id": "seed-el-0323", "lang": "el", "greeklish": false, "text": "θα ποστάρω την απάντηση του χαρακτήρα μου στο κανάλι της σκηνής μετά", "in_character": false, "intent": "roleplay", "split": "test", "source": "hand"}
+{"id": "seed-el-0324", "lang": "el", "greeklish": false, "text": "ο δικός μου μάλλον θα πει ψέματα στον Πρίγκιπα εδώ", "in_character": false, "intent": "roleplay", "split": "train", "source": "hand"}
+{"id": "seed-el-0325", "lang": "el", "greeklish": false, "text": "μπορεί κάποιος να μου πει πού είναι οι χαρακτήρες μας στη σκηνή;", "in_character": false, "intent": "roleplay", "split": "dev", "source": "hand"}
+{"id": "seed-el-0326", "lang": "el", "greeklish": false, "text": "θα ήθελα ένα flashback στο Embrace του χαρακτήρα μου", "in_character": false, "intent": "roleplay", "split": "train", "source": "hand"}
+{"id": "seed-el-0327", "lang": "el", "greeklish": false, "text": "ο χαρακτήρας μου δεν εμπιστεύεται καθόλου τον Nosferatu χαχα", "in_character": false, "intent": "roleplay", "split": "train", "source": "hand"}
+{"id": "seed-el-0328", "lang": "el", "greeklish": true, "text": "8elw o xaraktiras mou na milisei me ton Prigkipa meta", "in_character": false, "intent": "roleplay", "split": "train", "source": "hand"}
+{"id": "seed-el-0329", "lang": "el", "greeklish": true, "text": "ST perigrapse mas to Elysium pls", "in_character": false, "intent": "roleplay", "split": "train", "source": "hand"}
+{"id": "seed-el-0330", "lang": "el", "greeklish": true, "text": "na synexisoume th skini?", "in_character": false, "intent": "roleplay", "split": "dev", "source": "hand"}
