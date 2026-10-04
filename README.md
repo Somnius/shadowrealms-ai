@@ -4,482 +4,173 @@
 
 ![ShadowRealms AI Logo](assets/logos/logo-3.png)
 
-### The Ultimate AI-Powered Tabletop RPG Experience
+### Self-hosted AI Storyteller for World of Darkness chronicles
 
-[![Version](https://img.shields.io/badge/version-0.9.0-blue.svg)](https://github.com/Somnius/shadowrealms-ai)
-[![Phase 2](https://img.shields.io/badge/phase-2%20complete-green.svg)](https://github.com/Somnius/shadowrealms-ai)
-[![Phase 3A](https://img.shields.io/badge/phase-3A%20complete-green.svg)](https://github.com/Somnius/shadowrealms-ai)
-[![Phase 3B](https://img.shields.io/badge/phase-3B%20active-blue.svg)](https://github.com/Somnius/shadowrealms-ai)
-[![Status](https://img.shields.io/badge/status-login%20%26%20theme%20active-yellow.svg)](https://github.com/Somnius/shadowrealms-ai)
-[![License](https://img.shields.io/badge/license-MIT-yellow.svg)](LICENSE)
-
----
-
-## Enter a World Where AI Becomes Your Dungeon Master
-
-*Experience the future of tabletop RPG gaming with intelligent AI assistance, persistent world memory, and seamless multi-language support.*
-
----
+[![Version](https://img.shields.io/badge/version-0.9.1-blue.svg)](docs/CHANGELOG.md)
+[![CI](https://github.com/Somnius/shadowrealms-ai/actions/workflows/ci.yml/badge.svg)](https://github.com/Somnius/shadowrealms-ai/actions/workflows/ci.yml)
+[![CodeQL](https://github.com/Somnius/shadowrealms-ai/actions/workflows/codeql.yml/badge.svg)](https://github.com/Somnius/shadowrealms-ai/actions/workflows/codeql.yml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-yellow.svg)](LICENSE)
 
 </div>
 
-## What is ShadowRealms AI?
+![A V5 chronicle in play: dice cards, a Rouse check, the AI Storyteller's reply and the character panel](assets/screenshots/v0.9/play-v5.webp)
 
-ShadowRealms AI is a revolutionary platform that transforms traditional tabletop RPG gaming by integrating advanced AI technology. Our system acts as an intelligent Dungeon Master, providing dynamic storytelling, character development, and world-building assistance while maintaining complete campaign continuity through advanced memory systems.
+| Sign-in | Chronicle hall | Bestial failure |
+|---|---|---|
+| ![Sign-in page with the animated sigil](assets/screenshots/v0.9/login-desktop.webp) | ![Chronicle hall with a Classic and a V5 chronicle](assets/screenshots/v0.9/hall.webp) | ![A V5 bestial failure with the blood-drip effect](assets/screenshots/v0.9/dice-bestial-failure.webp) |
 
-### Key Features
+| V5 character sheet | Playing in Greek | Theme preview |
+|---|---|---|
+| ![Read-only V5 character sheet](assets/screenshots/v0.9/character-sheet-v5.webp) | ![The play view with the interface and the Storyteller in Greek](assets/screenshots/v0.9/play-greek.webp) | ![The theme preview page at /showcase](assets/screenshots/v0.9/showcase-hero.webp) |
 
-<div align="center">
-
-| **AI Dungeon Master** | **Persistent Worlds** | **Smart Dice System** |
-|:---:|:---:|:---:|
-| Intelligent NPC behavior and dynamic storytelling | ChromaDB-powered memory for campaign continuity | Automated dice rolling with context awareness |
-
-| **Multi-Language** | **Real-time Performance** | **Secure & Private** |
-|:---:|:---:|:---:|
-| Global accessibility with translation pipelines | Optimized for 5-10s responses, 30-60s for complex tasks | Local AI processing, no data leaves your system |
-
-</div>
+More: [all v0.9 screenshots with captions](assets/screenshots/v0.9/README.md) and [a V5 roll, animated](assets/screenshots/v0.9/dice-roll-v5-animated.webp).
 
 ---
 
-## 🎬 Demo Video
+## What it is
 
-See ShadowRealms AI in action:
+ShadowRealms AI is a web app for running World of Darkness chronicles with an AI Storyteller. You host it yourself: Docker for the app, and local language models through LM Studio and Ollama, so the stories stay on your machine. Every chronicle is either Classic (oWoD Revised) or V5, and the interface and the Storyteller work in English and Greek.
 
-<div align="center">
+## Features
 
-[![ShadowRealms AI Demo](https://img.youtube.com/vi/9RGGb-F5Y2M/maxresdefault.jpg)](https://www.youtube.com/watch?v=9RGGb-F5Y2M)
+### Rules editions
 
-**[▶️ Watch the Full Demo on YouTube](https://www.youtube.com/watch?v=9RGGb-F5Y2M)**
+- Each chronicle picks **Classic** (Vampire, Werewolf, Mage on the Revised rules) or **V5** (Vampire: The Masquerade 5th edition) when it's created, and keeps it.
+- Classic dice follow Revised: difficulty 2 to 10, 1s cancel successes, a botch only when nothing succeeded, specialties re-roll 10s, Willpower as one uncancellable success.
+- V5 dice: Hunger dice, pairs of 10s, messy criticals, bestial and total failures, Willpower rerolls, Rouse checks.
+- The Storyteller's prompt and the rule-book search follow the chronicle's edition. The rules as the app implements them: [Classic](docs/rules/CLASSIC_REVISED.md) and [V5](docs/rules/V5.md).
 
-*Watch this video to see the login system, gothic theme, campaign management, and admin panel in action!*
+### Play
 
-> **Version 0.8.0 Preview:** This demo showcases the frontend interface in its current state. Please note that not all features are fully functional yet—this is a first look at the user interface and design direction of ShadowRealms AI.
+- Discord-style chat: grouped messages, unread counts, jump to present, in-character and out-of-character rooms.
+- Live updates over server-sent events (falls back to polling).
+- Dice cards: rolls are made and posted by the server, so a dice card in the chat is always a real roll.
+- Slash commands with autocomplete: `/roll`, `/me`, `/chat` for everyone, and `/ai` commands for admins (`/ai help` lists them).
+- One "Speaking as" control: your character, yourself out of character, or the Storyteller voice for staff.
 
-</div>
+### Characters
+
+- A character forge per edition: Classic with the Revised budgets (7/5/3, 13/9/5, virtues, 15 freebies), V5 with attribute and skill spreads, Predator type, disciplines, advantages and flaws.
+- Read-only sheets with trackers (Hunger, Willpower, Humanity), portraits, and one playing character per chronicle.
+- Sheets lock after creation; later changes go through downtime requests the Storyteller approves.
+
+### AI
+
+- Roles instead of one model: English Storyteller, Greek Storyteller, utility and classifier, each set in the admin panel.
+- Greek replies with `llama-krikri-8b-instruct`; the Storyteller answers in the player's language.
+- Long-term memory and rule-book search with multilingual `bge-m3` embeddings in ChromaDB.
+- OOC rooms are moderated by the Laya classifier (trained locally from `ml/laya/`) or the loaded LLM; warnings and bans apply per chronicle.
+- Optional cloud providers: an admin can add Anthropic or OpenAI API keys (stored encrypted, off by default).
+
+### Gothic theme
+
+- 97 original SVG glyphs and sigils, animated dice, fog, candle glow and blood effects on botches.
+- An atmosphere setting per account: Full, Subtle or Off.
+- A guided theme preview at `/showcase`.
+
+### Security
+
+- Rate limits and lockouts, token revocation with refresh rotation, a password policy, an audit log.
+- gunicorn behind nginx with a strict Content-Security-Policy; only nginx is reachable from the network.
+- See [SECURITY.md](SECURITY.md) and [docs/SECURITY_MODEL.md](docs/SECURITY_MODEL.md).
+
+### Admin
+
+- Invite codes, all chronicles, users (bans, password resets), downtime requests, the moderation log.
+- AI system: models per role, cloud keys, embeddings and re-embedding.
 
 ---
+
+## Quick start
+
+You need Linux with Docker and the Compose v2 plugin (`docker compose`), [LM Studio](https://lmstudio.ai/) with its `lms` command, and [Ollama](https://ollama.com/) on the host. An NVIDIA GPU is strongly recommended. The [Installation](https://github.com/Somnius/shadowrealms-ai/wiki/Installation) page in the wiki has every step in detail.
+
+1. Clone the repository and create your config:
+
+```bash
+git clone https://github.com/Somnius/shadowrealms-ai.git
+cd shadowrealms-ai
+cp env.template .env
+cp backend/invites.template.json backend/invites.json
+python3 scripts/generate_secret_key.py
+```
+
+2. Edit `.env`: put your own keys in `FLASK_SECRET_KEY` and `JWT_SECRET_KEY`, and generate `POSTGRES_USER` and `POSTGRES_PASSWORD` ([how](docs/POSTGRESQL_ENV_SETUP.md)). Never keep the template values.
+3. Edit `backend/invites.json`: replace the example codes with your own random ones and keep one admin code for yourself. Registration needs an invite code.
+4. Download `llama-krikri-8b-instruct` and `text-embedding-bge-m3` in LM Studio, then load them. `gemma-4-e2b` is an optional smaller English chat model (`lms get gemma-4-e2b --gguf -y`).
+
+```bash
+lms server start
+lms load llama-krikri-8b-instruct -y    # Storyteller, English and Greek
+lms load text-embedding-bge-m3 -y       # memory and rule-book embeddings
+ollama pull llama3.2:3b                 # utility model
+```
+
+5. Start the stack and build the frontend:
+
+```bash
+./docker-up.sh
+./scripts/build-frontend.sh
+```
+
+6. Open http://localhost, register with your admin invite code (passwords need 12+ characters), create a chronicle, and type `/ai health` in its chat to check LM Studio, Ollama and ChromaDB.
+
+For development, `docker compose --profile dev up -d frontend` starts the live-reload frontend (point nginx at it, see [docs/DOCKER_ENV_SETUP.md](docs/DOCKER_ENV_SETUP.md)), and `APP_SERVER=flask` with `FLASK_ENV=development` in `.env` runs the Flask dev server instead of gunicorn. Don't use the dev server on anything reachable from outside.
+
+## Models and hardware
+
+| Role | Default | Where to change it |
+|---|---|---|
+| Storyteller (English) | the model LM Studio has loaded | Admin, AI system, or `LM_STUDIO_MODEL` |
+| Storyteller (Greek) | `llama-krikri-8b-instruct` (LM Studio) | Admin, AI system, or `STORYTELLER_EL_MODEL` |
+| Utility | `llama3.2:3b` (Ollama) | Admin, AI system, or `UTILITY_PROVIDER` and `UTILITY_MODEL` |
+| Classifier | Laya if its model is in `data/laya/model`, otherwise the loaded LM Studio model | Admin, AI system (also Typesafe Jev with a key) |
+| Embeddings | `text-embedding-bge-m3` (LM Studio) | `EMBEDDING_MODEL` (the collections are re-embedded at the next start) |
+
+- It's developed on Linux with a 16 GB NVIDIA GPU. Krikri needs about 5 GB of VRAM.
+- If something else holds the GPU, load only Krikri in LM Studio: the English role follows the loaded model, so Krikri then answers in both languages.
+- A Storyteller reply gets 45 seconds per model and 55 seconds in total before it falls back (`STORYTELLER_ATTEMPT_TIMEOUT`, `STORYTELLER_TIME_BUDGET`).
+- More in the wiki's [AI Models](https://github.com/Somnius/shadowrealms-ai/wiki/AI-Models) page and [docs/AI_SYSTEMS.md](docs/AI_SYSTEMS.md).
 
 ## Documentation
 
-For comprehensive documentation, detailed setup instructions, and complete feature overview, please refer to our complete documentation:
-
-**[View Complete Documentation](https://github.com/Somnius/shadowrealms-ai/blob/main/SHADOWREALMS_AI_COMPLETE.md)**
-
-### Additional Resources
-
-- **[Testing Guide](frontend/TESTING.md)** - Comprehensive testing documentation
-- **[Contributing Guidelines](docs/CONTRIBUTING.md)** - How to contribute to the project
-- **[Changelog](docs/CHANGELOG.md)** - Detailed version history and updates
-- **[Docker Setup Guide](docs/DOCKER_ENV_SETUP.md)** - Environment configuration
-- **[Books Sync Guide](books/README.md)** - World of Darkness books synchronization
-- **[Test Suite Guide](tests/README.md)** - Comprehensive test documentation
-- **[Documentation Index](docs/README.md)** - Complete documentation index
-
----
-
-## Quick Start
-
-<div align="center">
-
-### One Command to Rule Them All
-
-```bash
-git clone https://github.com/Somnius/shadowrealms-ai.git
-cd shadowrealms-ai
-docker-compose up -d
-```
-
-**Access Points:**
-- **Frontend**: http://localhost:3000
-- **Backend API**: http://localhost:5000
-- **ChromaDB**: http://localhost:8000
-
-</div>
-
----
-
-## Technology Stack
-
-<div align="center">
-
-### Backend & Infrastructure
-
-![Docker](https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white)
-![Flask](https://img.shields.io/badge/Flask-000000?style=for-the-badge&logo=flask&logoColor=white)
-![Python](https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white)
-![Redis](https://img.shields.io/badge/Redis-DC382D?style=for-the-badge&logo=redis&logoColor=white)
-
-### AI & Machine Learning
-
-![ChromaDB](https://img.shields.io/badge/ChromaDB-FF6B6B?style=for-the-badge&logo=vector-database&logoColor=white)
-![LM Studio](https://img.shields.io/badge/LM%20Studio-FF6B6B?style=for-the-badge&logo=local-llm&logoColor=white)
-![Ollama](https://img.shields.io/badge/Ollama-FF6B6B?style=for-the-badge&logo=ollama&logoColor=white)
-![RAG](https://img.shields.io/badge/RAG-4CAF50?style=for-the-badge&logo=artificial-intelligence&logoColor=white)
-
-### Frontend & UI
-
-![React](https://img.shields.io/badge/React-61DAFB?style=for-the-badge&logo=react&logoColor=black)
-![Nginx](https://img.shields.io/badge/Nginx-009639?style=for-the-badge&logo=nginx&logoColor=white)
-![Material-UI](https://img.shields.io/badge/Material--UI-0081CB?style=for-the-badge&logo=material-ui&logoColor=white)
-
-### Development & Monitoring
-
-![Git](https://img.shields.io/badge/Git-F05032?style=for-the-badge&logo=git&logoColor=white)
-![GitHub](https://img.shields.io/badge/GitHub-181717?style=for-the-badge&logo=github&logoColor=white)
-![JWT](https://img.shields.io/badge/JWT-000000?style=for-the-badge&logo=json-web-tokens&logoColor=white)
-
-</div>
-
----
-
-## Current Development Status
-
-<div align="center">
-
-### Version 0.8.0 - Player account, character & profile hub milestone 🎯
-
-**What changed from v0.7.18:**
-- **Player Profile**: Single hub with **Overview**, **Account Settings** (time zone + merged **OOC identity** / portrait), **Playable Characters** (switch PC, roster, portraits, and **character creation guide** before the wizard), and **Downtime requests**. The profile **Campaigns** shortcut is removed—use the **chronicle hall** (home) for chronicles.
-- **Header**: **Home** button to the left of the username on logged-in pages; logo/title still links home.
-- **Docs**: Indexed documentation and version stamps advanced to **v0.8.0** (see `docs/CHANGELOG.md` `[0.8.0]`).
-
-### Version 0.7.18 - Admin chronicles, support access, account-delete fixes 🛡️
-
-**What changed from v0.7.17:**
-- **Admin — All chronicles**: Lists every campaign from `GET /api/admin/campaigns`; **Open in app** enters the main UI for locations and chat.
-- **Site admin support access**: Admins may open any chronicle (campaign detail, messages, dice, read-state rules per `docs/CHANGELOG.md` `[0.7.18]`).
-- **Preserve-chat deletion**: Transfers `locations.created_by` to the acting admin before removing the user; admin-facing errors stay readable while details log server-side.
-- **Admin character list**: Safer schema ensures and clearer API error display when loading a user’s characters.
-
-### Version 0.7.17 - Documentation alignment and Phase 3B readiness 📚
-
-**What changed from v0.7.16:**
-- **Docs & version stamps**: All indexed documentation and config footers aligned to **v0.7.17** (see `docs/CHANGELOG.md` `[0.7.17]`).
-- **Next milestone**: Same focus as **0.7.16**—keep **users**, **players**, and **characters** (memberships, active PC, locked sheets, portraits, downtime) accurate before deeper Phase **3B** work.
-
-### Version 0.7.16 - Data layout, chargen polish, and character API hardening 📦
-
-**Latest updates (from v0.7.15):**
-- **WoD data layout**: Large **`World_of_Darkness.tar`** belongs under **`data/`** (gitignored); use **`scripts/move-wod-archive-to-data.sh`** after ensuring `data/` is writable (see `books/README.md`).
-- **Character creation**: Template step **Nature & Demeanor** — preset **oWoD** archetypes, optional **Custom** + free text; stored in `wod_meta` for all three supported lines; stricter **chronicle ID** validation before submit.
-- **`POST /api/characters/`**: Clearer errors — invalid campaign/session ids return **400**/**401**; database conflicts return **409** (`character_create_integrity`) instead of an opaque **500**.
-- **Shipped with this version** (see changelog): play suspension, campaign **discover/join**, admin user debug & membership tools, **one locked PC** rule (with admin multi-campaign bypass), dashboard **open chronicles** / **open enrollment**.
-- **Next milestone**: Keep **users**, **players**, and **characters** ready—accurate accounts, memberships, active PC, and sheets—for upcoming Phase **3B** location and character depth work.
-
-### Version 0.7.15 - WoD character creation & Player Profile 🎭
-
-**Highlights:**
-- **Character creation**: Guided wizard for **Vampire / Werewolf / Mage** chronicles; sheets stored with `wod_meta`, attributes (7/5/3), and locked-by-default `sheet_locked` after submit.
-- **Player Profile**: Swap globally **active character**, edit **character portrait** (when sheet is locked), set **OOC-only player avatar**, submit **downtime requests** for storyteller/admin review.
-- **Dashboard & chat**: Optional campaign filter by active PC; OOC lobby shows **player** avatar, story rooms show **character** portrait; messaging prefers the active character when set.
-- **Admin**: **Downtime requests** section to approve or reject with a reason.
-- **Contributing**: Prefer **`docker compose exec`** for `pip install` / `npm install` (see `docs/CONTRIBUTING.md`).
-
-### Version 0.7.14 - Dice overlay, hidden rolls & Phase 3B prep 🎲
-
-**Highlights (see changelog):**
-- **Dice theatre** and **hidden rolls** for `/ai roll`, sidebar rolls, and storyteller-only visibility.
-- **Faster polling** and campaign **`created_by`** merge for hidden-roll UI.
-
-### Version 0.7.13 - Chat UX, WoD dice & admin AI tools 🎲
-
-**Latest updates:**
-- **Timestamps**: Message payloads include **`time_display`** for readable relative times (`message_time_format` + `utils/messageTime.js`).
-- **Roll dice**: Sidebar modal posts **`POST /api/campaigns/<id>/roll`**; Storyteller d10 pool logic in `dice_service` / `dice` routes.
-- **`/ai` (admins)**: From chat, site admins can run **`/ai help`** and related diagnostics (`POST /api/ai/slash`); everyone else is nudged to the sidebar roller.
-- **Docs**: **`docs/dice-old-wod.md`** explains Old WoD pools vs the app.
-
-### Version 0.7.12 - OOC AI moderation & chat polish 🎭
-
-**Latest updates:**
-- **OOC chat**: AI no longer runs the in-character storyteller in OOC rooms; it only posts a short moderator warning when a line looks IC-relevant, otherwise stays silent (`ooc_no_reply`).
-- **Portraits**: Character `portrait_url` and message `character_portrait_url`; sidebar upload; SVG placeholder when missing.
-- **UI**: AI message header aligned left again (matches player rows).
-- **Docs**: `docs/AI_SYSTEMS.md` describes OOC channel AI behavior.
-
-### Version 0.7.10 - Logo & Asset Optimization ⚡
-
-**Latest Updates:**
-- ⚡ **Logo Optimization**: Reduced logo assets from 1.6MB to 116KB (93% reduction)
-- 🖼️ **Multiple Resolutions**: Created dedicated sizes for login (300x300), header (80x80), and favicons
-- 🚀 **Performance Boost**: Faster page loads, reduced bandwidth usage, better mobile experience
-- 🎨 **Enhanced Favicon Support**: Multi-format favicon.ico + PNG favicons (16x16, 32x32, 64x64)
-- 📱 **iOS Support**: Apple touch icon for better home screen bookmarks
-
-### Version 0.7.9 - Project Structure Organization 📁
-
-**Latest Updates:**
-- 📁 **Scripts Directory Created**: Organized all 8 utility scripts into `scripts/` directory
-- 📚 **Documentation Updated**: Fixed all script path references across 10 documentation files
-- 🗂️ **Test Results Moved**: Relocated `test_results.log` to `tests/` directory
-- ✅ **Backup Directories Protected**: Verified `backup/` and `backups/` properly ignored
-
-### Version 0.7.8 - Footer Version Display Fix 🔧
-
-**Latest Updates:**
-- 🔧 **Footer Version Fixed**: Corrected API path from `/api/api/version` to `/api/version`
-- ✅ **Version Display Working**: Footer now correctly shows application version from backend
-
-### Version 0.7.7 - PostgreSQL Migration Fixes & Remote Access 🗄️🌐
-
-**Latest Updates:**
-- 🗄️ **PostgreSQL Compatibility**: Fixed dictionary row access bugs across all routes after migration from SQLite
-- 🔧 **Boolean SQL Fixes**: Updated all queries from SQLite `is_active = 1` to PostgreSQL `is_active = TRUE`
-- 👥 **Admin Panel Fixed**: User management now displays correctly with proper datetime handling
-- 📍 **Location System Fixed**: Campaign location queries now work with PostgreSQL GROUP BY requirements
-- 🤖 **AI Model Configuration**: Smart router now dynamically loads model from `LM_STUDIO_MODEL` env var
-- 🌐 **Remote Network Access**: Configured hybrid Docker networking for LAN access (10.0.0.x)
-- 🔌 **ChromaDB Resilience**: Added retry logic (10 attempts) for reliable service connection
-- 🚪 **Nginx Routing Fixed**: API proxy now preserves `/api` prefix for correct endpoint routing
-
-### Version 0.7.6 - Message Persistence & API Verification ✅💬
-
-**Latest Updates:**
-- 💬 **Message Persistence**: Chat messages now properly save to database and persist across location changes
-- 🔍 **API Path Verification**: Complete frontend-backend URL path audit and corrections
-- 🎯 **Chat Input Focus**: Fixed focus loss after sending messages in chat
-- 📡 **ChromaDB API Update**: Updated health checks to use ChromaDB v2 API endpoints
-- 🏷️ **Dynamic Versioning**: Footer version now dynamically loads from backend `.env`
-- 🔧 **URL Standardization**: All message endpoints now follow consistent `/api/campaigns/{id}/locations/{id}` pattern
-
-### Version 0.7.5 - AI Health Checks & Security Hardening 🛡️🔍
-
-**Latest Updates:**
-- 🏥 **LM-Studio/Ollama Health Checks**: Automatic service validation before AI operations
-- 🔒 **Sensitive Data Protection**: Book source URLs moved to `.env` (not version controlled)
-- 👁️ **OOC Monitoring System**: AI-powered detection of in-character content in OOC rooms with 3-strike ban system
-- 🧹 **AI Memory Cleanup**: Automatic purging of deleted location/campaign data from ChromaDB
-- 🔧 **API Endpoint Audit**: Complete validation and fixes for frontend-backend routing
-- 📊 **Quality Over Speed**: Comprehensive health checks prevent operations with missing services
-
-### Version 0.7.0 - Phase 3B: Security & Testing Foundation 🔒🧪
-
-**Last Updated**: `2025-10-24`
-**Progress**: `Security System & Test Suite - Foundation for Phase 3B`
-
-**⚠️ Current Reality Check:**
-- ✅ **Working**: Login/Register, Admin Panel, Gothic Theme, Campaign Editing, Mobile UI, Custom Dialogs, **Security System**
-- ✅ **New**: Security utilities (400+ lines), Test suite (630+ lines), Input sanitization, Rate limiting
-- 🚧 **In Progress**: Phase 3B Week 1 - Location System, Character System, Real-time Chat
-- 📋 **Planned**: WebSocket chat, AI integration, Full character management
-
-</div>
-
-### Phase 2 Complete ✅
-
-<div align="center">
-
-| **Foundation** | **AI Services** | **Web Interface** |
-|:---:|:---:|:---:|
-| Complete Docker environment with all 6 services stable | Both LM Studio (3 models) and Ollama (1 model) fully working | React application serving through nginx proxy |
-| Backend API with authentication and RAG integration | ChromaDB vector memory system fully functional | Production-ready reverse proxy configuration |
-| SQLite schema with ChromaDB fully operational | Smart Model Router for intelligent model selection | JWT-based user management with role-based access |
-| Campaign Management API | Memory Search & Context Retrieval | RAG-Powered AI Responses |
-| Vector Embeddings | Persistent AI Memory | Context-Aware Generation |
-| API Response Consistency | Character Creation Schema | 100% User Experience Tests |
-| Rule Book Integration | WoD Books Processing | PDF Parser + RAG Import |
-| Invite System | Quick Import Tools | Integration Testing Suite |
-
-</div>
-
-### Phase 3A Status 🚧 (v0.6.0 - Frontend Foundation)
-
-<div align="center">
-
-| **✅ WORKING NOW** | **🚧 UI EXISTS (Not Wired)** | **📋 TODO** |
-|:---:|:---:|:---:|
-| **Login/Register** - Fully functional | Character creation form (no backend) | Character system wiring |
-| **Admin Panel** - User management works | Location chat UI (static) | WebSocket real-time chat |
-| **Invite System** - Secure registration | AI chat interface (placeholder) | LM Studio integration |
-| **Gothic Theme** - Immersive atmosphere | Rule book search UI (no data) | ChromaDB RAG hookup |
-| **Campaign Editing** - Name/desc updates | Character selection (no chars) | Full gameplay loop |
-| Campaign list with themes | Message history display (mock) | Session management |
-| Role-based access (admin/player) | OOC chat room (not live) | Campaign deletion |
-| JWT authentication | Campaign details page | NPC/Character management |
-| User bans (temp/permanent) | Location management UI | Dice rolling system |
-| Password reset by admin | Game-specific emojis/colors | Advanced features |
-| **👑 Admin Panel** (v0.6.1) | **User Moderation** (v0.6.1) | **Character Management** (v0.6.1) |
-| Admin-only panel UI (720 lines) | Temporary & permanent bans | Convert character to NPC |
-| User table with status | Ban duration tracking | Kill character with death types |
-| Edit user profiles | Password reset by admin | Character moderation log |
-| Moderation audit log | Auto-expiring temp bans | Soft/Mid/Horrible death options |
-| Refactored architecture | All actions logged | Admin-controlled NPCs |
-| **🦇 Gothic Horror Theme** (v0.6.2) | **Theme-Specific Effects** (v0.6.2) | **Immersive Atmosphere** (v0.6.2) |
-| Complete CSS theme (352 lines) | Vampire: Dripping blood | Gothic fonts (Cinzel/Crimson Text) |
-| GothicBox components (194 lines) | Mage: Magic sparkles | Clean login/register screens |
-| Gothic Showcase (546 lines) | Werewolf: Bite marks | Campaign-aware theming |
-| Dark fantasy aesthetics | Theme auto-switches by game | Larger logo with glow |
-| GPU-accelerated animations | Effects only when appropriate | No emojis on buttons |
-| **📝 Campaign Editing** (v0.6.3) | **Game System Themes** (v0.6.3) | **Enhanced UI** (v0.6.3) |
-| Edit campaign names (inline) | 🩸 Vampire - Blood Red | Click-to-edit interface |
-| Edit descriptions (textarea) | ✨ Mage - Mystic Purple | Game-specific emojis |
-| Permission checks (creator/admin) | 🐺 Werewolf - Amber Gold | Color-coded campaign cards |
-| Real-time UI updates | 🧚 Changeling - Fae Green | Save/cancel buttons |
-| Backend PUT endpoint working | 🏹 Hunter - Silver | Instant save feedback |
-| **📱 Responsive Design** (v0.6.4) | **Navigation Fixes** (v0.6.4) | **Mobile Optimization** (v0.6.4) |
-| Full mobile support (315 lines CSS) | Browser back button fixed | Touch-friendly UI (44px targets) |
-| Collapsible sidebars on mobile | Exit confirmation dialogs | Viewport meta tag configured |
-| Mobile-first breakpoints | Proper navigation history | Safe area insets (notches) |
-| Tablet & desktop layouts | Character exit warnings | Hamburger menu navigation |
-| Responsive chat interface | Page state preservation | Swipeable panels |
-| **🎨 UI/UX Polish** (v0.6.5) | **Custom Dialogs** (v0.6.5) | **In-App Docs** (v0.6.5) |
-| Custom ConfirmDialog (140 lines) | Cannot be disabled by browser | README modal (306 lines) |
-| Gothic-themed confirmations | Matches dark fantasy theme | Markdown parser built-in |
-| Touch-friendly 44px buttons | Keyboard accessible (auto-focus) | Backend API endpoint |
-| Footer component (182 lines) | Smooth fade-in animations | Docker volume mount |
-| Version info & links | Blood-red border with glow | In-app documentation viewer |
-
-</div>
-
-### Documentation Reorganization ✅
-
-<div align="center">
-
-| **docs/ Directory** | **11 Files** | **3,701 Lines** |
-|:---:|:---:|:---:|
-| Complete documentation index | Version history (CHANGELOG.md) | Contribution guidelines |
-| Docker setup guide | GitHub collaboration guide | Phase completion reports |
-| Frontend/Backend audit | System status reports | Manual testing guides |
-| Professional structure | Cleaner project root | Easy navigation |
-
-</div>
-
----
-
-## Development Roadmap
-
-<div align="center">
-
-### Phase 3B - Enhanced Frontend Features (NEXT) 🎯
-
-| **Real-Time Features** | **Advanced UI/UX** | **Mobile Experience** |
-|:---:|:---:|:---:|
-| WebSocket integration | Advanced character sheet builder | Mobile-responsive design |
-| Live player status updates | Drag-and-drop dice rolling | Touch-optimized controls |
-| Instant notifications | Combat tracker interface | Progressive Web App (PWA) |
-| Real-time message delivery | Inventory management UI | Offline capabilities |
-| Typing indicators | Quest tracking system | Mobile navigation |
-
-### Phase 4 - RPG Mechanics Integration
-
-| **White Wolf Character System** | **Narrative Combat** | **World Building with Admin Control** |
-|:---:|:---:|:---:|
-| Advanced WoD character sheets | Turn-based narrative combat | Location & NPC management |
-| d10 dice pools with difficulty | XP cost AI assistance | Admin verification system |
-| Character progression tracking | Environmental factors | Procedural generation with approval |
-| Skill checks and modifiers | Initiative system | World state management |
-
-### Phase 5 - Advanced Features
-
-| **Multiplayer Support** | **Advanced AI** | **Content Creation** |
-|:---:|:---:|:---:|
-| Real-time collaboration | Enhanced NPC behavior | Custom rule system support |
-| Session management | Dynamic world events | Community content sharing |
-| Voice integration | Advanced storytelling | Mod support |
-| Video chat for remote play | Multi-language support | Campaign templates |
-
-</div>
-
----
-
-## Architecture Overview
-
-<div align="center">
-
-```mermaid
-graph TB
-    A[Frontend React App] --> B[Nginx Reverse Proxy]
-    B --> C[Flask Backend API]
-    C --> D[Smart Model Router]
-    C --> E[RAG Service]
-    C --> F[SQLite Database]
-    C --> G[Redis Cache]
-    E --> H[ChromaDB Vector DB]
-    D --> I[LM Studio Models]
-    D --> J[Ollama Models]
-    K[GPU Monitor] --> C
-    L[System Monitor] --> C
-```
-
-</div>
-
----
-
-## Game Systems Supported
-
-<div align="center">
-
-| **D&D 5e** | **White Wolf** | **Custom Systems** |
-|:---:|:---:|:---:|
-| Complete D20 system integration | D10 dice pool mechanics | Flexible rule system support |
-| Character classes and races | Vampire, Werewolf, Mage support | Custom dice mechanics |
-| Spell and ability management | Storytelling system integration | Homebrew rule compatibility |
-
-</div>
-
----
-
-## Getting Started
-
-### Prerequisites
-
-- Docker & Docker Compose
-- 16GB+ RAM (recommended)
-- NVIDIA GPU with 16GB+ VRAM (for optimal AI performance)
-- Linux/macOS/Windows with WSL2
-
-### Installation
-
-```bash
-# Clone the repository
-git clone https://github.com/Somnius/shadowrealms-ai.git
-cd shadowrealms-ai
-
-# Start all services
-docker-compose up -d
-
-# Check service status
-docker-compose ps
-```
-
-### First Steps
-
-1. **Access the Frontend**: Open http://localhost:3000
-2. **Create Your Campaign**: Set up your first RPG campaign
-3. **Configure AI Models**: Ensure LM Studio and Ollama are running
-4. **Start Playing**: Begin your AI-assisted RPG adventure!
+- [docs/README.md](docs/README.md): index of everything in `docs/`
+- Wiki: [Installation](https://github.com/Somnius/shadowrealms-ai/wiki/Installation), [Configuration](https://github.com/Somnius/shadowrealms-ai/wiki/Configuration), [Rules Editions](https://github.com/Somnius/shadowrealms-ai/wiki/Rules-Editions), [AI Models](https://github.com/Somnius/shadowrealms-ai/wiki/AI-Models), [Architecture](https://github.com/Somnius/shadowrealms-ai/wiki/Architecture), [Security](https://github.com/Somnius/shadowrealms-ai/wiki/Security), [Troubleshooting](https://github.com/Somnius/shadowrealms-ai/wiki/Troubleshooting)
+- [docs/CHANGELOG.md](docs/CHANGELOG.md): every release
+- [docs/ROADMAP_v0.9.md](docs/ROADMAP_v0.9.md): the v0.9 plan and what's next
 
 ---
 
 ## Contributing
 
-<div align="center">
+Contributions are welcome. Read [docs/CONTRIBUTING.md](docs/CONTRIBUTING.md) first, and use [GitHub Issues](https://github.com/Somnius/shadowrealms-ai/issues) for bugs and feature ideas.
 
-We welcome contributions from the RPG and AI communities! Whether you're a developer, game designer, or AI enthusiast, there's a place for you in ShadowRealms AI.
+## Security
 
-[![Contributing](https://img.shields.io/badge/Contributing-Welcome-green.svg)](CONTRIBUTING.md)
-[![Issues](https://img.shields.io/badge/Issues-Report-red.svg)](https://github.com/Somnius/shadowrealms-ai/issues)
-[![Discussions](https://img.shields.io/badge/Discussions-Join-blue.svg)](https://github.com/Somnius/shadowrealms-ai/discussions)
-
-</div>
-
----
+Please don't open a public issue for a vulnerability. Report it privately from the Security tab of this repository; [SECURITY.md](SECURITY.md) has the details.
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+MIT, see [LICENSE](LICENSE).
+
+## Credits
+
+- Made with ❤️ for tabletop RPG games by **Lefteris Iliadis** ([Somnius](https://github.com/Somnius), @SomniusX).
+- Built with the help of [Cursor AI](https://cursor.sh).
+- Greek Storyteller model: Llama-Krikri by ILSP. Embeddings: bge-m3 by BAAI.
+
+## Disclaimer
+
+Not affiliated with or endorsed by Paradox Interactive or White Wolf/Renegade; World of Darkness and Vampire: The Masquerade are their trademarks. All glyphs and sigils are original; no rulebook text is included — bring your own books.
 
 ---
 
-<div align="center">
+## Demo video
 
-### Star this repository if you find it helpful!
+[![ShadowRealms AI Demo](https://img.youtube.com/vi/9RGGb-F5Y2M/maxresdefault.jpg)](https://www.youtube.com/watch?v=9RGGb-F5Y2M)
 
-**Made with ❤️ for the RPG community**
+**[▶️ Watch the demo on YouTube](https://www.youtube.com/watch?v=9RGGb-F5Y2M)**
 
-[![GitHub stars](https://img.shields.io/github/stars/Somnius/shadowrealms-ai?style=social)](https://github.com/Somnius/shadowrealms-ai)
-[![GitHub forks](https://img.shields.io/github/forks/Somnius/shadowrealms-ai?style=social)](https://github.com/Somnius/shadowrealms-ai)
+> **Version 0.7.0 Preview:** This demo showcases the frontend interface in its current state. Please note that not all features are fully functional yet—this is a first look at the user interface and design direction of ShadowRealms AI.
 
-</div>
+The current interface is very different; see the screenshots at the top.
