@@ -14,7 +14,7 @@ import { DesignProvider, ToastProvider, Button, Glyph, Modal } from './design';
 ```
 
 - Importing `./design` loads `tokens.css`. Custom properties go on `:root` and are all named `--sr-*`, so on their own they change nothing. Every element style is scoped under `.sr-app`, so anything rendered outside it keeps its own look.
-- `DesignProvider` renders `<div class="sr-app" data-motion data-line lang>` and a framer-motion `MotionConfig`.
+- `DesignProvider` renders `<div class="sr-app" data-motion data-line lang>` and a Motion `MotionConfig`.
 - Modals, drawers and toasts render through `Portal` into their own `.sr-app.sr-portal` node on `<body>`, so they get the tokens too.
 
 ## Fonts
@@ -61,7 +61,7 @@ All contrast figures were computed with the WCAG formula against `#0f0f1e`, `#0f
 - Preference: `'system' | 'reduced' | 'full'`. The OS `prefers-reduced-motion` always wins. The manual toggle (`<MotionToggle/>`, or `useMotionPreference().setPreference`) can only add a reduction on top of it, and the choice is stored in `localStorage.sr_motion` on a best-effort basis.
 - CSS: `.sr-app[data-motion=reduced]` and `@media (prefers-reduced-motion)` cut animations and transitions to 0.01 ms. Glyph loops are set to `animation: none`. JS: `MotionConfig reducedMotion="always"`, and the components also skip their framer transitions.
 - Ambient effects (`FogLayer`, `CandleGlow`) pause through `data-paused` when the tab is hidden (`visibilitychange`) or the element is off-screen (`IntersectionObserver`). Only `transform` and `opacity` are animated. Never put fog behind chat text.
-- framer-motion is used through `LazyMotion` + `m` + `domAnimation`, so the full `motion` bundle isn't pulled in.
+- Motion (`motion/react`, formerly framer-motion) is used through `LazyMotion` + `m` + `domAnimation`, so the full `motion` bundle isn't pulled in.
 
 ## Glyphs (97, original, hand-authored)
 
@@ -110,8 +110,8 @@ All contrast figures were computed with the WCAG formula against `#0f0f1e`, `#0f
 
 - `FogLayer` and `CandleGlow`: CSS only. They use no image assets, are aria-hidden, and pause or go static as described under motion.
 - `BloodDrip`: a one-shot drip for a botch or a bestial failure. `playKey` replays it and `onDone` fires when it ends. Under reduced motion it shows the final drips with no movement.
-- `SigilReveal`: the original ShadowRealms sigil. The thorned ring is built with `d3-shape` (`lineRadial`), each stroke is drawn in with framer-motion `pathLength`, then the drop fills. It plays once it's in view.
-- `DiceRollViz`: a d10 pool visualisation. Takes either the API `roll_result` (`result={…}`, V5 or classic) or raw dice (`edition`, `normal`, `hunger`, `dice`, `difficulty`, `rerolls`, `willpower`). `d3-scale` handles the layout (`scaleBand`) and the success meter (`scaleLinear`), `d3-shape` draws the crit-pair arcs, React renders the SVG, and framer-motion staggers the tumble. It's a `<figure>` whose caption states the result in words and lists every die. Server flags win over local maths. `diceAnalysis.js` mirrors `backend/services/v5_dice.py resolve_v5` and `docs/dice-old-wod.md`.
+- `SigilReveal`: the original ShadowRealms sigil. The thorned ring is built with `d3-shape` (`lineRadial`), each stroke is drawn in with Motion `pathLength`, then the drop fills. It plays once it's in view.
+- `DiceRollViz`: a d10 pool visualisation. Takes either the API `roll_result` (`result={…}`, V5 or classic) or raw dice (`edition`, `normal`, `hunger`, `dice`, `difficulty`, `rerolls`, `willpower`). `d3-scale` handles the layout (`scaleBand`) and the success meter (`scaleLinear`), `d3-shape` draws the crit-pair arcs, React renders the SVG, and Motion staggers the tumble. It's a `<figure>` whose caption states the result in words and lists every die. Server flags win over local maths. `diceAnalysis.js` mirrors `backend/services/v5_dice.py resolve_v5` and `docs/dice-old-wod.md`.
 
 ## Integration layer (phase 4, `atmosphere/Ambience.jsx`)
 
@@ -138,7 +138,7 @@ All contrast figures were computed with the WCAG formula against `#0f0f1e`, `#0f
 |---|---|---|
 | `d3-shape` 3.2 (+ `d3-path`) | ISC, © Mike Bostock | sigil ring, dice crit arcs |
 | `d3-scale` 4.0 (+ `d3-array`, `d3-format`, `d3-interpolate`, `d3-color`, `d3-time`, `d3-time-format`, `internmap`) | ISC, © Mike Bostock | dice layout and meter |
-| `framer-motion` 10 (already a dependency) | MIT | overlays, reveals |
+| `motion` 14 (formerly `framer-motion`) | MIT | overlays, reveals |
 | Cinzel, Alegreya, EB Garamond, Inter, JetBrains Mono | SIL OFL 1.1 | fonts, loaded from Google Fonts |
 
 All glyph and sigil artwork in this folder is original and falls under the repository's licence. No icon set was copied.

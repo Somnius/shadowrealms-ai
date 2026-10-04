@@ -1,5 +1,5 @@
 import React, { useId, useMemo, useRef } from 'react';
-import { LazyMotion, domAnimation, m } from 'framer-motion';
+import { LazyMotion, domAnimation, m } from 'motion/react';
 import { scaleBand, scaleLinear } from 'd3-scale';
 import { line, curveNatural } from 'd3-shape';
 import DieFace from '../glyphs/DieFace';
@@ -80,7 +80,7 @@ export function describeRoll(a, labels = outcomeLabels()) {
 
 /**
  * DiceRollViz: d10 pool visualisation (d3-scale for layout, d3-shape for the crit-pair arcs,
- * React renders the SVG, framer-motion staggers the reveal).
+ * React renders the SVG, Motion staggers the reveal).
  *
  * Either pass the API `result` (roll_result of /roll, V5 or classic), or raw dice:
  *   V5:      edition="v5" normal={[...]} hunger={[...]} difficulty={successes needed}

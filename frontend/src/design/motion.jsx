@@ -2,13 +2,13 @@
  * Motion preferences + small runtime hooks shared by the design system.
  *
  * - DesignProvider renders the opt-in `.sr-app` root with data-motion / data-line / lang,
- *   and a framer-motion MotionConfig so JS animations follow the same preference.
+ *   and a Motion MotionConfig so JS animations follow the same preference.
  * - Preference is 'system' (follow prefers-reduced-motion), 'reduced' or 'full'.
  *   The OS setting always wins: 'full' only means "don't add a reduction on top of the OS".
  *   A manual choice is remembered in localStorage (best effort).
  */
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
-import { MotionConfig } from 'framer-motion';
+import { MotionConfig } from 'motion/react';
 import './components/forms.css'; // MotionToggle reuses the Switch styles
 
 const STORAGE_KEY = 'sr_motion';

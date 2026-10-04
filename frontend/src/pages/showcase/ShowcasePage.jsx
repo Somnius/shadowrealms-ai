@@ -88,7 +88,7 @@ function FooterCta({ onBack }) {
         <p>
           {t(
             'showcase:cta.credits',
-            'Fonts: Cinzel, Alegreya, EB Garamond, Inter and JetBrains Mono (SIL Open Font License). Charts: d3 (ISC). Motion: framer-motion (MIT). Every glyph and sigil is original artwork.'
+            'Fonts: Cinzel, Alegreya, EB Garamond, Inter and JetBrains Mono (SIL Open Font License). Charts: d3 (ISC). Animation: Motion (MIT). Every glyph and sigil is original artwork.'
           )}
         </p>
         <p>
