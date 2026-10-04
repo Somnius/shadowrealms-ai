@@ -1,0 +1,125 @@
+{
+  "controls": {
+    "clear": "Clear label",
+    "intentGroup": "Intent",
+    "oocGroup": "In character?",
+    "save": "Save label"
+  },
+  "error": {
+    "clear": "Could not clear the label",
+    "load": "Could not load messages",
+    "save": "Could not save the label"
+  },
+  "eval": {
+    "busy": "An evaluation is already running.",
+    "failed": "Could not start the evaluation",
+    "help": "Runs Laya on every labelled message, the same way the OOC monitor does, and compares. The report keeps message numbers only; the text is looked up when you open it. The same report from a terminal: python scripts/laya_eval.py in the backend container.",
+    "run": "Run evaluation",
+    "running": "Running…",
+    "started": "Evaluation started.",
+    "title": "Evaluation"
+  },
+  "filter": {
+    "all": "All",
+    "allCampaigns": "All chronicles",
+    "allLanguages": "All languages",
+    "campaign": "Chronicle",
+    "language": "Language",
+    "status": "Show"
+  },
+  "history": {
+    "open": "Open",
+    "status": "Status",
+    "title": "Earlier runs",
+    "when": "Started"
+  },
+  "home": "label player chat and measure how well the Laya classifier does on it.",
+  "intent": {
+    "combat": "Combat",
+    "dice": "Dice",
+    "general": "General",
+    "roleplay": "Roleplay",
+    "rules_question": "Rules question"
+  },
+  "keys": {
+    "intent": "intent",
+    "move": "next / previous",
+    "ooc": "in / out of character",
+    "save": "save"
+  },
+  "lang": {
+    "el": "Greek",
+    "en": "English",
+    "unknown": "Unknown"
+  },
+  "lead": "Laya is the small classifier behind the OOC monitor and intent routing. Label real chat here, then run an evaluation to see how often Laya agrees with you.",
+  "loading": "Loading…",
+  "nav": "Laya",
+  "ooc": {
+    "in_character": "In character",
+    "out_of_character": "Out of character"
+  },
+  "page": {
+    "next": "Next",
+    "of": "Page {{page}} of {{pages}}",
+    "prev": "Previous"
+  },
+  "progress": {
+    "balance": "Labels so far",
+    "eligible": "Player chat messages",
+    "labelled": "Labelled",
+    "scanLimit": "Only the newest 5000 messages are listed.",
+    "stale": "Text changed since labelled",
+    "title": "Progress",
+    "unlabelled": "Not labelled"
+  },
+  "queue": {
+    "empty": "No messages match these filters.",
+    "emptyTitle": "Nothing here",
+    "help": "Player chat only (no Storyteller replies, dice or system rows). Label what the player wrote: is it the character speaking or acting, and what is it about.",
+    "listLabel": "Messages to label",
+    "title": "Label queue"
+  },
+  "report": {
+    "accuracy": "Accuracy {{acc}} ({{correct}} of {{n}})",
+    "byLanguage": "By language (detected)",
+    "ci": "95% interval {{lo}}–{{hi}}",
+    "col": {
+      "human": "Human",
+      "intentAcc": "Intent accuracy",
+      "label": "Label",
+      "language": "Language",
+      "n": "n (labelled)",
+      "oocAcc": "In-character accuracy",
+      "precision": "Precision",
+      "predicted": "Predicted",
+      "recall": "Recall",
+      "text": "Text"
+    },
+    "confusion": "Confusion matrix, {{title}}: rows = human label, columns = Laya",
+    "deleted": "(message deleted)",
+    "errors": "Laya errors",
+    "failed": "The last evaluation failed. See the backend logs.",
+    "goldVsPred": "Human \\ Laya",
+    "intentTitle": "Intent",
+    "macroF1": "macro-F1 {{f1}}",
+    "misclassified": "Misclassified ({{n}})",
+    "model": "Model",
+    "n": "Messages evaluated",
+    "nTooSmall": "(too few)",
+    "noMisses": "None.",
+    "none": "No evaluation yet. Label some messages, then run one.",
+    "oocTitle": "In character (OOC monitor)",
+    "running": "Evaluation running…",
+    "stale": "Stale labels skipped",
+    "threshold": "In-character threshold",
+    "tooSmall": "Sample too small: fewer than {{total}} messages, or a label with fewer than {{per}}. Read these numbers as examples, not as rates.",
+    "when": "Run at"
+  },
+  "state": {
+    "labelled": "Labelled",
+    "stale": "Text changed since labelled",
+    "unlabelled": "Unlabelled"
+  },
+  "title": "Laya: labels and evaluation"
+}
