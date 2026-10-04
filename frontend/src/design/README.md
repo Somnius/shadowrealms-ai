@@ -1,7 +1,7 @@
 # ShadowRealms design system (`src/design`)
 
-Part A of the v0.9 UI work: tokens, glyphs, components, motion and atmosphere. Nothing in the
-app imports it yet. The shell work (Part B) opts in by wrapping the app in `<DesignProvider>`.
+Tokens, glyphs, components, motion and atmosphere for the whole app (built in v0.9). The app
+shell wraps everything in `<DesignProvider>` (`src/app/App.jsx`).
 
 ```jsx
 import { DesignProvider, ToastProvider, Button, Glyph, Modal } from './design';
@@ -13,19 +13,13 @@ import { DesignProvider, ToastProvider, Button, Glyph, Modal } from './design';
 </DesignProvider>
 ```
 
-- Importing `./design` loads `tokens.css`. Custom properties go on `:root` and are all named `--sr-*`, so on their own they change nothing. Every element style is scoped under `.sr-app`, so legacy pages keep their current look.
+- Importing `./design` loads `tokens.css`. Custom properties go on `:root` and are all named `--sr-*`, so on their own they change nothing. Every element style is scoped under `.sr-app`, so anything rendered outside it keeps its own look.
 - `DesignProvider` renders `<div class="sr-app" data-motion data-line lang>` and a framer-motion `MotionConfig`.
 - Modals, drawers and toasts render through `Portal` into their own `.sr-app.sr-portal` node on `<body>`, so they get the tokens too.
 
 ## Fonts
 
-All fonts are SIL OFL 1.1. Add this to `public/index.html` when the shell lands (deliberately not done here):
-
-```html
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=Alegreya:wght@500;700&family=EB+Garamond:ital,wght@0,400..600;1,400..600&family=Inter:wght@400..600&family=JetBrains+Mono:wght@400&display=swap">
-```
+All fonts are SIL OFL 1.1. They are loaded from Google Fonts by `public/index.html` (preconnect plus one stylesheet link for Cinzel, Alegreya, EB Garamond, Inter and JetBrains Mono). nginx's Content-Security-Policy allows `fonts.googleapis.com` and `fonts.gstatic.com` for that.
 
 | Token | Font | Greek |
 |---|---|---|
@@ -90,7 +84,7 @@ All contrast figures were computed with the WCAG formula against `#0f0f1e`, `#0f
 | clan | clan-banu-haqim, -brujah, -gangrel, -hecata, -lasombra, -malkavian, -ministry, -nosferatu, -toreador, -tremere, -tzimisce, -ventrue, -ravnos, -salubri, -caitiff, -thin-blood |
 | discipline | disc-animalism, -auspex, -blood-sorcery, -celerity, -dominate, -fortitude, -obfuscate, -oblivion, -potence, -presence, -protean, -thin-blood-alchemy |
 
-**Originality rule.** Clan and discipline sigils are abstract, and none of them redraws an official White Wolf / Paradox logo. There is no rose (Toreador is a frame and a brushstroke), no dragon (Tzimisce is a ribcage), no rune (Tremere is a retort), no eye for Salubri (an open palm), no crown for Ventrue (a signet ring), and no circle-A for Brujah (a fractured ring). Before merge, a human reviewer should still put each one side by side with the official marks. That check hasn't been done yet.
+**Originality rule.** Clan and discipline sigils are abstract, and none of them redraws an official White Wolf / Paradox logo. There is no rose (Toreador is a frame and a brushstroke), no dragon (Tzimisce is a ribcage), no rune (Tremere is a retort), no eye for Salubri (an open palm), no crown for Ventrue (a signet ring), and no circle-A for Brujah (a fractured ring). A human reviewer should still put each one side by side with the official marks; that check hasn't been done yet (it's on the roadmap).
 
 ## Components
 
@@ -132,7 +126,7 @@ All contrast figures were computed with the WCAG formula against `#0f0f1e`, `#0f
 
 ## Playground
 
-`DesignPlayground.jsx` is a living style guide covering all glyphs, components, the motion toggle, game-line switching, EN/EL text and dice outcomes. It isn't mounted anywhere. Part B can route it at `/showcase`.
+`DesignPlayground.jsx` is a living style guide covering all glyphs, components, the motion toggle, game-line switching, EN/EL text and dice outcomes. It is mounted at **`/showcase/design`**. The guided theme preview at **`/showcase`** (`src/pages/showcase/`) walks through the same pieces for visitors. Both routes are public.
 
 ## Tests
 
