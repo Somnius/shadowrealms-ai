@@ -8,7 +8,9 @@ Watch the ShadowRealms AI platform in action:
 
 **[▶️ Watch on YouTube](https://www.youtube.com/watch?v=9RGGb-F5Y2M)**
 
-> **Note:** This demo showcases **Version 0.8.0** - an early preview of the frontend interface. While not all features are fully functional yet, this provides a first look at the user interface, authentication system, and overall design direction of ShadowRealms AI.
+> **Note:** This demo showcases **Version 0.7.0** - an early preview of the frontend interface. While not all features are fully functional yet, this provides a first look at the user interface, authentication system, and overall design direction of ShadowRealms AI.
+
+> The interface in this video predates v0.9.0 ("Into the Night"), which replaced the UI. For the current interface see the screenshots in the main [README](../README.md).
 
 ### About This Demo
 

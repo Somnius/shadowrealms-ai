@@ -335,7 +335,7 @@ This philosophy ensures:
 - [Phase 3A Interface Wireframe (ASCII)](#phase-3a-interface-wireframe-ascii)
 - [Next Steps for Phase 3A](#next-steps-for-phase-3a)
 
-### **🚀 Phase 3B: Advanced Campaign & Character Systems** ✅ STRUCTURE ORGANIZED (v0.8.0)
+### **🚀 Phase 3B: Advanced Campaign & Character Systems** ✅ STRUCTURE ORGANIZED (v0.7.9)
 - [Phase 3B Overview](#phase-3b-overview)
 - [Security & Testing Foundation](#security--testing-foundation)
 - [Location System Design](#location-system-design)
@@ -5974,11 +5974,11 @@ After comprehensive testing and debugging, we achieved **100% User Experience Te
 
 ---
 
-## 🚀 Phase 3B: Advanced Campaign & Character Systems (v0.8.0)
+## 🚀 Phase 3B: Advanced Campaign & Character Systems (v0.7.0)
 
 **Status:** 🚧 IN PROGRESS - Structure Organized  
 **Start Date:** 2025-10-24  
-**Current Version:** 0.8.0
+**Current Version:** 0.7.0
 
 ### Phase 3B Overview
 
@@ -6478,7 +6478,7 @@ Reason: [Admin's stated reason]
 
 ---
 
-### Files Created/Modified (v0.8.0)
+### Files Created/Modified (v0.7.0)
 
 **Backend:**
 - `backend/database.py` - Schema migrations (pending)
@@ -6502,14 +6502,14 @@ Reason: [Admin's stated reason]
 **Documentation:**
 - `docs/PHASE3B_IMPLEMENTATION.md` - Complete specification ✅
 - `docs/PLANNING.md` - Detailed summary ✅
-- `docs/CHANGELOG.md` - Version 0.8.0 entry ✅
+- `docs/CHANGELOG.md` - Version 0.7.0 entry ✅
 - `scripts/run-frontend-tests.sh` - Test runner script ✅
 
 ---
 
 **Last Updated:** 2026-03-25  
 **Next Milestone:** Location System Implementation  
-**Version:** 0.8.0
+**Version:** 0.7.0
 
 ---
 
