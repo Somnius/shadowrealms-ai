@@ -1,369 +1,106 @@
 # Contributing to ShadowRealms AI
 
-Thank you for your interest in contributing to ShadowRealms AI! This document provides guidelines and information for contributors.
+Thanks for your interest in ShadowRealms AI. This is a small, self-hosted hobby project; contributions are welcome, and this page explains how the repository works so a change can go in smoothly.
 
-## 🤝 **Table of Contents**
+## Contents
 
-- [Code of Conduct](#code-of-conduct)
-- [Getting Started](#getting-started)
-- [Development Setup](#development-setup)
-- [Contribution Types](#contribution-types)
-- [Code Standards](#code-standards)
-- [Testing Guidelines](#testing-guidelines)
-- [Pull Request Process](#pull-request-process)
-- [Release Process](#release-process)
-- [Community Guidelines](#community-guidelines)
-- [Getting Help](#getting-help)
+- [Code of conduct](#code-of-conduct)
+- [Development setup](#development-setup)
+- [Project rules](#project-rules)
+- [Tests and CI](#tests-and-ci)
+- [Commits and pull requests](#commits-and-pull-requests)
+- [Release process](#release-process)
+- [Getting help](#getting-help)
 
-## 📜 **Code of Conduct**
+## Code of conduct
 
-### **Our Pledge**
-We are committed to providing a welcoming and inspiring community for all. By participating in this project, you agree to uphold our Code of Conduct.
+Be respectful and constructive, assume good intent, and keep discussion about the work. Harassment, discrimination and spam aren't tolerated.
 
-### **Our Standards**
-- **Be respectful** and inclusive of all contributors
-- **Be collaborative** and open to different viewpoints
-- **Be constructive** in feedback and discussions
-- **Be professional** in all interactions
-- **Be helpful** to newcomers and experienced developers alike
+## Development setup
 
-### **Unacceptable Behavior**
-- Harassment, discrimination, or offensive behavior
-- Spam, trolling, or disruptive conduct
-- Violation of privacy or confidentiality
-- Any form of intimidation or coercion
-
-## 🚀 **Getting Started**
-
-### **Prerequisites**
-- **Docker and Docker Compose** (primary workflow — Python and Node run inside containers)
-- Git
-- Basic understanding of RPG systems and AI/ML concepts
-
-Optional: local Python 3.11+ / Node 18+ only if you deliberately develop **outside** Docker (not the default path for this repo).
-
-### **First Steps**
-1. **Fork the repository** on GitHub
-2. **Clone your fork** locally
-3. **Set up the development environment** (see Development Setup)
-4. **Create a feature branch** for your work
-5. **Make your changes** following our standards
-6. **Test thoroughly** before submitting
-7. **Submit a pull request** with clear description
-
-## 🛠️ **Development Setup**
-
-### **Quick Setup (installs run inside containers)**
-
-Dependencies are installed **in the images** at build time (`backend/Dockerfile` runs `pip install`, `frontend/Dockerfile` runs `npm install`). The compose file bind-mounts source trees; the frontend service keeps `node_modules` in a **container volume** (`/app/node_modules`), so **do not rely on host `npm install`** for the app that Docker serves.
+Everything runs in Docker (Compose v2, `docker compose`); Python and Node are installed inside the images.
 
 ```bash
-# Clone your fork
-git clone https://github.com/Somnius/shadowrealms-ai.git
+git clone https://github.com/<you>/shadowrealms-ai.git
 cd shadowrealms-ai
-
-# Environment variables (required for compose)
-cp env.template .env
-# Edit .env with your configuration
-
-# Build images and start stack (backend, frontend, DB, etc.)
-docker compose up --build
+cp env.template .env          # fill in secrets, see docs/DOCKER_ENV_SETUP.md
+./docker-up.sh                # starts the stack
+./scripts/build-frontend.sh   # production build, served by nginx at http://localhost/
 ```
 
-### **Adding or refreshing dependencies (inside running containers)**
-
-After you edit `backend/requirements.txt` or `frontend/package.json`:
+For frontend work with live reload, run the dev server (it is behind the `dev` compose profile) and point nginx at it, as described in [DOCKER_ENV_SETUP.md](DOCKER_ENV_SETUP.md#frontend-production-build-vs-dev-server):
 
 ```bash
-# Backend — reinstall from the updated requirements file
-docker compose exec backend pip install --no-cache-dir -r /app/requirements.txt
-
-# Frontend — refresh node_modules inside the frontend container
-docker compose exec frontend npm install
+docker compose --profile dev up -d frontend
 ```
 
-Then restart the affected service if needed (`docker compose restart backend` / `frontend`), or rebuild for a clean image:
+For backend work with auto-reload, set `APP_SERVER=flask` and `FLASK_ENV=development` in `.env` and run `docker compose up -d backend`. The backend source is bind-mounted, so gunicorn only needs a `docker compose restart backend` after a change.
+
+**Dependencies.** After editing `backend/requirements.txt` or `frontend/package.json`, rebuild the image: `docker compose build backend` or `docker compose --profile dev build frontend`. Commit `frontend/package-lock.json` with any `package.json` change.
+
+## Project rules
+
+These are checked in review, and most of them in CI.
+
+- **Translations.** All UI text goes through i18n and must exist in both English and Greek (`frontend/src/i18n/locales/en` and `el`). `frontend/src/i18n/__tests__/locales.test.js` fails if a key, plural form or `{{placeholder}}` is missing on either side, or if code uses a key that the English file doesn't have.
+- **Database schema.** A schema change goes into both `backend/init_postgresql_schema.sql` (fresh installs) and `migrate_db()` in `backend/database.py` (existing databases). CI applies the SQL file, runs `migrate_db()` twice, and fails if the schema changes.
+- **Rules data.** `frontend/src/rules/classic.json` and `v5.json` are verbatim copies of `docs/rules/classic.json` and `docs/rules/v5.json`; change the docs copy and copy it over. The specs are [rules/CLASSIC_REVISED.md](rules/CLASSIC_REVISED.md) and [rules/V5.md](rules/V5.md).
+- **Environment variables.** A new variable goes into `docker-compose.yml` (otherwise it never reaches the container), `env.template` and the table in [DOCKER_ENV_SETUP.md](DOCKER_ENV_SETUP.md).
+- **Game content.** Glyphs and symbols are original art; don't add official White Wolf / Paradox logos or copyrighted book text to the repository.
+- **Style.** Follow the code around you. Python: PEP 8, small functions, docstrings where the reason isn't obvious. React: function components with hooks; reuse the design system in `frontend/src/design/` (see its [README](../frontend/src/design/README.md)).
+
+## Tests and CI
+
+GitHub Actions (`.github/workflows/ci.yml`) runs on pull requests and on pushes to `main` that touch code:
+
+| Job | What it runs |
+|-----|--------------|
+| Python | `python -m compileall -q backend monitoring books scripts tests` and `ruff check --select E9,F63,F7,F82` (syntax errors and undefined names only) |
+| Backend unit tests | `python -m pytest -q backend/tests/unit` (no database or AI needed) |
+| PostgreSQL schema | applies `init_postgresql_schema.sql`, runs `migrate_db()` twice, diffs the schema |
+| Frontend | `npx react-scripts test --watchAll=false`, then `npm run build` |
+
+CodeQL (`.github/workflows/codeql.yml`) scans Python and JavaScript, and Dependabot opens monthly update PRs for pip, npm, Docker and GitHub Actions.
+
+Run the same checks locally:
 
 ```bash
-docker compose build --no-cache backend frontend
-docker compose up -d
+# Backend unit tests, inside the running backend container
+docker compose exec backend python -m pytest -q tests/unit
+
+# Frontend tests, in a one-off container (extra args go to Jest)
+./scripts/run-frontend-tests.sh
+./scripts/run-frontend-tests.sh src/features/chat
+
+# Python lint, as CI does
+docker run --rm -v "$PWD":/src -w /src python:3.12-slim sh -c \
+  'pip install -q ruff && ruff check --select E9,F63,F7,F82 backend monitoring books scripts tests'
 ```
 
-### **Running tests inside containers**
+The scripts in the top-level `tests/` folder are older integration scripts that need a running stack; CI doesn't run them. See [tests/README.md](../tests/README.md) and [frontend/TESTING.md](../frontend/TESTING.md).
 
-```bash
-# Frontend (example: CI-style, no watch)
-docker compose exec frontend npm run test:ci
+New logic should come with tests: backend unit tests in `backend/tests/unit/`, frontend tests next to the code or in a `__tests__/` folder.
 
-# Backend — use the test entrypoints you maintain under backend/tests/
-docker compose exec backend python -m pytest tests/ -q
-# or: docker compose exec backend python -m unittest discover -s tests -p 'test_*.py'
-```
+## Commits and pull requests
 
-### **Host-only setup (optional, not recommended for parity with production)**
+- Commit subjects are short and lowercase, in the form `area: what changed`, for example `chat: keep the composer focused after sending` or `docs: env table in DOCKER_ENV_SETUP`. Use the body for the why, if it isn't obvious.
+- One logical change per commit where practical.
+- Open pull requests against `main`. The [pull request template](../.github/pull_request_template.md) has the checklist (CI, tests, EN+EL, schema, env vars, docs).
+- Add a line under `## [Unreleased]` in [CHANGELOG.md](CHANGELOG.md) for anything a user or admin would notice.
+- Bugs and feature ideas go in [GitHub Issues](https://github.com/Somnius/shadowrealms-ai/issues) using the issue forms.
+- Security problems go through private reporting (Security tab, "Report a vulnerability"), never a public issue. See [SECURITY.md](../SECURITY.md).
 
-If you must run tools on the host, create a venv and use `backend/requirements.txt` / `frontend` with `npm install` locally — but behavior may differ from the container images; prefer the commands above.
+## Release process
 
-### **Environment Configuration**
-- Copy `env.template` to `.env`
-- Configure your local LLM endpoints
-- Set up database connections
-- Configure API keys (if using external services)
+Releases are commits on `main` plus a tag:
 
-## 📝 **Contribution Types**
+1. `./scripts/version-bump.sh OLD NEW` (only bumps the version markers).
+2. Write the release notes: `docs/CHANGELOG.md`, `SHADOWREALMS_AI_COMPLETE.md`, `README.md`.
+3. Commit on `main`, tag `vNEW`, push both, and create the GitHub release from the tag.
 
-### **Code Contributions**
-- **Bug fixes** - Resolve issues and improve stability
-- **Feature development** - Add new RPG mechanics or AI capabilities
-- **Performance improvements** - Optimize algorithms and database queries
-- **Security enhancements** - Strengthen authentication and data protection
-- **Documentation** - Improve guides, API docs, and code comments
+Details: [VERSION_BUMP_PROCESS.md](VERSION_BUMP_PROCESS.md).
 
-### **Non-Code Contributions**
-- **Bug reporting** - Detailed issue descriptions with reproduction steps
-- **Feature requests** - Well-thought-out proposals with use cases
-- **Documentation** - Tutorials, guides, and examples
-- **Testing** - Manual testing and test case development
-- **Community support** - Helping other users and contributors
+## Getting help
 
-### **Priority Areas**
-1. **Core RPG Engine** - Game mechanics and rule systems
-2. **AI Integration** - LLM integration and prompt engineering
-3. **User Experience** - UI/UX improvements and accessibility
-4. **Performance** - Scalability and optimization
-5. **Testing** - Test coverage and automation
-6. **Documentation** - User guides and developer docs
-
-## 🎯 **Code Standards**
-
-### **Python (Backend)**
-```python
-# Follow PEP 8 style guide
-# Use type hints for function parameters and return values
-# Include docstrings for all public functions and classes
-# Use meaningful variable and function names
-
-def calculate_damage(weapon_power: int, armor_rating: int, 
-                    critical_hit: bool = False) -> int:
-    """
-    Calculate damage dealt to a target.
-    
-    Args:
-        weapon_power: Base damage of the weapon
-        armor_rating: Target's armor protection
-        critical_hit: Whether this is a critical hit
-        
-    Returns:
-        Final damage amount after armor reduction
-    """
-    base_damage = weapon_power
-    if critical_hit:
-        base_damage *= 1.5
-    
-    final_damage = max(1, base_damage - armor_rating)
-    return int(final_damage)
-```
-
-### **JavaScript/React (Frontend)**
-```javascript
-// Use ES6+ features
-// Follow React best practices
-// Use functional components with hooks
-// Include PropTypes or TypeScript types
-// Use meaningful component and variable names
-
-import React, { useState, useEffect } from 'react';
-import PropTypes from 'prop-types';
-
-const CharacterSheet = ({ character, onUpdate }) => {
-  const [isEditing, setIsEditing] = useState(false);
-  
-  useEffect(() => {
-    // Component lifecycle logic
-  }, [character]);
-  
-  const handleSave = () => {
-    onUpdate(character);
-    setIsEditing(false);
-  };
-  
-  return (
-    <div className="character-sheet">
-      {/* Component JSX */}
-    </div>
-  );
-};
-
-CharacterSheet.propTypes = {
-  character: PropTypes.object.isRequired,
-  onUpdate: PropTypes.func.isRequired
-};
-```
-
-### **General Standards**
-- **Readability** - Code should be self-documenting
-- **Consistency** - Follow established patterns in the codebase
-- **Modularity** - Break complex functions into smaller, focused ones
-- **Error handling** - Include proper exception handling and validation
-- **Comments** - Explain complex logic, not obvious code
-- **Testing** - Include tests for new functionality
-
-## 🧪 **Testing Guidelines**
-
-### **Test Requirements**
-- **Unit tests** for all new functions and classes
-- **Integration tests** for API endpoints and database operations
-- **Frontend tests** for React components and user interactions
-- **Performance tests** for critical paths and algorithms
-
-### **Running Tests**
-```bash
-# Backend tests
-cd backend
-python -m pytest tests/ -v --cov=.
-
-# Frontend tests
-cd frontend
-npm test
-
-# Full test suite
-python3 tests/test_modules.py
-```
-
-### **Test Standards**
-- **Coverage** - Aim for 80%+ code coverage
-- **Naming** - Descriptive test names that explain the scenario
-- **Isolation** - Tests should be independent and repeatable
-- **Mocking** - Mock external dependencies appropriately
-- **Assertions** - Use specific assertions with clear failure messages
-
-## 🔄 **Pull Request Process**
-
-### **Before Submitting**
-1. **Ensure tests pass** locally
-2. **Update documentation** if needed
-3. **Check code style** with linters
-4. **Rebase on main** to avoid conflicts
-5. **Self-review** your changes
-
-### **Pull Request Template**
-```markdown
-## Description
-Brief description of changes and why they're needed
-
-## Type of Change
-- [ ] Bug fix
-- [ ] New feature
-- [ ] Breaking change
-- [ ] Documentation update
-- [ ] Performance improvement
-
-## Testing
-- [ ] Unit tests pass
-- [ ] Integration tests pass
-- [ ] Manual testing completed
-- [ ] Performance impact assessed
-
-## Checklist
-- [ ] Code follows style guidelines
-- [ ] Self-review completed
-- [ ] Documentation updated
-- [ ] No breaking changes introduced
-
-## Screenshots/Examples
-Include screenshots or examples if applicable
-```
-
-### **Review Process**
-1. **Automated checks** must pass (CI/CD)
-2. **Code review** by maintainers
-3. **Address feedback** and make requested changes
-4. **Maintainer approval** required for merge
-5. **Squash and merge** to main branch
-
-## 🚀 **Release Process**
-
-### **Version Management**
-- **Semantic versioning** (MAJOR.MINOR.PATCH)
-- **Feature branches** for new development
-- **Release branches** for version preparation
-- **Hotfix branches** for critical fixes
-
-### **Release Checklist**
-- [ ] All tests passing
-- [ ] Documentation updated
-- [ ] Changelog updated
-- [ ] Version bumped
-- [ ] Release notes prepared
-- [ ] GitHub release created
-- [ ] Docker images tagged
-
-### **Release Commands**
-```bash
-# Create release branch
-git checkout -b release/v1.0.0
-
-# Update version and changelog
-# Commit changes
-
-# Create release tag
-git tag v1.0.0
-
-# Push to GitHub
-git push origin release/v1.0.0
-git push origin v1.0.0
-
-# Create GitHub release
-# Merge to main
-```
-
-## 👥 **Community Guidelines**
-
-### **Communication Channels**
-- **GitHub Issues** - Bug reports and feature requests
-- **GitHub Discussions** - General questions and community chat
-- **Pull Requests** - Code review and collaboration
-- **Discord/Slack** - Real-time communication (if available)
-
-### **Best Practices**
-- **Be patient** with responses and reviews
-- **Ask questions** when something is unclear
-- **Share knowledge** and help other contributors
-- **Respect time** of maintainers and contributors
-- **Celebrate successes** and contributions
-
-### **Getting Help**
-- **Search existing issues** before creating new ones
-- **Provide context** and reproduction steps
-- **Use clear language** and examples
-- **Be respectful** even when frustrated
-
-## 🆘 **Getting Help**
-
-### **Resources**
-- **README.md** - Project overview and quick start
-- **SHADOWREALMS_AI_COMPLETE.md** - Comprehensive documentation
-- **Code comments** - Inline documentation
-- **Issue templates** - Structured reporting
-
-### **Contact Maintainers**
-- **GitHub Issues** - For project-related questions
-- **GitHub Discussions** - For community questions
-- **Email** - For sensitive or private matters
-
-### **Escalation Process**
-1. **Check documentation** first
-2. **Search existing issues** for similar problems
-3. **Create new issue** with detailed description
-4. **Tag maintainers** if urgent or blocking
-5. **Follow up** if no response within reasonable time
-
-## 🙏 **Acknowledgments**
-
-Thank you to all contributors who have helped make ShadowRealms AI what it is today. Your contributions, whether big or small, help create an amazing platform for AI-powered tabletop RPGs.
-
----
-
-**Remember**: Every contribution, no matter how small, makes a difference. Whether you're fixing a typo, adding a feature, or just asking questions, you're helping build something special.
-
-**Happy contributing!** 🎲✨
+- [Docs index](README.md) and the [wiki](https://github.com/Somnius/shadowrealms-ai/wiki)
+- [GitHub Issues](https://github.com/Somnius/shadowrealms-ai/issues) for questions about the code or setup
