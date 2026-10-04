@@ -40,6 +40,7 @@ Site-wide campaign membership override remains: `POST /api/admin/users/<user_id>
 
 - **Chronicle settings page** (`/chronicles/:id`, `frontend/src/features/chronicle/ChronicleSettingsPage.jsx`): shows your playing character for that chronicle and has **Leave chronicle** (detach; the dialog explains that the sheet is kept and that joining a different chronicle later needs approval). The **Members** panel lets the creator or staff add a member by **username** and set a player's playing character.
 - **Play view** (`/c/:id/:locationId`): the character you play is the chronicle's playing character (`my_playing_character_id` from `GET /api/campaigns/`), or your only active character there. The composer's **Speaking as** menu switches between that character (in character), yourself (out of character) and, for staff, the Storyteller voice. It changes the voice of a message, not the playing character.
+- **Chat messages:** members delete their own messages; the chronicle's creator (Storyteller) and site admins delete any message, including dice rolls and Storyteller (AI) lines, which players can't delete. Helpers follow the player rule here. See [FEATURES.md](FEATURES.md#chat-message-actions-and-older-history).
 - Open **enrollment** (listed / accepting / max players) remains **creator or admin** only.
 
 ## Tests

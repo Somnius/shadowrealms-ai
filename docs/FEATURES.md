@@ -13,8 +13,9 @@ Feature notes for ShadowRealms AI that don't have their own document. The full l
 2. [Admin user management, play suspension, discover/join](#admin-user-management-play-suspension-discoverjoin)
 3. [Chronicle detach, join restrictions, per-campaign playing character](#chronicle-detach-join-restrictions-per-campaign-playing-character)
 4. [Dice theatre and hidden rolls](#dice-theatre-and-hidden-rolls)
-5. [Gothic theme and design system](#gothic-theme-and-design-system)
-6. [Invite Code System](#invite-code-system)
+5. [Chat message actions and older history](#chat-message-actions-and-older-history)
+6. [Gothic theme and design system](#gothic-theme-and-design-system)
+7. [Invite Code System](#invite-code-system)
 
 ---
 
@@ -71,6 +72,23 @@ Feature notes for ShadowRealms AI that don't have their own document. The full l
 - **Hidden rolls:** `/ai roll-hidden` (admins) and the **Hide this roll from players** option in the roll dialog (admin, helper, or chronicle owner) store results without showing them to other players.
 - **V5:** Hunger dice, Willpower rerolls (which cost Willpower) and Rouse checks.
 - **Details:** [dice-old-wod.md](dice-old-wod.md), [dice-v5.md](dice-v5.md).
+
+---
+
+## Chat message actions and older history
+
+**Status:** v0.10 phase 3  
+**Scope:** Play view (`frontend/src/features/chat/MessageActions.jsx`, `backend/routes/messages.py`, `backend/services/message_actions.py`)
+
+- **Actions on a message:** hover or keyboard focus shows a small toolbar (Copy, Reply, Delete). On touch screens each message has a **…** button, and a long press opens the toolbar too. Every button has a label for screen readers; Esc closes an open toolbar.
+- **Copy** puts the message text on the clipboard (the Storyteller's roll tags are copied as their label).
+- **Reply** (everyone): the composer shows "Replying to …" with a short excerpt and a cancel button (Esc cancels too). The sent line shows a compact quote above it; clicking the quote scrolls to the original and highlights it if it is loaded. The message is saved with `reply_to_id`, which must be a message in the same room that the poster can see; a deleted original leaves the reply without a quote (`ON DELETE SET NULL`).
+- **Delete** (with a confirm dialog; the row disappears at once and comes back if the server refuses):
+  - players delete **their own** messages; there is no editing;
+  - the chronicle's owner (its Storyteller) and site admins delete **any** message;
+  - players can't delete **dice rows** (roll results, Rouse lines) or **Storyteller (AI) messages**, even ones their action produced. Deleting a roll result also deletes its dice animation marker.
+  - `DELETE /api/messages/<id>` returns `{"deleted_ids": [...]}`, or 403 with `code` `message_not_yours`, `dice_message_staff_only` or `ai_message_staff_only`. Other clients drop the row through the live stream (the room's reset counter). The message's AI memory embedding is removed too.
+- **Older history:** the room opens with the newest 150 messages. Scrolling near the top, or the **Load older messages** button there, loads the 50 before them (`GET /api/campaigns/<c>/locations/<l>?before_id=<id>&limit=<n>`, n up to 100, answers `{"messages": [...], "has_more": bool}` in chronological order) without moving what you are reading. When there is nothing older, the list shows "The beginning of <room>". Hidden rolls are filtered in the query, so pages count only messages you can see.
 
 ---
 
