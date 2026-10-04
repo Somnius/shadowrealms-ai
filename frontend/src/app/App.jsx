@@ -6,6 +6,7 @@ import { ChroniclesProvider } from './ChroniclesContext';
 import { SheetProvider } from './SheetContext';
 import AppShell, { PageBody, TopBar } from './AppShell';
 import { RedirectIfAuthed, RequireAdmin, RequireAuth } from './guards';
+import SessionNotices from './SessionNotices';
 import LoginPage from '../features/auth/LoginPage';
 import ChronicleHallPage from '../features/hall/ChronicleHallPage';
 import CreateChroniclePage from '../features/hall/CreateChroniclePage';
@@ -16,7 +17,7 @@ import PlayPage, { PlayRedirect } from '../features/play/PlayPage';
 import { t, useLanguage } from '../i18n';
 
 const AdminPage = lazy(() => import('../pages/AdminPage'));
-const GothicShowcase = lazy(() => import('../pages/GothicShowcase'));
+const ShowcasePage = lazy(() => import('../pages/showcase/ShowcasePage'));
 const DesignPlayground = lazy(() => import('../design/DesignPlayground'));
 
 function Loading() {
@@ -51,7 +52,7 @@ function ShowcaseRoute() {
   const navigate = useNavigate();
   return (
     <Suspense fallback={<Loading />}>
-      <GothicShowcase onBack={() => (window.history.length > 1 ? navigate(-1) : navigate('/'))} />
+      <ShowcasePage onBack={() => (window.history.length > 1 ? navigate(-1) : navigate('/'))} />
     </Suspense>
   );
 }
@@ -104,6 +105,7 @@ export default function App() {
     <DesignProvider className="sr-root" lang={lang}>
       <ToastProvider>
         <AuthProvider>
+          <SessionNotices />
           <ChroniclesProvider key={lang}>
             <SheetProvider>
               <AppRoutes />
