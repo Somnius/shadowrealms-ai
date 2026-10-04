@@ -686,7 +686,7 @@ def get_ai_memory(campaign_id):
         }), 200
         
     except Exception as e:
-        logger.error("Error getting AI memory for campaign %s: %s", campaign_id, safe_log_value(e))
+        logger.error("Error getting AI memory for campaign %s: %s", safe_log_value(campaign_id), safe_log_value(e))
         return jsonify({'error': 'Failed to retrieve AI memory'}), 500
     finally:
         if 'db' in locals():
@@ -1067,7 +1067,7 @@ def get_campaign_rules_edition(campaign_id) -> str:
         cursor.execute("SELECT rules_edition FROM campaigns WHERE id = %s", (campaign_id,))
         return edition_of(cursor.fetchone())
     except Exception as e:
-        logger.error("Error reading rules_edition for campaign %s: %s", campaign_id, safe_log_value(e))
+        logger.error("Error reading rules_edition for campaign %s: %s", safe_log_value(campaign_id), safe_log_value(e))
         return DEFAULT_RULES_EDITION
     finally:
         if db is not None:

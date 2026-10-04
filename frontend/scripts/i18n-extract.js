@@ -30,6 +30,11 @@ function flatten(obj, prefix = '', out = {}) {
 
 function setPath(obj, dotted, value) {
   const parts = dotted.split('.');
+  // Keys come from our own source files, but never write through prototype properties
+  if (parts.some((p) => p === '__proto__' || p === 'constructor' || p === 'prototype')) {
+    console.log(`SKIPPED: ${dotted} is not a usable translation key`);
+    return;
+  }
   let cur = obj;
   for (let i = 0; i < parts.length - 1; i += 1) {
     if (cur[parts[i]] == null) cur[parts[i]] = {};
