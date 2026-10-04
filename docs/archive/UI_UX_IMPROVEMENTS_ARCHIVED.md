@@ -1,7 +1,9 @@
+> **Archived:** historical record up to v0.8.0; see [docs/README.md](../README.md) for current docs.
+
 # UI/UX Improvements - Historical Archive
 
 **Note:** These are historical UI/UX improvement reports consolidated for reference.  
-**For current implementation**, see actual components and `QUALITY_AUDIT_REPORT.md`
+**For the current UI**, see [frontend/src/design/README.md](../../frontend/src/design/README.md) and [CHANGELOG.md](../CHANGELOG.md).
 
 ---
 

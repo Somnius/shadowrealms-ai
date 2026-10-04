@@ -1,3 +1,5 @@
+> **Archived:** historical record up to v0.8.0; see [docs/README.md](../README.md) for current docs.
+
 # PostgreSQL Migration - Complete Execution Guide
 
 **Version**: 0.8.0  

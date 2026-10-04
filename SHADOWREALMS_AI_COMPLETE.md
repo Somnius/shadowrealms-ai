@@ -344,8 +344,8 @@ This philosophy ensures:
 - [Enhanced Campaign Management](#enhanced-campaign-management)
 - [Notification System](#notification-system)
 - [AI Integration Points](#ai-integration-points)
-- [Complete Phase 3B Documentation](docs/PHASE3B_IMPLEMENTATION.md)
-- [Phase 3B Summary](docs/PLANNING.md)
+- [Complete Phase 3B Documentation](docs/archive/PHASE3B_IMPLEMENTATION.md)
+- [Phase 3B Summary](docs/archive/PLANNING.md)
 
 ### **🔧 Advanced Features & Planning**
 - [Phase Restructuring](#phase-restructuring)
@@ -5993,8 +5993,8 @@ Phase 3B builds upon Phase 3A's frontend foundation by implementing the core gam
 6. 🔔 **Notification System** - Multi-level notifications for admin actions, system events, broadcasts
 
 For complete details, see:
-- **[Phase 3B Implementation Guide](docs/PHASE3B_IMPLEMENTATION.md)** - Full specification (600+ lines)
-- **[Planning Documentation](docs/PLANNING.md)** - Phase planning and summaries
+- **[Phase 3B Implementation Guide](docs/archive/PHASE3B_IMPLEMENTATION.md)** - Full specification (600+ lines)
+- **[Planning Documentation](docs/archive/PLANNING.md)** - Phase planning and summaries
 - **[Changelog](docs/CHANGELOG.md)** - Version history through **v0.8.0**
 
 ---

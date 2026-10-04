@@ -1,3 +1,5 @@
+> **Archived:** historical record up to v0.8.0; see [docs/README.md](../README.md) for current docs, and [ROADMAP_v0.9.md](../ROADMAP_v0.9.md) for the current plan.
+
 # Planning & Phase Documentation
 
 **Last Updated**: 2026-04-05  
@@ -21,7 +23,7 @@ This document consolidates planning documentation and phase summaries.
 
 **Phase 2** (RAG, ChromaDB, books) and **Phase 3A** (auth, React shell, campaigns, themes) are **complete**. **Phase 3B** is the ongoing “tabletop platform” track.
 
-Older text in this file claimed locations were **hardcoded** and APIs **missing**. That is **obsolete**: the app now uses **PostgreSQL**, **REST routes** for locations, characters, messages, dice, and AI, and a **polling-based** chat UI. The long sections below are a **north-star** spec; trust the [Delivered](#delivered-through-v080) section and [CHANGELOG](CHANGELOG.md) for what actually ships.
+Older text in this file claimed locations were **hardcoded** and APIs **missing**. That is **obsolete**: the app now uses **PostgreSQL**, **REST routes** for locations, characters, messages, dice, and AI, and a **polling-based** chat UI. The long sections below are a **north-star** spec; trust the [Delivered](#delivered-through-v080) section and [CHANGELOG](../CHANGELOG.md) for what actually ships.
 
 ---
 

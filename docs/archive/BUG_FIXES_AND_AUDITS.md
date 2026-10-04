@@ -1,3 +1,5 @@
+> **Archived:** historical record up to v0.8.0; see [docs/README.md](../README.md) for current docs.
+
 # Bug Fixes & Technical Audits
 
 **Last Updated**: 2026-04-05  
