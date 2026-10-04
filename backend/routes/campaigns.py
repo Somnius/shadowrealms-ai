@@ -1492,13 +1492,23 @@ def post_campaign_add_member(campaign_id):
     except (TypeError, ValueError):
         return jsonify({"error": "Invalid session"}), 422
 
-    data = request.get_json()
-    if not data or "user_id" not in data:
-        return jsonify({"error": "user_id is required"}), 400
-    try:
-        new_member_id = int(data["user_id"])
-    except (TypeError, ValueError):
-        return jsonify({"error": "user_id must be an integer"}), 400
+    data = request.get_json(silent=True)
+    if not isinstance(data, dict) or ("user_id" not in data and "username" not in data):
+        return jsonify({"error": "user_id or username is required"}), 400
+    new_member_id = None
+    lookup_username = None
+    if "user_id" in data:
+        if isinstance(data["user_id"], bool):
+            return jsonify({"error": "user_id must be an integer"}), 400
+        try:
+            new_member_id = int(data["user_id"])
+        except (TypeError, ValueError):
+            return jsonify({"error": "user_id must be an integer"}), 400
+    else:
+        lookup_username = data.get("username")
+        if not isinstance(lookup_username, str) or not lookup_username.strip() or len(lookup_username) > 80:
+            return jsonify({"error": "username must be a non-empty string"}), 400
+        lookup_username = lookup_username.strip()
 
     conn = get_db()
     cursor = conn.cursor()
@@ -1511,11 +1521,17 @@ def post_campaign_add_member(campaign_id):
         conn.close()
         return jsonify({"error": "Storyteller or staff only"}), 403
 
-    cursor.execute("SELECT id FROM users WHERE id = %s", (new_member_id,))
-    if not cursor.fetchone():
+    # Resolved only after the storyteller/staff check, so players can't probe usernames here
+    if lookup_username is not None:
+        cursor.execute("SELECT id FROM users WHERE LOWER(username) = LOWER(%s)", (lookup_username,))
+    else:
+        cursor.execute("SELECT id FROM users WHERE id = %s", (new_member_id,))
+    found = cursor.fetchone()
+    if not found:
         cursor.close()
         conn.close()
         return jsonify({"error": "User not found"}), 404
+    new_member_id = found["id"]
 
     now = datetime.utcnow()
     if os.getenv("DATABASE_TYPE", "sqlite").lower() == "postgresql":
