@@ -51,7 +51,7 @@ def scan_rule_books():
         logger.error(f"Error scanning rule books: {e}")
         return jsonify({
             'success': False,
-            'error': str(e)
+            'error': 'Rule book request failed'
         }), 500
 
 @bp.route('/process', methods=['POST'])
@@ -113,7 +113,7 @@ def process_rule_book():
         logger.error(f"Error processing rule book: {e}")
         return jsonify({
             'success': False,
-            'error': str(e)
+            'error': 'Rule book request failed'
         }), 500
 
 @bp.route('/search', methods=['POST'])
@@ -169,7 +169,7 @@ def search_rule_books():
         logger.error(f"Error searching rule books: {e}")
         return jsonify({
             'success': False,
-            'error': str(e)
+            'error': 'Rule book request failed'
         }), 500
 
 @bp.route('/context', methods=['POST'])
@@ -213,7 +213,7 @@ def get_rule_context():
         logger.error(f"Error getting rule context: {e}")
         return jsonify({
             'success': False,
-            'error': str(e)
+            'error': 'Rule book request failed'
         }), 500
 
 @bp.route('/status', methods=['GET'])
@@ -253,7 +253,7 @@ def get_rule_books_status():
         logger.error(f"Error getting rule books status: {e}")
         return jsonify({
             'success': False,
-            'error': str(e)
+            'error': 'Rule book request failed'
         }), 500
 
 @bp.route('/systems', methods=['GET'])
@@ -279,5 +279,5 @@ def get_available_systems():
         logger.error(f"Error getting available systems: {e}")
         return jsonify({
             'success': False,
-            'error': str(e)
+            'error': 'Rule book request failed'
         }), 500

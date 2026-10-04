@@ -97,6 +97,13 @@ Stay aware of public advisories (e.g. compromised package versions). If a packag
 
 ## Application security (high level)
 
+The authentication model (passwords, lockouts, tokens and revocation, rate limits, headers, proxy
+trust, gunicorn) is described in [SECURITY_MODEL.md](SECURITY_MODEL.md). Its unit tests are in
+`backend/tests/unit/test_auth_security.py` (password policy, bcrypt, lockout logic, revocation
+decision, client IP behind one proxy, rate-limit keys and 429 body, no exception text in 500s).
+Integration tests that register users need passwords of 12+ characters that are not on the
+common-password list, and `RATELIMIT_ENABLED=false` when they log in many times.
+
 - **SQL**: Prefer parameterized queries (`%s` or `?` with bound parameters, depending on DB driver). Do not concatenate user input into SQL strings.
 - **Auth**: Admin routes use `@require_admin()` and JWT identity; compare resource ownership with **`str(id)`** where JWT identities are strings and DB ids may be integers.
 - **Site admin scope**: Users with **`users.role = 'admin'`** may open any chronicle for support (campaign detail, messages, dice, read-state rules as implemented in v0.7.18+; Player Profile hub changes are UX-only in v0.8.0). This is intentional; restrict who receives the admin role. Helpers and players do not receive this bypass unless separately documented.

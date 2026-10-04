@@ -6,7 +6,6 @@ Administrative controls for user moderation, bans, and character management
 
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
-import bcrypt
 import json
 import logging
 import os
@@ -30,7 +29,8 @@ from database import (
     ensure_campaigns_staff_pause_columns,
 )
 from services.moderation_audit import log_moderation_action, moderation_entry_kind
-from routes.auth import load_invites, save_invites
+from services.auth_security import check_password_policy, hash_password
+from routes.auth import _invites_locked, load_invites, save_invites
 from services.play_suspension import ALLOWED_REASON_CODES
 
 logger = logging.getLogger(__name__)
@@ -211,17 +211,24 @@ def reset_user_password(user_id):
         admin_id = get_jwt_identity()
         data = request.get_json()
         
-        new_password = data.get('new_password')
-        if not new_password or len(new_password) < 8:
-            return jsonify({'error': 'Password must be at least 8 characters'}), 400
-        
-        password_hash = bcrypt.hashpw(new_password.encode('utf-8'), bcrypt.gensalt())
-        
+        new_password = (data or {}).get('new_password')
         db = get_db()
         cursor = db.cursor()
-        
-        cursor.execute("UPDATE users SET password_hash = %s WHERE id = %s", 
-                      (password_hash.decode('utf-8'), user_id))
+        cursor.execute("SELECT username, email FROM users WHERE id = %s", (user_id,))
+        target = cursor.fetchone()
+        if not target:
+            cursor.close()
+            db.close()
+            return jsonify({'error': 'User not found'}), 404
+        problem = check_password_policy(new_password, target['username'], target['email'])
+        if problem:
+            cursor.close()
+            db.close()
+            return jsonify({'error': problem[1], 'code': problem[0]}), 400
+
+        # The users_bump_token_version trigger ends all of the user's sessions.
+        cursor.execute("UPDATE users SET password_hash = %s WHERE id = %s",
+                       (hash_password(new_password), user_id))
         db.commit()
         
         # Log the action
@@ -583,7 +590,14 @@ def create_invite():
             'created_at': datetime.utcnow().isoformat() + 'Z',
             'created_by': admin_name,
         }
-        save_invites(invites_data)
+        # Re-read under the invite lock so a concurrent signup's use count isn't overwritten.
+        with _invites_locked():
+            fresh = load_invites()
+            fresh.setdefault('invites', {})
+            if code in fresh['invites']:
+                return jsonify({'error': 'That invite code already exists'}), 400
+            fresh['invites'][code] = invites[code]
+            save_invites(fresh)
 
         logger.info("Admin %s created invite %s type=%s max_uses=%s", admin_name, code, inv_type, max_uses)
 
@@ -1368,7 +1382,8 @@ def embeddings_info():
     try:
         return jsonify(embeddings_status(connect_chroma({}))), 200
     except Exception as e:  # noqa: BLE001
-        return jsonify({'error': f'ChromaDB unavailable: {e}'}), 503
+        logger.error('ChromaDB unavailable: %s', e)
+        return jsonify({'error': 'ChromaDB unavailable'}), 503
 
 
 @bp.route('/embeddings/reembed', methods=['POST'])
@@ -1383,7 +1398,8 @@ def embeddings_reembed():
         report = reembed_collections(connect_chroma({}), force=bool(data.get('force')))
     except Exception as e:  # noqa: BLE001
         logger.error("Re-embed failed: %s", e)
-        return jsonify({'error': f'Re-embed failed: {e}'}), 503
+        logger.error('Re-embed failed: %s', e)
+        return jsonify({'error': 'Re-embed failed'}), 503
     logger.info("Admin %s ran re-embed: %s", get_jwt_identity(), report)
     return jsonify(report), 200
 
@@ -1450,3 +1466,73 @@ def delete_user_account_preserve_chats(user_id):
     finally:
         db.close()
 
+
+# ---------------------------------------------------------------------------------------------
+# Login lockouts + auth audit (v0.9 phase 5; docs/SECURITY_MODEL.md)
+# ---------------------------------------------------------------------------------------------
+
+@bp.route('/auth/unlock', methods=['POST'])
+@require_admin()
+def unlock_login():
+    """Clear failed-login counters/locks for a username and/or an IP address."""
+    from services.app_security import get_throttle
+
+    data = request.get_json(silent=True) or {}
+    username = str(data.get('username') or '').strip()[:150]
+    ip = str(data.get('ip') or '').strip()[:64]
+    if not username and not ip:
+        return jsonify({'error': 'username or ip required'}), 400
+    throttle = get_throttle()
+    cleared = 0
+    if username:
+        cleared += throttle.unlock_account(username)
+    if ip:
+        cleared += throttle.unlock_ip(ip)
+    admin_id = int(get_jwt_identity())
+    log_moderation_action(None, admin_id, 'auth_unlock', {'username': username or None, 'ip': ip or None,
+                                                          'keys_cleared': cleared})
+    return jsonify({'message': 'Unlocked', 'keys_cleared': cleared}), 200
+
+
+@bp.route('/auth-events', methods=['GET'])
+@require_admin()
+def list_auth_events():
+    """Recent auth audit rows (logins, failures, lockouts, logouts, refresh reuse)."""
+    try:
+        limit = min(max(int(request.args.get('limit', 100)), 1), 500)
+    except (TypeError, ValueError):
+        limit = 100
+    params = []
+    where = []
+    if request.args.get('user_id'):
+        try:
+            params.append(int(request.args['user_id']))
+            where.append('user_id = %s')
+        except ValueError:
+            return jsonify({'error': 'user_id must be an integer'}), 400
+    if request.args.get('event'):
+        params.append(str(request.args['event'])[:64])
+        where.append('event = %s')
+    params.append(limit)
+    db = get_db()
+    try:
+        cursor = db.cursor()
+        cursor.execute(
+            "SELECT id, created_at, event, user_id, username, ip, user_agent, details FROM auth_events "
+            + ("WHERE " + " AND ".join(where) + " " if where else "")
+            + "ORDER BY created_at DESC LIMIT %s",
+            params,
+        )
+        rows = cursor.fetchall()
+    finally:
+        db.close()
+    out = []
+    for r in rows:
+        d = dict(r)
+        d['created_at'] = d['created_at'].isoformat() if d.get('created_at') else None
+        try:
+            d['details'] = json.loads(d['details']) if d.get('details') else None
+        except ValueError:
+            pass
+        out.append(d)
+    return jsonify({'events': out}), 200

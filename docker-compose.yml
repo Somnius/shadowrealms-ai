@@ -12,9 +12,31 @@ services:
       - ./books:/app/books
       - ./README.md:/app/README.md:ro
       - ./docs:/app/project_docs:ro
+      - ./ml/laya:/app/ml/laya:ro
     environment:
       - VERSION=${VERSION}
-      - FLASK_ENV=development
+      # Production server by default (backend/gunicorn.conf.py). APP_SERVER=flask + FLASK_ENV=development
+      # for the dev server with auto-reload. See docs/SECURITY_MODEL.md.
+      - APP_SERVER=${APP_SERVER:-gunicorn}
+      - FLASK_ENV=${FLASK_ENV:-production}
+      - GUNICORN_WORKERS=${GUNICORN_WORKERS:-2}
+      - GUNICORN_THREADS=${GUNICORN_THREADS:-48}
+      - GUNICORN_BIND=${GUNICORN_BIND:-127.0.0.1:5000}
+      # Live updates: open SSE streams per gunicorn worker (each holds a thread), per user per worker
+      - SR_EVENTS_MAX_STREAMS=${SR_EVENTS_MAX_STREAMS:-20}
+      - SR_EVENTS_MAX_STREAMS_PER_USER=${SR_EVENTS_MAX_STREAMS_PER_USER:-4}
+      # Auth (docs/SECURITY_MODEL.md). Access tokens stay long-lived (360 min) until the frontend
+      # refreshes them via /api/auth/refresh; then drop JWT_ACCESS_TOKEN_MINUTES to 30.
+      - JWT_ACCESS_TOKEN_MINUTES=${JWT_ACCESS_TOKEN_MINUTES:-360}
+      - JWT_REFRESH_TOKEN_DAYS=${JWT_REFRESH_TOKEN_DAYS:-14}
+      - JWT_SESSION_MAX_DAYS=${JWT_SESSION_MAX_DAYS:-30}
+      - BCRYPT_ROUNDS=${BCRYPT_ROUNDS:-12}
+      - PASSWORD_MIN_LENGTH=${PASSWORD_MIN_LENGTH:-12}
+      # Same-origin through nginx needs no CORS; list extra origins comma-separated if ever needed
+      - CORS_ORIGINS=${CORS_ORIGINS:-}
+      # One trusted proxy hop: the local nginx (it resolves the real client IP itself, nginx/nginx.conf)
+      - TRUSTED_PROXY_HOPS=${TRUSTED_PROXY_HOPS:-1}
+      - RATELIMIT_ENABLED=${RATELIMIT_ENABLED:-true}
       - FLASK_APP=main.py
       - FLASK_HOST=0.0.0.0
       - FLASK_PORT=5000
@@ -58,6 +80,8 @@ services:
       - STORYTELLER_TIME_BUDGET=${STORYTELLER_TIME_BUDGET:-55}
       - STORYTELLER_CONTEXT_TOKENS=${STORYTELLER_CONTEXT_TOKENS:-8192}
       - JEV_MODEL=${JEV_MODEL:-jev-latest}
+      # Laya classifier runtime (model: data/laya/model via the ./data mount; loaded lazily per worker)
+      - LAYA_RUNTIME=/app/ml/laya/infer.py
       # Optional SMTP (copy values from .env)
       - SMTP_HOST=${SMTP_HOST:-}
       - SMTP_PORT=${SMTP_PORT:-587}
