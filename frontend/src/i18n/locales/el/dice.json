@@ -75,7 +75,10 @@
     "hungerDie": "Ζάρι Hunger {{value}} (δεν ξαναρίχνεται)",
     "picked": "{{n}}/{{max}} επιλεγμένα",
     "busy": "Ξαναρίχνω…",
-    "submit": "Ξαναρίξε με Willpower"
+    "submit": "Ξαναρίξε με Willpower",
+    "cost": "Κοστίζει 1 Willpower",
+    "spentSuperficial": "Willpower −1 (Superficial ζημιά).",
+    "spentAggravated": "Willpower −1 (Aggravated ζημιά: η γραμμή ήταν γεμάτη Superficial)."
   },
   "rouse": {
     "ok": "Rouse check: {{die}}, χωρίς αύξηση Hunger.",

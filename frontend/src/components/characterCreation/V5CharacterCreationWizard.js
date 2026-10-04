@@ -268,7 +268,7 @@ export default function V5CharacterCreationWizard({
         showError?.(body.error || t('wizard:error.createFailed', 'Could not create character.'));
         return;
       }
-      showSuccess?.(t('wizard:v5.created', 'Character embraced. Enter the chronicle to play.'));
+      showSuccess?.(t('wizard:v5.created', 'Character embraced. Here is the chronicle: you can play right away.'));
       onDone?.(body, parseInt(campaignId, 10));
     } catch (e) {
       showError?.(t('wizard:error.network', 'Network error while creating character.'));
@@ -378,7 +378,8 @@ export default function V5CharacterCreationWizard({
                   padding: '6px 12px',
                   borderRadius: '999px',
                   background: fieldErrors[id] ? 'rgba(248,113,113,0.15)' : 'var(--sr-night-800)',
-                  color: fieldErrors[id] ? 'var(--sr-blood-300)' : ACCENT,
+                  // blood-400 on night-800 passes 4.5:1 at 11px (blood-500 was 4.15:1)
+                  color: fieldErrors[id] ? 'var(--sr-blood-300)' : 'var(--sr-blood-400)',
                   border: `1px solid ${fieldErrors[id] ? 'var(--sr-blood-700)' : 'var(--sr-night-600)'}`,
                   cursor: 'pointer',
                   fontFamily: 'var(--sr-font-display)',

@@ -64,3 +64,14 @@
 .sr-app .sr-radio { display: flex; gap: var(--sr-space-2); align-items: baseline; padding: var(--sr-space-1) 0; cursor: pointer; }
 .sr-app .sr-radio input { accent-color: var(--sr-accent); width: 18px; height: 18px; }
 .sr-app .sr-hall__footer { margin-top: var(--sr-space-9); border-radius: var(--sr-radius-lg); overflow: hidden; }
+/* Loading placeholders: same grid and about the card height, so the page does not jump. */
+.sr-app .sr-hall__placeholder {
+  height: 100%;
+  min-height: 188px;
+  border: 1px solid var(--sr-border);
+  border-top: 2px solid var(--sr-border-strong);
+  border-radius: var(--sr-radius-lg);
+  background: var(--sr-surface);
+  opacity: 0.55;
+}
+.sr-app .sr-hall__grid--loading > li { animation: none; }

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { t } from '../../i18n';
-import { contrastRatio, readToken, wcagLevel } from './contrast';
+import { contrastRatio, formatRatio, readToken, wcagLevel } from './contrast';
 import { Section } from './parts';
 
 const PAGE = ['--sr-night-900', '#0f0f1e'];
@@ -88,7 +88,7 @@ function Ratio({ fg, bg, label }) {
   return (
     <span className={`sc-ratio sc-ratio--${level.replace(' ', '-').toLowerCase()}`} title={label}>
       <span className="sr-visually-hidden">{label}: </span>
-      {r ? r.toFixed(2) : '–'}
+      {formatRatio(r)}
       <small>{level === 'decor' ? t('showcase:tokens.decor', 'decor') : level}</small>
     </span>
   );

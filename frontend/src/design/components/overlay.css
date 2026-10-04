@@ -50,6 +50,7 @@
   gap: var(--sr-space-2);
   margin: 0;
   font-family: var(--sr-font-display);
+  font-variant-numeric: lining-nums;
   font-size: var(--sr-text-xl);
   letter-spacing: var(--sr-tracking-display);
 }
@@ -105,7 +106,7 @@
   padding: 0 var(--sr-space-2) 0 var(--sr-space-4);
   border-bottom: 1px solid var(--sr-border);
 }
-.sr-drawer__title { margin: 0; font-family: var(--sr-font-display); font-size: var(--sr-text-lg); letter-spacing: var(--sr-tracking-display); }
+.sr-drawer__title { margin: 0; font-family: var(--sr-font-display); font-variant-numeric: lining-nums; font-size: var(--sr-text-lg); letter-spacing: var(--sr-tracking-display); }
 .sr-drawer__body { flex: 1; overflow-y: auto; overscroll-behavior: contain; padding: var(--sr-space-3); }
 
 /* ---- Tooltip ---- */

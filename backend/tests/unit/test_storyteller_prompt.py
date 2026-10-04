@@ -88,3 +88,18 @@ def test_greek_script_check():
     assert set(sp.foreign_script_chars(bad)) >= {"开", "口"}
     fixed = sp.strip_foreign_script(bad)
     assert sp.foreign_script_chars(fixed) == [] and fixed.startswith("Όταν, η σιωπή")
+
+
+def test_in_world_rule_forbids_meta_commentary():
+    from services.storyteller_prompt import IN_WORLD_RULE
+
+    rule = IN_WORLD_RULE.lower()
+    assert "fourth wall" in rule and "meta commentary" in rule
+    assert "dice" in rule and "interface" in rule
+
+
+def test_storyteller_reply_sends_the_in_world_rule():
+    import pathlib
+
+    src = (pathlib.Path(__file__).resolve().parents[2] / "routes" / "ai.py").read_text()
+    assert "fixed.append(sp.IN_WORLD_RULE)" in src

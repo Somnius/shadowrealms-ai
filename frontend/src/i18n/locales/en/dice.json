@@ -75,7 +75,10 @@
     "hungerDie": "Hunger die {{value}} (can’t be rerolled)",
     "picked": "{{n}}/{{max}} picked",
     "busy": "Rerolling…",
-    "submit": "Reroll with Willpower"
+    "submit": "Reroll with Willpower",
+    "cost": "Costs 1 Willpower",
+    "spentSuperficial": "Willpower −1 (Superficial damage).",
+    "spentAggravated": "Willpower −1 (Aggravated damage: the track was full of Superficial)."
   },
   "rouse": {
     "ok": "Rouse check: {{die}}, no Hunger gain.",

@@ -134,7 +134,7 @@
 }
 .sr-app .sr-member-card--empty { color: var(--sr-text-muted); }
 .sr-app .sr-member-card--empty p { margin: 0; }
-.sr-app .sr-member-card__name { font-family: var(--sr-font-display); font-size: var(--sr-text-lg); letter-spacing: var(--sr-tracking-display); }
+.sr-app .sr-member-card__name { font-family: var(--sr-font-display); font-variant-numeric: lining-nums; font-size: var(--sr-text-lg); letter-spacing: var(--sr-tracking-display); }
 .sr-app .sr-member-card__actions { display: flex; flex-wrap: wrap; justify-content: center; gap: var(--sr-space-1); }
 .sr-app .sr-members { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }
 .sr-app .sr-member {

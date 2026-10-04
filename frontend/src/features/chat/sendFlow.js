@@ -16,6 +16,35 @@ import { t } from '../../i18n';
 
 let tempSeq = 0;
 
+/**
+ * OOC moderation notice from the server's structured `ooc_warning_info`
+ * ({count, threshold, banned, ban_hours, until}) as translated {title, body}; null without it.
+ */
+export function oocWarningNotice(info) {
+  if (!info || typeof info !== 'object') return null;
+  const count = Number(info.count) || 0;
+  const threshold = Number(info.threshold) || 0;
+  if (info.banned) {
+    const until = info.until ? new Date(info.until) : null;
+    const when = until && !Number.isNaN(until.getTime()) ? until.toLocaleString() : '';
+    return {
+      title: t('chat:ooc.bannedTitle', 'Temporarily barred from this chronicle'),
+      body: [
+        t('chat:ooc.bannedBody', 'You can’t post in this chronicle for {{hours}} hours: too many in-character lines in the out-of-character room.', { hours: info.ban_hours || '' }),
+        when ? t('chat:ooc.bannedUntil', 'You can post again after {{when}}.', { when }) : '',
+      ].filter(Boolean).join(' '),
+    };
+  }
+  const left = Math.max(0, threshold - count);
+  return {
+    title: t('chat:ooc.warningTitle', 'Out-of-character room: warning {{count}} of {{threshold}}', { count, threshold }),
+    body: [
+      t('chat:ooc.warningBody', 'This line reads as in-character. Keep roleplay to the story rooms; this room is for talking as players.'),
+      t('chat:ooc.warningsLeft', 'Warnings left before a temporary bar from this chronicle: {{left}}.', { left }),
+    ].join(' '),
+  };
+}
+
 export function makeAnimationId() {
   return `dice_${Date.now()}_${Math.random().toString(16).slice(2)}`;
 }
@@ -114,13 +143,22 @@ export async function sendChatMessage(ctx, rawText, opts = {}) {
       ...(slashMatch ? { ai_message_kind: 'slash_user' } : chatMatch ? { ai_message_kind: 'chat_user' } : {}),
     },
   });
+  const notifyOoc = (data) => {
+    const notice = oocWarningNotice(data && data.ooc_warning_info);
+    if (!notice) return false;
+    if (cb.onNotice) cb.onNotice({ tone: data.ooc_warning_info.banned ? 'danger' : 'warn', ...notice });
+    else cb.onError(notice.title);
+    return true;
+  };
   if (!save.ok) {
     cb.onSaved(temp.client_id, null);
-    cb.onError(save.data.error || t('chat:error.saveFailed', 'Your message could not be saved.'));
+    if (!notifyOoc(save.data)) cb.onError(save.data.error || t('chat:error.saveFailed', 'Your message could not be saved.'));
     return false;
   }
   cb.onSaved(temp.client_id, save.data.data || null);
-  if (save.data.ooc_warning) cb.onError(String(save.data.ooc_warning));
+  if (save.data.ooc_warning && !notifyOoc(save.data)) {
+    cb.onError(t('chat:ooc.warningFallback', 'This line reads as in-character. Keep roleplay to the story rooms.'));
+  }
 
   const postAssistant = async (content, kind) => {
     const r = await api(roomPath, {

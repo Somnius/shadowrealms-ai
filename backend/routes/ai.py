@@ -766,6 +766,7 @@ def _storyteller_reply(mode: str, message: str, campaign_id: int, location_id: i
                 fixed.append("\n".join(npc_lines))
             history_rows = get_recent_messages(location_id, campaign_id, limit=cfg['history_rows'])['messages']
         fixed.append(cfg['outro'])
+        fixed.append(sp.IN_WORLD_RULE)
 
         used = sum(sp.estimate_tokens(x) for x in fixed) + sp.estimate_tokens(message) + rag_budget
         semantic_text = ''

@@ -173,3 +173,38 @@ test('the chat scene continues and reads in Greek', () => {
   expect(within(screen.getByTestId('chat-preview')).getByText(/κήρυκας του Prince/)).toBeInTheDocument();
   expect(screen.getByRole('heading', { name: 'Ρίξε τα κόκαλα' })).toBeInTheDocument();
 });
+
+test('the glyph grid is one Tab stop and arrow keys move between glyphs', () => {
+  const restore = mockMotion(true);
+  try {
+    const { container } = renderPage();
+    const tiles = Array.from(container.querySelectorAll('[data-glyph-tile]'));
+    const stops = tiles.filter((b) => b.tabIndex === 0);
+    expect(stops).toHaveLength(1);
+    act(() => {
+      stops[0].focus();
+    });
+    const i = tiles.indexOf(stops[0]);
+    fireEvent.keyDown(stops[0], { key: 'ArrowRight' });
+    expect(document.activeElement).toBe(tiles[i + 1]);
+    expect(tiles[i + 1].tabIndex).toBe(0);
+    expect(tiles.filter((b) => b.tabIndex === 0)).toHaveLength(1);
+    fireEvent.keyDown(tiles[i + 1], { key: 'Home' });
+    expect(document.activeElement).toBe(tiles[0]);
+  } finally {
+    restore();
+  }
+});
+
+test('the skip link moves focus into the tour', () => {
+  const restore = mockMotion(true);
+  try {
+    renderPage();
+    const main = document.getElementById('sc-main');
+    main.scrollIntoView = () => {};
+    fireEvent.click(screen.getByText('Skip to the tour'));
+    expect(document.activeElement).toBe(main);
+  } finally {
+    restore();
+  }
+});

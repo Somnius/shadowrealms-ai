@@ -64,7 +64,7 @@ const ReadmeModal = ({ isOpen, onClose }) => {
       let table = '<table style="border-collapse: collapse; width: 100%; margin: 20px 0; background: var(--sr-night-800); border: 2px solid var(--sr-night-700); border-radius: 8px; overflow: hidden;">';
       table += '<thead><tr style="background: linear-gradient(135deg, var(--sr-blood-500) 0%, var(--sr-blood-700) 100%);">';
       headers.forEach(h => {
-        table += `<th style="padding: 12px; text-align: center; color: white; font-family: 'Cinzel', serif; border: 1px solid var(--sr-night-700);">${h}</th>`;
+        table += `<th style="padding: 12px; text-align: center; color: white; font-family: var(--sr-font-display); border: 1px solid var(--sr-night-700);">${h}</th>`;
       });
       table += '</tr></thead><tbody>';
       
@@ -97,10 +97,10 @@ const ReadmeModal = ({ isOpen, onClose }) => {
     });
     
     // Headers (most specific first)
-    html = html.replace(/^#### (.*$)/gim, '<h4 style="color: var(--sr-bone-300); margin-top: 18px; margin-bottom: 8px; font-family: \'Cinzel\', serif; font-size: 16px;">$1</h4>');
-    html = html.replace(/^### (.*$)/gim, '<h3 style="color: var(--sr-gold-500); margin-top: 20px; margin-bottom: 10px; font-family: \'Cinzel\', serif; font-size: 18px;">$1</h3>');
-    html = html.replace(/^## (.*$)/gim, '<h2 style="color: var(--sr-blood-500); margin-top: 25px; margin-bottom: 12px; font-family: \'Cinzel\', serif; font-size: 22px;">$1</h2>');
-    html = html.replace(/^# (.*$)/gim, '<h1 style="color: var(--sr-blood-500); margin-top: 30px; margin-bottom: 15px; font-family: \'Cinzel\', serif; font-size: 28px; border-bottom: 2px solid var(--sr-night-700); padding-bottom: 10px;">$1</h1>');
+    html = html.replace(/^#### (.*$)/gim, '<h4 style="color: var(--sr-bone-300); margin-top: 18px; margin-bottom: 8px; font-family: var(--sr-font-display); font-size: 16px;">$1</h4>');
+    html = html.replace(/^### (.*$)/gim, '<h3 style="color: var(--sr-gold-500); margin-top: 20px; margin-bottom: 10px; font-family: var(--sr-font-display); font-size: 18px;">$1</h3>');
+    html = html.replace(/^## (.*$)/gim, '<h2 style="color: var(--sr-blood-500); margin-top: 25px; margin-bottom: 12px; font-family: var(--sr-font-display); font-size: 22px;">$1</h2>');
+    html = html.replace(/^# (.*$)/gim, '<h1 style="color: var(--sr-blood-500); margin-top: 30px; margin-bottom: 15px; font-family: var(--sr-font-display); font-size: 28px; border-bottom: 2px solid var(--sr-night-700); padding-bottom: 10px;">$1</h1>');
     
     // Bold (before italic)
     html = html.replace(/\*\*(.*?)\*\*/g, '<strong style="color: var(--sr-gold-500); font-weight: bold;">$1</strong>');

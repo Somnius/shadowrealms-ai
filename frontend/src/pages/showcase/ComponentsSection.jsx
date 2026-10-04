@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import {
   Avatar,
   Badge,
@@ -17,6 +17,7 @@ import {
   Switch,
   Tabs,
   Textarea,
+  useAmbient,
   useOptionalToast,
 } from '../../design';
 import { t } from '../../i18n';
@@ -166,6 +167,8 @@ function Overlays() {
 
 export default function ComponentsSection() {
   const [ic, setIc] = useState(true);
+  const gridRef = useRef(null);
+  const { paused } = useAmbient(gridRef); // spinners and animated glyphs stop off-screen
   return (
     <Section
       id="components"
@@ -181,7 +184,7 @@ export default function ComponentsSection() {
         <Kbd>Tab</Kbd> <Kbd>←</Kbd> <Kbd>→</Kbd> <Kbd>Home</Kbd> <Kbd>End</Kbd> <Kbd>Esc</Kbd>
         <span>{t('showcase:comp.keys', 'Everything below works without a mouse.')}</span>
       </p>
-      <div className="sc-comp-grid">
+      <div className="sc-comp-grid" ref={gridRef} data-paused={paused ? 'true' : undefined}>
         <Panel title={t('showcase:comp.buttons', 'Buttons')} icon="dagger" headingLevel={3}>
           <div className="sc-row">
             <Button variant="primary" icon="send">

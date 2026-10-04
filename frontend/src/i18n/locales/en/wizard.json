@@ -111,7 +111,7 @@
     "backgroundStoryPlaceholder": "History, coterie, pack, cabal, goals…",
     "freebiesSub": "15 points (+ up to 7 from Flaws) to raise anything above the creation budgets."
   },
-  "created": "Character forged. Enter the chronicle to play.",
+  "created": "Character forged. Here is the chronicle: you can play right away.",
   "noChronicle": "You need to be a member of at least one Vampire, Werewolf, or Mage chronicle before using this forge.",
   "back": "Back",
   "field": {
@@ -159,7 +159,7 @@
     "extraNotesPlaceholder": "House rules, ST approval, page refs…"
   },
   "v5": {
-    "created": "Character embraced. Enter the chronicle to play.",
+    "created": "Character embraced. Here is the chronicle: you can play right away.",
     "thinMeritPlaceholder": "e.g. Day Drinker",
     "thinFlawPlaceholder": "e.g. Baby Teeth",
     "removeThin": "Remove thin-blood {{kind}} {{n}}",

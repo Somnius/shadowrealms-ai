@@ -4,7 +4,7 @@ import { overlayFromMarker } from '../../dice/diceMarker';
 import { classicOutcome, classifyClassicDie } from '../../dice/classicDiceDisplay';
 import { classifyV5Die, v5Badges } from '../../dice/v5DiceDisplay';
 import Markdown from './markdown';
-import { diceAnimationId, messageTime, presentSpeaker } from './messageModel';
+import { diceAnimationId, messageTime, parseRouseLine, presentSpeaker } from './messageModel';
 import { formatClock, formatFull, formatShort, isoOf } from './timeFormat';
 import { t } from '../../i18n';
 
@@ -90,13 +90,34 @@ export function MessageGroup({ group, timeZone, now }) {
               <Time ms={ms} timeZone={timeZone} now={now} short={false} className="sr-msg__gutter" />
             )}
             <div className={`sr-msg__body${group.kind === 'action' ? ' sr-msg__body--action' : ''}${first && longNarration ? ' sr-msg__body--dropcap' : ''}`}>
-              <Markdown text={m.content} />
+              <MessageBody message={m} />
             </div>
           </div>
         );
       })}
     </div>
   );
+}
+
+/** Translated Rouse check line (blood drop + result) from the parsed server template. */
+export function RouseLine({ rouse }) {
+  const text = rouse.success
+    ? t('chat:rouseLine.success', 'rolled {{die}}: success, Hunger stays {{hunger}}.', { die: rouse.die, hunger: rouse.hungerAfter })
+    : rouse.atMax
+      ? t('chat:rouseLine.atMax', 'rolled {{die}}: failure at Hunger 5. Hunger cannot rise further; test for hunger frenzy.', { die: rouse.die })
+      : t('chat:rouseLine.failure', 'rolled {{die}}: failure, Hunger {{before}} → {{after}}.', { die: rouse.die, before: rouse.hungerBefore, after: rouse.hungerAfter });
+  return (
+    <span className={`sr-rouse-line${rouse.success ? '' : ' sr-rouse-line--fail'}`}>
+      <Glyph name="blood-drop" size={16} className="sr-rouse-line__glyph" />
+      <strong className="sr-rouse-line__label">{t('chat:rouseLine.label', 'Rouse check')}</strong>{' '}
+      <span>{text}</span>
+    </span>
+  );
+}
+
+function MessageBody({ message }) {
+  const rouse = parseRouseLine(message);
+  return rouse ? <RouseLine rouse={rouse} /> : <Markdown text={message.content} />;
 }
 
 function diceFaces(marker) {

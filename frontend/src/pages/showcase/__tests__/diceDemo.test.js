@@ -59,3 +59,18 @@ test('contrast maths matches the WCAG reference values in the design README', ()
   expect(wcagLevel(3.2)).toBe('AA large');
   expect(wcagLevel(1.2)).toBe('decor');
 });
+
+test('glyph search folds Greek accents, case and final sigma', () => {
+  const { foldSearch } = require('../GlyphGallery');
+  expect(foldSearch('Κερί')).toBe(foldSearch('κερι'));
+  expect(foldSearch('ΤΡΑΠΟΥΛΆΣ')).toBe('τραπουλασ');
+  expect(foldSearch('τράπουλας').includes(foldSearch('ΤΡΑΠΟΥΛΑΣ'))).toBe(true);
+});
+
+test('contrast ratios are rounded down for display', () => {
+  const { formatRatio } = require('../contrast');
+  expect(formatRatio(4.499)).toBe('4.49');
+  expect(formatRatio(4.5)).toBe('4.50');
+  expect(formatRatio(7.0)).toBe('7.00');
+  expect(formatRatio(0)).toBe('–');
+});

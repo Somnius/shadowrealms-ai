@@ -124,3 +124,25 @@ export function markersById(messages) {
   }
   return map;
 }
+
+/**
+ * A Rouse check line (ai_message_kind dice_rouse:<id>) as data, parsed from the fixed English
+ * template in backend services/v5_dice.py format_rouse_markdown (older rows start with a blood-drop
+ * emoji). Returns {die, success, hungerBefore, hungerAfter, atMax} or null when it does not match.
+ */
+const ROUSE_RE = /^(?:\u{1FA78}\s*)?(?:\*\*.+\*\* makes a Rouse check|\*\*Rouse check\*\*): rolled \*\*(\d+)\*\* — (success|failure), (.*)$/su;
+export function parseRouseLine(msg) {
+  if (!kindOf(msg).startsWith('dice_rouse:')) return null;
+  const m = ROUSE_RE.exec(String(msg.content || '').trim());
+  if (!m) return null;
+  const die = Number(m[1]);
+  const success = m[2] === 'success';
+  const tail = m[3];
+  if (success) {
+    const h = /Hunger stays \*\*(\d+)\*\*/.exec(tail);
+    return h ? { die, success, hungerBefore: Number(h[1]), hungerAfter: Number(h[1]), atMax: false } : null;
+  }
+  if (/Hunger cannot rise further/.test(tail)) return { die, success, hungerBefore: 5, hungerAfter: 5, atMax: true };
+  const f = /Hunger \*\*(\d+) → (\d+)\*\*/.exec(tail);
+  return f ? { die, success, hungerBefore: Number(f[1]), hungerAfter: Number(f[2]), atMax: false } : null;
+}

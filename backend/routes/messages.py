@@ -563,6 +563,7 @@ def save_message(campaign_id, location_id):
         
         # CHECK FOR OOC VIOLATIONS (only for user messages, not AI; never for staff)
         ooc_warning = None
+        ooc_warning_info = None
         if role == 'user':
             try:
                 from services.ooc_monitor import create_ooc_monitor
@@ -591,12 +592,14 @@ def save_message(campaign_id, location_id):
                 
                 if is_violation:
                     logger.warning(f"OOC violation detected for user {user_id}: {content[:50]}...")
+                    ooc_warning_info = getattr(ooc_monitor, 'last_warning', None)
                     
                     if should_ban:
                         # User has been banned
                         return jsonify({
                             'error': 'OOC violation - temporarily banned',
                             'warning': warning_msg,
+                            'ooc_warning_info': ooc_warning_info,
                             'violation': True
                         }), 403
                     else:
@@ -802,6 +805,8 @@ def save_message(campaign_id, location_id):
         # Include OOC warning if there was a violation
         if ooc_warning:
             response_data['ooc_warning'] = ooc_warning
+            if ooc_warning_info:
+                response_data['ooc_warning_info'] = ooc_warning_info
         
         return jsonify(response_data), 201
         

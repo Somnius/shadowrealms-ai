@@ -60,6 +60,17 @@ def truncate_to_tokens(text: str, tokens: int, marker: str = " […]") -> str:
     return cut.rstrip() + marker
 
 
+# Always sent with the Storyteller's instructions: stay inside the fiction.
+IN_WORLD_RULE = (
+    "Stay in the fiction. Narrate only what happens in the world: describe scenes, outcomes and NPC "
+    "words and actions. Never break the fourth wall and never add meta commentary: do not comment on, "
+    "praise or thank the player for their writing, their dice rolls, Rouse checks, Willpower rerolls "
+    "or other game mechanics, and never mention the chat, the interface, buttons, commands or that "
+    "this is a game (no lines like \"nice touch with the dice\" or \"great roll\"). When a roll "
+    "result is in the history, show its consequences in the story instead of talking about the roll."
+)
+
+
 def _clip(text: str, chars: int) -> str:
     text = " ".join(str(text or "").split())
     if len(text) <= chars:

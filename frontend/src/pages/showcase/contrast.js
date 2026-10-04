@@ -30,6 +30,12 @@ export function contrastRatio(a, b) {
   return (Math.max(la, lb) + 0.05) / (Math.min(la, lb) + 0.05);
 }
 
+/** Ratio as shown: rounded down to 2 decimals, so 4.499 reads 4.49 (a fail), never 4.50. */
+export function formatRatio(ratio) {
+  if (!ratio) return '–';
+  return (Math.floor(ratio * 100 + 1e-9) / 100).toFixed(2);
+}
+
 /** 'AAA' (7+), 'AA' (4.5+), 'AA large' (3+) or 'decor'. */
 export function wcagLevel(ratio) {
   if (ratio == null) return '';

@@ -72,7 +72,7 @@
 .sr-app .sr-msg__name--player { color: var(--sr-text-2); }
 .sr-app .sr-msg__name--storyteller { color: var(--sr-gold-400); }
 .sr-app .sr-msg__name--staff { color: var(--sr-info-400); }
-.sr-app .sr-msg__name--ai { color: var(--sr-arcane-300); font-family: var(--sr-font-display); letter-spacing: var(--sr-tracking-display); }
+.sr-app .sr-msg__name--ai { color: var(--sr-arcane-300); font-family: var(--sr-font-display); font-variant-numeric: lining-nums; letter-spacing: var(--sr-tracking-display); }
 .sr-app .sr-msg__badge { align-self: center; }
 .sr-app .sr-msg__secondary { color: var(--sr-text-muted); font-size: var(--sr-text-sm); opacity: 0; transition: opacity var(--sr-dur-fast); }
 .sr-app .sr-msg:hover .sr-msg__secondary,
@@ -118,6 +118,7 @@
 .sr-app .sr-msg__body--dropcap .sr-md-p:first-child::first-letter {
   float: left;
   font-family: var(--sr-font-display);
+  font-variant-numeric: lining-nums;
   font-size: 2.6em;
   line-height: 0.9;
   padding: 4px 6px 0 0;
@@ -367,3 +368,8 @@
 .sr-app .sr-dicecard__reason { margin: 0; color: var(--sr-text); font-weight: 600; }
 .sr-app .sr-dicecard__summary { margin: 0; }
 .sr-app .sr-chat__aifail { display: flex; align-items: center; gap: var(--sr-space-2); flex-wrap: wrap; color: var(--sr-warn-400, var(--sr-text-2)); }
+
+/* Rouse check line (dice_rouse:*): structured, translated, blood-drop glyph */
+.sr-app .sr-rouse-line { display: inline-flex; align-items: baseline; gap: 0.35em; flex-wrap: wrap; font-style: normal; }
+.sr-app .sr-rouse-line__glyph { color: var(--sr-blood-400); align-self: center; flex: none; }
+.sr-app .sr-rouse-line__label { color: var(--sr-text); font-weight: 600; }

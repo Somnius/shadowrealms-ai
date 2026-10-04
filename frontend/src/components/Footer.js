@@ -42,7 +42,7 @@ function Footer() {
           fontFamily: 'var(--sr-font-body)'
         }}>
           <span style={{ 
-            color: 'var(--sr-blood-500)', 
+            color: 'var(--sr-blood-400)', 
             fontWeight: 'bold',
             fontFamily: 'var(--sr-font-display)'
           }}>
@@ -52,7 +52,7 @@ function Footer() {
           <span 
             onClick={() => setShowReadme(true)}
             style={{ 
-              color: 'var(--sr-arcane-500)',
+              color: 'var(--sr-arcane-400)',
               fontSize: '12px',
               padding: '2px 8px',
               background: 'rgba(157, 78, 221, 0.2)',
@@ -86,7 +86,7 @@ function Footer() {
         }}>
           {t('footer:madeWith', 'Made with')} <Glyph name="blood-drop" size={14} title={t('footer:love', 'love')} style={{ color: 'var(--sr-blood-500)', verticalAlign: '-2px' }} /> {t('footer:madeFor', 'for tabletop RPG games by')}{' '}
           <span style={{ 
-            color: 'var(--sr-blood-500)',
+            color: 'var(--sr-blood-400)',
             fontWeight: 'bold',
             fontFamily: 'var(--sr-font-display)'
           }}>
@@ -115,7 +115,7 @@ function Footer() {
               gap: '5px'
             }}
             onMouseOver={(e) => {
-              e.target.style.color = 'var(--sr-blood-500)';
+              e.target.style.color = 'var(--sr-blood-400)';
             }}
             onMouseOut={(e) => {
               e.target.style.color = 'var(--sr-bone-300)';
@@ -133,7 +133,7 @@ function Footer() {
             Somnius
           </a>
           
-          <span style={{ color: 'var(--sr-night-700)' }}>|</span>
+          <span aria-hidden="true" style={{ color: 'var(--sr-bone-500)' }}>|</span>
           
           <span style={{
             color: 'var(--sr-bone-500)',
@@ -150,7 +150,7 @@ function Footer() {
         marginTop: '15px',
         paddingTop: '15px',
         borderTop: '1px solid var(--sr-night-700)',
-        color: '#72767d',
+        color: 'var(--sr-bone-500)',
         fontSize: '12px',
         fontFamily: 'var(--sr-font-body)'
       }}>
@@ -160,16 +160,16 @@ function Footer() {
           target="_blank" 
           rel="noopener noreferrer"
           style={{
-            color: 'var(--sr-arcane-500)',
+            color: 'var(--sr-arcane-400)',
             textDecoration: 'none',
             fontWeight: 'bold',
             transition: 'color 0.2s'
           }}
           onMouseOver={(e) => {
-            e.target.style.color = 'var(--sr-arcane-400)';
+            e.target.style.color = 'var(--sr-arcane-300)';
           }}
           onMouseOut={(e) => {
-            e.target.style.color = 'var(--sr-arcane-500)';
+            e.target.style.color = 'var(--sr-arcane-400)';
           }}
         >
           Cursor AI

@@ -21,6 +21,7 @@
 .sr-app .sr-admin__title {
   margin: 0;
   font-family: var(--sr-font-display);
+  font-variant-numeric: lining-nums;
   font-size: var(--sr-text-2xl);
   color: var(--sr-accent-text);
   letter-spacing: var(--sr-tracking-display);

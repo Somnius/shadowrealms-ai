@@ -93,3 +93,10 @@ test('rouse check with server_posted does not post the line again', async () => 
   expect(api).toHaveBeenCalledTimes(1);
   expect(appendMessages).toHaveBeenCalledWith([{ id: 12 }]);
 });
+
+test('reroll toast text shows the Willpower spent from the response', () => {
+  const { willpowerSpentText } = require('../useDiceActions');
+  expect(willpowerSpentText({ willpower_spent: false })).toBeUndefined();
+  expect(willpowerSpentText({ willpower_spent: true, roll_result: { willpower_cost: 'superficial' } })).toBe('Willpower −1 (Superficial damage).');
+  expect(willpowerSpentText({ willpower_spent: true, roll_result: { willpower_cost: 'aggravated' } })).toMatch(/^Willpower −1 \(Aggravated/);
+});

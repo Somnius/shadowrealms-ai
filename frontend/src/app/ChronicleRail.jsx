@@ -40,7 +40,7 @@ function RailItem({ to, label, active, children, expanded, onNavigate }) {
  * `expanded` renders names next to the icons (mobile drawer).
  */
 export default function ChronicleRail({ expanded = false, onNavigate }) {
-  const { chronicles } = useChronicles();
+  const { chronicles, loaded, expectedCount } = useChronicles();
   const loc = useLocation();
   const path = loc.pathname;
   const activeId = (/^\/(?:c|chronicles)\/(\d+)/.exec(path) || [])[1];
@@ -57,7 +57,14 @@ export default function ChronicleRail({ expanded = false, onNavigate }) {
         <Glyph name="logo-mark" size={26} />
       </RailItem>
       <div className="sr-rail__sep" role="separator" />
-      <ul className="sr-rail__list">
+      <ul className="sr-rail__list" aria-busy={!loaded || undefined}>
+        {!loaded
+          ? Array.from({ length: expectedCount }, (_, i) => (
+              <li key={`ph${i}`} className="sr-rail__placeholder" aria-hidden="true">
+                <span className="sr-rail__icon" />
+              </li>
+            ))
+          : null}
         {chronicles.map((c) => {
           const line = lineOf(c.game_system);
           return (

@@ -6,6 +6,7 @@
 .sr-outcomes { display: flex; flex-wrap: wrap; gap: var(--sr-space-2); justify-content: center; }
 .sr-outcomes--lg .sr-outcome {
   font-family: var(--sr-font-display);
+  font-variant-numeric: lining-nums;
   font-size: var(--sr-text-md);
   letter-spacing: var(--sr-tracking-display);
   padding: 4px 12px;
@@ -206,6 +207,7 @@
   align-items: center;
   gap: var(--sr-space-2);
   font-family: var(--sr-font-display);
+  font-variant-numeric: lining-nums;
   font-size: var(--sr-text-xl);
   font-weight: 700;
   letter-spacing: var(--sr-tracking-display);
@@ -272,6 +274,7 @@
   gap: var(--sr-space-2);
   color: var(--sr-blood-300);
   font-family: var(--sr-font-display);
+  font-variant-numeric: lining-nums;
   font-size: var(--sr-text-md);
   letter-spacing: var(--sr-tracking-display);
 }
@@ -280,6 +283,7 @@
 .sr-reroll__dice { display: flex; flex-wrap: wrap; gap: var(--sr-space-2); justify-content: center; }
 .sr-reroll__foot { display: flex; flex-wrap: wrap; gap: var(--sr-space-2); justify-content: flex-end; align-items: center; margin-top: var(--sr-space-3); }
 .sr-reroll__picked { color: var(--sr-text-muted); font-size: var(--sr-text-sm); margin-right: auto; font-family: var(--sr-font-mono); }
+.sr-reroll__cost { color: var(--sr-text-2); font-size: var(--sr-text-sm); }
 
 /* ---- roll dialog: edition fields ---- */
 .sr-roll__help {
