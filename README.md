@@ -13,6 +13,18 @@
 
 </div>
 
+<div align="center">
+
+### ▶ Watch the trailer
+
+[![Trailer preview: a V5 roll lands a messy critical with the blood-red flash](assets/trailer/trailer-preview.webp)](https://github.com/Somnius/shadowrealms-ai/releases/download/trailer-v0.10.0/trailer_en_1080p60.mp4)
+
+**[English (2 min)](https://github.com/Somnius/shadowrealms-ai/releases/download/trailer-v0.10.0/trailer_en_1080p60.mp4)** · **[Ελληνικά (2 λεπτά)](https://github.com/Somnius/shadowrealms-ai/releases/download/trailer-v0.10.0/trailer_el_1080p60.mp4)** · [release page](https://github.com/Somnius/shadowrealms-ai/releases/tag/trailer-v0.10.0)
+
+<sub>Recorded on a fresh copy of the app: real AI Storyteller replies from a local model, real server dice rolls, original score.</sub>
+
+</div>
+
 ![A V5 chronicle in play: dice cards, a Rouse check, the AI Storyteller's reply and the character panel](assets/screenshots/v0.9/play-v5.webp)
 
 | Sign-in | Chronicle hall | Bestial failure |
@@ -185,15 +197,3 @@ MIT, see [LICENSE](LICENSE).
 ## Disclaimer
 
 Not affiliated with or endorsed by Paradox Interactive or White Wolf/Renegade; World of Darkness and Vampire: The Masquerade are their trademarks. All glyphs and sigils are original; no rulebook text is included — bring your own books.
-
----
-
-## Demo video
-
-[![ShadowRealms AI Demo](https://img.youtube.com/vi/9RGGb-F5Y2M/maxresdefault.jpg)](https://www.youtube.com/watch?v=9RGGb-F5Y2M)
-
-**[▶️ Watch the demo on YouTube](https://www.youtube.com/watch?v=9RGGb-F5Y2M)**
-
-> **Version 0.7.0 Preview:** This demo showcases the frontend interface in its current state. Please note that not all features are fully functional yet—this is a first look at the user interface and design direction of ShadowRealms AI.
-
-The current interface is very different; see the screenshots at the top.

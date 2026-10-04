@@ -1,6 +1,6 @@
 # ShadowRealms AI trailer: plan
 
-Status: **plan only, waiting for Lef's go.** Nothing below is built yet.
+Status: **done** (2026-10-04). Published at https://github.com/Somnius/shadowrealms-ai/releases/tag/trailer-v0.10.0 (English and Greek). The scripts are in `tools/trailer/` (`CUES.md`, `timeline.json`, `edit.py`, `record.mjs`, `music/compose.py`).
 
 ## What was decided (2026-10-04)
 
