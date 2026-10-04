@@ -1,6 +1,6 @@
 # Version Bump Process
 
-**Last Updated**: 2026-10-04 (v0.9.0)
+**Last Updated**: 2026-10-04 (v0.10.0)
 
 How to change the version number and cut a release.
 

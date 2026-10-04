@@ -1,6 +1,6 @@
 # Chronicle membership: detach, join restrictions, and per-campaign playing character
 
-**Last updated:** 2026-10-04 (v0.9.0)  
+**Last updated:** 2026-10-04 (v0.9.4)  
 
 This document describes data fields, API routes, and UI behavior for leaving a chronicle without deleting sheets, self-join rules after a voluntary leave, and which character is “live” for in-character play per chronicle.
 
