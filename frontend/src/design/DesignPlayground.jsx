@@ -1,9 +1,9 @@
 /**
- * Temporary living style guide for the design system. Not mounted anywhere yet:
- * the shell work (Part B) can route it at /showcase, or render it ad hoc with
- *   import DesignPlayground from './design/DesignPlayground';
+ * Developer style guide for the design system, mounted at /showcase/design (lazy). The public,
+ * translated tour of the same parts is the theme preview at /showcase (src/pages/showcase).
  */
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import {
   DesignProvider,
   MotionToggle,
@@ -281,6 +281,7 @@ export default function DesignPlayground() {
         <header className="pg-row" style={{ justifyContent: 'space-between' }}>
           <h1 className="sr-caps">{lang === 'el' ? 'Σκιώδη Βασίλεια — οδηγός ύφους' : 'ShadowRealms style guide'}</h1>
           <div className="pg-row">
+            <Link to="/showcase">{lang === 'el' ? 'Προεπισκόπηση θέματος' : 'Theme preview'}</Link>
             <MotionToggle />
             <Select
               label="Game line"
