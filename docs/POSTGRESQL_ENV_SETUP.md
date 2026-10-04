@@ -25,23 +25,19 @@ pwgen -s -y -1 16
 
 ## 📝 Add to Your `.env` File
 
-**Location**: `/home/lef/dev/shadowrealms-ai_dev/shadowrealms-ai/.env`
+**Location**: `.env` in the repository root (copied from `env.template`)
 
-Add these lines to the **DATABASE CONFIGURATION** section (replace values with YOUR generated ones):
+Set these lines in the **DATABASE (PostgreSQL)** section (replace values with YOUR generated ones):
 
 ```bash
 # =============================================================================
-# DATABASE CONFIGURATION
+# DATABASE (PostgreSQL)
 # =============================================================================
-# SQLite (old - for rollback only)
-DATABASE=/app/data/shadowrealms.db
-
-# PostgreSQL (new - primary database)
 POSTGRES_DB=shadowrealms_db
 POSTGRES_USER=YOUR_GENERATED_USERNAME_HERE
 POSTGRES_PASSWORD=YOUR_GENERATED_PASSWORD_HERE
 DATABASE_TYPE=postgresql
-DATABASE_HOST=localhost
+DATABASE_HOST=postgresql
 DATABASE_PORT=5432
 ```
 
@@ -85,10 +81,10 @@ POSTGRES_PASSWORD=Pg#9mR2wL4nQ8vT
 
 1. **Generate credentials** using commands above
 2. **Open** your `.env` file
-3. **Add** PostgreSQL variables to DATABASE CONFIGURATION section
+3. **Set** the PostgreSQL variables in the DATABASE (PostgreSQL) section
 4. **Save** and close
 5. **Verify** file permissions: `chmod 600 .env`
-6. **Test** connection after migration
+6. **Start** the stack (`./docker-up.sh`) and check the tables exist (see [DOCKER_ENV_SETUP.md](DOCKER_ENV_SETUP.md#postgresql-schema))
 
 ---
 
@@ -116,13 +112,12 @@ If you suspect your credentials have been exposed:
 
 1. **Stop containers**: `docker compose down`
 2. **Change credentials** in `.env`
-3. **Remove old data**: `docker volume rm shadowrealms-ai_postgresql_data`
-4. **Restart**: `docker compose up -d`
-5. **Re-run migration** with new credentials
+3. **Remove old data**: `docker volume rm shadowrealms-ai_postgresql_data` (this deletes the whole database; back it up first if you need the data)
+4. **Restart**: `docker compose up -d` (a fresh volume gets the schema from `backend/init_postgresql_schema.sql`)
 
 ---
 
 **Remember**: The `.env` file is already in `.gitignore` - your credentials will NOT be committed to git.
 
-**Last Updated**: 2025-10-28
+**Last Updated**: 2026-10-04
 
