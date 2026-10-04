@@ -166,13 +166,18 @@ function LoginAudit({ token, displayTimezone, onUnlockPrefill }) {
   const [hasMore, setHasMore] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  // Only the newest request may update the table (fast Older/Newer clicks can answer out of order).
+  const requestSeq = useRef(0);
 
   const load = useCallback(async () => {
+    const seq = ++requestSeq.current;
+    const current = () => seq === requestSeq.current;
     setLoading(true);
     setError('');
     try {
       const r = await api.getAuthEvents(token, { ...filters, limit, offset });
       const d = await r.json().catch(() => null);
+      if (!current()) return;
       if (!r.ok || !d || !Array.isArray(d.events)) {
         setRows([]);
         setHasMore(false);
@@ -182,11 +187,12 @@ function LoginAudit({ token, displayTimezone, onUnlockPrefill }) {
       setRows(d.events);
       setHasMore(!!d.has_more);
     } catch (e) {
+      if (!current()) return;
       setRows([]);
       setHasMore(false);
       setError(t('admin:security.audit.loadFailed', 'Could not load the login audit'));
     } finally {
-      setLoading(false);
+      if (current()) setLoading(false);
     }
   }, [token, filters, limit, offset]);
 
@@ -317,6 +323,9 @@ function LoginAudit({ token, displayTimezone, onUnlockPrefill }) {
                           size="sm"
                           variant="ghost"
                           icon="key"
+                          aria-label={t('admin:security.audit.unlockThisFor', 'Unlock {{who}}', {
+                            who: [ev.username, ev.ip].filter(Boolean).join(' / '),
+                          })}
                           onClick={() => onUnlockPrefill({ username: ev.username || '', ip: ev.ip || '' })}
                         >
                           {t('admin:security.audit.unlockThis', 'Unlock…')}

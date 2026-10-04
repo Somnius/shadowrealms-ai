@@ -214,7 +214,7 @@ refresh-token family ids and invite code prefixes stay in the database. Admin ac
 Every log record goes through `backend/services/log_safety.py`: `install_log_sanitizer()` (run by
 `Config.setup_logging()` and `gunicorn.conf.py`) wraps the log record factory, so CR, LF and other
 control characters in a finished message become visible escapes (`\n`, `\x1b`, ...) for our
-loggers, gunicorn's and libraries' alike. Tracebacks keep their line breaks. Call sites that log a
+loggers, gunicorn's and libraries' alike. Tracebacks keep their line breaks, but the exception message inside one is escaped as a whole, so it can't start a fake line either. Fields passed with `extra={...}` are not escaped (nothing uses them). Call sites that log a
 client-controlled value also wrap it in `safe_log_value()`, which is what CodeQL's
 `py/log-injection` query recognises.
 

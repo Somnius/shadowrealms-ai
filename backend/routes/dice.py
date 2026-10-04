@@ -33,6 +33,7 @@ from services.v5_dice import (
 import logging
 import json
 
+from services.log_safety import safe_log_value
 logger = logging.getLogger(__name__)
 
 dice_bp = Blueprint('dice', __name__)
@@ -778,7 +779,8 @@ def contested_roll(campaign_id):
             ))
 
         conn.commit()
-        logger.info(f"Contested {edition} roll in campaign {campaign_id}: {result['winner']} wins".replace("\r\n", "").replace("\n", ""))
+        logger.info("Contested %s roll in campaign %s: %s wins", safe_log_value(edition), campaign_id,
+                    safe_log_value(result['winner']))
 
         return jsonify({
             'rules_edition': edition,
@@ -873,7 +875,8 @@ def ai_roll(campaign_id):
         conn.commit()
         roll_result['roll_id'] = roll_id
         
-        logger.info(f"AI roll ({action_type}, {edition}) in campaign {campaign_id}: {roll_result['successes']} successes".replace("\r\n", "").replace("\n", ""))
+        logger.info("AI roll (%s, %s) in campaign %s: %s successes", safe_log_value(action_type),
+                    safe_log_value(edition), campaign_id, roll_result['successes'])
         
         return jsonify({
             'roll_id': roll_id,

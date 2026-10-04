@@ -8,8 +8,8 @@ terminal control codes. Two layers:
 * ``install_log_sanitizer()`` wraps the process-wide log record factory, so
   every record (ours, gunicorn's, any library's) gets its finished message
   escaped: CR/LF and other control characters become visible escapes such as
-  ``\\n``. Tracebacks from ``logger.exception`` are added by the formatter
-  afterwards and keep their real line breaks.
+  ``\\n``. Tracebacks from ``logger.exception`` keep their real line breaks,
+  but control characters inside each line are escaped too.
 * ``safe_log_value()`` escapes one value at the call site. It is what static
   analysis (CodeQL) recognises, so the flagged log calls use it explicitly.
 """
@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import logging
 import re
+import traceback
 from typing import Any, Optional
 
 # C0 controls except TAB, DEL, C1 controls, and the Unicode line/paragraph
@@ -77,8 +78,43 @@ def sanitize_record(record: logging.LogRecord) -> logging.LogRecord:
         return record
     record.msg = escape_log_text(message)
     record.args = None
+    # Tracebacks and stacks keep their line breaks, but each line is escaped: exception text
+    # often quotes client input. Formatters reuse a pre-filled exc_text instead of rendering it.
+    if record.exc_info and not record.exc_text:
+        record.exc_text = format_exception_safely(record.exc_info)
+    if record.stack_info:
+        record.stack_info = _escape_lines(record.stack_info)
+    # Note: fields passed with extra={...} are set after this runs and are not escaped.
     record._sr_log_safe = True
     return record
+
+
+_FRAME_CHUNK = ("  File ", "Traceback ", "\nDuring handling", "\nThe above exception")
+
+
+def format_exception_safely(exc_info) -> str:
+    """
+    A traceback like ``Formatter.formatException`` makes, with the exception messages escaped.
+
+    Frame lines keep their line breaks (each line escaped); an exception message is escaped
+    as a whole, so a newline inside it can't start a fake log line.
+    """
+    try:
+        chunks = traceback.TracebackException(*exc_info).format()
+        out = []
+        for chunk in chunks:
+            if chunk.startswith(_FRAME_CHUNK):
+                out.append(_escape_lines(chunk))
+            else:
+                body = chunk[:-1] if chunk.endswith("\n") else chunk
+                out.append(escape_log_text(body) + "\n")
+        return "".join(out).rstrip("\n")
+    except Exception:  # noqa: BLE001 - never let logging fail over a traceback
+        return escape_log_text(str(exc_info[1]))
+
+
+def _escape_lines(text: str) -> str:
+    return "\n".join(escape_log_text(line) for line in text.split("\n"))
 
 
 _installed = False

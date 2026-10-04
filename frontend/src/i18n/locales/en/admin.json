@@ -451,6 +451,7 @@
       "empty": "No events match these filters.",
       "loadFailed": "Could not load the login audit",
       "unlockThis": "Unlock…",
+      "unlockThisFor": "Unlock {{who}}",
       "pages": "Login audit pages",
       "prev": "Newer",
       "next": "Older",
