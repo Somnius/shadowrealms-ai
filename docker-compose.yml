@@ -67,7 +67,7 @@ services:
       # "none" disables thinking on reasoning models (Gemma 4); empty = model default
       - LM_STUDIO_REASONING_EFFORT=${LM_STUDIO_REASONING_EFFORT:-}
       - OLLAMA_URL=http://localhost:11434
-      - OLLAMA_MODEL=${OLLAMA_MODEL:-command-r:35b}
+      - OLLAMA_MODEL=${OLLAMA_MODEL:-llama3.2:3b}
       - OLLAMA_TIMEOUT=${OLLAMA_TIMEOUT:-30}
       # Phase 2 AI (docs/AI_SYSTEMS.md). Roles/keys are set in the admin panel; these are defaults.
       - STORYTELLER_EL_MODEL=${STORYTELLER_EL_MODEL:-llama-krikri-8b-instruct}

@@ -60,7 +60,7 @@ def create_app(config_class=Config):
             # Empty = model default; "none" turns off thinking on reasoning models (e.g. Gemma 4)
             'LM_STUDIO_REASONING_EFFORT': os.environ.get('LM_STUDIO_REASONING_EFFORT', '').strip(),
             'OLLAMA_URL': os.environ.get('OLLAMA_URL', 'http://localhost:11434'),
-            'OLLAMA_MODEL': os.environ.get('OLLAMA_MODEL', 'command-r:35b'),
+            'OLLAMA_MODEL': os.environ.get('OLLAMA_MODEL', 'llama3.2:3b'),
             'OLLAMA_TIMEOUT': int(os.environ.get('OLLAMA_TIMEOUT', '30'))
         })
         logger.info("LLM Service initialized successfully")
