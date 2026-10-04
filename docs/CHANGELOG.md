@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Admin **Laya** tab: label player chat (in character? intent?) and run an evaluation of Laya against those labels, with per-label n, a "sample too small" flag, confusion matrices and the misclassified messages. Reports are kept and can be re-run. Same report from the CLI: `python scripts/laya_eval.py`. First run on the 8 player messages that exist so far, with provisional labels not yet checked by a human: `docs/laya/EVALUATION.md`.
+
 ## [0.9.3] - 2026-10-04 - Locks and logs
 
 ### Added
