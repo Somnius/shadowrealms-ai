@@ -66,10 +66,10 @@ def main(argv=None):
         return 2
 
     db = get_db()
+    if not args.save:
+        db.set_session(readonly=True)  # before any statement: this run can't write
     try:
         cur = db.cursor()
-        if not args.save:
-            cur.execute("SET SESSION CHARACTERISTICS AS TRANSACTION READ ONLY")
         predict = laya_eval.laya_predictor(provider)
         model = laya_eval.model_info(provider.model_dir)
         if args.labels:
@@ -81,6 +81,7 @@ def main(argv=None):
             report["label_source"] = {"table": "laya_labels"}
         texts = None if args.no_text else laya_eval.fetch_texts(cur, [w["message_id"] for w in report["misclassified"]])
         if args.save:
+            laya_eval.reap_stale_runs(cur)
             rid = laya_eval.save_report(cur, report, None, "cli")
             db.commit()
             print(f"saved as report #{rid}", file=sys.stderr)
