@@ -20,6 +20,7 @@ from services.location_naming_context import build_enriched_suggestion_prompt
 from services.location_suggestion_parse import parse_location_suggestions
 from services.health_check import require_llm
 import logging
+from services.log_safety import safe_log_value
 import os
 from datetime import datetime
 
@@ -170,7 +171,7 @@ def batch_create_locations(campaign_id):
         
         conn.commit()
         
-        logger.info(f"Batch created {len(created_ids)} locations for campaign {campaign_id}")
+        logger.info(f"Batch created {len(created_ids)} locations for campaign {safe_log_value(campaign_id)}")
         
         return jsonify({
             'message': f'Created {len(created_ids)} locations',
@@ -439,7 +440,8 @@ def create_location(campaign_id):
         location_id = result['id']
         conn.commit()
         
-        logger.info(f"Location created: {name} (ID: {location_id}) in campaign {campaign_id}")
+        logger.info(f"Location created: {safe_log_value(name)} (ID: {safe_log_value(location_id)}) "
+                    f"in campaign {safe_log_value(campaign_id)}")
         
         return jsonify({
             'id': location_id,
@@ -528,7 +530,7 @@ def update_location(location_id):
         cursor.execute(query, params)
         conn.commit()
         
-        logger.info(f"Location updated: {location_id}")
+        logger.info(f"Location updated: {safe_log_value(location_id)}")
         
         return jsonify({'message': 'Location updated successfully'}), 200
         
@@ -575,7 +577,8 @@ def delete_location(campaign_id, location_id):
         cursor.execute("SELECT COUNT(*) AS n FROM messages WHERE location_id = %s", (location_id,))
         message_count = cursor.fetchone()['n']
         
-        logger.info(f"🗑️ Deleting location {location_id} ({location_name}) - {message_count} messages will be removed")
+        logger.info(f"🗑️ Deleting location {safe_log_value(location_id)} ({safe_log_value(location_name)}) - "
+                    f"{message_count} messages will be removed")
         
         # 1. CREATE AUDIT LOG ENTRY
         cursor.execute("""
@@ -630,7 +633,7 @@ def delete_location(campaign_id, location_id):
         
         conn.commit()
         
-        logger.info(f"✅ Location {location_id} ({location_name}) deleted successfully:")
+        logger.info(f"✅ Location {safe_log_value(location_id)} ({safe_log_value(location_name)}) deleted successfully:")
         logger.info(f"   • Soft-deleted from active locations")
         logger.info(f"   • {message_count} messages CASCADE deleted from SQL")
         logger.info(f"   • Message embeddings purged from ChromaDB")
@@ -723,7 +726,7 @@ def enter_location(location_id):
         
         conn.commit()
         
-        logger.info(f"Character {character_id} entered location {location_id}")
+        logger.info(f"Character {safe_log_value(character_id)} entered location {safe_log_value(location_id)}")
         
         return jsonify({'message': 'Entered location successfully'}), 200
         
@@ -771,7 +774,7 @@ def leave_location(location_id):
         
         conn.commit()
         
-        logger.info(f"Character {character_id} left location {location_id}")
+        logger.info(f"Character {safe_log_value(character_id)} left location {safe_log_value(location_id)}")
         
         return jsonify({'message': 'Left location successfully'}), 200
         

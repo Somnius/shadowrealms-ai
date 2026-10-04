@@ -13,6 +13,7 @@ import json
 from datetime import datetime
 from services.rules_edition import V5, edition_of
 from services.character_sheet_v5 import sanity_check_v5, stamp_v5_meta
+from services.log_safety import safe_log_value
 
 from database import (
     get_db,
@@ -402,9 +403,9 @@ def create_character():
 
         logger.info(
             "Character '%s' created by user %s in campaign %s",
-            name,
-            current_user_id,
-            campaign_id,
+            safe_log_value(name),
+            safe_log_value(current_user_id),
+            safe_log_value(campaign_id),
         )
 
         return jsonify(
@@ -592,7 +593,7 @@ def get_character(character_id):
         return jsonify({'character': ch}), 200
         
     except Exception as e:
-        logger.error(f"Error getting character {character_id}: {e}")
+        logger.error(f"Error getting character {safe_log_value(character_id)}: {safe_log_value(e)}")
         return jsonify({'error': 'Failed to retrieve character'}), 500
     finally:
         if 'db' in locals():
@@ -736,13 +737,13 @@ def update_character(character_id):
             
             db.commit()
             
-            logger.info(f"Character {character_id} updated by user {current_user_id}")
+            logger.info(f"Character {safe_log_value(character_id)} updated by user {safe_log_value(current_user_id)}")
         
         # Return updated character
         return get_character(character_id)
         
     except Exception as e:
-        logger.error(f"Error updating character {character_id}: {e}")
+        logger.error(f"Error updating character {safe_log_value(character_id)}: {safe_log_value(e)}")
         return jsonify({'error': 'Failed to update character'}), 500
     finally:
         if 'db' in locals():
@@ -783,12 +784,13 @@ def delete_character(character_id):
         cursor.execute("DELETE FROM characters WHERE id = %s", (character_id,))
         db.commit()
         
-        logger.info(f"Character {character_id} ({character['name']}) deleted by user {current_user_id}")
+        logger.info(f"Character {safe_log_value(character_id)} ({safe_log_value(character['name'])}) "
+                    f"deleted by user {safe_log_value(current_user_id)}")
         
         return jsonify({'message': 'Character deleted successfully'}), 200
         
     except Exception as e:
-        logger.error(f"Error deleting character {character_id}: {e}")
+        logger.error(f"Error deleting character {safe_log_value(character_id)}: {safe_log_value(e)}")
         return jsonify({'error': 'Failed to delete character'}), 500
     finally:
         if 'db' in locals():

@@ -48,6 +48,7 @@ from services.live_events import (
 )
 from services.location_access import fetch_readable_location_ids
 from services.playing_character import effective_playing_character_id
+from services.log_safety import safe_log_value
 
 logger = logging.getLogger(__name__)
 
@@ -200,7 +201,7 @@ def events_stream(campaign_id):
         except GeneratorExit:  # client went away
             pass
         except Exception as e:  # noqa: BLE001
-            logger.error(f"events stream for campaign {campaign_id} failed: {e}")
+            logger.error(f"events stream for campaign {safe_log_value(campaign_id)} failed: {safe_log_value(e)}")
         finally:
             SLOTS.release(user_id)
 
@@ -290,7 +291,7 @@ def campaign_unread(campaign_id):
         conn.rollback()
         return jsonify({"tracking": tracking, "character_id": character_id, "locations": out}), 200
     except Exception as e:  # noqa: BLE001
-        logger.error(f"unread summary for campaign {campaign_id} failed: {e}")
+        logger.error(f"unread summary for campaign {safe_log_value(campaign_id)} failed: {safe_log_value(e)}")
         return jsonify({"error": "Failed to load unread counts"}), 500
     finally:
         conn.close()
@@ -368,7 +369,7 @@ def campaign_roster(campaign_id):
         conn.rollback()
         return jsonify({"campaign_id": campaign_id, "members": members}), 200
     except Exception as e:  # noqa: BLE001
-        logger.error(f"roster for campaign {campaign_id} failed: {e}")
+        logger.error(f"roster for campaign {safe_log_value(campaign_id)} failed: {safe_log_value(e)}")
         return jsonify({"error": "Failed to load members"}), 500
     finally:
         conn.close()

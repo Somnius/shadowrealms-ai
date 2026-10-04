@@ -33,6 +33,7 @@ from services.auth_security import check_password_policy, hash_password
 from routes.auth import _invites_locked, load_invites, save_invites
 from services.play_suspension import ALLOWED_REASON_CODES
 from services.request_validation import RequestValidationError
+from services.log_safety import safe_log_value
 
 logger = logging.getLogger(__name__)
 
@@ -600,7 +601,8 @@ def create_invite():
             fresh['invites'][code] = invites[code]
             save_invites(fresh)
 
-        logger.info("Admin %s created invite %s type=%s max_uses=%s", admin_name, code, inv_type, max_uses)
+        logger.info("Admin %s created invite %s type=%s max_uses=%s", safe_log_value(admin_name), safe_log_value(code),
+                    safe_log_value(inv_type), safe_log_value(max_uses))
 
         invite_out = dict(invites[code])
         invite_out['code'] = code
@@ -1329,8 +1331,9 @@ def ai_providers():
         actor = int(get_jwt_identity())
         logger.info(
             "Admin %s updated AI providers (roles=%s, keys=%s, classifier=%s)",
-            actor, list((data.get('roles') or {}).keys()), list((data.get('keys') or {}).keys()),
-            data.get('classifier_provider'),
+            actor, safe_log_value(list((data.get('roles') or {}).keys())),
+            safe_log_value(list((data.get('keys') or {}).keys())),
+            safe_log_value(data.get('classifier_provider')),
         )
 
     snap = ai_roles.settings_snapshot()
@@ -1370,7 +1373,7 @@ def classifier_test():
                         'ms': int((_time.monotonic() - t0) * 1000)}), 200
     except Exception as e:  # noqa: BLE001
         # Exception text stays in the logs; the admin sees a fixed message.
-        logger.warning("Classifier test with %s failed: %s", name, e)
+        logger.warning("Classifier test with %s failed: %s", safe_log_value(name), safe_log_value(e))
         return jsonify({'ok': False, 'provider': name,
                         'detail': 'Classifier test failed; see the backend logs for details.',
                         'ms': int((_time.monotonic() - t0) * 1000)}), 200
