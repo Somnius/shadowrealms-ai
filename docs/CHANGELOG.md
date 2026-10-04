@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.10.0] - 2026-10-04 - New foundations
+
+Full plan and progress: `docs/ROADMAP_v0.10.md`.
+
 ### Changed
 - Frontend builds with Vite instead of Create React App (`react-scripts` removed). `npm start`, `npm run build` and `npm test` work as before; output still goes to `frontend/build/`, with no inline scripts and no source maps. Jest runs on its own with one config (`jest.config.js`), and `npm run lint` uses a plain ESLint 9 config. Node 22 in the frontend image and CI. `npm audit --omit=dev` went from 69 findings to 2 (react-router 6). Rebuild the dev image once: `docker compose --profile dev build frontend`.
 - ChromaDB is pinned: the `chromadb/chroma:1.5.9` image (was `:latest`) and the `chromadb>=1.5.9,<2` client move together. Existing data opens in place, nothing to migrate; take a copy of `data/vector_db` first (see [DOCKER_ENV_SETUP.md](DOCKER_ENV_SETUP.md#upgrading-an-existing-install)).
@@ -14,6 +18,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - CI: `actions/checkout` v7, `actions/setup-python` v7, `github/codeql-action` v4 (v3 is deprecated in December 2026).
 - Frontend dependencies: react-router 7 (replaces react-router-dom 6; fixes the last 2 `npm audit --omit=dev` findings, now 0), motion 14 (was framer-motion 10), i18next 26 and react-i18next 17, Jest 30, React Testing Library 16 and jest-dom 7. Unused zustand, Headless UI, Heroicons, React Query and TypeScript are gone. React stays on 18 and Tailwind on 3.
 - `npm run lint` is clean (it had 204 warnings) and now fails on any warning, in CI too.
+
+### Fixed
+- The public bundle carried the whole frontend `package.json` (every dependency and version); only the version number is in it now.
 
 ## [0.9.4] - 2026-10-04 - At the table
 
