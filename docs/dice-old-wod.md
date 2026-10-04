@@ -56,6 +56,20 @@ Administrative `/ai` commands are restricted to site admins in `POST /api/ai/sla
 
 A room can have a leniency floor (2–10). Its dice never show 1, and with 2+ dice at least one die is ≥ the floor, so botches can't happen. Specialty rerolls are plain d10s.
 
+## Pools from the character sheet (Storyteller roll requests)
+
+The AI Storyteller doesn't count dice itself. It asks for a roll with a tag such as `[[roll: Dexterity + Stealth, difficulty 6]]`, and `/api/ai/chat` computes the pool from the requesting player's sheet:
+
+- **Pool** = Attribute + Ability (Talents, Skills, Knowledges, and Storyteller-approved `skills.custom` rows). A Discipline, Background, Virtue, Willpower or Humanity rating can be named too; two or more traits need an Attribute among them, one trait alone is allowed (Willpower, Self-Control, Contacts).
+- **Untrained**: a Talent at 0 rolls the Attribute alone; a Skill at 0 rolls the Attribute at **+1 difficulty** (added to the requested difficulty); a Knowledge at 0 is noted ("only with the Storyteller's leave") and left to the table.
+- **Specialty**: only a flag (10s are rerolled), and only when the sheet has one for that Ability. Classic sheets don't store specialties today, so in practice this stays off unless a sheet has a `skills.specialties` list.
+- **Wound penalties**: not applied. Classic sheets don't track health levels, so there is nothing to read.
+- **Difficulty** from the tag, clamped to 2–10, default 6.
+
+The reply is saved with a canonical tag, e.g. `[[roll: Dexterity + Stealth | 3 dice | difficulty 6]]`, and the response carries the same data as `roll_requests`. In the chat the requester gets a **Roll** chip that opens the roll dialog pre-filled (pool, difficulty, specialty checkbox, reason). Other players see the chip as text.
+
+Code: `backend/services/dice_pools.py` (pools and tags), `backend/routes/ai.py` (`resolve_roll_tags`, prompt block), `frontend/src/features/dice/rollRequests.js` and `RollRequestChips.jsx` (chips, dialog pre-fill), tests in `backend/tests/unit/test_dice_pools.py` and `frontend/src/features/dice/__tests__/rollRequests.test.jsx`. The AI side is described in [AI_SYSTEMS.md](AI_SYSTEMS.md) → "Dice pools from the character sheet".
+
 ## `/ai roll` syntax (classic campaigns)
 
 `5`, `4+3`, `6-1`, `5@8` (pool@difficulty), `6 tn 7`, `6 diff 7`. The default difficulty is 6.

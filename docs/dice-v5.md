@@ -99,6 +99,21 @@ Calling `reroll` or `rouse` in a classic campaign returns **400**.
 
 Input types are checked on every dice route and bad ones get **400**, not 500: the body must be a JSON object; integer fields refuse booleans and fractions (`"3"` and `3.0` are accepted); `pool_expression`, `action_description` and `description` must be strings; `specialty` / `willpower` must be JSON booleans (the string `"false"` is refused); reroll `indices` must be JSON integers (no booleans, floats or strings).
 
+## Pools from the character sheet (Storyteller roll requests)
+
+The AI Storyteller doesn't count dice itself. It asks for a roll with a tag such as `[[roll: Dexterity + Stealth, difficulty 3]]`, and `/api/ai/chat` computes the pool from the requesting player's sheet:
+
+- **Pool** = Attribute + Skill, or Attribute + Discipline (`wod_meta.disciplines[].level`), or Attribute + Attribute. Two or more traits need an Attribute among them. One trait alone is allowed (a Willpower or Humanity roll).
+- **Specialty**: +1 die when the tag names a specialty the sheet has for that Skill (`skills.specialties[{skill, name}]`, predator specialty included). Only one per roll.
+- **Hunger dice** = current `wod_meta.hunger`, at most the pool size (Hunger 2 on a 1-die pool → 1 Hunger die). They're part of the pool, not extra dice.
+- **Impairment** −2: a full Health track (`wod_meta.health`, superficial + aggravated ≥ max) on Physical pools, a full Willpower track on Social and Mental pools (the Skill's group decides, else the Attribute's), more Stains than free Humanity boxes on every pool. The pool never drops below 1 die.
+- **Tracker rolls**: Willpower uses the undamaged boxes (max − superficial − aggravated), Humanity uses Humanity − Stains, and neither gets Hunger dice.
+- **Difficulty** from the tag, clamped to 1–10; none given → none filled in.
+
+The reply is saved with a canonical tag, e.g. `[[roll: Dexterity + Stealth | 4 dice | 2 hunger | difficulty 3]]`, and the response carries the same data as `roll_requests`. In the chat the requester gets a **Roll** chip that opens the roll dialog pre-filled (pool, difficulty, reason); Hunger in the dialog still follows the sheet, so a Rouse check made in between is respected. Other players see the chip as text.
+
+Code: `backend/services/dice_pools.py` (pools and tags), `backend/routes/ai.py` (`resolve_roll_tags`, prompt block), `frontend/src/features/dice/rollRequests.js` and `RollRequestChips.jsx` (chips, dialog pre-fill), tests in `backend/tests/unit/test_dice_pools.py` and `frontend/src/features/dice/__tests__/rollRequests.test.jsx`. The AI side is described in [AI_SYSTEMS.md](AI_SYSTEMS.md) → "Dice pools from the character sheet".
+
 ## `/ai roll` syntax (V5 campaigns)
 
 `pool[@difficulty][h<hunger>]`:
