@@ -89,7 +89,7 @@ i18next.use(initReactI18next).init({
   keySeparator: '.',
   interpolation: { escapeValue: false }, // React escapes
   returnNull: false,
-  initImmediate: false, // resources are bundled: init synchronously
+  initAsync: false, // resources are bundled: init synchronously
   react: { useSuspense: false },
 });
 syncDocumentLanguage(i18next.language);
