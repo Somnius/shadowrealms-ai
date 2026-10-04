@@ -14,6 +14,7 @@ import './laya.css';
 export const INTENTS = ['dice', 'combat', 'rules_question', 'roleplay', 'general'];
 const PER_PAGE = 25;
 const POLL_MS = 1500;
+const DEFAULT_STALE_SEC = 30 * 60; // the backend sends the real limit (it grows with the label count)
 
 export const intentLabels = () => ({
   dice: t('laya:intent.dice', 'Dice'),
@@ -42,10 +43,12 @@ const languageLabels = () => ({
 
 const num = (v) => (v == null ? '–' : Number(v).toFixed(3));
 
-function isTypingTarget(el) {
-  if (!el) return false;
+/** Shortcuts never fire while typing or while focus is on something Enter/letters already drive. */
+export function isShortcutTarget(el) {
+  if (!el || !el.closest) return true;
   const tag = (el.tagName || '').toLowerCase();
-  return tag === 'input' || tag === 'textarea' || tag === 'select' || el.isContentEditable;
+  if (tag === 'input' || tag === 'textarea' || tag === 'select' || el.isContentEditable) return false;
+  return !el.closest('a, button, [role="tab"], [role="link"], [role="button"]');
 }
 
 function draftOf(item) {
@@ -306,6 +309,9 @@ export default function LayaPanel({ token, showSuccess, showError }) {
   const [reportData, setReportData] = useState(null);
   const [starting, setStarting] = useState(false);
   const pollRef = useRef(null);
+  const pollStartRef = useRef(null);
+  const listRef = useRef(null);
+  const [waitExpired, setWaitExpired] = useState(false);
   const itemRefs = useRef({});
 
   const items = (data && data.items) || [];
@@ -342,17 +348,34 @@ export default function LayaPanel({ token, showSuccess, showError }) {
   useEffect(() => () => clearTimeout(pollRef.current), []);
   useEffect(() => { setDraft(draftOf(current)); }, [current && current.id, current && current.state]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Poll while a run is 'running'. The backend marks crashed runs failed; as a backstop, stop
+  // waiting here too once the run has been running longer than the backend's stale limit.
   const poll = useCallback(() => {
     clearTimeout(pollRef.current);
+    if (pollStartRef.current == null) pollStartRef.current = Date.now();
     pollRef.current = setTimeout(async () => {
       const d = await loadReport();
-      if (d && d.run && d.run.status === 'running') poll();
+      const stop = () => {
+        pollRef.current = null;
+        pollStartRef.current = null;
+      };
+      if (!d || !d.run || d.run.status !== 'running') {
+        stop();
+        return;
+      }
+      const limitMs = (d.stale_after_sec || DEFAULT_STALE_SEC) * 1000 + 2 * POLL_MS;
+      if (Date.now() - pollStartRef.current > limitMs) {
+        setWaitExpired(true);
+        stop();
+        return;
+      }
+      poll();
     }, POLL_MS);
   }, [loadReport]);
 
   useEffect(() => {
-    if (reportData && reportData.run && reportData.run.status === 'running' && !pollRef.current) poll();
-  }, [reportData, poll]);
+    if (reportData && reportData.run && reportData.run.status === 'running' && !pollRef.current && !waitExpired) poll();
+  }, [reportData, poll, waitExpired]);
 
   const save = useCallback(async () => {
     if (!current || draft.in_character == null || !draft.intent || saving) return;
@@ -394,6 +417,8 @@ export default function LayaPanel({ token, showSuccess, showError }) {
       const r = await layaApi.runEvaluation(token);
       const d = await r.json().catch(() => ({}));
       if (r.status === 202) {
+        setWaitExpired(false);
+        pollStartRef.current = null;
         ok(t('laya:eval.started', 'Evaluation started.'));
         await loadReport();
         poll();
@@ -419,24 +444,26 @@ export default function LayaPanel({ token, showSuccess, showError }) {
     if (node && node.scrollIntoView) node.scrollIntoView({ block: 'nearest' });
   }, [current]);
 
-  useEffect(() => {
-    const onKey = (e) => {
-      if (e.defaultPrevented || e.ctrlKey || e.metaKey || e.altKey || isTypingTarget(e.target)) return;
-      if (!items.length) return;
-      const k = e.key.toLowerCase();
-      let handled = true;
-      if (k === 'i') setDraft((d) => ({ ...d, in_character: true }));
-      else if (k === 'o') setDraft((d) => ({ ...d, in_character: false }));
-      else if (/^[1-5]$/.test(k)) setDraft((d) => ({ ...d, intent: INTENTS[Number(k) - 1] }));
-      else if (k === 'enter' && !(e.target && (e.target.tagName || '').toLowerCase() === 'button')) save();
-      else if (k === 'j' || k === 'arrowdown') move(1);
-      else if (k === 'k' || k === 'arrowup') move(-1);
-      else handled = false;
-      if (handled) e.preventDefault();
-    };
-    document.addEventListener('keydown', onKey);
-    return () => document.removeEventListener('keydown', onKey);
-  }, [items.length, save, move]);
+  const focusList = () => {
+    if (listRef.current) listRef.current.focus();
+  };
+
+  // Scoped to the panel (onKeyDown on its root), and only when focus isn't on a field, link,
+  // tab or button: click a message to put focus on the list.
+  const onKeyDown = (e) => {
+    if (e.defaultPrevented || e.ctrlKey || e.metaKey || e.altKey || !isShortcutTarget(e.target)) return;
+    if (!items.length) return;
+    const k = e.key.toLowerCase();
+    let handled = true;
+    if (k === 'i') setDraft((d) => ({ ...d, in_character: true }));
+    else if (k === 'o') setDraft((d) => ({ ...d, in_character: false }));
+    else if (/^[1-5]$/.test(k)) setDraft((d) => ({ ...d, intent: INTENTS[Number(k) - 1] }));
+    else if (k === 'enter') save();
+    else if (k === 'j' || k === 'arrowdown') move(1);
+    else if (k === 'k' || k === 'arrowup') move(-1);
+    else handled = false;
+    if (handled) e.preventDefault();
+  };
 
   const setFilter = (key, value) => {
     setFilters((f) => ({ ...f, [key]: value }));
@@ -449,10 +476,12 @@ export default function LayaPanel({ token, showSuccess, showError }) {
   const LANG = languageLabels();
   const counts = (data && data.counts) || null;
   const pages = data ? Math.max(1, Math.ceil(data.total / PER_PAGE)) : 1;
-  const running = !!(reportData && reportData.run && reportData.run.status === 'running');
+  const runRaw = reportData && reportData.run;
+  const running = !!(runRaw && runRaw.status === 'running' && !waitExpired);
+  const shownRun = runRaw && runRaw.status === 'running' && waitExpired ? { ...runRaw, status: 'failed' } : runRaw;
 
   return (
-    <div className="sr-admin__stack sr-laya" data-testid="laya-panel">
+    <div className="sr-admin__stack sr-laya" data-testid="laya-panel" onKeyDown={onKeyDown}>
       <Panel title={t('laya:progress.title', 'Progress')} className="sr-admin__panel">
         {counts ? (
           <dl className="sr-admin__stats" data-testid="laya-counts">
@@ -522,6 +551,7 @@ export default function LayaPanel({ token, showSuccess, showError }) {
         <p className="sr-admin__muted sr-laya__keys">
           <Kbd>I</Kbd> / <Kbd>O</Kbd> {t('laya:keys.ooc', 'in / out of character')} · <Kbd>1</Kbd>–<Kbd>5</Kbd> {t('laya:keys.intent', 'intent')} ·{' '}
           <Kbd>Enter</Kbd> {t('laya:keys.save', 'save')} · <Kbd>J</Kbd> / <Kbd>K</Kbd> {t('laya:keys.move', 'next / previous')}
+          {' '}({t('laya:keys.focus', 'click a message first')})
         </p>
 
         {data && items.length === 0 ? (
@@ -530,7 +560,7 @@ export default function LayaPanel({ token, showSuccess, showError }) {
           </EmptyState>
         ) : null}
 
-        <ol className="sr-laya__list" aria-label={t('laya:queue.listLabel', 'Messages to label')}>
+        <ol ref={listRef} tabIndex={0} className="sr-laya__list" aria-label={t('laya:queue.listLabel', 'Messages to label')} data-testid="laya-list">
           {items.map((it, idx) => {
             const isCurrent = idx === selected;
             return (
@@ -541,7 +571,7 @@ export default function LayaPanel({ token, showSuccess, showError }) {
                 aria-current={isCurrent ? 'true' : undefined}
                 data-testid={`laya-item-${it.id}`}
               >
-                <button type="button" className="sr-laya__pick" onClick={() => setSelected(idx)}>
+                <button type="button" className="sr-laya__pick" onClick={() => { setSelected(idx); focusList(); }}>
                   <span className="sr-laya__meta">
                     #{it.id} · {it.campaign_name} · {it.location_name || '—'} · {it.message_type} · {LANG[it.language] || it.language}
                   </span>
@@ -561,28 +591,28 @@ export default function LayaPanel({ token, showSuccess, showError }) {
                   <div className="sr-laya__controls" data-testid="laya-controls">
                     <div className="sr-admin__row" role="group" aria-label={t('laya:controls.oocGroup', 'In character?')}>
                       <Button size="sm" variant={draft.in_character === true ? 'primary' : 'secondary'} aria-pressed={draft.in_character === true}
-                        onClick={() => setDraft((d) => ({ ...d, in_character: true }))}>
+                        onClick={() => { setDraft((d) => ({ ...d, in_character: true })); focusList(); }}>
                         {OOC.in_character} <Kbd>I</Kbd>
                       </Button>
                       <Button size="sm" variant={draft.in_character === false ? 'primary' : 'secondary'} aria-pressed={draft.in_character === false}
-                        onClick={() => setDraft((d) => ({ ...d, in_character: false }))}>
+                        onClick={() => { setDraft((d) => ({ ...d, in_character: false })); focusList(); }}>
                         {OOC.out_of_character} <Kbd>O</Kbd>
                       </Button>
                     </div>
                     <div className="sr-admin__row" role="group" aria-label={t('laya:controls.intentGroup', 'Intent')}>
                       {INTENTS.map((i, n) => (
                         <Button key={i} size="sm" variant={draft.intent === i ? 'primary' : 'secondary'} aria-pressed={draft.intent === i}
-                          onClick={() => setDraft((d) => ({ ...d, intent: i }))}>
+                          onClick={() => { setDraft((d) => ({ ...d, intent: i })); focusList(); }}>
                           {INT[i]} <Kbd>{n + 1}</Kbd>
                         </Button>
                       ))}
                     </div>
                     <div className="sr-admin__row">
-                      <Button size="sm" variant="primary" disabled={draft.in_character == null || !draft.intent || saving} onClick={save}>
+                      <Button size="sm" variant="primary" disabled={draft.in_character == null || !draft.intent || saving} onClick={() => { save(); focusList(); }}>
                         {t('laya:controls.save', 'Save label')}
                       </Button>
                       {it.label ? (
-                        <Button size="sm" variant="ghost" onClick={clear}>{t('laya:controls.clear', 'Clear label')}</Button>
+                        <Button size="sm" variant="ghost" onClick={() => { clear(); focusList(); }}>{t('laya:controls.clear', 'Clear label')}</Button>
                       ) : null}
                     </div>
                   </div>
@@ -613,7 +643,7 @@ export default function LayaPanel({ token, showSuccess, showError }) {
         <p className="sr-admin__muted">
           {t('laya:eval.help', 'Runs Laya on every labelled message, the same way the OOC monitor does, and compares. The report keeps message numbers only; the text is looked up when you open it. The same report from a terminal: python scripts/laya_eval.py in the backend container.')}
         </p>
-        <Report run={reportData && reportData.run} report={reportData && reportData.report} />
+        <Report run={shownRun} report={reportData && reportData.report} />
         <History history={reportData && reportData.history} current={reportData && reportData.run && reportData.run.id} onOpen={(id) => loadReport(id)} />
       </Panel>
     </div>
