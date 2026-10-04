@@ -1,6 +1,6 @@
 # Roadmap v0.10
 
-Started 2026-10-04 ~09:15, target: everything done before 15:00 the same day. The 0.9 work is recorded in [ROADMAP_v0.9.md](ROADMAP_v0.9.md).
+Started 2026-10-04 ~09:00, target: everything done before 15:00 the same day. The 0.9 work is recorded in [ROADMAP_v0.9.md](ROADMAP_v0.9.md).
 
 How each phase runs: build in its own git worktree → two independent reviews (the second on a different model) → fixes → CI green → merge to `main` → docs, wiki and project board updated → version bump when it's worth one.
 
@@ -24,9 +24,9 @@ How each phase runs: build in its own git worktree → two independent reviews (
 
 ## Log
 
-- 09:15 — Phase 1: test data cleanup done (6 chronicles, 4 accounts deleted through the admin API).
-- 09:20 — Branch protection on `main`: force-push and deletion blocked for everyone; normal pushes unchanged.
-- 09:45 — Access tokens now last 30 minutes. Checked live first: with short tokens, an expired token got a 401, the app called `/api/auth/refresh` and retried, no logout. The live `OLLAMA_MODEL` pointed at a model that isn't installed (`command-r:35b`); now `llama3.2:3b`.
-- 09:50 — Phase 1 built (OLLAMA default, in-app README renderer rewritten, unused env variables removed, docs index); first review done, second review (different model) running.
-- 09:36 — Phase 2 built (dependency fixes, log-injection escaping: CodeQL alerts 47 → 0 locally, login audit paging and filters, admin "Logins & lockouts" tab, unlock takes one exact IP). First review done, nothing blocking; second review running.
+- before 09:12 — Phase 1: test data cleanup done (6 chronicles, 4 accounts deleted through the admin API).
+- before 09:12 — Branch protection on `main`: force-push and deletion blocked for everyone; normal pushes unchanged.
+- 09:21 — Access tokens now last 30 minutes. Checked live first: with short tokens, an expired token got a 401, the app called `/api/auth/refresh` and retried, no logout. The live `OLLAMA_MODEL` pointed at a model that isn't installed (`command-r:35b`); now `llama3.2:3b`.
+- 09:19 — Phase 1 built (OLLAMA default, in-app README renderer rewritten, unused env variables removed, docs index); first review done, second review (different model) running.
+- 09:30 — Phase 2 built (dependency fixes, log-injection escaping: CodeQL alerts 47 → 0 locally, login audit paging and filters, admin "Logins & lockouts" tab, unlock takes one exact IP). First review done, nothing blocking; second review running.
 - 09:36 — Phase 1 second review: no XSS, but hostile Markdown could hang the README viewer (backtick runs, unclosed links) or overflow the stack (deep nesting), and nested markup could end up inside an attribute. All fixed with tests, CI green, merged, **0.9.2 released and live**.
