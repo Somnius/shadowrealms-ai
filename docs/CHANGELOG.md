@@ -7,6 +7,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.0] - 2026-10-04 - Into the Night: editions, new shell, Greek, hardened public site
+
+Full plan and progress: `docs/ROADMAP_v0.9.md`.
+
+### Added
+- **Rules editions**: every chronicle is either **Classic** (oWoD Revised) or **V5** (Vampire 5th edition), chosen at creation and locked. V5 dice engine (Hunger dice, pairs of 10s, messy critical, bestial / total failure, Willpower reroll, Rouse check), V5 character wizard and sheet, edition-aware `/ai roll` and Storyteller prompt, rule-book search filtered by edition. Specs in `docs/rules/`.
+- **New app shell**: real URLs (`/chronicles`, `/c/<id>/<room>`, `/profile`, `/admin/<tab>`), one navigation, Discord-style chat (grouping, unread counts, jump to present, dice cards, slash autocomplete, one "Speaking as" control), live updates over server-sent events.
+- **Greek interface**: 1,080+ strings in English and Greek, switch saved per account; the Storyteller answers in the player's language (Greek via `llama-krikri-8b-instruct`).
+- **Gothic theme**: design system with 97 original SVG glyphs and sigils, atmosphere (fog, candle glow, blood effects on botches), animated dice, Full / Subtle / Off atmosphere setting, accessible contrast. New guided **theme preview** at `/showcase`.
+- **AI**: provider roles (LM Studio, Ollama, optional Anthropic / OpenAI API keys stored encrypted), multilingual embeddings (bge-m3), token-budgeted Storyteller prompt, working long-term memory.
+- **Laya classifier** (`ml/laya/`): trained locally for OOC vs in-character moderation and message intent (EN/EL); optional Typesafe Jev.
+- **Security**: rate limits and lockouts, token revocation and refresh rotation, password policy, audit log, gunicorn, production frontend build with a strict CSP. `docs/SECURITY_MODEL.md`, `SECURITY.md`.
+- **CI**: Python checks, backend unit tests (250+), schema check, frontend tests (360+) and build, CodeQL, Dependabot.
+- Public access at `srai.srv-box.com` (behind a preview gate).
+
+### Changed
+- Classic dice now follow Revised: a botch needs no successes rolled at all, specialties re-roll 10s, Willpower is one uncancellable success, 5+ is "exceptional".
+- Classic character creation fixed to the Revised budgets (7/5/3 and 13/9/5 as added dots, virtues 1+7, 15 freebies).
+- OOC moderation bans are per chronicle; staff and the chronicle owner are exempt.
+- Dice results are posted by the server.
+- Backend runs on gunicorn; frontend served as a static production build.
+
+### Fixed
+- Requests deadlocking each other on schema checks; AI memory never being stored or retrieved; players able to post as the AI Storyteller or post fake dice cards; non-members able to list a chronicle's rooms; several player-facing 403s from comparing a string user id with integers; database, Redis and ChromaDB ports reachable from the LAN.
+
+### Removed
+- `SimpleApp.js` (split into `app/` and `features/`), Font Awesome, unused legacy components.
+
 ## [0.8.0] - 2026-04-05 - Player account, character & profile hub milestone 🎯
 
 ### Added
