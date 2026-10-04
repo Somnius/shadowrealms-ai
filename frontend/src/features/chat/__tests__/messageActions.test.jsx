@@ -11,7 +11,6 @@ import { optimisticMessage, sendChatMessage } from '../sendFlow';
 
 const OWNER = { id: 1, username: 'st', role: 'player' };
 const PLAYER = { id: 2, username: 'ann', role: 'player' };
-const OTHER = { id: 3, username: 'bob', role: 'player' };
 const ADMIN = { id: 9, username: 'root', role: 'admin' };
 const HELPER = { id: 8, username: 'help', role: 'helper' };
 const campaign = { id: 1, created_by: 1 };
