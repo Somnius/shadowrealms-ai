@@ -8,7 +8,7 @@ Started 2026-10-04. Each phase: research → build → at least 2 reviews → co
 | 2 | AI: better local models, optional cloud providers, Laya/Jev classification, Greek replies | **done** |
 | 3 | UI/UX: one clear navigation, Discord-style chat, EN/EL interface | **done** |
 | 4 | Gothic theme redesign: animated SVG glyphs, motion, atmosphere | **done** |
-| 5 | Security + public site: hardened login, production server, srai.srv-box.com behind a gate | **done** (gate still on until tested) |
+| 5 | Security + public site: hardened login, production server, srai.srv-box.com behind a gate | **done** (gate removed 2026-10-04) |
 | 6 | Theme preview page rebuilt (last on purpose) | **done** |
 
 ## Decisions
@@ -18,7 +18,7 @@ Started 2026-10-04. Each phase: research → build → at least 2 reviews → co
 - Local models first. Anthropic / OpenAI only via API keys, set by an admin, off by default. Subscriptions are not API access.
 - Classification: Laya (open weights, local) first; Typesafe Jev (hosted) optional with an API key.
 - Greek: full EN/EL interface plus Storyteller replies in the player's language.
-- Public access at `srai.srv-box.com` stays behind an HTTP basic-auth gate until it's been tested.
+- Public access at `srai.srv-box.com` stays behind an HTTP basic-auth gate until it's been tested (removed 2026-10-04; the site is open with the app's own login).
 
 ## Phase details
 
@@ -49,7 +49,7 @@ Built (2026-10-04, details in `docs/AI_SYSTEMS.md` → "v0.9: providers, …"):
 ### Phase 5 — public site infrastructure (done early, 2026-10-04 ~03:05)
 - `srai.srv-box.com` → nginx on a reverse proxy on another host on the LAN → this machine's nginx on port 80 (the firewall allows the LAN). The proxy's config was backed up before the change.
 - TLS: the shared Let's Encrypt cert `srv-box.com` was expanded to 20 names including `srai.srv-box.com` (dry run first, then real; renews with the others).
-- Gate: HTTP basic auth on the reverse proxy (the preview gate). The credentials are not in version control.
+- Gate: HTTP basic auth on the reverse proxy (the preview gate, removed 2026-10-04). The credentials are not in version control.
 - Verified: no auth/wrong password → 401, with gate creds the app + API answer over HTTPS with a valid cert, HTTP → HTTPS redirect, and all 19 existing subdomains answer exactly as before the change (5 of them were already returning 502 before: ag, bz, f, git, vw).
 - Still to do in phase 5: production frontend build + gunicorn instead of the dev servers, login hardening.
 
@@ -73,7 +73,7 @@ Details: `docs/SECURITY_MODEL.md`.
 - nginx serves the static build (`./scripts/build-frontend.sh`) instead of the React dev server, with a strict CSP (scripts only from the site), gzip, and long caching for hashed assets. Checked in Chromium with no CSP violations.
 
 ## Open / next
-- Remove the preview gate once tested (one block in the reverse proxy's site config).
+- ~~Remove the preview gate once tested (one block in the reverse proxy's site config).~~ Done 2026-10-04.
 - Label 300–500 real chat messages and re-check the Laya thresholds on them.
 - Server-computed dice pools from the character sheet; message actions (reply/copy/delete) and older-history paging in chat.
 - Move the frontend from Create React App to Vite (most remaining npm audit findings are CRA build tooling).
