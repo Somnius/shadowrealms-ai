@@ -1,0 +1,43 @@
+/* In-app README (ReadmeModal): styles for the HTML that utils/markdown.js produces. */
+.sr-readme__content { color: var(--sr-text-2); overflow-wrap: anywhere; }
+.sr-readme__content h1,
+.sr-readme__content h2,
+.sr-readme__content h3,
+.sr-readme__content h4,
+.sr-readme__content h5,
+.sr-readme__content h6 { font-family: var(--sr-font-display); line-height: var(--sr-leading-tight); margin: 1.4em 0 0.5em; scroll-margin-top: 8px; }
+.sr-readme__content h1 { color: var(--sr-blood-500); font-size: 28px; border-bottom: 2px solid var(--sr-border); padding-bottom: 10px; }
+.sr-readme__content h2 { color: var(--sr-blood-500); font-size: 22px; }
+.sr-readme__content h3 { color: var(--sr-gold-500); font-size: 18px; }
+.sr-readme__content h4,
+.sr-readme__content h5,
+.sr-readme__content h6 { color: var(--sr-bone-300); font-size: 16px; }
+.sr-readme__content p { line-height: 1.6; margin: 10px 0; }
+.sr-readme__content strong { color: var(--sr-gold-500); }
+.sr-readme__content em { color: var(--sr-bone-300); }
+.sr-readme__content a { color: var(--sr-arcane-400); text-decoration: none; border-bottom: 1px dotted var(--sr-arcane-400); }
+.sr-readme__content a:hover { color: var(--sr-arcane-300); }
+.sr-readme__content a:has(> img) { border-bottom: none; }
+.sr-readme__content img { display: inline-block; max-width: 100%; height: auto; vertical-align: middle; border-radius: 4px; }
+.sr-readme__content div[align="center"] { text-align: center; margin: 20px 0; }
+.sr-readme__content div[align="center"] img { margin: 2px 3px; }
+.sr-readme__content .sr-md-img-missing { color: var(--sr-text-muted); font-style: italic; }
+.sr-readme__content code { background: rgba(157, 78, 221, 0.2); padding: 2px 6px; border-radius: 4px; color: var(--sr-arcane-300); font-family: var(--sr-font-mono); font-size: 13px; }
+.sr-readme__content pre.sr-md-code { background: var(--sr-night-850); padding: 15px; border-radius: 8px; border: 1px solid var(--sr-border); margin: 15px 0; overflow-x: auto; white-space: pre; }
+.sr-readme__content pre.sr-md-code code { background: none; padding: 0; border-radius: 0; color: var(--sr-bone-100); white-space: pre; display: block; }
+.sr-readme__content ul,
+.sr-readme__content ol { padding-left: 24px; margin: 10px 0; }
+.sr-readme__content ul { list-style: disc; }
+.sr-readme__content ol { list-style: decimal; }
+.sr-readme__content ul ul,
+.sr-readme__content ol ul { list-style: circle; margin: 4px 0; }
+.sr-readme__content li { margin-bottom: 5px; line-height: 1.6; }
+.sr-readme__content li > p { margin: 4px 0; }
+.sr-readme__content .sr-md-task { color: var(--sr-text-muted); }
+.sr-readme__content blockquote { border-left: 4px solid var(--sr-blood-500); padding-left: 15px; margin: 15px 0; color: var(--sr-bone-500); font-style: italic; }
+.sr-readme__content hr { border: none; border-top: 2px solid var(--sr-border); margin: 20px 0; }
+.sr-readme__content .sr-md-table { overflow-x: auto; margin: 20px 0; }
+.sr-readme__content table { border-collapse: collapse; width: 100%; background: var(--sr-night-800); border: 2px solid var(--sr-border); }
+.sr-readme__content th { padding: 10px; color: #fff; font-family: var(--sr-font-display); background: linear-gradient(135deg, var(--sr-blood-600) 0%, var(--sr-blood-700) 100%); border: 1px solid var(--sr-border); }
+.sr-readme__content td { padding: 10px; vertical-align: top; border: 1px solid var(--sr-border); }
+.sr-readme__content tbody tr:nth-child(odd) { background: var(--sr-night-750); }

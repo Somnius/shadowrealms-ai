@@ -46,4 +46,29 @@ describe('ReadmeModal', () => {
     expect(window.__readmeXss).toBe(false);
     delete window.__readmeXss;
   });
+
+  test('keeps the line breaks of fenced code blocks', async () => {
+    mockReadme(
+      [
+        '# Setup',
+        '',
+        '```bash',
+        'lms server start',
+        'lms load llama-krikri-8b-instruct -y    # Storyteller',
+        'ollama pull llama3.2:3b                 # utility model',
+        '```',
+        '',
+      ].join('\n')
+    );
+    render(<ReadmeModal isOpen onClose={() => {}} />);
+    const heading = await screen.findByRole('heading', { name: 'Setup' });
+    const code = heading.closest('.sr-readme__content').querySelector('pre > code');
+    expect(code.textContent).toBe(
+      [
+        'lms server start',
+        'lms load llama-krikri-8b-instruct -y    # Storyteller',
+        'ollama pull llama3.2:3b                 # utility model',
+      ].join('\n')
+    );
+  });
 });
