@@ -50,4 +50,4 @@ How each phase runs: build in its own git worktree → two independent reviews (
 - A message someone else deletes inside an older history page you've loaded stays until reload.
 - The AdminPage loaders as `useCallback` (5 effects keep a justified lint disable).
 - Unused Python packages in the backend image (openai, SQLAlchemy, alembic, …) can go.
-- Disk: the fs-verity errors from 10:16 (see above) need a look with root.
+- Disk: the fs-verity errors from 10:16 — checked by Lef at 12:40: `btrfs device stats` all 0, a full scrub (1.41 TiB) found no errors, and the file (inode 5885290) no longer exists. Cause unknown; no new errors since. If it happens again, look up the file before rebuilding.
