@@ -11,7 +11,7 @@ How each phase runs: build in its own git worktree → two independent reviews (
 | 1 | Small loose ends | test data cleanup · `OLLAMA_MODEL` default · in-app README code blocks · `env.template` legacy variables · GitHub social preview (manual, see below) | 0.9.2 | **done** (released 0.9.2) |
 | 2 | Security and maintenance | Dependabot alerts and PRs · CodeQL log-injection alerts · admin screens for account unlock and login audit · 30-minute access tokens · branch protection on `main` | 0.9.3 | **done** (released 0.9.3) |
 | 3 | Playing | dice pools computed from the character sheet · chat message actions and older history · Laya labelling tool and evaluation | 0.9.4 | **done** (released 0.9.4) |
-| 4 | Bigger projects | Create React App → Vite · major dependency upgrades (react-router 7, chromadb 1.x, Node LTS, …) · React lint warnings | 0.10.0 | in progress: Vite move **merged and live** · backend upgrades built, in review · frontend majors (react-router 7, …) and lint warnings being built |
+| 4 | Bigger projects | Create React App → Vite · major dependency upgrades (react-router 7, chromadb 1.x, Node LTS, …) · React lint warnings | 0.10.0 | **done** (released 0.10.0) |
 | — | Later | rule-book import into RAG (Classic + V5, deduplicated) · showcase video | — | postponed |
 
 ## Decisions (2026-10-04)
@@ -38,3 +38,14 @@ How each phase runs: build in its own git worktree → two independent reviews (
 - 10:13 — Phase 4: Create React App → Vite built (all 464 tests pass, production `npm audit` 69 → 2, build ~12% smaller); first review done, second running. Backend upgrades (chromadb 1.x with a data check on a copy, bcrypt 5, Python packages, Actions) being built.
 - 10:18 — Vite move: second review found the build targeted newer browsers than before (Vite ignores browserslist), which dropped the `100vh` fallback; the old browser floor is set explicitly now. Also: the dev server only accepts the nginx host name, plus doc fixes. CI green, merged, live (the CRA build is kept aside for a rollback; chat, admin tabs checked in Chromium, no console errors). Frontend majors + lint cleanup started.
 - 10:24 — Backend upgrades built. The live machine was already running Chroma 1.5.9, bcrypt 5 and the other new majors (the requirements were bare `>=` and Chroma was on `:latest`); this pins them, moves the backend image to Python 3.12 like CI, and bumps the Actions. Chroma data checked on copies: opens in place, nothing to migrate. Second review running. **For Lef:** during a docker build at 10:16–10:17 the kernel logged 24 `fs-verity … FILE CORRUPTED!` errors for one file (dm-0, inode 5885290); no btrfs checksum errors were logged and the next build worked. Cause unknown; it needs root to look into: `sudo btrfs device stats /`, `sudo btrfs scrub start -B /`, and `sudo find / -xdev -inum 5885290` to see which file it was.
+- 10:53 — Backend upgrades: second review checked every pin against what the live image ran (one real change: numpy 2.4.6 → 2.5.3 with the Python 3.12 move) and the Chroma data on a copy; doc fixes. Deployed with the old backend image tagged and `data/vector_db` backed up first (`data/vector_db.bak-2026-10-04`); checked live: Python 3.12.14, login (bcrypt 5), Laya, Chroma collections and counts unchanged. No new disk errors in the kernel log during these builds.
+- 10:53 — Frontend majors + lint: react-router 7, motion 14, i18next 26, Testing Library 16, Jest 30; unused packages dropped; 204 lint warnings → 0 and lint now fails CI on any warning; `npm audit --omit=dev` 0. Second review: merge, no regressions (all 3,326 EN/EL strings render the same as before, every admin tab and both chat rooms browsed). The footer no longer ships the whole `package.json`. Merged, **0.10.0 released and live**.
+
+## Left for later
+
+- Rule-book import into RAG (Classic + V5, deduplicated) and the showcase video (postponed by Lef).
+- Tailwind 4 (clears the last dev-only `npm audit` finding, `braces`), but it needs newer browsers than our build floor and a CSS config rewrite. React 19 (then react-router 8).
+- A message someone else deletes inside an older history page you've loaded stays until reload.
+- The AdminPage loaders as `useCallback` (5 effects keep a justified lint disable).
+- Unused Python packages in the backend image (openai, SQLAlchemy, alembic, …) can go.
+- Disk: the fs-verity errors from 10:16 (see above) need a look with root.
