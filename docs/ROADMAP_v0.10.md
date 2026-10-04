@@ -41,6 +41,8 @@ How each phase runs: build in its own git worktree → two independent reviews (
 - 10:53 — Backend upgrades: second review checked every pin against what the live image ran (one real change: numpy 2.4.6 → 2.5.3 with the Python 3.12 move) and the Chroma data on a copy; doc fixes. Deployed with the old backend image tagged and `data/vector_db` backed up first (`data/vector_db.bak-2026-10-04`); checked live: Python 3.12.14, login (bcrypt 5), Laya, Chroma collections and counts unchanged. No new disk errors in the kernel log during these builds.
 - 10:53 — Frontend majors + lint: react-router 7, motion 14, i18next 26, Testing Library 16, Jest 30; unused packages dropped; 204 lint warnings → 0 and lint now fails CI on any warning; `npm audit --omit=dev` 0. Second review: merge, no regressions (all 3,326 EN/EL strings render the same as before, every admin tab and both chat rooms browsed). The footer no longer ships the whole `package.json`. Merged, **0.10.0 released and live**.
 
+- 11:00 — After the release: CodeQL found new alerts on main (an uninitialised variable in the Laya label route, route ids in four log calls, asserts it read as having side effects in a test, a prototype-pollution pattern in the i18n extract script). All fixed; CodeQL now has **0 open security alerts** and Dependabot **0 open alerts**. CodeQL also scans `frontend/scripts/` now. Wiki pages (Home, Architecture, Security, Troubleshooting, Development and CI) updated for 0.10.0.
+
 ## Left for later
 
 - Rule-book import into RAG (Classic + V5, deduplicated) and the showcase video (postponed by Lef).
