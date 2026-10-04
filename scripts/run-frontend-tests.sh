@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# ShadowRealms AI - frontend test runner (Jest via react-scripts).
+# ShadowRealms AI - frontend test runner (Jest, config in frontend/jest.config.js).
 #
 # Runs the same command as the CI "Frontend tests + build" job, in a one-off container of the
 # dev frontend service (the service is behind the `dev` profile and normally not running).
@@ -21,4 +21,4 @@ WORKERS="${JEST_WORKERS:-4}"
 echo "Running frontend tests (jest, ${WORKERS} workers)..."
 docker compose --profile dev run --rm --no-deps \
   -e CI=true \
-  frontend npx react-scripts test --watchAll=false --maxWorkers="$WORKERS" "$@"
+  frontend npx jest --maxWorkers="$WORKERS" "$@"

@@ -1,5 +1,5 @@
 /**
- * Jest setup (loaded automatically by react-scripts before every test file).
+ * Jest setup (setupFilesAfterEnv in jest.config.js, runs before every test file).
  *
  * jsdom doesn't ship a few browser APIs the app uses, so we fill them in here.
  */
