@@ -1,5 +1,5 @@
 import React, { useId, useMemo, useRef } from 'react';
-import { LazyMotion, domAnimation, m } from 'framer-motion';
+import { LazyMotion, domAnimation, m } from 'motion/react';
 import { lineRadial, curveLinearClosed, curveCatmullRomClosed } from 'd3-shape';
 import { useInView, useReducedMotionPref } from '../motion';
 import { cx } from '../components/internal';
@@ -42,7 +42,7 @@ export function buildSigilPaths({ thorns = 12 } = {}) {
 }
 
 /**
- * SigilReveal: the brand sigil drawn stroke by stroke (framer-motion pathLength), then the
+ * SigilReveal: the brand sigil drawn stroke by stroke (Motion pathLength), then the
  * blood drop fills in. Plays once when it scrolls into view; `replayKey` replays it.
  * Reduced motion: rendered complete, no animation.
  */

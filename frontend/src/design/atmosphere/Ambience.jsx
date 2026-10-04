@@ -6,7 +6,7 @@
  * - is static under atmosphere 'subtle' (ambient loops) and 'off' / reduced motion (everything).
  */
 import React, { useEffect, useId, useMemo, useRef, useState } from 'react';
-import { LazyMotion, domAnimation, m } from 'framer-motion';
+import { LazyMotion, domAnimation, m } from 'motion/react';
 import { lineRadial, curveLinearClosed } from 'd3-shape';
 import { useAmbient, useMotionPreference, useReducedMotionPref } from '../motion';
 import { cx } from '../components/internal';

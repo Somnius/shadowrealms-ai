@@ -1,5 +1,5 @@
 import React, { createContext, useCallback, useContext, useEffect, useId, useMemo, useRef, useState } from 'react';
-import { AnimatePresence, LazyMotion, domAnimation, m } from 'framer-motion';
+import { AnimatePresence, LazyMotion, domAnimation, m } from 'motion/react';
 import Glyph from '../glyphs/Glyph';
 import { IconButton } from './Button';
 import { Portal, cx, useDialog, useScrollLock } from './internal';
