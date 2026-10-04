@@ -107,7 +107,7 @@ The AI Storyteller doesn't count dice itself. It asks for a roll with a tag such
 - **Specialty**: +1 die when the tag names a specialty the sheet has for that Skill (`skills.specialties[{skill, name}]`, predator specialty included). Only one per roll.
 - **Hunger dice** = current `wod_meta.hunger`, at most the pool size (Hunger 2 on a 1-die pool → 1 Hunger die). They're part of the pool, not extra dice.
 - **Impairment** −2: a full Health track (`wod_meta.health`, superficial + aggravated ≥ max) on Physical pools, a full Willpower track on Social and Mental pools (the Skill's group decides, else the Attribute's), more Stains than free Humanity boxes on every pool. The pool never drops below 1 die.
-- **Tracker rolls**: Willpower uses the undamaged boxes (max − superficial − aggravated), Humanity uses Humanity − Stains, and neither gets Hunger dice.
+- **Tracker rolls**: Willpower uses the undamaged boxes (max − superficial − aggravated), Humanity uses the rating (it is not a tracker pool in V5, p. 118; Stains only matter for Remorse), and neither gets Hunger dice.
 - **Difficulty** from the tag, clamped to 1–10; none given → none filled in.
 
 The reply is saved with a canonical tag, e.g. `[[roll: Dexterity + Stealth | 4 dice | 2 hunger | difficulty 3]]`, and the response carries the same data as `roll_requests`. In the chat the requester gets a **Roll** chip that opens the roll dialog pre-filled (pool, difficulty, reason); Hunger in the dialog still follows the sheet, so a Rouse check made in between is respected. Other players see the chip as text.

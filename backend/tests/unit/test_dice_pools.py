@@ -109,7 +109,7 @@ def test_v5_tracker_rolls_use_undamaged_boxes_and_no_hunger():
     r = pool(ELENI, ["Willpower"], "v5")
     assert r["pool"] == 4 and r["hunger"] == 0  # 5 − 1 superficial
     r = pool(with_meta(ELENI, stains=2), ["Humanity"], "v5")
-    assert r["pool"] == 5 and r["hunger"] == 0
+    assert r["pool"] == 7 and r["hunger"] == 0  # Humanity rating; Stains don't lower it
 
 
 # --- classic -----------------------------------------------------------------------------------
@@ -292,3 +292,15 @@ def test_ai_chat_resolves_tags_before_the_grant_and_memory():
     assert resolve < src.index("grant_assistant_reply(current_user_id, campaign_id, location_id, response)")
     assert "'roll_requests': roll_requests" in src
     assert "dice_pools.prompt_block(char_data['row'], char_data['rules_edition'])" in src
+
+
+def test_v5_humanity_roll_uses_the_rating_not_minus_stains():
+    r = pool(with_meta(ELENI, humanity=7, stains=2), ["Humanity"], "v5")
+    assert r["pool"] == 7
+
+
+def test_canonical_tag_is_one_line_even_with_odd_sheet_text():
+    from services.dice_pools import canonical_tag
+    tag = canonical_tag({"label": "Dexterity + Stealth", "specialty": "Night\nwork]", "pool": 6,
+                         "edition": "classic", "difficulty": 6})
+    assert "\n" not in tag and tag.count("]]") == 1 and "specialty Night work)" in tag
