@@ -1,4 +1,4 @@
-FROM node:18-alpine
+FROM node:22-alpine
 
 # Set working directory
 WORKDIR /app
@@ -15,5 +15,5 @@ COPY . .
 # Expose port
 EXPOSE 3000
 
-# Start development server
+# Start the Vite dev server (0.0.0.0:3000, see vite.config.mjs)
 CMD ["npm", "start"]
