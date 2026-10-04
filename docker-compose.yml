@@ -25,9 +25,9 @@ services:
       # Live updates: open SSE streams per gunicorn worker (each holds a thread), per user per worker
       - SR_EVENTS_MAX_STREAMS=${SR_EVENTS_MAX_STREAMS:-20}
       - SR_EVENTS_MAX_STREAMS_PER_USER=${SR_EVENTS_MAX_STREAMS_PER_USER:-4}
-      # Auth (docs/SECURITY_MODEL.md). Access tokens stay long-lived (360 min) until the frontend
-      # refreshes them via /api/auth/refresh; then drop JWT_ACCESS_TOKEN_MINUTES to 30.
-      - JWT_ACCESS_TOKEN_MINUTES=${JWT_ACCESS_TOKEN_MINUTES:-360}
+      # Auth (docs/SECURITY_MODEL.md). Access tokens last 30 min; the frontend silently
+      # refreshes them via /api/auth/refresh (checked live 2026-10-04: expired token → 401 → refresh → retry).
+      - JWT_ACCESS_TOKEN_MINUTES=${JWT_ACCESS_TOKEN_MINUTES:-30}
       - JWT_REFRESH_TOKEN_DAYS=${JWT_REFRESH_TOKEN_DAYS:-14}
       - JWT_SESSION_MAX_DAYS=${JWT_SESSION_MAX_DAYS:-30}
       - BCRYPT_ROUNDS=${BCRYPT_ROUNDS:-12}
