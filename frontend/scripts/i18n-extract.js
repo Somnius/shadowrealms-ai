@@ -28,27 +28,35 @@ function flatten(obj, prefix = '', out = {}) {
   return out;
 }
 
+// Keys come from our own source files, but never write through prototype properties.
+const isUnsafeKey = (key) => key === '__proto__' || key === 'constructor' || key === 'prototype';
+
 function setPath(obj, dotted, value) {
   const parts = dotted.split('.');
-  // Keys come from our own source files, but never write through prototype properties
-  if (parts.some((p) => p === '__proto__' || p === 'constructor' || p === 'prototype')) {
+  let cur = obj;
+  for (let i = 0; i < parts.length - 1; i += 1) {
+    const key = parts[i];
+    if (isUnsafeKey(key)) {
+      console.log(`SKIPPED: ${dotted} is not a usable translation key`);
+      return;
+    }
+    if (!Object.prototype.hasOwnProperty.call(cur, key) || cur[key] == null) cur[key] = {};
+    if (typeof cur[key] !== 'object') {
+      console.log(`KEY CLASH: ${dotted} needs ${key} to be an object but it is a string (rename one key)`);
+      return;
+    }
+    cur = cur[key];
+  }
+  const last = parts[parts.length - 1];
+  if (isUnsafeKey(last)) {
     console.log(`SKIPPED: ${dotted} is not a usable translation key`);
     return;
   }
-  let cur = obj;
-  for (let i = 0; i < parts.length - 1; i += 1) {
-    if (cur[parts[i]] == null) cur[parts[i]] = {};
-    if (typeof cur[parts[i]] !== 'object') {
-      console.log(`KEY CLASH: ${dotted} needs ${parts[i]} to be an object but it is a string (rename one key)`);
-      return;
-    }
-    cur = cur[parts[i]];
-  }
-  if (cur[parts[parts.length - 1]] && typeof cur[parts[parts.length - 1]] === 'object') {
+  if (cur[last] && typeof cur[last] === 'object') {
     console.log(`KEY CLASH: ${dotted} is a string but also a prefix of other keys (rename one key)`);
     return;
   }
-  cur[parts[parts.length - 1]] = value;
+  cur[last] = value;
 }
 
 function readNs(lang, ns) {
