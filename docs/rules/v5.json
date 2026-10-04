@@ -1,0 +1,1127 @@
+{
+  "ruleset": "v5",
+  "title": "Vampire: The Masquerade 5th Edition constants",
+  "sources": {
+    "primary": "V5 Corebook (Sept 2019 errata update); 'ref' = printed core pages",
+    "errata": "V5 Rules Errata 2.0 (Sept 6, 2019)",
+    "spec": "docs/rules/V5.md"
+  },
+  "dice": {
+    "die": "d10",
+    "success_on": 6,
+    "difficulty_means": "successes needed",
+    "win": "successes >= difficulty",
+    "critical": "each pair of 10s (regular or hunger) counts 4 successes instead of 2",
+    "successes_formula": "count(d>=6) + 2*floor(count(d==10)/2)",
+    "messy_critical": "critical win with >= 1 ten on a hunger die",
+    "bestial_failure": "failed roll with >= 1 hunger die showing 1",
+    "total_failure": "zero successes",
+    "min_pool": 1,
+    "hunger_dice_excluded_from": [
+      "checks (incl. Rouse)",
+      "Willpower rolls",
+      "Humanity rolls"
+    ],
+    "willpower_reroll": {
+      "cost": 1,
+      "max_dice": 3,
+      "dice": "regular only (never hunger)",
+      "not_on": [
+        "checks",
+        "tracker rolls (Willpower, Humanity)",
+        "One-Roll Conflict",
+        "while in frenzy"
+      ],
+      "per_roll_limit_default": 1,
+      "per_roll_limit_ambiguous": true,
+      "marks": "1 Superficial Willpower damage (not halved)",
+      "ref": "pp. 122, 158"
+    },
+    "specialty_bonus_dice": 1,
+    "specialties_per_roll": 1,
+    "automatic_win": {
+      "condition": "pool >= 2 x difficulty",
+      "margin": 0,
+      "optional": true,
+      "not_for": [
+        "checks",
+        "Blood Surge rolls"
+      ]
+    },
+    "take_half": "SPC successes = floor(pool/2); not for checks",
+    "contest_tie": "acting character wins",
+    "two_sided_conflict_tie": "both deal damage with margin 1",
+    "modifier_cap_guideline": {
+      "difficulty": 2,
+      "dice": 3
+    },
+    "difficulty_table": {
+      "1": "Routine",
+      "2": "Straightforward",
+      "3": "Moderate",
+      "4": "Challenging",
+      "5": "Hard",
+      "6": "Very Hard",
+      "7": "Nearly Impossible (7+)"
+    },
+    "ref": "pp. 117-127"
+  },
+  "rouse_check": {
+    "dice": 1,
+    "success_on": 6,
+    "failure": "+1 Hunger (after the effect resolves)",
+    "willpower_reroll": false,
+    "at_hunger_5": "cannot rouse voluntarily; forced rouse => hunger frenzy test difficulty 4",
+    "waking_fail_above_5": "torpor",
+    "mend_aggravated_fail_above_5": "torpor",
+    "ref": "pp. 211, 219"
+  },
+  "hunger": {
+    "min": 0,
+    "max": 5,
+    "only_kill_reaches": 0
+  },
+  "attributes": {
+    "physical": [
+      "Strength",
+      "Dexterity",
+      "Stamina"
+    ],
+    "social": [
+      "Charisma",
+      "Manipulation",
+      "Composure"
+    ],
+    "mental": [
+      "Intelligence",
+      "Wits",
+      "Resolve"
+    ]
+  },
+  "skills": {
+    "physical": [
+      "Athletics",
+      "Brawl",
+      "Craft",
+      "Drive",
+      "Firearms",
+      "Larceny",
+      "Melee",
+      "Stealth",
+      "Survival"
+    ],
+    "social": [
+      "Animal Ken",
+      "Etiquette",
+      "Insight",
+      "Intimidation",
+      "Leadership",
+      "Performance",
+      "Persuasion",
+      "Streetwise",
+      "Subterfuge"
+    ],
+    "mental": [
+      "Academics",
+      "Awareness",
+      "Finance",
+      "Investigation",
+      "Medicine",
+      "Occult",
+      "Politics",
+      "Science",
+      "Technology"
+    ]
+  },
+  "skills_with_free_specialty": [
+    "Academics",
+    "Craft",
+    "Performance",
+    "Science"
+  ],
+  "disciplines": [
+    "Animalism",
+    "Auspex",
+    "Blood Sorcery",
+    "Celerity",
+    "Dominate",
+    "Fortitude",
+    "Obfuscate",
+    "Potence",
+    "Presence",
+    "Protean",
+    "Thin-Blood Alchemy"
+  ],
+  "trackers": {
+    "health": "Stamina + 3",
+    "willpower": "Composure + Resolve",
+    "willpower_buyable": false,
+    "damage_types": [
+      "superficial",
+      "aggravated"
+    ],
+    "superficial_halving": "halve, round up, unless a rule says otherwise (not for Willpower spends)",
+    "impaired_when": "every box filled (any mix)",
+    "impaired_penalty": {
+      "health": "-2 dice Physical pools",
+      "willpower": "-2 dice Social and Mental pools"
+    },
+    "damage_while_impaired": "each point converts one Superficial to Aggravated",
+    "health_full_aggravated": {
+      "vampire": "torpor",
+      "mortal": "death or coma"
+    },
+    "recovery": {
+      "mortal_superficial_health_per_session": "Stamina",
+      "superficial_willpower_per_session": "max(Composure, Resolve)",
+      "desire_once_per_session": 1,
+      "aggravated_willpower_ambition_per_session": 1
+    },
+    "ref": "pp. 119, 126-127, 157-159"
+  },
+  "resonance": {
+    "types": {
+      "Choleric": [
+        "Celerity",
+        "Potence"
+      ],
+      "Melancholy": [
+        "Fortitude",
+        "Obfuscate"
+      ],
+      "Phlegmatic": [
+        "Auspex",
+        "Dominate"
+      ],
+      "Sanguine": [
+        "Blood Sorcery",
+        "Presence"
+      ],
+      "Animal": [
+        "Animalism",
+        "Protean"
+      ]
+    },
+    "temperaments": {
+      "fleeting": "no mechanical effect",
+      "intense": "+1 die to matching Discipline pools until next feeding or Hunger 5",
+      "acute": "as intense + Dyscrasia"
+    },
+    "random_temperament_d10": {
+      "1-5": "negligible",
+      "6-8": "fleeting",
+      "9-10": "reroll: 1-8 intense, 9-10 acute"
+    },
+    "random_resonance_d10": {
+      "1-3": "Phlegmatic",
+      "4-6": "Melancholy",
+      "7-8": "Choleric",
+      "9-10": "Sanguine"
+    },
+    "bagged_blood": "no Resonance",
+    "animal_blood": "never Dyscrasia",
+    "ref": "pp. 226-228"
+  },
+  "blood_potency_table": [
+    {
+      "bp": 0,
+      "blood_surge_dice": 0,
+      "mend_superficial_per_rouse": 1,
+      "discipline_bonus": 0,
+      "rouse_reroll_max_power_level": 0,
+      "bane_severity": 0,
+      "feeding_penalty": "none",
+      "animal_bag_slake": "full",
+      "human_slake_reduction": 0,
+      "kill_required_below_hunger": 1
+    },
+    {
+      "bp": 1,
+      "blood_surge_dice": 1,
+      "mend_superficial_per_rouse": 1,
+      "discipline_bonus": 0,
+      "rouse_reroll_max_power_level": 1,
+      "bane_severity": 1,
+      "feeding_penalty": "none",
+      "animal_bag_slake": "full",
+      "human_slake_reduction": 0,
+      "kill_required_below_hunger": 1
+    },
+    {
+      "bp": 2,
+      "blood_surge_dice": 1,
+      "mend_superficial_per_rouse": 2,
+      "discipline_bonus": 1,
+      "rouse_reroll_max_power_level": 1,
+      "bane_severity": 1,
+      "feeding_penalty": "animal and bagged blood slake half",
+      "animal_bag_slake": "half",
+      "human_slake_reduction": 0,
+      "kill_required_below_hunger": 1
+    },
+    {
+      "bp": 3,
+      "blood_surge_dice": 2,
+      "mend_superficial_per_rouse": 2,
+      "discipline_bonus": 1,
+      "rouse_reroll_max_power_level": 2,
+      "bane_severity": 2,
+      "feeding_penalty": "animal and bagged blood slake no hunger",
+      "animal_bag_slake": "none",
+      "human_slake_reduction": 0,
+      "kill_required_below_hunger": 1
+    },
+    {
+      "bp": 4,
+      "blood_surge_dice": 2,
+      "mend_superficial_per_rouse": 3,
+      "discipline_bonus": 2,
+      "rouse_reroll_max_power_level": 2,
+      "bane_severity": 2,
+      "feeding_penalty": "animal/bagged none; slake 1 less per human",
+      "animal_bag_slake": "none",
+      "human_slake_reduction": 1,
+      "kill_required_below_hunger": 1
+    },
+    {
+      "bp": 5,
+      "blood_surge_dice": 3,
+      "mend_superficial_per_rouse": 3,
+      "discipline_bonus": 2,
+      "rouse_reroll_max_power_level": 3,
+      "bane_severity": 3,
+      "feeding_penalty": "animal/bagged none; slake 1 less per human; must kill to go below Hunger 2",
+      "animal_bag_slake": "none",
+      "human_slake_reduction": 1,
+      "kill_required_below_hunger": 2
+    },
+    {
+      "bp": 6,
+      "blood_surge_dice": 3,
+      "mend_superficial_per_rouse": 3,
+      "discipline_bonus": 3,
+      "rouse_reroll_max_power_level": 3,
+      "bane_severity": 3,
+      "feeding_penalty": "animal/bagged none (table lists nothing else)",
+      "animal_bag_slake": "none",
+      "human_slake_reduction": 1,
+      "kill_required_below_hunger": 2,
+      "inferred": [
+        "human_slake_reduction",
+        "kill_required_below_hunger"
+      ],
+      "literal_table": {
+        "human_slake_reduction": 0,
+        "kill_required_below_hunger": null
+      }
+    },
+    {
+      "bp": 7,
+      "blood_surge_dice": 4,
+      "mend_superficial_per_rouse": 3,
+      "discipline_bonus": 3,
+      "rouse_reroll_max_power_level": 4,
+      "bane_severity": 4,
+      "feeding_penalty": "slake 2 less per human; must kill to go below Hunger 2",
+      "animal_bag_slake": "none",
+      "human_slake_reduction": 2,
+      "kill_required_below_hunger": 2
+    },
+    {
+      "bp": 8,
+      "blood_surge_dice": 4,
+      "mend_superficial_per_rouse": 4,
+      "discipline_bonus": 4,
+      "rouse_reroll_max_power_level": 4,
+      "bane_severity": 4,
+      "feeding_penalty": "animal/bagged none (table lists nothing else)",
+      "animal_bag_slake": "none",
+      "human_slake_reduction": 2,
+      "kill_required_below_hunger": 2,
+      "inferred": [
+        "human_slake_reduction",
+        "kill_required_below_hunger"
+      ],
+      "literal_table": {
+        "human_slake_reduction": 0,
+        "kill_required_below_hunger": null
+      }
+    },
+    {
+      "bp": 9,
+      "blood_surge_dice": 5,
+      "mend_superficial_per_rouse": 4,
+      "discipline_bonus": 4,
+      "rouse_reroll_max_power_level": 5,
+      "bane_severity": 5,
+      "feeding_penalty": "slake 2 less per human; must kill to go below Hunger 3",
+      "animal_bag_slake": "none",
+      "human_slake_reduction": 2,
+      "kill_required_below_hunger": 3
+    },
+    {
+      "bp": 10,
+      "blood_surge_dice": 5,
+      "mend_superficial_per_rouse": 5,
+      "discipline_bonus": 5,
+      "rouse_reroll_max_power_level": 5,
+      "bane_severity": 5,
+      "feeding_penalty": "animal/bagged none; slake 3 less per human; must kill to go below Hunger 3",
+      "animal_bag_slake": "none",
+      "human_slake_reduction": 3,
+      "kill_required_below_hunger": 3
+    }
+  ],
+  "blood_potency_table_notes": "p. 216. 'kill_required_below_hunger' = lowest Hunger reachable without killing (1 means normal). BP 6/8 human penalties inferred from neighbouring rows (see 'literal_table'). Errata 2.0: Discipline bonus applies once per roll and only to pools that use or are directly boosted by a Discipline. BP 6+ not intended for PCs.",
+  "generation_blood_potency": [
+    {
+      "generation": "4",
+      "min_bp": 5,
+      "max_bp": 10
+    },
+    {
+      "generation": "5",
+      "min_bp": 4,
+      "max_bp": 9
+    },
+    {
+      "generation": "6",
+      "min_bp": 3,
+      "max_bp": 8
+    },
+    {
+      "generation": "7",
+      "min_bp": 3,
+      "max_bp": 7
+    },
+    {
+      "generation": "8",
+      "min_bp": 2,
+      "max_bp": 6
+    },
+    {
+      "generation": "9",
+      "min_bp": 2,
+      "max_bp": 5
+    },
+    {
+      "generation": "10-11",
+      "min_bp": 1,
+      "max_bp": 4,
+      "starting_bp": 2
+    },
+    {
+      "generation": "12-13",
+      "min_bp": 1,
+      "max_bp": 3,
+      "starting_bp": 1
+    },
+    {
+      "generation": "14-16",
+      "min_bp": 0,
+      "max_bp": 0,
+      "starting_bp": 0,
+      "thin_blood": true
+    }
+  ],
+  "generation_ref": "pp. 148-149, 214",
+  "feeding_table": [
+    {
+      "source": "multiple small animals",
+      "slake": 1,
+      "time": "scene",
+      "note": "none above BP 2"
+    },
+    {
+      "source": "medium animal",
+      "slake": 1,
+      "time": "turn"
+    },
+    {
+      "source": "large animal",
+      "slake": 2,
+      "time": "scene"
+    },
+    {
+      "source": "blood bag",
+      "slake": 1,
+      "time": "turn",
+      "note": "none above BP 2; no Resonance"
+    },
+    {
+      "source": "sip from human",
+      "slake": 1,
+      "time": "3 turns"
+    },
+    {
+      "source": "max non-harmful drink from human",
+      "slake": 2,
+      "time": "scene"
+    },
+    {
+      "source": "harmful drink from human",
+      "slake": "1-4",
+      "time": "1 turn per point",
+      "note": "aggravated damage to human = slaked; human Strength+Stamina vs that to survive"
+    },
+    {
+      "source": "human drained and killed",
+      "slake": 5,
+      "time": "5 turns",
+      "note": "only way to Hunger 0"
+    }
+  ],
+  "feeding_from_vampires": {
+    "base": "1 slaked per Hunger the donor gains",
+    "donor_bp_2_higher": "2 per point",
+    "donor_bp_2_lower": "1 per 2 points",
+    "ref": "p. 213"
+  },
+  "bite_attack": {
+    "damage": "exactly 2 aggravated",
+    "feeding_per_turn": "1 aggravated to mortal, slake 1",
+    "ref": "p. 213 (Errata 2.0 text)"
+  },
+  "blood_gifts": {
+    "blush_of_life": "1 Rouse",
+    "blood_surge": "1 Rouse; +BP table dice to one Attribute roll; once per roll; not Willpower/Humanity/multi-scene/One-Roll Conflict",
+    "mend_superficial": "1 Rouse per turn; amount from BP table",
+    "mend_aggravated": "3 Rouses at nightfall (plus waking Rouse) per point; 1 aggravated + 1 crippling injury per night",
+    "disciplines": "1 activation per turn; cost per power",
+    "ref": "pp. 218-219"
+  },
+  "frenzy": {
+    "resist_roll": "Willpower (current) + floor(Humanity/3) vs difficulty",
+    "win": "resisted, but loses the turn",
+    "critical_win": "resisted, no turn lost",
+    "in_frenzy": {
+      "health_penalties_ignored": true,
+      "only_physical_disciplines": true,
+      "mental_discipline_resistance_bonus_dice": 3,
+      "no_resistance_pool": "+2 difficulty for the user",
+      "willpower_control_turns_per_point": 1,
+      "willpower_rerolls": false
+    },
+    "fury": {
+      "friend_killed": 2,
+      "lover_or_touchstone_hurt": 3,
+      "lover_or_touchstone_killed": 4,
+      "physical_provocation_or_harassment": 2,
+      "insulted_by_inferior": 2,
+      "public_humiliation": 2,
+      "end": "after destroying the cause, Willpower test difficulty 3 (5 if enemies remain)"
+    },
+    "hunger": {
+      "sight_or_smell_of_blood_at_hunger_4plus": 2,
+      "taste_of_blood_at_hunger_4plus": 3,
+      "fail_rouse_at_hunger_5": 4,
+      "end": "Hunger 1 or less"
+    },
+    "terror": {
+      "bonfire": 2,
+      "inside_burning_building": 3,
+      "being_burned": 2,
+      "obscured_sunlight": 3,
+      "direct_sunlight": 4,
+      "end": "no danger perceived or scene ends"
+    },
+    "ref": "pp. 219-220"
+  },
+  "compulsions": {
+    "random_d10": {
+      "1-3": "Hunger",
+      "4-5": "Dominance",
+      "6-7": "Harm",
+      "8-9": "Paranoia",
+      "10": "Clan Compulsion (reroll for Caitiff/thin-blood)"
+    },
+    "typical_penalty_dice": 2,
+    "willpower_can_ignore": false,
+    "ref": "pp. 208-211"
+  },
+  "humanity": {
+    "start": 7,
+    "start_fledgling_option": 8,
+    "frenzy_bonus": "floor(Humanity/3)",
+    "table": [
+      {
+        "humanity": 9,
+        "frenzy_dice": 3,
+        "torpor": "3 days"
+      },
+      {
+        "humanity": 8,
+        "frenzy_dice": 2,
+        "torpor": "1 week"
+      },
+      {
+        "humanity": 7,
+        "frenzy_dice": 2,
+        "torpor": "2 weeks"
+      },
+      {
+        "humanity": 6,
+        "frenzy_dice": 2,
+        "torpor": "1 month"
+      },
+      {
+        "humanity": 5,
+        "frenzy_dice": 1,
+        "torpor": "1 year"
+      },
+      {
+        "humanity": 4,
+        "frenzy_dice": 1,
+        "torpor": "1 decade"
+      },
+      {
+        "humanity": 3,
+        "frenzy_dice": 1,
+        "torpor": "5 decades"
+      },
+      {
+        "humanity": 2,
+        "frenzy_dice": 0,
+        "torpor": "1 century"
+      },
+      {
+        "humanity": 1,
+        "frenzy_dice": 0,
+        "torpor": "5 centuries"
+      }
+    ],
+    "humanity_10_row": "not in book; formula gives 3 frenzy dice, torpor unspecified",
+    "human_interaction_penalty": {
+      "5": -1,
+      "4": -2,
+      "3": -4,
+      "2": -6,
+      "1": -8
+    },
+    "human_interaction_penalty_with_blush": {
+      "2": -4,
+      "1": -5
+    },
+    "stains": {
+      "blood_bond_mortal": 1,
+      "embrace": 2,
+      "touchstone_damaged": 1,
+      "touchstone_damaged_by_you": 2,
+      "touchstone_destroyed": 2,
+      "touchstone_destroyed_by_you": 3,
+      "tenet_violation": "1 (justifiable) to 2+ (bestial); -1 or more if serving a Conviction"
+    },
+    "remorse": "end of session if any Stains: roll max(1, empty unstained boxes); 0 successes => -1 Humanity; always clear Stains",
+    "degeneration": "Stains > empty boxes: Impaired (-2 all pools), 1 aggravated Willpower per overflow Stain, no further deliberate Tenet breaches (terror frenzy diff 4 if forced)",
+    "xp_cost": "new x 10 (ST discretion)",
+    "ref": "pp. 236-241"
+  },
+  "sunlight": {
+    "direct": "aggravated per turn = Bane Severity",
+    "obscured_or_protected": "same, every other turn or less",
+    "thin_blood": "1 superficial per turn"
+  },
+  "backgrounds": [
+    "Allies",
+    "Contacts",
+    "Fame",
+    "Haven",
+    "Herd",
+    "Influence",
+    "Mask",
+    "Mawla",
+    "Resources",
+    "Retainers",
+    "Status"
+  ],
+  "advantage_types": [
+    "Merits",
+    "Backgrounds",
+    "Loresheets",
+    "Flaws"
+  ],
+  "merit_flaw_groups": [
+    "Linguistics",
+    "Looks",
+    "Substance Use",
+    "Archaic",
+    "Bonding",
+    "Feeding",
+    "Mythic",
+    "Thin-Blood"
+  ],
+  "predator_types": [
+    {
+      "name": "Alleycat",
+      "pool": "Strength + Brawl (alt: Wits + Streetwise vs criminals)",
+      "specialty_choice": [
+        "Intimidation (Stickups)",
+        "Brawl (Grappling)"
+      ],
+      "discipline_choice": [
+        "Celerity",
+        "Potence"
+      ],
+      "humanity": -1,
+      "advantages": [
+        {
+          "name": "Contacts (criminal)",
+          "dots": 3
+        }
+      ]
+    },
+    {
+      "name": "Bagger",
+      "pool": "Intelligence + Streetwise",
+      "specialty_choice": [
+        "Larceny (Lock Picking)",
+        "Streetwise (Black Market)"
+      ],
+      "discipline_choice": [
+        "Blood Sorcery (Tremere only)",
+        "Obfuscate"
+      ],
+      "advantages": [
+        {
+          "name": "Iron Gullet (Feeding Merit)",
+          "dots": 3
+        }
+      ],
+      "flaws": [
+        {
+          "name": "Enemy",
+          "dots": 2
+        }
+      ],
+      "forbidden_clans": [
+        "Ventrue"
+      ]
+    },
+    {
+      "name": "Blood Leech",
+      "pool": "none (ST should not abstract to dice)",
+      "specialty_choice": [
+        "Brawl (Kindred)",
+        "Stealth (against Kindred)"
+      ],
+      "discipline_choice": [
+        "Celerity",
+        "Protean"
+      ],
+      "humanity": -1,
+      "blood_potency": 1,
+      "flaws": [
+        {
+          "name": "Dark Secret: Diablerist OR Shunned",
+          "dots": 2
+        },
+        {
+          "name": "Prey Exclusion (mortals)",
+          "dots": 2
+        }
+      ]
+    },
+    {
+      "name": "Cleaver",
+      "pool": "Manipulation + Subterfuge",
+      "specialty_choice": [
+        "Persuasion (Gaslighting)",
+        "Subterfuge (Coverups)"
+      ],
+      "discipline_choice": [
+        "Dominate",
+        "Animalism"
+      ],
+      "advantages": [
+        {
+          "name": "Herd",
+          "dots": 2
+        }
+      ],
+      "flaws": [
+        {
+          "name": "Dark Secret: Cleaver",
+          "dots": 1
+        }
+      ]
+    },
+    {
+      "name": "Consensualist",
+      "pool": "Manipulation + Persuasion",
+      "specialty_choice": [
+        "Medicine (Phlebotomy)",
+        "Persuasion (Victims)"
+      ],
+      "discipline_choice": [
+        "Auspex",
+        "Fortitude"
+      ],
+      "humanity": 1,
+      "flaws": [
+        {
+          "name": "Dark Secret: Masquerade Breacher",
+          "dots": 1
+        },
+        {
+          "name": "Prey Exclusion (non-consenting)",
+          "dots": 1
+        }
+      ]
+    },
+    {
+      "name": "Farmer",
+      "pool": "Composure + Animal Ken",
+      "specialty_choice": [
+        "Animal Ken (specific animal)",
+        "Survival (Hunting)"
+      ],
+      "discipline_choice": [
+        "Animalism",
+        "Protean"
+      ],
+      "humanity": 1,
+      "flaws": [
+        {
+          "name": "Farmer (Feeding Flaw)",
+          "dots": 2
+        }
+      ],
+      "forbidden_clans": [
+        "Ventrue"
+      ],
+      "max_blood_potency": 2,
+      "errata_conflict": "core p. 177 prints 'Folkloric banes include: (••) Vegan' (misapplied errata); p. 181 and errata intent = Feeding Flaw (••) Farmer"
+    },
+    {
+      "name": "Osiris",
+      "pool": "Manipulation + Subterfuge or Intimidation + Fame",
+      "specialty_choice": [
+        "Occult (specific tradition)",
+        "Performance (specific field)"
+      ],
+      "discipline_choice": [
+        "Blood Sorcery (Tremere only)",
+        "Presence"
+      ],
+      "advantages": [
+        {
+          "name": "Fame and/or Herd (split)",
+          "dots": 3
+        }
+      ],
+      "flaws": [
+        {
+          "name": "Enemies and/or Mythic Flaws (split)",
+          "dots": 2
+        }
+      ]
+    },
+    {
+      "name": "Sandman",
+      "pool": "Dexterity + Stealth",
+      "specialty_choice": [
+        "Medicine (Anesthetics)",
+        "Stealth (Break-in)"
+      ],
+      "discipline_choice": [
+        "Auspex",
+        "Obfuscate"
+      ],
+      "advantages": [
+        {
+          "name": "Resources",
+          "dots": 1
+        }
+      ]
+    },
+    {
+      "name": "Scene Queen",
+      "pool": "Manipulation + Persuasion",
+      "specialty_choice": [
+        "Etiquette (specific scene)",
+        "Leadership (specific scene)",
+        "Streetwise (specific scene)"
+      ],
+      "discipline_choice": [
+        "Dominate",
+        "Potence"
+      ],
+      "advantages": [
+        {
+          "name": "Fame",
+          "dots": 1
+        },
+        {
+          "name": "Contacts",
+          "dots": 1
+        }
+      ],
+      "flaws": [
+        {
+          "name": "Influence: Disliked (outside subculture) OR Prey Exclusion (other subculture)",
+          "dots": 1
+        }
+      ]
+    },
+    {
+      "name": "Siren",
+      "pool": "Charisma + Subterfuge",
+      "specialty_choice": [
+        "Persuasion (Seduction)",
+        "Subterfuge (Seduction)"
+      ],
+      "discipline_choice": [
+        "Fortitude",
+        "Presence"
+      ],
+      "advantages": [
+        {
+          "name": "Looks: Beautiful",
+          "dots": 2
+        }
+      ],
+      "flaws": [
+        {
+          "name": "Enemy (spurned lover or jealous partner)",
+          "dots": 1
+        }
+      ]
+    }
+  ],
+  "predator_types_notes": "pp. 175-178; pools p. 307. Specialty in a 0-dot Skill gives 1 dot in that Skill instead. Thin-bloods/fledglings may skip. Errata renamed predator pool 'Headhunter' to 'Blood Leech'.",
+  "creation": {
+    "attributes": {
+      "spread": [
+        4,
+        3,
+        3,
+        3,
+        2,
+        2,
+        2,
+        2,
+        1
+      ],
+      "total_dots": 22,
+      "errata_note": "pre-errata '4 at 3, 3 at 2' is wrong"
+    },
+    "skill_distributions": {
+      "jack_of_all_trades": {
+        "3": 1,
+        "2": 8,
+        "1": 10
+      },
+      "balanced": {
+        "3": 3,
+        "2": 5,
+        "1": 7
+      },
+      "specialist": {
+        "4": 1,
+        "3": 3,
+        "2": 3,
+        "1": 3
+      }
+    },
+    "free_specialties": "one each for Academics/Craft/Performance/Science if rated, +1 any, +1 from predator type",
+    "disciplines": {
+      "clan_disciplines_picked": 2,
+      "dots": [
+        2,
+        1
+      ],
+      "powers_per_dot": 1,
+      "caitiff": "any two Disciplines, 2 and 1"
+    },
+    "advantages_dots": 7,
+    "flaws_min_dots": 2,
+    "flaws_max_dots": null,
+    "convictions": [
+      1,
+      3
+    ],
+    "touchstones": "one per Conviction",
+    "humanity": 7,
+    "coterie_dots_per_player": 1,
+    "coterie_dots_small_troupe": 2,
+    "thin_blood": {
+      "merits": [
+        1,
+        3
+      ],
+      "flaws": "same number as merits",
+      "no_clan": true,
+      "no_disciplines": true,
+      "cannot_buy": [
+        "Bonding",
+        "Mawla",
+        "Retainers",
+        "Status"
+      ]
+    },
+    "age_brackets": {
+      "childer": {
+        "generation": "12-16",
+        "xp": 0
+      },
+      "neonate": {
+        "generation": "12-13",
+        "xp": 15
+      },
+      "ancilla": {
+        "generation": "10-11",
+        "xp": 35,
+        "blood_potency_bonus": 1,
+        "advantage_dots_bonus": 2,
+        "flaw_dots_bonus": 2,
+        "humanity_change": -1,
+        "ambiguous": "whether +1 BP stacks on starting BP 2 (literal: BP 3)"
+      }
+    },
+    "ref": "pp. 139-151"
+  },
+  "experience": {
+    "award": "1 per session + 1 per story (option: 2 per session)",
+    "costs": {
+      "attribute": "new x 5",
+      "skill": "new x 3",
+      "specialty": 3,
+      "clan_discipline": "new x 5",
+      "other_discipline": "new x 7",
+      "caitiff_discipline": "new x 6",
+      "blood_sorcery_ritual": "level x 3",
+      "thin_blood_formula": "level x 3",
+      "advantage": "3 per dot",
+      "blood_potency": "new x 10",
+      "humanity": "new x 10 (ST discretion)"
+    },
+    "buy_one_level_at_a_time": true,
+    "ref": "pp. 130, 151, 241"
+  },
+  "weapon_damage_modifiers": {
+    "improvised_or_stake": 0,
+    "light_impact": 1,
+    "heavy_impact": 2,
+    "light_piercing": 2,
+    "light_gunshot": 2,
+    "heavy_melee": 3,
+    "medium_gunshot": 3,
+    "heavy_gunshot": 4,
+    "huge_melee": 4,
+    "ambiguous": "values for rows with blank cells inferred from table layout (p. 304)"
+  },
+  "clans": [
+    {
+      "name": "Brujah",
+      "disciplines": [
+        "Celerity",
+        "Potence",
+        "Presence"
+      ],
+      "bane": "fury_frenzy_penalty",
+      "bane_summary": "-Bane Severity dice to resist fury frenzy (min 1 die)",
+      "compulsion": "Rebellion",
+      "ref": "p. 67"
+    },
+    {
+      "name": "Gangrel",
+      "disciplines": [
+        "Animalism",
+        "Fortitude",
+        "Protean"
+      ],
+      "bane": "animal_features",
+      "bane_summary": "in frenzy gain Bane Severity animal features, each -1 to an Attribute, lasting one more night; only 1 if Riding the Wave",
+      "compulsion": "Feral Impulses",
+      "ref": "p. 73"
+    },
+    {
+      "name": "Malkavian",
+      "disciplines": [
+        "Auspex",
+        "Dominate",
+        "Obfuscate"
+      ],
+      "bane": "madness_penalty",
+      "bane_summary": "on bestial failure or Compulsion, -Bane Severity to one pool category for the scene",
+      "compulsion": "Delusion",
+      "ref": "p. 79"
+    },
+    {
+      "name": "Nosferatu",
+      "disciplines": [
+        "Animalism",
+        "Obfuscate",
+        "Potence"
+      ],
+      "bane": "hideous",
+      "bane_summary": "Repulsive Flaw (2), can never buy Looks; -Bane Severity dice to pass as non-deformed",
+      "compulsion": "Cryptophilia",
+      "ref": "p. 85"
+    },
+    {
+      "name": "Toreador",
+      "disciplines": [
+        "Auspex",
+        "Celerity",
+        "Presence"
+      ],
+      "bane": "aesthetic_fixation",
+      "bane_summary": "in unbeautiful surroundings -Bane Severity dice to Discipline pools",
+      "compulsion": "Obsession",
+      "ref": "p. 91"
+    },
+    {
+      "name": "Tremere",
+      "disciplines": [
+        "Auspex",
+        "Dominate",
+        "Blood Sorcery"
+      ],
+      "bane": "deficient_bond",
+      "bane_summary": "cannot Blood Bond Kindred; mortals/ghouls need Bane Severity extra drinks",
+      "compulsion": "Perfectionism",
+      "ref": "p. 97"
+    },
+    {
+      "name": "Ventrue",
+      "disciplines": [
+        "Dominate",
+        "Fortitude",
+        "Presence"
+      ],
+      "bane": "rarefied_palate",
+      "bane_summary": "feeding outside chosen preference costs Willpower = Bane Severity; Resolve + Awareness (diff 4+) to sense it",
+      "compulsion": "Arrogance",
+      "ref": "p. 102"
+    },
+    {
+      "name": "Caitiff",
+      "disciplines": [],
+      "bane": null,
+      "bane_summary": "no clan bane; start with Suspect (1) Flaw, no positive Status at creation; Discipline XP new x 6",
+      "compulsion": null,
+      "ref": "p. 107"
+    },
+    {
+      "name": "Thin-blood",
+      "disciplines": [
+        "Thin-Blood Alchemy"
+      ],
+      "bane": null,
+      "bane_summary": "BP 0, Bane Severity 0; mortal-style damage; frenzy only via supernatural means",
+      "compulsion": null,
+      "ref": "pp. 109-113, 215"
+    }
+  ],
+  "clan_compulsion_effects": {
+    "Rebellion": "-2 to all rolls until opposing orders/expectations",
+    "Feral Impulses": "-3 to Manipulation and Intelligence rolls for one scene; one-word speech",
+    "Delusion": "-2 to Dexterity, Manipulation, Composure, Wits and resisting terror frenzy for one scene",
+    "Cryptophilia": "-2 to actions not aimed at learning a secret",
+    "Obsession": "-2 to actions not about the fixated beautiful thing",
+    "Perfectionism": "-2 to all pools until a Skill critical win or scene ends; -1 on a repeat, 0 on second repeat",
+    "Arrogance": "-2 to actions not about leadership until an order is obeyed (not supernaturally)"
+  },
+  "bane_names_note": "bane keys are descriptive identifiers for code, not official book names"
+}
