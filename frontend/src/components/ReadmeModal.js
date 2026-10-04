@@ -45,7 +45,13 @@ const ReadmeModal = ({ isOpen, onClose }) => {
     const link = event.target.closest && event.target.closest('a[href^="#"]');
     if (!link) return;
     event.preventDefault();
-    const target = document.getElementById(decodeURIComponent(link.getAttribute('href').slice(1)));
+    let id = link.getAttribute('href').slice(1);
+    try {
+      id = decodeURIComponent(id);
+    } catch (e) {
+      // "#%" and similar: look the id up as written
+    }
+    const target = document.getElementById(id);
     if (target && event.currentTarget.contains(target) && target.scrollIntoView) {
       target.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
