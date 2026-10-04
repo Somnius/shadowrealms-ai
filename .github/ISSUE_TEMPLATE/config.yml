@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Report a security vulnerability
+    url: https://github.com/Somnius/shadowrealms-ai/security/advisories/new
+    about: Please report security problems privately (Security tab, "Report a vulnerability"), not as a public issue.
+  - name: Documentation and wiki
+    url: https://github.com/Somnius/shadowrealms-ai/wiki
+    about: Setup, playing, and administration guides.
