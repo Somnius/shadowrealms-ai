@@ -307,3 +307,8 @@
 @media (pointer: coarse) {
   .sr-dots__hit { width: 30px; height: 30px; }
 }
+
+/* EmptyState ambient=true: faint fog behind it (never used behind chat text) */
+.sr-empty--ambient { position: relative; overflow: hidden; isolation: isolate; border-radius: var(--sr-radius-lg); }
+.sr-empty--ambient > :not(.sr-empty__fog) { position: relative; z-index: 1; }
+.sr-empty__fog { z-index: 0; }

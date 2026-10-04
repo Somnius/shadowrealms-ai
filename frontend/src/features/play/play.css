@@ -161,8 +161,39 @@
 .sr-app .sr-switcher__item { display: flex; align-items: center; gap: var(--sr-space-2); padding: var(--sr-space-2); border-radius: var(--sr-radius-md); cursor: pointer; }
 .sr-app .sr-switcher__item.is-active { background: var(--sr-surface-hover); }
 .sr-app .sr-switcher__name { flex: 1; min-width: 0; }
-.sr-app .sr-roll__legacy { font-family: var(--sr-font-body); }
+.sr-app .sr-roll__legacy { display: flex; flex-direction: column; gap: var(--sr-space-3); }
 .sr-app .sr-roll__history { margin-right: auto; }
 .sr-app .sr-dicehist { list-style: none; margin: 0; padding: 0; }
 .sr-app .sr-dicehist li { padding: var(--sr-space-2) 0; border-bottom: 1px solid var(--sr-border); }
 @media (hover: none) { .sr-app .sr-rooms__search .sr-kbd { display: none; } }
+
+/* ---- phase 4: room glyphs come alive on hover / focus (one short motif each) ---- */
+.sr-app .sr-room__glyph { transition: color var(--sr-dur-fast) var(--sr-ease-out), transform var(--sr-dur-base) var(--sr-ease-out); }
+.sr-app .sr-room:hover .sr-room__glyph,
+.sr-app .sr-room:focus-visible .sr-room__glyph,
+.sr-app .sr-room.is-active .sr-room__glyph { color: var(--sr-accent-text); }
+/* lantern (OOC) and gas lamp (street): the flame flickers */
+.sr-app .sr-room:hover .sr-room__glyph .sr-glyph-flame,
+.sr-app .sr-room:focus-visible .sr-room__glyph .sr-glyph-flame {
+  transform-box: fill-box;
+  transform-origin: 50% 100%;
+  animation: sr-glyph-flicker-shape 1.4s ease-in-out infinite, sr-glyph-flicker-glow 1.1s steps(5, end) infinite;
+}
+.sr-app .sr-room:hover .sr-room__glyph[data-glyph='room-street'],
+.sr-app .sr-room:focus-visible .sr-room__glyph[data-glyph='room-street'] { animation: sr-room-sway 1.8s ease-in-out infinite; transform-origin: 50% 100%; }
+/* elysium: the pediment lifts, the columns stand */
+.sr-app .sr-room:hover .sr-room__glyph[data-glyph='room-elysium'] > :first-of-type,
+.sr-app .sr-room:focus-visible .sr-room__glyph[data-glyph='room-elysium'] > :first-of-type { animation: sr-room-lift 900ms var(--sr-ease-out) both; }
+/* haven: the crescent window lights up */
+.sr-app .sr-room:hover .sr-room__glyph[data-glyph='room-haven'] > :last-child,
+.sr-app .sr-room:focus-visible .sr-room__glyph[data-glyph='room-haven'] > :last-child { animation: sr-room-window 1.6s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
+.sr-app .sr-room:hover .sr-room__glyph[data-glyph='room-haven'],
+.sr-app .sr-room:focus-visible .sr-room__glyph[data-glyph='room-haven'] { --sr-glyph-accent: var(--sr-gold-400); }
+@keyframes sr-room-sway { 0%, 100% { transform: rotate(0deg); } 35% { transform: rotate(-5deg); } 70% { transform: rotate(4deg); } }
+@keyframes sr-room-lift { 0% { transform: translateY(0); } 50% { transform: translateY(-1.6px); } 100% { transform: translateY(-0.8px); } }
+@keyframes sr-room-window { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.55; transform: scale(0.9); } }
+
+/* AI is writing: candle-lit Storyteller avatar */
+.sr-app .sr-chat__typing { gap: var(--sr-space-3); min-height: 34px; padding-left: var(--sr-space-2); }
+.sr-app .sr-chat__typing-text { animation: sr-fade-in var(--sr-dur-base) var(--sr-ease-out); }
+.sr-app .sr-chat__empty { margin: var(--sr-space-6) var(--sr-space-4); }

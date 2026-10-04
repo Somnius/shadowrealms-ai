@@ -169,6 +169,9 @@ html, body { height: 100%; }
   border: 1px solid var(--sr-border-strong);
   border-radius: var(--sr-radius-lg);
   box-shadow: var(--sr-shadow-3);
+  max-height: calc(100dvh - 72px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
   animation: sr-rise-in var(--sr-dur-fast) var(--sr-ease-out);
 }
 .sr-app .sr-menu__list--bottom-end { top: calc(100% + 6px); right: 0; }
@@ -253,3 +256,8 @@ html, body { height: 100%; }
 
 /* Game terms kept in English, with an explanation tooltip (i18n/glossary.jsx). */
 .sr-app .sr-term[title] { text-decoration: underline dotted; text-decoration-color: var(--sr-text-muted); text-underline-offset: 3px; cursor: help; }
+
+/* Top bar with ambient fog (play view). The fog clips itself; content sits above it. */
+.sr-app .sr-topbar--ambient { position: relative; isolation: isolate; }
+.sr-app .sr-topbar--ambient > :not(.sr-topbar__fog) { position: relative; z-index: 1; }
+.sr-app .sr-topbar__fog { z-index: 0; }

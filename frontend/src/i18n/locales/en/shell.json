@@ -17,7 +17,15 @@
     "showcase": "Theme preview",
     "logout": "Log out",
     "button": "Account menu for {{name}}",
-    "title": "Account"
+    "title": "Account",
+    "atmosphere": "Atmosphere",
+    "atmosphereFull": "Full",
+    "atmosphereFullHint": "Fog, candlelight, animated sigils",
+    "atmosphereSubtle": "Subtle",
+    "atmosphereSubtleHint": "Still ambience, short transitions",
+    "atmosphereOff": "Off",
+    "atmosphereOffHint": "No motion at all",
+    "atmosphereSystem": "Motion is off in your system settings"
   },
   "language": {
     "label": "Language"

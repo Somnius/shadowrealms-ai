@@ -239,7 +239,7 @@ export default function CharacterCreationWizard({
   });
 
   const themeAccent =
-    systemType === 'werewolf' ? '#4ade80' : systemType === 'mage' ? '#38bdf8' : '#e94560';
+    systemType === 'werewolf' ? 'var(--sr-ok-400)' : systemType === 'mage' ? 'var(--sr-info-400)' : 'var(--sr-blood-500)';
 
   const resolveNatureDemeanor = (pick, custom) => {
     const text = (custom || '').trim();
@@ -421,7 +421,7 @@ export default function CharacterCreationWizard({
 
   const inlineErr = (sectionId) =>
     fieldErrors[sectionId] ? (
-      <p style={{ color: '#f87171', fontSize: '13px', marginBottom: '12px' }}>{fieldErrors[sectionId]}</p>
+      <p style={{ color: 'var(--sr-danger-400)', fontSize: '13px', marginBottom: '12px' }}>{fieldErrors[sectionId]}</p>
     ) : null;
 
   if (campaign && editionOf(campaign) === V5) {
@@ -442,7 +442,7 @@ export default function CharacterCreationWizard({
   if (!eligible.length) {
     return (
       <GothicBox theme="vampire" style={{ padding: '24px', maxWidth: '560px', margin: '0 auto' }}>
-        <p style={{ color: '#b5b5c3' }}>
+        <p style={{ color: 'var(--sr-bone-300)' }}>
           {t('wizard:noChronicle', 'You need to be a member of at least one Vampire, Werewolf, or Mage chronicle before using this forge.')}
         </p>
         <button
@@ -451,9 +451,9 @@ export default function CharacterCreationWizard({
           style={{
             marginTop: '16px',
             padding: '10px 20px',
-            background: '#2a2a4e',
-            color: '#e0e0e0',
-            border: '1px solid #9d4edd',
+            background: 'var(--sr-night-700)',
+            color: 'var(--sr-bone-100)',
+            border: '1px solid var(--sr-arcane-500)',
             borderRadius: '8px',
             cursor: 'pointer',
           }}
@@ -472,7 +472,7 @@ export default function CharacterCreationWizard({
         <div style={{ padding: '8px 8px 0' }}>
           <h2
             style={{
-              fontFamily: 'Cinzel, serif',
+              fontFamily: 'var(--sr-font-display)',
               color: themeAccent,
               marginTop: 0,
               fontSize: '22px',
@@ -480,7 +480,7 @@ export default function CharacterCreationWizard({
           >
             {t('wizard:classic.title', 'Character sheet forge')}
           </h2>
-          <p style={{ color: '#8b8b9f', fontSize: '14px', lineHeight: 1.5 }}>
+          <p style={{ color: 'var(--sr-bone-500)', fontSize: '14px', lineHeight: 1.5 }}>
             {t('wizard:classic.intro', 'Build a Classic World of Darkness (Revised) sheet: place your creation dots, then spend 15 freebie points. Scroll the sheet in order, or jump with the nav. Your Storyteller has final say on numbers and templates.')}
           </p>
         </div>
@@ -493,7 +493,7 @@ export default function CharacterCreationWizard({
             padding: '12px 16px',
             margin: '0 -4px 8px',
             background: 'linear-gradient(180deg, rgba(15,23,41,0.98) 70%, transparent)',
-            borderBottom: '1px solid #2a2a4e',
+            borderBottom: '1px solid var(--sr-night-700)',
           }}
         >
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', alignItems: 'center' }}>
@@ -506,11 +506,11 @@ export default function CharacterCreationWizard({
                   fontSize: '11px',
                   padding: '6px 12px',
                   borderRadius: '999px',
-                  background: fieldErrors[s.id] ? 'rgba(248,113,113,0.15)' : '#1e293b',
-                  color: fieldErrors[s.id] ? '#fca5a5' : themeAccent,
-                  border: `1px solid ${fieldErrors[s.id] ? '#b91c1c' : '#334155'}`,
+                  background: fieldErrors[s.id] ? 'rgba(248,113,113,0.15)' : 'var(--sr-night-800)',
+                  color: fieldErrors[s.id] ? 'var(--sr-blood-300)' : themeAccent,
+                  border: `1px solid ${fieldErrors[s.id] ? 'var(--sr-blood-700)' : 'var(--sr-night-600)'}`,
                   cursor: 'pointer',
-                  fontFamily: 'Cinzel, serif',
+                  fontFamily: 'var(--sr-font-display)',
                 }}
               >
                 {s.label()}
@@ -524,11 +524,11 @@ export default function CharacterCreationWizard({
               flexWrap: 'wrap',
               gap: '12px',
               fontSize: '12px',
-              color: '#b5b5c3',
+              color: 'var(--sr-bone-300)',
             }}
           >
             <span>
-              <strong style={{ color: '#e8e8ef' }}>{name || '—'}</strong>
+              <strong style={{ color: 'var(--sr-bone-100)' }}>{name || '—'}</strong>
               {concept ? ` · ${concept}` : ''}
             </span>
             {systemType === 'vampire' && clan ? (
@@ -544,7 +544,7 @@ export default function CharacterCreationWizard({
             ) : null}
             <label
               style={{
-                color: freebies.remaining < 0 ? '#fca5a5' : '#94a3b8',
+                color: freebies.remaining < 0 ? 'var(--sr-blood-300)' : 'var(--sr-bone-300)',
                 display: 'inline-flex',
                 alignItems: 'center',
                 gap: '6px',
@@ -569,7 +569,7 @@ export default function CharacterCreationWizard({
             accent={themeAccent}
           >
             {inlineErr(SHEET_SECTION_IDS.identity)}
-            <label style={{ color: '#c4b5fd', display: 'block', marginBottom: '8px' }}>
+            <label style={{ color: 'var(--sr-arcane-300)', display: 'block', marginBottom: '8px' }}>
               {t('wizard:field.chronicle', 'Chronicle')}
             </label>
             <select
@@ -579,9 +579,9 @@ export default function CharacterCreationWizard({
                 width: '100%',
                 padding: '10px',
                 marginBottom: '20px',
-                background: '#0f1729',
-                color: '#e0e0e0',
-                border: '2px solid #2a2a4e',
+                background: 'var(--sr-night-850)',
+                color: 'var(--sr-bone-100)',
+                border: '2px solid var(--sr-night-700)',
                 borderRadius: '8px',
               }}
             >
@@ -592,7 +592,7 @@ export default function CharacterCreationWizard({
                 </option>
               ))}
             </select>
-            <label style={{ color: '#c4b5fd', display: 'block', marginBottom: '8px' }}>
+            <label style={{ color: 'var(--sr-arcane-300)', display: 'block', marginBottom: '8px' }}>
               {t('wizard:field.name', 'Character name')}
             </label>
             <input
@@ -602,13 +602,13 @@ export default function CharacterCreationWizard({
                 width: '100%',
                 padding: '10px',
                 marginBottom: '16px',
-                background: '#0f1729',
-                color: '#e0e0e0',
-                border: '2px solid #2a2a4e',
+                background: 'var(--sr-night-850)',
+                color: 'var(--sr-bone-100)',
+                border: '2px solid var(--sr-night-700)',
                 borderRadius: '8px',
               }}
             />
-            <label style={{ color: '#c4b5fd', display: 'block', marginBottom: '8px' }}>
+            <label style={{ color: 'var(--sr-arcane-300)', display: 'block', marginBottom: '8px' }}>
               {t('wizard:field.concept', 'Concept')}
             </label>
             <input
@@ -618,9 +618,9 @@ export default function CharacterCreationWizard({
               style={{
                 width: '100%',
                 padding: '10px',
-                background: '#0f1729',
-                color: '#e0e0e0',
-                border: '2px solid #2a2a4e',
+                background: 'var(--sr-night-850)',
+                color: 'var(--sr-bone-100)',
+                border: '2px solid var(--sr-night-700)',
                 borderRadius: '8px',
               }}
             />
@@ -641,7 +641,7 @@ export default function CharacterCreationWizard({
                 }}
               >
                 <div>
-                  <label style={{ color: '#c4b5fd', display: 'block', marginBottom: '6px' }}>
+                  <label style={{ color: 'var(--sr-arcane-300)', display: 'block', marginBottom: '6px' }}>
                     <Term id="clan" />
                   </label>
                   <select
@@ -650,9 +650,9 @@ export default function CharacterCreationWizard({
                     style={{
                       width: '100%',
                       padding: '10px',
-                      background: '#0f1729',
-                      color: '#e0e0e0',
-                      border: '2px solid #2a2a4e',
+                      background: 'var(--sr-night-850)',
+                      color: 'var(--sr-bone-100)',
+                      border: '2px solid var(--sr-night-700)',
                       borderRadius: '8px',
                     }}
                   >
@@ -664,7 +664,7 @@ export default function CharacterCreationWizard({
                   </select>
                 </div>
                 <div>
-                  <label style={{ color: '#c4b5fd', display: 'block', marginBottom: '6px' }}>
+                  <label style={{ color: 'var(--sr-arcane-300)', display: 'block', marginBottom: '6px' }}>
                     <Term id="generation" />
                   </label>
                   <input
@@ -674,9 +674,9 @@ export default function CharacterCreationWizard({
                     style={{
                       width: '100%',
                       padding: '10px',
-                      background: '#0f1729',
-                      color: '#e0e0e0',
-                      border: '2px solid #2a2a4e',
+                      background: 'var(--sr-night-850)',
+                      color: 'var(--sr-bone-100)',
+                      border: '2px solid var(--sr-night-700)',
                       borderRadius: '8px',
                     }}
                   />
@@ -686,7 +686,7 @@ export default function CharacterCreationWizard({
 
             {systemType === 'werewolf' && (
               <>
-                <label style={{ color: '#c4b5fd', display: 'block', marginBottom: '8px' }}>
+                <label style={{ color: 'var(--sr-arcane-300)', display: 'block', marginBottom: '8px' }}>
                   Breed
                 </label>
                 <select
@@ -696,9 +696,9 @@ export default function CharacterCreationWizard({
                     width: '100%',
                     padding: '10px',
                     marginBottom: '12px',
-                    background: '#0f1729',
-                    color: '#e0e0e0',
-                    border: '2px solid #2a2a4e',
+                    background: 'var(--sr-night-850)',
+                    color: 'var(--sr-bone-100)',
+                    border: '2px solid var(--sr-night-700)',
                     borderRadius: '8px',
                   }}
                 >
@@ -708,7 +708,7 @@ export default function CharacterCreationWizard({
                     </option>
                   ))}
                 </select>
-                <label style={{ color: '#c4b5fd', display: 'block', marginBottom: '8px' }}>
+                <label style={{ color: 'var(--sr-arcane-300)', display: 'block', marginBottom: '8px' }}>
                   Auspice
                 </label>
                 <select
@@ -718,9 +718,9 @@ export default function CharacterCreationWizard({
                     width: '100%',
                     padding: '10px',
                     marginBottom: '12px',
-                    background: '#0f1729',
-                    color: '#e0e0e0',
-                    border: '2px solid #2a2a4e',
+                    background: 'var(--sr-night-850)',
+                    color: 'var(--sr-bone-100)',
+                    border: '2px solid var(--sr-night-700)',
                     borderRadius: '8px',
                   }}
                 >
@@ -730,7 +730,7 @@ export default function CharacterCreationWizard({
                     </option>
                   ))}
                 </select>
-                <label style={{ color: '#c4b5fd', display: 'block', marginBottom: '8px' }}>
+                <label style={{ color: 'var(--sr-arcane-300)', display: 'block', marginBottom: '8px' }}>
                   Tribe
                 </label>
                 <select
@@ -739,9 +739,9 @@ export default function CharacterCreationWizard({
                   style={{
                     width: '100%',
                     padding: '10px',
-                    background: '#0f1729',
-                    color: '#e0e0e0',
-                    border: '2px solid #2a2a4e',
+                    background: 'var(--sr-night-850)',
+                    color: 'var(--sr-bone-100)',
+                    border: '2px solid var(--sr-night-700)',
                     borderRadius: '8px',
                   }}
                 >
@@ -756,7 +756,7 @@ export default function CharacterCreationWizard({
 
             {systemType === 'mage' && (
               <>
-                <label style={{ color: '#c4b5fd', display: 'block', marginBottom: '8px' }}>
+                <label style={{ color: 'var(--sr-arcane-300)', display: 'block', marginBottom: '8px' }}>
                   Tradition
                 </label>
                 <select
@@ -765,9 +765,9 @@ export default function CharacterCreationWizard({
                   style={{
                     width: '100%',
                     padding: '10px',
-                    background: '#0f1729',
-                    color: '#e0e0e0',
-                    border: '2px solid #2a2a4e',
+                    background: 'var(--sr-night-850)',
+                    color: 'var(--sr-bone-100)',
+                    border: '2px solid var(--sr-night-700)',
                     borderRadius: '8px',
                   }}
                 >
@@ -777,7 +777,7 @@ export default function CharacterCreationWizard({
                     </option>
                   ))}
                 </select>
-                <p style={{ color: '#8b8b9f', fontSize: '13px', marginTop: '12px' }}>
+                <p style={{ color: 'var(--sr-bone-500)', fontSize: '13px', marginTop: '12px' }}>
                   {t('wizard:classic.areteHint', 'Arete starts at 1. You will assign six sphere dots in Advantages.')}
                 </p>
               </>
@@ -799,7 +799,7 @@ export default function CharacterCreationWizard({
               }}
             >
               <div>
-                <label style={{ color: '#c4b5fd', display: 'block', marginBottom: '6px' }}>
+                <label style={{ color: 'var(--sr-arcane-300)', display: 'block', marginBottom: '6px' }}>
                   Nature
                 </label>
                 <select
@@ -809,9 +809,9 @@ export default function CharacterCreationWizard({
                     width: '100%',
                     padding: '10px',
                     marginBottom: '8px',
-                    background: '#0f1729',
-                    color: '#e0e0e0',
-                    border: '2px solid #2a2a4e',
+                    background: 'var(--sr-night-850)',
+                    color: 'var(--sr-bone-100)',
+                    border: '2px solid var(--sr-night-700)',
                     borderRadius: '8px',
                   }}
                 >
@@ -833,15 +833,15 @@ export default function CharacterCreationWizard({
                   style={{
                     width: '100%',
                     padding: '10px',
-                    background: '#0f1729',
-                    color: '#e0e0e0',
-                    border: '2px solid #2a2a4e',
+                    background: 'var(--sr-night-850)',
+                    color: 'var(--sr-bone-100)',
+                    border: '2px solid var(--sr-night-700)',
                     borderRadius: '8px',
                   }}
                 />
               </div>
               <div>
-                <label style={{ color: '#c4b5fd', display: 'block', marginBottom: '6px' }}>
+                <label style={{ color: 'var(--sr-arcane-300)', display: 'block', marginBottom: '6px' }}>
                   Demeanor
                 </label>
                 <select
@@ -851,9 +851,9 @@ export default function CharacterCreationWizard({
                     width: '100%',
                     padding: '10px',
                     marginBottom: '8px',
-                    background: '#0f1729',
-                    color: '#e0e0e0',
-                    border: '2px solid #2a2a4e',
+                    background: 'var(--sr-night-850)',
+                    color: 'var(--sr-bone-100)',
+                    border: '2px solid var(--sr-night-700)',
                     borderRadius: '8px',
                   }}
                 >
@@ -875,9 +875,9 @@ export default function CharacterCreationWizard({
                   style={{
                     width: '100%',
                     padding: '10px',
-                    background: '#0f1729',
-                    color: '#e0e0e0',
-                    border: '2px solid #2a2a4e',
+                    background: 'var(--sr-night-850)',
+                    color: 'var(--sr-bone-100)',
+                    border: '2px solid var(--sr-night-700)',
                     borderRadius: '8px',
                   }}
                 />
@@ -893,7 +893,7 @@ export default function CharacterCreationWizard({
           >
             {inlineErr(SHEET_SECTION_IDS.attributes)}
             <PoolSummary variant="attributes" attrs={attrs} pools={pools} nosferatu={nosferatu} />
-            <label style={{ color: '#c4b5fd', display: 'block', marginBottom: '8px' }}>
+            <label style={{ color: 'var(--sr-arcane-300)', display: 'block', marginBottom: '8px' }}>
               {t('wizard:classic.attrPrimary', 'Which category is primary (+7 dots)?')}
             </label>
             <select
@@ -904,9 +904,9 @@ export default function CharacterCreationWizard({
                 maxWidth: '320px',
                 padding: '10px',
                 marginBottom: '20px',
-                background: '#0f1729',
-                color: '#e0e0e0',
-                border: '2px solid #2a2a4e',
+                background: 'var(--sr-night-850)',
+                color: 'var(--sr-bone-100)',
+                border: '2px solid var(--sr-night-700)',
                 borderRadius: '8px',
               }}
             >
@@ -936,7 +936,7 @@ export default function CharacterCreationWizard({
               abilityPools={abilityPools}
               customAbilities={customAbilities}
             />
-            <label style={{ color: '#c4b5fd', display: 'block', marginBottom: '8px' }}>
+            <label style={{ color: 'var(--sr-arcane-300)', display: 'block', marginBottom: '8px' }}>
               {t('wizard:classic.abilityPrimary', 'Which column is primary (13 dots)?')}
             </label>
             <select
@@ -947,9 +947,9 @@ export default function CharacterCreationWizard({
                 maxWidth: '400px',
                 padding: '10px',
                 marginBottom: '20px',
-                background: '#0f1729',
-                color: '#e0e0e0',
-                border: '2px solid #2a2a4e',
+                background: 'var(--sr-night-850)',
+                color: 'var(--sr-bone-100)',
+                border: '2px solid var(--sr-night-700)',
                 borderRadius: '8px',
               }}
             >
@@ -982,7 +982,7 @@ export default function CharacterCreationWizard({
                 accent={themeAccent}
               >
                 <div style={{ marginBottom: '20px' }}>
-                  <div style={{ color: '#94a3b8', fontSize: '12px', marginBottom: '8px' }}>
+                  <div style={{ color: 'var(--sr-bone-300)', fontSize: '12px', marginBottom: '8px' }}>
                     <Term id="discipline">Disciplines</Term>{' '}
                     {t('wizard:classic.dotsAtCreation', '({{n}} dots at creation; more with freebies)', { n: DISCIPLINE_DOTS })}
                   </div>
@@ -1009,9 +1009,9 @@ export default function CharacterCreationWizard({
                         style={{
                           flex: '1 1 180px',
                           padding: '8px',
-                          background: '#0f1729',
-                          color: '#e0e0e0',
-                          border: '1px solid #2a2a4e',
+                          background: 'var(--sr-night-850)',
+                          color: 'var(--sr-bone-100)',
+                          border: '1px solid var(--sr-night-700)',
                           borderRadius: '6px',
                         }}
                       >
@@ -1035,9 +1035,9 @@ export default function CharacterCreationWizard({
                           style={{
                             flex: '1 1 140px',
                             padding: '8px',
-                            background: '#0f1729',
-                            color: '#e0e0e0',
-                            border: '1px solid #2a2a4e',
+                            background: 'var(--sr-night-850)',
+                            color: 'var(--sr-bone-100)',
+                            border: '1px solid var(--sr-night-700)',
                             borderRadius: '6px',
                           }}
                         />
@@ -1062,7 +1062,7 @@ export default function CharacterCreationWizard({
                 </div>
 
                 <div style={{ marginBottom: '20px' }}>
-                  <div style={{ color: '#94a3b8', fontSize: '12px', marginBottom: '8px' }}>
+                  <div style={{ color: 'var(--sr-bone-300)', fontSize: '12px', marginBottom: '8px' }}>
                     <Term id="backgrounds" />{' '}
                     {t('wizard:classic.dotsAtCreation', '({{n}} dots at creation; more with freebies)', { n: BACKGROUND_DOTS })}
                   </div>
@@ -1088,16 +1088,16 @@ export default function CharacterCreationWizard({
                         style={{
                           flex: '1 1 160px',
                           padding: '8px',
-                          background: '#0f1729',
-                          color: '#e0e0e0',
-                          border: '1px solid #2a2a4e',
+                          background: 'var(--sr-night-850)',
+                          color: 'var(--sr-bone-100)',
+                          border: '1px solid var(--sr-night-700)',
                           borderRadius: '6px',
                         }}
                       />
                       <DotTrack
                         value={b.dots}
                         maxRank={5}
-                        accent="#a78bfa"
+                        accent="var(--sr-arcane-400)"
                         onChange={(n) => {
                           const next = [...backgrounds];
                           const others = next.reduce(
@@ -1114,7 +1114,7 @@ export default function CharacterCreationWizard({
                 </div>
 
                 <div style={{ marginBottom: '16px' }}>
-                  <div style={{ color: '#94a3b8', fontSize: '12px', marginBottom: '8px' }}>
+                  <div style={{ color: 'var(--sr-bone-300)', fontSize: '12px', marginBottom: '8px' }}>
                     <Term id="virtues" />{' '}
                     {morality.virtueFreebieDots > 0
                       ? t('wizard:classic.virtuesPlacedBought', '(1 free each + 7 = {{total}}; placed {{placed}} + {{bought}} bought with freebies; those don\'t change Humanity or Willpower)', { total: VIRTUE_TOTAL_AT_CREATION, placed: virtueTotal, bought: morality.virtueFreebieDots })
@@ -1127,7 +1127,7 @@ export default function CharacterCreationWizard({
                       ['courage', 'Courage'],
                     ].map(([key, label]) => (
                       <div key={key} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                        <span style={{ color: '#c4c4d4', fontSize: '12px', minWidth: '140px' }}>
+                        <span style={{ color: 'var(--sr-bone-300)', fontSize: '12px', minWidth: '140px' }}>
                           {label}
                         </span>
                         <DotTrack
@@ -1137,7 +1137,7 @@ export default function CharacterCreationWizard({
                           onChange={(n) => setVirtueFinal(key, n)}
                         />
                         {virtueFreebies[key] > 0 ? (
-                          <span style={{ color: '#94a3b8', fontSize: '11px' }}>
+                          <span style={{ color: 'var(--sr-bone-300)', fontSize: '11px' }}>
                             {t('wizard:classic.plusFreebie', '{{base}} + {{n}} freebie', { base: virtues[key], n: virtueFreebies[key] })}
                           </span>
                         ) : null}
@@ -1152,9 +1152,9 @@ export default function CharacterCreationWizard({
                     ['willpower', 'Willpower', willpowerFinal, morality.willpowerBase, 'Courage', willpowerBonus, setWillpowerBonus],
                   ].map(([termId, label, value, baseValue, from, bonus, setBonus]) => (
                     <div key={label} style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '10px' }}>
-                      <span style={{ color: '#c4b5fd', fontSize: '12px', minWidth: '80px' }}><Term id={termId} /></span>
+                      <span style={{ color: 'var(--sr-arcane-300)', fontSize: '12px', minWidth: '80px' }}><Term id={termId} /></span>
                       <DotTrack value={value} maxRank={10} accent="#f472b6" disabled onChange={() => {}} />
-                      <span style={{ color: '#94a3b8', fontSize: '12px' }}>
+                      <span style={{ color: 'var(--sr-bone-300)', fontSize: '12px' }}>
                         {value} = {from} ({baseValue}){bonus > 0 ? ` + ${t('wizard:classic.nFreebie', '{{n}} freebie', { n: bonus })}` : ''}
                       </span>
                       {freebieMode ? (
@@ -1164,7 +1164,7 @@ export default function CharacterCreationWizard({
                             aria-label={t('wizard:classic.lowerFreebie', 'Lower {{label}} freebie dots', { label })}
                             disabled={bonus <= 0}
                             onClick={() => setBonus(Math.max(0, bonus - 1))}
-                            style={{ padding: '2px 8px', background: '#1e293b', color: '#e2e8f0', border: '1px solid #475569', borderRadius: '6px', cursor: 'pointer' }}
+                            style={{ padding: '2px 8px', background: 'var(--sr-night-800)', color: 'var(--sr-bone-100)', border: '1px solid var(--sr-night-600)', borderRadius: '6px', cursor: 'pointer' }}
                           >
                             −
                           </button>
@@ -1173,7 +1173,7 @@ export default function CharacterCreationWizard({
                             aria-label={t('wizard:classic.raiseFreebie', 'Raise {{label}} with freebies', { label })}
                             disabled={value >= 10}
                             onClick={() => setBonus(bonus + 1)}
-                            style={{ padding: '2px 8px', background: '#1e293b', color: '#e2e8f0', border: '1px solid #475569', borderRadius: '6px', cursor: 'pointer' }}
+                            style={{ padding: '2px 8px', background: 'var(--sr-night-800)', color: 'var(--sr-bone-100)', border: '1px solid var(--sr-night-600)', borderRadius: '6px', cursor: 'pointer' }}
                           >
                             +
                           </button>
@@ -1204,7 +1204,7 @@ export default function CharacterCreationWizard({
                       borderRadius: '6px',
                     }}
                   >
-                    <span style={{ color: '#c4c4d4', fontSize: '13px' }}>{label}</span>
+                    <span style={{ color: 'var(--sr-bone-300)', fontSize: '13px' }}>{label}</span>
                     <DotTrack
                       value={spheres[k]}
                       maxRank={5}
@@ -1242,7 +1242,7 @@ export default function CharacterCreationWizard({
                   }}
                 >
                   <div>
-                    <label style={{ color: '#c4b5fd', fontSize: '12px' }}>Rage</label>
+                    <label style={{ color: 'var(--sr-arcane-300)', fontSize: '12px' }}>Rage</label>
                     <input
                       type="number"
                       min={0}
@@ -1253,15 +1253,15 @@ export default function CharacterCreationWizard({
                         width: '100%',
                         marginTop: '4px',
                         padding: '8px',
-                        background: '#0f1729',
-                        color: '#e0e0e0',
-                        border: '1px solid #2a2a4e',
+                        background: 'var(--sr-night-850)',
+                        color: 'var(--sr-bone-100)',
+                        border: '1px solid var(--sr-night-700)',
                         borderRadius: '6px',
                       }}
                     />
                   </div>
                   <div>
-                    <label style={{ color: '#c4b5fd', fontSize: '12px' }}>Gnosis</label>
+                    <label style={{ color: 'var(--sr-arcane-300)', fontSize: '12px' }}>Gnosis</label>
                     <input
                       type="number"
                       min={0}
@@ -1272,15 +1272,15 @@ export default function CharacterCreationWizard({
                         width: '100%',
                         marginTop: '4px',
                         padding: '8px',
-                        background: '#0f1729',
-                        color: '#e0e0e0',
-                        border: '1px solid #2a2a4e',
+                        background: 'var(--sr-night-850)',
+                        color: 'var(--sr-bone-100)',
+                        border: '1px solid var(--sr-night-700)',
                         borderRadius: '6px',
                       }}
                     />
                   </div>
                 </div>
-                <label style={{ color: '#c4b5fd', display: 'block', marginBottom: '8px' }}>
+                <label style={{ color: 'var(--sr-arcane-300)', display: 'block', marginBottom: '8px' }}>
                   {t('wizard:classic.giftsNotes', 'Gifts & rank notes')}
                 </label>
                 <textarea
@@ -1291,12 +1291,12 @@ export default function CharacterCreationWizard({
                   style={{
                     width: '100%',
                     padding: '12px',
-                    background: '#0f1729',
-                    color: '#e0e0e0',
-                    border: '2px solid #2a2a4e',
+                    background: 'var(--sr-night-850)',
+                    color: 'var(--sr-bone-100)',
+                    border: '2px solid var(--sr-night-700)',
                     borderRadius: '8px',
                     resize: 'vertical',
-                    fontFamily: 'Crimson Text, Georgia, serif',
+                    fontFamily: 'var(--sr-font-body)',
                     lineHeight: 1.5,
                   }}
                 />
@@ -1308,9 +1308,9 @@ export default function CharacterCreationWizard({
             sectionId={SHEET_SECTION_IDS.story}
             title={t('wizard:classic.storyTitle', 'Story & merits')}
             subtitle={t('wizard:classic.storySub', 'Background narrative and structured merits / flaws.')}
-            accent="#9d4edd"
+            accent="var(--sr-arcane-500)"
           >
-            <label style={{ color: '#c4b5fd', display: 'block', marginBottom: '8px' }}>
+            <label style={{ color: 'var(--sr-arcane-300)', display: 'block', marginBottom: '8px' }}>
               {t('wizard:classic.backgroundStory', 'Background & hooks')}
             </label>
             <textarea
@@ -1322,12 +1322,12 @@ export default function CharacterCreationWizard({
                 width: '100%',
                 padding: '12px',
                 marginBottom: '20px',
-                background: '#0f1729',
-                color: '#e0e0e0',
-                border: '2px solid #2a2a4e',
+                background: 'var(--sr-night-850)',
+                color: 'var(--sr-bone-100)',
+                border: '2px solid var(--sr-night-700)',
                 borderRadius: '8px',
                 resize: 'vertical',
-                fontFamily: 'Crimson Text, Georgia, serif',
+                fontFamily: 'var(--sr-font-body)',
                 lineHeight: 1.6,
               }}
             />
@@ -1368,9 +1368,9 @@ export default function CharacterCreationWizard({
               onClick={onCancel}
               style={{
                 padding: '10px 18px',
-                background: '#1e293b',
-                color: '#e2e8f0',
-                border: '1px solid #475569',
+                background: 'var(--sr-night-800)',
+                color: 'var(--sr-bone-100)',
+                border: '1px solid var(--sr-night-600)',
                 borderRadius: '8px',
                 cursor: 'pointer',
               }}
@@ -1383,13 +1383,13 @@ export default function CharacterCreationWizard({
               onClick={handleSubmit}
               style={{
                 padding: '10px 22px',
-                background: submitting ? '#4a4a5e' : '#9d4edd',
+                background: submitting ? 'var(--sr-night-500)' : 'var(--sr-arcane-500)',
                 color: 'white',
                 border: 'none',
                 borderRadius: '8px',
                 cursor: submitting ? 'not-allowed' : 'pointer',
                 fontWeight: 'bold',
-                fontFamily: 'Cinzel, serif',
+                fontFamily: 'var(--sr-font-display)',
               }}
             >
               {submitting ? t('wizard:submitting', 'Sealing sheet…') : t('wizard:submit', 'Create character')}

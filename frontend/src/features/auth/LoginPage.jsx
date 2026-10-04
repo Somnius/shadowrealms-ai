@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Button, Card, FogLayer, Glyph, Input, Tabs, useToast } from '../../design';
+import { Button, Card, CandleGlow, FogLayer, Glyph, Grain, Input, SigilReveal, Tabs, Vignette, useToast } from '../../design';
 import { useAuth } from '../../app/AuthContext';
 import { afterLoginPath } from '../../app/guards';
 import Footer from '../../components/Footer';
@@ -91,10 +91,21 @@ export default function LoginPage() {
   return (
     <div className="sr-authpage">
     <main className="sr-auth" id="main">
-      <FogLayer intensity={0.08} className="sr-auth__fog" />
+      <div className="sr-auth__atmos" aria-hidden="true">
+        <FogLayer intensity={0.13} speed={0.8} className="sr-auth__fog" />
+        <FogLayer intensity={0.1} tint="blood" speed={0.55} className="sr-auth__fog sr-auth__fog--low" />
+        <CandleGlow x="50%" y="20%" size={460} />
+        <Vignette strength={0.75} />
+        <Grain opacity={0.05} />
+      </div>
       <div className="sr-auth__inner">
-        <h1 className="sr-visually-hidden">{t('auth:title', 'ShadowRealms AI')}</h1>
-        <img className="sr-auth__logo" src="/logo-login.png" alt={t('auth:logoAlt', 'ShadowRealms AI')} />
+        <div className="sr-auth__hero">
+          <SigilReveal size={136} title={null} className="sr-auth__sigil" duration={1.4} />
+          <h1 className="sr-auth__wordmark" lang="en">
+            <span className="sr-auth__wordmark-main">{t('auth:wordmark', 'ShadowRealms')}</span>
+            <span className="sr-auth__wordmark-ai">AI</span>
+          </h1>
+        </div>
         <p className="sr-auth__tagline sr-prose">
           {t('auth:tagline', 'Step through the veil: chronicles, dice and an AI Storyteller await.')}
         </p>

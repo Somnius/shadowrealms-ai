@@ -1,4 +1,5 @@
 import React from 'react';
+import { FogLayer } from '../atmosphere/Atmosphere';
 import Glyph from '../glyphs/Glyph';
 import { cx } from './internal';
 import './display.css';
@@ -159,10 +160,11 @@ export function Divider({ ornament = 'ornament', label, className, ...rest }) {
 }
 
 /** Empty state: glyph, title, body, optional action. */
-export function EmptyState({ glyph = 'web', title, children, action, headingLevel = 3, className, ...rest }) {
+export function EmptyState({ glyph = 'web', title, children, action, headingLevel = 3, ambient = false, className, ...rest }) {
   const H = `h${headingLevel}`;
   return (
-    <div className={cx('sr-empty', className)} {...rest}>
+    <div className={cx('sr-empty', ambient && 'sr-empty--ambient', className)} {...rest}>
+      {ambient ? <FogLayer intensity={0.08} speed={0.7} className="sr-empty__fog" /> : null}
       <Glyph name={glyph} size={48} className="sr-empty__glyph" />
       {title ? <H className="sr-empty__title">{title}</H> : null}
       {children ? <div className="sr-empty__body">{children}</div> : null}

@@ -63,12 +63,13 @@ All contrast figures were computed with the WCAG formula against `#0f0f1e`, `#0f
 
 ## Motion and reduced motion
 
+- **Atmosphere** (the user menu's setting, phase 4): `'full' | 'subtle' | 'off'`, stored in `localStorage.sr_atmosphere` and written to `data-atmosphere` on `.sr-app` (and on portals). `full` = everything; `subtle` = ambient loops (fog drift, candle glow, grain, glyph loops not marked `.sr-glyph--essential`) hold still, short transitions and one-shot effects still play; `off` = reduced motion (`data-motion=reduced`). The OS `prefers-reduced-motion` forces `off`. `useAtmosphere()` → `{ level, choice, setLevel, systemReduced }`. An older `sr_motion=reduced` reads as `off`.
 - Preference: `'system' | 'reduced' | 'full'`. The OS `prefers-reduced-motion` always wins. The manual toggle (`<MotionToggle/>`, or `useMotionPreference().setPreference`) can only add a reduction on top of it, and the choice is stored in `localStorage.sr_motion` on a best-effort basis.
 - CSS: `.sr-app[data-motion=reduced]` and `@media (prefers-reduced-motion)` cut animations and transitions to 0.01 ms. Glyph loops are set to `animation: none`. JS: `MotionConfig reducedMotion="always"`, and the components also skip their framer transitions.
 - Ambient effects (`FogLayer`, `CandleGlow`) pause through `data-paused` when the tab is hidden (`visibilitychange`) or the element is off-screen (`IntersectionObserver`). Only `transform` and `opacity` are animated. Never put fog behind chat text.
 - framer-motion is used through `LazyMotion` + `m` + `domAnimation`, so the full `motion` bundle isn't pulled in.
 
-## Glyphs (95, original, hand-authored)
+## Glyphs (97, original, hand-authored)
 
 `<Glyph name="candle" size={24} title="…" animate draw />`
 
@@ -80,11 +81,11 @@ All contrast figures were computed with the WCAG formula against `#0f0f1e`, `#0f
 
 | Group | Names |
 |---|---|
-| dice | d10, d10-crit, d10-hunger, d10-botch |
+| dice | d10, d10-crit, d10-hunger, d10-botch, dice (two d10s) |
 | horror | blood-drop, fangs, eye, eye-shut, skull, candle, raven, bat, chalice, vitae-sigil, dagger, cross, thorned-rose, coffin, key, lock-chain, chain, scroll, book, mask, hood, crown, crown-thorns, web, hourglass, quill, ai-sigil, logo-mark |
 | moon | moon-new, moon-crescent, moon-half, moon-gibbous, moon-full |
 | room | room-ooc, room-elysium, room-haven, room-street |
-| ui | menu, close, send, settings, user, users, logout, globe, bell, search, chevron-down/up/left/right, check, plus, minus, trash, warning, info, ornament |
+| ui | menu, close, send, settings, user, users, logout, globe, bell, search, chevron-down/up/left/right, check, plus, reroll, minus, trash, warning, info, ornament |
 | line | line-vampire, line-werewolf, line-mage, line-wraith, line-changeling |
 | clan | clan-banu-haqim, -brujah, -gangrel, -hecata, -lasombra, -malkavian, -ministry, -nosferatu, -toreador, -tremere, -tzimisce, -ventrue, -ravnos, -salubri, -caitiff, -thin-blood |
 | discipline | disc-animalism, -auspex, -blood-sorcery, -celerity, -dominate, -fortitude, -obfuscate, -oblivion, -potence, -presence, -protean, -thin-blood-alchemy |
@@ -117,6 +118,17 @@ All contrast figures were computed with the WCAG formula against `#0f0f1e`, `#0f
 - `BloodDrip`: a one-shot drip for a botch or a bestial failure. `playKey` replays it and `onDone` fires when it ends. Under reduced motion it shows the final drips with no movement.
 - `SigilReveal`: the original ShadowRealms sigil. The thorned ring is built with `d3-shape` (`lineRadial`), each stroke is drawn in with framer-motion `pathLength`, then the drop fills. It plays once it's in view.
 - `DiceRollViz`: a d10 pool visualisation. Takes either the API `roll_result` (`result={…}`, V5 or classic) or raw dice (`edition`, `normal`, `hunger`, `dice`, `difficulty`, `rerolls`, `willpower`). `d3-scale` handles the layout (`scaleBand`) and the success meter (`scaleLinear`), `d3-shape` draws the crit-pair arcs, React renders the SVG, and framer-motion staggers the tumble. It's a `<figure>` whose caption states the result in words and lists every die. Server flags win over local maths. `diceAnalysis.js` mirrors `backend/services/v5_dice.py resolve_v5` and `docs/dice-old-wod.md`.
+
+## Integration layer (phase 4, `atmosphere/Ambience.jsx`)
+
+| Piece | Where it's used | Static fallback |
+|---|---|---|
+| `Vignette`, `Grain` | login set piece | grain holds still (subtle / off) |
+| `CandleHalo` | Storyteller avatar while the AI writes | steady glow |
+| `CrackOverlay`, `RollFx`, `rollMood()` | dice overlay + fresh dice cards: blood drips + crack (botch, bestial failure), gold-to-blood sweep (messy critical), gold flare (critical / exceptional) | end state drawn, no movement; history cards keep only a few dried drips |
+| `ChronicleSigil` | hall cards and the "open chronicles" list: the line's glyph in an edition ring (V5 thorns, classic engraved double ring), drawn on once in view; on hover / focus of `.sr-sigil-host` the ring turns and the line motif plays | complete ring, no motifs |
+| `RouteTransition` | shell outlet: 180 ms fade + 6 px rise per page type (never per room) | none (same element, so switching the atmosphere never remounts the page) |
+| `EmptyState ambient`, `TopBar ambient` | faint fog in empty states and the play header (never behind chat text) | still fog |
 
 ## Playground
 

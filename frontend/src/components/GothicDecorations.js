@@ -1,130 +1,36 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
+import { Card, Glyph } from '../design';
+import './sheet.css';
 
-// Gothic Border with decorations
-// theme: 'vampire' (blood), 'mage' (sparkles), 'werewolf' (bites), 'none' (clean)
-export const GothicBox = ({ children, style, className = '', theme = 'none' }) => {
-  const [bloodDrops, setBloodDrops] = useState([]);
-  const [sparkles, setSparkles] = useState([]);
-  const [biteMarks, setBiteMarks] = useState([]);
+const LINE = { vampire: 'vampire', werewolf: 'werewolf', mage: 'mage' };
 
-  useEffect(() => {
-    // Generate blood drops for vampire theme
-    if (theme === 'vampire') {
-      const drops = Array.from({ length: 3 }, (_, i) => ({
-        id: i,
-        left: `${Math.random() * 90 + 5}%`,
-        delay: `${Math.random() * 3}s`
-      }));
-      setBloodDrops(drops);
-    }
-
-    // Generate sparkles for mage theme
-    if (theme === 'mage') {
-      const sparks = Array.from({ length: 4 }, (_, i) => ({
-        id: i,
-        top: `${Math.random() * 80 + 10}%`,
-        left: `${Math.random() * 80 + 10}%`,
-        delay: `${Math.random() * 2}s`
-      }));
-      setSparkles(sparks);
-    }
-
-    // Generate bite marks for werewolf theme
-    if (theme === 'werewolf') {
-      const bites = Array.from({ length: 3 }, (_, i) => ({
-        id: i,
-        top: `${Math.random() * 70 + 10}%`,
-        left: `${Math.random() * 80 + 10}%`,
-        delay: `${Math.random() * 4}s`,
-        rotation: Math.random() * 360
-      }));
-      setBiteMarks(bites);
-    }
-  }, [theme]);
-
-  return (
-    <div className={`gothic-border gothic-card ${className}`} style={{ position: 'relative', ...style }}>
-      {/* Skeleton Hand Corners */}
-      <div className="gothic-corner top-left">
-        <i className="fas fa-hand-paper"></i>
-      </div>
-      <div className="gothic-corner top-right">
-        <i className="fas fa-hand-paper"></i>
-      </div>
-      <div className="gothic-corner bottom-left">
-        <i className="fas fa-hand-paper"></i>
-      </div>
-      <div className="gothic-corner bottom-right">
-        <i className="fas fa-hand-paper"></i>
-      </div>
-
-      {/* Candles */}
-      <div className="candle-decoration left">
-        <i className="fas fa-candle-holder candle"></i>
-      </div>
-      <div className="candle-decoration right">
-        <i className="fas fa-candle-holder candle"></i>
-      </div>
-
-      {/* Blood Drops - Vampire Theme */}
-      {theme === 'vampire' && bloodDrops.map(drop => (
-        <div
-          key={drop.id}
-          className="blood-drop"
-          style={{
-            left: drop.left,
-            top: '0',
-            animationDelay: drop.delay
-          }}
-        />
-      ))}
-
-      {/* Magic Sparkles - Mage Theme */}
-      {theme === 'mage' && sparkles.map(spark => (
-        <div
-          key={spark.id}
-          className="magic-sparkle"
-          style={{
-            top: spark.top,
-            left: spark.left,
-            animationDelay: spark.delay
-          }}
-        >
-          ✦
-        </div>
-      ))}
-
-      {/* Bite Marks - Werewolf Theme */}
-      {theme === 'werewolf' && biteMarks.map(bite => (
-        <div
-          key={bite.id}
-          className="bite-mark"
-          style={{
-            top: bite.top,
-            left: bite.left,
-            animationDelay: bite.delay,
-            transform: `rotate(${bite.rotation}deg)`
-          }}
-        />
-      ))}
-
-      {/* Content */}
-      {children}
-    </div>
-  );
-};
+/**
+ * Themed panel used by the legacy sheet / creation screens. Now a design-system ornate Card
+ * (original corner filigree, tokens) with the game line's accent. theme: 'vampire' | 'mage' |
+ * 'werewolf' | 'none'. No icon font, no random particles.
+ */
+export const GothicBox = ({ children, style, className = '', theme = 'none' }) => (
+  <Card
+    ornate
+    className={`sr-gbox sr-gbox--${theme} ${className}`.trim()}
+    data-line={LINE[theme]}
+    style={{ position: 'relative', ...style }}
+  >
+    {children}
+  </Card>
+);
 
 // Skull Divider
 export const SkullDivider = () => (
-  <div className="skull-divider">
-    <i className="fas fa-skull"></i> ⚔ <i className="fas fa-skull"></i>
+  <div className="skull-divider" aria-hidden="true">
+    <Glyph name="skull" size={18} /> <Glyph name="dagger" size={18} /> <Glyph name="skull" size={18} />
   </div>
 );
 
 // Ornate Divider with Gothic Icons
 export const OrnateDivider = ({ icon = 'skull' }) => (
-  <div className="ornate-divider">
-    <i className={`fas fa-${icon}`} style={{ color: '#e94560', margin: '0 10px' }}></i>
+  <div className="ornate-divider" aria-hidden="true">
+    <Glyph name={icon} size={18} style={{ color: 'var(--sr-blood-500)', margin: '0 10px' }} />
   </div>
 );
 
@@ -149,7 +55,6 @@ export const FloatingParticles = ({ count = 10 }) => {
     left: `${Math.random() * 100}%`,
     delay: `${Math.random() * 4}s`,
     duration: `${3 + Math.random() * 3}s`,
-    icon: ['✦', '✧', '★', '☆', '•'][Math.floor(Math.random() * 5)]
   }));
 
   return (
@@ -165,7 +70,7 @@ export const FloatingParticles = ({ count = 10 }) => {
             animationDuration: p.duration
           }}
         >
-          {p.icon}
+          <Glyph name="ornament" size={10} />
         </div>
       ))}
     </>
@@ -182,7 +87,7 @@ export const BloodSplatter = ({ style }) => (
   <div className="blood-splatter" style={style}></div>
 );
 
-export default {
+const GothicDecorations = {
   GothicBox,
   SkullDivider,
   OrnateDivider,
@@ -191,4 +96,6 @@ export default {
   MagicCircle,
   BloodSplatter
 };
+
+export default GothicDecorations;
 

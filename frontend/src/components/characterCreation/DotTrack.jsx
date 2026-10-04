@@ -7,7 +7,7 @@ import { t } from '../../i18n';
  */
 export default function DotTrack({ value, maxRank, onChange, disabled, accent, label }) {
   const rank = Math.max(0, Math.min(maxRank, parseInt(value, 10) || 0));
-  const a = accent || '#c4b5fd';
+  const a = accent || 'var(--sr-arcane-300)';
   return (
     <div
       role="group"
@@ -31,12 +31,12 @@ export default function DotTrack({ value, maxRank, onChange, disabled, accent, l
               minWidth: '18px',
               padding: 0,
               borderRadius: '50%',
-              border: `2px solid ${filled ? a : '#4b5568'}`,
+              border: `2px solid ${filled ? a : 'var(--sr-night-600)'}`,
               background: filled
-                ? `radial-gradient(circle at 30% 30%, ${a}, #5b21b6)`
+                ? `radial-gradient(circle at 30% 30%, ${a}, var(--sr-arcane-700))`
                 : 'transparent',
               cursor: disabled ? 'not-allowed' : 'pointer',
-              boxShadow: filled ? `0 0 8px ${a}55` : 'none',
+              boxShadow: filled ? `0 0 8px color-mix(in srgb, ${a} 33%, transparent)` : 'none',
               transition: 'transform 0.12s ease, box-shadow 0.12s ease',
             }}
             onMouseDown={(e) => e.preventDefault()}

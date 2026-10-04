@@ -1,17 +1,28 @@
 import React from 'react';
+import { DieFace, Glyph } from '../../design';
 import { classifyClassicDie } from '../../dice/classicDiceDisplay';
 import { classifyV5Die } from '../../dice/v5DiceDisplay';
 import { t } from '../../i18n';
+import './dice.css';
 
-const CLASSIC_BG = { one: '#8b0000', ten: '#ffd700', success: '#2d7a3e', fail: '#374151' };
-const V5_BG = {
-  normal: { ten: '#ffd700', success: '#2d7a3e', fail: '#374151', bestial: '#374151' },
-  hunger: { ten: '#ff6b6b', success: '#991b1b', fail: '#3f1d1d', bestial: '#450a0a' },
-};
+/** Map an edition-specific classification onto the design DieFace states. */
+export function dieState(value, { edition, difficulty, hunger = false } = {}) {
+  const v = parseInt(value, 10) || 1;
+  if (edition === 'v5') {
+    const c = classifyV5Die(v, hunger).state;
+    return c === 'ten' ? 'crit' : c === 'bestial' ? 'one' : c;
+  }
+  const c = classifyClassicDie(v, difficulty);
+  return c === 'ten' ? 'crit' : c;
+}
 
 /**
- * One die face. V5 Hunger dice get a red body and border; a Hunger 1 shows a skull.
- * `reroll`: a classic specialty reroll die (dashed border + ↻ corner mark).
+ * One die: the design system's d10 (original glyph) in a small frame.
+ * - V5 Hunger dice get the blood body and fang notch; a Hunger 1 also carries a skull mark (bestial).
+ * - `reroll`: a classic specialty reroll die (dashed frame + corner mark).
+ * - `onClick` makes it a toggle button (`selected` = aria-pressed), used by the V5 Willpower reroll.
+ * - `rolling` / `landed` / `index` drive the tumble and landing animation in the dice overlay.
+ * - `hidden`: show "?" instead of a value (rolling under reduced motion: no flickering numbers).
  */
 export default function DiceFace({
   value,
@@ -23,29 +34,35 @@ export default function DiceFace({
   selected = false,
   onClick,
   title,
+  rolling = false,
+  landed = false,
+  index = 0,
+  hidden = false,
 }) {
   const v = parseInt(value, 10) || 1;
-  let bg;
-  let label = String(v);
-  let border = '1px solid rgba(255,255,255,0.12)';
-  if (edition === 'v5') {
-    const c = classifyV5Die(v, hunger);
-    bg = V5_BG[c.kind][c.state];
-    if (hunger) border = '2px solid #dc2626';
-    if (c.state === 'bestial') label = '☠';
-  } else {
-    bg = CLASSIC_BG[classifyClassicDie(v, difficulty)];
-  }
-  if (reroll) border = '2px dashed #fbbf24';
-  if (selected) border = '3px solid #38bdf8';
-  const dark = (edition === 'v5' && !hunger && v === 10) || (edition !== 'v5' && v === 10);
-  const Tag = onClick ? 'button' : 'div';
+  const state = rolling ? 'rolling' : dieState(v, { edition, difficulty, hunger });
+  const bestial = !rolling && edition === 'v5' && hunger && v === 1;
+  const Tag = onClick ? 'button' : 'span';
+  const cls = [
+    'sr-ldie',
+    hunger && 'is-hunger',
+    reroll && 'is-reroll',
+    selected && 'is-selected',
+    onClick && 'is-button',
+    rolling && 'is-rolling',
+    landed && 'is-landed',
+  ]
+    .filter(Boolean)
+    .join(' ');
   return (
     <Tag
       type={onClick ? 'button' : undefined}
       onClick={onClick}
+      className={cls}
+      data-state={state}
+      style={{ '--die-size': `${size}px`, '--i': index }}
       title={
-        title ||
+        hidden ? undefined : title ||
         (hunger
           ? t('dice:die.hunger', 'Hunger die: {{value}}', { value: v })
           : reroll
@@ -53,43 +70,19 @@ export default function DiceFace({
           : `${v}`)
       }
       aria-pressed={onClick ? selected : undefined}
-      style={{
-        width: `${size}px`,
-        height: `${size}px`,
-        borderRadius: `${Math.round(size / 4.5)}px`,
-        border,
-        background: `linear-gradient(180deg, ${bg} 0%, rgba(15, 23, 41, 0.2) 100%)`,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        boxShadow: hunger ? '0 0 14px rgba(220,38,38,0.45)' : '0 10px 35px rgba(0,0,0,0.45)',
-        color: dark ? '#1b1b1b' : 'white',
-        fontFamily: 'Cinzel, serif',
-        fontSize: `${Math.round(size / 3)}px`,
-        fontWeight: 900,
-        userSelect: 'none',
-        padding: 0,
-        cursor: onClick ? 'pointer' : 'default',
-        position: 'relative',
-      }}
     >
-      {label}
+      <span className="sr-ldie__shadow" aria-hidden="true" />
+      <span className="sr-ldie__body">
+        <DieFace value={hidden ? '?' : v} hunger={hunger} state={state} size={size} decorative />
+      </span>
+      {bestial ? (
+        <span className="sr-ldie__mark sr-ldie__mark--bestial" aria-hidden="true">
+          <Glyph name="skull" size={Math.max(12, Math.round(size / 3.6))} />
+        </span>
+      ) : null}
       {reroll ? (
-        <span
-          aria-hidden="true"
-          style={{
-            position: 'absolute',
-            top: '-7px',
-            right: '-7px',
-            fontSize: `${Math.max(10, Math.round(size / 4.5))}px`,
-            lineHeight: 1,
-            padding: '2px 3px',
-            borderRadius: '999px',
-            background: '#fbbf24',
-            color: '#1b1b1b',
-          }}
-        >
-          ↻
+        <span className="sr-ldie__mark sr-ldie__mark--reroll" aria-hidden="true">
+          <Glyph name="reroll" size={Math.max(10, Math.round(size / 4.5))} strokeWidth={2.2} />
         </span>
       ) : null}
     </Tag>

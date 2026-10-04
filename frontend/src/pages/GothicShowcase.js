@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { Glyph } from '../design';
 import {
   GothicBox,
   SkullDivider,
@@ -132,7 +133,7 @@ const GothicShowcase = ({ onBack }) => {
       <div className="sr-showcase-inner">
         <header className="sr-showcase-hero">
           <h1>
-            <i className="fas fa-skull" /> ShadowRealms AI — Gothic theme preview
+            <Glyph name="skull" size={18} style={{ verticalAlign: '-3px' }} /> ShadowRealms AI — Gothic theme preview
           </h1>
           <p>
             Live demos use the same overlays and CSS as the app: login veil, post-auth welcome card, chronicle
@@ -243,14 +244,14 @@ const GothicShowcase = ({ onBack }) => {
 
         <GothicBox theme="vampire" style={{ background: '#16213e', padding: '36px', borderRadius: '12px', marginBottom: '36px' }}>
           <h2 style={{ color: '#e94560', marginBottom: '8px', fontSize: '1.5rem', fontFamily: 'Cinzel, serif', textAlign: 'center' }}>
-            <i className="fas fa-book-dead" /> Sign your pact
+            <Glyph name="book" size={18} style={{ verticalAlign: '-3px' }} /> Sign your pact
           </h2>
           <p style={{ color: '#94a3b8', textAlign: 'center', marginBottom: '22px', fontSize: '15px' }}>
             Styled like the real login card — Crimson inputs, Cinzel actions.
           </p>
           <form style={{ maxWidth: '400px', margin: '0 auto' }} onSubmit={(e) => e.preventDefault()}>
             <label style={{ display: 'block', marginBottom: '8px', color: '#b5b5c3', fontFamily: 'Crimson Text, serif' }}>
-              <i className="fas fa-user-secret" /> Username
+              <Glyph name="hood" size={18} style={{ verticalAlign: '-3px' }} /> Username
             </label>
             <input
               type="text"
@@ -259,7 +260,7 @@ const GothicShowcase = ({ onBack }) => {
               style={inputStyle}
             />
             <label style={{ display: 'block', marginBottom: '8px', marginTop: '16px', color: '#b5b5c3', fontFamily: 'Crimson Text, serif' }}>
-              <i className="fas fa-key" /> Password
+              <Glyph name="key" size={18} style={{ verticalAlign: '-3px' }} /> Password
             </label>
             <input type="password" readOnly placeholder="••••••••" style={inputStyle} />
             <GothicButton
@@ -279,12 +280,12 @@ const GothicShowcase = ({ onBack }) => {
                 boxShadow: '0 5px 22px rgba(233, 69, 96, 0.35)',
               }}
             >
-              <i className="fas fa-sign-in-alt" /> Enter the darkness
+              <Glyph name="chevron-right" size={18} style={{ verticalAlign: '-3px' }} /> Enter the darkness
             </GothicButton>
           </form>
         </GothicBox>
 
-        <OrnateDivider icon="dragon" />
+        <OrnateDivider icon="thorned-rose" />
 
         <h2 style={{ fontFamily: 'Cinzel, serif', color: '#e0e0e0', textAlign: 'center', marginBottom: '20px', fontSize: '1.35rem' }}>
           Chronicle hall cards (dashboard look)
@@ -325,17 +326,17 @@ const GothicShowcase = ({ onBack }) => {
 
         <GothicBox theme="werewolf" style={{ background: '#16213e', padding: '28px', borderRadius: '12px', marginBottom: '36px' }}>
           <h3 style={{ color: '#fbbf24', marginBottom: '12px', fontSize: '1.35rem', fontFamily: 'Cinzel, serif' }}>
-            <i className="fas fa-wolf" /> Werewolf: The Apocalypse
+            <Glyph name="line-werewolf" size={18} style={{ verticalAlign: '-3px' }} /> Werewolf: The Apocalypse
           </h3>
           <p style={{ color: '#b5b5c3', lineHeight: 1.75, fontFamily: 'Crimson Text, serif', marginBottom: '16px' }}>
             Rage, Wyrm, Gaia — orange accent tokens match the live chronicle picker.
           </p>
           <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginBottom: '14px' }}>
             <span style={tagStyle('#d97706')}>
-              <i className="fas fa-moon" /> Rage
+              <Glyph name="moon-crescent" size={18} style={{ verticalAlign: '-3px' }} /> Rage
             </span>
             <span style={tagStyle('#e94560')}>
-              <i className="fas fa-paw" /> Garou
+              <Glyph name="fangs" size={18} style={{ verticalAlign: '-3px' }} /> Garou
             </span>
           </div>
           <GothicButton
@@ -354,15 +355,15 @@ const GothicShowcase = ({ onBack }) => {
               fontFamily: 'Cinzel, serif',
             }}
           >
-            <i className="fas fa-door-open" /> Run enter-chronicle demo
+            <Glyph name="key" size={18} style={{ verticalAlign: '-3px' }} /> Run enter-chronicle demo
           </GothicButton>
         </GothicBox>
 
-        <OrnateDivider icon="feather-alt" />
+        <OrnateDivider icon="quill" />
 
         <GothicBox style={{ background: '#16213e', padding: '28px', borderRadius: '12px', marginBottom: '36px' }}>
           <h2 style={{ color: '#e94560', marginBottom: '18px', fontSize: '1.4rem', fontFamily: 'Cinzel, serif', textAlign: 'center' }}>
-            <i className="fas fa-comments" /> In-character hall (sample)
+            <Glyph name="raven" size={18} style={{ verticalAlign: '-3px' }} /> In-character hall (sample)
           </h2>
           <div
             style={{
@@ -421,16 +422,16 @@ const GothicShowcase = ({ onBack }) => {
                 cursor: 'default',
               }}
             >
-              <i className="fas fa-paper-plane" /> Send
+              <Glyph name="send" size={18} style={{ verticalAlign: '-3px' }} /> Send
             </GothicButton>
           </form>
         </GothicBox>
 
-        <OrnateDivider icon="skull-crossbones" />
+        <OrnateDivider icon="skull" />
 
         <GothicBox style={{ background: '#16213e', padding: '28px', borderRadius: '12px', marginBottom: '36px' }}>
           <h2 style={{ color: '#e94560', marginBottom: '18px', fontSize: '1.35rem', fontFamily: 'Cinzel, serif', textAlign: 'center' }}>
-            <i className="fas fa-crown" /> Admin strip (sample)
+            <Glyph name="crown" size={18} style={{ verticalAlign: '-3px' }} /> Admin strip (sample)
           </h2>
           <div style={{ overflowX: 'auto' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', fontFamily: 'Crimson Text, serif' }}>
@@ -471,7 +472,7 @@ const GothicShowcase = ({ onBack }) => {
             Record your readme video here — demos above match the live app overlays and palette.
           </p>
           <div style={{ fontSize: '14px', color: '#64748b' }}>
-            <i className="fas fa-moon" /> ShadowRealms AI
+            <Glyph name="moon-crescent" size={18} style={{ verticalAlign: '-3px' }} /> ShadowRealms AI
           </div>
         </footer>
       </div>

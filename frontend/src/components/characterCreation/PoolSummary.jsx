@@ -13,7 +13,7 @@ const chip = (label, rem, color) => (
       padding: '4px 10px',
       borderRadius: '6px',
       background: rem === 0 ? 'rgba(34,197,94,0.12)' : 'rgba(248,113,113,0.08)',
-      color: rem === 0 ? '#86efac' : color,
+      color: rem === 0 ? 'var(--sr-ok-400)' : color,
       border: `1px solid ${rem === 0 ? '#16653444' : '#991b1b33'}`,
     }}
   >
@@ -47,15 +47,15 @@ export default function PoolSummary({
           alignItems: 'center',
           padding: '10px 12px',
           background: 'rgba(15,23,41,0.92)',
-          border: '1px solid #2a2a4e',
+          border: '1px solid var(--sr-night-700)',
           borderRadius: '8px',
           marginBottom: '14px',
         }}
       >
-        <span style={{ fontSize: '11px', color: '#94a3b8', marginRight: '4px' }}>Attributes</span>
-        {chip('Physical', rp, '#f87171')}
-        {chip('Social', rs, '#a78bfa')}
-        {chip('Mental', rm, '#38bdf8')}
+        <span style={{ fontSize: '11px', color: 'var(--sr-bone-300)', marginRight: '4px' }}>Attributes</span>
+        {chip('Physical', rp, 'var(--sr-danger-400)')}
+        {chip('Social', rs, 'var(--sr-arcane-400)')}
+        {chip('Mental', rm, 'var(--sr-info-400)')}
       </div>
     );
   }
@@ -74,15 +74,15 @@ export default function PoolSummary({
           alignItems: 'center',
           padding: '10px 12px',
           background: 'rgba(15,23,41,0.92)',
-          border: '1px solid #2a2a4e',
+          border: '1px solid var(--sr-night-700)',
           borderRadius: '8px',
           marginBottom: '14px',
         }}
       >
-        <span style={{ fontSize: '11px', color: '#94a3b8', marginRight: '4px' }}>Abilities</span>
-        {chip('Talents', rt, '#fbbf24')}
+        <span style={{ fontSize: '11px', color: 'var(--sr-bone-300)', marginRight: '4px' }}>Abilities</span>
+        {chip('Talents', rt, 'var(--sr-gold-400)')}
         {chip('Skills', rsk, '#34d399')}
-        {chip('Knowledges', rkn, '#818cf8')}
+        {chip('Knowledges', rkn, 'var(--sr-arcane-400)')}
       </div>
     );
   }

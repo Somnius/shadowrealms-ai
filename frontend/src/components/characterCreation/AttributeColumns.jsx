@@ -21,7 +21,7 @@ export default function AttributeColumns({
       <div
         style={{
           textAlign: 'center',
-          fontFamily: 'Cinzel, serif',
+          fontFamily: 'var(--sr-font-display)',
           fontSize: '12px',
           color: accent,
           marginBottom: '12px',
@@ -29,7 +29,7 @@ export default function AttributeColumns({
         }}
       >
         {title}
-        <span style={{ color: '#6b7280', fontFamily: 'system-ui', marginLeft: '6px' }}>
+        <span style={{ color: 'var(--sr-bone-500)', fontFamily: 'var(--sr-font-ui)', marginLeft: '6px' }}>
           {t('wizard:pool.plusDots', '(+{{n}} dots)', { n: pool })}
         </span>
       </div>
@@ -49,7 +49,7 @@ export default function AttributeColumns({
         >
           <span
             style={{
-              color: '#d1d5db',
+              color: 'var(--sr-bone-100)',
               fontSize: '13px',
               textTransform: 'capitalize',
               flex: '1 1 auto',
@@ -57,7 +57,7 @@ export default function AttributeColumns({
           >
             {k}
             {nosferatu && k === 'appearance' ? (
-              <span style={{ display: 'block', color: '#9ca3af', fontSize: '11px', textTransform: 'none' }}>
+              <span style={{ display: 'block', color: 'var(--sr-bone-300)', fontSize: '11px', textTransform: 'none' }}>
                 {t('wizard:nosferatuAlwaysZero', 'Nosferatu: always 0')}
               </span>
             ) : null}
@@ -103,9 +103,9 @@ export default function AttributeColumns({
         justifyContent: 'space-between',
       }}
     >
-      {col('Physical', PHYSICAL, pools.physical, '#f87171')}
-      {col('Social', SOCIAL, pools.social, '#a78bfa')}
-      {col('Mental', MENTAL, pools.mental, '#38bdf8')}
+      {col('Physical', PHYSICAL, pools.physical, 'var(--sr-danger-400)')}
+      {col('Social', SOCIAL, pools.social, 'var(--sr-arcane-400)')}
+      {col('Mental', MENTAL, pools.mental, 'var(--sr-info-400)')}
     </div>
   );
 }

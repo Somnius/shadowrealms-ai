@@ -33,7 +33,7 @@ export default function ResponsiveSheetBlock({ sectionId, title, subtitle, accen
       open
       style={{
         marginBottom: '16px',
-        border: '1px solid #2a2a4e',
+        border: '1px solid var(--sr-night-700)',
         borderRadius: '10px',
         background: 'linear-gradient(165deg, rgba(15,23,41,0.95) 0%, rgba(22,33,62,0.85) 100%)',
         boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.04)',
@@ -44,19 +44,19 @@ export default function ResponsiveSheetBlock({ sectionId, title, subtitle, accen
           listStyle: 'none',
           cursor: 'pointer',
           padding: '14px 16px',
-          fontFamily: 'Cinzel, serif',
+          fontFamily: 'var(--sr-font-display)',
           fontSize: '15px',
-          color: accent || '#e94560',
+          color: accent || 'var(--sr-blood-500)',
           letterSpacing: '0.06em',
           textTransform: 'uppercase',
-          borderBottom: `1px solid ${accent || '#e94560'}44`,
+          borderBottom: `1px solid color-mix(in srgb, ${accent || 'var(--sr-blood-500)'} 27%, transparent)`,
         }}
       >
         {title}
-        <span style={{ float: 'right', fontSize: '12px', color: '#8b8b9f' }}>▼</span>
+        <span style={{ float: 'right', fontSize: '12px', color: 'var(--sr-bone-500)' }}>▼</span>
       </summary>
       {subtitle ? (
-        <p style={{ margin: '0 16px 8px', fontSize: '12px', color: '#8b8b9f' }}>{subtitle}</p>
+        <p style={{ margin: '0 16px 8px', fontSize: '12px', color: 'var(--sr-bone-500)' }}>{subtitle}</p>
       ) : null}
       <div style={{ padding: '0 14px 16px' }}>{children}</div>
     </details>

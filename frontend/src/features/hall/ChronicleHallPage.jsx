@@ -1,13 +1,13 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Avatar, Badge, Button, Card, EmptyState, Glyph, Spinner, useToast } from '../../design';
+import { Avatar, Badge, Button, Card, ChronicleSigil, EmptyState, Spinner, useToast } from '../../design';
 import { PageBody, TopBar } from '../../app/AppShell';
 import ButtonLink from '../../app/ButtonLink';
 import { useApi } from '../../app/AuthContext';
 import { useChronicles } from '../../app/ChroniclesContext';
 import { errorText } from '../../app/http';
-import { lineGlyph, lineOf } from '../../app/hooks';
-import { editionLabel } from '../../rules/rulesEdition';
+import { lineOf } from '../../app/hooks';
+import { editionLabel, editionOf } from '../../rules/rulesEdition';
 import Footer from '../../components/Footer';
 import { t } from '../../i18n';
 import './hall.css';
@@ -21,10 +21,10 @@ function ChronicleCard({ c }) {
   const hasChar = !!(c.my_playing_character_name || '').trim();
   return (
     <li data-line={lineOf(c.game_system) || undefined}>
-      <Card className="sr-hall__card" interactive>
+      <Card className="sr-hall__card sr-sigil-host" interactive>
         <div className="sr-hall__card-head">
           <span className="sr-hall__sigil" aria-hidden="true">
-            <Glyph name={lineGlyph(c.game_system)} size={28} />
+            <ChronicleSigil line={lineOf(c.game_system)} edition={editionOf(c)} size={52} />
           </span>
           <div className="sr-hall__card-title">
             <h2 className="sr-hall__name">
@@ -122,6 +122,7 @@ export default function ChronicleHallPage() {
           ) : chronicles.length === 0 ? (
             <EmptyState
               glyph="web"
+              ambient
               title={t('hall:empty.title', 'No chronicles yet')}
               action={
                 <ButtonLink to="/chronicles/new" variant="primary">
@@ -150,8 +151,8 @@ export default function ChronicleHallPage() {
             </p>
             <ul className="sr-hall__openlist">
               {open.map((dc) => (
-                <li key={dc.id} className="sr-hall__openrow">
-                  <Glyph name={lineGlyph(dc.game_system)} size={22} />
+                <li key={dc.id} className="sr-hall__openrow sr-sigil-host" data-line={lineOf(dc.game_system) || undefined}>
+                  <ChronicleSigil line={lineOf(dc.game_system)} edition={editionOf(dc)} size={36} />
                   <div className="sr-hall__openinfo">
                     <strong>{dc.name}</strong>
                     <span className="sr-muted">

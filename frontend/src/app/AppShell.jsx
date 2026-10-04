@@ -1,6 +1,6 @@
 import React, { createContext, useCallback, useContext, useMemo, useState } from 'react';
-import { Outlet } from 'react-router-dom';
-import { Drawer, Glyph, IconButton } from '../design';
+import { Outlet, useLocation } from 'react-router-dom';
+import { Drawer, FogLayer, Glyph, IconButton, RouteTransition } from '../design';
 import ChronicleRail from './ChronicleRail';
 import UserMenu from './UserMenu';
 import { useIsMobile } from './hooks';
@@ -14,11 +14,12 @@ export const useShell = () => useContext(ShellContext);
  * Page header used by every shell page: (mobile menu) · icon · title/subtitle · actions · user menu.
  * There is exactly one user menu and it always lives here.
  */
-export function TopBar({ title, subtitle, icon, actions, onMenu, menuLabel, titleId, children }) {
+export function TopBar({ title, subtitle, icon, actions, onMenu, menuLabel, titleId, ambient = false, children }) {
   const isMobile = useIsMobile();
   const { openNav } = useShell();
   return (
-    <header className="sr-topbar">
+    <header className={`sr-topbar${ambient ? ' sr-topbar--ambient' : ''}`}>
+      {ambient ? <FogLayer intensity={0.07} speed={0.6} className="sr-topbar__fog" /> : null}
       {isMobile ? (
         <IconButton
           icon="menu"
@@ -42,8 +43,21 @@ export function TopBar({ title, subtitle, icon, actions, onMenu, menuLabel, titl
   );
 }
 
+/**
+ * Key for the page transition: one per page *type*, never per room or chronicle switch inside the
+ * play view (that would remount PlayPage). /chronicles/* pages are distinct components anyway.
+ */
+export function routeKeyOf(pathname) {
+  const parts = String(pathname || '').split('/').filter(Boolean);
+  if (!parts.length) return 'root';
+  if (parts[0] === 'chronicles') return parts.length > 1 && parts[1] !== 'new' ? 'chronicles/:id' : parts.join('/');
+  if (parts[0] === 'c') return parts.length > 2 ? 'play' : 'play-redirect';
+  return parts[0];
+}
+
 /** Rail + routed page. On phones the rail moves into a left drawer opened from the top bar. */
 export default function AppShell() {
+  const { pathname } = useLocation();
   const isMobile = useIsMobile();
   const [navOpen, setNavOpen] = useState(false);
   const openNav = useCallback(() => setNavOpen(true), []);
@@ -59,7 +73,9 @@ export default function AppShell() {
           </div>
         ) : null}
         <div className="sr-shell__main">
-          <Outlet />
+          <RouteTransition routeKey={routeKeyOf(pathname)}>
+            <Outlet />
+          </RouteTransition>
         </div>
       </div>
       {isMobile ? (

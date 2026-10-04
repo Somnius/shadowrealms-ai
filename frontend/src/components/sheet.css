@@ -1,0 +1,28 @@
+/* Character sheet (read-only) + creation screens, on design tokens. */
+.sr-modal.sr-sheet { max-width: min(1040px, 100%); }
+.sr-sheet__sub { display: inline-flex; flex-wrap: wrap; align-items: center; gap: var(--sr-space-2); }
+.sr-sheet__body { font-family: var(--sr-font-body); color: var(--sr-text); }
+.sr-sheet .sr-modal__title .sr-glyph { color: var(--sr-accent); }
+.sr-sheet--werewolf { --sr-accent: var(--sr-amber-600); }
+.sr-sheet--mage { --sr-accent: var(--sr-arcane-500); }
+
+/* GothicBox (legacy wrapper) → ornate design Card */
+.sr-card.sr-gbox { padding: var(--sr-space-3) var(--sr-space-4); background: linear-gradient(180deg, var(--sr-night-800), var(--sr-night-850)); }
+.sr-card.sr-gbox--vampire { border-top: 2px solid var(--sr-blood-500); }
+.sr-card.sr-gbox--werewolf { border-top: 2px solid var(--sr-amber-600); }
+.sr-card.sr-gbox--mage { border-top: 2px solid var(--sr-arcane-500); }
+
+/* Legacy creation / sheet controls (inline-styled): AA control edges, token fonts, a visible
+   focus ring that inline box-shadows can't override (outline, not box-shadow). */
+.sr-app .sr-gbox :is(input:not([type='checkbox']):not([type='radio']):not([type='range']), select, textarea),
+.sr-app .sr-sheet :is(input:not([type='checkbox']):not([type='radio']), select, textarea) {
+  border-color: var(--sr-border-input) !important;
+  color: var(--sr-text);
+}
+.sr-app .sr-gbox :is(input, select, textarea, button):focus-visible,
+.sr-app .sr-sheet :is(input, select, textarea, button):focus-visible {
+  outline: 2px solid var(--sr-focus-color, var(--sr-blood-500));
+  outline-offset: 2px;
+}
+.sr-app .sr-gbox :is(input[type='checkbox'], input[type='radio']) { accent-color: var(--sr-accent); }
+.sr-app .sr-gbox ::placeholder { color: var(--sr-text-muted); opacity: 1; }

@@ -17,7 +17,15 @@
     "showcase": "Προεπισκόπηση θέματος",
     "logout": "Αποσύνδεση",
     "button": "Μενού λογαριασμού για {{name}}",
-    "title": "Λογαριασμός"
+    "title": "Λογαριασμός",
+    "atmosphere": "Ατμόσφαιρα",
+    "atmosphereFull": "Πλήρης",
+    "atmosphereFullHint": "Ομίχλη, φως κεριών, κινούμενα σύμβολα",
+    "atmosphereSubtle": "Διακριτική",
+    "atmosphereSubtleHint": "Ακίνητη ατμόσφαιρα, σύντομες μεταβάσεις",
+    "atmosphereOff": "Ανενεργή",
+    "atmosphereOffHint": "Καμία κίνηση",
+    "atmosphereSystem": "Η κίνηση είναι κλειστή στις ρυθμίσεις του συστήματος"
   },
   "language": {
     "label": "Γλώσσα"

@@ -79,7 +79,7 @@ export default function AbilityColumns({
       <div
         style={{
           textAlign: 'center',
-          fontFamily: 'Cinzel, serif',
+          fontFamily: 'var(--sr-font-display)',
           fontSize: '12px',
           color: colAccent,
           marginBottom: '12px',
@@ -87,7 +87,7 @@ export default function AbilityColumns({
         }}
       >
         {title}
-        <span style={{ color: '#6b7280', fontFamily: 'system-ui', marginLeft: '6px' }}>
+        <span style={{ color: 'var(--sr-bone-500)', fontFamily: 'var(--sr-font-ui)', marginLeft: '6px' }}>
           {t('wizard:pool.dots', '({{n}} dots)', { n: pool })}
         </span>
       </div>
@@ -105,7 +105,7 @@ export default function AbilityColumns({
             borderRadius: '6px',
           }}
         >
-          <span style={{ color: '#c4c4d4', fontSize: '12px', flex: '1 1 auto' }}>{label}</span>
+          <span style={{ color: 'var(--sr-bone-300)', fontSize: '12px', flex: '1 1 auto' }}>{label}</span>
           <DotTrack
             value={abilities[k]}
             maxRank={5}
@@ -136,9 +136,9 @@ export default function AbilityColumns({
               flex: '1 1 100px',
               padding: '6px 8px',
               fontSize: '12px',
-              background: '#0f1729',
-              color: '#e0e0e0',
-              border: '1px solid #2a2a4e',
+              background: 'var(--sr-night-850)',
+              color: 'var(--sr-bone-100)',
+              border: '1px solid var(--sr-night-700)',
               borderRadius: '6px',
             }}
           />
@@ -155,9 +155,9 @@ export default function AbilityColumns({
             style={{
               padding: '4px 8px',
               fontSize: '11px',
-              background: '#1e293b',
-              color: '#94a3b8',
-              border: '1px solid #475569',
+              background: 'var(--sr-night-800)',
+              color: 'var(--sr-bone-300)',
+              border: '1px solid var(--sr-night-600)',
               borderRadius: '6px',
               cursor: 'pointer',
             }}
@@ -176,7 +176,7 @@ export default function AbilityColumns({
           fontSize: '11px',
           background: 'transparent',
           color: colAccent,
-          border: `1px dashed ${colAccent}55`,
+          border: `1px dashed color-mix(in srgb, ${colAccent} 33%, transparent)`,
           borderRadius: '6px',
           cursor: 'pointer',
         }}
@@ -188,9 +188,9 @@ export default function AbilityColumns({
 
   return (
     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '18px', justifyContent: 'space-between' }}>
-      {col('Talents', TALENTS, pools.talents, '#fbbf24', 'talents')}
+      {col('Talents', TALENTS, pools.talents, 'var(--sr-gold-400)', 'talents')}
       {col('Skills', SKILLS, pools.skills, '#34d399', 'skills')}
-      {col('Knowledges', KNOWLEDGES, pools.knowledges, '#818cf8', 'knowledges')}
+      {col('Knowledges', KNOWLEDGES, pools.knowledges, 'var(--sr-arcane-400)', 'knowledges')}
     </div>
   );
 }

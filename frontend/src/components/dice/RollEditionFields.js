@@ -2,48 +2,15 @@ import React from 'react';
 import { V5_DIFFICULTY_TABLE, V5_MAX_HUNGER } from '../../rules/v5Rules';
 import { t } from '../../i18n';
 import { Term } from '../../i18n/glossary';
-
-const fieldLabel = {
-  display: 'block',
-  color: '#b5b5c3',
-  fontSize: '12px',
-  marginBottom: '6px',
-  fontFamily: 'Cinzel, serif',
-};
-const selectStyle = {
-  width: '100%',
-  marginBottom: '12px',
-  padding: '10px 12px',
-  background: '#0f1729',
-  border: '1px solid #2a2a4e',
-  borderRadius: '6px',
-  color: '#e0e0e0',
-  fontSize: '15px',
-  fontFamily: 'Crimson Text, serif',
-};
-const checkRow = (disabled) => ({
-  display: 'flex',
-  alignItems: 'center',
-  gap: '10px',
-  color: '#b5b5c3',
-  fontSize: '13px',
-  marginBottom: '12px',
-  cursor: disabled ? 'default' : 'pointer',
-  fontFamily: 'Crimson Text, serif',
-});
-const helpStyle = {
-  color: '#8b8b9f',
-  fontSize: '13px',
-  marginBottom: '16px',
-  fontFamily: 'Crimson Text, serif',
-  lineHeight: 1.5,
-};
+import { Button, Checkbox, Glyph, Select } from '../../design';
+import './dice.css';
 
 /** Help text for the roll modal, per edition. */
 export function RollHelp({ edition }) {
   if (edition === 'v5') {
     return (
-      <p style={helpStyle}>
+      <p className="sr-roll__help">
+        <Glyph name="d10-hunger" size={16} className="sr-roll__help-glyph" />
         <strong>V5</strong>:{' '}
         {t(
           'dice:help.v5',
@@ -53,7 +20,8 @@ export function RollHelp({ edition }) {
     );
   }
   return (
-    <p style={helpStyle}>
+    <p className="sr-roll__help">
+      <Glyph name="d10" size={16} className="sr-roll__help-glyph" />
       <strong>{t('dice:edition.classicLong', 'Classic (Revised)')}</strong>:{' '}
       {t(
         'dice:help.classic',
@@ -88,15 +56,12 @@ export default function RollEditionFields({
   if (edition === 'v5') {
     return (
       <>
-        <label style={fieldLabel} htmlFor="roll-v5-difficulty">
-          {t('dice:field.v5Difficulty', 'Difficulty (successes needed)')}
-        </label>
-        <select
+        <Select
           id="roll-v5-difficulty"
+          label={t('dice:field.v5Difficulty', 'Difficulty (successes needed)')}
           value={v5Difficulty}
           onChange={(e) => setV5Difficulty(Number(e.target.value))}
           disabled={disabled}
-          style={selectStyle}
         >
           {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((n) => (
             <option key={n} value={n}>
@@ -107,48 +72,45 @@ export default function RollEditionFields({
                 : ''}
             </option>
           ))}
-        </select>
-        <label style={fieldLabel} htmlFor="roll-v5-hunger">
-          <Term id="hunger" /> {hungerSource ? <span style={{ color: '#64748b' }}>({hungerSource})</span> : null}
-        </label>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px', flexWrap: 'wrap' }}>
-          <select
+        </Select>
+        <div className="sr-roll__hunger">
+          <Select
             id="roll-v5-hunger"
+            label={
+              <>
+                <Term id="hunger" /> {hungerSource ? <span className="sr-roll__source">({hungerSource})</span> : null}
+              </>
+            }
             value={hunger}
             onChange={(e) => setHunger(Number(e.target.value))}
             disabled={disabled}
-            style={{ ...selectStyle, width: 'auto', minWidth: '90px', marginBottom: 0 }}
+            fieldClassName="sr-roll__hunger-field"
           >
             {Array.from({ length: V5_MAX_HUNGER + 1 }, (_, n) => (
               <option key={n} value={n}>
                 {n}
               </option>
             ))}
-          </select>
-          <span aria-hidden="true" style={{ color: '#dc2626', letterSpacing: '2px' }}>
-            {'●'.repeat(hunger)}
-            <span style={{ color: '#4b5563' }}>{'○'.repeat(Math.max(0, V5_MAX_HUNGER - hunger))}</span>
+          </Select>
+          <span className="sr-roll__hunger-track" aria-hidden="true">
+            {Array.from({ length: V5_MAX_HUNGER }, (_, i) => (
+              <Glyph key={i} name="blood-drop" size={18} className={i < hunger ? 'is-full' : 'is-empty'} />
+            ))}
           </span>
           {onRouse ? (
-            <button
-              type="button"
+            <Button
+              variant="danger"
+              size="sm"
+              icon="blood-drop"
               onClick={onRouse}
-              disabled={disabled || rousing}
+              disabled={disabled}
+              loading={rousing}
+              loadingLabel={t('dice:field.rousing', 'Rousing…')}
               title={t('dice:field.rouseHint', 'One die: 6+ means no Hunger gain, otherwise Hunger +1')}
-              style={{
-                marginLeft: 'auto',
-                padding: '8px 12px',
-                background: '#3f1d1d',
-                color: '#fecaca',
-                border: '1px solid #dc2626',
-                borderRadius: '6px',
-                cursor: disabled || rousing ? 'not-allowed' : 'pointer',
-                fontFamily: 'Cinzel, serif',
-                fontSize: '12px',
-              }}
+              className="sr-roll__rouse"
             >
-              <span lang="en">{rousing ? t('dice:field.rousing', 'Rousing…') : t('dice:field.rouse', 'Rouse check')}</span>
-            </button>
+              <span lang="en">{t('dice:field.rouse', 'Rouse check')}</span>
+            </Button>
           ) : null}
         </div>
       </>
@@ -156,15 +118,12 @@ export default function RollEditionFields({
   }
   return (
     <>
-      <label style={fieldLabel} htmlFor="roll-classic-difficulty">
-        {t('dice:field.classicDifficulty', 'Difficulty (target number, 2–10)')}
-      </label>
-      <select
+      <Select
         id="roll-classic-difficulty"
+        label={t('dice:field.classicDifficulty', 'Difficulty (target number, 2–10)')}
         value={classicDifficulty}
         onChange={(e) => setClassicDifficulty(Number(e.target.value))}
         disabled={disabled}
-        style={selectStyle}
       >
         {[2, 3, 4, 5, 6, 7, 8, 9, 10].map((n) => (
           <option key={n} value={n}>
@@ -172,15 +131,19 @@ export default function RollEditionFields({
             {n === 6 ? ` ${t('dice:field.commonDefault', '(common default)')}` : ''}
           </option>
         ))}
-      </select>
-      <label style={checkRow(disabled)}>
-        <input type="checkbox" checked={specialty} onChange={(e) => setSpecialty(e.target.checked)} disabled={disabled} />
-        {t('dice:field.specialty', 'Specialty (10s are rerolled for extra successes)')}
-      </label>
-      <label style={checkRow(disabled)}>
-        <input type="checkbox" checked={willpower} onChange={(e) => setWillpower(e.target.checked)} disabled={disabled} />
-        {t('dice:field.willpower', 'Spend Willpower (+1 automatic success, can’t be cancelled)')}
-      </label>
+      </Select>
+      <Checkbox
+        label={t('dice:field.specialty', 'Specialty (10s are rerolled for extra successes)')}
+        checked={specialty}
+        onChange={(e) => setSpecialty(e.target.checked)}
+        disabled={disabled}
+      />
+      <Checkbox
+        label={t('dice:field.willpower', 'Spend Willpower (+1 automatic success, can’t be cancelled)')}
+        checked={willpower}
+        onChange={(e) => setWillpower(e.target.checked)}
+        disabled={disabled}
+      />
     </>
   );
 }
