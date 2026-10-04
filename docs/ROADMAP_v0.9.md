@@ -34,7 +34,7 @@ Started 2026-10-04. Each phase: research → build → at least 2 reviews → co
 - Embeddings: `nomic-embed-text-v1.5` can't separate Greek texts (a Greek question scored an unrelated Greek text 0.785 vs 0.795 for the right one). `bge-m3` (downloaded, 635 MB) ranks the right passage first in both languages and across languages. `Qwen3-Embedding-0.6B` was the first pick but fails to load in LM Studio's current llama.cpp runtime (2.51.0).
 - Switching embedders means re-embedding what's already in ChromaDB.
 - Qwen3.5 needs `reasoning_effort: none` or it spends the whole budget thinking.
-- Laya: train one multi-task classifier (OOC vs in-character, message intent) with the recmeets recipe (`~/dev/recmeets/scripts/laya/`), serve it as ONNX on CPU. Jev (Typesafe, `POST https://api.typesafe.ai/v1/systemone`, Bearer key) as the optional hosted alternative with the same request shape.
+- Laya: train one multi-task classifier (OOC vs in-character, message intent) with the recipe from another local project (recmeets), serve it as ONNX on CPU. Jev (Typesafe, `POST https://api.typesafe.ai/v1/systemone`, Bearer key) as the optional hosted alternative with the same request shape.
 - Cloud (optional, admin-set API keys): Anthropic Messages API, OpenAI Responses API.
 
 Built (2026-10-04, details in `docs/AI_SYSTEMS.md` → "v0.9: providers, …"):
@@ -47,9 +47,9 @@ Built (2026-10-04, details in `docs/AI_SYSTEMS.md` → "v0.9: providers, …"):
 - Still open: the trained Laya model (separate work in `ml/laya/`); Greek reply quality with Krikri actually loaded (see the phase 2 report); Greeklish detection; the storyteller prompt can exceed an 8k context in busy rooms (pre-existing).
 
 ### Phase 5 — public site infrastructure (done early, 2026-10-04 ~03:05)
-- `srai.srv-box.com` → DietPi `snikket-proxy` nginx (`/mnt/ext_data/snikket/proxy-srai.conf`, mounted in its `docker-compose.yml`; backups `docker-compose.yml.bak-srai-*`, `renewal/srv-box.com.conf.bak-srai-*`) → `http://10.0.0.3:80` (this machine's nginx; ufw allows the LAN).
+- `srai.srv-box.com` → nginx on a reverse proxy on another host on the LAN → this machine's nginx on port 80 (the firewall allows the LAN). The proxy's config was backed up before the change.
 - TLS: the shared Let's Encrypt cert `srv-box.com` was expanded to 20 names including `srai.srv-box.com` (dry run first, then real; renews with the others).
-- Gate: HTTP basic auth (`/mnt/ext_data/snikket/auth/srai.htpasswd`). Credentials are only in `.srai-gate-credentials.txt` in the repo folder (gitignored, mode 600).
+- Gate: HTTP basic auth on the reverse proxy (the preview gate). The credentials are not in version control.
 - Verified: no auth/wrong password → 401, with gate creds the app + API answer over HTTPS with a valid cert, HTTP → HTTPS redirect, and all 19 existing subdomains answer exactly as before the change (5 of them were already returning 502 before: ag, bz, f, git, vw).
 - Still to do in phase 5: production frontend build + gunicorn instead of the dev servers, login hardening.
 
@@ -58,7 +58,7 @@ Details: `docs/SECURITY_MODEL.md`.
 - Audit of `routes/auth.py` and related code. Fixed: no brute-force protection at all; login said "Account is deactivated" before checking the password (enumeration of disabled accounts) and took less time for unknown usernames; logout did nothing server-side and tokens stayed valid for 6 h after logout, ban, deactivation or a password reset; passwords over 72 bytes made login answer 500 (bcrypt 5); the welcome email contained the plaintext password; `CORS(app)` allowed every origin; the backend trusted a client-supplied `X-Forwarded-For` for the invite alert; exception text in several responses (rule books, AI health, health check, README, re-embed); `Config.debug_env_vars()` printed the secrets; invite use was check-then-write (two signups could overuse a code); the backend ran Flask's dev server and listened on all interfaces.
 - Now: password policy (12+ characters, max 72 bytes, common-password list), bcrypt cost 12 with rehash on login, generic login errors with a dummy hash for unknown users, time-limited lockouts per account+IP / account / IP / wrong invites (Redis), Flask-Limiter limits with a JSON 429, server-side revocation (token_version trigger + jti blocklist + refresh rotation with reuse detection in an HttpOnly SameSite=Strict cookie), logout / logout-all / change-password endpoints, admin unlock + `auth_events` audit log, security headers and no-store on the API, CORS allow-list (`CORS_ORIGINS`, empty by default), generic 500s, nginx realip for the real client IP with one trusted hop.
 - Production server: gunicorn gthread (2 workers × 48 threads, preload, 127.0.0.1:5000), `APP_SERVER=flask` keeps the dev server. SSE streams capped at 20 per worker.
-- Frontend changes still needed (refresh on 401, server logout, 429/503 handling, change-password screen): listed in `docs/SECURITY_MODEL.md` → "Frontend changes needed". Until they land, access tokens stay at 360 minutes (`JWT_ACCESS_TOKEN_MINUTES`).
+- Frontend changes (refresh on 401, server logout, 429/503 handling, change-password screen): done, see `frontend/src/app/http.js` and `AuthContext.jsx`. Access tokens still default to 360 minutes in `docker-compose.yml` (`JWT_ACCESS_TOKEN_MINUTES`); lowering it to 30 is listed under "Open / next".
 
 ### Dependency security (2026-10-04)
 - 8 Python security PRs from Dependabot merged (all checks green).
@@ -73,7 +73,7 @@ Details: `docs/SECURITY_MODEL.md`.
 - nginx serves the static build (`./scripts/build-frontend.sh`) instead of the React dev server, with a strict CSP (scripts only from the site), gzip, and long caching for hashed assets. Checked in Chromium with no CSP violations.
 
 ## Open / next
-- Remove the preview gate once tested (one block in the DietPi's `proxy-srai.conf`).
+- Remove the preview gate once tested (one block in the reverse proxy's site config).
 - Label 300–500 real chat messages and re-check the Laya thresholds on them.
 - Server-computed dice pools from the character sheet; message actions (reply/copy/delete) and older-history paging in chat.
 - Move the frontend from Create React App to Vite (most remaining npm audit findings are CRA build tooling).

@@ -86,8 +86,8 @@ browser --https--> DietPi nginx (10.0.0.10, TLS, HSTS)  --http--> nginx on this 
 
 - **Access token**: a JWT (HS256, `JWT_SECRET_KEY`, at least 32 characters or the server refuses
   to start in production) returned in the JSON body and sent as `Authorization: Bearer`.
-  Lifetime `JWT_ACCESS_TOKEN_MINUTES`: 30 by default in code; docker-compose keeps **360** until
-  the frontend uses the refresh endpoint (see "Frontend changes"), then set it to 30.
+  Lifetime `JWT_ACCESS_TOKEN_MINUTES`: 30 by default in code; docker-compose still defaults to **360**;
+  the frontend now refreshes tokens (see "Frontend changes"), so it can be set to 30.
 - **Refresh token**: only in an `HttpOnly`, `SameSite=Strict` cookie `srai_refresh` with
   `Path=/api/auth` (`Secure` when the request came over https; `AUTH_COOKIE_SECURE=true|false`
   forces it). JavaScript can't read it, so an XSS can't steal a long-lived credential.
@@ -247,33 +247,24 @@ the backend container uses the host network.
 | `GUNICORN_*` | see table above | |
 | `SR_EVENTS_DB_POOL` | 4 | PostgreSQL connections per worker for SSE polling |
 
-## Frontend changes needed
+## Frontend changes (done in v0.9.0)
 
-The backend keeps working with today's frontend (Bearer token from the login JSON in
-`localStorage`), but to use short access tokens and real logout the frontend needs:
+The list below was the plan for the frontend once the backend changes above landed. Items 1 to 5
+and 8 are done:
 
-1. **Refresh on 401.** On a 401 with `code` `TOKEN_EXPIRED` (or proactively shortly before
-   `expires_in` runs out), call `POST /api/auth/refresh` with
-   `fetch('/api/auth/refresh', {method: 'POST', credentials: 'same-origin', headers:
-   {'Content-Type': 'application/json'}, body: '{}'})`; store the new `access_token`, retry the
-   request once. Only if refresh fails (401 `REFRESH_INVALID`) log out locally. Run one refresh
-   at a time (share the promise) so parallel 401s don't race: a second use of the same refresh
-   cookie counts as reuse and ends the session.
-2. **Logout calls the server**: `POST /api/auth/logout` with the Bearer token (and
-   `credentials: 'same-origin'`) before clearing `localStorage`; add "Sign out everywhere" =
-   `POST /api/auth/logout-all`.
-3. **Don't treat 429 or 503 as logged out**: 429 (`RATE_LIMITED`, `LOGIN_LOCKED`) should show
-   the message with `retry_after`; 503 `UNAVAILABLE` is a retry. Only 401 ends a session.
-4. **Login/register**: show the server's `error` text (it is generic for bad credentials); the
-   password field hint should say "at least 12 characters"; map the policy codes
-   (`PASSWORD_TOO_SHORT`, `PASSWORD_TOO_LONG`, `PASSWORD_COMMON`, `PASSWORD_CONTAINS_USERNAME`,
-   `PASSWORD_TOO_SIMPLE`) to translated messages. Login/register responses no longer include
-   `refresh_token` in JSON (it is the cookie now).
-5. **Change password** screen in the profile: `POST /api/auth/change-password`
-   `{current_password, new_password}` -> store the returned `access_token`.
-6. **Admin panel** (optional): reset-password now enforces the same policy (show the error);
-   unlock form for `POST /api/admin/auth/unlock`; an "auth events" table from
-   `GET /api/admin/auth-events`.
-7. Once 1-3 are live, set `JWT_ACCESS_TOKEN_MINUTES=30` in `.env` and restart the backend.
-8. Longer term: a Content-Security-Policy for the HTML (served by the frontend/nginx) would make
-   XSS, the remaining way to steal an access token from `localStorage`, much harder.
+1. **Refresh on 401**: `frontend/src/app/http.js` calls `POST /api/auth/refresh` once on
+   `TOKEN_EXPIRED`, retries the request, and shares one refresh between callers and tabs (Web
+   Locks). A refused refresh ends the session locally.
+2. **Logout calls the server**: `AuthContext.jsx` posts to `/api/auth/logout` or, for "Sign out
+   everywhere" in the user menu, `/api/auth/logout-all`.
+3. **429 and 503 don't log out**: they become a translated message with the wait time.
+4. **Login/register**: the server's `error` is shown and the password policy codes are mapped to
+   translated messages (`features/auth/PasswordRules.jsx`).
+5. **Change password**: in the profile page (`POST /api/auth/change-password`).
+6. **Admin panel** (optional, not done): an unlock form for `POST /api/admin/auth/unlock` and an
+   auth events table from `GET /api/admin/auth-events`. Both endpoints work from the API.
+7. **Shorter access tokens**: not done yet. `docker-compose.yml` still defaults
+   `JWT_ACCESS_TOKEN_MINUTES` to 360; with 1 to 3 live it can be set to 30 in `.env` (then
+   `docker compose up -d backend`).
+8. **Content-Security-Policy**: nginx sends a strict CSP with the production build (scripts only
+   from the site), see `nginx/nginx.conf`.
