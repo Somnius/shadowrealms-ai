@@ -2,7 +2,7 @@
 
 # ShadowRealms AI
 
-![ShadowRealms AI Logo](assets/logos/logo-3.png)
+![ShadowRealms AI](assets/logos/shadowrealms-banner.png)
 
 ### Self-hosted AI Storyteller for World of Darkness chronicles
 
