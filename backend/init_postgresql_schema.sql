@@ -195,12 +195,14 @@ CREATE TABLE IF NOT EXISTS messages (
     role            TEXT NOT NULL DEFAULT 'user',                        -- 'user' | 'assistant' ...
     created_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     ai_message_kind TEXT,
-    speaker_mode    TEXT                                                 -- 'character' | 'player' | 'staff'
+    speaker_mode    TEXT,                                                -- 'character' | 'player' | 'staff'
+    reply_to_id     INTEGER REFERENCES messages(id) ON DELETE SET NULL   -- quoted message (v0.10 phase 3)
 );
 
 CREATE INDEX IF NOT EXISTS idx_messages_location ON messages(campaign_id, location_id, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_messages_location_id ON messages(campaign_id, location_id, id);
 CREATE INDEX IF NOT EXISTS idx_messages_user ON messages(user_id);
+CREATE INDEX IF NOT EXISTS idx_messages_reply_to ON messages(reply_to_id) WHERE reply_to_id IS NOT NULL;
 
 -- -----------------------------------------------------------------------------
 -- location_reads (unread tracking; same shape as routes/messages.py creates)
