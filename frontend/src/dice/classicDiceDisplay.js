@@ -1,0 +1,76 @@
+/**
+ * Classic (VtM Revised) dice: classify dice and label outcomes for overlays/history.
+ * Mirrors backend/services/wod_dice.py `resolve_classic` (docs/rules/CLASSIC_REVISED.md):
+ * - success on die >= difficulty (2–10, default 6)
+ * - each 1 cancels one success
+ * - botch ONLY if no die succeeded at all and at least one 1 showed (Willpower prevents it)
+ * - specialty: natural 10s count and are rerolled (rerolled 10s explode again);
+ *   rerolled 1s do not cancel
+ * - Willpower: +1 automatic success that 1s cannot cancel
+ * - 5+ net successes = exceptional
+ */
+
+export const EXCEPTIONAL_THRESHOLD = 5;
+
+/** Pure resolution of already-rolled dice. */
+export function resolveClassicDice(dice, difficulty = 6, { specialtyRerolls = [], willpower = false } = {}) {
+  const d = (dice || []).map((x) => parseInt(x, 10) || 0);
+  const rr = (specialtyRerolls || []).map((x) => parseInt(x, 10) || 0);
+  const tn = parseInt(difficulty, 10) || 6;
+  const rawSuccesses = d.filter((x) => x >= tn).length;
+  const ones = d.filter((x) => x === 1).length;
+  const rerollSuccesses = rr.filter((x) => x >= tn).length;
+  const diceNet = Math.max(0, rawSuccesses + rerollSuccesses - ones);
+  const successes = diceNet + (willpower ? 1 : 0);
+  const isBotch = !willpower && rawSuccesses === 0 && ones > 0;
+  return {
+    rules_edition: 'classic',
+    results: d,
+    specialty_rerolls: rr,
+    difficulty: tn,
+    raw_successes: rawSuccesses,
+    ones,
+    successes,
+    is_botch: isBotch,
+    is_exceptional: successes >= EXCEPTIONAL_THRESHOLD,
+    willpower: Boolean(willpower),
+  };
+}
+
+/**
+ * Classify one die for display.
+ * @returns 'one' | 'ten' | 'success' | 'fail'
+ */
+export function classifyClassicDie(value, difficulty = 6) {
+  const v = parseInt(value, 10) || 0;
+  if (v === 1) return 'one';
+  if (v === 10) return 'ten';
+  if (v >= (parseInt(difficulty, 10) || 6)) return 'success';
+  return 'fail';
+}
+
+/** Overlay/history label + tone for a classic roll result (API roll_result or marker). */
+export function classicOutcome(result) {
+  const r = result || {};
+  const successes = Number(r.successes ?? r.net_successes ?? 0);
+  const botch = Boolean(r.is_botch ?? r.botch);
+  const exceptional = Boolean(r.is_exceptional ?? successes >= EXCEPTIONAL_THRESHOLD);
+  if (botch) return { key: 'botch', label: 'Botch', tone: 'danger' };
+  if (successes <= 0) return { key: 'failure', label: 'Failure', tone: 'muted' };
+  if (exceptional) {
+    return { key: 'exceptional', label: `Exceptional success (${successes})`, tone: 'gold' };
+  }
+  return {
+    key: 'success',
+    label: `Success (${successes} ${successes === 1 ? 'success' : 'successes'})`,
+    tone: 'success',
+  };
+}
+
+/** Short header line for overlays: "TN 6 · 3 net · specialty · Willpower". */
+export function classicSummaryLine(r) {
+  const parts = [`TN ${r?.difficulty ?? 6}`, `${Number(r?.successes ?? 0)} net`];
+  if (r?.specialty) parts.push('specialty');
+  if (r?.willpower) parts.push('Willpower');
+  return parts.join(' · ');
+}

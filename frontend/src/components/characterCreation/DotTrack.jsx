@@ -2,14 +2,15 @@ import React from 'react';
 
 /**
  * Clickable WoD-style dot track (filled circles). `maxRank` is usually 5.
+ * `label` (optional) names the trait for screen readers.
  */
-export default function DotTrack({ value, maxRank, onChange, disabled, accent }) {
+export default function DotTrack({ value, maxRank, onChange, disabled, accent, label }) {
   const rank = Math.max(0, Math.min(maxRank, parseInt(value, 10) || 0));
   const a = accent || '#c4b5fd';
   return (
     <div
       role="group"
-      aria-label={`Rating ${rank} of ${maxRank}`}
+      aria-label={label ? `${label}: ${rank} of ${maxRank}` : `Rating ${rank} of ${maxRank}`}
       style={{ display: 'flex', alignItems: 'center', gap: '5px', flexWrap: 'nowrap' }}
     >
       {Array.from({ length: maxRank }, (_, i) => {
@@ -22,6 +23,7 @@ export default function DotTrack({ value, maxRank, onChange, disabled, accent })
             disabled={disabled}
             onClick={() => onChange(filled && n === rank ? n - 1 : n)}
             title={`Set to ${n}`}
+            aria-label={label ? `Set ${label} to ${n}` : `Set to ${n}`}
             style={{
               width: '18px',
               height: '18px',

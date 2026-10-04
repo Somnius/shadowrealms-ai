@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { api } from '../utils/api';
 import { useToast } from '../components/ToastNotification';
 import ConfirmDialog from '../components/ConfirmDialog';
+import EditionBadge from '../components/EditionBadge';
+import { editionLabel } from '../rules/rulesEdition';
 import { formatDateTimeInZone } from '../utils/userTimeFormat';
 import '../responsive.css';
 
@@ -188,6 +190,7 @@ function AdminPage({ token, user, displayTimezone = null, onAdminOpenCampaign = 
                 id: c.id,
                 name: c.name,
                 game_system: c.game_system,
+                rules_edition: c.rules_edition,
                 status: c.status,
                 created_at: c.created_at,
               }))
@@ -349,6 +352,7 @@ function AdminPage({ token, user, displayTimezone = null, onAdminOpenCampaign = 
         id: c.id,
         name: c.name,
         game_system: c.game_system,
+        rules_edition: c.rules_edition,
         status: c.status,
       });
     } catch (e) {
@@ -1057,7 +1061,10 @@ function AdminPage({ token, user, displayTimezone = null, onAdminOpenCampaign = 
                         <td style={{ padding: '10px', color: '#fff', fontWeight: 600 }}>
                           {c.name || `Campaign ${c.id}`}
                         </td>
-                        <td style={{ padding: '10px', color: '#b5b5c3' }}>{c.game_system || '—'}</td>
+                        <td style={{ padding: '10px', color: '#b5b5c3' }}>
+                          {c.game_system || '—'}
+                          <EditionBadge campaign={c} />
+                        </td>
                         <td style={{ padding: '10px', color: '#b5b5c3', maxWidth: '200px' }}>
                           <div style={{ fontSize: '12px' }}>{c.status || '—'}</div>
                           {paused ? (
@@ -2453,7 +2460,8 @@ function AdminPage({ token, user, displayTimezone = null, onAdminOpenCampaign = 
                     <li key={`${c.id}-${c.via || 'm'}`}>
                       <strong style={{ color: '#e8e8ef' }}>{c.name || `Campaign ${c.id}`}</strong>
                       {' · '}
-                      {c.game_system || '—'} · {c.member_role || 'member'}
+                      {c.game_system || '—'}
+                      <EditionBadge campaign={c} /> · {c.member_role || 'member'}
                       {c.via === 'created_by_only' ? (
                         <span style={{ color: '#fbbf24' }}> (creator only — use Add below to write roster row)</span>
                       ) : null}
@@ -2493,7 +2501,11 @@ function AdminPage({ token, user, displayTimezone = null, onAdminOpenCampaign = 
                   <option value="">— Select campaign —</option>
                   {adminCampaignsList.map((c) => (
                     <option key={c.id} value={String(c.id)}>
-                      {c.name || `Campaign ${c.id}`} · {c.game_system || '—'} (id {c.id})
+                      {c.name || `Campaign ${c.id}`} · {c.game_system || '—'}
+                      {c.rules_edition != null && String(c.game_system || '').toLowerCase() === 'vampire'
+                        ? ` ${editionLabel(c)}`
+                        : ''}{' '}
+                      (id {c.id})
                     </option>
                   ))}
                 </select>

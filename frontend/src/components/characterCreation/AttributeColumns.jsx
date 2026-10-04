@@ -1,8 +1,20 @@
 import React from 'react';
 import { MENTAL, PHYSICAL, SOCIAL } from '../../characterSheet/constants';
+import { attributeBase } from '../../characterSheet/validation';
 import DotTrack from './DotTrack';
 
-export default function AttributeColumns({ attrs, setAttrs, pools }) {
+/**
+ * `pools` = dots to ADD per category on top of the free dot in each attribute (7/5/3).
+ * Without `freebieMode` the UI stops at the budget; with it, any rating 1–5 (priced as freebies).
+ * `nosferatu`: Appearance is fixed at 0 (classic.json creation.attributes.nosferatu_appearance).
+ */
+export default function AttributeColumns({
+  attrs,
+  setAttrs,
+  pools,
+  freebieMode = false,
+  nosferatu = false,
+}) {
   const col = (title, keys, pool, accent) => (
     <div style={{ flex: '1 1 200px', minWidth: 0 }}>
       <div
@@ -17,7 +29,7 @@ export default function AttributeColumns({ attrs, setAttrs, pools }) {
       >
         {title}
         <span style={{ color: '#6b7280', fontFamily: 'system-ui', marginLeft: '6px' }}>
-          ({pool} pts)
+          (+{pool} dots)
         </span>
       </div>
       {keys.map((k) => (
@@ -43,12 +55,19 @@ export default function AttributeColumns({ attrs, setAttrs, pools }) {
             }}
           >
             {k}
+            {nosferatu && k === 'appearance' ? (
+              <span style={{ display: 'block', color: '#9ca3af', fontSize: '11px', textTransform: 'none' }}>
+                Nosferatu: always 0
+              </span>
+            ) : null}
           </span>
           <DotTrack
             value={attrs[k]}
             maxRank={5}
             accent={accent}
+            disabled={nosferatu && k === 'appearance'}
             onChange={(n) => {
+              if (nosferatu && k === 'appearance') return;
               const catKeys =
                 title === 'Physical' ? PHYSICAL : title === 'Social' ? SOCIAL : MENTAL;
               const poolSize =
@@ -60,8 +79,12 @@ export default function AttributeColumns({ attrs, setAttrs, pools }) {
               const old = parseInt(attrs[k], 10) || 1;
               const next = Math.max(1, Math.min(5, n));
               const delta = next - old;
-              const sum = catKeys.reduce((s, key) => s + (parseInt(attrs[key], 10) || 1), 0);
-              if (sum + delta > poolSize) return;
+              const added = catKeys.reduce(
+                (s, key) =>
+                  s + (parseInt(attrs[key], 10) || 0) - attributeBase(key, { nosferatu }),
+                0
+              );
+              if (!freebieMode && delta > 0 && added + delta > poolSize) return;
               setAttrs((prev) => ({ ...prev, [k]: next }));
             }}
           />

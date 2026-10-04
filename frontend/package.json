@@ -12,7 +12,9 @@
     "zustand": "^4.3.0",
     "@headlessui/react": "^1.7.0",
     "@heroicons/react": "^2.0.0",
-    "framer-motion": "^10.0.0"
+    "framer-motion": "^10.0.0",
+    "d3-scale": "^4.0.2",
+    "d3-shape": "^3.2.0"
   },
   "devDependencies": {
     "tailwindcss": "^3.2.0",
@@ -35,6 +37,11 @@
     "test:ci": "react-scripts test --coverage --watchAll=false --passWithNoTests",
     "audit": "npm audit --omit=dev",
     "eject": "react-scripts eject"
+  },
+  "jest": {
+    "transformIgnorePatterns": [
+      "node_modules/(?!(d3-[a-z-]+|internmap)/)"
+    ]
   },
   "eslintConfig": {
     "extends": [

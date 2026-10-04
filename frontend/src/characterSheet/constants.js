@@ -114,6 +114,7 @@ export const MTA_SPHERES = [
   ['time', 'Time'],
 ];
 
+/** Classic disciplines (core list in src/rules/classic.json plus bloodline/supplement ones). */
 export const DISCIPLINE_PRESETS = [
   'Animalism',
   'Auspex',
@@ -129,6 +130,7 @@ export const DISCIPLINE_PRESETS = [
   'Necromancy',
   'Obfuscate',
   'Obeah',
+  'Obtenebration',
   'Potence',
   'Presence',
   'Protean',
@@ -137,9 +139,11 @@ export const DISCIPLINE_PRESETS = [
   'Serpentis',
   'Spiritus',
   'Temporis',
+  'Thanatosis',
   'Thaumaturgy',
   'Valeren',
   'Vicissitude',
+  'Visceratika',
 ];
 
 /** Section anchor ids — must match CharacterCreationWizard nav. */
@@ -151,4 +155,5 @@ export const SHEET_SECTION_IDS = {
   abilities: 'section-abilities',
   advantages: 'section-advantages',
   story: 'section-story',
+  freebies: 'section-freebies',
 };
