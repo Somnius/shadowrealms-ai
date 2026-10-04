@@ -1,561 +1,103 @@
 # Feature Documentation
 
-**Last Updated**: 2026-04-05  
-**Version**: 0.8.0+
+**Last Updated**: 2026-10-04  
+**Version**: 0.9.0
 
-This document consolidates all feature-specific documentation for ShadowRealms AI.
+Feature notes for ShadowRealms AI that don't have their own document. The full list of changes per release is in [CHANGELOG.md](CHANGELOG.md); the plan for v0.9 is in [ROADMAP_v0.9.md](ROADMAP_v0.9.md).
 
 ---
 
 ## Table of Contents
 
-1. [Overview](#overview)
-2. [Dice theatre and hidden rolls (v0.7.14)](#dice-theatre-and-hidden-rolls-v0714)
-3. [Admin user management, play suspension, discover/join](#admin-user-management-play-suspension-discoverjoin)
-4. [Chronicle detach, join restrictions, per-campaign playing character](#chronicle-detach-join-restrictions-per-campaign-playing-character)
-5. [Gothic Horror Theme](#gothic-horror-theme)
+1. [What's new in v0.9.0](#whats-new-in-v090)
+2. [Admin user management, play suspension, discover/join](#admin-user-management-play-suspension-discoverjoin)
+3. [Chronicle detach, join restrictions, per-campaign playing character](#chronicle-detach-join-restrictions-per-campaign-playing-character)
+4. [Dice theatre and hidden rolls](#dice-theatre-and-hidden-rolls)
+5. [Gothic theme and design system](#gothic-theme-and-design-system)
 6. [Invite Code System](#invite-code-system)
+
+---
+
+## What's new in v0.9.0
+
+- **Rules editions.** Every chronicle is **Classic** (oWoD Revised: Vampire, Werewolf, Mage) or **V5** (Vampire: The Masquerade 5th edition only), chosen at creation and locked. Each edition has its own dice engine, character forge and sheet, and rule-book search. See [rules/CLASSIC_REVISED.md](rules/CLASSIC_REVISED.md), [rules/V5.md](rules/V5.md), [dice-old-wod.md](dice-old-wod.md), [dice-v5.md](dice-v5.md) and [CHARACTER_SHEET_BLOCKS.md](CHARACTER_SHEET_BLOCKS.md).
+- **New app shell.** Real URLs: `/chronicles` (the hall), `/chronicles/new`, `/chronicles/:id` (chronicle settings), `/c/:id/:locationId` (play), `/profile`, `/profile/characters/new`, `/admin/:section`. Discord-style chat with grouped messages, unread counts, dice cards, slash command autocomplete and a **Speaking as** control; live updates over Server-Sent Events.
+- **English and Greek.** The whole interface in both languages, saved per account; the Storyteller answers in the player's language.
+- **AI.** Provider roles (LM Studio, Ollama, optional Anthropic / OpenAI keys), bge-m3 embeddings for English and Greek, the Laya classifier for OOC moderation. See [AI_SYSTEMS.md](AI_SYSTEMS.md).
+- **Security.** Login hardening, server-side logout, rate limits, gunicorn and a production frontend build. See [SECURITY_MODEL.md](SECURITY_MODEL.md).
 
 ---
 
 ## Admin user management, play suspension, discover/join
 
-**Status:** Shipped (see `docs/CHANGELOG.md` **[Unreleased]**)  
-**Scope:** Site admin panel, player dashboard, campaign settings
+**Status:** Shipped  
+**Scope:** Admin panel (`/admin`), chronicle hall, chronicle settings
 
-- **Suspend character play**: Staff can set a hold with reason templates and a player-visible message; the player cannot activate that PC or open its chronicle until cleared.
+- **Suspend character play**: Staff can set a hold with reason templates and a player-visible message; the player cannot play that PC or open its chronicle until cleared.
 - **Admin debug profile**: JSON aggregate of user, memberships, characters, downtime, and moderation slices.
 - **Campaign membership override**: Admins can add or remove `campaign_players` rows by user and campaign ID.
-- **All chronicles (v0.7.18+)**: Admin tab lists every campaign (`GET /api/admin/campaigns`) with creator metadata; **Open in app** enters the main chronicle UI. Site **`admin`** may open any chronicle for support (messages, dice, read-state)—not granted to helpers or players by default.
+- **All chronicles (v0.7.18+)**: Admin tab lists every campaign (`GET /api/admin/campaigns`) with creator metadata and opens any of them in the play view. Site **`admin`** may open any chronicle for support (messages, dice, read-state); not granted to helpers or players by default.
 - **Preserve-chat account delete**: Removes a user while keeping location IC history; related rows reassigned per `docs/CHANGELOG.md` `[0.7.18]`.
-- **Listed chronicles**: Storytellers mark a game **listed** and **accepting players**; others see it under “Open chronicles” and can self-join (subject to `max_players`).
+- **Listed chronicles**: Storytellers mark a game **listed** and **accepting players** on the chronicle settings page; others see it in the chronicle hall and can self-join (subject to `max_players`).
 - **Single locked sheet rule**: By default a player may only commit one locked character across chronicles; admins can grant `allow_multi_campaign_play` per account.
 
-### Player Profile hub (v0.8.0+)
+### Profile (`/profile`)
 
-- **Overview / Account Settings / Playable Characters / Downtime** — Sidebar replaces older split sections; **Account Settings** merges time zone with **OOC identity** (including OOC portrait).
-- **Playable Characters** — Switch active PC, roster & IC portraits, and **character creation guide** before starting the wizard; redundant profile **Campaigns** tab removed (use the **chronicle hall**).
-- **Header** — **Home** control to the left of the username on logged-in pages (logo/title still links home).
+- **Account**: time zone, out-of-character portrait, password change, and **Sign out everywhere**. The interface language and the atmosphere (motion) setting are in the user menu.
+- **Characters**: your characters with their portraits (change a portrait here), and **New character** (`/profile/characters/new`), which opens the forge for the chronicle's edition.
+- **Downtime**: requests for changes to a locked sheet, reviewed by an admin.
 
 ---
 
 ## Chronicle detach, join restrictions, per-campaign playing character
 
 **Status:** Shipped  
-**Scope:** Campaign API, `users` / `campaign_players` columns, dashboard campaign details, player profile
+**Scope:** Campaign API, `users` / `campaign_players` columns, chronicle settings page
 
 **Full reference:** [CAMPAIGN_MEMBERSHIP_AND_PLAYING_CHARACTER.md](CAMPAIGN_MEMBERSHIP_AND_PLAYING_CHARACTER.md)
 
-- **Leave chronicle (`POST .../detach`)** — Removes `campaign_players` membership; does not delete characters. Sets `restrict_self_join_new_chronicles` on that user so **self-join to a new chronicle** requires storyteller/staff add or an existing sheet for **rejoin** to the same campaign.
-- **Per-campaign playing character** — `campaign_players.active_character_id`; IC messages use `effective_playing_character_id()` (not only global `users.active_character_id`). Switching to another PC **in the same chronicle** requires storyteller or admin/helper approval.
-- **Storyteller tools** — Chronicle creator, site admin, or helper can `POST .../members` to add a user; `PUT .../players/<id>/playing-character` to set or clear the live PC.
+- **Leave chronicle (`POST .../detach`)**: Removes `campaign_players` membership; does not delete characters. Sets `restrict_self_join_new_chronicles` on that user so **self-join to a new chronicle** requires a storyteller/staff add, or an existing sheet to **rejoin** the same campaign.
+- **Per-campaign playing character**: `campaign_players.active_character_id`; IC messages use `effective_playing_character_id()`. The old global `users.active_character_id` is legacy and not used by the v0.9 interface. Switching to another PC **in the same chronicle** requires storyteller or admin/helper approval.
+- **Storyteller tools**: the chronicle creator, a site admin or a helper can add a member by username and set a player's playing character on the chronicle settings page (`POST .../members`, `PUT .../players/<id>/playing-character`).
 
 ---
 
-## Dice theatre and hidden rolls (v0.7.14)
+## Dice theatre and hidden rolls
 
-**Status:** Shipped  
-**Scope:** In-campaign chat and sidebar
+**Status:** Shipped (v0.7.14, reworked in v0.9.0)  
+**Scope:** Play view
 
-- **Public rolls:** `/ai roll` (admins) and **Roll dice** in the sidebar show a **center-screen animation** (~3 seconds, up to **10** dice) before the final pool line appears in chat.
-- **Hidden rolls:** `/ai roll-hidden` (admins) and the sidebar **Hide roll from others** option (admin, helper, or campaign owner) store results without exposing rows to other players.
-- **Details:** See `docs/dice-old-wod.md` and `docs/CHANGELOG.md` (`[0.7.14]`).
-
----
-
-## Gothic Horror Theme
-
-**Status:** ✅ FULLY IMPLEMENTED  
-**Version:** Applied in v0.6.2+  
-**Last Updated:** 2025-10-28
+- **Rolls** are made by the server (`POST /api/campaigns/:id/roll`), which also posts the result to chat, so nobody can post a result that wasn't rolled. The play view shows an animated roll before the result card appears.
+- **Hidden rolls:** `/ai roll-hidden` (admins) and the **Hide this roll from players** option in the roll dialog (admin, helper, or chronicle owner) store results without showing them to other players.
+- **V5:** Hunger dice, Willpower rerolls (which cost Willpower) and Rouse checks.
+- **Details:** [dice-old-wod.md](dice-old-wod.md), [dice-v5.md](dice-v5.md).
 
 ---
 
-## 📋 Table of Contents
+## Gothic theme and design system
 
-1. [Overview](#overview)
-2. [Theme System](#theme-system)
-3. [Visual Effects](#visual-effects)
-4. [Implementation Details](#implementation-details)
-5. [Usage Examples](#usage-examples)
-6. [Color Scheme](#color-scheme)
-7. [Typography](#typography)
-8. [Testing Guide](#testing-guide)
+v0.9.0 replaced the old gothic theme with a design system: original SVG glyphs and clan sigils, motion, an atmosphere layer (fog, candle glow, blood effects on botches) with a Full / Subtle / Off setting, and accessible contrast.
 
----
-
-## Overview
-
-The Gothic Horror Theme transforms ShadowRealms AI into a dark fantasy experience perfect for World of Darkness campaigns. The theme uses campaign-specific effects that automatically apply based on the game system.
-
-### Design Philosophy
-
-**"Effects with Purpose":**
-- Login/Register: Set the mood when entering ShadowRealms
-- Campaign-specific: Immerse players in their chosen game
-- Dashboard: Keep clean for functionality
-
-**Key Principles:**
-- Not just "dark mode" - it's an **immersive horror atmosphere**
-- Every box tells a story (blood, magic, decay)
-- Typography evokes **gothic literature** and **medieval grimoires**
-- Subtle animations create **unease** and **mystique**
-
----
-
-## Theme System
-
-### Auto-Detection
-
-The system automatically detects campaign type and applies appropriate theme:
-
-```javascript
-const getCampaignTheme = (campaign) => {
-  if (!campaign || !campaign.game_system) return 'none';
-  const gameSystem = campaign.game_system.toLowerCase();
-  
-  // Enhanced detection with multiple keywords
-  if (gameSystem.includes('vampire') || gameSystem.includes('masquerade') || gameSystem.includes('vtm')) 
-    return 'vampire';
-  if (gameSystem.includes('mage') || gameSystem.includes('ascension') || gameSystem.includes('mta')) 
-    return 'mage';
-  if (gameSystem.includes('werewolf') || gameSystem.includes('apocalypse') || gameSystem.includes('wta') || gameSystem.includes('garou')) 
-    return 'werewolf';
-  
-  return 'none';
-};
-```
-
-### GothicBox Component
-
-The core component that applies theme-specific decorations:
-
-```javascript
-<GothicBox theme="vampire">   // Blood drips
-<GothicBox theme="mage">      // Magic sparkles
-<GothicBox theme="werewolf">  // Bite marks
-<GothicBox theme="none">      // Clean (colors only)
-```
-
----
-
-## Visual Effects
-
-### Vampire Theme 🩸
-- **Dripping blood** from top of containers
-- **Blood splatters** in background
-- **Crimson gradients** (#e94560, #8b0000)
-- **Flickering candles** in corners
-- **Skeleton hands** decorations
-
-**Applied to:**
-- Login box (left side)
-- Vampire campaign chat interfaces
-- Vampire campaign cards (optional)
-
-### Mage Theme ✨
-- **Purple sparkles** floating around
-- **Magic circles** with glowing stars
-- **Mystical particle effects** (✦ ✧ ★)
-- **Purple gradients** (#9d4edd, #5a0099)
-- **Ethereal glow effects**
-
-**Applied to:**
-- Register box (right side)
-- Mage campaign chat interfaces
-- Mage campaign cards (optional)
-
-### Werewolf Theme 🐺
-- **Bite marks** with pulsing animation
-- **Fang patterns** scattered randomly
-- **Amber/feral colors** (#d97706, #8b0000)
-- **Primal, tribal aesthetic**
-- **Rotated for natural look**
-
-**Applied to:**
-- Werewolf campaign chat interfaces
-- Werewolf campaign cards (optional)
-
-### Clean Theme
-- **No animations** or special effects
-- **Gothic fonts** only
-- **Dark color palette**
-- **Professional and functional**
-
-**Applied to:**
-- Main dashboard
-- Campaign list view
-- Admin panel
-- User settings
-- Character browser
-
----
-
-## Implementation Details
-
-### Files Modified
-
-#### 1. `frontend/src/gothic-theme.css` (396 lines)
-
-**Animations:**
-```css
-@keyframes blood-drip { /* Falling blood drops */ }
-@keyframes magic-sparkle { /* Floating sparkles */ }
-@keyframes candle-flicker { /* Flame movement */ }
-@keyframes bite-pulse { /* Pulsing bite marks */ }
-@keyframes pulse { /* General pulsing */ }
-@keyframes bounce { /* Loading dots */ }
-@keyframes fadeIn { /* Smooth entrance */ }
-@keyframes scaleIn { /* Zoom entrance */ }
-```
-
-**Classes:**
-- `.blood-drop` - Animated blood drip
-- `.magic-sparkle` - Floating sparkle
-- `.bite-mark` - Werewolf bite pattern
-- `.candle` - Flickering candle
-- `.skeleton-hand` - Corner decoration
-- `.gothic-border` - Glowing border
-- `.skull-divider` - Section separator
-- `.gothic-button` - Themed button
-
-#### 2. `frontend/src/components/GothicDecorations.js`
-
-**Components:**
-- `<GothicBox>` - Main container with decorations
-- `<SkullDivider>` - Skull and sword separator
-- `<OrnateDivider>` - Fancy horizontal line
-- `<GothicButton>` - Button with shine effect
-- `<FloatingParticles>` - Random floating symbols
-- `<MagicCircle>` - Purple magic circle
-- `<BloodSplatter>` - Blood splatter background
-
-**Theme Logic:**
-```javascript
-function GothicBox({ children, theme = 'vampire', style }) {
-  return (
-    <div className="gothic-box" style={style}>
-      {/* Skeleton hands in corners */}
-      <div className="skeleton-hand top-left">🖐️</div>
-      <div className="skeleton-hand top-right">🖐️</div>
-      <div className="skeleton-hand bottom-left">🖐️</div>
-      <div className="skeleton-hand bottom-right">🖐️</div>
-      
-      {/* Theme-specific effects */}
-      {theme === 'vampire' && (
-        <>
-          <div className="candle left">🕯️</div>
-          <div className="candle right">🕯️</div>
-          {[1, 2, 3].map(i => (
-            <div key={i} className="blood-drop" style={{...}} />
-          ))}
-        </>
-      )}
-      
-      {theme === 'mage' && (
-        <>
-          {[1, 2, 3, 4].map(i => (
-            <div key={i} className="magic-sparkle" style={{...}} />
-          ))}
-        </>
-      )}
-      
-      {theme === 'werewolf' && (
-        <>
-          {[1, 2, 3].map(i => (
-            <div key={i} className="bite-mark" style={{...}} />
-          ))}
-        </>
-      )}
-      
-      {children}
-    </div>
-  );
-}
-```
-
-#### 3. `frontend/src/SimpleApp.js`
-
-**Login Screen:**
-```javascript
-<GothicBox theme="vampire" style={{...}}>
-  <h2>Login</h2>
-  <form>...</form>
-</GothicBox>
-
-<GothicBox theme="mage" style={{...}}>
-  <h2>Register</h2>
-  <form>...</form>
-</GothicBox>
-```
-
-**Chat Interface:**
-```javascript
-const renderChat = () => {
-  const campaignTheme = getCampaignTheme(selectedCampaign);
-  
-  return (
-    <div>
-      <GothicBox theme={campaignTheme}>
-        <MessageList />
-        <ChatInput />
-      </GothicBox>
-    </div>
-  );
-};
-```
-
-#### 4. `frontend/src/pages/GothicShowcase.js`
-
-Preview page showing all three theme examples side-by-side.
-
----
-
-## Usage Examples
-
-### Campaign Cards (Optional)
-```javascript
-campaigns.map(campaign => (
-  <GothicBox 
-    key={campaign.id}
-    theme={getCampaignTheme(campaign)}
-    style={{ padding: '20px', margin: '10px' }}
-  >
-    <h3>{campaign.name}</h3>
-    <p>{campaign.description}</p>
-    <button>Enter Campaign</button>
-  </GothicBox>
-))
-```
-
-### Modals
-```javascript
-<GothicBox theme="vampire" style={{
-  position: 'fixed',
-  top: '50%',
-  left: '50%',
-  transform: 'translate(-50%, -50%)',
-  ...
-}}>
-  <h2>Warning!</h2>
-  <p>Are you sure?</p>
-  <button>Confirm</button>
-</GothicBox>
-```
-
-### Character Sheets
-```javascript
-<GothicBox theme={getCampaignTheme(character.campaign)}>
-  <h2>{character.name}</h2>
-  <CharacterStats />
-  <CharacterAbilities />
-</GothicBox>
-```
-
----
-
-## Color Scheme
-
-### Vampire (Blood Red)
-- Primary: `#e94560` (crimson)
-- Dark: `#8b0000` (dark blood)
-- Glow: `rgba(233, 69, 96, 0.4)`
-- Usage: Borders, highlights, effects
-
-### Mage (Magic Purple)
-- Primary: `#9d4edd` (purple)
-- Dark: `#5a0099` (deep purple)
-- Glow: `rgba(157, 78, 221, 0.4)`
-- Usage: Sparkles, glows, accents
-
-### Werewolf (Feral Amber)
-- Primary: `#d97706` (amber)
-- Secondary: `#8b0000` (blood)
-- Glow: `rgba(217, 119, 6, 0.4)`
-- Usage: Bite marks, primal effects
-
-### Universal Dark Theme
-- Background: `#0f0f1e`, `#16213e`
-- Text: `#b5b5c3`, `#e0e0e0`
-- Borders: `#2a2a4e`
-- Shadows: `rgba(0, 0, 0, 0.5)`
-
-### Accent Colors
-- Candle: `#ff9500` (flickering orange)
-- Bone: `#8b8b9f` (gray)
-- Success: `#4ade80` (green)
-- Error: `#ff4444` (red)
-
----
-
-## Typography
-
-### Cinzel (Headers)
-- **Font**: `'Cinzel', serif`
-- **Usage**: h1, h2, h3, buttons, titles
-- **Style**: Medieval/gothic, formal
-- **Letter-spacing**: 2px
-- **Source**: Google Fonts
-
-**Evokes:**
-- Medieval grimoires
-- Ancient manuscripts
-- Gothic architecture
-- Religious texts
-
-### Crimson Text (Body)
-- **Font**: `'Crimson Text', serif`
-- **Usage**: Paragraphs, labels, content
-- **Style**: Elegant serif, readable
-- **Line-height**: 1.6
-- **Source**: Google Fonts
-
-**Evokes:**
-- Gothic literature
-- Victorian novels
-- Classic horror stories
-- Atmospheric prose
-
-### Monospace (Code/Data)
-- **Font**: `'Courier New', monospace`
-- **Usage**: Code blocks, logs, technical data
-- **Style**: Fixed-width
-- **Size**: 13px
-
----
-
-## Testing Guide
-
-### Step 1: Refresh Browser
-```bash
-Ctrl + Shift + R  # Hard refresh to clear cache
-```
-
-### Step 2: Check Login Screen
-- Logo should be centered and 240px
-- Login box (left) should have blood drips
-- Register box (right) should have sparkles
-- Buttons say "LOGIN" and "REGISTER" (no emojis)
-- Gothic fonts throughout
-
-### Step 3: Preview Page
-Click "💀 Preview Gothic Horror Theme 💀" button to see:
-- Vampire card (blood only)
-- Mage card (sparkles only)
-- Werewolf card (bite marks only)
-- Font samples
-- Color schemes
-
-### Step 4: Enter Campaign
-- Navigate to a campaign
-- Chat interface should show theme-specific effects
-- Vampire: Blood drips
-- Mage: Sparkles
-- Werewolf: Bite marks
-
-### Step 5: Dashboard Check
-- Main dashboard should be clean
-- No blood/sparkles/effects on main screens
-- Just colors and gothic fonts
-- Professional and functional
-
----
-
-## Performance
-
-### Optimization
-- ✅ All animations are CSS-based (GPU-accelerated)
-- ✅ No heavy JavaScript
-- ✅ Optimized for 60fps
-- ✅ Minimal DOM elements
-
-### Browser Compatibility
-- ✅ Chrome/Chromium
-- ✅ Brave
-- ✅ Firefox (Floorp)
-- ✅ Edge
-- ✅ Safari
-
-### Responsive Design
-- ✅ Desktop: Full effects
-- ✅ Mobile: Adapted layout, reduced effects
-- ✅ Tablet: Adjusted spacing
-
----
-
-## Future Enhancements
-
-### Additional Campaign Types
-
-**Changeling: The Dreaming**
-```javascript
-if (gameSystem.includes('changeling')) return 'changeling';
-// Effects: Fairy dust, dreamlike sparkles, whimsical colors
-```
-
-**Hunter: The Reckoning**
-```javascript
-if (gameSystem.includes('hunter')) return 'hunter';
-// Effects: Crosshairs, weapon icons, tactical elements
-```
-
-**Wraith: The Oblivion**
-```javascript
-if (gameSystem.includes('wraith')) return 'wraith';
-// Effects: Ghostly wisps, chains, ethereal transparency
-```
-
-### Customization Options
-- User preference for effect intensity
-- Toggle animations on/off
-- Custom color schemes
-- Theme preview before applying
-
----
-
-## Troubleshooting
-
-### Effects Not Showing
-1. Hard refresh (Ctrl+Shift+R)
-2. Check browser console for errors
-3. Verify `gothic-theme.css` is loaded
-4. Check `GothicBox` component is imported
-
-### Performance Issues
-1. Reduce number of particles
-2. Disable animations in CSS
-3. Use `theme="none"` for clean layout
-
-### Theme Not Detected
-1. Verify `game_system` field in campaign
-2. Check `getCampaignTheme()` function
-3. Add more keywords to detection logic
-
----
-
-## Conclusion
-
-The Gothic Horror Theme provides a fully immersive dark fantasy experience that enhances gameplay without compromising functionality. Effects apply automatically based on campaign type, creating appropriate atmospheres while keeping administrative areas clean and professional.
-
-**The shadows await...** 🦇💀🩸✨
-
+- Reference: [frontend/src/design/README.md](../frontend/src/design/README.md).
+- Guided theme preview: **`/showcase`**, and the component playground at **`/showcase/design`** (both open without signing in).
+- The pre-0.9 theme description (`gothic-theme.css`, `GothicDecorations`, `SimpleApp.js`) is archived in [archive/GOTHIC_THEME_V06.md](archive/GOTHIC_THEME_V06.md).
 
 ---
 
 ## Invite Code System
 
-## Overview
+### Overview
 
 ShadowRealms AI uses an invite-only registration system to control access. Users must have a valid invite code to register.
 
-## Invite Code Types
+### Invite Code Types
 
 - **Admin**: Full administrative access to all campaigns and settings
 - **Player**: Standard player access to join campaigns
 
-## File Structure
+### File Structure
 
-### `backend/invites.json` (Gitignored - Real Codes)
+#### `backend/invites.json` (gitignored, real codes)
 This file contains your actual invite codes and is **NOT** committed to Git for security.
 
 ```json
@@ -573,10 +115,10 @@ This file contains your actual invite codes and is **NOT** committed to Git for 
 }
 ```
 
-### `backend/invites.template.json` (Template - In Git)
+#### `backend/invites.template.json` (template, in git)
 This is a template showing the structure. Copy this to `invites.json` and add your own codes.
 
-## Initial Setup
+### Initial Setup
 
 1. Copy the template:
 ```bash
@@ -586,16 +128,9 @@ cp backend/invites.template.json backend/invites.json
 2. Edit `backend/invites.json` with your custom invite codes
 3. The `invites.json` file is automatically gitignored
 
-## Current Active Invites
+The template only contains placeholder codes (`EXAMPLE-ADMIN-CODE-12345`, `EXAMPLE-PLAYER-CODE-67890`). Replace them with your own long, random codes before anyone registers.
 
-The project comes with these **example** invite codes in `backend/invites.json`:
-
-- **ADMIN-SHADOWREALM-2025**: Admin access (1 use)
-- **PLAYER-WELCOME-2025**: Player access (5 uses)
-
-**⚠️ CHANGE THESE CODES** for production use!
-
-## Invite Code Format
+### Invite Code Format
 
 Each invite code entry has:
 - `type`: "admin" or "player"
@@ -605,9 +140,9 @@ Each invite code entry has:
 - `created_at`: ISO timestamp of creation
 - `created_by`: Who created the invite
 
-## Adding New Invite Codes
+#### Adding New Invite Codes
 
-Edit `backend/invites.json` manually:
+Admins can list and create invite codes in the app under **Admin → Invite codes** (`/admin/invites`; `GET`/`POST /api/admin/invites`). You can also edit `backend/invites.json` by hand:
 
 ```json
 {
@@ -624,7 +159,7 @@ Edit `backend/invites.json` manually:
 }
 ```
 
-## Security Best Practices
+### Security Best Practices
 
 1. **Never commit `invites.json`** to Git (already in `.gitignore`)
 2. **Use strong, unique codes** (long, random strings)
@@ -632,17 +167,16 @@ Edit `backend/invites.json` manually:
 4. **Track who uses what** via the description field
 5. **Rotate codes** regularly for sensitive roles
 
-## Checking Invite Usage
+### Checking Invite Usage
 
 The system automatically tracks:
 - How many times each code has been used
 - When codes reach their `max_uses` limit, they become invalid
 
-## Future Enhancements
+Claims are atomic across threads and gunicorn workers, so two sign-ups can't use the same last slot of a code. Wrong invite codes count toward a lockout (see [SECURITY_MODEL.md](SECURITY_MODEL.md)), and if SMTP and `MAIL_ADMIN_ALERT_EMAIL` are set, invalid sign-up attempts send the admin an email.
 
-Planned features:
-- Admin UI to manage invites
+### Possible later additions
+
 - Expiration dates for codes
 - Email-based invites
-- Invite code generation API endpoint
 
