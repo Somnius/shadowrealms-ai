@@ -183,6 +183,34 @@ docker compose up -d
 
 ---
 
+## Versions and upgrading
+
+| Piece | Version | Where |
+|-------|---------|-------|
+| Python (backend image and CI) | 3.12 | `backend/Dockerfile`, `.github/workflows/ci.yml` |
+| ChromaDB server | `chromadb/chroma:1.5.9` | `docker-compose.yml` |
+| ChromaDB client | `chromadb>=1.5.9,<2` | `backend/requirements.txt` |
+| PostgreSQL / Redis | `postgres:16-alpine` / `redis:7-alpine` | `docker-compose.yml` |
+
+The Chroma server image and the `chromadb` client are upgraded together, on the same 1.x line.
+
+### Upgrading an existing install
+
+Chroma 1.5.9 opens an existing `data/vector_db` in place; there is no export/import step. This was checked on copies: data written by `chromadb/chroma:1.0.20` (what `:latest` was when the compose file started using `/data`) and by `0.6.3` reopened under 1.5.9 with the same collections, ids, documents, metadata and embeddings, and the same query results. On first start the new server upgrades the SQLite file, so keep a copy to go back to:
+
+```bash
+docker compose stop backend chromadb
+sudo cp -a data/vector_db data/vector_db.bak-$(date +%F)   # files are owned by root
+git pull
+docker compose build backend
+docker compose up -d chromadb backend
+docker compose logs backend --tail 50                     # "Connected to ChromaDB", no re-embed errors
+```
+
+To roll back, stop `chromadb`, put the copy back in place of `data/vector_db`, and check out the old compose file.
+
+---
+
 ## Checking the running setup
 
 ```bash
