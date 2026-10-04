@@ -23,6 +23,7 @@ Index of the documentation in this folder (current release: v0.9.3). The [projec
 
 - [AI_SYSTEMS.md](AI_SYSTEMS.md): providers and roles, Greek replies, embeddings, the classifier and OOC monitoring, memory
 - [../ml/laya/README.md](../ml/laya/README.md): the Laya classifier (training and runtime)
+- [laya/HOWTO.md](laya/HOWTO.md): labelling chat and evaluating Laya (admin tab, CLI); [laya/EVALUATION.md](laya/EVALUATION.md): results on real chat
 - [../books/README.md](../books/README.md): syncing, parsing and importing rule books into RAG
 
 ## Security
