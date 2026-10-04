@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { t } from '../i18n';
 import { Modal, Spinner } from '../design';
+import { sanitizeRichHtml } from '../utils/security';
 
 const ReadmeModal = ({ isOpen, onClose }) => {
   const [readmeContent, setReadmeContent] = useState('Loading...');
@@ -39,11 +40,11 @@ const ReadmeModal = ({ isOpen, onClose }) => {
 
   // Enhanced markdown parser
   const parseMarkdown = (markdown) => {
+    // The result is HTML built from the README text; it is only ever rendered through
+    // sanitizeRichHtml (DOMPurify), which also drops HTML comments and any raw HTML
+    // in the README that is not on its allowlist.
     let html = markdown;
-    
-    // Remove or simplify HTML comments
-    html = html.replace(/<!--[\s\S]*?-->/g, '');
-    
+
     // Handle <div align="center"> and similar HTML tags - just remove them but keep content
     html = html.replace(/<div[^>]*>/gi, '<div style="text-align: center; margin: 20px 0;">');
     html = html.replace(/<\/div>/gi, '</div>');
@@ -162,6 +163,9 @@ const ReadmeModal = ({ isOpen, onClose }) => {
     return result.join('\n');
   };
 
+  // Every string set above (README, empty notice, error) is sanitized right before rendering.
+  const safeHtml = useMemo(() => sanitizeRichHtml(readmeContent), [readmeContent]);
+
   return (
     <Modal
       open={!!isOpen}
@@ -177,7 +181,7 @@ const ReadmeModal = ({ isOpen, onClose }) => {
           <Spinner variant="candle" label={t('footer:readme.loading', 'Loading the README…')} />
         </div>
       ) : (
-        <div className="sr-readme__content sr-prose" dangerouslySetInnerHTML={{ __html: readmeContent }} />
+        <div className="sr-readme__content sr-prose" dangerouslySetInnerHTML={{ __html: safeHtml }} />
       )}
     </Modal>
   );

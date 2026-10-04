@@ -5,6 +5,7 @@ Integrates with the monitoring system to provide performance-based AI configurat
 """
 
 import os
+import sys
 import json
 import logging
 from typing import Dict, Any, Optional
@@ -188,7 +189,7 @@ if __name__ == "__main__":
     print("=" * 50)
     if success:
         print("✅ All tests passed! Service is ready for integration.")
-        exit(0)
+        sys.exit(0)
     else:
         print("❌ Tests failed! Please fix issues before integration.")
-        exit(1)
+        sys.exit(1)

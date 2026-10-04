@@ -1,7 +1,12 @@
 /**
  * Security utilities for ShadowRealms AI
  * Provides input sanitization, XSS prevention, and validation helpers
+ *
+ * HTML is never cleaned with regular expressions here: text is pulled out of a
+ * parsed (inert) DOM, and HTML that must stay HTML goes through DOMPurify.
  */
+
+import DOMPurify from 'dompurify';
 
 /**
  * Sanitize HTML input to prevent XSS attacks
@@ -75,6 +80,38 @@ export const validatePassword = (password) => {
 };
 
 /**
+ * Plain text of an HTML fragment: the browser parses it into an inert document
+ * (DOMParser runs no scripts and loads nothing), elements whose content is not
+ * readable text are dropped, and the remaining text nodes are returned.
+ * The result is text, not HTML: render it as text (React does by default).
+ * @param {string} input - Text that may contain HTML markup
+ * @returns {string} - The text content, without any markup
+ */
+export const htmlToText = (input) => {
+  if (!input) return '';
+  const doc = new DOMParser().parseFromString(String(input), 'text/html');
+  doc.querySelectorAll('script, style, iframe, object, embed, noscript, template, link, meta')
+    .forEach((el) => el.remove());
+  return doc.body ? doc.body.textContent || '' : '';
+};
+
+/**
+ * Sanitize HTML that has to stay HTML (e.g. the README rendered from markdown)
+ * with DOMPurify's allowlist: no scripts, event handlers, javascript: URLs,
+ * forms or embedded objects. Links may keep target="_blank".
+ * @param {string} html - Untrusted HTML
+ * @returns {string} - HTML safe to pass to dangerouslySetInnerHTML
+ */
+export const sanitizeRichHtml = (html) => {
+  if (!html) return '';
+  return DOMPurify.sanitize(String(html), {
+    USE_PROFILES: { html: true },
+    ADD_ATTR: ['target'],
+    FORBID_TAGS: ['style', 'form', 'input', 'button', 'textarea', 'select'],
+  });
+};
+
+/**
  * Strip potentially dangerous characters from campaign/character names
  * Allows: letters, numbers, spaces, basic punctuation
  * @param {string} name - Name to sanitize
@@ -82,44 +119,28 @@ export const validatePassword = (password) => {
  */
 export const sanitizeName = (name) => {
   if (!name) return '';
-  
-  // Remove HTML tags
-  let sanitized = name.replace(/<[^>]*>/g, '');
-  
-  // Remove special characters except allowed ones
+
+  // Markup becomes its text; the allowlist below then removes every other character
+  // (including < and >), so the result can never contain a tag.
+  let sanitized = htmlToText(name);
   sanitized = sanitized.replace(/[^a-zA-Z0-9\s\-',.!?()]/g, '');
-  
+
   // Trim and limit length
   sanitized = sanitized.trim().substring(0, 100);
-  
+
   return sanitized;
 };
 
 /**
- * Sanitize campaign description and setting text
- * Removes scripts, dangerous HTML, but allows basic formatting
+ * Sanitize campaign description and setting text to plain text.
+ * Any HTML is reduced to its readable text (scripts, styles and embeds are
+ * dropped with their content), so render the result as text, not as HTML.
  * @param {string} text - Text to sanitize
- * @returns {string} - Sanitized text
+ * @returns {string} - Plain text, at most 10000 characters
  */
 export const sanitizeDescription = (text) => {
   if (!text) return '';
-  
-  // Remove script tags and event handlers
-  let sanitized = text.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '');
-  sanitized = sanitized.replace(/on\w+="[^"]*"/gi, '');
-  sanitized = sanitized.replace(/on\w+='[^']*'/gi, '');
-  
-  // Remove dangerous tags
-  const dangerousTags = ['iframe', 'object', 'embed', 'link', 'style', 'meta'];
-  dangerousTags.forEach(tag => {
-    const regex = new RegExp(`<${tag}\\b[^<]*(?:(?!<\\/${tag}>)<[^<]*)*<\\/${tag}>`, 'gi');
-    sanitized = sanitized.replace(regex, '');
-  });
-  
-  // Limit length
-  sanitized = sanitized.substring(0, 10000);
-  
-  return sanitized.trim();
+  return htmlToText(text).substring(0, 10000).trim();
 };
 
 /**
@@ -323,6 +344,8 @@ export const generateCSRFToken = () => {
 
 export default {
   sanitizeHtml,
+  htmlToText,
+  sanitizeRichHtml,
   sanitizeUrl,
   isValidEmail,
   isValidUsername,

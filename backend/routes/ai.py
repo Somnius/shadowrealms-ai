@@ -30,7 +30,7 @@ from services.rules_edition import (
 )
 from services.character_prompt import format_character_for_prompt
 from services.assistant_grants import grant_assistant_reply
-from services.request_validation import chat_text, strict_int
+from services.request_validation import RequestValidationError, chat_text, strict_int
 
 # Longest player message /api/ai/chat accepts (characters).
 MAX_CHAT_MESSAGE_CHARS = 8000
@@ -210,6 +210,7 @@ def get_ai_status():
 @require_ai_services
 def ai_chat():
     """AI chat endpoint with performance-based response generation"""
+    db = None
     try:
         current_user_id = int(get_jwt_identity())
         data = request.get_json()
@@ -225,9 +226,9 @@ def ai_chat():
             message = chat_text(message, 'Message', MAX_CHAT_MESSAGE_CHARS)
             location_id = strict_int(location_id, 'location', None, 1)
             if not isinstance(context, dict):
-                raise ValueError('context must be an object')
-        except ValueError as e:
-            return jsonify({'error': str(e)}), 400
+                raise RequestValidationError('context must be an object')
+        except RequestValidationError as e:
+            return jsonify({'error': e.public_message}), 400
         # From `/chat …` in UI: use full storyteller pipeline even in OOC rooms (not moderation-only path)
         assistant_direct = bool(data.get('assistant_direct') or data.get('direct_chat'))
         
@@ -351,7 +352,7 @@ def ai_chat():
         logger.error(f"Error in AI chat: {e}")
         return jsonify({'error': 'AI chat failed'}), 500
     finally:
-        if 'db' in locals():
+        if db is not None:
             db.close()
 
 
@@ -553,9 +554,9 @@ def _ai_slash_command_impl():
                 campaign_id=campaign_id,
                 location_id=location_id,
             )
-        except ValueError as e:
+        except RequestValidationError as e:
             return jsonify({
-                'error': str(e),
+                'error': e.public_message,
                 'supported_commands': SUPPORTED_AI_SLASH_VERBS,
                 'future_commands_suggestion': FUTURE_COMMAND_SUGGESTIONS,
             }), 400
@@ -572,6 +573,7 @@ def _ai_slash_command_impl():
 @require_ai_services
 def ai_world_building():
     """AI-assisted world building endpoint"""
+    db = None
     try:
         current_user_id = int(get_jwt_identity())
         data = request.get_json()
@@ -624,7 +626,7 @@ def ai_world_building():
         logger.error(f"Error in AI world building: {e}")
         return jsonify({'error': 'AI world building failed'}), 500
     finally:
-        if 'db' in locals():
+        if db is not None:
             db.close()
 
 @bp.route('/memory/<int:campaign_id>', methods=['GET'])

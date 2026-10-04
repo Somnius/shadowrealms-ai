@@ -32,6 +32,7 @@ from services.moderation_audit import log_moderation_action, moderation_entry_ki
 from services.auth_security import check_password_policy, hash_password
 from routes.auth import _invites_locked, load_invites, save_invites
 from services.play_suspension import ALLOWED_REASON_CODES
+from services.request_validation import RequestValidationError
 
 logger = logging.getLogger(__name__)
 
@@ -1258,14 +1259,14 @@ _KEY_FIELDS = {'anthropic': 'anthropic_api_key', 'openai': 'openai_api_key', 'je
 
 
 def _clean_api_key(raw):
-    """None -> delete; '' -> leave unchanged (returns False); else the stripped key or ValueError."""
+    """None -> delete; '' -> leave unchanged (returns False); else the stripped key or RequestValidationError."""
     if raw is None:
         return None
     s = str(raw).strip()
     if s == '':
         return False
     if len(s) > 500 or any(c.isspace() for c in s):
-        raise ValueError('API key looks malformed (whitespace or too long)')
+        raise RequestValidationError('API key looks malformed (whitespace or too long)')
     return s
 
 
@@ -1291,38 +1292,38 @@ def ai_providers():
         ops = []
         try:
             if not isinstance(data, dict):
-                raise ValueError('expected a JSON object')
+                raise RequestValidationError('expected a JSON object')
             roles = data.get('roles') or {}
             keys = data.get('keys') or {}
             if not isinstance(roles, dict) or not isinstance(keys, dict):
-                raise ValueError('roles and keys must be objects')
+                raise RequestValidationError('roles and keys must be objects')
             for role, cfg in roles.items():
                 if not isinstance(cfg, dict):
-                    raise ValueError(f'role {role}: expected an object')
+                    raise RequestValidationError(f'role {role}: expected an object')
                 if role not in ai_roles.ROLES:
-                    raise ValueError(f'unknown AI role {role!r}')
+                    raise RequestValidationError(f'unknown AI role {role!r}')
                 prov, model = cfg.get('provider'), cfg.get('model')
                 if (prov is not None and not isinstance(prov, str)) or (model is not None and not isinstance(model, str)):
-                    raise ValueError(f'role {role}: provider and model must be strings')
+                    raise RequestValidationError(f'role {role}: provider and model must be strings')
                 if prov and prov.strip() and prov.strip() not in ai_roles.ALL_PROVIDERS:
-                    raise ValueError(f'unknown provider {prov.strip()!r}')
+                    raise RequestValidationError(f'unknown provider {prov.strip()!r}')
                 ops.append(lambda r=role, p=prov, m=model: ai_roles.set_role_config(r, p, m))
             for name, raw in keys.items():
                 if name not in _KEY_FIELDS:
-                    raise ValueError(f'unknown key {name!r}')
+                    raise RequestValidationError(f'unknown key {name!r}')
                 key = _clean_api_key(raw)
                 if key is not False:
                     ops.append(lambda n=_KEY_FIELDS[name], k=key: set_secret(n, k))
             if 'classifier_provider' in data:
                 v = str(data.get('classifier_provider') or 'auto').strip().lower()
                 if v not in classifier.PROVIDERS + ('auto',):
-                    raise ValueError(f'unknown classifier provider {v!r}')
+                    raise RequestValidationError(f'unknown classifier provider {v!r}')
                 ops.append(lambda v=v: set_app_setting(classifier.SETTING_PROVIDER, None if v == 'auto' else v))
             if 'jev_model' in data:
                 jm = str(data.get('jev_model') or '').strip() or None
                 ops.append(lambda jm=jm: set_app_setting(classifier.SETTING_JEV_MODEL, jm))
-        except ValueError as e:
-            return jsonify({'error': str(e)}), 400
+        except RequestValidationError as e:
+            return jsonify({'error': e.public_message}), 400
         for op in ops:
             op()
         actor = int(get_jwt_identity())
@@ -1368,7 +1369,10 @@ def classifier_test():
         return jsonify({'ok': True, 'provider': name, 'result': res,
                         'ms': int((_time.monotonic() - t0) * 1000)}), 200
     except Exception as e:  # noqa: BLE001
-        return jsonify({'ok': False, 'provider': name, 'detail': str(e)[:300],
+        # Exception text stays in the logs; the admin sees a fixed message.
+        logger.warning("Classifier test with %s failed: %s", name, e)
+        return jsonify({'ok': False, 'provider': name,
+                        'detail': 'Classifier test failed; see the backend logs for details.',
                         'ms': int((_time.monotonic() - t0) * 1000)}), 200
 
 
@@ -1425,7 +1429,8 @@ def list_lm_studio_models_admin():
         else:
             err = f'GET /v1/models: {r.status_code}'
     except Exception as e:
-        err = str(e)
+        logger.warning("LM Studio GET /v1/models failed: %s", e)
+        err = 'LM Studio is not reachable (see the backend logs for details)'
     try:
         r2 = req.get(f'{base}/api/v1/models', timeout=15, headers=hdrs)
         if r2.status_code == 200:

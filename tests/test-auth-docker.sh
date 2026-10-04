@@ -16,7 +16,6 @@
 #   ./test-auth-docker.sh                    # Run all tests
 #   ./test-auth-docker.sh coverage           # Run with coverage report
 #   ./test-auth-docker.sh specific LoginForm.test.tsx  # Run specific test
-#   ./test-auth-docker.sh custom             # Run custom test suite
 #
 # DEPENDENCIES:
 #   - Docker and Docker Compose must be installed and running
@@ -108,7 +107,7 @@ build_container() {
 }
 
 # Function to run different types of tests based on the first argument
-# $1 is the test type (all, coverage, watch, specific, custom)
+# $1 is the test type (all, coverage, watch, specific)
 # $2 is optional and used for specific test file names
 run_tests() {
     # Set local variable 'test_type' to first argument, default to "all" if not provided
@@ -142,15 +141,10 @@ run_tests() {
             # Run only the specified test file
             docker-compose run --rm frontend npm test -- $test_file
             ;;
-        "custom")
-            print_status "Running custom test suite..."
-            # Run our custom test runner script
-            docker-compose run --rm frontend node test-auth-system.js
-            ;;
         *)
             # Handle unknown test types
             print_error "Unknown test type: $test_type"
-            print_status "Available options: all, coverage, watch, specific, custom"
+            print_status "Available options: all, coverage, watch, specific"
             exit 1
             ;;
     esac
@@ -205,13 +199,11 @@ show_help() {
     echo "  coverage  - Run tests with coverage report"
     echo "  watch     - Run tests in watch mode"
     echo "  specific  - Run specific test file"
-    echo "  custom    - Run custom test suite"
     echo ""
     echo "Examples:"
     echo "  $0                                    # Run all tests"
     echo "  $0 coverage                          # Run with coverage"
     echo "  $0 specific LoginForm.test.tsx       # Run specific test"
-    echo "  $0 custom                            # Run custom suite"
     echo ""
     echo "Prerequisites:"
     echo "  - Docker and Docker Compose installed"

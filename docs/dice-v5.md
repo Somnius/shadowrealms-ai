@@ -27,7 +27,7 @@ V5 is only available for `game_system = vampire`. It's chosen when the campaign 
 - **Critical win**: at least one pair of 10s, and the roll wins.
 - **Messy critical**: a critical where at least one of the 10s is on a Hunger die.
 - **Bestial failure**: the roll fails and any Hunger die shows a 1.
-- **Willpower reroll**: after the roll, the roller may reroll **up to 3 normal dice**, once. Hunger dice can't be rerolled. The app doesn't mark the Willpower damage on the sheet.
+- **Willpower reroll**: after the roll, the roller may reroll **up to 3 normal dice**, once. Hunger dice can't be rerolled. It costs **1 Willpower**: when the roll has a character, the server marks **1 Superficial Willpower damage** on the sheet (`wod_meta.willpower`, not halved), in the same transaction as the reroll. If every box is already filled, one Superficial box turns Aggravated instead (core p. 126). **App ruling:** a track full of Aggravated damage has nothing left to spend, so the reroll is refused. Rolls without a character (NPC / storyteller) cost nothing.
 - **Rouse check**: roll one die. On **6+**, Hunger doesn't change; otherwise Hunger goes up by 1, to a maximum of 5. A failed Rouse at Hunger 5 sets `at_max_hunger`, meaning the ST should call for a hunger frenzy test.
 - **Room leniency** (`/ai dice-diff`): no die shows 1, and with 2+ dice at least one die is ≥ the floor. Bestial failures therefore can't happen. Reroll dice are 2–10.
 
@@ -68,6 +68,8 @@ The roll is stored in `dice_rolls`. `difficulty` holds the successes needed, `is
 ```
 
 `indices` are positions in `normal_dice` (0-based, 1–3 of them, no repeats). Only the user who made the roll can reroll it, and only once: a second try returns **409**. Only V5 `manual` rolls can be rerolled. The stored row is updated, and the response has the same shape as a roll, plus `rerolled: true`, `rerolled_indices` and `rerolled_from`. With `location_id` (it must be the room of the original roll, else **400**) the reroll is posted to chat like a roll; `speak_as` and `hidden` default to what the original roll was posted with.
+
+Willpower cost (`v5_dice.spend_willpower`): when the roll has a `character_id`, the character's track is read from `wod_meta.willpower` `{max, superficial, aggravated}`. If the sheet has no usable track, `max` is Composure + Resolve with no damage, and the new track is saved to `wod_meta.willpower`. The response adds `willpower_spent` (bool), `willpower_before` and `willpower_after` (the tracks, or `null` without a character), and `roll_result.willpower_cost` (`"superficial"`, or `"aggravated"` when a full track turned a box). The chat line says `· Willpower −1`. Errors: **409** `No Willpower left…` when the track is full of Aggravated damage (the body also has `willpower`), and **409** when the character has neither a Willpower track nor Composure and Resolve. Nothing is changed in either case.
 
 ### `POST /api/campaigns/:id/rouse`
 

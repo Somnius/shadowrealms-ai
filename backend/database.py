@@ -8,6 +8,7 @@ import sqlite3
 import psycopg2
 import psycopg2.extras
 import logging
+import sys
 from typing import Optional, Dict, Any
 from datetime import datetime
 import os
@@ -1667,7 +1668,7 @@ if __name__ == "__main__":
     print("=" * 50)
     if success:
         print("✅ All tests passed! Module is ready for integration.")
-        exit(0)
+        sys.exit(0)
     else:
         print("❌ Tests failed! Please fix issues before integration.")
-        exit(1)
+        sys.exit(1)

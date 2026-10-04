@@ -10,6 +10,8 @@ import {
   validatePassword,
   sanitizeName,
   sanitizeDescription,
+  htmlToText,
+  sanitizeRichHtml,
   validateChatMessage,
   RateLimiter,
   sanitizeSearchQuery,
@@ -111,8 +113,16 @@ describe('Security Utilities', () => {
       const input = 'Marcus<script>alert(1)</script>';
       const result = sanitizeName(input);
       expect(result).not.toContain('<script>');
-      // Parentheses are allowed punctuation in names
-      expect(result).toBe('Marcusalert(1)');
+      // Script content is dropped with the element
+      expect(result).toBe('Marcus');
+    });
+
+    it('never leaves a tag when tags are nested or split', () => {
+      for (const input of ['<<script>script>x', '<scr<script>ipt>Bad</script>', 'A<img src=x onerror=alert(1)>B']) {
+        const result = sanitizeName(input);
+        expect(result).not.toMatch(/[<>]/);
+      }
+      expect(sanitizeName('A<img src=x onerror=alert(1)>B')).toBe('AB');
     });
     
     it('should allow basic punctuation', () => {
@@ -162,6 +172,54 @@ describe('Security Utilities', () => {
     });
   });
   
+  describe('htmlToText', () => {
+    it('returns the text of markup without any tags', () => {
+      expect(htmlToText('<b>Bold</b> and <i>italic</i>')).toBe('Bold and italic');
+      expect(htmlToText('')).toBe('');
+      expect(htmlToText(null)).toBe('');
+    });
+
+    it('drops script/style/iframe contents and handles tricky inputs', () => {
+      expect(htmlToText('a<script>alert(1)</script>b<style>p{}</style>c')).toBe('abc');
+      expect(htmlToText('<scr<script>ipt>alert(1)</script>')).not.toMatch(/<script/i);
+      expect(htmlToText('<!-- <!-- -->x-->')).not.toContain('<!--');
+      expect(htmlToText('1 < 2 & 3 > 2')).toBe('1 < 2 & 3 > 2');
+    });
+
+    it('does not run scripts or handlers while parsing', () => {
+      window.__xssProbe = false;
+      htmlToText('<img src=x onerror="window.__xssProbe=true"><script>window.__xssProbe=true</script>');
+      expect(window.__xssProbe).toBe(false);
+      delete window.__xssProbe;
+    });
+  });
+
+  describe('sanitizeRichHtml', () => {
+    it('keeps safe formatting, links and images', () => {
+      const out = sanitizeRichHtml(
+        '<h2 style="color: red">T</h2><a href="https://example.com" target="_blank" rel="noopener noreferrer">l</a><img src="https://x/y.png" alt="b">'
+      );
+      expect(out).toContain('<h2 style="color: red">T</h2>');
+      expect(out).toContain('href="https://example.com"');
+      expect(out).toContain('target="_blank"');
+      expect(out).toContain('<img');
+    });
+
+    it('removes scripts, handlers, javascript: URLs, comments and forms', () => {
+      const out = sanitizeRichHtml(
+        '<p onclick="x()">a</p><script>bad()</script><a href="javascript:alert(1)">j</a>'
+        + '<!-- note --><iframe src="https://e"></iframe><form><input></form><img src=x onerror=alert(1)>'
+      );
+      expect(out).not.toMatch(/onclick|onerror|<script|javascript:|<!--|<iframe|<form|<input/i);
+      expect(out).toContain('<p>a</p>');
+    });
+
+    it('returns an empty string for empty input', () => {
+      expect(sanitizeRichHtml('')).toBe('');
+      expect(sanitizeRichHtml(null)).toBe('');
+    });
+  });
+
   describe('validateChatMessage', () => {
     it('should accept valid messages', () => {
       const result = validateChatMessage('Hello, world!');

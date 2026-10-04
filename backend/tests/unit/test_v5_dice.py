@@ -235,3 +235,63 @@ def test_three_tens_one_hunger_is_messy():
     # same dice failing a high difficulty: not a critical, not messy
     r = resolve_v5([10, 10], [10], 6)
     assert r["outcome"] == "fail" and not r["is_critical"] and not r["is_messy_critical"]
+
+
+# --- Willpower spend (reroll cost) ----------------------------------------------------------
+
+from services.v5_dice import NoWillpowerLeft, spend_willpower, willpower_track  # noqa: E402
+
+
+def test_spend_marks_one_superficial():
+    out = spend_willpower({"max": 5, "superficial": 1, "aggravated": 1})
+    assert out["before"] == {"max": 5, "superficial": 1, "aggravated": 1}
+    assert out["after"] == {"max": 5, "superficial": 2, "aggravated": 1}
+    assert out["damage"] == "superficial"
+
+
+def test_spend_on_full_track_turns_a_superficial_box_aggravated():
+    out = spend_willpower({"max": 4, "superficial": 3, "aggravated": 1})
+    assert out["after"] == {"max": 4, "superficial": 2, "aggravated": 2}
+    assert out["damage"] == "aggravated"
+    out = spend_willpower({"max": 4, "superficial": 4, "aggravated": 0})
+    assert out["after"] == {"max": 4, "superficial": 3, "aggravated": 1}
+
+
+def test_spend_on_all_aggravated_track_is_refused():
+    with pytest.raises(NoWillpowerLeft):
+        spend_willpower({"max": 3, "superficial": 0, "aggravated": 3})
+
+
+def test_spend_does_not_mutate_input():
+    track = {"max": 5, "superficial": 0, "aggravated": 0}
+    spend_willpower(track)
+    assert track == {"max": 5, "superficial": 0, "aggravated": 0}
+
+
+def test_willpower_track_from_sheet_or_attributes():
+    assert willpower_track({"willpower": {"max": 6, "superficial": 2, "aggravated": 1}}) == {
+        "max": 6, "superficial": 2, "aggravated": 1}
+    # missing damage counts as 0; strings and floats from older sheets are accepted
+    assert willpower_track({"willpower": {"max": "5", "superficial": 1.0}}) == {
+        "max": 5, "superficial": 1, "aggravated": 0}
+    # out-of-range damage is clamped so superficial + aggravated <= max
+    assert willpower_track({"willpower": {"max": 3, "superficial": 9, "aggravated": 2}}) == {
+        "max": 3, "superficial": 1, "aggravated": 2}
+    # no track: Composure + Resolve, undamaged
+    assert willpower_track({}, {"composure": 2, "resolve": 3}) == {
+        "max": 5, "superficial": 0, "aggravated": 0}
+    assert willpower_track({"willpower": {"max": 0}}, {"composure": 1, "resolve": 1})["max"] == 2
+    assert willpower_track({}, {}) is None
+    assert willpower_track(None, None) is None
+    assert willpower_track({"willpower": {"max": True}}, {"composure": True, "resolve": 2}) is None
+
+
+def test_reroll_chat_line_shows_the_willpower_cost():
+    from services.dice_service import DiceService
+
+    base = {"normal_dice": [6, 2], "hunger_dice": [], "difficulty": 1, "successes": 1,
+            "margin": 0, "outcome": "win", "rerolled": True, "rerolled_indices": [1]}
+    assert "Willpower −1" in DiceService.format_v5_roll_for_chat({**base, "willpower_cost": "superficial"})
+    line = DiceService.format_v5_roll_for_chat({**base, "willpower_cost": "aggravated"})
+    assert "turned Aggravated" in line
+    assert "Willpower −1" not in DiceService.format_v5_roll_for_chat(base)

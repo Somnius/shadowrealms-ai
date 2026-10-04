@@ -186,15 +186,14 @@ class SmartBookImporter:
             
             # Get or create collection
             collection = get_rag_collection(self.client, self.collection_name)
-            # Precomputed vectors in the JSON were made with an older embedder; let the
-            # collection's embedder embed the text instead so everything shares one space.
-            has_embeddings = False
-            
+            # Precomputed vectors in the JSON (if any) were made with an older embedder, so
+            # they are ignored: the collection's embedder embeds the text and everything
+            # shares one space.
+
             # Prepare data for batch insert
             ids = []
             documents = []
             metadatas = []
-            embeddings = [] if has_embeddings else None
             
             for i, chunk in enumerate(chunks):
                 # Use index to ensure uniqueness even if chunk_id has duplicates
@@ -214,9 +213,6 @@ class SmartBookImporter:
                     'word_count': chunk['word_count']
                 }
                 metadatas.append(chunk_metadata)
-                
-                if has_embeddings:
-                    embeddings.append(chunk['embedding'])
             
             # Insert in batches
             total_inserted = 0
@@ -224,21 +220,11 @@ class SmartBookImporter:
                 batch_ids = ids[i:i+batch_size]
                 batch_docs = documents[i:i+batch_size]
                 batch_meta = metadatas[i:i+batch_size]
-                
-                if has_embeddings:
-                    batch_emb = embeddings[i:i+batch_size]
-                    collection.add(
-                        ids=batch_ids,
-                        documents=batch_docs,
-                        metadatas=batch_meta,
-                        embeddings=batch_emb
-                    )
-                else:
-                    collection.add(
-                        ids=batch_ids,
-                        documents=batch_docs,
-                        metadatas=batch_meta
-                    )
+                collection.add(
+                    ids=batch_ids,
+                    documents=batch_docs,
+                    metadatas=batch_meta
+                )
                 
                 total_inserted += len(batch_ids)
                 print(f"   Inserted {total_inserted}/{len(ids)} chunks", end='\r')
