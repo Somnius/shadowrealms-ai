@@ -125,3 +125,31 @@ def test_install_log_sanitizer_covers_every_logger(restore_factory):
     assert lines[1] == "failed on a\\nb"
     # The traceback the formatter appends keeps its own line breaks.
     assert lines[2].startswith("Traceback")
+
+
+def test_traceback_message_cannot_start_a_new_line():
+    import io
+    import logging as _logging
+    from services.log_safety import sanitize_record
+
+    stream = io.StringIO()
+    handler = _logging.StreamHandler(stream)
+    handler.setFormatter(_logging.Formatter("%(levelname)s %(message)s"))
+    log = _logging.getLogger("test_log_safety_tb")
+    log.propagate = False
+    log.addHandler(handler)
+    old = _logging.getLogRecordFactory()
+    _logging.setLogRecordFactory(lambda *a, **k: sanitize_record(old(*a, **k)))
+    try:
+        try:
+            raise ValueError("bad\nERROR forged line\x1b[0m")
+        except ValueError:
+            log.exception("failed %s", "x")
+    finally:
+        _logging.setLogRecordFactory(old)
+        log.removeHandler(handler)
+    out = stream.getvalue()
+    assert "Traceback (most recent call last):" in out
+    assert "\nERROR forged line" not in out
+    assert "ValueError: bad\\nERROR forged line\\x1b[0m" in out
+    assert out.count("\n") > 3  # frame lines keep their line breaks

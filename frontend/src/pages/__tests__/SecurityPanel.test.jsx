@@ -217,7 +217,7 @@ test('the Unlock button on a lockout row fills in the unlock form', async () => 
   const user = setupUser();
   mount();
   await flush();
-  await user.click(within(screen.getAllByTestId('auth-event-row')[0]).getByRole('button', { name: 'Unlock…' }));
+  await user.click(within(screen.getAllByTestId('auth-event-row')[0]).getByRole('button', { name: 'Unlock mallory / 203.0.113.7' }));
   const form = screen.getByTestId('unlock-form');
   expect(within(form).getByLabelText('Username')).toHaveValue('mallory');
   expect(within(form).getByLabelText(/^IP address/)).toHaveValue('203.0.113.7');
