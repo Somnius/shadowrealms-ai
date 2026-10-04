@@ -1,4 +1,3 @@
-import React from 'react';
 import { createEmptyMeritRow } from '../../characterSheet/meritsFlaws';
 import { t } from '../../i18n';
 

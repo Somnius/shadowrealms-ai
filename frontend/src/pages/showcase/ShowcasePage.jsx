@@ -2,7 +2,7 @@
  * Public theme preview (/showcase): a guided tour of the design system with live components and
  * sample data only (no API calls), so it works signed out. Lazy-loaded from app/App.jsx.
  */
-import React, { useEffect, useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router';
 import { Button, Card, Glyph, useAmbient, useAtmosphere } from '../../design';
 import { useT } from '../../i18n';

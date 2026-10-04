@@ -1,4 +1,3 @@
-import React from 'react';
 import { render, screen, waitFor } from '@testing-library/react';
 import setupUser from '../../../design/testing/setupUser';
 import { DesignProvider } from '../../../design';

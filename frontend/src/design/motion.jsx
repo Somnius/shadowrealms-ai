@@ -7,7 +7,7 @@
  *   The OS setting always wins: 'full' only means "don't add a reduction on top of the OS".
  *   A manual choice is remembered in localStorage (best effort).
  */
-import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { MotionConfig } from 'motion/react';
 import './components/forms.css'; // MotionToggle reuses the Switch styles
 
@@ -22,7 +22,7 @@ function readStored() {
   try {
     const v = window.localStorage.getItem(STORAGE_KEY);
     return v === 'reduced' || v === 'full' || v === 'system' ? v : null;
-  } catch (e) {
+  } catch {
     return null;
   }
 }
@@ -30,7 +30,7 @@ function readStored() {
 function writeStored(value, key = STORAGE_KEY) {
   try {
     window.localStorage.setItem(key, value);
-  } catch (e) {
+  } catch {
     /* private mode etc. */
   }
 }
@@ -40,7 +40,7 @@ function readAtmosphere() {
   try {
     const v = window.localStorage.getItem(ATMOSPHERE_KEY);
     if (ATMOSPHERE_LEVELS.includes(v)) return v;
-  } catch (e) {
+  } catch {
     /* ignore */
   }
   return readStored() === 'reduced' ? 'off' : 'full';

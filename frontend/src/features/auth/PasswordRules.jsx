@@ -1,4 +1,3 @@
-import React from 'react';
 import { Glyph } from '../../design';
 import { t } from '../../i18n';
 import './auth.css';

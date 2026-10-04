@@ -11,7 +11,7 @@ export default function formatWhen(value, timeZone) {
   if (timeZone) opts.timeZone = timeZone;
   try {
     return new Intl.DateTimeFormat(getLocale(), opts).format(d);
-  } catch (e) {
+  } catch {
     return d.toLocaleString();
   }
 }

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { render, screen } from '@testing-library/react';
 import setupUser from '../testing/setupUser';
 import Tabs from '../components/Tabs';

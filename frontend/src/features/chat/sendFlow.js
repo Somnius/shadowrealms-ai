@@ -51,7 +51,7 @@ export function makeAnimationId() {
 
 /** Strip BOM; bare `/ai` → `/ai help` for admins. */
 export function normalizeInput(raw, isAdmin) {
-  const s = String(raw == null ? '' : raw).replace(/^﻿+/, '').trim();
+  const s = String(raw == null ? '' : raw).replace(/^\uFEFF+/, '').trim();
   if (!s) return s;
   if (isAdmin && /^\s*\/ai\s*$/i.test(s)) return '/ai help';
   return s;

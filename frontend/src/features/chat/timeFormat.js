@@ -8,7 +8,7 @@ function fmt(ms, timeZone, opts) {
   if (timeZone) o.timeZone = timeZone;
   try {
     return new Intl.DateTimeFormat(getLocale(), o).format(new Date(ms));
-  } catch (e) {
+  } catch {
     return new Date(ms).toLocaleString();
   }
 }

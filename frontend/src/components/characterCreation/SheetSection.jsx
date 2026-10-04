@@ -1,4 +1,3 @@
-import React from 'react';
 
 export default function SheetSection({ title, subtitle, children, accent }) {
   return (

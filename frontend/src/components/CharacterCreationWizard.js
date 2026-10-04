@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { GothicBox } from './GothicDecorations';
 import DotTrack from './characterCreation/DotTrack';
 import SheetSection from './characterCreation/SheetSection';
@@ -416,7 +416,7 @@ export default function CharacterCreationWizard({
       }
       showSuccess?.(t('wizard:created', 'Character forged. Here is the chronicle: you can play right away.'));
       onDone?.(body, cidNum);
-    } catch (e) {
+    } catch {
       showError?.(t('wizard:error.network', 'Network error while creating character.'));
     } finally {
       setSubmitting(false);

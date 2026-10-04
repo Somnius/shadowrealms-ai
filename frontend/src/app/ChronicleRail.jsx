@@ -1,4 +1,3 @@
-import React from 'react';
 import { NavLink, useLocation } from 'react-router';
 import { Glyph, Tooltip } from '../design';
 import { useChronicles } from './ChroniclesContext';

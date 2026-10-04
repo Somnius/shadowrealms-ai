@@ -68,7 +68,7 @@ export function holdSession(promise) {
 function storedToken() {
   try {
     return window.localStorage.getItem(TOKEN_KEY);
-  } catch (e) {
+  } catch {
     return null;
   }
 }
@@ -100,7 +100,7 @@ async function peekJson(res) {
   try {
     const r = typeof res.clone === 'function' ? res.clone() : res;
     return await r.json();
-  } catch (e) {
+  } catch {
     return null;
   }
 }
@@ -153,19 +153,19 @@ async function doRefresh(sentToken) {
       headers: { 'Content-Type': 'application/json' },
       body: '{}',
     });
-  } catch (e) {
+  } catch {
     return { fatal: false };
   }
   let data = null;
   try {
     data = await res.json();
-  } catch (e) {
+  } catch {
     data = null;
   }
   if (res.ok && data && data.access_token) {
     try {
       window.localStorage.setItem(TOKEN_KEY, data.access_token);
-    } catch (e) {
+    } catch {
       /* private mode */
     }
     return { token: data.access_token, user: data.user || null };
@@ -274,7 +274,7 @@ export async function apiFetch(token, path, { method = 'GET', body, headers, sig
   let data = null;
   try {
     data = await res.json();
-  } catch (e) {
+  } catch {
     data = null;
   }
   data = data == null ? {} : data;

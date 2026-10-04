@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Button, Checkbox, Input, Modal, Spinner, Textarea } from '../../design';
 import RollEditionFields, { RollHelp } from '../../components/dice/RollEditionFields';
 import { describeRollRow } from '../../dice/historyRow';

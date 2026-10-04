@@ -1,4 +1,3 @@
-import React from 'react';
 import { DieFace, Glyph } from '../../design';
 import { classifyClassicDie } from '../../dice/classicDiceDisplay';
 import { classifyV5Die } from '../../dice/v5DiceDisplay';

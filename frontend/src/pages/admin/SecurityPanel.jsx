@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Badge, Button, EmptyState, Input, Panel, Select } from '../../design';
 import { api } from '../../utils/api';
 import { formatNumber, t } from '../../i18n';
@@ -106,7 +106,7 @@ function UnlockForm({ token, showSuccess, showError, usernameRef, initial = null
         : t('admin:security.unlock.nothing', 'Nothing was locked for that username or address.');
       setResult({ ok: n > 0, text });
       showSuccess(t('admin:security.unlock.done', 'Unlock applied.'));
-    } catch (err) {
+    } catch {
       setError(t('admin:security.unlock.failed', 'Unlock failed'));
       showError(t('admin:security.unlock.failed', 'Unlock failed'));
     } finally {
@@ -186,7 +186,7 @@ function LoginAudit({ token, displayTimezone, onUnlockPrefill }) {
       }
       setRows(d.events);
       setHasMore(!!d.has_more);
-    } catch (e) {
+    } catch {
       if (!current()) return;
       setRows([]);
       setHasMore(false);

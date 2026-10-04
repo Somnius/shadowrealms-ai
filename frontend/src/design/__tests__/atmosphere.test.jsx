@@ -2,7 +2,6 @@
  * Phase 4 atmosphere layer: the per-user Atmosphere setting (full / subtle / off), and that
  * reduced motion renders the static fallbacks instead of animations.
  */
-import React from 'react';
 import { render, screen, act } from '@testing-library/react';
 import { DesignProvider, useAtmosphere, useMotionPreference } from '../motion';
 import { CandleHalo, ChronicleSigil, CrackOverlay, RollFx, RouteTransition, rollMood } from '../atmosphere/Ambience';

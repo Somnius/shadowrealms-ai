@@ -1,4 +1,3 @@
-import React from 'react';
 import './glyphs.css';
 import { t } from '../../i18n';
 

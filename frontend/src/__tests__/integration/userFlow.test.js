@@ -2,7 +2,6 @@
  * Integration tests for the main user flows through the v0.9 app shell (router + providers),
  * with fetch mocked per route.
  */
-import React from 'react';
 import { render, screen, waitFor, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router';
 import setupUser from '../../design/testing/setupUser';

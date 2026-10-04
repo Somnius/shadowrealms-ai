@@ -1,4 +1,3 @@
-import React from 'react';
 import { MENTAL, PHYSICAL, SOCIAL } from '../../characterSheet/constants';
 import { attributeBase } from '../../characterSheet/validation';
 import DotTrack from './DotTrack';

@@ -1,4 +1,4 @@
-import React, { forwardRef } from 'react';
+import { forwardRef } from 'react';
 import Glyph from '../glyphs/Glyph';
 import Spinner from './Spinner';
 import Tooltip from './Tooltip';
@@ -86,7 +86,6 @@ export const IconButton = forwardRef(function IconButton(
   ref
 ) {
   if (process.env.NODE_ENV !== 'production' && !label) {
-    // eslint-disable-next-line no-console
     console.warn('[design] IconButton needs a `label` for screen readers');
   }
   const button = (

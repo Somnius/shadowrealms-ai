@@ -1,4 +1,3 @@
-import React from 'react';
 import { render, screen } from '@testing-library/react';
 import { analyzeV5, analyzeClassic } from '../atmosphere/diceAnalysis';
 import DiceRollViz from '../atmosphere/DiceRollViz';

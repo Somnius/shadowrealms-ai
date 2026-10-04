@@ -39,7 +39,7 @@ export function getTimezoneSelectOptions() {
     if (typeof Intl !== 'undefined' && typeof Intl.supportedValuesOf === 'function') {
       zones = Intl.supportedValuesOf('timeZone');
     }
-  } catch (_) {
+  } catch {
     zones = null;
   }
   if (!zones || !zones.length) {

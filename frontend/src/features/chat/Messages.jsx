@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Avatar, Badge, DieFace, Glyph, RollFx, rollMood } from '../../design';
 import { overlayFromMarker } from '../../dice/diceMarker';
 import { classicOutcome, classifyClassicDie } from '../../dice/classicDiceDisplay';

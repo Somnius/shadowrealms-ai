@@ -47,7 +47,7 @@ function parseMarker(msg) {
     if (!obj || typeof obj !== 'object') return null;
     if (!obj.animation_id) obj.animation_id = diceAnimationId(msg);
     return obj;
-  } catch (e) {
+  } catch {
     return null;
   }
 }

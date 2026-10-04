@@ -1,4 +1,3 @@
-import React from 'react';
 import { Badge } from '../../design';
 import { classicOutcome } from '../../dice/classicDiceDisplay';
 import { v5Badges } from '../../dice/v5DiceDisplay';

@@ -73,7 +73,7 @@ export async function copyToClipboard(text) {
       await navigator.clipboard.writeText(text);
       return true;
     }
-  } catch (e) {
+  } catch {
     /* fall through to the textarea fallback */
   }
   try {
@@ -87,7 +87,7 @@ export async function copyToClipboard(text) {
     const ok = typeof document.execCommand === 'function' && document.execCommand('copy');
     document.body.removeChild(ta);
     return !!ok;
-  } catch (e) {
+  } catch {
     return false;
   }
 }

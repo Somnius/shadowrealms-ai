@@ -2,7 +2,7 @@
  * Developer style guide for the design system, mounted at /showcase/design (lazy). The public,
  * translated tour of the same parts is the theme preview at /showcase (src/pages/showcase).
  */
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Link } from 'react-router';
 import {
   DesignProvider,
@@ -230,7 +230,7 @@ function Components() {
       </Modal>
       <Drawer open={drawer} onClose={() => setDrawer(false)} title="Rooms">
         <EmptyState glyph="room-haven" title="No rooms yet" action={<Button variant="primary">Create a room</Button>}>
-          The Storyteller hasn't opened any locations.
+          The Storyteller hasn&apos;t opened any locations.
         </EmptyState>
       </Drawer>
     </div>

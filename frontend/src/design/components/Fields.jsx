@@ -1,4 +1,4 @@
-import React, { forwardRef, useId } from 'react';
+import { forwardRef, useId } from 'react';
 import Glyph from '../glyphs/Glyph';
 import { cx } from './internal';
 import './forms.css';

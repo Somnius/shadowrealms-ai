@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { GothicBox } from '../GothicDecorations';
 import DotTrack from './DotTrack';
 import MeritFlawRows from './MeritFlawRows';
@@ -270,7 +270,7 @@ export default function V5CharacterCreationWizard({
       }
       showSuccess?.(t('wizard:v5.created', 'Character embraced. Here is the chronicle: you can play right away.'));
       onDone?.(body, parseInt(campaignId, 10));
-    } catch (e) {
+    } catch {
       showError?.(t('wizard:error.network', 'Network error while creating character.'));
     } finally {
       setSubmitting(false);

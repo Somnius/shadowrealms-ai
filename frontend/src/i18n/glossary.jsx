@@ -6,7 +6,6 @@
  *   glossary:term.<id>  the English term (identical in el)
  *   glossary:hint.<id>  what it means (Greek in el)
  */
-import React from 'react';
 import { t } from './index';
 
 /** The term itself (always English). */

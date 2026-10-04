@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import setupUser from '../testing/setupUser';
 import DotTrack from '../components/DotTrack';

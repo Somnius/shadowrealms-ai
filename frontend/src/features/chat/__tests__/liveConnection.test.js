@@ -23,8 +23,6 @@ class FakeES {
   }
 }
 
-const flush = () => new Promise((r) => setTimeout(r, 0));
-
 function make(overrides = {}) {
   FakeES.instances = [];
   const modes = [];

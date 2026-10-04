@@ -1,4 +1,3 @@
-import React from 'react';
 import { render, screen } from '@testing-library/react';
 import Glyph, { AnimatedCandle } from '../glyphs/Glyph';
 import DieFace from '../glyphs/DieFace';

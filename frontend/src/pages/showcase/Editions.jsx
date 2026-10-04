@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Badge, Button, Card, ChronicleSigil, DiceRollViz, DotTrack, Glyph, RollFx, Select, useReducedMotionPref } from '../../design';
 import DiceRollOverlay from '../../components/dice/DiceRollOverlay';
 import OutcomeBadges from '../../components/dice/OutcomeBadges';
@@ -63,7 +63,6 @@ function useDemoOverlay() {
     });
     timers.current = [];
   };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => clear, []);
   const play = (roll) => {
     clear();

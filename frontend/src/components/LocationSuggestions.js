@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { t } from '../i18n';
 import { AiSigil, Glyph } from '../design';
 import { authFetch } from '../app/http';

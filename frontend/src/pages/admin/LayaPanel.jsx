@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Badge, Button, EmptyState, Kbd, Panel, Select } from '../../design';
 import { t } from '../../i18n';
 import { layaApi } from './layaApi';
@@ -327,7 +327,7 @@ export default function LayaPanel({ token, showSuccess, showError }) {
       }
       setData(d);
       setSelected((s) => (keepSelection ? Math.min(s, Math.max(0, (d.items || []).length - 1)) : 0));
-    } catch (e) {
+    } catch {
       fail(t('laya:error.load', 'Could not load messages'));
     }
   }, [token, filters, page, fail]);
@@ -338,7 +338,7 @@ export default function LayaPanel({ token, showSuccess, showError }) {
       const d = await r.json().catch(() => null);
       if (r.ok && d) setReportData(d);
       return d;
-    } catch (e) {
+    } catch {
       return null;
     }
   }, [token]);
@@ -390,7 +390,7 @@ export default function LayaPanel({ token, showSuccess, showError }) {
       // In the "unlabelled" view the saved row drops out, so the same index is the next message.
       if (filters.status !== 'unlabelled') setSelected((s) => Math.min(s + 1, items.length - 1));
       await load(true);
-    } catch (e) {
+    } catch {
       fail(t('laya:error.save', 'Could not save the label'));
     } finally {
       setSaving(false);
@@ -406,7 +406,7 @@ export default function LayaPanel({ token, showSuccess, showError }) {
         return;
       }
       await load(true);
-    } catch (e) {
+    } catch {
       fail(t('laya:error.clear', 'Could not clear the label'));
     }
   };
@@ -428,7 +428,7 @@ export default function LayaPanel({ token, showSuccess, showError }) {
       } else {
         fail(d.error || t('laya:eval.failed', 'Could not start the evaluation'));
       }
-    } catch (e) {
+    } catch {
       fail(t('laya:eval.failed', 'Could not start the evaluation'));
     } finally {
       setStarting(false);
