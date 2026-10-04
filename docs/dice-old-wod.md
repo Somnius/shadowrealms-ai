@@ -16,11 +16,11 @@ Every campaign has `rules_edition`: `classic` (the default, and what every campa
 | API wrapper | `backend/services/dice_service.py`: `roll_d10_pool` delegates to `wod_dice.roll_classic` |
 | Roll API + access control | `backend/routes/dice.py`: `manual_roll`, `contested_roll`, `ai_roll` |
 | `/ai roll` and `/ai roll-hidden` (admin only) | `backend/services/ai_slash_commands.py` |
-| Player **Roll dice** UI (sidebar) | `frontend/src/SimpleApp.js` (posts to `POST /api/campaigns/:id/roll`) |
+| Player **Roll dice** UI (play view) | `frontend/src/features/dice/` (`useDiceActions.js` posts to `POST /api/campaigns/:id/roll`, `DiceDialogs.jsx`) and `frontend/src/components/dice/` (dice faces, roll overlay, edition fields) |
 | Chat rows for dice | `backend/routes/messages.py`: `ai_message_kind` values `dice_animation`, `dice_roll`, `dice_animation_hidden`, `dice_roll_hidden` |
 | Unit tests | `backend/tests/unit/test_wod_dice.py` |
 
-Administrative `/ai` commands are restricted to site admins in `POST /api/ai/slash` (`backend/routes/ai.py`). Hidden sidebar rolls are available to admin, helper or the campaign owner. All campaign members (and site admins) can use **Roll dice**.
+Administrative `/ai` commands are restricted to site admins in `POST /api/ai/slash` (`backend/routes/ai.py`). Hidden rolls are available to admin, helper or the campaign owner. All campaign members (and site admins) can use **Roll dice**.
 
 ## Core mechanics (Vampire: The Masquerade Revised)
 
