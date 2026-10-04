@@ -97,7 +97,7 @@ docker compose --profile dev run --rm --no-deps frontend npm run audit
 
 Review `npm audit` output; upgrade or replace packages with confirmed fixes.
 
-The frontend moved from Create React App to Vite, which removed 67 of the 69 `npm audit --omit=dev` findings (react-scripts was a runtime dependency, so its build tooling counted). The 2 left are react-router 6 (fixed in 7, a separate upgrade); the dev-only findings are `braces` under Jest and Tailwind, build and test tooling that never ships to the browser.
+The frontend moved from Create React App to Vite, which removed 67 of the 69 `npm audit --omit=dev` findings (react-scripts was a runtime dependency, so its build tooling counted). The 2 left were react-router 6, fixed by moving to react-router 7, so `npm audit --omit=dev` is at 0. The full `npm audit` still lists 5 dev-only findings, all `braces` (stack exhaustion on crafted glob patterns) under Tailwind 3; there is no fixed `braces` release and only Tailwind 4 drops it. Tailwind runs at build time on our own CSS and never ships to the browser.
 
 ### pip (backend)
 
