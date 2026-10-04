@@ -137,9 +137,26 @@ For development, `docker compose --profile dev up -d frontend` starts the live-r
 - A Storyteller reply gets 45 seconds per model and 55 seconds in total before it falls back (`STORYTELLER_ATTEMPT_TIMEOUT`, `STORYTELLER_TIME_BUDGET`).
 - More in the wiki's [AI Models](https://github.com/Somnius/shadowrealms-ai/wiki/AI-Models) page and [docs/AI_SYSTEMS.md](docs/AI_SYSTEMS.md).
 
+## Tech stack
+
+| | |
+|---|---|
+| AI models | Llama-Krikri 8B for the Greek Storyteller and any model in [LM Studio](https://lmstudio.ai) for English; Llama 3.2 3B on [Ollama](https://ollama.com) for utility calls; bge-m3 embeddings; **Laya**, our own fine-tuned mmBERT chat classifier on ONNX Runtime (CPU); optional Anthropic / OpenAI / Typesafe Jev with an admin-set key |
+| Memory and rules search | RAG on ChromaDB 1.5.9 with bge-m3 |
+| Backend | Python 3.12, Flask 3.1 on gunicorn 26, PostgreSQL 16, Redis 7, server-sent events |
+| Frontend | React 18, Vite 8, react-router 7, motion, i18next (English and Greek), DOMPurify, d3, own SVG design system |
+| Infrastructure | Docker Compose, nginx with a strict CSP, NVIDIA container runtime for GPU stats |
+| Quality and security | GitHub Actions (pytest, Jest, ESLint, schema checks), CodeQL, Dependabot, branch protection |
+| Built with | [Cursor AI](https://cursor.sh), [OpenCode](https://opencode.ai), [Claude Code](https://claude.com/claude-code) with Claude Opus 5.5 and Claude Fable 5.1 |
+
+The full list with versions, how Laya was trained, and how each release was built and reviewed: [docs/TECH_STACK.md](docs/TECH_STACK.md).
+
+---
+
 ## Documentation
 
 - [docs/README.md](docs/README.md): index of everything in `docs/`
+- [docs/TECH_STACK.md](docs/TECH_STACK.md): the AI models, technologies and tools used
 - Wiki: [Installation](https://github.com/Somnius/shadowrealms-ai/wiki/Installation), [Configuration](https://github.com/Somnius/shadowrealms-ai/wiki/Configuration), [Rules Editions](https://github.com/Somnius/shadowrealms-ai/wiki/Rules-Editions), [AI Models](https://github.com/Somnius/shadowrealms-ai/wiki/AI-Models), [Architecture](https://github.com/Somnius/shadowrealms-ai/wiki/Architecture), [Security](https://github.com/Somnius/shadowrealms-ai/wiki/Security), [Troubleshooting](https://github.com/Somnius/shadowrealms-ai/wiki/Troubleshooting)
 - [docs/CHANGELOG.md](docs/CHANGELOG.md): every release
 - [docs/ROADMAP_v0.10.md](docs/ROADMAP_v0.10.md): the plan from v0.9.2 to v0.10
@@ -162,7 +179,7 @@ MIT, see [LICENSE](LICENSE).
 ## Credits
 
 - Made with ❤️ for tabletop RPG games by **Lefteris Iliadis** ([Somnius](https://github.com/Somnius), @SomniusX).
-- Built with the help of AI coding tools: [Cursor AI](https://cursor.sh), [OpenCode](https://opencode.ai), and [Claude Code](https://claude.com/claude-code) with Claude Opus 5.5 and Claude Fable 5.1.
+- Built with the help of AI coding tools: [Cursor AI](https://cursor.sh), [OpenCode](https://opencode.ai), and [Claude Code](https://claude.com/claude-code) with Claude Opus 5.5 and Claude Fable 5.1 (see [Tech stack](#tech-stack)).
 - Greek Storyteller model: Llama-Krikri by ILSP. Embeddings: bge-m3 by BAAI.
 
 ## Disclaimer
