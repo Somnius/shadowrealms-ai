@@ -90,7 +90,7 @@ def main():
                 metadatas = []
                 
                 for i, chunk in enumerate(batch_chunks):
-                    chunk_id = f"{metadata['filename']}_{campaign_id}_{batch_start + i}"
+                    chunk_id = f"{metadata['filename']}_0_{batch_start + i}"
                     ids.append(chunk_id)
                     documents.append(chunk['text'])
                     
@@ -100,6 +100,7 @@ def main():
                         'filename': metadata['filename'],
                         'system': metadata['system'],
                         'category': metadata['category'],
+                        'rules_edition': 'classic',  # Revised core books
                         'page_number': chunk['page_number'],
                         'chunk_id': chunk['chunk_id'],
                         'word_count': chunk['word_count']

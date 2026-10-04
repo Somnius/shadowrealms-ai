@@ -95,7 +95,7 @@ class OOCMonitor:
             conn = get_db()
             cursor = conn.cursor()
             cursor.execute("""
-                SELECT name, description, game_system
+                SELECT name, description, game_system, rules_edition
                 FROM campaigns
                 WHERE id = %s
             """, (campaign_id,))
@@ -107,11 +107,14 @@ class OOCMonitor:
             campaign_name = campaign['name']
             campaign_desc = campaign['description']
             game_system = campaign['game_system']
+            from services.rules_edition import edition_of, rules_edition_label
+
+            rules_label = rules_edition_label(edition_of(campaign))
             
             # Build AI prompt to detect IC content
-            prompt = f"""You are monitoring an OOC (Out of Character) chat room for the campaign "{campaign_name}" ({game_system} system).
+            prompt = f"""You are monitoring an OOC (Out of Character) chat room for the campaign "{campaign_name}" ({game_system} system, {rules_label} rules).
 
-The OOC room is for players to discuss the game as themselves, ask questions, coordinate schedules, and chat about non-game topics.
+The OOC room is for players to discuss the game as themselves, ask questions, coordinate schedules, and chat about non-game topics. Questions or talk about the {rules_label} rules and dice (pools, difficulties, successes, Hunger, Willpower, etc.) are OOC and allowed.
 
 IN-CHARACTER content (roleplay) should NOT be in the OOC room and is a violation.
 

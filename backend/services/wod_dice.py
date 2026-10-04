@@ -1,22 +1,38 @@
 """
 Classic / Revised Storyteller (Old World of Darkness) d10 pool resolution.
 
-Rules implemented (Revised Storyteller style, widely used in late oWoD):
-- Pool: roll that many d10.
-- Difficulty (target number): 2–10; each die showing value >= TN is a success.
-- 1s never count as successes; each 1 cancels one success (successes cannot go below 0).
-- Botch: zero net successes after cancellations and the roll included at least one 1.
+This is the ONE classic implementation in the app; ``DiceService.roll_d10_pool``
+and the ``/ai roll`` slash command both go through it.
 
-See: https://whitewolf.fandom.com/wiki/Botch (Revised vs original botch differs;
-we use the Revised rule: at least one 1 and no successes after canceling.)
+Rules (Vampire: The Masquerade Revised core):
+- Pool: roll that many d10.
+- Difficulty (target number): 2-10, default 6; each die showing >= difficulty is a success.
+- Each 1 cancels one success (net successes never go below 0).
+- Botch: only when NO die was a success before cancelling AND at least one 1 showed.
+  If there were successes but 1s cancelled them all, it is a simple failure.
+- Specialty: each natural 10 counts as a success and is rolled again; a 10 on the
+  reroll explodes again. Reroll dice only ADD successes.
+  App ruling (the book is silent): a 1 on a specialty reroll cancels nothing.
+  1s from the original pool cancel successes from the pool and from rerolls alike.
+- Willpower: declared before the roll, adds 1 automatic success that 1s cannot
+  cancel. A willpower roll therefore never botches and always has >= 1 net success.
+- 5+ net successes is an "exceptional success" (the Revised term; not "critical").
+
+Every function that rolls takes an optional ``rng`` (anything with ``randint`` and
+``shuffle``, e.g. ``random.Random(seed)``) so tests can be deterministic.
 """
 
 from __future__ import annotations
 
 import random
 import re
-from dataclasses import dataclass
-from typing import List, Optional, Tuple
+from dataclasses import dataclass, field
+from typing import Any, List, Optional, Sequence, Tuple
+
+MAX_POOL = 50
+EXCEPTIONAL_THRESHOLD = 5
+# Hard cap on specialty explosions so a pathological rng cannot loop forever.
+MAX_SPECIALTY_REROLLS = 100
 
 
 @dataclass
@@ -29,6 +45,11 @@ class StorytellerRollResult:
     botch: bool
     pool: int
     leniency_floor: Optional[int] = None
+    specialty: bool = False
+    specialty_rerolls: List[int] = field(default_factory=list)
+    reroll_successes: int = 0
+    willpower: bool = False
+    exceptional: bool = False
 
 
 def parse_pool_expression(pool_str: str) -> int:
@@ -44,23 +65,24 @@ def parse_pool_expression(pool_str: str) -> int:
     total = sum(int(p) for p in parts)
     if total < 1:
         raise ValueError("Pool must be at least 1 die.")
-    if total > 50:
-        raise ValueError("Pool capped at 50 dice for this command.")
+    if total > MAX_POOL:
+        raise ValueError(f"Pool capped at {MAX_POOL} dice for this command.")
     return total
 
 
 def parse_roll_expression(expr: str, default_difficulty: int = 6) -> Tuple[int, int]:
     """
-    Parse `/ai roll` payload.
+    Parse classic `/ai roll` payload.
     Forms:
       - `7` — 7 dice, default difficulty
       - `4+3@8` — pool 7, difficulty 8
       - `5 @ 7` — spaces allowed
+      - `6 tn 7` / `6 diff 7`
     """
     raw = (expr or "").strip()
     if not raw:
         raise ValueError(
-            "Missing roll expression. Examples: `5`, `4+3`, `6@7` (pool@difficulty), TN 6–10."
+            "Missing roll expression. Examples: `5`, `4+3`, `6@7` (pool@difficulty), TN 2–10."
         )
 
     difficulty = default_difficulty
@@ -73,7 +95,7 @@ def parse_roll_expression(expr: str, default_difficulty: int = 6) -> Tuple[int, 
         if not pool_part:
             raise ValueError("Missing dice pool before `@`.")
         if not diff_part.isdigit():
-            raise ValueError(f"Invalid difficulty after `@`: {diff_part!r} (use 6–10).")
+            raise ValueError(f"Invalid difficulty after `@`: {diff_part!r} (use 2–10).")
         difficulty = int(diff_part)
     else:
         m = re.match(r"^(.+?)(?:tn|diff)\s*(\d+)\s*$", raw, re.IGNORECASE)
@@ -89,57 +111,153 @@ def parse_roll_expression(expr: str, default_difficulty: int = 6) -> Tuple[int, 
     return pool, difficulty
 
 
-def _lenient_d10_pool(pool: int, floor: int) -> List[int]:
+def _rng(rng: Any = None) -> Any:
+    return rng if rng is not None else random
+
+
+def _valid_leniency_floor(leniency_floor: Any) -> Optional[int]:
+    if leniency_floor is None:
+        return None
+    try:
+        v = int(leniency_floor)
+    except (TypeError, ValueError):
+        return None
+    return v if 2 <= v <= 10 else None
+
+
+def _lenient_d10_pool(pool: int, floor: int, rng: Any = None) -> List[int]:
     """
     Room leniency: no 1s on any die; one die is always in [floor, 10];
     others are in [2, 10]. Order is shuffled.
     """
+    r = _rng(rng)
     f = max(2, min(10, int(floor)))
     if pool < 1:
         return []
     if pool == 1:
-        return [random.randint(f, 10)]
-    dice = [random.randint(f, 10)]
-    dice.extend(random.randint(2, 10) for _ in range(pool - 1))
-    random.shuffle(dice)
+        return [r.randint(f, 10)]
+    dice = [r.randint(f, 10)]
+    dice.extend(r.randint(2, 10) for _ in range(pool - 1))
+    r.shuffle(dice)
     return dice
+
+
+def roll_d10s(pool: int, leniency_floor: Optional[int] = None, rng: Any = None) -> List[int]:
+    """Roll ``pool`` d10s, honouring a room leniency floor when one is set."""
+    r = _rng(rng)
+    lf = _valid_leniency_floor(leniency_floor)
+    if lf is not None:
+        return _lenient_d10_pool(pool, lf, rng=r)
+    return [r.randint(1, 10) for _ in range(pool)]
+
+
+def roll_specialty_rerolls(dice: Sequence[int], rng: Any = None) -> List[int]:
+    """One reroll per natural 10 in ``dice``; each 10 on a reroll explodes again."""
+    r = _rng(rng)
+    pending = sum(1 for d in dice if d == 10)
+    out: List[int] = []
+    while pending > 0 and len(out) < MAX_SPECIALTY_REROLLS:
+        pending -= 1
+        d = r.randint(1, 10)
+        out.append(d)
+        if d == 10:
+            pending += 1
+    return out
+
+
+def resolve_classic(
+    dice: Sequence[int],
+    difficulty: int,
+    *,
+    specialty_rerolls: Sequence[int] = (),
+    willpower: bool = False,
+    leniency_floor: Optional[int] = None,
+    specialty: Optional[bool] = None,
+) -> StorytellerRollResult:
+    """
+    Resolve an already-rolled classic pool (pure; no randomness).
+
+    ``dice`` are the original pool; ``specialty_rerolls`` are the extra dice rolled
+    for natural 10s (only meaningful for specialty rolls).
+    """
+    dice = [int(d) for d in dice]
+    rerolls = [int(d) for d in specialty_rerolls]
+    raw_successes = sum(1 for d in dice if d >= difficulty)
+    ones = sum(1 for d in dice if d == 1)
+    reroll_successes = sum(1 for d in rerolls if d >= difficulty)
+    dice_net = max(0, raw_successes + reroll_successes - ones)
+    net = dice_net + (1 if willpower else 0)
+    botch = (not willpower) and raw_successes == 0 and ones > 0
+    return StorytellerRollResult(
+        dice=dice,
+        difficulty=difficulty,
+        raw_successes=raw_successes,
+        ones=ones,
+        net_successes=net,
+        botch=botch,
+        pool=len(dice),
+        leniency_floor=_valid_leniency_floor(leniency_floor),
+        specialty=bool(rerolls) if specialty is None else bool(specialty),
+        specialty_rerolls=rerolls,
+        reroll_successes=reroll_successes,
+        willpower=bool(willpower),
+        exceptional=net >= EXCEPTIONAL_THRESHOLD,
+    )
+
+
+def roll_classic(
+    pool: int,
+    difficulty: int = 6,
+    *,
+    specialty: bool = False,
+    willpower: bool = False,
+    leniency_floor: Optional[int] = None,
+    rng: Any = None,
+) -> StorytellerRollResult:
+    """Roll and resolve a classic pool."""
+    r = _rng(rng)
+    dice = roll_d10s(pool, leniency_floor=leniency_floor, rng=r)
+    rerolls = roll_specialty_rerolls(dice, rng=r) if specialty else []
+    return resolve_classic(
+        dice,
+        difficulty,
+        specialty_rerolls=rerolls,
+        willpower=willpower,
+        leniency_floor=leniency_floor,
+        specialty=specialty,
+    )
 
 
 def roll_storyteller_pool(
     pool: int,
     difficulty: int,
     leniency_floor: Optional[int] = None,
+    *,
+    specialty: bool = False,
+    willpower: bool = False,
+    rng: Any = None,
 ) -> StorytellerRollResult:
-    lf = None
-    if leniency_floor is not None:
-        try:
-            v = int(leniency_floor)
-            if 2 <= v <= 10:
-                lf = v
-        except (TypeError, ValueError):
-            lf = None
-
-    if lf is not None:
-        dice = _lenient_d10_pool(pool, lf)
-    else:
-        dice = [random.randint(1, 10) for _ in range(pool)]
-
-    raw_successes = sum(1 for d in dice if d >= difficulty)
-    ones = sum(1 for d in dice if d == 1)
-    net = raw_successes - ones
-    if net < 0:
-        net = 0
-    botch = net == 0 and ones > 0
-    return StorytellerRollResult(
-        dice=sorted(dice),
-        difficulty=difficulty,
-        raw_successes=raw_successes,
-        ones=ones,
-        net_successes=net,
-        botch=botch,
-        pool=pool,
-        leniency_floor=lf,
+    """Backwards-compatible name for :func:`roll_classic` (dice returned sorted)."""
+    res = roll_classic(
+        pool,
+        difficulty,
+        specialty=specialty,
+        willpower=willpower,
+        leniency_floor=leniency_floor,
+        rng=rng,
     )
+    res.dice = sorted(res.dice)
+    return res
+
+
+def classic_outcome_label(result: StorytellerRollResult) -> str:
+    if result.botch:
+        return "Botch"
+    if result.net_successes == 0:
+        return "Failure"
+    if result.exceptional:
+        return "Exceptional success"
+    return "Success"
 
 
 def format_storyteller_roll_markdown(
@@ -147,7 +265,7 @@ def format_storyteller_roll_markdown(
 ) -> str:
     sys_note = ""
     if game_system:
-        sys_note = f"\n**Campaign system:** {game_system}\n"
+        sys_note = f"\n**Campaign system:** {game_system} · **Rules:** Classic (Revised)\n"
     if result.leniency_floor is not None:
         sys_note += (
             f"\n**Room leniency (floor {result.leniency_floor}):** "
@@ -156,14 +274,26 @@ def format_storyteller_roll_markdown(
         )
 
     dice_show = ", ".join(str(d) for d in result.dice)
+    n = result.net_successes
     if result.botch:
-        outcome = "**BOTCH** (no successes after 1s cancel, and at least one 1 was rolled)."
-    elif result.net_successes == 0:
+        outcome = "**BOTCH** (no die succeeded and at least one 1 was rolled)."
+    elif n == 0:
         outcome = "**Failure** (no net successes)."
-    elif result.net_successes == 1:
+    elif result.exceptional:
+        outcome = f"**Exceptional success** — {n} successes."
+    elif n == 1:
         outcome = "**1 success**."
     else:
-        outcome = f"**{result.net_successes} successes**."
+        outcome = f"**{n} successes**."
+
+    extra = ""
+    if result.specialty_rerolls:
+        extra += (
+            f"- **Specialty rerolls (10s):** {', '.join(str(d) for d in result.specialty_rerolls)}"
+            f" → +{result.reroll_successes}\n"
+        )
+    if result.willpower:
+        extra += "- **Willpower:** +1 automatic success (cannot be cancelled)\n"
 
     return (
         "**`/ai roll`** — Old World of Darkness (Storyteller d10)\n"
@@ -172,8 +302,10 @@ def format_storyteller_roll_markdown(
         f"- **Dice:** {dice_show}\n"
         f"- **Raw successes (≥{result.difficulty}):** {result.raw_successes} · "
         f"**1s (cancel successes):** {result.ones}\n"
-        f"- **Net successes:** {result.net_successes}\n\n"
+        f"{extra}"
+        f"- **Net successes:** {n}\n\n"
         f"{outcome}\n\n"
-        "_Revised Storyteller: 1s cancel successes; botch = no net successes with any 1._\n"
-        "_Syntax: `pool`, `4+3`, `6-1`, or `5@8` for pool@TN._"
+        "_Revised: 1s cancel successes; botch only if no die succeeded and a 1 showed. "
+        "5+ successes = exceptional._\n"
+        "_Syntax: `pool`, `4+3`, `6-1`, or `5@8` for pool@difficulty._"
     )

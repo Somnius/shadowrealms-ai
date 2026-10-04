@@ -41,7 +41,16 @@ def create_app(config_class=Config):
         init_db()
         from database import migrate_db
         migrate_db()
-    
+
+    # One-off, idempotent: stamp rules_edition on untagged rule book chunks so classic
+    # campaigns never get V5 chunks. Background thread; failures never block startup.
+    try:
+        from services.rag_service import backfill_rule_book_editions_in_background
+
+        backfill_rule_book_editions_in_background(app.config)
+    except Exception as e:  # noqa: BLE001
+        logger.warning("Could not start rule book edition backfill: %s", e)
+
     # Initialize LLM service
     with app.app_context():
         from services.llm_service import initialize_llm_service

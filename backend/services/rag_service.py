@@ -325,35 +325,71 @@ class RAGService:
         
         return context
     
-    def get_rule_book_context(self, query: str, campaign_id: int, n_results: int = 5) -> List[Dict[str, Any]]:
+    @staticmethod
+    def rule_book_where(campaign_id: int, rules_edition: Optional[str] = None) -> Dict[str, Any]:
+        """See services.rules_edition.rule_book_where."""
+        from services.rules_edition import rule_book_where
+
+        return rule_book_where(campaign_id, rules_edition)
+
+    @staticmethod
+    def rule_book_fallback_where(campaign_id: int, rules_edition: str) -> Dict[str, Any]:
+        """See services.rules_edition.rule_book_fallback_where (never matches another edition)."""
+        from services.rules_edition import rule_book_fallback_where
+
+        return rule_book_fallback_where(campaign_id, rules_edition)
+
+    def get_rule_book_context(
+        self,
+        query: str,
+        campaign_id: int,
+        n_results: int = 5,
+        rules_edition: Optional[str] = None,
+    ) -> List[Dict[str, Any]]:
         """
         Get relevant context from official rule books using semantic search.
         
         Args:
             query: The query to search for
-            campaign_id: Campaign ID to filter by
+            campaign_id: Campaign ID; global books (campaign_id 0) are always included
             n_results: Number of chunks to retrieve
+            rules_edition: 'classic' / 'v5' to keep only that edition's books. When no
+                chunk carries that tag, untagged (legacy) chunks are tried; chunks of
+                another edition are never returned.
             
         Returns:
             List of relevant rule book chunks with metadata
         """
+        from services.rules_edition import rule_book_edition_allowed
+
         try:
             collection = self._get_collection('rule_books')
-            
-            # Query the rule books collection
-            results = collection.query(
-                query_texts=[query],
-                n_results=n_results,
-                where={"campaign_id": campaign_id},
-                include=['documents', 'metadatas', 'distances']
-            )
+
+            def _query(where):
+                return collection.query(
+                    query_texts=[query],
+                    n_results=n_results,
+                    where=where,
+                    include=['documents', 'metadatas', 'distances']
+                )
+
+            results = _query(self.rule_book_where(campaign_id, rules_edition))
+            if rules_edition and not (results.get('documents') and results['documents'][0]):
+                logger.info(
+                    "No rule book chunks tagged rules_edition=%s; trying untagged chunks only",
+                    rules_edition,
+                )
+                results = _query(self.rule_book_fallback_where(campaign_id, rules_edition))
             
             rule_book_context = []
             if results['documents'] and results['documents'][0]:
                 for i, doc in enumerate(results['documents'][0]):
+                    metadata = (results['metadatas'][0][i] if results['metadatas'] else None) or {}
+                    if rules_edition and not rule_book_edition_allowed(metadata, rules_edition):
+                        continue
                     chunk = {
                         'content': doc,
-                        'metadata': results['metadatas'][0][i] if results['metadatas'] else {},
+                        'metadata': metadata,
                         'distance': results['distances'][0][i] if results['distances'] else 0.0,
                         'relevance': 1 - (results['distances'][0][i] if results['distances'] else 0.0)
                     }
@@ -365,8 +401,46 @@ class RAGService:
         except Exception as e:
             logger.error(f"Error retrieving rule book context: {e}")
             return []
+
+    def backfill_rule_book_editions(self, batch_size: int = 500) -> int:
+        """
+        Stamp ``rules_edition`` on rule book chunks that have none (imported before
+        editions existed, or by the old in-app importer). The edition comes from the
+        chunk's category / filename / book name (services.rules_edition.rules_edition_for_book):
+        V5 when they say so, otherwise classic. Idempotent; returns how many were tagged.
+        """
+        from services.rules_edition import rules_edition_for_book
+
+        collection = self._get_collection('rule_books')
+        tagged = 0
+        offset = 0
+        while True:
+            page = collection.get(include=['metadatas'], limit=batch_size, offset=offset)
+            ids = page.get('ids') or []
+            if not ids:
+                break
+            upd_ids, upd_meta = [], []
+            for cid, meta in zip(ids, page.get('metadatas') or [{}] * len(ids)):
+                meta = dict(meta or {})
+                if meta.get('rules_edition'):
+                    continue
+                meta['rules_edition'] = rules_edition_for_book(
+                    meta.get('category'), meta.get('file_path') or meta.get('filename'),
+                    meta.get('filename'), meta.get('book_name'), meta.get('book_id'),
+                )
+                upd_ids.append(cid)
+                upd_meta.append(meta)
+            if upd_ids:
+                collection.update(ids=upd_ids, metadatas=upd_meta)
+                tagged += len(upd_ids)
+            if len(ids) < batch_size:
+                break
+            offset += batch_size
+        if tagged:
+            logger.info("Tagged %s untagged rule book chunks with rules_edition", tagged)
+        return tagged
     
-    def augment_prompt(self, prompt: str, campaign_id: int, user_id: int = None, include_rule_books: bool = True, n_rule_book_chunks: int = 5) -> str:
+    def augment_prompt(self, prompt: str, campaign_id: int, user_id: int = None, include_rule_books: bool = True, n_rule_book_chunks: int = 5, rules_edition: Optional[str] = None) -> str:
         """Augment prompt with relevant context from memory"""
         # Get campaign context
         context = self.get_campaign_context(campaign_id, prompt)
@@ -406,7 +480,9 @@ class RAGService:
         
         # Add rule book context (NEW!)
         if include_rule_books:
-            rule_book_context = self.get_rule_book_context(prompt, campaign_id, n_rule_book_chunks)
+            rule_book_context = self.get_rule_book_context(
+                prompt, campaign_id, n_rule_book_chunks, rules_edition=rules_edition
+            )
             if rule_book_context:
                 context_parts.append("=== OFFICIAL RULE BOOKS ===")
                 for chunk in rule_book_context:
@@ -471,6 +547,34 @@ class RAGService:
         
         return status
 
+def backfill_rule_book_editions_in_background(config: Dict[str, Any]) -> None:
+    """
+    Run RAGService.backfill_rule_book_editions once, in a daemon thread, so a slow or
+    missing ChromaDB never delays or blocks app startup. Failures are only logged.
+    """
+    import threading
+
+    def _run():
+        try:
+            create_rag_service(config).backfill_rule_book_editions()
+        except Exception as e:  # noqa: BLE001 - startup helper, must never raise
+            logger.warning("Rule book rules_edition backfill skipped: %s", e)
+
+    threading.Thread(target=_run, name="rule-book-edition-backfill", daemon=True).start()
+
+
 def create_rag_service(config: Dict[str, Any]) -> RAGService:
     """Create and initialize RAG service"""
     return RAGService(config)
+
+
+_shared_rag_service: Optional[RAGService] = None
+
+
+def get_rag_service() -> RAGService:
+    """Shared RAG service built from the Flask app config (message memory, location cleanup)."""
+    global _shared_rag_service
+    if _shared_rag_service is None:
+        from flask import current_app
+        _shared_rag_service = create_rag_service(current_app.config)
+    return _shared_rag_service

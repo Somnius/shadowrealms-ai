@@ -9,11 +9,12 @@ import logging
 import os
 from typing import Any, Optional
 
-from database import get_db
+from database import get_db, once_per_process
 
 logger = logging.getLogger(__name__)
 
 
+@once_per_process
 def ensure_app_settings_table(cursor) -> None:
     db_type = os.getenv("DATABASE_TYPE", "sqlite").lower()
     if db_type == "postgresql":

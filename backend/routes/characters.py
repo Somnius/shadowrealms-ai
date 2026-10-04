@@ -11,6 +11,8 @@ from flask_jwt_extended import jwt_required, get_jwt_identity
 import logging
 import json
 from datetime import datetime
+from services.rules_edition import V5, edition_of
+from services.character_sheet_v5 import sanity_check_v5, stamp_v5_meta
 
 from database import (
     get_db,
@@ -58,6 +60,7 @@ def _campaign_is_active_sql(alias: str = "c") -> str:
 
 
 def _ensure_character_schema(cursor):
+    # Not decorated: each helper below is once_per_process and run by migrate_db().
     ensure_character_portrait_url_column(cursor)
     ensure_characters_is_active_column(cursor)
     ensure_characters_wod_sheet_columns(cursor)
@@ -103,6 +106,7 @@ def _character_public_dict(row, owner_name=None, campaign_name=None):
         'portrait_url': row.get('portrait_url'),
         'sheet_locked': _sheet_locked_bool(row.get('sheet_locked')),
         'wod_meta': _wod_meta_parse(row.get('wod_meta')),
+        'rules_edition': edition_of(row),
         'is_active': bool(row.get('is_active', True)),
         'play_suspended': _sheet_locked_bool(row.get('play_suspended')),
         'play_suspension_reason_code': row.get('play_suspension_reason_code'),
@@ -279,6 +283,19 @@ def create_character():
                 }
             ), 400
 
+        rules_edition = edition_of(campaign)
+        if rules_edition == V5:
+            wm_dict = stamp_v5_meta(wm if isinstance(wm, dict) else {})
+            problems = sanity_check_v5(
+                data.get('attributes'), data.get('skills'), wm_dict
+            )
+            if problems:
+                return jsonify({
+                    'error': 'Invalid V5 sheet: ' + '; '.join(problems[:10]),
+                    'problems': problems,
+                }), 400
+            wod_meta = json.dumps(wm_dict)
+
         portrait_url = data.get('portrait_url')
         if portrait_url is not None and portrait_url != '':
             if (
@@ -346,9 +363,9 @@ def create_character():
             INSERT INTO characters (
                 name, system_type, attributes, skills, background, merits_flaws,
                 user_id, campaign_id, portrait_url, is_active, sheet_locked,
-                wod_meta, created_at, updated_at
+                wod_meta, created_at, updated_at, rules_edition
             )
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             RETURNING id
             """,
             (
@@ -366,6 +383,7 @@ def create_character():
                 wod_meta,
                 now,
                 now,
+                rules_edition,
             ),
         )
 
@@ -394,6 +412,7 @@ def create_character():
                 'message': 'Character created successfully',
                 'character_id': character_id,
                 'name': name,
+                'rules_edition': rules_edition,
             }
         ), 201
 
@@ -562,7 +581,7 @@ def get_character(character_id):
             return jsonify({'error': 'Character not found'}), 404
         
         # Check access permissions
-        if current_user['role'] not in ['admin', 'helper'] and character['user_id'] != current_user_id:
+        if current_user['role'] not in ['admin', 'helper'] and int(character['user_id']) != int(current_user_id):
             return jsonify({'error': 'Access denied'}), 403
         
         ch = _character_public_dict(
@@ -610,7 +629,7 @@ def update_character(character_id):
             return jsonify({'error': 'Character not found'}), 404
         
         # Check permissions
-        if current_user['role'] not in ['admin', 'helper'] and character['user_id'] != current_user_id:
+        if current_user['role'] not in ['admin', 'helper'] and int(character['user_id']) != int(current_user_id):
             return jsonify({'error': 'Access denied'}), 403
 
         player_locked = current_user['role'] not in (
@@ -687,6 +706,26 @@ def update_character(character_id):
                 updates.append("is_active = %s")
                 params.append(bool(data['is_active']))
 
+        if edition_of(character) == V5 and any(
+            k in data for k in ('attributes', 'skills', 'wod_meta')
+        ):
+            new_meta = None
+            if 'wod_meta' in data and current_user['role'] in ('admin', 'helper'):
+                new_meta = stamp_v5_meta(data['wod_meta'] or {})
+                # replace the already-queued wod_meta value with the stamped one
+                idx = updates.index("wod_meta = %s")
+                params[idx] = json.dumps(new_meta)
+            problems = sanity_check_v5(
+                data.get('attributes') if 'attributes' in data else None,
+                data.get('skills') if 'skills' in data else None,
+                new_meta,
+            )
+            if problems:
+                return jsonify({
+                    'error': 'Invalid V5 sheet: ' + '; '.join(problems[:10]),
+                    'problems': problems,
+                }), 400
+
         # Apply updates if any
         if updates:
             params.append(datetime.utcnow())  # updated_at
@@ -734,7 +773,7 @@ def delete_character(character_id):
             return jsonify({'error': 'Character not found'}), 404
         
         # Check permissions
-        if current_user['role'] not in ['admin', 'helper'] and character['user_id'] != current_user_id:
+        if current_user['role'] not in ['admin', 'helper'] and int(character['user_id']) != int(current_user_id):
             return jsonify({'error': 'Access denied'}), 403
         
         cursor.execute(

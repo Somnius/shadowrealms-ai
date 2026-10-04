@@ -1,51 +1,68 @@
 # Old World of Darkness (Storyteller) dice in ShadowRealms AI
 
-**Document version:** 0.8.0 (aligned with app release; v0.7.18+ allows site **admin** campaign access for rolls—update when dice or admin `/ai roll` behavior changes.)
+**Document version:** 0.9 (classic rules corrected to the Revised core text; campaigns now have a `rules_edition`, see below.)
 
-This document summarizes how **classic / Revised Storyteller**–style **d10 pools** are used in the app, where to find the implementation, and how it relates to published rules. It is not a full replacement for the rulebooks.
+This document explains how the app rolls **classic / Revised Storyteller** **d10 pools** and where the code lives. It does not replace the rulebooks. For Vampire 5th Edition campaigns, see [dice-v5.md](dice-v5.md).
+
+## Rules edition
+
+Every campaign has `rules_edition`: `classic` (the default, and what every campaign created before v0.9 is) or `v5`. It's picked when the campaign is created and can't be changed later (`PUT /api/campaigns/:id` with a different value returns **409**). `v5` is only allowed for `game_system = vampire`. Characters copy the campaign's edition when they're created. Everything below applies to `classic` campaigns.
 
 ## Where it is implemented
 
 | Area | Location |
 |------|-----------|
-| Player **Roll dice** UI (sidebar) | `frontend/src/SimpleApp.js` — modal posts to `POST /api/campaigns/:id/roll`; optional **Hide roll from others** for admin / helper / campaign owner |
-| Dice theatre overlay | `frontend/src/SimpleApp.js` — center-screen animation (~3s, up to **10** dice) for `/ai roll`, `/ai roll-hidden`, and sidebar rolls |
-| Roll API + access control | `backend/routes/dice.py` — `manual_roll` |
-| Core resolution (pool loop) | `backend/services/dice_service.py` — `roll_d10_pool` |
-| `/ai roll` and `/ai roll-hidden` (admin-only) | `backend/services/wod_dice.py` — expressions; `backend/services/ai_slash_commands.py` — slash handlers |
-| Chat rows for dice (markers + results) | `backend/routes/messages.py` — `ai_message_kind` values `dice_animation`, `dice_roll`, `dice_animation_hidden`, `dice_roll_hidden` (optional `:animationId` suffix); hidden kinds omitted for non-privileged users in `get_messages` |
+| Classic rules (the one implementation) | `backend/services/wod_dice.py`: `resolve_classic` (pure, explicit dice), `roll_classic`, expression parsing |
+| API wrapper | `backend/services/dice_service.py`: `roll_d10_pool` delegates to `wod_dice.roll_classic` |
+| Roll API + access control | `backend/routes/dice.py`: `manual_roll`, `contested_roll`, `ai_roll` |
+| `/ai roll` and `/ai roll-hidden` (admin only) | `backend/services/ai_slash_commands.py` |
+| Player **Roll dice** UI (sidebar) | `frontend/src/SimpleApp.js` (posts to `POST /api/campaigns/:id/roll`) |
+| Chat rows for dice | `backend/routes/messages.py`: `ai_message_kind` values `dice_animation`, `dice_roll`, `dice_animation_hidden`, `dice_roll_hidden` |
+| Unit tests | `backend/tests/unit/test_wod_dice.py` |
 
-Administrative **`/ai`** commands (including `/ai roll` and **`/ai roll-hidden`** with `pool@diff` text syntax) are **restricted to site users with `role = admin`** in `POST /api/ai/slash` (`backend/routes/ai.py`). **Hidden** sidebar rolls are available to **admin**, **helper**, or the **campaign owner** (`campaigns.created_by`). All campaign members may use the **Roll dice** button if they have campaign access.
+Administrative `/ai` commands are restricted to site admins in `POST /api/ai/slash` (`backend/routes/ai.py`). Hidden sidebar rolls are available to admin, helper or the campaign owner. All campaign members (and site admins) can use **Roll dice**.
 
-## Core mechanics (Storyteller d10)
+## Core mechanics (Vampire: The Masquerade Revised)
 
-The **Storyteller System** used in **Vampire: The Masquerade**, **Werewolf: The Apocalypse**, **Mage: The Ascension**, etc. (often called **old WoD** or **oWoD**) typically uses:
+1. **Dice pool**: roll that many d10 (Attribute + Ability, etc.). The API accepts a number or a sum expression (`5`, `4+3`, `7-1`). Pools are capped at **50**.
+2. **Difficulty**: a target number from **2 to 10**, default **6**. Each die showing **≥ difficulty** is one success. A 10 is always a success.
+3. **1s cancel successes**: each 1 removes one success. Net successes never go below 0.
+4. **Botch**: only when **no die succeeded** (before cancelling) **and at least one 1** showed. If successes were rolled but 1s cancelled them all, that's a plain **failure**, not a botch. Book example (Revised p. 192): 9, 1, 1, 8, 1 at difficulty 8 is a failure.
+5. **Specialty**: each natural **10** counts as a success **and is rerolled**. A 10 on the reroll is rerolled again, with no limit (the code stops after 100 rerolls as a safety cap). Rerolled dice only **add** successes. **App ruling** (the book is silent): a 1 on a specialty reroll cancels nothing. 1s from the original pool cancel successes from the pool and from rerolls alike.
+6. **Willpower**: declared before the roll (`willpower: true`). Adds **1 automatic success** that 1s can't cancel. A Willpower roll therefore never botches and always has at least 1 net success. The app doesn't deduct the Willpower point from the sheet.
+7. **Exceptional success**: **5+ net successes**. The API field is `is_exceptional`. `is_critical` is kept for older clients and means the same thing for classic rolls. The chat text says "Exceptional success", not "critical".
 
-1. **Dice pool** — Roll a number of **d10** determined by traits (Attribute + Ability, etc.). The UI accepts a total pool or a sum expression (`5`, `4+3`, `7-1`).
-2. **Difficulty (target number)** — Usually **6–10** on a per-roll basis. Each die that shows **greater than or equal to** the difficulty counts as **one success** (before cancellations).
-3. **1s** — On a **1**, the die does not succeed; in **Revised** rules, **1s cancel successes** (each 1 removes one success from the pool’s total). Net successes are typically floored at zero for display.
-4. **Botch** — Definitions differ between **original** and **Revised** Storyteller. The **Revised** simplification is often stated as: a **botch** occurs when there are **no successes after applying 1s**, and the roll included **at least one 1**. The **original** edition could treat botches when **more 1s than successes** appeared (a stricter reading).  
+## API
 
-   Community references: [Storyteller System (Fandom)](https://whitewolf.fandom.com/wiki/Storyteller_System), [Botch (Fandom)](https://whitewolf.fandom.com/wiki/Botch), [RPG.SE — botch / automatic successes](https://rpg.stackexchange.com/questions/84150/how-do-automatic-successes-in-old-world-of-darkness-deal-with-fails-and-botches).
+`POST /api/campaigns/:id/roll`
 
-5. **Specialty** — With an applicable **specialty**, **10** may count as **two successes** (and in some editions, **10s** “explode” — reroll; that optional rule is **not** fully modeled here unless added later). The sidebar and API expose a **Specialty** checkbox that maps to `dice_service.roll_d10_pool(..., specialty=True)`.
+```json
+{ "pool_size": 6, "difficulty": 7, "specialty": true, "willpower": false,
+  "character_id": 12, "location_id": 3, "action_description": "Sneak past the guard" }
+```
 
-6. **“Five successes” style exceptional results** — The service flags **5+ net successes** as a **critical** highlight for chat formatting; table interpretation is always up to the Storyteller.
+`pool_expression` (e.g. `"4+3"`) can replace `pool_size`. The response is `{roll_id, rules_edition: "classic", roll_result, chat_message}`, where `roll_result` holds:
 
-## Defaults in the UI
+- `results`: the original dice
+- `specialty_rerolls`: the extra dice rolled for 10s
+- `successes`: net successes
+- `raw_successes` and `ones_count`
+- `is_botch`, `is_exceptional` and `is_critical` (same as `is_exceptional`)
+- `willpower`, `specialty`, `difficulty`, `leniency_floor` and `message`
 
-- **Difficulty** defaults to **6** (a common baseline in many oWoD examples; your table may prefer 7 or higher for hard tasks).
-- **Pool** is entered as a **number or sum**; the server caps pools at **50** dice per roll.
+`POST /api/campaigns/:id/roll/contested` takes `attacker_pool` and `defender_pool` (1–50 each) and `difficulty`. Each side is rolled with the rules above. A botch loses automatically; otherwise the side with more successes wins. Equal successes are a tie in classic (V5 differs: the acting character wins ties, see `dice-v5.md`). `specialty` and `willpower` on `POST /roll` must be JSON booleans and integer fields refuse booleans and fractions; bad types get **400**.
 
-## Botch display and narration
+## Room leniency (`/ai dice-diff`)
 
-How a **botch** should read in chat (aces, dramatic text, house rules) is intentionally left flexible; the code returns structured flags (`is_botch`, `successes`, raw `results`) and a short **chat message** string. Tables can override presentation in the UI or downstream tooling in a later iteration.
+A room can have a leniency floor (2–10). Its dice never show 1, and with 2+ dice at least one die is ≥ the floor, so botches can't happen. Specialty rerolls are plain d10s.
+
+## `/ai roll` syntax (classic campaigns)
+
+`5`, `4+3`, `6-1`, `5@8` (pool@difficulty), `6 tn 7`, `6 diff 7`. The default difficulty is 6.
 
 ## Related reading (external)
 
-- [Storyteller System — Fandom Wiki](https://whitewolf.fandom.com/wiki/Storyteller_System)  
-- [Success — Fandom Wiki](https://whitewolf.fandom.com/wiki/Success)  
-- [Botch — Fandom Wiki](https://whitewolf.fandom.com/wiki/Botch)  
-- [Storytelling System — Wikipedia](https://en.wikipedia.org/wiki/Storytelling_System) (successor **nWoD / Chronicles of Darkness** — different from classic oWoD in several places)
+- [Storyteller System (Fandom wiki)](https://whitewolf.fandom.com/wiki/Storyteller_System)
+- [Botch (Fandom wiki)](https://whitewolf.fandom.com/wiki/Botch)
 
-Always defer to your **printed rulebook** and **Storyteller** for the final word at the table.
+The printed rulebook and the Storyteller have the final word at the table.

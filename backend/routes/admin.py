@@ -13,6 +13,7 @@ import os
 import re
 import secrets
 from datetime import datetime, timedelta
+from services.rules_edition import edition_of
 
 from database import (
     get_db,
@@ -847,7 +848,7 @@ def admin_get_user_debug(user_id):
         cursor.execute(
             """
             SELECT cp.campaign_id, cp.joined_at, cp.role AS member_role, c.name AS campaign_name,
-                   c.game_system, c.created_by
+                   c.game_system, c.created_by, c.rules_edition
             FROM campaign_players cp
             JOIN campaigns c ON c.id = cp.campaign_id
             WHERE cp.user_id = %s
@@ -861,6 +862,7 @@ def admin_get_user_debug(user_id):
                 'campaign_id': row['campaign_id'],
                 'campaign_name': row['campaign_name'],
                 'game_system': row['game_system'],
+                'rules_edition': edition_of(row),
                 'joined_at': row['joined_at'],
                 'member_role': row.get('member_role'),
                 'is_owner': str(row.get('created_by')) == str(user_id),
@@ -868,7 +870,7 @@ def admin_get_user_debug(user_id):
 
         cursor.execute(
             """
-            SELECT id, name, game_system, created_at, created_by
+            SELECT id, name, game_system, created_at, created_by, rules_edition
             FROM campaigns
             WHERE created_by = %s
             ORDER BY created_at DESC
@@ -1011,7 +1013,7 @@ def list_all_campaigns():
             """
             SELECT c.id, c.name, c.description, c.game_system, c.status, c.created_at, c.created_by,
                    c.is_active, c.listing_visibility, c.accepting_players, c.max_players,
-                   c.admin_inactive_reason, c.admin_inactive_at,
+                   c.admin_inactive_reason, c.admin_inactive_at, c.rules_edition,
                    u.username AS creator_username
             FROM campaigns c
             LEFT JOIN users u ON u.id = c.created_by
@@ -1036,6 +1038,7 @@ def list_all_campaigns():
                 'listing_visibility': _row_get(row, 'listing_visibility', 'private') or 'private',
                 'accepting_players': acc_players,
                 'max_players': _row_get(row, 'max_players'),
+                'rules_edition': edition_of({'rules_edition': _row_get(row, 'rules_edition')}),
                 'admin_inactive_reason': _row_get(row, 'admin_inactive_reason', '') or '',
                 'admin_inactive_at': _row_get(row, 'admin_inactive_at'),
             })

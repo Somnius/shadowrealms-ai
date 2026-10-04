@@ -54,6 +54,7 @@ SUPPORTED_AI_SLASH_VERBS: List[str] = [
     "summarize",
     "roll",
     "roll-hidden",
+    "rouse",
     "clean",
     "dice-diff",
 ]
@@ -66,8 +67,9 @@ FUTURE_COMMAND_SUGGESTIONS = [
     "/ai ping — tiny generation for baseline latency",
     "/ai context — truncated context for this room",
     "/ai summarize <text> — OOC wall-of-text helper",
-    "/ai roll <expr> — Storyteller (oWoD) d10 pool, e.g. 5, 4+3@7",
+    "/ai roll <expr> — d10 pool by campaign rules: classic `4+3@7` (pool@TN), V5 `6@3h2` (pool@successes, Hunger)",
     "/ai roll-hidden <expr> — same as `/ai roll`, but hidden from normal players",
+    "/ai rouse [hunger] — V5 Rouse check (one die, 6+ = no Hunger gain)",
     "/ai clean … — remove clutter (see `/ai clean`)",
     "/ai dice-diff <2-10|restore> — room leniency for sidebar dice (owner/admin)",
 ]
@@ -163,14 +165,41 @@ def _truncate(s: str, max_chars: int) -> Tuple[str, bool]:
     return s[: max_chars - 20] + "\n… _(truncated)_\n", True
 
 
-def execute_help_command(user_id: int) -> Dict[str, Any]:
+_ROLL_HELP_CLASSIC = (
+    "- **`/ai roll …`** — Server-side **classic (Revised)** d10 pool: `5`, `4+3@8`, `6 tn 7` "
+    "(pool@difficulty 2–10, default 6). 1s cancel successes; botch only if no die succeeded and a 1 showed. "
+    "Uses this room’s leniency if **`/ai dice-diff`** is active."
+)
+_ROLL_HELP_V5 = (
+    "- **`/ai roll …`** — Server-side **V5** pool: `pool[@difficulty][h<hunger>]`, e.g. `6`, `6@3`, `6@3h2` "
+    "(difficulty = successes needed 0–10, default 1; Hunger 0–5). 6+ succeeds, pairs of 10s = criticals, "
+    "messy criticals and bestial failures from Hunger dice. Uses this room’s leniency if **`/ai dice-diff`** is active.\n"
+    "- **`/ai rouse [hunger]`** — V5 Rouse check: one die, 6+ = no Hunger gain, else Hunger +1 (max 5). "
+    "Stateless: does not change any character sheet (the rouse API with a character does)."
+)
+
+
+def execute_help_command(user_id: int, campaign_id: Optional[int] = None) -> Dict[str, Any]:
     """List /ai subcommands. Most verbs are site-admin-only; see notes for exceptions."""
+    _gs, edition = _fetch_campaign_rules(campaign_id)
+    if not campaign_id:
+        roll_help = (
+            _ROLL_HELP_CLASSIC
+            + "\n"
+            + _ROLL_HELP_V5
+            + "\n- _Inside a campaign room, `/ai roll` follows that campaign’s rules edition._"
+        )
+    elif edition == "v5":
+        roll_help = _ROLL_HELP_V5
+    else:
+        roll_help = _ROLL_HELP_CLASSIC
+    dice_doc = "docs/dice-v5.md" if edition == "v5" else "docs/dice-old-wod.md"
     display = """**`/ai help`** — slash commands
 
 **Who can use what**
 - **Site administrators** can use every `/ai` verb below.
 - **Campaign owner** (creator of the campaign) can also use **`/ai clean …`** and **`/ai dice-diff …`** from inside a campaign room.
-- Everyone else: use **Roll dice** in the right sidebar for Storyteller (Old World of Darkness) d10 pools in chat.
+- Everyone else: use **Roll dice** in the right sidebar for d10 pools in chat (classic or V5, per campaign).
 
 **Commands**
 - **`/ai help`** — This reference.
@@ -179,18 +208,19 @@ def execute_help_command(user_id: int) -> Dict[str, Any]:
 - **`/ai ping`** — Smallest possible LLM round-trip to measure latency (needs a running LLM).
 - **`/ai context`** — Truncated **location + recent messages + campaign** text the storyteller pipeline would see in the current room.
 - **`/ai summarize …`** — OOC helper: compress a long pasted block into short bullets (needs LLM).
-- **`/ai roll …`** — Server-side Storyteller d10 pool (e.g. `5`, `4+3@8`, `6 tn 7`). Uses this room’s leniency if **`/ai dice-diff`** is active.
+__ROLL_HELP__
 - **`/ai roll-hidden …`** — Same roll math as **`/ai roll`**, but the result is hidden from normal players (shown to admin/storyteller only).
 - **`/ai respond …`** — Diagnostics: echo payload through the LLM with timing (needs LLM).
 - **`/ai clean`** — Lists what you can remove from the **current room** (more targets later).
 - **`/ai clean ai`** — Deletes **admin `/ai` command lines** and the **assistant slash replies** tied to them in this room (does not remove normal storyteller chat).
 - **`/ai dice-diff <2–10>`** — **Lenient dice** for this **room** only: no **1**s; with **2+** dice, **at least one** die is **≥** your floor (e.g. `7` → one die in 7–10, others 2–10). **Botches from 1s** cannot occur. Affects **Roll dice** in the sidebar for everyone in this channel.
-- **`/ai dice-diff restore`** — Clear leniency; rolls return to normal random d10s (1–10) and standard Revised Storyteller rules.
+- **`/ai dice-diff restore`** — Clear leniency; rolls return to normal random d10s (1–10) and the campaign's standard rules.
 
 Site admins can also set the same option per room via **Admin Dice Rules** in the sidebar.
 
-See **docs/dice-old-wod.md** for base dice rules used by the app and the Roll dice UI.
+See **__DICE_DOC__** for the dice rules used by the app and the Roll dice UI.
 """
+    display = display.replace("__ROLL_HELP__", roll_help).replace("__DICE_DOC__", dice_doc)
     return {
         "ok": True,
         "command": "help",
@@ -426,26 +456,31 @@ def execute_summarize_command(payload: str, user_id: int) -> Dict[str, Any]:
     }
 
 
-def _fetch_campaign_game_system(campaign_id: Optional[int]) -> str:
+def _fetch_campaign_rules(campaign_id: Optional[int]) -> Tuple[str, str]:
+    """(game_system, rules_edition) of an active campaign; ('', 'classic') when unknown."""
+    from services.rules_edition import DEFAULT_RULES_EDITION, edition_of
+
     if not campaign_id:
-        return ""
+        return "", DEFAULT_RULES_EDITION
     try:
         from database import get_db
 
         db = get_db()
         cur = db.cursor()
-        cur.execute(
-            "SELECT game_system FROM campaigns WHERE id = %s AND is_active = TRUE",
-            (campaign_id,),
-        )
-        row = cur.fetchone()
-        cur.close()
-        db.close()
-        if row and row.get("game_system"):
-            return str(row["game_system"])
+        try:
+            cur.execute(
+                "SELECT game_system, rules_edition FROM campaigns WHERE id = %s AND is_active = TRUE",
+                (campaign_id,),
+            )
+            row = cur.fetchone()
+        finally:
+            cur.close()
+            db.close()
+        if row:
+            return str(row.get("game_system") or ""), edition_of(row)
     except Exception as e:
-        logger.warning("Could not load game_system: %s", e)
-    return ""
+        logger.warning("Could not load campaign rules: %s", e)
+    return "", DEFAULT_RULES_EDITION
 
 
 def _fetch_location_dice_leniency_floor(
@@ -626,10 +661,41 @@ def execute_roll_command(
         roll_storyteller_pool,
     )
 
-    game_system = _fetch_campaign_game_system(campaign_id)
-    default_diff = 6
-    pool, diff = parse_roll_expression(payload, default_difficulty=default_diff)
+    game_system, edition = _fetch_campaign_rules(campaign_id)
     lf = _fetch_location_dice_leniency_floor(campaign_id, location_id)
+
+    if edition == "v5":
+        from services.v5_dice import format_v5_roll_markdown, parse_v5_roll_expression, roll_v5
+
+        pool, diff, hunger = parse_v5_roll_expression(payload)
+        res = roll_v5(pool, hunger, diff, leniency_floor=lf)
+        return {
+            "ok": True,
+            "command": "roll",
+            "display_markdown": format_v5_roll_markdown(res, game_system=game_system),
+            "roll": {
+                "rules_edition": "v5",
+                "dice": res["results"],
+                "normal_dice": res["normal_dice"],
+                "hunger_dice": res["hunger_dice"],
+                "pool": res["pool"],
+                "hunger": res["hunger"],
+                "difficulty": res["difficulty"],
+                "successes": res["successes"],
+                "net_successes": res["successes"],
+                "margin": res["margin"],
+                "outcome": res["outcome"],
+                "is_critical": res["is_critical"],
+                "is_messy_critical": res["is_messy_critical"],
+                "is_bestial_failure": res["is_bestial_failure"],
+                "is_total_failure": res["is_total_failure"],
+                "botch": False,
+                "leniency_floor": lf,
+            },
+            "future_commands_suggestion": FUTURE_COMMAND_SUGGESTIONS,
+        }
+
+    pool, diff = parse_roll_expression(payload, default_difficulty=6)
     result = roll_storyteller_pool(pool, diff, leniency_floor=lf)
     display = format_storyteller_roll_markdown(result, game_system=game_system)
     return {
@@ -637,12 +703,46 @@ def execute_roll_command(
         "command": "roll",
         "display_markdown": display,
         "roll": {
+            "rules_edition": "classic",
             "dice": result.dice,
             "pool": result.pool,
             "difficulty": result.difficulty,
             "net_successes": result.net_successes,
             "botch": result.botch,
+            "is_exceptional": result.exceptional,
+            "leniency_floor": result.leniency_floor,
         },
+        "future_commands_suggestion": FUTURE_COMMAND_SUGGESTIONS,
+    }
+
+
+def execute_rouse_command(
+    payload: str,
+    user_id: int,
+    campaign_id: Optional[int] = None,
+    location_id: Optional[int] = None,
+) -> Dict[str, Any]:
+    """V5 Rouse check. Stateless: Hunger comes from the payload (default 0)."""
+    from services.v5_dice import format_rouse_markdown, resolve_rouse
+    from services.wod_dice import roll_d10s
+
+    _gs, edition = _fetch_campaign_rules(campaign_id)
+    if campaign_id and edition != "v5":
+        raise ValueError("`/ai rouse` is a V5 rule; this campaign uses classic (Revised) rules.")
+    raw = (payload or "").strip()
+    hunger = 0
+    if raw:
+        if not raw.isdigit() or not (0 <= int(raw) <= 5):
+            raise ValueError("Usage: `/ai rouse` or `/ai rouse <hunger 0–5>`.")
+        hunger = int(raw)
+    lf = _fetch_location_dice_leniency_floor(campaign_id, location_id)
+    res = resolve_rouse(roll_d10s(1, leniency_floor=lf)[0], hunger)
+    display = "**`/ai rouse`** — V5\n\n" + format_rouse_markdown(res)
+    return {
+        "ok": True,
+        "command": "rouse",
+        "display_markdown": display,
+        "rouse": {**res, "rules_edition": "v5"},
         "future_commands_suggestion": FUTURE_COMMAND_SUGGESTIONS,
     }
 
@@ -742,7 +842,7 @@ def execute_ai_slash_command(
 ) -> Dict[str, Any]:
     """Dispatch subcommand. Raises ValueError for unknown verb or bad args."""
     if verb == "help":
-        return execute_help_command(user_id)
+        return execute_help_command(user_id, campaign_id=campaign_id)
     if verb == "respond":
         return execute_respond_command(payload, user_id)
     if verb == "health":
@@ -765,6 +865,10 @@ def execute_ai_slash_command(
         )
     if verb == "roll-hidden":
         return execute_roll_hidden_command(
+            payload, user_id, campaign_id=campaign_id, location_id=location_id
+        )
+    if verb == "rouse":
+        return execute_rouse_command(
             payload, user_id, campaign_id=campaign_id, location_id=location_id
         )
     if verb == "clean":

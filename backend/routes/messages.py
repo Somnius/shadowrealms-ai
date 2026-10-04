@@ -9,6 +9,7 @@ from typing import Optional
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from database import (
+    ensure_location_reads_table,
     get_db,
     ensure_character_portrait_url_column,
     ensure_messages_ai_message_kind_column,
@@ -100,23 +101,6 @@ def _message_dict_from_row(row) -> dict:
         'speaker_mode': sm,
         'staff_kind': staff_kind,
     }
-
-def _ensure_location_reads_table(cursor):
-    """
-    Ensure unread tracking table exists.
-    Kept here to avoid reliance on init SQL (which may not run on existing volumes).
-    """
-    cursor.execute("""
-        CREATE TABLE IF NOT EXISTS location_reads (
-            id SERIAL PRIMARY KEY,
-            character_id INTEGER NOT NULL REFERENCES characters(id) ON DELETE CASCADE,
-            location_id INTEGER NOT NULL REFERENCES locations(id) ON DELETE CASCADE,
-            last_read_message_id INTEGER,
-            last_read_at TIMESTAMP,
-            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            UNIQUE(character_id, location_id)
-        )
-    """)
 
 @messages_bp.route('/campaigns/<int:campaign_id>/locations/<int:location_id>', methods=['GET'])
 @jwt_required()
@@ -261,7 +245,7 @@ def get_location_read_state(campaign_id, location_id):
 
         conn = get_db()
         cursor = conn.cursor()
-        _ensure_location_reads_table(cursor)
+        ensure_location_reads_table(cursor)
         ensure_locations_player_access_columns(cursor)
         conn.commit()
 
@@ -322,7 +306,7 @@ def get_location_read_state(campaign_id, location_id):
                 WHERE campaign_id = %s
                   AND location_id = %s
                   AND id > %s
-                  AND COALESCE(ai_message_kind, '') NOT LIKE 'dice_animation%'
+                  AND COALESCE(ai_message_kind, '') NOT LIKE 'dice_animation%%'
                 ORDER BY id ASC
                 LIMIT 1
             """, (campaign_id, location_id, last_read_message_id))
@@ -332,7 +316,7 @@ def get_location_read_state(campaign_id, location_id):
                 FROM messages
                 WHERE campaign_id = %s
                   AND location_id = %s
-                  AND COALESCE(ai_message_kind, '') NOT LIKE 'dice_animation%'
+                  AND COALESCE(ai_message_kind, '') NOT LIKE 'dice_animation%%'
                 ORDER BY id ASC
                 LIMIT 1
             """, (campaign_id, location_id))
@@ -370,7 +354,7 @@ def set_location_read_state(campaign_id, location_id):
 
         conn = get_db()
         cursor = conn.cursor()
-        _ensure_location_reads_table(cursor)
+        ensure_location_reads_table(cursor)
 
         if not _campaign_accessible_to_viewer(cursor, campaign_id, user_id):
             return jsonify({'error': 'Unauthorized or campaign not found'}), 403
@@ -428,7 +412,7 @@ def set_location_read_state(campaign_id, location_id):
             WHERE campaign_id = %s
               AND location_id = %s
               AND id > %s
-              AND COALESCE(ai_message_kind, '') NOT LIKE 'dice_animation%'
+              AND COALESCE(ai_message_kind, '') NOT LIKE 'dice_animation%%'
             ORDER BY id ASC
             LIMIT 1
         """, (campaign_id, location_id, rs.get('last_read_message_id') or 0))
