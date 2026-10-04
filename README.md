@@ -45,6 +45,8 @@ ShadowRealms AI is a web app for running World of Darkness chronicles with an AI
 - Discord-style chat: grouped messages, unread counts, jump to present, in-character and out-of-character rooms.
 - Live updates over server-sent events (falls back to polling).
 - Dice cards: rolls are made and posted by the server, so a dice card in the chat is always a real roll.
+- When the Storyteller calls for a roll, the server works out the pool from your sheet (specialties, Hunger, impairment) and the chat shows a roll chip that fills in the dice dialog.
+- Copy, reply (with a quote) and delete on messages: players delete their own, the Storyteller and admins delete any. Scroll up to load older history.
 - Slash commands with autocomplete: `/roll`, `/me`, `/chat` for everyone, and `/ai` commands for admins (`/ai help` lists them).
 - One "Speaking as" control: your character, yourself out of character, or the Storyteller voice for staff.
 
@@ -70,13 +72,16 @@ ShadowRealms AI is a web app for running World of Darkness chronicles with an AI
 
 ### Security
 
-- Rate limits and lockouts, token revocation with refresh rotation, a password policy, an audit log.
+- Rate limits and lockouts, 30-minute access tokens with refresh rotation and revocation, a password policy, a login audit.
+- Log lines can't be forged: control characters in anything a client sends are escaped.
 - gunicorn behind nginx with a strict Content-Security-Policy; only nginx is reachable from the network.
 - See [SECURITY.md](SECURITY.md) and [docs/SECURITY_MODEL.md](docs/SECURITY_MODEL.md).
 
 ### Admin
 
 - Invite codes, all chronicles, users (bans, password resets), downtime requests, the moderation log.
+- Logins & lockouts: lift a lockout by username or IP, and a paged login audit.
+- Laya: label player chat and run an evaluation of the classifier against those labels ([docs/laya/](docs/laya/HOWTO.md)).
 - AI system: models per role, cloud keys, embeddings and re-embedding.
 
 ---

@@ -1,14 +1,15 @@
 # Feature Documentation
 
 **Last Updated**: 2026-10-04  
-**Version**: 0.9.0
+**Version**: 0.10.0
 
-Feature notes for ShadowRealms AI that don't have their own document. The full list of changes per release is in [CHANGELOG.md](CHANGELOG.md); the plan for v0.9 is in [ROADMAP_v0.9.md](ROADMAP_v0.9.md).
+Feature notes for ShadowRealms AI that don't have their own document. The full list of changes per release is in [CHANGELOG.md](CHANGELOG.md); the plans are in [ROADMAP_v0.9.md](ROADMAP_v0.9.md) and [ROADMAP_v0.10.md](ROADMAP_v0.10.md).
 
 ---
 
 ## Table of Contents
 
+1. [What's new in v0.9.2 to v0.10.0](#whats-new-in-v092-to-v0100)
 1. [What's new in v0.9.0](#whats-new-in-v090)
 2. [Admin user management, play suspension, discover/join](#admin-user-management-play-suspension-discoverjoin)
 3. [Chronicle detach, join restrictions, per-campaign playing character](#chronicle-detach-join-restrictions-per-campaign-playing-character)
@@ -16,6 +17,16 @@ Feature notes for ShadowRealms AI that don't have their own document. The full l
 5. [Chat message actions and older history](#chat-message-actions-and-older-history)
 6. [Gothic theme and design system](#gothic-theme-and-design-system)
 7. [Invite Code System](#invite-code-system)
+
+---
+
+## What's new in v0.9.2 to v0.10.0
+
+- **Dice pools from the sheet.** The Storyteller asks for a roll with a tag like `[[roll: Dexterity + Stealth, difficulty 6]]`; the server works out the pool from the speaking character's sheet (specialties, Hunger, impairment, Classic or V5) and the chat shows a roll chip that fills in the dice dialog. See [dice-v5.md](dice-v5.md) and [dice-old-wod.md](dice-old-wod.md).
+- **Chat message actions and older history.** Copy, reply and delete, with the rights described [below](#chat-message-actions-and-older-history).
+- **Admin: Logins & lockouts.** Lift a lockout by username or one exact IP address; a paged, filterable login audit. See [SECURITY_MODEL.md](SECURITY_MODEL.md).
+- **Admin: Laya.** Label player chat (in character or not, and the intent) and run an evaluation of the Laya classifier against those labels; reports are kept and can be re-run, also from the CLI. See [laya/HOWTO.md](laya/HOWTO.md) and [laya/EVALUATION.md](laya/EVALUATION.md).
+- **Under the hood (0.10.0).** The frontend builds with Vite (react-router 7, motion, i18next 26, Jest 30, lint with no warnings), the backend runs on Python 3.12, and ChromaDB is pinned to 1.5.9. Access tokens last 30 minutes and log lines are escaped.
 
 ---
 

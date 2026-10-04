@@ -1,6 +1,6 @@
 # ShadowRealms AI - Complete Platform Documentation
 
-> **This is the long-form project history**, written release by release since v0.4. Early sections describe plans and setups that have since changed (SQLite, the old React UI, `docker-compose` v1, port 3000). For the current setup and documentation see the [README](README.md) and the [docs index](docs/README.md). Latest release: **v0.9.0 "Into the Night"** ([summary below](#version-090---into-the-night), full notes in [docs/CHANGELOG.md](docs/CHANGELOG.md)).
+> **This is the long-form project history**, written release by release since v0.4. Early sections describe plans and setups that have since changed (SQLite, the old React UI, `docker-compose` v1, port 3000). For the current setup and documentation see the [README](README.md) and the [docs index](docs/README.md). Latest release: **v0.10.0 "New foundations"** ([summary below](#version-0100---new-foundations), full notes in [docs/CHANGELOG.md](docs/CHANGELOG.md)).
 
 ## Project Overview & Vision
 
@@ -295,6 +295,7 @@ This philosophy ensures:
 - [Performance & Scalability](#performance--scalability)
 
 ### **📊 Current Status & Versions**
+- [Version 0.10.0 - New foundations](#version-0100---new-foundations)
 - [Version 0.9.0 - Into the Night](#version-090---into-the-night)
 - [Version 0.8.0 - Player account and character management milestone](#version-080---player-account-and-character-management-milestone)
 - [Version 0.7.18 - Admin chronicles, site admin access, account-delete hardening](#version-0718---admin-chronicles-site-admin-access-account-delete-hardening-)
@@ -633,9 +634,9 @@ CREATE TABLE system_logs (
 - **Scaling**: Horizontal scaling with load balancers and database clustering
 
 ### Container Images
-- **Backend**: `python:3.11-slim` (Ubuntu-based for better package compatibility)
+- **Backend**: `python:3.12-slim` (Debian-based, same Python as CI)
 - **Monitoring**: `python:3.11-slim` (Optimized for system monitoring)
-- **ChromaDB**: `chromadb/chroma:latest` (Official vector database)
+- **ChromaDB**: `chromadb/chroma:1.5.9` (pinned together with the `chromadb` client)
 - **Redis**: `redis:7-alpine` (Lightweight caching)
 - **Nginx**: `nginx:alpine` (Reverse proxy)
 - **Frontend**: `node:22-alpine` (Vite dev server and production build)
@@ -1322,6 +1323,19 @@ The project now includes comprehensive `.gitignore` rules covering:
 - **Campaign Continuity**: Persistent AI memory across multiple sessions
 - **Multi-Language**: Global accessibility with translation pipelines
 - **Real-time Collaboration**: Live AI-assisted gaming experiences
+
+## Version 0.10.0 - New foundations
+
+### What changed from 0.9.1 (releases 0.9.2, 0.9.3, 0.9.4 and 0.10.0, all on 2026-10-04)
+
+- **0.9.2 Loose ends**: `OLLAMA_MODEL` defaults to `llama3.2:3b`, the unused env variables are gone, the in-app README renders code blocks, tables, lists and images properly.
+- **0.9.3 Locks and logs**: an admin **Logins & lockouts** tab (unlock by username or exact IP, paged login audit), 30-minute access tokens, every log line escaped against log injection, and a fix for the unlock endpoint, which took `*` as an IP and cleared every lockout.
+- **0.9.4 At the table**: dice pools computed from the character sheet when the Storyteller calls for a roll, copy / reply / delete on chat messages, older history, and an admin **Laya** tab to label chat and evaluate the classifier. V5 Humanity rolls use the rating (Stains don't lower it).
+- **0.10.0 New foundations**: the frontend moved from Create React App to Vite; react-router 7, motion 14, i18next 26, Jest 30; all lint warnings fixed and lint fails CI on new ones; the backend image is on Python 3.12 and ChromaDB is pinned to 1.5.9. `npm audit --omit=dev`, Dependabot and CodeQL security alerts are all at zero.
+
+**See also:** [docs/CHANGELOG.md](docs/CHANGELOG.md) (`[0.9.2]` to `[0.10.0]`), [docs/ROADMAP_v0.10.md](docs/ROADMAP_v0.10.md).
+
+---
 
 ## Version 0.9.0 - Into the Night
 
