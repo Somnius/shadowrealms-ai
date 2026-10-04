@@ -1,32 +1,24 @@
-#!/bin/bash
-# ShadowRealms AI - Frontend Test Runner
-# Runs all frontend tests inside the Docker container
+#!/usr/bin/env bash
+#
+# ShadowRealms AI - frontend test runner (Jest via react-scripts).
+#
+# Runs the same command as the CI "Frontend tests + build" job, in a one-off container of the
+# dev frontend service (the service is behind the `dev` profile and normally not running).
+#
+#   ./scripts/run-frontend-tests.sh                 # whole suite
+#   ./scripts/run-frontend-tests.sh src/i18n        # only tests whose path matches
+#   ./scripts/run-frontend-tests.sh --coverage      # with a coverage report in frontend/coverage/
+#
+# Extra arguments go straight to Jest. JEST_WORKERS (default 4) caps the parallel test workers.
 
-echo "🧪 Running ShadowRealms AI Frontend Tests..."
-echo "============================================"
+set -euo pipefail
 
-# Check if frontend container is running
-if ! docker compose ps frontend | grep -q "Up"; then
-    echo "⚠️  Frontend container is not running. Starting it..."
-    docker compose up -d frontend
-    sleep 5
-fi
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+cd "$ROOT"
 
-echo ""
-echo "📦 Running Security Tests..."
-docker compose exec frontend npm test -- --testPathPattern=security.test.js --no-coverage --watchAll=false
+WORKERS="${JEST_WORKERS:-4}"
 
-echo ""
-echo "📦 Running Integration Tests..."
-docker compose exec frontend npm test -- --testPathPattern=userFlow.test.js --no-coverage --watchAll=false
-
-echo ""
-echo "📦 Running All Tests with Coverage..."
-docker compose exec frontend npm test -- --coverage --watchAll=false
-
-echo ""
-echo "✅ Frontend tests completed!"
-echo ""
-echo "📊 Check coverage report in: frontend/coverage/"
-echo ""
-
+echo "Running frontend tests (jest, ${WORKERS} workers)..."
+docker compose --profile dev run --rm --no-deps \
+  -e CI=true \
+  frontend npx react-scripts test --watchAll=false --maxWorkers="$WORKERS" "$@"
