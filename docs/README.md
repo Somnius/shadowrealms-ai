@@ -54,4 +54,5 @@ Index of the documentation in this folder (current release: v0.10.0). The [proje
 
 - [Wiki](https://github.com/Somnius/shadowrealms-ai/wiki): installation, configuration, AI models, rules editions, World of Darkness books, architecture, development and CI, security, troubleshooting
 - [Issues](https://github.com/Somnius/shadowrealms-ai/issues): bug reports and feature requests
-- [Demo video](../demo/README.md) (from v0.7.0)
+- [Trailer](https://github.com/Somnius/shadowrealms-ai/releases/tag/trailer-v0.10.0) (v0.10.0, English and Greek; how it was made: [video/TRAILER_PLAN.md](video/TRAILER_PLAN.md))
+- [Old demo video](../demo/README.md) (from v0.7.0)
