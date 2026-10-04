@@ -103,7 +103,7 @@ def test_older_page_reverses_and_flags_more():
 
 def test_reply_excerpt():
     assert ma.reply_excerpt("  **Hello**\n\n  _there_  ") == "Hello there"
-    assert ma.reply_excerpt("Roll it [[roll: Wits + Awareness, difficulty 3]] now") == "Roll it now"
+    assert ma.reply_excerpt("Roll [[roll: Wits + Awareness | 5 dice | difficulty 6]] now") == "Roll Wits + Awareness now"
     long = "word " * 100
     out = ma.reply_excerpt(long)
     assert len(out) <= ma.REPLY_EXCERPT_CHARS

@@ -105,12 +105,13 @@ def older_page(rows_newest_first: List[Any], limit: int) -> Tuple[List[Any], boo
 
 _WS = re.compile(r"\s+")
 _MD_NOISE = re.compile(r"[*_`#>~]+")
-_ROLL_TAG = re.compile(r"\[\[\s*roll\s*:[^\]]*\]\]", re.IGNORECASE)
+# [[roll: Label | 6 dice | ...]] (the AI's roll requests) reads as its label.
+_ROLL_TAG = re.compile(r"\[\[\s*roll\s*:\s*([^\]|\n]*?)\s*(?:\|[^\]\n]*)?\]\]", re.IGNORECASE)
 
 
 def reply_excerpt(content: Any, limit: int = REPLY_EXCERPT_CHARS) -> str:
     """One line of plain-ish text from a message for a reply quote."""
-    text = _ROLL_TAG.sub("", str(content or ""))
+    text = _ROLL_TAG.sub(lambda m: m.group(1), str(content or ""))
     text = _MD_NOISE.sub("", text)
     text = _WS.sub(" ", text).strip()
     if len(text) > limit:
