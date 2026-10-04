@@ -204,3 +204,41 @@ def test_model_info(tmp_path):
     assert info["name"] == "laya-shadowrealms-chat" and info["onnx_bytes"] == 4
     assert len(info["config_sha256"]) == 12 and info["onnx_mtime"].endswith("Z")
     assert le.model_info(str(tmp_path / "missing"))["name"] is None
+
+
+class _FakeCursor:
+    def __init__(self, labels):
+        self.labels, self.sql, self.rowcount = labels, [], 0
+
+    def execute(self, sql, params=()):
+        self.sql.append((" ".join(sql.split()), params))
+        self.rowcount = 1 if sql.lstrip().startswith("UPDATE") else 0
+
+    def fetchone(self):
+        return {"n": self.labels}
+
+
+def test_stale_threshold_scales_with_labels():
+    assert le.stale_after_seconds(_FakeCursor(0)) == le.STALE_RUN_MIN_SEC
+    assert le.stale_after_seconds(_FakeCursor(10)) == le.STALE_RUN_MIN_SEC
+    assert le.stale_after_seconds(_FakeCursor(5000)) == 5000 * le.STALE_RUN_SEC_PER_LABEL
+
+
+def test_reap_marks_old_running_rows_failed():
+    cur = _FakeCursor(4000)
+    assert le.reap_stale_runs(cur) == 1
+    sql, params = cur.sql[-1]
+    assert sql.startswith("UPDATE laya_eval_reports SET status = 'failed'") and "status = 'running'" in sql
+    assert params == (4000,)
+
+
+def test_failure_log_is_escaped(caplog):
+    items = [{"message_id": 1, "content": "x", "in_character": True, "intent": "roleplay"}]
+
+    def boom(_):
+        raise RuntimeError("bad\nFAKE LOG LINE")
+
+    with caplog.at_level("WARNING", logger="services.laya_eval"):
+        r = le.build_report(items, boom, model={}, ooc_threshold=0.8)
+    assert r["errors"] == 1
+    assert "\n" not in caplog.records[-1].getMessage()

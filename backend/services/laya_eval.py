@@ -28,6 +28,7 @@ import os
 from datetime import datetime, timezone
 from typing import Any, Callable, Dict, Iterable, List, Optional, Sequence
 
+from services.log_safety import safe_log_value
 from services.request_validation import RequestValidationError, optional_str, strict_bool, strict_int
 
 logger = logging.getLogger(__name__)
@@ -42,7 +43,11 @@ MIN_N_TOTAL = 100      # fewer labelled messages than this -> the whole report i
 EXCERPT_CHARS = 160
 MAX_SCAN = 5000        # newest eligible messages the label queue looks at
 REPORT_VERSION = 1
-STALE_RUN_MINUTES = 30  # a 'running' row older than this is a crashed run
+# A 'running' row older than max(STALE_RUN_MIN_SEC, labels x STALE_RUN_SEC_PER_LABEL) is a crashed
+# run (process restart mid-run). Laya takes ~0.25 s per message on 4 threads, so 1 s per label is
+# a 4x margin, and the floor covers model loading and a busy CPU.
+STALE_RUN_MIN_SEC = 30 * 60
+STALE_RUN_SEC_PER_LABEL = 1
 
 
 # --- validation -----------------------------------------------------------------------------
@@ -199,7 +204,7 @@ def build_report(items: Iterable[Dict[str, Any]], predict: Callable[[str], Dict[
             p = predict(it["content"])
         except Exception as e:  # noqa: BLE001 - one bad message must not sink the run
             errors += 1
-            logger.warning("Laya failed on message %s: %s: %s", it.get("message_id"), type(e).__name__, str(e)[:200])
+            logger.warning("Laya failed on message %s: %s: %s", it.get("message_id"), type(e).__name__, safe_log_value(e, 200))
             continue
         lang = message_language(it["content"])
         g_ooc, p_ooc = ooc_name(bool(it["in_character"])), ooc_name(bool(p["in_character"]))
@@ -458,14 +463,26 @@ def fetch_texts(cursor, message_ids: Sequence[int]) -> Dict[int, str]:
     return {r["id"]: r["content"] for r in cursor.fetchall()}
 
 
-def start_run(cursor, user_id: Optional[int], source: str = "admin") -> Optional[int]:
-    """New 'running' report row, or None if another run is in progress. Crashed runs
-    (still 'running' after STALE_RUN_MINUTES) are marked failed first."""
+def stale_after_seconds(cursor) -> int:
+    """How long a run may stay 'running' before it counts as crashed (scales with the label count)."""
+    cursor.execute("SELECT COUNT(*) AS n FROM laya_labels", ())
+    return max(STALE_RUN_MIN_SEC, int(cursor.fetchone()["n"]) * STALE_RUN_SEC_PER_LABEL)
+
+
+def reap_stale_runs(cursor) -> int:
+    """Mark crashed runs (still 'running' after stale_after_seconds) as failed; the caller commits."""
     cursor.execute(
         "UPDATE laya_eval_reports SET status = 'failed', finished_at = NOW() "
-        "WHERE status = 'running' AND started_at < NOW() - make_interval(mins => %s)",
-        (STALE_RUN_MINUTES,),
+        "WHERE status = 'running' AND started_at < NOW() - make_interval(secs => %s)",
+        (stale_after_seconds(cursor),),
     )
+    return cursor.rowcount or 0
+
+
+def start_run(cursor, user_id: Optional[int], source: str = "admin") -> Optional[int]:
+    """New 'running' report row, or None if another run is in progress. Crashed runs are
+    marked failed first (reap_stale_runs)."""
+    reap_stale_runs(cursor)
     cursor.execute(
         "INSERT INTO laya_eval_reports (status, source, started_by) VALUES ('running', %s, %s) "
         "ON CONFLICT DO NOTHING RETURNING id",
@@ -491,13 +508,21 @@ def save_report(cursor, report: Dict[str, Any], user_id: Optional[int], source: 
     return cursor.fetchone()["id"]
 
 
+_RUN_SQL = """
+    SELECT r.id, r.status, r.source, r.started_at, r.finished_at, r.report, u.username AS started_by
+      FROM laya_eval_reports r LEFT JOIN users u ON u.id = r.started_by
+"""
+
+
 def latest_runs(cursor, limit: int = 10) -> List[Dict[str, Any]]:
-    cursor.execute("""
-        SELECT r.id, r.status, r.source, r.started_at, r.finished_at, r.report, u.username AS started_by
-          FROM laya_eval_reports r LEFT JOIN users u ON u.id = r.started_by
-         ORDER BY r.id DESC LIMIT %s
-    """, (limit,))
+    cursor.execute(_RUN_SQL + " ORDER BY r.id DESC LIMIT %s", (limit,))
     return [dict(r) for r in cursor.fetchall()]
+
+
+def get_run(cursor, run_id: int) -> Optional[Dict[str, Any]]:
+    cursor.execute(_RUN_SQL + " WHERE r.id = %s", (run_id,))
+    row = cursor.fetchone()
+    return dict(row) if row else None
 
 
 def run_summary(row: Dict[str, Any]) -> Dict[str, Any]:
