@@ -28,8 +28,10 @@ from services.auth_security import (
     RULE_INVITE_IP,
     check_password_policy,
     hash_password,
+    is_known_ip,
     login_checks,
     needs_rehash,
+    remember_ip,
     success_clears,
     verify_password,
 )
@@ -290,6 +292,8 @@ def register():
         )
         if cursor.fetchone():
             release_invite_code(invite_code)
+            # Counts like a wrong invite code, so an invite holder can't enumerate accounts for free
+            throttle.fail(invite_checks)
             return jsonify({'error': 'Username or email is already registered', 'code': 'ALREADY_REGISTERED'}), 400
         cursor.execute("""
             INSERT INTO users (username, email, password_hash, role, created_at)
@@ -339,7 +343,7 @@ def login():
     ip = client_ip()
 
     throttle = get_throttle()
-    checks = login_checks(username, ip)
+    checks = login_checks(username, ip, known_ip=is_known_ip(throttle.store, username, ip))
     wait = throttle.locked_for(checks)
     if wait:
         log_auth_event('login_blocked', username=username, ip=ip, user_agent=_ua(), details={'retry_after': wait})
@@ -386,6 +390,7 @@ def login():
         db.close()
 
     throttle.clear(success_clears(username, ip))
+    remember_ip(throttle.store, username, ip)
     log_auth_event('login', user_id=user['id'], username=user['username'], ip=ip, user_agent=_ua())
     logger.info("User logged in: %s (ID: %s)", user['username'], user['id'])
     tokens = issue_tokens(user)
