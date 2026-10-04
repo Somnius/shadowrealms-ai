@@ -94,7 +94,7 @@ and recreate the container with `docker compose up -d backend`. See [SECURITY_MO
 | `JWT_SECRET_KEY` | none | Signs access and refresh tokens. Changing it signs everyone out. |
 | `POSTGRES_DB` | `shadowrealms_db` (template) | Database name, used by the `postgresql` service and passed to the backend as `DATABASE_NAME`. |
 | `POSTGRES_USER`, `POSTGRES_PASSWORD` | none | Database credentials. Generate your own ([POSTGRESQL_ENV_SETUP.md](POSTGRESQL_ENV_SETUP.md)). |
-| `DATABASE_TYPE`, `DATABASE_HOST`, `DATABASE_PORT` | `postgresql`, `postgresql`, `5432` (template) | Keep as in the template. |
+| `DATABASE_TYPE`, `DATABASE_HOST`, `DATABASE_PORT` | `postgresql`, `localhost`, `5432` (template) | Keep as in the template. `DATABASE_HOST` must be `localhost`: the backend uses the host network, so the service name `postgresql` doesn't resolve inside it. |
 | `VERSION` | none | Release version shown by `/api/version`. Bumped by `scripts/version-bump.sh`. |
 
 ### Server and security
