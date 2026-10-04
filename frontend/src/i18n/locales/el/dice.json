@@ -178,5 +178,17 @@
     "classic_one": "{{count}} επιτυχία σε δυσκολία {{difficulty}}",
     "classic_other": "{{count}} επιτυχίες σε δυσκολία {{difficulty}}",
     "diceSr": "Ζάρια: {{dice}}"
+  },
+  "request": {
+    "group": "Ρίψεις που ζητήθηκαν",
+    "open": "Άνοιγμα του παραθύρου ρίψης με αυτά τα ζάρια",
+    "roll": "Ρίψη: {{text}}",
+    "withSpecialty": "{{label}}, specialty {{specialty}}",
+    "v5Dice_one": "{{count}} ζάρι, {{hunger}} Hunger",
+    "v5Dice_other": "{{count}} ζάρια, {{hunger}} Hunger",
+    "v5": "{{dice}}, χρειάζονται {{difficulty}}",
+    "classicDice_one": "{{count}} ζάρι",
+    "classicDice_other": "{{count}} ζάρια",
+    "classic": "{{dice}}, δυσκολία {{difficulty}}"
   }
 }

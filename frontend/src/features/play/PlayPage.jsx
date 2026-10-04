@@ -19,6 +19,8 @@ import { useLiveUpdates } from '../chat/useLiveUpdates';
 import { useDiceOverlay } from '../dice/useDiceOverlay';
 import { useDiceActions } from '../dice/useDiceActions';
 import { DiceHistoryDialog, DiceRulesDialog, RollDialog } from '../dice/DiceDialogs';
+import { RollRequestContext } from '../dice/RollRequestChips';
+import { rollPrefill } from '../dice/rollRequests';
 import ChannelList, { isOpenRoom, localizeRooms, roomGlyph, sortRooms } from './ChannelList';
 import MemberPanel from './MemberPanel';
 import QuickSwitcher from './QuickSwitcher';
@@ -151,6 +153,8 @@ export default function PlayPage() {
   const [panelOpen, setPanelOpen] = useState(() => readLocal('sr_member_panel', '1') !== '0');
   const [panelDrawer, setPanelDrawer] = useState(false);
   const [rollOpen, setRollOpen] = useState(false);
+  // A Storyteller roll request the dialog opens with (features/dice/rollRequests.js), or null.
+  const [rollRequest, setRollRequest] = useState(null);
   const [rulesOpen, setRulesOpen] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false);
   const [switcherOpen, setSwitcherOpen] = useState(false);
@@ -203,6 +207,20 @@ export default function PlayPage() {
     fetchRoom: room.fetchSince,
     toast,
   });
+  // Roll chips under Storyteller messages: the player who asked opens the roll dialog pre-filled.
+  const rollRequestCtx = useMemo(
+    () => ({
+      userId: user?.id ?? null,
+      onRoll:
+        ready && room.status !== 'closed'
+          ? (req) => {
+              setRollRequest(rollPrefill(req));
+              setRollOpen(true);
+            }
+          : null,
+    }),
+    [user, ready, room.status]
+  );
 
   const refreshUnread = useCallback(async () => {
     if (playStatus !== 'ready') return;
@@ -423,17 +441,19 @@ export default function PlayPage() {
                 </EmptyState>
               </div>
             ) : (
-              <MessageList
-                roomKey={`${campaignId}:${locationId}`}
-                roomName={location?.name}
-                messages={room.messages}
-                status={ready ? room.status : 'loading'}
-                firstUnreadId={room.firstUnreadId}
-                hiddenIds={dice.hiddenMessageIds}
-                timeZone={user?.display_timezone || null}
-                onAtBottomChange={setAtBottom}
-                userId={user?.id}
-              />
+              <RollRequestContext.Provider value={rollRequestCtx}>
+                <MessageList
+                  roomKey={`${campaignId}:${locationId}`}
+                  roomName={location?.name}
+                  messages={room.messages}
+                  status={ready ? room.status : 'loading'}
+                  firstUnreadId={room.firstUnreadId}
+                  hiddenIds={dice.hiddenMessageIds}
+                  timeZone={user?.display_timezone || null}
+                  onAtBottomChange={setAtBottom}
+                  userId={user?.id}
+                />
+              </RollRequestContext.Provider>
             )}
             <div className="sr-chat__bottom">
               <div className="sr-chat__typing" aria-live="polite">
@@ -518,8 +538,10 @@ export default function PlayPage() {
         <>
           <RollDialog
             open={rollOpen}
+            prefill={rollRequest}
             onClose={() => {
               setRollOpen(false);
+              setRollRequest(null);
               // Back to typing (the dialog would otherwise return focus to the dice button).
               requestAnimationFrame(() => composerRef.current && composerRef.current.focus());
             }}

@@ -1,0 +1,28 @@
+/* Roll chips under a Storyteller message (RollRequestChips.jsx). */
+.sr-app .sr-rollreq { display: flex; flex-wrap: wrap; gap: var(--sr-space-2); margin-top: var(--sr-space-2); }
+.sr-app .sr-rollreq__chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sr-space-1);
+  max-width: 100%;
+  padding: var(--sr-space-1) var(--sr-space-3);
+  border: 1px solid var(--sr-border);
+  border-radius: var(--sr-radius-full);
+  background: var(--sr-surface-sunken);
+  color: var(--sr-text-2);
+  font-family: var(--sr-font-body);
+  font-size: var(--sr-text-sm);
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+  text-align: start;
+}
+.sr-app .sr-rollreq__chip svg { flex: none; }
+.sr-app .sr-rollreq__chip--action {
+  cursor: pointer;
+  border-color: var(--sr-border-strong);
+  background: var(--sr-surface);
+  color: var(--sr-text);
+  transition: background var(--sr-dur-fast) var(--sr-ease-out), border-color var(--sr-dur-fast) var(--sr-ease-out);
+}
+.sr-app .sr-rollreq__chip--action:hover { background: var(--sr-surface-hover); border-color: var(--sr-accent); }
+.sr-app .sr-rollreq__chip--action:focus-visible { outline: none; box-shadow: 0 0 0 2px var(--sr-focus-color); }
