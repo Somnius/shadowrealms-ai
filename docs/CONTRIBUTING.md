@@ -58,7 +58,7 @@ GitHub Actions (`.github/workflows/ci.yml`) runs on pull requests and on pushes 
 | Python | `python -m compileall -q backend monitoring books scripts tests` and `ruff check --select E9,F63,F7,F82` (syntax errors and undefined names only) |
 | Backend unit tests | `python -m pytest -q backend/tests/unit` (no database or AI needed) |
 | PostgreSQL schema | applies `init_postgresql_schema.sql`, runs `migrate_db()` twice, diffs the schema |
-| Frontend | `npx react-scripts test --watchAll=false`, then `npm run build` |
+| Frontend | `npx jest --ci`, `npm run lint` (warnings only), then `npm run build` |
 
 CodeQL (`.github/workflows/codeql.yml`) scans Python and JavaScript, and Dependabot opens monthly update PRs for pip, npm, Docker and GitHub Actions.
 

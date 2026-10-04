@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- Frontend builds with Vite instead of Create React App (`react-scripts` removed). `npm start`, `npm run build` and `npm test` work as before; output still goes to `frontend/build/`, with no inline scripts and no source maps. Jest runs on its own with one config (`jest.config.js`), and `npm run lint` uses a plain ESLint 9 config. Node 22 in the frontend image and CI. `npm audit --omit=dev` went from 69 findings to 2 (react-router 6). Rebuild the dev image once: `docker compose --profile dev build frontend`.
+
 ## [0.9.4] - 2026-10-04 - At the table
 
 ### Added

@@ -52,6 +52,8 @@ For live-reload development, start the dev server (it is behind the `dev` compos
 docker compose --profile dev up -d frontend
 ```
 
+The dev server is Vite (`frontend/vite.config.mjs`). To run it without nginx in front, set `API_PROXY_TARGET=http://127.0.0.1:5000` and it proxies `/api` itself. The `frontend` image holds the npm packages, so after a dependency change rebuild it (`docker compose --profile dev build frontend`) before `./scripts/build-frontend.sh` or the tests.
+
 **Editing `nginx/nginx.conf`:** the file is bind-mounted as a single file, and editors or `sed -i` replace it with a new file that the running container doesn't see. After an edit, recreate nginx rather than reloading it:
 
 ```bash

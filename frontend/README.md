@@ -1,6 +1,6 @@
 # ShadowRealms AI - Frontend
 
-React single-page app (Create React App, React Router). In production nginx serves the static build from `frontend/build/`; there is a live-reload dev server for development.
+React single-page app (Vite, React Router). In production nginx serves the static build from `frontend/build/`; there is a live-reload dev server for development.
 
 (`public/README.md` is a symlink to the repository's main README, which the app shows in its README dialog. This file is the frontend's own notes.)
 
@@ -12,7 +12,11 @@ docker compose --profile dev up -d frontend # dev server on 127.0.0.1:3000, see 
 ./scripts/run-frontend-tests.sh             # Jest suite, see TESTING.md
 ```
 
-The build keeps every script in a file (`INLINE_RUNTIME_CHUNK=false`) so nginx's Content-Security-Policy can forbid inline scripts.
+Inside `frontend/` (node 22): `npm start` (Vite dev server on port 3000), `npm run build`, `npm test`, `npm run lint`.
+
+The build (`vite.config.mjs`) keeps every script in a file, without the module preload polyfill, so nginx's Content-Security-Policy can forbid inline scripts. Hashed assets go to `build/static/`. JSX in `.js` files is fine; a small plugin in the Vite config compiles it. `REACT_APP_*` variables still work (`import.meta.env` or `process.env`).
+
+After a dependency change, rebuild the dev image before building: `docker compose --profile dev build frontend`.
 
 ## Routes
 

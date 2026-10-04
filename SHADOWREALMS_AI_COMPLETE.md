@@ -638,7 +638,7 @@ CREATE TABLE system_logs (
 - **ChromaDB**: `chromadb/chroma:latest` (Official vector database)
 - **Redis**: `redis:7-alpine` (Lightweight caching)
 - **Nginx**: `nginx:alpine` (Reverse proxy)
-- **Frontend**: `node:18-alpine` (React development)
+- **Frontend**: `node:22-alpine` (Vite dev server and production build)
 
 ### Benefits
 - **Consistency**: Same environment across development and production
