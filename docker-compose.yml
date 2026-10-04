@@ -154,7 +154,10 @@ services:
       - shadowrealms-network
     restart: unless-stopped
 
+  # Live-reload dev server. Not started by default: production is the static build in
+  # frontend/build (./scripts/build-frontend.sh) served by nginx. Use `--profile dev`.
   frontend:
+    profiles: ["dev"]
     build:
       context: ./frontend
       dockerfile: Dockerfile
@@ -189,9 +192,9 @@ services:
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf
       - ./nginx/ssl:/etc/nginx/ssl
+      - ./frontend/build:/usr/share/nginx/html:ro
     depends_on:
       - backend
-      - frontend
     network_mode: "host"
     restart: unless-stopped
 
