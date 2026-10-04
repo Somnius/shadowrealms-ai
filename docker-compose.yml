@@ -102,7 +102,7 @@ services:
   postgresql:
     image: postgres:16-alpine
     ports:
-      - "5432:5432"
+      - "127.0.0.1:5432:5432"
     environment:
       # ⚠️  Credentials loaded from .env file (gitignored)
       # See docs/POSTGRESQL_ENV_SETUP.md for secure credential generation
@@ -125,7 +125,7 @@ services:
   chromadb:
     image: chromadb/chroma:latest
     ports:
-      - "8000:8000"
+      - "127.0.0.1:8000:8000"
     volumes:
       - ./data/vector_db:/data
     networks:
@@ -137,7 +137,7 @@ services:
       context: ./monitoring
       dockerfile: Dockerfile
     ports:
-      - "8001:8000"
+      - "127.0.0.1:8001:8000"
     volumes:
       - ./data/logs:/app/logs
       - /var/run/docker.sock:/var/run/docker.sock
@@ -159,7 +159,7 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
     ports:
-      - "3000:3000"
+      - "127.0.0.1:3000:3000"
     volumes:
       - ./frontend:/app
       - /app/node_modules
@@ -174,7 +174,7 @@ services:
   redis:
     image: redis:7-alpine
     ports:
-      - "6379:6379"
+      - "127.0.0.1:6379:6379"
     volumes:
       - redis_data:/data
     networks:
