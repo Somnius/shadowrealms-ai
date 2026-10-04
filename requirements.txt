@@ -39,7 +39,7 @@ python-socketio>=5.17.0
 # Utilities
 python-dateutil>=2.8.0
 pytz>=2023.3
-click>=8.1.0
+click>=8.5.0
 
 # Development & Testing
 pytest>=7.4.0
