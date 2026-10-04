@@ -6,7 +6,7 @@
 
 ### Self-hosted AI Storyteller for World of Darkness chronicles
 
-[![Version](https://img.shields.io/badge/version-0.9.2-blue.svg)](docs/CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-0.9.3-blue.svg)](docs/CHANGELOG.md)
 [![CI](https://github.com/Somnius/shadowrealms-ai/actions/workflows/ci.yml/badge.svg)](https://github.com/Somnius/shadowrealms-ai/actions/workflows/ci.yml)
 [![CodeQL](https://github.com/Somnius/shadowrealms-ai/actions/workflows/codeql.yml/badge.svg)](https://github.com/Somnius/shadowrealms-ai/actions/workflows/codeql.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-yellow.svg)](LICENSE)

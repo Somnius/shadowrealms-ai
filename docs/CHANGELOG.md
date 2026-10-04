@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.3] - 2026-10-04 - Locks and logs
+
+### Added
+- Admin **Logins & lockouts** tab (`/admin/security`): lift a lockout by username or one exact IP address, and a paged login audit with username / event / IP filters.
+- `GET /api/admin/auth-events` takes `offset`, `username` and `ip`, returns `has_more`, UTC timestamps, and only non-secret detail fields.
+
+### Changed
+- Access tokens last 30 minutes (the browser refreshes them on its own); `main` is protected against force-push and deletion.
+- Dependencies: `@testing-library/user-event` and `autoprefixer` bumped, unused `msw` removed, patched `underscore` and `qs` pinned.
+
+### Security
+- Log injection (CodeQL `py/log-injection`): every log record is escaped (CR/LF and other control characters show as `\n`, `\x1b`, ...), exception messages inside tracebacks included; call sites that log client input use `safe_log_value()`.
+- The admin unlock endpoint took any string as an IP and used it in a Redis key pattern, so `*` cleared every lockout; it now accepts one exact IPv4/IPv6 address.
+
 ## [0.9.2] - 2026-10-04 - Loose ends
 
 ### Changed
