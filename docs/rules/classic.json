@@ -1,0 +1,718 @@
+{
+  "ruleset": "classic_revised",
+  "title": "Vampire: The Masquerade Revised (oWoD) constants",
+  "sources": {
+    "primary": "VtM Revised core (2000); page numbers in 'ref' fields are printed Revised pages",
+    "cross_check": "V20 core, used only where the Revised text extraction was unreadable (flagged with 'source': 'V20')",
+    "spec": "docs/rules/CLASSIC_REVISED.md"
+  },
+  "dice": {
+    "die": "d10",
+    "difficulty_min": 2,
+    "difficulty_max": 10,
+    "difficulty_default": 6,
+    "ten_always_succeeds": true,
+    "ones_cancel_successes": true,
+    "botch_rule": "botch iff raw_successes == 0 and ones >= 1; successes cancelled to 0 by ones = plain failure",
+    "max_traits_in_pool": 2,
+    "trait_1_to_10_pool_cannot_add_other_traits": true,
+    "willpower_auto_success": {
+      "successes": 1,
+      "max_per_turn": 1,
+      "declare_before_roll": true,
+      "cancellable_by_ones": false,
+      "ref": "pp. 137, 193"
+    },
+    "specialty": {
+      "min_trait_rating": 4,
+      "revised_mode": "reroll_tens_open_ended",
+      "v20_mode": "ten_counts_double",
+      "default_mode": "revised_reroll",
+      "ambiguous": "whether 1s on rerolled dice cancel successes (default: no)",
+      "ref": "p. 117; V20 p. 96"
+    },
+    "automatic_success": {
+      "condition": "pool >= difficulty",
+      "successes": 1,
+      "not_in_combat_or_stress": true,
+      "ref": "p. 193"
+    },
+    "retry_penalty": "+1 difficulty per repeated failed attempt (ST option)",
+    "multiple_actions": "first pool -N dice (N = number of actions), each later action -1 more cumulative; pool <= 0 => not allowed",
+    "damage_and_soak_can_botch": false,
+    "untrained": {
+      "talents": "attribute only, no penalty",
+      "skills": "attribute only, +1 difficulty",
+      "knowledges": "no roll unless ST permits",
+      "ref": "pp. 120-126"
+    },
+    "difficulty_table": {
+      "3": "easy",
+      "4": "routine",
+      "5": "straightforward",
+      "6": "standard",
+      "7": "challenging",
+      "8": "difficult",
+      "9": "extremely difficult"
+    },
+    "degrees_of_success": {
+      "1": "marginal",
+      "2": "moderate",
+      "3": "complete",
+      "4": "exceptional",
+      "5": "phenomenal (5+)"
+    }
+  },
+  "attributes": {
+    "physical": [
+      "Strength",
+      "Dexterity",
+      "Stamina"
+    ],
+    "social": [
+      "Charisma",
+      "Manipulation",
+      "Appearance"
+    ],
+    "mental": [
+      "Perception",
+      "Intelligence",
+      "Wits"
+    ]
+  },
+  "abilities": {
+    "talents": [
+      "Alertness",
+      "Athletics",
+      "Brawl",
+      "Dodge",
+      "Empathy",
+      "Expression",
+      "Intimidation",
+      "Leadership",
+      "Streetwise",
+      "Subterfuge"
+    ],
+    "skills": [
+      "Animal Ken",
+      "Crafts",
+      "Drive",
+      "Etiquette",
+      "Firearms",
+      "Melee",
+      "Performance",
+      "Security",
+      "Stealth",
+      "Survival"
+    ],
+    "knowledges": [
+      "Academics",
+      "Computer",
+      "Finance",
+      "Investigation",
+      "Law",
+      "Linguistics",
+      "Medicine",
+      "Occult",
+      "Politics",
+      "Science"
+    ]
+  },
+  "disciplines": [
+    "Animalism",
+    "Auspex",
+    "Celerity",
+    "Chimerstry",
+    "Dementation",
+    "Dominate",
+    "Fortitude",
+    "Necromancy",
+    "Obfuscate",
+    "Obtenebration",
+    "Potence",
+    "Presence",
+    "Protean",
+    "Quietus",
+    "Serpentis",
+    "Thaumaturgy",
+    "Vicissitude"
+  ],
+  "backgrounds": [
+    "Allies",
+    "Contacts",
+    "Fame",
+    "Generation",
+    "Herd",
+    "Influence",
+    "Mentor",
+    "Resources",
+    "Retainers",
+    "Status"
+  ],
+  "virtues": {
+    "pairs": [
+      [
+        "Conscience",
+        "Conviction"
+      ],
+      [
+        "Self-Control",
+        "Instinct"
+      ]
+    ],
+    "always": [
+      "Courage"
+    ],
+    "conviction_instinct_start_at": 0,
+    "ref": "pp. 133-134, 286-287"
+  },
+  "paths": [
+    "Humanity",
+    "Path of Blood",
+    "Path of the Bones",
+    "Path of Metamorphosis",
+    "Path of Night",
+    "Path of Paradox",
+    "Path of Typhon"
+  ],
+  "hierarchy_of_sins_humanity": {
+    "10": "Selfish thoughts",
+    "9": "Minor selfish acts",
+    "8": "Injury to another (accidental or otherwise)",
+    "7": "Theft",
+    "6": "Accidental violation (e.g. draining a vessel out of starvation)",
+    "5": "Intentional property damage",
+    "4": "Impassioned violation (e.g. manslaughter, killing in frenzy)",
+    "3": "Planned violation (e.g. murder)",
+    "2": "Casual violation (thoughtless killing, feeding past satiation)",
+    "1": "Utter perversion or heinous acts",
+    "check": {
+      "roll": "Conscience (or Conviction)",
+      "difficulty": 8,
+      "willpower_allowed": false,
+      "fail": "-1 Humanity",
+      "botch": "-1 Humanity, -1 Conscience, gain derangement"
+    },
+    "ref": "pp. 221-222"
+  },
+  "generation_table": [
+    {
+      "generation": 3,
+      "max_trait": 10,
+      "blood_pool_max": null,
+      "blood_per_turn": null
+    },
+    {
+      "generation": 4,
+      "max_trait": 9,
+      "blood_pool_max": 50,
+      "blood_per_turn": 10
+    },
+    {
+      "generation": 5,
+      "max_trait": 8,
+      "blood_pool_max": 40,
+      "blood_per_turn": 8
+    },
+    {
+      "generation": 6,
+      "max_trait": 7,
+      "blood_pool_max": 30,
+      "blood_per_turn": 6
+    },
+    {
+      "generation": 7,
+      "max_trait": 6,
+      "blood_pool_max": 20,
+      "blood_per_turn": 4
+    },
+    {
+      "generation": 8,
+      "max_trait": 5,
+      "blood_pool_max": 15,
+      "blood_per_turn": 3
+    },
+    {
+      "generation": 9,
+      "max_trait": 5,
+      "blood_pool_max": 14,
+      "blood_per_turn": 2
+    },
+    {
+      "generation": 10,
+      "max_trait": 5,
+      "blood_pool_max": 13,
+      "blood_per_turn": 1
+    },
+    {
+      "generation": 11,
+      "max_trait": 5,
+      "blood_pool_max": 12,
+      "blood_per_turn": 1
+    },
+    {
+      "generation": 12,
+      "max_trait": 5,
+      "blood_pool_max": 11,
+      "blood_per_turn": 1
+    },
+    {
+      "generation": 13,
+      "max_trait": 5,
+      "blood_pool_max": 10,
+      "blood_per_turn": 1,
+      "note": "13th and higher"
+    }
+  ],
+  "generation_table_ref": "p. 139 (same values in V20)",
+  "generation_background_to_generation": {
+    "0": 13,
+    "1": 12,
+    "2": 11,
+    "3": 10,
+    "4": 9,
+    "5": 8
+  },
+  "blood": {
+    "nightly_cost": 1,
+    "heal_normal_level_cost": 1,
+    "heal_aggravated": {
+      "blood_per_level": 5,
+      "requires": "full day of rest",
+      "extra_levels_same_day": "5 blood + 1 Willpower each"
+    },
+    "physical_attribute_boost": {
+      "cost_per_dot": 1,
+      "duration": "scene",
+      "free_cap": "generation max_trait + 1",
+      "above_cap_lasts_turns": 3,
+      "absolute_cap": 10
+    },
+    "blush_of_life_cost": "8 - Humanity (min 0); Humanity followers only",
+    "max_drink_per_turn_from_vessel": 3,
+    "self_control_dice_capped_by_blood_pool": true,
+    "starting_blood_pool": {
+      "roll": "1d10",
+      "cap": "generation blood_pool_max",
+      "source": "V20 p. 86 states it; Revised shows it only in the example on p. 111"
+    },
+    "vessels": {
+      "average_human": 10,
+      "child": 5,
+      "cow": 5,
+      "dog": 2,
+      "cat": 1,
+      "rat": 0.5,
+      "bat_or_bird": 0.25,
+      "plasma_bag": 1,
+      "werewolf": 25,
+      "note": "V20 lists bird 0.5, bat/rat 0.25"
+    },
+    "blood_bond_drinks": 3,
+    "ref": "pp. 137-139"
+  },
+  "health": {
+    "levels": [
+      {
+        "name": "Bruised",
+        "penalty": 0,
+        "movement": "none"
+      },
+      {
+        "name": "Hurt",
+        "penalty": -1,
+        "movement": "none"
+      },
+      {
+        "name": "Injured",
+        "penalty": -1,
+        "movement": "max running speed halved"
+      },
+      {
+        "name": "Wounded",
+        "penalty": -2,
+        "movement": "cannot run; loses dice if moving and attacking"
+      },
+      {
+        "name": "Mauled",
+        "penalty": -2,
+        "movement": "3 yards/turn"
+      },
+      {
+        "name": "Crippled",
+        "penalty": -5,
+        "movement": "1 yard/turn"
+      },
+      {
+        "name": "Incapacitated",
+        "penalty": null,
+        "movement": "none; may only spend blood"
+      }
+    ],
+    "damage_types": [
+      "bashing",
+      "lethal",
+      "aggravated"
+    ],
+    "soak": {
+      "difficulty": 6,
+      "mortal": {
+        "bashing": "Stamina",
+        "lethal": null,
+        "aggravated": null
+      },
+      "vampire": {
+        "bashing": "Stamina + Fortitude",
+        "lethal": "Stamina + Fortitude",
+        "aggravated": "Fortitude"
+      }
+    },
+    "vampire_bashing_after_soak": "halve, round down",
+    "firearms_vs_vampire": "bashing unless head shot (difficulty 8) => lethal",
+    "overflow": {
+      "incapacitated_plus_bashing_or_lethal": "torpor (vampire) / death (mortal)",
+      "incapacitated_or_torpor_plus_aggravated": "final death",
+      "last_level_lost_to_aggravated": "final death"
+    },
+    "willpower_ignores_wound_penalties_for_turns": 1,
+    "ref": "pp. 140-141, 208-209, 216-218"
+  },
+  "willpower": {
+    "rating_range": [
+      1,
+      10
+    ],
+    "start": "Courage (1-5 before freebies)",
+    "path_follower_min_start": 5,
+    "refresh": "full pool at end of story; optional +1 per night, +1 for achievements, 1-3 for acting out Nature",
+    "ref": "pp. 136-138"
+  },
+  "humanity": {
+    "range": [
+      0,
+      10
+    ],
+    "start": "Conscience + Self-Control (5-9 before freebies)",
+    "virtue_dice_capped_by_humanity": true,
+    "daytime_pool_cap": "Humanity",
+    "path_followers_count_as_humanity_for_mortal_interaction": "3, or Path rating if lower",
+    "torpor_length_by_humanity": {
+      "10": "1 day",
+      "9": "3 days",
+      "8": "1 week",
+      "7": "2 weeks",
+      "6": "1 month",
+      "5": "1 year",
+      "4": "1 decade",
+      "3": "5 decades",
+      "2": "1 century",
+      "1": "5 centuries",
+      "0": "1 millennium+"
+    },
+    "ref": "pp. 134-136, 216"
+  },
+  "frenzy": {
+    "roll": "Self-Control (or Instinct); dice capped by blood pool and Humanity",
+    "successes_to_fully_resist": 5,
+    "atrocity_difficulty": "9 - Conscience",
+    "difficulties": {
+      "smell_of_blood_hungry": 3,
+      "sight_of_blood_hungry": 4,
+      "harassment": 4,
+      "life_threatening": 4,
+      "malicious_taunts": 4,
+      "physical_provocation": 6,
+      "taste_of_blood_hungry": 6,
+      "loved_one_in_danger": 7,
+      "outright_humiliation": 8
+    },
+    "feeding_check_threshold": "frenzy check if blood pool < 7 - Self-Control when prey is caught",
+    "ref": "pp. 202, 228-229"
+  },
+  "rotschreck": {
+    "roll": "Courage",
+    "successes_to_fully_resist": 5,
+    "botch": "immediate frenzy",
+    "difficulties": {
+      "lighting_cigarette": 3,
+      "sight_of_torch": 5,
+      "bonfire": 6,
+      "obscured_sunlight": 7,
+      "being_burned": 7,
+      "direct_sunlight": 8,
+      "trapped_in_burning_building": 9
+    },
+    "ref": "p. 229"
+  },
+  "sunlight": {
+    "soak": "Fortitude only",
+    "soak_difficulty": {
+      "faint": 3,
+      "fully_covered": 5,
+      "indirect_window": 7,
+      "cloudy_day_or_single_ray": 9,
+      "direct": 10
+    },
+    "levels_per_turn_by_exposure": {
+      "small_part": 1,
+      "large_part": 2,
+      "half_or_more": 3
+    },
+    "ref": "p. 232"
+  },
+  "hunting": {
+    "roll": "Perception (+ Herd dots)",
+    "per": "hour",
+    "difficulty_by_area": {
+      "slum": 4,
+      "lower_income_bohemian": 5,
+      "downtown_business": 6,
+      "warehouse_district": 6,
+      "suburb": 7,
+      "heavily_patrolled": 8
+    },
+    "success_yield": "1d10 blood points (cap AMBIGUOUS)",
+    "fame": "-1 difficulty per dot, minimum 3",
+    "ref": "p. 202"
+  },
+  "creation": {
+    "attributes": {
+      "priorities": [
+        7,
+        5,
+        3
+      ],
+      "free_dot_each": 1,
+      "nosferatu_appearance": 0
+    },
+    "abilities": {
+      "priorities": [
+        13,
+        9,
+        5
+      ],
+      "max_before_freebies": 3
+    },
+    "disciplines": {
+      "dots": 3,
+      "must_be_clan": true,
+      "caitiff": "any (ST approval)"
+    },
+    "backgrounds": {
+      "dots": 5
+    },
+    "virtues": {
+      "dots": 7,
+      "free_dot_each_humane_virtue": 1
+    },
+    "freebies": 15,
+    "freebie_costs": {
+      "attribute": {
+        "cost": 5,
+        "source": "V20 p. 82"
+      },
+      "ability": {
+        "cost": 2,
+        "source": "V20 p. 82; Revised example p. 111"
+      },
+      "discipline": {
+        "cost": 7,
+        "source": "V20 p. 82; Revised example p. 111"
+      },
+      "background": {
+        "cost": 1,
+        "source": "V20 p. 82; Revised example p. 111"
+      },
+      "virtue": {
+        "cost": 2,
+        "source": "V20 p. 82"
+      },
+      "humanity_or_path": {
+        "cost": 2,
+        "source": "V20 p. 82; Revised example p. 111"
+      },
+      "willpower": {
+        "cost": 1,
+        "source": "V20 p. 82; Revised example p. 111"
+      }
+    },
+    "flaws_max_points": 7,
+    "freebies_max_with_flaws": 22,
+    "merit_flaw_categories": [
+      "Physical",
+      "Mental",
+      "Social",
+      "Supernatural"
+    ],
+    "path_start_max": 5,
+    "default_generation": 13,
+    "max_years_as_kindred": 25,
+    "ref": "pp. 102-111, 287, 296"
+  },
+  "experience": {
+    "costs": {
+      "new_ability": 3,
+      "new_discipline": 10,
+      "new_thaum_or_necro_path": 7,
+      "attribute": "current x 4",
+      "ability": "current x 2",
+      "clan_discipline": "current x 5",
+      "other_discipline": "current x 7",
+      "caitiff_discipline": "current x 6",
+      "secondary_path": "current x 4",
+      "virtue": "current x 2",
+      "humanity": "current x 2",
+      "willpower": "current x 1"
+    },
+    "backgrounds_buyable_with_xp": false,
+    "max_increase_per_trait_per_story": 1,
+    "award_per_chapter": "1 automatic + 1 learning + 1 roleplaying (2 if inspired) + 1 heroism; usually 1-5",
+    "ref": "pp. 141-143"
+  },
+  "sects": {
+    "Camarilla": [
+      "Brujah",
+      "Gangrel",
+      "Malkavian",
+      "Nosferatu",
+      "Toreador",
+      "Tremere",
+      "Ventrue"
+    ],
+    "Sabbat": [
+      "Lasombra",
+      "Tzimisce"
+    ],
+    "Independent": [
+      "Assamite",
+      "Followers of Set",
+      "Giovanni",
+      "Ravnos"
+    ]
+  },
+  "clans": [
+    {
+      "name": "Assamite",
+      "disciplines": [
+        "Celerity",
+        "Obfuscate",
+        "Quietus"
+      ],
+      "source": "V20 (Revised line unreadable)"
+    },
+    {
+      "name": "Brujah",
+      "disciplines": [
+        "Celerity",
+        "Potence",
+        "Presence"
+      ],
+      "source": "Revised partial + V20"
+    },
+    {
+      "name": "Followers of Set",
+      "disciplines": [
+        "Obfuscate",
+        "Presence",
+        "Serpentis"
+      ],
+      "source": "V20 (Revised line unreadable)"
+    },
+    {
+      "name": "Gangrel",
+      "disciplines": [
+        "Animalism",
+        "Fortitude",
+        "Protean"
+      ],
+      "source": "V20 (Revised line unreadable)"
+    },
+    {
+      "name": "Giovanni",
+      "disciplines": [
+        "Dominate",
+        "Necromancy",
+        "Potence"
+      ],
+      "source": "Revised"
+    },
+    {
+      "name": "Lasombra",
+      "disciplines": [
+        "Dominate",
+        "Obtenebration",
+        "Potence"
+      ],
+      "source": "Revised"
+    },
+    {
+      "name": "Malkavian",
+      "disciplines": [
+        "Auspex",
+        "Dominate",
+        "Obfuscate"
+      ],
+      "source": "Revised (V20 uses Dementation instead of Dominate)"
+    },
+    {
+      "name": "Nosferatu",
+      "disciplines": [
+        "Animalism",
+        "Obfuscate",
+        "Potence"
+      ],
+      "source": "V20 (Revised line unreadable)",
+      "appearance_fixed_at": 0
+    },
+    {
+      "name": "Ravnos",
+      "disciplines": [
+        "Animalism",
+        "Chimerstry",
+        "Fortitude"
+      ],
+      "source": "Revised partial + V20"
+    },
+    {
+      "name": "Toreador",
+      "disciplines": [
+        "Auspex",
+        "Celerity",
+        "Presence"
+      ],
+      "source": "Revised"
+    },
+    {
+      "name": "Tremere",
+      "disciplines": [
+        "Auspex",
+        "Dominate",
+        "Thaumaturgy"
+      ],
+      "source": "V20 (Revised line unreadable)"
+    },
+    {
+      "name": "Tzimisce",
+      "disciplines": [
+        "Animalism",
+        "Auspex",
+        "Vicissitude"
+      ],
+      "source": "V20 (Revised line unreadable)"
+    },
+    {
+      "name": "Ventrue",
+      "disciplines": [
+        "Dominate",
+        "Fortitude",
+        "Presence"
+      ],
+      "source": "V20 (Revised line unreadable)"
+    },
+    {
+      "name": "Caitiff",
+      "disciplines": [],
+      "note": "any Disciplines with ST approval; XP cost current x 6 for all"
+    }
+  ]
+}

@@ -500,3 +500,6 @@ backend/invites.json
 backups/
 .env.backup-before-postgresql
 CLAUDE.md
+
+# Basic-auth gate for srai.srv-box.com (local only)
+.srai-gate-credentials.txt
