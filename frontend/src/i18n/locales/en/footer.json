@@ -1,0 +1,11 @@
+{
+  "readmeTitle": "Show the README",
+  "madeWith": "Made with",
+  "madeFor": "for tabletop RPG games by",
+  "builtWith": "Built with the help of",
+  "readme": {
+    "failed": "Failed to load README.md: {{error}}",
+    "close": "Close",
+    "loading": "Loading the README…"
+  }
+}

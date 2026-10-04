@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { t } from '../i18n';
 
 function LocationSuggestions({ campaignId, settingDescription, onComplete, onSkip }) {
   const [suggestions, setSuggestions] = useState([]);
@@ -13,7 +14,7 @@ function LocationSuggestions({ campaignId, settingDescription, onComplete, onSki
     const run = async () => {
       if (!campaignId) {
         console.error('❌ Cannot fetch suggestions: campaignId is undefined');
-        setError('⚠️ Campaign ID is missing. Please try creating the campaign again.');
+        setError(t('locations:error.noCampaign', 'The chronicle ID is missing. Please try creating the chronicle again.'));
         setLoading(false);
         return;
       }
@@ -37,7 +38,7 @@ function LocationSuggestions({ campaignId, settingDescription, onComplete, onSki
         if (!alive) return;
 
         if (!response.ok) {
-          setError(data.error || `Server error: ${response.status}`);
+          setError(data.error || t('locations:error.server', 'Server error: {{status}}', { status: response.status }));
           setSuggestions([]);
           setSelected({});
           return;
@@ -50,7 +51,7 @@ function LocationSuggestions({ campaignId, settingDescription, onComplete, onSki
         setSuggestions(locationSuggestions);
 
         if (locationSuggestions.length === 0) {
-          setError('AI returned no suggestions. You can add locations manually later.');
+          setError(t('locations:error.empty', 'The AI returned no suggestions. You can add locations manually later.'));
         }
 
         const preSelected = {};
@@ -87,14 +88,14 @@ function LocationSuggestions({ campaignId, settingDescription, onComplete, onSki
   const handleCreate = async () => {
     if (!campaignId) {
       console.error('❌ Cannot create locations: campaignId is undefined');
-      setError('⚠️ Campaign ID is missing. Please try creating the campaign again.');
+      setError(t('locations:error.noCampaign', 'The chronicle ID is missing. Please try creating the chronicle again.'));
       return;
     }
     
     const selectedLocations = suggestions.filter((_, idx) => selected[idx]);
     
     if (selectedLocations.length === 0) {
-      setError('⚠️ Please select at least one location');
+      setError(t('locations:error.noneSelected', 'Please select at least one location.'));
       return;
     }
     
@@ -122,11 +123,11 @@ function LocationSuggestions({ campaignId, settingDescription, onComplete, onSki
       } else {
         const errorData = await response.json();
         console.error('❌ Failed to create locations:', errorData);
-        setError(`❌ Failed to create locations: ${errorData.error || 'Unknown error'}`);
+        setError(t('locations:error.createFailedWith', 'Failed to create locations: {{error}}', { error: errorData.error || t('locations:error.unknown', 'Unknown error') }));
       }
     } catch (error) {
       console.error('❌ Error creating locations:', error);
-      setError('❌ Failed to create locations. Please try again.');
+      setError(t('locations:error.createFailed', 'Failed to create locations. Please try again.'));
     } finally {
       setCreating(false);
     }
@@ -177,7 +178,7 @@ function LocationSuggestions({ campaignId, settingDescription, onComplete, onSki
             fontSize: '26px',
           }}
           >
-            Generating location ideas…
+            {t('locations:loading.title', 'Generating location ideas…')}
           </h3>
           <p style={{
             color: '#b5b5c3',
@@ -188,8 +189,7 @@ function LocationSuggestions({ campaignId, settingDescription, onComplete, onSki
             maxWidth: '420px',
           }}
           >
-            The AI is reading your setting and drafting atmospheric locations.
-            This can take from a few seconds up to a couple of minutes depending on your model.
+            {t('locations:loading.body', 'The AI is reading your setting and drafting atmospheric locations. This can take from a few seconds up to a couple of minutes depending on your model.')}
           </p>
           <div style={{
             display: 'flex',
@@ -222,7 +222,7 @@ function LocationSuggestions({ campaignId, settingDescription, onComplete, onSki
             lineHeight: 1.5,
           }}
           >
-            Please wait — the list will appear below when ready.
+            {t('locations:loading.wait', 'Please wait — the list will appear below when ready.')}
           </p>
         </div>
       )}
@@ -233,7 +233,7 @@ function LocationSuggestions({ campaignId, settingDescription, onComplete, onSki
         marginBottom: '10px',
         fontSize: '24px'
       }}>
-        🏰 Suggested locations
+        🏰 {t('locations:title', 'Suggested locations')}
       </h2>
 
       {error && (
@@ -265,7 +265,7 @@ function LocationSuggestions({ campaignId, settingDescription, onComplete, onSki
         marginBottom: '25px',
         fontSize: '16px'
       }}>
-        Select the locations you want to create for your campaign. You can add more later.
+        {t('locations:intro', 'Select the locations you want to create for your chronicle. You can add more later.')}
       </p>
 
       <div style={{
@@ -358,7 +358,7 @@ function LocationSuggestions({ campaignId, settingDescription, onComplete, onSki
         alignItems: 'center'
       }}>
         <div style={{ color: '#8b8b9f', fontSize: '14px' }}>
-          {Object.values(selected).filter(Boolean).length} of {suggestions.length} selected
+          {t('locations:selected', '{{n}} of {{total}} selected', { n: Object.values(selected).filter(Boolean).length, total: suggestions.length })}
         </div>
         
         <div style={{ display: 'flex', gap: '10px' }}>
@@ -380,7 +380,7 @@ function LocationSuggestions({ campaignId, settingDescription, onComplete, onSki
             onMouseOver={(e) => !creating && (e.target.style.background = '#6c757d')}
             onMouseOut={(e) => !creating && (e.target.style.background = '#40444b')}
           >
-            Skip for Now
+            {t('locations:skip', 'Skip for now')}
           </button>
           
           <button
@@ -402,7 +402,9 @@ function LocationSuggestions({ campaignId, settingDescription, onComplete, onSki
             onMouseOver={(e) => !creating && (e.target.style.transform = 'translateY(-2px)')}
             onMouseOut={(e) => !creating && (e.target.style.transform = 'translateY(0)')}
           >
-            {creating ? 'Creating...' : `Create ${Object.values(selected).filter(Boolean).length} Locations`}
+            {creating
+              ? t('locations:creating', 'Creating…')
+              : t('locations:create', { one: 'Create {{count}} location', other: 'Create {{count}} locations' }, { count: Object.values(selected).filter(Boolean).length })}
           </button>
         </div>
       </div>

@@ -3,6 +3,7 @@
  * (backend/services/v5_dice.py resolve_v5, docs/dice-old-wod.md) but the server stays the
  * source of truth: when the API already returned flags, pass them in and they win.
  */
+import { t } from '../../i18n';
 
 /** V5: successes 6+, each pair of 10s adds 2, messy = critical with a Hunger 10, bestial = fail with a Hunger 1. */
 export function analyzeV5({ normal = [], hunger = [], difficulty = 1, flags } = {}) {
@@ -110,6 +111,21 @@ export function analyzeClassic({ dice = [], difficulty = 6, rerolls = [], willpo
   return out;
 }
 
+/** Outcome labels in the active language (game terms stay English, see i18n/glossary). */
+export function outcomeLabels() {
+  return {
+    'messy-critical': t('dice:outcome.messyCritical', 'Messy critical'),
+    critical: t('dice:outcome.criticalWin', 'Critical win'),
+    success: t('dice:outcome.success', 'Success'),
+    'bestial-failure': t('dice:outcome.bestialFailure', 'Bestial failure'),
+    'total-failure': t('dice:outcome.totalFailure', 'Total failure'),
+    failure: t('dice:outcome.failure', 'Failure'),
+    botch: t('dice:outcome.botch', 'Botch'),
+    exceptional: t('dice:outcome.exceptional', 'Exceptional success'),
+  };
+}
+
+/** English labels (kept for callers that want fixed text). */
 export const OUTCOME_LABELS = {
   'messy-critical': 'Messy critical',
   critical: 'Critical win',

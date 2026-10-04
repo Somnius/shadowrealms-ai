@@ -1,0 +1,86 @@
+{
+  "voice": {
+    "character": "{{name}} (in character)",
+    "player": "{{name}} (out of character)",
+    "staff": "Storyteller voice",
+    "staffShort": "Storyteller",
+    "title": "Speaking as",
+    "button": "Speaking as {{name}}. Change voice"
+  },
+  "composer": {
+    "ic": "Speak as {{name}} in {{room}}…",
+    "staff": "Speak as the Storyteller…",
+    "ooc": "Say something out of character in {{room}}…",
+    "label": "Message {{room}}",
+    "closed": "This room is sealed.",
+    "roll": "Roll dice",
+    "sending": "Sending…",
+    "send": "Send"
+  },
+  "slash": {
+    "label": "Commands",
+    "admin": "admin",
+    "roll": "Open the dice roller for this room",
+    "me": "Post an action / emote line",
+    "chat": "Ask the AI assistant directly (out of the story)",
+    "ai": {
+      "help": "List all /ai commands",
+      "respond": "Ask the Storyteller to respond to the scene",
+      "health": "LLM / vector store health snapshot",
+      "model": "Configured and active model",
+      "ping": "Tiny generation to measure latency",
+      "context": "Show the context sent for this room",
+      "summarize": "Summarize a wall of text",
+      "roll": "Roll by campaign rules: classic 4+3@7, V5 6@3h2",
+      "rollHidden": "Same as /ai roll, hidden from players",
+      "rouse": "V5 Rouse check",
+      "clean": "Remove clutter (see /ai clean)",
+      "diceDiff": "Room dice leniency (owner/admin)"
+    }
+  },
+  "list": {
+    "label": "Messages in {{room}}"
+  },
+  "loading": "Unsealing the room…",
+  "loadFailed": "Could not load this room",
+  "empty": {
+    "title": "No whispers yet",
+    "body": "Start the conversation in {{room}}."
+  },
+  "newMessages": "New messages",
+  "new": "New",
+  "jump": {
+    "new_one": "{{count}} new message",
+    "new_other": "{{count}} new messages",
+    "present": "Jump to present"
+  },
+  "diagnostics": "Storyteller diagnostics",
+  "speaker": {
+    "ai": "Storyteller",
+    "player": "Player",
+    "character": "Character"
+  },
+  "badge": {
+    "ai": "AI",
+    "storyteller": "Storyteller",
+    "staff": "Staff",
+    "ooc": "OOC"
+  },
+  "error": {
+    "aiAdminOnly": "Only site administrators can use /ai commands. Use the dice button to roll.",
+    "chatUsage": "Usage: /chat followed by your message to the AI assistant.",
+    "saveFailed": "Your message could not be saved.",
+    "aiSaveFailed": "The Storyteller’s reply could not be saved.",
+    "slashFailed": "Slash command failed",
+    "aiFailed": "The Storyteller could not answer."
+  },
+  "time": {
+    "today": "Today at {{time}}",
+    "yesterday": "Yesterday at {{time}}"
+  },
+  "day": {
+    "today": "Today",
+    "yesterday": "Yesterday"
+  },
+  "weaving": "The Storyteller is weaving…"
+}

@@ -1,0 +1,11 @@
+{
+  "readmeTitle": "Δες το README",
+  "madeWith": "Φτιαγμένο με",
+  "madeFor": "για επιτραπέζια RPG από",
+  "builtWith": "Φτιάχτηκε με τη βοήθεια του",
+  "readme": {
+    "failed": "Δεν ήταν δυνατή η φόρτωση του README.md: {{error}}",
+    "close": "Κλείσιμο",
+    "loading": "Φορτώνει το README…"
+  }
+}

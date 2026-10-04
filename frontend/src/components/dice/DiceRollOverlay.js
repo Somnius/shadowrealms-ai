@@ -3,6 +3,7 @@ import DiceFace from './DiceFace';
 import OutcomeBadges from './OutcomeBadges';
 import { classicOutcome, classicSummaryLine } from '../../dice/classicDiceDisplay';
 import { v5Badges, v5SummaryLine } from '../../dice/v5DiceDisplay';
+import { t } from '../../i18n';
 
 const SR_ONLY = {
   position: 'absolute',
@@ -22,7 +23,7 @@ export function overlayAnnouncement(overlay) {
   const v5 = overlay.rulesEdition === 'v5';
   const labels = v5 ? v5Badges(overlay.result).map((b) => b.label) : [classicOutcome(overlay.result).label];
   const summary = v5 ? v5SummaryLine(overlay.result) : classicSummaryLine(overlay.result);
-  return `Dice result: ${labels.join(', ')}. ${summary}.`;
+  return t('dice:overlay.announce', 'Dice result: {{labels}}. {{summary}}.', { labels: labels.join(', '), summary });
 }
 
 /**
@@ -86,7 +87,11 @@ export default function DiceRollOverlay({ overlay, onDismiss }) {
     >
       <div
         role="dialog"
-        aria-label={overlay.settled ? 'Dice roll result (Escape to close)' : 'Dice rolling (Escape to close)'}
+        aria-label={
+          overlay.settled
+            ? t('dice:overlay.resultLabel', 'Dice roll result (Escape to close)')
+            : t('dice:overlay.rollingLabel', 'Dice rolling (Escape to close)')
+        }
         data-testid="dice-overlay"
         style={{
           outline: 'none',
@@ -101,11 +106,15 @@ export default function DiceRollOverlay({ overlay, onDismiss }) {
         <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: '12px', marginBottom: '10px', flexWrap: 'wrap' }}>
           <div style={{ color: '#e94560', fontFamily: 'Cinzel, serif', fontSize: '18px', fontWeight: 700 }}>
             <i className="fas fa-dice" style={{ marginRight: '10px' }} />
-            {overlay.settled ? 'Result' : 'Rolling…'}
-            <span style={{ marginLeft: '10px', fontSize: '12px', color: '#94a3b8' }}>{v5 ? 'V5' : 'Classic'}</span>
+            {overlay.settled ? t('dice:overlay.result', 'Result') : t('dice:overlay.rolling', 'Rolling…')}
+            <span style={{ marginLeft: '10px', fontSize: '12px', color: '#94a3b8' }}>{v5 ? t('dice:edition.v5', 'V5') : t('dice:edition.classic', 'Classic')}</span>
           </div>
           <div style={{ color: '#b5b5c3', fontFamily: 'Crimson Text, serif', fontSize: '12px' }}>
-            {overlay.settled ? summary : v5 ? `Difficulty ${overlay.difficulty}` : `TN ${overlay.difficulty}`}
+            {overlay.settled
+              ? summary
+              : v5
+              ? t('dice:overlay.difficulty', 'Difficulty {{n}}', { n: overlay.difficulty })
+              : t('dice:summary.tn', 'TN {{tn}}', { tn: overlay.difficulty })}
           </div>
         </div>
 
@@ -127,14 +136,12 @@ export default function DiceRollOverlay({ overlay, onDismiss }) {
           {overlay.settled && rerolls.length > 0 && (
             <div
               role="group"
-              aria-label={`Specialty rerolls: ${rerolls.join(', ')}`}
+              aria-label={t('dice:overlay.rerollsLabel', 'Specialty rerolls: {{list}}', { list: rerolls.join(', ') })}
               data-testid="specialty-rerolls"
               style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', alignItems: 'center', paddingLeft: '10px', borderLeft: '1px dashed #fbbf24' }}
             >
               <span style={{ color: '#fbbf24', fontFamily: 'Crimson Text, serif', fontSize: '12px' }}>
-                ↻ Specialty
-                <br />
-                rerolls
+                ↻ {t('dice:overlay.rerollsTitle', 'Specialty rerolls')}
               </span>
               {rerolls.map((v, i) => (
                 <DiceFace
@@ -149,7 +156,7 @@ export default function DiceRollOverlay({ overlay, onDismiss }) {
           )}
           {overlay.extraDiceCount > 0 && (
             <div style={{ alignSelf: 'center', color: '#8b8b9f', fontFamily: 'Crimson Text, serif', fontSize: '14px', marginLeft: '4px' }}>
-              +{overlay.extraDiceCount} more
+              {t('dice:overlay.more', '+{{count}} more', { count: overlay.extraDiceCount })}
             </div>
           )}
         </div>
@@ -159,8 +166,8 @@ export default function DiceRollOverlay({ overlay, onDismiss }) {
             <OutcomeBadges result={overlay.result} />
           ) : (
             <div style={{ color: '#b5b5c3', fontFamily: 'Crimson Text, serif', fontSize: '12px', textAlign: 'center' }}>
-              {v5 && overlay.hungerFlags?.some(Boolean) ? 'Red dice are Hunger dice. ' : ''}
-              The roll resolves right after the dice stop.
+              {v5 && overlay.hungerFlags?.some(Boolean) ? `${t('dice:overlay.redHunger', 'Red dice are Hunger dice.')} ` : ''}
+              {t('dice:overlay.resolves', 'The roll resolves right after the dice stop.')}
             </div>
           )}
         </div>

@@ -10,6 +10,8 @@
  * - 5+ net successes = exceptional
  */
 
+import { t } from '../i18n';
+
 export const EXCEPTIONAL_THRESHOLD = 5;
 
 /** Pure resolution of already-rolled dice. */
@@ -55,22 +57,29 @@ export function classicOutcome(result) {
   const successes = Number(r.successes ?? r.net_successes ?? 0);
   const botch = Boolean(r.is_botch ?? r.botch);
   const exceptional = Boolean(r.is_exceptional ?? successes >= EXCEPTIONAL_THRESHOLD);
-  if (botch) return { key: 'botch', label: 'Botch', tone: 'danger' };
-  if (successes <= 0) return { key: 'failure', label: 'Failure', tone: 'muted' };
+  if (botch) return { key: 'botch', label: t('dice:outcome.botch', 'Botch'), tone: 'danger', term: 'botch' };
+  if (successes <= 0) return { key: 'failure', label: t('dice:outcome.failure', 'Failure'), tone: 'muted' };
   if (exceptional) {
-    return { key: 'exceptional', label: `Exceptional success (${successes})`, tone: 'gold' };
+    return {
+      key: 'exceptional',
+      label: t('dice:outcome.exceptionalCount', 'Exceptional success ({{count}})', { count: successes }),
+      tone: 'gold',
+    };
   }
   return {
     key: 'success',
-    label: `Success (${successes} ${successes === 1 ? 'success' : 'successes'})`,
+    label: t('dice:outcome.successCount', { one: 'Success ({{count}} success)', other: 'Success ({{count}} successes)' }, { count: successes }),
     tone: 'success',
   };
 }
 
 /** Short header line for overlays: "TN 6 · 3 net · specialty · Willpower". */
 export function classicSummaryLine(r) {
-  const parts = [`TN ${r?.difficulty ?? 6}`, `${Number(r?.successes ?? 0)} net`];
-  if (r?.specialty) parts.push('specialty');
-  if (r?.willpower) parts.push('Willpower');
+  const parts = [
+    t('dice:summary.tn', 'TN {{tn}}', { tn: r?.difficulty ?? 6 }),
+    t('dice:summary.net', '{{count}} net', { count: Number(r?.successes ?? 0) }),
+  ];
+  if (r?.specialty) parts.push(t('dice:summary.specialty', 'specialty'));
+  if (r?.willpower) parts.push(t('dice:summary.willpower', 'Willpower'));
   return parts.join(' · ');
 }

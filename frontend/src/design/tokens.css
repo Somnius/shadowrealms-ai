@@ -12,9 +12,10 @@
  *
  *   <link rel="preconnect" href="https://fonts.googleapis.com">
  *   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
- *   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=Alegreya+SC:wght@500;700&family=EB+Garamond:ital,wght@0,400..600;1,400..600&family=Inter:wght@400..600&family=JetBrains+Mono:wght@400&display=swap">
+ *   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=Alegreya:wght@500;700&family=EB+Garamond:ital,wght@0,400..600;1,400..600&family=Inter:wght@400..600&family=JetBrains+Mono:wght@400&display=swap">
  *
- * Cinzel has no Greek glyphs, so :lang(el) swaps the display face to Alegreya SC.
+ * Cinzel has no Greek glyphs, so :lang(el) swaps the display face to Alegreya (not Alegreya SC:
+ * its small-cap glyphs keep the tonos, and Greek capitals must not carry accents).
  */
 
 :root {
@@ -88,7 +89,7 @@
   --sr-scrim: rgba(4, 4, 10, 0.72);
 
   /* ---- typography ---- */
-  --sr-font-display: 'Cinzel', 'Alegreya SC', 'EB Garamond', Georgia, serif;
+  --sr-font-display: 'Cinzel', 'Alegreya', 'EB Garamond', Georgia, serif;
   --sr-font-body: 'EB Garamond', 'Iowan Old Style', Georgia, 'Times New Roman', serif;
   --sr-font-ui: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, 'Noto Sans', sans-serif;
   --sr-font-mono: 'JetBrains Mono', ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace;
@@ -282,7 +283,7 @@
 /* Cinzel has no Greek: swap the display face. */
 .sr-app:lang(el),
 .sr-app :lang(el) {
-  --sr-font-display: 'Alegreya SC', 'EB Garamond', Georgia, serif;
+  --sr-font-display: 'Alegreya', 'EB Garamond', Georgia, serif;
 }
 /* Don't fake small caps in Greek (no reliable Greek small-cap forms). */
 .sr-app :lang(el) .sr-smallcaps,

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { GothicBox } from './GothicDecorations';
 import DotTrack from './characterCreation/DotTrack';
 import ResponsiveSheetBlock from './characterCreation/ResponsiveSheetBlock';
@@ -12,6 +12,8 @@ import {
   SOCIAL,
   TALENTS,
 } from '../characterSheet/constants';
+import { t } from '../i18n';
+import { Term } from '../i18n/glossary';
 
 function StaticDots({ value, maxRank = 5, accent = '#c4b5fd' }) {
   const rank = Math.max(0, Math.min(maxRank, parseInt(value, 10) || 0));
@@ -28,6 +30,16 @@ function attrPoolLabel(attrs, keys) {
  * Read-only oWoD-style sheet (dots + sections) for viewing a sealed character — similar layout to the forge.
  */
 export default function CharacterSheetModal({ character, gameSystem, onClose }) {
+  // Esc closes the sheet (the shell's own dialogs do the same).
+  useEffect(() => {
+    if (!character || !onClose) return undefined;
+    const onKey = (e) => {
+      if (e.key === 'Escape') onClose();
+    };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [character, onClose]);
+
   if (!character) return null;
 
   const gs = String(gameSystem || character.system_type || '').toLowerCase();
@@ -61,7 +73,7 @@ export default function CharacterSheetModal({ character, gameSystem, onClose }) 
         }}
       >
         {title}
-        <span style={{ color: '#6b7280', fontFamily: 'system-ui', marginLeft: '6px' }}>({pool} pts)</span>
+        <span style={{ color: '#6b7280', fontFamily: 'system-ui', marginLeft: '6px' }}>{t('sheet:pts', '({{n}} pts)', { n: pool })}</span>
       </div>
       {keys.map((k) => (
         <div
@@ -170,7 +182,7 @@ export default function CharacterSheetModal({ character, gameSystem, onClose }) 
                 fontSize: '1.25rem',
               }}
             >
-              {character.name || 'Character'}
+              {character.name || t('sheet:untitled', 'Character')}
               {character.campaign_name ? (
                 <span style={{ color: '#94a3b8', fontWeight: 'normal', fontSize: '0.9rem' }}>
                   {' '}
@@ -197,7 +209,7 @@ export default function CharacterSheetModal({ character, gameSystem, onClose }) 
                 fontFamily: 'Cinzel, serif',
               }}
             >
-              Close
+              {t('sheet:close', 'Close')}
             </button>
           </div>
 
@@ -207,13 +219,13 @@ export default function CharacterSheetModal({ character, gameSystem, onClose }) 
             ) : (
             <>
             <p style={{ color: '#8b8b9f', fontSize: '13px', marginTop: 0, lineHeight: 1.5 }}>
-              Classic WoD–style sheet (read-only). Numbers match your sealed chronicle record.
+              {t('sheet:classicIntro', 'Classic WoD–style sheet (read-only). Numbers match your sealed chronicle record.')}
             </p>
 
-            <ResponsiveSheetBlock sectionId="view-identity" title="Identity" subtitle="Concept & nature" accent={accent}>
+            <ResponsiveSheetBlock sectionId="view-identity" title={t('sheet:identity', 'Identity')} subtitle={t('sheet:identitySub', 'Concept & nature')} accent={accent}>
               {wm.concept != null && String(wm.concept).trim() ? (
                 <p style={{ color: '#e0e0e0', margin: '0 0 10px' }}>
-                  <strong style={{ color: '#c4b5fd' }}>Concept:</strong> {String(wm.concept)}
+                  <strong style={{ color: '#c4b5fd' }}>{t('sheet:concept', 'Concept:')}</strong> {String(wm.concept)}
                 </p>
               ) : null}
               {wm.nature != null && String(wm.nature).trim() ? (
@@ -228,32 +240,32 @@ export default function CharacterSheetModal({ character, gameSystem, onClose }) 
               ) : null}
             </ResponsiveSheetBlock>
 
-            <ResponsiveSheetBlock sectionId="view-template" title="Template" accent={accent}>
+            <ResponsiveSheetBlock sectionId="view-template" title={t('sheet:template', 'Template')} accent={accent}>
               {gs === 'vampire' && (
                 <div style={{ color: '#e0e0e0', display: 'grid', gap: '8px', fontSize: '14px' }}>
                   {wm.clan ? (
                     <p style={{ margin: 0 }}>
-                      <strong style={{ color: '#c4b5fd' }}>Clan:</strong> {wm.clan}
+                      <strong style={{ color: '#c4b5fd' }}><Term id="clan" />:</strong> {wm.clan}
                     </p>
                   ) : null}
                   {wm.generation != null ? (
                     <p style={{ margin: 0 }}>
-                      <strong style={{ color: '#c4b5fd' }}>Generation:</strong> {String(wm.generation)}
+                      <strong style={{ color: '#c4b5fd' }}><Term id="generation" />:</strong> {String(wm.generation)}
                     </p>
                   ) : null}
                   {wm.humanity != null ? (
                     <p style={{ margin: 0 }}>
-                      <strong style={{ color: '#c4b5fd' }}>Humanity:</strong> {String(wm.humanity)}
+                      <strong style={{ color: '#c4b5fd' }}><Term id="humanity" />:</strong> {String(wm.humanity)}
                     </p>
                   ) : null}
                   {wm.willpower != null ? (
                     <p style={{ margin: 0 }}>
-                      <strong style={{ color: '#c4b5fd' }}>Willpower:</strong> {String(wm.willpower)}
+                      <strong style={{ color: '#c4b5fd' }}><Term id="willpower" />:</strong> {String(wm.willpower)}
                     </p>
                   ) : null}
                   {wm.virtues && typeof wm.virtues === 'object' ? (
                     <p style={{ margin: 0 }}>
-                      <strong style={{ color: '#c4b5fd' }}>Virtues:</strong>{' '}
+                      <strong style={{ color: '#c4b5fd' }}><Term id="virtues" />:</strong>{' '}
                       {['conscience', 'self_control', 'courage']
                         .map((k) => `${k}: ${wm.virtues[k] ?? '—'}`)
                         .join(' · ')}
@@ -261,7 +273,7 @@ export default function CharacterSheetModal({ character, gameSystem, onClose }) 
                   ) : null}
                   {Array.isArray(wm.disciplines) && wm.disciplines.length ? (
                     <div style={{ marginTop: 8 }}>
-                      <strong style={{ color: '#c4b5fd' }}>Disciplines</strong>
+                      <strong style={{ color: '#c4b5fd' }}><Term id="discipline">Disciplines</Term></strong>
                       <ul style={{ margin: '6px 0 0', paddingLeft: '1.2rem', color: '#d1d5db' }}>
                         {wm.disciplines.map((d, i) => (
                           <li key={i}>
@@ -273,7 +285,7 @@ export default function CharacterSheetModal({ character, gameSystem, onClose }) 
                   ) : null}
                   {Array.isArray(wm.backgrounds) && wm.backgrounds.length ? (
                     <div style={{ marginTop: 8 }}>
-                      <strong style={{ color: '#c4b5fd' }}>Backgrounds</strong>
+                      <strong style={{ color: '#c4b5fd' }}><Term id="backgrounds" /></strong>
                       <ul style={{ margin: '6px 0 0', paddingLeft: '1.2rem', color: '#d1d5db' }}>
                         {wm.backgrounds.map((b, i) => (
                           <li key={i}>
@@ -314,7 +326,7 @@ export default function CharacterSheetModal({ character, gameSystem, onClose }) 
                   ) : null}
                   {wm.gifts_notes ? (
                     <p style={{ margin: 0, whiteSpace: 'pre-wrap' }}>
-                      <strong style={{ color: '#c4b5fd' }}>Gifts / notes:</strong> {wm.gifts_notes}
+                      <strong style={{ color: '#c4b5fd' }}>{t('sheet:giftsNotes', 'Gifts / notes:')}</strong> {wm.gifts_notes}
                     </p>
                   ) : null}
                 </div>
@@ -343,7 +355,7 @@ export default function CharacterSheetModal({ character, gameSystem, onClose }) 
               )}
             </ResponsiveSheetBlock>
 
-            <ResponsiveSheetBlock sectionId="view-attr" title="Attributes" accent={accent}>
+            <ResponsiveSheetBlock sectionId="view-attr" title={<Term id="attributes" />} accent={accent}>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '16px' }}>
                 {col('Physical', PHYSICAL, physPool)}
                 {col('Social', SOCIAL, socPool)}
@@ -351,7 +363,7 @@ export default function CharacterSheetModal({ character, gameSystem, onClose }) 
               </div>
             </ResponsiveSheetBlock>
 
-            <ResponsiveSheetBlock sectionId="view-abilities" title="Abilities" accent={accent}>
+            <ResponsiveSheetBlock sectionId="view-abilities" title={<Term id="abilities" />} accent={accent}>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '16px' }}>
                 {abilityCol('Talents', TALENTS, talents)}
                 {abilityCol('Skills', SKILLS, skills)}
@@ -360,7 +372,7 @@ export default function CharacterSheetModal({ character, gameSystem, onClose }) 
             </ResponsiveSheetBlock>
 
             {character.background != null && String(character.background).trim() ? (
-              <ResponsiveSheetBlock sectionId="view-story" title="Background & notes" accent={accent}>
+              <ResponsiveSheetBlock sectionId="view-story" title={t('sheet:backgroundNotes', 'Background & notes')} accent={accent}>
                 <p style={{ color: '#d1d5db', whiteSpace: 'pre-wrap', lineHeight: 1.55, margin: 0 }}>
                   {String(character.background)}
                 </p>
@@ -368,7 +380,7 @@ export default function CharacterSheetModal({ character, gameSystem, onClose }) 
             ) : null}
 
             {meritEntries.length > 0 || (mf.notes && String(mf.notes).trim()) ? (
-              <ResponsiveSheetBlock sectionId="view-merits" title="Merits & flaws" accent={accent}>
+              <ResponsiveSheetBlock sectionId="view-merits" title={<Term id="merits" />} accent={accent}>
                 {meritEntries.map((e, i) => (
                   <div
                     key={i}

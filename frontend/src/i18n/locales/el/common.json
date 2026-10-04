@@ -1,0 +1,22 @@
+{
+  "loading": "Φόρτωση",
+  "save": "Αποθήκευση",
+  "cancel": "Ακύρωση",
+  "edit": "Επεξεργασία",
+  "delete": "Διαγραφή",
+  "error": {
+    "network": "Σφάλμα δικτύου: δεν ήταν δυνατή η σύνδεση με τον διακομιστή."
+  },
+  "dots": {
+    "value": "{{value}} από {{max}}"
+  },
+  "close": "Κλείσιμο",
+  "notifications": "Ειδοποιήσεις",
+  "dismiss": "Απόρριψη",
+  "time": {
+    "justNow": "Μόλις τώρα",
+    "minutesAgo_one": "πριν από {{count}} λεπτό",
+    "minutesAgo_other": "πριν από {{count}} λεπτά",
+    "yesterdayAt": "Χθες · {{time}} · {{date}}"
+  }
+}

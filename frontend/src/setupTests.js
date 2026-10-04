@@ -6,7 +6,7 @@
 import '@testing-library/jest-dom';
 import { webcrypto } from 'crypto';
 
-// SimpleApp reads the viewport through matchMedia on mount
+// The shell reads the viewport through matchMedia (mobile drawers, reduced motion)
 if (!window.matchMedia) {
   window.matchMedia = (query) => ({
     matches: false,

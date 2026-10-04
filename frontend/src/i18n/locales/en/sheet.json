@@ -1,0 +1,24 @@
+{
+  "loadFailed": "Could not load the character sheet.",
+  "pts": "({{n}} pts)",
+  "untitled": "Character",
+  "close": "Close",
+  "classicIntro": "Classic WoD–style sheet (read-only). Numbers match your sealed chronicle record.",
+  "identity": "Identity",
+  "identitySub": "Concept & nature",
+  "concept": "Concept:",
+  "template": "Template",
+  "giftsNotes": "Gifts / notes:",
+  "backgroundNotes": "Background & notes",
+  "v5": {
+    "trackerAria": "{{label}}: {{sup}} superficial, {{agg}} aggravated of {{max}}",
+    "stains_one": "{{count}} Stain",
+    "stains_other": "{{count}} Stains",
+    "intro": "Vampire: The Masquerade 5th Edition sheet (read-only).",
+    "concept": "Concept",
+    "trackers": "Trackers",
+    "otherSpecialties": "Other specialties:",
+    "fromPredator": "(predator type)",
+    "tenets": "Chronicle tenets"
+  }
+}

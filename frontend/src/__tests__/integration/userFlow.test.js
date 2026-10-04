@@ -1,375 +1,190 @@
 /**
- * Integration tests for critical user flows
- * Tests end-to-end user journeys through the application
+ * Integration tests for the main user flows through the v0.9 app shell (router + providers),
+ * with fetch mocked per route.
  */
-
 import React from 'react';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import '@testing-library/jest-dom';
-import SimpleApp from '../../SimpleApp';
+import { render, screen, waitFor, within } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
+import setupUser from '../../design/testing/setupUser';
+import App from '../../app/App';
 
-// Mock fetch for API calls
-global.fetch = jest.fn();
+const ME_PLAYER = { id: 1, username: 'testuser', role: 'player', email: 't@example.com', statistics: { characters_owned: 0 } };
 
-describe('User Flow Integration Tests', () => {
-  const mockMePlayer = (overrides = {}) => ({
-    id: 1,
-    username: 'testuser',
-    role: 'player',
-    active_character_id: null,
-    statistics: { characters_owned: 0, campaigns_created: 0 },
-    ...overrides,
-  });
+function json(status, body) {
+  return Promise.resolve({ ok: status >= 200 && status < 300, status, json: async () => body });
+}
 
-  beforeEach(() => {
-    // Clear localStorage before each test
-    localStorage.clear();
-    
-    // Reset fetch mock
-    fetch.mockClear();
+/** routes: { 'POST /api/auth/login': (body) => [status, json] } ; unknown routes → 200 [] */
+function mockFetch(routes) {
+  global.fetch = jest.fn((url, opts = {}) => {
+    const method = opts.method || 'GET';
+    const path = String(url).split('?')[0];
+    const key = `${method} ${path}`;
+    const body = opts.body ? JSON.parse(opts.body) : undefined;
+    if (routes[key]) {
+      const [status, payload] = routes[key](body, url);
+      return json(status, payload);
+    }
+    return json(200, []);
   });
-  
-  describe('Authentication Flow', () => {
-    it('should allow user to register with valid invite code', async () => {
-      fetch.mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({
-          access_token: 'test-token',
-          user: { id: 1, username: 'testuser', role: 'player' },
-        }),
-      });
-      fetch.mockResolvedValueOnce({
-        ok: true,
-        json: async () => mockMePlayer(),
-      });
-      fetch.mockResolvedValueOnce({
-        ok: true,
-        json: async () => [],
-      });
-      
-      render(<SimpleApp />);
-      
-      // Fill registration form
-      const usernameInput = screen.getAllByPlaceholderText(/username/i)[1]; // Second one is register
-      const emailInput = screen.getByPlaceholderText(/email/i);
-      const passwordInput = screen.getAllByPlaceholderText(/password/i)[1];
-      const inviteInput = screen.getByPlaceholderText(/invite code/i);
-      
-      fireEvent.change(usernameInput, { target: { value: 'testuser' } });
-      fireEvent.change(emailInput, { target: { value: 'test@example.com' } });
-      fireEvent.change(passwordInput, { target: { value: 'SecurePass123' } });
-      fireEvent.change(inviteInput, { target: { value: 'VALID-CODE' } });
-      
-      // Submit registration
-      const registerButton = screen.getByRole('button', { name: /register/i });
-      fireEvent.click(registerButton);
-      
-      // Wait for successful registration and redirect to dashboard
-      await waitFor(() => {
-        expect(fetch).toHaveBeenCalledWith(
-          '/api/auth/register',
-          expect.objectContaining({
-            method: 'POST',
-            body: expect.stringContaining('testuser')
-          })
-        );
-      });
-    });
-    
-    it('should prevent registration with invalid invite code', async () => {
-      // Mock failed registration
-      fetch.mockResolvedValueOnce({
-        ok: false,
-        json: async () => ({ error: 'Invalid invite code' })
-      });
-      
-      render(<SimpleApp />);
-      
-      const inviteInput = screen.getByPlaceholderText(/invite code/i);
-      fireEvent.change(inviteInput, { target: { value: 'INVALID' } });
-      
-      const registerButton = screen.getByRole('button', { name: /register/i });
-      fireEvent.click(registerButton);
-      
-      await waitFor(() => {
-        expect(screen.getByText(/invalid invite code/i)).toBeInTheDocument();
-      });
-    });
-    
-    it('should allow user to login with valid credentials', async () => {
-      fetch.mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({
-          access_token: 'test-token',
-          user: { id: 1, username: 'testuser', role: 'player' },
-        }),
-      });
-      fetch.mockResolvedValueOnce({
-        ok: true,
-        json: async () => mockMePlayer(),
-      });
-      fetch.mockResolvedValueOnce({
-        ok: true,
-        json: async () => [],
-      });
-      
-      render(<SimpleApp />);
-      
-      const usernameInput = screen.getAllByPlaceholderText(/username/i)[0]; // First one is login
-      const passwordInput = screen.getAllByPlaceholderText(/password/i)[0];
-      
-      fireEvent.change(usernameInput, { target: { value: 'testuser' } });
-      fireEvent.change(passwordInput, { target: { value: 'password123' } });
-      
-      const loginButton = screen.getByRole('button', { name: /^login$/i });
-      fireEvent.click(loginButton);
-      
-      await waitFor(() => {
-        expect(fetch).toHaveBeenCalledWith(
-          '/api/auth/login',
-          expect.objectContaining({
-            method: 'POST'
-          })
-        );
-      });
-    });
-  });
-  
-  describe('Campaign Management Flow', () => {
-    beforeEach(() => {
-      localStorage.setItem('token', 'test-token');
-      localStorage.setItem(
-        'user',
-        JSON.stringify({
-          id: 1,
-          username: 'testuser',
-          role: 'admin',
-          active_character_id: null,
-          statistics: { characters_owned: 0, campaigns_created: 0 },
-        })
-      );
-    });
-    
-    it('should allow admin to create a new campaign', async () => {
-      const adminMe = mockMePlayer({
-        role: 'admin',
-        statistics: { characters_owned: 0, campaigns_created: 1 },
-      });
-      const campaignRow = {
-        id: 1,
-        name: 'Test Campaign',
-        description: 'Test Description',
-        game_system: 'vampire',
-      };
-      let campaignsList = [];
-      fetch.mockImplementation((url, options = {}) => {
-        const u = String(url);
-        const method = (options.method || 'GET').toUpperCase();
-        if (u.includes('/users/me')) {
-          return Promise.resolve({
-            ok: true,
-            json: async () => adminMe,
-          });
-        }
-        if (
-          method === 'POST' &&
-          u.includes('/campaigns') &&
-          !/\/campaigns\/\d/.test(u.split('?')[0])
-        ) {
-          campaignsList = [campaignRow];
-          return Promise.resolve({
-            ok: true,
-            json: async () => ({ campaign_id: 1, message: 'ok' }),
-          });
-        }
-        if (method === 'GET' && u.includes('/campaigns')) {
-          return Promise.resolve({
-            ok: true,
-            json: async () => campaignsList,
-          });
-        }
-        return Promise.resolve({ ok: false, json: async () => ({}) });
-      });
-      
-      render(<SimpleApp />);
-      
-      await waitFor(() => {
-        expect(screen.getByText(/your campaigns/i)).toBeInTheDocument();
-      });
-      
-      // Click "New Campaign" button
-      const newCampaignButton = screen.getByRole('button', { name: /new campaign/i });
-      fireEvent.click(newCampaignButton);
-      
-      await waitFor(() => {
-        expect(screen.getByText(/create new campaign/i)).toBeInTheDocument();
-      });
-      
-      // Fill campaign form
-      const nameInput = screen.getByPlaceholderText(/campaign name/i);
-      const descInput = screen.getByPlaceholderText(/describe your campaign/i);
-      
-      fireEvent.change(nameInput, { target: { value: 'Test Campaign' } });
-      fireEvent.change(descInput, { target: { value: 'Test Description' } });
-      
-      // Submit campaign (the header also has a "Create campaign" button, so submit the form itself)
-      fireEvent.submit(nameInput.closest('form'));
-      
-      await waitFor(() => {
-        expect(fetch).toHaveBeenCalledWith(
-          '/api/campaigns',
-          expect.objectContaining({
-            method: 'POST',
-            body: expect.stringContaining('Test Campaign')
-          })
-        );
-      });
-    });
-    
-    it('should prevent XSS in campaign creation', async () => {
-      fetch.mockResolvedValue({
-        ok: true,
-        json: async () =>
-          mockMePlayer({ role: 'admin', statistics: { characters_owned: 0, campaigns_created: 0 } }),
-      });
-      
-      render(<SimpleApp />);
-      
-      await waitFor(() => {
-        const newCampaignButton = screen.queryByRole('button', { name: /new campaign/i });
-        if (newCampaignButton) {
-          fireEvent.click(newCampaignButton);
-        }
-      });
-      
-      // Try to inject script in campaign name
-      const nameInput = screen.queryByPlaceholderText(/campaign name/i);
-      if (nameInput) {
-        fireEvent.change(nameInput, { 
-          target: { value: '<script>alert("xss")</script>' } 
-        });
-        
-        // React renders it as text, so no script element may end up in the page
-        expect(document.body.querySelector('script')).toBeNull();
-      }
-    });
-  });
-  
-  describe('Navigation Flow', () => {
-    beforeEach(() => {
-      localStorage.setItem('token', 'test-token');
-      localStorage.setItem('user', JSON.stringify(mockMePlayer()));
-    });
-    
-    it('should handle browser back button correctly', async () => {
-      fetch.mockResolvedValue({
-        ok: true,
-        json: async () => []
-      });
-      
-      render(<SimpleApp />);
-      
-      // Simulate navigation
-      window.history.pushState({ page: 'dashboard' }, '', '/');
-      window.history.pushState({ page: 'createCampaign' }, '', '/');
-      
-      // Trigger popstate (back button)
-      window.dispatchEvent(new PopStateEvent('popstate', {
-        state: { page: 'dashboard' }
-      }));
-      
-      await waitFor(() => {
-        // Should navigate back to dashboard
-        expect(window.location.pathname).toBe('/');
-      });
-    });
-  });
-  
-  describe('Security Tests', () => {
-    it('should store tokens securely in localStorage', async () => {
-      fetch.mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({
-          access_token: 'test-token-123',
-          user: { id: 1, username: 'testuser', role: 'player' },
-        }),
-      });
-      fetch.mockResolvedValueOnce({
-        ok: true,
-        json: async () => mockMePlayer(),
-      });
-      fetch.mockResolvedValueOnce({
-        ok: true,
-        json: async () => [],
-      });
-      
-      render(<SimpleApp />);
-      
-      const usernameInput = screen.getAllByPlaceholderText(/username/i)[0];
-      const passwordInput = screen.getAllByPlaceholderText(/password/i)[0];
-      
-      fireEvent.change(usernameInput, { target: { value: 'testuser' } });
-      fireEvent.change(passwordInput, { target: { value: 'password123' } });
-      
-      const loginButton = screen.getByRole('button', { name: /^login$/i });
-      fireEvent.click(loginButton);
-      
-      await waitFor(() => {
-        const storedToken = localStorage.getItem('token');
-        expect(storedToken).toBe('test-token-123');
-      });
-    });
-    
-    it('should clear sensitive data on logout', async () => {
-      localStorage.setItem('token', 'test-token');
-      localStorage.setItem('user', JSON.stringify({ id: 1, username: 'test' }));
-      
-      fetch.mockResolvedValue({
-        ok: true,
-        json: async () => []
-      });
-      
-      render(<SimpleApp />);
-      
-      await waitFor(() => {
-        const logoutButton = screen.queryByRole('button', { name: /logout/i });
-        if (logoutButton) {
-          fireEvent.click(logoutButton);
-        }
-      });
-      
-      await waitFor(() => {
-        expect(localStorage.getItem('token')).toBeNull();
-        expect(localStorage.getItem('user')).toBeNull();
-      });
-    });
-  });
-  
-  describe('Rate Limiting', () => {
-    it('should prevent spam message submissions', async () => {
-      localStorage.setItem('token', 'test-token');
-      
-      fetch.mockResolvedValue({
-        ok: true,
-        json: async () => ({ success: true })
-      });
-      
-      render(<SimpleApp />);
-      
-      // Try to send multiple messages rapidly
-      const messageInput = screen.queryByPlaceholderText(/type your message/i);
-      if (messageInput) {
-        for (let i = 0; i < 10; i++) {
-          fireEvent.change(messageInput, { target: { value: `Message ${i}` } });
-          fireEvent.submit(messageInput.closest('form'));
-        }
-        
-        // Should have rate limiting in place
-        // Exact number of calls depends on rate limit implementation
-        expect(fetch).toHaveBeenCalledTimes(expect.any(Number));
-      }
-    });
-  });
-  
+}
+
+function renderAt(path) {
+  return render(
+    <MemoryRouter initialEntries={[path]} future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+      <App />
+    </MemoryRouter>
+  );
+}
+
+const calls = (method, path) =>
+  global.fetch.mock.calls.filter(([url, opts = {}]) => (opts.method || 'GET') === method && String(url).split('?')[0] === path);
+
+beforeEach(() => {
+  localStorage.clear();
 });
 
+describe('Authentication flow', () => {
+  it('registers with an invite code and lands in the chronicle hall', async () => {
+    mockFetch({
+      'POST /api/auth/register': () => [201, { access_token: 'test-token' }],
+      'GET /api/users/me': () => [200, ME_PLAYER],
+      'GET /api/campaigns/': () => [200, []],
+    });
+    const u = setupUser();
+    renderAt('/login');
+    await u.click(screen.getByRole('tab', { name: /register/i }));
+    await u.type(screen.getByLabelText(/username/i), 'testuser');
+    await u.type(screen.getByLabelText(/email/i), 'test@example.com');
+    await u.type(screen.getByLabelText(/^password/i), 'SecurePass123');
+    await u.type(screen.getByLabelText(/invite code/i), 'VALID-CODE');
+    await u.click(screen.getByRole('button', { name: /create account/i }));
+    await waitFor(() => expect(calls('POST', '/api/auth/register')).toHaveLength(1));
+    expect(JSON.parse(calls('POST', '/api/auth/register')[0][1].body)).toMatchObject({ username: 'testuser', invite_code: 'VALID-CODE' });
+    expect(await screen.findByRole('heading', { name: /chronicle hall/i })).toBeInTheDocument();
+    expect(localStorage.getItem('token')).toBe('test-token');
+  });
+
+  it('shows the server error for an invalid invite code', async () => {
+    mockFetch({ 'POST /api/auth/register': () => [400, { error: 'Invalid invite code' }] });
+    const u = setupUser();
+    renderAt('/login');
+    await u.click(screen.getByRole('tab', { name: /register/i }));
+    await u.type(screen.getByLabelText(/username/i), 'x');
+    await u.type(screen.getByLabelText(/email/i), 'x@example.com');
+    await u.type(screen.getByLabelText(/^password/i), 'pw');
+    await u.type(screen.getByLabelText(/invite code/i), 'NOPE');
+    await u.click(screen.getByRole('button', { name: /create account/i }));
+    expect(await screen.findByRole('alert')).toHaveTextContent('Invalid invite code');
+    expect(localStorage.getItem('token')).toBeNull();
+  });
+
+  it('logs in and shows every chronicle with its own character', async () => {
+    mockFetch({
+      'POST /api/auth/login': () => [200, { access_token: 'jwt-1' }],
+      'GET /api/users/me': () => [200, ME_PLAYER],
+      'GET /api/campaigns/': () => [
+        200,
+        [
+          { id: 3, name: 'Night Court', game_system: 'vampire', rules_edition: 'v5', my_playing_character_name: 'Yorika' },
+          { id: 2, name: 'Old Blood', game_system: 'vampire', rules_edition: 'classic' },
+        ],
+      ],
+    });
+    const u = setupUser();
+    renderAt('/login');
+    await u.type(screen.getByLabelText(/username/i), 'testuser');
+    await u.type(screen.getByLabelText(/password/i), 'pw');
+    await u.click(screen.getByRole('button', { name: /enter/i }));
+    const main = await screen.findByRole('main');
+    expect(await within(main).findByRole('link', { name: 'Night Court' })).toHaveAttribute('href', '/c/3');
+    expect(screen.getByText('Yorika')).toBeInTheDocument();
+    expect(screen.getByText(/no character in this chronicle yet/i)).toBeInTheDocument();
+    expect(calls('GET', '/api/campaigns/')[0][0]).not.toContain('for_active_character');
+  });
+
+  it('shows the login error', async () => {
+    mockFetch({ 'POST /api/auth/login': () => [401, { error: 'Invalid credentials' }] });
+    const u = setupUser();
+    renderAt('/login');
+    await u.type(screen.getByLabelText(/username/i), 'x');
+    await u.type(screen.getByLabelText(/password/i), 'y');
+    await u.click(screen.getByRole('button', { name: /enter/i }));
+    expect(await screen.findByRole('alert')).toHaveTextContent('Invalid credentials');
+  });
+
+  it('sends unauthenticated deep links to the login page', async () => {
+    mockFetch({});
+    renderAt('/c/3/7');
+    expect(await screen.findByRole('tab', { name: /sign in/i })).toBeInTheDocument();
+  });
+});
+
+describe('Chronicle management', () => {
+  beforeEach(() => {
+    localStorage.setItem('token', 'jwt');
+    localStorage.setItem('user', JSON.stringify({ ...ME_PLAYER, role: 'admin' }));
+  });
+
+  it('creates a V5 chronicle and opens its settings', async () => {
+    mockFetch({
+      'GET /api/users/me': () => [200, { ...ME_PLAYER, role: 'admin' }],
+      'POST /api/campaigns': () => [201, { campaign_id: 42, rules_edition: 'v5' }],
+      'GET /api/campaigns/42': () => [200, { id: 42, name: 'New Night', description: 'd', game_system: 'vampire', rules_edition: 'v5', created_by: 1 }],
+      'GET /api/campaigns/42/roster': () => [200, { members: [] }],
+      'GET /api/characters/': () => [200, { characters: [] }],
+      'GET /api/campaigns/42/stats': () => [200, {}],
+      'GET /api/campaigns/42/locations': () => [200, []],
+    });
+    const u = setupUser();
+    renderAt('/chronicles/new');
+    await u.type(await screen.findByLabelText(/^name/i), 'New Night');
+    await u.type(screen.getByLabelText(/world and setting/i), 'A city of masks.');
+    await u.click(within(screen.getByTestId('rules-edition-choice')).getByLabelText(/v5/i));
+    await u.click(screen.getByRole('button', { name: /create chronicle/i }));
+    await waitFor(() => expect(calls('POST', '/api/campaigns')).toHaveLength(1));
+    expect(JSON.parse(calls('POST', '/api/campaigns')[0][1].body)).toEqual({
+      name: 'New Night',
+      description: 'A city of masks.',
+      game_system: 'vampire',
+      rules_edition: 'v5',
+    });
+    expect(await screen.findByRole('link', { name: /enter chronicle/i })).toHaveAttribute('href', '/c/42');
+  });
+
+  it('renders hostile chronicle names as text', async () => {
+    mockFetch({
+      'GET /api/users/me': () => [200, ME_PLAYER],
+      'GET /api/campaigns/': () => [200, [{ id: 9, name: '<img src=x onerror=alert(1)>', game_system: 'vampire', description: '<script>alert(1)</script>' }]],
+    });
+    const { container } = renderAt('/chronicles');
+    const main = await screen.findByRole('main');
+    expect(await within(main).findByText('<img src=x onerror=alert(1)>')).toBeInTheDocument();
+    expect(container.querySelector('img[src="x"]')).toBeNull();
+    expect(container.querySelector('script')).toBeNull();
+  });
+});
+
+describe('Session', () => {
+  it('logging out clears the stored token and profile', async () => {
+    localStorage.setItem('token', 'jwt');
+    localStorage.setItem('user', JSON.stringify(ME_PLAYER));
+    mockFetch({ 'GET /api/users/me': () => [200, ME_PLAYER], 'GET /api/campaigns/': () => [200, []] });
+    const u = setupUser();
+    renderAt('/chronicles');
+    await u.click(await screen.findByRole('button', { name: /account menu for testuser/i }));
+    await u.click(screen.getByRole('menuitem', { name: /log out/i }));
+    expect(localStorage.getItem('token')).toBeNull();
+    expect(localStorage.getItem('user')).toBeNull();
+    expect(await screen.findByRole('tab', { name: /sign in/i })).toBeInTheDocument();
+  });
+
+  it('a 401 from the API logs the user out', async () => {
+    localStorage.setItem('token', 'expired');
+    localStorage.setItem('user', JSON.stringify(ME_PLAYER));
+    mockFetch({ 'GET /api/users/me': () => [401, { msg: 'Token has expired' }] });
+    renderAt('/chronicles');
+    expect(await screen.findByRole('tab', { name: /sign in/i })).toBeInTheDocument();
+    expect(localStorage.getItem('token')).toBeNull();
+  });
+});

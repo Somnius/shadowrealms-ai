@@ -4,8 +4,12 @@
 import { editionOf, V5 } from '../rules/rulesEdition';
 import { classicOutcome } from './classicDiceDisplay';
 import { resolveV5Dice, v5Badges } from './v5DiceDisplay';
+import { t } from '../i18n';
 
 const list = (a) => (Array.isArray(a) ? a.join(', ') : String(a ?? ''));
+
+const successesText = (n) =>
+  t('dice:summary.successes', { one: '{{count}} success', other: '{{count}} successes' }, { count: Number(n) || 0 });
 
 export function describeRollRow(row) {
   const r = row || {};
@@ -17,8 +21,9 @@ export function describeRollRow(row) {
     const ok = Number(r.successes) > 0;
     const hb = mods.hunger_before;
     const ha = mods.hunger_after;
-    const hunger = hb != null && ha != null ? ` · Hunger ${hb} → ${ha}` : '';
-    return `V5 Rouse check → [${die}] → ${ok ? 'no Hunger gain' : 'failed'}${hunger}`;
+    const hunger = hb != null && ha != null ? ` · ${t('dice:history.hungerChange', 'Hunger {{before}} → {{after}}', { before: hb, after: ha })}` : '';
+    const result = ok ? t('dice:history.rouseOk', 'no Hunger gain') : t('dice:history.rouseFailed', 'failed');
+    return t('dice:history.rouse', 'V5 Rouse check → [{{die}}] → {{result}}', { die, result }) + hunger;
   }
 
   if (edition === V5) {
@@ -26,19 +31,23 @@ export function describeRollRow(row) {
     const hungerDice = Array.isArray(mods.hunger_dice) ? mods.hunger_dice : [];
     const res = resolveV5Dice(normal, hungerDice, r.difficulty);
     const tags = v5Badges(res).map((b) => b.label).join(' · ');
-    const rr = mods.rerolled ? ' · Willpower reroll' : '';
+    const rr = mods.rerolled ? ` · ${t('dice:history.wpReroll', 'Willpower reroll')}` : '';
     return (
-      `V5 · pool ${r.dice_pool} (Hunger ${hungerDice.length}), need ${r.difficulty}` +
-      ` → [${list(normal)}]${hungerDice.length ? ` hunger [${list(hungerDice)}]` : ''}` +
-      ` → ${r.successes} successes · ${tags}${rr}`
+      t('dice:history.v5Head', 'V5 · pool {{pool}} (Hunger {{hunger}}), need {{difficulty}}', {
+        pool: r.dice_pool,
+        hunger: hungerDice.length,
+        difficulty: r.difficulty,
+      }) +
+      ` → [${list(normal)}]${hungerDice.length ? ` ${t('dice:history.hungerDice', 'hunger [{{dice}}]', { dice: list(hungerDice) })}` : ''}` +
+      ` → ${successesText(r.successes)} · ${tags}${rr}`
     );
   }
 
   const extras = [];
-  if (mods.specialty) extras.push('specialty');
-  if (mods.willpower) extras.push('Willpower');
+  if (mods.specialty) extras.push(t('dice:summary.specialty', 'specialty'));
+  if (mods.willpower) extras.push(t('dice:summary.willpower', 'Willpower'));
   const rerolls = Array.isArray(mods.specialty_rerolls) && mods.specialty_rerolls.length
-    ? ` +rerolls [${list(mods.specialty_rerolls)}]`
+    ? ` ${t('dice:history.rerolls', '+rerolls [{{dice}}]', { dice: list(mods.specialty_rerolls) })}`
     : '';
   const out = classicOutcome({
     successes: r.successes,
@@ -46,7 +55,8 @@ export function describeRollRow(row) {
     is_exceptional: r.is_critical,
   });
   return (
-    `Pool ${r.dice_pool}, TN ${r.difficulty}${extras.length ? `, ${extras.join(', ')}` : ''}` +
-    ` → [${list(r.results)}]${rerolls} → ${r.successes} successes · ${out.label}`
+    t('dice:history.classicHead', 'Pool {{pool}}, TN {{difficulty}}', { pool: r.dice_pool, difficulty: r.difficulty }) +
+    `${extras.length ? `, ${extras.join(', ')}` : ''}` +
+    ` → [${list(r.results)}]${rerolls} → ${successesText(r.successes)} · ${out.label}`
   );
 }

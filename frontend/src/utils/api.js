@@ -288,5 +288,44 @@ export const api = {
     fetch(`${API_URL}/admin/lm-studio/models`, {
       headers: { Authorization: `Bearer ${token}` },
     }),
+
+  // Phase 2: AI roles/providers, write-only API keys (returned masked), classifier, embeddings
+  getAiProviders: (token) =>
+    fetch(`${API_URL}/admin/ai-providers`, {
+      headers: { Authorization: `Bearer ${token}` },
+    }),
+
+  putAiProviders: (token, payload) =>
+    fetch(`${API_URL}/admin/ai-providers`, {
+      method: 'PUT',
+      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    }),
+
+  testAiProvider: (token, provider, model) =>
+    fetch(`${API_URL}/admin/ai-providers/test`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ provider, model }),
+    }),
+
+  testClassifier: (token, provider, text) =>
+    fetch(`${API_URL}/admin/classifier/test`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ provider, text }),
+    }),
+
+  getEmbeddings: (token) =>
+    fetch(`${API_URL}/admin/embeddings`, {
+      headers: { Authorization: `Bearer ${token}` },
+    }),
+
+  reembed: (token, force = false) =>
+    fetch(`${API_URL}/admin/embeddings/reembed`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ force }),
+    }),
 };
 

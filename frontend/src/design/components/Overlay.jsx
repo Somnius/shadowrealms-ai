@@ -5,6 +5,7 @@ import { IconButton } from './Button';
 import { Portal, cx, useDialog, useScrollLock } from './internal';
 import { useReducedMotionPref } from '../motion';
 import './overlay.css';
+import { t } from '../../i18n';
 
 const EASE_OUT = [0.2, 0.8, 0.2, 1];
 
@@ -26,7 +27,7 @@ export function Modal({
   initialFocusRef,
   closeOnBackdrop = true,
   closeOnEsc = true,
-  closeLabel = 'Close',
+  closeLabel = t('common:close', 'Close'),
   footer,
   className,
   children,
@@ -97,7 +98,7 @@ export function Modal({
  * Drawer (mobile nav, member panel). Same dialog behaviour as Modal.
  * side: 'left' | 'right' | 'bottom'. width defaults to min(85vw, 360px).
  */
-export function Drawer({ open, onClose, title, side = 'left', initialFocusRef, closeLabel = 'Close', width, className, children }) {
+export function Drawer({ open, onClose, title, side = 'left', initialFocusRef, closeLabel = t('common:close', 'Close'), width, className, children }) {
   const reduced = useReducedMotionPref();
   const panelRef = useRef(null);
   const titleId = useId();
@@ -171,7 +172,7 @@ const TONE_GLYPH = { info: 'raven', ok: 'check', warn: 'warning', danger: 'skull
  * Errors (tone 'danger') are announced assertively (role="alert"), the rest politely (role="status").
  * Timers pause while the pointer is over / focus is inside the region.
  */
-export function ToastProvider({ children, label = 'Notifications', closeLabel = 'Dismiss', max = 4 }) {
+export function ToastProvider({ children, label = t('common:notifications', 'Notifications'), closeLabel = t('common:dismiss', 'Dismiss'), max = 4 }) {
   const [toasts, setToasts] = useState([]);
   const timers = useRef(new Map());
   const paused = useRef(false);

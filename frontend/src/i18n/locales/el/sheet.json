@@ -1,0 +1,24 @@
+{
+  "loadFailed": "Δεν ήταν δυνατή η φόρτωση του φύλλου χαρακτήρα.",
+  "pts": "({{n}} πόντοι)",
+  "untitled": "Χαρακτήρας",
+  "close": "Κλείσιμο",
+  "classicIntro": "Φύλλο τύπου Classic WoD (μόνο για ανάγνωση). Οι αριθμοί είναι αυτοί που έχουν κλειδώσει στο χρονικό σου.",
+  "identity": "Ταυτότητα",
+  "identitySub": "Concept και Nature",
+  "concept": "Concept:",
+  "template": "Πρότυπο",
+  "giftsNotes": "Gifts / σημειώσεις:",
+  "backgroundNotes": "Ιστορικό και σημειώσεις",
+  "v5": {
+    "trackerAria": "{{label}}: {{sup}} superficial, {{agg}} aggravated από {{max}}",
+    "stains_one": "{{count}} Stain",
+    "stains_other": "{{count}} Stains",
+    "intro": "Φύλλο Vampire: The Masquerade 5th Edition (μόνο για ανάγνωση).",
+    "concept": "Concept",
+    "trackers": "Μετρητές",
+    "otherSpecialties": "Άλλες specialties:",
+    "fromPredator": "(από τον predator type)",
+    "tenets": "Αρχές του χρονικού"
+  }
+}

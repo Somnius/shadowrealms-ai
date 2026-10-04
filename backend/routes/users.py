@@ -19,8 +19,10 @@ from database import (
     ensure_users_self_switch_playing_character_column,
     ensure_users_restrict_self_join_new_chronicles_column,
     ensure_campaign_players_active_character_id_column,
+    ensure_users_ui_language_column,
 )
 from services.play_suspension import suspended_json
+from routes.ui_language import parse_ui_language
 from services.gpu_monitor import gpu_monitor_service
 
 logger = logging.getLogger(__name__)
@@ -328,6 +330,75 @@ def put_current_user_me():
             db.close()
 
     return get_current_user_me()
+
+
+def _language_user_id():
+    try:
+        return int(get_jwt_identity())
+    except (TypeError, ValueError):
+        return None
+
+
+@bp.route('/me/language', methods=['GET'])
+@jwt_required()
+def get_my_ui_language():
+    """The current user's saved interface language: {"ui_language": "en" | "el" | null}."""
+    user_id = _language_user_id()
+    if user_id is None:
+        return jsonify({"error": "Invalid session"}), 422
+    db = None
+    try:
+        db = get_db()
+        cursor = db.cursor()
+        ensure_users_ui_language_column(cursor)
+        db.commit()
+        cursor.execute("SELECT ui_language FROM users WHERE id = %s", (user_id,))
+        row = cursor.fetchone()
+        if not row:
+            return jsonify({"error": "User not found"}), 404
+        try:
+            lang = parse_ui_language(row["ui_language"])
+        except ValueError:
+            lang = None  # an old/odd value in the column: treat as "no choice"
+        return jsonify({"ui_language": lang})
+    except Exception as e:
+        logger.error(f"GET /users/me/language error: {e}")
+        return jsonify({"error": "Failed to load language"}), 500
+    finally:
+        if db is not None:
+            db.close()
+
+
+@bp.route('/me/language', methods=['PUT'])
+@jwt_required()
+def put_my_ui_language():
+    """Save the current user's interface language. Body: {"ui_language": "en" | "el" | null}."""
+    user_id = _language_user_id()
+    if user_id is None:
+        return jsonify({"error": "Invalid session"}), 422
+    data = request.get_json(silent=True)
+    if not isinstance(data, dict) or "ui_language" not in data:
+        return jsonify({"error": "JSON body with ui_language required"}), 400
+    try:
+        lang = parse_ui_language(data["ui_language"])
+    except ValueError as ve:
+        return jsonify({"error": str(ve)}), 400
+    db = None
+    try:
+        db = get_db()
+        cursor = db.cursor()
+        ensure_users_ui_language_column(cursor)
+        cursor.execute("UPDATE users SET ui_language = %s WHERE id = %s", (lang, user_id))
+        db.commit()
+        return jsonify({"ui_language": lang})
+    except Exception as e:
+        logger.error(f"PUT /users/me/language error: {e}")
+        if db is not None:
+            db.rollback()
+        return jsonify({"error": "Failed to save language"}), 500
+    finally:
+        if db is not None:
+            db.close()
 
 
 @bp.route('/', methods=['GET'])

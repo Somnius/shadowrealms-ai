@@ -1,0 +1,22 @@
+{
+  "loading": "Loading",
+  "save": "Save",
+  "cancel": "Cancel",
+  "edit": "Edit",
+  "delete": "Delete",
+  "error": {
+    "network": "Network error: the server could not be reached."
+  },
+  "dots": {
+    "value": "{{value}} of {{max}}"
+  },
+  "close": "Close",
+  "notifications": "Notifications",
+  "dismiss": "Dismiss",
+  "time": {
+    "justNow": "Just now",
+    "minutesAgo_one": "{{count}} minute ago",
+    "minutesAgo_other": "{{count}} minutes ago",
+    "yesterdayAt": "Yesterday · {{time}} · {{date}}"
+  }
+}

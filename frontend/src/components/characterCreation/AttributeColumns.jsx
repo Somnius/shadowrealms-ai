@@ -2,6 +2,7 @@ import React from 'react';
 import { MENTAL, PHYSICAL, SOCIAL } from '../../characterSheet/constants';
 import { attributeBase } from '../../characterSheet/validation';
 import DotTrack from './DotTrack';
+import { t } from '../../i18n';
 
 /**
  * `pools` = dots to ADD per category on top of the free dot in each attribute (7/5/3).
@@ -29,7 +30,7 @@ export default function AttributeColumns({
       >
         {title}
         <span style={{ color: '#6b7280', fontFamily: 'system-ui', marginLeft: '6px' }}>
-          (+{pool} dots)
+          {t('wizard:pool.plusDots', '(+{{n}} dots)', { n: pool })}
         </span>
       </div>
       {keys.map((k) => (
@@ -57,7 +58,7 @@ export default function AttributeColumns({
             {k}
             {nosferatu && k === 'appearance' ? (
               <span style={{ display: 'block', color: '#9ca3af', fontSize: '11px', textTransform: 'none' }}>
-                Nosferatu: always 0
+                {t('wizard:nosferatuAlwaysZero', 'Nosferatu: always 0')}
               </span>
             ) : null}
           </span>

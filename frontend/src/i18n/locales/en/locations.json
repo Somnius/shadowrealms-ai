@@ -1,0 +1,23 @@
+{
+  "error": {
+    "noCampaign": "The chronicle ID is missing. Please try creating the chronicle again.",
+    "server": "Server error: {{status}}",
+    "empty": "The AI returned no suggestions. You can add locations manually later.",
+    "noneSelected": "Please select at least one location.",
+    "createFailedWith": "Failed to create locations: {{error}}",
+    "unknown": "Unknown error",
+    "createFailed": "Failed to create locations. Please try again."
+  },
+  "loading": {
+    "title": "Generating location ideas…",
+    "body": "The AI is reading your setting and drafting atmospheric locations. This can take from a few seconds up to a couple of minutes depending on your model.",
+    "wait": "Please wait — the list will appear below when ready."
+  },
+  "title": "Suggested locations",
+  "intro": "Select the locations you want to create for your chronicle. You can add more later.",
+  "selected": "{{n}} of {{total}} selected",
+  "skip": "Skip for now",
+  "creating": "Creating…",
+  "create_one": "Create {{count}} location",
+  "create_other": "Create {{count}} locations"
+}

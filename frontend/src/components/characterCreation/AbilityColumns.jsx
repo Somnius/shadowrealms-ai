@@ -1,6 +1,7 @@
 import React from 'react';
 import { KNOWLEDGES, SKILLS, TALENTS } from '../../characterSheet/constants';
 import DotTrack from './DotTrack';
+import { t } from '../../i18n';
 
 function newCustomRow() {
   return { id: `c_${Math.random().toString(36).slice(2, 11)}`, label: '', dots: 0 };
@@ -87,7 +88,7 @@ export default function AbilityColumns({
       >
         {title}
         <span style={{ color: '#6b7280', fontFamily: 'system-ui', marginLeft: '6px' }}>
-          ({pool} dots)
+          {t('wizard:pool.dots', '({{n}} dots)', { n: pool })}
         </span>
       </div>
       {list.map(([k, label]) => (
@@ -128,7 +129,7 @@ export default function AbilityColumns({
           }}
         >
           <input
-            placeholder="Custom ability"
+            placeholder={t('wizard:ability.customPlaceholder', 'Custom ability')}
             value={row.label}
             onChange={(e) => updateCustomLabel(catKey, row.id, e.target.value)}
             style={{
@@ -150,6 +151,7 @@ export default function AbilityColumns({
           <button
             type="button"
             onClick={() => removeCustom(catKey, row.id)}
+            aria-label={t('wizard:ability.removeCustom', 'Remove custom ability')}
             style={{
               padding: '4px 8px',
               fontSize: '11px',
@@ -179,7 +181,7 @@ export default function AbilityColumns({
           cursor: 'pointer',
         }}
       >
-        + Add custom {title.slice(0, -1)}
+        {t('wizard:ability.addCustom', '+ Add custom {{kind}}', { kind: title.slice(0, -1) })}
       </button>
     </div>
   );

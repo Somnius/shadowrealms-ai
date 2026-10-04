@@ -2,6 +2,8 @@ import React from 'react';
 import DotTrack from './characterCreation/DotTrack';
 import ResponsiveSheetBlock from './characterCreation/ResponsiveSheetBlock';
 import { V5_ATTRIBUTES, V5_SKILLS, V5_SKILL_LABELS } from '../characterSheet/v5/constants';
+import { t } from '../i18n';
+import { Term } from '../i18n/glossary';
 
 const ACCENT = '#e94560';
 const obj = (v) => (v && typeof v === 'object' ? v : {});
@@ -15,17 +17,17 @@ function StaticDots({ value, maxRank = 5, accent = ACCENT }) {
 }
 
 /** Health / Willpower boxes: aggravated (X), superficial (/), empty. */
-function TrackerBoxes({ label, track, fallbackMax }) {
-  const t = obj(track);
-  const max = Math.max(0, n(t.max) || n(fallbackMax));
-  const agg = Math.min(max, n(t.aggravated));
-  const sup = Math.min(max - agg, n(t.superficial));
+function TrackerBoxes({ termId, label, track, fallbackMax }) {
+  const tr = obj(track);
+  const max = Math.max(0, n(tr.max) || n(fallbackMax));
+  const agg = Math.min(max, n(tr.aggravated));
+  const sup = Math.min(max - agg, n(tr.superficial));
   return (
     <div style={{ marginBottom: '10px' }}>
       <div style={{ color: '#c4b5fd', fontSize: '12px', marginBottom: '4px' }}>
-        {label} {max ? `(${max})` : ''}
+        <Term id={termId}>{label}</Term> {max ? `(${max})` : ''}
       </div>
-      <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }} aria-label={`${label}: ${sup} superficial, ${agg} aggravated of ${max}`}>
+      <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }} aria-label={t('sheet:v5.trackerAria', '{{label}}: {{sup}} superficial, {{agg}} aggravated of {{max}}', { label, sup, agg, max })}>
         {Array.from({ length: max }, (_, i) => {
           const mark = i < agg ? 'X' : i < agg + sup ? '/' : '';
           return (
@@ -60,8 +62,8 @@ function HumanityTrack({ humanity, stains }) {
   return (
     <div style={{ marginBottom: '10px' }}>
       <div style={{ color: '#c4b5fd', fontSize: '12px', marginBottom: '4px' }}>
-        Humanity {h}
-        {s ? ` · ${s} Stains` : ''}
+        <Term id="humanity">Humanity {h}</Term>
+        {s ? ` · ${t('sheet:v5.stains', { one: '{{count}} Stain', other: '{{count}} Stains' }, { count: s })}` : ''}
       </div>
       <div style={{ display: 'flex', gap: '4px' }}>
         {Array.from({ length: 10 }, (_, i) => {
@@ -137,27 +139,28 @@ export default function V5CharacterSheetView({ character }) {
   return (
     <>
       <p style={{ color: '#8b8b9f', fontSize: '13px', marginTop: 0, lineHeight: 1.5 }}>
-        Vampire: The Masquerade 5th Edition sheet (read-only).
+        {t('sheet:v5.intro', 'Vampire: The Masquerade 5th Edition sheet (read-only).')}
       </p>
 
-      <ResponsiveSheetBlock sectionId="v5-view-identity" title="Identity" accent={ACCENT}>
+      <ResponsiveSheetBlock sectionId="v5-view-identity" title={t('sheet:identity', 'Identity')} accent={ACCENT}>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '4px 16px', fontSize: '14px' }}>
-          {p('Concept', wm.concept)}
-          {p('Clan', wm.clan)}
-          {p('Generation', wm.generation)}
-          {p('Predator type', wm.predator_type)}
+          {p(t('sheet:v5.concept', 'Concept'), wm.concept)}
+          {p(<Term id="clan" />, wm.clan)}
+          {p(<Term id="generation" />, wm.generation)}
+          {p(<Term id="predator" />, wm.predator_type)}
           {p('Sire', wm.sire)}
           {p('Ambition', wm.ambition)}
           {p('Desire', wm.desire)}
         </div>
       </ResponsiveSheetBlock>
 
-      <ResponsiveSheetBlock sectionId="v5-view-trackers" title="Trackers" accent={ACCENT}>
+      <ResponsiveSheetBlock sectionId="v5-view-trackers" title={t('sheet:v5.trackers', 'Trackers')} accent={ACCENT}>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '12px' }}>
           <div>
             {/* Older/partial sheets may lack the tracker objects: fall back to the derived max. */}
-            <TrackerBoxes label="Health" track={wm.health} fallbackMax={n(attrs.stamina) + 3} />
+            <TrackerBoxes termId="health" label="Health" track={wm.health} fallbackMax={n(attrs.stamina) + 3} />
             <TrackerBoxes
+              termId="willpower"
               label="Willpower"
               track={wm.willpower}
               fallbackMax={n(attrs.composure) + n(attrs.resolve)}
@@ -165,15 +168,15 @@ export default function V5CharacterSheetView({ character }) {
           </div>
           <div>
             <HumanityTrack humanity={wm.humanity} stains={wm.stains} />
-            <div style={{ color: '#c4b5fd', fontSize: '12px', marginBottom: '4px' }}>Hunger {n(wm.hunger)}</div>
+            <div style={{ color: '#c4b5fd', fontSize: '12px', marginBottom: '4px' }}><Term id="hunger">Hunger {n(wm.hunger)}</Term></div>
             <StaticDots value={wm.hunger} maxRank={5} accent="#dc2626" />
-            <div style={{ color: '#c4b5fd', fontSize: '12px', margin: '10px 0 4px' }}>Blood Potency {n(wm.blood_potency)}</div>
+            <div style={{ color: '#c4b5fd', fontSize: '12px', margin: '10px 0 4px' }}><Term id="bloodPotency">Blood Potency {n(wm.blood_potency)}</Term></div>
             <StaticDots value={wm.blood_potency} maxRank={10} />
           </div>
         </div>
       </ResponsiveSheetBlock>
 
-      <ResponsiveSheetBlock sectionId="v5-view-attributes" title="Attributes" accent={ACCENT}>
+      <ResponsiveSheetBlock sectionId="v5-view-attributes" title={<Term id="attributes" />} accent={ACCENT}>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '16px' }}>
           {['physical', 'social', 'mental'].map((c) => (
             <React.Fragment key={c}>{column(c, V5_ATTRIBUTES[c], attrs)}</React.Fragment>
@@ -181,7 +184,7 @@ export default function V5CharacterSheetView({ character }) {
         </div>
       </ResponsiveSheetBlock>
 
-      <ResponsiveSheetBlock sectionId="v5-view-skills" title="Skills" accent={ACCENT}>
+      <ResponsiveSheetBlock sectionId="v5-view-skills" title={<Term id="skills" />} accent={ACCENT}>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '16px' }}>
           {['physical', 'social', 'mental'].map((c) => (
             <React.Fragment key={c}>{column(c, V5_SKILLS[c], obj(sk[c]))}</React.Fragment>
@@ -189,14 +192,14 @@ export default function V5CharacterSheetView({ character }) {
         </div>
         {specialties.some((s) => s && !V5_SKILL_LABELS[s.skill]) ? (
           <p style={{ color: '#94a3b8', fontSize: '12px' }}>
-            Other specialties:{' '}
+            {t('sheet:v5.otherSpecialties', 'Other specialties:')}{' '}
             {specialties.filter((s) => s && !V5_SKILL_LABELS[s.skill]).map((s) => `${s.skill}: ${s.name}`).join(', ')}
           </p>
         ) : null}
       </ResponsiveSheetBlock>
 
       {disciplines.length ? (
-        <ResponsiveSheetBlock sectionId="v5-view-disciplines" title="Disciplines" accent={ACCENT}>
+        <ResponsiveSheetBlock sectionId="v5-view-disciplines" title={<Term id="discipline">Disciplines</Term>} accent={ACCENT}>
           {disciplines.map((d, i) => (
             <div key={i} style={{ marginBottom: '10px', color: '#e0e0e0' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -212,15 +215,15 @@ export default function V5CharacterSheetView({ character }) {
       ) : null}
 
       {advantages.length || flaws.length ? (
-        <ResponsiveSheetBlock sectionId="v5-view-advantages" title="Advantages & flaws" accent={ACCENT}>
+        <ResponsiveSheetBlock sectionId="v5-view-advantages" title="Advantages & Flaws" accent={ACCENT}>
           {[...advantages, ...flaws.map((f) => ({ ...f, flaw: true }))].map((a, i) => (
             <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '6px', color: a.flaw ? '#fca5a5' : '#e0e0e0' }}>
               <span style={{ flex: 1 }}>
                 {a.name}
                 <span style={{ color: '#94a3b8', fontSize: '12px' }}>
                   {' '}
-                  {a.flaw ? 'flaw' : a.kind || ''}
-                  {a.kind === 'predator' && a.flaw ? ' (predator type)' : ''}
+                  {a.flaw ? 'Flaw' : a.kind || ''}
+                  {a.kind === 'predator' && a.flaw ? ` ${t('sheet:v5.fromPredator', '(predator type)')}` : ''}
                 </span>
               </span>
               <StaticDots value={a.dots} accent={a.flaw ? '#f87171' : ACCENT} />
@@ -230,18 +233,18 @@ export default function V5CharacterSheetView({ character }) {
       ) : null}
 
       {touchstones.length || wm.chronicle_tenets ? (
-        <ResponsiveSheetBlock sectionId="v5-view-convictions" title="Convictions & touchstones" accent={ACCENT}>
-          {touchstones.map((t, i) => (
+        <ResponsiveSheetBlock sectionId="v5-view-convictions" title={<Term id="convictions" />} accent={ACCENT}>
+          {touchstones.map((ts, i) => (
             <p key={i} style={{ margin: '0 0 6px', color: '#e0e0e0' }}>
-              <strong style={{ color: '#c4b5fd' }}>{t.conviction}</strong> — {t.name}
+              <strong style={{ color: '#c4b5fd' }}>{ts.conviction}</strong> — {ts.name}
             </p>
           ))}
-          {p('Chronicle tenets', wm.chronicle_tenets)}
+          {p(t('sheet:v5.tenets', 'Chronicle tenets'), wm.chronicle_tenets)}
         </ResponsiveSheetBlock>
       ) : null}
 
       {character?.background != null && String(character.background).trim() ? (
-        <ResponsiveSheetBlock sectionId="v5-view-story" title="Background & notes" accent={ACCENT}>
+        <ResponsiveSheetBlock sectionId="v5-view-story" title={t('sheet:backgroundNotes', 'Background & notes')} accent={ACCENT}>
           <p style={{ color: '#d1d5db', whiteSpace: 'pre-wrap', lineHeight: 1.55, margin: 0 }}>{String(character.background)}</p>
         </ResponsiveSheetBlock>
       ) : null}

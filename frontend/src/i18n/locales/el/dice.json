@@ -1,0 +1,172 @@
+{
+  "hiddenBadge": "Κρυφό ρολάρισμα",
+  "error": {
+    "marker": "Δεν ήταν δυνατή η δημοσίευση του animation των ζαριών.",
+    "result": "Δεν ήταν δυνατή η δημοσίευση του αποτελέσματος.",
+    "poolFormat": "Το pool πρέπει να είναι αριθμοί με + ή - (π.χ. 5, 4+3, 7-1).",
+    "noRoom": "Μπες πρώτα σε μια τοποθεσία.",
+    "resultNotPosted": "Το ρολάρισμα αποθηκεύτηκε, αλλά δεν ήταν δυνατή η δημοσίευσή του στην τοποθεσία.",
+    "poolRange": "Το pool πρέπει να έχει από 1 έως 50 ζάρια.",
+    "v5Diff": "Η δυσκολία πρέπει να είναι από 0 έως 10.",
+    "diff": "Η δυσκολία πρέπει να είναι από 2 έως 10.",
+    "rollFailed": "Το ρολάρισμα απέτυχε.",
+    "rerollElsewhere": "Γύρνα στο χρονικό όπου έριξες για να ξαναρίξεις.",
+    "rerollFailed": "Το ξαναρίξιμο απέτυχε.",
+    "rouseFailed": "Το Rouse check απέτυχε."
+  },
+  "dialog": {
+    "title": "Ρίξε ζάρια",
+    "submit": "Ρίξε και δημοσίευσε"
+  },
+  "field": {
+    "pool": "Pool ζαριών",
+    "poolHint": "π.χ. 5, 4+3 ή 7-1",
+    "hidden": "Κρύψε αυτό το ρολάρισμα από τους παίκτες (μόνο Storyteller / staff)",
+    "reason": "Για ποιο λόγο ρίχνεις; (προαιρετικό)",
+    "reasonPlaceholder": "π.χ. επίθεση Brawl, Perception + Alertness…",
+    "v5Difficulty": "Δυσκολία (επιτυχίες που χρειάζονται)",
+    "justCount": "(απλώς μέτρα τις επιτυχίες)",
+    "rouseHint": "Ένα ζάρι: με 6+ το Hunger δεν ανεβαίνει, αλλιώς Hunger +1",
+    "rousing": "Rouse check…",
+    "rouse": "Rouse check",
+    "classicDifficulty": "Δυσκολία (αριθμός-στόχος, 2–10)",
+    "commonDefault": "(η συνηθισμένη)",
+    "specialty": "Specialty (τα 10 ξαναρίχνονται για έξτρα επιτυχίες)",
+    "willpower": "Ξόδεψε Willpower (+1 αυτόματη επιτυχία που δεν ακυρώνεται)"
+  },
+  "hungerSource": "Φύλλο χαρακτήρα ({{name}}): {{hunger}}",
+  "history": {
+    "open": "Ιστορικό ρολαρισμάτων",
+    "failed": "Δεν ήταν δυνατή η φόρτωση του ιστορικού.",
+    "title": "Ιστορικό ρολαρισμάτων: {{room}}",
+    "empty": "Δεν έχει καταγραφεί ακόμα κανένα ρολάρισμα σε αυτή την τοποθεσία.",
+    "hungerChange": "Hunger {{before}} → {{after}}",
+    "rouseOk": "χωρίς αύξηση Hunger",
+    "rouseFailed": "απέτυχε",
+    "rouse": "V5 Rouse check → [{{die}}] → {{result}}",
+    "wpReroll": "ξαναρίξιμο με Willpower",
+    "v5Head": "V5 · pool {{pool}} (Hunger {{hunger}}), χρειάζονται {{difficulty}}",
+    "hungerDice": "hunger [{{dice}}]",
+    "rerolls": "+ξαναριξίματα [{{dice}}]",
+    "classicHead": "Pool {{pool}}, στόχος {{difficulty}}"
+  },
+  "rules": {
+    "range": "Δώσε κατώτατο όριο από 2 έως 10 ή επανάφερε τα κανονικά ζάρια.",
+    "failed": "Δεν ήταν δυνατή η ενημέρωση των κανόνων ζαριών.",
+    "saved": "Αποθηκεύτηκε επιεικές κατώτατο όριο {{n}} για αυτή την τοποθεσία.",
+    "off": "Η επιείκεια απενεργοποιήθηκε: κανονική τυχαιότητα d10 σε αυτή την τοποθεσία.",
+    "title": "Κανόνες ζαριών τοποθεσίας",
+    "body": "Μόνο για το {{room}}. Όριο 2-10: χωρίς άσους· με 2+ ζάρια, ένα ζάρι φέρνει πάντα τουλάχιστον το όριο. Ίδιο με το /ai dice-diff.",
+    "restore": "Επαναφορά κανονικών",
+    "floor": "Κατώτατο όριο επιείκειας (2-10)"
+  },
+  "defaultReason": "Ρολάρισμα ζαριών",
+  "posted": {
+    "public": "Το ρολάρισμα δημοσιεύτηκε σε αυτή την τοποθεσία.",
+    "hidden": "Το κρυφό ρολάρισμα δημοσιεύτηκε σε αυτή την τοποθεσία."
+  },
+  "reroll": {
+    "done": "Το ξαναρίξιμο με Willpower δημοσιεύτηκε.",
+    "doneElsewhere": "Το ξαναρίξιμο με Willpower δημοσιεύτηκε στην τοποθεσία όπου έριξες.",
+    "region": "Ξαναρίξιμο με Willpower",
+    "title": "Το V5 ρολάρισμά σου",
+    "elsewhere": "Έριξες σε άλλη τοποθεσία· το ξαναρίξιμο θα δημοσιευτεί εκεί.",
+    "normalDie": "Κανονικό ζάρι {{value}}: πάτα για να το διαλέξεις για ξαναρίξιμο",
+    "hungerDie": "Ζάρι Hunger {{value}} (δεν ξαναρίχνεται)",
+    "picked": "{{n}}/{{max}} επιλεγμένα",
+    "busy": "Ξαναρίχνω…",
+    "submit": "Ξαναρίξε με Willpower"
+  },
+  "rouse": {
+    "ok": "Rouse check: {{die}}, χωρίς αύξηση Hunger.",
+    "fail": "Rouse check: {{die}}, Hunger {{before}} → {{after}}."
+  },
+  "die": {
+    "hunger": "Ζάρι Hunger: {{value}}",
+    "normal": "Ζάρι: {{value}}",
+    "crit": ", κρίσιμο",
+    "one": ", άσος",
+    "success": ", επιτυχία",
+    "reroll": "Ξαναρίξιμο Specialty: {{value}}"
+  },
+  "edition": {
+    "v5Long": "V5 (5η Έκδοση)",
+    "classicLong": "Κλασικό (Revised)",
+    "v5": "V5",
+    "classic": "Κλασικό"
+  },
+  "overlay": {
+    "announce": "Αποτέλεσμα ζαριών: {{labels}}. {{summary}}.",
+    "resultLabel": "Αποτέλεσμα ζαριών (Escape για κλείσιμο)",
+    "rollingLabel": "Τα ζάρια κυλάνε (Escape για κλείσιμο)",
+    "result": "Αποτέλεσμα",
+    "rolling": "Τα ζάρια κυλάνε…",
+    "difficulty": "Δυσκολία {{n}}",
+    "rerollsLabel": "Ξαναριξίματα Specialty: {{list}}",
+    "rerollsTitle": "Ξαναριξίματα Specialty",
+    "more": "+{{count}} ακόμα",
+    "redHunger": "Τα κόκκινα ζάρια είναι ζάρια Hunger.",
+    "resolves": "Το αποτέλεσμα βγαίνει μόλις σταματήσουν τα ζάρια."
+  },
+  "summary": {
+    "tn": "Στόχος {{tn}}",
+    "net": "{{count}} καθαρές",
+    "specialty": "specialty",
+    "willpower": "Willpower",
+    "successes_one": "{{count}} επιτυχία",
+    "successes_other": "{{count}} επιτυχίες",
+    "vs": " έναντι {{difficulty}}",
+    "margin": "περιθώριο {{margin}}",
+    "hunger": "Hunger {{count}}"
+  },
+  "help": {
+    "v5": "pool από d10· κάθε 6+ είναι επιτυχία και κάθε ζευγάρι 10 μετράει για 4. Η δυσκολία είναι πόσες επιτυχίες χρειάζεσαι. Το τρέχον Hunger σου αντικαθιστά ισάριθμα ζάρια με ζάρια Hunger (messy critical και bestial failure). Μετά το ρολάρισμα μπορείς να ξοδέψεις Willpower για να ξαναρίξεις έως 3 κανονικά ζάρια.",
+    "classic": "pool από d10, δυσκολία (αριθμός-στόχος) συνήθως 6–9. Κάθε ζάρι ≥ δυσκολίας είναι επιτυχία· οι άσοι ακυρώνουν επιτυχίες. Botch έχεις μόνο αν δεν φέρεις καμία επιτυχία και τουλάχιστον έναν άσο. Specialty: τα 10 ξαναρίχνονται για περισσότερες επιτυχίες. Willpower: μία αυτόματη επιτυχία (το δηλώνεις πριν ρίξεις)."
+  },
+  "viz": {
+    "dice_one": "{{count}} ζάρι",
+    "dice_other": "{{count}} ζάρια",
+    "hungerPart": ", {{count}} Hunger",
+    "successesOf_one": "{{count}} επιτυχία από {{difficulty}} που χρειάζονται",
+    "successesOf_other": "{{count}} επιτυχίες από {{difficulty}} που χρειάζονται",
+    "pairs_one": "{{count}} κρίσιμο ζευγάρι",
+    "pairs_other": "{{count}} κρίσιμα ζευγάρια",
+    "diceAt_one": "{{count}} ζάρι σε δυσκολία {{difficulty}}",
+    "diceAt_other": "{{count}} ζάρια σε δυσκολία {{difficulty}}",
+    "net_one": "{{count}} καθαρή επιτυχία",
+    "net_other": "{{count}} καθαρές επιτυχίες",
+    "ones_one": "{{count}} άσος",
+    "ones_other": "{{count}} άσοι",
+    "willpower": "ξοδεύτηκε Willpower",
+    "list": "Ζάρια: {{list}}.",
+    "hungerTag": " (Hunger)",
+    "rerollTag": " (ξαναρίξιμο)"
+  },
+  "outcome": {
+    "messyCritical": "Messy critical",
+    "criticalWin": "Critical win",
+    "success": "Επιτυχία",
+    "bestialFailure": "Bestial failure",
+    "totalFailure": "Total failure",
+    "failure": "Αποτυχία",
+    "botch": "Botch",
+    "exceptional": "Εξαιρετική επιτυχία",
+    "exceptionalCount": "Εξαιρετική επιτυχία ({{count}})",
+    "successCount_one": "Επιτυχία ({{count}} επιτυχία)",
+    "successCount_other": "Επιτυχία ({{count}} επιτυχίες)",
+    "win": "Επιτυχία"
+  },
+  "v5difficulty": {
+    "1": "Ρουτίνα",
+    "2": "Απλό",
+    "3": "Μέτριο",
+    "4": "Απαιτητικό",
+    "5": "Δύσκολο",
+    "6": "Πολύ δύσκολο",
+    "7": "Σχεδόν αδύνατο (7+)"
+  },
+  "hint": {
+    "criticalWin": "Επιτυχία με τουλάχιστον ένα ζευγάρι 10: κάθε ζευγάρι μετράει για 4 επιτυχίες.",
+    "totalFailure": "Ούτε μία επιτυχία: η χειρότερη αποτυχία στο V5."
+  }
+}

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import ReadmeModal from './ReadmeModal';
 import packageJson from '../../package.json';
+import { t } from '../i18n';
 
 /**
  * SPA build version — from `frontend/package.json`, bumped by `scripts/version-bump.sh`.
@@ -70,7 +71,7 @@ function Footer() {
               e.target.style.transform = 'scale(1)';
               e.target.style.boxShadow = 'none';
             }}
-            title="Click to view README"
+            title={t('footer:readmeTitle', 'Show the README')}
           >
             {displayVersion}
           </span>
@@ -82,7 +83,7 @@ function Footer() {
           fontSize: '14px',
           fontFamily: 'Crimson Text, serif'
         }}>
-          Made with <span style={{ color: '#e94560' }}>♥</span> for TableTop RPG games by{' '}
+          {t('footer:madeWith', 'Made with')} <span style={{ color: '#e94560' }}>♥</span> {t('footer:madeFor', 'for tabletop RPG games by')}{' '}
           <span style={{ 
             color: '#e94560',
             fontWeight: 'bold',
@@ -152,7 +153,7 @@ function Footer() {
         fontSize: '12px',
         fontFamily: 'Crimson Text, serif'
       }}>
-        Built with the help of{' '}
+        {t('footer:builtWith', 'Built with the help of')}{' '}
         <a 
           href="https://cursor.sh" 
           target="_blank" 

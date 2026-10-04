@@ -1,5 +1,6 @@
 import React from 'react';
-import { editionLabel, editionOf, V5 } from '../rules/rulesEdition';
+import { editionOf, V5 } from '../rules/rulesEdition';
+import { t } from '../i18n';
 
 /**
  * Small "V5" / "Classic" pill shown next to a campaign's game system.
@@ -15,7 +16,7 @@ export default function EditionBadge({ campaign, style }) {
   const v5 = ed === V5;
   return (
     <span
-      title={editionLabel(campaign, { long: true })}
+      title={v5 ? t('dice:edition.v5Long', 'V5 (5th Edition)') : t('dice:edition.classicLong', 'Classic (Revised)')}
       data-testid="edition-badge"
       style={{
         display: 'inline-block',
@@ -33,7 +34,7 @@ export default function EditionBadge({ campaign, style }) {
         ...style,
       }}
     >
-      {editionLabel(campaign)}
+      {v5 ? t('dice:edition.v5', 'V5') : t('dice:edition.classic', 'Classic')}
     </span>
   );
 }

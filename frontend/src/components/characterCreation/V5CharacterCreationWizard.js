@@ -40,20 +40,24 @@ import {
   skillSpreadStatus,
   validateV5Sheet,
 } from '../../characterSheet/v5/validation';
+import { translateSheetErrors } from '../../characterSheet/i18nErrors';
+import { t } from '../../i18n';
+import { Term } from '../../i18n/glossary';
 
 const API_URL = '/api';
 const ACCENT = '#e94560';
 
+// Labels are functions so t() runs at render time. Game terms stay English.
 const SECTION_ORDER = [
-  [V5_SECTION_IDS.identity, 'Identity'],
-  [V5_SECTION_IDS.clan, 'Clan'],
-  [V5_SECTION_IDS.attributes, 'Attributes'],
-  [V5_SECTION_IDS.skills, 'Skills'],
-  [V5_SECTION_IDS.disciplines, 'Disciplines'],
-  [V5_SECTION_IDS.predator, 'Predator'],
-  [V5_SECTION_IDS.advantages, 'Advantages'],
-  [V5_SECTION_IDS.humanity, 'Humanity'],
-  [V5_SECTION_IDS.story, 'Story'],
+  [V5_SECTION_IDS.identity, () => t('wizard:section.identity', 'Identity')],
+  [V5_SECTION_IDS.clan, () => 'Clan'],
+  [V5_SECTION_IDS.attributes, () => 'Attributes'],
+  [V5_SECTION_IDS.skills, () => 'Skills'],
+  [V5_SECTION_IDS.disciplines, () => 'Disciplines'],
+  [V5_SECTION_IDS.predator, () => 'Predator'],
+  [V5_SECTION_IDS.advantages, () => 'Advantages'],
+  [V5_SECTION_IDS.humanity, () => 'Humanity'],
+  [V5_SECTION_IDS.story, () => t('wizard:section.story', 'Story')],
 ];
 
 const inputStyle = {
@@ -233,8 +237,8 @@ export default function V5CharacterCreationWizard({
     setDisciplines((prev) => prev.map((d, j) => (j === i ? { ...d, ...patch } : d)));
 
   const handleSubmit = async () => {
-    const err = validateV5Sheet(sheet, V5_DISCIPLINES);
-    if (!campaignId) err[V5_SECTION_IDS.identity] = 'Choose a chronicle.';
+    const err = translateSheetErrors(validateV5Sheet(sheet, V5_DISCIPLINES));
+    if (!campaignId) err[V5_SECTION_IDS.identity] = t('wizard:error.chronicle', 'Choose a chronicle.');
     setFieldErrors(err);
     const first = SECTION_ORDER.find(([id]) => err[id]);
     if (first) {
@@ -260,13 +264,13 @@ export default function V5CharacterCreationWizard({
       });
       const body = await res.json().catch(() => ({}));
       if (!res.ok) {
-        showError?.(body.error || 'Could not create character.');
+        showError?.(body.error || t('wizard:error.createFailed', 'Could not create character.'));
         return;
       }
-      showSuccess?.('Character embraced. Select them in Player Profile if needed.');
+      showSuccess?.(t('wizard:v5.created', 'Character embraced. Select them in Player Profile if needed.'));
       onDone?.(body);
     } catch (e) {
-      showError?.('Network error while creating character.');
+      showError?.(t('wizard:error.network', 'Network error while creating character.'));
     } finally {
       setSubmitting(false);
     }
@@ -277,8 +281,8 @@ export default function V5CharacterCreationWizard({
       <p style={{ color: '#f87171', fontSize: '13px', marginBottom: '12px' }}>{fieldErrors[id]}</p>
     ) : null;
 
-  const textField = (label, value, setter, placeholder) => {
-    const id = `v5-field-${toKey(label)}`;
+  const textField = (idKey, label, value, setter, placeholder) => {
+    const id = `v5-field-${toKey(idKey)}`;
     return (
       <div>
         <label htmlFor={id} style={labelStyle}>
@@ -308,7 +312,7 @@ export default function V5CharacterCreationWizard({
             <input
               value={r.name}
               aria-label={`Thin-blood ${kind.replace(/s$/, '')} ${i + 1}`}
-              placeholder={kind === 'Merits' ? 'e.g. Day Drinker' : 'e.g. Baby Teeth'}
+              placeholder={kind === 'Merits' ? t('wizard:v5.thinMeritPlaceholder', 'e.g. Day Drinker') : t('wizard:v5.thinFlawPlaceholder', 'e.g. Baby Teeth')}
               onChange={(e) =>
                 setRows((prev) => prev.map((x, j) => (j === i ? { name: e.target.value } : x)))
               }
@@ -317,7 +321,7 @@ export default function V5CharacterCreationWizard({
             {rows.length > 1 ? (
               <button
                 type="button"
-                aria-label={`Remove thin-blood ${kind.replace(/s$/, '')} ${i + 1}`}
+                aria-label={t('wizard:v5.removeThin', 'Remove thin-blood {{kind}} {{n}}', { kind: kind.replace(/s$/, ''), n: i + 1 })}
                 onClick={() => setRows((prev) => prev.filter((_, j) => j !== i))}
                 style={{ padding: '6px 10px', background: '#1e293b', color: '#94a3b8', border: '1px solid #475569', borderRadius: '6px', cursor: 'pointer' }}
               >
@@ -332,7 +336,7 @@ export default function V5CharacterCreationWizard({
             onClick={() => setRows((prev) => [...prev, { name: '' }])}
             style={{ padding: '6px 12px', fontSize: '12px', background: 'transparent', color: '#c4b5fd', border: '1px dashed #6d28d9', borderRadius: '6px', cursor: 'pointer' }}
           >
-            + Add {kind === 'Merits' ? 'Merit' : 'Flaw'}
+            {kind === 'Merits' ? t('wizard:v5.addMerit', '+ Add Merit') : t('wizard:v5.addFlaw', '+ Add Flaw')}
           </button>
         ) : null}
       </div>
@@ -344,12 +348,10 @@ export default function V5CharacterCreationWizard({
       <GothicBox theme="vampire">
         <div style={{ padding: '8px 8px 0' }}>
           <h2 style={{ fontFamily: 'Cinzel, serif', color: ACCENT, marginTop: 0, fontSize: '22px' }}>
-            Character sheet forge · V5
+            {t('wizard:v5.title', 'Character sheet forge · V5')}
           </h2>
           <p style={{ color: '#8b8b9f', fontSize: '14px', lineHeight: 1.5 }}>
-            <strong>Vampire: The Masquerade 5th Edition</strong> creation: fixed attribute spread,
-            a skill distribution, 2 + 1 Discipline dots, a predator type, 7 Advantage dots and at
-            least 2 Flaw dots. No freebie points in V5.
+            {t('wizard:v5.intro', 'Vampire: The Masquerade 5th Edition creation: fixed attribute spread, a skill distribution, 2 + 1 Discipline dots, a predator type, 7 Advantage dots and at least 2 Flaw dots. No freebie points in V5.')}
           </p>
         </div>
 
@@ -381,7 +383,7 @@ export default function V5CharacterCreationWizard({
                   fontFamily: 'Cinzel, serif',
                 }}
               >
-                {label}
+                {label()}
               </button>
             ))}
           </div>
@@ -392,16 +394,17 @@ export default function V5CharacterCreationWizard({
             </span>
             <span style={{ color: ACCENT }}>{clan}</span>
             <span>
-              Health {derived.health} · Willpower {derived.willpower} · Humanity {derived.humanity} · BP{' '}
-              {derived.blood_potency} · Hunger {derived.hunger}
+              <Term id="health">Health {derived.health}</Term> · <Term id="willpower">Willpower {derived.willpower}</Term> ·{' '}
+              <Term id="humanity">Humanity {derived.humanity}</Term> · <Term id="bloodPotency">BP {derived.blood_potency}</Term> ·{' '}
+              <Term id="hunger">Hunger {derived.hunger}</Term>
             </span>
           </div>
         </div>
 
         <div style={{ padding: '8px 16px 24px' }}>
-          <ResponsiveSheetBlock sectionId={V5_SECTION_IDS.identity} title="Identity" subtitle="Chronicle and concept" accent={ACCENT}>
+          <ResponsiveSheetBlock sectionId={V5_SECTION_IDS.identity} title={t('wizard:section.identity', 'Identity')} subtitle={t('wizard:v5.identitySub', 'Chronicle and concept')} accent={ACCENT}>
             {inlineErr(V5_SECTION_IDS.identity)}
-            <label htmlFor="v5-field-chronicle" style={labelStyle}>Chronicle</label>
+            <label htmlFor="v5-field-chronicle" style={labelStyle}>{t('wizard:field.chronicle', 'Chronicle')}</label>
             <select
               id="v5-field-chronicle"
               value={campaignId}
@@ -416,24 +419,24 @@ export default function V5CharacterCreationWizard({
               ))}
             </select>
             <div style={gridStyle}>
-              {textField('Character name', name, setName)}
-              {textField('Concept', concept, setConcept, 'e.g. burned-out paramedic')}
-              {textField('Sire', sire, setSire, 'optional')}
-              {textField('Ambition', ambition, setAmbition, 'long-term goal')}
-              {textField('Desire', desire, setDesire, 'this session')}
+              {textField('Character name', t('wizard:field.name', 'Character name'), name, setName)}
+              {textField('Concept', t('wizard:field.concept', 'Concept'), concept, setConcept, t('wizard:v5.conceptPlaceholder', 'e.g. burned-out paramedic'))}
+              {textField('Sire', 'Sire', sire, setSire, t('wizard:v5.optional', 'optional'))}
+              {textField('Ambition', 'Ambition', ambition, setAmbition, t('wizard:v5.ambitionPlaceholder', 'long-term goal'))}
+              {textField('Desire', 'Desire', desire, setDesire, t('wizard:v5.desirePlaceholder', 'this session'))}
             </div>
           </ResponsiveSheetBlock>
 
           <ResponsiveSheetBlock
             sectionId={V5_SECTION_IDS.clan}
-            title="Clan & generation"
-            subtitle="Age sets the generation range and starting Blood Potency."
+            title="Clan & Generation"
+            subtitle={t('wizard:v5.clanSub', 'Age sets the generation range and starting Blood Potency.')}
             accent={ACCENT}
           >
             {inlineErr(V5_SECTION_IDS.clan)}
             <div style={gridStyle}>
               <div>
-                <label htmlFor="v5-field-clan" style={labelStyle}>Clan</label>
+                <label htmlFor="v5-field-clan" style={labelStyle}><Term id="clan" /></label>
                 <select id="v5-field-clan" value={clan} onChange={(e) => changeClan(e.target.value)} style={inputStyle}>
                   {V5_CLAN_NAMES.map((c) => (
                     <option key={c} value={c}>
@@ -443,7 +446,7 @@ export default function V5CharacterCreationWizard({
                 </select>
               </div>
               <div>
-                <label htmlFor="v5-field-age" style={labelStyle}>Age</label>
+                <label htmlFor="v5-field-age" style={labelStyle}>{t('wizard:v5.age', 'Age')}</label>
                 <select id="v5-field-age" value={age} onChange={(e) => changeAge(e.target.value)} style={inputStyle}>
                   {Object.entries(V5_AGE_BRACKETS).map(([k, a]) => (
                     <option key={k} value={k}>
@@ -454,7 +457,7 @@ export default function V5CharacterCreationWizard({
                 </select>
               </div>
               <div>
-                <label htmlFor="v5-field-generation" style={labelStyle}>Generation</label>
+                <label htmlFor="v5-field-generation" style={labelStyle}><Term id="generation" /></label>
                 <select
                   id="v5-field-generation"
                   value={generation}
@@ -463,7 +466,8 @@ export default function V5CharacterCreationWizard({
                 >
                   {V5_AGE_BRACKETS[age].generations.map((g) => (
                     <option key={g} value={g}>
-                      {g}th{g >= 14 ? ' (thin-blood)' : ''}
+                      {t('wizard:v5.generationOption', '{{g}}th', { g })}
+                      {g >= 14 ? ' (thin-blood)' : ''}
                     </option>
                   ))}
                 </select>
@@ -492,8 +496,8 @@ export default function V5CharacterCreationWizard({
 
           <ResponsiveSheetBlock
             sectionId={V5_SECTION_IDS.attributes}
-            title="Attributes"
-            subtitle="One at 4, three at 3, four at 2, one at 1."
+            title={<Term id="attributes" />}
+            subtitle={t('wizard:v5.attributesSub', 'One at 4, three at 3, four at 2, one at 1.')}
             accent={ACCENT}
           >
             {inlineErr(V5_SECTION_IDS.attributes)}
@@ -523,12 +527,12 @@ export default function V5CharacterCreationWizard({
 
           <ResponsiveSheetBlock
             sectionId={V5_SECTION_IDS.skills}
-            title="Skills"
-            subtitle="Pick a distribution, then free specialties."
+            title={<Term id="skills" />}
+            subtitle={t('wizard:v5.skillsSub', 'Pick a distribution, then free specialties.')}
             accent={ACCENT}
           >
             {inlineErr(V5_SECTION_IDS.skills)}
-            <label htmlFor="v5-field-distribution" style={labelStyle}>Distribution</label>
+            <label htmlFor="v5-field-distribution" style={labelStyle}>{t('wizard:v5.distribution', 'Distribution')}</label>
             <select
               id="v5-field-distribution"
               value={skillDistribution}
@@ -570,20 +574,19 @@ export default function V5CharacterCreationWizard({
             </div>
             <div style={{ marginTop: '16px' }}>
               <div style={{ color: '#94a3b8', fontSize: '12px', marginBottom: '8px' }}>
-                Specialties: {freeSpecialtyCount(skills)} free (one each for rated Academics, Craft,
-                Performance, Science, plus one of your choice). The predator type adds one more below.
+                {t('wizard:v5.specialtiesHelp', 'Specialties: {{n}} free (one each for rated Academics, Craft, Performance, Science, plus one of your choice). The predator type adds one more below.', { n: freeSpecialtyCount(skills) })}
               </div>
               {specialties.map((sp, i) => (
                 <div key={i} style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '8px' }}>
                   <select
-                    aria-label={`Specialty ${i + 1} skill`}
+                    aria-label={t('wizard:v5.specialtySkill', 'Specialty {{n}} skill', { n: i + 1 })}
                     value={sp.skill}
                     onChange={(e) =>
                       setSpecialties((prev) => prev.map((x, j) => (j === i ? { ...x, skill: e.target.value } : x)))
                     }
                     style={{ ...inputStyle, flex: '1 1 160px', width: 'auto', padding: '8px' }}
                   >
-                    <option value="">Skill…</option>
+                    <option value="">{t('wizard:v5.skillPick', 'Skill…')}</option>
                     {V5_SKILL_KEYS.filter((k) => skills[k] > 0).map((k) => (
                       <option key={k} value={k}>
                         {V5_SKILL_LABELS[k]}
@@ -591,9 +594,9 @@ export default function V5CharacterCreationWizard({
                     ))}
                   </select>
                   <input
-                    aria-label={`Specialty ${i + 1} name`}
+                    aria-label={t('wizard:v5.specialtyName', 'Specialty {{n}} name', { n: i + 1 })}
                     value={sp.name}
-                    placeholder="Specialty (e.g. Grappling)"
+                    placeholder={t('wizard:v5.specialtyPlaceholder', 'Specialty (e.g. Grappling)')}
                     onChange={(e) =>
                       setSpecialties((prev) => prev.map((x, j) => (j === i ? { ...x, name: e.target.value } : x)))
                     }
@@ -602,6 +605,7 @@ export default function V5CharacterCreationWizard({
                   <button
                     type="button"
                     onClick={() => setSpecialties((prev) => prev.filter((_, j) => j !== i))}
+                    aria-label={t('wizard:v5.removeSpecialty', 'Remove specialty {{n}}', { n: i + 1 })}
                     style={{ padding: '6px 10px', background: '#1e293b', color: '#94a3b8', border: '1px solid #475569', borderRadius: '6px', cursor: 'pointer' }}
                   >
                     ×
@@ -614,7 +618,7 @@ export default function V5CharacterCreationWizard({
                   onClick={() => setSpecialties((prev) => [...prev, { skill: '', name: '' }])}
                   style={{ padding: '6px 12px', fontSize: '12px', background: 'transparent', color: '#c4b5fd', border: '1px dashed #6d28d9', borderRadius: '6px', cursor: 'pointer' }}
                 >
-                  + Add specialty
+                  {t('wizard:v5.addSpecialty', '+ Add specialty')}
                 </button>
               ) : null}
             </div>
@@ -622,13 +626,13 @@ export default function V5CharacterCreationWizard({
 
           <ResponsiveSheetBlock
             sectionId={V5_SECTION_IDS.disciplines}
-            title="Disciplines"
+            title={<Term id="discipline">Disciplines</Term>}
             subtitle={
               clan === THIN_BLOOD
-                ? 'Thin-bloods start with no Disciplines.'
+                ? t('wizard:v5.discThin', 'Thin-bloods start with no Disciplines.')
                 : clan === CAITIFF
-                  ? 'Any two Disciplines: one at 2 dots, one at 1. One power per dot.'
-                  : 'Two clan Disciplines: one at 2 dots, one at 1. One power per dot.'
+                  ? t('wizard:v5.discCaitiff', 'Any two Disciplines: one at 2 dots, one at 1. One power per dot.')
+                  : t('wizard:v5.discClan', 'Two clan Disciplines: one at 2 dots, one at 1. One power per dot.')
             }
             accent={ACCENT}
           >
@@ -638,12 +642,12 @@ export default function V5CharacterCreationWizard({
                 <div key={i} style={{ marginBottom: '14px' }}>
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', alignItems: 'center' }}>
                     <select
-                      aria-label={`Discipline at ${d.level} ${d.level === 1 ? 'dot' : 'dots'}`}
+                      aria-label={t('wizard:v5.discAt', { one: 'Discipline at {{count}} dot', other: 'Discipline at {{count}} dots' }, { count: d.level })}
                       value={d.name}
                       onChange={(e) => setDisc(i, { name: e.target.value })}
                       style={{ ...inputStyle, flex: '1 1 200px', width: 'auto', padding: '8px' }}
                     >
-                      <option value="">Discipline at {d.level} {d.level === 1 ? 'dot' : 'dots'}…</option>
+                      <option value="">{t('wizard:v5.discAtPick', { one: 'Discipline at {{count}} dot…', other: 'Discipline at {{count}} dots…' }, { count: d.level })}</option>
                       {discOptions.map((o) => (
                         <option key={o} value={o}>
                           {o}
@@ -657,8 +661,8 @@ export default function V5CharacterCreationWizard({
                       <input
                         key={p}
                         value={d.powers[p] || ''}
-                        aria-label={`${d.name || `Discipline ${i + 1}`} power ${p + 1}`}
-                        placeholder={`Power ${p + 1} (optional)`}
+                        aria-label={t('wizard:v5.powerLabel', '{{disc}} power {{n}}', { disc: d.name || `Discipline ${i + 1}`, n: p + 1 })}
+                        placeholder={t('wizard:v5.powerPlaceholder', 'Power {{n}} (optional)', { n: p + 1 })}
                         onChange={(e) => {
                           const powers = [...d.powers];
                           powers[p] = e.target.value;
@@ -674,12 +678,12 @@ export default function V5CharacterCreationWizard({
 
           <ResponsiveSheetBlock
             sectionId={V5_SECTION_IDS.predator}
-            title="Predator type"
-            subtitle="How you hunt: a specialty, one Discipline dot, and the type's extras."
+            title={<Term id="predator" />}
+            subtitle={t('wizard:v5.predatorSub', "How you hunt: a specialty, one Discipline dot, and the type's extras.")}
             accent={ACCENT}
           >
             {inlineErr(V5_SECTION_IDS.predator)}
-            <label htmlFor="v5-field-predator" style={labelStyle}>Predator type</label>
+            <label htmlFor="v5-field-predator" style={labelStyle}><Term id="predator" /></label>
             <select
               id="v5-field-predator"
               value={predatorType}
@@ -690,19 +694,19 @@ export default function V5CharacterCreationWizard({
               }}
               style={{ ...inputStyle, maxWidth: '420px', marginBottom: '12px' }}
             >
-              <option value="">{clan === THIN_BLOOD ? 'None (optional for thin-bloods)' : 'Choose…'}</option>
+              <option value="">{clan === THIN_BLOOD ? t('wizard:v5.predatorNone', 'None (optional for thin-bloods)') : t('wizard:v5.choose', 'Choose…')}</option>
               {V5_PREDATOR_TYPES.map((p) => (
                 <option key={p.name} value={p.name} disabled={(p.forbidden_clans || []).includes(clan)}>
                   {p.name}
-                  {(p.forbidden_clans || []).includes(clan) ? ` (not for ${clan})` : ''}
+                  {(p.forbidden_clans || []).includes(clan) ? ` ${t('wizard:v5.notFor', '(not for {{clan}})', { clan })}` : ''}
                 </option>
               ))}
             </select>
             {pred ? (
               <div style={{ color: '#cbd5e1', fontSize: '13px', display: 'grid', gap: '10px' }}>
-                <div style={{ color: '#94a3b8' }}>Hunting pool: {pred.pool}</div>
+                <div style={{ color: '#94a3b8' }}>{t('wizard:v5.huntingPool', 'Hunting pool: {{pool}}', { pool: pred.pool })}</div>
                 <div role="radiogroup" aria-labelledby="v5-predator-specialty-label">
-                  <span id="v5-predator-specialty-label" style={labelStyle}>Specialty</span>
+                  <span id="v5-predator-specialty-label" style={labelStyle}><Term id="specialty" /></span>
                   {pred.specialty_choice.map((sc, i) => (
                     <label key={sc} style={{ display: 'block', cursor: 'pointer' }}>
                       <input
@@ -717,14 +721,14 @@ export default function V5CharacterCreationWizard({
                 </div>
                 {clan !== THIN_BLOOD ? (
                   <div>
-                    <label htmlFor="v5-field-predator-discipline" style={labelStyle}>Discipline dot</label>
+                    <label htmlFor="v5-field-predator-discipline" style={labelStyle}>{t('wizard:v5.disciplineDot', 'Discipline dot')}</label>
                     <select
                       id="v5-field-predator-discipline"
                       value={predatorDiscipline}
                       onChange={(e) => setPredatorDiscipline(e.target.value)}
                       style={{ ...inputStyle, maxWidth: '300px', padding: '8px' }}
                     >
-                      <option value="">Choose…</option>
+                      <option value="">{t('wizard:v5.choose', 'Choose…')}</option>
                       {predDiscOptions.map((o) => (
                         <option key={o} value={o}>
                           {o}
@@ -734,9 +738,9 @@ export default function V5CharacterCreationWizard({
                   </div>
                 ) : null}
                 <div style={{ color: '#94a3b8' }}>
-                  {(pred.advantages || []).map((a) => `${a.name} ${'●'.repeat(a.dots)}`).join(', ') || 'No advantages'}
+                  {(pred.advantages || []).map((a) => `${a.name} ${'●'.repeat(a.dots)}`).join(', ') || t('wizard:v5.noAdvantages', 'No advantages')}
                   {' · '}
-                  {(pred.flaws || []).map((f) => `${f.name} ${'●'.repeat(f.dots)}`).join(', ') || 'no flaws'}
+                  {(pred.flaws || []).map((f) => `${f.name} ${'●'.repeat(f.dots)}`).join(', ') || t('wizard:v5.noFlaws', 'no flaws')}
                   {pred.humanity ? ` · Humanity ${pred.humanity > 0 ? '+' : ''}${pred.humanity}` : ''}
                   {pred.blood_potency ? ` · Blood Potency +${pred.blood_potency}` : ''}
                 </div>
@@ -746,13 +750,13 @@ export default function V5CharacterCreationWizard({
 
           <ResponsiveSheetBlock
             sectionId={V5_SECTION_IDS.advantages}
-            title="Advantages & flaws"
-            subtitle={`Up to ${derived.advantage_dots} dots of Merits and Backgrounds (+ for advantages), at least ${derived.flaw_min_dots} dots of Flaws (− for flaws). Predator extras are added on top; its Flaws count.`}
+            title="Advantages & Flaws"
+            subtitle={t('wizard:v5.advantagesSub', 'Up to {{adv}} dots of Merits and Backgrounds (+ for advantages), at least {{flaws}} dots of Flaws (− for flaws). Predator extras are added on top; its Flaws count.', { adv: derived.advantage_dots, flaws: derived.flaw_min_dots })}
             accent={ACCENT}
           >
             {inlineErr(V5_SECTION_IDS.advantages)}
             <p style={{ color: advDots > derived.advantage_dots || flawDots < derived.flaw_min_dots ? '#fca5a5' : '#86efac', fontSize: '12px', margin: '0 0 10px' }}>
-              Advantages {advDots}/{derived.advantage_dots} · Flaws {flawDots} (min {derived.flaw_min_dots})
+              {t('wizard:v5.advantagesCount', 'Advantages {{adv}}/{{advMax}} · Flaws {{flaws}} (min {{flawMin}})', { adv: advDots, advMax: derived.advantage_dots, flaws: flawDots, flawMin: derived.flaw_min_dots })}
             </p>
             <MeritFlawRows
               rows={meritRows}
@@ -763,10 +767,7 @@ export default function V5CharacterCreationWizard({
             {clan === THIN_BLOOD ? (
               <div style={{ marginTop: '16px', paddingTop: '12px', borderTop: '1px solid #2a2a4e' }}>
                 <p style={{ color: '#94a3b8', fontSize: '12px', margin: '0 0 10px', lineHeight: 1.5 }}>
-                  Thin-bloods also take {V5_THIN_BLOOD_MERITS[0]}–{V5_THIN_BLOOD_MERITS[1]} thin-blood
-                  Merits and the same number of thin-blood Flaws (core p. 182). They have no dot value
-                  and don't count toward the totals above. The rules file has no list of them, so
-                  write the names from the book.
+                  {t('wizard:v5.thinHelp', "Thin-bloods also take {{lo}}–{{hi}} thin-blood Merits and the same number of thin-blood Flaws (core p. 182). They have no dot value and don't count toward the totals above. The rules file has no list of them, so write the names from the book.", { lo: V5_THIN_BLOOD_MERITS[0], hi: V5_THIN_BLOOD_MERITS[1] })}
                 </p>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '16px' }}>
                   {thinRows('Merits', thinBloodMerits, setThinBloodMerits)}
@@ -778,18 +779,18 @@ export default function V5CharacterCreationWizard({
 
           <ResponsiveSheetBlock
             sectionId={V5_SECTION_IDS.humanity}
-            title="Humanity & trackers"
-            subtitle="1–3 Convictions, each with a mortal Touchstone."
+            title={t('wizard:v5.humanityTitle', 'Humanity & trackers')}
+            subtitle={t('wizard:v5.humanitySub', '1–3 Convictions, each with a mortal Touchstone.')}
             accent={ACCENT}
           >
             {inlineErr(V5_SECTION_IDS.humanity)}
             <div style={{ ...gridStyle, gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', marginBottom: '16px', color: '#e2e8f0', fontSize: '13px' }}>
-              <div>Health <strong>{derived.health}</strong> <span style={{ color: '#94a3b8' }}>(Stamina + 3)</span></div>
-              <div>Willpower <strong>{derived.willpower}</strong> <span style={{ color: '#94a3b8' }}>(Composure + Resolve)</span></div>
-              <div>Humanity <strong>{derived.humanity}</strong></div>
-              <div>Hunger <strong>{derived.hunger}</strong></div>
+              <div><Term id="health" /> <strong>{derived.health}</strong> <span style={{ color: '#94a3b8' }}>(Stamina + 3)</span></div>
+              <div><Term id="willpower" /> <strong>{derived.willpower}</strong> <span style={{ color: '#94a3b8' }}>(Composure + Resolve)</span></div>
+              <div><Term id="humanity" /> <strong>{derived.humanity}</strong></div>
+              <div><Term id="hunger" /> <strong>{derived.hunger}</strong></div>
               <div>
-                Blood Potency <strong>{derived.blood_potency}</strong>
+                <Term id="bloodPotency" /> <strong>{derived.blood_potency}</strong>
                 {derived.blood_potency_range ? (
                   <span style={{ color: '#94a3b8' }}> ({derived.blood_potency_range[0]}–{derived.blood_potency_range[1]})</span>
                 ) : null}
@@ -806,25 +807,24 @@ export default function V5CharacterCreationWizard({
                   checked={fledglingHumanity}
                   onChange={(e) => setFledglingHumanity(e.target.checked)}
                 />
-                Just-Embraced fledgling: start at Humanity {V5_FLEDGLING_HUMANITY} instead of{' '}
-                {V5_STARTING_HUMANITY} (Storyteller option)
+                {t('wizard:v5.fledgling', 'Just-Embraced fledgling: start at Humanity {{n}} instead of {{base}} (Storyteller option)', { n: V5_FLEDGLING_HUMANITY, base: V5_STARTING_HUMANITY })}
               </label>
             ) : null}
             {convictions.map((c, i) => (
               <div key={i} style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '8px' }}>
                 <input
-                  aria-label={`Conviction ${i + 1}`}
+                  aria-label={t('wizard:v5.convictionN', 'Conviction {{n}}', { n: i + 1 })}
                   value={c.conviction}
-                  placeholder="Conviction (e.g. Never kill a child)"
+                  placeholder={t('wizard:v5.convictionPlaceholder', 'Conviction (e.g. Never kill a child)')}
                   onChange={(e) =>
                     setConvictions((prev) => prev.map((x, j) => (j === i ? { ...x, conviction: e.target.value } : x)))
                   }
                   style={{ ...inputStyle, flex: '2 1 220px', width: 'auto', padding: '8px' }}
                 />
                 <input
-                  aria-label={`Touchstone ${i + 1}`}
+                  aria-label={t('wizard:v5.touchstoneN', 'Touchstone {{n}}', { n: i + 1 })}
                   value={c.touchstone}
-                  placeholder="Touchstone (a living mortal)"
+                  placeholder={t('wizard:v5.touchstonePlaceholder', 'Touchstone (a living mortal)')}
                   onChange={(e) =>
                     setConvictions((prev) => prev.map((x, j) => (j === i ? { ...x, touchstone: e.target.value } : x)))
                   }
@@ -834,6 +834,7 @@ export default function V5CharacterCreationWizard({
                   <button
                     type="button"
                     onClick={() => setConvictions((prev) => prev.filter((_, j) => j !== i))}
+                    aria-label={t('wizard:v5.removeConviction', 'Remove conviction {{n}}', { n: i + 1 })}
                     style={{ padding: '6px 10px', background: '#1e293b', color: '#94a3b8', border: '1px solid #475569', borderRadius: '6px', cursor: 'pointer' }}
                   >
                     ×
@@ -847,20 +848,20 @@ export default function V5CharacterCreationWizard({
                 onClick={() => setConvictions((prev) => [...prev, { conviction: '', touchstone: '' }])}
                 style={{ padding: '6px 12px', fontSize: '12px', background: 'transparent', color: '#c4b5fd', border: '1px dashed #6d28d9', borderRadius: '6px', cursor: 'pointer' }}
               >
-                + Add conviction
+                {t('wizard:v5.addConviction', '+ Add conviction')}
               </button>
             ) : null}
-            <label htmlFor="v5-field-tenets" style={{ ...labelStyle, marginTop: '14px' }}>Chronicle tenets (from your Storyteller)</label>
+            <label htmlFor="v5-field-tenets" style={{ ...labelStyle, marginTop: '14px' }}>{t('wizard:v5.tenets', 'Chronicle tenets (from your Storyteller)')}</label>
             <textarea id="v5-field-tenets" value={tenets} onChange={(e) => setTenets(e.target.value)} rows={2} style={{ ...inputStyle, resize: 'vertical' }} />
           </ResponsiveSheetBlock>
 
-          <ResponsiveSheetBlock sectionId={V5_SECTION_IDS.story} title="Story" subtitle="Background narrative." accent="#9d4edd">
+          <ResponsiveSheetBlock sectionId={V5_SECTION_IDS.story} title={t('wizard:section.story', 'Story')} subtitle={t('wizard:v5.storySub', 'Background narrative.')} accent="#9d4edd">
             <textarea
-              aria-label="Background narrative"
+              aria-label={t('wizard:v5.storySub', 'Background narrative.')}
               value={background}
               onChange={(e) => setBackground(e.target.value)}
               rows={6}
-              placeholder="History, coterie, goals…"
+              placeholder={t('wizard:v5.storyPlaceholder', 'History, coterie, goals…')}
               style={{ ...inputStyle, resize: 'vertical', fontFamily: 'Crimson Text, Georgia, serif', lineHeight: 1.6 }}
             />
           </ResponsiveSheetBlock>
@@ -871,7 +872,7 @@ export default function V5CharacterCreationWizard({
               onClick={onCancel}
               style={{ padding: '10px 18px', background: '#1e293b', color: '#e2e8f0', border: '1px solid #475569', borderRadius: '8px', cursor: 'pointer' }}
             >
-              Cancel
+              {t('wizard:cancel', 'Cancel')}
             </button>
             <button
               type="button"
@@ -888,7 +889,7 @@ export default function V5CharacterCreationWizard({
                 fontFamily: 'Cinzel, serif',
               }}
             >
-              {submitting ? 'Sealing sheet…' : 'Create character'}
+              {submitting ? t('wizard:submitting', 'Sealing sheet…') : t('wizard:submit', 'Create character')}
             </button>
           </div>
         </div>

@@ -24,12 +24,12 @@ All fonts are SIL OFL 1.1. Add this to `public/index.html` when the shell lands 
 ```html
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=Alegreya+SC:wght@500;700&family=EB+Garamond:ital,wght@0,400..600;1,400..600&family=Inter:wght@400..600&family=JetBrains+Mono:wght@400&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=Alegreya:wght@500;700&family=EB+Garamond:ital,wght@0,400..600;1,400..600&family=Inter:wght@400..600&family=JetBrains+Mono:wght@400&display=swap">
 ```
 
 | Token | Font | Greek |
 |---|---|---|
-| `--sr-font-display` | Cinzel; under `:lang(el)` → Alegreya SC | Cinzel has none, hence the swap |
+| `--sr-font-display` | Cinzel; under `:lang(el)` → Alegreya | Cinzel has none, hence the swap. Not Alegreya SC: its small caps keep the tonos, which Greek capitals must not carry |
 | `--sr-font-body` | EB Garamond (prose, chat, textarea) | yes |
 | `--sr-font-ui` | Inter (buttons, labels, inputs) | yes |
 | `--sr-font-mono` | JetBrains Mono (dice, keys) | yes |
@@ -133,7 +133,7 @@ All contrast figures were computed with the WCAG formula against `#0f0f1e`, `#0f
 | `d3-shape` 3.2 (+ `d3-path`) | ISC, © Mike Bostock | sigil ring, dice crit arcs |
 | `d3-scale` 4.0 (+ `d3-array`, `d3-format`, `d3-interpolate`, `d3-color`, `d3-time`, `d3-time-format`, `internmap`) | ISC, © Mike Bostock | dice layout and meter |
 | `framer-motion` 10 (already a dependency) | MIT | overlays, reveals |
-| Cinzel, Alegreya SC, EB Garamond, Inter, JetBrains Mono | SIL OFL 1.1 | fonts, loaded from Google Fonts |
+| Cinzel, Alegreya, EB Garamond, Inter, JetBrains Mono | SIL OFL 1.1 | fonts, loaded from Google Fonts |
 
 All glyph and sigil artwork in this folder is original and falls under the repository's licence. No icon set was copied.
 

@@ -1,0 +1,172 @@
+{
+  "hiddenBadge": "Hidden roll",
+  "error": {
+    "marker": "Could not post the dice animation.",
+    "result": "Could not post the roll result.",
+    "poolFormat": "Pool must be digits with + or - (e.g. 5, 4+3, 7-1).",
+    "noRoom": "Join a room first.",
+    "resultNotPosted": "Roll saved but could not be posted to the room.",
+    "poolRange": "Pool must be between 1 and 50 dice.",
+    "v5Diff": "Difficulty must be between 0 and 10.",
+    "diff": "Difficulty must be between 2 and 10.",
+    "rollFailed": "Roll failed.",
+    "rerollElsewhere": "Go back to the chronicle where you rolled to reroll.",
+    "rerollFailed": "Reroll failed.",
+    "rouseFailed": "Rouse check failed."
+  },
+  "dialog": {
+    "title": "Roll dice",
+    "submit": "Roll & post"
+  },
+  "field": {
+    "pool": "Dice pool",
+    "poolHint": "e.g. 5, 4+3 or 7-1",
+    "hidden": "Hide this roll from players (Storyteller / staff only)",
+    "reason": "What are you rolling for? (optional)",
+    "reasonPlaceholder": "e.g. Brawl attack, Perception + Alertness…",
+    "v5Difficulty": "Difficulty (successes needed)",
+    "justCount": "(just count successes)",
+    "rouseHint": "One die: 6+ means no Hunger gain, otherwise Hunger +1",
+    "rousing": "Rousing…",
+    "rouse": "Rouse check",
+    "classicDifficulty": "Difficulty (target number, 2–10)",
+    "commonDefault": "(common default)",
+    "specialty": "Specialty (10s are rerolled for extra successes)",
+    "willpower": "Spend Willpower (+1 automatic success, can’t be cancelled)"
+  },
+  "hungerSource": "{{name}}'s sheet: {{hunger}}",
+  "history": {
+    "open": "Roll history",
+    "failed": "Could not load the roll history.",
+    "title": "Roll history: {{room}}",
+    "empty": "No rolls recorded in this room yet.",
+    "hungerChange": "Hunger {{before}} → {{after}}",
+    "rouseOk": "no Hunger gain",
+    "rouseFailed": "failed",
+    "rouse": "V5 Rouse check → [{{die}}] → {{result}}",
+    "wpReroll": "Willpower reroll",
+    "v5Head": "V5 · pool {{pool}} (Hunger {{hunger}}), need {{difficulty}}",
+    "hungerDice": "hunger [{{dice}}]",
+    "rerolls": "+rerolls [{{dice}}]",
+    "classicHead": "Pool {{pool}}, TN {{difficulty}}"
+  },
+  "rules": {
+    "range": "Enter a floor from 2 to 10, or restore normal dice.",
+    "failed": "Could not update the dice rules.",
+    "saved": "Leniency floor {{n}} saved for this room.",
+    "off": "Leniency off: normal d10 randomness for this room.",
+    "title": "Room dice rules",
+    "body": "Only for {{room}}. Floor 2-10: no 1s; with 2+ dice, one die is always at least the floor. Same as /ai dice-diff.",
+    "restore": "Restore normal",
+    "floor": "Leniency floor (2-10)"
+  },
+  "defaultReason": "Dice roll",
+  "posted": {
+    "public": "Roll posted to this room.",
+    "hidden": "Private roll posted to this room."
+  },
+  "reroll": {
+    "done": "Willpower reroll posted.",
+    "doneElsewhere": "Willpower reroll posted to the room you rolled in.",
+    "region": "Willpower reroll",
+    "title": "Your V5 roll",
+    "elsewhere": "Rolled in another room; the reroll is posted there.",
+    "normalDie": "Normal die {{value}}: click to pick it for the reroll",
+    "hungerDie": "Hunger die {{value}} (can’t be rerolled)",
+    "picked": "{{n}}/{{max}} picked",
+    "busy": "Rerolling…",
+    "submit": "Reroll with Willpower"
+  },
+  "rouse": {
+    "ok": "Rouse check: {{die}}, no Hunger gain.",
+    "fail": "Rouse check: {{die}}, Hunger {{before}} → {{after}}."
+  },
+  "die": {
+    "hunger": "Hunger die: {{value}}",
+    "normal": "Die: {{value}}",
+    "crit": ", critical",
+    "one": ", one",
+    "success": ", success",
+    "reroll": "Specialty reroll: {{value}}"
+  },
+  "edition": {
+    "v5Long": "V5 (5th Edition)",
+    "classicLong": "Classic (Revised)",
+    "v5": "V5",
+    "classic": "Classic"
+  },
+  "overlay": {
+    "announce": "Dice result: {{labels}}. {{summary}}.",
+    "resultLabel": "Dice roll result (Escape to close)",
+    "rollingLabel": "Dice rolling (Escape to close)",
+    "result": "Result",
+    "rolling": "Rolling…",
+    "difficulty": "Difficulty {{n}}",
+    "rerollsLabel": "Specialty rerolls: {{list}}",
+    "rerollsTitle": "Specialty rerolls",
+    "more": "+{{count}} more",
+    "redHunger": "Red dice are Hunger dice.",
+    "resolves": "The roll resolves right after the dice stop."
+  },
+  "summary": {
+    "tn": "TN {{tn}}",
+    "net": "{{count}} net",
+    "specialty": "specialty",
+    "willpower": "Willpower",
+    "successes_one": "{{count}} success",
+    "successes_other": "{{count}} successes",
+    "vs": " vs {{difficulty}}",
+    "margin": "margin {{margin}}",
+    "hunger": "Hunger {{count}}"
+  },
+  "help": {
+    "v5": "pool of d10; each 6+ is a success and every pair of 10s counts as 4. Difficulty is the number of successes you need. Your current Hunger replaces that many dice with Hunger dice (messy criticals and bestial failures). After the roll you can spend Willpower to reroll up to 3 normal dice.",
+    "classic": "pool of d10, difficulty (target number) usually 6–9. Each die ≥ difficulty is a success; 1s cancel successes. A botch needs no successes at all and at least one 1. Specialty: 10s are rerolled for more successes. Willpower: one automatic success (declare before rolling)."
+  },
+  "viz": {
+    "dice_one": "{{count}} die",
+    "dice_other": "{{count}} dice",
+    "hungerPart": ", {{count}} Hunger",
+    "successesOf_one": "{{count}} success of {{difficulty}} needed",
+    "successesOf_other": "{{count}} successes of {{difficulty}} needed",
+    "pairs_one": "{{count}} critical pair",
+    "pairs_other": "{{count}} critical pairs",
+    "diceAt_one": "{{count}} die at difficulty {{difficulty}}",
+    "diceAt_other": "{{count}} dice at difficulty {{difficulty}}",
+    "net_one": "{{count}} net success",
+    "net_other": "{{count}} net successes",
+    "ones_one": "{{count}} one",
+    "ones_other": "{{count}} ones",
+    "willpower": "Willpower spent",
+    "list": "Dice: {{list}}.",
+    "hungerTag": " (Hunger)",
+    "rerollTag": " (reroll)"
+  },
+  "outcome": {
+    "messyCritical": "Messy critical",
+    "criticalWin": "Critical win",
+    "success": "Success",
+    "bestialFailure": "Bestial failure",
+    "totalFailure": "Total failure",
+    "failure": "Failure",
+    "botch": "Botch",
+    "exceptional": "Exceptional success",
+    "exceptionalCount": "Exceptional success ({{count}})",
+    "successCount_one": "Success ({{count}} success)",
+    "successCount_other": "Success ({{count}} successes)",
+    "win": "Win"
+  },
+  "v5difficulty": {
+    "1": "Routine",
+    "2": "Straightforward",
+    "3": "Moderate",
+    "4": "Challenging",
+    "5": "Hard",
+    "6": "Very Hard",
+    "7": "Nearly Impossible (7+)"
+  },
+  "hint": {
+    "criticalWin": "A win with at least one pair of 10s: each pair counts as 4 successes.",
+    "totalFailure": "Not a single success: the worst kind of failure in V5."
+  }
+}

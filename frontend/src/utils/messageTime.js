@@ -7,6 +7,8 @@
  * @param {string|null|undefined} [timeZone] - user.display_timezone
  * @returns {string}
  */
+import { getLanguage, getLocale, t } from '../i18n';
+
 export function formatMessageTime(createdAt, now = new Date(), timeZone = null) {
   const then = createdAt instanceof Date ? createdAt : new Date(createdAt);
   if (Number.isNaN(then.getTime())) {
@@ -60,9 +62,12 @@ export function formatMessageTime(createdAt, now = new Date(), timeZone = null) 
   }
 
   const formatTime12h = (d) => {
-    const opts = { hour: 'numeric', minute: '2-digit', hour12: true };
+    const opts =
+      getLanguage() === 'el'
+        ? { hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }
+        : { hour: 'numeric', minute: '2-digit', hour12: true };
     if (timeZone) opts.timeZone = timeZone;
-    return new Intl.DateTimeFormat(undefined, opts).format(d instanceof Date ? d : new Date(d));
+    return new Intl.DateTimeFormat(getLocale(), opts).format(d instanceof Date ? d : new Date(d));
   };
 
   const nowKey = calendarDateKeyInTz(now, timeZone);
@@ -71,39 +76,36 @@ export function formatMessageTime(createdAt, now = new Date(), timeZone = null) 
   if (secs < 0) {
     const dayDiff = daysBetweenCalendarKeys(thenKey, nowKey);
     const timeStr = formatTime12h(then);
-    const fullDateStr = then.toLocaleDateString(undefined, localeDateOpts);
-    const dateOnlyStr = then.toLocaleDateString(undefined, localeDateShortOpts);
+    const fullDateStr = then.toLocaleDateString(getLocale(), localeDateOpts);
+    const dateOnlyStr = then.toLocaleDateString(getLocale(), localeDateShortOpts);
     if (dayDiff === 0) {
       return `${timeStr} · ${fullDateStr}`;
     }
     if (dayDiff === 1) {
-      return `Yesterday · ${timeStr} · ${fullDateStr}`;
+      return t('common:time.yesterdayAt', 'Yesterday · {{time}} · {{date}}', { time: timeStr, date: fullDateStr });
     }
     return dateOnlyStr;
   }
 
   if (secs < 60) {
-    return 'Just now';
+    return t('common:time.justNow', 'Just now');
   }
 
   const minutes = Math.floor(secs / 60);
   if (minutes <= 30) {
-    if (minutes === 1) return '1 minute ago';
-    if (minutes === 2) return '2 minutes ago';
-    if (minutes === 5) return '5 minutes ago';
-    return `${minutes} minutes ago`;
+    return t('common:time.minutesAgo', { one: '{{count}} minute ago', other: '{{count}} minutes ago' }, { count: minutes });
   }
 
   const dayDiff = daysBetweenCalendarKeys(thenKey, nowKey);
   const timeStr = formatTime12h(then);
-  const fullDateStr = then.toLocaleDateString(undefined, localeDateOpts);
-  const dateOnlyStr = then.toLocaleDateString(undefined, localeDateShortOpts);
+  const fullDateStr = then.toLocaleDateString(getLocale(), localeDateOpts);
+  const dateOnlyStr = then.toLocaleDateString(getLocale(), localeDateShortOpts);
 
   if (dayDiff === 0) {
     return `${timeStr} · ${fullDateStr}`;
   }
   if (dayDiff === 1) {
-    return `Yesterday · ${timeStr} · ${fullDateStr}`;
+    return t('common:time.yesterdayAt', 'Yesterday · {{time}} · {{date}}', { time: timeStr, date: fullDateStr });
   }
   return dateOnlyStr;
 }

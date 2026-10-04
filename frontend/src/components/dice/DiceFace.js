@@ -1,6 +1,7 @@
 import React from 'react';
 import { classifyClassicDie } from '../../dice/classicDiceDisplay';
 import { classifyV5Die } from '../../dice/v5DiceDisplay';
+import { t } from '../../i18n';
 
 const CLASSIC_BG = { one: '#8b0000', ten: '#ffd700', success: '#2d7a3e', fail: '#374151' };
 const V5_BG = {
@@ -43,7 +44,14 @@ export default function DiceFace({
     <Tag
       type={onClick ? 'button' : undefined}
       onClick={onClick}
-      title={title || (hunger ? `Hunger die: ${v}` : reroll ? `Specialty reroll: ${v}` : `${v}`)}
+      title={
+        title ||
+        (hunger
+          ? t('dice:die.hunger', 'Hunger die: {{value}}', { value: v })
+          : reroll
+          ? t('dice:die.reroll', 'Specialty reroll: {{value}}', { value: v })
+          : `${v}`)
+      }
       aria-pressed={onClick ? selected : undefined}
       style={{
         width: `${size}px`,

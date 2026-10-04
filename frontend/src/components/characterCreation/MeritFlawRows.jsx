@@ -1,5 +1,6 @@
 import React from 'react';
 import { createEmptyMeritRow } from '../../characterSheet/meritsFlaws';
+import { t } from '../../i18n';
 
 export default function MeritFlawRows({ rows, setRows, globalNotes, setGlobalNotes }) {
   const update = (id, field, value) => {
@@ -14,7 +15,7 @@ export default function MeritFlawRows({ rows, setRows, globalNotes, setGlobalNot
   return (
     <div>
       <div style={{ color: '#94a3b8', fontSize: '12px', marginBottom: '10px' }}>
-        Named merits and flaws (points + for merits, − for flaws). Add rows as on a paper sheet.
+        {t('wizard:merits.intro', 'Named merits and flaws (points + for merits, − for flaws). Add rows as on a paper sheet.')}
       </div>
       {rows.map((r) => (
         <div
@@ -28,7 +29,7 @@ export default function MeritFlawRows({ rows, setRows, globalNotes, setGlobalNot
           }}
         >
           <input
-            placeholder="Name"
+            placeholder={t('wizard:merits.name', 'Name')}
             value={r.name}
             onChange={(e) => update(r.id, 'name', e.target.value)}
             style={{
@@ -42,8 +43,8 @@ export default function MeritFlawRows({ rows, setRows, globalNotes, setGlobalNot
           />
           <input
             type="number"
-            title="Points (+ merit / − flaw)"
-            placeholder="±pts"
+            title={t('wizard:merits.pointsTitle', 'Points (+ merit / − flaw)')}
+            placeholder={t('wizard:merits.pointsPlaceholder', '±pts')}
             value={r.points === '' || r.points === null ? '' : r.points}
             onChange={(e) => {
               const v = e.target.value;
@@ -51,7 +52,7 @@ export default function MeritFlawRows({ rows, setRows, globalNotes, setGlobalNot
               else update(r.id, 'points', parseInt(v, 10) || 0);
             }}
             style={{
-              width: '72px',
+              width: '80px',
               padding: '8px',
               background: '#0f1729',
               color: '#e0e0e0',
@@ -60,7 +61,7 @@ export default function MeritFlawRows({ rows, setRows, globalNotes, setGlobalNot
             }}
           />
           <input
-            placeholder="Note (optional)"
+            placeholder={t('wizard:merits.note', 'Note (optional)')}
             value={r.note}
             onChange={(e) => update(r.id, 'note', e.target.value)}
             style={{
@@ -86,7 +87,7 @@ export default function MeritFlawRows({ rows, setRows, globalNotes, setGlobalNot
               cursor: rows.length <= 1 ? 'not-allowed' : 'pointer',
             }}
           >
-            Remove
+            {t('wizard:merits.remove', 'Remove')}
           </button>
         </div>
       ))}
@@ -104,16 +105,16 @@ export default function MeritFlawRows({ rows, setRows, globalNotes, setGlobalNot
           cursor: 'pointer',
         }}
       >
-        + Add row
+        {t('wizard:merits.addRow', '+ Add row')}
       </button>
       <label style={{ color: '#c4b5fd', display: 'block', marginTop: '18px', marginBottom: '8px' }}>
-        Extra notes (optional)
+        {t('wizard:merits.extraNotes', 'Extra notes (optional)')}
       </label>
       <textarea
         value={globalNotes}
         onChange={(e) => setGlobalNotes(e.target.value)}
         rows={2}
-        placeholder="House rules, ST approval, page refs…"
+        placeholder={t('wizard:merits.extraNotesPlaceholder', 'House rules, ST approval, page refs…')}
         style={{
           width: '100%',
           padding: '12px',
