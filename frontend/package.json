@@ -47,7 +47,7 @@
     "test": "jest",
     "test:coverage": "jest --coverage",
     "test:ci": "jest --ci --coverage --passWithNoTests",
-    "lint": "eslint .",
+    "lint": "eslint . --max-warnings=0",
     "audit": "npm audit --omit=dev"
   },
   "browserslist": {
