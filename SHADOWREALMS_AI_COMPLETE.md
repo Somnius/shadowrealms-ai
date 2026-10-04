@@ -1,5 +1,7 @@
 # ShadowRealms AI - Complete Platform Documentation
 
+> **This is the long-form project history**, written release by release since v0.4. Early sections describe plans and setups that have since changed (SQLite, the old React UI, `docker-compose` v1, port 3000). For the current setup and documentation see the [README](README.md) and the [docs index](docs/README.md). Latest release: **v0.9.0 "Into the Night"** ([summary below](#version-090---into-the-night), full notes in [docs/CHANGELOG.md](docs/CHANGELOG.md)).
+
 ## Project Overview & Vision
 
 **ShadowRealms AI** is a revolutionary web-based RPG platform that transforms traditional tabletop gaming through AI-powered storytelling, world-building, and campaign management. Built with modern web technologies and local LLM integration, it provides a private, scalable platform for immersive roleplaying experiences that bridges the gap between traditional pen-and-paper RPGs and cutting-edge artificial intelligence.
@@ -293,6 +295,7 @@ This philosophy ensures:
 - [Performance & Scalability](#performance--scalability)
 
 ### **📊 Current Status & Versions**
+- [Version 0.9.0 - Into the Night](#version-090---into-the-night)
 - [Version 0.8.0 - Player account and character management milestone](#version-080---player-account-and-character-management-milestone)
 - [Version 0.7.18 - Admin chronicles, site admin access, account-delete hardening](#version-0718---admin-chronicles-site-admin-access-account-delete-hardening-)
 - [Version 0.7.17 - Documentation alignment and Phase 3B readiness](#version-0717---documentation-alignment-and-phase-3b-readiness-)
@@ -1319,6 +1322,22 @@ The project now includes comprehensive `.gitignore` rules covering:
 - **Campaign Continuity**: Persistent AI memory across multiple sessions
 - **Multi-Language**: Global accessibility with translation pipelines
 - **Real-time Collaboration**: Live AI-assisted gaming experiences
+
+## Version 0.9.0 - Into the Night
+
+### What changed from 0.8.0
+
+- **Rules editions**: every chronicle is **Classic** (oWoD Revised: Vampire, Werewolf, Mage) or **V5** (Vampire: The Masquerade 5th edition), chosen at creation and locked. Each edition has its own dice engine, character forge and sheet, and rule-book search. Classic dice and character creation were corrected to the Revised books.
+- **New app shell**: real URLs (`/chronicles`, `/c/<id>/<room>`, `/profile`, `/admin/<tab>`), one navigation, Discord-style chat with live updates over Server-Sent Events. `SimpleApp.js` is gone (split into `frontend/src/app/` and `frontend/src/features/`).
+- **English and Greek**: the whole interface in both languages; the Storyteller answers in the player's language.
+- **Gothic theme rebuilt**: a design system with original SVG glyphs and sigils, motion and atmosphere, and a guided theme preview at `/showcase`.
+- **AI**: provider roles (LM Studio, Ollama, optional Anthropic / OpenAI keys), bge-m3 embeddings, the locally trained Laya classifier for OOC moderation.
+- **Security and production**: hardened login and sessions, rate limits, gunicorn, a static production frontend served by nginx with a strict CSP, services bound to localhost.
+- **CI**: Python checks, backend unit tests, schema check, frontend tests and build, CodeQL, Dependabot.
+
+**See also:** [docs/CHANGELOG.md](docs/CHANGELOG.md) (`[0.9.0]`), [docs/ROADMAP_v0.9.md](docs/ROADMAP_v0.9.md), [docs/SECURITY_MODEL.md](docs/SECURITY_MODEL.md), [docs/AI_SYSTEMS.md](docs/AI_SYSTEMS.md), [docs/rules/](docs/rules/).
+
+---
 
 ## Version 0.8.0 - Player account and character management milestone
 
@@ -7194,113 +7213,9 @@ def select_model(task_type, context):
 
 ## Quick Start Guide
 
-### ⚡ **5-Minute Setup**
+The setup steps that used to be here (`docker-compose` v1, the frontend on port 3000) are out of date. For the current first run see the [README](README.md) and [docs/DOCKER_ENV_SETUP.md](docs/DOCKER_ENV_SETUP.md): copy `env.template` to `.env`, run `./docker-up.sh` and `./scripts/build-frontend.sh`, then open http://localhost/.
 
-**1. Clone the Repository**
-```bash
-# Clone the repository
-git clone https://github.com/Somnius/shadowrealms-ai.git
-cd shadowrealms-ai
-```
-
-**2. Environment Setup**
-```bash
-# Create .env file from template
-cp env.template .env
-# Edit .env with your values (API keys, database settings, etc.)
-```
-
-**3. Start the Platform**
-```bash
-# Start all services with Docker Compose
-docker-compose up -d
-
-# Check service status
-docker-compose ps
-```
-
-**4. Access the Platform**
-- **Frontend**: http://localhost:3000
-- **Backend API**: http://localhost:5000
-- **ChromaDB**: http://localhost:8000
-
-### 🎯 **Current Status (v0.8.0)**
-
-🎯 **v0.8.0** — **Player Profile** hub milestone: **Account Settings** (time zone + OOC identity/portrait), **Playable Characters** (switch PC, roster, guide-before-wizard), **Downtime**; **Home** in the header; chronicles from the hall, not a redundant profile tab (see `docs/CHANGELOG.md` `[0.8.0]`). Builds on **v0.7.18** (admin **All chronicles**, site-admin chronicle access, preserve-chat delete, admin character list fixes—`[0.7.18]`).
-
-✅ **Phase 1 Complete** - Foundation & Docker Setup  
-✅ **Phase 2 Complete** - RAG & Vector Memory System  
-✅ **Phase 3A Complete** - Frontend polished, professional UX, docs integrated!  
-🚧 **Phase 3B In Progress** - PostgreSQL migration complete, system fully operational  
-✅ **Admin Panel** - User moderation & character management (v0.6.1)  
-✅ **Gothic Horror Theme** - Immersive dark fantasy atmosphere (v0.6.2)  
-✅ **Campaign Editing** - Name/description editing, game-specific themes (v0.6.3)  
-✅ **Responsive Design** - Full mobile support, touch-optimized UI (v0.6.4)  
-✅ **UI/UX Polish** - Custom dialogs, footer, in-app README (v0.6.5)  
-✅ **Security System** - Input sanitization, validation, rate limiting (v0.7.0)  
-✅ **AI Health Checks** - LM Studio, Ollama, ChromaDB validation (v0.7.5)  
-✅ **Message Persistence** - Chat messages save/load correctly, ChromaDB v2 (v0.7.6)  
-✅ **Chat timestamps & dice (v0.7.13+)** - `time_display` on messages; sidebar **Roll dice** + `POST .../roll`; admin **`/ai`** tools via `POST /api/ai/slash`
-✅ **Dice theatre & hidden rolls (v0.7.14)** - Center overlay for `/ai roll` and sidebar rolls; `/ai roll-hidden` and storyteller-only sidebar rolls; faster polling  
-✅ **WoD sheets & campaign loop (v0.7.15–v0.7.16)** - Character wizard + Player Profile; discover/join; play suspension; Nature/Demeanor presets; local **`data/World_of_Darkness.tar`** layout (`books/README.md`); clearer **`POST /api/characters/`** errors  
-✅ **PostgreSQL Migration** - Full compatibility, remote access, AI integration (v0.7.7)  
-✅ **Footer Version Display** - Fixed API path, version now displays correctly (v0.7.8)  
-✅ **Project Structure** - Scripts organized in dedicated directory (v0.7.9)  
-🎯 **Phase 3B Week 1** - Location CRUD, Character System, Real-time Chat  
-✅ **Backend APIs** - Campaign updates, README endpoint working  
-✅ **RAG System** - ChromaDB vector memory fully functional  
-✅ **Mobile Support** - Works on phones/tablets/desktop, navigation fixed  
-✅ **Security** - XSS prevention, SQL injection protection, CSRF tokens  
-✅ **Testing** - Jest test suite with security & integration tests  
-🚧 **Frontend Status** - Login/admin/campaigns/security working, locations/chat next  
-⚠️ **Reality Check** - Phase 3B started! Security foundation complete, ready for core features  
-✅ **Testing Infrastructure** - Comprehensive test suite  
-
-### 🚀 **What's Working**
-
-- **Complete Docker Environment** - All 6 services running stable
-- **AI Models** - Both LM Studio (3 models) and Ollama (1 model) operational
-- **Vector Memory** - ChromaDB with persistent AI memory across campaigns
-- **Campaign System** - Full campaign lifecycle management
-- **Character Creation** - World of Darkness d10 system support
-- **Rule Book Integration** - Searchable PDF content with AI context
-- **Admin Commands** - 50+ admin commands for full ST/DM control
-
-### 🔄 **Development Workflow**
-
-```bash
-# Check service status
-docker-compose ps
-
-# View logs
-docker-compose logs -f [service_name]
-
-# Run tests
-python test_modules.py
-
-# Create backup
-./scripts/backup.sh
-
-# Update and commit
-git add .
-git commit -m "Update: Description of changes"
-git push origin main
-```
-
-### 🛠️ **Prerequisites**
-
-- **Docker & Docker Compose** - Container orchestration
-- **16GB+ RAM** - Recommended for optimal performance
-- **NVIDIA GPU with 16GB+ VRAM** - For AI model execution
-- **Linux/macOS/Windows with WSL2** - Supported platforms
-
-### 🚨 **Security Features**
-
-- **Local AI Processing** - No data leaves your system
-- **JWT Authentication** - Secure user management
-- **Role-Based Access** - Admin, Helper, and Player roles
-- **Environment Protection** - Sensitive data in .env files only
-- **Backup System** - Automated data protection
+The status list that followed (last updated for v0.8.0) is replaced by the version sections above and [docs/CHANGELOG.md](docs/CHANGELOG.md).
 
 ## Conclusion & Next Steps
 
@@ -7351,12 +7266,4 @@ The platform is now positioned for rapid development of AI features and user int
 
 ## Documentation Notes
 
-This document consolidates the following files:
-- `PLANNING.md` - Project planning and phases
-- `README.md` - Project overview and setup
-- `REFERENCE.md` - Development environment reference
-- `DEVELOPMENT_STATUS.md` - Current development status
-
-**Current Version**: 0.4.10 - Phase 1 Completion & Network Resolution
-**Last Updated**: 2025-09-05 21:30 EEST
-**Next Milestone**: Version 0.5.0 - Proper Phase 1 Completion with Smart Model Routing
+This document started (v0.4) as a merge of `PLANNING.md`, `README.md`, `REFERENCE.md` and `DEVELOPMENT_STATUS.md`, and grew a section per release after that. The current version is in `env.template` (`VERSION`) and at the top of [docs/CHANGELOG.md](docs/CHANGELOG.md).
