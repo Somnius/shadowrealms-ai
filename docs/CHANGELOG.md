@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.2] - 2026-10-04 - Loose ends
+
 ### Changed
 - `OLLAMA_MODEL` defaults to `llama3.2:3b` (compose, `env.template`, code), the same model the README and the Utility role use; it was `command-r:35b`. Set it in `.env` to keep another model.
 - `env.template`: the "Legacy / unused" block is gone (nothing passed those variables to the backend).
@@ -14,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - In-app README: fenced code blocks kept their lines merged into one; tables dropped empty cells; lists, nested lists, images and in-page links rendered wrong. The renderer was rewritten (`frontend/src/utils/markdown.js`); repo images load from raw.githubusercontent.com.
 - Docs index named v0.9.0 as the current release and didn't link the v0.10 roadmap.
+- The README renderer can't be hung or crashed by hostile Markdown (long backtick runs, unclosed links, very deep nesting), and nested markup never ends up inside a link or image attribute.
 
 ## [0.9.1] - 2026-10-04 - Morning after
 
