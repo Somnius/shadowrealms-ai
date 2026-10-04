@@ -8,6 +8,7 @@ import en_dice from './en/dice.json';
 import en_footer from './en/footer.json';
 import en_glossary from './en/glossary.json';
 import en_hall from './en/hall.json';
+import en_laya from './en/laya.json';
 import en_locations from './en/locations.json';
 import en_play from './en/play.json';
 import en_profile from './en/profile.json';
@@ -24,6 +25,7 @@ import el_dice from './el/dice.json';
 import el_footer from './el/footer.json';
 import el_glossary from './el/glossary.json';
 import el_hall from './el/hall.json';
+import el_laya from './el/laya.json';
 import el_locations from './el/locations.json';
 import el_play from './el/play.json';
 import el_profile from './el/profile.json';
@@ -32,9 +34,9 @@ import el_shell from './el/shell.json';
 import el_showcase from './el/showcase.json';
 import el_wizard from './el/wizard.json';
 
-export const NAMESPACES = ['admin', 'auth', 'chat', 'chronicle', 'common', 'dice', 'footer', 'glossary', 'hall', 'locations', 'play', 'profile', 'sheet', 'shell', 'showcase', 'wizard'];
+export const NAMESPACES = ['admin', 'auth', 'chat', 'chronicle', 'common', 'dice', 'footer', 'glossary', 'hall', 'laya', 'locations', 'play', 'profile', 'sheet', 'shell', 'showcase', 'wizard'];
 
 export const resources = {
-  en: { admin: en_admin, auth: en_auth, chat: en_chat, chronicle: en_chronicle, common: en_common, dice: en_dice, footer: en_footer, glossary: en_glossary, hall: en_hall, locations: en_locations, play: en_play, profile: en_profile, sheet: en_sheet, shell: en_shell, showcase: en_showcase, wizard: en_wizard },
-  el: { admin: el_admin, auth: el_auth, chat: el_chat, chronicle: el_chronicle, common: el_common, dice: el_dice, footer: el_footer, glossary: el_glossary, hall: el_hall, locations: el_locations, play: el_play, profile: el_profile, sheet: el_sheet, shell: el_shell, showcase: el_showcase, wizard: el_wizard },
+  en: { admin: en_admin, auth: en_auth, chat: en_chat, chronicle: en_chronicle, common: en_common, dice: en_dice, footer: en_footer, glossary: en_glossary, hall: en_hall, laya: en_laya, locations: en_locations, play: en_play, profile: en_profile, sheet: en_sheet, shell: en_shell, showcase: en_showcase, wizard: en_wizard },
+  el: { admin: el_admin, auth: el_auth, chat: el_chat, chronicle: el_chronicle, common: el_common, dice: el_dice, footer: el_footer, glossary: el_glossary, hall: el_hall, laya: el_laya, locations: el_locations, play: el_play, profile: el_profile, sheet: el_sheet, shell: el_shell, showcase: el_showcase, wizard: el_wizard },
 };

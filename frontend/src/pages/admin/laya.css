@@ -1,0 +1,43 @@
+/* Admin Laya tab (pages/admin/LayaPanel.jsx). Tokens only; scoped under .sr-app. */
+.sr-app .sr-laya__keys { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sr-space-1); }
+.sr-app .sr-laya__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--sr-space-2);
+  max-height: 70vh;
+  overflow-y: auto;
+}
+.sr-app .sr-laya__item {
+  display: grid;
+  gap: var(--sr-space-2);
+  padding: var(--sr-space-3);
+  background: var(--sr-surface-sunken);
+  border: 1px solid var(--sr-border);
+  border-left: 4px solid var(--sr-border);
+  border-radius: var(--sr-radius-md);
+  min-width: 0;
+}
+.sr-app .sr-laya__item.is-current { border-left-color: var(--sr-accent); background: var(--sr-surface-hover); }
+.sr-app .sr-laya__pick {
+  all: unset;
+  display: grid;
+  gap: var(--sr-space-1);
+  cursor: pointer;
+  min-width: 0;
+}
+.sr-app .sr-laya__pick:focus-visible { outline: 2px solid var(--sr-accent); outline-offset: 2px; border-radius: var(--sr-radius-sm); }
+.sr-app .sr-laya__meta { color: var(--sr-text-muted); font-size: var(--sr-text-xs); overflow-wrap: anywhere; }
+.sr-app .sr-laya__text { color: var(--sr-text); white-space: pre-wrap; overflow-wrap: anywhere; line-height: 1.55; }
+.sr-app .sr-laya__status { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sr-space-2); }
+.sr-app .sr-laya__controls { display: grid; gap: var(--sr-space-2); padding-top: var(--sr-space-2); border-top: 1px solid var(--sr-border); }
+.sr-app .sr-laya__small { color: var(--sr-warn-400); font-size: var(--sr-text-xs); }
+.sr-app .sr-laya__wrong { color: var(--sr-danger-400); font-weight: 600; }
+.sr-app .sr-laya__caption { caption-side: top; text-align: left; padding: var(--sr-space-2) 0; color: var(--sr-text-muted); font-size: var(--sr-text-xs); }
+.sr-app .sr-laya__confusion td,
+.sr-app .sr-laya__metrics td { font-variant-numeric: tabular-nums; }
+.sr-app .sr-laya__confusion td { text-align: center; }
+.sr-app .sr-laya__confusion td.is-diag { color: var(--sr-ok-400); font-weight: 600; }
+.sr-app .sr-laya__confusion td.is-miss { color: var(--sr-danger-400); font-weight: 600; }
+.sr-app .sr-laya .sr-admin__table th[scope='row'] { color: var(--sr-text); font-weight: 600; text-align: left; border-bottom: 1px solid var(--sr-border); }
