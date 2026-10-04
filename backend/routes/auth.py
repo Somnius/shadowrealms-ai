@@ -46,6 +46,7 @@ from services.auth_tokens import (
     revoke_jti,
 )
 from services.mail_service import is_smtp_configured, send_invalid_invite_alert, send_welcome_registration
+from services.log_safety import safe_log_value
 
 logger = logging.getLogger(__name__)
 
@@ -265,7 +266,8 @@ def register():
     role = claim_invite_code(invite_code)
     if role is None:
         throttle.fail(invite_checks)
-        logger.warning("Invalid or exhausted invite signup attempt username=%s ip=%s", username[:40], ip)
+        logger.warning("Invalid or exhausted invite signup attempt username=%s ip=%s",
+                       safe_log_value(username, 40), safe_log_value(ip))
         log_auth_event('invite_invalid', username=username, ip=ip, user_agent=_ua(),
                        details={'code_prefix': invite_code[:7]})
         admin_alert = os.environ.get("MAIL_ADMIN_ALERT_EMAIL", "").strip()
@@ -314,7 +316,7 @@ def register():
         if db is not None:
             db.close()
 
-    logger.info("New user registered: %s (id %s) role=%s", username, user['id'], role)
+    logger.info("New user registered: %s (id %s) role=%s", safe_log_value(username), user['id'], safe_log_value(role))
     log_auth_event('register', user_id=user['id'], username=username, ip=ip, user_agent=_ua(),
                    details={'role': role})
     if is_smtp_configured():

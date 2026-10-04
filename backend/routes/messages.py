@@ -28,6 +28,7 @@ from services.dice_markers import is_dice_kind, sanitize_marker
 from datetime import datetime
 from services.message_time_format import format_message_time
 import logging
+from services.log_safety import safe_log_value
 
 logger = logging.getLogger(__name__)
 
@@ -535,8 +536,8 @@ def save_message(campaign_id, location_id):
             if (poster.get('role') or '').strip().lower() != 'admin':
                 conn.rollback()
                 logger.warning(
-                    f"Refused client-posted dice row ({ai_message_kind.split(':', 1)[0]}) from user "
-                    f"{user_id} in campaign {campaign_id}"
+                    f"Refused client-posted dice row ({safe_log_value(ai_message_kind.split(':', 1)[0])}) from user "
+                    f"{safe_log_value(user_id)} in campaign {safe_log_value(campaign_id)}"
                 )
                 return jsonify({
                     'error': 'Dice results are posted by the server. Use the dice roller.',
@@ -556,7 +557,7 @@ def save_message(campaign_id, location_id):
             ):
                 conn.rollback()
                 logger.warning(
-                    f"Refused assistant-role message from user {user_id} in campaign {campaign_id} "
+                    f"Refused assistant-role message from user {safe_log_value(user_id)} in campaign {safe_log_value(campaign_id)} "
                     f"(not an AI reply issued to them)"
                 )
                 return jsonify({'error': 'Only the AI Storyteller can post as the Storyteller.'}), 403
@@ -591,7 +592,7 @@ def save_message(campaign_id, location_id):
                 )
                 
                 if is_violation:
-                    logger.warning(f"OOC violation detected for user {user_id}: {content[:50]}...")
+                    logger.warning(f"OOC violation detected for user {safe_log_value(user_id)}: {safe_log_value(content, 50)}")
                     ooc_warning_info = getattr(ooc_monitor, 'last_warning', None)
                     
                     if should_ban:
@@ -794,7 +795,8 @@ def save_message(campaign_id, location_id):
         row = cursor.fetchone()
         saved_message = _message_dict_from_row(row)
         
-        logger.info(f"Message saved: ID={message_id}, Campaign={campaign_id}, Location={location_id}")
+        logger.info(f"Message saved: ID={safe_log_value(message_id)}, Campaign={safe_log_value(campaign_id)}, "
+                    f"Location={safe_log_value(location_id)}")
         
         # Build response
         response_data = {
@@ -847,7 +849,7 @@ def delete_message(message_id):
         cursor.execute("DELETE FROM messages WHERE id = %s", (message_id,))
         conn.commit()
         
-        logger.info(f"Message deleted: ID={message_id} by User={user_id}")
+        logger.info(f"Message deleted: ID={safe_log_value(message_id)} by User={safe_log_value(user_id)}")
         
         return jsonify({'message': 'Message deleted successfully'}), 200
         

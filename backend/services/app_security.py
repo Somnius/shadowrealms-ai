@@ -23,6 +23,7 @@ from werkzeug.exceptions import HTTPException
 from werkzeug.middleware.proxy_fix import ProxyFix
 
 from services.auth_security import FailoverStore, MemoryStore, RedisStore, Throttle
+from services.log_safety import safe_log_value
 
 logger = logging.getLogger(__name__)
 
@@ -292,7 +293,7 @@ def init_error_handlers(app):
     def _unhandled(e):
         if isinstance(e, HTTPException):
             return _http(e)
-        logger.exception("Unhandled error on %s %s", request.method, request.path)
+        logger.exception("Unhandled error on %s %s", safe_log_value(request.method), safe_log_value(request.path))
         return jsonify({"error": "Internal server error", "code": "INTERNAL"}), 500
 
 

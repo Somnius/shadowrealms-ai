@@ -778,7 +778,7 @@ def contested_roll(campaign_id):
             ))
 
         conn.commit()
-        logger.info("Contested %s roll in campaign %s: %s wins", edition, campaign_id, result['winner'])
+        logger.info(f"Contested {edition} roll in campaign {campaign_id}: {result['winner']} wins".replace("\r\n", "").replace("\n", ""))
 
         return jsonify({
             'rules_edition': edition,
@@ -873,7 +873,7 @@ def ai_roll(campaign_id):
         conn.commit()
         roll_result['roll_id'] = roll_id
         
-        logger.info(f"AI roll ({action_type}, {edition}) in campaign {campaign_id}: {roll_result['successes']} successes")
+        logger.info(f"AI roll ({action_type}, {edition}) in campaign {campaign_id}: {roll_result['successes']} successes".replace("\r\n", "").replace("\n", ""))
         
         return jsonify({
             'roll_id': roll_id,

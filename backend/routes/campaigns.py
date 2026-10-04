@@ -31,6 +31,7 @@ from services.playing_character import (
     effective_playing_character_id,
     is_campaign_storyteller_or_staff,
 )
+from services.log_safety import safe_log_value
 
 logger = logging.getLogger(__name__)
 
@@ -725,14 +726,14 @@ def get_campaign_stats(campaign_id):
         if ooc_ids:
             logger.info(
                 "Campaign %s stats: excluding OOC lobby location_id(s) from story counts: %s",
-                campaign_id,
+                safe_log_value(campaign_id),
                 ooc_ids,
             )
         else:
             logger.warning(
                 "Campaign %s stats: no OOC lobby row matched (type=ooc / known names). "
                 "Story location and message totals may include the lobby — check locations.name/type.",
-                campaign_id,
+                safe_log_value(campaign_id),
             )
 
         # Story locations only — OOC lobby is not a playable "location" in this total
@@ -944,7 +945,7 @@ def delete_campaign(campaign_id):
         cursor.execute("SELECT COUNT(*) FROM messages WHERE campaign_id = %s", (campaign_id,))
         message_count = cursor.fetchone()['count']
         
-        logger.info(f"🗑️ Deleting campaign {campaign_id} ({campaign_name}):")
+        logger.info(f"🗑️ Deleting campaign {safe_log_value(campaign_id)} ({safe_log_value(campaign_name)}):")
         logger.info(f"   • {location_count} locations")
         logger.info(f"   • {message_count} messages")
         
@@ -991,7 +992,7 @@ def delete_campaign(campaign_id):
         cursor.execute("DELETE FROM campaigns WHERE id = %s", (campaign_id,))
         conn.commit()
         
-        logger.info(f"✅ Campaign {campaign_id} ({campaign_name}) fully deleted:")
+        logger.info(f"✅ Campaign {safe_log_value(campaign_id)} ({safe_log_value(campaign_name)}) fully deleted:")
         logger.info(f"   • SQL data removed (CASCADE)")
         logger.info(f"   • ChromaDB embeddings purged")
         logger.info(f"   • AI memory cleaned - no orphaned data")

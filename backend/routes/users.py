@@ -25,6 +25,7 @@ from services.play_suspension import suspended_json
 from routes.ui_language import parse_ui_language
 from services.request_validation import RequestValidationError
 from services.gpu_monitor import gpu_monitor_service
+from services.log_safety import safe_log_value
 
 logger = logging.getLogger(__name__)
 
@@ -516,7 +517,7 @@ def get_user(user_id):
         }), 200
         
     except Exception as e:
-        logger.error(f"Error getting user {user_id}: {e}")
+        logger.error(f"Error getting user {safe_log_value(user_id)}: {safe_log_value(e)}")
         return jsonify({'error': 'Failed to retrieve user'}), 500
     finally:
         if 'db' in locals():
@@ -617,13 +618,13 @@ def update_user(user_id):
             
             db.commit()
             
-            logger.info(f"User {user_id} updated by user {current_user_id}")
+            logger.info(f"User {safe_log_value(user_id)} updated by user {safe_log_value(current_user_id)}")
         
         # Return updated user
         return get_user(user_id)
         
     except Exception as e:
-        logger.error(f"Error updating user {user_id}: {e}")
+        logger.error(f"Error updating user {safe_log_value(user_id)}: {safe_log_value(e)}")
         return jsonify({'error': 'Failed to update user'}), 500
     finally:
         if 'db' in locals():
@@ -663,12 +664,13 @@ def delete_user(user_id):
         
         db.commit()
         
-        logger.info(f"User {user_id} ({target_user['username']}) deactivated by admin {current_user_id}")
+        logger.info(f"User {safe_log_value(user_id)} ({safe_log_value(target_user['username'])}) "
+                    f"deactivated by admin {safe_log_value(current_user_id)}")
         
         return jsonify({'message': 'User deactivated successfully'}), 200
         
     except Exception as e:
-        logger.error(f"Error deleting user {user_id}: {e}")
+        logger.error(f"Error deleting user {safe_log_value(user_id)}: {safe_log_value(e)}")
         return jsonify({'error': 'Failed to delete user'}), 500
     finally:
         if 'db' in locals():
