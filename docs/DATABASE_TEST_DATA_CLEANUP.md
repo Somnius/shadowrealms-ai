@@ -130,6 +130,8 @@ WHERE active_character_id IS NOT NULL
 BEGIN;
 
 -- 4a) Clear active character pointers to rows we are about to remove
+--     (users.active_character_id and campaign_players.active_character_id are both
+--     ON DELETE SET NULL in init_postgresql_schema.sql; clearing them first is harmless either way)
 UPDATE users SET active_character_id = NULL
 WHERE active_character_id IN (
   SELECT ch.id FROM characters ch
