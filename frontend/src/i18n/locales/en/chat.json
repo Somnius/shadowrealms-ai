@@ -101,5 +101,37 @@
     "success": "rolled {{die}}: success, Hunger stays {{hunger}}.",
     "atMax": "rolled {{die}}: failure at Hunger 5. Hunger cannot rise further; test for hunger frenzy.",
     "failure": "rolled {{die}}: failure, Hunger {{before}} → {{after}}."
+  },
+  "actions": {
+    "label": "Message actions",
+    "more": "More actions",
+    "copy": "Copy text",
+    "reply": "Reply",
+    "delete": "Delete message",
+    "copied": "Copied to the clipboard.",
+    "copyFailed": "Could not copy the text."
+  },
+  "reply": {
+    "replyingTo": "Replying to {{name}}",
+    "cancel": "Cancel reply",
+    "jump": "Replying to {{name}}: {{text}}. Show the original message",
+    "hidden": "Hidden roll",
+    "notLoaded": "The original message is further back. Load older messages to see it.",
+    "gone": "The message you replied to is gone. Your text is still in the box."
+  },
+  "delete": {
+    "title": "Delete this message?",
+    "body": "It is removed for everyone in the room. This can’t be undone.",
+    "cancel": "Keep it",
+    "confirm": "Delete",
+    "notYours": "You can only delete your own messages.",
+    "diceStaffOnly": "Only the Storyteller or an admin can delete dice rolls.",
+    "aiStaffOnly": "Only the Storyteller or an admin can delete Storyteller messages.",
+    "failed": "Could not delete the message."
+  },
+  "older": {
+    "load": "Load older messages",
+    "loading": "Loading older messages…",
+    "beginning": "The beginning of {{room}}"
   }
 }

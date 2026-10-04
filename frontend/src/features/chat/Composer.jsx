@@ -3,6 +3,7 @@ import { DRAFT_PREFIX, readSession, writeSession } from '../../app/hooks';
 import { Avatar, Glyph, IconButton } from '../../design';
 import MenuButton from '../../app/Menu';
 import { completeSlash, parseLocalCommand, slashSuggestions } from './slashCommands';
+import { ReplyBar } from './MessageActions';
 import { t } from '../../i18n';
 
 const MAX_ROWS = 10;
@@ -67,6 +68,7 @@ function SpeakingAs({ voices, value, onChange }) {
  * (↑/↓ move, Tab/Enter complete, Esc closes). The voice control sits on the left, dice + send on the right.
  *
  * onSend(text) → Promise<boolean> (false keeps the text so nothing typed is lost).
+ * replyTo ({id, author, excerpt}) shows a "Replying to" bar; Esc or its close button calls onCancelReply.
  */
 export default function Composer({
   roomName,
@@ -81,6 +83,8 @@ export default function Composer({
   isAdmin = false,
   draftKey,
   inputRef,
+  replyTo = null,
+  onCancelReply,
 }) {
   // The unsent draft lives in sessionStorage per user and room, so it survives switching rooms and
   // the remount that a language switch causes (App re-keys the tree on language change).
@@ -177,6 +181,12 @@ export default function Composer({
         }
       }
     }
+    if (e.key === 'Escape' && replyTo && onCancelReply) {
+      e.preventDefault();
+      e.stopPropagation();
+      onCancelReply();
+      return;
+    }
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       send();
@@ -215,6 +225,15 @@ export default function Composer({
             </li>
           ))}
         </ul>
+      ) : null}
+      {replyTo ? (
+        <ReplyBar
+          reply={replyTo}
+          onCancel={() => {
+            if (onCancelReply) onCancelReply();
+            requestAnimationFrame(() => ref.current && ref.current.focus());
+          }}
+        />
       ) : null}
       <div className="sr-composer__box">
         <SpeakingAs voices={voices} value={speakAs} onChange={onSpeakAsChange} />

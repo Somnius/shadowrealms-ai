@@ -3,6 +3,7 @@ import { readLocal, writeLocal } from '../../app/hooks';
 import { isMarker } from './messageModel';
 
 export const INITIAL_LIMIT = 150;
+export const OLDER_LIMIT = 50;
 
 // Per user, so a shared browser doesn't carry one account's read state over to another.
 const seenKey = (uid, cid, lid) => `sr_seen_${uid == null ? 'anon' : uid}_${cid}_${lid}`;
@@ -31,6 +32,26 @@ export function mergeMessages(prev, incoming) {
   return [...core, ...temps];
 }
 
+export function firstServerId(messages) {
+  let min = 0;
+  for (const m of messages) if (m.id != null && !m.temp && (min === 0 || m.id < min)) min = m.id;
+  return min;
+}
+
+/**
+ * A refetched newest page merged with what was loaded before it: rows in the window come from the
+ * server (deleted ones drop out), older pages loaded with "Load older" stay unless the page shows
+ * the room's beginning, optimistic rows stay at the end.
+ */
+export function mergeRefresh(prev, fresh, limit = INITIAL_LIMIT) {
+  const temps = prev.filter((m) => m.temp && m.id == null);
+  const sorted = [...fresh].sort((a, b) => a.id - b.id);
+  const oldest = sorted.length ? sorted[0].id : null;
+  const keepOlder = sorted.length >= limit && oldest != null;
+  const older = keepOlder ? prev.filter((m) => m.id != null && !m.temp && m.id < oldest) : [];
+  return [...older, ...sorted, ...temps];
+}
+
 export function lastServerId(messages) {
   let max = 0;
   for (const m of messages) if (m.id != null && !m.temp && m.id > max) max = m.id;
@@ -47,6 +68,12 @@ export function useRoomMessages({ api, campaignId, locationId, characterId, user
   const [status, setStatus] = useState('loading');
   const [closedInfo, setClosedInfo] = useState(null);
   const [firstUnreadId, setFirstUnreadId] = useState(null);
+  // Older history: true while there may be rows before the oldest loaded one.
+  const [hasMore, setHasMore] = useState(false);
+  const [loadingOlder, setLoadingOlder] = useState(false);
+  const olderInflight = useRef(false);
+  // Ids removed optimistically (delete pending): a refetch must not bring them back meanwhile.
+  const removing = useRef(new Set());
   const messagesRef = useRef(messages);
   messagesRef.current = messages;
   const roomRef = useRef(`${campaignId}:${locationId}`);
@@ -62,6 +89,7 @@ export function useRoomMessages({ api, campaignId, locationId, characterId, user
     setStatus('loading');
     setClosedInfo(null);
     setFirstUnreadId(null);
+    setHasMore(false);
     lastMarked.current = 0;
     const r = await api(`${roomPath}?recent=1&limit=${INITIAL_LIMIT}`);
     if (roomRef.current !== key) return;
@@ -94,6 +122,8 @@ export function useRoomMessages({ api, campaignId, locationId, characterId, user
     if (firstUnread && !list.some((m) => m.id >= firstUnread)) firstUnread = null;
     setFirstUnreadId(firstUnread);
     setMessages(list);
+    // A full first page may have more before it (the server filters hidden rolls before LIMIT).
+    setHasMore(list.length >= INITIAL_LIMIT);
     setStatus('ready');
   }, [api, roomPath, campaignId, locationId, characterId, userId]);
 
@@ -125,8 +155,9 @@ export function useRoomMessages({ api, campaignId, locationId, characterId, user
         if (roomRef.current !== key) break;
         if (r.ok && Array.isArray(r.data) && r.data.length > 0) {
           // Update the ref now so a re-run asks only for what came after these rows.
-          messagesRef.current = mergeMessages(messagesRef.current, r.data);
-          setMessages((prev) => mergeMessages(prev, r.data));
+          const rows = r.data.filter((m) => !removing.current.has(m.id));
+          messagesRef.current = mergeMessages(messagesRef.current, rows);
+          setMessages((prev) => mergeMessages(prev, rows));
         }
       } while (again.current);
     } finally {
@@ -140,8 +171,58 @@ export function useRoomMessages({ api, campaignId, locationId, characterId, user
     const key = roomRef.current;
     const r = await api(`${roomPath}?recent=1&limit=${INITIAL_LIMIT}`);
     if (roomRef.current !== key || !r.ok || !Array.isArray(r.data)) return;
-    setMessages((prev) => [...r.data, ...prev.filter((m) => m.temp && m.id == null)]);
+    const fresh = r.data.filter((m) => !removing.current.has(m.id));
+    setMessages((prev) => mergeRefresh(prev, fresh, INITIAL_LIMIT));
+    if (r.data.length < INITIAL_LIMIT) setHasMore(false);
   }, [api, roomPath]);
+
+  /**
+   * The page before the oldest loaded row (GET ?before_id=&limit=). Returns the number of rows
+   * added; the list keeps its scroll position (MessageList anchors it).
+   */
+  const loadOlder = useCallback(async () => {
+    if (!enabled || olderInflight.current) return 0;
+    const before = firstServerId(messagesRef.current);
+    if (!before) {
+      setHasMore(false);
+      return 0;
+    }
+    const key = roomRef.current;
+    olderInflight.current = true;
+    setLoadingOlder(true);
+    try {
+      const r = await api(`${roomPath}?before_id=${before}&limit=${OLDER_LIMIT}`);
+      if (roomRef.current !== key) return 0;
+      if (!r.ok || !r.data || !Array.isArray(r.data.messages)) return 0;
+      const rows = r.data.messages.filter((m) => !removing.current.has(m.id));
+      messagesRef.current = mergeMessages(messagesRef.current, rows);
+      setMessages((prev) => mergeMessages(prev, rows));
+      setHasMore(!!r.data.has_more);
+      return rows.length;
+    } finally {
+      olderInflight.current = false;
+      if (roomRef.current === key) setLoadingOlder(false);
+    }
+  }, [api, roomPath, enabled]);
+
+  /** Optimistic delete: drop rows now, returns them so a failed delete can put them back. */
+  const removeMessages = useCallback((ids) => {
+    const set = new Set((ids || []).map(Number));
+    set.forEach((id) => removing.current.add(id));
+    const removed = messagesRef.current.filter((m) => m.id != null && set.has(Number(m.id)));
+    messagesRef.current = messagesRef.current.filter((m) => !(m.id != null && set.has(Number(m.id))));
+    setMessages((prev) => prev.filter((m) => !(m.id != null && set.has(Number(m.id)))));
+    return removed;
+  }, []);
+
+  /** The delete settled: ids stop being filtered (rollback passes the rows to restore). */
+  const settleRemoval = useCallback((ids, restore) => {
+    (ids || []).forEach((id) => removing.current.delete(Number(id)));
+    if (restore && restore.length) {
+      messagesRef.current = mergeMessages(messagesRef.current, restore);
+      setMessages((prev) => mergeMessages(prev, restore));
+    }
+  }, []);
 
   const addOptimistic = useCallback((msg) => setMessages((prev) => [...prev, msg]), []);
   const resolveOptimistic = useCallback((clientId, saved) => {
@@ -170,6 +251,11 @@ export function useRoomMessages({ api, campaignId, locationId, characterId, user
     status,
     closedInfo,
     firstUnreadId,
+    hasMore,
+    loadingOlder,
+    loadOlder,
+    removeMessages,
+    settleRemoval,
     reload: load,
     refresh,
     fetchSince,

@@ -8,6 +8,7 @@ import RollRequestChips from '../dice/RollRequestChips';
 import { rollRequestsOf, stripRollTags } from '../dice/rollRequests';
 import { diceAnimationId, messageTime, parseRouseLine, presentSpeaker } from './messageModel';
 import { formatClock, formatFull, formatShort, isoOf } from './timeFormat';
+import { MessageActions, ReplyQuote, useMessageRowProps } from './MessageActions';
 import { t } from '../../i18n';
 
 const BADGE_TONE = { success: 'ok', gold: 'gold', blood: 'blood', danger: 'danger', muted: 'neutral' };
@@ -67,36 +68,42 @@ export function MessageGroup({ group, timeZone, now }) {
   const longNarration = sp.tone === 'ai' && String(head.content || '').length > 280;
   return (
     <div className={`sr-msg-group sr-msg-group--${sp.tone} sr-msg-group--${group.kind}`}>
-      {group.messages.map((m, i) => {
-        const ms = messageTime(m);
-        const first = i === 0;
-        return (
-          <div
-            key={m.id != null ? m.id : m.client_id}
-            id={m.id != null ? `msg-${m.id}` : undefined}
-            className={`sr-msg${first ? ' sr-msg--first' : ''}${m.temp ? ' is-pending' : ''}`}
-            data-message-id={m.id != null ? m.id : undefined}
-          >
-            {first ? (
-              <>
-                <div className="sr-msg__avatar">
-                  <SpeakerAvatar msg={m} />
-                </div>
-                <div className="sr-msg__header">
-                  <SpeakerName msg={m} secondaryLast />
-                  <Time ms={ms} timeZone={timeZone} now={now} className="sr-msg__time" />
-                  {sp.secondary ? <span className="sr-msg__secondary">{sp.secondary}</span> : null}
-                </div>
-              </>
-            ) : (
-              <Time ms={ms} timeZone={timeZone} now={now} short={false} className="sr-msg__gutter" />
-            )}
-            <div className={`sr-msg__body${group.kind === 'action' ? ' sr-msg__body--action' : ''}${first && longNarration ? ' sr-msg__body--dropcap' : ''}`}>
-              <MessageBody message={m} />
-            </div>
+      {group.messages.map((m, i) => (
+        <GroupRow key={m.id != null ? m.id : m.client_id} m={m} first={i === 0} sp={sp} group={group} longNarration={longNarration} timeZone={timeZone} now={now} />
+      ))}
+    </div>
+  );
+}
+
+function GroupRow({ m, first, sp, group, longNarration, timeZone, now }) {
+  const ms = messageTime(m);
+  const press = useMessageRowProps(m);
+  return (
+    <div
+      id={m.id != null ? `msg-${m.id}` : undefined}
+      className={`sr-msg${first ? ' sr-msg--first' : ''}${m.temp ? ' is-pending' : ''}`}
+      data-message-id={m.id != null ? m.id : undefined}
+      {...press}
+    >
+      {first ? (
+        <>
+          <div className="sr-msg__avatar">
+            <SpeakerAvatar msg={m} />
           </div>
-        );
-      })}
+          <div className="sr-msg__header">
+            <SpeakerName msg={m} secondaryLast />
+            <Time ms={ms} timeZone={timeZone} now={now} className="sr-msg__time" />
+            {sp.secondary ? <span className="sr-msg__secondary">{sp.secondary}</span> : null}
+          </div>
+        </>
+      ) : (
+        <Time ms={ms} timeZone={timeZone} now={now} short={false} className="sr-msg__gutter" />
+      )}
+      {m.reply_to ? <ReplyQuote reply={m.reply_to} /> : null}
+      <div className={`sr-msg__body${group.kind === 'action' ? ' sr-msg__body--action' : ''}${first && longNarration ? ' sr-msg__body--dropcap' : ''}`}>
+        <MessageBody message={m} />
+      </div>
+      <MessageActions message={m} />
     </div>
   );
 }
@@ -203,8 +210,9 @@ export function DiceCard({ message, marker, timeZone, now }) {
   // Decided once when the card mounts, so a re-render never replays the effect.
   const [fresh] = useState(() => !Number.isNaN(ms) && Date.now() - ms < FRESH_ROLL_MS);
   const mood = info ? rollMood(info.parsed.result) : null;
+  const press = useMessageRowProps(message);
   return (
-    <div className="sr-card-row" id={message.id != null ? `msg-${message.id}` : undefined} data-message-id={message.id}>
+    <div className="sr-card-row sr-card-row--actions" id={message.id != null ? `msg-${message.id}` : undefined} data-message-id={message.id} {...press}>
       <figure className={`sr-dicecard${hidden ? ' sr-dicecard--hidden' : ''}${fresh ? ' is-fresh' : ''}`} data-mood={mood || undefined}>
         <figcaption className="sr-dicecard__head">
           <SpeakerAvatar msg={message} size={24} />
@@ -258,6 +266,7 @@ export function DiceCard({ message, marker, timeZone, now }) {
         )}
         {info ? <RollFx mood={mood} play={fresh} compact playKey={typeof message.id === 'number' ? message.id : 0} /> : null}
       </figure>
+      <MessageActions message={message} />
     </div>
   );
 }
@@ -266,8 +275,9 @@ export function DiceCard({ message, marker, timeZone, now }) {
 export function DiagnosticCard({ message, timeZone, now }) {
   const ms = messageTime(message);
   const first = String(message.content || '').split('\n').find((l) => l.trim()) || '';
+  const press = useMessageRowProps(message);
   return (
-    <div className="sr-card-row" id={message.id != null ? `msg-${message.id}` : undefined} data-message-id={message.id}>
+    <div className="sr-card-row sr-card-row--actions" id={message.id != null ? `msg-${message.id}` : undefined} data-message-id={message.id} {...press}>
       <details className="sr-diag">
         <summary>
           <Glyph name="ai-sigil" size={16} />
@@ -279,6 +289,7 @@ export function DiagnosticCard({ message, timeZone, now }) {
           <Markdown text={message.content} />
         </div>
       </details>
+      <MessageActions message={message} />
     </div>
   );
 }
@@ -286,13 +297,15 @@ export function DiagnosticCard({ message, timeZone, now }) {
 /** Room events / moderation notes: one centred line. */
 export function SystemLine({ message, timeZone }) {
   const ms = messageTime(message);
+  const press = useMessageRowProps(message);
   return (
-    <div className="sr-card-row sr-sysline" id={message.id != null ? `msg-${message.id}` : undefined} data-message-id={message.id}>
+    <div className="sr-card-row sr-card-row--actions sr-sysline" id={message.id != null ? `msg-${message.id}` : undefined} data-message-id={message.id} {...press}>
       <Glyph name="raven" size={16} />
       <span className="sr-sysline__text">
         <Markdown text={message.content} />
       </span>
       <Time ms={ms} timeZone={timeZone} short={false} className="sr-msg__time" />
+      <MessageActions message={message} />
     </div>
   );
 }

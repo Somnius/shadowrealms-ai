@@ -483,6 +483,17 @@ export const GLYPHS = {
     ],
   },
   minus: { label: 'Remove', group: 'ui', shapes: [{ d: 'M5 12h14' }] },
+  copy: {
+    label: 'Copy',
+    group: 'ui',
+    shapes: [{ d: 'M8.5 8.5h11v12h-11Z' }, { d: 'M15.5 8.5v-5h-11v12h4' }],
+  },
+  reply: { label: 'Reply', group: 'ui', shapes: [{ d: 'M9.5 5.5L3.5 11l6 5.5' }, { d: 'M3.5 11h10c4 0 7 2.6 7 7.5' }] },
+  more: {
+    label: 'More',
+    group: 'ui',
+    shapes: [{ c: [5.5, 12, 1.6], f: 1 }, { c: [12, 12, 1.6], f: 1 }, { c: [18.5, 12, 1.6], f: 1 }],
+  },
   trash: {
     label: 'Delete',
     group: 'ui',
