@@ -31,7 +31,7 @@ export { default as Tabs } from './components/Tabs';
 export { default as DotTrack } from './components/DotTrack';
 export { Card, Panel, Badge, Avatar, Divider, EmptyState, Kbd } from './components/Surface';
 export { Field, Input, Textarea, Select, Checkbox, Switch } from './components/Fields';
-export { Modal, Drawer, ToastProvider, useToast } from './components/Overlay';
+export { Modal, Drawer, ToastProvider, useToast, useOptionalToast } from './components/Overlay';
 export { Portal } from './components/internal';
 
 /* atmosphere */

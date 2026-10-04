@@ -1,6 +1,8 @@
 import React, { useRef } from 'react';
 import { Avatar, Badge, Button, DotTrack, Glyph } from '../../design';
 import { editionOf, V5 } from '../../rules/rulesEdition';
+import ButtonLink from '../../app/ButtonLink';
+import { lineOf } from '../../app/hooks';
 import { t } from '../../i18n';
 import { Term, termHint } from '../../i18n/glossary';
 
@@ -25,6 +27,11 @@ function CharacterCard({ campaign, character, onOpenSheet, onPortrait, toast }) 
         <p className="sr-muted">
           {t('play:panel.noCharacter', 'You have no character in this chronicle. You can still talk out of character.')}
         </p>
+        {campaign && ['vampire', 'werewolf', 'mage'].includes(lineOf(campaign.game_system)) ? (
+          <ButtonLink to={`/profile/characters/new?chronicle=${campaign.id}`} variant="primary" size="sm" icon="quill">
+            {t('hall:createCharacter', 'Create character')}
+          </ButtonLink>
+        ) : null}
       </div>
     );
   }

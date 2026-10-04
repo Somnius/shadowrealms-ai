@@ -1,17 +1,19 @@
-// API utility functions
+// API utility functions (fetch with the session rules of app/http.js: refresh on expiry, etc.)
+import { authFetch } from '../app/http';
+
 const API_URL = '/api';
 
 export const api = {
   // Auth
   login: (credentials) => 
-    fetch(`${API_URL}/auth/login`, {
+    authFetch(`${API_URL}/auth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(credentials)
     }),
   
   register: (userData) =>
-    fetch(`${API_URL}/auth/register`, {
+    authFetch(`${API_URL}/auth/register`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(userData)
@@ -19,12 +21,12 @@ export const api = {
   
   // Campaigns
   getCampaigns: (token) =>
-    fetch(`${API_URL}/campaigns/`, {
+    authFetch(`${API_URL}/campaigns/`, {
       headers: { 'Authorization': `Bearer ${token}` }
     }),
   
   createCampaign: (token, campaignData) =>
-    fetch(`${API_URL}/campaigns`, {
+    authFetch(`${API_URL}/campaigns`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -34,18 +36,18 @@ export const api = {
     }),
 
   discoverCampaigns: (token) =>
-    fetch(`${API_URL}/campaigns/discover`, {
+    authFetch(`${API_URL}/campaigns/discover`, {
       headers: { Authorization: `Bearer ${token}` },
     }),
 
   joinCampaign: (token, campaignId) =>
-    fetch(`${API_URL}/campaigns/${campaignId}/join`, {
+    authFetch(`${API_URL}/campaigns/${campaignId}/join`, {
       method: 'POST',
       headers: { Authorization: `Bearer ${token}` },
     }),
 
   detachCampaign: (token, campaignId, payload = {}) =>
-    fetch(`${API_URL}/campaigns/${campaignId}/detach`, {
+    authFetch(`${API_URL}/campaigns/${campaignId}/detach`, {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${token}`,
@@ -55,7 +57,7 @@ export const api = {
     }),
 
   addCampaignMember: (token, campaignId, userId) =>
-    fetch(`${API_URL}/campaigns/${campaignId}/members`, {
+    authFetch(`${API_URL}/campaigns/${campaignId}/members`, {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${token}`,
@@ -65,7 +67,7 @@ export const api = {
     }),
 
   setMyPlayingCharacter: (token, campaignId, characterId) =>
-    fetch(`${API_URL}/campaigns/${campaignId}/my-playing-character`, {
+    authFetch(`${API_URL}/campaigns/${campaignId}/my-playing-character`, {
       method: 'PUT',
       headers: {
         Authorization: `Bearer ${token}`,
@@ -75,7 +77,7 @@ export const api = {
     }),
 
   setPlayerPlayingCharacter: (token, campaignId, targetUserId, characterId) =>
-    fetch(`${API_URL}/campaigns/${campaignId}/players/${targetUserId}/playing-character`, {
+    authFetch(`${API_URL}/campaigns/${campaignId}/players/${targetUserId}/playing-character`, {
       method: 'PUT',
       headers: {
         Authorization: `Bearer ${token}`,
@@ -85,7 +87,7 @@ export const api = {
     }),
 
   updateCampaign: (token, campaignId, payload) =>
-    fetch(`${API_URL}/campaigns/${campaignId}`, {
+    authFetch(`${API_URL}/campaigns/${campaignId}`, {
       method: 'PUT',
       headers: {
         Authorization: `Bearer ${token}`,
@@ -95,24 +97,24 @@ export const api = {
     }),
 
   getCampaign: (token, campaignId) =>
-    fetch(`${API_URL}/campaigns/${campaignId}`, {
+    authFetch(`${API_URL}/campaigns/${campaignId}`, {
       headers: { Authorization: `Bearer ${token}` },
     }),
 
   getCampaignStats: (token, campaignId) =>
-    fetch(`${API_URL}/campaigns/${campaignId}/stats`, {
+    authFetch(`${API_URL}/campaigns/${campaignId}/stats`, {
       headers: { Authorization: `Bearer ${token}` },
     }),
 
   deleteCampaign: (token, campaignId) =>
-    fetch(`${API_URL}/campaigns/${campaignId}`, {
+    authFetch(`${API_URL}/campaigns/${campaignId}`, {
       method: 'DELETE',
       headers: { Authorization: `Bearer ${token}` },
     }),
   
   // AI Chat
   sendMessage: (token, messageData) =>
-    fetch(`${API_URL}/ai/chat`, {
+    authFetch(`${API_URL}/ai/chat`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -123,24 +125,24 @@ export const api = {
   
   // Admin
   getAllUsers: (token) =>
-    fetch(`${API_URL}/admin/users`, {
+    authFetch(`${API_URL}/admin/users`, {
       headers: { 'Authorization': `Bearer ${token}` }
     }),
 
   /** All campaigns (admin picker — not scoped to caller's membership). */
   listAdminCampaigns: (token) =>
-    fetch(`${API_URL}/admin/campaigns`, {
+    authFetch(`${API_URL}/admin/campaigns`, {
       headers: { Authorization: `Bearer ${token}` },
     }),
 
   /** Chronicles a user is in (roster + campaigns they created without a roster row). */
   getAdminUserCampaignMemberships: (token, userId) =>
-    fetch(`${API_URL}/admin/users/${userId}/campaign-memberships`, {
+    authFetch(`${API_URL}/admin/users/${userId}/campaign-memberships`, {
       headers: { Authorization: `Bearer ${token}` },
     }),
   
   updateUser: (token, userId, userData) =>
-    fetch(`${API_URL}/admin/users/${userId}`, {
+    authFetch(`${API_URL}/admin/users/${userId}`, {
       method: 'PUT',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -150,7 +152,7 @@ export const api = {
     }),
   
   resetUserPassword: (token, userId, password) =>
-    fetch(`${API_URL}/admin/users/${userId}/reset-password`, {
+    authFetch(`${API_URL}/admin/users/${userId}/reset-password`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -160,7 +162,7 @@ export const api = {
     }),
   
   banUser: (token, userId, banData) =>
-    fetch(`${API_URL}/admin/users/${userId}/ban`, {
+    authFetch(`${API_URL}/admin/users/${userId}/ban`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -170,14 +172,14 @@ export const api = {
     }),
   
   unbanUser: (token, userId) =>
-    fetch(`${API_URL}/admin/users/${userId}/unban`, {
+    authFetch(`${API_URL}/admin/users/${userId}/unban`, {
       method: 'POST',
       headers: { 'Authorization': `Bearer ${token}` }
     }),
 
   /** Remove user + all their characters; location chat rows kept (reassigned to archive account). */
   deleteUserAccountPreserveChats: (token, userId) =>
-    fetch(`${API_URL}/admin/users/${userId}/delete-account`, {
+    authFetch(`${API_URL}/admin/users/${userId}/delete-account`, {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${token}`,
@@ -187,17 +189,17 @@ export const api = {
     }),
   
   getUserCharacters: (token, userId) =>
-    fetch(`${API_URL}/admin/users/${userId}/characters`, {
+    authFetch(`${API_URL}/admin/users/${userId}/characters`, {
       headers: { 'Authorization': `Bearer ${token}` }
     }),
 
   getUserDebug: (token, userId) =>
-    fetch(`${API_URL}/admin/users/${userId}/debug`, {
+    authFetch(`${API_URL}/admin/users/${userId}/debug`, {
       headers: { Authorization: `Bearer ${token}` },
     }),
 
   patchCharacterPlayStatus: (token, characterId, payload) =>
-    fetch(`${API_URL}/admin/characters/${characterId}/play-status`, {
+    authFetch(`${API_URL}/admin/characters/${characterId}/play-status`, {
       method: 'PATCH',
       headers: {
         Authorization: `Bearer ${token}`,
@@ -207,7 +209,7 @@ export const api = {
     }),
 
   adminUserCampaignMembership: (token, userId, campaignId, action) =>
-    fetch(`${API_URL}/admin/users/${userId}/campaigns/${campaignId}/membership`, {
+    authFetch(`${API_URL}/admin/users/${userId}/campaigns/${campaignId}/membership`, {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${token}`,
@@ -217,13 +219,13 @@ export const api = {
     }),
   
   convertCharacterToNPC: (token, characterId) =>
-    fetch(`${API_URL}/admin/characters/${characterId}/convert-to-npc`, {
+    authFetch(`${API_URL}/admin/characters/${characterId}/convert-to-npc`, {
       method: 'POST',
       headers: { 'Authorization': `Bearer ${token}` }
     }),
   
   killCharacter: (token, characterId, deathType) =>
-    fetch(`${API_URL}/admin/characters/${characterId}/kill`, {
+    authFetch(`${API_URL}/admin/characters/${characterId}/kill`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -233,17 +235,17 @@ export const api = {
     }),
   
   getModerationLog: (token, limit = 50) =>
-    fetch(`${API_URL}/admin/moderation-log?limit=${limit}`, {
+    authFetch(`${API_URL}/admin/moderation-log?limit=${limit}`, {
       headers: { 'Authorization': `Bearer ${token}` }
     }),
 
   listInvites: (token) =>
-    fetch(`${API_URL}/admin/invites`, {
+    authFetch(`${API_URL}/admin/invites`, {
       headers: { 'Authorization': `Bearer ${token}` }
     }),
 
   createInvite: (token, payload) =>
-    fetch(`${API_URL}/admin/invites`, {
+    authFetch(`${API_URL}/admin/invites`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -254,13 +256,13 @@ export const api = {
 
   listDowntimeRequests: (token, status) => {
     const q = status ? `?status=${encodeURIComponent(status)}` : '';
-    return fetch(`${API_URL}/admin/downtime-requests${q}`, {
+    return authFetch(`${API_URL}/admin/downtime-requests${q}`, {
       headers: { Authorization: `Bearer ${token}` },
     });
   },
 
   resolveDowntimeRequest: (token, requestId, payload) =>
-    fetch(`${API_URL}/admin/downtime-requests/${requestId}`, {
+    authFetch(`${API_URL}/admin/downtime-requests/${requestId}`, {
       method: 'PATCH',
       headers: {
         Authorization: `Bearer ${token}`,
@@ -270,12 +272,12 @@ export const api = {
     }),
 
   getAiSettings: (token) =>
-    fetch(`${API_URL}/admin/ai-settings`, {
+    authFetch(`${API_URL}/admin/ai-settings`, {
       headers: { Authorization: `Bearer ${token}` },
     }),
 
   putAiSettings: (token, payload) =>
-    fetch(`${API_URL}/admin/ai-settings`, {
+    authFetch(`${API_URL}/admin/ai-settings`, {
       method: 'PUT',
       headers: {
         Authorization: `Bearer ${token}`,
@@ -285,44 +287,44 @@ export const api = {
     }),
 
   listLmStudioModels: (token) =>
-    fetch(`${API_URL}/admin/lm-studio/models`, {
+    authFetch(`${API_URL}/admin/lm-studio/models`, {
       headers: { Authorization: `Bearer ${token}` },
     }),
 
   // Phase 2: AI roles/providers, write-only API keys (returned masked), classifier, embeddings
   getAiProviders: (token) =>
-    fetch(`${API_URL}/admin/ai-providers`, {
+    authFetch(`${API_URL}/admin/ai-providers`, {
       headers: { Authorization: `Bearer ${token}` },
     }),
 
   putAiProviders: (token, payload) =>
-    fetch(`${API_URL}/admin/ai-providers`, {
+    authFetch(`${API_URL}/admin/ai-providers`, {
       method: 'PUT',
       headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
     }),
 
   testAiProvider: (token, provider, model) =>
-    fetch(`${API_URL}/admin/ai-providers/test`, {
+    authFetch(`${API_URL}/admin/ai-providers/test`, {
       method: 'POST',
       headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({ provider, model }),
     }),
 
   testClassifier: (token, provider, text) =>
-    fetch(`${API_URL}/admin/classifier/test`, {
+    authFetch(`${API_URL}/admin/classifier/test`, {
       method: 'POST',
       headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({ provider, text }),
     }),
 
   getEmbeddings: (token) =>
-    fetch(`${API_URL}/admin/embeddings`, {
+    authFetch(`${API_URL}/admin/embeddings`, {
       headers: { Authorization: `Bearer ${token}` },
     }),
 
   reembed: (token, force = false) =>
-    fetch(`${API_URL}/admin/embeddings/reembed`, {
+    authFetch(`${API_URL}/admin/embeddings/reembed`, {
       method: 'POST',
       headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({ force }),

@@ -44,7 +44,12 @@
     "noChars": "You need a character first.",
     "mine": "Your requests",
     "none": "None yet.",
-    "staff": "Staff: {{reason}}"
+    "staff": "Staff: {{reason}}",
+    "status": {
+      "approved": "Approved",
+      "rejected": "Rejected",
+      "pending": "Pending"
+    }
   },
   "title": "Profile & characters",
   "sections": "Profile sections",
@@ -52,5 +57,25 @@
     "characters": "Characters",
     "account": "Account",
     "downtime": "Downtime"
+  },
+  "password": {
+    "title": "Change password",
+    "body": "After the change you stay signed in on this device; every other device and browser is signed out and needs the new password.",
+    "current": "Current password",
+    "new": "New password",
+    "again": "New password again",
+    "busy": "Changing password",
+    "submit": "Change password",
+    "changed": "Password changed.",
+    "changedBody": "You stay signed in here; every other device has been signed out."
+  },
+  "sessions": {
+    "title": "Sessions",
+    "body": "Lost a device or signed in on a shared computer? Sign out everywhere ends every session of your account, this one included."
+  },
+  "role": {
+    "admin": "Admin",
+    "helper": "Helper",
+    "player": "Player"
   }
 }

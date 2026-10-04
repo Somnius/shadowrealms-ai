@@ -4,12 +4,20 @@ import { Button, Card, CandleGlow, FogLayer, Glyph, Grain, Input, SigilReveal, T
 import { useAuth } from '../../app/AuthContext';
 import { afterLoginPath } from '../../app/guards';
 import Footer from '../../components/Footer';
+import PasswordRules, { passwordProblem } from './PasswordRules';
 import LanguageSwitch from '../../app/LanguageSwitch';
 import { t } from '../../i18n';
 import './auth.css';
 
+const SESSION_NOTICE = {
+  expired: () => t('auth:session.expired', 'Your session has expired. Sign in again to continue where you were.'),
+  revoked: () => t('auth:session.revoked', 'You were signed out, for example because the password changed or someone chose “Sign out everywhere”. Sign in again.'),
+  invalid: () => t('auth:session.invalid', 'Your sign-in is no longer valid. Sign in again.'),
+  elsewhere: () => t('auth:session.elsewhere', 'You signed out in another tab.'),
+};
+
 function LoginForm({ onDone }) {
-  const { login } = useAuth();
+  const { login, sessionNotice } = useAuth();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const submit = async (e) => {
@@ -24,6 +32,11 @@ function LoginForm({ onDone }) {
   };
   return (
     <form onSubmit={submit} className="sr-auth__form" noValidate={false}>
+      {sessionNotice && SESSION_NOTICE[sessionNotice] ? (
+        <p className="sr-auth__notice" role="status">
+          <Glyph name="hourglass" size={16} /> {SESSION_NOTICE[sessionNotice]()}
+        </p>
+      ) : null}
       <Input name="username" label={t('auth:username', 'Username')} autoComplete="username" required autoFocus />
       <Input name="password" type="password" label={t('auth:password', 'Password')} autoComplete="current-password" required />
       {error ? (
@@ -43,11 +56,23 @@ function RegisterForm({ onDone }) {
   const { toast } = useToast();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  const [pwError, setPwError] = useState('');
+  const [pw, setPw] = useState('');
+  const [names, setNames] = useState({ username: '', email: '' });
   const submit = async (e) => {
     e.preventDefault();
     const fd = new FormData(e.currentTarget);
-    setBusy(true);
+    const local = passwordProblem(String(fd.get('password') || ''), {
+      username: String(fd.get('username') || ''),
+      email: String(fd.get('email') || ''),
+    });
     setError('');
+    if (local) {
+      setPwError(local);
+      return;
+    }
+    setPwError('');
+    setBusy(true);
     const r = await register({
       username: String(fd.get('username') || '').trim(),
       email: String(fd.get('email') || '').trim(),
@@ -58,13 +83,31 @@ function RegisterForm({ onDone }) {
     if (r.ok) {
       toast({ tone: 'ok', title: t('auth:register.done', 'Account created. Welcome to the shadows.') });
       onDone();
-    } else setError(r.error);
+    } else if (r.code && String(r.code).startsWith('PASSWORD_')) setPwError(r.error);
+    else setError(r.error);
+  };
+  const onNames = (e) => {
+    const { name, value } = e.target;
+    if (name === 'username' || name === 'email') setNames((n) => ({ ...n, [name]: value }));
   };
   return (
-    <form onSubmit={submit} className="sr-auth__form">
+    <form onSubmit={submit} className="sr-auth__form" onChange={onNames}>
       <Input name="username" label={t('auth:username', 'Username')} autoComplete="username" required />
       <Input name="email" type="email" label={t('auth:email', 'Email')} autoComplete="email" required />
-      <Input name="password" type="password" label={t('auth:password', 'Password')} autoComplete="new-password" required />
+      <Input
+        name="password"
+        type="password"
+        label={t('auth:password', 'Password')}
+        autoComplete="new-password"
+        required
+        value={pw}
+        onChange={(e) => {
+          setPw(e.target.value);
+          if (pwError) setPwError('');
+        }}
+        error={pwError || undefined}
+        hint={<PasswordRules password={pw} username={names.username} email={names.email} />}
+      />
       <Input
         name="invite_code"
         label={t('auth:invite', 'Invite code')}

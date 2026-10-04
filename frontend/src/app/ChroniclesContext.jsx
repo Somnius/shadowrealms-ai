@@ -1,6 +1,6 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { useAuth } from './AuthContext';
-import { apiFetch } from './http';
+import { apiFetch, getCurrentToken } from './http';
 
 const ChroniclesContext = createContext(null);
 
@@ -11,25 +11,26 @@ const ChroniclesContext = createContext(null);
  */
 export function ChroniclesProvider({ children }) {
   const { token } = useAuth();
+  const authed = !!token;
   const [chronicles, setChronicles] = useState([]);
   const [loaded, setLoaded] = useState(false);
 
   const reload = useCallback(async () => {
-    if (!token) return [];
-    const r = await apiFetch(token, '/campaigns/');
+    if (!authed) return [];
+    const r = await apiFetch(getCurrentToken(), '/campaigns/');
     const list = r.ok && Array.isArray(r.data) ? r.data : [];
     if (r.ok) setChronicles(list);
     setLoaded(true);
     return list;
-  }, [token]);
+  }, [authed]);
 
   useEffect(() => {
-    if (token) reload();
+    if (authed) reload();
     else {
       setChronicles([]);
       setLoaded(false);
     }
-  }, [token, reload]);
+  }, [authed, reload]);
 
   const byId = useCallback((id) => chronicles.find((c) => String(c.id) === String(id)) || null, [chronicles]);
 

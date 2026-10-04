@@ -5,10 +5,12 @@ import { useChronicles } from './ChroniclesContext';
 import { lineGlyph, lineOf } from './hooks';
 import { t } from '../i18n';
 
-function initials(name) {
+export function initials(name) {
   const parts = String(name || '').trim().split(/\s+/).filter(Boolean);
   if (!parts.length) return '?';
-  return (parts.length > 1 ? parts[0][0] + parts[1][0] : parts[0].slice(0, 2)).toLocaleUpperCase();
+  const raw = parts.length > 1 ? [...parts[0]][0] + [...parts[1]][0] : [...parts[0]].slice(0, 2).join('');
+  // Greek capitals drop the tonos ("ΥΕ", not "ΥΈ"): strip combining marks before upper-casing.
+  return raw.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleUpperCase();
 }
 
 function RailItem({ to, label, active, children, expanded, onNavigate }) {

@@ -14,17 +14,43 @@ export function parseStorytellerPool(input) {
 }
 
 /**
- * Dice actions of the play view (phase 1 behaviour, moved out of SimpleApp):
- * roll (POST /campaigns/<c>/roll), V5 Willpower reroll, V5 Rouse check. Each posts the dice marker
- * (role assistant, dice_animation:<id>) and the final line (role user, dice_roll:<id>) to the room.
+ * Dice actions of the play view: roll (POST /campaigns/<c>/roll), V5 Willpower reroll, V5 Rouse check.
+ *
+ * With location_id the server saves the dice marker (dice_animation[_hidden]:<id>) and the result
+ * line (dice_roll[_hidden]:<id>) itself and answers server_posted: true, message_ids, messages, so
+ * nobody can post a result that wasn't rolled. Then we only show the saved rows (or refetch); the
+ * marker row starts the overlay through useDiceOverlay. Older backends (no server_posted) still get
+ * the two rows posted from here (postRollToRoom).
  */
-export function useDiceActions({ api, campaign, location, speakAs, character, onCharacterHunger, startFromMarker, appendMessages, toast }) {
+export function useDiceActions({
+  api,
+  campaign,
+  location,
+  speakAs,
+  character,
+  onCharacterHunger,
+  startFromMarker,
+  appendMessages,
+  fetchRoom,
+  toast,
+}) {
   const [lastV5Roll, setLastV5Roll] = useState(null);
   const [rolling, setRolling] = useState(false);
   const [rerolling, setRerolling] = useState(false);
   const [rousing, setRousing] = useState(false);
 
   const err = useCallback((title) => toast({ tone: 'danger', title }), [toast]);
+
+  /** Server already saved the chat rows: show them now if they're for the open room. */
+  const showServerRows = useCallback(
+    (data, locationId) => {
+      if (String(locationId) !== String(location?.id)) return;
+      const rows = Array.isArray(data.messages) ? data.messages.filter((m) => m && m.id != null) : [];
+      if (rows.length) appendMessages(rows);
+      else if (fetchRoom) fetchRoom();
+    },
+    [location, appendMessages, fetchRoom]
+  );
 
   const postRollToRoom = useCallback(
     async (rollResult, chatBody, { hidden = false, locationId, speakAs: sa, characterId } = {}) => {
@@ -107,8 +133,11 @@ export function useDiceActions({ api, campaign, location, speakAs, character, on
             ...(v5 ? { difficulty: d, hunger: form.hunger } : { difficulty: d, specialty: !!form.specialty, willpower: !!form.willpower }),
             speak_as: speakAs,
             ...(asChar ? { character_id: character.id } : {}),
-            action_description: String(form.reason || '').trim() || t('dice:defaultReason', 'Dice roll'),
+            // No reason typed: leave it out and the server labels the roll (in English, the same for
+            // every reader), instead of saving it in this player's interface language.
+            ...(String(form.reason || '').trim() ? { action_description: String(form.reason).trim() } : {}),
             location_id: location.id,
+            hidden: !!form.hidden,
           },
         });
         if (!r.ok) {
@@ -116,13 +145,16 @@ export function useDiceActions({ api, campaign, location, speakAs, character, on
           return false;
         }
         const result = r.data.roll_result || {};
-        const ok = await postRollToRoom(result, r.data.chat_message || '', {
-          hidden: !!form.hidden,
-          locationId: location.id,
-          speakAs,
-          characterId: asChar ? character.id : undefined,
-        });
-        if (!ok) return false;
+        if (r.data.server_posted) showServerRows(r.data, location.id);
+        else {
+          const ok = await postRollToRoom(result, r.data.chat_message || '', {
+            hidden: !!form.hidden,
+            locationId: location.id,
+            speakAs,
+            characterId: asChar ? character.id : undefined,
+          });
+          if (!ok) return false;
+        }
         if (editionOf(result) === V5 && result.can_reroll) {
           setLastV5Roll({
             ...result,
@@ -140,7 +172,7 @@ export function useDiceActions({ api, campaign, location, speakAs, character, on
         setRolling(false);
       }
     },
-    [api, campaign, location, speakAs, character, postRollToRoom, err, toast]
+    [api, campaign, location, speakAs, character, postRollToRoom, showServerRows, err, toast]
   );
 
   const reroll = useCallback(
@@ -155,19 +187,23 @@ export function useDiceActions({ api, campaign, location, speakAs, character, on
       try {
         const r = await api(`/campaigns/${last.campaignId}/roll/${last.roll_id}/reroll`, {
           method: 'POST',
-          body: { indices, location_id: last.locationId },
+          body: { indices, location_id: last.locationId, hidden: !!last.hidden, speak_as: last.speakAs },
         });
         if (!r.ok) {
           err(r.data.error || t('dice:error.rerollFailed', 'Reroll failed.'));
           if (r.status === 409) setLastV5Roll(null);
           return;
         }
-        const ok = await postRollToRoom(r.data.roll_result || {}, r.data.chat_message || '', {
-          hidden: last.hidden,
-          locationId: last.locationId,
-          speakAs: last.speakAs,
-          characterId: last.characterId,
-        });
+        let ok = true;
+        if (r.data.server_posted) showServerRows(r.data, last.locationId);
+        else {
+          ok = await postRollToRoom(r.data.roll_result || {}, r.data.chat_message || '', {
+            hidden: last.hidden,
+            locationId: last.locationId,
+            speakAs: last.speakAs,
+            characterId: last.characterId,
+          });
+        }
         if (ok) {
           toast({
             tone: 'ok',
@@ -182,7 +218,7 @@ export function useDiceActions({ api, campaign, location, speakAs, character, on
         setRerolling(false);
       }
     },
-    [api, campaign, location, lastV5Roll, postRollToRoom, err, toast]
+    [api, campaign, location, lastV5Roll, postRollToRoom, showServerRows, err, toast]
   );
 
   /** V5 Rouse check; hunger = value typed in the dialog (used when not speaking as the character). */
@@ -194,7 +230,7 @@ export function useDiceActions({ api, campaign, location, speakAs, character, on
       try {
         const r = await api(`/campaigns/${campaign.id}/rouse`, {
           method: 'POST',
-          body: { location_id: location.id, ...(asChar ? { character_id: character.id } : { hunger }) },
+          body: { location_id: location.id, speak_as: speakAs, ...(asChar ? { character_id: character.id } : { hunger }) },
         });
         if (!r.ok) {
           err(r.data.error || t('dice:error.rouseFailed', 'Rouse check failed.'));
@@ -203,17 +239,20 @@ export function useDiceActions({ api, campaign, location, speakAs, character, on
         const d = r.data;
         const after = Number(d.hunger_after);
         if (asChar && Number.isFinite(after) && onCharacterHunger) onCharacterHunger(after);
-        const msg = await api(`/campaigns/${campaign.id}/locations/${location.id}`, {
-          method: 'POST',
-          body: {
-            content: d.chat_message || `Rouse check: ${d.die}`,
-            message_type: 'action',
-            role: 'user',
-            speak_as: speakAs,
-            ...(asChar ? { character_id: character.id } : {}),
-          },
-        });
-        if (msg.ok && msg.data.data) appendMessages([msg.data.data]);
+        if (d.server_posted) showServerRows(d, location.id);
+        else {
+          const msg = await api(`/campaigns/${campaign.id}/locations/${location.id}`, {
+            method: 'POST',
+            body: {
+              content: d.chat_message || `Rouse check: ${d.die}`,
+              message_type: 'action',
+              role: 'user',
+              speak_as: speakAs,
+              ...(asChar ? { character_id: character.id } : {}),
+            },
+          });
+          if (msg.ok && msg.data.data) appendMessages([msg.data.data]);
+        }
         toast({
           tone: d.success ? 'ok' : 'blood',
           title: d.success
@@ -225,7 +264,7 @@ export function useDiceActions({ api, campaign, location, speakAs, character, on
         setRousing(false);
       }
     },
-    [api, campaign, location, speakAs, character, onCharacterHunger, appendMessages, err, toast]
+    [api, campaign, location, speakAs, character, onCharacterHunger, appendMessages, showServerRows, err, toast]
   );
 
   return { roll, reroll, rouse, lastV5Roll, setLastV5Roll, rolling, rerolling, rousing };

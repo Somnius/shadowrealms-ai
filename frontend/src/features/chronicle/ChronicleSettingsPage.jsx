@@ -7,7 +7,7 @@ import { useApi, useAuth } from '../../app/AuthContext';
 import { useChronicles } from '../../app/ChroniclesContext';
 import { useSheet } from '../../app/SheetContext';
 import { errorText } from '../../app/http';
-import { canUseStaffVoice, isStoryteller, lineGlyph, lineOf } from '../../app/hooks';
+import { canUseStaffVoice, gameSystemTitle, isStoryteller, lineGlyph, lineOf } from '../../app/hooks';
 import { editionLabel } from '../../rules/rulesEdition';
 import LocationManager from './LocationManager';
 import { t } from '../../i18n';
@@ -43,6 +43,8 @@ export default function ChronicleSettingsPage() {
   const [leaveOpen, setLeaveOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleteText, setDeleteText] = useState('');
+  // Typing the chronicle's own name (any case, extra spaces ignored) confirms the delete.
+  const norm = (v) => String(v || '').trim().replace(/\s+/g, ' ').toLocaleLowerCase();
   const [addMemberId, setAddMemberId] = useState('');
   const [pcUser, setPcUser] = useState('');
   const [pcChar, setPcChar] = useState('');
@@ -121,8 +123,10 @@ export default function ChronicleSettingsPage() {
     navigate('/chronicles');
   };
 
+  const deleteMatches = !!campaign && norm(deleteText) !== '' && norm(deleteText) === norm(campaign.name);
+
   const destroy = async () => {
-    if (deleteText !== 'CONFIRM') return;
+    if (!deleteMatches) return;
     setSaving(true);
     const r = await api(`/campaigns/${id}`, { method: 'DELETE' });
     setSaving(false);
@@ -138,11 +142,21 @@ export default function ChronicleSettingsPage() {
 
   const addMember = async (e) => {
     e.preventDefault();
-    const uid = parseInt(addMemberId, 10);
-    if (!Number.isFinite(uid)) return;
-    const r = await api(`/campaigns/${id}/members`, { method: 'POST', body: { user_id: uid } });
+    const raw = String(addMemberId || '').trim();
+    if (!raw) return;
+    // A number is a user ID; anything else is a username (the server looks it up).
+    const body = /^\d+$/.test(raw) ? { user_id: parseInt(raw, 10) } : { username: raw };
+    const r = await api(`/campaigns/${id}/members`, { method: 'POST', body });
     if (!r.ok) {
-      toast({ tone: 'danger', title: errorText(r.data, t('chronicle:members.addFailed', 'Could not add the member')) });
+      toast({
+        tone: 'danger',
+        title:
+          r.status === 404
+            ? t('chronicle:members.notFound', 'No account called “{{name}}”.', { name: raw })
+            : r.status === 403
+              ? t('chronicle:members.forbidden', 'Only the Storyteller or staff can add members.')
+              : t('chronicle:members.addFailed', 'Could not add the member'),
+      });
       return;
     }
     toast({ tone: 'ok', title: t('chronicle:members.added', 'Member added.') });
@@ -223,7 +237,7 @@ export default function ChronicleSettingsPage() {
             )}
             <div className="sr-row">
               <Badge tone="neutral" icon={lineGlyph(campaign.game_system)}>
-                {campaign.game_system}
+                <span lang="en">{gameSystemTitle(campaign.game_system)}</span>
               </Badge>
               <Badge edition={editionLabel(campaign)} />
               {isST ? <Badge tone="gold" icon="crown-thorns">{t('chronicle:youAreST', 'You are the Storyteller')}</Badge> : null}
@@ -328,9 +342,9 @@ export default function ChronicleSettingsPage() {
               <div className="sr-stack sr-chronicle__sttools">
                 <form className="sr-row sr-row--end" onSubmit={addMember}>
                   <Input
-                    type="number"
-                    min={1}
-                    label={t('chronicle:members.addLabel', 'Add a member by user ID')}
+                    label={t('chronicle:members.addByName', 'Add a member (username)')}
+                    autoComplete="off"
+                    spellCheck={false}
                     value={addMemberId}
                     onChange={(e) => setAddMemberId(e.target.value)}
                     fieldClassName="sr-field--short"
@@ -358,17 +372,10 @@ export default function ChronicleSettingsPage() {
                       placeholder={t('chronicle:members.pickCharacter', 'Choose a character')}
                       options={pcOptions.map((c) => ({ value: String(c.id), label: c.name }))}
                     />
-                  ) : (
-                    <Input
-                      type="number"
-                      min={1}
-                      label={t('chronicle:members.pcCharacterId', 'Character ID')}
-                      value={pcChar}
-                      onChange={(e) => setPcChar(e.target.value)}
-                      fieldClassName="sr-field--short"
-                    />
-                  )}
-                  <Button type="submit" variant="secondary">
+                  ) : pcUser ? (
+                    <p className="sr-muted sr-small">{t('chronicle:members.pcNone', 'This player has no character in this chronicle yet.')}</p>
+                  ) : null}
+                  <Button type="submit" variant="secondary" disabled={!pcUser || !pcChar}>
                     {t('chronicle:members.pcApply', 'Set playing character')}
                   </Button>
                 </form>
@@ -455,14 +462,14 @@ export default function ChronicleSettingsPage() {
             <Button variant="ghost" onClick={() => setDeleteOpen(false)}>
               {t('common:cancel', 'Cancel')}
             </Button>
-            <Button variant="danger" icon="trash" disabled={deleteText !== 'CONFIRM'} loading={saving} onClick={destroy}>
+            <Button variant="danger" icon="trash" disabled={!deleteMatches} loading={saving} onClick={destroy}>
               {t('chronicle:delete.confirm', 'Delete forever')}
             </Button>
           </>
         }
       >
         <Input
-          label={t('chronicle:delete.type', 'Type CONFIRM to proceed')}
+          label={t('chronicle:delete.typeName', 'Type the chronicle’s name, {{name}}, to confirm', { name: campaign?.name || '' })}
           value={deleteText}
           onChange={(e) => setDeleteText(e.target.value)}
           autoComplete="off"

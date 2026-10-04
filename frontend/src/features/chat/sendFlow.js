@@ -99,7 +99,7 @@ export async function sendChatMessage(ctx, rawText, opts = {}) {
   const messageType = opts.messageType || roomType;
   const roomPath = `/campaigns/${campaign.id}/locations/${location.id}`;
 
-  const temp = optimisticMessage({ text, user, campaign, location, speakAs, character, messageType });
+  const temp = optimisticMessage({ text, user, campaign, location, speakAs: slashMatch ? 'staff' : speakAs, character, messageType });
   cb.onOptimistic(temp);
 
   const save = await api(roomPath, {
@@ -108,8 +108,9 @@ export async function sendChatMessage(ctx, rawText, opts = {}) {
       content: text,
       message_type: messageType,
       role: 'user',
-      speak_as: speakAs,
-      ...(speakAs === 'character' && character?.id ? { character_id: character.id } : {}),
+      // /ai commands are staff tools, never the character's in-character line.
+      speak_as: slashMatch ? 'staff' : speakAs,
+      ...(!slashMatch && speakAs === 'character' && character?.id ? { character_id: character.id } : {}),
       ...(slashMatch ? { ai_message_kind: 'slash_user' } : chatMatch ? { ai_message_kind: 'chat_user' } : {}),
     },
   });
@@ -194,16 +195,31 @@ export async function sendChatMessage(ctx, rawText, opts = {}) {
           assistant_direct: true,
         }
       : { message: text, campaign_id: campaign.id, location: location.id, location_type: location.type };
-    const ai = await api('/ai/chat', { method: 'POST', body });
-    if (!ai.ok) {
-      cb.onError(ai.data.error || t('chat:error.aiFailed', 'The Storyteller could not answer.'));
-      return true;
-    }
-    const raw = ai.data.response != null ? ai.data.response : ai.data.message;
-    const reply = raw != null && String(raw).trim() !== '' ? String(raw).trim() : null;
-    if (!ai.data.ooc_no_reply && reply) {
-      await postAssistant(reply, chatMatch ? 'chat_assistant' : null);
-    }
+    // Ask the Storyteller; on failure the room shows one inline notice with a Retry (the player's
+    // message is already saved, so a retry only asks again).
+    const askAi = async () => {
+      const ai = await api('/ai/chat', { method: 'POST', body });
+      if (!ai.ok) {
+        const reason = ai.status === 503 || ai.status === 429 || ai.status === 0 ? ai.data.error : null;
+        const retry = async () => {
+          cb.onAiPending(true);
+          try {
+            await askAi();
+          } finally {
+            cb.onAiPending(false);
+          }
+        };
+        if (cb.onAiFailed) cb.onAiFailed({ reason: reason || null, retry });
+        else cb.onError(ai.data.error || t('chat:error.aiFailed', 'The Storyteller could not answer.'));
+        return;
+      }
+      const raw = ai.data.response != null ? ai.data.response : ai.data.message;
+      const reply = raw != null && String(raw).trim() !== '' ? String(raw).trim() : null;
+      if (!ai.data.ooc_no_reply && reply) {
+        await postAssistant(reply, chatMatch ? 'chat_assistant' : null);
+      }
+    };
+    await askAi();
     return true;
   } finally {
     cb.onAiPending(false);

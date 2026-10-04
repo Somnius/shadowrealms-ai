@@ -1,5 +1,5 @@
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useToast } from '../../design';
 import CharacterCreationWizard from '../../components/CharacterCreationWizard';
 import { PageBody, TopBar } from '../../app/AppShell';
@@ -14,6 +14,8 @@ export default function CharacterCreatePage() {
   const { token, refreshUser } = useAuth();
   const { chronicles, reload } = useChronicles();
   const { toast } = useToast();
+  const [params] = useSearchParams();
+  const chronicleId = params.get('chronicle');
   return (
     <>
       <TopBar title={t('profile:create.title', 'New character')} icon="quill" />
@@ -30,11 +32,14 @@ export default function CharacterCreatePage() {
         <CharacterCreationWizard
           token={token}
           campaigns={chronicles}
-          onCancel={() => navigate('/profile/characters')}
-          onDone={async () => {
+          initialCampaignId={chronicleId}
+          onCancel={() => navigate(chronicleId ? `/c/${chronicleId}` : '/profile/characters')}
+          onDone={async (body, campaignId) => {
             await refreshUser();
             await reload();
-            navigate('/profile/characters');
+            // Straight into the chronicle the character belongs to (that is where you play it).
+            const cid = (body && body.character && body.character.campaign_id) || campaignId;
+            navigate(cid ? `/c/${cid}` : '/profile/characters');
           }}
           showError={(msg) => toast({ tone: 'danger', title: String(msg) })}
           showSuccess={(msg) => toast({ tone: 'ok', title: String(msg) })}

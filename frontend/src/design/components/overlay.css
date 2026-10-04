@@ -150,7 +150,8 @@
   position: fixed;
   z-index: var(--sr-z-toast);
   right: var(--sr-space-4);
-  bottom: calc(var(--sr-space-4) + env(safe-area-inset-bottom));
+  /* Top right, under the 56px top bar: never over the composer's send / dice buttons. */
+  top: calc(64px + env(safe-area-inset-top));
   width: min(380px, calc(100vw - 32px));
   pointer-events: none;
 }

@@ -1,4 +1,5 @@
 import React, { useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { DRAFT_PREFIX, readSession, writeSession } from '../../app/hooks';
 import { Avatar, Glyph, IconButton } from '../../design';
 import MenuButton from '../../app/Menu';
 import { completeSlash, parseLocalCommand, slashSuggestions } from './slashCommands';
@@ -33,6 +34,7 @@ function SpeakingAs({ voices, value, onChange }) {
       icon: v.glyph || v.sigil,
       label: v.label,
       checked: v.id === value,
+      radio: true, // one voice at a time: a radio group, not checkboxes
       keepFocus: true,
       onSelect: () => onChange(v.id),
     })),
@@ -80,23 +82,34 @@ export default function Composer({
   draftKey,
   inputRef,
 }) {
-  const [text, setText] = useState('');
+  // The unsent draft lives in sessionStorage per user and room, so it survives switching rooms and
+  // the remount that a language switch causes (App re-keys the tree on language change).
+  const storeKey = draftKey ? `${DRAFT_PREFIX}${draftKey}` : null;
+  const [text, setTextState] = useState(() => (storeKey ? readSession(storeKey, '') : ''));
   const [active, setActive] = useState(0);
   const [dismissed, setDismissed] = useState(false);
   const ownRef = useRef(null);
   const ref = inputRef || ownRef;
   const listId = useId();
-  const drafts = useRef(new Map());
+  const keyRef = useRef(storeKey);
+  keyRef.current = storeKey;
 
-  // Keep an unsent draft per room while switching rooms.
-  const prevKey = useRef(draftKey);
+  const setText = (value) => {
+    setTextState((cur) => {
+      const next = typeof value === 'function' ? value(cur) : value;
+      if (keyRef.current) writeSession(keyRef.current, next);
+      return next;
+    });
+  };
+
+  // Switching rooms: show that room's draft.
+  const prevKey = useRef(storeKey);
   useEffect(() => {
-    if (prevKey.current !== draftKey) {
-      drafts.current.set(prevKey.current, text);
-      setText(drafts.current.get(draftKey) || '');
-      prevKey.current = draftKey;
+    if (prevKey.current !== storeKey) {
+      setTextState(storeKey ? readSession(storeKey, '') : '');
+      prevKey.current = storeKey;
     }
-  }, [draftKey]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [storeKey]);
 
   const suggestions = useMemo(() => (dismissed ? [] : slashSuggestions(text, { isAdmin })), [text, isAdmin, dismissed]);
   const open = suggestions.length > 0;

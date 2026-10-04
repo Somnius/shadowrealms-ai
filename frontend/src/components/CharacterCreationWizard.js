@@ -49,6 +49,7 @@ import { BACKGROUND_DOTS, DISCIPLINE_DOTS } from '../rules/classicRules';
 import { t } from '../i18n';
 import { Term } from '../i18n/glossary';
 import { translateSheetError } from '../characterSheet/i18nErrors';
+import { authFetch } from '../app/http';
 
 const API_URL = '/api';
 
@@ -95,6 +96,7 @@ export default function CharacterCreationWizard({
   onCancel,
   showError,
   showSuccess,
+  initialCampaignId,
 }) {
   const eligible = useMemo(
     () =>
@@ -105,7 +107,9 @@ export default function CharacterCreationWizard({
   );
 
   const [campaignIdState, setCampaignId] = useState(
-    eligible[0]?.id != null ? String(eligible[0].id) : ''
+    initialCampaignId != null && initialCampaignId !== ''
+      ? String(initialCampaignId)
+      : eligible[0]?.id != null ? String(eligible[0].id) : ''
   );
   // Campaigns can arrive after mount: fall back to the first eligible one so the state
   // always matches what the <select> shows.
@@ -386,7 +390,7 @@ export default function CharacterCreationWizard({
 
     setSubmitting(true);
     try {
-      const res = await fetch(`${API_URL}/characters/`, {
+      const res = await authFetch(`${API_URL}/characters/`, {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${token}`,
@@ -410,8 +414,8 @@ export default function CharacterCreationWizard({
         showError?.(body.error || t('wizard:error.createFailed', 'Could not create character.'));
         return;
       }
-      showSuccess?.(t('wizard:created', 'Character forged. Select them in Player Profile if needed.'));
-      onDone?.(body);
+      showSuccess?.(t('wizard:created', 'Character forged. Enter the chronicle to play.'));
+      onDone?.(body, cidNum);
     } catch (e) {
       showError?.(t('wizard:error.network', 'Network error while creating character.'));
     } finally {

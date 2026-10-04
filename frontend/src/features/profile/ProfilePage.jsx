@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { Avatar, Badge, Button, Card, EmptyState, Glyph, Panel, Select, Tabs, Textarea, useToast } from '../../design';
+import { Avatar, Badge, Button, Card, EmptyState, Glyph, Input, Panel, Select, Tabs, Textarea, useToast } from '../../design';
 import { PageBody, TopBar } from '../../app/AppShell';
 import ButtonLink from '../../app/ButtonLink';
 import { useApi, useAuth } from '../../app/AuthContext';
@@ -9,9 +9,25 @@ import { errorText } from '../../app/http';
 import { getTimezoneSelectOptions } from '../../utils/timezones';
 import { formatDateTimeInZone } from '../../utils/userTimeFormat';
 import { t } from '../../i18n';
+import PasswordRules, { passwordProblem } from '../auth/PasswordRules';
 import './profile.css';
 
 const MAX_IMAGE = 360000;
+
+/** Account role in the interface language. */
+export function roleLabel(role) {
+  if (role === 'admin') return t('profile:role.admin', 'Admin');
+  if (role === 'helper') return t('profile:role.helper', 'Helper');
+  if (role === 'player') return t('profile:role.player', 'Player');
+  return role || '';
+}
+
+function downtimeStatusLabel(status) {
+  if (status === 'approved') return t('profile:downtime.status.approved', 'Approved');
+  if (status === 'rejected') return t('profile:downtime.status.rejected', 'Rejected');
+  if (status === 'pending') return t('profile:downtime.status.pending', 'Pending');
+  return status || '';
+}
 
 export const ownCharacters = (list, user) => (list || []).filter((c) => user && String(c.user_id) === String(user.id));
 
@@ -54,6 +70,129 @@ function ImagePicker({ label, onPick, toast }) {
   );
 }
 
+/** Change password: the server ends every other session and keeps this one signed in. */
+function ChangePasswordPanel() {
+  const { user, changePassword } = useAuth();
+  const { toast } = useToast();
+  const [current, setCurrent] = useState('');
+  const [next, setNext] = useState('');
+  const [again, setAgain] = useState('');
+  const [errors, setErrors] = useState({});
+  const [busy, setBusy] = useState(false);
+
+  const submit = async (e) => {
+    e.preventDefault();
+    const errs = {};
+    if (!current) errs.current = t('auth:pw.currentRequired', 'Enter your current password.');
+    const problem = passwordProblem(next, { username: user?.username, email: user?.email });
+    if (problem) errs.next = problem;
+    else if (next === current) errs.next = t('auth:pw.unchanged', 'The new password must differ from the current one.');
+    if (!errs.next && again !== next) errs.again = t('auth:pw.mismatch', 'The two new passwords do not match.');
+    setErrors(errs);
+    if (Object.keys(errs).length) return;
+    setBusy(true);
+    const r = await changePassword(current, next);
+    setBusy(false);
+    if (!r.ok) {
+      if (r.code === 'INVALID_CREDENTIALS') setErrors({ current: r.error });
+      else if (r.code && String(r.code).startsWith('PASSWORD_')) setErrors({ next: r.error });
+      else toast({ tone: 'danger', title: r.error });
+      return;
+    }
+    setCurrent('');
+    setNext('');
+    setAgain('');
+    setErrors({});
+    toast({
+      tone: 'ok',
+      title: t('profile:password.changed', 'Password changed.'),
+      body: t('profile:password.changedBody', 'You stay signed in here; every other device has been signed out.'),
+    });
+  };
+
+  return (
+    <Panel title={t('profile:password.title', 'Change password')} icon="key">
+      <form className="sr-form" onSubmit={submit} noValidate>
+        <p className="sr-muted">
+          {t('profile:password.body', 'After the change you stay signed in on this device; every other device and browser is signed out and needs the new password.')}
+        </p>
+        {/* Lets password managers tie the new password to this account. */}
+        <input type="text" name="username" autoComplete="username" value={user?.username || ''} readOnly hidden />
+        <Input
+          type="password"
+          name="current_password"
+          label={t('profile:password.current', 'Current password')}
+          autoComplete="current-password"
+          required
+          value={current}
+          onChange={(e) => setCurrent(e.target.value)}
+          error={errors.current}
+        />
+        <Input
+          type="password"
+          name="new_password"
+          label={t('profile:password.new', 'New password')}
+          autoComplete="new-password"
+          required
+          value={next}
+          onChange={(e) => setNext(e.target.value)}
+          error={errors.next}
+          hint={<PasswordRules password={next} username={user?.username} email={user?.email} />}
+        />
+        <Input
+          type="password"
+          name="new_password_again"
+          label={t('profile:password.again', 'New password again')}
+          autoComplete="new-password"
+          required
+          value={again}
+          onChange={(e) => setAgain(e.target.value)}
+          error={errors.again}
+        />
+        <div className="sr-form__actions">
+          <Button type="submit" variant="primary" loading={busy} loadingLabel={t('profile:password.busy', 'Changing password')}>
+            {t('profile:password.submit', 'Change password')}
+          </Button>
+        </div>
+      </form>
+    </Panel>
+  );
+}
+
+/** Sign out everywhere (POST /auth/logout-all). */
+function SessionsPanel() {
+  const { logout } = useAuth();
+  const { toast } = useToast();
+  const navigate = useNavigate();
+  const [busy, setBusy] = useState(false);
+  return (
+    <Panel title={t('profile:sessions.title', 'Sessions')} icon="lock-chain">
+      <p className="sr-muted">
+        {t('profile:sessions.body', 'Lost a device or signed in on a shared computer? Sign out everywhere ends every session of your account, this one included.')}
+      </p>
+      <div className="sr-form__actions">
+        <Button
+          variant="danger"
+          icon="logout"
+          loading={busy}
+          onClick={async () => {
+            setBusy(true);
+            const r = await logout({ everywhere: true });
+            setBusy(false);
+            if (r && r.ok === false) {
+              toast({ tone: 'danger', title: t('shell:menu.logoutAllFailed', 'Could not sign out the other devices. Try again in a moment.') });
+              return;
+            }
+            navigate('/login');
+          }}
+        >
+          {t('shell:menu.logoutAll', 'Sign out everywhere')}
+        </Button>
+      </div>
+    </Panel>
+  );
+}
+
 function AccountSection() {
   const api = useApi();
   const { user, setUser } = useAuth();
@@ -84,7 +223,7 @@ function AccountSection() {
           <dd>{user?.email}</dd>
           <dt>{t('profile:account.role', 'Role')}</dt>
           <dd>
-            <Badge tone={user?.role === 'admin' ? 'gold' : 'neutral'}>{user?.role}</Badge>
+            <Badge tone={user?.role === 'admin' ? 'gold' : 'neutral'}>{roleLabel(user?.role)}</Badge>
           </dd>
         </dl>
       </Panel>
@@ -129,6 +268,8 @@ function AccountSection() {
           />
         </div>
       </Panel>
+      <ChangePasswordPanel />
+      <SessionsPanel />
     </div>
   );
 }
@@ -273,7 +414,7 @@ function DowntimeSection() {
             {mine.map((r) => (
               <li key={r.id}>
                 <div className="sr-row">
-                  <Badge tone={r.status === 'approved' ? 'ok' : r.status === 'rejected' ? 'danger' : 'warn'}>{r.status}</Badge>
+                  <Badge tone={r.status === 'approved' ? 'ok' : r.status === 'rejected' ? 'danger' : 'warn'}>{downtimeStatusLabel(r.status)}</Badge>
                   <strong>{r.character_name}</strong>
                   <span className="sr-muted sr-small">{r.campaign_name}</span>
                   {r.created_at ? <span className="sr-muted sr-small">{formatDateTimeInZone(r.created_at, user?.display_timezone || null)}</span> : null}

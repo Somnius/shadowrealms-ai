@@ -43,6 +43,7 @@ import {
 import { translateSheetErrors } from '../../characterSheet/i18nErrors';
 import { t } from '../../i18n';
 import { Term } from '../../i18n/glossary';
+import { authFetch } from '../../app/http';
 
 const API_URL = '/api';
 const ACCENT = 'var(--sr-blood-500)';
@@ -250,7 +251,7 @@ export default function V5CharacterCreationWizard({
     if (meritNotes.trim()) payload.merits_flaws.notes = meritNotes.trim();
     setSubmitting(true);
     try {
-      const res = await fetch(`${API_URL}/characters/`, {
+      const res = await authFetch(`${API_URL}/characters/`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -267,8 +268,8 @@ export default function V5CharacterCreationWizard({
         showError?.(body.error || t('wizard:error.createFailed', 'Could not create character.'));
         return;
       }
-      showSuccess?.(t('wizard:v5.created', 'Character embraced. Select them in Player Profile if needed.'));
-      onDone?.(body);
+      showSuccess?.(t('wizard:v5.created', 'Character embraced. Enter the chronicle to play.'));
+      onDone?.(body, parseInt(campaignId, 10));
     } catch (e) {
       showError?.(t('wizard:error.network', 'Network error while creating character.'));
     } finally {

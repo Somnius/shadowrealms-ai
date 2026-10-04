@@ -82,5 +82,9 @@
     "today": "Today",
     "yesterday": "Yesterday"
   },
-  "weaving": "The Storyteller is weaving…"
+  "weaving": "The Storyteller is weaving…",
+  "aiFailed": {
+    "title": "The Storyteller could not answer.",
+    "retry": "Ask again"
+  }
 }

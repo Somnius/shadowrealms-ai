@@ -4,6 +4,23 @@ import { diceAnimationId, isMarker } from '../chat/messageModel';
 
 const randomD10 = () => Math.floor(Math.random() * 10) + 1;
 
+export const MAX_DURATION_MS = 8000;
+export const MAX_CLOCK_SKEW_MS = 60000;
+
+/**
+ * Marker timing from another client (or a tampered row): the duration is capped at 8 s and the start
+ * time must lie within ±60 s of this clock, so a marker can't hide a result or freeze the overlay.
+ */
+export function clampMarkerTiming(marker, now = Date.now()) {
+  let durationMs = Number(marker.duration_ms ?? marker.durationMs);
+  if (!Number.isFinite(durationMs) || durationMs <= 0) durationMs = 3000;
+  durationMs = Math.min(durationMs, MAX_DURATION_MS);
+  let startedAtMs = Number(marker.started_at_ms ?? marker.startedAtMs);
+  if (!Number.isFinite(startedAtMs)) startedAtMs = now;
+  startedAtMs = Math.min(Math.max(startedAtMs, now - MAX_CLOCK_SKEW_MS), now + MAX_CLOCK_SKEW_MS);
+  return { startedAtMs, durationMs };
+}
+
 const CLOSED = {
   visible: false,
   animationId: null,
@@ -55,9 +72,9 @@ export function useDiceOverlay(messages, { onSettle } = {}) {
     const animId = String(marker.animation_id || marker.animationId || '');
     if (!animId || processed.current.has(animId)) return;
     processed.current.add(animId);
-    const startedAtMs = Number(marker.started_at_ms || marker.startedAtMs || Date.now());
-    const durationMs = Number(marker.duration_ms || marker.durationMs || 3000);
-    const revealAtMs = startedAtMs + durationMs;
+    const { startedAtMs, durationMs } = clampMarkerTiming(marker);
+    // A start in the future (clock skew) still never hides the result for more than the duration.
+    const revealAtMs = Math.min(startedAtMs + durationMs, Date.now() + durationMs);
     const remaining = revealAtMs - Date.now();
     if (remaining <= 0) return; // missed the window (history load / slow poll): just show the result
     setPending((p) => ({ ...p, [animId]: true }));

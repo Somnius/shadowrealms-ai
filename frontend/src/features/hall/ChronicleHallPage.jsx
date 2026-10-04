@@ -6,7 +6,7 @@ import ButtonLink from '../../app/ButtonLink';
 import { useApi } from '../../app/AuthContext';
 import { useChronicles } from '../../app/ChroniclesContext';
 import { errorText } from '../../app/http';
-import { lineOf } from '../../app/hooks';
+import { gameSystemTitle, lineOf } from '../../app/hooks';
 import { editionLabel, editionOf } from '../../rules/rulesEdition';
 import Footer from '../../components/Footer';
 import { t } from '../../i18n';
@@ -33,7 +33,7 @@ function ChronicleCard({ c }) {
               </Link>
             </h2>
             <div className="sr-hall__meta">
-              <span className="sr-hall__system">{c.game_system}</span>
+              <span className="sr-hall__system" lang="en">{gameSystemTitle(c.game_system)}</span>
               <Badge edition={editionLabel(c)} tone="neutral" />
             </div>
           </div>
@@ -49,7 +49,14 @@ function ChronicleCard({ c }) {
               </span>
             </>
           ) : (
-            <span className="sr-muted">{t('hall:noCharacter', 'No character in this chronicle yet')}</span>
+            <>
+              <span className="sr-muted">{t('hall:noCharacter', 'No character in this chronicle yet')}</span>
+              {['vampire', 'werewolf', 'mage'].includes(lineOf(c.game_system)) ? (
+                <ButtonLink to={`/profile/characters/new?chronicle=${c.id}`} variant="secondary" size="sm" icon="quill">
+                  {t('hall:createCharacter', 'Create character')}
+                </ButtonLink>
+              ) : null}
+            </>
           )}
         </div>
         <div className="sr-hall__actions">
@@ -130,7 +137,9 @@ export default function ChronicleHallPage() {
                 </ButtonLink>
               }
             >
-              {t('hall:empty.body', 'Create one, or join an open chronicle below.')}
+              {open.length > 0
+                ? t('hall:empty.body', 'Create one, or join an open chronicle below.')
+                : t('hall:empty.bodyNoOpen', 'Create one, or ask a Storyteller to add you to theirs.')}
             </EmptyState>
           ) : (
             <ul className="sr-hall__grid">
@@ -156,7 +165,7 @@ export default function ChronicleHallPage() {
                   <div className="sr-hall__openinfo">
                     <strong>{dc.name}</strong>
                     <span className="sr-muted">
-                      {dc.game_system} · {editionLabel(dc)}
+                      <span lang="en">{gameSystemTitle(dc.game_system)}</span> · {editionLabel(dc)}
                       {dc.max_players != null ? ` · ${t('hall:open.max', 'max {{n}} players', { n: dc.max_players })}` : ''}
                     </span>
                   </div>

@@ -23,7 +23,9 @@
   "room": {
     "closed": "Closed",
     "unread_one": "{{count}} unread message",
-    "unread_other": "{{count}} unread messages"
+    "unread_other": "{{count}} unread messages",
+    "oocDefaultName": "Out of Character Lobby",
+    "oocDefaultDescription": "A place for players to discuss the chronicle, ask questions and chat as themselves (not as characters). This is the meeting place before entering the game world."
   },
   "rooms": {
     "label": "Rooms of {{name}}",
