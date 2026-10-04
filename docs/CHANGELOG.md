@@ -7,8 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.4] - 2026-10-04 - At the table
+
 ### Added
+- **Dice pools from the sheet**: when the Storyteller calls for a roll it writes a roll tag (`[[roll: Dexterity + Stealth, difficulty 6]]`); the server works out the pool from the speaking character's sheet (specialties, Hunger, impairment, Classic or V5) and the chat shows a roll chip that fills in the dice dialog. Tags it can't resolve show as plain bold text, without a chip.
+- **Chat message actions**: copy, reply (with a quote of the original) and delete. Players delete their own messages; the chronicle's Storyteller and admins delete any; players can't delete dice rolls or Storyteller messages. Deleting a roll removes its animation row too; a deleted message's embedding is removed from the AI's message search.
+- **Older history**: scroll to the top (or press "Load older messages") to load earlier messages without losing your place.
 - Admin **Laya** tab: label player chat (in character? intent?) and run an evaluation of Laya against those labels, with per-label n, a "sample too small" flag, confusion matrices and the misclassified messages. Reports are kept and can be re-run. Same report from the CLI: `python scripts/laya_eval.py`. First run on the 8 player messages that exist so far, with provisional labels not yet checked by a human: `docs/laya/EVALUATION.md`.
+
+### Fixed
+- V5 Humanity rolls used Humanity minus Stains; Humanity isn't a tracker pool (only Health and Willpower are, corebook p. 118), so the roll uses the rating. `docs/rules/V5.md` said otherwise and is corrected.
 
 ## [0.9.3] - 2026-10-04 - Locks and logs
 

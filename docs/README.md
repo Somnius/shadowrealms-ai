@@ -1,6 +1,6 @@
 # ShadowRealms AI Documentation
 
-Index of the documentation in this folder (current release: v0.9.3). The [project wiki](https://github.com/Somnius/shadowrealms-ai/wiki) has step-by-step pages for installation, configuration, AI models, rules editions, books, architecture and troubleshooting.
+Index of the documentation in this folder (current release: v0.9.4). The [project wiki](https://github.com/Somnius/shadowrealms-ai/wiki) has step-by-step pages for installation, configuration, AI models, rules editions, books, architecture and troubleshooting.
 
 ## Getting started
 
