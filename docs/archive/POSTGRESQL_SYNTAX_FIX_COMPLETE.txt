@@ -1,3 +1,5 @@
+Archived: historical record up to v0.7.6; see docs/README.md for current docs.
+
 ╔══════════════════════════════════════════════════════════════════════════════╗
 ║                                                                              ║
 ║           POSTGRESQL SQL SYNTAX FIX - COMPREHENSIVE CLEANUP                 ║

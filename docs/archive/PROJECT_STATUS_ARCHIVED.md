@@ -1,7 +1,9 @@
+> **Archived:** historical record up to v0.8.0; see [docs/README.md](../README.md) for current docs.
+
 # Project Status - Historical Archive
 
 **Note:** These are historical status reports consolidated for reference.  
-**For current status**, see: `PHASE3B_IMPLEMENTATION.md` and `QUALITY_AUDIT_REPORT.md`
+**For current status**, see [ROADMAP_v0.9.md](../ROADMAP_v0.9.md) and [CHANGELOG.md](../CHANGELOG.md).
 
 ---
 

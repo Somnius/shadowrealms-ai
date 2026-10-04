@@ -1,3 +1,5 @@
+> **Archived:** historical record up to v0.8.0; see [docs/README.md](../README.md) for current docs.
+
 # Phase 3B: Advanced Campaign & Character Systems
 
 **Version:** 0.8.0  

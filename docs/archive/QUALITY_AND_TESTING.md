@@ -1,3 +1,5 @@
+> **Archived:** historical record up to v0.8.0; see [docs/README.md](../README.md) for current docs.
+
 # Quality Assurance & Testing Documentation
 
 **Last Updated**: 2026-04-05  
@@ -286,9 +288,9 @@ Comprehensive audit of ShadowRealms AI to ensure all code follows the "Quality O
 
 ## 🔗 Related Documentation
 
-- [Core Design Philosophy](../SHADOWREALMS_AI_COMPLETE.md#core-design-philosophy)
+- [Core Design Philosophy](../../SHADOWREALMS_AI_COMPLETE.md#core-design-philosophy)
 - [Phase 3B Implementation](./PHASE3B_IMPLEMENTATION.md#implementation-philosophy)
-- [Security & Testing](./PHASE3B_SUMMARY.md)
+- [Security & Testing](../SECURITY_AND_TESTING.md)
 
 ---
 

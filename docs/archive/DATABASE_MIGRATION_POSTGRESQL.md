@@ -1,3 +1,5 @@
+> **Archived:** historical record up to v0.8.0; see [docs/README.md](../README.md) for current docs.
+
 # PostgreSQL Migration - Decision & Plan
 
 **Date**: 2025-10-28  
