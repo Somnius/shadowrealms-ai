@@ -28,8 +28,8 @@ jobs:
     name: Python (syntax + undefined names)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.12"
       - run: pip install ruff
@@ -42,8 +42,8 @@ jobs:
     name: Backend unit tests
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.12"
       - run: pip install pytest cryptography itsdangerous flask flask-jwt-extended "flask-limiter>=4.1.1" bcrypt
@@ -75,8 +75,8 @@ jobs:
       DATABASE_PASSWORD: ci
       DATABASE_NAME: ci
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.12"
       - run: pip install psycopg2-binary
