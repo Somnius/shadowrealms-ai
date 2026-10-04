@@ -1,4 +1,4 @@
-import React, { useEffect, useId, useRef, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import { useReducedMotionPref } from '../../design';
 
 /** Adds `is-in` once the element is on screen (sections rise in once). Immediate without IntersectionObserver. */

@@ -1,4 +1,3 @@
-import React from 'react';
 import { Glyph } from '../design';
 import { LANGUAGE_NAMES, setLanguage, t, useLanguage } from '../i18n';
 

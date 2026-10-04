@@ -1,4 +1,3 @@
-import React from 'react';
 import { Badge, Modal } from '../design';
 import './sheet.css';
 import DotTrack from './characterCreation/DotTrack';

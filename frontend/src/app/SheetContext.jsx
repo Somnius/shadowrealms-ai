@@ -1,4 +1,4 @@
-import React, { createContext, useCallback, useContext, useMemo, useState } from 'react';
+import { createContext, useCallback, useContext, useMemo, useState } from 'react';
 import CharacterSheetModal from '../components/CharacterSheetModal';
 import { useToast } from '../design';
 import { apiFetch, errorText, getCurrentToken } from './http';

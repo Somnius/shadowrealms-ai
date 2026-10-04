@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { t } from '../i18n';
 import { Modal, Spinner } from '../design';
 import { sanitizeRichHtml } from '../utils/security';
@@ -48,7 +48,7 @@ const ReadmeModal = ({ isOpen, onClose }) => {
     let id = link.getAttribute('href').slice(1);
     try {
       id = decodeURIComponent(id);
-    } catch (e) {
+    } catch {
       // "#%" and similar: look the id up as written
     }
     const target = document.getElementById(id);

@@ -1,4 +1,4 @@
-import React, { useMemo, useRef, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import {
   AiSigil,
   AnimatedCandle,
@@ -97,7 +97,7 @@ function Inspector({ name }) {
     try {
       await navigator.clipboard.writeText(usage);
       ok = true;
-    } catch (e) {
+    } catch {
       ok = false;
     }
     if (toast) {

@@ -50,7 +50,7 @@ export function readToken(name, fallback) {
   try {
     const v = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
     return v && parseColor(v) ? v : fallback;
-  } catch (e) {
+  } catch {
     return fallback;
   }
 }

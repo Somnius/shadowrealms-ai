@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import { useRef } from 'react';
 import { Avatar, Badge, Button, DotTrack, Glyph } from '../../design';
 import { editionOf, V5 } from '../../rules/rulesEdition';
 import ButtonLink from '../../app/ButtonLink';

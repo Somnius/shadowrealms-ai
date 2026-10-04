@@ -1,4 +1,3 @@
-import React from 'react';
 import { act, render, screen, waitFor, within } from '@testing-library/react';
 import setupUser from '../../design/testing/setupUser';
 import { setLanguage } from '../../i18n';
@@ -240,7 +239,6 @@ test('a run stuck in "running" past the stale limit shows as failed and frees th
     expect(await screen.findByText('Evaluation running…')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Running…' })).toBeDisabled();
     for (let i = 0; i < 6; i += 1) {
-      // eslint-disable-next-line no-await-in-loop
       await act(async () => { jest.advanceTimersByTime(1500); });
     }
     expect(await screen.findByText('The last evaluation failed. See the backend logs.')).toBeInTheDocument();

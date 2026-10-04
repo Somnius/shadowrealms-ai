@@ -1,4 +1,4 @@
-import React, { useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { DRAFT_PREFIX, readSession, writeSession } from '../../app/hooks';
 import { Avatar, Glyph, IconButton } from '../../design';
 import MenuButton from '../../app/Menu';

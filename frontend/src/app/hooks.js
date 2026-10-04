@@ -37,7 +37,7 @@ export function readLocal(key, fallback = null) {
   try {
     const v = window.localStorage.getItem(key);
     return v == null ? fallback : v;
-  } catch (e) {
+  } catch {
     return fallback;
   }
 }
@@ -46,7 +46,7 @@ export function writeLocal(key, value) {
   try {
     if (value == null) window.localStorage.removeItem(key);
     else window.localStorage.setItem(key, String(value));
-  } catch (e) {
+  } catch {
     /* ignore */
   }
 }
@@ -95,7 +95,7 @@ export function readSession(key, fallback = null) {
   try {
     const v = window.sessionStorage.getItem(key);
     return v == null ? fallback : v;
-  } catch (e) {
+  } catch {
     return fallback;
   }
 }
@@ -104,7 +104,7 @@ export function writeSession(key, value) {
   try {
     if (value == null || value === '') window.sessionStorage.removeItem(key);
     else window.sessionStorage.setItem(key, String(value));
-  } catch (e) {
+  } catch {
     /* ignore */
   }
 }
@@ -118,7 +118,7 @@ export function clearSessionPrefix(prefix) {
       if (k && k.startsWith(prefix)) keys.push(k);
     }
     keys.forEach((k) => window.sessionStorage.removeItem(k));
-  } catch (e) {
+  } catch {
     /* ignore */
   }
 }

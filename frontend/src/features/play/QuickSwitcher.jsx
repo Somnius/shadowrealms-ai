@@ -1,4 +1,4 @@
-import React, { useMemo, useRef, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { Glyph, Modal } from '../../design';
 import { roomGlyph } from './ChannelList';
 import { lineGlyph } from '../../app/hooks';

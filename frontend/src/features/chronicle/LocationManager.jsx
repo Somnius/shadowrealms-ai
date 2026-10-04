@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Button, Checkbox, Glyph, Input, Modal, Panel, Select, Spinner, Textarea } from '../../design';
 import LocationSuggestions from '../../components/LocationSuggestions';
 import { errorText } from '../../app/http';

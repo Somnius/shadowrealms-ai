@@ -5,7 +5,7 @@
  * - pauses when the tab is hidden or the element is off-screen (useAmbient),
  * - is static under atmosphere 'subtle' (ambient loops) and 'off' / reduced motion (everything).
  */
-import React, { useEffect, useId, useMemo, useRef, useState } from 'react';
+import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import { LazyMotion, domAnimation, m } from 'motion/react';
 import { lineRadial, curveLinearClosed } from 'd3-shape';
 import { useAmbient, useMotionPreference, useReducedMotionPref } from '../motion';

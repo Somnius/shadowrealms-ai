@@ -3,7 +3,6 @@
  * must keep accessible names (or be hidden when the text already says it), and no icon-font
  * markup may remain in these components.
  */
-import React from 'react';
 import { render, screen, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router';
 import setupUser from '../../design/testing/setupUser';

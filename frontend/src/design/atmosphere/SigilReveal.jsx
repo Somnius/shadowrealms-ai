@@ -1,4 +1,4 @@
-import React, { useId, useMemo, useRef } from 'react';
+import { useId, useMemo, useRef } from 'react';
 import { LazyMotion, domAnimation, m } from 'motion/react';
 import { lineRadial, curveLinearClosed, curveCatmullRomClosed } from 'd3-shape';
 import { useInView, useReducedMotionPref } from '../motion';

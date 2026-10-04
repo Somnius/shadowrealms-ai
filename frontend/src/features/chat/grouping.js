@@ -22,7 +22,7 @@ export function dayKey(ms, timeZone) {
   }
   try {
     return new Intl.DateTimeFormat('en-CA', { timeZone, year: 'numeric', month: '2-digit', day: '2-digit' }).format(d);
-  } catch (e) {
+  } catch {
     return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`;
   }
 }

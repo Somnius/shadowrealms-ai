@@ -1,4 +1,4 @@
-import React, { createContext, useContext } from 'react';
+import { createContext, useContext } from 'react';
 import { Glyph } from '../../design';
 import { rollRequestText, rollRequestsOf } from './rollRequests';
 import { t } from '../../i18n';

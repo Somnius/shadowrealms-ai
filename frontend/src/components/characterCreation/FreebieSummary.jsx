@@ -1,4 +1,3 @@
-import React from 'react';
 import { FREEBIE_COSTS } from '../../rules/classicRules';
 import { t } from '../../i18n';
 

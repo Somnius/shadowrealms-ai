@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import ReadmeModal from './ReadmeModal';
 import packageJson from '../../package.json';
 import { t } from '../i18n';

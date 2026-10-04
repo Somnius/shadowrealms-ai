@@ -118,7 +118,7 @@ export function markersById(messages) {
     try {
       const obj = typeof m.content === 'string' ? JSON.parse(m.content) : m.content;
       if (obj && typeof obj === 'object') map[id] = obj;
-    } catch (e) {
+    } catch {
       /* malformed marker: card falls back to the text line */
     }
   }

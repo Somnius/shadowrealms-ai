@@ -1,4 +1,3 @@
-import React from 'react';
 import Glyph from '../glyphs/Glyph';
 import { cx } from './internal';
 import './display.css';

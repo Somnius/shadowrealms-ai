@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import { useEffect } from 'react';
 import { Badge, Glyph, RollFx, rollMood, useReducedMotionPref } from '../../design';
 import DiceFace from './DiceFace';
 import OutcomeBadges from './OutcomeBadges';

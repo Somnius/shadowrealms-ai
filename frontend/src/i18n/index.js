@@ -32,7 +32,7 @@ export function normalizeLanguage(value) {
 function readStored() {
   try {
     return normalizeLanguage(window.localStorage.getItem(STORAGE_KEY));
-  } catch (e) {
+  } catch {
     return null;
   }
 }
@@ -46,7 +46,7 @@ function writeStored(lang) {
       window.localStorage.removeItem(STORAGE_KEY);
       window.localStorage.removeItem(OWNER_KEY);
     }
-  } catch (e) {
+  } catch {
     /* private mode: the choice lasts for this page only */
   }
 }
@@ -65,7 +65,7 @@ export function detectLanguage() {
   let fromUrl = null;
   try {
     fromUrl = normalizeLanguage(new URLSearchParams(window.location.search).get('lang'));
-  } catch (e) {
+  } catch {
     fromUrl = null;
   }
   return fromUrl || readStored() || browserLanguage();
@@ -101,7 +101,7 @@ function pickPlural(def, vars) {
     let rule = 'other';
     try {
       rule = new Intl.PluralRules(i18next.language || 'en').select(n);
-    } catch (e) {
+    } catch {
       rule = n === 1 ? 'one' : 'other';
     }
     return def[rule] != null ? def[rule] : def.other;
@@ -139,7 +139,7 @@ export function getLocale(lang = getLanguage()) {
 export function formatNumber(n, opts) {
   try {
     return new Intl.NumberFormat(getLocale(), opts).format(n);
-  } catch (e) {
+  } catch {
     return String(n);
   }
 }
@@ -148,7 +148,7 @@ export function formatNumber(n, opts) {
 export function formatList(items, type = 'conjunction') {
   try {
     return new Intl.ListFormat(getLocale(), { style: 'long', type }).format(items.map(String));
-  } catch (e) {
+  } catch {
     return items.join(', ');
   }
 }
@@ -177,7 +177,7 @@ export function setLanguage(lang, { remember = true, save = remember } = {}) {
     listeners.forEach((fn) => {
       try {
         fn(next);
-      } catch (e) {
+      } catch {
         /* saving is best effort */
       }
     });
@@ -196,7 +196,7 @@ export function storedLanguage() {
 export function storedLanguageOwner() {
   try {
     return window.localStorage.getItem(OWNER_KEY);
-  } catch (e) {
+  } catch {
     return null;
   }
 }

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { t } from '../../i18n';
 import { contrastRatio, formatRatio, readToken, wcagLevel } from './contrast';
 import { Section } from './parts';

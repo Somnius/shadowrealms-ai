@@ -1,4 +1,3 @@
-import React from 'react';
 import { Link } from 'react-router';
 import { Badge, Glyph, Tooltip } from '../../design';
 import ButtonLink from '../../app/ButtonLink';

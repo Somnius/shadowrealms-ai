@@ -1,4 +1,3 @@
-import React from 'react';
 import { act, render, screen, waitFor, within } from '@testing-library/react';
 import { ToastProvider } from '../../design';
 import setupUser from '../../design/testing/setupUser';
@@ -56,7 +55,6 @@ function mount() {
 
 async function flush() {
   for (let i = 0; i < 3; i += 1) {
-    // eslint-disable-next-line no-await-in-loop
     await act(async () => {
       await new Promise((r) => setTimeout(r, 0));
     });

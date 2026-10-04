@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router';
 import { Badge, Button, Checkbox, EmptyState, Input, Modal, Panel, Select, Tabs, Textarea, useToast } from '../design';
 import { api } from '../utils/api';
@@ -142,16 +142,22 @@ function AdminPage({ token, user, displayTimezone = null, onAdminOpenCampaign = 
   const [masterPromptDraft, setMasterPromptDraft] = useState('');
   const [aiSaveLoading, setAiSaveLoading] = useState(false);
 
+  // The effects below call loaders (fetchUsers, reloadChronicles, loadAiSection, …) and showError,
+  // which are plain functions recreated on every render. Listing them as deps would re-run each
+  // effect, and its fetch, after every render, so the effects list only the values they react to.
+
   // Fetch all users on mount
   useEffect(() => {
     fetchUsers();
     fetchInvites();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- loaders are recreated every render (see above)
   }, []);
 
   useEffect(() => {
     if (!token || adminSection !== 'moderation') return undefined;
     fetchModerationLog();
     return undefined;
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- loaders are recreated every render (see above)
   }, [token, adminSection, moderationLogLimit]);
 
   const reloadChronicles = async () => {
@@ -174,7 +180,7 @@ function AdminPage({ token, user, displayTimezone = null, onAdminOpenCampaign = 
         setChroniclesError(msg);
         showError(msg);
       }
-    } catch (e) {
+    } catch {
       setChroniclesList([]);
       setChroniclesError(t('admin:error.loadChronicles', 'Could not load chronicles'));
       showError(t('admin:error.loadChronicles', 'Could not load chronicles'));
@@ -187,6 +193,7 @@ function AdminPage({ token, user, displayTimezone = null, onAdminOpenCampaign = 
     if (adminSection !== 'chronicles' || !token) return undefined;
     reloadChronicles();
     return undefined;
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- loaders are recreated every render (see above)
   }, [adminSection, token]);
 
   useEffect(() => {
@@ -258,7 +265,7 @@ function AdminPage({ token, user, displayTimezone = null, onAdminOpenCampaign = 
             showError(msg);
           }
         }
-      } catch (e) {
+      } catch {
         if (!cancelled) {
           setAdminCampaignsList([]);
           setAdminCampaignsLoadError(t('admin:error.loadCampaigns', 'Could not load campaigns'));
@@ -270,6 +277,7 @@ function AdminPage({ token, user, displayTimezone = null, onAdminOpenCampaign = 
     return () => {
       cancelled = true;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- loaders are recreated every render (see above)
   }, [membershipModalUser, token]);
 
   useEffect(() => {
@@ -287,7 +295,7 @@ function AdminPage({ token, user, displayTimezone = null, onAdminOpenCampaign = 
         } else if (!cancelled) {
           setMembershipTargetChronicles([]);
         }
-      } catch (e) {
+      } catch {
         if (!cancelled) setMembershipTargetChronicles([]);
       }
     })();
@@ -332,6 +340,7 @@ function AdminPage({ token, user, displayTimezone = null, onAdminOpenCampaign = 
     if (adminSection !== 'ai') return undefined;
     loadAiSection();
     return undefined;
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- loaders are recreated every render (see above)
   }, [adminSection, token]);
 
   const fetchUsers = async () => {
@@ -341,7 +350,7 @@ function AdminPage({ token, user, displayTimezone = null, onAdminOpenCampaign = 
         const data = await response.json();
         setUsers(data);
       }
-    } catch (err) {
+    } catch {
       setError(t('admin:error.loadUsers', 'Failed to load users'));
     }
   };
@@ -353,7 +362,7 @@ function AdminPage({ token, user, displayTimezone = null, onAdminOpenCampaign = 
         const data = await response.json();
         setModerationLog(Array.isArray(data) ? data : []);
       }
-    } catch (err) {
+    } catch {
       console.error('Failed to load moderation log');
     }
   };
@@ -375,7 +384,7 @@ function AdminPage({ token, user, displayTimezone = null, onAdminOpenCampaign = 
         setUserCharsError(msg);
         showError(msg);
       }
-    } catch (e) {
+    } catch {
       setUserCharsList([]);
       setUserCharsError(t('admin:error.loadCharacters', 'Failed to load characters'));
       showError(t('admin:error.loadCharacters', 'Failed to load characters'));
@@ -406,7 +415,7 @@ function AdminPage({ token, user, displayTimezone = null, onAdminOpenCampaign = 
         rules_edition: c.rules_edition,
         status: c.status,
       });
-    } catch (e) {
+    } catch {
       showError(t('admin:error.openChronicle', 'Could not open chronicle'));
     } finally {
       setChroniclesOpeningId(null);
@@ -430,7 +439,7 @@ function AdminPage({ token, user, displayTimezone = null, onAdminOpenCampaign = 
       const mp = d.max_players != null ? d.max_players : c.max_players;
       setChEdMaxPlayers(mp != null && mp !== '' ? String(mp) : '');
       setChronicleEditTarget(c);
-    } catch (e) {
+    } catch {
       showError(t('admin:error.loadChronicle', 'Could not load chronicle'));
     } finally {
       setChronicleBusyId(null);
@@ -472,7 +481,7 @@ function AdminPage({ token, user, displayTimezone = null, onAdminOpenCampaign = 
       } else {
         showError(d.error || t('admin:error.updateFailed', 'Update failed'));
       }
-    } catch (err) {
+    } catch {
       showError(t('admin:error.requestFailed', 'Request failed'));
     } finally {
       setChronicleBusyId(null);
@@ -489,7 +498,7 @@ function AdminPage({ token, user, displayTimezone = null, onAdminOpenCampaign = 
       const d = await r.json().catch(() => null);
       if (r.ok) setChronicleStatsData(d);
       else showError((d && d.error) || t('admin:error.loadStats', 'Could not load stats'));
-    } catch (e) {
+    } catch {
       showError(t('admin:error.loadStats', 'Could not load stats'));
     } finally {
       setChronicleStatsLoading(false);
@@ -514,7 +523,7 @@ function AdminPage({ token, user, displayTimezone = null, onAdminOpenCampaign = 
       } else {
         showError(d.error || t('admin:error.pause', 'Could not pause'));
       }
-    } catch (e) {
+    } catch {
       showError(t('admin:error.requestFailed', 'Request failed'));
     } finally {
       setChronicleBusyId(null);
@@ -533,7 +542,7 @@ function AdminPage({ token, user, displayTimezone = null, onAdminOpenCampaign = 
       } else {
         showError(d.error || t('admin:error.resume', 'Could not resume'));
       }
-    } catch (e) {
+    } catch {
       showError(t('admin:error.requestFailed', 'Request failed'));
     } finally {
       setChronicleBusyId(null);
@@ -554,7 +563,7 @@ function AdminPage({ token, user, displayTimezone = null, onAdminOpenCampaign = 
       } else {
         showError(d.error || t('admin:error.deleteFailed', 'Delete failed'));
       }
-    } catch (e) {
+    } catch {
       showError(t('admin:error.deleteFailed', 'Delete failed'));
     } finally {
       setChronicleDeleteLoading(false);
@@ -572,7 +581,7 @@ function AdminPage({ token, user, displayTimezone = null, onAdminOpenCampaign = 
       const data = await r.json().catch(() => null);
       if (r.ok) setDebugPayload(data);
       else showError(data?.error || t('admin:error.loadDebug', 'Failed to load debug profile'));
-    } catch (e) {
+    } catch {
       showError(t('admin:error.loadDebug', 'Failed to load debug profile'));
     } finally {
       setDebugLoading(false);
@@ -597,7 +606,7 @@ function AdminPage({ token, user, displayTimezone = null, onAdminOpenCampaign = 
       } else {
         showError(d.error || t('admin:error.failed', 'Failed'));
       }
-    } catch (err) {
+    } catch {
       showError(t('admin:error.requestFailed', 'Request failed'));
     }
   };
@@ -614,7 +623,7 @@ function AdminPage({ token, user, displayTimezone = null, onAdminOpenCampaign = 
       } else {
         showError(d.error || t('admin:error.failed', 'Failed'));
       }
-    } catch (err) {
+    } catch {
       showError(t('admin:error.requestFailed', 'Request failed'));
     }
   };
@@ -641,7 +650,7 @@ function AdminPage({ token, user, displayTimezone = null, onAdminOpenCampaign = 
       } else {
         showError(d.error || t('admin:error.failed', 'Failed'));
       }
-    } catch (err) {
+    } catch {
       showError(t('admin:error.requestFailed', 'Request failed'));
     }
   };
@@ -653,7 +662,7 @@ function AdminPage({ token, user, displayTimezone = null, onAdminOpenCampaign = 
         const data = await response.json();
         setInvites(Array.isArray(data) ? data : []);
       }
-    } catch (err) {
+    } catch {
       console.error('Failed to load invites');
     }
   };
@@ -678,7 +687,7 @@ function AdminPage({ token, user, displayTimezone = null, onAdminOpenCampaign = 
       } else {
         setError(data.error || t('admin:error.createInvite', 'Failed to create invite'));
       }
-    } catch (err) {
+    } catch {
       setError(t('admin:error.connection', 'Connection error'));
     } finally {
       setInviteLoading(false);
@@ -713,7 +722,7 @@ function AdminPage({ token, user, displayTimezone = null, onAdminOpenCampaign = 
         const data = await response.json();
         setError(data.error || t('admin:error.updateUser', 'Failed to update user'));
       }
-    } catch (err) {
+    } catch {
       setError(t('admin:error.connection', 'Connection error'));
     } finally {
       setLoading(false);
@@ -736,7 +745,7 @@ function AdminPage({ token, user, displayTimezone = null, onAdminOpenCampaign = 
         const data = await response.json();
         setError(data.error || t('admin:error.resetPassword', 'Failed to reset password'));
       }
-    } catch (err) {
+    } catch {
       setError(t('admin:error.connection', 'Connection error'));
     } finally {
       setLoading(false);
@@ -771,7 +780,7 @@ function AdminPage({ token, user, displayTimezone = null, onAdminOpenCampaign = 
         const data = await response.json();
         setError(data.error || t('admin:error.banUser', 'Failed to ban user'));
       }
-    } catch (err) {
+    } catch {
       setError(t('admin:error.connection', 'Connection error'));
     } finally {
       setLoading(false);
@@ -810,7 +819,7 @@ function AdminPage({ token, user, displayTimezone = null, onAdminOpenCampaign = 
           showError(msg);
         }
       }
-    } catch (e) {
+    } catch {
       showError(t('admin:error.deleteFailed', 'Delete failed'));
     } finally {
       setDeleteAccountLoading(false);
@@ -830,7 +839,7 @@ function AdminPage({ token, user, displayTimezone = null, onAdminOpenCampaign = 
         fetchUsers();
         fetchModerationLog();
       }
-    } catch (err) {
+    } catch {
       setError(t('admin:error.unbanUser', 'Failed to unban user'));
     }
   };
@@ -891,7 +900,7 @@ function AdminPage({ token, user, displayTimezone = null, onAdminOpenCampaign = 
       } else {
         showError(d.error || t('admin:error.saveFailed', 'Save failed'));
       }
-    } catch (e) {
+    } catch {
       showError(t('admin:error.saveFailed', 'Save failed'));
     } finally {
       setAiSaveLoading(false);

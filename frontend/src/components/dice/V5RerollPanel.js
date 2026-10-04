@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import DiceFace from './DiceFace';
 import OutcomeBadges from './OutcomeBadges';
 import { canSelectForReroll, v5SummaryLine } from '../../dice/v5DiceDisplay';

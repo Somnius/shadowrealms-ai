@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Button, Panel } from '../../design';
 import { api } from '../../utils/api';
 import { t } from '../../i18n';
@@ -91,13 +91,13 @@ export default function AiProvidersPanel({ token, lmModels, showSuccess, showErr
       setRoles(rs);
       setClassifierChoice((d.classifier && d.classifier.configured) || 'auto');
       setJevModel((d.classifier && d.classifier.jev && d.classifier.jev.model) || '');
-    } catch (e) {
+    } catch {
       showError(t('admin:ai.error.load', 'Could not load AI providers'));
     }
     try {
       const r2 = await api.getEmbeddings(token);
       setEmb(await r2.json().catch(() => null));
-    } catch (e) {
+    } catch {
       setEmb({ error: t('admin:ai.error.chroma', 'ChromaDB unavailable') });
     }
   };
@@ -115,7 +115,7 @@ export default function AiProvidersPanel({ token, lmModels, showSuccess, showErr
         return true;
       }
       showError(d.error || t('admin:error.saveFailed', 'Save failed'));
-    } catch (e) {
+    } catch {
       showError(t('admin:error.saveFailed', 'Save failed'));
     } finally {
       setBusy(false);
@@ -173,7 +173,7 @@ export default function AiProvidersPanel({ token, lmModels, showSuccess, showErr
       } else {
         showError(d.error || t('admin:ai.emb.failed', 'Re-embed failed'));
       }
-    } catch (e) {
+    } catch {
       showError(t('admin:ai.emb.failed', 'Re-embed failed'));
     } finally {
       setBusy(false);

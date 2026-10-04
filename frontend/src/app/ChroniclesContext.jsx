@@ -1,4 +1,4 @@
-import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { useAuth } from './AuthContext';
 import { apiFetch, getCurrentToken } from './http';
 
@@ -18,7 +18,7 @@ function rememberedCount() {
   try {
     const n = Number(window.localStorage.getItem(COUNT_KEY));
     return Number.isFinite(n) && n >= 0 ? Math.min(n, 12) : 2;
-  } catch (e) {
+  } catch {
     return 2;
   }
 }
@@ -43,7 +43,7 @@ export function ChroniclesProvider({ children }) {
       }
       try {
         window.localStorage.setItem(COUNT_KEY, String(list.length));
-      } catch (e) {
+      } catch {
         /* storage blocked: placeholders fall back to 2 */
       }
     }

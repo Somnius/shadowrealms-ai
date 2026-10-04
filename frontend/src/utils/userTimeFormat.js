@@ -3,7 +3,7 @@ import { getLanguage, getLocale } from '../i18n';
 /** Greek uses the 24-hour clock; English keeps 12-hour (as before). */
 function clockOpts(opts) {
   if (getLanguage() !== 'el') return opts;
-  const { hour12, ...rest } = opts; // eslint-disable-line no-unused-vars
+  const { hour12, ...rest } = opts;
   return { ...rest, hourCycle: 'h23' };
 }
 

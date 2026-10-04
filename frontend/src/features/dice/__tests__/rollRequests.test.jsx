@@ -1,4 +1,3 @@
-import React from 'react';
 import { act, fireEvent, render, screen } from '@testing-library/react';
 import { DesignProvider } from '../../../design';
 import { setLanguage } from '../../../i18n';

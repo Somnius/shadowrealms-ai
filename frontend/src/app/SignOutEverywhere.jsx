@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router';
 import { Button, Modal, useOptionalToast } from '../design';
 import { useAuth } from './AuthContext';

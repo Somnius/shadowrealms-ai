@@ -1,4 +1,3 @@
-import React from 'react';
 import { editionOf, V5 } from '../rules/rulesEdition';
 import { t } from '../i18n';
 

@@ -6,7 +6,7 @@
  * - The page provides MessageActionsContext (PlayPage via useMessageActions); without it (the
  *   showcase preview) messages render without actions.
  */
-import React, { createContext, useCallback, useContext, useMemo, useRef, useState } from 'react';
+import { createContext, useCallback, useContext, useMemo, useRef, useState } from 'react';
 import { Button, Glyph, IconButton, Modal } from '../../design';
 import { errorText } from '../../app/http';
 import { canDeleteMessage, copyTextOf, copyToClipboard, isActionable, replyTargetOf } from './messageRules';
@@ -166,7 +166,7 @@ export function jumpToMessage(id, { reduced = false, doc = typeof document !== '
   if (typeof el.focus === 'function') el.focus({ preventScroll: true });
   el.classList.remove('is-flash');
   // restart the highlight (reflow between remove and add)
-  void el.offsetWidth; // eslint-disable-line no-void
+  void el.offsetWidth;
   el.classList.add('is-flash');
   setTimeout(() => el.classList.remove('is-flash'), 1600);
   return true;

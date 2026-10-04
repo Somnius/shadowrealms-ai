@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { EmptyState, Glyph, Spinner, useReducedMotionPref } from '../../design';
 import { buildTimeline } from './grouping';
 import { markersById, messageKind } from './messageModel';

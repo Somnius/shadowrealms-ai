@@ -1,4 +1,3 @@
-import React from 'react';
 import { V5_DIFFICULTY_TABLE, V5_MAX_HUNGER } from '../../rules/v5Rules';
 import { t } from '../../i18n';
 import { Term } from '../../i18n/glossary';

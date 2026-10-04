@@ -1,4 +1,4 @@
-import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import {
   apiFetch,
   authErrorText,
@@ -25,7 +25,7 @@ function readStoredUser() {
   try {
     const raw = window.localStorage.getItem('user');
     return raw ? JSON.parse(raw) : null;
-  } catch (e) {
+  } catch {
     return null;
   }
 }
@@ -34,7 +34,7 @@ function store(key, value) {
   try {
     if (value == null) window.localStorage.removeItem(key);
     else window.localStorage.setItem(key, typeof value === 'string' ? value : JSON.stringify(value));
-  } catch (e) {
+  } catch {
     /* private mode */
   }
 }
@@ -56,7 +56,7 @@ export function AuthProvider({ children }) {
     let tok = null;
     try {
       tok = window.localStorage.getItem('token');
-    } catch (e) {
+    } catch {
       tok = null;
     }
     setCurrentToken(tok);
@@ -94,7 +94,7 @@ export function AuthProvider({ children }) {
         try {
           const r = await withTimeout(call(everywhere ? '/auth/logout-all' : '/auth/logout', { method: 'POST', body: {} }), 6000);
           ok = !!r.ok;
-        } catch (e) {
+        } catch {
           ok = false;
         } finally {
           loggingOut.current = false;

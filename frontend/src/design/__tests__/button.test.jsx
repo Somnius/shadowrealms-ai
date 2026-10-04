@@ -1,4 +1,3 @@
-import React from 'react';
 import { render, screen } from '@testing-library/react';
 import setupUser from '../testing/setupUser';
 import Button, { IconButton } from '../components/Button';

@@ -1,4 +1,4 @@
-import React, { Suspense, lazy } from 'react';
+import { Suspense, lazy } from 'react';
 import { Navigate, Route, Routes, useNavigate } from 'react-router';
 import { DesignProvider, Spinner, ToastProvider } from '../design';
 import { AuthProvider, useAuth } from './AuthContext';

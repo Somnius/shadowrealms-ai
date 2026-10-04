@@ -1,4 +1,3 @@
-import React from 'react';
 import { KNOWLEDGES, SKILLS, TALENTS } from '../../characterSheet/constants';
 import DotTrack from './DotTrack';
 import { t } from '../../i18n';

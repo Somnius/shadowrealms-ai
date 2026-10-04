@@ -197,10 +197,8 @@ describe('renderMarkdown details', () => {
   });
 
   test('unsafe URLs are not links or images', () => {
-    /* eslint-disable no-script-url */
     expect(resolveLink('javascript:alert(1)')).toBeNull();
     expect(resolveLink('JaVaScRiPt:alert(1)')).toBeNull();
-    /* eslint-enable no-script-url */
     expect(resolveLink('data:text/html,x')).toBeNull();
     expect(resolveImage('data:image/png;base64,AAAA')).toBeNull();
     expect(resolveImage('http://example.com/a.png')).toBeNull();

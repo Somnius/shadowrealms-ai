@@ -84,7 +84,7 @@ export class LiveConnection {
     if (this.es) {
       try {
         this.es.close();
-      } catch (e) {
+      } catch {
         /* ignore */
       }
     }
@@ -97,7 +97,7 @@ export class LiveConnection {
     let ticket = null;
     try {
       ticket = await this.getTicket();
-    } catch (e) {
+    } catch {
       ticket = null;
     }
     if (this.stopped) return;
@@ -112,7 +112,7 @@ export class LiveConnection {
     const parse = (ev) => {
       try {
         return JSON.parse(ev.data || '{}');
-      } catch (e) {
+      } catch {
         return {};
       }
     };

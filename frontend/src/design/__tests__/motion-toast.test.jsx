@@ -1,4 +1,3 @@
-import React from 'react';
 import { render, screen, waitFor, act } from '@testing-library/react';
 import setupUser from '../testing/setupUser';
 import { DesignProvider, MotionToggle, useMotionPreference } from '../motion';

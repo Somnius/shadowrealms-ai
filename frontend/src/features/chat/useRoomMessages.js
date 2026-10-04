@@ -150,7 +150,6 @@ export function useRoomMessages({ api, campaignId, locationId, characterId, user
         again.current = false;
         const key = roomRef.current;
         const since = lastServerId(messagesRef.current);
-        // eslint-disable-next-line no-await-in-loop
         const r = await api(since > 0 ? `${roomPath}?since_id=${since}&limit=200` : `${roomPath}?recent=1&limit=${INITIAL_LIMIT}`);
         if (roomRef.current !== key) break;
         if (r.ok && Array.isArray(r.data) && r.data.length > 0) {

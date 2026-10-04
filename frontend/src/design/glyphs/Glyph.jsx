@@ -1,4 +1,4 @@
-import React, { forwardRef, useId } from 'react';
+import { forwardRef, useId } from 'react';
 import { GLYPHS } from './glyphData';
 import './glyphs.css';
 
@@ -59,7 +59,6 @@ const Glyph = forwardRef(function Glyph(
   const def = GLYPHS[name];
   if (!def) {
     if (process.env.NODE_ENV !== 'production') {
-      // eslint-disable-next-line no-console
       console.warn(`[design] unknown glyph "${name}"`);
     }
     return null;

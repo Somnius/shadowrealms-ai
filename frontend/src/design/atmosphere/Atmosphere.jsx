@@ -1,4 +1,4 @@
-import React, { useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { LazyMotion, domAnimation, m } from 'motion/react';
 import { useAmbient, useReducedMotionPref } from '../motion';
 import { cx } from '../components/internal';

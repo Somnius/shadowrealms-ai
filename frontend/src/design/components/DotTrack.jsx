@@ -1,4 +1,4 @@
-import React, { useId } from 'react';
+import { useId } from 'react';
 import { cx } from './internal';
 import './display.css';
 import { t } from '../../i18n';

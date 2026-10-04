@@ -1,4 +1,4 @@
-import React, { cloneElement, isValidElement, useEffect, useId, useRef, useState } from 'react';
+import { cloneElement, isValidElement, useEffect, useId, useRef, useState } from 'react';
 import { cx } from './internal';
 import './overlay.css';
 

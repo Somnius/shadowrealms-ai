@@ -6,7 +6,6 @@
  * Inline: `code`, **bold**, *italic* / _italic_, ~~strike~~, [label](https://…), bare http(s) links.
  * Links: only http:, https: and mailto: are clickable; anything else (javascript:, data:, …) stays text.
  */
-import React from 'react';
 
 const SAFE_PROTOCOLS = new Set(['http:', 'https:', 'mailto:']);
 
@@ -19,7 +18,7 @@ export function safeHref(raw) {
   let url;
   try {
     url = new URL(s);
-  } catch (e) {
+  } catch {
     return null;
   }
   return SAFE_PROTOCOLS.has(url.protocol) ? url.href : null;

@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Badge, Button, ChronicleSigil, Glyph } from '../../design';
 import MessageList from '../../features/chat/MessageList';
 import '../../features/chat/chat.css';
