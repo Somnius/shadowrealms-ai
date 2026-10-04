@@ -1,0 +1,332 @@
+{"id": "seed-en-0000", "lang": "en", "greeklish": false, "text": "/roll 5d10 diff 6", "in_character": false, "intent": "dice", "split": "train", "source": "hand"}
+{"id": "seed-en-0001", "lang": "en", "greeklish": false, "text": "/roll 7d10", "in_character": false, "intent": "dice", "split": "train", "source": "hand"}
+{"id": "seed-en-0002", "lang": "en", "greeklish": false, "text": "rolling Dex + Firearms, 6 dice diff 7", "in_character": false, "intent": "dice", "split": "train", "source": "hand"}
+{"id": "seed-en-0003", "lang": "en", "greeklish": false, "text": "can I roll Wits + Awareness to notice the guy?", "in_character": false, "intent": "dice", "split": "train", "source": "hand"}
+{"id": "seed-en-0004", "lang": "en", "greeklish": false, "text": "ST, do you want a Perception roll for that or nah", "in_character": false, "intent": "dice", "split": "dev", "source": "hand"}
+{"id": "seed-en-0005", "lang": "en", "greeklish": false, "text": "3 successes, does that beat him?", "in_character": false, "intent": "dice", "split": "train", "source": "hand"}
+{"id": "seed-en-0006", "lang": "en", "greeklish": false, "text": "ugh botched again", "in_character": false, "intent": "dice", "split": "test", "source": "hand"}
+{"id": "seed-en-0007", "lang": "en", "greeklish": false, "text": "I got a messy critical lol", "in_character": false, "intent": "dice", "split": "train", "source": "hand"}
+{"id": "seed-en-0008", "lang": "en", "greeklish": false, "text": "2 hunger dice came up 10s... messy crit?", "in_character": false, "intent": "dice", "split": "test", "source": "hand"}
+{"id": "seed-en-0009", "lang": "en", "greeklish": false, "text": "bestial failure, great. what happens now", "in_character": false, "intent": "dice", "split": "test", "source": "hand"}
+{"id": "seed-en-0010", "lang": "en", "greeklish": false, "text": "Should I spend willpower for the extra success?", "in_character": false, "intent": "dice", "split": "train", "source": "hand"}
+{"id": "seed-en-0011", "lang": "en", "greeklish": false, "text": "spending a WP point, rerolling 3 dice", "in_character": false, "intent": "dice", "split": "dev", "source": "hand"}
+{"id": "seed-en-0012", "lang": "en", "greeklish": false, "text": "!r 6d10 diff 8 spec melee", "in_character": false, "intent": "dice", "split": "test", "source": "hand"}
+{"id": "seed-en-0013", "lang": "en", "greeklish": false, "text": "how many dice do I roll for Manipulation + Subterfuge, I have 3 and 2", "in_character": false, "intent": "dice", "split": "test", "source": "hand"}
+{"id": "seed-en-0014", "lang": "en", "greeklish": false, "text": "rolled 4 successes on Stealth", "in_character": false, "intent": "dice", "split": "dev", "source": "hand"}
+{"id": "seed-en-0015", "lang": "en", "greeklish": false, "text": "can someone roll for me, my dice roller isn't loading", "in_character": false, "intent": "dice", "split": "dev", "source": "hand"}
+{"id": "seed-en-0016", "lang": "en", "greeklish": false, "text": "the dice bot is broken again", "in_character": false, "intent": "dice", "split": "dev", "source": "hand"}
+{"id": "seed-en-0017", "lang": "en", "greeklish": false, "text": "is it diff 6 or 7 for the climbing check?", "in_character": false, "intent": "dice", "split": "test", "source": "hand"}
+{"id": "seed-en-0018", "lang": "en", "greeklish": false, "text": "/r 4d10 hunger 2", "in_character": false, "intent": "dice", "split": "train", "source": "hand"}
+{"id": "seed-en-0019", "lang": "en", "greeklish": false, "text": "Dex+Athletics: 8, 3, 10, 1, 5 so 2 successes?", "in_character": false, "intent": "dice", "split": "train", "source": "hand"}
+{"id": "seed-en-0020", "lang": "en", "greeklish": false, "text": "rouse check: 4. no hunger gain", "in_character": false, "intent": "dice", "split": "train", "source": "hand"}
+{"id": "seed-en-0021", "lang": "en", "greeklish": false, "text": "rouse check failed, hunger 3 now", "in_character": false, "intent": "dice", "split": "train", "source": "hand"}
+{"id": "seed-en-0022", "lang": "en", "greeklish": false, "text": "Frenzy check: rolling Self-Control diff 7", "in_character": false, "intent": "dice", "split": "test", "source": "hand"}
+{"id": "seed-en-0023", "lang": "en", "greeklish": false, "text": "Courage roll vs Rötschreck, 3 dice", "in_character": false, "intent": "dice", "split": "test", "source": "hand"}
+{"id": "seed-en-0024", "lang": "en", "greeklish": false, "text": "my pool for Dominate is Cha + Dominate = 7", "in_character": false, "intent": "dice", "split": "train", "source": "hand"}
+{"id": "seed-en-0025", "lang": "en", "greeklish": false, "text": "let me roll Composure + Resolve to resist", "in_character": false, "intent": "dice", "split": "test", "source": "hand"}
+{"id": "seed-en-0026", "lang": "en", "greeklish": false, "text": "rolling Intelligence + Occult to know what the sigil is", "in_character": false, "intent": "dice", "split": "dev", "source": "hand"}
+{"id": "seed-en-0027", "lang": "en", "greeklish": false, "text": "rolled 10 dice, 6 successes!! crit!", "in_character": false, "intent": "dice", "split": "dev", "source": "hand"}
+{"id": "seed-en-0028", "lang": "en", "greeklish": false, "text": "two 10s = critical, right", "in_character": false, "intent": "dice", "split": "train", "source": "hand"}
+{"id": "seed-en-0029", "lang": "en", "greeklish": false, "text": "who's rolling for the NPC?", "in_character": false, "intent": "dice", "split": "train", "source": "hand"}
+{"id": "seed-en-0030", "lang": "en", "greeklish": false, "text": "ST can you roll the Sheriff's Awareness secretly", "in_character": false, "intent": "dice", "split": "test", "source": "hand"}
+{"id": "seed-en-0031", "lang": "en", "greeklish": false, "text": "/roll 3d10 diff 5 # haggling", "in_character": false, "intent": "dice", "split": "train", "source": "hand"}
+{"id": "seed-en-0032", "lang": "en", "greeklish": false, "text": "/roll 1d10", "in_character": false, "intent": "dice", "split": "train", "source": "hand"}
+{"id": "seed-en-0033", "lang": "en", "greeklish": false, "text": "d10 please", "in_character": false, "intent": "dice", "split": "test", "source": "hand"}
+{"id": "seed-en-0034", "lang": "en", "greeklish": false, "text": "I'll roll Charisma + Persuasion to calm the crowd", "in_character": false, "intent": "dice", "split": "train", "source": "hand"}
+{"id": "seed-en-0035", "lang": "en", "greeklish": false, "text": "Resolve + Awareness for the Auspex use, 6 dice", "in_character": false, "intent": "dice", "split": "train", "source": "hand"}
+{"id": "seed-en-0036", "lang": "en", "greeklish": false, "text": "my roll: 7 3 2 9 10 6 -> 4 successes", "in_character": false, "intent": "dice", "split": "train", "source": "hand"}
+{"id": "seed-en-0037", "lang": "en", "greeklish": false, "text": "rolling for Hunting: Wits + Streetwise", "in_character": false, "intent": "dice", "split": "train", "source": "hand"}
+{"id": "seed-en-0038", "lang": "en", "greeklish": false, "text": "can I take half instead of rolling?", "in_character": false, "intent": "dice", "split": "test", "source": "hand"}
+{"id": "seed-en-0039", "lang": "en", "greeklish": false, "text": "roll Wits+Investigation diff 6 for clues pls", "in_character": false, "intent": "dice", "split": "train", "source": "hand"}
+{"id": "seed-en-0040", "lang": "en", "greeklish": false, "text": "gonna try a Blood Surge on this roll", "in_character": false, "intent": "dice", "split": "dev", "source": "hand"}
+{"id": "seed-en-0041", "lang": "en", "greeklish": false, "text": "Still need a Composure roll from everyone", "in_character": false, "intent": "dice", "split": "train", "source": "hand"}
+{"id": "seed-en-0042", "lang": "en", "greeklish": false, "text": "Everyone roll Resolve + Awareness", "in_character": false, "intent": "dice", "split": "test", "source": "hand"}
+{"id": "seed-en-0043", "lang": "en", "greeklish": false, "text": "Kevin, roll Strength + Athletics to force the door", "in_character": false, "intent": "dice", "split": "train", "source": "hand"}
+{"id": "seed-en-0044", "lang": "en", "greeklish": false, "text": "rerolled. 1 success. sigh", "in_character": false, "intent": "dice", "split": "train", "source": "hand"}
+{"id": "seed-en-0045", "lang": "en", "greeklish": false, "text": "4 dice, difficulty 8, 0 successes. fantastic", "in_character": false, "intent": "dice", "split": "test", "source": "hand"}
+{"id": "seed-en-0046", "lang": "en", "greeklish": false, "text": "rolled it in Roll20, 3 succ", "in_character": false, "intent": "dice", "split": "dev", "source": "hand"}
+{"id": "seed-en-0047", "lang": "en", "greeklish": false, "text": "result: botch 😭", "in_character": false, "intent": "dice", "split": "test", "source": "hand"}
+{"id": "seed-en-0048", "lang": "en", "greeklish": false, "text": "🎲🎲🎲 come on", "in_character": false, "intent": "dice", "split": "train", "source": "hand"}
+{"id": "seed-en-0049", "lang": "en", "greeklish": false, "text": "ok rolling now", "in_character": false, "intent": "dice", "split": "test", "source": "hand"}
+{"id": "seed-en-0050", "lang": "en", "greeklish": false, "text": "Wait I rolled the wrong pool, it should be Manipulation not Charisma. reroll?", "in_character": false, "intent": "dice", "split": "test", "source": "hand"}
+{"id": "seed-en-0051", "lang": "en", "greeklish": false, "text": "Oblivion roll: Resolve + Oblivion, 5 dice", "in_character": false, "intent": "dice", "split": "train", "source": "hand"}
+{"id": "seed-en-0052", "lang": "en", "greeklish": false, "text": "Cha + Animalism diff 6 to call the rats", "in_character": false, "intent": "dice", "split": "test", "source": "hand"}
+{"id": "seed-en-0053", "lang": "en", "greeklish": false, "text": "I need a 7 or higher right?", "in_character": false, "intent": "dice", "split": "dev", "source": "hand"}
+{"id": "seed-en-0054", "lang": "en", "greeklish": false, "text": "I'll roll Dex+Drive to lose the cops", "in_character": false, "intent": "dice", "split": "train", "source": "hand"}
+{"id": "seed-en-0055", "lang": "en", "greeklish": false, "text": "roll it again with diff 5 since you have the right tools", "in_character": false, "intent": "dice", "split": "train", "source": "hand"}
+{"id": "seed-en-0056", "lang": "en", "greeklish": false, "text": "degeneration roll: Conscience 3, diff 7", "in_character": false, "intent": "dice", "split": "train", "source": "hand"}
+{"id": "seed-en-0057", "lang": "en", "greeklish": false, "text": "Conscience roll succeeded phew", "in_character": false, "intent": "dice", "split": "train", "source": "hand"}
+{"id": "seed-en-0058", "lang": "en", "greeklish": false, "text": "rolling Willpower diff 6 to resist the Dominate", "in_character": false, "intent": "dice", "split": "train", "source": "hand"}
+{"id": "seed-en-0059", "lang": "en", "greeklish": false, "text": "Contested roll: my Wits+Subterfuge vs her Perception+Empathy", "in_character": false, "intent": "dice", "split": "dev", "source": "hand"}
+{"id": "seed-en-0060", "lang": "en", "greeklish": false, "text": "5 vs 3 successes, I win the contested roll?", "in_character": false, "intent": "dice", "split": "dev", "source": "hand"}
+{"id": "seed-en-0061", "lang": "en", "greeklish": false, "text": "Can I roll Intimidation instead of Persuasion here?", "in_character": false, "intent": "dice", "split": "train", "source": "hand"}
+{"id": "seed-en-0062", "lang": "en", "greeklish": false, "text": "/roll 6d10>6", "in_character": false, "intent": "dice", "split": "dev", "source": "hand"}
+{"id": "seed-en-0063", "lang": "en", "greeklish": false, "text": "/roll 2d10 # rouse x2", "in_character": false, "intent": "dice", "split": "train", "source": "hand"}
+{"id": "seed-en-0064", "lang": "en", "greeklish": false, "text": "rolled 9 successes on 12 dice lmao", "in_character": false, "intent": "dice", "split": "test", "source": "hand"}
+{"id": "seed-en-0065", "lang": "en", "greeklish": false, "text": "rolling Auspex to read his aura, Wits + Auspex", "in_character": false, "intent": "dice", "split": "test", "source": "hand"}
+{"id": "seed-en-0066", "lang": "en", "greeklish": false, "text": "remorse roll time? I have 2 stains", "in_character": false, "intent": "dice", "split": "train", "source": "hand"}
+{"id": "seed-en-0067", "lang": "en", "greeklish": false, "text": "How does Blood Surge work again?", "in_character": false, "intent": "rules_question", "split": "train", "source": "hand"}
+{"id": "seed-en-0068", "lang": "en", "greeklish": false, "text": "Does Celerity add to Dex rolls or give extra actions in V5?", "in_character": false, "intent": "rules_question", "split": "train", "source": "hand"}
+{"id": "seed-en-0069", "lang": "en", "greeklish": false, "text": "what's the difference between superficial and aggravated damage?", "in_character": false, "intent": "rules_question", "split": "train", "source": "hand"}
+{"id": "seed-en-0070", "lang": "en", "greeklish": false, "text": "can a Ventrue feed from anyone or only their prey exclusion?", "in_character": false, "intent": "rules_question", "split": "dev", "source": "hand"}
+{"id": "seed-en-0071", "lang": "en", "greeklish": false, "text": "How much XP does it cost to raise a clan Discipline to 3?", "in_character": false, "intent": "rules_question", "split": "train", "source": "hand"}
+{"id": "seed-en-0072", "lang": "en", "greeklish": false, "text": "Is Fortitude soak automatic or do I need to activate it?", "in_character": false, "intent": "rules_question", "split": "train", "source": "hand"}
+{"id": "seed-en-0073", "lang": "en", "greeklish": false, "text": "Do 1s cancel successes in V20?", "in_character": false, "intent": "rules_question", "split": "train", "source": "hand"}
+{"id": "seed-en-0074", "lang": "en", "greeklish": false, "text": "What happens at Hunger 5?", "in_character": false, "intent": "rules_question", "split": "test", "source": "hand"}
+{"id": "seed-en-0075", "lang": "en", "greeklish": false, "text": "When do I have to make a rouse check?", "in_character": false, "intent": "rules_question", "split": "train", "source": "hand"}
+{"id": "seed-en-0076", "lang": "en", "greeklish": false, "text": "Can Dominate work through a phone call?", "in_character": false, "intent": "rules_question", "split": "train", "source": "hand"}
+{"id": "seed-en-0077", "lang": "en", "greeklish": false, "text": "does Presence work on other vampires?", "in_character": false, "intent": "rules_question", "split": "train", "source": "hand"}
+{"id": "seed-en-0078", "lang": "en", "greeklish": false, "text": "Can a Nosferatu ever pass as human without Obfuscate?", "in_character": false, "intent": "rules_question", "split": "train", "source": "hand"}
+{"id": "seed-en-0079", "lang": "en", "greeklish": false, "text": "what's a blood bond and how many drinks does it take?", "in_character": false, "intent": "rules_question", "split": "train", "source": "hand"}
+{"id": "seed-en-0080", "lang": "en", "greeklish": false, "text": "Is Thin-blooded alchemy allowed in this game?", "in_character": false, "intent": "rules_question", "split": "dev", "source": "hand"}
+{"id": "seed-en-0081", "lang": "en", "greeklish": false, "text": "how many health levels does a vampire have", "in_character": false, "intent": "rules_question", "split": "train", "source": "hand"}
+{"id": "seed-en-0082", "lang": "en", "greeklish": false, "text": "Can I buy Resources 4 at character creation?", "in_character": false, "intent": "rules_question", "split": "train", "source": "hand"}
+{"id": "seed-en-0083", "lang": "en", "greeklish": false, "text": "Do we use the V20 freebie point table or something custom?", "in_character": false, "intent": "rules_question", "split": "train", "source": "hand"}
+{"id": "seed-en-0084", "lang": "en", "greeklish": false, "text": "what does Blood Potency actually do for me", "in_character": false, "intent": "rules_question", "split": "train", "source": "hand"}
+{"id": "seed-en-0085", "lang": "en", "greeklish": false, "text": "can I learn out-of-clan Disciplines without a teacher?", "in_character": false, "intent": "rules_question", "split": "dev", "source": "hand"}
+{"id": "seed-en-0086", "lang": "en", "greeklish": false, "text": "how long does it take to heal aggravated damage?", "in_character": false, "intent": "rules_question", "split": "test", "source": "hand"}
+{"id": "seed-en-0087", "lang": "en", "greeklish": false, "text": "Does staking actually paralyze in V5 or is that a myth?", "in_character": false, "intent": "rules_question", "split": "test", "source": "hand"}
+{"id": "seed-en-0088", "lang": "en", "greeklish": false, "text": "Is diablerie allowed for PCs or instant ban lol", "in_character": false, "intent": "rules_question", "split": "test", "source": "hand"}
+{"id": "seed-en-0089", "lang": "en", "greeklish": false, "text": "what's the max dots for a 13th gen?", "in_character": false, "intent": "rules_question", "split": "train", "source": "hand"}
+{"id": "seed-en-0090", "lang": "en", "greeklish": false, "text": "how do generation and blood pool connect again?", "in_character": false, "intent": "rules_question", "split": "train", "source": "hand"}
+{"id": "seed-en-0091", "lang": "en", "greeklish": false, "text": "What counts as a Masquerade breach for Humanity?", "in_character": false, "intent": "rules_question", "split": "train", "source": "hand"}
+{"id": "seed-en-0092", "lang": "en", "greeklish": false, "text": "Where's the frenzy chart in the book?", "in_character": false, "intent": "rules_question", "split": "test", "source": "hand"}
+{"id": "seed-en-0093", "lang": "en", "greeklish": false, "text": "can someone explain stains vs Humanity loss", "in_character": false, "intent": "rules_question", "split": "test", "source": "hand"}
+{"id": "seed-en-0094", "lang": "en", "greeklish": false, "text": "Does Auspex let me see Obfuscated people automatically?", "in_character": false, "intent": "rules_question", "split": "dev", "source": "hand"}
+{"id": "seed-en-0095", "lang": "en", "greeklish": false, "text": "Can I use Celerity and Potence in the same turn?", "in_character": false, "intent": "rules_question", "split": "test", "source": "hand"}
+{"id": "seed-en-0096", "lang": "en", "greeklish": false, "text": "Is there a limit on how many times I can spend willpower per scene?", "in_character": false, "intent": "rules_question", "split": "train", "source": "hand"}
+{"id": "seed-en-0097", "lang": "en", "greeklish": false, "text": "How does sunlight damage work, is it per turn?", "in_character": false, "intent": "rules_question", "split": "test", "source": "hand"}
+{"id": "seed-en-0098", "lang": "en", "greeklish": false, "text": "Do mortals get a roll to notice Obfuscate?", "in_character": false, "intent": "rules_question", "split": "train", "source": "hand"}
+{"id": "seed-en-0099", "lang": "en", "greeklish": false, "text": "Is Animalism usable on werewolves?", "in_character": false, "intent": "rules_question", "split": "test", "source": "hand"}
+{"id": "seed-en-0100", "lang": "en", "greeklish": false, "text": "How do Predator types work?", "in_character": false, "intent": "rules_question", "split": "test", "source": "hand"}
+{"id": "seed-en-0101", "lang": "en", "greeklish": false, "text": "Which Predator type gives Herd?", "in_character": false, "intent": "rules_question", "split": "test", "source": "hand"}
+{"id": "seed-en-0102", "lang": "en", "greeklish": false, "text": "can I swap a skill specialty later?", "in_character": false, "intent": "rules_question", "split": "train", "source": "hand"}
+{"id": "seed-en-0103", "lang": "en", "greeklish": false, "text": "What's the rule for multiple actions in one turn?", "in_character": false, "intent": "rules_question", "split": "test", "source": "hand"}
+{"id": "seed-en-0104", "lang": "en", "greeklish": false, "text": "Who's above the Prince in the Camarilla hierarchy?", "in_character": false, "intent": "rules_question", "split": "test", "source": "hand"}
+{"id": "seed-en-0105", "lang": "en", "greeklish": false, "text": "what are the Traditions again?", "in_character": false, "intent": "rules_question", "split": "dev", "source": "hand"}
+{"id": "seed-en-0106", "lang": "en", "greeklish": false, "text": "Are Caitiff allowed in this chronicle?", "in_character": false, "intent": "rules_question", "split": "test", "source": "hand"}
+{"id": "seed-en-0107", "lang": "en", "greeklish": false, "text": "Does Iron Gullet let me feed on bagged blood?", "in_character": false, "intent": "rules_question", "split": "dev", "source": "hand"}
+{"id": "seed-en-0108", "lang": "en", "greeklish": false, "text": "Can I spend XP between sessions or only at the end of the story?", "in_character": false, "intent": "rules_question", "split": "train", "source": "hand"}
+{"id": "seed-en-0109", "lang": "en", "greeklish": false, "text": "Is the Blush of Life free or does it cost a rouse check?", "in_character": false, "intent": "rules_question", "split": "train", "source": "hand"}
+{"id": "seed-en-0110", "lang": "en", "greeklish": false, "text": "Can ghouls learn Disciplines?", "in_character": false, "intent": "rules_question", "split": "dev", "source": "hand"}
+{"id": "seed-en-0111", "lang": "en", "greeklish": false, "text": "How strong is a ghoul compared to a neonate?", "in_character": false, "intent": "rules_question", "split": "test", "source": "hand"}
+{"id": "seed-en-0112", "lang": "en", "greeklish": false, "text": "what does a messy critical mean narratively?", "in_character": false, "intent": "rules_question", "split": "train", "source": "hand"}
+{"id": "seed-en-0113", "lang": "en", "greeklish": false, "text": "if I get staked do I still see what's going on?", "in_character": false, "intent": "rules_question", "split": "train", "source": "hand"}
+{"id": "seed-en-0114", "lang": "en", "greeklish": false, "text": "Do vampires show up on cameras in V5?", "in_character": false, "intent": "rules_question", "split": "train", "source": "hand"}
+{"id": "seed-en-0115", "lang": "en", "greeklish": false, "text": "are we using the V5 hunting rules or just handwaving it?", "in_character": false, "intent": "rules_question", "split": "dev", "source": "hand"}
+{"id": "seed-en-0116", "lang": "en", "greeklish": false, "text": "Is Humanity 4 a big deal?", "in_character": false, "intent": "rules_question", "split": "dev", "source": "hand"}
+{"id": "seed-en-0117", "lang": "en", "greeklish": false, "text": "What happens if my Willpower track fills up with superficial?", "in_character": false, "intent": "rules_question", "split": "test", "source": "hand"}
+{"id": "seed-en-0118", "lang": "en", "greeklish": false, "text": "Can I use Dominate on someone who doesn't speak my language?", "in_character": false, "intent": "rules_question", "split": "dev", "source": "hand"}
+{"id": "seed-en-0119", "lang": "en", "greeklish": false, "text": "how does the Toreador bane work exactly", "in_character": false, "intent": "rules_question", "split": "test", "source": "hand"}
+{"id": "seed-en-0120", "lang": "en", "greeklish": false, "text": "does the Malkavian bane apply all the time?", "in_character": false, "intent": "rules_question", "split": "train", "source": "hand"}
+{"id": "seed-en-0121", "lang": "en", "greeklish": false, "text": "Is there a rule for vampires drinking alcohol?", "in_character": false, "intent": "rules_question", "split": "dev", "source": "hand"}
+{"id": "seed-en-0122", "lang": "en", "greeklish": false, "text": "How do I calculate my Health track again?", "in_character": false, "intent": "rules_question", "split": "train", "source": "hand"}
+{"id": "seed-en-0123", "lang": "en", "greeklish": false, "text": "Does Potence add to damage or only to the roll?", "in_character": false, "intent": "rules_question", "split": "dev", "source": "hand"}
+{"id": "seed-en-0124", "lang": "en", "greeklish": false, "text": "Can Protean let me sink into the earth at level 1?", "in_character": false, "intent": "rules_question", "split": "dev", "source": "hand"}
+{"id": "seed-en-0125", "lang": "en", "greeklish": false, "text": "how many Thaumaturgy paths can I start with?", "in_character": false, "intent": "rules_question", "split": "test", "source": "hand"}
+{"id": "seed-en-0126", "lang": "en", "greeklish": false, "text": "What's the XP cost for a new Merit dot?", "in_character": false, "intent": "rules_question", "split": "test", "source": "hand"}
+{"id": "seed-en-0127", "lang": "en", "greeklish": false, "text": "Who are the Anarchs and what do they want?", "in_character": false, "intent": "rules_question", "split": "train", "source": "hand"}
+{"id": "seed-en-0128", "lang": "en", "greeklish": false, "text": "who are the Tremere loyal to after the Pyramid fell?", "in_character": false, "intent": "rules_question", "split": "test", "source": "hand"}
+{"id": "seed-en-0129", "lang": "en", "greeklish": false, "text": "What is Elysium exactly, can we fight there?", "in_character": false, "intent": "rules_question", "split": "train", "source": "hand"}
+{"id": "seed-en-0130", "lang": "en", "greeklish": false, "text": "does Obfuscate work on cameras?", "in_character": false, "intent": "rules_question", "split": "train", "source": "hand"}
+{"id": "seed-en-0131", "lang": "en", "greeklish": false, "text": "what's the difficulty for frenzy checks in V20, is it fixed?", "in_character": false, "intent": "rules_question", "split": "train", "source": "hand"}
+{"id": "seed-en-0132", "lang": "en", "greeklish": false, "text": "Are we still on for Friday at 9?", "in_character": false, "intent": "general", "split": "train", "source": "hand"}
+{"id": "seed-en-0133", "lang": "en", "greeklish": false, "text": "I can't make it next week, work trip 😞", "in_character": false, "intent": "general", "split": "test", "source": "hand"}
+{"id": "seed-en-0134", "lang": "en", "greeklish": false, "text": "brb, pizza guy", "in_character": false, "intent": "general", "split": "train", "source": "hand"}
+{"id": "seed-en-0135", "lang": "en", "greeklish": false, "text": "back", "in_character": false, "intent": "general", "split": "test", "source": "hand"}
+{"id": "seed-en-0136", "lang": "en", "greeklish": false, "text": "lol", "in_character": false, "intent": "general", "split": "train", "source": "hand"}
+{"id": "seed-en-0137", "lang": "en", "greeklish": false, "text": "ok", "in_character": false, "intent": "general", "split": "train", "source": "hand"}
+{"id": "seed-en-0138", "lang": "en", "greeklish": false, "text": "+1", "in_character": false, "intent": "general", "split": "test", "source": "hand"}
+{"id": "seed-en-0139", "lang": "en", "greeklish": false, "text": "gg everyone, great session tonight", "in_character": false, "intent": "general", "split": "dev", "source": "hand"}
+{"id": "seed-en-0140", "lang": "en", "greeklish": false, "text": "who's hosting next time?", "in_character": false, "intent": "general", "split": "test", "source": "hand"}
+{"id": "seed-en-0141", "lang": "en", "greeklish": false, "text": "my mic is dead, I'll type tonight", "in_character": false, "intent": "general", "split": "dev", "source": "hand"}
+{"id": "seed-en-0142", "lang": "en", "greeklish": false, "text": "can you hear me? discord is acting up", "in_character": false, "intent": "general", "split": "train", "source": "hand"}
+{"id": "seed-en-0143", "lang": "en", "greeklish": false, "text": "lmao when Marcus said \"I'm not afraid of the Sheriff\" and then immediately ran", "in_character": false, "intent": "general", "split": "train", "source": "hand"}
+{"id": "seed-en-0144", "lang": "en", "greeklish": false, "text": "Elena's line \"you are not welcome here\" was so cold 😂", "in_character": false, "intent": "general", "split": "train", "source": "hand"}
+{"id": "seed-en-0145", "lang": "en", "greeklish": false, "text": "I love how the ST described the Elysium tonight", "in_character": false, "intent": "general", "split": "test", "source": "hand"}
+{"id": "seed-en-0146", "lang": "en", "greeklish": false, "text": "anyone watching the new Vampire series?", "in_character": false, "intent": "general", "split": "test", "source": "hand"}
+{"id": "seed-en-0147", "lang": "en", "greeklish": false, "text": "sorry I'm late, traffic", "in_character": false, "intent": "general", "split": "train", "source": "hand"}
+{"id": "seed-en-0148", "lang": "en", "greeklish": false, "text": "gotta go early tonight, 11:30 latest", "in_character": false, "intent": "general", "split": "dev", "source": "hand"}
+{"id": "seed-en-0149", "lang": "en", "greeklish": false, "text": "what time is it for you guys? I'm in Athens", "in_character": false, "intent": "general", "split": "test", "source": "hand"}
+{"id": "seed-en-0150", "lang": "en", "greeklish": false, "text": "happy birthday Nikos!! 🎂", "in_character": false, "intent": "general", "split": "dev", "source": "hand"}
+{"id": "seed-en-0151", "lang": "en", "greeklish": false, "text": "thanks for the recap, I missed a lot", "in_character": false, "intent": "general", "split": "train", "source": "hand"}
+{"id": "seed-en-0152", "lang": "en", "greeklish": false, "text": "can someone post the session notes?", "in_character": false, "intent": "general", "split": "train", "source": "hand"}
+{"id": "seed-en-0153", "lang": "en", "greeklish": false, "text": "my character sheet link is in the pinned messages", "in_character": false, "intent": "general", "split": "train", "source": "hand"}
+{"id": "seed-en-0154", "lang": "en", "greeklish": false, "text": "should we do a session zero for the new players?", "in_character": false, "intent": "general", "split": "train", "source": "hand"}
+{"id": "seed-en-0155", "lang": "en", "greeklish": false, "text": "Welcome to the group, Maria!", "in_character": false, "intent": "general", "split": "dev", "source": "hand"}
+{"id": "seed-en-0156", "lang": "en", "greeklish": false, "text": "good night all", "in_character": false, "intent": "general", "split": "test", "source": "hand"}
+{"id": "seed-en-0157", "lang": "en", "greeklish": false, "text": "I'm so tired lol, 3 hours of sleep", "in_character": false, "intent": "general", "split": "train", "source": "hand"}
+{"id": "seed-en-0158", "lang": "en", "greeklish": false, "text": "anyone else lagging?", "in_character": false, "intent": "general", "split": "test", "source": "hand"}
+{"id": "seed-en-0159", "lang": "en", "greeklish": false, "text": "that plot twist with the Prince... I'm shook", "in_character": false, "intent": "general", "split": "train", "source": "hand"}
+{"id": "seed-en-0160", "lang": "en", "greeklish": false, "text": "brb 5 mins", "in_character": false, "intent": "general", "split": "train", "source": "hand"}
+{"id": "seed-en-0161", "lang": "en", "greeklish": false, "text": "ok I'm back, what did I miss", "in_character": false, "intent": "general", "split": "train", "source": "hand"}
+{"id": "seed-en-0162", "lang": "en", "greeklish": false, "text": "we need to talk about pacing, the last two sessions felt slow", "in_character": false, "intent": "general", "split": "train", "source": "hand"}
+{"id": "seed-en-0163", "lang": "en", "greeklish": false, "text": "can we pause for 10?", "in_character": false, "intent": "general", "split": "dev", "source": "hand"}
+{"id": "seed-en-0164", "lang": "en", "greeklish": false, "text": "I'll bring snacks next time", "in_character": false, "intent": "general", "split": "train", "source": "hand"}
+{"id": "seed-en-0165", "lang": "en", "greeklish": false, "text": "is this channel for OOC only?", "in_character": false, "intent": "general", "split": "train", "source": "hand"}
+{"id": "seed-en-0166", "lang": "en", "greeklish": false, "text": "pls keep IC stuff in the scene channel guys", "in_character": false, "intent": "general", "split": "train", "source": "hand"}
+{"id": "seed-en-0167", "lang": "en", "greeklish": false, "text": "haha", "in_character": false, "intent": "general", "split": "test", "source": "hand"}
+{"id": "seed-en-0168", "lang": "en", "greeklish": false, "text": "wait what", "in_character": false, "intent": "general", "split": "train", "source": "hand"}
+{"id": "seed-en-0169", "lang": "en", "greeklish": false, "text": "same", "in_character": false, "intent": "general", "split": "train", "source": "hand"}
+{"id": "seed-en-0170", "lang": "en", "greeklish": false, "text": "nice!", "in_character": false, "intent": "general", "split": "train", "source": "hand"}
+{"id": "seed-en-0171", "lang": "en", "greeklish": false, "text": "F", "in_character": false, "intent": "general", "split": "train", "source": "hand"}
+{"id": "seed-en-0172", "lang": "en", "greeklish": false, "text": "👍", "in_character": false, "intent": "general", "split": "test", "source": "hand"}
+{"id": "seed-en-0173", "lang": "en", "greeklish": false, "text": "ty", "in_character": false, "intent": "general", "split": "dev", "source": "hand"}
+{"id": "seed-en-0174", "lang": "en", "greeklish": false, "text": "np", "in_character": false, "intent": "general", "split": "dev", "source": "hand"}
+{"id": "seed-en-0175", "lang": "en", "greeklish": false, "text": "omg the Nosferatu NPC is my new favourite", "in_character": false, "intent": "general", "split": "test", "source": "hand"}
+{"id": "seed-en-0176", "lang": "en", "greeklish": false, "text": "I made fan art of our coterie, posting it in #art", "in_character": false, "intent": "general", "split": "train", "source": "hand"}
+{"id": "seed-en-0177", "lang": "en", "greeklish": false, "text": "Steam sale has Bloodlines 2 cheap btw", "in_character": false, "intent": "general", "split": "train", "source": "hand"}
+{"id": "seed-en-0178", "lang": "en", "greeklish": false, "text": "did anyone read the new V5 supplement?", "in_character": false, "intent": "general", "split": "test", "source": "hand"}
+{"id": "seed-en-0179", "lang": "en", "greeklish": false, "text": "let's vote on the next chronicle: Anarchs or Sabbat?", "in_character": false, "intent": "general", "split": "test", "source": "hand"}
+{"id": "seed-en-0180", "lang": "en", "greeklish": false, "text": "can we move the game to Saturday?", "in_character": false, "intent": "general", "split": "train", "source": "hand"}
+{"id": "seed-en-0181", "lang": "en", "greeklish": false, "text": "I'm out sick this week, sorry everyone", "in_character": false, "intent": "general", "split": "dev", "source": "hand"}
+{"id": "seed-en-0182", "lang": "en", "greeklish": false, "text": "I'm loving this campaign honestly", "in_character": false, "intent": "general", "split": "test", "source": "hand"}
+{"id": "seed-en-0183", "lang": "en", "greeklish": false, "text": "ST you're a monster for that cliffhanger 😂", "in_character": false, "intent": "general", "split": "test", "source": "hand"}
+{"id": "seed-en-0184", "lang": "en", "greeklish": false, "text": "Lag is horrible tonight", "in_character": false, "intent": "general", "split": "train", "source": "hand"}
+{"id": "seed-en-0185", "lang": "en", "greeklish": false, "text": "I'll update my sheet after dinner", "in_character": false, "intent": "general", "split": "test", "source": "hand"}
+{"id": "seed-en-0186", "lang": "en", "greeklish": false, "text": "need to leave in 20 min", "in_character": false, "intent": "general", "split": "dev", "source": "hand"}
+{"id": "seed-en-0187", "lang": "en", "greeklish": false, "text": "is the game on this week or is it the holiday?", "in_character": false, "intent": "general", "split": "test", "source": "hand"}
+{"id": "seed-en-0188", "lang": "en", "greeklish": false, "text": "the OOC chat is so dead today lol", "in_character": false, "intent": "general", "split": "train", "source": "hand"}
+{"id": "seed-en-0189", "lang": "en", "greeklish": false, "text": "morning everyone ☕", "in_character": false, "intent": "general", "split": "dev", "source": "hand"}
+{"id": "seed-en-0190", "lang": "en", "greeklish": false, "text": "I just realized I've been playing my Brujah way too calm", "in_character": false, "intent": "general", "split": "train", "source": "hand"}
+{"id": "seed-en-0191", "lang": "en", "greeklish": false, "text": "poor Jacob, the dice hate him tonight", "in_character": false, "intent": "general", "split": "train", "source": "hand"}
+{"id": "seed-en-0192", "lang": "en", "greeklish": false, "text": "I'll write a backstory doc this weekend", "in_character": false, "intent": "general", "split": "dev", "source": "hand"}
+{"id": "seed-en-0193", "lang": "en", "greeklish": false, "text": "Can I invite a friend to watch the session?", "in_character": false, "intent": "general", "split": "train", "source": "hand"}
+{"id": "seed-en-0194", "lang": "en", "greeklish": false, "text": "that Gangrel NPC gave me chills", "in_character": false, "intent": "general", "split": "test", "source": "hand"}
+{"id": "seed-en-0195", "lang": "en", "greeklish": false, "text": "testing testing", "in_character": false, "intent": "general", "split": "test", "source": "hand"}
+{"id": "seed-en-0196", "lang": "en", "greeklish": false, "text": "my cat just walked over my keyboard sorry", "in_character": false, "intent": "general", "split": "dev", "source": "hand"}
+{"id": "seed-en-0197", "lang": "en", "greeklish": false, "text": "*draws my fangs and lunges at the ghoul*", "in_character": true, "intent": "combat", "split": "test", "source": "hand"}
+{"id": "seed-en-0198", "lang": "en", "greeklish": false, "text": "I slam the hunter into the wall and go for his throat", "in_character": true, "intent": "combat", "split": "test", "source": "hand"}
+{"id": "seed-en-0199", "lang": "en", "greeklish": false, "text": "I lunge at the Prince!", "in_character": true, "intent": "combat", "split": "train", "source": "hand"}
+{"id": "seed-en-0200", "lang": "en", "greeklish": false, "text": "Marcus grabs the stake from the table and drives it into the Lasombra's chest", "in_character": true, "intent": "combat", "split": "test", "source": "hand"}
+{"id": "seed-en-0201", "lang": "en", "greeklish": false, "text": "*ducks behind the car and fires twice at the shadow*", "in_character": true, "intent": "combat", "split": "train", "source": "hand"}
+{"id": "seed-en-0202", "lang": "en", "greeklish": false, "text": "I sink my claws into his arm and twist", "in_character": true, "intent": "combat", "split": "dev", "source": "hand"}
+{"id": "seed-en-0203", "lang": "en", "greeklish": false, "text": "Elena whirls around, kicking the gun from his hand", "in_character": true, "intent": "combat", "split": "dev", "source": "hand"}
+{"id": "seed-en-0204", "lang": "en", "greeklish": false, "text": "*backhands the ghoul across the room*", "in_character": true, "intent": "combat", "split": "train", "source": "hand"}
+{"id": "seed-en-0205", "lang": "en", "greeklish": false, "text": "I tackle him before he reaches the door", "in_character": true, "intent": "combat", "split": "train", "source": "hand"}
+{"id": "seed-en-0206", "lang": "en", "greeklish": false, "text": "\"You should have stayed home,\" I growl, and swing the crowbar at his knees", "in_character": true, "intent": "combat", "split": "train", "source": "hand"}
+{"id": "seed-en-0207", "lang": "en", "greeklish": false, "text": "*blurs forward with Celerity, knife flashing*", "in_character": true, "intent": "combat", "split": "train", "source": "hand"}
+{"id": "seed-en-0208", "lang": "en", "greeklish": false, "text": "Viktor roars and charges into the werewolf, fangs bared", "in_character": true, "intent": "combat", "split": "dev", "source": "hand"}
+{"id": "seed-en-0209", "lang": "en", "greeklish": false, "text": "I grab the Sheriff by the collar and headbutt him", "in_character": true, "intent": "combat", "split": "train", "source": "hand"}
+{"id": "seed-en-0210", "lang": "en", "greeklish": false, "text": "*kicks the door in and opens fire on the room*", "in_character": true, "intent": "combat", "split": "train", "source": "hand"}
+{"id": "seed-en-0211", "lang": "en", "greeklish": false, "text": "I throw the chair through the window and leap out after it", "in_character": true, "intent": "combat", "split": "train", "source": "hand"}
+{"id": "seed-en-0212", "lang": "en", "greeklish": false, "text": "She drives her heel into his kneecap and wrenches the gun away.", "in_character": true, "intent": "combat", "split": "test", "source": "hand"}
+{"id": "seed-en-0213", "lang": "en", "greeklish": false, "text": "*bites down hard on his neck, not letting go*", "in_character": true, "intent": "combat", "split": "train", "source": "hand"}
+{"id": "seed-en-0214", "lang": "en", "greeklish": false, "text": "I shove the hunter off the roof", "in_character": true, "intent": "combat", "split": "train", "source": "hand"}
+{"id": "seed-en-0215", "lang": "en", "greeklish": false, "text": "Get down!! *tackles Sofia out of the line of fire*", "in_character": true, "intent": "combat", "split": "train", "source": "hand"}
+{"id": "seed-en-0216", "lang": "en", "greeklish": false, "text": "I parry the blade with my forearm and punch him in the face", "in_character": true, "intent": "combat", "split": "train", "source": "hand"}
+{"id": "seed-en-0217", "lang": "en", "greeklish": false, "text": "*draws the katana slowly* Come then.", "in_character": true, "intent": "combat", "split": "dev", "source": "hand"}
+{"id": "seed-en-0218", "lang": "en", "greeklish": false, "text": "Dmitri smashes the lamp over the ghoul's head", "in_character": true, "intent": "combat", "split": "test", "source": "hand"}
+{"id": "seed-en-0219", "lang": "en", "greeklish": false, "text": "I rip the shotgun out of his hands and snap it in half", "in_character": true, "intent": "combat", "split": "dev", "source": "hand"}
+{"id": "seed-en-0220", "lang": "en", "greeklish": false, "text": "*pins the Brujah to the floor, claws at his throat*", "in_character": true, "intent": "combat", "split": "dev", "source": "hand"}
+{"id": "seed-en-0221", "lang": "en", "greeklish": false, "text": "I run. I just run as fast as I can away from the fire", "in_character": true, "intent": "combat", "split": "test", "source": "hand"}
+{"id": "seed-en-0222", "lang": "en", "greeklish": false, "text": "I fire my last bullet at the Sabbat pack leader", "in_character": true, "intent": "combat", "split": "train", "source": "hand"}
+{"id": "seed-en-0223", "lang": "en", "greeklish": false, "text": "*sidesteps the punch and drives a fist into his ribs*", "in_character": true, "intent": "combat", "split": "test", "source": "hand"}
+{"id": "seed-en-0224", "lang": "en", "greeklish": false, "text": "Anna grabs the fire extinguisher and sprays it in the hunters' faces", "in_character": true, "intent": "combat", "split": "train", "source": "hand"}
+{"id": "seed-en-0225", "lang": "en", "greeklish": false, "text": "I bite the cop before he can call for backup", "in_character": true, "intent": "combat", "split": "test", "source": "hand"}
+{"id": "seed-en-0226", "lang": "en", "greeklish": false, "text": "\"Not tonight.\" *slams the stake through his heart*", "in_character": true, "intent": "combat", "split": "test", "source": "hand"}
+{"id": "seed-en-0227", "lang": "en", "greeklish": false, "text": "I dive at the gunman, trying to knock the rifle away", "in_character": true, "intent": "combat", "split": "train", "source": "hand"}
+{"id": "seed-en-0228", "lang": "en", "greeklish": false, "text": "*hisses, fangs out, and swipes at the Tzimisce's eyes*", "in_character": true, "intent": "combat", "split": "train", "source": "hand"}
+{"id": "seed-en-0229", "lang": "en", "greeklish": false, "text": "Lucas kicks the table over for cover and returns fire", "in_character": true, "intent": "combat", "split": "train", "source": "hand"}
+{"id": "seed-en-0230", "lang": "en", "greeklish": false, "text": "I strangle the ghoul until he stops moving", "in_character": true, "intent": "combat", "split": "dev", "source": "hand"}
+{"id": "seed-en-0231", "lang": "en", "greeklish": false, "text": "*catches the blade with his bare hand and smiles*", "in_character": true, "intent": "combat", "split": "test", "source": "hand"}
+{"id": "seed-en-0232", "lang": "en", "greeklish": false, "text": "ok attacking the ghoul: Str + Brawl, 7 dice, diff 6", "in_character": false, "intent": "combat", "split": "train", "source": "hand"}
+{"id": "seed-en-0233", "lang": "en", "greeklish": false, "text": "what's my initiative? I got 8", "in_character": false, "intent": "combat", "split": "test", "source": "hand"}
+{"id": "seed-en-0234", "lang": "en", "greeklish": false, "text": "initiative order: Marcus, the ghoul, Elena, then me", "in_character": false, "intent": "combat", "split": "train", "source": "hand"}
+{"id": "seed-en-0235", "lang": "en", "greeklish": false, "text": "I'm down to Injured, -1 to all pools", "in_character": false, "intent": "combat", "split": "dev", "source": "hand"}
+{"id": "seed-en-0236", "lang": "en", "greeklish": false, "text": "soaking 4 with Fortitude", "in_character": false, "intent": "combat", "split": "train", "source": "hand"}
+{"id": "seed-en-0237", "lang": "en", "greeklish": false, "text": "took 3 aggravated from the fire, ouch", "in_character": false, "intent": "combat", "split": "train", "source": "hand"}
+{"id": "seed-en-0238", "lang": "en", "greeklish": false, "text": "my character wants to grapple him this turn, Str+Brawl?", "in_character": false, "intent": "combat", "split": "train", "source": "hand"}
+{"id": "seed-en-0239", "lang": "en", "greeklish": false, "text": "plan: Elena distracts, Marcus flanks left, my guy goes for the leader", "in_character": false, "intent": "combat", "split": "dev", "source": "hand"}
+{"id": "seed-en-0240", "lang": "en", "greeklish": false, "text": "health track: 4 superficial 2 aggravated, I'm impaired", "in_character": false, "intent": "combat", "split": "train", "source": "hand"}
+{"id": "seed-en-0241", "lang": "en", "greeklish": false, "text": "I'll spend blood to heal before the next round", "in_character": false, "intent": "combat", "split": "test", "source": "hand"}
+{"id": "seed-en-0242", "lang": "en", "greeklish": false, "text": "is it my turn?", "in_character": false, "intent": "combat", "split": "test", "source": "hand"}
+{"id": "seed-en-0243", "lang": "en", "greeklish": false, "text": "who's next in initiative?", "in_character": false, "intent": "combat", "split": "test", "source": "hand"}
+{"id": "seed-en-0244", "lang": "en", "greeklish": false, "text": "using Potence on the punch, +2 dice", "in_character": false, "intent": "combat", "split": "train", "source": "hand"}
+{"id": "seed-en-0245", "lang": "en", "greeklish": false, "text": "damage: 5 successes + 2 Potence = 7 superficial", "in_character": false, "intent": "combat", "split": "train", "source": "hand"}
+{"id": "seed-en-0246", "lang": "en", "greeklish": false, "text": "declaring a full dodge this round", "in_character": false, "intent": "combat", "split": "train", "source": "hand"}
+{"id": "seed-en-0247", "lang": "en", "greeklish": false, "text": "called shot to the head, +2 diff right?", "in_character": false, "intent": "combat", "split": "dev", "source": "hand"}
+{"id": "seed-en-0248", "lang": "en", "greeklish": false, "text": "my character disengages and runs for the car, what do I roll?", "in_character": false, "intent": "combat", "split": "test", "source": "hand"}
+{"id": "seed-en-0249", "lang": "en", "greeklish": false, "text": "Viktor attacks the nearest hunter, rolling Str+Melee", "in_character": false, "intent": "combat", "split": "test", "source": "hand"}
+{"id": "seed-en-0250", "lang": "en", "greeklish": false, "text": "how many hunters are left standing?", "in_character": false, "intent": "combat", "split": "train", "source": "hand"}
+{"id": "seed-en-0251", "lang": "en", "greeklish": false, "text": "ST, does the ghoul still have the gun?", "in_character": false, "intent": "combat", "split": "test", "source": "hand"}
+{"id": "seed-en-0252", "lang": "en", "greeklish": false, "text": "can we skip to the end of the fight, it's been 40 minutes lol", "in_character": false, "intent": "combat", "split": "dev", "source": "hand"}
+{"id": "seed-en-0253", "lang": "en", "greeklish": false, "text": "combat in this system takes forever 😅", "in_character": false, "intent": "combat", "split": "train", "source": "hand"}
+{"id": "seed-en-0254", "lang": "en", "greeklish": false, "text": "wait the hunter gets 2 actions? that's brutal", "in_character": false, "intent": "combat", "split": "train", "source": "hand"}
+{"id": "seed-en-0255", "lang": "en", "greeklish": false, "text": "I think we should retreat, we're getting destroyed", "in_character": false, "intent": "combat", "split": "dev", "source": "hand"}
+{"id": "seed-en-0256", "lang": "en", "greeklish": false, "text": "guys focus fire on the Tzimisce", "in_character": false, "intent": "combat", "split": "test", "source": "hand"}
+{"id": "seed-en-0257", "lang": "en", "greeklish": false, "text": "I'm at 1 health level, healing next turn or I'm toast", "in_character": false, "intent": "combat", "split": "train", "source": "hand"}
+{"id": "seed-en-0258", "lang": "en", "greeklish": false, "text": "the ghoul hits me for 4 lethal, I soak 2", "in_character": false, "intent": "combat", "split": "test", "source": "hand"}
+{"id": "seed-en-0259", "lang": "en", "greeklish": false, "text": "round 3: my character keeps shooting", "in_character": false, "intent": "combat", "split": "dev", "source": "hand"}
+{"id": "seed-en-0260", "lang": "en", "greeklish": false, "text": "ok so my character punches him, 3 successes, damage pool 5", "in_character": false, "intent": "combat", "split": "train", "source": "hand"}
+{"id": "seed-en-0261", "lang": "en", "greeklish": false, "text": "combat recap: Elena's in torpor, Marcus is wounded, the ghoul fled", "in_character": false, "intent": "combat", "split": "train", "source": "hand"}
+{"id": "seed-en-0262", "lang": "en", "greeklish": false, "text": "*adjusts my tie and steps into Elysium*", "in_character": true, "intent": "roleplay", "split": "test", "source": "hand"}
+{"id": "seed-en-0263", "lang": "en", "greeklish": false, "text": "Good evening, Primogen. I trust the night finds you well.", "in_character": true, "intent": "roleplay", "split": "test", "source": "hand"}
+{"id": "seed-en-0264", "lang": "en", "greeklish": false, "text": "\"I didn't come here to beg,\" Elena says quietly, meeting the Prince's gaze.", "in_character": true, "intent": "roleplay", "split": "train", "source": "hand"}
+{"id": "seed-en-0265", "lang": "en", "greeklish": false, "text": "*lights a cigarette and watches the rain*", "in_character": true, "intent": "roleplay", "split": "train", "source": "hand"}
+{"id": "seed-en-0266", "lang": "en", "greeklish": false, "text": "Marcus leans against the bar. \"So, who's buying?\"", "in_character": true, "intent": "roleplay", "split": "dev", "source": "hand"}
+{"id": "seed-en-0267", "lang": "en", "greeklish": false, "text": "I kneel before the Prince and offer my report", "in_character": true, "intent": "roleplay", "split": "dev", "source": "hand"}
+{"id": "seed-en-0268", "lang": "en", "greeklish": false, "text": "*smiles, fangs barely visible* You look delicious tonight.", "in_character": true, "intent": "roleplay", "split": "train", "source": "hand"}
+{"id": "seed-en-0269", "lang": "en", "greeklish": false, "text": "I wander through the club looking for an easy meal", "in_character": true, "intent": "roleplay", "split": "train", "source": "hand"}
+{"id": "seed-en-0270", "lang": "en", "greeklish": false, "text": "\"Where were you last night, Sire?\"", "in_character": true, "intent": "roleplay", "split": "train", "source": "hand"}
+{"id": "seed-en-0271", "lang": "en", "greeklish": false, "text": "She sighs and pulls her coat tighter. \"This city never sleeps, does it.\"", "in_character": true, "intent": "roleplay", "split": "train", "source": "hand"}
+{"id": "seed-en-0272", "lang": "en", "greeklish": false, "text": "*glances nervously at the Sheriff*", "in_character": true, "intent": "roleplay", "split": "train", "source": "hand"}
+{"id": "seed-en-0273", "lang": "en", "greeklish": false, "text": "I whisper to Sofia: we need to leave. Now.", "in_character": true, "intent": "roleplay", "split": "dev", "source": "hand"}
+{"id": "seed-en-0274", "lang": "en", "greeklish": false, "text": "Viktor tastes the blood and grimaces. \"Too much whiskey in this one.\"", "in_character": true, "intent": "roleplay", "split": "train", "source": "hand"}
+{"id": "seed-en-0275", "lang": "en", "greeklish": false, "text": "*checks my phone, three missed calls from my mortal sister*", "in_character": true, "intent": "roleplay", "split": "train", "source": "hand"}
+{"id": "seed-en-0276", "lang": "en", "greeklish": false, "text": "I follow the woman into the alley, keeping to the shadows", "in_character": true, "intent": "roleplay", "split": "test", "source": "hand"}
+{"id": "seed-en-0277", "lang": "en", "greeklish": false, "text": "\"Don't touch me,\" I hiss.", "in_character": true, "intent": "roleplay", "split": "dev", "source": "hand"}
+{"id": "seed-en-0278", "lang": "en", "greeklish": false, "text": "*bows deeply* My Prince.", "in_character": true, "intent": "roleplay", "split": "test", "source": "hand"}
+{"id": "seed-en-0279", "lang": "en", "greeklish": false, "text": "Anna sits at the piano and plays something sad.", "in_character": true, "intent": "roleplay", "split": "train", "source": "hand"}
+{"id": "seed-en-0280", "lang": "en", "greeklish": false, "text": "I tell the Nosferatu I'll owe him a favor if he finds the girl", "in_character": true, "intent": "roleplay", "split": "dev", "source": "hand"}
+{"id": "seed-en-0281", "lang": "en", "greeklish": false, "text": "\"You smell like fear, little ghoul.\"", "in_character": true, "intent": "roleplay", "split": "test", "source": "hand"}
+{"id": "seed-en-0282", "lang": "en", "greeklish": false, "text": "*paces back and forth in the haven, muttering*", "in_character": true, "intent": "roleplay", "split": "train", "source": "hand"}
+{"id": "seed-en-0283", "lang": "en", "greeklish": false, "text": "I hand the envelope to the Seneschal without a word", "in_character": true, "intent": "roleplay", "split": "train", "source": "hand"}
+{"id": "seed-en-0284", "lang": "en", "greeklish": false, "text": "Lucas laughs. \"You really think the Anarchs care about your Traditions?\"", "in_character": true, "intent": "roleplay", "split": "dev", "source": "hand"}
+{"id": "seed-en-0285", "lang": "en", "greeklish": false, "text": "*stares at the mirror where my reflection should be*", "in_character": true, "intent": "roleplay", "split": "test", "source": "hand"}
+{"id": "seed-en-0286", "lang": "en", "greeklish": false, "text": "I call my ghoul and tell him to bring the car around", "in_character": true, "intent": "roleplay", "split": "train", "source": "hand"}
+{"id": "seed-en-0287", "lang": "en", "greeklish": false, "text": "\"I remember when this city was just mud and gaslight.\"", "in_character": true, "intent": "roleplay", "split": "train", "source": "hand"}
+{"id": "seed-en-0288", "lang": "en", "greeklish": false, "text": "*sniffs the air* Someone's been here. Recently.", "in_character": true, "intent": "roleplay", "split": "test", "source": "hand"}
+{"id": "seed-en-0289", "lang": "en", "greeklish": false, "text": "Dmitri slides a stack of cash across the table. \"For your silence.\"", "in_character": true, "intent": "roleplay", "split": "dev", "source": "hand"}
+{"id": "seed-en-0290", "lang": "en", "greeklish": false, "text": "I approach the bouncer and use Presence to get in", "in_character": true, "intent": "roleplay", "split": "train", "source": "hand"}
+{"id": "seed-en-0291", "lang": "en", "greeklish": false, "text": "*leans in close* Tell me everything you know about the Tremere chantry.", "in_character": true, "intent": "roleplay", "split": "train", "source": "hand"}
+{"id": "seed-en-0292", "lang": "en", "greeklish": false, "text": "\"Why did you Embrace me?\" she asks, voice shaking.", "in_character": true, "intent": "roleplay", "split": "test", "source": "hand"}
+{"id": "seed-en-0293", "lang": "en", "greeklish": false, "text": "I sit on the rooftop and watch the sky lighten, wondering if I should stay", "in_character": true, "intent": "roleplay", "split": "test", "source": "hand"}
+{"id": "seed-en-0294", "lang": "en", "greeklish": false, "text": "*pours a glass of blood wine for the guest*", "in_character": true, "intent": "roleplay", "split": "test", "source": "hand"}
+{"id": "seed-en-0295", "lang": "en", "greeklish": false, "text": "\"The Prince is dead. Long live the Prince.\"", "in_character": true, "intent": "roleplay", "split": "train", "source": "hand"}
+{"id": "seed-en-0296", "lang": "en", "greeklish": false, "text": "I search the dead hunter's pockets", "in_character": true, "intent": "roleplay", "split": "train", "source": "hand"}
+{"id": "seed-en-0297", "lang": "en", "greeklish": false, "text": "*runs fingers along the old book's spine* This is Tremere work.", "in_character": true, "intent": "roleplay", "split": "dev", "source": "hand"}
+{"id": "seed-en-0298", "lang": "en", "greeklish": false, "text": "Marcus storms out of Elysium, slamming the door.", "in_character": true, "intent": "roleplay", "split": "train", "source": "hand"}
+{"id": "seed-en-0299", "lang": "en", "greeklish": false, "text": "\"Easy, friend. Nobody needs to get hurt tonight.\"", "in_character": true, "intent": "roleplay", "split": "test", "source": "hand"}
+{"id": "seed-en-0300", "lang": "en", "greeklish": false, "text": "*feeds slowly, careful not to kill her*", "in_character": true, "intent": "roleplay", "split": "train", "source": "hand"}
+{"id": "seed-en-0301", "lang": "en", "greeklish": false, "text": "I pretend to be a lost tourist and ask the cop for directions", "in_character": true, "intent": "roleplay", "split": "train", "source": "hand"}
+{"id": "seed-en-0302", "lang": "en", "greeklish": false, "text": "Elena kneels by her brother's grave and says nothing for a long time.", "in_character": true, "intent": "roleplay", "split": "test", "source": "hand"}
+{"id": "seed-en-0303", "lang": "en", "greeklish": false, "text": "\"Your Majesty, the Sabbat are at the gates.\"", "in_character": true, "intent": "roleplay", "split": "test", "source": "hand"}
+{"id": "seed-en-0304", "lang": "en", "greeklish": false, "text": "*rolls my eyes* Of course the Ventrue wants a meeting.", "in_character": true, "intent": "roleplay", "split": "train", "source": "hand"}
+{"id": "seed-en-0305", "lang": "en", "greeklish": false, "text": "I offer the Malkavian a deal: information for blood", "in_character": true, "intent": "roleplay", "split": "train", "source": "hand"}
+{"id": "seed-en-0306", "lang": "en", "greeklish": false, "text": "\"I've seen the end of this. It ends in fire.\" *giggles*", "in_character": true, "intent": "roleplay", "split": "test", "source": "hand"}
+{"id": "seed-en-0307", "lang": "en", "greeklish": false, "text": "*opens the coffin lid and climbs out at dusk*", "in_character": true, "intent": "roleplay", "split": "test", "source": "hand"}
+{"id": "seed-en-0308", "lang": "en", "greeklish": false, "text": "Sofia hugs the frightened girl. \"You're safe now. I promise.\"", "in_character": true, "intent": "roleplay", "split": "train", "source": "hand"}
+{"id": "seed-en-0309", "lang": "en", "greeklish": false, "text": "I bribe the coroner to lose the body", "in_character": true, "intent": "roleplay", "split": "dev", "source": "hand"}
+{"id": "seed-en-0310", "lang": "en", "greeklish": false, "text": "\"Kneel.\" *uses Dominate on the guard*", "in_character": true, "intent": "roleplay", "split": "dev", "source": "hand"}
+{"id": "seed-en-0311", "lang": "en", "greeklish": false, "text": "*hums a lullaby while scrubbing blood off the floor*", "in_character": true, "intent": "roleplay", "split": "train", "source": "hand"}
+{"id": "seed-en-0312", "lang": "en", "greeklish": false, "text": "I ask the bartender if she's seen a tall man in a red coat", "in_character": true, "intent": "roleplay", "split": "train", "source": "hand"}
+{"id": "seed-en-0313", "lang": "en", "greeklish": false, "text": "Viktor grins. \"Tonight we hunt.\"", "in_character": true, "intent": "roleplay", "split": "train", "source": "hand"}
+{"id": "seed-en-0314", "lang": "en", "greeklish": false, "text": "I'm going to need you to forget you saw me. *stares into his eyes*", "in_character": true, "intent": "roleplay", "split": "train", "source": "hand"}
+{"id": "seed-en-0315", "lang": "en", "greeklish": false, "text": "What do you want, Nosferatu? Speak quickly.", "in_character": true, "intent": "roleplay", "split": "dev", "source": "hand"}
+{"id": "seed-en-0316", "lang": "en", "greeklish": false, "text": "*rolls the old coin across her knuckles, waiting*", "in_character": true, "intent": "roleplay", "split": "test", "source": "hand"}
+{"id": "seed-en-0317", "lang": "en", "greeklish": false, "text": "I think my character should confront the Sheriff next session", "in_character": false, "intent": "roleplay", "split": "train", "source": "hand"}
+{"id": "seed-en-0318", "lang": "en", "greeklish": false, "text": "my character would totally refuse that deal tbh", "in_character": false, "intent": "roleplay", "split": "train", "source": "hand"}
+{"id": "seed-en-0319", "lang": "en", "greeklish": false, "text": "Marcus is going to try to sweet-talk the bouncer, is that ok?", "in_character": false, "intent": "roleplay", "split": "dev", "source": "hand"}
+{"id": "seed-en-0320", "lang": "en", "greeklish": false, "text": "I want Elena to have a scene with her sire at some point", "in_character": false, "intent": "roleplay", "split": "train", "source": "hand"}
+{"id": "seed-en-0321", "lang": "en", "greeklish": false, "text": "can we do a downtime scene for my character feeding?", "in_character": false, "intent": "roleplay", "split": "train", "source": "hand"}
+{"id": "seed-en-0322", "lang": "en", "greeklish": false, "text": "ST can you describe the club when we walk in?", "in_character": false, "intent": "roleplay", "split": "train", "source": "hand"}
+{"id": "seed-en-0323", "lang": "en", "greeklish": false, "text": "let's continue the scene from where we left off", "in_character": false, "intent": "roleplay", "split": "dev", "source": "hand"}
+{"id": "seed-en-0324", "lang": "en", "greeklish": false, "text": "I'll post my character's reply in the scene channel later", "in_character": false, "intent": "roleplay", "split": "test", "source": "hand"}
+{"id": "seed-en-0325", "lang": "en", "greeklish": false, "text": "my guy is probably going to lie to the Prince here", "in_character": false, "intent": "roleplay", "split": "train", "source": "hand"}
+{"id": "seed-en-0326", "lang": "en", "greeklish": false, "text": "can someone recap where our characters are standing in the scene?", "in_character": false, "intent": "roleplay", "split": "test", "source": "hand"}
+{"id": "seed-en-0327", "lang": "en", "greeklish": false, "text": "I'd like a flashback scene to when my character was Embraced", "in_character": false, "intent": "roleplay", "split": "test", "source": "hand"}
+{"id": "seed-en-0328", "lang": "en", "greeklish": false, "text": "my character doesn't trust the Nosferatu at all lol", "in_character": false, "intent": "roleplay", "split": "train", "source": "hand"}
+{"id": "seed-en-0329", "lang": "en", "greeklish": false, "text": "what's the dress code at the party, so I know what my character wears?", "in_character": false, "intent": "roleplay", "split": "dev", "source": "hand"}
+{"id": "seed-en-0330", "lang": "en", "greeklish": false, "text": "Should I play Anna colder toward the Tremere?", "in_character": false, "intent": "roleplay", "split": "test", "source": "hand"}
+{"id": "seed-en-0331", "lang": "en", "greeklish": false, "text": "so Viktor is still in the alley, right? I'll write his next move in the IC channel", "in_character": false, "intent": "roleplay", "split": "train", "source": "hand"}
