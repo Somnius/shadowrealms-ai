@@ -74,8 +74,11 @@ browser --https--> DietPi nginx (10.0.0.10, TLS, HSTS)  --http--> nginx on this 
 
 ### Unlocking an account or address
 
+- Admin panel: **Admin › Logins & lockouts** (`/admin/security`) has an unlock form; a lockout
+  row in the login audit there has an "Unlock…" button that fills it in.
 - Admin API: `POST /api/admin/auth/unlock` with `{"username": "..."}` and/or `{"ip": "..."}`
-  (logged in the moderation log as `auth_unlock`).
+  (logged in the moderation log as `auth_unlock`). `ip` must be one exact IPv4/IPv6 address;
+  wildcards and ranges get a 400.
 - Shell: `docker exec shadowrealms-ai-redis-1 redis-cli --scan --pattern 'srai:auth:*'` lists the
   keys; delete them with `redis-cli del <key>` (all of them: `... --scan --pattern 'srai:auth:*' |
   xargs -r docker exec -i shadowrealms-ai-redis-1 redis-cli del`). Usernames appear as a SHA-256
@@ -198,9 +201,22 @@ A breach returns `429 {"error": "...", "code": "RATE_LIMITED", "retry_after": <s
 `auth_events` (PostgreSQL): `login`, `login_failed` (with `known_user`), `lockout`,
 `login_blocked`, `login_disabled`, `register`, `invite_invalid`, `logout`, `logout_all`,
 `password_changed`, `password_change_failed`, `refresh_reuse`, with user id, username, IP and user
-agent. Rows older than 180 days are pruned opportunistically. Admins read it with
-`GET /api/admin/auth-events?limit=100[&user_id=][&event=]`. Admin actions stay in
+agent. Rows older than 180 days are pruned opportunistically. Admins read it in
+**Admin › Logins & lockouts** or with
+`GET /api/admin/auth-events?limit=100&offset=0[&user_id=][&username=][&event=][&ip=]`
+(`username` is exact and case-insensitive; the answer is `{events, limit, offset, has_more}`).
+Only the non-secret detail fields (`known_user`, `seconds`, `retry_after`, `role`) are returned;
+refresh-token family ids and invite code prefixes stay in the database. Admin actions stay in
 `user_moderation_log`.
+
+## Log injection
+
+Every log record goes through `backend/services/log_safety.py`: `install_log_sanitizer()` (run by
+`Config.setup_logging()` and `gunicorn.conf.py`) wraps the log record factory, so CR, LF and other
+control characters in a finished message become visible escapes (`\n`, `\x1b`, ...) for our
+loggers, gunicorn's and libraries' alike. Tracebacks keep their line breaks. Call sites that log a
+client-controlled value also wrap it in `safe_log_value()`, which is what CodeQL's
+`py/log-injection` query recognises.
 
 ## Production server
 
@@ -261,8 +277,8 @@ and 8 are done:
 4. **Login/register**: the server's `error` is shown and the password policy codes are mapped to
    translated messages (`features/auth/PasswordRules.jsx`).
 5. **Change password**: in the profile page (`POST /api/auth/change-password`).
-6. **Admin panel** (optional, not done): an unlock form for `POST /api/admin/auth/unlock` and an
-   auth events table from `GET /api/admin/auth-events`. Both endpoints work from the API.
+6. **Admin panel**: done in v0.10, **Admin › Logins & lockouts** (`/admin/security`): unlock
+   form plus a filtered, paged login audit.
 7. **Shorter access tokens**: not done yet. `docker-compose.yml` still defaults
    `JWT_ACCESS_TOKEN_MINUTES` to 360; with 1 to 3 live it can be set to 30 in `.env` (then
    `docker compose up -d backend`).
