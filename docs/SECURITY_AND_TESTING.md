@@ -1,10 +1,30 @@
 # Security practices and automated tests
 
-**Document version:** 0.8.0 (see `docs/CHANGELOG.md`).
+**Document version:** 0.9.0 (see `docs/CHANGELOG.md`).
 
 This document describes how we test security-sensitive behavior, how to run those tests safely, and how to keep dependencies under control.
 
-## What the security / feature tests cover
+## Automated checks (CI)
+
+Every pull request and every push to `main` that touches code runs `.github/workflows/ci.yml`:
+
+- **Python**: `compileall` over `backend monitoring books scripts tests`, and `ruff check --select E9,F63,F7,F82` (syntax errors and undefined names).
+- **Backend unit tests**: `python -m pytest -q backend/tests/unit`, 291 tests that need no database, Redis or AI: dice (classic and V5), rules editions, character and Storyteller prompts, AI providers and secret storage, the classifier and OOC monitor, live events, request validation, and authentication security (`test_auth_security.py`, see below).
+- **PostgreSQL schema**: applies `backend/init_postgresql_schema.sql` to an empty database, runs `migrate_db()` twice, and fails if the schema differs.
+- **Frontend**: the Jest suite (`npx react-scripts test --watchAll=false`, 385 tests in 38 files at v0.9.0) and a production build.
+
+Also on GitHub:
+
+- **CodeQL** (`.github/workflows/codeql.yml`) scans Python and JavaScript/TypeScript.
+- **Dependabot** (`.github/dependabot.yml`) opens monthly update PRs for pip, npm, Docker images and GitHub Actions, plus security updates as advisories appear.
+
+Run them locally with `docker compose exec backend python -m pytest -q tests/unit` and `./scripts/run-frontend-tests.sh` (see [CONTRIBUTING.md](CONTRIBUTING.md#tests-and-ci)).
+
+## Integration tests (manual)
+
+The tests below are older integration scripts in the top-level `tests/` folder. They need a running PostgreSQL and are not part of CI.
+
+### What the security / feature tests cover
 
 The file [`tests/test_campaign_membership.py`](../tests/test_campaign_membership.py) exercises (PostgreSQL):
 
@@ -29,7 +49,7 @@ Tests register **synthetic users** with unique names (UUID suffix). They **mock*
 
 They **do not** mock the database: they require **PostgreSQL** with the same credentials as normal development (see below).
 
-**Cleaning up rows left in the DB after tests:** see [DATABASE_TEST_DATA_CLEANUP.md](DATABASE_TEST_DATA_CLEANUP.md), [`scripts/cleanup_integration_test_data.py`](../scripts/cleanup_integration_test_data.py), and [`scripts/sql/test_data_candidates.sql`](../scripts/sql/test_data_candidates.sql) (read-only `SELECT`s first).
+**Cleaning up rows left in the DB after tests:** see [DATABASE_TEST_DATA_CLEANUP.md](DATABASE_TEST_DATA_CLEANUP.md) and [`scripts/cleanup_integration_test_data.py`](../scripts/cleanup_integration_test_data.py).
 
 ## Prerequisites
 
@@ -72,12 +92,12 @@ If PostgreSQL credentials are not set, the suite is **skipped** with a clear mes
 - Run periodically:
 
 ```bash
-cd frontend
-npm install
-npm run audit
+docker compose --profile dev run --rm --no-deps frontend npm run audit
 ```
 
 Review `npm audit` output; upgrade or replace packages with confirmed fixes.
+
+At v0.9.0, after `npm audit fix`, the remaining findings are all in the Create React App build tooling (`react-scripts` and its dependencies). That code runs only at build time and never ships to the browser. The proper fix is moving the frontend from Create React App to Vite, which is planned after v0.9.
 
 ### pip (backend)
 
@@ -106,9 +126,9 @@ common-password list, and `RATELIMIT_ENABLED=false` when they log in many times.
 
 - **SQL**: Prefer parameterized queries (`%s` or `?` with bound parameters, depending on DB driver). Do not concatenate user input into SQL strings.
 - **Auth**: Admin routes use `@require_admin()` and JWT identity; compare resource ownership with **`str(id)`** where JWT identities are strings and DB ids may be integers.
-- **Site admin scope**: Users with **`users.role = 'admin'`** may open any chronicle for support (campaign detail, messages, dice, read-state rules as implemented in v0.7.18+; Player Profile hub changes are UX-only in v0.8.0). This is intentional; restrict who receives the admin role. Helpers and players do not receive this bypass unless separately documented.
+- **Site admin scope**: Users with **`users.role = 'admin'`** may open any chronicle for support (campaign detail, messages, dice, read-state rules as implemented since v0.7.18). This is intentional; restrict who receives the admin role. Helpers and players do not receive this bypass unless separately documented.
 - **PostgreSQL booleans**: Comparisons like `is_active = 1` against `BOOLEAN` columns can error; routes use `IS TRUE` / dialect-specific helpers where needed.
-- **XSS**: Avoid injecting untrusted HTML. `ReadmeModal` uses `dangerouslySetInnerHTML` only for **trusted** README content served by the app—do not reuse that pattern for user chat or arbitrary uploads.
+- **XSS**: Avoid injecting untrusted HTML. `ReadmeModal` uses `dangerouslySetInnerHTML` only for the README served by the app, after sanitizing it; chat markdown is rendered to React nodes without any HTML (`features/chat/markdown.jsx`). Do not reuse the README pattern for user content. nginx also sends a strict Content-Security-Policy with the production build.
 
 ## Related files
 
@@ -116,4 +136,5 @@ common-password list, and `RATELIMIT_ENABLED=false` when they log in many times.
 - `tests/test_campaign_membership.py` — detach, join gate, playing-character rules (PostgreSQL).
 - `scripts/run_security_tests.sh` — convenience runner with `.env` handling.
 - `scripts/cleanup_integration_test_data.py` — optional DB cleanup for `sec_*` / `@test.local` test rows (see [DATABASE_TEST_DATA_CLEANUP.md](DATABASE_TEST_DATA_CLEANUP.md)).
-- `tests/README.md` — full test suite index.
+- `backend/tests/unit/` — the unit tests CI runs.
+- `tests/README.md` — index of the older integration scripts.

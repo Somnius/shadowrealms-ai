@@ -182,7 +182,6 @@ COMMIT;
 
 | File | Purpose |
 |------|---------|
-| [`scripts/sql/test_data_candidates.sql`](../scripts/sql/test_data_candidates.sql) | Copy-paste `SELECT` blocks for `psql` |
 | [`scripts/cleanup_integration_test_data.py`](../scripts/cleanup_integration_test_data.py) | List or delete integration-test rows (see `--help`) |
 | [`scripts/cleanup_test_data.sh`](../scripts/cleanup_test_data.sh) | Loads env safely; runs the cleanup script |
 | This doc | Procedure and safety notes |
