@@ -192,7 +192,7 @@ class OllamaProvider(LLMProvider):
     
     def __init__(self, config: Dict[str, Any]):
         self.base_url = config.get('OLLAMA_URL', 'http://localhost:11434')
-        self.model = config.get('OLLAMA_MODEL', 'command-r:35b')
+        self.model = config.get('OLLAMA_MODEL', 'llama3.2:3b')
         self.timeout = config.get('OLLAMA_TIMEOUT', 30)
     
     def is_available(self) -> bool:

@@ -125,7 +125,7 @@ and recreate the container with `docker compose up -d backend`. See [SECURITY_MO
 | `LM_STUDIO_MODEL` | `auto` | `auto` uses the model LM Studio has loaded. |
 | `LM_STUDIO_TIMEOUT` | `120` (compose), `30` (template) | Seconds per LM Studio request. |
 | `LM_STUDIO_REASONING_EFFORT` | empty (compose), `none` (template) | `none` turns off "thinking" on reasoning models; empty uses the model's default. |
-| `OLLAMA_MODEL` | `command-r:35b` | Default Ollama model. |
+| `OLLAMA_MODEL` | `llama3.2:3b` | Default Ollama model (the same small model the Utility role uses; `ollama pull llama3.2:3b`). |
 | `OLLAMA_TIMEOUT` | `30` | Seconds per Ollama request. |
 | `STORYTELLER_EL_MODEL` | `llama-krikri-8b-instruct` | Default model of the Greek Storyteller role. Changeable in Admin, Ai System. |
 | `UTILITY_PROVIDER`, `UTILITY_MODEL` | `ollama`, `llama3.2:3b` | Default provider and model of the Utility role. |
