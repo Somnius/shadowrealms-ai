@@ -18,6 +18,8 @@ This document consolidates all AI and memory system documentation for ShadowReal
 7. [AI Context & Memory Proposal](#ai-context--memory-proposal)
 8. [Complete AI Memory System](#complete-ai-memory-system)
 
+Sections 5 to 8 are historical design notes from before v0.9.
+
 ---
 
 ## v0.9: providers, language routing, embeddings, classifier
@@ -161,6 +163,8 @@ Non-admins receive a short message pointing them to **Roll dice** in the sidebar
 ---
 
 ## OOC Monitoring System
+
+> Written for v0.7.6. Since v0.9 the in-character decision comes from the classifier (Laya, Jev, or the LLM fallback; see the v0.9 section above) and bans apply per chronicle, with staff and the chronicle owner exempt. Where the text below differs, the v0.9 section and the code (`backend/services/classifier.py`, `backend/services/ooc_monitor.py`) win.
 
 ## Overview
 
@@ -489,11 +493,13 @@ The goal is to **maintain roleplay boundaries** while being **fair and education
 
 ---
 
-**Last Updated**: 2025-10-28  
-**Version**: 0.7.6
-
+*OOC Monitoring notes last updated 2025-10-28 (v0.7.6).*
 
 ---
+
+# Historical design notes (before v0.9)
+
+> The sections below are design notes, plans and completion reports from v0.6 to v0.7, kept for reference. File names (for example `SimpleApp.js`, split into `frontend/src/app/` and `frontend/src/features/` in v0.9), function names and plans may no longer match the code. For the current AI system, see [v0.9: providers, language routing, embeddings, classifier](#v09-providers-language-routing-embeddings-classifier) above.
 
 ## AI Memory Cleanup
 
@@ -964,14 +970,13 @@ Currently: One `message_memory` collection for all campaigns
 
 ## Related Documentation
 
-- [AI Memory System Complete](./AI_MEMORY_SYSTEM_COMPLETE.md)
-- [AI Memory Implementation Plan](./AI_MEMORY_IMPLEMENTATION_PLAN.md)
-- [Quality Audit Findings](./QUALITY_AUDIT_FINDINGS.md)
-- [Database Schema](./DATABASE_SCHEMA.md)
+- [Complete AI Memory System](#complete-ai-memory-system) and [AI Memory Implementation](#ai-memory-implementation) (below in this file; they used to be separate files)
+- [Quality and testing reports (archived)](archive/QUALITY_AND_TESTING.md)
+- Database schema: `backend/init_postgresql_schema.sql`
 
 ---
 
-## Changelog
+### AI Memory Cleanup changelog
 
 **v0.6.5** (2025-10-28)
 
@@ -984,9 +989,7 @@ Currently: One `message_memory` collection for all campaigns
 
 ---
 
-**Last Updated:** 2025-10-28  
-**Status:** ✅ Production Ready  
-**Version:** 0.6.5
+*AI Memory Cleanup notes last updated 2025-10-28 (v0.6.5).*
 
 
 ---
@@ -1039,7 +1042,7 @@ AI that remembers and understands:
 - Integrate: location context + message history into prompt
 
 #### Step 1.4: Update Frontend to Pass location_id (20 min)
-- Modify: `handleSendMessage()` in SimpleApp.js
+- Modify: `handleSendMessage()` in SimpleApp.js (historical; the chat send flow is now `frontend/src/features/chat/sendFlow.js`)
 - Pass: `location: currentLocation.id` to AI API
 
 #### Step 1.5: Test Phase 1 (10 min)
