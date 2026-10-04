@@ -70,6 +70,10 @@ class Config:
         # Create logs directory if it doesn't exist
         os.makedirs(os.path.dirname(cls.LOG_FILE), exist_ok=True)
         
+        # Escape CR/LF and other control characters in every log record (log injection, CWE-117)
+        from services.log_safety import install_log_sanitizer
+        install_log_sanitizer()
+
         # Configure root logger
         logging.basicConfig(
             level=getattr(logging, cls.LOG_LEVEL),

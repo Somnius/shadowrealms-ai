@@ -16,6 +16,15 @@ import os
 
 os.environ.setdefault("SR_DEFER_BACKGROUND_JOBS", "1")
 
+try:
+    # Escape CR/LF and control characters in every log record, gunicorn's own included
+    # (user agents and paths reach the access/error logs). main.py installs it as well.
+    from services.log_safety import install_log_sanitizer
+
+    install_log_sanitizer()
+except ImportError:  # pragma: no cover - config file loaded from another directory
+    pass
+
 
 def _int(name, default):
     try:
