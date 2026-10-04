@@ -116,6 +116,6 @@ jobs:
           cache-dependency-path: frontend/package-lock.json
       - run: npm ci --no-audit --no-fund
       - run: npx jest --ci
-      - name: Lint (warnings only, they don't fail the job)
+      - name: Lint (fails on any warning)
         run: npm run lint
       - run: npm run build

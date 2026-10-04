@@ -1,5 +1,5 @@
 // ESLint flat config (replaces CRA's eslint-config-react-app). Run with `npm run lint`.
-// Not part of `npm run build`; the existing warnings are cleaned up separately.
+// Not part of `npm run build`. `npm run lint` fails on any warning (--max-warnings=0).
 import js from '@eslint/js';
 import globals from 'globals';
 import react from 'eslint-plugin-react';
@@ -24,7 +24,7 @@ export default [
     rules: {
       ...react.configs.flat.recommended.rules,
       ...react.configs.flat['jsx-runtime'].rules,
-      // Same severity as CRA had; existing findings are warnings, not errors
+      // Same severity as CRA had; npm run lint still fails on any of them (--max-warnings=0)
       'no-unused-vars': ['warn', { args: 'none', ignoreRestSiblings: true }],
       'no-irregular-whitespace': 'warn',
       'react/no-unescaped-entities': 'warn',
