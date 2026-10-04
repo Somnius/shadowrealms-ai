@@ -196,7 +196,7 @@ The Chroma server image and the `chromadb` client are upgraded together, on the 
 
 ### Upgrading an existing install
 
-Chroma 1.5.9 opens an existing `data/vector_db` in place; there is no export/import step. This was checked on copies: data written by `chromadb/chroma:1.0.20` (what `:latest` was when the compose file started using `/data`) and by `0.6.3` reopened under 1.5.9 with the same collections, ids, documents, metadata and embeddings, and the same query results. On first start the new server upgrades the SQLite file, so keep a copy to go back to:
+If you pulled `chromadb/chroma:latest` after 2026-05-05 you already run this image (`docker image inspect chromadb/chroma:latest`, same digest as `:1.5.9`); the pin only stops a future `:latest` from moving, and nothing in `data/vector_db` changes. (The server inside prints `1.4.4` as its version; that's a stale string in the image.) Older installs: 1.5.9 opens an existing `data/vector_db` in place, no export/import step. This was checked on copies: data written by `chromadb/chroma:1.0.20` and by `0.6.3` reopened under 1.5.9 with the same collections, ids, documents, metadata, embeddings and query results. An older server upgrades the SQLite file on first start, so keep a copy to go back to:
 
 ```bash
 docker compose stop backend chromadb

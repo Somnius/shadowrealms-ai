@@ -23,7 +23,7 @@ openai>=3.24.0
 chromadb>=1.5.9,<2  # same 1.x line as the chromadb/chroma image in docker-compose.yml
 sentence-transformers>=6.1.0
 torch>=2.14.1
-numpy>=2.5.3
+numpy>=2.5.3  # needs Python >=3.12 (backend/Dockerfile); the 3.11 image had 2.4.6
 onnxruntime>=1.30.0  # Laya classifier (services/classifier.py, ml/laya/infer.py)
 tokenizers>=0.23.2   # Laya tokenizer
 requests>=2.34.2
