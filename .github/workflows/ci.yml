@@ -111,11 +111,11 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: "18"
+          node-version: "22"
           cache: npm
           cache-dependency-path: frontend/package-lock.json
       - run: npm ci --no-audit --no-fund
-      - run: npx react-scripts test --watchAll=false
-      - name: Build
-        # CI=true would turn the existing lint warnings into errors; they still show in the log
-        run: CI=false npm run build
+      - run: npx jest --ci
+      - name: Lint (warnings only, they don't fail the job)
+        run: npm run lint
+      - run: npm run build
