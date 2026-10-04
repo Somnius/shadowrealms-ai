@@ -10,20 +10,37 @@ import { isV5Allowed } from '../../rules/rulesEdition';
 import { t } from '../../i18n';
 import './hall.css';
 
-export const GAME_SYSTEMS = [
-  { value: 'vampire', label: () => t('glossary:line.vampire', 'Vampire: The Masquerade') },
-  { value: 'werewolf', label: () => t('glossary:line.werewolf', 'Werewolf: The Apocalypse') },
-  { value: 'mage', label: () => t('glossary:line.mage', 'Mage: The Ascension') },
-  { value: 'custom', label: () => t('glossary:line.custom', 'Custom system') },
-];
+// Game lines per edition: Classic covers the Revised-era lines (and a custom system with Classic
+// dice); V5 currently means Vampire: The Masquerade 5th Edition only (that's what the backend allows).
+export const GAME_LINES = {
+  classic: [
+    { value: 'vampire', label: () => t('glossary:line.vampireRevised', 'Vampire: The Masquerade (Revised)') },
+    { value: 'werewolf', label: () => t('glossary:line.werewolfRevised', 'Werewolf: The Apocalypse (Revised)') },
+    { value: 'mage', label: () => t('glossary:line.mageRevised', 'Mage: The Ascension (Revised)') },
+    { value: 'custom', label: () => t('glossary:line.custom', 'Custom system') },
+  ],
+  v5: [
+    { value: 'vampire', label: () => t('glossary:line.vampireV5', 'Vampire: The Masquerade (5th Edition)') },
+  ],
+};
+
+/** Every game line the app knows (any edition), for code that only needs the names. */
+export const GAME_SYSTEMS = GAME_LINES.classic;
 
 export default function CreateChroniclePage() {
   const api = useApi();
   const navigate = useNavigate();
   const { toast } = useToast();
   const { reload } = useChronicles();
-  const [system, setSystem] = useState('vampire');
   const [edition, setEdition] = useState('classic');
+  const [system, setSystem] = useState('vampire');
+  const lines = GAME_LINES[edition] || GAME_LINES.classic;
+
+  const chooseEdition = (next) => {
+    setEdition(next);
+    // keep the game line if the new edition has it, otherwise take its first one
+    if (!(GAME_LINES[next] || []).some((g) => g.value === system)) setSystem(GAME_LINES[next][0].value);
+  };
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
 
@@ -38,7 +55,7 @@ export default function CreateChroniclePage() {
         name: String(fd.get('name') || '').trim(),
         description: String(fd.get('description') || '').trim(),
         game_system: system,
-        rules_edition: isV5Allowed(system) ? edition : 'classic',
+        rules_edition: edition === 'v5' && isV5Allowed(system) ? 'v5' : 'classic',
       },
     });
     setBusy(false);
@@ -65,29 +82,28 @@ export default function CreateChroniclePage() {
               rows={6}
               required
             />
+            <fieldset className="sr-radio-group" data-testid="rules-edition-choice">
+              <legend>{t('chronicle:field.edition', 'Edition')}</legend>
+              {[
+                ['classic', t('chronicle:edition.classic', 'Classic (Revised)'), t('chronicle:edition.classicHint', 'd10 vs target number, 1s cancel, botches')],
+                ['v5', t('chronicle:edition.v5', 'V5 (5th Edition)'), t('chronicle:edition.v5Hint', 'successes needed, Hunger dice, criticals')],
+              ].map(([value, label, hint]) => (
+                <label key={value} className="sr-radio">
+                  <input type="radio" name="rules_edition" value={value} checked={edition === value} onChange={() => chooseEdition(value)} />
+                  <span>
+                    {label} <span className="sr-muted">· {hint}</span>
+                  </span>
+                </label>
+              ))}
+              <p className="sr-muted sr-small">{t('chronicle:edition.locked', 'The edition is locked once the chronicle is created.')}</p>
+            </fieldset>
             <Select
               label={t('chronicle:field.system', 'Game line')}
               value={system}
               onChange={(e) => setSystem(e.target.value)}
-              options={GAME_SYSTEMS.map((g) => ({ value: g.value, label: g.label() }))}
+              options={lines.map((g) => ({ value: g.value, label: g.label() }))}
+              hint={edition === 'v5' ? t('chronicle:field.systemV5Hint', 'V5 currently supports Vampire: The Masquerade.') : undefined}
             />
-            {isV5Allowed(system) ? (
-              <fieldset className="sr-radio-group" data-testid="rules-edition-choice">
-                <legend>{t('chronicle:field.edition', 'Edition')}</legend>
-                {[
-                  ['classic', t('chronicle:edition.classic', 'Classic (Revised)'), t('chronicle:edition.classicHint', 'd10 vs target number, 1s cancel, botches')],
-                  ['v5', t('chronicle:edition.v5', 'V5 (5th Edition)'), t('chronicle:edition.v5Hint', 'successes needed, Hunger dice, criticals')],
-                ].map(([value, label, hint]) => (
-                  <label key={value} className="sr-radio">
-                    <input type="radio" name="rules_edition" value={value} checked={edition === value} onChange={() => setEdition(value)} />
-                    <span>
-                      {label} <span className="sr-muted">· {hint}</span>
-                    </span>
-                  </label>
-                ))}
-                <p className="sr-muted sr-small">{t('chronicle:edition.locked', 'The edition is locked once the chronicle is created.')}</p>
-              </fieldset>
-            ) : null}
             {error ? (
               <p className="sr-error" role="alert">
                 <Glyph name="warning" size={16} /> {error}

@@ -59,7 +59,8 @@
     "description": "World and setting",
     "descriptionHint": "The Storyteller AI reads this as the chronicle’s world. You can edit it later.",
     "system": "Game line",
-    "edition": "Edition"
+    "edition": "Edition",
+    "systemV5Hint": "V5 currently supports Vampire: The Masquerade."
   },
   "youAreST": "You are the Storyteller",
   "stats": {
