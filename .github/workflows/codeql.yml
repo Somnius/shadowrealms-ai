@@ -6,6 +6,7 @@ on:
     paths: &code
       - "backend/**"
       - "frontend/src/**"
+      - "frontend/scripts/**"
       - "monitoring/**"
       - "books/*.py"
       - "scripts/**"
