@@ -7,11 +7,12 @@ import { editionLabel } from '../rules/rulesEdition';
 import { t } from '../i18n';
 import AiProvidersPanel from './admin/AiProvidersPanel';
 import SecurityPanel from './admin/SecurityPanel';
+import LayaPanel from './admin/LayaPanel';
 import formatWhen from './admin/formatWhen';
 import './admin/admin.css';
 
 /** Admin sections, in tab order; each is a sub-route (/admin/<id>, overview at /admin). */
-export const ADMIN_SECTIONS = ['home', 'invites', 'chronicles', 'users', 'downtime', 'moderation', 'security', 'ai'];
+export const ADMIN_SECTIONS = ['home', 'invites', 'chronicles', 'users', 'downtime', 'moderation', 'security', 'ai', 'laya'];
 
 export const sectionLabels = () => ({
   home: t('admin:nav.home', 'Overview'),
@@ -22,6 +23,7 @@ export const sectionLabels = () => ({
   moderation: t('admin:nav.moderation', 'Moderation log'),
   security: t('admin:nav.security', 'Logins & lockouts'),
   ai: t('admin:nav.ai', 'AI system'),
+  laya: t('laya:nav', 'Laya'),
 });
 
 const SECTION_ICONS = {
@@ -33,6 +35,7 @@ const SECTION_ICONS = {
   moderation: 'scroll',
   security: 'lock-chain',
   ai: 'ai-sigil',
+  laya: 'eye',
 };
 
 /** Yes/No confirmation in the design-system modal (replaces the legacy ConfirmDialog here). */
@@ -936,6 +939,7 @@ function AdminPage({ token, user, displayTimezone = null, onAdminOpenCampaign = 
         <li><strong>{t('admin:nav.moderation', 'Moderation log')}</strong> — {t('admin:home.moderation', 'recent admin actions for audit and follow-up.')}</li>
         <li><strong>{t('admin:nav.security', 'Logins & lockouts')}</strong> — {t('admin:home.security', 'unlock an account or address after failed sign-ins; read the login audit (sign-ins, failures, lockouts, logouts).')}</li>
         <li><strong>{t('admin:nav.ai', 'AI system')}</strong> — {t('admin:home.ai', 'local model, global master prompt, model per role, cloud keys, classifier and embeddings.')}</li>
+        <li><strong>{t('laya:nav', 'Laya')}</strong> — {t('laya:home', 'label player chat and measure how well the Laya classifier does on it.')}</li>
       </ul>
     </div>
   );
@@ -1380,6 +1384,16 @@ function AdminPage({ token, user, displayTimezone = null, onAdminOpenCampaign = 
     </div>
   );
 
+  const renderLaya = () => (
+    <div className="sr-admin__section">
+      <h2 className="sr-admin__title">{t('laya:title', 'Laya: labels and evaluation')}</h2>
+      <p className="sr-admin__lead">
+        {t('laya:lead', 'Laya is the small classifier behind the OOC monitor and intent routing. Label real chat here, then run an evaluation to see how often Laya agrees with you.')}
+      </p>
+      <LayaPanel token={token} showSuccess={showSuccess} showError={showError} />
+    </div>
+  );
+
   const RENDER = {
     home: renderHome,
     invites: renderInvites,
@@ -1389,6 +1403,7 @@ function AdminPage({ token, user, displayTimezone = null, onAdminOpenCampaign = 
     moderation: renderModeration,
     security: () => <SecurityPanel token={token} displayTimezone={displayTimezone} showSuccess={showSuccess} showError={showError} />,
     ai: renderAi,
+    laya: renderLaya,
   };
   const labels = sectionLabels();
   const membershipDisabled = adminCampaignsLoading || !!adminCampaignsLoadError || adminCampaignsList.length === 0;
