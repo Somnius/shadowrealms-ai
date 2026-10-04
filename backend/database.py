@@ -14,6 +14,56 @@ import os
 
 logger = logging.getLogger(__name__)
 
+import contextlib
+import functools
+
+# Schema "ensure" helpers run ALTER TABLE ... IF NOT EXISTS. On PostgreSQL that still takes an
+# AccessExclusiveLock even when nothing changes, so calling them on every request made concurrent
+# requests deadlock each other. migrate_db() runs every decorated helper at startup and commits;
+# only then are the helpers marked done, and from that point they are no-ops for the rest of the
+# process. A helper called outside migrate_db() (a request path) always runs its DDL and is never
+# marked done there, because the request may roll back and leave the object missing while the flag
+# says it exists. Every decorated helper must therefore be called from migrate_db() (and its object
+# must also be in init_postgresql_schema.sql).
+_SCHEMA_ENSURED = set()
+_MIGRATION_PENDING = None  # set of keys run during the current migrate_db() call, else None
+
+
+def _once_key(fn, args):
+    return (fn.__module__, fn.__qualname__, tuple(repr(a) for a in args[1:]))
+
+
+def once_per_process(fn):
+    @functools.wraps(fn)
+    def wrapper(*args, **kwargs):
+        if os.getenv('DATABASE_TYPE', 'sqlite').lower() != 'postgresql':
+            return fn(*args, **kwargs)
+        key = _once_key(fn, args)
+        if key in _SCHEMA_ENSURED:
+            return None
+        result = fn(*args, **kwargs)
+        if _MIGRATION_PENDING is not None:
+            _MIGRATION_PENDING.add(key)
+        return result
+    return wrapper
+
+
+@contextlib.contextmanager
+def schema_migration():
+    """
+    Wrap migrate_db()'s DDL. once_per_process helpers run inside the block are marked
+    done only when the block exits without an exception, so the block must end with the
+    COMMIT. If anything (the COMMIT included) fails, nothing is marked.
+    """
+    global _MIGRATION_PENDING
+    _MIGRATION_PENDING = set()
+    try:
+        yield
+        _SCHEMA_ENSURED.update(_MIGRATION_PENDING)
+    finally:
+        _MIGRATION_PENDING = None
+
+
 def get_db():
     """Get database connection (PostgreSQL or SQLite based on DATABASE_TYPE env var)"""
     from config import Config
@@ -74,6 +124,7 @@ def _pg_table_columns(cursor, table: str) -> set:
     return {r["column_name"] for r in cursor.fetchall()}
 
 
+@once_per_process
 def ensure_users_display_timezone_column(cursor):
     """Add users.display_timezone (IANA name) if missing."""
     db_type = os.getenv("DATABASE_TYPE", "sqlite").lower()
@@ -90,6 +141,7 @@ def ensure_users_display_timezone_column(cursor):
             )
 
 
+@once_per_process
 def ensure_messages_speaker_mode_column(cursor):
     """Who is speaking: character (IC mask), player (OOC self), staff (ST/site)."""
     db_type = os.getenv("DATABASE_TYPE", "sqlite").lower()
@@ -109,6 +161,7 @@ def ensure_messages_speaker_mode_column(cursor):
             cursor.execute("ALTER TABLE messages ADD COLUMN speaker_mode TEXT")
 
 
+@once_per_process
 def ensure_messages_ai_message_kind_column(cursor):
     """Tag /ai slash user+assistant rows for cleanup (messages.ai_message_kind)."""
     db_type = os.getenv("DATABASE_TYPE", "sqlite").lower()
@@ -130,6 +183,7 @@ def ensure_messages_ai_message_kind_column(cursor):
             )
 
 
+@once_per_process
 def ensure_locations_dice_leniency_floor_column(cursor):
     """Per-room Storyteller leniency (minimum die floor); NULL = normal RNG."""
     db_type = os.getenv("DATABASE_TYPE", "sqlite").lower()
@@ -151,6 +205,7 @@ def ensure_locations_dice_leniency_floor_column(cursor):
             )
 
 
+@once_per_process
 def ensure_locations_player_access_columns(cursor):
     """Storyteller may close a location to players (is_open=false) with optional closure_reason."""
     db_type = os.getenv("DATABASE_TYPE", "sqlite").lower()
@@ -179,6 +234,7 @@ def ensure_locations_player_access_columns(cursor):
             )
 
 
+@once_per_process
 def ensure_character_portrait_url_column(cursor):
     """Add characters.portrait_url if missing (PostgreSQL and SQLite)."""
     db_type = os.getenv('DATABASE_TYPE', 'sqlite').lower()
@@ -195,6 +251,7 @@ def ensure_character_portrait_url_column(cursor):
             )
 
 
+@once_per_process
 def ensure_users_player_profile_columns(cursor):
     """player OOC avatar + globally active character pointer."""
     db_type = os.getenv("DATABASE_TYPE", "sqlite").lower()
@@ -214,6 +271,7 @@ def ensure_users_player_profile_columns(cursor):
             cursor.execute("ALTER TABLE users ADD COLUMN active_character_id INTEGER")
 
 
+@once_per_process
 def ensure_characters_is_active_column(cursor):
     """Soft-toggle for character validity (messages routes expect is_active)."""
     db_type = os.getenv("DATABASE_TYPE", "sqlite").lower()
@@ -235,6 +293,7 @@ def ensure_characters_is_active_column(cursor):
             )
 
 
+@once_per_process
 def ensure_characters_wod_sheet_columns(cursor):
     """sheet_locked (player edits) + structured WoD chargen metadata JSON."""
     db_type = os.getenv("DATABASE_TYPE", "sqlite").lower()
@@ -281,6 +340,7 @@ def ensure_characters_wod_sheet_columns(cursor):
             )
 
 
+@once_per_process
 def ensure_characters_is_npc_column(cursor):
     """Player vs NPC flag (admin tooling)."""
     db_type = os.getenv("DATABASE_TYPE", "sqlite").lower()
@@ -302,6 +362,7 @@ def ensure_characters_is_npc_column(cursor):
             )
 
 
+@once_per_process
 def ensure_characters_play_suspension_columns(cursor):
     """Admin can suspend a PC (downtime / need info); players see reason when blocked."""
     db_type = os.getenv("DATABASE_TYPE", "sqlite").lower()
@@ -358,6 +419,7 @@ def ensure_characters_play_suspension_columns(cursor):
             )
 
 
+@once_per_process
 def ensure_users_allow_multi_campaign_play_column(cursor):
     """When true, player may have sheet_locked PCs in more than one campaign (admin grant)."""
     db_type = os.getenv("DATABASE_TYPE", "sqlite").lower()
@@ -374,6 +436,7 @@ def ensure_users_allow_multi_campaign_play_column(cursor):
             )
 
 
+@once_per_process
 def ensure_users_self_switch_playing_character_column(cursor):
     """When true, player may change active PC in a chronicle without storyteller approval."""
     db_type = os.getenv("DATABASE_TYPE", "sqlite").lower()
@@ -392,6 +455,7 @@ def ensure_users_self_switch_playing_character_column(cursor):
             )
 
 
+@once_per_process
 def ensure_users_restrict_self_join_new_chronicles_column(cursor):
     """After voluntary campaign detach, block self-join to new chronicles until ST/admin adds them."""
     db_type = os.getenv("DATABASE_TYPE", "sqlite").lower()
@@ -410,6 +474,7 @@ def ensure_users_restrict_self_join_new_chronicles_column(cursor):
             )
 
 
+@once_per_process
 def ensure_campaign_players_active_character_id_column(cursor):
     """Per-membership: which PC is live for this chronicle (ST approval to switch)."""
     db_type = os.getenv("DATABASE_TYPE", "sqlite").lower()
@@ -467,6 +532,7 @@ def backfill_campaign_players_active_character(cursor):
         )
 
 
+@once_per_process
 def ensure_campaigns_listing_columns(cursor):
     """listed campaigns appear in discover; accepting_players allows self-serve join."""
     db_type = os.getenv("DATABASE_TYPE", "sqlite").lower()
@@ -495,6 +561,33 @@ def ensure_campaigns_listing_columns(cursor):
             )
 
 
+@once_per_process
+def ensure_rules_edition_columns(cursor):
+    """campaigns.rules_edition / characters.rules_edition: 'classic' (oWoD Revised) or 'v5'."""
+    db_type = os.getenv("DATABASE_TYPE", "sqlite").lower()
+    if db_type == "postgresql":
+        cursor.execute(
+            "ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS rules_edition TEXT NOT NULL DEFAULT 'classic'"
+        )
+        cursor.execute(
+            "ALTER TABLE characters ADD COLUMN IF NOT EXISTS rules_edition TEXT NOT NULL DEFAULT 'classic'"
+        )
+        return
+    for table in ("campaigns", "characters"):
+        cursor.execute(
+            "SELECT name FROM sqlite_master WHERE type='table' AND name=?", (table,)
+        )
+        if not cursor.fetchone():
+            continue
+        cursor.execute(f"PRAGMA table_info({table})")
+        cols = [row["name"] for row in cursor.fetchall()]
+        if "rules_edition" not in cols:
+            cursor.execute(
+                f"ALTER TABLE {table} ADD COLUMN rules_edition TEXT NOT NULL DEFAULT 'classic'"
+            )
+
+
+@once_per_process
 def ensure_campaigns_staff_pause_columns(cursor):
     """Optional note when staff sets campaigns.is_active false (discover/join gate)."""
     db_type = os.getenv("DATABASE_TYPE", "sqlite").lower()
@@ -519,6 +612,7 @@ def ensure_campaigns_staff_pause_columns(cursor):
             cursor.execute("ALTER TABLE campaigns ADD COLUMN admin_inactive_at TIMESTAMP")
 
 
+@once_per_process
 def ensure_character_downtime_requests_table(cursor):
     """Player-submitted downtime; admin approves or rejects with reason."""
     db_type = os.getenv("DATABASE_TYPE", "sqlite").lower()
@@ -558,6 +652,23 @@ def ensure_character_downtime_requests_table(cursor):
         )
 
 
+@once_per_process
+def ensure_location_reads_table(cursor):
+    """Unread tracking per character and room (also in init_postgresql_schema.sql)."""
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS location_reads (
+            id SERIAL PRIMARY KEY,
+            character_id INTEGER NOT NULL REFERENCES characters(id) ON DELETE CASCADE,
+            location_id INTEGER NOT NULL REFERENCES locations(id) ON DELETE CASCADE,
+            last_read_message_id INTEGER,
+            last_read_at TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE(character_id, location_id)
+        )
+    """)
+
+
+@once_per_process
 def ensure_dice_tables(cursor, db_kind: str) -> None:
     """
     Create dice_rolls / dice_roll_templates if missing.
@@ -677,29 +788,35 @@ def migrate_db():
         logger.info("PostgreSQL detected — ensuring portrait column and dice tables")
         conn = get_db()
         try:
-            cursor = conn.cursor()
-            ensure_users_display_timezone_column(cursor)
-            ensure_messages_ai_message_kind_column(cursor)
-            ensure_messages_speaker_mode_column(cursor)
-            ensure_locations_dice_leniency_floor_column(cursor)
-            ensure_locations_player_access_columns(cursor)
-            ensure_character_portrait_url_column(cursor)
-            ensure_users_player_profile_columns(cursor)
-            ensure_characters_is_active_column(cursor)
-            ensure_characters_wod_sheet_columns(cursor)
-            ensure_characters_play_suspension_columns(cursor)
-            ensure_users_allow_multi_campaign_play_column(cursor)
-            ensure_users_self_switch_playing_character_column(cursor)
-            ensure_users_restrict_self_join_new_chronicles_column(cursor)
-            ensure_campaign_players_active_character_id_column(cursor)
-            ensure_campaigns_listing_columns(cursor)
-            ensure_character_downtime_requests_table(cursor)
-            ensure_dice_tables(cursor, 'postgresql')
-            backfill_campaign_players_active_character(cursor)
-            from services.ai_runtime_settings import ensure_app_settings_table
+            with schema_migration():
+                cursor = conn.cursor()
+                ensure_users_display_timezone_column(cursor)
+                ensure_messages_ai_message_kind_column(cursor)
+                ensure_messages_speaker_mode_column(cursor)
+                ensure_locations_dice_leniency_floor_column(cursor)
+                ensure_locations_player_access_columns(cursor)
+                ensure_character_portrait_url_column(cursor)
+                ensure_users_player_profile_columns(cursor)
+                ensure_characters_is_active_column(cursor)
+                ensure_characters_wod_sheet_columns(cursor)
+                ensure_characters_play_suspension_columns(cursor)
+                ensure_users_allow_multi_campaign_play_column(cursor)
+                ensure_users_self_switch_playing_character_column(cursor)
+                ensure_users_restrict_self_join_new_chronicles_column(cursor)
+                ensure_campaign_players_active_character_id_column(cursor)
+                ensure_campaigns_listing_columns(cursor)
+                ensure_rules_edition_columns(cursor)
+                ensure_character_downtime_requests_table(cursor)
+                ensure_characters_is_npc_column(cursor)
+                ensure_campaigns_staff_pause_columns(cursor)
+                ensure_location_reads_table(cursor)
+                ensure_dice_tables(cursor, 'postgresql')
+                backfill_campaign_players_active_character(cursor)
+                from services.ai_runtime_settings import ensure_app_settings_table
 
-            ensure_app_settings_table(cursor)
-            conn.commit()
+                ensure_app_settings_table(cursor)
+                # Last statement of the block: the helpers become no-ops only once this COMMIT succeeded.
+                conn.commit()
         except Exception as e:
             logger.error(f"PostgreSQL schema ensure failed: {e}")
             conn.rollback()
@@ -1052,6 +1169,7 @@ def migrate_db():
         ensure_users_restrict_self_join_new_chronicles_column(cursor)
         ensure_campaign_players_active_character_id_column(cursor)
         ensure_campaigns_listing_columns(cursor)
+        ensure_rules_edition_columns(cursor)
         ensure_character_downtime_requests_table(cursor)
         ensure_messages_ai_message_kind_column(cursor)
         ensure_messages_speaker_mode_column(cursor)

@@ -21,6 +21,17 @@ from datetime import datetime, timedelta
 
 logger = logging.getLogger(__name__)
 
+
+def _campaign_context_to_send(context):
+    """
+    The campaign context to add as its own message, or '' when the system prompt
+    already contains it (routes/ai.py builds it into system_prompt), so it's sent once.
+    """
+    cc = str(context.get('campaign_context') or '').strip()
+    if not cc or cc in str(context.get('system_prompt') or ''):
+        return ''
+    return cc
+
 class TaskType(Enum):
     """Types of AI tasks for model routing"""
     ROLEPLAY = "roleplay"
@@ -292,10 +303,10 @@ class SmartModelRouter:
             })
         
         # Add campaign context if available
-        if context.get('campaign_context'):
+        if _campaign_context_to_send(context):
             messages.append({
                 'role': 'system',
-                'content': f"Campaign Context: {context['campaign_context']}"
+                'content': f"Campaign Context: {_campaign_context_to_send(context)}"
             })
         
         # Add user prompt
@@ -342,8 +353,8 @@ class SmartModelRouter:
         if context.get('system_prompt'):
             full_prompt = f"System: {context['system_prompt']}\n\nUser: {prompt}"
         
-        if context.get('campaign_context'):
-            full_prompt = f"Campaign Context: {context['campaign_context']}\n\n{full_prompt}"
+        if _campaign_context_to_send(context):
+            full_prompt = f"Campaign Context: {_campaign_context_to_send(context)}\n\n{full_prompt}"
         
         # Prepare payload
         payload = {

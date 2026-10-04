@@ -68,7 +68,8 @@ CREATE TABLE IF NOT EXISTS campaigns (
     listing_visibility    TEXT NOT NULL DEFAULT 'private',              -- 'private' | 'listed'
     accepting_players     BOOLEAN NOT NULL DEFAULT FALSE,
     admin_inactive_reason TEXT,
-    admin_inactive_at     TIMESTAMP
+    admin_inactive_at     TIMESTAMP,
+    rules_edition         TEXT NOT NULL DEFAULT 'classic'               -- 'classic' (oWoD Revised) | 'v5'
 );
 
 CREATE INDEX IF NOT EXISTS idx_campaigns_created_by ON campaigns(created_by);
@@ -111,6 +112,7 @@ CREATE TABLE IF NOT EXISTS characters (
     is_active                   BOOLEAN NOT NULL DEFAULT TRUE,
     is_npc                      BOOLEAN NOT NULL DEFAULT FALSE,
     sheet_locked                BOOLEAN NOT NULL DEFAULT FALSE,
+    rules_edition               TEXT NOT NULL DEFAULT 'classic',     -- copied from campaign at create
     -- legacy d20 fields still read by routes/ai.py character context
     character_class             TEXT,
     level                       INTEGER DEFAULT 1,

@@ -339,6 +339,16 @@ class RuleBookRAGService:
                 logger.error(f"Failed to get embeddings for {book_id}")
                 return False
             
+            # Edition from the actual file (a 'vampire' pattern can match the V5 corebook
+            # in books/.../V5/), defaulting to classic. Never leave a chunk untagged.
+            from services.rules_edition import rules_edition_for_book
+
+            edition = rules_edition_for_book(
+                None, result.get('file_path') or str(file_path),
+                Path(str(file_path)).name, result.get('book_name'), book_id,
+            )
+            logger.info(f"Rule book {book_id} ({file_path}) stamped rules_edition={edition}")
+
             # Prepare metadata
             metadata_list = []
             for chunk in chunks:
@@ -346,6 +356,8 @@ class RuleBookRAGService:
                     'book_id': book_id,
                     'book_name': result['book_name'],
                     'system': result['system'],
+                    'rules_edition': edition,
+                    'filename': Path(str(file_path)).name,
                     'page_number': chunk['page_number'],
                     'chunk_id': chunk['chunk_id'],
                     'word_count': chunk['word_count'],
@@ -392,6 +404,15 @@ class RuleBookRAGService:
                 logger.error(f"Failed to generate embedding for chunk {chunk_id}")
                 return False
             
+            if not (metadata or {}).get('rules_edition'):
+                from services.rules_edition import rules_edition_for_book
+
+                metadata = dict(metadata or {})
+                metadata['rules_edition'] = rules_edition_for_book(
+                    metadata.get('category'), metadata.get('filename'),
+                    metadata.get('book_name'), book_id,
+                )
+
             # Prepare context for rule books (global/system-wide)
             context = {
                 'book_id': book_id,

@@ -10,6 +10,7 @@ import logging
 from datetime import datetime
 from flask import Blueprint, request, jsonify, current_app
 from flask_jwt_extended import jwt_required, get_jwt_identity
+from services.rules_edition import edition_of, normalize_rules_edition, validate_rules_edition
 from services.rag_service import create_rag_service
 from services.embedding_service import create_embedding_service
 from database import (
@@ -121,14 +122,20 @@ def create_campaign():
             if field not in data:
                 return jsonify({'error': f'Missing required field: {field}'}), 400
         
+        rules_edition, ed_err = validate_rules_edition(
+            data.get('rules_edition'), data.get('game_system')
+        )
+        if ed_err:
+            return jsonify({'error': ed_err}), 400
+
         # Get database connection
         conn = get_db()
         cursor = conn.cursor()
         
         # Create campaign in database
         cursor.execute("""
-            INSERT INTO campaigns (name, description, game_system, created_by, created_at, status)
-            VALUES (%s, %s, %s, %s, %s, %s)
+            INSERT INTO campaigns (name, description, game_system, created_by, created_at, status, rules_edition)
+            VALUES (%s, %s, %s, %s, %s, %s, %s)
             RETURNING id
         """, (
             data['name'],
@@ -136,7 +143,8 @@ def create_campaign():
             data['game_system'],
             user_id,
             datetime.now().isoformat(),
-            'active'
+            'active',
+            rules_edition,
         ))
         
         result = cursor.fetchone()
@@ -177,6 +185,7 @@ def create_campaign():
             'name': data['name'],
             'description': data['description'],
             'game_system': data['game_system'],
+            'rules_edition': rules_edition,
             'settings': data.get('settings', {}),
             'world_info': data.get('world_info', {}),
             'created_at': datetime.now().isoformat()
@@ -194,6 +203,7 @@ def create_campaign():
         return jsonify({
             'message': 'Campaign created successfully',
             'campaign_id': campaign_id,
+            'rules_edition': rules_edition,
             'memory_id': memory_id
         }), 201
         
@@ -246,7 +256,7 @@ def get_campaigns():
             cursor.execute(
                 """
                 SELECT c.id, c.name, c.description, c.game_system, c.created_at, c.status,
-                       c.max_players, c.listing_visibility, c.accepting_players,
+                       c.max_players, c.listing_visibility, c.accepting_players, c.rules_edition,
                        cp.active_character_id AS my_playing_character_id,
                        ch_my.name AS my_playing_character_name,
                        ch_my.portrait_url AS my_playing_character_portrait_url
@@ -268,7 +278,7 @@ def get_campaigns():
         else:
             cursor.execute("""
                 SELECT c.id, c.name, c.description, c.game_system, c.created_at, c.status,
-                       c.max_players, c.listing_visibility, c.accepting_players,
+                       c.max_players, c.listing_visibility, c.accepting_players, c.rules_edition,
                        cp.active_character_id AS my_playing_character_id,
                        ch_my.name AS my_playing_character_name,
                        ch_my.portrait_url AS my_playing_character_portrait_url
@@ -299,6 +309,7 @@ def get_campaigns():
                 'max_players': row.get('max_players'),
                 'listing_visibility': row.get('listing_visibility') or 'private',
                 'accepting_players': acc,
+                'rules_edition': edition_of(row),
                 'my_playing_character_id': row.get('my_playing_character_id'),
                 'my_playing_character_name': row.get('my_playing_character_name'),
                 'my_playing_character_portrait_url': row.get(
@@ -353,7 +364,7 @@ def discover_campaigns():
         cursor.execute(
             """
             SELECT c.id, c.name, c.description, c.game_system, c.created_at, c.status,
-                   c.max_players, c.listing_visibility, c.accepting_players
+                   c.max_players, c.listing_visibility, c.accepting_players, c.rules_edition
             FROM campaigns c
             WHERE c.is_active = 1
               AND c.listing_visibility = 'listed'
@@ -367,7 +378,7 @@ def discover_campaigns():
             if os.getenv("DATABASE_TYPE", "sqlite").lower() != "postgresql"
             else """
             SELECT c.id, c.name, c.description, c.game_system, c.created_at, c.status,
-                   c.max_players, c.listing_visibility, c.accepting_players
+                   c.max_players, c.listing_visibility, c.accepting_players, c.rules_edition
             FROM campaigns c
             WHERE c.is_active = TRUE
               AND c.listing_visibility = 'listed'
@@ -391,6 +402,7 @@ def discover_campaigns():
                     "created_at": row["created_at"],
                     "status": row["status"],
                     "max_players": row.get("max_players"),
+                    "rules_edition": edition_of(row),
                 }
             )
         cursor.close()
@@ -564,14 +576,14 @@ def get_or_update_campaign(campaign_id):
         if is_site_admin:
             cursor.execute("""
                 SELECT id, name, description, game_system, created_by, created_at, status,
-                       max_players, listing_visibility, accepting_players
+                       max_players, listing_visibility, accepting_players, rules_edition
                 FROM campaigns
                 WHERE id = %s
             """, (campaign_id,))
         else:
             cursor.execute("""
                 SELECT id, name, description, game_system, created_by, created_at, status,
-                       max_players, listing_visibility, accepting_players
+                       max_players, listing_visibility, accepting_players, rules_edition
                 FROM campaigns
                 WHERE id = %s AND (created_by = %s OR id IN (
                     SELECT campaign_id FROM campaign_players WHERE user_id = %s
@@ -601,6 +613,7 @@ def get_or_update_campaign(campaign_id):
             'max_players': row.get('max_players'),
             'listing_visibility': row.get('listing_visibility') or 'private',
             'accepting_players': acc,
+            'rules_edition': edition_of(row),
         }
 
         cursor.execute(
@@ -801,7 +814,7 @@ def update_campaign(campaign_id):
         
         # Check if user is admin or campaign creator
         cursor.execute("""
-            SELECT created_by FROM campaigns WHERE id = %s
+            SELECT created_by, game_system, rules_edition FROM campaigns WHERE id = %s
         """, (campaign_id,))
         
         row = cursor.fetchone()
@@ -819,6 +832,14 @@ def update_campaign(campaign_id):
         ):
             return jsonify({'error': 'Unauthorized'}), 403
         
+        if 'rules_edition' in data:
+            requested = normalize_rules_edition(data.get('rules_edition'), default=None)
+            if requested != edition_of(row):
+                return jsonify({
+                    'error': 'rules_edition cannot be changed after a campaign is created',
+                    'rules_edition': edition_of(row),
+                }), 409
+
         # Update campaign fields if provided
         updates = []
         params = []

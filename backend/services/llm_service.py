@@ -18,6 +18,17 @@ from .rag_service import RAGService, create_rag_service
 logger = logging.getLogger(__name__)
 
 
+def _campaign_context_to_send(context):
+    """
+    The campaign context to add as its own message, or '' when the system prompt
+    already contains it (routes/ai.py builds it into system_prompt), so it's sent once.
+    """
+    cc = str(context.get('campaign_context') or '').strip()
+    if not cc or cc in str(context.get('system_prompt') or ''):
+        return ''
+    return cc
+
+
 def _merge_master_system_prompt(context: Dict[str, Any]) -> Dict[str, Any]:
     """Prepend admin-configured master system prompt to route-specific system_prompt."""
     from services.ai_runtime_settings import get_app_setting
@@ -123,10 +134,10 @@ class LMStudioProvider(LLMProvider):
                 payload['reasoning_effort'] = reasoning_effort
 
             # Add context if available
-            if context.get('campaign_context'):
+            if _campaign_context_to_send(context):
                 payload['messages'].insert(1, {
                     "role": "system",
-                    "content": f"Campaign Context: {context['campaign_context']}"
+                    "content": f"Campaign Context: {_campaign_context_to_send(context)}"
                 })
             
             # Make request to LM Studio
@@ -205,7 +216,7 @@ class OllamaProvider(LLMProvider):
                 }
             }
             
-            # Add context if available
+            # Add context if available (this provider doesn't send system_prompt, so this is the only copy)
             if context.get('campaign_context'):
                 payload['prompt'] = f"Campaign Context: {context['campaign_context']}\n\nUser: {prompt}"
             
@@ -240,6 +251,7 @@ class LLMService:
         self.rag_service = create_rag_service(config)
         
         # Keep legacy providers for backward compatibility
+        self.provider_priority = ['lm_studio', 'ollama']
         self.providers = {
             'lm_studio': LMStudioProvider(config),
             'ollama': OllamaProvider(config)
@@ -272,7 +284,9 @@ class LLMService:
         
         # Augment prompt with relevant context
         if campaign_id:
-            augmented_prompt = self.rag_service.augment_prompt(prompt, campaign_id, user_id)
+            augmented_prompt = self.rag_service.augment_prompt(
+                prompt, campaign_id, user_id, rules_edition=context.get('rules_edition')
+            )
             logger.info(f"Augmented prompt with RAG context for campaign {campaign_id}")
         else:
             augmented_prompt = prompt

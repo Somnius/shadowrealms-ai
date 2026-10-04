@@ -17,39 +17,96 @@ CAMPAIGN_BOOK_SETS = {
         'name': 'Core Rules Only',
         'description': 'Essential WoD mechanics only',
         'books': ['wod_2nd_ed'],
-        'priority': 1
+        'priority': 1,
+        'rules_edition': 'classic'
     },
     'vampire_full': {
         'name': 'Vampire: The Masquerade (Full)',
         'description': 'Complete Vampire game',
         'books': ['wod_2nd_ed', 'vampire_core', 'guide_to_camarilla', 'guide_to_sabbat'],
-        'priority': 2
+        'priority': 2,
+        'rules_edition': 'classic'
     },
     'vampire_basic': {
         'name': 'Vampire: The Masquerade (Basic)',
         'description': 'Core Vampire rules',
         'books': ['wod_2nd_ed', 'vampire_core'],
-        'priority': 2
+        'priority': 2,
+        'rules_edition': 'classic'
     },
     'werewolf_full': {
         'name': 'Werewolf: The Apocalypse (Full)',
         'description': 'Complete Werewolf game',
         'books': ['wod_2nd_ed', 'werewolf_core', 'tribal_guides', 'umbra_guide'],
-        'priority': 2
+        'priority': 2,
+        'rules_edition': 'classic'
     },
     'mage_basic': {
         'name': 'Mage: The Ascension (Basic)',
         'description': 'Core Mage rules',
         'books': ['wod_2nd_ed', 'mage_core'],
-        'priority': 2
+        'priority': 2,
+        'rules_edition': 'classic'
     },
     'crossover': {
         'name': 'Crossover Campaign',
         'description': 'Multiple WoD game lines',
         'books': ['wod_2nd_ed'],  # Start with core, add others as needed
-        'priority': 1
-    }
+        'priority': 1,
+        'rules_edition': 'classic'
+    },
+    # V5 sets: patterns match PDFs in books/World_of_Darkness/V5/ (category 'V5' only,
+    # so e.g. 'camarilla' cannot pick up the oWoD Guide to the Camarilla).
+    'vampire_v5_core': {
+        'name': 'Vampire: The Masquerade 5th Edition (Core)',
+        'description': 'V5 corebook (2019 errata printing) + rules errata',
+        'books': [
+            'Vampire the Masquerade - Corebook',
+            'V5 Rules Errata 2.0',
+        ],
+        'priority': 2,
+        'rules_edition': 'v5',
+        'category': 'V5',
+    },
+    'vampire_v5_full': {
+        'name': 'Vampire: The Masquerade 5th Edition (Full)',
+        'description': 'V5 core plus the main rules supplements',
+        'books': [
+            'Vampire the Masquerade - Corebook',
+            'V5 Rules Errata 2.0',
+            "Player's Guide",
+            'Companion',
+            'Camarilla',
+            'Anarch',
+            'Sabbat - The Black Hand',
+            'Cults of the Blood Gods',
+            'Chicago By Night',
+            'Second Inquisition',
+            "Storyteller's Toolkit",
+        ],
+        'priority': 2,
+        'rules_edition': 'v5',
+        'category': 'V5',
+    },
 }
+
+# parse_books.py stores the 2nd path part as category ('V5', 'oWoD',
+# 'Classic World of Darkness', 'nWoD', 'New World of Darkness').
+VALID_RULES_EDITIONS = ('classic', 'v5', 'nwod')
+
+
+def rules_edition_for_category(category: str) -> str:
+    c = (category or '').strip().lower()
+    if c == 'v5':
+        return 'v5'
+    if c in ('nwod', 'new world of darkness'):
+        return 'nwod'
+    return 'classic'
+
+
+def _is_low_res(name: str) -> bool:
+    n = name.lower()
+    return 'low-res' in n or 'low res' in n or 'lowres' in n
 
 
 class SmartBookImporter:
@@ -89,7 +146,7 @@ class SmartBookImporter:
         return sorted(books, key=lambda x: (x['system'], x['filename']))
     
     def import_book(self, json_path: Path, book_id: str, campaign_id: int = 0,
-                    batch_size: int = 100) -> bool:
+                    batch_size: int = 100, rules_edition: str = None) -> bool:
         """
         Import a single book to ChromaDB
         
@@ -98,6 +155,8 @@ class SmartBookImporter:
             book_id: Unique identifier for this book
             campaign_id: 0 for global, >0 for campaign-specific
             batch_size: Number of chunks to insert at once
+            rules_edition: 'classic' | 'v5' | 'nwod' stamped on every chunk
+                (default: derived from the book's category, 'V5' -> 'v5')
         """
         try:
             print(f"\n📚 Importing book: {json_path.name}")
@@ -110,7 +169,9 @@ class SmartBookImporter:
             chunks = data['chunks']
             has_embeddings = data['processing_info'].get('embeddings_generated', False)
             
+            edition = rules_edition or rules_edition_for_category(metadata.get('category'))
             print(f"   System: {metadata['system']}")
+            print(f"   Rules edition: {edition}")
             print(f"   Chunks: {len(chunks)}")
             print(f"   Embeddings: {'✓' if has_embeddings else '✗'}")
             
@@ -141,6 +202,7 @@ class SmartBookImporter:
                     'filename': metadata['filename'],
                     'system': metadata['system'],
                     'category': metadata['category'],
+                    'rules_edition': edition,
                     'page_number': chunk['page_number'],
                     'chunk_id': chunk['chunk_id'],
                     'word_count': chunk['word_count']
@@ -182,7 +244,8 @@ class SmartBookImporter:
             print(f"   ✗ Error importing book: {e}")
             return False
     
-    def import_book_set(self, set_name: str, campaign_id: int = 0) -> Dict[str, Any]:
+    def import_book_set(self, set_name: str, campaign_id: int = 0,
+                        rules_edition: str = None) -> Dict[str, Any]:
         """Import a predefined set of books for a campaign type"""
         if set_name not in CAMPAIGN_BOOK_SETS:
             print(f"❌ Unknown book set: {set_name}")
@@ -197,6 +260,12 @@ class SmartBookImporter:
         print(f"{'='*80}")
         
         available_books = self.list_available_books()
+        if book_set.get('category'):
+            want = book_set['category'].lower()
+            available_books = [b for b in available_books
+                               if str(b.get('category', '')).lower() == want]
+        edition = rules_edition or book_set.get('rules_edition')
+        print(f"Rules edition: {edition or '(from book category)'}")
         imported_count = 0
         failed_count = 0
         
@@ -211,12 +280,14 @@ class SmartBookImporter:
                 failed_count += 1
                 continue
             
-            # Use first match (could be improved with better matching)
-            book = matches[0]
+            # Prefer full-resolution editions when a Low-Res duplicate exists
+            hi = [b for b in matches if not _is_low_res(b['filename'])]
+            book = (hi or matches)[0]
             success = self.import_book(
                 Path(book['path']),
                 book_id=book_pattern,
-                campaign_id=campaign_id
+                campaign_id=campaign_id,
+                rules_edition=edition,
             )
             
             if success:
@@ -289,6 +360,9 @@ Examples:
   
   # Import core rules globally (available to all campaigns)
   python import_to_rag.py --import-set core_only --campaign-id 0
+
+  # Import the V5 core globally (chunks stamped rules_edition=v5)
+  python import_to_rag.py --import-set vampire_v5_core --campaign-id 0
   
   # List what's currently in the database
   python import_to_rag.py --list-imported
@@ -323,6 +397,14 @@ Examples:
         type=int,
         default=0,
         help='Campaign ID (0=global, >0=campaign-specific)'
+    )
+    parser.add_argument(
+        '--rules-edition',
+        type=str,
+        choices=VALID_RULES_EDITIONS,
+        default=None,
+        help="Override the rules_edition stamped on imported chunks "
+             "(default: the set's edition, else from category: V5 -> v5, otherwise classic)"
     )
     parser.add_argument(
         '--list-imported',
@@ -378,10 +460,11 @@ Examples:
             print(f"\n{set_name}:")
             print(f"  Name: {set_info['name']}")
             print(f"  Description: {set_info['description']}")
+            print(f"  Rules edition: {set_info.get('rules_edition', 'classic')}")
             print(f"  Books: {', '.join(set_info['books'])}")
     
     elif args.import_set:
-        importer.import_book_set(args.import_set, args.campaign_id)
+        importer.import_book_set(args.import_set, args.campaign_id, args.rules_edition)
     
     elif args.import_file:
         # Import specific file
@@ -393,7 +476,9 @@ Examples:
         # Generate book_id from filename
         book_id = args.import_file.replace('.json', '').replace(' ', '_').replace('-', '_').lower()
         
-        success = importer.import_book(json_path, book_id, args.campaign_id)
+        success = importer.import_book(
+            json_path, book_id, args.campaign_id, rules_edition=args.rules_edition
+        )
         if success:
             print(f"\n✅ Successfully imported to campaign {args.campaign_id}")
         else:

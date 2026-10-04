@@ -38,6 +38,18 @@ jobs:
       - name: Ruff (errors only, no style rules)
         run: ruff check --select E9,F63,F7,F82 backend monitoring books scripts tests
 
+  backend-unit:
+    name: Backend unit tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install pytest
+      - name: Pure unit tests (dice, rules edition, character prompt)
+        run: python -m pytest -q backend/tests/unit
+
   schema:
     name: PostgreSQL schema + migrate_db
     runs-on: ubuntu-latest
@@ -72,9 +84,21 @@ jobs:
         run: psql -h localhost -U ci -d ci -v ON_ERROR_STOP=1 -q -f backend/init_postgresql_schema.sql
       - name: Run migrate_db() twice (must be a no-op on the schema)
         working-directory: backend
+        env:
+          PG_CONTAINER: ${{ job.services.postgres.id }}
         run: |
+          # pg_dump runs inside the service container so its version matches the server.
+          # \restrict / \unrestrict lines carry a random key per dump, so they are dropped.
+          dump() { docker exec "$PG_CONTAINER" pg_dump -U ci -d ci -s | grep -vE '^\\(un)?restrict '; }
+          dump > /tmp/schema0.sql
           python -c "from database import migrate_db; migrate_db()"
+          dump > /tmp/schema1.sql
           python -c "from database import migrate_db; migrate_db()"
+          dump > /tmp/schema2.sql
+          echo "init_postgresql_schema.sql vs first migrate_db():"
+          diff -u /tmp/schema0.sql /tmp/schema1.sql
+          echo "first vs second migrate_db():"
+          diff -u /tmp/schema1.sql /tmp/schema2.sql
           psql -h localhost -U ci -d ci -tAc "select count(*) from information_schema.tables where table_schema='public'"
 
   frontend:

@@ -21,6 +21,13 @@ from services.ai_slash_commands import (
     SUPPORTED_AI_SLASH_VERBS,
 )
 from services.message_time_format import format_message_time
+from services.rules_edition import (
+    DEFAULT_RULES_EDITION,
+    edition_of,
+    rules_edition_label,
+    storyteller_rules_brief,
+)
+from services.character_prompt import format_character_for_prompt
 
 logger = logging.getLogger(__name__)
 
@@ -201,14 +208,28 @@ def ai_chat():
         db = get_db()
         cursor = db.cursor()
         
-        # Verify campaign access
+        # Verify campaign access: member, creator, or site admin
         if campaign_id:
+            try:
+                campaign_id = int(campaign_id)
+            except (TypeError, ValueError):
+                return jsonify({'error': 'Invalid campaign_id'}), 400
             cursor.execute("""
-                SELECT c.*, u.role as user_role
+                SELECT c.id
                 FROM campaigns c
-                JOIN users u ON u.id = %s
                 WHERE c.id = %s AND c.is_active = TRUE
-            """, (current_user_id, campaign_id))
+                  AND (
+                    c.created_by = %s
+                    OR EXISTS (
+                        SELECT 1 FROM campaign_players cp
+                        WHERE cp.campaign_id = c.id AND cp.user_id = %s
+                    )
+                    OR EXISTS (
+                        SELECT 1 FROM users u
+                        WHERE u.id = %s AND LOWER(TRIM(COALESCE(u.role, ''))) = 'admin'
+                    )
+                  )
+            """, (campaign_id, current_user_id, current_user_id, current_user_id))
             
             campaign = cursor.fetchone()
             
@@ -368,7 +389,7 @@ def ai_slash_command():
                         "**`/ai` is restricted**\n\n"
                         "Only **administrator** accounts can use most `/ai` commands. "
                         "**Campaign owners** may use **`/ai help`**, **`/ai clean …`**, and **`/ai dice-diff …`**. "
-                        "For Storyteller (Old WoD) d10 rolls, everyone can use **Roll dice** in the right sidebar.\n"
+                        "For d10 rolls (classic or V5, per campaign), everyone can use **Roll dice** in the right sidebar.\n"
                     ),
                     "supported_commands": SUPPORTED_AI_SLASH_VERBS,
                     "future_commands_suggestion": FUTURE_COMMAND_SUGGESTIONS,
@@ -648,7 +669,9 @@ def generate_efficient_response(message: str, context: dict, campaign_id: int, l
 Current player message: {message}
 
 Respond naturally as the AI storyteller, addressing the player character by name and taking into account their background, any NPCs present, the conversation history, and location context. If NPCs are present, roleplay them naturally in your responses.''',
-            'campaign_context': campaign_context
+            'campaign_context': campaign_context,
+            'campaign_id': campaign_id,
+            'rules_edition': get_campaign_rules_edition(campaign_id),
         }
         
         # Configure for efficient mode
@@ -712,7 +735,9 @@ def generate_balanced_response(message: str, context: dict, campaign_id: int, lo
 Current player message: {message}
 
 Respond as the AI storyteller, addressing the player character by name and taking into account their clan/class, background, any NPCs present, the conversation history, location context, and relevant past events. Be descriptive and true to the game system's lore. Roleplay NPCs with distinct personalities and motivations.''',
-            'campaign_context': campaign_context
+            'campaign_context': campaign_context,
+            'campaign_id': campaign_id,
+            'rules_edition': get_campaign_rules_edition(campaign_id),
         }
         
         # Configure for balanced mode
@@ -782,7 +807,9 @@ def generate_full_response(message: str, context: dict, campaign_id: int, locati
 Current player message: {message}
 
 Respond as the AI storyteller, addressing the player character by name, considering their clan/class, nature, demeanor, and background. Take into account NPCs present (their personalities, motivations, and recent actions), the entire conversation history, location context, relevant past events from days/weeks ago, and campaign setting. Be descriptive, immersive, and true to the game system's lore and atmosphere. Roleplay each NPC with a distinct voice, personality, and agenda. React dynamically to the player's actions. Reference past events naturally when relevant.''',
-            'campaign_context': campaign_context
+            'campaign_context': campaign_context,
+            'campaign_id': campaign_id,
+            'rules_edition': get_campaign_rules_edition(campaign_id),
         }
         
         # Configure for full mode
@@ -1028,6 +1055,24 @@ def get_context_manager():
         _context_manager = AIContextManager(max_context_tokens=4000)
     return _context_manager
 
+def get_campaign_rules_edition(campaign_id) -> str:
+    """rules_edition of a campaign ('classic' when missing/unknown)."""
+    if not campaign_id:
+        return DEFAULT_RULES_EDITION
+    db = None
+    try:
+        db = get_db()
+        cursor = db.cursor()
+        cursor.execute("SELECT rules_edition FROM campaigns WHERE id = %s", (campaign_id,))
+        return edition_of(cursor.fetchone())
+    except Exception as e:
+        logger.error(f"Error reading rules_edition for campaign {campaign_id}: {e}")
+        return DEFAULT_RULES_EDITION
+    finally:
+        if db is not None:
+            db.close()
+
+
 def get_campaign_context(campaign_id: int) -> str:
     """Get campaign context for AI responses"""
     try:
@@ -1036,7 +1081,7 @@ def get_campaign_context(campaign_id: int) -> str:
         
         # Get campaign details
         cursor.execute("""
-            SELECT name, description, game_system, status
+            SELECT name, description, game_system, status, rules_edition
             FROM campaigns
             WHERE id = %s AND is_active = TRUE
         """, (campaign_id,))
@@ -1056,9 +1101,12 @@ def get_campaign_context(campaign_id: int) -> str:
         
         memories = cursor.fetchall()
         
+        edition = edition_of(campaign)
         context = f"Campaign: {campaign['name']} ({campaign['game_system']})\n"
+        context += f"Rules edition: {rules_edition_label(edition)} [rules_edition={edition}]\n"
         context += f"Description: {campaign['description'] or 'No description'}\n"
         context += f"Status: {campaign['status'] or 'active'}\n"
+        context += "\n" + storyteller_rules_brief(edition, campaign['game_system']) + "\n"
         
         if memories:
             context += "\nRecent Context:\n"
@@ -1567,10 +1615,18 @@ def get_character_context(user_id: int, campaign_id: int) -> dict:
             SELECT 
                 c.id,
                 c.name,
+                c.system_type,
+                c.attributes,
+                c.skills,
+                c.background,
+                c.merits_flaws,
+                c.wod_meta,
+                c.rules_edition AS character_rules_edition,
                 c.character_class,
                 c.level,
                 c.character_data,
-                cam.game_system
+                cam.game_system,
+                cam.rules_edition
             FROM characters c
             JOIN campaigns cam ON c.campaign_id = cam.id
             WHERE c.id = %s AND c.user_id = %s AND c.campaign_id = %s
@@ -1582,71 +1638,29 @@ def get_character_context(user_id: int, campaign_id: int) -> dict:
                 'has_character': False,
                 'formatted': 'No character found for this campaign.'
             }
-        
-        # Parse character_data JSON if available
+
+        # The campaign's edition is authoritative (characters copy it at creation).
+        edition = edition_of(character)
+        game_system = character['game_system'] or 'Unknown'
+        formatted = format_character_for_prompt(dict(character), edition)
+
         character_data = {}
-        if character['character_data']:
+        if character.get('character_data'):
             try:
                 character_data = json.loads(character['character_data'])
-            except:
-                pass
-        
-        # Build formatted character info
-        formatted_lines = [f"Character: {character['name']}"]
-        
-        if character['character_class']:
-            formatted_lines.append(f"Class/Clan: {character['character_class']}")
-        
-        if character['level']:
-            formatted_lines.append(f"Level/Generation: {character['level']}")
-        
-        # Add game system specific info
-        game_system = character['game_system'] or 'Unknown'
-        formatted_lines.append(f"Game System: {game_system}")
-        
-        # Extract key character data fields
-        if character_data:
-            # Common fields across systems
-            if 'clan' in character_data:
-                formatted_lines.append(f"Clan: {character_data['clan']}")
-            if 'generation' in character_data:
-                formatted_lines.append(f"Generation: {character_data['generation']}")
-            if 'background' in character_data:
-                background = character_data['background']
-                if len(background) > 200:
-                    background = background[:200] + "..."
-                formatted_lines.append(f"Background: {background}")
-            if 'nature' in character_data:
-                formatted_lines.append(f"Nature: {character_data['nature']}")
-            if 'demeanor' in character_data:
-                formatted_lines.append(f"Demeanor: {character_data['demeanor']}")
-            
-            # Attributes
-            if 'attributes' in character_data:
-                attrs = character_data['attributes']
-                if isinstance(attrs, dict):
-                    attr_summary = ", ".join([f"{k}: {v}" for k, v in list(attrs.items())[:5]])
-                    formatted_lines.append(f"Key Attributes: {attr_summary}")
-            
-            # Current status
-            if 'blood_pool' in character_data:
-                formatted_lines.append(f"Blood Pool: {character_data.get('blood_pool', 0)}")
-            if 'willpower' in character_data:
-                formatted_lines.append(f"Willpower: {character_data.get('willpower', 0)}")
-            if 'health' in character_data:
-                formatted_lines.append(f"Health: {character_data.get('health', 'Normal')}")
-        
-        formatted = "\n".join(formatted_lines)
-        
+            except (TypeError, ValueError):
+                character_data = {}
+
         logger.info(f"Retrieved character context for user {user_id}: {character['name']}")
         
         return {
             'has_character': True,
             'id': character['id'],
             'name': character['name'],
-            'class': character['character_class'],
-            'level': character['level'],
+            'class': character.get('character_class'),
+            'level': character.get('level'),
             'game_system': game_system,
+            'rules_edition': edition,
             'data': character_data,
             'formatted': formatted
         }

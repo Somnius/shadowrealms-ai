@@ -21,107 +21,177 @@ class DiceService:
         difficulty: int = 6,
         specialty: bool = False,
         leniency_floor: int | None = None,
+        willpower: bool = False,
+        rng=None,
     ) -> Dict:
         """
-        Roll a pool of d10s using old World of Darkness mechanics
-        
+        Roll a classic (oWoD Revised) d10 pool. Delegates to services.wod_dice so the
+        app has one classic implementation.
+
         Args:
             pool_size: Number of d10s to roll
-            difficulty: Target number for success (default 6)
-            specialty: If True, 10s count as 2 successes (specialty roll)
-        
-        Returns:
-            Dict with roll results and analysis
+            difficulty: Target number for success (2-10, default 6)
+            specialty: natural 10s count and are rerolled (rerolled 10s explode again)
+            leniency_floor: room leniency floor (2-10) or None
+            willpower: +1 automatic success that 1s cannot cancel
+            rng: optional random.Random for deterministic tests
         """
+        from services.wod_dice import roll_classic
+
         if pool_size < 1:
             return {
+                'rules_edition': 'classic',
                 'results': [],
                 'successes': 0,
                 'is_botch': False,
                 'is_critical': False,
+                'is_exceptional': False,
                 'difficulty': difficulty,
                 'specialty': specialty,
+                'willpower': willpower,
                 'message': 'No dice to roll'
             }
-        
+
         if difficulty < 2 or difficulty > 10:
             difficulty = 6  # Default to 6 if invalid
-        
-        # Roll the dice (optional room leniency: no 1s, one die ≥ floor when pool ≥ 2)
-        lf_applied = None
-        if leniency_floor is not None:
-            try:
-                v = int(leniency_floor)
-                if 2 <= v <= 10:
-                    from services.wod_dice import _lenient_d10_pool
 
-                    results = _lenient_d10_pool(pool_size, v)
-                    lf_applied = v
-                else:
-                    results = [random.randint(1, 10) for _ in range(pool_size)]
-            except (TypeError, ValueError):
-                results = [random.randint(1, 10) for _ in range(pool_size)]
-        else:
-            results = [random.randint(1, 10) for _ in range(pool_size)]
-        
-        # Count successes and ones
-        successes = 0
-        ones_count = 0
-        
-        for die in results:
-            if die == 1:
-                ones_count += 1
-                successes -= 1  # 1s cancel successes
-            elif die >= difficulty:
-                if die == 10 and specialty:
-                    successes += 2  # Specialty: 10s count as 2 successes
-                else:
-                    successes += 1
-        
-        # Determine outcome
-        is_botch = (successes < 0 or (successes == 0 and ones_count > 0))
-        is_critical = successes >= 5  # 5+ successes is exceptional
-        
-        # Generate message
-        if is_botch:
-            message = "💀 **BOTCH!** Critical failure!"
+        r = roll_classic(
+            pool_size,
+            difficulty,
+            specialty=specialty,
+            willpower=willpower,
+            leniency_floor=leniency_floor,
+            rng=rng,
+        )
+        return DiceService.classic_result_dict(r)
+
+    @staticmethod
+    def classic_result_dict(r) -> Dict:
+        """Turn a wod_dice.StorytellerRollResult into the API roll_result dict."""
+        successes = r.net_successes
+        if r.botch:
+            message = "💀 **BOTCH!** No die succeeded and a 1 showed."
         elif successes == 0:
             message = "❌ **Failure** - No successes"
-        elif is_critical:
-            message = f"🌟 **CRITICAL SUCCESS!** {successes} successes!"
+        elif r.exceptional:
+            message = f"🌟 **Exceptional success!** {successes} successes"
         elif successes == 1:
             message = f"✅ Success ({successes} success)"
         else:
             message = f"✅ Success ({successes} successes)"
-        
         return {
-            'results': results,
-            'successes': max(0, successes),  # Don't show negative
-            'is_botch': is_botch,
-            'is_critical': is_critical,
-            'difficulty': difficulty,
-            'specialty': specialty,
-            'ones_count': ones_count,
+            'rules_edition': 'classic',
+            'results': list(r.dice),
+            'specialty_rerolls': list(r.specialty_rerolls),
+            'successes': successes,
+            'raw_successes': r.raw_successes,
+            'is_botch': r.botch,
+            # Kept for older clients: for classic this means "exceptional" (5+ successes).
+            'is_critical': r.exceptional,
+            'is_exceptional': r.exceptional,
+            'difficulty': r.difficulty,
+            'specialty': r.specialty,
+            'willpower': r.willpower,
+            'ones_count': r.ones,
             'message': message,
-            'leniency_floor': lf_applied,
+            'leniency_floor': r.leniency_floor,
         }
-    
+
     @staticmethod
-    def roll_contested(attacker_pool: int, defender_pool: int, 
-                      difficulty: int = 6) -> Dict:
+    def roll_v5_pool(
+        pool_size: int,
+        hunger: int = 0,
+        difficulty: int = 1,
+        leniency_floor: int | None = None,
+        rng=None,
+    ) -> Dict:
+        """Roll a V5 pool (services.v5_dice) and add a chat-friendly message."""
+        from services.v5_dice import roll_v5
+
+        res = roll_v5(pool_size, hunger, difficulty, leniency_floor=leniency_floor, rng=rng)
+        res['message'] = DiceService.v5_message(res)
+        return res
+
+    @staticmethod
+    def v5_message(res: Dict) -> str:
+        from services.v5_dice import outcome_label
+
+        label = outcome_label(res)
+        n = res['successes']
+        succ = f"{n} success{'es' if n != 1 else ''}"
+        icons = {
+            'Messy critical': '🩸',
+            'Critical win': '🌟',
+            'Win': '✅',
+            'Bestial failure': '🐺',
+            'Total failure': '❌',
+            'Failure': '❌',
+        }
+        return f"{icons.get(label, '')} **{label}** ({succ} vs difficulty {res['difficulty']})".strip()
+
+    @staticmethod
+    def format_v5_roll_for_chat(roll_data: Dict, character_name: str = None,
+                                action_description: str = None) -> str:
+        header = "🎲 **Dice Roll** (V5)"
+        if character_name:
+            header = f"🎲 **{character_name}** rolls (V5)"
+        if action_description:
+            header += f" for **{action_description}**"
+        lf = roll_data.get('leniency_floor')
+        if lf is not None:
+            header += f"\n_Leniency floor **{lf}** (no 1s; with 2+ dice, one die ≥ {lf})._\n"
+
+        def show(d, hunger):
+            mark = '🩸' if hunger else ''
+            if d == 10:
+                return f"[{mark}⭐{d}]"
+            if d >= 6:
+                return f"[{mark}✓{d}]"
+            if hunger and d == 1:
+                return f"[{mark}💀{d}]"
+            return f"[{mark}{d}]"
+
+        normal = " ".join(show(d, False) for d in roll_data.get('normal_dice', []))
+        hunger = " ".join(show(d, True) for d in roll_data.get('hunger_dice', []))
+        lines = [header, f"Dice: {normal}" + (f" | Hunger: {hunger}" if hunger else "")]
+        if roll_data.get('rerolled'):
+            lines.append(f"Willpower reroll of dice #{', '.join(str(i + 1) for i in roll_data.get('rerolled_indices', []))}")
+        lines.append(
+            f"Difficulty: {roll_data['difficulty']} | Successes: {roll_data['successes']} | Margin: {roll_data['margin']:+d}"
+        )
+        lines.append(roll_data.get('message') or DiceService.v5_message(roll_data))
+        return "\n".join(lines)
+
+    @staticmethod
+    def roll_contested(attacker_pool: int, defender_pool: int,
+                      difficulty: int = 6, rules_edition: str = 'classic',
+                      attacker_hunger: int = 0, defender_hunger: int = 0,
+                      rng=None) -> Dict:
         """
         Roll a contested action (both sides roll, compare successes)
         
         Args:
             attacker_pool: Attacker's dice pool
             defender_pool: Defender's dice pool
-            difficulty: Target number (same for both)
+            difficulty: Target number (same for both); ignored for V5
+            rules_edition: 'classic' or 'v5'
+            rng: optional random.Random for deterministic tests
+
+        V5 (core p. 123): the attacker is the acting character and wins ties, i.e. the
+        attacker wins when attacker successes >= defender successes. Each side's outcome,
+        critical, messy critical and bestial failure are then set from the contest result
+        (see DiceService.v5_contest_side), not from a difficulty.
         
         Returns:
             Dict with both rolls and winner determination
         """
-        attacker_roll = DiceService.roll_d10_pool(attacker_pool, difficulty)
-        defender_roll = DiceService.roll_d10_pool(defender_pool, difficulty)
+        if rules_edition == 'v5':
+            return DiceService._roll_contested_v5(
+                attacker_pool, defender_pool, attacker_hunger, defender_hunger, rng
+            )
+
+        attacker_roll = DiceService.roll_d10_pool(attacker_pool, difficulty, rng=rng)
+        defender_roll = DiceService.roll_d10_pool(defender_pool, difficulty, rng=rng)
         
         # Determine winner
         attacker_success = attacker_roll['successes']
@@ -149,11 +219,90 @@ class DiceService:
             message = "⚖️ Tie! Both sides have equal successes."
         
         return {
+            'rules_edition': 'classic',
             'attacker_roll': attacker_roll,
             'defender_roll': defender_roll,
             'winner': winner,
             'margin': margin,
             'message': message
+        }
+
+    @staticmethod
+    def v5_contest_side(res: Dict, won: bool, opponent_successes: int) -> Dict:
+        """
+        Re-label one side of a V5 contest from the contest result (pure; mutates and
+        returns ``res``). A side that won is a win, critical when it has a pair of 10s,
+        messy when one of those 10s is a Hunger die. A side that lost is a failure,
+        bestial when any Hunger die shows a 1. ``difficulty`` stays 0 (contests have
+        no difficulty); ``margin`` is successes minus the opponent's successes.
+        """
+        pairs = res.get('critical_pairs', 0)
+        hunger_tens = sum(1 for d in res.get('hunger_dice', []) if d == 10)
+        res['outcome'] = 'win' if won else 'fail'
+        res['is_critical'] = bool(won and pairs >= 1)
+        res['is_messy_critical'] = bool(res['is_critical'] and hunger_tens > 0)
+        res['is_bestial_failure'] = bool(
+            (not won) and any(d == 1 for d in res.get('hunger_dice', []))
+        )
+        res['is_total_failure'] = res['successes'] == 0
+        res['contest_won'] = bool(won)
+        res['opponent_successes'] = opponent_successes
+        res['margin'] = res['successes'] - opponent_successes
+        from services.v5_dice import outcome_label
+
+        label = outcome_label(res)
+        if res['is_total_failure'] and won:
+            label = 'Win (0 successes)'
+        n = res['successes']
+        icons = {
+            'Messy critical': '🩸', 'Critical win': '🌟', 'Win': '✅',
+            'Bestial failure': '🐺', 'Total failure': '❌', 'Failure': '❌',
+        }
+        res['message'] = (
+            f"{icons.get(label, '✅')} **{label}** ({n} success{'es' if n != 1 else ''} "
+            f"vs {opponent_successes})"
+        )
+        return res
+
+    @staticmethod
+    def _roll_contested_v5(attacker_pool, defender_pool, attacker_hunger, defender_hunger, rng=None) -> Dict:
+        attacker_roll = DiceService.roll_v5_pool(attacker_pool, attacker_hunger, 0, rng=rng)
+        defender_roll = DiceService.roll_v5_pool(defender_pool, defender_hunger, 0, rng=rng)
+        return DiceService.resolve_contested_v5(attacker_roll, defender_roll)
+
+    @staticmethod
+    def resolve_contested_v5(attacker_roll: Dict, defender_roll: Dict) -> Dict:
+        """Decide a V5 contest from two resolved rolls (pure). Ties go to the attacker."""
+        a, d = attacker_roll['successes'], defender_roll['successes']
+        attacker_wins = a >= d
+        DiceService.v5_contest_side(attacker_roll, attacker_wins, d)
+        DiceService.v5_contest_side(defender_roll, not attacker_wins, a)
+        if attacker_wins:
+            winner, margin = 'attacker', a - d
+            if margin == 0:
+                message = "⚔️ Tie on successes: the attacker (acting character) wins with margin 0."
+            else:
+                message = f"⚔️ Attacker wins by {margin} success{'es' if margin != 1 else ''}!"
+        else:
+            winner, margin = 'defender', d - a
+            message = f"🛡️ Defender wins by {margin} success{'es' if margin != 1 else ''}!"
+        extras = []
+        for side, r in (('Attacker', attacker_roll), ('Defender', defender_roll)):
+            if r['is_messy_critical']:
+                extras.append(f"{side}: messy critical")
+            elif r['is_critical']:
+                extras.append(f"{side}: critical win")
+            if r['is_bestial_failure']:
+                extras.append(f"{side}: bestial failure")
+        if extras:
+            message += " (" + "; ".join(extras) + ")"
+        return {
+            'rules_edition': 'v5',
+            'attacker_roll': attacker_roll,
+            'defender_roll': defender_roll,
+            'winner': winner,
+            'margin': margin,
+            'message': message,
         }
     
     @staticmethod
@@ -344,6 +493,11 @@ class DiceService:
                 dice_display.append(f"[{die}]")  # Failure
         
         dice_str = " ".join(dice_display)
+        rerolls = roll_data.get('specialty_rerolls') or []
+        if rerolls:
+            dice_str += " | specialty rerolls: " + " ".join(f"[{d}]" for d in rerolls)
+        if roll_data.get('willpower'):
+            dice_str += " | Willpower +1"
         
         result = [
             header + leniency_line,
