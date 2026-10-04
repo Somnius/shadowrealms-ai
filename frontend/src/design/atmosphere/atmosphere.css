@@ -1,0 +1,162 @@
+/* Ambient effects. Only transform / opacity animate; everything is aria-hidden + pointer-events: none. */
+
+/* ---- Fog ---- */
+.sr-fog {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 0;
+  --fog-opacity: 0.1;
+  --fog-speed: 1;
+  --fog-color: 224, 224, 235;
+}
+.sr-fog--blood { --fog-color: 139, 0, 0; }
+.sr-fog--arcane { --fog-color: 157, 78, 221; }
+.sr-fog__sheet {
+  position: absolute;
+  top: -10%;
+  left: 0;
+  width: 200%;
+  height: 120%;
+  opacity: var(--fog-opacity);
+  will-change: transform;
+  background:
+    radial-gradient(35% 45% at 12% 60%, rgba(var(--fog-color), 0.9), transparent 70%),
+    radial-gradient(30% 35% at 32% 30%, rgba(var(--fog-color), 0.6), transparent 70%),
+    radial-gradient(40% 40% at 55% 70%, rgba(var(--fog-color), 0.8), transparent 70%),
+    radial-gradient(28% 38% at 78% 40%, rgba(var(--fog-color), 0.7), transparent 70%),
+    radial-gradient(35% 45% at 95% 65%, rgba(var(--fog-color), 0.9), transparent 70%);
+  animation: sr-fog-drift calc(80s / var(--fog-speed)) linear infinite;
+}
+.sr-fog__sheet--b {
+  top: 10%;
+  opacity: calc(var(--fog-opacity) * 0.7);
+  transform: scaleY(-1);
+  animation-name: sr-fog-drift-b;
+  animation-duration: calc(64s / var(--fog-speed));
+}
+@keyframes sr-fog-drift {
+  from { transform: translate3d(0, 0, 0); }
+  to { transform: translate3d(-50%, 0, 0); }
+}
+@keyframes sr-fog-drift-b {
+  from { transform: translate3d(-50%, 0, 0) scaleY(-1); }
+  to { transform: translate3d(0, 0, 0) scaleY(-1); }
+}
+
+/* ---- Candle glow ---- */
+.sr-candle-glow {
+  position: absolute;
+  left: var(--glow-x);
+  top: var(--glow-y);
+  width: var(--glow-size);
+  height: var(--glow-size);
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  z-index: 0;
+}
+.sr-candle-glow__core {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 149, 0, 0.22) 0%, rgba(255, 149, 0, 0.08) 35%, transparent 70%);
+  animation:
+    sr-glow-flicker 2.3s steps(8, end) infinite,
+    sr-glow-breathe 5.9s ease-in-out infinite;
+  will-change: opacity, transform;
+}
+.sr-candle-glow--blood .sr-candle-glow__core { background: radial-gradient(circle, rgba(233, 69, 96, 0.2) 0%, rgba(139, 0, 0, 0.08) 40%, transparent 70%); }
+.sr-candle-glow--arcane .sr-candle-glow__core { background: radial-gradient(circle, rgba(157, 78, 221, 0.2) 0%, rgba(157, 78, 221, 0.06) 40%, transparent 70%); }
+@keyframes sr-glow-flicker {
+  0%, 100% { opacity: 1; }
+  25% { opacity: 0.86; }
+  50% { opacity: 0.95; }
+  75% { opacity: 0.8; }
+}
+@keyframes sr-glow-breathe {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.06); }
+}
+
+.sr-fog.is-static .sr-fog__sheet,
+.sr-candle-glow.is-static .sr-candle-glow__core {
+  animation: none;
+}
+
+/* ---- Blood drip ---- */
+.sr-blood-drip {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  pointer-events: none;
+  z-index: 2;
+  line-height: 0;
+  filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.5));
+}
+
+/* ---- Sigil ---- */
+.sr-sigil { display: block; overflow: visible; color: var(--sr-accent, #e94560); }
+.sr-sigil path { fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; }
+.sr-sigil__thorns { stroke-width: 1.6; }
+.sr-sigil__ring { stroke-width: 1; opacity: 0.7; }
+.sr-sigil__runes { stroke-width: 1.4; opacity: 0.8; }
+.sr-sigil__tri { stroke-width: 1.8; }
+.sr-sigil__moon { stroke: var(--sr-bone-300, #b5b5c3) !important; stroke-width: 1.2; }
+.sr-sigil .sr-sigil__drop { fill: var(--sr-blood-600, #c2334d); stroke: var(--sr-blood-400, #ff6b81); stroke-width: 0.8; }
+
+/* ---- Dice roll viz ---- */
+.sr-dice-viz {
+  margin: 0;
+  padding: var(--sr-space-3);
+  border: 1px solid var(--sr-border);
+  border-radius: var(--sr-radius-lg);
+  background: var(--sr-surface-sunken);
+}
+.sr-dice-viz__title {
+  margin-bottom: var(--sr-space-2);
+  color: var(--sr-text-2);
+  font-family: var(--sr-font-display);
+  letter-spacing: var(--sr-tracking-display);
+}
+.sr-dice-viz__stage { position: relative; }
+.sr-dice-viz__svg { display: block; overflow: visible; }
+.sr-dice-viz__pair { fill: none; stroke: var(--sr-gold-400); stroke-width: 1.6; stroke-linecap: round; stroke-dasharray: none; }
+.sr-dice-viz--messy-critical .sr-dice-viz__pair { stroke: var(--sr-blood-400); }
+.sr-dice-viz__meter-track { fill: var(--sr-night-700); }
+.sr-dice-viz__meter-fill { fill: var(--sr-bone-300); }
+.sr-dice-viz--success .sr-dice-viz__meter-fill,
+.sr-dice-viz--exceptional .sr-dice-viz__meter-fill { fill: var(--sr-ok-400); }
+.sr-dice-viz--critical .sr-dice-viz__meter-fill { fill: var(--sr-gold-400); }
+.sr-dice-viz--messy-critical .sr-dice-viz__meter-fill { fill: var(--sr-blood-500); }
+.sr-dice-viz__mark { stroke: var(--sr-text); stroke-width: 1.5; }
+.sr-dice-viz__mark-label { fill: var(--sr-text-muted); font-family: var(--sr-font-mono); font-size: 11px; }
+.sr-dice-viz__drip { position: absolute; inset: 0 -12px auto -12px; height: 0; } /* starts below the title so text stays readable */
+.sr-dice-viz__caption {
+  display: flex;
+  align-items: center;
+  gap: var(--sr-space-2);
+  margin-top: var(--sr-space-2);
+  font-family: var(--sr-font-display);
+  font-size: var(--sr-text-lg);
+  letter-spacing: var(--sr-tracking-display);
+}
+.sr-dice-viz__count { margin-left: auto; font-family: var(--sr-font-mono); font-size: var(--sr-text-md); color: var(--sr-text-2); }
+.sr-dice-viz--critical .sr-dice-viz__caption,
+.sr-dice-viz--exceptional .sr-dice-viz__caption { color: var(--sr-gold-400); }
+.sr-dice-viz--messy-critical .sr-dice-viz__outcome {
+  background: linear-gradient(90deg, var(--sr-gold-400), var(--sr-blood-400));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.sr-dice-viz--messy-critical .sr-dice-viz__outcome-glyph { color: var(--sr-blood-400); }
+.sr-dice-viz--bestial-failure,
+.sr-dice-viz--botch { border-color: var(--sr-blood-700); box-shadow: inset 0 0 24px rgba(139, 0, 0, 0.25); }
+.sr-dice-viz--bestial-failure .sr-dice-viz__caption,
+.sr-dice-viz--botch .sr-dice-viz__caption { color: var(--sr-danger-400); }
+.sr-dice-viz--total-failure .sr-dice-viz__caption,
+.sr-dice-viz--failure .sr-dice-viz__caption { color: var(--sr-text-2); }
+.sr-die.is-paired .sr-die__body { stroke-width: 1.8; }
+.sr-die.is-reroll { opacity: 0.85; }

@@ -1,0 +1,152 @@
+/* Glyph base + built-in animations. Compositor-only (transform / opacity / stroke-dashoffset). */
+
+.sr-glyph {
+  display: inline-block;
+  flex-shrink: 0;
+  vertical-align: middle;
+  overflow: visible;
+}
+
+.sr-glyph-accent-stroke {
+  stroke: var(--sr-glyph-accent, currentColor);
+}
+
+/* Fill the drop when the parent asks for it: <span style="--sr-glyph-fill: ..."> */
+.sr-glyph-fillable {
+  fill: var(--sr-glyph-fill, none);
+}
+
+/* ---- candle / lantern / lamp flame ---- */
+.sr-glyph--animate .sr-glyph-flame {
+  transform-box: fill-box;
+  transform-origin: 50% 100%;
+  animation:
+    sr-glyph-flicker-shape 2.3s ease-in-out infinite,
+    sr-glyph-flicker-glow 1.7s steps(6, end) infinite;
+}
+.sr-glyph--animate.sr-glyph--room-street .sr-glyph-flame,
+.sr-glyph--animate.sr-glyph--room-ooc .sr-glyph-flame {
+  animation-duration: 3.1s, 2.3s;
+}
+@keyframes sr-glyph-flicker-shape {
+  0%, 100% { transform: scale(1, 1) skewX(0deg); }
+  20% { transform: scale(0.94, 1.08) skewX(-3deg); }
+  45% { transform: scale(1.04, 0.95) skewX(2deg); }
+  70% { transform: scale(0.97, 1.05) skewX(-1deg); }
+}
+@keyframes sr-glyph-flicker-glow {
+  0%, 100% { opacity: 1; }
+  30% { opacity: 0.82; }
+  55% { opacity: 0.95; }
+  80% { opacity: 0.75; }
+}
+
+/* ---- eye blink ---- */
+.sr-glyph--animate.sr-glyph--eye > :not(title),
+.sr-glyph--animate .sr-glyph-lid {
+  transform-box: view-box;
+  transform-origin: 12px 12px;
+  animation: sr-glyph-blink 6s ease-in-out infinite;
+}
+@keyframes sr-glyph-blink {
+  0%, 92%, 100% { transform: scaleY(1); }
+  95% { transform: scaleY(0.08); }
+}
+
+/* ---- AI sigil rune ring ---- */
+.sr-glyph--animate .sr-glyph-runes {
+  transform-box: view-box;
+  transform-origin: 12px 12px;
+  animation: sr-glyph-turn 8s linear infinite;
+}
+@keyframes sr-glyph-turn {
+  to { transform: rotate(360deg); }
+}
+
+/* ---- blood drop swell + fall ---- */
+.sr-glyph--animate.sr-glyph--blood-drop > :not(title) {
+  transform-box: view-box;
+  transform-origin: 12px 3px;
+  animation: sr-glyph-drip 2.4s var(--sr-ease-drip, ease-in) infinite;
+}
+@keyframes sr-glyph-drip {
+  0% { transform: translateY(-3px) scale(0.6); opacity: 0; }
+  25% { transform: translateY(0) scale(0.95); opacity: 1; }
+  60% { transform: translateY(0) scale(1, 1.06); opacity: 1; }
+  100% { transform: translateY(6px) scale(0.9, 1.1); opacity: 0; }
+}
+
+/* ---- draw-on (stroke-dashoffset, pathLength = 1) ---- */
+.sr-glyph--draw .sr-glyph-stroke {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 0;
+  animation: sr-glyph-draw var(--sr-dur-ritual, 1200ms) var(--sr-ease-in-out, ease-in-out) both;
+}
+.sr-glyph--draw .sr-glyph-solid {
+  animation: sr-glyph-fade 400ms ease-out 900ms both;
+}
+@keyframes sr-glyph-draw {
+  from { stroke-dashoffset: 1; }
+  to { stroke-dashoffset: 0; }
+}
+@keyframes sr-glyph-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* ---- pause / reduced motion (also covered globally inside .sr-app) ---- */
+[data-paused='true'] .sr-glyph *,
+.sr-glyph[data-paused='true'] * {
+  animation-play-state: paused !important;
+}
+[data-motion='reduced'] .sr-glyph--animate *,
+[data-motion='reduced'] .sr-glyph--draw * {
+  animation: none !important;
+}
+/* The OS setting always stops glyph loops. */
+@media (prefers-reduced-motion: reduce) {
+  .sr-glyph--animate *,
+  .sr-glyph--draw * {
+    animation: none !important;
+  }
+}
+
+/* ---- d10 face (DieFace) ---- */
+.sr-die {
+  display: inline-block;
+  overflow: visible;
+  --die-body: var(--sr-night-800, #16213e);
+  --die-edge: var(--sr-bone-500, #8b8b9f);
+  --die-text: var(--sr-bone-100, #e0e0e0);
+}
+.sr-die__body {
+  fill: var(--die-body);
+  stroke: var(--die-edge);
+  stroke-width: 1.2;
+  stroke-linejoin: round;
+}
+.sr-die__facets {
+  stroke: var(--die-edge);
+  stroke-width: 0.6;
+  opacity: 0.55;
+}
+.sr-die__fang {
+  fill: none;
+  stroke: var(--sr-blood-300, #fda4af);
+  stroke-width: 0.9;
+  stroke-linejoin: round;
+}
+.sr-die__value {
+  fill: var(--die-text);
+  font-family: var(--sr-font-mono, monospace);
+  font-size: 7.5px;
+  font-weight: 700;
+}
+.sr-die--success { --die-edge: var(--sr-bone-300, #b5b5c3); }
+.sr-die--fail { --die-text: var(--sr-bone-500, #8b8b9f); }
+.sr-die--crit { --die-edge: var(--sr-gold-400, #fbbf24); --die-text: var(--sr-gold-300, #fde68a); }
+.sr-die--crit .sr-die__body { filter: drop-shadow(0 0 2px rgba(251, 191, 36, 0.45)); }
+.sr-die--one { --die-edge: var(--sr-blood-700, #8b0000); --die-text: var(--sr-danger-400, #f87171); }
+.sr-die--hunger { --die-body: var(--sr-blood-900, #3b0a14); --die-edge: var(--sr-blood-500, #e94560); }
+.sr-die--hunger.sr-die--crit { --die-edge: var(--sr-gold-400, #fbbf24); }
+.sr-die--hunger.sr-die--one { --die-edge: var(--sr-danger-400, #f87171); }

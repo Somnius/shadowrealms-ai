@@ -1,0 +1,330 @@
+/*
+ * ShadowRealms design tokens + base styles.
+ *
+ * - Custom properties live on :root (all prefixed --sr-, so they change nothing on their own).
+ * - Every element style is scoped under .sr-app, so legacy pages are untouched until the
+ *   app shell opts in (e.g. <DesignProvider> renders <div class="sr-app">).
+ * - Motion: [data-motion="reduced"] on .sr-app (set by DesignProvider from the OS setting or
+ *   the user's manual toggle) and @media (prefers-reduced-motion) as a fallback.
+ *
+ * Fonts (all SIL OFL 1.1, Greek coverage checked in the design doc §4.2). Add this to
+ * public/index.html <head> when the shell lands (NOT done here on purpose):
+ *
+ *   <link rel="preconnect" href="https://fonts.googleapis.com">
+ *   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+ *   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=Alegreya+SC:wght@500;700&family=EB+Garamond:ital,wght@0,400..600;1,400..600&family=Inter:wght@400..600&family=JetBrains+Mono:wght@400&display=swap">
+ *
+ * Cinzel has no Greek glyphs, so :lang(el) swaps the display face to Alegreya SC.
+ */
+
+:root {
+  /* ---- surfaces (night) ---- */
+  --sr-night-950: #07070f;
+  --sr-night-900: #0f0f1e; /* page */
+  --sr-night-850: #0f1729; /* rail, inputs */
+  --sr-night-800: #16213e; /* panels */
+  --sr-night-750: #1a2547; /* hover row */
+  --sr-night-700: #2a2a4e; /* borders */
+  --sr-night-600: #3a3a64; /* strong borders, scrollbar */
+  --sr-night-500: #4a4a5e; /* decor only (2.2:1) */
+
+  /* ---- text (bone) ---- */
+  --sr-bone-50: #f5f2ea;
+  --sr-bone-100: #e0e0e0; /* primary text */
+  --sr-bone-300: #b5b5c3; /* secondary (>= 7.8:1 on all surfaces) */
+  --sr-bone-500: #8b8b9f; /* muted (>= 4.7:1 on all surfaces) */
+
+  /* ---- blood (brand) ---- */
+  --sr-blood-300: #fda4af;
+  --sr-blood-400: #ff6b81; /* rose text on panels, small sizes (5.8:1 on #16213e) */
+  --sr-blood-500: #e94560; /* brand: borders, large text, focus ring, glyph fill */
+  --sr-blood-600: #c2334d; /* button fill under white text (5.42:1) */
+  --sr-blood-700: #8b0000; /* drips, botch, decor; white on it 10:1 */
+  --sr-blood-800: #5c0a17;
+  --sr-blood-900: #3b0a14;
+
+  /* ---- arcane (AI / mage) ---- */
+  --sr-arcane-300: #c4b5fd;
+  --sr-arcane-400: #b794f6; /* arcane text */
+  --sr-arcane-500: #9d4edd; /* fill under white text (4.6:1), decor */
+  --sr-arcane-700: #5b2a86;
+  --sr-arcane-950: rgba(157, 78, 221, 0.08);
+
+  /* ---- ember / gold ---- */
+  --sr-ember-500: #ff9500; /* candle */
+  --sr-gold-300: #fde68a;
+  --sr-gold-400: #fbbf24; /* ST voice, critical 10s */
+  --sr-gold-500: #ffd700;
+  --sr-amber-600: #d97706; /* werewolf accent */
+
+  /* ---- status ---- */
+  --sr-ok-400: #4ade80;
+  --sr-warn-400: #fbbf24;
+  --sr-danger-400: #f87171;
+  --sr-info-400: #7dd3fc;
+
+  /* ---- semantic ---- */
+  --sr-bg: var(--sr-night-900);
+  --sr-bg-deep: var(--sr-night-950);
+  --sr-surface: var(--sr-night-800);
+  --sr-surface-sunken: var(--sr-night-850);
+  --sr-surface-hover: var(--sr-night-750);
+  --sr-border: var(--sr-night-700);
+  --sr-border-strong: var(--sr-night-600);
+  --sr-border-input: #707096; /* form control edges: >= 3.18:1 on every surface (WCAG 1.4.11) */
+  --sr-text: var(--sr-bone-100);
+  --sr-text-2: var(--sr-bone-300);
+  --sr-text-muted: var(--sr-bone-500);
+  --sr-accent: var(--sr-blood-500);
+  --sr-accent-text: var(--sr-blood-400);
+  --sr-accent-fill: var(--sr-blood-600);
+  --sr-accent-fill-hover: var(--sr-blood-700);
+  --sr-on-accent: #ffffff;
+  --sr-hunger: var(--sr-blood-500);
+  --sr-crit: var(--sr-gold-400);
+  --sr-focus-color: var(--sr-blood-500);
+  --sr-focus: 0 0 0 2px var(--sr-night-900), 0 0 0 4px var(--sr-focus-color);
+  --sr-glyph-accent: var(--sr-blood-500);
+  --sr-scrim: rgba(4, 4, 10, 0.72);
+
+  /* ---- typography ---- */
+  --sr-font-display: 'Cinzel', 'Alegreya SC', 'EB Garamond', Georgia, serif;
+  --sr-font-body: 'EB Garamond', 'Iowan Old Style', Georgia, 'Times New Roman', serif;
+  --sr-font-ui: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, 'Noto Sans', sans-serif;
+  --sr-font-mono: 'JetBrains Mono', ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace;
+  --sr-text-xs: 0.75rem;    /* 12 */
+  --sr-text-sm: 0.8125rem;  /* 13 meta */
+  --sr-text-md: 0.875rem;   /* 14 UI */
+  --sr-text-base: 1rem;     /* 16 */
+  --sr-text-chat: 1.0625rem;/* 17 chat body */
+  --sr-text-lg: 1.25rem;    /* 20 */
+  --sr-text-xl: 1.5rem;     /* 24 */
+  --sr-text-2xl: 1.875rem;  /* 30 */
+  --sr-text-3xl: 2.375rem;  /* 38 */
+  --sr-leading-tight: 1.2;
+  --sr-leading-ui: 1.4;
+  --sr-leading-body: 1.5;
+  --sr-tracking-display: 0.06em; /* never more: Greek caps get too wide */
+
+  /* ---- spacing (4px base) ---- */
+  --sr-space-1: 4px;
+  --sr-space-2: 8px;
+  --sr-space-3: 12px;
+  --sr-space-4: 16px;
+  --sr-space-5: 20px;
+  --sr-space-6: 24px;
+  --sr-space-7: 32px;
+  --sr-space-8: 40px;
+  --sr-space-9: 48px;
+  --sr-space-10: 64px;
+
+  /* ---- radii ---- */
+  --sr-radius-sm: 4px;
+  --sr-radius-md: 8px;
+  --sr-radius-lg: 12px;
+  --sr-radius-full: 999px;
+
+  /* ---- elevation / glow ---- */
+  --sr-shadow-1: 0 1px 2px rgba(0, 0, 0, 0.5);
+  --sr-shadow-2: 0 4px 16px rgba(0, 0, 0, 0.45);
+  --sr-shadow-3: 0 20px 60px rgba(0, 0, 0, 0.65);
+  --sr-glow-blood: 0 0 24px rgba(233, 69, 96, 0.25);
+  --sr-glow-arcane: 0 0 24px rgba(157, 78, 221, 0.25);
+  --sr-glow-ember: 0 0 28px rgba(255, 149, 0, 0.3);
+  --sr-glow-gold: 0 0 18px rgba(251, 191, 36, 0.35);
+
+  /* ---- z-index ---- */
+  --sr-z-rail: 10;
+  --sr-z-drawer: 40;
+  --sr-z-popover: 50;
+  --sr-z-modal: 60;
+  --sr-z-toast: 70;
+  --sr-z-dice: 80;
+
+  /* ---- motion ---- */
+  --sr-dur-instant: 80ms;
+  --sr-dur-fast: 150ms;
+  --sr-dur-base: 240ms;
+  --sr-dur-slow: 400ms;
+  --sr-dur-ritual: 1200ms;
+  --sr-ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --sr-ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --sr-ease-drip: cubic-bezier(0.55, 0, 0.9, 0.4);
+
+  /* ---- layout ---- */
+  --sr-tap: 44px; /* minimum touch target */
+  /* breakpoints (for reference; CSS vars can't be used in @media):
+     sm 480, md 768 (drawer <-> columns), lg 1024, xl 1440 */
+}
+
+/* Per game line accents, set on the shell: <div class="sr-app" data-line="werewolf"> */
+[data-line='werewolf'] {
+  --sr-accent: var(--sr-amber-600);
+  --sr-accent-text: var(--sr-gold-400);
+  --sr-accent-fill: #b45309; /* white on it 5.0:1 */
+  --sr-accent-fill-hover: #92400e;
+  --sr-focus-color: var(--sr-amber-600);
+  --sr-glyph-accent: var(--sr-amber-600);
+}
+[data-line='mage'] {
+  --sr-accent: var(--sr-arcane-500);
+  --sr-accent-text: var(--sr-arcane-400);
+  --sr-accent-fill: #7e3bbf; /* white on it 6.4:1 */
+  --sr-accent-fill-hover: var(--sr-arcane-700);
+  --sr-focus-color: var(--sr-arcane-400);
+  --sr-glyph-accent: var(--sr-arcane-400);
+}
+
+/* ------------------------------------------------------------------ */
+/* Base element styles (opt-in)                                        */
+/* ------------------------------------------------------------------ */
+
+.sr-app {
+  color: var(--sr-text);
+  background-color: var(--sr-bg);
+  font-family: var(--sr-font-ui);
+  font-size: var(--sr-text-md);
+  line-height: var(--sr-leading-ui);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+/* Portals (modal, drawer, toasts) render their own .sr-app wrapper: keep it transparent. */
+.sr-app.sr-portal {
+  background: transparent;
+}
+
+.sr-app *,
+.sr-app *::before,
+.sr-app *::after {
+  box-sizing: border-box;
+}
+
+.sr-app :where(h1, h2, h3, h4) {
+  font-family: var(--sr-font-display);
+  font-weight: 700;
+  line-height: var(--sr-leading-tight);
+  letter-spacing: var(--sr-tracking-display);
+  color: var(--sr-text);
+  margin: 0 0 var(--sr-space-3);
+}
+.sr-app :where(h1) { font-size: var(--sr-text-3xl); }
+.sr-app :where(h2) { font-size: var(--sr-text-2xl); }
+.sr-app :where(h3) { font-size: var(--sr-text-xl); }
+.sr-app :where(h4) { font-size: var(--sr-text-lg); }
+
+.sr-app :where(p) { margin: 0 0 var(--sr-space-3); }
+
+.sr-app :where(a) {
+  color: var(--sr-accent-text);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 2px;
+}
+.sr-app :where(a:hover) { color: var(--sr-blood-300); }
+
+.sr-app :where(code, kbd, samp, pre) { font-family: var(--sr-font-mono); }
+
+.sr-app :where(button, input, select, textarea) {
+  font: inherit;
+  color: inherit;
+}
+
+.sr-app ::selection {
+  background: var(--sr-blood-800);
+  color: var(--sr-bone-50);
+}
+
+/* Global focus ring (fixes the missing focus states in the legacy UI). */
+.sr-app :where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
+  outline: none;
+  box-shadow: var(--sr-focus);
+}
+.sr-app :where(a):focus-visible { border-radius: var(--sr-radius-sm); }
+
+/* Scrollbars */
+.sr-app * {
+  scrollbar-width: thin;
+  scrollbar-color: var(--sr-border-strong) transparent;
+}
+.sr-app *::-webkit-scrollbar { width: 10px; height: 10px; }
+.sr-app *::-webkit-scrollbar-thumb {
+  background: var(--sr-border-strong);
+  border-radius: var(--sr-radius-full);
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+/* Text helpers */
+.sr-app .sr-display { font-family: var(--sr-font-display); letter-spacing: var(--sr-tracking-display); }
+.sr-app .sr-prose { font-family: var(--sr-font-body); font-size: var(--sr-text-chat); line-height: var(--sr-leading-body); }
+.sr-app .sr-mono { font-family: var(--sr-font-mono); }
+.sr-app .sr-muted { color: var(--sr-text-muted); }
+/* Uppercase is lang-aware: with lang="el" the browser drops the tonos (ΚΑΛΗΣΠΕΡΑ, not ΚΑΛΗΣΠΈΡΑ).
+   So put lang on <html> (or on mixed-language islands) whenever Greek is shown. */
+.sr-app .sr-caps { text-transform: uppercase; letter-spacing: var(--sr-tracking-display); }
+
+.sr-visually-hidden {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
+}
+
+/* ------------------------------------------------------------------ */
+/* Greek                                                               */
+/* ------------------------------------------------------------------ */
+
+/* Cinzel has no Greek: swap the display face. */
+.sr-app:lang(el),
+.sr-app :lang(el) {
+  --sr-font-display: 'Alegreya SC', 'EB Garamond', Georgia, serif;
+}
+/* Don't fake small caps in Greek (no reliable Greek small-cap forms). */
+.sr-app :lang(el) .sr-smallcaps,
+.sr-app:lang(el) .sr-smallcaps {
+  font-variant: normal;
+}
+.sr-app .sr-smallcaps { font-variant: small-caps; letter-spacing: 0.04em; }
+
+/* ------------------------------------------------------------------ */
+/* Motion                                                              */
+/* ------------------------------------------------------------------ */
+
+/* Ambient loops can be paused by the components (off-screen / tab hidden). */
+.sr-app [data-paused='true'],
+.sr-app [data-paused='true'] * {
+  animation-play-state: paused !important;
+}
+
+/* Manual toggle (DesignProvider writes data-motion) */
+.sr-app[data-motion='reduced'] *,
+.sr-app[data-motion='reduced'] *::before,
+.sr-app[data-motion='reduced'] *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  animation-delay: 0ms !important;
+  transition-duration: 0.01ms !important;
+  scroll-behavior: auto !important;
+}
+
+/* OS setting always applies (also without DesignProvider). The manual toggle can only add to it. */
+@media (prefers-reduced-motion: reduce) {
+  .sr-app *,
+  .sr-app *::before,
+  .sr-app *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    animation-delay: 0ms !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+@keyframes sr-fade-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes sr-rise-in { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+@keyframes sr-spin { to { transform: rotate(360deg); } }
