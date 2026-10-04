@@ -163,7 +163,6 @@ expect(mockLogin).toHaveBeenCalledWith({
 ### Setup Files
 - **`setupTests.ts`** - Global test configuration
 - **`jest.config.js`** - Jest configuration
-- **`test-auth-system.js`** - Custom test runner
 
 ### Mocking Strategy
 - **Framer Motion** - Mocked to avoid animation issues
@@ -215,9 +214,6 @@ docker-compose exec frontend npm run test:ci
 
 # Run specific test file
 docker-compose exec frontend npm test -- LoginForm.test.tsx
-
-# Run custom test suite
-docker-compose exec frontend node test-auth-system.js
 ```
 
 #### Docker Test Runner Script
@@ -230,9 +226,6 @@ docker-compose exec frontend node test-auth-system.js
 
 # Run specific test
 ./test-auth-docker.sh specific LoginForm.test.tsx
-
-# Run custom suite
-./test-auth-docker.sh custom
 ```
 
 #### One-time Test Run

@@ -49,7 +49,7 @@ class HealthCheckService:
             return (False, "LM Studio connection timed out. Is it running?")
         except Exception as e:
             logger.error(f"Unexpected error checking LM Studio: {e}")
-            return (False, f"Error checking LM Studio: {str(e)}")
+            return (False, "Unexpected error checking LM Studio (details are in the backend logs).")
     
     def check_ollama(self, base_url: str = 'http://localhost:11434') -> Tuple[bool, str]:
         """
@@ -80,7 +80,7 @@ class HealthCheckService:
             return (False, "Ollama connection timed out.")
         except Exception as e:
             logger.error(f"Unexpected error checking Ollama: {e}")
-            return (False, f"Error checking Ollama: {str(e)}")
+            return (False, "Unexpected error checking Ollama (details are in the backend logs).")
     
     def check_chromadb(self, host: str = 'chromadb', port: int = 8000) -> Tuple[bool, str]:
         """
@@ -107,7 +107,7 @@ class HealthCheckService:
             return (False, "ChromaDB connection timed out.")
         except Exception as e:
             logger.error(f"Unexpected error checking ChromaDB: {e}")
-            return (False, f"Error checking ChromaDB: {str(e)}")
+            return (False, "Unexpected error checking ChromaDB (details are in the backend logs).")
     
     def check_all_services(self) -> Dict[str, Any]:
         """

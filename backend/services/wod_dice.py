@@ -29,6 +29,8 @@ import re
 from dataclasses import dataclass, field
 from typing import Any, List, Optional, Sequence, Tuple
 
+from services.request_validation import RequestValidationError
+
 MAX_POOL = 50
 EXCEPTIONAL_THRESHOLD = 5
 # Hard cap on specialty explosions so a pathological rng cannot loop forever.
@@ -56,17 +58,18 @@ def parse_pool_expression(pool_str: str) -> int:
     """Parse pool like '7', '4+3', '6-2+1' (digits with + or -, no spaces required)."""
     s = re.sub(r"\s+", "", (pool_str or "").strip())
     if not s:
-        raise ValueError("Dice pool is empty.")
-    if not re.fullmatch(r"\d+([+-]\d+)*", s):
-        raise ValueError(
+        raise RequestValidationError("Dice pool is empty.")
+    # Short terms only: a huge digit string would make int() raise its own ValueError.
+    if len(s) > 60 or not re.fullmatch(r"\d{1,4}([+-]\d{1,4})*", s):
+        raise RequestValidationError(
             "Invalid pool. Use digits with + or -, e.g. `5`, `4+3`, `7-1` (wound penalties)."
         )
     parts = re.split(r"(?=[+-])", s)
     total = sum(int(p) for p in parts)
     if total < 1:
-        raise ValueError("Pool must be at least 1 die.")
+        raise RequestValidationError("Pool must be at least 1 die.")
     if total > MAX_POOL:
-        raise ValueError(f"Pool capped at {MAX_POOL} dice for this command.")
+        raise RequestValidationError(f"Pool capped at {MAX_POOL} dice for this command.")
     return total
 
 
@@ -81,7 +84,7 @@ def parse_roll_expression(expr: str, default_difficulty: int = 6) -> Tuple[int, 
     """
     raw = (expr or "").strip()
     if not raw:
-        raise ValueError(
+        raise RequestValidationError(
             "Missing roll expression. Examples: `5`, `4+3`, `6@7` (pool@difficulty), TN 2–10."
         )
 
@@ -93,12 +96,12 @@ def parse_roll_expression(expr: str, default_difficulty: int = 6) -> Tuple[int, 
         pool_part = left.strip()
         diff_part = right.strip()
         if not pool_part:
-            raise ValueError("Missing dice pool before `@`.")
-        if not diff_part.isdigit():
-            raise ValueError(f"Invalid difficulty after `@`: {diff_part!r} (use 2–10).")
+            raise RequestValidationError("Missing dice pool before `@`.")
+        if not diff_part.isdigit() or len(diff_part) > 2:
+            raise RequestValidationError("Invalid difficulty after `@` (use 2–10).")
         difficulty = int(diff_part)
     else:
-        m = re.match(r"^(.+?)(?:tn|diff)\s*(\d+)\s*$", raw, re.IGNORECASE)
+        m = re.match(r"^(.+?)(?:tn|diff)\s*(\d{1,2})\s*$", raw, re.IGNORECASE)
         if m:
             pool_part = m.group(1).strip()
             difficulty = int(m.group(2))
@@ -106,7 +109,7 @@ def parse_roll_expression(expr: str, default_difficulty: int = 6) -> Tuple[int, 
     pool = parse_pool_expression(pool_part)
 
     if difficulty < 2 or difficulty > 10:
-        raise ValueError("Difficulty (target number) must be between 2 and 10.")
+        raise RequestValidationError("Difficulty (target number) must be between 2 and 10.")
 
     return pool, difficulty
 

@@ -24,6 +24,8 @@ import random
 import re
 from typing import Any, Dict, List, Optional, Sequence, Tuple
 
+from services.request_validation import RequestValidationError
+
 MAX_POOL = 50
 MAX_HUNGER = 5
 MAX_DIFFICULTY = 10
@@ -101,10 +103,10 @@ def roll_v5(
     r = _rng(rng)
     pool = int(pool)
     if pool < 1 or pool > MAX_POOL:
-        raise ValueError(f"Pool must be between 1 and {MAX_POOL}.")
+        raise RequestValidationError(f"Pool must be between 1 and {MAX_POOL}.")
     difficulty = int(difficulty)
     if difficulty < 0 or difficulty > MAX_DIFFICULTY:
-        raise ValueError(f"Difficulty must be between 0 and {MAX_DIFFICULTY}.")
+        raise RequestValidationError(f"Difficulty must be between 0 and {MAX_DIFFICULTY}.")
     h = min(clamp_hunger(hunger), pool)
     dice = _roll_dice(pool, leniency_floor, r)
     # Leniency guarantees one high die somewhere in the list; which slots are
@@ -118,24 +120,24 @@ def roll_v5(
 
 
 def validate_reroll_indices(normal_dice: Sequence[int], indices: Sequence[Any]) -> List[int]:
-    """Return the cleaned index list or raise ValueError."""
+    """Return the cleaned index list or raise RequestValidationError."""
     if not isinstance(indices, (list, tuple)) or not indices:
-        raise ValueError("indices must be a non-empty list of normal-die positions.")
+        raise RequestValidationError("indices must be a non-empty list of normal-die positions.")
     out: List[int] = []
     for i in indices:
         # Only real integers: bools (int subclass), floats and strings are refused.
         if isinstance(i, bool) or not isinstance(i, int):
-            raise ValueError(f"Invalid die index: {i!r} (must be an integer)")
+            raise RequestValidationError("Each die index must be an integer.")
         iv = i
         if iv < 0 or iv >= len(normal_dice):
-            raise ValueError(
+            raise RequestValidationError(
                 f"Die index {iv} is out of range (0–{len(normal_dice) - 1}, normal dice only)."
             )
         if iv in out:
-            raise ValueError(f"Die index {iv} given twice.")
+            raise RequestValidationError(f"Die index {iv} given twice.")
         out.append(iv)
     if len(out) > MAX_WILLPOWER_REROLL:
-        raise ValueError(f"A Willpower reroll covers at most {MAX_WILLPOWER_REROLL} dice.")
+        raise RequestValidationError(f"A Willpower reroll covers at most {MAX_WILLPOWER_REROLL} dice.")
     return out
 
 
@@ -149,7 +151,7 @@ def apply_reroll(
     """Replace the chosen normal dice with ``new_values`` and re-resolve (pure)."""
     idx = validate_reroll_indices(normal_dice, indices)
     if len(new_values) != len(idx):
-        raise ValueError("new_values must match indices.")
+        raise ValueError("new_values must match indices.")  # internal bug, not client input
     normal = list(normal_dice)
     before = [normal[i] for i in idx]
     for i, v in zip(idx, new_values):
@@ -183,6 +185,60 @@ def willpower_reroll(
     res = apply_reroll(normal_dice, hunger_dice, difficulty, idx, new_vals)
     res["leniency_floor"] = leniency_floor
     return res
+
+
+class NoWillpowerLeft(Exception):
+    """The Willpower track is full of Aggravated damage: there is nothing left to spend."""
+
+
+def _as_int(v: Any) -> Optional[int]:
+    if isinstance(v, bool):
+        return None
+    if isinstance(v, int):
+        return v
+    if isinstance(v, float) and v.is_integer():
+        return int(v)
+    if isinstance(v, str) and v.strip().lstrip("+-").isdigit():
+        return int(v.strip())
+    return None
+
+
+def willpower_track(wod_meta: Any, attributes: Any = None) -> Optional[Dict[str, int]]:
+    """
+    The character's Willpower track as {max, superficial, aggravated}, cleaned up.
+    Uses wod_meta.willpower when it has a usable max; otherwise max = Composure + Resolve
+    (core p. 157) with no damage. None when neither is on the sheet.
+    """
+    track = wod_meta.get("willpower") if isinstance(wod_meta, dict) else None
+    mx = _as_int(track.get("max")) if isinstance(track, dict) else None
+    if mx is None or mx < 1:
+        attrs = attributes if isinstance(attributes, dict) else {}
+        comp, res = _as_int(attrs.get("composure")), _as_int(attrs.get("resolve"))
+        if comp is None or res is None or comp + res < 1:
+            return None
+        return {"max": comp + res, "superficial": 0, "aggravated": 0}
+    agg = min(max(_as_int(track.get("aggravated")) or 0, 0), mx)
+    sup = min(max(_as_int(track.get("superficial")) or 0, 0), mx - agg)
+    return {"max": mx, "superficial": sup, "aggravated": agg}
+
+
+def spend_willpower(track: Dict[str, int]) -> Dict[str, Any]:
+    """
+    Mark one spent Willpower point (core p. 122 / p. 126; docs/rules/V5.md §1.5).
+    The spend is 1 Superficial Willpower damage, never halved. When every box is
+    already filled, one Superficial box turns Aggravated instead. A track full of
+    Aggravated damage has nothing left to spend: NoWillpowerLeft (app ruling, the
+    book gives no further step). Pure; returns {'before', 'after', 'damage'} where
+    damage is 'superficial' or 'aggravated'.
+    """
+    mx, sup, agg = track["max"], track["superficial"], track["aggravated"]
+    if sup + agg < mx:
+        after, damage = {"max": mx, "superficial": sup + 1, "aggravated": agg}, "superficial"
+    elif sup > 0:
+        after, damage = {"max": mx, "superficial": sup - 1, "aggravated": agg + 1}, "aggravated"
+    else:
+        raise NoWillpowerLeft()
+    return {"before": dict(track), "after": after, "damage": damage}
 
 
 def resolve_rouse(die: int, hunger_before: int) -> Dict[str, Any]:
@@ -220,7 +276,7 @@ def outcome_label(res: Dict[str, Any]) -> str:
 
 _V5_EXPR_RE = re.compile(
     r"^(?P<pool>[\d\s+\-]+?)\s*"
-    r"(?:(?:@\s*(?P<diff>\d+))\s*(?:h\s*(?P<h>\d+))?|(?:h\s*(?P<h2>\d+))\s*(?:@\s*(?P<diff2>\d+))?)?\s*$",
+    r"(?:(?:@\s*(?P<diff>\d{1,2}))\s*(?:h\s*(?P<h>\d{1,2}))?|(?:h\s*(?P<h2>\d{1,2}))\s*(?:@\s*(?P<diff2>\d{1,2}))?)?\s*$",
     re.IGNORECASE,
 )
 
@@ -237,12 +293,12 @@ def parse_v5_roll_expression(
 
     raw = (expr or "").strip()
     if not raw:
-        raise ValueError(
+        raise RequestValidationError(
             "Missing roll expression. V5 examples: `6`, `6@3` (pool@successes needed), `6@3h2` (Hunger 2)."
         )
     m = _V5_EXPR_RE.match(raw)
     if not m:
-        raise ValueError(
+        raise RequestValidationError(
             "Invalid V5 roll. Use `pool[@difficulty][h<hunger>]`, e.g. `6@3h2`."
         )
     pool = parse_pool_expression(m.group("pool"))
@@ -251,9 +307,9 @@ def parse_v5_roll_expression(
     difficulty = int(diff_s) if diff_s is not None else int(default_difficulty)
     hunger = int(h_s) if h_s is not None else int(default_hunger)
     if difficulty < 0 or difficulty > MAX_DIFFICULTY:
-        raise ValueError("V5 difficulty (successes needed) must be between 0 and 10.")
+        raise RequestValidationError("V5 difficulty (successes needed) must be between 0 and 10.")
     if hunger < 0 or hunger > MAX_HUNGER:
-        raise ValueError("Hunger must be between 0 and 5.")
+        raise RequestValidationError("Hunger must be between 0 and 5.")
     return pool, difficulty, hunger
 
 

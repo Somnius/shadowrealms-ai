@@ -49,10 +49,13 @@ def test_marked_done_after_successful_migration(db):
 
 def test_failed_migration_marks_nothing(db):
     ensure_probe, calls = _counter(db)
-    with pytest.raises(RuntimeError):
+
+    def failing_migration():
         with db.schema_migration():
             ensure_probe("migrate")
             raise RuntimeError("COMMIT failed")
+
+    pytest.raises(RuntimeError, failing_migration)
     ensure_probe("req")
     assert calls == ["migrate", "req"]
     assert db._MIGRATION_PENDING is None
@@ -80,13 +83,15 @@ def test_every_decorated_helper_runs_in_migrate_db():
         for f in files:
             if not f.endswith(".py"):
                 continue
-            tree = ast.parse(open(os.path.join(root, f), encoding="utf-8").read())
+            with open(os.path.join(root, f), encoding="utf-8") as fh:
+                tree = ast.parse(fh.read())
             for node in ast.walk(tree):
                 if isinstance(node, ast.FunctionDef) and any(
                     getattr(d, "id", None) == "once_per_process" for d in node.decorator_list
                 ):
                     decorated.add(node.name)
-    src = open(os.path.join(backend, "database.py"), encoding="utf-8").read()
+    with open(os.path.join(backend, "database.py"), encoding="utf-8") as fh:
+        src = fh.read()
     tree = ast.parse(src)
     migrate = next(n for n in tree.body if isinstance(n, ast.FunctionDef) and n.name == "migrate_db")
     pg_branch = next(n for n in migrate.body if isinstance(n, ast.If))

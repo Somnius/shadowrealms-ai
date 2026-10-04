@@ -14,6 +14,8 @@ from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional, Tuple
 from zoneinfo import ZoneInfo
 
+from services.request_validation import RequestValidationError
+
 logger = logging.getLogger(__name__)
 
 # English labels to align with chat UI (“Wednesday, March 25, 2026 · 9:39 PM”).
@@ -409,7 +411,7 @@ def execute_summarize_command(payload: str, user_id: int) -> Dict[str, Any]:
 
     text = (payload or "").strip()
     if not text:
-        raise ValueError(
+        raise RequestValidationError(
             "Usage: `/ai summarize` followed by the text to compress (OOC helper)."
         )
 
@@ -563,7 +565,7 @@ def execute_clean_command(
             "display_markdown": display,
             "future_commands_suggestion": FUTURE_COMMAND_SUGGESTIONS,
         }
-    raise ValueError(
+    raise RequestValidationError(
         f"Unknown clean target `{payload.strip()!r}`. Use **`/ai clean`** to list options."
     )
 
@@ -620,11 +622,11 @@ def execute_dice_diff_command(
             try:
                 v = int(parts[0])
             except (ValueError, IndexError) as e:
-                raise ValueError(
+                raise RequestValidationError(
                     "Usage: `/ai dice-diff <2–10>` or `/ai dice-diff restore`."
                 ) from e
             if v < 2 or v > 10:
-                raise ValueError("Floor must be between **2** and **10**.")
+                raise RequestValidationError("Floor must be between **2** and **10**.")
             cur.execute(
                 """
                 UPDATE locations SET dice_leniency_floor = %s
@@ -730,12 +732,12 @@ def execute_rouse_command(
 
     _gs, edition = _fetch_campaign_rules(campaign_id)
     if campaign_id and edition != "v5":
-        raise ValueError("`/ai rouse` is a V5 rule; this campaign uses classic (Revised) rules.")
+        raise RequestValidationError("`/ai rouse` is a V5 rule; this campaign uses classic (Revised) rules.")
     raw = (payload or "").strip()
     hunger = 0
     if raw:
         if not raw.isdigit() or not (0 <= int(raw) <= 5):
-            raise ValueError("Usage: `/ai rouse` or `/ai rouse <hunger 0–5>`.")
+            raise RequestValidationError("Usage: `/ai rouse` or `/ai rouse <hunger 0–5>`.")
         hunger = int(raw)
     lf = _fetch_location_dice_leniency_floor(campaign_id, location_id)
     res = resolve_rouse(roll_d10s(1, leniency_floor=lf)[0], hunger)
@@ -843,7 +845,7 @@ def execute_ai_slash_command(
     campaign_id: Optional[int] = None,
     location_id: Optional[int] = None,
 ) -> Dict[str, Any]:
-    """Dispatch subcommand. Raises ValueError for unknown verb or bad args."""
+    """Dispatch subcommand. Raises RequestValidationError for unknown verb or bad args."""
     if verb == "help":
         return execute_help_command(user_id, campaign_id=campaign_id)
     if verb == "respond":
@@ -856,7 +858,7 @@ def execute_ai_slash_command(
         return execute_ping_command(user_id)
     if verb == "context":
         if not campaign_id or location_id is None:
-            raise ValueError(
+            raise RequestValidationError(
                 "Open a campaign location first — `/ai context` needs an active room."
             )
         return execute_context_command(user_id, campaign_id, location_id)
@@ -876,14 +878,14 @@ def execute_ai_slash_command(
         )
     if verb == "clean":
         if not campaign_id or location_id is None:
-            raise ValueError(
+            raise RequestValidationError(
                 "Open a campaign location first — `/ai clean` runs per **room**."
             )
         return execute_clean_command(payload, user_id, campaign_id, location_id)
     if verb == "dice-diff":
         if not campaign_id or location_id is None:
-            raise ValueError(
+            raise RequestValidationError(
                 "Open a campaign location first — `/ai dice-diff` applies to **this room**."
             )
         return execute_dice_diff_command(payload, user_id, campaign_id, location_id)
-    raise ValueError(f"Unknown /ai subcommand: {verb}")
+    raise RequestValidationError(f"Unknown /ai subcommand: {verb}")

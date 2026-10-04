@@ -17,9 +17,14 @@ from services.dice_chat import (
 )
 from services.rules_edition import CLASSIC, V5, edition_of
 from services.wod_dice import parse_pool_expression
-from services.request_validation import body_object, optional_str, strict_bool, strict_int
+from services.request_validation import (
+    RequestValidationError, body_object, optional_str, strict_bool, strict_int,
+)
 from services.v5_dice import (
+    NoWillpowerLeft,
     clamp_hunger,
+    spend_willpower,
+    willpower_track,
     format_rouse_markdown,
     resolve_rouse,
     rouse_check,
@@ -134,7 +139,7 @@ def _character_wod_meta(cursor, character_id: int) -> dict:
 
 
 def _int_arg(data, key, default=None):
-    """Integer body field; bools, fractions and non-numeric values raise ValueError (→ 400)."""
+    """Integer body field; bools, fractions and non-numeric values raise RequestValidationError (→ 400)."""
     return strict_int(data.get(key), key, default)
 
 
@@ -143,7 +148,7 @@ def hunger_override_note(hunger: int, sheet_hunger: int) -> str:
 
 
 def _json_body():
-    """The request's JSON object ({} when absent). Raises ValueError for arrays/scalars."""
+    """The request's JSON object ({} when absent). Raises RequestValidationError for arrays/scalars."""
     return body_object(request.get_json(silent=True))
 
 
@@ -207,8 +212,8 @@ def manual_roll(campaign_id):
                 return jsonify({'error': 'pool_size must be at least 1 (or send pool_expression)'}), 400
             elif pool_size > 50:
                 return jsonify({'error': 'pool_size must be at most 50'}), 400
-        except (TypeError, ValueError) as e:
-            return jsonify({'error': f'Invalid input: {e}'}), 400
+        except RequestValidationError as e:
+            return jsonify({'error': f'Invalid input: {e.public_message}'}), 400
 
         conn = get_db()
         cursor = conn.cursor()
@@ -349,8 +354,8 @@ def manual_roll(campaign_id):
             'chat_message': chat_message
         }, cursor, message_ids)), 200
 
-    except ValueError as e:
-        return jsonify({'error': str(e)}), 400
+    except RequestValidationError as e:
+        return jsonify({'error': e.public_message}), 400
     except Exception as e:
         logger.exception("Error processing manual roll: %s", e)
         return jsonify({'error': 'Failed to process roll'}), 500
@@ -366,7 +371,9 @@ def manual_roll(campaign_id):
 def willpower_reroll(campaign_id, roll_id):
     """
     V5 Willpower reroll: reroll up to 3 normal (non-Hunger) dice of an earlier roll, once.
-    Only the user who made the roll may reroll it.
+    Only the user who made the roll may reroll it. With a character on the roll it costs
+    1 Willpower (1 Superficial Willpower damage, see v5_dice.spend_willpower); 409 when the
+    track is full of Aggravated damage. Rolls without a character cost nothing.
 
     Body: indices: [int] - positions in roll_result.normal_dice (0-based), 1-3 entries
           location_id: int (optional) - the room of the original roll; when given, the server
@@ -382,8 +389,8 @@ def willpower_reroll(campaign_id, roll_id):
             location_id = _int_arg(data, 'location_id')
             hidden_arg = None if data.get('hidden') is None else strict_bool(data.get('hidden'), 'hidden')
             speak_as_arg = optional_str(data.get('speak_as'), 'speak_as') or None
-        except (TypeError, ValueError) as e:
-            return jsonify({'error': str(e)}), 400
+        except RequestValidationError as e:
+            return jsonify({'error': e.public_message}), 400
         conn = get_db()
         cursor = conn.cursor()
 
@@ -431,10 +438,44 @@ def willpower_reroll(campaign_id, roll_id):
                 normal, hunger, int(row['difficulty']), data.get('indices'),
                 leniency_floor=leniency_floor,
             )
-        except ValueError as e:
-            return jsonify({'error': str(e)}), 400
+        except RequestValidationError as e:
+            return jsonify({'error': e.public_message}), 400
         res['message'] = dice_service.v5_message(res)
         res['leniency_floor'] = leniency_floor
+
+        # The reroll costs 1 Willpower: 1 Superficial Willpower damage on the character's
+        # sheet (a Superficial box turns Aggravated when the track is full). Rolls without
+        # a character (NPC / storyteller) cost nothing.
+        character_id = row.get('character_id')
+        spend = None
+        character_meta = None
+        character_name = None
+        if character_id:
+            cursor.execute(
+                "SELECT name, wod_meta, attributes FROM characters WHERE id = %s FOR UPDATE",
+                (character_id,),
+            )
+            crow = cursor.fetchone() or {}
+            character_name = crow.get('name')
+            character_meta = _json_field(crow.get('wod_meta'), {})
+            if not isinstance(character_meta, dict):
+                character_meta = {}
+            track = willpower_track(character_meta, _json_field(crow.get('attributes'), {}))
+            if track is None:
+                conn.rollback()
+                return jsonify({
+                    'error': 'This character has no Willpower on the sheet '
+                             '(set the Willpower track, or Composure and Resolve)',
+                }), 409
+            try:
+                spend = spend_willpower(track)
+            except NoWillpowerLeft:
+                conn.rollback()
+                return jsonify({
+                    'error': 'No Willpower left: the Willpower track is full of Aggravated damage',
+                    'willpower': track,
+                }), 409
+            res['willpower_cost'] = spend['damage']
 
         mods.update({
             'rerolled': True,
@@ -442,6 +483,12 @@ def willpower_reroll(campaign_id, roll_id):
             'original_normal_dice': normal,
             'normal_dice': res['normal_dice'],
         })
+        if spend is not None:
+            mods.update({
+                'willpower_before': spend['before'],
+                'willpower_after': spend['after'],
+                'willpower_cost': spend['damage'],
+            })
         cursor.execute(
             """
             UPDATE dice_rolls
@@ -457,12 +504,13 @@ def willpower_reroll(campaign_id, roll_id):
             conn.rollback()
             return jsonify({'error': 'This roll has already been rerolled'}), 409
 
-        character_name = None
-        if row.get('character_id'):
-            cursor.execute("SELECT name FROM characters WHERE id = %s", (row['character_id'],))
-            crow = cursor.fetchone()
-            if crow:
-                character_name = crow['name']
+        if spend is not None:
+            character_meta['willpower'] = {**(character_meta.get('willpower') if isinstance(
+                character_meta.get('willpower'), dict) else {}), **spend['after']}
+            cursor.execute(
+                "UPDATE characters SET wod_meta = %s, updated_at = CURRENT_TIMESTAMP WHERE id = %s",
+                (json.dumps(character_meta), character_id),
+            )
         res['roll_id'] = roll_id
         res['can_reroll'] = False
         chat_message = dice_service.format_v5_roll_for_chat(
@@ -481,6 +529,9 @@ def willpower_reroll(campaign_id, roll_id):
             'rules_edition': V5,
             'roll_result': res,
             'chat_message': chat_message,
+            'willpower_spent': spend is not None,
+            'willpower_before': spend['before'] if spend else None,
+            'willpower_after': spend['after'] if spend else None,
         }, cursor, message_ids)), 200
     except Exception as e:
         logger.exception("Error processing reroll: %s", e)
@@ -515,8 +566,8 @@ def rouse_check_route(campaign_id):
             # Used only without character_id (e.g. a storyteller rousing for an NPC).
             hunger_arg = strict_int(data.get('hunger'), 'hunger', None, 0, 5)
             speak_as = optional_str(data.get('speak_as'), 'speak_as') or None
-        except (TypeError, ValueError) as e:
-            return jsonify({'error': f'Invalid input: {e}'}), 400
+        except RequestValidationError as e:
+            return jsonify({'error': f'Invalid input: {e.public_message}'}), 400
 
         conn = get_db()
         cursor = conn.cursor()
@@ -654,8 +705,8 @@ def contested_roll(campaign_id):
             location_id = _int_arg(data, 'location_id')
             attacker_cid = _int_arg(data, 'attacker_character_id')
             defender_cid = _int_arg(data, 'defender_character_id')
-        except (TypeError, ValueError) as e:
-            return jsonify({'error': f'Invalid input: {e}'}), 400
+        except RequestValidationError as e:
+            return jsonify({'error': f'Invalid input: {e.public_message}'}), 400
 
         if attacker_pool is None or defender_pool is None:
             return jsonify({'error': 'Both attacker_pool and defender_pool required'}), 400
@@ -833,8 +884,8 @@ def ai_roll(campaign_id):
             'action_type': action_type
         }), 200
         
-    except (TypeError, ValueError) as e:
-        return jsonify({'error': f'Invalid input: {e}'}), 400
+    except RequestValidationError as e:
+        return jsonify({'error': f'Invalid input: {e.public_message}'}), 400
     except Exception as e:
         logger.exception("Error processing AI roll: %s", e)
         return jsonify({'error': 'Failed to process AI roll'}), 500

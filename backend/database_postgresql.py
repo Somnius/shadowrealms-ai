@@ -5,6 +5,7 @@ Supports both SQLite (legacy/rollback) and PostgreSQL (production)
 """
 
 import logging
+import sys
 from typing import Optional, Dict, Any
 from datetime import datetime
 import os
@@ -338,8 +339,8 @@ if __name__ == "__main__":
     print("=" * 50)
     if success:
         print(f"✅ Database ready: {info}")
-        exit(0)
+        sys.exit(0)
     else:
         print(f"❌ Database connection failed: {info}")
-        exit(1)
+        sys.exit(1)
 

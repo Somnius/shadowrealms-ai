@@ -23,6 +23,7 @@ from database import (
 )
 from services.play_suspension import suspended_json
 from routes.ui_language import parse_ui_language
+from services.request_validation import RequestValidationError
 from services.gpu_monitor import gpu_monitor_service
 
 logger = logging.getLogger(__name__)
@@ -47,7 +48,7 @@ def _parse_display_timezone_payload(raw):
     try:
         ZoneInfo(s)
     except Exception:
-        raise ValueError(f"Invalid IANA timezone: {s}")
+        raise RequestValidationError("Invalid IANA timezone (e.g. Europe/Athens, or auto)") from None
     return s
 
 
@@ -208,8 +209,8 @@ def put_current_user_me():
         if "display_timezone" in data:
             try:
                 tz_norm = _parse_display_timezone_payload(data["display_timezone"])
-            except ValueError as ve:
-                return jsonify({"error": str(ve)}), 400
+            except RequestValidationError as ve:
+                return jsonify({"error": ve.public_message}), 400
             updates.append("display_timezone = %s")
             params.append(tz_norm)
 
@@ -381,8 +382,8 @@ def put_my_ui_language():
         return jsonify({"error": "JSON body with ui_language required"}), 400
     try:
         lang = parse_ui_language(data["ui_language"])
-    except ValueError as ve:
-        return jsonify({"error": str(ve)}), 400
+    except RequestValidationError as ve:
+        return jsonify({"error": ve.public_message}), 400
     db = None
     try:
         db = get_db()
@@ -599,8 +600,8 @@ def update_user(user_id):
         if 'display_timezone' in data:
             try:
                 tz_norm = _parse_display_timezone_payload(data['display_timezone'])
-            except ValueError as ve:
-                return jsonify({'error': str(ve)}), 400
+            except RequestValidationError as ve:
+                return jsonify({'error': ve.public_message}), 400
             cur_tz = target_user['display_timezone']
             if tz_norm != cur_tz:
                 updates.append("display_timezone = %s")

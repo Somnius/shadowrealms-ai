@@ -155,7 +155,13 @@ class DiceService:
         hunger = " ".join(show(d, True) for d in roll_data.get('hunger_dice', []))
         lines = [header, f"Dice: {normal}" + (f" | Hunger: {hunger}" if hunger else "")]
         if roll_data.get('rerolled'):
-            lines.append(f"Willpower reroll of dice #{', '.join(str(i + 1) for i in roll_data.get('rerolled_indices', []))}")
+            line = f"Willpower reroll of dice #{', '.join(str(i + 1) for i in roll_data.get('rerolled_indices', []))}"
+            cost = roll_data.get('willpower_cost')
+            if cost == 'superficial':
+                line += " · Willpower −1"
+            elif cost == 'aggravated':
+                line += " · Willpower −1 (track full: a Superficial box turned Aggravated)"
+            lines.append(line)
         lines.append(
             f"Difficulty: {roll_data['difficulty']} | Successes: {roll_data['successes']} | Margin: {roll_data['margin']:+d}"
         )

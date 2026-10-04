@@ -5,6 +5,7 @@ Flask application with modular architecture and GPU monitoring integration
 """
 
 import os
+import sys
 import json
 import logging
 from datetime import datetime
@@ -284,7 +285,7 @@ if __name__ == "__main__":
         if success:
             print("✅ All tests passed! Application is ready for integration.")
             print("💡 To run the actual Flask app, use: python main.py --run")
-            exit(0)
+            sys.exit(0)
         else:
             print("❌ Tests failed! Please fix issues before integration.")
-            exit(1)
+            sys.exit(1)
