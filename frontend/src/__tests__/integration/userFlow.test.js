@@ -4,7 +4,7 @@
  */
 import React from 'react';
 import { render, screen, waitFor, within } from '@testing-library/react';
-import { MemoryRouter } from 'react-router-dom';
+import { MemoryRouter } from 'react-router';
 import setupUser from '../../design/testing/setupUser';
 import App from '../../app/App';
 
@@ -31,7 +31,7 @@ function mockFetch(routes) {
 
 function renderAt(path) {
   return render(
-    <MemoryRouter initialEntries={[path]} future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+    <MemoryRouter initialEntries={[path]}>
       <App />
     </MemoryRouter>
   );

@@ -1,6 +1,6 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
-import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
+import { MemoryRouter, Route, Routes, useLocation } from 'react-router';
 import { AuthProvider } from '../AuthContext';
 import { RedirectIfAuthed, RequireAdmin, RequireAuth, afterLoginPath } from '../guards';
 
@@ -12,7 +12,7 @@ function Where() {
 function mount(path) {
   return render(
     <AuthProvider>
-      <MemoryRouter initialEntries={[path]} future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+      <MemoryRouter initialEntries={[path]}>
         <Routes>
           <Route path="/login" element={<RedirectIfAuthed><Where /></RedirectIfAuthed>} />
           <Route path="/chronicles" element={<RequireAuth><div>hall</div></RequireAuth>} />

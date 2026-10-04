@@ -1,5 +1,5 @@
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router';
 import { Avatar, Glyph, useAtmosphere } from '../design';
 import MenuButton from './Menu';
 import { useAuth } from './AuthContext';

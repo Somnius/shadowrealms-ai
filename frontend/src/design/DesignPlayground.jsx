@@ -3,7 +3,7 @@
  * translated tour of the same parts is the theme preview at /showcase (src/pages/showcase).
  */
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router';
 import {
   DesignProvider,
   MotionToggle,
