@@ -1,34 +1,21 @@
-# Assets Directory
+# Assets
 
-This directory contains static assets for the TG-RPG project.
+Images used by the repository's documentation (the README, the wiki). The app's own images (favicons, header and login logos) live in `frontend/public/`.
 
 ## Structure
 
 ```
 assets/
 ├── logos/          # Project logo variations
-│   ├── logo-1.png  # Primary logo
-│   ├── logo-2.png  # Alternative logo
-│   └── logo-3.png  # Secondary logo
+│   ├── logo-1.png
+│   ├── logo-2.png
+│   ├── logo-3.png  # used at the top of the main README
+│   └── logo-4.png
+├── screenshots/    # App screenshots for the README and the wiki, one folder per release (e.g. v0.9/)
 └── README.md       # This file
 ```
 
-## Logo Files
-
-- **logo-1.png** - Primary project logo (1.6MB)
-- **logo-2.png** - Alternative logo design (1.9MB)  
-- **logo-3.png** - Secondary logo variant (1.6MB)
-
-## Usage
-
-These logos can be used for:
-- Bot profile pictures
-- Web interface branding
-- Documentation and marketing materials
-- Telegram channel/supergroup icons
-
 ## Notes
 
-- Logo files are currently included in version control
-- If file sizes become an issue, consider using Git LFS or excluding them
-- Ensure proper licensing and attribution for logo usage
+- The logo PNGs are 1.6 to 1.9 MB each and are kept in version control; consider Git LFS if more large images are added.
+- Screenshots are WebP to keep the repository small. Take them from a test instance with made-up accounts and chronicles, never real player data.
