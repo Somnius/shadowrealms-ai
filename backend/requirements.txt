@@ -17,7 +17,7 @@ PyJWT>=2.8.0
 cryptography>=41.0.0
 
 # AI/LLM Integration
-openai>=1.0.0
+openai>=1.109.1
 chromadb>=0.4.0
 sentence-transformers>=2.2.0
 torch>=2.14.1
