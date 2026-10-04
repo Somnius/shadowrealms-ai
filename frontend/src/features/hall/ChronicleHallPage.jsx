@@ -119,7 +119,7 @@ export default function ChronicleHallPage() {
           </ButtonLink>
         }
       />
-      <PageBody>
+      <PageBody className="sr-page--with-footer">
         <section aria-labelledby="hall-mine">
           <h2 id="hall-mine" className="sr-section-title">
             {t('hall:mine', 'Your chronicles')}
