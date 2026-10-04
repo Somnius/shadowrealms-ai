@@ -130,7 +130,7 @@ All contrast figures were computed with the WCAG formula against `#0f0f1e`, `#0f
 
 ## Tests
 
-`src/design/__tests__/` covers glyph rendering and naming, Button, Modal and Drawer focus and Esc, DotTrack keyboard, Tabs, the form controls, motion preference, toasts and dice analysis. `testing/setupUser.js` points user-event 14 (which uses `@testing-library/dom` v10) at RTL's `act`, so the tests don't print "not wrapped in act" warnings.
+`src/design/__tests__/` covers glyph rendering and naming, Button, Modal and Drawer focus and Esc, DotTrack keyboard, Tabs, the form controls, motion preference, toasts and dice analysis. `testing/setupUser.js` returns a user-event 14 instance (React Testing Library 16 wraps its events in `act` itself).
 
 ## Third-party code
 
