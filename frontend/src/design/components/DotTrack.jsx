@@ -1,6 +1,7 @@
 import React, { useId } from 'react';
 import { cx } from './internal';
 import './display.css';
+import { t } from '../../i18n';
 
 /**
  * Accessible rating dots (attributes, abilities, disciplines, Hunger, Willpower...).
@@ -33,7 +34,7 @@ export default function DotTrack({
   const floor = Math.max(min, locked);
   const clamp = (v) => Math.min(max, Math.max(floor, v));
   const editable = !readOnly && typeof onChange === 'function';
-  const text = valueText ? valueText(value, max) : `${value} of ${max}`;
+  const text = valueText ? valueText(value, max) : t('common:dots.value', '{{value}} of {{max}}', { value, max });
 
   const set = (v) => {
     const next = clamp(v);

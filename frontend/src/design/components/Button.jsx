@@ -4,6 +4,7 @@ import Spinner from './Spinner';
 import Tooltip from './Tooltip';
 import { cx } from './internal';
 import './button.css';
+import { t } from '../../i18n';
 
 const renderIcon = (icon, size) =>
   typeof icon === 'string' ? <Glyph name={icon} size={size} /> : icon || null;
@@ -24,7 +25,7 @@ const Button = forwardRef(function Button(
     icon,
     iconEnd,
     loading = false,
-    loadingLabel = 'Loading',
+    loadingLabel = t('common:loading', 'Loading'),
     block = false,
     disabled,
     type = 'button',

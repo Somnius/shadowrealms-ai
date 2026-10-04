@@ -11,6 +11,7 @@
  * - no botch, 1s cancel nothing
  */
 import { V5_SUCCESS_ON } from '../rules/v5Rules';
+import { t } from '../i18n';
 
 export function resolveV5Dice(normalDice, hungerDice, difficulty = 1) {
   const normal = (normalDice || []).map((x) => parseInt(x, 10) || 0);
@@ -69,14 +70,22 @@ export function v5Outcome(result) {
   const r = result || {};
   const successes = Number(r.successes ?? r.net_successes ?? 0);
   const win = r.outcome ? r.outcome === 'win' : successes >= Number(r.difficulty ?? 1) && successes > 0;
-  if (win && r.is_messy_critical) return { key: 'messy', label: 'Messy critical', tone: 'blood' };
-  if (win && r.is_critical) return { key: 'critical', label: 'Critical win', tone: 'gold' };
-  if (win) return { key: 'win', label: 'Win', tone: 'success' };
-  if (r.is_bestial_failure) return { key: 'bestial', label: 'Bestial failure', tone: 'blood' };
-  if (r.is_total_failure || successes === 0) {
-    return { key: 'total', label: 'Total failure', tone: 'danger' };
+  if (win && r.is_messy_critical) {
+    return { key: 'messy', label: t('dice:outcome.messyCritical', 'Messy critical'), tone: 'blood', term: 'messyCritical' };
   }
-  return { key: 'fail', label: 'Failure', tone: 'muted' };
+  if (win && r.is_critical) return { key: 'critical', label: t('dice:outcome.criticalWin', 'Critical win'), tone: 'gold', term: 'criticalWin' };
+  if (win) return { key: 'win', label: t('dice:outcome.win', 'Win'), tone: 'success' };
+  if (r.is_bestial_failure) {
+    return { key: 'bestial', label: t('dice:outcome.bestialFailure', 'Bestial failure'), tone: 'blood', term: 'bestialFailure' };
+  }
+  if (r.is_total_failure || successes === 0) {
+    return totalFailure();
+  }
+  return { key: 'fail', label: t('dice:outcome.failure', 'Failure'), tone: 'muted' };
+}
+
+function totalFailure() {
+  return { key: 'total', label: t('dice:outcome.totalFailure', 'Total failure'), tone: 'danger', term: 'totalFailure' };
 }
 
 /** All badges that apply (outcome first). */
@@ -85,7 +94,7 @@ export function v5Badges(result) {
   const out = [v5Outcome(r)];
   // A bestial failure can also be a total failure; show both.
   if (out[0].key === 'bestial' && (r.is_total_failure || Number(r.successes) === 0)) {
-    out.push({ key: 'total', label: 'Total failure', tone: 'danger' });
+    out.push(totalFailure());
   }
   return out;
 }
@@ -95,13 +104,13 @@ export function v5SummaryLine(r) {
   const s = Number(r?.successes ?? 0);
   const d = Number(r?.difficulty ?? 1);
   const hungerCount = Array.isArray(r?.hunger_dice) ? r.hunger_dice.length : Number(r?.hunger ?? 0);
-  const parts = [`${s} ${s === 1 ? 'success' : 'successes'}`];
+  const parts = [t('dice:summary.successes', { one: '{{count}} success', other: '{{count}} successes' }, { count: s })];
   if (d > 0) {
     const m = s - d;
-    parts[0] += ` vs ${d}`;
-    parts.push(`margin ${m >= 0 ? '+' : ''}${m}`);
+    parts[0] += t('dice:summary.vs', ' vs {{difficulty}}', { difficulty: d });
+    parts.push(t('dice:summary.margin', 'margin {{margin}}', { margin: `${m >= 0 ? '+' : ''}${m}` }));
   }
-  parts.push(`Hunger ${hungerCount}`);
+  parts.push(t('dice:summary.hunger', 'Hunger {{count}}', { count: hungerCount }));
   return parts.join(' · ');
 }
 

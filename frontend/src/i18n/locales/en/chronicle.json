@@ -1,0 +1,109 @@
+{
+  "loadFailed": "Could not load this chronicle.",
+  "saveFailed": "Save failed",
+  "enrollment": {
+    "saved": "Enrollment settings saved.",
+    "title": "Open enrollment",
+    "visibility": "Visibility",
+    "private": "Private (invite / admin only)",
+    "listed": "Listed under “Open chronicles”",
+    "accepting": "Accepting new players (self-serve join)",
+    "max": "Max players (0 = no limit)",
+    "save": "Save enrollment"
+  },
+  "leave": {
+    "failed": "Could not leave the chronicle",
+    "done": "You left the chronicle.",
+    "body": "Leaving keeps your character sheet. Joining a different chronicle later needs approval; you can rejoin this one while it stays open.",
+    "button": "Leave chronicle",
+    "title": "Leave this chronicle?",
+    "confirm": "Leave"
+  },
+  "delete": {
+    "failed": "Could not delete the chronicle",
+    "done": "Chronicle deleted.",
+    "body": "Deleting removes every room, character, message and roll of this chronicle. This cannot be undone.",
+    "button": "Delete chronicle",
+    "title": "Delete “{{name}}”?",
+    "confirm": "Delete forever",
+    "type": "Type CONFIRM to proceed"
+  },
+  "members": {
+    "addFailed": "Could not add the member",
+    "added": "Member added.",
+    "pcFailed": "Could not set the playing character",
+    "pcDone": "Playing character updated.",
+    "title": "Members",
+    "plays": "plays {{name}}",
+    "addLabel": "Add a member by user ID",
+    "add": "Add",
+    "pcPlayer": "Player",
+    "pickPlayer": "Choose a player",
+    "pcCharacter": "Playing character",
+    "pickCharacter": "Choose a character",
+    "pcCharacterId": "Character ID",
+    "pcApply": "Set playing character",
+    "pcHint": "Players switch characters in this chronicle only with Storyteller approval."
+  },
+  "title": "Chronicle",
+  "subtitle": "Details & settings",
+  "enter": "Enter chronicle",
+  "name": {
+    "saved": "Name saved.",
+    "edit": "Rename"
+  },
+  "field": {
+    "name": "Name",
+    "description": "World and setting",
+    "descriptionHint": "The Storyteller AI reads this as the chronicle’s world. You can edit it later.",
+    "system": "Game line",
+    "edition": "Edition"
+  },
+  "youAreST": "You are the Storyteller",
+  "stats": {
+    "players": "Players",
+    "characters": "Characters",
+    "locations": "Locations",
+    "messages": "Messages"
+  },
+  "world": {
+    "title": "World & setting",
+    "saved": "World description saved.",
+    "warning": "The AI Storyteller reads this as the world. Changing it changes world generation, NPC behaviour and how characters are treated."
+  },
+  "you": {
+    "title": "You in this chronicle"
+  },
+  "danger": {
+    "title": "Danger zone"
+  },
+  "rooms": {
+    "saveFailed": "Could not save room access",
+    "saved": "Room access updated.",
+    "deleteFailed": "Could not delete the room",
+    "deleted": "Room deleted.",
+    "title": "Locations",
+    "suggest": "Add with AI suggestions",
+    "open": "Open to players (unchecked = closed, scene paused)",
+    "reason": "Reason shown to players (optional)",
+    "saveAccess": "Save access",
+    "oocAlwaysOpen": "The OOC lobby cannot be closed.",
+    "deleteTitle": "Delete {{name}}?",
+    "deleteBody": "All messages in this room are deleted too. This cannot be undone.",
+    "deleteConfirm": "Delete room",
+    "added": "New locations added."
+  },
+  "create": {
+    "failed": "Could not create the chronicle",
+    "done": "Chronicle created.",
+    "title": "New chronicle",
+    "submit": "Create chronicle"
+  },
+  "edition": {
+    "classic": "Classic (Revised)",
+    "classicHint": "d10 vs target number, 1s cancel, botches",
+    "v5": "V5 (5th Edition)",
+    "v5Hint": "successes needed, Hunger dice, criticals",
+    "locked": "The edition is locked once the chronicle is created."
+  }
+}

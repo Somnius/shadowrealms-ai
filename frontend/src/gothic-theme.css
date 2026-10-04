@@ -475,16 +475,6 @@ h1, h2, h3, h4, h5, h6 {
   }
 }
 
-@keyframes sr-login-float {
-  0%,
-  100% {
-    transform: translateY(0);
-  }
-  50% {
-    transform: translateY(-6px);
-  }
-}
-
 @keyframes sr-login-fade-up {
   from {
     opacity: 0;
@@ -496,14 +486,6 @@ h1, h2, h3, h4, h5, h6 {
   }
 }
 
-/* Wraps login gate + footer so the gate’s full-bleed layers do not stack over the footer */
-.sr-login-page {
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  background: #07070f;
-}
-
 .sr-login-gate {
   position: relative;
   min-height: 100vh;
@@ -511,12 +493,6 @@ h1, h2, h3, h4, h5, h6 {
   flex-direction: column;
   overflow: hidden;
   background: #07070f;
-}
-
-/* Must follow .sr-login-gate so min-height:0 overrides min-height:100vh */
-.sr-login-page > .sr-login-gate {
-  flex: 1 1 auto;
-  min-height: 0;
 }
 
 .sr-login-gate-bg {
@@ -588,14 +564,6 @@ h1, h2, h3, h4, h5, h6 {
 
 .sr-login-brand {
   animation: sr-login-fade-up 0.85s ease-out both;
-}
-
-.sr-login-logo {
-  animation: sr-login-float 5s ease-in-out infinite;
-}
-
-.sr-login-forms {
-  animation: sr-login-fade-up 0.85s ease-out 0.12s both;
 }
 
 /* ========== Post-auth session reveal (welcome → dashboard) ========== */
@@ -672,34 +640,16 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 /* ========== Dashboard entrance ========== */
-@keyframes sr-dashboard-enter {
-  from {
-    opacity: 0;
-    transform: translateY(12px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.sr-dashboard-shell {
-  animation: sr-dashboard-enter 0.65s ease-out both;
-}
-
 @media (prefers-reduced-motion: reduce) {
   .sr-login-gate-bg,
   .sr-login-gate-orbs::before,
   .sr-login-gate-orbs::after,
-  .sr-login-logo,
   .sr-session-reveal-card,
   .sr-session-reveal-sigil,
   .sr-page-loading-overlay {
     animation: none !important;
   }
-  .sr-login-brand,
-  .sr-login-forms,
-  .sr-dashboard-shell {
+  .sr-login-brand {
     animation: none !important;
     opacity: 1 !important;
     transform: none !important;

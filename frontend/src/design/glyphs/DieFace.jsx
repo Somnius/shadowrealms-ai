@@ -1,5 +1,6 @@
 import React from 'react';
 import './glyphs.css';
+import { t } from '../../i18n';
 
 const OUTLINE = 'M12 2.2L21 9.8L20 15.2L12 21.8L4 15.2L3 9.8Z';
 const FACETS = 'M3 9.8L7.6 12M21 9.8L16.4 12M12 15V21.8';
@@ -17,9 +18,13 @@ export default function DieFace({ value, hunger = false, state, size = 40, title
     state || (value === 10 ? 'crit' : value === 1 ? 'one' : value >= 6 ? 'success' : 'fail');
   const name =
     title ||
-    `${hunger ? 'Hunger die' : 'Die'}: ${value}${
-      { crit: ', critical', one: ', one', success: ', success', fail: '' }[resolved] || ''
-    }`;
+    (hunger ? t('dice:die.hunger', 'Hunger die: {{value}}', { value }) : t('dice:die.normal', 'Die: {{value}}', { value })) +
+    ({
+      crit: t('dice:die.crit', ', critical'),
+      one: t('dice:die.one', ', one'),
+      success: t('dice:die.success', ', success'),
+      fail: '',
+    }[resolved] || '');
   const a11y = decorative ? { 'aria-hidden': true } : { role: 'img', 'aria-label': name };
   return (
     <svg

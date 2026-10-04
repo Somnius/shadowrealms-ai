@@ -36,4 +36,4 @@ export { Portal } from './components/internal';
 export { FogLayer, CandleGlow, BloodDrip } from './atmosphere/Atmosphere';
 export { default as SigilReveal, buildSigilPaths } from './atmosphere/SigilReveal';
 export { default as DiceRollViz, describeRoll } from './atmosphere/DiceRollViz';
-export { analyzeV5, analyzeClassic, OUTCOME_LABELS } from './atmosphere/diceAnalysis';
+export { analyzeV5, analyzeClassic, OUTCOME_LABELS, outcomeLabels } from './atmosphere/diceAnalysis';

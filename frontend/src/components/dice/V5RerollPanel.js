@@ -3,6 +3,7 @@ import DiceFace from './DiceFace';
 import OutcomeBadges from './OutcomeBadges';
 import { canSelectForReroll, v5SummaryLine } from '../../dice/v5DiceDisplay';
 import { V5_WILLPOWER_REROLL_MAX } from '../../rules/v5Rules';
+import { t } from '../../i18n';
 
 /**
  * After a V5 roll by this player: pick up to 3 NORMAL dice and reroll them once
@@ -26,7 +27,7 @@ export default function V5RerollPanel({ roll, onReroll, onDismiss, busy, elsewhe
   return (
     <div
       role="region"
-      aria-label="Willpower reroll"
+      aria-label={t('dice:reroll.region', 'Willpower reroll')}
       data-testid="v5-reroll-panel"
       style={{
         boxSizing: 'border-box',
@@ -41,11 +42,11 @@ export default function V5RerollPanel({ roll, onReroll, onDismiss, busy, elsewhe
       }}
     >
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-        <strong style={{ color: '#fecaca', fontFamily: 'Cinzel, serif', fontSize: '14px' }}>Your V5 roll</strong>
+        <strong style={{ color: '#fecaca', fontFamily: 'Cinzel, serif', fontSize: '14px' }}>{t('dice:reroll.title', 'Your V5 roll')}</strong>
         <button
           type="button"
           onClick={onDismiss}
-          aria-label="Close"
+          aria-label={t('common:close', 'Close')}
           style={{ background: 'transparent', color: '#94a3b8', border: 'none', cursor: 'pointer', fontSize: '18px' }}
         >
           ×
@@ -53,7 +54,7 @@ export default function V5RerollPanel({ roll, onReroll, onDismiss, busy, elsewhe
       </div>
       {elsewhere ? (
         <div style={{ color: '#fbbf24', fontSize: '12px', textAlign: 'center', marginBottom: '6px' }}>
-          Rolled in another room; the reroll is posted there.
+          {t('dice:reroll.elsewhere', 'Rolled in another room; the reroll is posted there.')}
         </div>
       ) : null}
       <OutcomeBadges result={{ rules_edition: 'v5', ...roll }} />
@@ -69,16 +70,16 @@ export default function V5RerollPanel({ roll, onReroll, onDismiss, busy, elsewhe
             size={36}
             selected={selected.includes(i)}
             onClick={busy ? undefined : () => toggle(i)}
-            title={`Normal die ${v} — click to pick for the reroll`}
+            title={t('dice:reroll.normalDie', 'Normal die {{value}}: click to pick it for the reroll', { value: v })}
           />
         ))}
         {(roll.hunger_dice || []).map((v, i) => (
-          <DiceFace key={`h${i}`} value={v} edition="v5" hunger size={36} title={`Hunger die ${v} (can't be rerolled)`} />
+          <DiceFace key={`h${i}`} value={v} edition="v5" hunger size={36} title={t('dice:reroll.hungerDie', 'Hunger die {{value}} (can’t be rerolled)', { value: v })} />
         ))}
       </div>
       <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end', alignItems: 'center', marginTop: '12px' }}>
         <span style={{ color: '#64748b', fontSize: '12px', marginRight: 'auto' }}>
-          {selected.length}/{V5_WILLPOWER_REROLL_MAX} picked
+          {t('dice:reroll.picked', '{{n}}/{{max}} picked', { n: selected.length, max: V5_WILLPOWER_REROLL_MAX })}
         </span>
         <button
           type="button"
@@ -95,7 +96,7 @@ export default function V5RerollPanel({ roll, onReroll, onDismiss, busy, elsewhe
             fontSize: '12px',
           }}
         >
-          {busy ? 'Rerolling…' : 'Reroll with Willpower'}
+          {busy ? t('dice:reroll.busy', 'Rerolling…') : t('dice:reroll.submit', 'Reroll with Willpower')}
         </button>
       </div>
     </div>

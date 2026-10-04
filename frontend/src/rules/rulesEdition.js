@@ -7,6 +7,8 @@
  * Characters copy the edition of their campaign.
  */
 
+import { t } from '../i18n';
+
 export const CLASSIC = 'classic';
 export const V5 = 'v5';
 export const RULES_EDITIONS = [CLASSIC, V5];
@@ -50,6 +52,6 @@ export function isV5(objOrValue) {
 /** Short badge text: 'V5' / 'Classic'. `long` gives the full name. */
 export function editionLabel(objOrValue, { long = false } = {}) {
   const ed = editionOf(objOrValue);
-  if (ed === V5) return long ? 'V5 (5th Edition)' : 'V5';
-  return long ? 'Classic (Revised)' : 'Classic';
+  if (ed === V5) return long ? t('chronicle:edition.v5', 'V5 (5th Edition)') : 'V5';
+  return long ? t('chronicle:edition.classic', 'Classic (Revised)') : 'Classic';
 }

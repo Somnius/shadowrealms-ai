@@ -1,4 +1,5 @@
 import React from 'react';
+import { t } from '../../i18n';
 
 /**
  * Clickable WoD-style dot track (filled circles). `maxRank` is usually 5.
@@ -10,7 +11,7 @@ export default function DotTrack({ value, maxRank, onChange, disabled, accent, l
   return (
     <div
       role="group"
-      aria-label={label ? `${label}: ${rank} of ${maxRank}` : `Rating ${rank} of ${maxRank}`}
+      aria-label={label ? t('wizard:dots.labelled', '{{label}}: {{rank}} of {{max}}', { label, rank, max: maxRank }) : t('wizard:dots.rating', 'Rating {{rank}} of {{max}}', { rank, max: maxRank })}
       style={{ display: 'flex', alignItems: 'center', gap: '5px', flexWrap: 'nowrap' }}
     >
       {Array.from({ length: maxRank }, (_, i) => {
@@ -22,8 +23,8 @@ export default function DotTrack({ value, maxRank, onChange, disabled, accent, l
             type="button"
             disabled={disabled}
             onClick={() => onChange(filled && n === rank ? n - 1 : n)}
-            title={`Set to ${n}`}
-            aria-label={label ? `Set ${label} to ${n}` : `Set to ${n}`}
+            title={t('wizard:dots.setTo', 'Set to {{n}}', { n })}
+            aria-label={label ? t('wizard:dots.setLabelTo', 'Set {{label}} to {{n}}', { label, n }) : t('wizard:dots.setTo', 'Set to {{n}}', { n })}
             style={{
               width: '18px',
               height: '18px',

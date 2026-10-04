@@ -1,0 +1,71 @@
+{
+  "panel": {
+    "sheet": "Character sheet",
+    "noChar": "no character",
+    "noCharacter": "You have no character in this chronicle. You can still talk out of character.",
+    "portraitTooBig": "Image is too large (max ~350 KB).",
+    "portrait": "Portrait",
+    "you": "(you)",
+    "staff": "Staff",
+    "openSheet": "Open {{name}}’s sheet",
+    "yourCharacter": "Your character",
+    "storyteller": "Storyteller",
+    "ai": "AI",
+    "players_one": "Player · {{count}}",
+    "players_other": "Players · {{count}}",
+    "tools": "Staff tools",
+    "portraitFailed": "Could not save the portrait.",
+    "portraitSaved": "Portrait updated.",
+    "hide": "Hide member list",
+    "show": "Show member list",
+    "label": "Members"
+  },
+  "room": {
+    "closed": "Closed",
+    "unread_one": "{{count}} unread message",
+    "unread_other": "{{count}} unread messages"
+  },
+  "rooms": {
+    "label": "Rooms of {{name}}",
+    "settings": "Chronicle details & settings",
+    "ooc": "Out of character",
+    "story": "Story locations",
+    "none": "No rooms yet.",
+    "manage": "Manage locations"
+  },
+  "switcher": {
+    "open": "Find a room",
+    "title": "Jump to…",
+    "placeholder": "Room or chronicle name",
+    "results": "Results",
+    "room": "room",
+    "chronicle": "chronicle",
+    "none": "Nothing matches."
+  },
+  "error": {
+    "load": "Could not open this chronicle."
+  },
+  "title": "Chronicle",
+  "noRooms": "This chronicle has no rooms yet",
+  "openSettings": "Open chronicle settings",
+  "backToHall": "Back to the hall",
+  "nav": {
+    "open": "Chronicles and rooms",
+    "title": "Chronicles & rooms"
+  },
+  "live": {
+    "pollingHint": "Live connection unavailable: checking for new messages every 5 seconds.",
+    "polling": "Polling"
+  },
+  "closed": {
+    "ok": "Understood",
+    "thisRoom": "This room",
+    "leadReason": "{{room}} is sealed: “{{reason}}”",
+    "lead": "{{room}} is sealed until the Storyteller reopens it.",
+    "flavor": "The table has called cut on this scene.",
+    "flavorVampire": "Even the oldest Kindred must wait when the Prince locks Elysium’s doors.",
+    "flavorWerewolf": "The caern’s pulse says “hunt elsewhere tonight.”",
+    "flavorMage": "The Consensus politely declines your Paradigm until further notice.",
+    "title": "{{room}}: unavailable"
+  }
+}

@@ -1,5 +1,7 @@
 import React from 'react';
 import { V5_DIFFICULTY_TABLE, V5_MAX_HUNGER } from '../../rules/v5Rules';
+import { t } from '../../i18n';
+import { Term } from '../../i18n/glossary';
 
 const fieldLabel = {
   display: 'block',
@@ -42,19 +44,21 @@ export function RollHelp({ edition }) {
   if (edition === 'v5') {
     return (
       <p style={helpStyle}>
-        <strong>V5</strong>: pool of <strong>d10</strong>, each <strong>6+</strong> is a success and every
-        pair of 10s counts as 4. Difficulty is the number of successes you need. Your current
-        <strong> Hunger</strong> replaces that many dice with Hunger dice (messy criticals and bestial
-        failures). After the roll you can spend Willpower to reroll up to 3 normal dice.
+        <strong>V5</strong>:{' '}
+        {t(
+          'dice:help.v5',
+          'pool of d10; each 6+ is a success and every pair of 10s counts as 4. Difficulty is the number of successes you need. Your current Hunger replaces that many dice with Hunger dice (messy criticals and bestial failures). After the roll you can spend Willpower to reroll up to 3 normal dice.'
+        )}
       </p>
     );
   }
   return (
     <p style={helpStyle}>
-      <strong>Classic (Revised)</strong>: pool of <strong>d10</strong>, difficulty (target number) usually
-      6–9. Each die ≥ difficulty is a success; <strong>1s cancel</strong> successes. A botch needs no
-      successes at all and at least one 1. Specialty: 10s are rerolled for more successes. Willpower:
-      one automatic success (declare before rolling).
+      <strong>{t('dice:edition.classicLong', 'Classic (Revised)')}</strong>:{' '}
+      {t(
+        'dice:help.classic',
+        'pool of d10, difficulty (target number) usually 6–9. Each die ≥ difficulty is a success; 1s cancel successes. A botch needs no successes at all and at least one 1. Specialty: 10s are rerolled for more successes. Willpower: one automatic success (declare before rolling).'
+      )}
     </p>
   );
 }
@@ -85,7 +89,7 @@ export default function RollEditionFields({
     return (
       <>
         <label style={fieldLabel} htmlFor="roll-v5-difficulty">
-          Difficulty (successes needed)
+          {t('dice:field.v5Difficulty', 'Difficulty (successes needed)')}
         </label>
         <select
           id="roll-v5-difficulty"
@@ -97,15 +101,15 @@ export default function RollEditionFields({
           {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((n) => (
             <option key={n} value={n}>
               {n}
-              {n === 0 ? ' (just count successes)' : ''}
+              {n === 0 ? ` ${t('dice:field.justCount', '(just count successes)')}` : ''}
               {V5_DIFFICULTY_TABLE[String(Math.min(n, 7))] && n > 0
-                ? ` — ${V5_DIFFICULTY_TABLE[String(Math.min(n, 7))]}`
+                ? ` — ${t(`dice:v5difficulty.${Math.min(n, 7)}`, V5_DIFFICULTY_TABLE[String(Math.min(n, 7))])}`
                 : ''}
             </option>
           ))}
         </select>
         <label style={fieldLabel} htmlFor="roll-v5-hunger">
-          Hunger {hungerSource ? <span style={{ color: '#64748b' }}>({hungerSource})</span> : null}
+          <Term id="hunger" /> {hungerSource ? <span style={{ color: '#64748b' }}>({hungerSource})</span> : null}
         </label>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px', flexWrap: 'wrap' }}>
           <select
@@ -130,7 +134,7 @@ export default function RollEditionFields({
               type="button"
               onClick={onRouse}
               disabled={disabled || rousing}
-              title="One die: 6+ no Hunger gain, otherwise Hunger +1"
+              title={t('dice:field.rouseHint', 'One die: 6+ means no Hunger gain, otherwise Hunger +1')}
               style={{
                 marginLeft: 'auto',
                 padding: '8px 12px',
@@ -143,7 +147,7 @@ export default function RollEditionFields({
                 fontSize: '12px',
               }}
             >
-              {rousing ? 'Rousing…' : 'Rouse check'}
+              <span lang="en">{rousing ? t('dice:field.rousing', 'Rousing…') : t('dice:field.rouse', 'Rouse check')}</span>
             </button>
           ) : null}
         </div>
@@ -153,7 +157,7 @@ export default function RollEditionFields({
   return (
     <>
       <label style={fieldLabel} htmlFor="roll-classic-difficulty">
-        Difficulty (target number, 2–10)
+        {t('dice:field.classicDifficulty', 'Difficulty (target number, 2–10)')}
       </label>
       <select
         id="roll-classic-difficulty"
@@ -165,17 +169,17 @@ export default function RollEditionFields({
         {[2, 3, 4, 5, 6, 7, 8, 9, 10].map((n) => (
           <option key={n} value={n}>
             {n}
-            {n === 6 ? ' (common default)' : ''}
+            {n === 6 ? ` ${t('dice:field.commonDefault', '(common default)')}` : ''}
           </option>
         ))}
       </select>
       <label style={checkRow(disabled)}>
         <input type="checkbox" checked={specialty} onChange={(e) => setSpecialty(e.target.checked)} disabled={disabled} />
-        Specialty (10s are rerolled for extra successes)
+        {t('dice:field.specialty', 'Specialty (10s are rerolled for extra successes)')}
       </label>
       <label style={checkRow(disabled)}>
         <input type="checkbox" checked={willpower} onChange={(e) => setWillpower(e.target.checked)} disabled={disabled} />
-        Spend Willpower (+1 automatic success, can’t be cancelled)
+        {t('dice:field.willpower', 'Spend Willpower (+1 automatic success, can’t be cancelled)')}
       </label>
     </>
   );

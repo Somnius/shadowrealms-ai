@@ -1,0 +1,211 @@
+/**
+ * Sending a chat line (ported from SimpleApp.handleSendMessage, same server protocol):
+ *
+ * 1. POST the user's line to the room (speak_as, character_id, message_type ic/ooc/action).
+ * 2. `/ai <verb>` (site admins): POST /api/ai/slash, then save the returned text as an assistant line
+ *    (`slash_assistant`), or for `/ai roll[-hidden]` the dice marker + final line.
+ *    `/chat <text>`: POST /api/ai/chat with assistant_direct, save the reply (`chat_assistant`).
+ *    Anything else: POST /api/ai/chat; OOC rooms may answer `ooc_no_reply`.
+ * 3. The browser saves AI replies as role "assistant" messages; the server only accepts text it
+ *    handed to this user (phase 2 services/assistant_grants.py).
+ *
+ * Everything UI-related goes through callbacks so this stays testable and component-free.
+ */
+import { buildDiceMarker } from '../../dice/diceMarker';
+import { t } from '../../i18n';
+
+let tempSeq = 0;
+
+export function makeAnimationId() {
+  return `dice_${Date.now()}_${Math.random().toString(16).slice(2)}`;
+}
+
+/** Strip BOM; bare `/ai` → `/ai help` for admins. */
+export function normalizeInput(raw, isAdmin) {
+  const s = String(raw == null ? '' : raw).replace(/^﻿+/, '').trim();
+  if (!s) return s;
+  if (isAdmin && /^\s*\/ai\s*$/i.test(s)) return '/ai help';
+  return s;
+}
+
+export function staffKindFor(user, campaign) {
+  if (user?.role === 'admin' || user?.role === 'helper') return 'admin';
+  if (campaign?.created_by != null && user?.id != null && String(campaign.created_by) === String(user.id)) return 'storyteller';
+  return 'staff';
+}
+
+/** Optimistic row shown until the server echoes the saved message. */
+export function optimisticMessage({ text, user, campaign, location, speakAs, character, messageType }) {
+  tempSeq += 1;
+  const asChar = speakAs === 'character' && character?.id;
+  return {
+    client_id: `tmp-${Date.now()}-${tempSeq}`,
+    temp: true,
+    role: 'user',
+    content: text,
+    message_type: messageType,
+    created_at: new Date().toISOString(),
+    location_id: location.id,
+    user_id: user?.id,
+    username: user?.username,
+    poster_role: user?.role || '',
+    speaker_mode: speakAs,
+    staff_kind: speakAs === 'staff' ? staffKindFor(user, campaign) : null,
+    player_avatar_url: user?.player_avatar_url || null,
+    character_id: asChar ? character.id : null,
+    character_name: asChar ? character.name : null,
+    character_portrait_url: asChar ? character.portrait_url || null : null,
+  };
+}
+
+/**
+ * @param {object} ctx
+ *  api(path, opts) → {ok,status,data}; campaign; location; user; speakAs; character;
+ *  callbacks: onOptimistic(msg), onSaved(clientId, msg|null), onAppend(msgs), onError(text),
+ *             onAiPending(bool), onDiceMarker(marker), onRoomReload(), onLocationsChanged()
+ * @param {string} rawText
+ * @param {{ messageType?: 'action' }} [opts]
+ * @returns {Promise<boolean>} true when the user's line was saved
+ */
+export async function sendChatMessage(ctx, rawText, opts = {}) {
+  const { api, campaign, location, user, speakAs, character } = ctx;
+  const cb = {
+    onOptimistic: () => {},
+    onSaved: () => {},
+    onAppend: () => {},
+    onError: () => {},
+    onAiPending: () => {},
+    onDiceMarker: () => {},
+    onRoomReload: () => {},
+    onLocationsChanged: () => {},
+    ...ctx,
+  };
+  const isAdmin = user?.role === 'admin';
+  const text = normalizeInput(rawText, isAdmin);
+  if (!text) return false;
+
+  if (/^\s*\/ai(\s+|$)/i.test(text) && !isAdmin) {
+    cb.onError(t('chat:error.aiAdminOnly', 'Only site administrators can use /ai commands. Use the dice button to roll.'));
+    return false;
+  }
+  const chatMatch = text.match(/^\s*\/chat(?:\s+([\s\S]*))?$/i);
+  if (chatMatch && !(chatMatch[1] || '').trim()) {
+    cb.onError(t('chat:error.chatUsage', 'Usage: /chat followed by your message to the AI assistant.'));
+    return false;
+  }
+  const slashMatch = text.match(/^\s*\/ai\s+(\S+)(?:\s+([\s\S]*))?$/i);
+  const inOoc = String(location?.type || '').toLowerCase() === 'ooc';
+  const roomType = inOoc ? 'ooc' : 'ic';
+  const messageType = opts.messageType || roomType;
+  const roomPath = `/campaigns/${campaign.id}/locations/${location.id}`;
+
+  const temp = optimisticMessage({ text, user, campaign, location, speakAs, character, messageType });
+  cb.onOptimistic(temp);
+
+  const save = await api(roomPath, {
+    method: 'POST',
+    body: {
+      content: text,
+      message_type: messageType,
+      role: 'user',
+      speak_as: speakAs,
+      ...(speakAs === 'character' && character?.id ? { character_id: character.id } : {}),
+      ...(slashMatch ? { ai_message_kind: 'slash_user' } : chatMatch ? { ai_message_kind: 'chat_user' } : {}),
+    },
+  });
+  if (!save.ok) {
+    cb.onSaved(temp.client_id, null);
+    cb.onError(save.data.error || t('chat:error.saveFailed', 'Your message could not be saved.'));
+    return false;
+  }
+  cb.onSaved(temp.client_id, save.data.data || null);
+  if (save.data.ooc_warning) cb.onError(String(save.data.ooc_warning));
+
+  const postAssistant = async (content, kind) => {
+    const r = await api(roomPath, {
+      method: 'POST',
+      body: { content, message_type: roomType, role: 'assistant', ...(kind ? { ai_message_kind: kind } : {}) },
+    });
+    if (r.ok && r.data.data) cb.onAppend([r.data.data]);
+    else cb.onError(r.data.error || t('chat:error.aiSaveFailed', 'The Storyteller’s reply could not be saved.'));
+  };
+
+  cb.onAiPending(true);
+  try {
+    if (slashMatch) {
+      const r = await api('/ai/slash', {
+        method: 'POST',
+        body: { line: text.trim(), campaign_id: campaign.id, location_id: location.id },
+      });
+      const d = r.data || {};
+      const content = d.display_markdown || d.llm_acknowledgment || null;
+      const hasReply = Boolean(content && String(content).trim());
+      if (!r.ok && !hasReply) {
+        cb.onError(d.error || t('chat:error.slashFailed', 'Slash command failed'));
+        return true;
+      }
+      if (!r.ok && d.error) cb.onError(d.error);
+      if (d.command === 'roll' || d.command === 'roll-hidden') {
+        const hidden = d.command === 'roll-hidden';
+        const animationId = makeAnimationId();
+        const marker = buildDiceMarker(d.roll || {}, { animationId, startedAtMs: Date.now(), durationMs: 3000 });
+        cb.onDiceMarker(marker);
+        const m1 = await api(roomPath, {
+          method: 'POST',
+          body: {
+            content: JSON.stringify(marker),
+            message_type: roomType,
+            role: 'assistant',
+            ai_message_kind: `${hidden ? 'dice_animation_hidden' : 'dice_animation'}:${animationId}`,
+          },
+        });
+        if (!m1.ok) {
+          cb.onError(m1.data.error || t('dice:error.marker', 'Could not post the dice animation.'));
+          return true;
+        }
+        const m2 = await api(roomPath, {
+          method: 'POST',
+          body: {
+            content,
+            message_type: roomType,
+            role: 'assistant',
+            ai_message_kind: `${hidden ? 'dice_roll_hidden' : 'dice_roll'}:${animationId}`,
+          },
+        });
+        if (!m2.ok) {
+          cb.onError(m2.data.error || t('dice:error.result', 'Could not post the roll result.'));
+          return true;
+        }
+        cb.onAppend([m1.data.data, m2.data.data].filter(Boolean));
+      } else if (hasReply) {
+        await postAssistant(content, 'slash_assistant');
+      }
+      if (d.clean_target === 'ai' && typeof d.deleted_count === 'number') cb.onRoomReload();
+      if (d.command === 'dice-diff') cb.onLocationsChanged();
+      return true;
+    }
+
+    const body = chatMatch
+      ? {
+          message: (chatMatch[1] || '').trim(),
+          campaign_id: campaign.id,
+          location: location.id,
+          location_type: location.type,
+          assistant_direct: true,
+        }
+      : { message: text, campaign_id: campaign.id, location: location.id, location_type: location.type };
+    const ai = await api('/ai/chat', { method: 'POST', body });
+    if (!ai.ok) {
+      cb.onError(ai.data.error || t('chat:error.aiFailed', 'The Storyteller could not answer.'));
+      return true;
+    }
+    const raw = ai.data.response != null ? ai.data.response : ai.data.message;
+    const reply = raw != null && String(raw).trim() !== '' ? String(raw).trim() : null;
+    if (!ai.data.ooc_no_reply && reply) {
+      await postAssistant(reply, chatMatch ? 'chat_assistant' : null);
+    }
+    return true;
+  } finally {
+    cb.onAiPending(false);
+  }
+}

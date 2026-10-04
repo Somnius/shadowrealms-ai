@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { t } from '../i18n';
 
 const ReadmeModal = ({ isOpen, onClose }) => {
   const [readmeContent, setReadmeContent] = useState('Loading...');
@@ -29,7 +30,7 @@ const ReadmeModal = ({ isOpen, onClose }) => {
         })
         .catch(error => {
           console.error('Error loading README:', error);
-          setReadmeContent(`<p style="color: #e94560;">Failed to load README.md: ${error.message}</p>`);
+          setReadmeContent(`<p style="color: #e94560;">${t('footer:readme.failed', 'Failed to load README.md: {{error}}', { error: error.message })}</p>`);
           setIsLoading(false);
         });
     }
@@ -232,7 +233,7 @@ const ReadmeModal = ({ isOpen, onClose }) => {
                 e.target.style.transform = 'scale(1)';
               }}
             >
-              ✕ Close
+              ✕ {t('footer:readme.close', 'Close')}
             </button>
             <h2 style={{
               margin: 0,
@@ -270,7 +271,7 @@ const ReadmeModal = ({ isOpen, onClose }) => {
                 borderRadius: '50%',
                 animation: 'spin 1s linear infinite'
               }}></div>
-              <p style={{ marginTop: '20px' }}>Loading README...</p>
+              <p style={{ marginTop: '20px' }}>{t('footer:readme.loading', 'Loading the README…')}</p>
             </div>
           ) : (
             <div 

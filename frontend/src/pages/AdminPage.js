@@ -1,15 +1,87 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
+import { Badge, Button, Checkbox, EmptyState, Input, Modal, Panel, Select, Tabs, Textarea, useToast } from '../design';
 import { api } from '../utils/api';
-import { useToast } from '../components/ToastNotification';
-import ConfirmDialog from '../components/ConfirmDialog';
 import EditionBadge from '../components/EditionBadge';
 import { editionLabel } from '../rules/rulesEdition';
-import { formatDateTimeInZone } from '../utils/userTimeFormat';
-import '../responsive.css';
+import { getLanguage, getLocale, t } from '../i18n';
+import AiProvidersPanel from './admin/AiProvidersPanel';
+import './admin/admin.css';
+
+/** Admin sections, in tab order; each is a sub-route (/admin/<id>, overview at /admin). */
+export const ADMIN_SECTIONS = ['home', 'invites', 'chronicles', 'users', 'downtime', 'moderation', 'ai'];
+
+export const sectionLabels = () => ({
+  home: t('admin:nav.home', 'Overview'),
+  invites: t('admin:nav.invites', 'Invite codes'),
+  chronicles: t('admin:nav.chronicles', 'All chronicles'),
+  users: t('admin:nav.users', 'Users'),
+  downtime: t('admin:nav.downtime', 'Downtime requests'),
+  moderation: t('admin:nav.moderation', 'Moderation log'),
+  ai: t('admin:nav.ai', 'AI system'),
+});
+
+const SECTION_ICONS = {
+  home: 'crown',
+  invites: 'key',
+  chronicles: 'book',
+  users: 'users',
+  downtime: 'hourglass',
+  moderation: 'scroll',
+  ai: 'ai-sigil',
+};
+
+/** Date + time in the admin's display timezone (browser zone when unset), in the UI language. */
+function formatWhen(value, timeZone) {
+  if (!value) return '—';
+  const d = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(d.getTime())) return '—';
+  const opts = { year: 'numeric', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', second: '2-digit' };
+  if (getLanguage() === 'el') opts.hourCycle = 'h23';
+  else opts.hour12 = true;
+  if (timeZone) opts.timeZone = timeZone;
+  try {
+    return new Intl.DateTimeFormat(getLocale(), opts).format(d);
+  } catch (e) {
+    return d.toLocaleString();
+  }
+}
+
+/** Yes/No confirmation in the design-system modal (replaces the legacy ConfirmDialog here). */
+function AdminConfirm({ open, title, message, confirmText, onConfirm, onCancel, busy = false }) {
+  return (
+    <Modal
+      open={open}
+      onClose={busy ? undefined : onCancel}
+      title={title}
+      icon="warning"
+      size="sm"
+      footer={
+        <>
+          <Button variant="ghost" onClick={onCancel} disabled={busy}>
+            {t('admin:common.cancel', 'Cancel')}
+          </Button>
+          <Button variant="danger" onClick={onConfirm} loading={busy}>
+            {confirmText}
+          </Button>
+        </>
+      }
+    >
+      <p className="sr-admin__confirm">{message}</p>
+    </Modal>
+  );
+}
 
 function AdminPage({ token, user, displayTimezone = null, onAdminOpenCampaign = null }) {
-  // Initialize toast notification system
-  const { showSuccess, showError, ToastContainer } = useToast();
+  const { toast } = useToast();
+  const showSuccess = (message) => toast({ tone: 'ok', title: message });
+  const showError = (message) => toast({ tone: 'danger', title: message });
+  const navigate = useNavigate();
+  const sectionParam = (useParams()['*'] || '').split('/')[0];
+  /** Section comes from the URL: /admin, /admin/invites, /admin/users, … */
+  const adminSection = ADMIN_SECTIONS.includes(sectionParam) ? sectionParam : 'home';
+  const setAdminSection = (id) => navigate(id === 'home' ? '/admin' : `/admin/${id}`);
+  const [banType, setBanType] = useState('temporary');
   const [users, setUsers] = useState([]);
   const [selectedUser, setSelectedUser] = useState(null);
   const [showBanModal, setShowBanModal] = useState(false);
@@ -30,8 +102,6 @@ function AdminPage({ token, user, displayTimezone = null, onAdminOpenCampaign = 
   const [inviteDescription, setInviteDescription] = useState('');
   const [inviteCustomCode, setInviteCustomCode] = useState('');
   const [inviteLoading, setInviteLoading] = useState(false);
-  /** 'home' | 'invites' | 'users' | 'chronicles' | 'moderation' | 'downtime' */
-  const [adminSection, setAdminSection] = useState('home');
   const [downtimeRows, setDowntimeRows] = useState([]);
   const [downtimeStatusFilter, setDowntimeStatusFilter] = useState('pending');
   const [showUserCharsModal, setShowUserCharsModal] = useState(false);
@@ -81,16 +151,6 @@ function AdminPage({ token, user, displayTimezone = null, onAdminOpenCampaign = 
   const [masterPromptDraft, setMasterPromptDraft] = useState('');
   const [aiSaveLoading, setAiSaveLoading] = useState(false);
 
-  const adminNavSections = [
-    { id: 'home', label: 'Overview' },
-    { id: 'invites', label: 'Invite codes' },
-    { id: 'chronicles', label: 'All chronicles' },
-    { id: 'users', label: 'User management' },
-    { id: 'downtime', label: 'Downtime requests' },
-    { id: 'moderation', label: 'Moderation log' },
-    { id: 'ai', label: 'Ai System' },
-  ];
-
   // Fetch all users on mount
   useEffect(() => {
     fetchUsers();
@@ -118,15 +178,15 @@ function AdminPage({ token, user, displayTimezone = null, onAdminOpenCampaign = 
         const msg =
           (data && data.error) ||
           (r.status === 404
-            ? 'Admin campaigns API not found. Restart the backend.'
-            : 'Could not load chronicles');
+            ? t('admin:error.campaignsApiMissing', 'Admin campaigns API not found. Restart the backend.')
+            : t('admin:error.loadChronicles', 'Could not load chronicles'));
         setChroniclesError(msg);
         showError(msg);
       }
     } catch (e) {
       setChroniclesList([]);
-      setChroniclesError('Could not load chronicles');
-      showError('Could not load chronicles');
+      setChroniclesError(t('admin:error.loadChronicles', 'Could not load chronicles'));
+      showError(t('admin:error.loadChronicles', 'Could not load chronicles'));
     } finally {
       setChroniclesLoading(false);
     }
@@ -202,7 +262,7 @@ function AdminPage({ token, user, displayTimezone = null, onAdminOpenCampaign = 
             const msg =
               (data && data.error) ||
               (data2 && data2.error) ||
-              'Could not load campaigns (restart backend to enable /api/admin/campaigns)';
+              t('admin:error.loadCampaignsRestart', 'Could not load campaigns (restart backend to enable /api/admin/campaigns)');
             setAdminCampaignsLoadError(msg);
             showError(msg);
           }
@@ -210,7 +270,7 @@ function AdminPage({ token, user, displayTimezone = null, onAdminOpenCampaign = 
       } catch (e) {
         if (!cancelled) {
           setAdminCampaignsList([]);
-          setAdminCampaignsLoadError('Could not load campaigns');
+          setAdminCampaignsLoadError(t('admin:error.loadCampaigns', 'Could not load campaigns'));
         }
       } finally {
         if (!cancelled) setAdminCampaignsLoading(false);
@@ -258,7 +318,7 @@ function AdminPage({ token, user, displayTimezone = null, onAdminOpenCampaign = 
         setMasterPromptDraft(d.ai_master_system_prompt || '');
       } else {
         setAiSettings(null);
-        showError((d && d.error) || 'Could not load AI settings');
+        showError((d && d.error) || t('admin:error.loadAiSettings', 'Could not load AI settings'));
       }
       const r2 = await api.listLmStudioModels(token);
       const d2 = await r2.json().catch(() => null);
@@ -267,11 +327,11 @@ function AdminPage({ token, user, displayTimezone = null, onAdminOpenCampaign = 
         setLmListError(d2.error || null);
       } else {
         setLmOpenaiModels([]);
-        setLmListError((d2 && d2.error) || 'Could not list LM Studio models');
+        setLmListError((d2 && d2.error) || t('admin:error.listLmModels', 'Could not list LM Studio models'));
       }
     } catch (e) {
       console.error(e);
-      showError('Failed to load Ai System settings');
+      showError(t('admin:error.loadAiSystem', 'Failed to load Ai System settings'));
     } finally {
       setAiSectionLoading(false);
     }
@@ -291,7 +351,7 @@ function AdminPage({ token, user, displayTimezone = null, onAdminOpenCampaign = 
         setUsers(data);
       }
     } catch (err) {
-      setError('Failed to load users');
+      setError(t('admin:error.loadUsers', 'Failed to load users'));
     }
   };
 
@@ -320,14 +380,14 @@ function AdminPage({ token, user, displayTimezone = null, onAdminOpenCampaign = 
         setUserCharsList([]);
         const msg =
           (data && typeof data === 'object' && data.error) ||
-          `Could not load characters (${r.status})`;
+          t('admin:error.loadCharactersStatus', 'Could not load characters ({{status}})', { status: r.status });
         setUserCharsError(msg);
         showError(msg);
       }
     } catch (e) {
       setUserCharsList([]);
-      setUserCharsError('Failed to load characters');
-      showError('Failed to load characters');
+      setUserCharsError(t('admin:error.loadCharacters', 'Failed to load characters'));
+      showError(t('admin:error.loadCharacters', 'Failed to load characters'));
     } finally {
       setUserCharsLoading(false);
     }
@@ -343,7 +403,7 @@ function AdminPage({ token, user, displayTimezone = null, onAdminOpenCampaign = 
 
   const handleOpenChronicleFromAdmin = async (c) => {
     if (!onAdminOpenCampaign || !c?.id) {
-      showError('Open-in-app is not available from this screen.');
+      showError(t('admin:error.openUnavailable', 'Open-in-app is not available from this screen.'));
       return;
     }
     setChroniclesOpeningId(c.id);
@@ -356,7 +416,7 @@ function AdminPage({ token, user, displayTimezone = null, onAdminOpenCampaign = 
         status: c.status,
       });
     } catch (e) {
-      showError('Could not open chronicle');
+      showError(t('admin:error.openChronicle', 'Could not open chronicle'));
     } finally {
       setChroniclesOpeningId(null);
     }
@@ -369,7 +429,7 @@ function AdminPage({ token, user, displayTimezone = null, onAdminOpenCampaign = 
       const r = await api.getCampaign(token, c.id);
       const d = await r.json().catch(() => null);
       if (!r.ok) {
-        showError((d && d.error) || 'Could not load chronicle');
+        showError((d && d.error) || t('admin:error.loadChronicle', 'Could not load chronicle'));
         return;
       }
       setChEdName(d.name || c.name || '');
@@ -380,7 +440,7 @@ function AdminPage({ token, user, displayTimezone = null, onAdminOpenCampaign = 
       setChEdMaxPlayers(mp != null && mp !== '' ? String(mp) : '');
       setChronicleEditTarget(c);
     } catch (e) {
-      showError('Could not load chronicle');
+      showError(t('admin:error.loadChronicle', 'Could not load chronicle'));
     } finally {
       setChronicleBusyId(null);
     }
@@ -391,7 +451,7 @@ function AdminPage({ token, user, displayTimezone = null, onAdminOpenCampaign = 
     if (!chronicleEditTarget) return;
     const name = chEdName.trim();
     if (!name) {
-      showError('Name is required');
+      showError(t('admin:error.nameRequired', 'Name is required'));
       return;
     }
     setChronicleBusyId(chronicleEditTarget.id);
@@ -400,7 +460,7 @@ function AdminPage({ token, user, displayTimezone = null, onAdminOpenCampaign = 
       if (chEdMaxPlayers !== '') {
         const n = parseInt(chEdMaxPlayers, 10);
         if (Number.isNaN(n) || n < 0) {
-          showError('Max players must be a non-negative integer or empty');
+          showError(t('admin:error.maxPlayers', 'Max players must be a non-negative integer or empty'));
           setChronicleBusyId(null);
           return;
         }
@@ -415,14 +475,14 @@ function AdminPage({ token, user, displayTimezone = null, onAdminOpenCampaign = 
       });
       const d = await r.json().catch(() => ({}));
       if (r.ok) {
-        showSuccess('Chronicle updated');
+        showSuccess(t('admin:chronicles.updated', 'Chronicle updated'));
         setChronicleEditTarget(null);
         await reloadChronicles();
       } else {
-        showError(d.error || 'Update failed');
+        showError(d.error || t('admin:error.updateFailed', 'Update failed'));
       }
     } catch (err) {
-      showError('Request failed');
+      showError(t('admin:error.requestFailed', 'Request failed'));
     } finally {
       setChronicleBusyId(null);
     }
@@ -437,9 +497,9 @@ function AdminPage({ token, user, displayTimezone = null, onAdminOpenCampaign = 
       const r = await api.getCampaignStats(token, c.id);
       const d = await r.json().catch(() => null);
       if (r.ok) setChronicleStatsData(d);
-      else showError((d && d.error) || 'Could not load stats');
+      else showError((d && d.error) || t('admin:error.loadStats', 'Could not load stats'));
     } catch (e) {
-      showError('Could not load stats');
+      showError(t('admin:error.loadStats', 'Could not load stats'));
     } finally {
       setChronicleStatsLoading(false);
     }
@@ -456,15 +516,15 @@ function AdminPage({ token, user, displayTimezone = null, onAdminOpenCampaign = 
       });
       const d = await r.json().catch(() => ({}));
       if (r.ok) {
-        showSuccess('Chronicle paused (hidden from discovery; rolls may be blocked until resumed)');
+        showSuccess(t('admin:chronicles.pausedToast', 'Chronicle paused (hidden from discovery; rolls may be blocked until resumed)'));
         setChroniclePauseTarget(null);
         setChroniclePauseReason('');
         await reloadChronicles();
       } else {
-        showError(d.error || 'Could not pause');
+        showError(d.error || t('admin:error.pause', 'Could not pause'));
       }
     } catch (e) {
-      showError('Request failed');
+      showError(t('admin:error.requestFailed', 'Request failed'));
     } finally {
       setChronicleBusyId(null);
     }
@@ -477,13 +537,13 @@ function AdminPage({ token, user, displayTimezone = null, onAdminOpenCampaign = 
       const r = await api.updateCampaign(token, c.id, { is_active: true });
       const d = await r.json().catch(() => ({}));
       if (r.ok) {
-        showSuccess('Chronicle resumed');
+        showSuccess(t('admin:chronicles.resumed', 'Chronicle resumed'));
         await reloadChronicles();
       } else {
-        showError(d.error || 'Could not resume');
+        showError(d.error || t('admin:error.resume', 'Could not resume'));
       }
     } catch (e) {
-      showError('Request failed');
+      showError(t('admin:error.requestFailed', 'Request failed'));
     } finally {
       setChronicleBusyId(null);
     }
@@ -497,14 +557,14 @@ function AdminPage({ token, user, displayTimezone = null, onAdminOpenCampaign = 
       const r = await api.deleteCampaign(token, chronicleDeleteTarget.id);
       const d = await r.json().catch(() => ({}));
       if (r.ok) {
-        showSuccess(d.message || 'Chronicle deleted');
+        showSuccess(d.message || t('admin:chronicles.deleted', 'Chronicle deleted'));
         setChronicleDeleteTarget(null);
         await reloadChronicles();
       } else {
-        showError(d.error || 'Delete failed');
+        showError(d.error || t('admin:error.deleteFailed', 'Delete failed'));
       }
     } catch (e) {
-      showError('Delete failed');
+      showError(t('admin:error.deleteFailed', 'Delete failed'));
     } finally {
       setChronicleDeleteLoading(false);
       setChronicleBusyId(null);
@@ -520,9 +580,9 @@ function AdminPage({ token, user, displayTimezone = null, onAdminOpenCampaign = 
       const r = await api.getUserDebug(token, u.id);
       const data = await r.json().catch(() => null);
       if (r.ok) setDebugPayload(data);
-      else showError(data?.error || 'Failed to load debug profile');
+      else showError(data?.error || t('admin:error.loadDebug', 'Failed to load debug profile'));
     } catch (e) {
-      showError('Failed to load debug profile');
+      showError(t('admin:error.loadDebug', 'Failed to load debug profile'));
     } finally {
       setDebugLoading(false);
     }
@@ -539,15 +599,15 @@ function AdminPage({ token, user, displayTimezone = null, onAdminOpenCampaign = 
       });
       const d = await r.json().catch(() => ({}));
       if (r.ok) {
-        showSuccess('Character suspended');
+        showSuccess(t('admin:users.chars.suspended', 'Character suspended'));
         setSuspendTargetChar(null);
         setSuspendMessage('');
         if (charsTargetUser) refreshUserCharsList(charsTargetUser.id);
       } else {
-        showError(d.error || 'Failed');
+        showError(d.error || t('admin:error.failed', 'Failed'));
       }
     } catch (err) {
-      showError('Request failed');
+      showError(t('admin:error.requestFailed', 'Request failed'));
     }
   };
 
@@ -558,13 +618,13 @@ function AdminPage({ token, user, displayTimezone = null, onAdminOpenCampaign = 
       });
       const d = await r.json().catch(() => ({}));
       if (r.ok) {
-        showSuccess('Suspension cleared');
+        showSuccess(t('admin:users.chars.cleared', 'Suspension cleared'));
         if (charsTargetUser) refreshUserCharsList(charsTargetUser.id);
       } else {
-        showError(d.error || 'Failed');
+        showError(d.error || t('admin:error.failed', 'Failed'));
       }
     } catch (err) {
-      showError('Request failed');
+      showError(t('admin:error.requestFailed', 'Request failed'));
     }
   };
 
@@ -573,7 +633,7 @@ function AdminPage({ token, user, displayTimezone = null, onAdminOpenCampaign = 
     if (!membershipModalUser) return;
     const cid = parseInt(membershipCampaignId, 10);
     if (!cid) {
-      showError('Select a campaign');
+      showError(t('admin:error.selectCampaign', 'Select a campaign'));
       return;
     }
     try {
@@ -585,13 +645,13 @@ function AdminPage({ token, user, displayTimezone = null, onAdminOpenCampaign = 
       );
       const d = await r.json().catch(() => ({}));
       if (r.ok) {
-        showSuccess(d.message || 'Updated');
+        showSuccess(d.message || t('admin:users.membership.updated', 'Updated'));
         setMembershipCampaignId('');
       } else {
-        showError(d.error || 'Failed');
+        showError(d.error || t('admin:error.failed', 'Failed'));
       }
     } catch (err) {
-      showError('Request failed');
+      showError(t('admin:error.requestFailed', 'Request failed'));
     }
   };
 
@@ -621,14 +681,14 @@ function AdminPage({ token, user, displayTimezone = null, onAdminOpenCampaign = 
       const response = await api.createInvite(token, payload);
       const data = await response.json().catch(() => ({}));
       if (response.ok) {
-        showSuccess(`✅ Invite created: ${data.invite?.code || 'OK'}`);
+        showSuccess(t('admin:invites.created', 'Invite created: {{code}}', { code: data.invite?.code || 'OK' }));
         setInviteCustomCode('');
         fetchInvites();
       } else {
-        setError(data.error || 'Failed to create invite');
+        setError(data.error || t('admin:error.createInvite', 'Failed to create invite'));
       }
     } catch (err) {
-      setError('Connection error');
+      setError(t('admin:error.connection', 'Connection error'));
     } finally {
       setInviteLoading(false);
     }
@@ -637,7 +697,7 @@ function AdminPage({ token, user, displayTimezone = null, onAdminOpenCampaign = 
   const copyToClipboard = (text) => {
     if (!text) return;
     navigator.clipboard.writeText(text).then(() => {
-      showSuccess('Copied to clipboard');
+      showSuccess(t('admin:invites.copied', 'Copied to clipboard'));
     }).catch(() => {});
   };
 
@@ -655,15 +715,15 @@ function AdminPage({ token, user, displayTimezone = null, onAdminOpenCampaign = 
       });
       
       if (response.ok) {
-        showSuccess('✅ User updated successfully!');
+        showSuccess(t('admin:users.edit.done', 'User updated.'));
         setShowEditModal(false);
         fetchUsers();
       } else {
         const data = await response.json();
-        setError(data.error || 'Failed to update user');
+        setError(data.error || t('admin:error.updateUser', 'Failed to update user'));
       }
     } catch (err) {
-      setError('Connection error');
+      setError(t('admin:error.connection', 'Connection error'));
     } finally {
       setLoading(false);
     }
@@ -679,14 +739,14 @@ function AdminPage({ token, user, displayTimezone = null, onAdminOpenCampaign = 
       const response = await api.resetUserPassword(token, selectedUser.id, newPassword);
       
       if (response.ok) {
-        showSuccess('✅ Password reset successfully!');
+        showSuccess(t('admin:users.password.done', 'Password reset.'));
         setShowPasswordModal(false);
       } else {
         const data = await response.json();
-        setError(data.error || 'Failed to reset password');
+        setError(data.error || t('admin:error.resetPassword', 'Failed to reset password'));
       }
     } catch (err) {
-      setError('Connection error');
+      setError(t('admin:error.connection', 'Connection error'));
     } finally {
       setLoading(false);
     }
@@ -712,16 +772,16 @@ function AdminPage({ token, user, displayTimezone = null, onAdminOpenCampaign = 
       const response = await api.banUser(token, selectedUser.id, banData);
       
       if (response.ok) {
-        showSuccess('✅ User banned successfully!');
+        showSuccess(t('admin:users.ban.done', 'User banned.'));
         setShowBanModal(false);
         fetchUsers();
         fetchModerationLog();
       } else {
         const data = await response.json();
-        setError(data.error || 'Failed to ban user');
+        setError(data.error || t('admin:error.banUser', 'Failed to ban user'));
       }
     } catch (err) {
-      setError('Connection error');
+      setError(t('admin:error.connection', 'Connection error'));
     } finally {
       setLoading(false);
     }
@@ -735,7 +795,7 @@ function AdminPage({ token, user, displayTimezone = null, onAdminOpenCampaign = 
   const confirmDeleteAccount = async () => {
     if (!userToDeleteAccount || !token || deleteAccountLoading) return;
     if (userToDeleteAccount.id == null || userToDeleteAccount.id === '') {
-      showError('Invalid user id; refresh the user list and try again.');
+      showError(t('admin:error.invalidUserId', 'Invalid user id; refresh the user list and try again.'));
       return;
     }
     setDeleteAccountLoading(true);
@@ -744,23 +804,23 @@ function AdminPage({ token, user, displayTimezone = null, onAdminOpenCampaign = 
       const r = await api.deleteUserAccountPreserveChats(token, uid);
       const d = await r.json().catch(() => ({}));
       if (r.ok) {
-        showSuccess(d.message || 'Account removed; chat history preserved.');
+        showSuccess(d.message || t('admin:users.delete.done', 'Account removed; chat history preserved.'));
         setShowDeleteAccountConfirm(false);
         setUserToDeleteAccount(null);
         fetchUsers();
         fetchModerationLog();
       } else {
-        const msg = d.error || 'Delete failed';
+        const msg = d.error || t('admin:error.deleteFailed', 'Delete failed');
         if (r.status === 404 && msg === 'Not found') {
           showError(
-            'Delete API not found (404). Restart the backend so it loads the latest routes, then try again.',
+            t('admin:error.deleteApiMissing', 'Delete API not found (404). Restart the backend so it loads the latest routes, then try again.'),
           );
         } else {
           showError(msg);
         }
       }
     } catch (e) {
-      showError('Delete failed');
+      showError(t('admin:error.deleteFailed', 'Delete failed'));
     } finally {
       setDeleteAccountLoading(false);
     }
@@ -773,2090 +833,985 @@ function AdminPage({ token, user, displayTimezone = null, onAdminOpenCampaign = 
       const response = await api.unbanUser(token, userToUnban);
       
       if (response.ok) {
-        showSuccess('✅ User unbanned successfully!');
+        showSuccess(t('admin:users.unban.done', 'User unbanned.'));
         setShowUnbanConfirm(false);
         setUserToUnban(null);
         fetchUsers();
         fetchModerationLog();
       }
     } catch (err) {
-      setError('Failed to unban user');
+      setError(t('admin:error.unbanUser', 'Failed to unban user'));
     }
   };
 
-  return (
-    <div
-      className="admin-panel-root"
-      style={{ background: '#0f0f1e' }}
-    >
-      <aside
-        className="admin-panel-sidebar"
-        style={{
-          background: 'linear-gradient(180deg, #16213e 0%, #0f1729 100%)',
-          borderRight: '2px solid #2a2a4e',
-          padding: '16px 12px 24px',
-          boxShadow: '2px 0 12px rgba(0,0,0,0.35)',
-        }}
-      >
-        <div
-          style={{
-            color: '#e94560',
-            fontWeight: 800,
-            fontSize: '12px',
-            letterSpacing: '0.12em',
-            marginBottom: '14px',
-            paddingLeft: '4px',
-          }}
-        >
-          ADMIN PANEL
-        </div>
-        <nav
-          aria-label="Admin sections"
-          style={{
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '6px',
-          }}
-        >
-          {adminNavSections.map(({ id, label }) => {
-            const active = adminSection === id;
-            return (
-              <button
-                key={id}
-                type="button"
-                onClick={() => setAdminSection(id)}
-                style={{
-                  padding: '10px 12px',
-                  borderRadius: '8px',
-                  border: active ? '2px solid #e94560' : '2px solid #2a2a4e',
-                  background: active ? 'rgba(233, 69, 96, 0.22)' : 'rgba(15, 23, 41, 0.85)',
-                  color: active ? '#fff' : '#b5b5c3',
-                  cursor: 'pointer',
-                  fontWeight: active ? 700 : 500,
-                  fontSize: '13px',
-                  textAlign: 'left',
-                  width: '100%',
-                }}
-              >
-                {label}
-              </button>
-            );
-          })}
-        </nav>
-      </aside>
+  const reloadDowntime = async () => {
+    const r2 = await api.listDowntimeRequests(token, downtimeStatusFilter || undefined);
+    if (r2.ok) {
+      const d2 = await r2.json();
+      setDowntimeRows(Array.isArray(d2.requests) ? d2.requests : []);
+    }
+  };
 
-      {/* Main Content */}
-      <div className="admin-panel-main">
-      <div style={{ maxWidth: '1400px', margin: '0 auto', padding: '40px 20px' }}>
+  const approveDowntime = async (row) => {
+    const note = window.prompt(t('admin:downtime.approvePrompt', 'Optional note to the player:'), '') || '';
+    const r = await api.resolveDowntimeRequest(token, row.id, {
+      status: 'approved',
+      admin_reason: note.trim() || undefined,
+    });
+    const resBody = await r.json().catch(() => ({}));
+    if (r.ok) {
+      showSuccess(t('admin:downtime.approved', 'Request approved.'));
+      await reloadDowntime();
+    } else {
+      showError(resBody.error || t('admin:downtime.approveFailed', 'Failed to approve'));
+    }
+  };
 
-        {adminSection === 'home' && (
-          <div style={{
-            textAlign: 'center',
-            maxWidth: '640px',
-            margin: '48px auto 0',
-            padding: '32px 24px',
-            color: '#b5b5c3',
-            lineHeight: 1.65,
-          }}>
-            <h2 style={{ color: '#e94560', marginTop: 0, marginBottom: '16px' }}>You are on the Admin Panel</h2>
-            <p style={{ marginBottom: '20px' }}>
-              This area is for site administrators only. Use the sidebar to open each tool; your changes apply to the whole site (users, invites, and moderation).
-            </p>
-            <ul style={{ textAlign: 'left', display: 'inline-block', margin: '0 auto', paddingLeft: '1.25rem', maxWidth: '520px' }}>
-              <li style={{ marginBottom: '10px' }}><strong style={{ color: '#e0e0e0' }}>Invite codes</strong> — create and copy registration codes; track uses and optional notes.</li>
-              <li style={{ marginBottom: '10px' }}><strong style={{ color: '#e0e0e0' }}>All chronicles</strong> — every campaign in the database; open one in the main app to visit locations and chat (site admins only).</li>
-              <li style={{ marginBottom: '10px' }}><strong style={{ color: '#e0e0e0' }}>User management</strong> — edit accounts, grant Helper ST privileges (multi-chronicle + self-switch PC), reset passwords, ban or unban users.</li>
-              <li style={{ marginBottom: '10px' }}><strong style={{ color: '#e0e0e0' }}>Moderation log</strong> — recent admin actions for audit and follow-up.</li>
-              <li><strong style={{ color: '#e0e0e0' }}>Ai System</strong> — pick the local model id, optional global master system prompt.</li>
-            </ul>
+  const rejectDowntime = async (row) => {
+    const reason = window.prompt(t('admin:downtime.rejectPrompt', 'Rejection reason (required):'), '');
+    if (!reason || !reason.trim()) {
+      showError(t('admin:downtime.reasonRequired', 'Reason is required to reject.'));
+      return;
+    }
+    const r = await api.resolveDowntimeRequest(token, row.id, {
+      status: 'rejected',
+      admin_reason: reason.trim(),
+    });
+    const resBody = await r.json().catch(() => ({}));
+    if (r.ok) {
+      showSuccess(t('admin:downtime.rejected', 'Request rejected.'));
+      await reloadDowntime();
+    } else {
+      showError(resBody.error || t('admin:downtime.rejectFailed', 'Failed to reject'));
+    }
+  };
+
+  const saveAiSettings = async () => {
+    setAiSaveLoading(true);
+    try {
+      const r = await api.putAiSettings(token, {
+        lm_studio_model: aiModelSelect.trim(),
+        ai_master_system_prompt: masterPromptDraft,
+      });
+      const d = await r.json().catch(() => ({}));
+      if (r.ok) {
+        showSuccess(t('admin:ai.settings.saved', 'AI settings saved.'));
+        await loadAiSection();
+      } else {
+        showError(d.error || t('admin:error.saveFailed', 'Save failed'));
+      }
+    } catch (e) {
+      showError(t('admin:error.saveFailed', 'Save failed'));
+    } finally {
+      setAiSaveLoading(false);
+    }
+  };
+
+  const campaignStatusLabel = (status) => ({
+    active: t('admin:chronicles.status.active', 'active'),
+    inactive: t('admin:chronicles.status.inactive', 'inactive'),
+    completed: t('admin:chronicles.status.completed', 'completed'),
+    archived: t('admin:chronicles.status.archived', 'archived'),
+  }[status] || status || '—');
+  const campaignName = (c) => c.name || t('admin:common.campaignN', 'Campaign {{id}}', { id: c.id });
+  const roleLabel = (role) => (role === 'admin' ? t('admin:users.role.admin', 'Admin') : role === 'helper' ? t('admin:users.role.helper', 'Helper') : t('admin:users.role.player', 'Player'));
+  const downtimeFilterLabel = (f) => ({
+    pending: t('admin:downtime.filter.pending', 'Pending'),
+    approved: t('admin:downtime.filter.approved', 'Approved'),
+    rejected: t('admin:downtime.filter.rejected', 'Rejected'),
+    '': t('admin:downtime.filter.all', 'All'),
+  }[f] || f);
+  const logKindLabel = (kind) => ({
+    admin: t('admin:moderation.kind.admin', 'staff'),
+    user: t('admin:moderation.kind.user', 'user'),
+    system: t('admin:moderation.kind.system', 'system'),
+  }[kind] || kind);
+  const suspensionLabel = (code) => ({
+    pending_downtime: t('admin:users.suspend.reason.pending_downtime', 'Pending downtime'),
+    pending_more_information: t('admin:users.suspend.reason.pending_more_information', 'Pending more information'),
+    custom: t('admin:users.suspend.reason.custom', 'Custom (use message)'),
+  }[code] || code);
+
+  /* ---------- sections ---------- */
+
+  const renderHome = () => (
+    <div className="sr-admin__section sr-admin__home">
+      <h2 className="sr-admin__title">{t('admin:home.title', 'Admin panel')}</h2>
+      <p className="sr-admin__lead">
+        {t('admin:home.lead', 'This area is for site administrators only. Each tab opens one tool; your changes apply to the whole site (users, invites and moderation).')}
+      </p>
+      <ul>
+        <li><strong>{t('admin:nav.invites', 'Invite codes')}</strong> — {t('admin:home.invites', 'create and copy registration codes; track uses and optional notes.')}</li>
+        <li><strong>{t('admin:nav.chronicles', 'All chronicles')}</strong> — {t('admin:home.chronicles', 'every campaign in the database; open one in the app to visit locations and chat (site admins only).')}</li>
+        <li><strong>{t('admin:nav.users', 'Users')}</strong> — {t('admin:home.users', 'edit accounts, grant Helper ST privileges (multi-chronicle + self-switch PC), reset passwords, ban or unban users.')}</li>
+        <li><strong>{t('admin:nav.downtime', 'Downtime requests')}</strong> — {t('admin:home.downtime', 'sheet change requests from players; approve or reject with a reason.')}</li>
+        <li><strong>{t('admin:nav.moderation', 'Moderation log')}</strong> — {t('admin:home.moderation', 'recent admin actions for audit and follow-up.')}</li>
+        <li><strong>{t('admin:nav.ai', 'AI system')}</strong> — {t('admin:home.ai', 'local model, global master prompt, model per role, cloud keys, classifier and embeddings.')}</li>
+      </ul>
+    </div>
+  );
+
+  const renderInvites = () => (
+    <div className="sr-admin__section">
+      <h2 className="sr-admin__title">{t('admin:invites.title', 'Invite codes (sign-up)')}</h2>
+      <p className="sr-admin__lead">
+        {t('admin:invites.lead', 'Create a code and send it to the player. They enter it on the Register form with username, email and password. Invalid attempts are logged; if SMTP and MAIL_ADMIN_ALERT_EMAIL are set, you get an email alert.')}
+      </p>
+      <Panel className="sr-admin__panel">
+        <form onSubmit={handleCreateInvite} className="sr-admin__form">
+          <Select label={t('admin:invites.role', 'Role granted by this code')} value={inviteType} onChange={(e) => setInviteType(e.target.value)}>
+            <option value="player">{t('admin:invites.rolePlayer', 'Player')}</option>
+            <option value="admin">{t('admin:invites.roleAdmin', 'Admin (use sparingly)')}</option>
+          </Select>
+          <Input
+            type="number"
+            min={1}
+            max={500}
+            label={t('admin:invites.maxUses', 'Max uses')}
+            value={inviteMaxUses}
+            onChange={(e) => setInviteMaxUses(e.target.value)}
+          />
+          <Input
+            label={t('admin:invites.note', 'Note (optional)')}
+            value={inviteDescription}
+            onChange={(e) => setInviteDescription(e.target.value)}
+            placeholder={t('admin:invites.notePlaceholder', 'e.g. Player: Alex — March 2026')}
+          />
+          <Input
+            label={t('admin:invites.custom', 'Custom code (optional)')}
+            value={inviteCustomCode}
+            onChange={(e) => setInviteCustomCode(e.target.value)}
+            placeholder={t('admin:invites.customPlaceholder', 'Leave empty to auto-generate (e.g. SR-A1B2C3-D4E5)')}
+          />
+          <div>
+            <Button type="submit" variant="arcane" icon="plus" loading={inviteLoading} loadingLabel={t('admin:invites.creating', 'Creating…')}>
+              {t('admin:invites.create', 'Create invite code')}
+            </Button>
           </div>
-        )}
-
-        {/* Invite codes — players use these at registration */}
-        {adminSection === 'invites' && (
-        <div style={{ marginBottom: '40px' }}>
-          <h2 style={{ color: '#e94560', marginBottom: '20px' }}>🎟️ Invite codes (sign-up)</h2>
-          <p style={{ color: '#b5b5c3', marginBottom: '20px', lineHeight: 1.6 }}>
-            Create a code and send it to the player. They enter it on the <strong>Register</strong> form with username, email, and password.
-            Invalid attempts are logged; if SMTP and <code style={{ color: '#9d4edd' }}>MAIL_ADMIN_ALERT_EMAIL</code> are set, you get an email alert.
-          </p>
-
-          <div style={{
-            background: '#16213e',
-            borderRadius: '10px',
-            padding: '24px',
-            marginBottom: '24px',
-            border: '1px solid #2a2a4e',
-            boxShadow: '0 2px 10px rgba(0,0,0,0.5)'
-          }}>
-            <form onSubmit={handleCreateInvite} style={{ display: 'grid', gap: '16px', maxWidth: '640px' }}>
-              <div>
-                <label style={{ display: 'block', color: '#b5b5c3', marginBottom: '6px', fontWeight: 600 }}>Role granted by this code</label>
-                <select
-                  value={inviteType}
-                  onChange={(e) => setInviteType(e.target.value)}
-                  style={{ width: '100%', padding: '10px', borderRadius: '6px', background: '#0f1729', color: '#e0e0e0', border: '2px solid #2a2a4e' }}
-                >
-                  <option value="player">Player</option>
-                  <option value="admin">Admin (use sparingly)</option>
-                </select>
-              </div>
-              <div>
-                <label style={{ display: 'block', color: '#b5b5c3', marginBottom: '6px', fontWeight: 600 }}>Max uses</label>
-                <input
-                  type="number"
-                  min={1}
-                  max={500}
-                  value={inviteMaxUses}
-                  onChange={(e) => setInviteMaxUses(e.target.value)}
-                  style={{ width: '100%', padding: '10px', borderRadius: '6px', background: '#0f1729', color: '#e0e0e0', border: '2px solid #2a2a4e' }}
-                />
-              </div>
-              <div>
-                <label style={{ display: 'block', color: '#b5b5c3', marginBottom: '6px', fontWeight: 600 }}>Note (optional)</label>
-                <input
-                  type="text"
-                  value={inviteDescription}
-                  onChange={(e) => setInviteDescription(e.target.value)}
-                  placeholder="e.g. Player: Alex — March 2026"
-                  style={{ width: '100%', padding: '10px', borderRadius: '6px', background: '#0f1729', color: '#e0e0e0', border: '2px solid #2a2a4e' }}
-                />
-              </div>
-              <div>
-                <label style={{ display: 'block', color: '#b5b5c3', marginBottom: '6px', fontWeight: 600 }}>Custom code (optional)</label>
-                <input
-                  type="text"
-                  value={inviteCustomCode}
-                  onChange={(e) => setInviteCustomCode(e.target.value)}
-                  placeholder="Leave empty to auto-generate (e.g. SR-A1B2C3-D4E5)"
-                  style={{ width: '100%', padding: '10px', borderRadius: '6px', background: '#0f1729', color: '#e0e0e0', border: '2px solid #2a2a4e' }}
-                />
-              </div>
-              <button
-                type="submit"
-                disabled={inviteLoading}
-                style={{
-                  padding: '12px 20px',
-                  background: inviteLoading ? '#4a4a5e' : '#9d4edd',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '8px',
-                  fontWeight: 'bold',
-                  cursor: inviteLoading ? 'not-allowed' : 'pointer',
-                  maxWidth: '280px'
-                }}
-              >
-                {inviteLoading ? 'Creating…' : '➕ Create invite code'}
-              </button>
-            </form>
-          </div>
-
-          <div style={{
-            background: '#16213e',
-            borderRadius: '10px',
-            padding: '20px',
-            border: '1px solid #2a2a4e',
-            overflowX: 'auto'
-          }}>
-            <h3 style={{ color: '#b5b5c3', marginTop: 0 }}>Existing codes</h3>
-            {invites.length === 0 ? (
-              <p style={{ color: '#8b8b9f' }}>No invites yet. Create one above.</p>
-            ) : (
-              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                <thead>
-                  <tr style={{ borderBottom: '2px solid #2a2a4e' }}>
-                    <th style={{ padding: '10px', textAlign: 'left', color: '#e94560' }}>Code</th>
-                    <th style={{ padding: '10px', textAlign: 'left', color: '#e94560' }}>Type</th>
-                    <th style={{ padding: '10px', textAlign: 'left', color: '#e94560' }}>Uses</th>
-                    <th style={{ padding: '10px', textAlign: 'left', color: '#e94560' }}>Note</th>
-                    <th style={{ padding: '10px', textAlign: 'left', color: '#e94560' }}>Created</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {invites.map((inv) => (
-                    <tr key={inv.code} style={{ borderBottom: '1px solid #2a2a4e' }}>
-                      <td style={{ padding: '10px', color: '#fff', fontFamily: 'monospace' }}>
-                        <button
-                          type="button"
-                          onClick={() => copyToClipboard(inv.code)}
-                          style={{
-                            background: 'transparent',
-                            border: '1px solid #667eea',
-                            color: '#a5b4fc',
-                            borderRadius: '4px',
-                            padding: '4px 8px',
-                            cursor: 'pointer',
-                            marginRight: '8px'
-                          }}
-                        >Copy</button>
-                        {inv.code}
-                      </td>
-                      <td style={{ padding: '10px', color: '#b5b5c3' }}>{inv.type}</td>
-                      <td style={{ padding: '10px', color: '#b5b5c3' }}>{inv.uses} / {inv.max_uses}</td>
-                      <td style={{ padding: '10px', color: '#8b8b9f', maxWidth: '280px' }}>{inv.description || '—'}</td>
-                      <td style={{ padding: '10px', color: '#8b8b9f', fontSize: '12px' }}>
-                        {inv.created_at ? formatDateTimeInZone(inv.created_at, displayTimezone) : '—'}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            )}
-          </div>
-        </div>
-        )}
-
-        {adminSection === 'chronicles' && (
-        <div style={{ marginBottom: '40px' }}>
-          <h2 style={{ color: '#e94560', marginBottom: '12px' }}>All chronicles</h2>
-          <p style={{ color: '#b5b5c3', marginBottom: '20px', lineHeight: 1.65, maxWidth: '860px' }}>
-            Complete list from <code style={{ color: '#9d4edd', fontSize: '12px' }}>GET /api/admin/campaigns</code>.
-            <strong style={{ color: '#e0e0e0' }}> Pause</strong> sets the chronicle inactive (players won’t see it in discovery; manual dice in that game may be blocked until you <strong style={{ color: '#e0e0e0' }}>Resume</strong>).
-            <strong style={{ color: '#e0e0e0' }}> Delete</strong> removes the campaign and related data—use with care.
-          </p>
-          <div style={{
-            background: '#16213e',
-            borderRadius: '10px',
-            padding: '20px',
-            border: '1px solid #2a2a4e',
-            overflowX: 'auto',
-          }}
-          >
-            {chroniclesLoading ? (
-              <p style={{ color: '#8b8b9f' }}>Loading chronicles…</p>
-            ) : chroniclesError ? (
-              <p style={{ color: '#f87171' }}>{chroniclesError}</p>
-            ) : chroniclesList.length === 0 ? (
-              <div style={{ color: '#94a3b8', lineHeight: 1.7, maxWidth: '520px' }}>
-                <p style={{ marginTop: 0, fontSize: '16px', color: '#cbd5e1' }}>
-                  There are no campaigns in the system.
-                </p>
-                <p style={{ marginBottom: 0 }}>
-                  When storytellers or players create a chronicle from the main app, it will appear here.
-                  If you expected something listed, confirm the database and that site admins can reach{' '}
-                  <code style={{ color: '#9d4edd', fontSize: '12px' }}>/api/admin/campaigns</code>.
-                </p>
-              </div>
-            ) : (
-              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
-                <thead>
-                  <tr style={{ borderBottom: '2px solid #2a2a4e' }}>
-                    <th style={{ padding: '10px', textAlign: 'left', color: '#e94560' }}>ID</th>
-                    <th style={{ padding: '10px', textAlign: 'left', color: '#e94560' }}>Name</th>
-                    <th style={{ padding: '10px', textAlign: 'left', color: '#e94560' }}>System</th>
-                    <th style={{ padding: '10px', textAlign: 'left', color: '#e94560' }}>State</th>
-                    <th style={{ padding: '10px', textAlign: 'left', color: '#e94560' }}>Listing</th>
-                    <th style={{ padding: '10px', textAlign: 'left', color: '#e94560' }}>Max pl.</th>
-                    <th style={{ padding: '10px', textAlign: 'left', color: '#e94560' }}>Created by</th>
-                    <th style={{ padding: '10px', textAlign: 'left', color: '#e94560' }}>Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {chroniclesList.map((c) => {
-                    const busy = chronicleBusyId === c.id;
-                    const paused = c.is_active === false;
-                    return (
-                      <tr key={c.id} style={{ borderBottom: '1px solid #2a2a4e' }}>
-                        <td style={{ padding: '10px', color: '#b5b5c3' }}>{c.id}</td>
-                        <td style={{ padding: '10px', color: '#fff', fontWeight: 600 }}>
-                          {c.name || `Campaign ${c.id}`}
-                        </td>
-                        <td style={{ padding: '10px', color: '#b5b5c3' }}>
-                          {c.game_system || '—'}
-                          <EditionBadge campaign={c} />
-                        </td>
-                        <td style={{ padding: '10px', color: '#b5b5c3', maxWidth: '200px' }}>
-                          <div style={{ fontSize: '12px' }}>{c.status || '—'}</div>
-                          {paused ? (
-                            <div style={{ marginTop: '6px' }}>
-                              <span style={{
-                                padding: '3px 8px', borderRadius: '8px', fontSize: '11px', fontWeight: 600,
-                                background: 'rgba(251, 191, 36, 0.2)', color: '#fbbf24', border: '1px solid #fbbf24',
-                              }}
-                              >
-                                Paused
-                              </span>
-                              {c.admin_inactive_reason ? (
-                                <div style={{ marginTop: '6px', color: '#64748b', fontSize: '11px', wordBreak: 'break-word' }} title={c.admin_inactive_reason}>
-                                  {c.admin_inactive_reason.length > 80 ? `${c.admin_inactive_reason.slice(0, 80)}…` : c.admin_inactive_reason}
-                                </div>
-                              ) : null}
-                            </div>
-                          ) : (
-                            <div style={{ marginTop: '6px' }}>
-                              <span style={{
-                                padding: '3px 8px', borderRadius: '8px', fontSize: '11px', fontWeight: 600,
-                                background: 'rgba(34, 197, 94, 0.15)', color: '#4ade80', border: '1px solid #22c55e',
-                              }}
-                              >
-                                Active
-                              </span>
-                            </div>
-                          )}
-                        </td>
-                        <td style={{ padding: '10px', color: '#b5b5c3', fontSize: '12px' }}>
-                          {c.listing_visibility || 'private'}
-                          {c.accepting_players ? <span style={{ color: '#86efac' }}> · open join</span> : null}
-                        </td>
-                        <td style={{ padding: '10px', color: '#b5b5c3' }}>
-                          {c.max_players != null && c.max_players !== '' ? c.max_players : '—'}
-                        </td>
-                        <td style={{ padding: '10px', color: '#b5b5c3' }}>
-                          {c.creator_username || '—'}
-                          {c.created_by != null ? (
-                            <span style={{ color: '#64748b' }}>{' '}(#{c.created_by})</span>
-                          ) : null}
-                        </td>
-                        <td style={{ padding: '10px' }}>
-                          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', maxWidth: '340px' }}>
-                            <button
-                              type="button"
-                              disabled={!onAdminOpenCampaign || chroniclesOpeningId === c.id || busy}
-                              onClick={() => handleOpenChronicleFromAdmin(c)}
-                              style={{
-                                padding: '6px 12px', background: '#667eea', color: '#fff', border: 'none',
-                                borderRadius: '4px', cursor: (!onAdminOpenCampaign || chroniclesOpeningId === c.id || busy) ? 'not-allowed' : 'pointer',
-                                fontSize: '12px', fontWeight: 600, opacity: busy ? 0.6 : 1,
-                              }}
-                            >
-                              {chroniclesOpeningId === c.id ? 'Opening…' : 'Open'}
-                            </button>
-                            <button
-                              type="button"
-                              disabled={busy}
-                              onClick={() => openChronicleEdit(c)}
-                              style={{
-                                padding: '6px 12px', background: '#0ea5e9', color: '#fff', border: 'none',
-                                borderRadius: '4px', cursor: busy ? 'not-allowed' : 'pointer', fontSize: '12px', fontWeight: 600,
-                              }}
-                            >
-                              Edit
-                            </button>
-                            <button
-                              type="button"
-                              disabled={busy}
-                              onClick={() => openChronicleStats(c)}
-                              style={{
-                                padding: '6px 12px', background: '#6366f1', color: '#fff', border: 'none',
-                                borderRadius: '4px', cursor: busy ? 'not-allowed' : 'pointer', fontSize: '12px', fontWeight: 600,
-                              }}
-                            >
-                              Stats
-                            </button>
-                            {paused ? (
-                              <button
-                                type="button"
-                                disabled={busy}
-                                onClick={() => resumeChronicle(c)}
-                                style={{
-                                  padding: '6px 12px', background: '#22c55e', color: '#fff', border: 'none',
-                                  borderRadius: '4px', cursor: busy ? 'not-allowed' : 'pointer', fontSize: '12px', fontWeight: 600,
-                                }}
-                              >
-                                Resume
-                              </button>
-                            ) : (
-                              <button
-                                type="button"
-                                disabled={busy}
-                                onClick={() => { setChroniclePauseTarget(c); setChroniclePauseReason(''); }}
-                                style={{
-                                  padding: '6px 12px', background: '#ca8a04', color: '#fff', border: 'none',
-                                  borderRadius: '4px', cursor: busy ? 'not-allowed' : 'pointer', fontSize: '12px', fontWeight: 600,
-                                }}
-                              >
-                                Pause
-                              </button>
-                            )}
-                            <button
-                              type="button"
-                              disabled={busy}
-                              onClick={() => setChronicleDeleteTarget(c)}
-                              style={{
-                                padding: '6px 12px', background: '#b91c1c', color: '#fff', border: 'none',
-                                borderRadius: '4px', cursor: busy ? 'not-allowed' : 'pointer', fontSize: '12px', fontWeight: 600,
-                              }}
-                            >
-                              Delete
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            )}
-          </div>
-        </div>
-        )}
-
-        {/* User Management Section */}
-        {adminSection === 'users' && (
-        <div style={{ marginBottom: '40px' }}>
-          <h2 style={{ color: '#e94560', marginBottom: '20px' }}>👥 User Management</h2>
-          
-          <div style={{
-            background: '#16213e',
-            borderRadius: '10px',
-            padding: '20px',
-            boxShadow: '0 2px 10px rgba(0,0,0,0.5)',
-            border: '1px solid #2a2a4e',
-            overflowX: 'auto'
-          }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+        </form>
+      </Panel>
+      <Panel title={t('admin:invites.existing', 'Existing codes')} className="sr-admin__panel">
+        {invites.length === 0 ? (
+          <EmptyState glyph="key" title={t('admin:invites.empty', 'No invites yet. Create one above.')} />
+        ) : (
+          <div className="sr-admin__tablewrap">
+            <table className="sr-admin__table">
               <thead>
-                <tr style={{ borderBottom: '2px solid #2a2a4e' }}>
-                  <th style={{ padding: '12px', textAlign: 'left', color: '#e94560' }}>ID</th>
-                  <th style={{ padding: '12px', textAlign: 'left', color: '#e94560' }}>Username</th>
-                  <th style={{ padding: '12px', textAlign: 'left', color: '#e94560' }}>Email</th>
-                  <th style={{ padding: '12px', textAlign: 'left', color: '#e94560' }}>Role</th>
-                  <th style={{ padding: '12px', textAlign: 'left', color: '#e94560' }}>Privileges</th>
-                  <th style={{ padding: '12px', textAlign: 'left', color: '#e94560' }}>Status</th>
-                  <th style={{ padding: '12px', textAlign: 'left', color: '#e94560' }}>Last login</th>
-                  <th style={{ padding: '12px', textAlign: 'left', color: '#e94560' }}>Actions</th>
+                <tr>
+                  <th>{t('admin:invites.col.code', 'Code')}</th>
+                  <th>{t('admin:invites.col.type', 'Type')}</th>
+                  <th>{t('admin:invites.col.uses', 'Uses')}</th>
+                  <th>{t('admin:invites.col.note', 'Note')}</th>
+                  <th>{t('admin:invites.col.created', 'Created')}</th>
                 </tr>
               </thead>
               <tbody>
-                {users.map(u => (
-                  <tr key={u.id} style={{ borderBottom: '1px solid #2a2a4e' }}>
-                    <td style={{ padding: '12px', color: '#b5b5c3' }}>{u.id}</td>
-                    <td style={{ padding: '12px', color: '#fff', fontWeight: '600' }}>{u.username}</td>
-                    <td style={{ padding: '12px', color: '#b5b5c3' }}>{u.email}</td>
-                    <td style={{ padding: '12px' }}>
-                      <span style={{
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: '6px',
-                        whiteSpace: 'nowrap',
-                        padding: '4px 12px',
-                        borderRadius: '12px',
-                        fontSize: '12px',
-                        fontWeight: '600',
-                        background: u.role === 'admin' ? 'rgba(233, 69, 96, 0.2)' : 'rgba(40, 167, 69, 0.2)',
-                        color: u.role === 'admin' ? '#e94560' : '#28a745',
-                        border: `1px solid ${u.role === 'admin' ? '#e94560' : '#28a745'}`
-                      }}>
-                        <span aria-hidden="true" style={{ lineHeight: 1, fontSize: '14px' }}>{u.role === 'admin' ? '👑' : '🎮'}</span>
-                        <span>{u.role === 'admin' ? 'Admin' : 'Player'}</span>
-                      </span>
+                {invites.map((inv) => (
+                  <tr key={inv.code}>
+                    <td>
+                      <div className="sr-admin__row">
+                        <Button size="sm" variant="ghost" icon="scroll" onClick={() => copyToClipboard(inv.code)}>
+                          {t('admin:invites.copy', 'Copy')}
+                        </Button>
+                        <span className="sr-admin__mono sr-admin__strong">{inv.code}</span>
+                      </div>
                     </td>
-                    <td style={{ padding: '12px', maxWidth: '140px' }}>
-                      {!u.allow_multi_campaign_play && !u.self_switch_playing_character ? (
-                        <span style={{ color: '#64748b', fontSize: '12px' }}>—</span>
-                      ) : u.allow_multi_campaign_play && u.self_switch_playing_character ? (
-                        <span
-                          title="Site-granted: multiple locked chronicles + self-switch playing character without ST approval"
-                          style={{
-                            display: 'inline-block',
-                            padding: '4px 10px',
-                            borderRadius: '10px',
-                            fontSize: '11px',
-                            fontWeight: 700,
-                            background: 'rgba(167, 139, 250, 0.2)',
-                            color: '#e9d5ff',
-                            border: '1px solid #a78bfa',
-                          }}
-                        >
-                          Helper ST
-                        </span>
-                      ) : (
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                          {u.allow_multi_campaign_play && (
-                            <span
-                              style={{
-                                display: 'inline-block',
-                                padding: '2px 8px',
-                                borderRadius: '8px',
-                                fontSize: '10px',
-                                fontWeight: 600,
-                                background: 'rgba(56, 189, 248, 0.15)',
-                                color: '#7dd3fc',
-                                border: '1px solid #38bdf8',
-                              }}
-                              title="May have locked PCs in more than one chronicle"
-                            >
-                              Multi
-                            </span>
-                          )}
-                          {u.self_switch_playing_character && (
-                            <span
-                              style={{
-                                display: 'inline-block',
-                                padding: '2px 8px',
-                                borderRadius: '8px',
-                                fontSize: '10px',
-                                fontWeight: 600,
-                                background: 'rgba(52, 211, 153, 0.15)',
-                                color: '#6ee7b7',
-                                border: '1px solid #34d399',
-                              }}
-                              title="May switch active PC in a chronicle without storyteller approval"
-                            >
-                              Self-switch
-                            </span>
-                          )}
-                        </div>
-                      )}
-                    </td>
-                    <td style={{ padding: '12px' }}>
-                      {u.is_banned ? (
-                        <span style={{
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: '6px',
-                          whiteSpace: 'nowrap',
-                          padding: '4px 12px',
-                          borderRadius: '12px',
-                          fontSize: '12px',
-                          fontWeight: '600',
-                          background: 'rgba(255, 68, 68, 0.2)',
-                          color: '#ff4444',
-                          border: '1px solid #ff4444'
-                        }}>
-                          <span aria-hidden="true" style={{ lineHeight: 1, fontSize: '14px' }}>🚫</span>
-                          <span>{u.ban_type === 'permanent' ? 'PERMA BAN' : 'TEMP BAN'}</span>
-                        </span>
-                      ) : (
-                        <span style={{
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: '6px',
-                          whiteSpace: 'nowrap',
-                          padding: '4px 12px',
-                          borderRadius: '12px',
-                          fontSize: '12px',
-                          fontWeight: '600',
-                          background: 'rgba(40, 167, 69, 0.2)',
-                          color: '#28a745',
-                          border: '1px solid #28a745'
-                        }}>
-                          <span aria-hidden="true" style={{ lineHeight: 1, fontSize: '14px' }}>✅</span>
-                          <span>Active</span>
-                        </span>
-                      )}
-                    </td>
-                    <td style={{ padding: '12px', color: '#8b8b9f', fontSize: '12px' }}>
-                      {u.last_login
-                        ? formatDateTimeInZone(u.last_login, displayTimezone)
-                        : '—'}
-                    </td>
-                    <td style={{ padding: '12px' }}>
-                      <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                        <button
-                          type="button"
-                          onClick={() => openUserCharacters(u)}
-                          style={{
-                            padding: '6px 12px',
-                            background: '#0ea5e9',
-                            color: 'white',
-                            border: 'none',
-                            borderRadius: '4px',
-                            cursor: 'pointer',
-                            fontSize: '12px',
-                            fontWeight: '600',
-                          }}
-                        >
-                          PCs
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => openUserDebug(u)}
-                          style={{
-                            padding: '6px 12px',
-                            background: '#6366f1',
-                            color: 'white',
-                            border: 'none',
-                            borderRadius: '4px',
-                            cursor: 'pointer',
-                            fontSize: '12px',
-                            fontWeight: '600',
-                          }}
-                        >
-                          Debug
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setMembershipModalUser(u);
-                            setMembershipCampaignId('');
-                          }}
-                          style={{
-                            padding: '6px 12px',
-                            background: '#8b5cf6',
-                            color: 'white',
-                            border: 'none',
-                            borderRadius: '4px',
-                            cursor: 'pointer',
-                            fontSize: '12px',
-                            fontWeight: '600',
-                          }}
-                        >
-                          Campaign
-                        </button>
-                        <button
-                          onClick={() => { setSelectedUser(u); setShowEditModal(true); }}
-                          style={{
-                            padding: '6px 12px',
-                            background: '#667eea',
-                            color: 'white',
-                            border: 'none',
-                            borderRadius: '4px',
-                            cursor: 'pointer',
-                            fontSize: '12px',
-                            fontWeight: '600'
-                          }}
-                        >
-                          ✏️ Edit
-                        </button>
-                        <button
-                          onClick={() => { setSelectedUser(u); setShowPasswordModal(true); }}
-                          style={{
-                            padding: '6px 12px',
-                            background: '#ffa726',
-                            color: 'white',
-                            border: 'none',
-                            borderRadius: '4px',
-                            cursor: 'pointer',
-                            fontSize: '12px',
-                            fontWeight: '600'
-                          }}
-                        >
-                          🔑 Reset PW
-                        </button>
-                        {u.id === user?.id ? (
-                          <span style={{
-                            padding: '6px 12px',
-                            color: '#8b8b9f',
-                            fontSize: '12px',
-                            fontStyle: 'italic'
-                          }}>
-                            (You)
-                          </span>
-                        ) : (
+                    <td>{inv.type === 'admin' ? t('admin:invites.typeAdmin', 'admin') : inv.type === 'player' ? t('admin:invites.typePlayer', 'player') : inv.type}</td>
+                    <td>{inv.uses} / {inv.max_uses}</td>
+                    <td className="is-note">{inv.description || '—'}</td>
+                    <td className="is-small">{formatWhen(inv.created_at, displayTimezone)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </Panel>
+    </div>
+  );
+
+  const renderChronicles = () => (
+    <div className="sr-admin__section">
+      <h2 className="sr-admin__title">{t('admin:chronicles.title', 'All chronicles')}</h2>
+      <p className="sr-admin__lead">
+        {t('admin:chronicles.lead', 'Complete list from GET /api/admin/campaigns. Pause sets the chronicle inactive (players won’t see it in discovery; manual dice in that game may be blocked until you resume). Delete removes the campaign and related data — use with care.')}
+      </p>
+      <Panel className="sr-admin__panel">
+        {chroniclesLoading ? (
+          <p className="sr-admin__muted">{t('admin:chronicles.loading', 'Loading chronicles…')}</p>
+        ) : chroniclesError ? (
+          <p className="sr-admin__error">{chroniclesError}</p>
+        ) : chroniclesList.length === 0 ? (
+          <EmptyState glyph="book" title={t('admin:chronicles.emptyTitle', 'There are no campaigns in the system.')}>
+            {t('admin:chronicles.emptyBody', 'When Storytellers or players create a chronicle in the app, it appears here. If you expected something, check the database and that site admins can reach /api/admin/campaigns.')}
+          </EmptyState>
+        ) : (
+          <div className="sr-admin__tablewrap">
+            <table className="sr-admin__table">
+              <thead>
+                <tr>
+                  <th>{t('admin:chronicles.col.id', 'ID')}</th>
+                  <th>{t('admin:chronicles.col.name', 'Name')}</th>
+                  <th>{t('admin:chronicles.col.system', 'System')}</th>
+                  <th>{t('admin:chronicles.col.state', 'State')}</th>
+                  <th>{t('admin:chronicles.col.listing', 'Listing')}</th>
+                  <th>{t('admin:chronicles.col.maxPlayers', 'Max players')}</th>
+                  <th>{t('admin:chronicles.col.createdBy', 'Created by')}</th>
+                  <th>{t('admin:chronicles.col.actions', 'Actions')}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {chroniclesList.map((c) => {
+                  const busy = chronicleBusyId === c.id;
+                  const paused = c.is_active === false;
+                  return (
+                    <tr key={c.id}>
+                      <td>{c.id}</td>
+                      <td className="is-name">{campaignName(c)}</td>
+                      <td>
+                        {c.game_system || '—'} <EditionBadge campaign={c} />
+                      </td>
+                      <td>
+                        <div className="is-small">{campaignStatusLabel(c.status)}</div>
+                        {paused ? (
                           <>
-                            {u.username !== 'ic_history_archive' && (
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  setUserToDeleteAccount(u);
-                                  setShowDeleteAccountConfirm(true);
-                                }}
-                                style={{
-                                  padding: '6px 12px',
-                                  background: '#7f1d1d',
-                                  color: 'white',
-                                  border: '1px solid #991b1b',
-                                  borderRadius: '4px',
-                                  cursor: 'pointer',
-                                  fontSize: '12px',
-                                  fontWeight: '600',
-                                }}
-                              >
-                                🗑️ Delete
-                              </button>
-                            )}
-                            {u.is_banned ? (
-                              <button
-                                onClick={() => handleUnbanUser(u.id)}
-                                style={{
-                                  padding: '6px 12px',
-                                  background: '#28a745',
-                                  color: 'white',
-                                  border: 'none',
-                                  borderRadius: '4px',
-                                  cursor: 'pointer',
-                                  fontSize: '12px',
-                                  fontWeight: '600',
-                                }}
-                              >
-                                ✅ Unban
-                              </button>
-                            ) : (
-                              <button
-                                onClick={() => { setSelectedUser(u); setShowBanModal(true); }}
-                                style={{
-                                  padding: '6px 12px',
-                                  background: '#dc3545',
-                                  color: 'white',
-                                  border: 'none',
-                                  borderRadius: '4px',
-                                  cursor: 'pointer',
-                                  fontSize: '12px',
-                                  fontWeight: '600',
-                                }}
-                              >
-                                🚫 Ban
-                              </button>
-                            )}
+                            <Badge tone="warn">{t('admin:chronicles.paused', 'Paused')}</Badge>
+                            {c.admin_inactive_reason ? (
+                              <div className="sr-admin__reason" title={c.admin_inactive_reason}>
+                                {c.admin_inactive_reason.length > 80 ? `${c.admin_inactive_reason.slice(0, 80)}…` : c.admin_inactive_reason}
+                              </div>
+                            ) : null}
                           </>
+                        ) : (
+                          <Badge tone="ok">{t('admin:chronicles.active', 'Active')}</Badge>
+                        )}
+                      </td>
+                      <td className="is-small">
+                        {c.listing_visibility === 'listed' ? t('admin:chronicles.listed', 'listed') : t('admin:chronicles.private', 'private')}
+                        {c.accepting_players ? <span className="sr-admin__ok"> · {t('admin:chronicles.openJoin', 'open join')}</span> : null}
+                      </td>
+                      <td>{c.max_players != null && c.max_players !== '' ? c.max_players : '—'}</td>
+                      <td>
+                        {c.creator_username || '—'}
+                        {c.created_by != null ? <span className="sr-admin__muted"> (#{c.created_by})</span> : null}
+                      </td>
+                      <td>
+                        <div className="sr-admin__actions sr-admin__actions--cell">
+                          <Button
+                            size="sm"
+                            variant="arcane"
+                            disabled={!onAdminOpenCampaign || chroniclesOpeningId === c.id || busy}
+                            loading={chroniclesOpeningId === c.id}
+                            loadingLabel={t('admin:chronicles.opening', 'Opening…')}
+                            onClick={() => handleOpenChronicleFromAdmin(c)}
+                          >
+                            {t('admin:chronicles.open', 'Open')}
+                          </Button>
+                          <Button size="sm" disabled={busy} onClick={() => openChronicleEdit(c)}>{t('admin:common.edit', 'Edit')}</Button>
+                          <Button size="sm" disabled={busy} onClick={() => openChronicleStats(c)}>{t('admin:chronicles.stats', 'Stats')}</Button>
+                          {paused ? (
+                            <Button size="sm" disabled={busy} onClick={() => resumeChronicle(c)}>{t('admin:chronicles.resume', 'Resume')}</Button>
+                          ) : (
+                            <Button size="sm" disabled={busy} onClick={() => { setChroniclePauseTarget(c); setChroniclePauseReason(''); }}>
+                              {t('admin:chronicles.pause', 'Pause')}
+                            </Button>
+                          )}
+                          <Button size="sm" variant="danger" disabled={busy} onClick={() => setChronicleDeleteTarget(c)}>{t('admin:common.delete', 'Delete')}</Button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </Panel>
+    </div>
+  );
+
+  const renderUsers = () => (
+    <div className="sr-admin__section">
+      <h2 className="sr-admin__title">{t('admin:users.title', 'User management')}</h2>
+      <Panel className="sr-admin__panel">
+        <div className="sr-admin__tablewrap">
+          <table className="sr-admin__table">
+            <thead>
+              <tr>
+                <th>{t('admin:users.col.id', 'ID')}</th>
+                <th>{t('admin:users.col.username', 'Username')}</th>
+                <th>{t('admin:users.col.email', 'Email')}</th>
+                <th>{t('admin:users.col.role', 'Role')}</th>
+                <th>{t('admin:users.col.privileges', 'Privileges')}</th>
+                <th>{t('admin:users.col.status', 'Status')}</th>
+                <th>{t('admin:users.col.lastLogin', 'Last login')}</th>
+                <th>{t('admin:users.col.actions', 'Actions')}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {users.map((u) => (
+                <tr key={u.id}>
+                  <td>{u.id}</td>
+                  <td className="is-name">{u.username}</td>
+                  <td className="is-wrap">{u.email}</td>
+                  <td>
+                    <Badge tone={u.role === 'admin' ? 'blood' : 'ok'} icon={u.role === 'admin' ? 'crown' : 'user'}>{roleLabel(u.role)}</Badge>
+                  </td>
+                  <td>
+                    {!u.allow_multi_campaign_play && !u.self_switch_playing_character ? (
+                      <span className="sr-admin__muted">—</span>
+                    ) : u.allow_multi_campaign_play && u.self_switch_playing_character ? (
+                      <Badge tone="arcane" title={t('admin:users.priv.helperHint', 'Site-granted: multiple locked chronicles + switching the playing character without Storyteller approval')}>
+                        {t('admin:users.priv.helper', 'Helper ST')}
+                      </Badge>
+                    ) : (
+                      <div className="sr-admin__badges">
+                        {u.allow_multi_campaign_play && (
+                          <Badge tone="neutral" title={t('admin:users.priv.multiHint', 'May have locked characters in more than one chronicle')}>
+                            {t('admin:users.priv.multi', 'Multi')}
+                          </Badge>
+                        )}
+                        {u.self_switch_playing_character && (
+                          <Badge tone="neutral" title={t('admin:users.priv.selfSwitchHint', 'May switch the active character in a chronicle without Storyteller approval')}>
+                            {t('admin:users.priv.selfSwitch', 'Self-switch')}
+                          </Badge>
                         )}
                       </div>
+                    )}
+                  </td>
+                  <td>
+                    {u.is_banned ? (
+                      <Badge tone="danger" icon="lock-chain">
+                        {u.ban_type === 'permanent' ? t('admin:users.status.permaBan', 'Permanent ban') : t('admin:users.status.tempBan', 'Temporary ban')}
+                      </Badge>
+                    ) : (
+                      <Badge tone="ok" icon="check">{t('admin:users.status.active', 'Active')}</Badge>
+                    )}
+                  </td>
+                  <td className="is-small">{formatWhen(u.last_login, displayTimezone)}</td>
+                  <td>
+                    <div className="sr-admin__actions sr-admin__actions--cell">
+                      <Button size="sm" onClick={() => openUserCharacters(u)}>{t('admin:users.action.characters', 'Characters')}</Button>
+                      <Button size="sm" variant="ghost" onClick={() => openUserDebug(u)}>{t('admin:users.action.debug', 'Debug')}</Button>
+                      <Button size="sm" onClick={() => { setMembershipModalUser(u); setMembershipCampaignId(''); }}>
+                        {t('admin:users.action.membership', 'Chronicles')}
+                      </Button>
+                      <Button size="sm" onClick={() => { setSelectedUser(u); setShowEditModal(true); }}>{t('admin:common.edit', 'Edit')}</Button>
+                      <Button size="sm" icon="key" onClick={() => { setSelectedUser(u); setShowPasswordModal(true); }}>
+                        {t('admin:users.action.resetPassword', 'Reset password')}
+                      </Button>
+                      {u.id === user?.id ? (
+                        <span className="sr-admin__muted">{t('admin:users.you', '(you)')}</span>
+                      ) : (
+                        <>
+                          {u.username !== 'ic_history_archive' && (
+                            <Button size="sm" variant="danger" icon="trash" onClick={() => { setUserToDeleteAccount(u); setShowDeleteAccountConfirm(true); }}>
+                              {t('admin:common.delete', 'Delete')}
+                            </Button>
+                          )}
+                          {u.is_banned ? (
+                            <Button size="sm" icon="check" onClick={() => handleUnbanUser(u.id)}>{t('admin:users.action.unban', 'Unban')}</Button>
+                          ) : (
+                            <Button size="sm" variant="danger" onClick={() => { setSelectedUser(u); setBanType('temporary'); setShowBanModal(true); }}>
+                              {t('admin:users.action.ban', 'Ban')}
+                            </Button>
+                          )}
+                        </>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </Panel>
+    </div>
+  );
+
+  const renderModeration = () => (
+    <div className="sr-admin__section">
+      <h2 className="sr-admin__title">{t('admin:moderation.title', 'Recent activity log')}</h2>
+      <p className="sr-admin__lead">
+        {t('admin:moderation.lead', 'Audit trail: staff actions (red), a user acting on their own account (green), automated or system events (blue). Rows stay visible when a user account was removed (names may show as missing).')}
+      </p>
+      <div className="sr-admin__row">
+        <Select
+          label={t('admin:moderation.rows', 'Rows')}
+          fieldClassName="sr-admin__select"
+          value={moderationLogLimit}
+          onChange={(e) => setModerationLogLimit(Number(e.target.value))}
+          options={[50, 100, 200, 500].map((n) => ({ value: n, label: String(n) }))}
+        />
+        <Button size="sm" icon="moon-half" onClick={() => fetchModerationLog()}>{t('admin:common.refresh', 'Refresh')}</Button>
+      </div>
+      <Panel className="sr-admin__panel">
+        {moderationLog.length === 0 ? (
+          <EmptyState glyph="scroll" title={t('admin:moderation.empty', 'No logged actions yet')} />
+        ) : (
+          <div className="sr-admin__log">
+            {moderationLog.map((log) => {
+              const kind = log.entry_kind || 'admin';
+              const actor = log.admin_username || (log.admin_id != null && log.admin_id !== '' ? `#${log.admin_id}` : '—');
+              const target =
+                log.username ||
+                (log.user_id != null && log.user_id !== '' ? t('admin:moderation.userN', 'user #{{id}}', { id: log.user_id }) : '—');
+              return (
+                <div key={log.id} className={`sr-admin__entry sr-admin__entry--${kind}`}>
+                  <div className="sr-admin__entry-head">
+                    <span className="sr-admin__entry-action" lang="en">
+                      {String(log.action || '').toUpperCase()}
+                      <span className="sr-admin__entry-kind">({logKindLabel(kind)})</span>
+                    </span>
+                    <span className="sr-admin__muted">{formatWhen(log.created_at, displayTimezone)}</span>
+                  </div>
+                  <div>
+                    <strong className="sr-admin__strong">{actor}</strong>
+                    <span className="sr-admin__muted"> → </span>
+                    <strong className="sr-admin__strong">{target}</strong>
+                  </div>
+                  {log.details && Object.keys(log.details).length > 0 && (
+                    <div className="sr-admin__entry-details">{JSON.stringify(log.details)}</div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </Panel>
+    </div>
+  );
+
+  const renderDowntime = () => (
+    <div className="sr-admin__section">
+      <h2 className="sr-admin__title">{t('admin:downtime.title', 'Character downtime requests')}</h2>
+      <p className="sr-admin__lead">
+        {t('admin:downtime.lead', 'Players send these from their profile when their sheet is locked. Approve or reject with a short reason (required for rejections).')}
+      </p>
+      <div className="sr-admin__row" role="group" aria-label={t('admin:downtime.filterLabel', 'Filter by status')}>
+        {['pending', 'approved', 'rejected', ''].map((f) => (
+          <Button
+            key={f || 'all'}
+            size="sm"
+            variant="ghost"
+            className="sr-admin__filter"
+            aria-pressed={downtimeStatusFilter === f}
+            onClick={() => setDowntimeStatusFilter(f)}
+          >
+            {downtimeFilterLabel(f)}
+          </Button>
+        ))}
+      </div>
+      <Panel className="sr-admin__panel">
+        {downtimeRows.length === 0 ? (
+          <EmptyState glyph="hourglass" title={t('admin:downtime.empty', 'No requests in this filter.')} />
+        ) : (
+          <div className="sr-admin__log">
+            {downtimeRows.map((row) => (
+              <div key={row.id} className="sr-admin__entry">
+                <div className="sr-admin__entry-char">
+                  {row.character_name} <span className="sr-admin__muted">· @{row.player_username}</span>
+                </div>
+                <div className="sr-admin__muted">{row.campaign_name}</div>
+                <div className="sr-admin__entry-text">{row.request_text}</div>
+                <div className="sr-admin__muted">
+                  {t('admin:downtime.status', 'Status:')} <strong>{downtimeFilterLabel(row.status)}</strong>
+                  {row.admin_reason ? ` — ${row.admin_reason}` : ''}
+                </div>
+                {row.status === 'pending' && (
+                  <div className="sr-admin__row sr-admin__row--spaced">
+                    <Button size="sm" variant="primary" icon="check" onClick={() => approveDowntime(row)}>{t('admin:downtime.approve', 'Approve')}</Button>
+                    <Button size="sm" variant="danger" icon="close" onClick={() => rejectDowntime(row)}>{t('admin:downtime.reject', 'Reject')}</Button>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </Panel>
+    </div>
+  );
+
+  const renderAi = () => (
+    <div className="sr-admin__section sr-admin__section--narrow">
+      <h2 className="sr-admin__title">{t('admin:nav.ai', 'AI system')}</h2>
+      <p className="sr-admin__lead">
+        {t('admin:ai.lead', 'Choose which model id the backend sends to LM Studio’s OpenAI-compatible API, or leave the default to follow LM_STUDIO_MODEL in the environment and the model LM Studio reports as loaded. This is the default LM Studio model (used by the English Storyteller and fallbacks unless a role below names a model). The master system prompt is prepended to every feature-specific system prompt.')}
+      </p>
+      {aiSectionLoading ? (
+        <p className="sr-admin__muted">{t('admin:loading', 'Loading…')}</p>
+      ) : (
+        <Panel title={t('admin:ai.settings.title', 'Local model and master prompt')} className="sr-admin__panel">
+          {aiSettings && (
+            <div className="sr-admin__kv">
+              <div><strong>{t('admin:ai.settings.url', 'LM Studio URL:')}</strong> <span className="sr-admin__code">{aiSettings.lm_studio_url || '—'}</span></div>
+              <div><strong>{t('admin:ai.settings.envModel', 'Env LM_STUDIO_MODEL:')}</strong> {aiSettings.env_lm_studio_model || t('admin:ai.settings.envEmpty', '(empty / auto)')}</div>
+              <div>
+                <strong>{t('admin:ai.settings.effective', 'Effective model id (in use):')}</strong>{' '}
+                <code className="sr-admin__code">{aiSettings.effective_lm_studio_model || '—'}</code>
+              </div>
+            </div>
+          )}
+          {lmListError && (
+            <p className="sr-admin__warn">
+              {lmListError} — {t('admin:ai.settings.lmUnreachable', 'Is LM Studio running and reachable from the backend host?')}
+            </p>
+          )}
+          <div className="sr-admin__row sr-admin__row--top">
+            <Select
+              label={t('admin:ai.settings.model', 'Chat model (OpenAI id from LM Studio)')}
+              hint={t('admin:ai.settings.modelHint', 'Pick a model from the list (from GET /v1/models), or keep the default to follow whatever you load in LM Studio without pinning an id here.')}
+              fieldClassName="sr-admin__grow"
+              value={aiModelSelect}
+              onChange={(e) => setAiModelSelect(e.target.value)}
+            >
+              <option value="">{t('admin:ai.settings.modelDefault', 'Default — use env + loaded model')}</option>
+              {lmOpenaiModels.map((m) => (
+                <option key={m.id || JSON.stringify(m)} value={m.id}>{m.id}</option>
+              ))}
+            </Select>
+            <Button size="sm" className="sr-admin__btn-offset" onClick={() => loadAiSection()}>{t('admin:ai.settings.refresh', 'Refresh list')}</Button>
+          </div>
+          <Textarea
+            label={t('admin:ai.settings.prompt', 'Master system prompt (global)')}
+            className="sr-admin__textarea-mono"
+            value={masterPromptDraft}
+            onChange={(e) => setMasterPromptDraft(e.target.value)}
+            rows={12}
+            placeholder={t('admin:ai.settings.promptPlaceholder', 'Optional. Applied before each feature-specific system prompt (chat, locations, moderation…). Describe the assistant’s tone, safety rules and setting.')}
+          />
+          <div>
+            <Button variant="primary" loading={aiSaveLoading} loadingLabel={t('admin:common.saving', 'Saving…')} onClick={saveAiSettings}>
+              {t('admin:ai.settings.save', 'Save AI settings')}
+            </Button>
+          </div>
+        </Panel>
+      )}
+      <AiProvidersPanel token={token} lmModels={lmOpenaiModels} showSuccess={showSuccess} showError={showError} />
+    </div>
+  );
+
+  const RENDER = {
+    home: renderHome,
+    invites: renderInvites,
+    chronicles: renderChronicles,
+    users: renderUsers,
+    downtime: renderDowntime,
+    moderation: renderModeration,
+    ai: renderAi,
+  };
+  const labels = sectionLabels();
+  const membershipDisabled = adminCampaignsLoading || !!adminCampaignsLoadError || adminCampaignsList.length === 0;
+
+  return (
+    <div className="sr-admin">
+      <Tabs
+        className="sr-admin__tabs"
+        label={t('admin:nav.label', 'Admin sections')}
+        value={adminSection}
+        onChange={setAdminSection}
+        tabs={ADMIN_SECTIONS.map((id) => ({
+          id,
+          label: labels[id],
+          icon: SECTION_ICONS[id],
+          content: id === adminSection ? RENDER[id]() : null,
+        }))}
+      />
+
+      {/* Edit user */}
+      <Modal open={showEditModal && !!selectedUser} onClose={() => setShowEditModal(false)} title={t('admin:users.edit.title', 'Edit user')} icon="user">
+        {selectedUser ? (
+          <form onSubmit={handleEditUser} className="sr-admin__form sr-admin__form--modal">
+            <Input name="username" label={t('admin:users.col.username', 'Username')} defaultValue={selectedUser.username} />
+            <Input type="email" name="email" label={t('admin:users.col.email', 'Email')} defaultValue={selectedUser.email} />
+            <Checkbox
+              name="allow_multi"
+              defaultChecked={!!selectedUser.allow_multi_campaign_play}
+              label={t('admin:users.edit.multi', 'Multiple chronicles at once (locked sheets in more than one campaign). Without this, joining a second locked chronicle is blocked.')}
+            />
+            <Checkbox
+              name="self_switch_pc"
+              defaultChecked={!!selectedUser.self_switch_playing_character}
+              label={t('admin:users.edit.selfSwitch', 'Self-switch playing character (trusted player): change which character is active in a chronicle without Storyteller approval. Other chronicles are unchanged; characters are still switched per chronicle.')}
+            />
+            <div className="sr-admin__actions">
+              <Button variant="ghost" onClick={() => setShowEditModal(false)}>{t('admin:common.cancel', 'Cancel')}</Button>
+              <Button type="submit" variant="primary" loading={loading} loadingLabel={t('admin:common.saving', 'Saving…')}>
+                {t('admin:common.saveChanges', 'Save changes')}
+              </Button>
+            </div>
+          </form>
+        ) : null}
+      </Modal>
+
+      {/* Reset password */}
+      <Modal
+        open={showPasswordModal && !!selectedUser}
+        onClose={() => setShowPasswordModal(false)}
+        title={selectedUser ? t('admin:users.password.title', 'Reset password for {{name}}', { name: selectedUser.username }) : ''}
+        icon="key"
+        size="sm"
+      >
+        <form onSubmit={handleResetPassword} className="sr-admin__form sr-admin__form--modal">
+          <Input
+            type="password"
+            name="new_password"
+            required
+            minLength={8}
+            autoComplete="new-password"
+            label={t('admin:users.password.new', 'New password')}
+            placeholder={t('admin:users.password.min', 'At least 8 characters')}
+          />
+          <div className="sr-admin__actions">
+            <Button variant="ghost" onClick={() => setShowPasswordModal(false)}>{t('admin:common.cancel', 'Cancel')}</Button>
+            <Button type="submit" variant="primary" loading={loading} loadingLabel={t('admin:users.password.busy', 'Resetting…')}>
+              {t('admin:users.password.submit', 'Reset password')}
+            </Button>
+          </div>
+        </form>
+      </Modal>
+
+      {/* Ban */}
+      <Modal
+        open={showBanModal && !!selectedUser}
+        onClose={() => setShowBanModal(false)}
+        title={selectedUser ? t('admin:users.ban.title', 'Ban {{name}}', { name: selectedUser.username }) : ''}
+        icon="lock-chain"
+      >
+        <form onSubmit={handleBanUser} className="sr-admin__form sr-admin__form--modal">
+          <Select name="ban_type" required label={t('admin:users.ban.type', 'Ban type')} value={banType} onChange={(e) => setBanType(e.target.value)}>
+            <option value="temporary">{t('admin:users.ban.temporary', 'Temporary')}</option>
+            <option value="permanent">{t('admin:users.ban.permanent', 'Permanent')}</option>
+          </Select>
+          {banType === 'temporary' ? (
+            <div className="sr-admin__grid2">
+              <Input type="number" name="duration_days" min="0" defaultValue="0" label={t('admin:users.ban.days', 'Days')} />
+              <Input type="number" name="duration_hours" min="0" defaultValue="0" label={t('admin:users.ban.hours', 'Hours')} />
+            </div>
+          ) : null}
+          <Textarea
+            name="ban_reason"
+            required
+            rows={3}
+            label={t('admin:users.ban.reason', 'Reason')}
+            placeholder={t('admin:users.ban.reasonPlaceholder', 'Explain why this user is being banned…')}
+          />
+          <div className="sr-admin__actions">
+            <Button variant="ghost" onClick={() => setShowBanModal(false)}>{t('admin:common.cancel', 'Cancel')}</Button>
+            <Button type="submit" variant="danger" loading={loading} loadingLabel={t('admin:users.ban.busy', 'Banning…')}>
+              {t('admin:users.ban.submit', 'Ban user')}
+            </Button>
+          </div>
+        </form>
+      </Modal>
+
+      {/* A user's characters */}
+      <Modal
+        open={showUserCharsModal && !!charsTargetUser}
+        onClose={() => { setShowUserCharsModal(false); setCharsTargetUser(null); setSuspendTargetChar(null); }}
+        title={charsTargetUser ? t('admin:users.chars.title', 'Characters — {{name}}', { name: charsTargetUser.username }) : ''}
+        icon="users"
+        size="lg"
+      >
+        {userCharsLoading ? (
+          <p className="sr-admin__muted">{t('admin:loading', 'Loading…')}</p>
+        ) : userCharsError ? (
+          <p className="sr-admin__error">{userCharsError}</p>
+        ) : userCharsList.length === 0 ? (
+          <p className="sr-admin__muted">{t('admin:users.chars.none', 'No characters')}</p>
+        ) : (
+          <div className="sr-admin__tablewrap">
+            <table className="sr-admin__table">
+              <thead>
+                <tr>
+                  <th>{t('admin:users.chars.col.id', 'ID')}</th>
+                  <th>{t('admin:users.chars.col.name', 'Name')}</th>
+                  <th>{t('admin:users.chars.col.campaign', 'Chronicle')}</th>
+                  <th>{t('admin:users.chars.col.locked', 'Locked')}</th>
+                  <th>{t('admin:users.chars.col.suspended', 'Suspended')}</th>
+                  <th><span className="sr-visually-hidden">{t('admin:users.col.actions', 'Actions')}</span></th>
+                </tr>
+              </thead>
+              <tbody>
+                {userCharsList.map((ch) => (
+                  <tr key={ch.id}>
+                    <td>{ch.id}</td>
+                    <td className="is-name">{ch.name}</td>
+                    <td>{ch.campaign_id}</td>
+                    <td>{ch.sheet_locked ? t('admin:common.yes', 'Yes') : t('admin:common.no', 'No')}</td>
+                    <td>{ch.play_suspended ? (suspensionLabel(ch.play_suspension_reason_code) || t('admin:common.yes', 'Yes')) : '—'}</td>
+                    <td>
+                      {ch.play_suspended ? (
+                        <Button size="sm" onClick={() => clearCharacterSuspension(ch.id)}>{t('admin:users.chars.clear', 'Clear hold')}</Button>
+                      ) : (
+                        <Button
+                          size="sm"
+                          variant="danger"
+                          onClick={() => { setSuspendTargetChar(ch); setSuspendReason('pending_downtime'); setSuspendMessage(''); }}
+                        >
+                          {t('admin:users.chars.suspend', 'Suspend')}
+                        </Button>
+                      )}
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
-        </div>
         )}
+      </Modal>
 
-        {/* Moderation Log */}
-        {adminSection === 'moderation' && (
-        <div>
-          <h2 style={{ color: '#e94560', marginBottom: '12px' }}>Recent activity log</h2>
-          <p style={{ color: '#8b8b9f', marginBottom: '16px', maxWidth: '720px' }}>
-            Audit trail: staff actions (red), a user acting on their own account (green), automated or system-tagged events (blue). Rows remain visible when a user account was removed (names may show as missing).
-          </p>
-          <div style={{ marginBottom: '16px', display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '12px' }}>
-            <label style={{ color: '#b5b5c3', display: 'flex', alignItems: 'center', gap: '8px' }}>
-              Rows:
-              <select
-                value={moderationLogLimit}
-                onChange={(e) => setModerationLogLimit(Number(e.target.value))}
-                style={{
-                  padding: '8px 12px',
-                  borderRadius: '6px',
-                  background: '#0f1729',
-                  border: '1px solid #2a2a4e',
-                  color: '#e0e0e0',
-                }}
-              >
-                {[50, 100, 200, 500].map((n) => (
-                  <option key={n} value={n}>{n}</option>
+      {/* Suspend a character */}
+      <Modal
+        open={!!suspendTargetChar}
+        onClose={() => setSuspendTargetChar(null)}
+        title={suspendTargetChar ? t('admin:users.suspend.title', 'Suspend play — {{name}}', { name: suspendTargetChar.name }) : ''}
+        icon="lock-chain"
+        size="sm"
+      >
+        <form onSubmit={submitSuspend} className="sr-admin__form sr-admin__form--modal">
+          <Select label={t('admin:users.suspend.reasonLabel', 'Reason')} value={suspendReason} onChange={(e) => setSuspendReason(e.target.value)}>
+            <option value="pending_downtime">{suspensionLabel('pending_downtime')}</option>
+            <option value="pending_more_information">{suspensionLabel('pending_more_information')}</option>
+            <option value="custom">{suspensionLabel('custom')}</option>
+          </Select>
+          <Textarea
+            label={t('admin:users.suspend.message', 'Message to the player')}
+            value={suspendMessage}
+            onChange={(e) => setSuspendMessage(e.target.value)}
+            rows={4}
+            placeholder={t('admin:users.suspend.messagePlaceholder', 'Shown when they try to use this character in play.')}
+          />
+          <div className="sr-admin__actions">
+            <Button variant="ghost" onClick={() => setSuspendTargetChar(null)}>{t('admin:common.cancel', 'Cancel')}</Button>
+            <Button type="submit" variant="danger">{t('admin:users.suspend.confirm', 'Suspend')}</Button>
+          </div>
+        </form>
+      </Modal>
+
+      {/* Debug profile */}
+      <Modal
+        open={showDebugModal && !!debugTargetUser}
+        onClose={() => { setShowDebugModal(false); setDebugTargetUser(null); setDebugPayload(null); }}
+        title={debugTargetUser ? t('admin:users.debug.title', 'Debug profile — {{name}} (id {{id}})', { name: debugTargetUser.username, id: debugTargetUser.id }) : ''}
+        icon="eye"
+        size="lg"
+      >
+        {debugLoading ? (
+          <p className="sr-admin__muted">{t('admin:loading', 'Loading…')}</p>
+        ) : debugPayload ? (
+          <pre className="sr-admin__pre">{JSON.stringify(debugPayload, null, 2)}</pre>
+        ) : null}
+      </Modal>
+
+      {/* Chronicle membership */}
+      <Modal
+        open={!!membershipModalUser}
+        onClose={() => { setMembershipModalUser(null); setMembershipCampaignId(''); setMembershipTargetChronicles([]); setAdminCampaignsFromFallback(false); }}
+        title={membershipModalUser ? t('admin:users.membership.title', 'Chronicle membership — {{name}}', { name: membershipModalUser.username }) : ''}
+        icon="book"
+      >
+        <div className="sr-admin__section">
+          <div>
+            <strong className="sr-admin__strong">{t('admin:users.membership.current', 'This user’s chronicles')}</strong>
+            {membershipTargetChronicles.length === 0 ? (
+              <p className="sr-admin__muted">
+                {adminCampaignsLoading
+                  ? t('admin:loading', 'Loading…')
+                  : t('admin:users.membership.none', 'None listed (no roster row and not the sole creator of an orphan chronicle).')}
+              </p>
+            ) : (
+              <ul className="sr-admin__list">
+                {membershipTargetChronicles.map((c) => (
+                  <li key={`${c.id}-${c.via || 'm'}`}>
+                    <strong className="sr-admin__strong">{campaignName(c)}</strong>
+                    {' · '}
+                    {c.game_system || '—'} <EditionBadge campaign={c} /> · {c.member_role || t('admin:users.membership.member', 'member')}
+                    {c.via === 'created_by_only' ? (
+                      <span className="sr-admin__warn"> {t('admin:users.membership.creatorOnly', '(creator only — use Add below to write a roster row)')}</span>
+                    ) : null}
+                  </li>
                 ))}
-              </select>
-            </label>
-            <button
-              type="button"
-              onClick={() => fetchModerationLog()}
-              style={{
-                padding: '8px 14px',
-                borderRadius: '6px',
-                border: '1px solid #2a2a4e',
-                background: '#0f1729',
-                color: '#e0e0e0',
-                cursor: 'pointer',
-              }}
-            >
-              Refresh
-            </button>
-          </div>
-          
-          <div style={{
-            background: '#16213e',
-            borderRadius: '10px',
-            padding: '20px',
-            boxShadow: '0 2px 10px rgba(0,0,0,0.5)',
-            border: '1px solid #2a2a4e'
-          }}>
-            {moderationLog.length === 0 ? (
-              <p style={{ color: '#b5b5c3', textAlign: 'center' }}>No logged actions yet</p>
-            ) : (
-              <div style={{ maxHeight: '560px', overflowY: 'auto' }}>
-                {moderationLog.map((log) => {
-                  const kind = log.entry_kind || 'admin';
-                  const borderColor =
-                    kind === 'user' ? '#22c55e' : kind === 'system' ? '#3b82f6' : '#e94560';
-                  const actor =
-                    log.admin_username ||
-                    (log.admin_id != null && log.admin_id !== ''
-                      ? `#${log.admin_id}`
-                      : '—');
-                  const target =
-                    log.username ||
-                    (log.user_id != null && log.user_id !== ''
-                      ? `user #${log.user_id}`
-                      : '—');
-                  return (
-                  <div key={log.id} style={{
-                    padding: '12px',
-                    marginBottom: '10px',
-                    background: '#0f1729',
-                    borderRadius: '8px',
-                    border: '1px solid #2a2a4e',
-                    borderLeft: `4px solid ${borderColor}`,
-                  }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', flexWrap: 'wrap', gap: '8px' }}>
-                      <span style={{ color: '#e0e0e0', fontWeight: '600' }}>
-                        {String(log.action || '').toUpperCase()}
-                        <span style={{ color: '#6b7280', fontWeight: 'normal', fontSize: '12px', marginLeft: '8px' }}>
-                          ({kind})
-                        </span>
-                      </span>
-                      <span style={{ color: '#8b8b9f', fontSize: '12px' }}>
-                        {formatDateTimeInZone(log.created_at, displayTimezone)}
-                      </span>
-                    </div>
-                    <div style={{ color: '#b5b5c3', fontSize: '14px' }}>
-                      <strong style={{ color: '#cbd5e1' }}>{actor}</strong>
-                      <span style={{ color: '#64748b', margin: '0 6px' }}>→</span>
-                      <strong style={{ color: '#cbd5e1' }}>{target}</strong>
-                    </div>
-                    {log.details && Object.keys(log.details).length > 0 && (
-                      <div style={{ color: '#8b8b9f', fontSize: '12px', marginTop: '6px', wordBreak: 'break-word' }}>
-                        {JSON.stringify(log.details)}
-                      </div>
-                    )}
-                  </div>
-                  );
-                })}
-              </div>
+              </ul>
             )}
           </div>
-        </div>
-        )}
-
-        {adminSection === 'downtime' && (
-        <div>
-          <h2 style={{ color: '#e94560', marginBottom: '16px' }}>Character downtime requests</h2>
-          <p style={{ color: '#8b8b9f', marginBottom: '16px', maxWidth: '720px' }}>
-            Players submit these from Player Profile when their sheet is locked. Approve or reject with a short reason (required for rejections).
-          </p>
-          <div style={{ marginBottom: '16px', display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-            {['pending', 'approved', 'rejected', ''].map((f) => (
-              <button
-                key={f || 'all'}
-                type="button"
-                onClick={() => setDowntimeStatusFilter(f)}
-                style={{
-                  padding: '8px 14px',
-                  borderRadius: '6px',
-                  border: downtimeStatusFilter === f ? '2px solid #e94560' : '1px solid #2a2a4e',
-                  background: downtimeStatusFilter === f ? 'rgba(233, 69, 96, 0.15)' : '#0f1729',
-                  color: '#e0e0e0',
-                  cursor: 'pointer',
-                }}
-              >
-                {f === '' ? 'All' : f}
-              </button>
-            ))}
-          </div>
-          <div style={{
-            background: '#16213e',
-            borderRadius: '10px',
-            padding: '20px',
-            border: '1px solid #2a2a4e',
-          }}>
-            {downtimeRows.length === 0 ? (
-              <p style={{ color: '#b5b5c3' }}>No requests in this filter.</p>
+          <form onSubmit={submitMembershipOverride} className="sr-admin__form sr-admin__form--modal">
+            {adminCampaignsLoading ? (
+              <p className="sr-admin__muted">{t('admin:users.membership.loadingCampaigns', 'Loading chronicles…')}</p>
+            ) : adminCampaignsLoadError ? (
+              <p className="sr-admin__error">{adminCampaignsLoadError}</p>
+            ) : adminCampaignsList.length === 0 ? (
+              <p className="sr-admin__muted">{t('admin:users.membership.noCampaigns', 'No chronicles in the database yet. Create one first.')}</p>
             ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-                {downtimeRows.map((row) => (
-                  <div
-                    key={row.id}
-                    style={{
-                      background: '#0f1729',
-                      borderRadius: '8px',
-                      padding: '14px',
-                      border: '1px solid #2a2a4e',
-                    }}
-                  >
-                    <div style={{ color: '#e94560', fontWeight: 'bold' }}>
-                      {row.character_name} <span style={{ color: '#8b8b9f', fontWeight: 'normal' }}>· @{row.player_username}</span>
-                    </div>
-                    <div style={{ color: '#8b8b9f', fontSize: '13px' }}>{row.campaign_name}</div>
-                    <div style={{ color: '#b5b5c3', marginTop: '8px', whiteSpace: 'pre-wrap' }}>{row.request_text}</div>
-                    <div style={{ marginTop: '8px', color: '#94a3b8', fontSize: '12px' }}>
-                      Status: <strong>{row.status}</strong>
-                      {row.admin_reason ? ` — ${row.admin_reason}` : ''}
-                    </div>
-                    {row.status === 'pending' && (
-                      <div style={{ marginTop: '12px', display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                        <button
-                          type="button"
-                          onClick={async () => {
-                            const note = window.prompt('Optional note to the player:', '') || '';
-                            const r = await api.resolveDowntimeRequest(token, row.id, {
-                              status: 'approved',
-                              admin_reason: note.trim() || undefined,
-                            });
-                            const resBody = await r.json().catch(() => ({}));
-                            if (r.ok) {
-                              showSuccess('Request approved.');
-                              const r2 = await api.listDowntimeRequests(token, downtimeStatusFilter || undefined);
-                              if (r2.ok) {
-                                const d2 = await r2.json();
-                                setDowntimeRows(Array.isArray(d2.requests) ? d2.requests : []);
-                              }
-                            } else {
-                              showError(resBody.error || 'Failed to approve');
-                            }
-                          }}
-                          style={{
-                            padding: '8px 16px',
-                            background: '#15803d',
-                            color: 'white',
-                            border: 'none',
-                            borderRadius: '6px',
-                            cursor: 'pointer',
-                          }}
-                        >
-                          Approve
-                        </button>
-                        <button
-                          type="button"
-                          onClick={async () => {
-                            const reason = window.prompt('Rejection reason (required):', '');
-                            if (!reason || !reason.trim()) {
-                              showError('Reason is required to reject.');
-                              return;
-                            }
-                            const r = await api.resolveDowntimeRequest(token, row.id, {
-                              status: 'rejected',
-                              admin_reason: reason.trim(),
-                            });
-                            const resBody = await r.json().catch(() => ({}));
-                            if (r.ok) {
-                              showSuccess('Request rejected.');
-                              const r2 = await api.listDowntimeRequests(token, downtimeStatusFilter || undefined);
-                              if (r2.ok) {
-                                const d2 = await r2.json();
-                                setDowntimeRows(Array.isArray(d2.requests) ? d2.requests : []);
-                              }
-                            } else {
-                              showError(resBody.error || 'Failed to reject');
-                            }
-                          }}
-                          style={{
-                            padding: '8px 16px',
-                            background: '#b91c1c',
-                            color: 'white',
-                            border: 'none',
-                            borderRadius: '6px',
-                            cursor: 'pointer',
-                          }}
-                        >
-                          Reject
-                        </button>
-                      </div>
-                    )}
-                  </div>
+              <Select
+                label={t('admin:users.membership.campaign', 'Chronicle')}
+                value={membershipCampaignId}
+                onChange={(e) => setMembershipCampaignId(e.target.value)}
+                required
+              >
+                <option value="">{t('admin:users.membership.select', '— Select a chronicle —')}</option>
+                {adminCampaignsList.map((c) => (
+                  <option key={c.id} value={String(c.id)}>
+                    {campaignName(c)} · {c.game_system || '—'}
+                    {c.rules_edition != null && String(c.game_system || '').toLowerCase() === 'vampire' ? ` ${editionLabel(c)}` : ''}{' '}
+                    (id {c.id})
+                  </option>
                 ))}
-              </div>
+              </Select>
             )}
-          </div>
-        </div>
-        )}
-
-        {adminSection === 'ai' && (
-        <div style={{ maxWidth: '900px', margin: '0 auto' }}>
-          <h2 style={{ color: '#e94560', marginBottom: '12px' }}>Ai System</h2>
-          <p style={{ color: '#b5b5c3', marginBottom: '20px', lineHeight: 1.65 }}>
-            Choose which model id the backend sends to LM Studio&apos;s OpenAI-compatible API, or leave default to follow{' '}
-            <code style={{ color: '#9d4edd' }}>LM_STUDIO_MODEL</code> in the environment and the model LM Studio reports as loaded.
-            The master system prompt is prepended to every route-specific system prompt for chat / AI features.
-          </p>
-          {aiSectionLoading ? (
-            <p style={{ color: '#8b8b9f' }}>Loading…</p>
-          ) : (
-            <div style={{
-              background: '#16213e',
-              borderRadius: '10px',
-              padding: '24px',
-              border: '1px solid #2a2a4e',
-              display: 'grid',
-              gap: '20px',
-            }}>
-              {aiSettings && (
-                <div style={{ color: '#94a3b8', fontSize: '14px', lineHeight: 1.6 }}>
-                  <div><strong style={{ color: '#e0e0e0' }}>LM Studio URL:</strong> {aiSettings.lm_studio_url || '—'}</div>
-                  <div><strong style={{ color: '#e0e0e0' }}>Env LM_STUDIO_MODEL:</strong> {aiSettings.env_lm_studio_model || '(empty / auto)'}</div>
-                  <div><strong style={{ color: '#e0e0e0' }}>Effective model id (in use):</strong>{' '}
-                    <code style={{ color: '#7dd3fc' }}>{aiSettings.effective_lm_studio_model || '—'}</code>
-                  </div>
-                </div>
-              )}
-              {lmListError && (
-                <div style={{ color: '#ffb74d', fontSize: '14px' }}>
-                  {lmListError} — Is LM Studio running and reachable from the backend host?
-                </div>
-              )}
-              <div>
-                <label style={{ display: 'block', color: '#b5b5c3', marginBottom: '8px', fontWeight: 600 }}>
-                  Chat model (OpenAI id from LM Studio)
-                </label>
-                <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', alignItems: 'center' }}>
-                  <select
-                    value={aiModelSelect}
-                    onChange={(e) => setAiModelSelect(e.target.value)}
-                    style={{
-                      flex: '1 1 280px',
-                      minWidth: '220px',
-                      padding: '10px',
-                      borderRadius: '6px',
-                      background: '#0f1729',
-                      color: '#e0e0e0',
-                      border: '2px solid #2a2a4e',
-                    }}
-                  >
-                    <option value="">Default — use env + loaded model resolution</option>
-                    {lmOpenaiModels.map((m) => (
-                      <option key={m.id || JSON.stringify(m)} value={m.id}>
-                        {m.id}
-                      </option>
-                    ))}
-                  </select>
-                  <button
-                    type="button"
-                    onClick={() => loadAiSection()}
-                    style={{
-                      padding: '10px 16px',
-                      borderRadius: '6px',
-                      border: '1px solid #2a2a4e',
-                      background: '#0f1729',
-                      color: '#e0e0e0',
-                      cursor: 'pointer',
-                    }}
-                  >
-                    Refresh list
-                  </button>
-                </div>
-                <p style={{ color: '#8b8b9f', fontSize: '13px', marginTop: '8px', marginBottom: 0 }}>
-                  Pick a model from the list (from GET /v1/models), or default to match whatever you load in LM Studio without pinning an id here.
-                </p>
-              </div>
-              <div>
-                <label style={{ display: 'block', color: '#b5b5c3', marginBottom: '8px', fontWeight: 600 }}>
-                  Master system prompt (global)
-                </label>
-                <textarea
-                  value={masterPromptDraft}
-                  onChange={(e) => setMasterPromptDraft(e.target.value)}
-                  rows={12}
-                  placeholder="Optional. Applied before each feature-specific system prompt (e.g. chat, locations, moderation). Describe your assistant’s tone, safety, and setting."
-                  style={{
-                    width: '100%',
-                    boxSizing: 'border-box',
-                    padding: '12px',
-                    borderRadius: '8px',
-                    background: '#0f1729',
-                    color: '#e8e8e8',
-                    border: '2px solid #2a2a4e',
-                    fontFamily: 'ui-monospace, monospace',
-                    fontSize: '13px',
-                    lineHeight: 1.5,
-                  }}
-                />
-              </div>
-              <div>
-                <button
-                  type="button"
-                  disabled={aiSaveLoading}
-                  onClick={async () => {
-                    setAiSaveLoading(true);
-                    try {
-                      const r = await api.putAiSettings(token, {
-                        lm_studio_model: aiModelSelect.trim(),
-                        ai_master_system_prompt: masterPromptDraft,
-                      });
-                      const d = await r.json().catch(() => ({}));
-                      if (r.ok) {
-                        showSuccess('AI settings saved.');
-                        await loadAiSection();
-                      } else {
-                        showError(d.error || 'Save failed');
-                      }
-                    } catch (e) {
-                      showError('Save failed');
-                    } finally {
-                      setAiSaveLoading(false);
-                    }
-                  }}
-                  style={{
-                    padding: '12px 24px',
-                    background: aiSaveLoading ? '#4a4a5e' : 'linear-gradient(135deg, #e94560 0%, #8b0000 100%)',
-                    color: 'white',
-                    border: 'none',
-                    borderRadius: '8px',
-                    cursor: aiSaveLoading ? 'not-allowed' : 'pointer',
-                    fontWeight: 'bold',
-                  }}
-                >
-                  {aiSaveLoading ? 'Saving…' : 'Save AI settings'}
-                </button>
-              </div>
-            </div>
-          )}
-        </div>
-        )}
-      </div>
-
-      {/* Edit User Modal */}
-      {showEditModal && selectedUser && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          background: 'rgba(0,0,0,0.8)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 1000
-        }}>
-          <div style={{
-            background: '#16213e',
-            padding: '30px',
-            borderRadius: '10px',
-            width: '90%',
-            maxWidth: '500px',
-            border: '2px solid #2a2a4e'
-          }}>
-            <h3 style={{ color: '#e94560', marginBottom: '20px' }}>✏️ Edit User</h3>
-            <form onSubmit={handleEditUser}>
-              <div style={{ marginBottom: '15px' }}>
-                <label style={{ display: 'block', color: '#b5b5c3', marginBottom: '5px' }}>Username:</label>
-                <input
-                  type="text"
-                  name="username"
-                  defaultValue={selectedUser.username}
-                  style={{
-                    width: '100%',
-                    padding: '10px',
-                    background: '#0f1729',
-                    border: '2px solid #2a2a4e',
-                    borderRadius: '5px',
-                    color: '#fff',
-                    boxSizing: 'border-box'
-                  }}
-                />
-              </div>
-              <div style={{ marginBottom: '20px' }}>
-                <label style={{ display: 'block', color: '#b5b5c3', marginBottom: '5px' }}>Email:</label>
-                <input
-                  type="email"
-                  name="email"
-                  defaultValue={selectedUser.email}
-                  style={{
-                    width: '100%',
-                    padding: '10px',
-                    background: '#0f1729',
-                    border: '2px solid #2a2a4e',
-                    borderRadius: '5px',
-                    color: '#fff',
-                    boxSizing: 'border-box'
-                  }}
-                />
-              </div>
-              <div style={{ marginBottom: '16px' }}>
-                <label style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', color: '#b5b5c3', cursor: 'pointer' }}>
-                  <input
-                    type="checkbox"
-                    name="allow_multi"
-                    defaultChecked={!!selectedUser.allow_multi_campaign_play}
-                    style={{ marginTop: '4px' }}
-                  />
-                  <span>
-                    Multiple chronicles at once (locked sheets in more than one campaign). Without this, joining a second locked chronicle is blocked.
-                  </span>
-                </label>
-              </div>
-              <div style={{ marginBottom: '20px' }}>
-                <label style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', color: '#b5b5c3', cursor: 'pointer' }}>
-                  <input
-                    type="checkbox"
-                    name="self_switch_pc"
-                    defaultChecked={!!selectedUser.self_switch_playing_character}
-                    style={{ marginTop: '4px' }}
-                  />
-                  <span>
-                    Self-switch playing character (trusted player): change which character is active in a chronicle without storyteller approval. Other campaigns are unchanged; you can still switch PCs separately per chronicle.
-                  </span>
-                </label>
-              </div>
-              <div style={{ display: 'flex', gap: '10px' }}>
-                <button
-                  type="submit"
-                  disabled={loading}
-                  style={{
-                    flex: 1,
-                    padding: '12px',
-                    background: loading ? '#4a4a5e' : '#28a745',
-                    color: 'white',
-                    border: 'none',
-                    borderRadius: '8px',
-                    cursor: loading ? 'not-allowed' : 'pointer',
-                    fontWeight: 'bold'
-                  }}
-                >
-                  {loading ? 'Saving...' : 'Save Changes'}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setShowEditModal(false)}
-                  style={{
-                    flex: 1,
-                    padding: '12px',
-                    background: '#dc3545',
-                    color: 'white',
-                    border: 'none',
-                    borderRadius: '8px',
-                    cursor: 'pointer',
-                    fontWeight: 'bold'
-                  }}
-                >
-                  Cancel
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* Reset Password Modal */}
-      {showPasswordModal && selectedUser && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          background: 'rgba(0,0,0,0.8)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 1000
-        }}>
-          <div style={{
-            background: '#16213e',
-            padding: '30px',
-            borderRadius: '10px',
-            width: '90%',
-            maxWidth: '500px',
-            border: '2px solid #2a2a4e'
-          }}>
-            <h3 style={{ color: '#e94560', marginBottom: '20px' }}>🔑 Reset Password for {selectedUser.username}</h3>
-            <form onSubmit={handleResetPassword}>
-              <div style={{ marginBottom: '20px' }}>
-                <label style={{ display: 'block', color: '#b5b5c3', marginBottom: '5px' }}>New Password:</label>
-                <input
-                  type="password"
-                  name="new_password"
-                  required
-                  minLength={8}
-                  placeholder="Minimum 8 characters"
-                  style={{
-                    width: '100%',
-                    padding: '10px',
-                    background: '#0f1729',
-                    border: '2px solid #2a2a4e',
-                    borderRadius: '5px',
-                    color: '#fff',
-                    boxSizing: 'border-box'
-                  }}
-                />
-              </div>
-              <div style={{ display: 'flex', gap: '10px' }}>
-                <button
-                  type="submit"
-                  disabled={loading}
-                  style={{
-                    flex: 1,
-                    padding: '12px',
-                    background: loading ? '#4a4a5e' : '#ffa726',
-                    color: 'white',
-                    border: 'none',
-                    borderRadius: '8px',
-                    cursor: loading ? 'not-allowed' : 'pointer',
-                    fontWeight: 'bold'
-                  }}
-                >
-                  {loading ? 'Resetting...' : 'Reset Password'}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setShowPasswordModal(false)}
-                  style={{
-                    flex: 1,
-                    padding: '12px',
-                    background: '#dc3545',
-                    color: 'white',
-                    border: 'none',
-                    borderRadius: '8px',
-                    cursor: 'pointer',
-                    fontWeight: 'bold'
-                  }}
-                >
-                  Cancel
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* Ban User Modal */}
-      {showBanModal && selectedUser && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          background: 'rgba(0,0,0,0.8)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 1000
-        }}>
-          <div style={{
-            background: '#16213e',
-            padding: '30px',
-            borderRadius: '10px',
-            width: '90%',
-            maxWidth: '500px',
-            border: '2px solid #2a2a4e'
-          }}>
-            <h3 style={{ color: '#e94560', marginBottom: '20px' }}>🚫 Ban {selectedUser.username}</h3>
-            <form onSubmit={handleBanUser}>
-              <div style={{ marginBottom: '15px' }}>
-                <label style={{ display: 'block', color: '#b5b5c3', marginBottom: '5px' }}>Ban Type:</label>
-                <select
-                  name="ban_type"
-                  required
-                  onChange={(e) => {
-                    document.getElementById('duration-fields').style.display = 
-                      e.target.value === 'temporary' ? 'block' : 'none';
-                  }}
-                  style={{
-                    width: '100%',
-                    padding: '10px',
-                    background: '#0f1729',
-                    border: '2px solid #2a2a4e',
-                    borderRadius: '5px',
-                    color: '#fff',
-                    boxSizing: 'border-box'
-                  }}
-                >
-                  <option value="temporary">⏰ Temporary</option>
-                  <option value="permanent">🔒 Permanent</option>
-                </select>
-              </div>
-              
-              <div id="duration-fields" style={{ marginBottom: '15px' }}>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-                  <div>
-                    <label style={{ display: 'block', color: '#b5b5c3', marginBottom: '5px' }}>Days:</label>
-                    <input
-                      type="number"
-                      name="duration_days"
-                      min="0"
-                      defaultValue="0"
-                      style={{
-                        width: '100%',
-                        padding: '10px',
-                        background: '#0f1729',
-                        border: '2px solid #2a2a4e',
-                        borderRadius: '5px',
-                        color: '#fff',
-                        boxSizing: 'border-box'
-                      }}
-                    />
-                  </div>
-                  <div>
-                    <label style={{ display: 'block', color: '#b5b5c3', marginBottom: '5px' }}>Hours:</label>
-                    <input
-                      type="number"
-                      name="duration_hours"
-                      min="0"
-                      defaultValue="0"
-                      style={{
-                        width: '100%',
-                        padding: '10px',
-                        background: '#0f1729',
-                        border: '2px solid #2a2a4e',
-                        borderRadius: '5px',
-                        color: '#fff',
-                        boxSizing: 'border-box'
-                      }}
-                    />
-                  </div>
-                </div>
-              </div>
-              
-              <div style={{ marginBottom: '20px' }}>
-                <label style={{ display: 'block', color: '#b5b5c3', marginBottom: '5px' }}>Reason:</label>
-                <textarea
-                  name="ban_reason"
-                  required
-                  rows="3"
-                  placeholder="Explain why this user is being banned..."
-                  style={{
-                    width: '100%',
-                    padding: '10px',
-                    background: '#0f1729',
-                    border: '2px solid #2a2a4e',
-                    borderRadius: '5px',
-                    color: '#fff',
-                    fontFamily: 'inherit',
-                    boxSizing: 'border-box'
-                  }}
-                />
-              </div>
-              
-              <div style={{ display: 'flex', gap: '10px' }}>
-                <button
-                  type="submit"
-                  disabled={loading}
-                  style={{
-                    flex: 1,
-                    padding: '12px',
-                    background: loading ? '#4a4a5e' : '#dc3545',
-                    color: 'white',
-                    border: 'none',
-                    borderRadius: '8px',
-                    cursor: loading ? 'not-allowed' : 'pointer',
-                    fontWeight: 'bold'
-                  }}
-                >
-                  {loading ? 'Banning...' : '🚫 Ban User'}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setShowBanModal(false)}
-                  style={{
-                    flex: 1,
-                    padding: '12px',
-                    background: '#667eea',
-                    color: 'white',
-                    border: 'none',
-                    borderRadius: '8px',
-                    cursor: 'pointer',
-                    fontWeight: 'bold'
-                  }}
-                >
-                  Cancel
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {showUserCharsModal && charsTargetUser && (
-        <div style={{
-          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-          background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center',
-          justifyContent: 'center', zIndex: 1000,
-        }}>
-          <div style={{
-            background: '#16213e', padding: '24px', borderRadius: '10px',
-            width: '92%', maxWidth: '720px', maxHeight: '85vh', overflow: 'auto',
-            border: '2px solid #2a2a4e',
-          }}>
-            <h3 style={{ color: '#e94560', marginBottom: '16px' }}>
-              Characters — {charsTargetUser.username}
-            </h3>
-            {userCharsLoading ? (
-              <p style={{ color: '#b5b5c3' }}>Loading…</p>
-            ) : userCharsError ? (
-              <p style={{ color: '#f87171' }}>{userCharsError}</p>
-            ) : userCharsList.length === 0 ? (
-              <p style={{ color: '#b5b5c3' }}>No characters</p>
-            ) : (
-              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
-                <thead>
-                  <tr style={{ borderBottom: '1px solid #2a2a4e' }}>
-                    <th style={{ textAlign: 'left', padding: '8px', color: '#e94560' }}>ID</th>
-                    <th style={{ textAlign: 'left', padding: '8px', color: '#e94560' }}>Name</th>
-                    <th style={{ textAlign: 'left', padding: '8px', color: '#e94560' }}>Campaign</th>
-                    <th style={{ textAlign: 'left', padding: '8px', color: '#e94560' }}>Locked</th>
-                    <th style={{ textAlign: 'left', padding: '8px', color: '#e94560' }}>Suspended</th>
-                    <th style={{ textAlign: 'left', padding: '8px', color: '#e94560' }} />
-                  </tr>
-                </thead>
-                <tbody>
-                  {userCharsList.map((ch) => (
-                    <tr key={ch.id} style={{ borderBottom: '1px solid #2a2a4e' }}>
-                      <td style={{ padding: '8px', color: '#b5b5c3' }}>{ch.id}</td>
-                      <td style={{ padding: '8px', color: '#fff' }}>{ch.name}</td>
-                      <td style={{ padding: '8px', color: '#b5b5c3' }}>{ch.campaign_id}</td>
-                      <td style={{ padding: '8px', color: '#b5b5c3' }}>{ch.sheet_locked ? 'Yes' : 'No'}</td>
-                      <td style={{ padding: '8px', color: '#b5b5c3' }}>
-                        {ch.play_suspended ? (ch.play_suspension_reason_code || 'yes') : '—'}
-                      </td>
-                      <td style={{ padding: '8px' }}>
-                        {ch.play_suspended ? (
-                          <button
-                            type="button"
-                            onClick={() => clearCharacterSuspension(ch.id)}
-                            style={{
-                              padding: '4px 10px', background: '#28a745', color: '#fff',
-                              border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '12px',
-                            }}
-                          >
-                            Clear hold
-                          </button>
-                        ) : (
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setSuspendTargetChar(ch);
-                              setSuspendReason('pending_downtime');
-                              setSuspendMessage('');
-                            }}
-                            style={{
-                              padding: '4px 10px', background: '#dc3545', color: '#fff',
-                              border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '12px',
-                            }}
-                          >
-                            Suspend
-                          </button>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            )}
-            <button
-              type="button"
-              onClick={() => {
-                setShowUserCharsModal(false);
-                setCharsTargetUser(null);
-                setSuspendTargetChar(null);
-              }}
-              style={{
-                marginTop: '20px', padding: '10px 20px', background: '#667eea',
-                color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer',
-              }}
-            >
-              Close
-            </button>
-          </div>
-        </div>
-      )}
-
-      {suspendTargetChar && (
-        <div style={{
-          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-          background: 'rgba(0,0,0,0.9)', display: 'flex', alignItems: 'center',
-          justifyContent: 'center', zIndex: 1100,
-        }}>
-          <div style={{
-            background: '#16213e', padding: '24px', borderRadius: '10px',
-            width: '90%', maxWidth: '440px', border: '2px solid #2a2a4e',
-          }}>
-            <h3 style={{ color: '#e94560', marginBottom: '16px' }}>
-              Suspend play — {suspendTargetChar.name}
-            </h3>
-            <form onSubmit={submitSuspend}>
-              <label style={{ display: 'block', color: '#b5b5c3', marginBottom: '8px' }}>Reason</label>
-              <select
-                value={suspendReason}
-                onChange={(e) => setSuspendReason(e.target.value)}
-                style={{
-                  width: '100%', padding: '10px', marginBottom: '12px',
-                  background: '#0f1729', border: '2px solid #2a2a4e', borderRadius: '5px', color: '#fff',
-                }}
-              >
-                <option value="pending_downtime">Pending downtime</option>
-                <option value="pending_more_information">Pending more information</option>
-                <option value="custom">Custom (use message)</option>
-              </select>
-              <label style={{ display: 'block', color: '#b5b5c3', marginBottom: '8px' }}>Message to player</label>
-              <textarea
-                value={suspendMessage}
-                onChange={(e) => setSuspendMessage(e.target.value)}
-                rows={4}
-                style={{
-                  width: '100%', padding: '10px', marginBottom: '16px', boxSizing: 'border-box',
-                  background: '#0f1729', border: '2px solid #2a2a4e', borderRadius: '5px', color: '#fff',
-                }}
-                placeholder="Shown when they try to use this character in play."
-              />
-              <div style={{ display: 'flex', gap: '10px' }}>
-                <button type="submit" style={{
-                  flex: 1, padding: '12px', background: '#dc3545', color: '#fff',
-                  border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold',
-                }}
-                >
-                  Confirm suspend
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setSuspendTargetChar(null)}
-                  style={{
-                    flex: 1, padding: '12px', background: '#667eea', color: '#fff',
-                    border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold',
-                  }}
-                >
-                  Cancel
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {showDebugModal && debugTargetUser && (
-        <div style={{
-          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-          background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center',
-          justifyContent: 'center', zIndex: 1000,
-        }}>
-          <div style={{
-            background: '#16213e', padding: '24px', borderRadius: '10px',
-            width: '94%', maxWidth: '900px', maxHeight: '88vh', overflow: 'auto',
-            border: '2px solid #2a2a4e',
-          }}>
-            <h3 style={{ color: '#e94560', marginBottom: '12px' }}>
-              Debug profile — {debugTargetUser.username} (id {debugTargetUser.id})
-            </h3>
-            {debugLoading ? (
-              <p style={{ color: '#b5b5c3' }}>Loading…</p>
-            ) : debugPayload ? (
-              <pre style={{
-                background: '#0f1729', padding: '16px', borderRadius: '8px',
-                color: '#c4c4d4', fontSize: '12px', overflow: 'auto', maxHeight: '70vh',
-                border: '1px solid #2a2a4e',
-              }}
-              >
-                {JSON.stringify(debugPayload, null, 2)}
-              </pre>
+            {adminCampaignsFromFallback && adminCampaignsList.length > 0 ? (
+              <p className="sr-admin__warn">
+                {t('admin:users.membership.fallback', 'Full admin list unavailable (old backend?). Showing your chronicles only. Restart the backend so GET /api/admin/campaigns loads.')}
+              </p>
             ) : null}
-            <button
-              type="button"
-              onClick={() => {
-                setShowDebugModal(false);
-                setDebugTargetUser(null);
-                setDebugPayload(null);
-              }}
-              style={{
-                marginTop: '16px', padding: '10px 20px', background: '#667eea',
-                color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer',
-              }}
-            >
-              Close
-            </button>
-          </div>
-        </div>
-      )}
-
-      {membershipModalUser && (
-        <div style={{
-          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-          background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center',
-          justifyContent: 'center', zIndex: 1000,
-        }}>
-          <div style={{
-            background: '#16213e', padding: '24px', borderRadius: '10px',
-            width: '90%', maxWidth: '420px', border: '2px solid #2a2a4e',
-          }}>
-            <h3 style={{ color: '#e94560', marginBottom: '16px' }}>
-              Campaign membership — {membershipModalUser.username}
-            </h3>
-            <div style={{ marginBottom: '16px', fontSize: '13px', color: '#94a3b8' }}>
-              <strong style={{ color: '#c4b5fd' }}>This user&apos;s chronicles</strong>
-              {membershipTargetChronicles.length === 0 ? (
-                <p style={{ margin: '8px 0 0', color: '#64748b' }}>
-                  {adminCampaignsLoading ? 'Loading…' : 'None listed (no roster row and not sole creator of an orphan campaign).'}
-                </p>
-              ) : (
-                <ul style={{ margin: '8px 0 0', paddingLeft: '18px', color: '#d1d5db' }}>
-                  {membershipTargetChronicles.map((c) => (
-                    <li key={`${c.id}-${c.via || 'm'}`}>
-                      <strong style={{ color: '#e8e8ef' }}>{c.name || `Campaign ${c.id}`}</strong>
-                      {' · '}
-                      {c.game_system || '—'}
-                      <EditionBadge campaign={c} /> · {c.member_role || 'member'}
-                      {c.via === 'created_by_only' ? (
-                        <span style={{ color: '#fbbf24' }}> (creator only — use Add below to write roster row)</span>
-                      ) : null}
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
-            <form onSubmit={submitMembershipOverride}>
-              <label style={{ display: 'block', color: '#b5b5c3', marginBottom: '6px' }}>
-                Campaign
-              </label>
-              {adminCampaignsLoading ? (
-                <p style={{ color: '#8b8b9f', marginBottom: '12px' }}>Loading campaigns…</p>
-              ) : adminCampaignsLoadError ? (
-                <p style={{ color: '#f87171', marginBottom: '12px' }}>{adminCampaignsLoadError}</p>
-              ) : adminCampaignsList.length === 0 ? (
-                <p style={{ color: '#8b8b9f', marginBottom: '12px' }}>
-                  No campaigns in the database yet. Create a campaign first.
-                </p>
-              ) : (
-                <select
-                  value={membershipCampaignId}
-                  onChange={(e) => setMembershipCampaignId(e.target.value)}
-                  required
-                  style={{
-                    width: '100%',
-                    padding: '10px',
-                    marginBottom: '12px',
-                    boxSizing: 'border-box',
-                    background: '#0f1729',
-                    border: '2px solid #2a2a4e',
-                    borderRadius: '5px',
-                    color: '#fff',
-                  }}
-                >
-                  <option value="">— Select campaign —</option>
-                  {adminCampaignsList.map((c) => (
-                    <option key={c.id} value={String(c.id)}>
-                      {c.name || `Campaign ${c.id}`} · {c.game_system || '—'}
-                      {c.rules_edition != null && String(c.game_system || '').toLowerCase() === 'vampire'
-                        ? ` ${editionLabel(c)}`
-                        : ''}{' '}
-                      (id {c.id})
-                    </option>
-                  ))}
-                </select>
-              )}
-              {adminCampaignsFromFallback && adminCampaignsList.length > 0 ? (
-                <p style={{ fontSize: '12px', color: '#fbbf24', marginBottom: '10px', lineHeight: 1.4 }}>
-                  Full admin list unavailable (old backend?). Showing <strong>your</strong> chronicles only.
-                  Restart the backend so <code style={{ fontSize: '11px' }}>GET /api/admin/campaigns</code> loads.
-                </p>
-              ) : null}
-              <label style={{ display: 'block', color: '#b5b5c3', marginBottom: '6px' }}>Action</label>
-              <select
-                value={membershipAction}
-                onChange={(e) => setMembershipAction(e.target.value)}
-                style={{
-                  width: '100%', padding: '10px', marginBottom: '16px',
-                  background: '#0f1729', border: '2px solid #2a2a4e', borderRadius: '5px', color: '#fff',
-                }}
+            <Select label={t('admin:users.membership.action', 'Action')} value={membershipAction} onChange={(e) => setMembershipAction(e.target.value)}>
+              <option value="add">{t('admin:users.membership.add', 'Add to the roster (campaign_players)')}</option>
+              <option value="remove">{t('admin:users.membership.remove', 'Remove from the roster (campaign_players)')}</option>
+            </Select>
+            <div className="sr-admin__actions">
+              <Button
+                variant="ghost"
+                onClick={() => { setMembershipModalUser(null); setMembershipCampaignId(''); setMembershipTargetChronicles([]); setAdminCampaignsFromFallback(false); }}
               >
-                <option value="add">Add to campaign_players</option>
-                <option value="remove">Remove from campaign_players</option>
-              </select>
-              <div style={{ display: 'flex', gap: '10px' }}>
-                <button
-                  type="submit"
-                  disabled={
-                    adminCampaignsLoading ||
-                    !!adminCampaignsLoadError ||
-                    adminCampaignsList.length === 0
-                  }
-                  style={{
-                    flex: 1,
-                    padding: '12px',
-                    background:
-                      adminCampaignsLoading ||
-                      adminCampaignsLoadError ||
-                      adminCampaignsList.length === 0
-                        ? '#3d5a40'
-                        : '#28a745',
-                    color: '#fff',
-                    border: 'none',
-                    borderRadius: '8px',
-                    cursor:
-                      adminCampaignsLoading ||
-                      adminCampaignsLoadError ||
-                      adminCampaignsList.length === 0
-                        ? 'not-allowed'
-                        : 'pointer',
-                    fontWeight: 'bold',
-                  }}
-                >
-                  Apply
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setMembershipModalUser(null);
-                    setMembershipCampaignId('');
-                    setMembershipTargetChronicles([]);
-                    setAdminCampaignsFromFallback(false);
-                  }}
-                  style={{
-                    flex: 1, padding: '12px', background: '#dc3545', color: '#fff',
-                    border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold',
-                  }}
-                >
-                  Cancel
-                </button>
-              </div>
-            </form>
+                {t('admin:common.cancel', 'Cancel')}
+              </Button>
+              <Button type="submit" variant="primary" disabled={membershipDisabled}>{t('admin:common.apply', 'Apply')}</Button>
+            </div>
+          </form>
+        </div>
+      </Modal>
+
+      {/* Edit chronicle */}
+      <Modal
+        open={!!chronicleEditTarget}
+        onClose={() => setChronicleEditTarget(null)}
+        title={t('admin:chronicles.edit.title', 'Edit chronicle')}
+        description={chronicleEditTarget ? `${chronicleEditTarget.name} (id ${chronicleEditTarget.id})` : undefined}
+        icon="book"
+      >
+        <form onSubmit={submitChronicleEdit} className="sr-admin__form sr-admin__form--modal">
+          <Input label={t('admin:chronicles.col.name', 'Name')} value={chEdName} onChange={(e) => setChEdName(e.target.value)} required />
+          <Textarea label={t('admin:chronicles.edit.description', 'Description')} value={chEdDescription} onChange={(e) => setChEdDescription(e.target.value)} rows={4} />
+          <Select label={t('admin:chronicles.edit.listing', 'Listing visibility')} value={chEdListing} onChange={(e) => setChEdListing(e.target.value)}>
+            <option value="private">{t('admin:chronicles.private', 'private')}</option>
+            <option value="listed">{t('admin:chronicles.listed', 'listed')}</option>
+          </Select>
+          <Checkbox
+            label={t('admin:chronicles.edit.accepting', 'Accepting new players')}
+            checked={chEdAccepting}
+            onChange={(e) => setChEdAccepting(e.target.checked)}
+          />
+          <Input
+            type="number"
+            min={0}
+            label={t('admin:chronicles.edit.maxPlayers', 'Max players (empty = no limit)')}
+            value={chEdMaxPlayers}
+            onChange={(e) => setChEdMaxPlayers(e.target.value)}
+            placeholder={t('admin:chronicles.edit.maxPlaceholder', 'e.g. 6')}
+          />
+          <div className="sr-admin__actions">
+            <Button variant="ghost" onClick={() => setChronicleEditTarget(null)}>{t('admin:common.cancel', 'Cancel')}</Button>
+            <Button type="submit" variant="primary" disabled={!!chronicleBusyId}>{t('admin:common.save', 'Save')}</Button>
           </div>
-        </div>
-      )}
+        </form>
+      </Modal>
 
-      {/* Error Display */}
-      {error && (
-        <div style={{
-          position: 'fixed',
-          bottom: '20px',
-          right: '20px',
-          padding: '15px 25px',
-          background: 'rgba(233, 69, 96, 0.9)',
-          border: '2px solid #e94560',
-          borderRadius: '8px',
-          color: 'white',
-          fontWeight: '500',
-          zIndex: 2000
-        }}>
-          ⚠️ {error}
-        </div>
-      )}
+      {/* Chronicle stats */}
+      <Modal
+        open={!!chronicleStatsTarget}
+        onClose={() => { setChronicleStatsTarget(null); setChronicleStatsData(null); }}
+        title={chronicleStatsTarget ? t('admin:chronicles.statsTitle', 'Stats — {{name}} (id {{id}})', { name: chronicleStatsTarget.name, id: chronicleStatsTarget.id }) : ''}
+        icon="hourglass"
+        size="sm"
+      >
+        {chronicleStatsLoading ? (
+          <p className="sr-admin__muted">{t('admin:loading', 'Loading…')}</p>
+        ) : chronicleStatsData ? (
+          <dl className="sr-admin__stats">
+            <dt>{t('admin:chronicles.stat.players', 'Active players')}</dt><dd>{chronicleStatsData.active_players}</dd>
+            <dt>{t('admin:chronicles.stat.characters', 'Characters')}</dt><dd>{chronicleStatsData.characters}</dd>
+            <dt>{t('admin:chronicles.stat.locations', 'Locations')}</dt><dd>{chronicleStatsData.locations}</dd>
+            <dt>{t('admin:chronicles.stat.messages', 'Story messages')}</dt><dd>{chronicleStatsData.messages}</dd>
+          </dl>
+        ) : (
+          <p className="sr-admin__muted">{t('admin:common.noData', 'No data')}</p>
+        )}
+      </Modal>
 
-      {chronicleEditTarget && (
-        <div style={{
-          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-          background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center',
-          justifyContent: 'center', zIndex: 1000,
-        }}
-        >
-          <div style={{
-            background: '#16213e', padding: '24px', borderRadius: '10px',
-            width: '92%', maxWidth: '520px', border: '2px solid #2a2a4e', maxHeight: '90vh', overflow: 'auto',
-          }}
-          >
-            <h3 style={{ color: '#e94560', marginTop: 0 }}>Edit chronicle</h3>
-            <p style={{ color: '#8b8b9f', fontSize: '13px', marginTop: '-8px' }}>
-              {chronicleEditTarget.name} (id {chronicleEditTarget.id})
+      {/* Pause chronicle */}
+      <Modal
+        open={!!chroniclePauseTarget}
+        onClose={() => { setChroniclePauseTarget(null); setChroniclePauseReason(''); }}
+        title={t('admin:chronicles.pauseTitle', 'Pause chronicle?')}
+        icon="moon-new"
+      >
+        {chroniclePauseTarget ? (
+          <form onSubmit={submitChroniclePause} className="sr-admin__form sr-admin__form--modal">
+            <p className="sr-admin__lead">
+              {t('admin:chronicles.pauseBody', '“{{name}}” will be marked inactive: it disappears from discovery and join lists, and manual dice that need an active chronicle may fail until you resume it.', { name: chroniclePauseTarget.name })}
             </p>
-            <form onSubmit={submitChronicleEdit} style={{ display: 'grid', gap: '14px' }}>
-              <label style={{ color: '#b5b5c3' }}>
-                Name
-                <input
-                  value={chEdName}
-                  onChange={(e) => setChEdName(e.target.value)}
-                  required
-                  style={{
-                    display: 'block', width: '100%', marginTop: '6px', padding: '10px', boxSizing: 'border-box',
-                    background: '#0f1729', border: '2px solid #2a2a4e', borderRadius: '6px', color: '#fff',
-                  }}
-                />
-              </label>
-              <label style={{ color: '#b5b5c3' }}>
-                Description
-                <textarea
-                  value={chEdDescription}
-                  onChange={(e) => setChEdDescription(e.target.value)}
-                  rows={4}
-                  style={{
-                    display: 'block', width: '100%', marginTop: '6px', padding: '10px', boxSizing: 'border-box',
-                    background: '#0f1729', border: '2px solid #2a2a4e', borderRadius: '6px', color: '#fff',
-                    fontFamily: 'inherit',
-                  }}
-                />
-              </label>
-              <label style={{ color: '#b5b5c3' }}>
-                Listing visibility
-                <select
-                  value={chEdListing}
-                  onChange={(e) => setChEdListing(e.target.value)}
-                  style={{
-                    display: 'block', width: '100%', marginTop: '6px', padding: '10px',
-                    background: '#0f1729', border: '2px solid #2a2a4e', borderRadius: '6px', color: '#fff',
-                  }}
-                >
-                  <option value="private">private</option>
-                  <option value="listed">listed</option>
-                </select>
-              </label>
-              <label style={{ color: '#b5b5c3', display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer' }}>
-                <input
-                  type="checkbox"
-                  checked={chEdAccepting}
-                  onChange={(e) => setChEdAccepting(e.target.checked)}
-                />
-                Accepting new players
-              </label>
-              <label style={{ color: '#b5b5c3' }}>
-                Max players (empty = no limit)
-                <input
-                  type="number"
-                  min={0}
-                  value={chEdMaxPlayers}
-                  onChange={(e) => setChEdMaxPlayers(e.target.value)}
-                  placeholder="e.g. 6"
-                  style={{
-                    display: 'block', width: '100%', marginTop: '6px', padding: '10px', boxSizing: 'border-box',
-                    background: '#0f1729', border: '2px solid #2a2a4e', borderRadius: '6px', color: '#fff',
-                  }}
-                />
-              </label>
-              <div style={{ display: 'flex', gap: '10px', marginTop: '8px' }}>
-                <button
-                  type="submit"
-                  disabled={!!chronicleBusyId}
-                  style={{
-                    flex: 1, padding: '12px', background: chronicleBusyId ? '#4a4a5e' : '#28a745',
-                    color: '#fff', border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: chronicleBusyId ? 'not-allowed' : 'pointer',
-                  }}
-                >
-                  Save
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setChronicleEditTarget(null)}
-                  style={{
-                    flex: 1, padding: '12px', background: '#64748b', color: '#fff',
-                    border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer',
-                  }}
-                >
-                  Cancel
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+            <Textarea
+              label={t('admin:chronicles.pauseReason', 'Reason (optional, visible to staff in this list)')}
+              value={chroniclePauseReason}
+              onChange={(e) => setChroniclePauseReason(e.target.value)}
+              rows={3}
+              placeholder={t('admin:chronicles.pausePlaceholder', 'e.g. on hiatus until March, content review…')}
+            />
+            <div className="sr-admin__actions">
+              <Button variant="ghost" onClick={() => { setChroniclePauseTarget(null); setChroniclePauseReason(''); }}>{t('admin:common.cancel', 'Cancel')}</Button>
+              <Button type="submit" variant="danger" disabled={!!chronicleBusyId}>{t('admin:chronicles.pause', 'Pause')}</Button>
+            </div>
+          </form>
+        ) : null}
+      </Modal>
 
-      {chronicleStatsTarget && (
-        <div style={{
-          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-          background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center',
-          justifyContent: 'center', zIndex: 1000,
-        }}
-        >
-          <div style={{
-            background: '#16213e', padding: '24px', borderRadius: '10px',
-            width: '92%', maxWidth: '560px', border: '2px solid #2a2a4e', maxHeight: '88vh', overflow: 'auto',
-          }}
-          >
-            <h3 style={{ color: '#e94560', marginTop: 0 }}>
-              Stats — {chronicleStatsTarget.name} (id {chronicleStatsTarget.id})
-            </h3>
-            {chronicleStatsLoading ? (
-              <p style={{ color: '#b5b5c3' }}>Loading…</p>
-            ) : chronicleStatsData ? (
-              <dl style={{ color: '#cbd5e1', display: 'grid', gap: '10px' }}>
-                <div><dt style={{ color: '#e94560', display: 'inline' }}>Active players</dt><dd style={{ display: 'inline', marginLeft: '8px' }}>{chronicleStatsData.active_players}</dd></div>
-                <div><dt style={{ color: '#e94560', display: 'inline' }}>Characters</dt><dd style={{ display: 'inline', marginLeft: '8px' }}>{chronicleStatsData.characters}</dd></div>
-                <div><dt style={{ color: '#e94560', display: 'inline' }}>Locations</dt><dd style={{ display: 'inline', marginLeft: '8px' }}>{chronicleStatsData.locations}</dd></div>
-                <div><dt style={{ color: '#e94560', display: 'inline' }}>Story messages</dt><dd style={{ display: 'inline', marginLeft: '8px' }}>{chronicleStatsData.messages}</dd></div>
-              </dl>
-            ) : (
-              <p style={{ color: '#b5b5c3' }}>No data</p>
-            )}
-            <button
-              type="button"
-              onClick={() => { setChronicleStatsTarget(null); setChronicleStatsData(null); }}
-              style={{
-                marginTop: '16px', padding: '10px 20px', background: '#667eea',
-                color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold',
-              }}
-            >
-              Close
-            </button>
-          </div>
-        </div>
-      )}
-
-      {chroniclePauseTarget && (
-        <div style={{
-          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-          background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center',
-          justifyContent: 'center', zIndex: 1000,
-        }}
-        >
-          <div style={{
-            background: '#16213e', padding: '24px', borderRadius: '10px',
-            width: '92%', maxWidth: '480px', border: '2px solid #ca8a04',
-          }}
-          >
-            <h3 style={{ color: '#fbbf24', marginTop: 0 }}>Pause chronicle?</h3>
-            <p style={{ color: '#b5b5c3', fontSize: '14px', lineHeight: 1.55 }}>
-              <strong>{chroniclePauseTarget.name}</strong> will be marked inactive: it disappears from discovery / join lists and manual dice calls that require an active campaign may fail until you resume.
-            </p>
-            <form onSubmit={submitChroniclePause}>
-              <label style={{ color: '#b5b5c3', display: 'block', marginBottom: '16px' }}>
-                Reason (optional, visible to staff in this list)
-                <textarea
-                  value={chroniclePauseReason}
-                  onChange={(e) => setChroniclePauseReason(e.target.value)}
-                  rows={3}
-                  placeholder="e.g. hiatus until March, content review…"
-                  style={{
-                    display: 'block', width: '100%', marginTop: '8px', padding: '10px', boxSizing: 'border-box',
-                    background: '#0f1729', border: '2px solid #2a2a4e', borderRadius: '6px', color: '#fff',
-                    fontFamily: 'inherit',
-                  }}
-                />
-              </label>
-              <div style={{ display: 'flex', gap: '10px' }}>
-                <button
-                  type="submit"
-                  disabled={!!chronicleBusyId}
-                  style={{
-                    flex: 1, padding: '12px', background: chronicleBusyId ? '#4a4a5e' : '#ca8a04',
-                    color: '#fff', border: 'none', borderRadius: '8px', fontWeight: 'bold',
-                    cursor: chronicleBusyId ? 'not-allowed' : 'pointer',
-                  }}
-                >
-                  Pause
-                </button>
-                <button
-                  type="button"
-                  onClick={() => { setChroniclePauseTarget(null); setChroniclePauseReason(''); }}
-                  style={{
-                    flex: 1, padding: '12px', background: '#64748b', color: '#fff',
-                    border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer',
-                  }}
-                >
-                  Cancel
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      <ConfirmDialog
-        isOpen={!!chronicleDeleteTarget}
-        title="⚠️ Delete chronicle permanently?"
+      <AdminConfirm
+        open={!!chronicleDeleteTarget}
+        title={t('admin:chronicles.deleteTitle', 'Delete chronicle permanently?')}
         message={
           chronicleDeleteTarget
-            ? `Delete "${chronicleDeleteTarget.name}" (id ${chronicleDeleteTarget.id}) and all related locations, messages, and data?\n\nThis cannot be undone.`
+            ? t('admin:chronicles.deleteBody', 'Delete “{{name}}” (id {{id}}) and all related locations, messages and data?\n\nThis cannot be undone.', { name: chronicleDeleteTarget.name, id: chronicleDeleteTarget.id })
             : ''
         }
+        confirmText={t('admin:chronicles.deleteConfirm', 'Yes, delete')}
+        busy={chronicleDeleteLoading}
         onConfirm={confirmDeleteChronicle}
         onCancel={() => { if (!chronicleDeleteLoading) setChronicleDeleteTarget(null); }}
-        confirmText={chronicleDeleteLoading ? 'Deleting…' : 'Yes, delete'}
-        cancelText="Cancel"
       />
 
-      {/* Unban Confirmation Dialog */}
-      <ConfirmDialog
-        isOpen={showUnbanConfirm}
-        title="⚠️ Unban User?"
-        message={`Are you sure you want to unban this user?\n\nThey will immediately regain full access to the system.`}
+      <AdminConfirm
+        open={showUnbanConfirm}
+        title={t('admin:users.unban.title', 'Unban user?')}
+        message={t('admin:users.unban.body', 'They immediately regain full access to the site.')}
+        confirmText={t('admin:users.unban.confirm', 'Yes, unban')}
         onConfirm={confirmUnban}
-        onCancel={() => {
-          setShowUnbanConfirm(false);
-          setUserToUnban(null);
-        }}
-        confirmText="Yes, Unban"
-        cancelText="Cancel"
+        onCancel={() => { setShowUnbanConfirm(false); setUserToUnban(null); }}
       />
 
-      <ConfirmDialog
-        isOpen={showDeleteAccountConfirm}
-        title="⚠️ Delete account permanently?"
+      <AdminConfirm
+        open={showDeleteAccountConfirm}
+        title={t('admin:users.delete.title', 'Delete account permanently?')}
         message={
           userToDeleteAccount
-            ? `Delete "${userToDeleteAccount.username}" and ALL of their characters?\n\n` +
-              'Location in-character chat lines will stay in the chronicle, but will show as posted by the system archive account (message text is unchanged). ' +
-              'Dice rolls they made may also be reassigned to that archive account. ' +
-              'If they created any campaigns, ownership will be transferred to you.'
+            ? t('admin:users.delete.body', 'Delete “{{name}}” and ALL of their characters?\n\nIn-character chat lines stay in the chronicle but show as posted by the system archive account (the text is unchanged). Their dice rolls may also move to that archive account. Chronicles they created are transferred to you.', { name: userToDeleteAccount.username })
             : ''
         }
+        confirmText={t('admin:users.delete.confirm', 'Yes, delete account')}
+        busy={deleteAccountLoading}
         onConfirm={confirmDeleteAccount}
-        onCancel={() => {
-          setShowDeleteAccountConfirm(false);
-          setUserToDeleteAccount(null);
-        }}
-        confirmText={deleteAccountLoading ? 'Working…' : 'Yes, delete account'}
-        cancelText="Cancel"
+        onCancel={() => { setShowDeleteAccountConfirm(false); setUserToDeleteAccount(null); }}
       />
 
-      {/* Toast Notifications */}
-      </div>
-      <ToastContainer />
+      {error && (
+        <div className="sr-admin__banner" role="alert">
+          <span className="sr-admin__grow">{error}</span>
+          <Button size="sm" variant="ghost" icon="close" onClick={() => setError('')}>
+            {t('admin:common.dismiss', 'Dismiss')}
+          </Button>
+        </div>
+      )}
     </div>
   );
 }
 
 export default AdminPage;
-

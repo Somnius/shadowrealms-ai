@@ -5,7 +5,8 @@ import { line, curveNatural } from 'd3-shape';
 import DieFace from '../glyphs/DieFace';
 import Glyph from '../glyphs/Glyph';
 import { BloodDrip } from './Atmosphere';
-import { analyzeClassic, analyzeV5, OUTCOME_LABELS } from './diceAnalysis';
+import { analyzeClassic, analyzeV5, outcomeLabels } from './diceAnalysis';
+import { t } from '../../i18n';
 import { useInView, useReducedMotionPref } from '../motion';
 import { cx } from '../components/internal';
 import './atmosphere.css';
@@ -56,20 +57,24 @@ function analyze(props) {
   });
 }
 
-export function describeRoll(a, labels = OUTCOME_LABELS) {
+export function describeRoll(a, labels = outcomeLabels()) {
   const outcome = labels[a.outcome] || a.outcome;
   if (a.edition === 'v5') {
     const hungerCount = a.dice.filter((d) => d.hunger).length;
     const parts = [
-      `${a.dice.length} dice${hungerCount ? `, ${hungerCount} Hunger` : ''}`,
-      `${a.successes} ${a.successes === 1 ? 'success' : 'successes'} of ${a.difficulty} needed`,
+      t('dice:viz.dice', { one: '{{count}} die', other: '{{count}} dice' }, { count: a.dice.length }) +
+        (hungerCount ? t('dice:viz.hungerPart', ', {{count}} Hunger', { count: hungerCount }) : ''),
+      t('dice:viz.successesOf', { one: '{{count}} success of {{difficulty}} needed', other: '{{count}} successes of {{difficulty}} needed' }, { count: a.successes, difficulty: a.difficulty }),
     ];
-    if (a.pairs.length) parts.push(`${a.pairs.length} critical ${a.pairs.length === 1 ? 'pair' : 'pairs'}`);
+    if (a.pairs.length) parts.push(t('dice:viz.pairs', { one: '{{count}} critical pair', other: '{{count}} critical pairs' }, { count: a.pairs.length }));
     return `${outcome}. ${parts.join('; ')}.`;
   }
-  const parts = [`${a.dice.length} dice at difficulty ${a.difficulty}`, `${a.successes} net ${a.successes === 1 ? 'success' : 'successes'}`];
-  if (a.ones) parts.push(`${a.ones} ${a.ones === 1 ? 'one' : 'ones'}`);
-  if (a.willpower) parts.push('Willpower spent');
+  const parts = [
+    t('dice:viz.diceAt', { one: '{{count}} die at difficulty {{difficulty}}', other: '{{count}} dice at difficulty {{difficulty}}' }, { count: a.dice.length, difficulty: a.difficulty }),
+    t('dice:viz.net', { one: '{{count}} net success', other: '{{count}} net successes' }, { count: a.successes }),
+  ];
+  if (a.ones) parts.push(t('dice:viz.ones', { one: '{{count}} one', other: '{{count}} ones' }, { count: a.ones }));
+  if (a.willpower) parts.push(t('dice:viz.willpower', 'Willpower spent'));
   return `${outcome}. ${parts.join('; ')}.`;
 }
 
@@ -85,7 +90,7 @@ export function describeRoll(a, labels = OUTCOME_LABELS) {
  * Reduced motion: no tumble, no drip — final state at once.
  */
 export default function DiceRollViz(props) {
-  const { title, labels = OUTCOME_LABELS, showMeter = true, drip = true, rollKey = 0, className } = props;
+  const { title, labels = outcomeLabels(), showMeter = true, drip = true, rollKey = 0, className } = props;
   const reduced = useReducedMotionPref();
   const ref = useRef(null);
   const inView = useInView(ref);
@@ -239,7 +244,12 @@ export default function DiceRollViz(props) {
           {a.successes} {a.edition === 'v5' ? `/ ${a.difficulty}` : ''}
         </span>
         <span className="sr-visually-hidden">
-          {caption} Dice: {a.dice.map((d) => `${d.value}${d.hunger ? ' (Hunger)' : ''}${d.reroll ? ' (reroll)' : ''}`).join(', ')}.
+          {caption}{' '}
+          {t('dice:viz.list', 'Dice: {{list}}.', {
+            list: a.dice
+              .map((d) => `${d.value}${d.hunger ? t('dice:viz.hungerTag', ' (Hunger)') : ''}${d.reroll ? t('dice:viz.rerollTag', ' (reroll)') : ''}`)
+              .join(', '),
+          })}
         </span>
       </figcaption>
     </figure>

@@ -46,18 +46,22 @@ import {
   validateVirtues,
 } from '../characterSheet/validation';
 import { BACKGROUND_DOTS, DISCIPLINE_DOTS } from '../rules/classicRules';
+import { t } from '../i18n';
+import { Term } from '../i18n/glossary';
+import { translateSheetError } from '../characterSheet/i18nErrors';
 
 const API_URL = '/api';
 
+// Labels are functions: t() must run at render time, in the active language.
 const SECTION_ORDER = [
-  { id: SHEET_SECTION_IDS.identity, label: 'Identity' },
-  { id: SHEET_SECTION_IDS.template, label: 'Template' },
-  { id: SHEET_SECTION_IDS.nature, label: 'Nature' },
-  { id: SHEET_SECTION_IDS.attributes, label: 'Attributes' },
-  { id: SHEET_SECTION_IDS.abilities, label: 'Abilities' },
-  { id: SHEET_SECTION_IDS.advantages, label: 'Advantages' },
-  { id: SHEET_SECTION_IDS.story, label: 'Story' },
-  { id: SHEET_SECTION_IDS.freebies, label: 'Freebies' },
+  { id: SHEET_SECTION_IDS.identity, label: () => t('wizard:section.identity', 'Identity') },
+  { id: SHEET_SECTION_IDS.template, label: () => t('wizard:section.template', 'Template') },
+  { id: SHEET_SECTION_IDS.nature, label: () => 'Nature' },
+  { id: SHEET_SECTION_IDS.attributes, label: () => 'Attributes' },
+  { id: SHEET_SECTION_IDS.abilities, label: () => 'Abilities' },
+  { id: SHEET_SECTION_IDS.advantages, label: () => 'Advantages' },
+  { id: SHEET_SECTION_IDS.story, label: () => t('wizard:section.story', 'Story') },
+  { id: SHEET_SECTION_IDS.freebies, label: () => 'Freebies' },
 ];
 
 function scrollToSection(sectionDomId) {
@@ -238,9 +242,9 @@ export default function CharacterCreationWizard({
     systemType === 'werewolf' ? '#4ade80' : systemType === 'mage' ? '#38bdf8' : '#e94560';
 
   const resolveNatureDemeanor = (pick, custom) => {
-    const t = (custom || '').trim();
-    if (pick === ARCHETYPE_CUSTOM) return t;
-    return t ? `${pick} (${t})` : pick;
+    const text = (custom || '').trim();
+    if (pick === ARCHETYPE_CUSTOM) return text;
+    return text ? `${pick} (${text})` : pick;
   };
 
   const wodMeta = () => {
@@ -296,55 +300,55 @@ export default function CharacterCreationWizard({
 
   const runValidation = () => {
     const err = {};
-    if (!campaign) err[SHEET_SECTION_IDS.identity] = 'Choose a chronicle.';
+    if (!campaign) err[SHEET_SECTION_IDS.identity] = t('wizard:error.chronicle', 'Choose a chronicle.');
     const cidNum = parseInt(campaignId, 10);
     if (!Number.isFinite(cidNum) || cidNum < 1) {
-      err[SHEET_SECTION_IDS.identity] = 'Choose a valid chronicle.';
+      err[SHEET_SECTION_IDS.identity] = t('wizard:error.chronicleInvalid', 'Choose a valid chronicle.');
     }
-    if (!name.trim()) err[SHEET_SECTION_IDS.identity] = 'Character name is required.';
+    if (!name.trim()) err[SHEET_SECTION_IDS.identity] = t('wizard:error.name', 'Character name is required.');
 
     if (['vampire', 'werewolf', 'mage'].includes(systemType)) {
       const natureMsgs = [];
       if (naturePick === ARCHETYPE_CUSTOM && !(natureCustom || '').trim()) {
-        natureMsgs.push('Enter your Nature (free text), or pick a preset archetype.');
+        natureMsgs.push(t('wizard:classic.error.nature', 'Enter your Nature (free text), or pick a preset archetype.'));
       }
       if (demeanorPick === ARCHETYPE_CUSTOM && !(demeanorCustom || '').trim()) {
-        natureMsgs.push('Enter your Demeanor (free text), or pick a preset archetype.');
+        natureMsgs.push(t('wizard:classic.error.demeanor', 'Enter your Demeanor (free text), or pick a preset archetype.'));
       }
       if (natureMsgs.length) err[SHEET_SECTION_IDS.nature] = natureMsgs.join(' ');
     }
 
     // Final sheets may hold freebie dots; the freebie ledger prices and caps them.
     const errA = validateAttributeSpread(attrs, pools, { allowFreebies: true, nosferatu });
-    if (errA) err[SHEET_SECTION_IDS.attributes] = errA;
+    if (errA) err[SHEET_SECTION_IDS.attributes] = translateSheetError(errA);
 
     const errAb = validateAbilitySpread(abilities, abilityPools, customAbilities, {
       allowFreebies: true,
     });
-    if (errAb) err[SHEET_SECTION_IDS.abilities] = errAb;
+    if (errAb) err[SHEET_SECTION_IDS.abilities] = translateSheetError(errAb);
 
     if (systemType === 'vampire') {
       const advMsgs = [];
       // Creation Virtues must be exactly 10; extra dots live in virtueFreebies.
       const vErr = validateVirtues(virtues);
-      if (vErr) advMsgs.push(vErr);
+      if (vErr) advMsgs.push(translateSheetError(vErr));
       const dSum = disciplines.reduce((s, d) => s + (parseInt(d.dots, 10) || 0), 0);
       if (dSum < DISCIPLINE_DOTS) {
-        advMsgs.push(`Place all ${DISCIPLINE_DOTS} Discipline dots (clan Disciplines; Caitiff any).`);
+        advMsgs.push(t('wizard:classic.error.disciplines', 'Place all {{n}} Discipline dots (clan Disciplines; Caitiff any).', { n: DISCIPLINE_DOTS }));
       }
       const bgSum = backgrounds.reduce((s, b) => s + (parseInt(b.dots, 10) || 0), 0);
       if (bgSum < BACKGROUND_DOTS) {
-        advMsgs.push(`Place all ${BACKGROUND_DOTS} Background dots.`);
+        advMsgs.push(t('wizard:classic.error.backgrounds', 'Place all {{n}} Background dots.', { n: BACKGROUND_DOTS }));
       }
       if (advMsgs.length) err[SHEET_SECTION_IDS.advantages] = advMsgs.join(' ');
     }
 
     const fErr = validateFreebies(freebies);
-    if (fErr) err[SHEET_SECTION_IDS.freebies] = fErr;
+    if (fErr) err[SHEET_SECTION_IDS.freebies] = translateSheetError(fErr);
 
     if (systemType === 'mage') {
       const sErr = validateSpheres(spheres);
-      if (sErr) err[SHEET_SECTION_IDS.advantages] = sErr;
+      if (sErr) err[SHEET_SECTION_IDS.advantages] = translateSheetError(sErr);
     }
 
     return err;
@@ -403,13 +407,13 @@ export default function CharacterCreationWizard({
       });
       const body = await res.json().catch(() => ({}));
       if (!res.ok) {
-        showError?.(body.error || 'Could not create character.');
+        showError?.(body.error || t('wizard:error.createFailed', 'Could not create character.'));
         return;
       }
-      showSuccess?.('Character forged. Select them in Player Profile if needed.');
+      showSuccess?.(t('wizard:created', 'Character forged. Select them in Player Profile if needed.'));
       onDone?.(body);
     } catch (e) {
-      showError?.('Network error while creating character.');
+      showError?.(t('wizard:error.network', 'Network error while creating character.'));
     } finally {
       setSubmitting(false);
     }
@@ -439,8 +443,7 @@ export default function CharacterCreationWizard({
     return (
       <GothicBox theme="vampire" style={{ padding: '24px', maxWidth: '560px', margin: '0 auto' }}>
         <p style={{ color: '#b5b5c3' }}>
-          You need to be a member of at least one Vampire, Werewolf, or Mage chronicle before
-          using this forge.
+          {t('wizard:noChronicle', 'You need to be a member of at least one Vampire, Werewolf, or Mage chronicle before using this forge.')}
         </p>
         <button
           type="button"
@@ -455,7 +458,7 @@ export default function CharacterCreationWizard({
             cursor: 'pointer',
           }}
         >
-          Back
+          {t('wizard:back', 'Back')}
         </button>
       </GothicBox>
     );
@@ -475,12 +478,10 @@ export default function CharacterCreationWizard({
               fontSize: '22px',
             }}
           >
-            Character sheet forge
+            {t('wizard:classic.title', 'Character sheet forge')}
           </h2>
           <p style={{ color: '#8b8b9f', fontSize: '14px', lineHeight: 1.5 }}>
-            Build a <strong>Classic World of Darkness</strong> (Revised) sheet: place your creation
-            dots, then spend 15 freebie points. Scroll the sheet in order, or jump with the nav.
-            Your Storyteller has final say on numbers and templates.
+            {t('wizard:classic.intro', 'Build a Classic World of Darkness (Revised) sheet: place your creation dots, then spend 15 freebie points. Scroll the sheet in order, or jump with the nav. Your Storyteller has final say on numbers and templates.')}
           </p>
         </div>
 
@@ -512,7 +513,7 @@ export default function CharacterCreationWizard({
                   fontFamily: 'Cinzel, serif',
                 }}
               >
-                {s.label}
+                {s.label()}
               </button>
             ))}
           </div>
@@ -555,7 +556,7 @@ export default function CharacterCreationWizard({
                 checked={freebieMode}
                 onChange={(e) => setFreebieMode(e.target.checked)}
               />
-              Freebie mode · {freebies.spent}/{freebies.available} spent
+              {t('wizard:classic.freebieMode', 'Freebie mode · {{spent}}/{{available}} spent', { spent: freebies.spent, available: freebies.available })}
             </label>
           </div>
         </div>
@@ -563,13 +564,13 @@ export default function CharacterCreationWizard({
         <div style={{ padding: '8px 16px 24px' }}>
           <ResponsiveSheetBlock
             sectionId={SHEET_SECTION_IDS.identity}
-            title="Identity"
-            subtitle="Chronicle and character hook"
+            title={t('wizard:section.identity', 'Identity')}
+            subtitle={t('wizard:classic.identitySub', 'Chronicle and character hook')}
             accent={themeAccent}
           >
             {inlineErr(SHEET_SECTION_IDS.identity)}
             <label style={{ color: '#c4b5fd', display: 'block', marginBottom: '8px' }}>
-              Chronicle
+              {t('wizard:field.chronicle', 'Chronicle')}
             </label>
             <select
               value={campaignId}
@@ -592,7 +593,7 @@ export default function CharacterCreationWizard({
               ))}
             </select>
             <label style={{ color: '#c4b5fd', display: 'block', marginBottom: '8px' }}>
-              Character name
+              {t('wizard:field.name', 'Character name')}
             </label>
             <input
               value={name}
@@ -608,12 +609,12 @@ export default function CharacterCreationWizard({
               }}
             />
             <label style={{ color: '#c4b5fd', display: 'block', marginBottom: '8px' }}>
-              Concept
+              {t('wizard:field.concept', 'Concept')}
             </label>
             <input
               value={concept}
               onChange={(e) => setConcept(e.target.value)}
-              placeholder="e.g. weary homicide detective"
+              placeholder={t('wizard:field.conceptPlaceholder', 'e.g. weary homicide detective')}
               style={{
                 width: '100%',
                 padding: '10px',
@@ -627,8 +628,8 @@ export default function CharacterCreationWizard({
 
           <ResponsiveSheetBlock
             sectionId={SHEET_SECTION_IDS.template}
-            title="Template"
-            subtitle="Clan, breed, or tradition — your chronicle’s baseline"
+            title={t('wizard:section.template', 'Template')}
+            subtitle={t('wizard:classic.templateSub', 'Clan, breed, or tradition — your chronicle’s baseline')}
             accent={themeAccent}
           >
             {systemType === 'vampire' && (
@@ -641,7 +642,7 @@ export default function CharacterCreationWizard({
               >
                 <div>
                   <label style={{ color: '#c4b5fd', display: 'block', marginBottom: '6px' }}>
-                    Clan
+                    <Term id="clan" />
                   </label>
                   <select
                     value={clan}
@@ -664,7 +665,7 @@ export default function CharacterCreationWizard({
                 </div>
                 <div>
                   <label style={{ color: '#c4b5fd', display: 'block', marginBottom: '6px' }}>
-                    Generation
+                    <Term id="generation" />
                   </label>
                   <input
                     value={generation}
@@ -777,7 +778,7 @@ export default function CharacterCreationWizard({
                   ))}
                 </select>
                 <p style={{ color: '#8b8b9f', fontSize: '13px', marginTop: '12px' }}>
-                  Arete starts at 1. You will assign six sphere dots in Advantages.
+                  {t('wizard:classic.areteHint', 'Arete starts at 1. You will assign six sphere dots in Advantages.')}
                 </p>
               </>
             )}
@@ -785,8 +786,8 @@ export default function CharacterCreationWizard({
 
           <ResponsiveSheetBlock
             sectionId={SHEET_SECTION_IDS.nature}
-            title="Nature & demeanor"
-            subtitle="Classic oWoD-style archetypes (Revised-era lists). Pick Custom to type your own."
+            title="Nature & Demeanor"
+            subtitle={t('wizard:classic.natureSub', 'Classic oWoD-style archetypes (Revised-era lists). Pick Custom to type your own.')}
             accent={themeAccent}
           >
             {inlineErr(SHEET_SECTION_IDS.nature)}
@@ -819,15 +820,15 @@ export default function CharacterCreationWizard({
                       {a}
                     </option>
                   ))}
-                  <option value={ARCHETYPE_CUSTOM}>Custom (enter below)</option>
+                  <option value={ARCHETYPE_CUSTOM}>{t('wizard:classic.customArchetype', 'Custom (enter below)')}</option>
                 </select>
                 <input
                   value={natureCustom}
                   onChange={(e) => setNatureCustom(e.target.value)}
                   placeholder={
                     naturePick === ARCHETYPE_CUSTOM
-                      ? 'Your Nature (free text)'
-                      : 'Optional: extra detail, or wording for another system'
+                      ? t('wizard:classic.naturePlaceholder', 'Your Nature (free text)')
+                      : t('wizard:classic.archetypeExtra', 'Optional: extra detail, or wording for another system')
                   }
                   style={{
                     width: '100%',
@@ -861,15 +862,15 @@ export default function CharacterCreationWizard({
                       {a}
                     </option>
                   ))}
-                  <option value={ARCHETYPE_CUSTOM}>Custom (enter below)</option>
+                  <option value={ARCHETYPE_CUSTOM}>{t('wizard:classic.customArchetype', 'Custom (enter below)')}</option>
                 </select>
                 <input
                   value={demeanorCustom}
                   onChange={(e) => setDemeanorCustom(e.target.value)}
                   placeholder={
                     demeanorPick === ARCHETYPE_CUSTOM
-                      ? 'Your Demeanor (free text)'
-                      : 'Optional: extra detail, or wording for another system'
+                      ? t('wizard:classic.demeanorPlaceholder', 'Your Demeanor (free text)')
+                      : t('wizard:classic.archetypeExtra', 'Optional: extra detail, or wording for another system')
                   }
                   style={{
                     width: '100%',
@@ -886,14 +887,14 @@ export default function CharacterCreationWizard({
 
           <ResponsiveSheetBlock
             sectionId={SHEET_SECTION_IDS.attributes}
-            title="Attributes"
-            subtitle="Every attribute starts at 1. Add 7 / 5 / 3 dots across Physical, Social, Mental."
+            title={<Term id="attributes" />}
+            subtitle={t('wizard:classic.attributesSub', 'Every attribute starts at 1. Add 7 / 5 / 3 dots across Physical, Social, Mental.')}
             accent={themeAccent}
           >
             {inlineErr(SHEET_SECTION_IDS.attributes)}
             <PoolSummary variant="attributes" attrs={attrs} pools={pools} nosferatu={nosferatu} />
             <label style={{ color: '#c4b5fd', display: 'block', marginBottom: '8px' }}>
-              Which category is primary (+7 dots)?
+              {t('wizard:classic.attrPrimary', 'Which category is primary (+7 dots)?')}
             </label>
             <select
               value={priority}
@@ -909,9 +910,9 @@ export default function CharacterCreationWizard({
                 borderRadius: '8px',
               }}
             >
-              <option value="physical">Physical primary (+7) · Social (+5) · Mental (+3)</option>
-              <option value="social">Social primary (+7) · Physical (+5) · Mental (+3)</option>
-              <option value="mental">Mental primary (+7) · Social (+5) · Physical (+3)</option>
+              <option value="physical">{t('wizard:classic.attrOrder.physical', 'Physical primary (+7) · Social (+5) · Mental (+3)')}</option>
+              <option value="social">{t('wizard:classic.attrOrder.social', 'Social primary (+7) · Physical (+5) · Mental (+3)')}</option>
+              <option value="mental">{t('wizard:classic.attrOrder.mental', 'Mental primary (+7) · Social (+5) · Physical (+3)')}</option>
             </select>
             <AttributeColumns
               attrs={attrs}
@@ -924,8 +925,8 @@ export default function CharacterCreationWizard({
 
           <ResponsiveSheetBlock
             sectionId={SHEET_SECTION_IDS.abilities}
-            title="Abilities"
-            subtitle="13 / 9 / 5 across Talents, Skills, Knowledges; no ability above 3 before freebies. Custom rows share the column pools."
+            title={<Term id="abilities" />}
+            subtitle={t('wizard:classic.abilitiesSub', '13 / 9 / 5 across Talents, Skills, Knowledges; no ability above 3 before freebies. Custom rows share the column pools.')}
             accent={themeAccent}
           >
             {inlineErr(SHEET_SECTION_IDS.abilities)}
@@ -936,7 +937,7 @@ export default function CharacterCreationWizard({
               customAbilities={customAbilities}
             />
             <label style={{ color: '#c4b5fd', display: 'block', marginBottom: '8px' }}>
-              Which column is primary (13 dots)?
+              {t('wizard:classic.abilityPrimary', 'Which column is primary (13 dots)?')}
             </label>
             <select
               value={abilityPriority}
@@ -969,20 +970,21 @@ export default function CharacterCreationWizard({
           <ResponsiveSheetBlock
             sectionId={SHEET_SECTION_IDS.advantages}
             title="Advantages"
-            subtitle="Line-specific pools — virtues, spheres, or Garou energy."
+            subtitle={t('wizard:classic.advantagesSub', 'Line-specific pools — virtues, spheres, or Garou energy.')}
             accent={themeAccent}
           >
             {inlineErr(SHEET_SECTION_IDS.advantages)}
 
             {systemType === 'vampire' && (
               <SheetSection
-                title="Kindred advantages"
-                subtitle="3 Discipline dots, 5 Background dots, Virtues 1 free each + 7. Humanity and Willpower follow from your Virtues."
+                title={t('wizard:classic.kindredTitle', 'Kindred advantages')}
+                subtitle={t('wizard:classic.kindredSub', '3 Discipline dots, 5 Background dots, Virtues 1 free each + 7. Humanity and Willpower follow from your Virtues.')}
                 accent={themeAccent}
               >
                 <div style={{ marginBottom: '20px' }}>
                   <div style={{ color: '#94a3b8', fontSize: '12px', marginBottom: '8px' }}>
-                    Disciplines ({DISCIPLINE_DOTS} dots at creation; more with freebies)
+                    <Term id="discipline">Disciplines</Term>{' '}
+                    {t('wizard:classic.dotsAtCreation', '({{n}} dots at creation; more with freebies)', { n: DISCIPLINE_DOTS })}
                   </div>
                   {disciplines.map((d, i) => (
                     <div
@@ -1019,11 +1021,11 @@ export default function CharacterCreationWizard({
                             {p}
                           </option>
                         ))}
-                        <option value="__custom">Custom name…</option>
+                        <option value="__custom">{t('wizard:classic.customName', 'Custom name…')}</option>
                       </select>
                       {(!d.name || !DISCIPLINE_PRESETS.includes(d.name)) && (
                         <input
-                          placeholder="Discipline name"
+                          placeholder={t('wizard:classic.disciplineName', 'Discipline name')}
                           value={DISCIPLINE_PRESETS.includes(d.name) ? '' : d.name}
                           onChange={(e) => {
                             const next = [...disciplines];
@@ -1061,7 +1063,8 @@ export default function CharacterCreationWizard({
 
                 <div style={{ marginBottom: '20px' }}>
                   <div style={{ color: '#94a3b8', fontSize: '12px', marginBottom: '8px' }}>
-                    Backgrounds ({BACKGROUND_DOTS} dots at creation; more with freebies)
+                    <Term id="backgrounds" />{' '}
+                    {t('wizard:classic.dotsAtCreation', '({{n}} dots at creation; more with freebies)', { n: BACKGROUND_DOTS })}
                   </div>
                   {backgrounds.map((b, i) => (
                     <div
@@ -1075,7 +1078,7 @@ export default function CharacterCreationWizard({
                       }}
                     >
                       <input
-                        placeholder="e.g. Resources"
+                        placeholder={t('wizard:classic.backgroundPlaceholder', 'e.g. Resources')}
                         value={b.name}
                         onChange={(e) => {
                           const next = [...backgrounds];
@@ -1112,11 +1115,10 @@ export default function CharacterCreationWizard({
 
                 <div style={{ marginBottom: '16px' }}>
                   <div style={{ color: '#94a3b8', fontSize: '12px', marginBottom: '8px' }}>
-                    Virtues (1 free each + 7 = {VIRTUE_TOTAL_AT_CREATION}; placed {virtueTotal}
+                    <Term id="virtues" />{' '}
                     {morality.virtueFreebieDots > 0
-                      ? ` + ${morality.virtueFreebieDots} bought with freebies; those don't change Humanity or Willpower`
-                      : ''}
-                    )
+                      ? t('wizard:classic.virtuesPlacedBought', '(1 free each + 7 = {{total}}; placed {{placed}} + {{bought}} bought with freebies; those don\'t change Humanity or Willpower)', { total: VIRTUE_TOTAL_AT_CREATION, placed: virtueTotal, bought: morality.virtueFreebieDots })
+                      : t('wizard:classic.virtuesPlaced', '(1 free each + 7 = {{total}}; placed {{placed}})', { total: VIRTUE_TOTAL_AT_CREATION, placed: virtueTotal })}
                   </div>
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: '16px' }}>
                     {[
@@ -1125,7 +1127,7 @@ export default function CharacterCreationWizard({
                       ['courage', 'Courage'],
                     ].map(([key, label]) => (
                       <div key={key} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                        <span style={{ color: '#c4c4d4', fontSize: '12px', width: '140px' }}>
+                        <span style={{ color: '#c4c4d4', fontSize: '12px', minWidth: '140px' }}>
                           {label}
                         </span>
                         <DotTrack
@@ -1136,7 +1138,7 @@ export default function CharacterCreationWizard({
                         />
                         {virtueFreebies[key] > 0 ? (
                           <span style={{ color: '#94a3b8', fontSize: '11px' }}>
-                            {virtues[key]} + {virtueFreebies[key]} freebie
+                            {t('wizard:classic.plusFreebie', '{{base}} + {{n}} freebie', { base: virtues[key], n: virtueFreebies[key] })}
                           </span>
                         ) : null}
                       </div>
@@ -1146,20 +1148,20 @@ export default function CharacterCreationWizard({
 
                 <div style={{ display: 'grid', gap: '10px' }}>
                   {[
-                    ['Humanity', humanityFinal, morality.humanityBase, 'Conscience + Self-Control', humanityBonus, setHumanityBonus],
-                    ['Willpower', willpowerFinal, morality.willpowerBase, 'Courage', willpowerBonus, setWillpowerBonus],
-                  ].map(([label, value, baseValue, from, bonus, setBonus]) => (
+                    ['humanity', 'Humanity', humanityFinal, morality.humanityBase, 'Conscience + Self-Control', humanityBonus, setHumanityBonus],
+                    ['willpower', 'Willpower', willpowerFinal, morality.willpowerBase, 'Courage', willpowerBonus, setWillpowerBonus],
+                  ].map(([termId, label, value, baseValue, from, bonus, setBonus]) => (
                     <div key={label} style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '10px' }}>
-                      <span style={{ color: '#c4b5fd', fontSize: '12px', width: '80px' }}>{label}</span>
+                      <span style={{ color: '#c4b5fd', fontSize: '12px', minWidth: '80px' }}><Term id={termId} /></span>
                       <DotTrack value={value} maxRank={10} accent="#f472b6" disabled onChange={() => {}} />
                       <span style={{ color: '#94a3b8', fontSize: '12px' }}>
-                        {value} = {from} ({baseValue}){bonus > 0 ? ` + ${bonus} freebie` : ''}
+                        {value} = {from} ({baseValue}){bonus > 0 ? ` + ${t('wizard:classic.nFreebie', '{{n}} freebie', { n: bonus })}` : ''}
                       </span>
                       {freebieMode ? (
                         <span style={{ display: 'inline-flex', gap: '4px' }}>
                           <button
                             type="button"
-                            aria-label={`Lower ${label} freebie dots`}
+                            aria-label={t('wizard:classic.lowerFreebie', 'Lower {{label}} freebie dots', { label })}
                             disabled={bonus <= 0}
                             onClick={() => setBonus(Math.max(0, bonus - 1))}
                             style={{ padding: '2px 8px', background: '#1e293b', color: '#e2e8f0', border: '1px solid #475569', borderRadius: '6px', cursor: 'pointer' }}
@@ -1168,7 +1170,7 @@ export default function CharacterCreationWizard({
                           </button>
                           <button
                             type="button"
-                            aria-label={`Raise ${label} with freebies`}
+                            aria-label={t('wizard:classic.raiseFreebie', 'Raise {{label}} with freebies', { label })}
                             disabled={value >= 10}
                             onClick={() => setBonus(bonus + 1)}
                             style={{ padding: '2px 8px', background: '#1e293b', color: '#e2e8f0', border: '1px solid #475569', borderRadius: '6px', cursor: 'pointer' }}
@@ -1186,7 +1188,7 @@ export default function CharacterCreationWizard({
             {systemType === 'mage' && (
               <SheetSection
                 title="Spheres"
-                subtitle="Allocate exactly 6 dots among the nine spheres (Arete remains 1)."
+                subtitle={t('wizard:classic.spheresSub', 'Allocate exactly 6 dots among the nine spheres (Arete remains 1).')}
                 accent={themeAccent}
               >
                 {MTA_SPHERES.map(([k, label]) => (
@@ -1227,8 +1229,8 @@ export default function CharacterCreationWizard({
 
             {systemType === 'werewolf' && (
               <SheetSection
-                title="Garou advantages"
-                subtitle="Starting Rage, Gnosis, and gifts — set with your Storyteller."
+                title={t('wizard:classic.garouTitle', 'Garou advantages')}
+                subtitle={t('wizard:classic.garouSub', 'Starting Rage, Gnosis, and gifts — set with your Storyteller.')}
                 accent={themeAccent}
               >
                 <div
@@ -1279,13 +1281,13 @@ export default function CharacterCreationWizard({
                   </div>
                 </div>
                 <label style={{ color: '#c4b5fd', display: 'block', marginBottom: '8px' }}>
-                  Gifts & rank notes
+                  {t('wizard:classic.giftsNotes', 'Gifts & rank notes')}
                 </label>
                 <textarea
                   value={giftsNotes}
                   onChange={(e) => setGiftsNotes(e.target.value)}
                   rows={4}
-                  placeholder="Gift names, rank, or table agreements…"
+                  placeholder={t('wizard:classic.giftsPlaceholder', 'Gift names, rank, or table agreements…')}
                   style={{
                     width: '100%',
                     padding: '12px',
@@ -1304,18 +1306,18 @@ export default function CharacterCreationWizard({
 
           <ResponsiveSheetBlock
             sectionId={SHEET_SECTION_IDS.story}
-            title="Story & merits"
-            subtitle="Background narrative and structured merits / flaws."
+            title={t('wizard:classic.storyTitle', 'Story & merits')}
+            subtitle={t('wizard:classic.storySub', 'Background narrative and structured merits / flaws.')}
             accent="#9d4edd"
           >
             <label style={{ color: '#c4b5fd', display: 'block', marginBottom: '8px' }}>
-              Background & hooks
+              {t('wizard:classic.backgroundStory', 'Background & hooks')}
             </label>
             <textarea
               value={background}
               onChange={(e) => setBackground(e.target.value)}
               rows={6}
-              placeholder="History, coterie, pack, cabal, goals…"
+              placeholder={t('wizard:classic.backgroundStoryPlaceholder', 'History, coterie, pack, cabal, goals…')}
               style={{
                 width: '100%',
                 padding: '12px',
@@ -1339,8 +1341,8 @@ export default function CharacterCreationWizard({
 
           <ResponsiveSheetBlock
             sectionId={SHEET_SECTION_IDS.freebies}
-            title="Freebie points"
-            subtitle="15 points (+ up to 7 from Flaws) to raise anything above the creation budgets."
+            title={<Term id="freebie" />}
+            subtitle={t('wizard:classic.freebiesSub', '15 points (+ up to 7 from Flaws) to raise anything above the creation budgets.')}
             accent={themeAccent}
           >
             {inlineErr(SHEET_SECTION_IDS.freebies)}
@@ -1373,7 +1375,7 @@ export default function CharacterCreationWizard({
                 cursor: 'pointer',
               }}
             >
-              Cancel
+              {t('wizard:cancel', 'Cancel')}
             </button>
             <button
               type="button"
@@ -1390,7 +1392,7 @@ export default function CharacterCreationWizard({
                 fontFamily: 'Cinzel, serif',
               }}
             >
-              {submitting ? 'Sealing sheet…' : 'Create character'}
+              {submitting ? t('wizard:submitting', 'Sealing sheet…') : t('wizard:submit', 'Create character')}
             </button>
           </div>
         </div>

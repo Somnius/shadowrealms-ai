@@ -1,6 +1,14 @@
 import React from 'react';
 import { classicOutcome } from '../../dice/classicDiceDisplay';
 import { v5Badges } from '../../dice/v5DiceDisplay';
+import { t as tr } from '../../i18n';
+import { termHint } from '../../i18n/glossary';
+
+/** Explanation for an outcome that is a game term (kept in English): glossary first, then dice:hint.* */
+export function outcomeHint(term) {
+  if (!term) return '';
+  return termHint(term) || tr(`dice:hint.${term}`, '');
+}
 
 const TONES = {
   success: { bg: 'rgba(34,197,94,0.15)', fg: '#86efac', bd: '#16a34a' },
@@ -21,6 +29,8 @@ export default function OutcomeBadges({ result }) {
           <span
             key={b.key}
             data-testid={`outcome-${b.key}`}
+            lang={b.term ? 'en' : undefined}
+            title={outcomeHint(b.term) || undefined}
             style={{
               padding: '4px 12px',
               borderRadius: '999px',

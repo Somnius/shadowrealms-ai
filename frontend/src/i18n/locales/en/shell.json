@@ -1,0 +1,25 @@
+{
+  "nav": {
+    "open": "Open navigation",
+    "title": "ShadowRealms"
+  },
+  "rail": {
+    "label": "Chronicles",
+    "hall": "Chronicle hall",
+    "create": "Create a chronicle"
+  },
+  "menu": {
+    "profile": "Profile & characters",
+    "language": "Language",
+    "motionSystem": "Reduced motion (system setting)",
+    "motion": "Reduce motion",
+    "admin": "Admin panel",
+    "showcase": "Theme preview",
+    "logout": "Log out",
+    "button": "Account menu for {{name}}",
+    "title": "Account"
+  },
+  "language": {
+    "label": "Language"
+  }
+}

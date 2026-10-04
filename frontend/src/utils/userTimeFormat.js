@@ -1,3 +1,12 @@
+import { getLanguage, getLocale } from '../i18n';
+
+/** Greek uses the 24-hour clock; English keeps 12-hour (as before). */
+function clockOpts(opts) {
+  if (getLanguage() !== 'el') return opts;
+  const { hour12, ...rest } = opts; // eslint-disable-line no-unused-vars
+  return { ...rest, hourCycle: 'h23' };
+}
+
 /**
  * Format instants in the user's chosen IANA zone (or browser local if zone is null/empty).
  * @param {string|number|Date} isoOrDate
@@ -22,7 +31,7 @@ export function formatDateTimeInZone(isoOrDate, timeZone, extra = {}) {
   if (timeZone) {
     opts.timeZone = timeZone;
   }
-  return new Intl.DateTimeFormat(undefined, opts).format(d);
+  return new Intl.DateTimeFormat(getLocale(), clockOpts(opts)).format(d);
 }
 
 /**

@@ -3,6 +3,7 @@ import {
   abilityPoolRemainders,
   attributePoolRemainders,
 } from '../../characterSheet/validation';
+import { t } from '../../i18n';
 
 const chip = (label, rem, color) => (
   <span
@@ -16,7 +17,7 @@ const chip = (label, rem, color) => (
       border: `1px solid ${rem === 0 ? '#16653444' : '#991b1b33'}`,
     }}
   >
-    {label}: <strong>{rem}</strong> left
+    {label}: <strong>{rem}</strong> {t('wizard:pool.left', 'left')}
   </span>
 );
 

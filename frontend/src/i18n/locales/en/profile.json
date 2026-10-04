@@ -1,0 +1,56 @@
+{
+  "characters": {
+    "new": "New character",
+    "body": "Inside a chronicle you always play that chronicle’s character. Sheets lock after creation; ask for changes through downtime.",
+    "empty": "No characters yet",
+    "emptyBody": "Join or create a chronicle, then forge a character for it.",
+    "suspended": "Unavailable for play"
+  },
+  "create": {
+    "title": "New character",
+    "guide": "Before you forge a character",
+    "step1": "Join or create the chronicle first; the wizard asks which chronicle the character belongs to.",
+    "step2": "Have a concept, background, description, ties and gear ready; the Storyteller hooks plots into them.",
+    "step3": "Follow the Storyteller’s limits on starting dots and powers.",
+    "step4": "The sheet locks when you finish. Later changes go through a downtime request."
+  },
+  "imageTooBig": "Image is too large (max ~350 KB).",
+  "saveFailed": "Could not save",
+  "account": {
+    "title": "Account",
+    "role": "Role"
+  },
+  "tz": {
+    "title": "Time zone",
+    "saved": "Display time zone saved.",
+    "label": "Display time zone",
+    "hint": "Message times, dice history and admin timestamps use this zone.",
+    "browser": "Browser default (device time)"
+  },
+  "ooc": {
+    "title": "Out-of-character portrait",
+    "body": "Shown when you speak as yourself (out of character). In story rooms others see your character’s portrait.",
+    "change": "Change portrait",
+    "saved": "Portrait saved."
+  },
+  "downtime": {
+    "failed": "Could not submit the request",
+    "sent": "Request sent to the Storyteller and staff.",
+    "new": "New downtime request",
+    "body": "Sheets are locked after creation. Ask the Storyteller or staff to change stats, merits or story flags; they approve or reject with a reason.",
+    "character": "Character",
+    "what": "What should change?",
+    "submit": "Submit request",
+    "noChars": "You need a character first.",
+    "mine": "Your requests",
+    "none": "None yet.",
+    "staff": "Staff: {{reason}}"
+  },
+  "title": "Profile & characters",
+  "sections": "Profile sections",
+  "tab": {
+    "characters": "Characters",
+    "account": "Account",
+    "downtime": "Downtime"
+  }
+}

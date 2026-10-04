@@ -1,0 +1,433 @@
+{
+  "title": "Admin panel",
+  "nav": {
+    "home": "Overview",
+    "invites": "Invite codes",
+    "chronicles": "All chronicles",
+    "users": "Users",
+    "downtime": "Downtime requests",
+    "moderation": "Moderation log",
+    "ai": "AI system",
+    "label": "Admin sections"
+  },
+  "common": {
+    "cancel": "Cancel",
+    "campaignN": "Campaign {{id}}",
+    "edit": "Edit",
+    "delete": "Delete",
+    "refresh": "Refresh",
+    "saving": "Saving…",
+    "saveChanges": "Save changes",
+    "yes": "Yes",
+    "no": "No",
+    "apply": "Apply",
+    "save": "Save",
+    "noData": "No data",
+    "dismiss": "Dismiss"
+  },
+  "error": {
+    "campaignsApiMissing": "Admin campaigns API not found. Restart the backend.",
+    "loadChronicles": "Could not load chronicles",
+    "loadCampaignsRestart": "Could not load campaigns (restart backend to enable /api/admin/campaigns)",
+    "loadCampaigns": "Could not load campaigns",
+    "loadAiSettings": "Could not load AI settings",
+    "listLmModels": "Could not list LM Studio models",
+    "loadAiSystem": "Failed to load Ai System settings",
+    "loadUsers": "Failed to load users",
+    "loadCharactersStatus": "Could not load characters ({{status}})",
+    "loadCharacters": "Failed to load characters",
+    "openUnavailable": "Open-in-app is not available from this screen.",
+    "openChronicle": "Could not open chronicle",
+    "loadChronicle": "Could not load chronicle",
+    "nameRequired": "Name is required",
+    "maxPlayers": "Max players must be a non-negative integer or empty",
+    "updateFailed": "Update failed",
+    "requestFailed": "Request failed",
+    "loadStats": "Could not load stats",
+    "pause": "Could not pause",
+    "resume": "Could not resume",
+    "deleteFailed": "Delete failed",
+    "loadDebug": "Failed to load debug profile",
+    "failed": "Failed",
+    "selectCampaign": "Select a campaign",
+    "createInvite": "Failed to create invite",
+    "connection": "Connection error",
+    "updateUser": "Failed to update user",
+    "resetPassword": "Failed to reset password",
+    "banUser": "Failed to ban user",
+    "invalidUserId": "Invalid user id; refresh the user list and try again.",
+    "deleteApiMissing": "Delete API not found (404). Restart the backend so it loads the latest routes, then try again.",
+    "unbanUser": "Failed to unban user",
+    "saveFailed": "Save failed"
+  },
+  "chronicles": {
+    "updated": "Chronicle updated",
+    "pausedToast": "Chronicle paused (hidden from discovery; rolls may be blocked until resumed)",
+    "resumed": "Chronicle resumed",
+    "deleted": "Chronicle deleted",
+    "title": "All chronicles",
+    "lead": "Complete list from GET /api/admin/campaigns. Pause sets the chronicle inactive (players won’t see it in discovery; manual dice in that game may be blocked until you resume). Delete removes the campaign and related data — use with care.",
+    "loading": "Loading chronicles…",
+    "emptyTitle": "There are no campaigns in the system.",
+    "emptyBody": "When Storytellers or players create a chronicle in the app, it appears here. If you expected something, check the database and that site admins can reach /api/admin/campaigns.",
+    "col": {
+      "id": "ID",
+      "name": "Name",
+      "system": "System",
+      "state": "State",
+      "listing": "Listing",
+      "maxPlayers": "Max players",
+      "createdBy": "Created by",
+      "actions": "Actions"
+    },
+    "paused": "Paused",
+    "active": "Active",
+    "listed": "listed",
+    "private": "private",
+    "openJoin": "open join",
+    "opening": "Opening…",
+    "open": "Open",
+    "stats": "Stats",
+    "resume": "Resume",
+    "pause": "Pause",
+    "edit": {
+      "title": "Edit chronicle",
+      "description": "Description",
+      "listing": "Listing visibility",
+      "accepting": "Accepting new players",
+      "maxPlayers": "Max players (empty = no limit)",
+      "maxPlaceholder": "e.g. 6"
+    },
+    "statsTitle": "Stats — {{name}} (id {{id}})",
+    "stat": {
+      "players": "Active players",
+      "characters": "Characters",
+      "locations": "Locations",
+      "messages": "Story messages"
+    },
+    "pauseTitle": "Pause chronicle?",
+    "pauseBody": "“{{name}}” will be marked inactive: it disappears from discovery and join lists, and manual dice that need an active chronicle may fail until you resume it.",
+    "pauseReason": "Reason (optional, visible to staff in this list)",
+    "pausePlaceholder": "e.g. on hiatus until March, content review…",
+    "deleteTitle": "Delete chronicle permanently?",
+    "deleteBody": "Delete “{{name}}” (id {{id}}) and all related locations, messages and data?\n\nThis cannot be undone.",
+    "deleteConfirm": "Yes, delete",
+    "status": {
+      "active": "active",
+      "inactive": "inactive",
+      "completed": "completed",
+      "archived": "archived"
+    }
+  },
+  "users": {
+    "chars": {
+      "suspended": "Character suspended",
+      "cleared": "Suspension cleared",
+      "title": "Characters — {{name}}",
+      "none": "No characters",
+      "col": {
+        "id": "ID",
+        "name": "Name",
+        "campaign": "Chronicle",
+        "locked": "Locked",
+        "suspended": "Suspended"
+      },
+      "clear": "Clear hold",
+      "suspend": "Suspend"
+    },
+    "membership": {
+      "updated": "Updated",
+      "title": "Chronicle membership — {{name}}",
+      "current": "This user’s chronicles",
+      "none": "None listed (no roster row and not the sole creator of an orphan chronicle).",
+      "member": "member",
+      "creatorOnly": "(creator only — use Add below to write a roster row)",
+      "loadingCampaigns": "Loading chronicles…",
+      "noCampaigns": "No chronicles in the database yet. Create one first.",
+      "campaign": "Chronicle",
+      "select": "— Select a chronicle —",
+      "fallback": "Full admin list unavailable (old backend?). Showing your chronicles only. Restart the backend so GET /api/admin/campaigns loads.",
+      "action": "Action",
+      "add": "Add to the roster (campaign_players)",
+      "remove": "Remove from the roster (campaign_players)"
+    },
+    "edit": {
+      "done": "User updated.",
+      "title": "Edit user",
+      "multi": "Multiple chronicles at once (locked sheets in more than one campaign). Without this, joining a second locked chronicle is blocked.",
+      "selfSwitch": "Self-switch playing character (trusted player): change which character is active in a chronicle without Storyteller approval. Other chronicles are unchanged; characters are still switched per chronicle."
+    },
+    "password": {
+      "done": "Password reset.",
+      "title": "Reset password for {{name}}",
+      "new": "New password",
+      "min": "At least 8 characters",
+      "busy": "Resetting…",
+      "submit": "Reset password"
+    },
+    "ban": {
+      "done": "User banned.",
+      "title": "Ban {{name}}",
+      "type": "Ban type",
+      "temporary": "Temporary",
+      "permanent": "Permanent",
+      "days": "Days",
+      "hours": "Hours",
+      "reason": "Reason",
+      "reasonPlaceholder": "Explain why this user is being banned…",
+      "busy": "Banning…",
+      "submit": "Ban user"
+    },
+    "delete": {
+      "done": "Account removed; chat history preserved.",
+      "title": "Delete account permanently?",
+      "body": "Delete “{{name}}” and ALL of their characters?\n\nIn-character chat lines stay in the chronicle but show as posted by the system archive account (the text is unchanged). Their dice rolls may also move to that archive account. Chronicles they created are transferred to you.",
+      "confirm": "Yes, delete account"
+    },
+    "unban": {
+      "done": "User unbanned.",
+      "title": "Unban user?",
+      "body": "They immediately regain full access to the site.",
+      "confirm": "Yes, unban"
+    },
+    "role": {
+      "admin": "Admin",
+      "helper": "Helper",
+      "player": "Player"
+    },
+    "suspend": {
+      "reason": {
+        "pending_downtime": "Pending downtime",
+        "pending_more_information": "Pending more information",
+        "custom": "Custom (use message)"
+      },
+      "title": "Suspend play — {{name}}",
+      "reasonLabel": "Reason",
+      "message": "Message to the player",
+      "messagePlaceholder": "Shown when they try to use this character in play.",
+      "confirm": "Suspend"
+    },
+    "title": "User management",
+    "col": {
+      "id": "ID",
+      "username": "Username",
+      "email": "Email",
+      "role": "Role",
+      "privileges": "Privileges",
+      "status": "Status",
+      "lastLogin": "Last login",
+      "actions": "Actions"
+    },
+    "priv": {
+      "helperHint": "Site-granted: multiple locked chronicles + switching the playing character without Storyteller approval",
+      "helper": "Helper ST",
+      "multiHint": "May have locked characters in more than one chronicle",
+      "multi": "Multi",
+      "selfSwitchHint": "May switch the active character in a chronicle without Storyteller approval",
+      "selfSwitch": "Self-switch"
+    },
+    "status": {
+      "permaBan": "Permanent ban",
+      "tempBan": "Temporary ban",
+      "active": "Active"
+    },
+    "action": {
+      "characters": "Characters",
+      "debug": "Debug",
+      "membership": "Chronicles",
+      "resetPassword": "Reset password",
+      "unban": "Unban",
+      "ban": "Ban"
+    },
+    "you": "(you)",
+    "debug": {
+      "title": "Debug profile — {{name}} (id {{id}})"
+    }
+  },
+  "invites": {
+    "created": "Invite created: {{code}}",
+    "copied": "Copied to clipboard",
+    "title": "Invite codes (sign-up)",
+    "lead": "Create a code and send it to the player. They enter it on the Register form with username, email and password. Invalid attempts are logged; if SMTP and MAIL_ADMIN_ALERT_EMAIL are set, you get an email alert.",
+    "role": "Role granted by this code",
+    "rolePlayer": "Player",
+    "roleAdmin": "Admin (use sparingly)",
+    "maxUses": "Max uses",
+    "note": "Note (optional)",
+    "notePlaceholder": "e.g. Player: Alex — March 2026",
+    "custom": "Custom code (optional)",
+    "customPlaceholder": "Leave empty to auto-generate (e.g. SR-A1B2C3-D4E5)",
+    "creating": "Creating…",
+    "create": "Create invite code",
+    "existing": "Existing codes",
+    "empty": "No invites yet. Create one above.",
+    "col": {
+      "code": "Code",
+      "type": "Type",
+      "uses": "Uses",
+      "note": "Note",
+      "created": "Created"
+    },
+    "copy": "Copy",
+    "typeAdmin": "admin",
+    "typePlayer": "player"
+  },
+  "downtime": {
+    "approvePrompt": "Optional note to the player:",
+    "approved": "Request approved.",
+    "approveFailed": "Failed to approve",
+    "rejectPrompt": "Rejection reason (required):",
+    "reasonRequired": "Reason is required to reject.",
+    "rejected": "Request rejected.",
+    "rejectFailed": "Failed to reject",
+    "filter": {
+      "pending": "Pending",
+      "approved": "Approved",
+      "rejected": "Rejected",
+      "all": "All"
+    },
+    "title": "Character downtime requests",
+    "lead": "Players send these from their profile when their sheet is locked. Approve or reject with a short reason (required for rejections).",
+    "filterLabel": "Filter by status",
+    "empty": "No requests in this filter.",
+    "status": "Status:",
+    "approve": "Approve",
+    "reject": "Reject"
+  },
+  "ai": {
+    "settings": {
+      "saved": "AI settings saved.",
+      "title": "Local model and master prompt",
+      "url": "LM Studio URL:",
+      "envModel": "Env LM_STUDIO_MODEL:",
+      "envEmpty": "(empty / auto)",
+      "effective": "Effective model id (in use):",
+      "lmUnreachable": "Is LM Studio running and reachable from the backend host?",
+      "model": "Chat model (OpenAI id from LM Studio)",
+      "modelHint": "Pick a model from the list (from GET /v1/models), or keep the default to follow whatever you load in LM Studio without pinning an id here.",
+      "modelDefault": "Default — use env + loaded model",
+      "refresh": "Refresh list",
+      "prompt": "Master system prompt (global)",
+      "promptPlaceholder": "Optional. Applied before each feature-specific system prompt (chat, locations, moderation…). Describe the assistant’s tone, safety rules and setting.",
+      "save": "Save AI settings"
+    },
+    "lead": "Choose which model id the backend sends to LM Studio’s OpenAI-compatible API, or leave the default to follow LM_STUDIO_MODEL in the environment and the model LM Studio reports as loaded. This is the default LM Studio model (used by the English Storyteller and fallbacks unless a role below names a model). The master system prompt is prepended to every feature-specific system prompt.",
+    "role": {
+      "storyteller_en": "Storyteller — English players",
+      "storyteller_el": "Storyteller — Greek players",
+      "utility": "Utility (quick dice/combat answers)",
+      "classifier": "Classifier fallback (OOC check when Laya/Jev are not used)"
+    },
+    "provider": {
+      "lm_studio": "LM Studio (local)",
+      "ollama": "Ollama (local)",
+      "anthropic": "Anthropic (cloud, API key)",
+      "openai": "OpenAI (cloud, API key)"
+    },
+    "test": {
+      "ok": "OK",
+      "failed": "Failed",
+      "testing": "testing…",
+      "badResponse": "bad response"
+    },
+    "key": {
+      "set": "key set {{masked}}",
+      "none": "no key (off)",
+      "inputLabel": "{{name}} API key",
+      "replace": "Enter a new key to replace",
+      "paste": "Paste API key",
+      "save": "Save key",
+      "remove": "Remove",
+      "test": "Test connection",
+      "removed": "Key removed.",
+      "saved": "Key saved (stored encrypted)."
+    },
+    "error": {
+      "load": "Could not load AI providers",
+      "chroma": "ChromaDB unavailable"
+    },
+    "emb": {
+      "rebuilt_one": "Re-embedded {{count}} collection with {{model}}.",
+      "rebuilt_other": "Re-embedded {{count}} collections with {{model}}.",
+      "allCurrent": "All collections already use the current embedder.",
+      "failed": "Re-embed failed",
+      "title": "Embeddings (RAG memory)",
+      "model": "Model",
+      "dims": "({{dims}} dims), set with",
+      "changeNeedsReembed": "Changing it needs a re-embed.",
+      "embedderError": "Embedder error: {{error}}",
+      "col": {
+        "collection": "Collection",
+        "items": "Items",
+        "model": "Model",
+        "dims": "Dims",
+        "status": "Status"
+      },
+      "needsReembed": "needs re-embed ({{reasons}})",
+      "current": "current",
+      "reembedStale": "Re-embed stale collections",
+      "reembedAll": "Re-embed everything"
+    },
+    "loadingProviders": "Loading AI providers…",
+    "roles": {
+      "title": "Models per role",
+      "body": "Greek messages go to the Greek Storyteller, everything else to the English one. If a cloud provider fails, the backend falls back to the local model. Leave the model empty for the default shown.",
+      "loadedModel": "loaded LM Studio model",
+      "providerLabel": "{{role}}: provider",
+      "needsKey": " — add a key first",
+      "modelLabel": "{{role}}: model",
+      "defaultModel": "default: {{model}}",
+      "inUse": "In use: {{chain}}",
+      "default": "default",
+      "saved": "Model roles saved.",
+      "save": "Save roles",
+      "testLm": "Test LM Studio",
+      "testOllama": "Test Ollama"
+    },
+    "cloud": {
+      "title": "Cloud providers (optional)",
+      "body": "Off until a key is saved and a role uses the provider. Keys are stored encrypted on the server and are never sent back to the browser; only the last 4 characters are shown."
+    },
+    "classifier": {
+      "title": "Message classifier (OOC monitor + intent)",
+      "inUse": "In use:",
+      "layaInstalled": "Laya: installed.",
+      "layaMissing": "Laya: not available ({{reason}}).",
+      "noModel": "no model",
+      "threshold": "OOC warning threshold: P(in character) ≥ {{value}}.",
+      "providerLabel": "Classifier provider",
+      "auto": "Auto (Laya if installed, else LLM prompt)",
+      "laya": "Laya (local)",
+      "jev": "Typesafe Jev (hosted, API key)",
+      "llm": "LLM prompt (classifier role)",
+      "jevModel": "Jev model",
+      "saved": "Classifier settings saved.",
+      "save": "Save classifier",
+      "testText": "Classifier test text",
+      "test": "Test {{name}}"
+    }
+  },
+  "moderation": {
+    "kind": {
+      "admin": "staff",
+      "user": "user",
+      "system": "system"
+    },
+    "title": "Recent activity log",
+    "lead": "Audit trail: staff actions (red), a user acting on their own account (green), automated or system events (blue). Rows stay visible when a user account was removed (names may show as missing).",
+    "rows": "Rows",
+    "empty": "No logged actions yet",
+    "userN": "user #{{id}}"
+  },
+  "home": {
+    "title": "Admin panel",
+    "lead": "This area is for site administrators only. Each tab opens one tool; your changes apply to the whole site (users, invites and moderation).",
+    "invites": "create and copy registration codes; track uses and optional notes.",
+    "chronicles": "every campaign in the database; open one in the app to visit locations and chat (site admins only).",
+    "users": "edit accounts, grant Helper ST privileges (multi-chronicle + self-switch PC), reset passwords, ban or unban users.",
+    "downtime": "sheet change requests from players; approve or reject with a reason.",
+    "moderation": "recent admin actions for audit and follow-up.",
+    "ai": "local model, global master prompt, model per role, cloud keys, classifier and embeddings."
+  },
+  "loading": "Loading…"
+}

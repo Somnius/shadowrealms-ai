@@ -23,14 +23,15 @@
         color: #e5e5e5;
         font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
       }
-      #root { min-height: 100vh; }
+      #root { min-height: 100vh; min-height: 100dvh; }
     </style>
-    <!-- Load webfonts in head (avoid @import inside CSS — reduces FOUC and layout thrash) -->
+    <!-- Webfonts (all SIL OFL 1.1; see src/design/tokens.css). Cinzel has no Greek, so the design
+         system swaps to Alegreya under :lang(el). Crimson Text stays for legacy pages until phase C. -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
       rel="stylesheet"
-      href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&amp;family=Crimson+Text:ital,wght@0,400;0,600;1,400&amp;family=Inter:wght@300;400;500;600;700&amp;family=JetBrains+Mono:wght@300;400;500;600;700&amp;display=swap"
+      href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700&amp;family=Alegreya:wght@500;700&amp;family=EB+Garamond:ital,wght@0,400..600;1,400..600&amp;family=Inter:wght@400..600&amp;family=JetBrains+Mono:wght@400;500&amp;family=Crimson+Text:ital,wght@0,400;0,600;1,400&amp;display=swap"
     />
     <!-- Single FA load (was duplicated via gothic-theme @import); newer build may reduce Firefox glyph warnings -->
     <link

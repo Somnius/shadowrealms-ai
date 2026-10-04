@@ -1,0 +1,24 @@
+{
+  "youPlay": "You play",
+  "noCharacter": "No character in this chronicle yet",
+  "enter": "Enter",
+  "details": "Details & settings",
+  "join": {
+    "needsApproval": "Joining a new chronicle needs Storyteller approval.",
+    "failed": "Could not join this chronicle",
+    "done": "You joined the chronicle."
+  },
+  "title": "Chronicle hall",
+  "create": "New chronicle",
+  "mine": "Your chronicles",
+  "empty": {
+    "title": "No chronicles yet",
+    "body": "Create one, or join an open chronicle below."
+  },
+  "open": {
+    "title": "Open chronicles you can join",
+    "body": "Listed by their Storyteller and accepting players. Joining lets you create a character there.",
+    "max": "max {{n}} players",
+    "join": "Join"
+  }
+}
