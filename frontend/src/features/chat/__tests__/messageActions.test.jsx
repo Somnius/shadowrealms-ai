@@ -5,7 +5,7 @@ import { DesignProvider } from '../../../design';
 import MessageList from '../MessageList';
 import Composer from '../Composer';
 import { MessageActionsContext, ReplyQuote, deleteErrorText, jumpToMessage, useMessageActions } from '../MessageActions';
-import { anchoredScrollTop, canDeleteMessage, copyTextOf, excerptOf, replyTargetOf } from '../messageActions';
+import { anchoredScrollTop, canDeleteMessage, copyTextOf, excerptOf, replyTargetOf } from '../messageRules';
 import { mergeRefresh, useRoomMessages } from '../useRoomMessages';
 import { optimisticMessage, sendChatMessage } from '../sendFlow';
 
