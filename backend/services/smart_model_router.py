@@ -41,7 +41,19 @@ class TaskType(Enum):
     DICE_ROLLING = "dice_rolling"
     COMBAT = "combat"
     CHARACTER_CREATION = "character_creation"
+    RULES = "rules"
     GENERAL = "general"
+
+
+# Classifier intent label -> TaskType (services/classifier.INTENTS)
+INTENT_TASK_TYPES = {
+    "dice": TaskType.DICE_ROLLING,
+    "combat": TaskType.COMBAT,
+    "rules_question": TaskType.RULES,
+    "roleplay": TaskType.ROLEPLAY,
+    "general": TaskType.GENERAL,
+}
+INTENT_MIN_SCORE = 0.6
 
 class ModelProvider(Enum):
     """Available model providers"""
@@ -95,6 +107,7 @@ class SmartModelRouter:
             TaskType.DICE_ROLLING: ['llama3.2:3b', LM_STUDIO_ROUTE_KEY],
             TaskType.COMBAT: ['llama3.2:3b', LM_STUDIO_ROUTE_KEY],
             TaskType.CHARACTER_CREATION: [LM_STUDIO_ROUTE_KEY, 'llama3.2:3b'],
+            TaskType.RULES: [LM_STUDIO_ROUTE_KEY, 'llama3.2:3b'],
             TaskType.GENERAL: [LM_STUDIO_ROUTE_KEY, 'llama3.2:3b']
         }
         
@@ -119,9 +132,28 @@ class SmartModelRouter:
                     logger.warning(f"⚠️  Failed to load priority model: {model_name}")
     
     def detect_task_type(self, prompt: str, context: Dict[str, Any]) -> TaskType:
-        """Detect the type of task based on prompt and context"""
+        """
+        Task type of the player's message. The classifier's intent (Laya / Jev) when one is
+        configured and confident; otherwise the keyword rules below. Uses the raw player
+        message (context['player_message']) rather than the RAG-augmented prompt.
+        """
+        text = str(context.get('player_message') or prompt or '')
+        if not context.get('skip_classifier'):
+            try:
+                from services.classifier import classify_intent_fast
+
+                intent = classify_intent_fast(text)
+            except Exception as e:  # noqa: BLE001 - routing must never fail on the classifier
+                logger.warning(f"Intent classifier failed, using keywords: {e}")
+                intent = None
+            if intent and intent.get('score', 0) >= INTENT_MIN_SCORE and intent.get('label') in INTENT_TASK_TYPES:
+                return INTENT_TASK_TYPES[intent['label']]
+        return self.detect_task_type_keywords(text)
+
+    def detect_task_type_keywords(self, prompt: str) -> TaskType:
+        """Keyword fallback (the original router rules)."""
         prompt_lower = prompt.lower()
-        
+
         # Character creation
         if any(word in prompt_lower for word in ['character', 'create', 'background', 'stats', 'sheet', 'class', 'race']):
             return TaskType.CHARACTER_CREATION
@@ -230,156 +262,127 @@ class SmartModelRouter:
         
         return None
     
+    @staticmethod
+    def resolve_role(task_type: TaskType, context: Dict[str, Any]) -> str:
+        """
+        AI role (services/ai_roles.ROLES) for this call:
+        - context['ai_role'] == 'storyteller' -> storyteller_el / storyteller_en by context['reply_language']
+        - an explicit role name is used as is
+        - no role: dice/combat -> utility (as the old router did), anything else -> storyteller_en
+        """
+        from services.ai_roles import ROLES
+
+        hint = str(context.get('ai_role') or '').strip()
+        if hint == 'storyteller':
+            return 'storyteller_el' if context.get('reply_language') == 'el' else 'storyteller_en'
+        if hint in ROLES:
+            return hint
+        if task_type in (TaskType.DICE_ROLLING, TaskType.COMBAT):
+            return 'utility'
+        return 'storyteller_en'
+
+    @staticmethod
+    def build_messages(prompt: str, context: Dict[str, Any]) -> List[Dict[str, str]]:
+        messages: List[Dict[str, str]] = []
+        system = str(context.get('system_prompt') or '').strip()
+        if context.get('reply_language'):
+            from services.language import reply_language_instruction
+
+            instruction = reply_language_instruction(
+                context['reply_language'], storyteller=context.get('ai_role') == 'storyteller'
+            )
+            system = f"{system}\n\n{instruction}".strip()
+        if system:
+            messages.append({'role': 'system', 'content': system})
+        cc = _campaign_context_to_send(context)
+        if cc:
+            messages.append({'role': 'system', 'content': f"Campaign Context: {cc}"})
+        messages.append({'role': 'user', 'content': prompt})
+        return messages
+
     def generate_response(self, prompt: str, context: Dict[str, Any], config: Dict[str, Any]) -> Dict[str, Any]:
-        """Generate response using the best available model for the task"""
-        # Detect task type
+        """Pick the AI role for this message and generate through its provider chain (services/ai_roles)."""
+        from services.ai_providers import ProviderError
+        from services.ai_roles import generate_for_role
+
         task_type = self.detect_task_type(prompt, context)
-        
-        # Get best model for this task
-        model_name = self.get_best_model(task_type, context)
-        
-        if not model_name:
+        role = self.resolve_role(task_type, context)
+        params = {
+            'max_tokens': config.get('max_tokens', 1024),
+            'temperature': config.get('temperature', 0.7),
+        }
+        budget = None
+        if context.get('ai_role') == 'storyteller':  # player chat behind nginx's 60 s
+            from services.ai_roles import storyteller_timeouts
+
+            attempt_timeout, budget = storyteller_timeouts()
+            params['timeout'] = attempt_timeout
+        if config.get('timeout'):
+            params['timeout'] = config['timeout']
+        try:
+            messages = self.build_messages(prompt, context)
+            res = generate_for_role(role, messages, params, budget_s=budget)
+        except ProviderError as e:
+            logger.error(f"All providers failed for role {role}: {e}")
             return {
-                'response': 'Error: No suitable models available',
+                'response': 'Error: the AI is unavailable right now (all configured models failed).',
                 'model_used': None,
                 'task_type': task_type.value,
-                'error': 'No models available'
+                'role': role,
+                'error': str(e),
             }
-        
-        # Get model configuration
-        model_config = self.model_configs.get(model_name, {})
-        
-        # Generate response
-        try:
-            if model_config['provider'] == ModelProvider.LM_STUDIO:
-                response = self._generate_lm_studio_response(model_name, prompt, context, config, model_config)
-            elif model_config['provider'] == ModelProvider.OLLAMA:
-                response = self._generate_ollama_response(model_name, prompt, context, config, model_config)
-            else:
-                raise ValueError(f"Unknown provider: {model_config['provider']}")
-            
-            # Update last used time
-            self.model_last_used[model_name] = time.time()
-            display_model = (
-                get_effective_lm_studio_model_id(self.config)
-                if model_name == LM_STUDIO_ROUTE_KEY
-                else model_name
-            )
-            return {
-                'response': response,
-                'model_used': display_model,
-                'task_type': task_type.value,
-                'provider': model_config['provider'].value,
-                'vram_usage': self.get_current_vram_usage(),
-                'timestamp': datetime.now().isoformat()
-            }
-            
-        except Exception as e:
-            logger.error(f"Error generating response with {model_name}: {e}")
-            err_model = (
-                get_effective_lm_studio_model_id(self.config)
-                if model_name == LM_STUDIO_ROUTE_KEY
-                else model_name
-            )
-            return {
-                'response': f'Error generating response: {str(e)}',
-                'model_used': err_model,
-                'task_type': task_type.value,
-                'error': str(e)
-            }
-    
-    def _generate_lm_studio_response(self, model_name: str, prompt: str, context: Dict[str, Any], config: Dict[str, Any], model_config: Dict[str, Any]) -> str:
-        """Generate response using LM Studio"""
-        base_url = model_config['base_url']
-        
-        # Prepare messages
-        messages = []
-        
-        # Add system prompt if provided
-        if context.get('system_prompt'):
-            messages.append({
-                'role': 'system',
-                'content': context['system_prompt']
-            })
-        
-        # Add campaign context if available
-        if _campaign_context_to_send(context):
-            messages.append({
-                'role': 'system',
-                'content': f"Campaign Context: {_campaign_context_to_send(context)}"
-            })
-        
-        # Add user prompt
-        messages.append({
-            'role': 'user',
-            'content': prompt
-        })
-        
-        # Prepare payload (model id from admin + env + LM Studio loaded state)
-        payload = {
-            'model': get_effective_lm_studio_model_id(self.config),
-            'messages': messages,
-            'max_tokens': config.get('max_tokens', model_config.get('max_tokens', 1024)),
-            'temperature': config.get('temperature', model_config.get('temperature', 0.7)),
-            'stream': False
+        text, script_fix = res['text'], None
+        if context.get('reply_language') == 'el':
+            text, script_fix = self._fix_greek_script(text, role, res, messages, params, budget)
+        out = {
+            'response': text,
+            'model_used': res['model'],
+            'provider': res['provider'],
+            'role': role,
+            'language': context.get('reply_language'),
+            'attempts': res['attempts'],
+            'ms': res['ms'],
+            'task_type': task_type.value,
+            'timestamp': datetime.now().isoformat()
         }
-        reasoning_effort = (self.config.get('LM_STUDIO_REASONING_EFFORT') or '').strip()
-        if reasoning_effort:
-            payload['reasoning_effort'] = reasoning_effort
+        if res.get('trimmed'):
+            out['trimmed'] = res['trimmed']
+        if script_fix:
+            out['script_fix'] = script_fix
+        return out
 
-        hdrs = {'Content-Type': 'application/json'}
-        ak = (self.config.get('LM_STUDIO_API_KEY') or '').strip()
-        if ak:
-            hdrs['Authorization'] = f'Bearer {ak}'
-        response = requests.post(
-            f"{base_url}/v1/chat/completions",
-            json=payload,
-            timeout=config.get('timeout', 30),
-            headers=hdrs,
-        )
-        
-        if response.status_code == 200:
-            return response.json()['choices'][0]['message']['content']
-        else:
-            raise Exception(f"LM Studio API error: {response.status_code} - {response.text}")
-    
-    def _generate_ollama_response(self, model_name: str, prompt: str, context: Dict[str, Any], config: Dict[str, Any], model_config: Dict[str, Any]) -> str:
-        """Generate response using Ollama"""
-        base_url = model_config['base_url']
-        
-        # Prepare full prompt with context
-        full_prompt = prompt
-        
-        if context.get('system_prompt'):
-            full_prompt = f"System: {context['system_prompt']}\n\nUser: {prompt}"
-        
-        if _campaign_context_to_send(context):
-            full_prompt = f"Campaign Context: {_campaign_context_to_send(context)}\n\n{full_prompt}"
-        
-        # Prepare payload
-        payload = {
-            'model': model_name,
-            'prompt': full_prompt,
-            'stream': False,
-            'options': {
-                'temperature': config.get('temperature', model_config.get('temperature', 0.7)),
-                'num_predict': config.get('max_tokens', model_config.get('max_tokens', 1024))
-            }
-        }
-        
-        # Make request
-        response = requests.post(
-            f"{base_url}/api/generate",
-            json=payload,
-            timeout=config.get('timeout', 30),
-            headers={'Content-Type': 'application/json'}
-        )
-        
-        if response.status_code == 200:
-            return response.json()['response']
-        else:
-            raise Exception(f"Ollama API error: {response.status_code} - {response.text}")
-    
+    @staticmethod
+    def _fix_greek_script(text, role, res, messages, params, budget):
+        """
+        Small models writing Greek sometimes drop CJK/Thai/Arabic/Tamil characters into words.
+        Retry once on the same model at a lower temperature; if that is still mixed (or fails),
+        strip the foreign characters. Returns (text, None | 'retried' | 'stripped').
+        """
+        from services.ai_providers import ProviderError
+        from services.ai_roles import generate_for_role
+        from services.storyteller_prompt import foreign_script_chars, strip_foreign_script
+
+        bad = foreign_script_chars(text)
+        if not bad:
+            return text, None
+        logger.warning("Greek reply from %s/%s has %d foreign-script characters (%r); retrying once",
+                       res['provider'], res['model'], len(bad), ''.join(bad[:12]))
+        retry_params = {**params, 'temperature': max(0.1, float(params.get('temperature') or 0.7) - 0.4)}
+        left = (budget or 120) - res['ms'] / 1000.0 - 2
+        if left < 5:
+            logger.warning("No time left to retry the Greek reply; stripping foreign-script characters")
+            return strip_foreign_script(text), 'stripped'
+        try:
+            again = generate_for_role(role, messages, retry_params, chain=[(res['provider'], res['model'])],
+                                      budget_s=left)['text']
+            if not foreign_script_chars(again):
+                return again, 'retried'
+            text = again
+        except ProviderError as e:
+            logger.warning("Greek script retry failed: %s", e)
+        logger.warning("Greek reply still mixed after retry; stripping foreign-script characters")
+        return strip_foreign_script(text), 'stripped'
+
     def get_system_status(self) -> Dict[str, Any]:
         """Get system status for all models"""
         available_models = self.get_available_models()

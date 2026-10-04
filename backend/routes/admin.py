@@ -1240,6 +1240,154 @@ def ai_settings():
     return jsonify(out), 200
 
 
+_KEY_FIELDS = {'anthropic': 'anthropic_api_key', 'openai': 'openai_api_key', 'jev': 'jev_api_key'}
+
+
+def _clean_api_key(raw):
+    """None -> delete; '' -> leave unchanged (returns False); else the stripped key or ValueError."""
+    if raw is None:
+        return None
+    s = str(raw).strip()
+    if s == '':
+        return False
+    if len(s) > 500 or any(c.isspace() for c in s):
+        raise ValueError('API key looks malformed (whitespace or too long)')
+    return s
+
+
+@bp.route('/ai-providers', methods=['GET', 'PUT'])
+@require_admin()
+def ai_providers():
+    """
+    Admin: AI role -> provider/model, cloud + Jev API keys (write-only), classifier choice.
+    Keys are stored encrypted (services/secret_store.py) and only ever returned masked.
+    PUT body (all optional):
+      {"roles": {"storyteller_en": {"provider": "lm_studio", "model": ""}, ...},
+       "keys": {"anthropic": "sk-..." | "" (keep) | null (delete), "openai": ..., "jev": ...},
+       "classifier_provider": "auto"|"laya"|"jev"|"llm", "jev_model": "jev-latest"}
+    """
+    from services import ai_roles, classifier
+    from services.ai_runtime_settings import set_app_setting
+    from services.embedding_service import configured_embedding_model
+    from services.secret_store import set_secret
+
+    if request.method == 'PUT':
+        data = request.get_json(silent=True) or {}
+        # Validate the whole body first, then save: a bad field saves nothing.
+        ops = []
+        try:
+            if not isinstance(data, dict):
+                raise ValueError('expected a JSON object')
+            roles = data.get('roles') or {}
+            keys = data.get('keys') or {}
+            if not isinstance(roles, dict) or not isinstance(keys, dict):
+                raise ValueError('roles and keys must be objects')
+            for role, cfg in roles.items():
+                if not isinstance(cfg, dict):
+                    raise ValueError(f'role {role}: expected an object')
+                if role not in ai_roles.ROLES:
+                    raise ValueError(f'unknown AI role {role!r}')
+                prov, model = cfg.get('provider'), cfg.get('model')
+                if (prov is not None and not isinstance(prov, str)) or (model is not None and not isinstance(model, str)):
+                    raise ValueError(f'role {role}: provider and model must be strings')
+                if prov and prov.strip() and prov.strip() not in ai_roles.ALL_PROVIDERS:
+                    raise ValueError(f'unknown provider {prov.strip()!r}')
+                ops.append(lambda r=role, p=prov, m=model: ai_roles.set_role_config(r, p, m))
+            for name, raw in keys.items():
+                if name not in _KEY_FIELDS:
+                    raise ValueError(f'unknown key {name!r}')
+                key = _clean_api_key(raw)
+                if key is not False:
+                    ops.append(lambda n=_KEY_FIELDS[name], k=key: set_secret(n, k))
+            if 'classifier_provider' in data:
+                v = str(data.get('classifier_provider') or 'auto').strip().lower()
+                if v not in classifier.PROVIDERS + ('auto',):
+                    raise ValueError(f'unknown classifier provider {v!r}')
+                ops.append(lambda v=v: set_app_setting(classifier.SETTING_PROVIDER, None if v == 'auto' else v))
+            if 'jev_model' in data:
+                jm = str(data.get('jev_model') or '').strip() or None
+                ops.append(lambda jm=jm: set_app_setting(classifier.SETTING_JEV_MODEL, jm))
+        except ValueError as e:
+            return jsonify({'error': str(e)}), 400
+        for op in ops:
+            op()
+        actor = int(get_jwt_identity())
+        logger.info(
+            "Admin %s updated AI providers (roles=%s, keys=%s, classifier=%s)",
+            actor, list((data.get('roles') or {}).keys()), list((data.get('keys') or {}).keys()),
+            data.get('classifier_provider'),
+        )
+
+    snap = ai_roles.settings_snapshot()
+    snap['classifier'] = classifier.status()
+    snap['embedding_model'] = configured_embedding_model()
+    return jsonify(snap), 200
+
+
+@bp.route('/ai-providers/test', methods=['POST'])
+@require_admin()
+def ai_providers_test():
+    """Admin: tiny real request to one provider with the stored key; never returns the key."""
+    from services.ai_roles import test_provider
+
+    data = request.get_json(silent=True) or {}
+    return jsonify(test_provider(str(data.get('provider') or ''), (data.get('model') or '').strip() or None)), 200
+
+
+@bp.route('/classifier/test', methods=['POST'])
+@require_admin()
+def classifier_test():
+    """Admin: classify a sample text with one classifier provider (no fallback)."""
+    import time as _time
+    from services import classifier
+
+    data = request.get_json(silent=True) or {}
+    name = str(data.get('provider') or classifier.resolve_provider_name()).strip().lower()
+    if name == 'auto':
+        name = classifier.resolve_provider_name('auto')
+    if name not in classifier.PROVIDERS:
+        return jsonify({'ok': False, 'detail': f'unknown provider {name!r}'}), 400
+    text = str(data.get('text') or '*draws her knife and hisses at the Prince*')[:2000]
+    t0 = _time.monotonic()
+    try:
+        res = classifier.build_provider(name).classify(text, {'room': 'OOC'})
+        return jsonify({'ok': True, 'provider': name, 'result': res,
+                        'ms': int((_time.monotonic() - t0) * 1000)}), 200
+    except Exception as e:  # noqa: BLE001
+        return jsonify({'ok': False, 'provider': name, 'detail': str(e)[:300],
+                        'ms': int((_time.monotonic() - t0) * 1000)}), 200
+
+
+@bp.route('/embeddings', methods=['GET'])
+@require_admin()
+def embeddings_info():
+    """Admin: configured embedding model + each ChromaDB collection's model/dimension (read-only)."""
+    from services.rag_service import connect_chroma
+    from services.vector_store import embeddings_status
+
+    try:
+        return jsonify(embeddings_status(connect_chroma({}))), 200
+    except Exception as e:  # noqa: BLE001
+        return jsonify({'error': f'ChromaDB unavailable: {e}'}), 503
+
+
+@bp.route('/embeddings/reembed', methods=['POST'])
+@require_admin()
+def embeddings_reembed():
+    """Admin: rebuild collections embedded with another model (idempotent; force = all)."""
+    from services.rag_service import connect_chroma
+    from services.vector_store import reembed_collections
+
+    data = request.get_json(silent=True) or {}
+    try:
+        report = reembed_collections(connect_chroma({}), force=bool(data.get('force')))
+    except Exception as e:  # noqa: BLE001
+        logger.error("Re-embed failed: %s", e)
+        return jsonify({'error': f'Re-embed failed: {e}'}), 503
+    logger.info("Admin %s ran re-embed: %s", get_jwt_identity(), report)
+    return jsonify(report), 200
+
+
 @bp.route('/lm-studio/models', methods=['GET'])
 @require_admin()
 def list_lm_studio_models_admin():

@@ -75,6 +75,9 @@ def suggest_locations(campaign_id):
         llm_context = {
             "system_prompt": system_prompt,
             "campaign_context": f"Campaign: {campaign_name}\nSetting: {setting_description}",
+            # reply language: the setting text, else the requester's UI language
+            "player_message": setting_description or "",
+            "player_user_id": user_id,
         }
         
         llm_config = {
@@ -576,7 +579,7 @@ def delete_location(campaign_id, location_id):
             
             if message_ids and hasattr(rag_service, 'client'):
                 try:
-                    collection = rag_service.client.get_or_create_collection(name='message_memory')
+                    collection = rag_service._get_collection('messages')
                     # Delete embeddings for these messages
                     embedding_ids = [f"msg_{msg_id}_{campaign_id}" for msg_id in message_ids]
                     if embedding_ids:

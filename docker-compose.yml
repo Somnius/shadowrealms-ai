@@ -47,6 +47,17 @@ services:
       - OLLAMA_URL=http://localhost:11434
       - OLLAMA_MODEL=${OLLAMA_MODEL:-command-r:35b}
       - OLLAMA_TIMEOUT=${OLLAMA_TIMEOUT:-30}
+      # Phase 2 AI (docs/AI_SYSTEMS.md). Roles/keys are set in the admin panel; these are defaults.
+      - STORYTELLER_EL_MODEL=${STORYTELLER_EL_MODEL:-llama-krikri-8b-instruct}
+      - UTILITY_PROVIDER=${UTILITY_PROVIDER:-ollama}
+      - UTILITY_MODEL=${UTILITY_MODEL:-llama3.2:3b}
+      - EMBEDDING_MODEL=${EMBEDDING_MODEL:-text-embedding-bge-m3}
+      - OOC_VIOLATION_THRESHOLD=${OOC_VIOLATION_THRESHOLD:-0.8}
+      - OPENAI_REASONING_EFFORT=${OPENAI_REASONING_EFFORT:-none}
+      - STORYTELLER_ATTEMPT_TIMEOUT=${STORYTELLER_ATTEMPT_TIMEOUT:-45}
+      - STORYTELLER_TIME_BUDGET=${STORYTELLER_TIME_BUDGET:-55}
+      - STORYTELLER_CONTEXT_TOKENS=${STORYTELLER_CONTEXT_TOKENS:-8192}
+      - JEV_MODEL=${JEV_MODEL:-jev-latest}
       # Optional SMTP (copy values from .env)
       - SMTP_HOST=${SMTP_HOST:-}
       - SMTP_PORT=${SMTP_PORT:-587}

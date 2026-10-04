@@ -1,7 +1,7 @@
 # AI & Memory Systems Documentation
 
-**Last Updated**: 2026-04-05  
-**Version**: 0.8.0
+**Last Updated**: 2026-10-04  
+**Version**: 0.9 (phase 2: AI)
 
 This document consolidates all AI and memory system documentation for ShadowRealms AI.
 
@@ -10,12 +10,129 @@ This document consolidates all AI and memory system documentation for ShadowReal
 ## Table of Contents
 
 1. [Overview](#overview)
-2. [OOC channel AI & `/ai` admin tools (storyteller chat)](#ooc-channel-ai-storyteller-chat)
-3. [OOC Monitoring System](#ooc-monitoring-system)
-4. [AI Memory Cleanup](#ai-memory-cleanup)
-5. [AI Memory Implementation](#ai-memory-implementation)
-6. [AI Context & Memory Proposal](#ai-context--memory-proposal)
-7. [Complete AI Memory System](#complete-ai-memory-system)
+2. [v0.9: providers, language routing, embeddings, classifier](#v09-providers-language-routing-embeddings-classifier)
+3. [OOC channel AI & `/ai` admin tools (storyteller chat)](#ooc-channel-ai-storyteller-chat)
+4. [OOC Monitoring System](#ooc-monitoring-system)
+5. [AI Memory Cleanup](#ai-memory-cleanup)
+6. [AI Memory Implementation](#ai-memory-implementation)
+7. [AI Context & Memory Proposal](#ai-context--memory-proposal)
+8. [Complete AI Memory System](#complete-ai-memory-system)
+
+---
+
+## v0.9: providers, language routing, embeddings, classifier
+
+Phase 2 of the v0.9 roadmap. Local models first; cloud providers only with API keys an admin enters (off by default).
+
+### Providers and roles
+
+Every LLM call still goes through `LLMService.generate_response` → `SmartModelRouter.generate_response`, which now picks an **AI role** and calls `services/ai_roles.generate_for_role`. Providers live in `services/ai_providers.py` behind one interface, `generate(messages, params) -> text` (OpenAI-style messages), and raise `ProviderError` on any failure.
+
+| Provider | How | Notes |
+|---|---|---|
+| `lm_studio` (default) | `POST {LM_STUDIO_URL}/v1/chat/completions` | Sends `reasoning_effort` from `LM_STUDIO_REASONING_EFFORT` (Qwen3.5 needs `none` or it spends the whole budget thinking and returns empty content). LM Studio JIT-loads a model id that isn't loaded. |
+| `ollama` | `POST {OLLAMA_URL}/api/chat` | |
+| `anthropic` (cloud) | `POST https://api.anthropic.com/v1/messages`, `x-api-key`, `anthropic-version: 2023-06-01` | Default model `claude-sonnet-5-5` (admin-editable). System messages go to `system`. No `temperature` is sent to `claude-(sonnet|opus|fable)-5*` (Sonnet 5.5 rejects a non-default temperature); any other model gets one retry without it when a 400 names `temperature`. `stop_reason: refusal` counts as a failure. |
+| `openai` (cloud) | `POST https://api.openai.com/v1/chat/completions`, Bearer key | Default model `gpt-6.1-sol` (admin-editable). Sends `reasoning_effort` (`OPENAI_REASONING_EFFORT`, default `none`) and `max_completion_tokens`; same temperature retry. |
+
+Roles (admin panel → **Ai System → Models per role**, stored in `app_settings` as `ai_role:<role>:provider|model`):
+
+| Role | Used for | Default |
+|---|---|---|
+| `storyteller_en` | Storyteller replies when the player writes English | LM Studio, model empty = the old behaviour: the admin "Chat model" override, else `LM_STUDIO_MODEL`, else the model LM Studio has loaded |
+| `storyteller_el` | Storyteller replies when the player writes Greek | LM Studio `llama-krikri-8b-instruct` (`STORYTELLER_EL_MODEL`) |
+| `utility` | Calls with no role whose task is dice/combat (as the old router did) | Ollama `llama3.2:3b` (`UTILITY_PROVIDER`, `UTILITY_MODEL`) |
+| `classifier` | The LLM-prompt fallback of the classifier (OOC check) | LM Studio, loaded model. Never falls back to Ollama (see below) |
+
+**Fallback chain** (`ai_roles.fallback_chain`): cloud fails → the role's local model; an LM Studio model that isn't the loaded one fails → LM Studio's loaded model; LM Studio fails → Ollama; Ollama fails → LM Studio. When LM Studio answers "Failed to load model" (not enough VRAM), that model is skipped for 5 minutes so later messages don't wait ~7 s for the same failure. `POST /api/ai/chat` returns `ai_meta` (`provider`, `model_used`, `role`, `language`, `ms`, `fallback_from`) so you can see who answered.
+
+### Cloud API keys
+
+- Admin panel → **Ai System → Cloud providers**: paste the key, **Save key**, then **Test connection** (a 16-token request with the stored key). Then pick the provider for a role and **Save roles**. Nothing uses a cloud provider until both are done.
+- Keys are encrypted with Fernet; the key is derived from `FLASK_SECRET_KEY` with HKDF-SHA256 (`services/secret_store.py`) and stored in `app_settings` (`secret:anthropic_api_key`, `secret:openai_api_key`, `secret:jev_api_key`). The API only ever returns `{"set": true, "masked": "••••abcd"}`; plaintext never goes back to the browser.
+- Changing `FLASK_SECRET_KEY` makes stored keys unreadable: they show as "no key" and must be entered again.
+- Keys are **not** read from environment variables (`OPENAI_API_KEY` in `env.template` is legacy and unused by these providers).
+- API: `GET/PUT /api/admin/ai-providers`, `POST /api/admin/ai-providers/test` (admin only). In `PUT`, `"keys": {"anthropic": "<key>"}` sets, `""` keeps, `null` deletes.
+
+### Language routing (EN / EL)
+
+- `services/language.detect_language`: share of Greek letters (U+0370–03FF, U+1F00–1FFF) among all letters; ≥ 0.3 → Greek. Latin-script text is English only when it is clearly English (common English words outnumber common Greeklish ones), so **Greeklish** ("Rixnw 5 zaria gia to Dex") is undecided. Fewer than 4 letters and no Greek → undecided.
+- Undecided messages ("ok", "5d10", Greeklish) fall back to `users.ui_language` (`'en'` | `'el'` | NULL, new column, phase 3 will set it from the UI), then English.
+- Storyteller calls (`ai_role: 'storyteller'` in `routes/ai.py`) go to `storyteller_el` for Greek, `storyteller_en` otherwise, and the system prompt gets an explicit instruction to answer in the player's language (Greek: natural modern Greek, informal εσύ). Other LLM calls (`/ai summarize`, `/ai respond`, location suggestions) get a language line too, from the text they work on (`player_message`), keeping any required output format.
+- Greek replies are checked for characters outside Greek/Latin/punctuation/digits/symbols (small models sometimes put CJK/Thai/Arabic/Tamil letters inside Greek words): one retry on the same model at a lower temperature, then the stray characters are stripped. `ai_meta.script_fix` says `retried` or `stripped`; the warning is logged.
+- Why Krikri: in the phase 2 benchmark `google/gemma-4-e2b` answered Greek prompts in English 6 of 6 times and with grammar errors otherwise; `llama-krikri-8b-instruct` wrote clean Greek.
+
+**VRAM (measured 2026-10-04, RTX 4080 SUPER 16 GB, ComfyUI holding 7.1 GB):** with `gemma-4-e2b` loaded through `lms load`, LM Studio refused to JIT-load Krikri ("Failed to load model", ~7 s), so the Greek reply fell back to gemma (Greek with errors). Krikri alone next to ComfyUI fits (observed 14.9 GB used with Krikri + bge-m3 + ComfyUI). Options while ComfyUI is resident:
+1. Load **Krikri as the single LM Studio model** (`lms load llama-krikri-8b-instruct`). `storyteller_en` follows the loaded model, so both languages use Krikri, with no swapping. Its English is plainer but fine.
+2. Let LM Studio swap: with **Unload previous JIT model on load** on (it is) and gemma loaded *by JIT* (not with `lms load`), a Greek message evicts gemma and loads Krikri, and vice versa. Each switch costs a model load.
+3. Without ComfyUI both fit (≈ 4.4 + 5.0 + 0.6 GB).
+
+### Embeddings (RAG)
+
+- Before v0.9, every ChromaDB collection used **Chroma's built-in default embedder** (all-MiniLM-L6-v2, 384 dims, English only). The LM Studio embedding service was never used for storage.
+- Now every collection is opened through `services/vector_store.get_rag_collection`, with one embedding function (`LMStudioEmbeddingFunction`, LM Studio `POST /v1/embeddings`). Model: `EMBEDDING_MODEL`, default **`text-embedding-bge-m3`** (1024 dims; ranks the right passage first in English, Greek and across languages; `nomic-embed-text-v1.5` could not separate Greek texts). So all writes (`documents=`) and queries (`query_texts=`) use the same model. New collections use cosine distance (so `relevance = 1 - distance` is the cosine similarity).
+- Each collection records `embedding_model` and `embedding_dim` in its metadata. **Re-embed** rebuilds every collection whose embedder, model or dimension differs: it copies ids/documents/metadatas into `<name>__reembed` with new vectors, deletes the old collection and renames the new one into place. Idempotent. One run at a time across processes (PostgreSQL advisory lock; a second run reports `skipped`). A leftover `<name>__reembed` from a crash is never deleted blindly: restored if the original is missing/empty, dropped if the original holds all its ids, else kept as `<name>__reembed_orphan_<time>`. The startup run is skipped in the werkzeug reloader's parent process.
+  - Runs automatically at backend start (background thread; skipped if the embedder is down).
+  - Admin panel → **Ai System → Embeddings → Re-embed** (`POST /api/admin/embeddings/reembed`, `{"force": true}` rebuilds all). `GET /api/admin/embeddings` shows each collection's model, dimension and count.
+  - CLI: `docker compose exec backend python reembed_rag.py [--dry-run] [--force] [--only NAME ...]`.
+  - Writes that hit a collection during its rebuild can be lost (it takes well under a second for today's data).
+- **To change the embedder:** set `EMBEDDING_MODEL` in `.env` (an LM Studio embedding model id), `docker compose up -d backend`; the startup re-embed converts the collections. Until then, a collection built with another embedder raises an "embedding function conflict" and RAG skips it.
+- The book/ingest scripts (`books/import_to_rag.py`, `books/quick_import_core.py`, `scripts/ingest_location_naming_rag.py`, `backend/ingest_location_naming_rag.py`) use the same helper; precomputed vectors in parsed book JSON are ignored. Books: run `python books/parse_books.py` first (writes `books/parsed/`), then `docker compose exec backend python books/import_to_rag.py --list` / `--import …` (the scripts find the backend code both in a checkout and in the container, where books are mounted at `/app/books`).
+- **Message memory** (`message_memory`, every saved chat line): the Storyteller adds up to 3–5 earlier lines from the same room whose cosine relevance is ≥ **0.5** (`SEMANTIC_MIN_RELEVANCE` in `routes/ai.py`). bge-m3 scores same-language matches ~0.73 but Greek↔English ~0.57–0.67, so the old 0.7 dropped every cross-language memory. Lines already in the recent history, and the current message, are skipped.
+
+### Storyteller prompt and context budget
+
+- The player's message is sent once (the user turn). Room history is labelled `Player <name>` / `Storyteller`, newest kept; long lines are clipped (Storyteller 700, player 500 characters). Campaign-wide `ai_memory` is no longer added (it repeated the history and leaked other rooms' scenes), nor is the campaign JSON in the RAG section.
+- Budget (`services/storyteller_prompt.py`): the model context (`STORYTELLER_CONTEXT_TOKENS`, default 8192, lowered to LM Studio's `loaded_context_length` when smaller) minus the reply's `max_tokens` minus a 400-token reserve. Fixed parts first (instructions, campaign, character, location, NPCs), RAG sections in the user turn get 25%, room memory 10%, history the rest. Tokens are estimated at 3.5 ASCII / 2.0 other characters per token (gemma-4-e2b measured 5.3 English, 2.4 Greek).
+- If a model still reports a context overflow, the same model is retried with the prompt trimmed (up to twice, 60% each time); the chain then never falls back to Ollama, whose default context is smaller. `ai_meta.trimmed` counts the trims.
+
+### Message classifier (OOC monitor + intent)
+
+`services/classifier.classify(text, campaign_ctx)` returns:
+
+```json
+{"ooc_violation": {"label": true, "score": 0.97}, "intent": {"label": "combat", "score": 0.91},
+ "language": "en", "provider": "laya", "fallbacks": []}
+```
+
+`score` under `ooc_violation` is P(in character); `label` is `score >= OOC_VIOLATION_THRESHOLD` (default **0.8**, high on purpose because 3 warnings mean a 24 h campaign ban). The threshold only means something for Laya and Jev, which return a probability; the `llm` provider answers YES/NO, scored 1.0/0.0. Intents: `dice`, `combat`, `rules_question`, `roleplay`, `general`.
+
+| Provider | What | Availability |
+|---|---|---|
+| `laya` | Fine-tuned Laya (mmBERT) on CPU via ONNX Runtime, built under `ml/laya/` (see `ml/laya/README.md`) | Model dir `LAYA_MODEL_DIR` (default `backend/data/laya/model` = repo `data/laya/model` in Docker) with `model.onnx`, `tokenizer.json`, `laya.json`; the runtime `infer.py` (`LayaClassifier(model_dir).classify(text)`) is looked up at `LAYA_RUNTIME`, then `<model dir>/infer.py`, then `ml/laya/infer.py`. Missing → unavailable |
+| `jev` | Typesafe System One: `POST https://api.typesafe.ai/v1/systemone`, Bearer key, model `jev-latest` (`JEV_MODEL` / admin field). A `noul` question (in character?) and a `choice` question (intent), the same wording as Laya's. One retry on 429/529 honouring `retry-after` (max 2 s) | Needs the Jev key (admin panel, stored encrypted like the cloud keys) |
+| `llm` | One prompt to the `classifier` role, answering `IN_CHARACTER: YES/NO` and `INTENT: …` (few-shot, EN + EL examples). The message goes in a fenced block marked as data only; anything in it that looks like an answer label or a prompt field (`IN_CHARACTER:`, `INTENT:`, `Message:`, `Answer:`, `Question N:`, the fence markers; any case/spacing, after NFKC and dropping invisible characters) is replaced before it reaches the model, and only the first line of the answer is read, strictly. A malformed answer counts as "classifier unavailable" (nothing flagged) | Always (needs LM Studio) |
+
+- Admin setting `classifier_provider`: `auto` (default: Laya if installed, else LLM), `laya`, `jev`, `llm`. If the chosen one fails, `laya` and then `llm` are tried. If none works, nothing is flagged (fail open).
+- Used by `services/ooc_monitor.py` (warnings/bans when messages are saved in an OOC room) and by `POST /api/ai/chat` in OOC rooms (returns a short fixed moderator note in the player's language, or `ooc_no_reply`). Both go through `classify_cached` (2 min, per process), so the save + the chat call for one message classify it once. Site admins, helpers, the campaign owner and staff-voice posts are never moderated.
+- Intent routing: `SmartModelRouter.detect_task_type` uses the classifier's intent when the provider is Laya or Jev and the score is ≥ 0.6 (`rules_question` → new `TaskType.RULES`); with the `llm` provider it keeps the keyword rules, because a second LLM round trip per Storyteller message isn't worth it.
+- **Measured** (12 then 16 labelled EN/EL messages, LLM prompt): Ollama `llama3.2:3b` flagged 7 of 7 OOC messages as in character, so it is never used for this; `gemma-4-e2b` got 12/12 and, with the few-shot EN/EL prompt, 16/16, Latency with gemma-4-e2b loaded: ~0.13–0.18 s per message (measured 2026-10-04 through `/api/admin/classifier/test`; an earlier note said ~1.5 s). A small set: Laya is the real fix.
+- Admin panel → **Message classifier**: choose the provider, Jev key, and **Test laya / jev / llm** on a sample text (`POST /api/admin/classifier/test`).
+
+### Who may post as the Storyteller
+
+The browser saves AI replies itself (it calls `/api/ai/chat` or `/api/ai/slash`, then POSTs the text to `/api/campaigns/<c>/locations/<l>` with `role: 'assistant'`). That endpoint used to accept `role: 'assistant'` from anyone, so any chronicle member could post as the AI Storyteller, and skip the OOC monitor (which only checks `role: 'user'`).
+
+Now (`services/assistant_grants.py`): `role` must be `user` or `assistant` (else 400), and an assistant message is accepted (else 403) only when:
+- the poster is a site admin, or
+- it's a dice-animation marker (`ai_message_kind` `dice_animation[_hidden]:<id>`, content = that marker's JSON with only the known marker keys, scalar or short numeric-list values, max 2000 characters), or
+- the exact text (trimmed, SHA-256) was handed to this user for this campaign **and room** by `/api/ai/chat` or `/api/ai/slash` in the last 30 minutes (table `ai_reply_grants`). Each grant works once, also under parallel saves (the consuming `UPDATE` re-checks `consumed_at IS NULL`). Replies issued without a room get no grant.
+- `/api/ai/chat` rejects a `message` that isn't a non-blank string of at most 8000 characters (400). When every model fails it answers 503 with a fixed text and issues no grant; it never echoes the player's text as a reply.
+
+### Environment variables (phase 2)
+
+| Variable | Default | |
+|---|---|---|
+| `STORYTELLER_EL_MODEL` | `llama-krikri-8b-instruct` | Default model of the Greek Storyteller role |
+| `UTILITY_PROVIDER` / `UTILITY_MODEL` | `ollama` / `llama3.2:3b` | Default of the utility role |
+| `EMBEDDING_MODEL` | `text-embedding-bge-m3` | LM Studio embedding model for all RAG collections |
+| `OOC_VIOLATION_THRESHOLD` | `0.8` | P(in character) at which an OOC-room message is a violation |
+| `OPENAI_REASONING_EFFORT` | `none` | Sent to OpenAI chat completions for reasoning models only (o-series, gpt-5+); a 400 about it is retried once without it |
+| `STORYTELLER_ATTEMPT_TIMEOUT` | `45` | Seconds per model attempt for Storyteller replies |
+| `STORYTELLER_TIME_BUDGET` | `55` | Seconds for the Storyteller's whole fallback chain (nginx gives `/api` 60 s) |
+| `STORYTELLER_CONTEXT_TOKENS` | `8192` | Context window the Storyteller prompt is budgeted for (lowered to LM Studio's loaded context when smaller) |
+| `JEV_MODEL` | `jev-latest` | Typesafe model (admin field overrides) |
+| `LAYA_MODEL_DIR`, `LAYA_RUNTIME` | see above | Laya model and runtime location |
 
 ---
 
@@ -23,9 +140,9 @@ This document consolidates all AI and memory system documentation for ShadowReal
 
 When a player sends a message from a location whose **database** `type` is `ooc`, `POST /api/ai/chat` does **not** run the normal in-character storyteller (efficient / balanced / full). Instead:
 
-- The model receives campaign summary, known PC names, recent messages in **that OOC room**, and the new line.
-- If the text looks like normal **meta / player** chat, the API returns `ooc_no_reply: true` and `response: null` — **no assistant message** is added.
-- If the text looks **in-character** or like content that belongs in an **in-character** location, the API returns a **short moderator-style warning** only (no scene narration, no NPC voices). The frontend stores that as `message_type: ooc`, `role: assistant`.
+- Since v0.9 the message goes to the classifier (`services/classifier.py`, see above), not to a free-form LLM prompt.
+- If it is normal **meta / player** chat, the API returns `ooc_no_reply: true` and `response: null`: **no assistant message** is added.
+- If it is **in character**, the API returns a **short fixed moderator note** in the player's language (no scene narration, no NPC voices). The frontend stores that as `message_type: ooc`, `role: assistant` (allowed through a one-time grant, see "Who may post as the Storyteller").
 
 The server resolves OOC vs IC using `location_id` and the `locations` table (not client-supplied `location_type` alone), so behavior cannot be spoofed by the browser.
 
@@ -58,7 +175,7 @@ The OOC Monitoring System ensures that players maintain proper roleplay boundari
 - Missing OOC rooms can be fixed with `backend/fix_missing_ooc_rooms.py`
 
 ### 2. **AI-Powered Detection**
-The system uses a lightweight AI model (`llama3.2:3b`) to detect in-character content in OOC rooms.
+Since v0.9 detection goes through `services/classifier.py` (Laya → Jev → LLM prompt, see "v0.9: providers, language routing, embeddings, classifier"). A message is a violation when P(in character) ≥ `OOC_VIOLATION_THRESHOLD` (0.8). If no classifier is available nothing is flagged. (Before v0.9 this section named `llama3.2:3b`; measured on 2026-10-04 it flags almost every message, so it is no longer used here.)
 
 **What is detected as IC (In-Character)?**
 - Character actions in first person ("I draw my sword")
@@ -96,15 +213,15 @@ You have 1 warning(s) remaining before a temporary ban is issued.
 ### 4. **Temporary Bans**
 - **Duration**: 24 hours
 - **Trigger**: 3 OOC violations within 7 days
-- **Effect**: User cannot send messages in ANY campaign
+- **Effect**: User cannot post in **that campaign** (table `campaign_bans`); other campaigns and the account are not affected. The monitor never sets `users.ban_*` (site bans are an admin action)
+- **Exempt**: site admins, helpers, the campaign owner (Storyteller) and staff-voice posts are never warned or banned
 - **Message**: Clear explanation of why they were banned and when it expires
 
 **Ban Message Example:**
 ```
 ⛔ You are temporarily banned from this campaign.
 
-Reason: Temporary ban for repeated OOC violations in campaign ID 7. 
-Please review the OOC room rules: No in-character roleplay in OOC.
+Reason: Repeated in-character posts in the OOC room (no in-character roleplay in OOC).
 
 Time remaining: 23h 45m
 
@@ -115,7 +232,7 @@ Ban expires: 2025-10-29 14:30 UTC
 - Violations are tracked per user per campaign
 - Rolling 7-day window (old violations don't count after 7 days)
 - Violations are logged in `ooc_violations` table
-- Ban history is stored in `users` table
+- Campaign bans are stored in `campaign_bans` (`user_id`, `campaign_id`, `banned_until`, `reason`)
 
 ## Database Schema
 
@@ -131,7 +248,19 @@ CREATE TABLE ooc_violations (
 )
 ```
 
-### `users` Ban Fields
+### `campaign_bans` Table (OOC monitor bans, per campaign)
+```sql
+CREATE TABLE campaign_bans (
+    user_id      INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    campaign_id  INTEGER NOT NULL REFERENCES campaigns(id) ON DELETE CASCADE,
+    banned_until TIMESTAMP NOT NULL,
+    reason       TEXT,
+    created_at   TIMESTAMP NOT NULL DEFAULT NOW(),
+    PRIMARY KEY (user_id, campaign_id)
+)
+```
+
+### `users` Ban Fields (site bans, admin only; the OOC monitor never writes these)
 ```sql
 ban_type TEXT DEFAULT NULL,          -- 'temp' or 'permanent'
 ban_until TIMESTAMP DEFAULT NULL,    -- When ban expires
@@ -239,22 +368,7 @@ class OOCMonitor:
 
 ### AI Model Configuration
 
-The OOC monitor uses a fast, lightweight model for detection:
-
-```python
-config = {
-    'model': 'llama3.2:3b',  # Fast detection model
-    'temperature': 0.3,       # Low for consistent detection
-    'max_tokens': 100,
-    'task_type': 'moderation'
-}
-```
-
-**Why llama3.2:3b?**
-- Fast response time (<1 second)
-- Good at classification tasks
-- Low GPU usage
-- Consistent results with low temperature
+Choose the classifier in Admin → Ai System → Message classifier (`auto` | `laya` | `jev` | `llm`). With `llm`, the prompt goes to the `classifier` role (default: the model LM Studio has loaded). The threshold is `OOC_VIOLATION_THRESHOLD` (env, default 0.8).
 
 ## Testing
 
@@ -344,12 +458,12 @@ WHERE ban_until < datetime('now');
 
 ### 3. Multiple Campaigns
 - Violations are tracked PER CAMPAIGN
-- A user can be banned in one campaign but not another
-- Future enhancement: global bans across all campaigns
+- A user can be banned in one campaign but not another (`campaign_bans`)
+- Site-wide bans are only the admin's (`users.ban_type`)
 
 ### 4. Ban Expiry
-- Bans are checked on every message attempt
-- Expired bans are automatically cleared
+- Bans are checked on every message attempt in that campaign
+- Expired bans simply stop applying (the row stays until the next ban overwrites it)
 - No manual intervention needed
 
 ## Philosophy

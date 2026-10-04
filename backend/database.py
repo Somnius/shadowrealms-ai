@@ -669,6 +669,52 @@ def ensure_location_reads_table(cursor):
 
 
 @once_per_process
+def ensure_users_ui_language_column(cursor):
+    """users.ui_language ('en' | 'el' | NULL): Storyteller reply language fallback (phase 3 UI too)."""
+    if os.getenv("DATABASE_TYPE", "sqlite").lower() == "postgresql":
+        cursor.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS ui_language TEXT")
+    else:
+        cursor.execute("PRAGMA table_info(users)")
+        if "ui_language" not in [row["name"] for row in cursor.fetchall()]:
+            cursor.execute("ALTER TABLE users ADD COLUMN ui_language TEXT")
+
+
+@once_per_process
+def ensure_ai_reply_grants_table(cursor):
+    """One-time permits to save an AI reply as an assistant message (services/assistant_grants.py)."""
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS ai_reply_grants (
+            id             BIGSERIAL PRIMARY KEY,
+            user_id        INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+            campaign_id    INTEGER NOT NULL REFERENCES campaigns(id) ON DELETE CASCADE,
+            location_id    INTEGER,
+            content_sha256 TEXT NOT NULL,
+            created_at     TIMESTAMP NOT NULL DEFAULT NOW(),
+            consumed_at    TIMESTAMP
+        )
+    """)
+    cursor.execute(
+        "CREATE INDEX IF NOT EXISTS idx_ai_reply_grants_lookup "
+        "ON ai_reply_grants(user_id, campaign_id, content_sha256)"
+    )
+
+
+@once_per_process
+def ensure_campaign_bans_table(cursor):
+    """Campaign-scoped posting bans from the OOC monitor (services/ooc_monitor.py)."""
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS campaign_bans (
+            user_id      INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+            campaign_id  INTEGER NOT NULL REFERENCES campaigns(id) ON DELETE CASCADE,
+            banned_until TIMESTAMP NOT NULL,
+            reason       TEXT,
+            created_at   TIMESTAMP NOT NULL DEFAULT NOW(),
+            PRIMARY KEY (user_id, campaign_id)
+        )
+    """)
+
+
+@once_per_process
 def ensure_dice_tables(cursor, db_kind: str) -> None:
     """
     Create dice_rolls / dice_roll_templates if missing.
@@ -810,6 +856,9 @@ def migrate_db():
                 ensure_characters_is_npc_column(cursor)
                 ensure_campaigns_staff_pause_columns(cursor)
                 ensure_location_reads_table(cursor)
+                ensure_users_ui_language_column(cursor)
+                ensure_ai_reply_grants_table(cursor)
+                ensure_campaign_bans_table(cursor)
                 ensure_dice_tables(cursor, 'postgresql')
                 backfill_campaign_players_active_character(cursor)
                 from services.ai_runtime_settings import ensure_app_settings_table

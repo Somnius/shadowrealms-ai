@@ -9,10 +9,11 @@ from flask_jwt_extended import jwt_required, get_jwt_identity
 import logging
 import json
 from datetime import datetime
+from typing import Optional
 
 from database import get_db
 from services.gpu_monitor import gpu_monitor_service
-from services.llm_service import get_llm_service
+from services.llm_service import get_llm_service, last_generation_meta
 from services.health_check import get_health_check_service, require_llm, require_ai_services
 from services.ai_slash_commands import (
     parse_ai_slash_line,
@@ -28,6 +29,27 @@ from services.rules_edition import (
     storyteller_rules_brief,
 )
 from services.character_prompt import format_character_for_prompt
+from services.assistant_grants import grant_assistant_reply
+from services.request_validation import chat_text, strict_int
+
+# Longest player message /api/ai/chat accepts (characters).
+MAX_CHAT_MESSAGE_CHARS = 8000
+# Shown instead of a reply when every model failed. Never contains the player's text, and no
+# assistant grant is issued for it, so it can't be saved as a Storyteller message.
+AI_UNAVAILABLE_TEXT = 'The AI Storyteller is unavailable right now. Please try again in a moment.'
+
+
+def _public_ai_meta():
+    """Which provider/model/role/language produced the last reply (no prompts, no keys)."""
+    meta = last_generation_meta() or {}
+    out = {k: meta[k] for k in ('provider', 'model_used', 'role', 'language', 'task_type', 'ms',
+                                'trimmed', 'script_fix') if k in meta}
+    if meta.get('attempts'):
+        out['fallback_from'] = [
+            {'provider': a.get('provider'), 'model': a.get('model')} for a in meta['attempts']
+        ]
+    return out
+
 
 logger = logging.getLogger(__name__)
 
@@ -192,18 +214,22 @@ def ai_chat():
         current_user_id = int(get_jwt_identity())
         data = request.get_json()
         
-        if not data:
+        if not data or not isinstance(data, dict):
             return jsonify({'error': 'No data provided'}), 400
         
         message = data.get('message')
         campaign_id = data.get('campaign_id')
         location_id = data.get('location')  # Get location from request
-        context = data.get('context', {})
+        context = data.get('context') or {}
+        try:
+            message = chat_text(message, 'Message', MAX_CHAT_MESSAGE_CHARS)
+            location_id = strict_int(location_id, 'location', None, 1)
+            if not isinstance(context, dict):
+                raise ValueError('context must be an object')
+        except ValueError as e:
+            return jsonify({'error': str(e)}), 400
         # From `/chat …` in UI: use full storyteller pipeline even in OOC rooms (not moderation-only path)
         assistant_direct = bool(data.get('assistant_direct') or data.get('direct_chat'))
-        
-        if not message:
-            return jsonify({'error': 'Message is required'}), 400
         
         db = get_db()
         cursor = db.cursor()
@@ -270,6 +296,7 @@ def ai_chat():
                 campaign_id, 'conversation', message, ooc_text,
                 {**context, 'ooc_moderation': True}
             )
+            grant_assistant_reply(current_user_id, campaign_id, location_id, ooc_text)
             return jsonify({
                 'response': ooc_text,
                 'ooc_no_reply': False,
@@ -294,14 +321,26 @@ def ai_chat():
             # Fast mode - full response
             response = generate_full_response(message, context, campaign_id, location_id, current_user_id)
             response_type = 'full'
+
+        if response is None:
+            # Every model failed: fixed text, no AI memory, no grant (not saveable as Storyteller).
+            return jsonify({
+                'error': AI_UNAVAILABLE_TEXT,
+                'ai_unavailable': True,
+                'ai_meta': _public_ai_meta(),
+                'timestamp': datetime.utcnow().isoformat()
+            }), 503
         
         # Store conversation in AI memory
         if campaign_id:
             store_ai_memory(campaign_id, 'conversation', message, response, context)
+            # The browser saves this reply as an assistant message; allow exactly this text once.
+            grant_assistant_reply(current_user_id, campaign_id, location_id, response)
         
         return jsonify({
             'response': response,
             'response_type': response_type,
+            'ai_meta': _public_ai_meta(),
             'performance_mode': performance_mode.value,
             'ai_config': ai_config,
             'resource_limited': is_limited,
@@ -319,6 +358,24 @@ def ai_chat():
 @bp.route('/slash', methods=['POST'])
 @jwt_required()
 def ai_slash_command():
+    """Run a /ai command; any text it returns may then be saved once as an assistant message."""
+    resp = _ai_slash_command_impl()
+    response, status = resp if isinstance(resp, tuple) else (resp, 200)
+    try:
+        body = response.get_json(silent=True) or {}
+        req = request.get_json(silent=True) or {}
+        campaign_id = req.get('campaign_id')
+        if campaign_id:
+            user_id = int(get_jwt_identity())
+            for key in ('display_markdown', 'llm_acknowledgment'):
+                if body.get(key):
+                    grant_assistant_reply(user_id, campaign_id, req.get('location_id'), body[key])
+    except Exception as e:  # noqa: BLE001
+        logger.error(f"Could not grant /ai slash reply: {e}")
+    return response, status
+
+
+def _ai_slash_command_impl():
     """
     Chat /ai … commands (diagnostics & tools). Examples: /ai health, /ai roll 4+3@7
     Does not require Chroma/LLM globally — each subcommand enforces what it needs.
@@ -627,288 +684,197 @@ def get_ai_memory(campaign_id):
             db.close()
 
 # Helper functions for AI response generation
-def generate_efficient_response(message: str, context: dict, campaign_id: int, location_id: int = None, user_id: int = None) -> str:
-    """Generate efficient (basic) AI response"""
+
+# Per performance mode: reply size/sampling, how much room history and long-term memory to
+# fetch (the token budget may use less), and the opening instruction.
+STORYTELLER_MODES = {
+    'efficient': {
+        'llm': {'max_tokens': 256, 'temperature': 0.6, 'top_p': 0.8},
+        'history_rows': 10, 'semantic': 0, 'npc_history': False,
+        'intro': 'You are the AI Storyteller of a tabletop RPG chronicle. Keep replies concise.',
+        'outro': ('Respond as the Storyteller, addressing the player character by name and taking into '
+                  'account their background, any NPCs present, the conversation history and the location. '
+                  'Roleplay NPCs naturally.'),
+    },
+    'balanced': {
+        'llm': {'max_tokens': 512, 'temperature': 0.7, 'top_p': 0.9},
+        'history_rows': 16, 'semantic': 3, 'npc_history': False,
+        'intro': ('You are the AI Storyteller of a tabletop RPG chronicle. Give detailed, immersive replies '
+                  'of good quality.'),
+        'outro': ('Respond as the Storyteller, addressing the player character by name and taking into '
+                  'account their clan/class, background, any NPCs present, the conversation history, the '
+                  "location and relevant past events. Be descriptive and true to the game system's lore. "
+                  'Roleplay NPCs with distinct personalities and motivations.'),
+    },
+    'full': {
+        'llm': {'max_tokens': 1024, 'temperature': 0.8, 'top_p': 0.95},
+        'history_rows': 24, 'semantic': 5, 'npc_history': True,
+        'intro': ('You are the AI Storyteller of a tabletop RPG chronicle. Give comprehensive, detailed, '
+                  'immersive replies.'),
+        'outro': ('Respond as the Storyteller, addressing the player character by name, considering their '
+                  'clan/class, nature, demeanor and background. Take into account the NPCs present (their '
+                  'personalities, motivations and recent actions), the conversation history, the location, '
+                  'relevant past events and the campaign setting. Be descriptive, immersive and true to the '
+                  "game system's lore and atmosphere. Give each NPC a distinct voice and agenda. React to the "
+                  "player's actions and reference past events when relevant."),
+    },
+}
+# Share of the prompt budget the RAG rule-book/memory sections (user turn) may take, and
+# the long-term message memory (system prompt).
+RAG_BUDGET_SHARE = 0.25
+SEMANTIC_BUDGET_SHARE = 0.10
+
+
+def _storyteller_reply(mode: str, message: str, campaign_id: int, location_id: int = None,
+                       user_id: int = None) -> Optional[str]:
+    """
+    One Storyteller reply; None when no model could answer.
+
+    The prompt is built to fit the model's context (services.storyteller_prompt): fixed parts
+    first (instructions, campaign, character, location, NPCs), then the newest room history
+    that fits, then long-term memory; the RAG sections in the user turn get their own share.
+    The player's message is sent once, as the user turn.
+    """
+    from services import storyteller_prompt as sp
+    from services.ai_roles import storyteller_context_tokens
+
+    cfg = STORYTELLER_MODES[mode]
     try:
         llm_service = get_llm_service()
-        
-        # Get campaign context for better responses
+        budget = sp.prompt_budget(storyteller_context_tokens(), cfg['llm']['max_tokens'])
+        rag_budget = int(budget * RAG_BUDGET_SHARE)
+
         campaign_context = get_campaign_context(campaign_id)
-        
-        # Get character context if provided
-        character_context = ""
+        fixed = [cfg['intro'], campaign_context]
         if user_id and campaign_id:
             char_data = get_character_context(user_id, campaign_id)
             if char_data['has_character']:
-                character_context = f"\n\n{char_data['formatted']}"
-        
-        # Get location context if provided
-        location_context = ""
-        npc_context = ""
-        message_history = ""
+                fixed.append(char_data['formatted'])
+        history_rows = []
         if location_id:
-            loc_data = get_location_context(location_id, campaign_id)
-            location_context = f"\n\n{loc_data['formatted']}"
-            
-            # Get NPCs at location
+            fixed.append(get_location_context(location_id, campaign_id)['formatted'])
             npc_data = get_location_npcs(location_id, campaign_id)
             if npc_data['count'] > 0:
-                npc_context = f"\n\n{npc_data['formatted']}"
-            
-            # Get recent messages (limited for efficient mode)
-            msg_data = get_recent_messages(location_id, campaign_id, limit=5)
-            if msg_data['count'] > 0:
-                message_history = f"\n\n{msg_data['formatted']}"
-        
-        # Prepare context for LLM
-        llm_context = {
-            'system_prompt': f'''You are a helpful AI assistant for tabletop RPGs. Provide concise, helpful responses optimized for resource conservation.
+                npc_lines = [npc_data['formatted']]
+                if cfg['npc_history']:
+                    for npc in npc_data['npcs'][:3]:
+                        npc_hist = get_npc_history(npc['id'], limit=3)
+                        if npc_hist['count'] > 0:
+                            npc_lines.append(f"{npc['name']}'s {npc_hist['formatted']}")
+                fixed.append("\n".join(npc_lines))
+            history_rows = get_recent_messages(location_id, campaign_id, limit=cfg['history_rows'])['messages']
+        fixed.append(cfg['outro'])
 
-{campaign_context}{character_context}{location_context}{npc_context}{message_history}
-
-Current player message: {message}
-
-Respond naturally as the AI storyteller, addressing the player character by name and taking into account their background, any NPCs present, the conversation history, and location context. If NPCs are present, roleplay them naturally in your responses.''',
-            'campaign_context': campaign_context,
-            'campaign_id': campaign_id,
-            'rules_edition': get_campaign_rules_edition(campaign_id),
-        }
-        
-        # Configure for efficient mode
-        llm_config = {
-            'max_tokens': 256,
-            'temperature': 0.6,
-            'top_p': 0.8
-        }
-        
-        return llm_service.generate_response(message, llm_context, llm_config)
-        
-    except Exception as e:
-        logger.error(f"Error generating efficient response: {e}")
-        return f"AI Response (Efficient Mode): {message[:100]}... [Response optimized for resource conservation]"
-
-def generate_balanced_response(message: str, context: dict, campaign_id: int, location_id: int = None, user_id: int = None) -> str:
-    """Generate balanced AI response"""
-    try:
-        llm_service = get_llm_service()
-        
-        # Get campaign context for better responses
-        campaign_context = get_campaign_context(campaign_id)
-        
-        # Get character context if provided
-        character_context = ""
-        if user_id and campaign_id:
-            char_data = get_character_context(user_id, campaign_id)
-            if char_data['has_character']:
-                character_context = f"\n\n{char_data['formatted']}"
-        
-        # Get location context if provided
-        location_context = ""
-        npc_context = ""
-        message_history = ""
-        semantic_context = ""
-        if location_id:
-            loc_data = get_location_context(location_id, campaign_id)
-            location_context = f"\n\n{loc_data['formatted']}"
-            
-            # Get NPCs at location
-            npc_data = get_location_npcs(location_id, campaign_id)
-            if npc_data['count'] > 0:
-                npc_context = f"\n\n{npc_data['formatted']}"
-            
-            # Get recent messages (moderate limit for balanced mode)
-            msg_data = get_recent_messages(location_id, campaign_id, limit=10)
-            if msg_data['count'] > 0:
-                message_history = f"\n\n{msg_data['formatted']}"
-            
-            # Get semantically relevant past messages
-            semantic_data = get_semantic_message_history(message, campaign_id, location_id, limit=3)
+        used = sum(sp.estimate_tokens(x) for x in fixed) + sp.estimate_tokens(message) + rag_budget
+        semantic_text = ''
+        if location_id and cfg['semantic']:
+            seen = {" ".join(str(r.get('content') or '').split()) for r in history_rows}
+            seen.add(" ".join(message.split()))
+            semantic_data = get_semantic_message_history(message, campaign_id, location_id,
+                                                         limit=cfg['semantic'], exclude=seen)
             if semantic_data['count'] > 0:
-                semantic_context = f"\n\n{semantic_data['formatted']}"
-        
-        # Prepare context for LLM
+                semantic_text = sp.truncate_to_tokens(semantic_data['formatted'],
+                                                      int(budget * SEMANTIC_BUDGET_SHARE))
+                used += sp.estimate_tokens(semantic_text)
+        history_text, n_hist = sp.format_history(
+            history_rows, message, max(0, budget - used),
+            time_label=lambda r: r.get('time_display') or '',
+        )
+        logger.info(
+            "Storyteller prompt (%s): budget %s tokens, fixed+RAG %s, history %s rows",
+            mode, budget, used, n_hist,
+        )
+        parts = fixed[:-1] + [x for x in (semantic_text, history_text) if x] + fixed[-1:]
         llm_context = {
-            'system_prompt': f'''You are an AI storyteller for tabletop RPGs. Provide balanced, detailed, immersive responses with good quality and reasonable performance.
-
-{campaign_context}{character_context}{location_context}{npc_context}{message_history}{semantic_context}
-
-Current player message: {message}
-
-Respond as the AI storyteller, addressing the player character by name and taking into account their clan/class, background, any NPCs present, the conversation history, location context, and relevant past events. Be descriptive and true to the game system's lore. Roleplay NPCs with distinct personalities and motivations.''',
-            'campaign_context': campaign_context,
+            'system_prompt': "\n\n".join(p for p in parts if p),
             'campaign_id': campaign_id,
             'rules_edition': get_campaign_rules_edition(campaign_id),
+            # Only for the reply-language fallback (users.ui_language). Not 'user_id': that
+            # would switch on LLMService.store_interaction, which was never on for chat.
+            'player_user_id': user_id,
+            'ai_role': 'storyteller',
+            'rag_budget_tokens': rag_budget,
         }
-        
-        # Configure for balanced mode
-        llm_config = {
-            'max_tokens': 512,
-            'temperature': 0.7,
-            'top_p': 0.9
-        }
-        
-        return llm_service.generate_response(message, llm_context, llm_config)
-        
+        return llm_service.generate_response(message, llm_context, dict(cfg['llm']), raise_on_error=True)
     except Exception as e:
-        logger.error(f"Error generating balanced response: {e}")
-        return f"AI Response (Balanced Mode): {message[:200]}... [Response with balanced quality and performance]"
+        logger.error(f"Error generating {mode} response: {e}")
+        return None
 
-def generate_full_response(message: str, context: dict, campaign_id: int, location_id: int = None, user_id: int = None) -> str:
-    """Generate full AI response"""
-    try:
-        llm_service = get_llm_service()
-        
-        # Get campaign context for better responses
-        campaign_context = get_campaign_context(campaign_id)
-        
-        # Get character context if provided
-        character_context = ""
-        if user_id and campaign_id:
-            char_data = get_character_context(user_id, campaign_id)
-            if char_data['has_character']:
-                character_context = f"\n\n{char_data['formatted']}"
-        
-        # Get location context if provided
-        location_context = ""
-        npc_context = ""
-        message_history = ""
-        semantic_context = ""
-        if location_id:
-            loc_data = get_location_context(location_id, campaign_id)
-            location_context = f"\n\n{loc_data['formatted']}"
-            
-            # Get NPCs at location with their histories
-            npc_data = get_location_npcs(location_id, campaign_id)
-            if npc_data['count'] > 0:
-                npc_context_lines = [npc_data['formatted']]
-                # For full mode, also include recent NPC activity
-                for npc in npc_data['npcs'][:3]:  # Top 3 most relevant NPCs
-                    npc_hist = get_npc_history(npc['id'], limit=3)
-                    if npc_hist['count'] > 0:
-                        npc_context_lines.append(f"\n{npc['name']}'s {npc_hist['formatted']}")
-                npc_context = "\n\n" + "\n".join(npc_context_lines)
-            
-            # Get recent messages (full limit for maximum context)
-            msg_data = get_recent_messages(location_id, campaign_id, limit=15)
-            if msg_data['count'] > 0:
-                message_history = f"\n\n{msg_data['formatted']}"
-            
-            # Get semantically relevant past messages (full mode gets more)
-            semantic_data = get_semantic_message_history(message, campaign_id, location_id, limit=5)
-            if semantic_data['count'] > 0:
-                semantic_context = f"\n\n{semantic_data['formatted']}"
-        
-        # Prepare context for LLM
-        llm_context = {
-            'system_prompt': f'''You are an AI storyteller for tabletop RPGs. Provide comprehensive, detailed, immersive responses with maximum quality and depth.
 
-{campaign_context}{character_context}{location_context}{npc_context}{message_history}{semantic_context}
+def generate_efficient_response(message: str, context: dict, campaign_id: int, location_id: int = None, user_id: int = None) -> Optional[str]:
+    """Generate efficient (basic) AI response; None when no model could answer."""
+    return _storyteller_reply('efficient', message, campaign_id, location_id, user_id)
 
-Current player message: {message}
 
-Respond as the AI storyteller, addressing the player character by name, considering their clan/class, nature, demeanor, and background. Take into account NPCs present (their personalities, motivations, and recent actions), the entire conversation history, location context, relevant past events from days/weeks ago, and campaign setting. Be descriptive, immersive, and true to the game system's lore and atmosphere. Roleplay each NPC with a distinct voice, personality, and agenda. React dynamically to the player's actions. Reference past events naturally when relevant.''',
-            'campaign_context': campaign_context,
-            'campaign_id': campaign_id,
-            'rules_edition': get_campaign_rules_edition(campaign_id),
-        }
-        
-        # Configure for full mode
-        llm_config = {
-            'max_tokens': 1024,
-            'temperature': 0.8,
-            'top_p': 0.95
-        }
-        
-        return llm_service.generate_response(message, llm_context, llm_config)
-        
-    except Exception as e:
-        logger.error(f"Error generating full response: {e}")
-        return f"AI Response (Full Mode): {message} [Full quality response with maximum detail]"
+def generate_balanced_response(message: str, context: dict, campaign_id: int, location_id: int = None, user_id: int = None) -> Optional[str]:
+    """Generate balanced AI response; None when no model could answer."""
+    return _storyteller_reply('balanced', message, campaign_id, location_id, user_id)
 
-def get_campaign_character_names_list(campaign_id: int) -> list:
-    """Active player character names for OOC relevance checks."""
-    try:
-        db = get_db()
-        cursor = db.cursor()
-        cursor.execute("""
-            SELECT name FROM characters
-            WHERE campaign_id = %s AND is_active = TRUE
-            ORDER BY name
-        """, (campaign_id,))
-        return [row['name'] for row in cursor.fetchall() if row.get('name')]
-    except Exception as e:
-        logger.error(f"Error listing character names for campaign {campaign_id}: {e}")
-        return []
-    finally:
-        if 'db' in locals():
-            db.close()
+
+def generate_full_response(message: str, context: dict, campaign_id: int, location_id: int = None, user_id: int = None) -> Optional[str]:
+    """Generate full AI response; None when no model could answer."""
+    return _storyteller_reply('full', message, campaign_id, location_id, user_id)
+
+
+OOC_ROOM_NOTES = {
+    'en': (
+        "This looks like in-character play. The OOC room is for talking as players "
+        "(rules, dice, scheduling, chat), so please take the scene to an in-character location."
+    ),
+    'el': (
+        "Αυτό μοιάζει με παιχνίδι μέσα στον ρόλο. Το δωμάτιο OOC είναι για κουβέντα ως παίκτες "
+        "(κανόνες, ζάρια, προγραμματισμός, συζήτηση), οπότε συνέχισε τη σκηνή σε μια τοποθεσία του παιχνιδιού."
+    ),
+}
 
 
 def generate_ooc_room_response(
     message: str, campaign_id: int, location_id: int, user_id: int
 ):
     """
-    OOC channel: return None when no AI reply is needed; otherwise a short moderator warning.
-    Does not advance fiction or speak as storyteller/NPCs.
+    OOC channel: return None when no AI reply is needed; otherwise a short moderator note.
+    Uses services.classifier (Laya / Jev / LLM prompt) to decide whether the message is
+    in-character; never narrates or continues the story. Fails silent.
+
+    Staff (admin, helper, campaign owner) get no note, like the OOC monitor. The verdict is
+    shared with the monitor's check of the same text in save_message (classify_cached).
     """
+    from services.classifier import ClassifierUnavailable, classify_cached
+    from services.language import resolve_reply_language
+    from services.ooc_monitor import is_exempt_from_ooc_moderation, ooc_campaign_context
+
     try:
-        llm_service = get_llm_service()
-        campaign_context = get_campaign_context(campaign_id)
-        if len(campaign_context) > 2800:
-            campaign_context = campaign_context[:2800] + "\n…"
-
-        names = get_campaign_character_names_list(campaign_id)
-        names_str = ", ".join(names) if names else "(none listed yet)"
-
-        msg_data = get_recent_messages(location_id, campaign_id, limit=14)
-        history = msg_data['formatted']
-
-        char_note = ""
-        if user_id and campaign_id:
-            cd = get_character_context(user_id, campaign_id)
-            if cd.get('has_character'):
-                char_note = f"\nThe sending player controls the character: {cd.get('name', 'Unknown')}."
-
-        system_prompt = f"""You monitor the OUT-OF-CHARACTER (OOC) chat room for a tabletop RPG campaign.
-
-Campaign context:
-{campaign_context}
-
-Known PC names: {names_str}
-{char_note}
-
-{history}
-
-Latest message to evaluate:
----
-{message}
----
-
-Rules:
-- If the message is normal OOC (scheduling, rules, greetings, casual player chat, brief meta about the game without acting in-scene), reply with exactly one word: SILENT
-- If the message is clearly in-character play (dialogue or narration as the character, advancing a scene, or content that belongs in an in-character location), write a SHORT moderator note (2–4 sentences): politely remind them to use an in-character room for that. Do NOT narrate the world, play NPCs, continue the story, or answer as the DM.
-
-Output ONLY the single word SILENT or your short moderator text. No JSON, no labels."""
-
-        llm_context = {'system_prompt': system_prompt}
-        llm_config = {
-            'max_tokens': 220,
-            'temperature': 0.25,
-            'top_p': 0.85,
-        }
-        raw = llm_service.generate_response(message, llm_context, llm_config)
-        if not raw or not str(raw).strip():
+        db = get_db()
+        try:
+            cursor = db.cursor()
+            cursor.execute(
+                "SELECT u.role, c.created_by FROM users u, campaigns c WHERE u.id = %s AND c.id = %s",
+                (user_id, campaign_id),
+            )
+            who = cursor.fetchone() or {}
+        finally:
+            db.close()
+        owner = who.get('created_by') is not None and int(who['created_by']) == int(user_id)
+        if is_exempt_from_ooc_moderation(who.get('role'), owner):
             return None
-
-        stripped = str(raw).strip().strip('"').strip("'")
-        first_token = stripped.split()[0].upper().rstrip('.,!?;:') if stripped else ''
-        if first_token == 'SILENT' or stripped.upper() == 'NONE':
+        campaign_ctx = ooc_campaign_context(campaign_id)
+        if campaign_ctx is None:
             return None
-        return stripped
-
+        result = classify_cached(message, campaign_ctx)
+    except ClassifierUnavailable as e:
+        logger.error(f"OOC room moderation: no classifier available: {e}")
+        return None
     except Exception as e:
         logger.error(f"Error in OOC room AI moderation: {e}")
         return None
+    logger.info(
+        "OOC room classify by %s: P(in character)=%s intent=%s%s",
+        result['provider'], result['ooc_violation']['score'], result['intent']['label'],
+        ' (cached)' if result.get('cached') else '',
+    )
+    if not result['ooc_violation']['label']:
+        return None
+    return OOC_ROOM_NOTES[resolve_reply_language(message, user_id)]
 
 
 class AIContextManager:
@@ -1090,29 +1056,15 @@ def get_campaign_context(campaign_id: int) -> str:
         if not campaign:
             return "No campaign context available"
         
-        # Get recent AI memory for context
-        cursor.execute("""
-            SELECT content, memory_type, created_at
-            FROM ai_memory
-            WHERE campaign_id = %s
-            ORDER BY created_at DESC
-            LIMIT 5
-        """, (campaign_id,))
-        
-        memories = cursor.fetchall()
-        
+        # No ai_memory here: it is campaign-wide (other rooms' scenes would leak into this
+        # one) and repeats the room history the Storyteller prompt already has.
         edition = edition_of(campaign)
         context = f"Campaign: {campaign['name']} ({campaign['game_system']})\n"
         context += f"Rules edition: {rules_edition_label(edition)} [rules_edition={edition}]\n"
         context += f"Description: {campaign['description'] or 'No description'}\n"
         context += f"Status: {campaign['status'] or 'active'}\n"
         context += "\n" + storyteller_rules_brief(edition, campaign['game_system']) + "\n"
-        
-        if memories:
-            context += "\nRecent Context:\n"
-            for memory in memories:
-                context += f"- {memory['memory_type']}: {memory['content'][:100]}...\n"
-        
+
         return context
         
     except Exception as e:
@@ -1186,6 +1138,7 @@ def get_recent_messages(location_id: int, campaign_id: int, limit: int = 15) -> 
             FROM messages m
             JOIN users u ON m.user_id = u.id
             WHERE m.campaign_id = %s AND m.location_id = %s
+              AND COALESCE(m.ai_message_kind, '') NOT LIKE 'dice_animation%%'
             ORDER BY m.created_at DESC
             LIMIT %s
         """, (campaign_id, location_id, limit))
@@ -1204,8 +1157,8 @@ def get_recent_messages(location_id: int, campaign_id: int, limit: int = 15) -> 
         out_messages = []
         for msg in reversed(messages):
             time_label = format_message_time(msg['created_at'])
-            role_label = "User" if msg['role'] == 'user' else "AI"
-            history_lines.append(f"[{time_label}] {role_label} ({msg['username']}): {msg['content']}")
+            who = "Storyteller" if msg['role'] == 'assistant' else f"Player {msg['username']}"
+            history_lines.append(f"[{time_label}] {who}: {msg['content']}")
             m = dict(msg)
             m['time_display'] = time_label
             out_messages.append(m)
@@ -1231,8 +1184,14 @@ def get_recent_messages(location_id: int, campaign_id: int, limit: int = 15) -> 
         if 'db' in locals():
             db.close()
 
-def get_semantic_message_history(query: str, campaign_id: int, location_id: int = None, limit: int = 5) -> dict:
-    """Get semantically relevant messages from long-term memory"""
+# bge-m3 cosine relevance: same-language matches score ~0.73, Greek<->English ~0.57-0.67
+# (measured 2026-10-04), so 0.7 dropped every cross-language memory.
+SEMANTIC_MIN_RELEVANCE = 0.5
+
+
+def get_semantic_message_history(query: str, campaign_id: int, location_id: int = None, limit: int = 5,
+                                 exclude=None) -> dict:
+    """Get semantically relevant messages from long-term memory (skipping texts in `exclude`)"""
     try:
         from services.rag_service import get_rag_service
         rag_service = get_rag_service()
@@ -1242,9 +1201,13 @@ def get_semantic_message_history(query: str, campaign_id: int, location_id: int 
             query=query,
             campaign_id=campaign_id,
             location_id=location_id,
-            limit=limit,
-            min_relevance=0.7
+            limit=limit + len(exclude or ()),
+            min_relevance=SEMANTIC_MIN_RELEVANCE
         )
+        if exclude:
+            relevant_messages = [m for m in relevant_messages
+                                 if " ".join(str(m.get('content') or '').split()) not in exclude]
+        relevant_messages = relevant_messages[:limit]
         
         if not relevant_messages:
             return {
@@ -1254,18 +1217,19 @@ def get_semantic_message_history(query: str, campaign_id: int, location_id: int 
             }
         
         # Format relevant messages
-        formatted_lines = ["Relevant Past Context:"]
+        formatted_lines = ["Relevant earlier moments in this location:"]
         for msg in relevant_messages:
-            content = msg['content']
-            metadata = msg['metadata']
-            relevance = msg['relevance']
-            
+            content = " ".join(str(msg['content'] or '').split())
+            if len(content) > 400:
+                content = content[:400].rstrip() + " […]"
+            metadata = msg['metadata'] or {}
             ts = metadata.get('timestamp')
-            time_label = format_message_time(ts) if ts else 'Unknown time'
-
-            character = metadata.get('character_name', 'Unknown')
-            role = metadata.get('role', 'user')
-            formatted_lines.append(f"[{time_label}] {character} ({role}): {content}")
+            time_label = format_message_time(ts) if ts else 'earlier'
+            if metadata.get('role') == 'assistant':
+                who = 'Storyteller'
+            else:
+                who = metadata.get('character_name') or 'Player'
+            formatted_lines.append(f"[{time_label}] {who}: {content}")
         
         formatted = "\n".join(formatted_lines)
         

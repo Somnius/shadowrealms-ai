@@ -47,6 +47,31 @@ def _merge_master_system_prompt(context: Dict[str, Any]) -> Dict[str, Any]:
     return ctx
 
 
+def _remember_generation(result: Dict[str, Any]) -> None:
+    """Keep provider/model/role/language of the last generation in flask.g (for API responses)."""
+    try:
+        from flask import g, has_request_context
+
+        if has_request_context():
+            g.ai_generation = {
+                k: result.get(k)
+                for k in ('provider', 'model_used', 'role', 'language', 'task_type', 'ms', 'attempts', 'error',
+                          'trimmed', 'script_fix')
+                if result.get(k) is not None
+            }
+    except Exception:  # noqa: BLE001
+        pass
+
+
+def last_generation_meta() -> Optional[Dict[str, Any]]:
+    try:
+        from flask import g, has_request_context
+
+        return g.get('ai_generation') if has_request_context() else None
+    except Exception:  # noqa: BLE001
+        return None
+
+
 class LLMProvider(ABC):
     """Abstract base class for LLM providers"""
     
@@ -238,6 +263,10 @@ class OllamaProvider(LLMProvider):
             logger.error(f"Error generating response with Ollama: {e}")
             return f"Error: Failed to generate response - {str(e)}"
 
+class AIUnavailableError(RuntimeError):
+    """Every configured model failed (LLMService.generate_response with raise_on_error=True)."""
+
+
 class LLMService:
     """Main LLM service that manages multiple providers with smart routing"""
     
@@ -275,9 +304,27 @@ class LLMService:
                 return provider
         return None
     
-    def generate_response(self, prompt: str, context: Dict[str, Any], config: Dict[str, Any]) -> str:
-        """Generate response using smart model routing with RAG augmentation"""
+    def generate_response(self, prompt: str, context: Dict[str, Any], config: Dict[str, Any],
+                          raise_on_error: bool = False) -> str:
+        """
+        Generate response using smart model routing with RAG augmentation.
+
+        When every model fails the router's error text is returned, or AIUnavailableError is
+        raised with raise_on_error=True (the Storyteller chat must not hand that text out as
+        an AI reply).
+        """
         context = _merge_master_system_prompt(context)
+        context = dict(context or {})
+        # Routing and language look at what the player wrote, not the RAG-augmented prompt.
+        context.setdefault('player_message', prompt)
+        if not context.get('reply_language'):
+            # Every caller (Storyteller, /ai slash helpers, location suggestions) answers in the
+            # language of what the player wrote, else their UI language, else English.
+            from services.language import resolve_reply_language
+
+            context['reply_language'] = resolve_reply_language(
+                context['player_message'], context.get('player_user_id') or context.get('user_id')
+            )
         # Get campaign context for RAG augmentation
         campaign_id = context.get('campaign_id')
         user_id = context.get('user_id')
@@ -285,7 +332,8 @@ class LLMService:
         # Augment prompt with relevant context
         if campaign_id:
             augmented_prompt = self.rag_service.augment_prompt(
-                prompt, campaign_id, user_id, rules_edition=context.get('rules_edition')
+                prompt, campaign_id, user_id, rules_edition=context.get('rules_edition'),
+                max_tokens=context.get('rag_budget_tokens'),
             )
             logger.info(f"Augmented prompt with RAG context for campaign {campaign_id}")
         else:
@@ -294,9 +342,12 @@ class LLMService:
         
         # Use smart model router for intelligent model selection
         result = self.model_router.generate_response(augmented_prompt, context, config)
+        _remember_generation(result)
         
-        if 'error' in result:
-            logger.error(f"SmartModelRouter error: {result['error']}")
+        if 'error' in result or not str(result.get('response') or '').strip():
+            logger.error(f"SmartModelRouter error: {result.get('error') or 'empty response'}")
+            if raise_on_error:
+                raise AIUnavailableError(str(result.get('error') or 'empty response'))
             return result['response']
         
         # Store interaction in memory

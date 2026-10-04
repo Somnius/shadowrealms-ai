@@ -14,86 +14,61 @@ import numpy as np
 
 logger = logging.getLogger(__name__)
 
+DEFAULT_EMBEDDING_MODEL = "text-embedding-bge-m3"
+
+
+def configured_embedding_model() -> str:
+    """EMBEDDING_MODEL env (LM Studio model id); default bge-m3 (good for English and Greek)."""
+    return (os.environ.get("EMBEDDING_MODEL") or DEFAULT_EMBEDDING_MODEL).strip()
+
+
+class EmbeddingError(Exception):
+    pass
+
+
 class EmbeddingService:
-    """Advanced embedding service for vector processing"""
-    
+    """Text embeddings from LM Studio's /v1/embeddings (model: EMBEDDING_MODEL)."""
+
+    BATCH = 32
+
     def __init__(self, config: Dict[str, Any]):
         self.config = config
-        self.lm_studio_url = config.get('LM_STUDIO_URL', 'http://localhost:1234')
-        self.embedding_model = 'nomic-embed-text-v1.5'  # From our LM Studio models
-        
-        logger.info("Embedding Service initialized")
-    
-    def _call_lm_studio_embedding(self, text: str) -> Optional[List[float]]:
-        """Call LM Studio for embedding using chat completion as fallback"""
-        try:
-            # First try the embeddings endpoint
-            url = f"{self.lm_studio_url}/v1/embeddings"
-            payload = {
-                "model": self.embedding_model,
-                "input": text
-            }
-            
-            response = requests.post(url, json=payload, timeout=30)
-            if response.status_code == 200:
-                data = response.json()
-                if 'data' in data and len(data['data']) > 0:
-                    return data['data'][0]['embedding']
-            
-            # Fallback: Use chat completion to generate a simple hash-based embedding
-            logger.warning("Embeddings endpoint not available, using hash-based fallback")
-            return self._generate_hash_embedding(text)
-            
-        except Exception as e:
-            logger.error(f"Error calling LM Studio embedding: {e}")
-            # Fallback to hash-based embedding
-            return self._generate_hash_embedding(text)
-    
-    def _generate_hash_embedding(self, text: str) -> List[float]:
-        """Generate a simple hash-based embedding as fallback"""
-        import hashlib
-        import struct
-        
-        # Create a hash of the text
-        text_hash = hashlib.sha256(text.encode()).digest()
-        
-        # Convert to 384-dimensional vector (common embedding size)
-        embedding = []
-        for i in range(0, len(text_hash), 4):
-            if len(embedding) >= 384:
-                break
-            # Convert 4 bytes to float
-            chunk = text_hash[i:i+4]
-            if len(chunk) == 4:
-                value = struct.unpack('f', chunk)[0]
-                embedding.append(value)
-        
-        # Pad or truncate to exactly 384 dimensions
-        while len(embedding) < 384:
-            embedding.append(0.0)
-        
-        return embedding[:384]
-    
+        self.lm_studio_url = (config.get('LM_STUDIO_URL') or os.environ.get('LM_STUDIO_URL')
+                              or 'http://localhost:1234').rstrip('/')
+        self.api_key = (config.get('LM_STUDIO_API_KEY') or os.environ.get('LM_STUDIO_API_KEY') or '').strip()
+        self.embedding_model = configured_embedding_model()
+        self.timeout = 120
+
+    def embed_texts(self, texts: List[str]) -> List[List[float]]:
+        """One vector per text, in order. Raises EmbeddingError (no fake vectors: they'd poison the index)."""
+        out: List[List[float]] = []
+        headers = {'Content-Type': 'application/json'}
+        if self.api_key:
+            headers['Authorization'] = f'Bearer {self.api_key}'
+        for i in range(0, len(texts), self.BATCH):
+            batch = [self._clean_text(t) or " " for t in texts[i:i + self.BATCH]]
+            try:
+                r = requests.post(f"{self.lm_studio_url}/v1/embeddings",
+                                  json={"model": self.embedding_model, "input": batch},
+                                  headers=headers, timeout=self.timeout)
+            except requests.RequestException as e:
+                raise EmbeddingError(f"LM Studio embeddings unreachable: {e}") from e
+            if r.status_code != 200:
+                raise EmbeddingError(f"LM Studio embeddings HTTP {r.status_code}: {r.text[:200]}")
+            data = sorted(r.json().get('data') or [], key=lambda d: d.get('index', 0))
+            if len(data) != len(batch):
+                raise EmbeddingError(f"LM Studio returned {len(data)} embeddings for {len(batch)} inputs")
+            out.extend(d['embedding'] for d in data)
+        return out
+
     def get_embedding(self, text: str) -> Optional[List[float]]:
-        """Get embedding for text"""
+        """Embedding for one text, or None when the embedder is unavailable."""
         try:
-            # Clean and prepare text
-            cleaned_text = self._clean_text(text)
-            
-            # Get embedding from LM Studio
-            embedding = self._call_lm_studio_embedding(cleaned_text)
-            
-            if embedding:
-                logger.info(f"Generated embedding for text: {cleaned_text[:50]}...")
-                return embedding
-            else:
-                logger.warning("Failed to generate embedding")
-                return None
-                
-        except Exception as e:
-            logger.error(f"Error getting embedding: {e}")
+            return self.embed_texts([text])[0]
+        except EmbeddingError as e:
+            logger.error(f"Embedding failed: {e}")
             return None
-    
+
     def _clean_text(self, text: str) -> str:
         """Clean text for embedding"""
         # Remove extra whitespace
@@ -106,15 +81,13 @@ class EmbeddingService:
         return text
     
     def get_batch_embeddings(self, texts: List[str]) -> List[Optional[List[float]]]:
-        """Get embeddings for multiple texts"""
-        embeddings = []
-        
-        for text in texts:
-            embedding = self.get_embedding(text)
-            embeddings.append(embedding)
-        
-        return embeddings
-    
+        """Embeddings for several texts; all None when the embedder is unavailable."""
+        try:
+            return self.embed_texts(texts)
+        except EmbeddingError as e:
+            logger.error(f"Batch embedding failed: {e}")
+            return [None] * len(texts)
+
     def calculate_similarity(self, embedding1: List[float], embedding2: List[float]) -> float:
         """Calculate cosine similarity between two embeddings"""
         try:

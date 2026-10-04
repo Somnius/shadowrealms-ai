@@ -437,6 +437,8 @@ def execute_summarize_command(payload: str, user_id: int) -> Dict[str, Any]:
                 "You condense long player or ST pasted text for busy players. "
                 "Bullet list, max ~12 bullets, neutral tone."
             ),
+            # reply language follows the pasted text, not the English instructions
+            "player_message": text,
         },
         {"max_tokens": 512, "temperature": 0.35, "top_p": 0.9},
     )
@@ -802,6 +804,7 @@ def execute_respond_command(payload: str, user_id: int) -> Dict[str, Any]:
             "You are a system diagnostics assistant. The user is measuring AI pipeline latency. "
             "Answer in one concise sentence. No storytelling."
         ),
+        "player_message": payload or "",
     }
     config = {"max_tokens": 120, "temperature": 0.25, "top_p": 0.85}
 
