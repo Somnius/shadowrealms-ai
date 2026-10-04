@@ -1,6 +1,6 @@
 # Frontend Testing
 
-The frontend tests use Jest and React Testing Library. There are 418 tests in 40 files, and all of them run in CI.
+The frontend tests use Jest and React Testing Library. There are 474 tests in 43 files, and all of them run in CI.
 
 ## Running the tests
 

@@ -1,3 +1,4 @@
+import path from 'node:path';
 import { defineConfig, loadEnv, transformWithOxc } from 'vite';
 import react from '@vitejs/plugin-react';
 
@@ -6,19 +7,21 @@ import react from '@vitejs/plugin-react';
 // (fast refresh still applies). Cheaper than renaming every file.
 function jsxInJsFiles() {
   let isDev = false;
+  let srcDir = '';
   return {
     name: 'sr:jsx-in-js',
     enforce: 'pre',
     configResolved(config) {
       isDev = config.command === 'serve';
+      srcDir = path.resolve(config.root, 'src') + path.sep;
     },
     async transform(code, id) {
       const file = id.split('?')[0];
-      if (!file.endsWith('.js') || !file.includes('/src/') || file.includes('/node_modules/')) return null;
+      if (!file.endsWith('.js') || !file.startsWith(srcDir) || file.includes('/node_modules/')) return null;
       const result = await transformWithOxc(code, file, {
         lang: 'jsx',
         jsx: { runtime: 'automatic', development: isDev },
-        sourcemap: isDev,
+        sourcemap: true,
       });
       return { code: result.code, map: result.map };
     },
@@ -44,8 +47,9 @@ export default defineConfig(({ mode }) => {
       host: '0.0.0.0',
       port: 3000,
       strictPort: true,
-      // nginx proxies to the dev server under its upstream name; CRA didn't check hosts either
-      allowedHosts: true,
+      // nginx proxies to the dev server under its upstream name (Host: frontend); localhost and
+      // IP addresses are allowed by default
+      allowedHosts: ['frontend'],
       proxy: apiTarget ? { '/api': { target: apiTarget } } : undefined,
     },
     // The dev server's dependency scan reads src/ too, so it needs to know .js may contain JSX
@@ -56,6 +60,10 @@ export default defineConfig(({ mode }) => {
       outDir: 'build',
       assetsDir: 'static',
       sourcemap: false,
+      // Vite ignores package.json browserslist. Keep about the floor CRA built for, so older
+      // Safari/Chrome still parse the bundle and CSS fallbacks (100vh before 100dvh) stay.
+      target: ['chrome109', 'edge109', 'firefox115', 'safari15.6', 'ios15.6'],
+      cssTarget: ['chrome109', 'safari15', 'firefox115'],
       // The polyfill is an inline script, which the Content-Security-Policy (script-src 'self') blocks
       modulePreload: { polyfill: false },
     },

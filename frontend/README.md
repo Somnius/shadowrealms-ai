@@ -14,7 +14,7 @@ docker compose --profile dev up -d frontend # dev server on 127.0.0.1:3000, see 
 
 Inside `frontend/` (node 22): `npm start` (Vite dev server on port 3000), `npm run build`, `npm test`, `npm run lint`.
 
-The build (`vite.config.mjs`) keeps every script in a file, without the module preload polyfill, so nginx's Content-Security-Policy can forbid inline scripts. Hashed assets go to `build/static/`. JSX in `.js` files is fine; a small plugin in the Vite config compiles it. `REACT_APP_*` variables still work (`import.meta.env` or `process.env`).
+The build (`vite.config.mjs`) keeps every script in a file, without the module preload polyfill, so nginx's Content-Security-Policy can forbid inline scripts. Hashed assets go to `build/static/`. JSX in `.js` files is fine; a small plugin in the Vite config compiles it. `REACT_APP_*` variables still work (`import.meta.env` or `process.env`) when they are set at build time; an unset `process.env.REACT_APP_X` is not replaced and fails in the browser.
 
 After a dependency change, rebuild the dev image before building: `docker compose --profile dev build frontend`.
 
