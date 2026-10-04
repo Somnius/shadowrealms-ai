@@ -347,9 +347,39 @@ class Throttle:
                 + self.store.delete_pattern(f"{PREFIX}*:aip:*|{ip}"))
 
 
-def login_checks(username: str, ip: str):
+KNOWN_IP_SECONDS = 90 * 24 * 3600
+
+
+def known_ip_key(username: str, ip: str) -> str:
+    return f"{PREFIX}known:{account_key(username)}|{ip}"
+
+
+def is_known_ip(store, username: str, ip: str) -> bool:
+    """True when this account has signed in successfully from this address in the last 90 days."""
+    try:
+        return bool(ip) and store.ttl(known_ip_key(username, ip)) > 0
+    except Exception:  # noqa: BLE001 - never block a login on this lookup
+        return False
+
+
+def remember_ip(store, username: str, ip: str) -> None:
+    if ip:
+        store.set(known_ip_key(username, ip), 1, KNOWN_IP_SECONDS)
+
+
+def login_checks(username: str, ip: str, known_ip: bool = False):
+    """Throttle checks for a login attempt.
+
+    The account-wide lock exists to slow distributed guessing, but it also let anyone who knows
+    a username lock its owner out (the lock is checked before the password). Addresses the
+    account has already signed in from skip that one rule; they still have the account+IP and
+    per-IP limits, and their failures don't count towards the account-wide lock.
+    """
     acct = account_key(username)
-    return [(RULE_ACCOUNT_IP, f"{acct}|{ip}"), (RULE_ACCOUNT, acct), (RULE_IP, ip)]
+    checks = [(RULE_ACCOUNT_IP, f"{acct}|{ip}"), (RULE_IP, ip)]
+    if not known_ip:
+        checks.insert(1, (RULE_ACCOUNT, acct))
+    return checks
 
 
 def success_clears(username: str, ip: str):

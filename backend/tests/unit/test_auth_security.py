@@ -289,3 +289,24 @@ def test_security_headers_on_api_responses():
     assert r.headers["Cache-Control"] == "no-store"
     assert r.headers["Referrer-Policy"] == "same-origin"
     assert "frame-ancestors 'none'" in r.headers["Content-Security-Policy"]
+
+
+def test_known_ip_is_not_locked_out_by_distributed_guessing():
+    """Pentest M1: anyone who knows a username could keep its owner locked out."""
+    from services.auth_security import (
+        MemoryStore, Throttle, login_checks, remember_ip, is_known_ip,
+    )
+    store = MemoryStore()
+    t = Throttle(store)
+    remember_ip(store, "owner", "10.0.0.50")          # owner signed in from home before
+    for i in range(40):                                # attacker fails from 40 addresses
+        t.fail(login_checks("owner", f"198.51.100.{i}", known_ip=is_known_ip(store, "owner", f"198.51.100.{i}")))
+    # a new address is still locked by the account-wide rule
+    assert t.locked_for(login_checks("owner", "203.0.113.7", known_ip=is_known_ip(store, "owner", "203.0.113.7"))) > 0
+    # the owner's known address is not
+    assert is_known_ip(store, "owner", "10.0.0.50")
+    assert t.locked_for(login_checks("owner", "10.0.0.50", known_ip=True)) == 0
+    # but a known address still has its own account+IP limit
+    for _ in range(5):
+        t.fail(login_checks("owner", "10.0.0.50", known_ip=True))
+    assert t.locked_for(login_checks("owner", "10.0.0.50", known_ip=True)) > 0
