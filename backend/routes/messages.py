@@ -24,6 +24,7 @@ from services.location_access import (
 )
 from services.playing_character import effective_playing_character_id
 from services.assistant_grants import ALLOWED_ROLES, assistant_post_allowed
+from services.dice_markers import is_dice_kind, sanitize_marker
 from datetime import datetime
 from services.message_time_format import format_message_time
 import logging
@@ -466,7 +467,9 @@ def save_message(campaign_id, location_id):
             # Dice animation + dice-roll final reveal tags
             # Format: dice_animation:<animationId>, dice_roll:<animationId>
             # Hidden variants: dice_animation_hidden:<animationId>, dice_roll_hidden:<animationId>
-            elif mk.startswith('dice_animation') or mk.startswith('dice_roll'):
+            # The dice API posts these itself (services/dice_chat.py); from this endpoint only
+            # site admins may (the admin-only /ai roll flow), checked below.
+            elif is_dice_kind(mk):
                 ai_message_kind = mk
         
         if not content.strip():
@@ -525,6 +528,24 @@ def save_message(campaign_id, location_id):
             )
 
         location_type = location_row['type']
+
+        if ai_message_kind and is_dice_kind(ai_message_kind):
+            cursor.execute("SELECT role FROM users WHERE id = %s", (user_id,))
+            poster = cursor.fetchone() or {}
+            if (poster.get('role') or '').strip().lower() != 'admin':
+                conn.rollback()
+                logger.warning(
+                    f"Refused client-posted dice row ({ai_message_kind.split(':', 1)[0]}) from user "
+                    f"{user_id} in campaign {campaign_id}"
+                )
+                return jsonify({
+                    'error': 'Dice results are posted by the server. Use the dice roller.',
+                }), 403
+            if ai_message_kind.startswith('dice_animation'):
+                clean = sanitize_marker(content, ai_message_kind)
+                if clean is None:
+                    return jsonify({'error': 'Invalid dice animation marker'}), 400
+                content = clean
 
         if role == 'assistant':
             cursor.execute("SELECT role FROM users WHERE id = %s", (user_id,))

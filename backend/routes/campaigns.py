@@ -105,7 +105,7 @@ def get_embedding_service():
 def create_campaign():
     """Create a new campaign"""
     try:
-        user_id = get_jwt_identity()
+        user_id = int(get_jwt_identity())
         
         # Handle malformed JSON
         try:
@@ -222,7 +222,7 @@ def get_campaigns():
     membership. Omit for full membership list (e.g. character creation picker).
     """
     try:
-        raw_uid = get_jwt_identity()
+        raw_uid = int(get_jwt_identity())
         try:
             user_id = int(raw_uid)
         except (TypeError, ValueError):
@@ -355,7 +355,7 @@ def get_campaigns():
 def discover_campaigns():
     """List campaigns open for self-serve join that the user is not yet in."""
     try:
-        user_id = get_jwt_identity()
+        user_id = int(get_jwt_identity())
         conn = get_db()
         cursor = conn.cursor()
         ensure_campaigns_listing_columns(cursor)
@@ -418,7 +418,7 @@ def discover_campaigns():
 def join_campaign(campaign_id):
     """Player self-join when campaign is listed and accepting players."""
     try:
-        user_id = get_jwt_identity()
+        user_id = int(get_jwt_identity())
         conn = get_db()
         cursor = conn.cursor()
         ensure_campaigns_listing_columns(cursor)
@@ -555,7 +555,7 @@ def get_or_update_campaign(campaign_id):
         return delete_campaign(campaign_id)
     
     try:
-        raw_uid = get_jwt_identity()
+        raw_uid = int(get_jwt_identity())
         try:
             user_id = int(raw_uid)
         except (TypeError, ValueError):
@@ -670,7 +670,7 @@ def get_or_update_campaign(campaign_id):
 def get_campaign_stats(campaign_id):
     """Get campaign statistics counts for settings UI"""
     try:
-        user_id = get_jwt_identity()
+        user_id = int(get_jwt_identity())
         conn = get_db()
         cursor = conn.cursor()
 
@@ -801,7 +801,7 @@ def get_campaign_stats(campaign_id):
 def update_campaign(campaign_id):
     """Update campaign details (admin only)"""
     try:
-        user_id = get_jwt_identity()
+        user_id = int(get_jwt_identity())
         data = request.get_json()
         if not data:
             return jsonify({'error': 'JSON body required'}), 400
@@ -909,7 +909,7 @@ def update_campaign(campaign_id):
 def delete_campaign(campaign_id):
     """Delete campaign with full AI memory cleanup"""
     try:
-        user_id = get_jwt_identity()
+        user_id = int(get_jwt_identity())
         
         conn = get_db()
         cursor = conn.cursor()
@@ -1018,7 +1018,7 @@ def delete_campaign(campaign_id):
 def update_world_data(campaign_id):
     """Update world-building data for campaign"""
     try:
-        user_id = get_jwt_identity()
+        user_id = int(get_jwt_identity())
         data = request.get_json()
         
         # Verify user has access to campaign
@@ -1058,7 +1058,7 @@ def update_world_data(campaign_id):
 def search_campaign_memory(campaign_id):
     """Search campaign memory using RAG"""
     try:
-        user_id = get_jwt_identity()
+        user_id = int(get_jwt_identity())
         data = request.get_json()
         
         query = data.get('query', '')
@@ -1117,7 +1117,7 @@ def search_campaign_memory(campaign_id):
 def get_campaign_context(campaign_id):
     """Get campaign context for AI generation"""
     try:
-        user_id = get_jwt_identity()
+        user_id = int(get_jwt_identity())
         data = request.get_json()
         
         query = data.get('query', '')
@@ -1161,7 +1161,7 @@ def get_campaign_context(campaign_id):
 def store_interaction(campaign_id):
     """Store AI interaction for campaign"""
     try:
-        user_id = get_jwt_identity()
+        user_id = int(get_jwt_identity())
         data = request.get_json()
         
         prompt = data.get('prompt', '')

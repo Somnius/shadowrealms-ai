@@ -1,16 +1,19 @@
-"""Unit tests for services/live_events.py (stream tickets, SSE framing, snapshot diffs, slots)."""
+"""Unit tests for services/live_events.py (stream tickets, SSE framing, activity diffs, single-use tickets, slots)."""
 
 import json
 import time
 
+from services.auth_security import MemoryStore
 from services.live_events import (
     StreamSlots,
-    diff_snapshots,
-    last_ids,
+    TicketLedger,
+    activity_from_rows,
+    activity_last_ids,
+    diff_activity,
     make_ticket,
     parse_seen,
     read_ticket,
-    snapshot_from_rows,
+    read_ticket_claims,
     sse,
 )
 
@@ -59,24 +62,56 @@ def test_sse_frame():
     assert "\n" not in data
 
 
-def test_snapshot_and_diff():
-    prev = snapshot_from_rows([{"location_id": 4, "last_id": 10, "n": 5}, {"location_id": 7, "last_id": 3, "n": 1}])
-    cur = snapshot_from_rows([
-        {"location_id": 4, "last_id": 12, "n": 7},
-        {"location_id": 7, "last_id": 3, "n": 1},
-        {"location_id": 9, "last_id": 13, "n": 1},
-    ])
-    changes = diff_snapshots(prev, cur)
+def rows(*items):
+    return [{"location_id": lid, "version": v, "last_message_id": last, "reset_version": r}
+            for lid, v, last, r in items]
+
+
+def test_activity_diff_reports_rooms_whose_counter_moved():
+    prev = activity_from_rows(rows((4, 3, 10, 0), (7, 1, 3, 0)))
+    cur = activity_from_rows(rows((4, 5, 12, 0), (7, 1, 3, 0), (9, 1, 13, 0)))
+    changes = diff_activity(prev, cur)
     assert [c["location_id"] for c in changes] == [4, 9]
-    assert all(not c["deleted"] for c in changes)
-    assert last_ids(cur) == {"4": 12, "7": 3, "9": 13}
+    assert changes[0] == {"location_id": 4, "last_id": 12, "version": 5, "deleted": False}
+    assert not changes[1]["deleted"]  # a room seen for the first time is new messages, not a reset
+    assert activity_last_ids(cur) == {"4": 12, "7": 3, "9": 13}
+    assert diff_activity(cur, cur) == []
 
 
-def test_diff_detects_deletes():
-    prev = {4: (10, 5)}
-    assert diff_snapshots(prev, {4: (10, 4)}) == [{"location_id": 4, "last_id": 10, "deleted": True}]
-    assert diff_snapshots(prev, {}) == [{"location_id": 4, "last_id": 0, "deleted": True}]
-    assert diff_snapshots(prev, {4: (10, 5)}) == []
+def test_activity_diff_flags_edits_and_deletes():
+    prev = activity_from_rows(rows((4, 3, 10, 0)))
+    cur = activity_from_rows(rows((4, 4, 10, 1)))  # trigger: DELETE bumps version + reset_version
+    assert diff_activity(prev, cur) == [{"location_id": 4, "last_id": 10, "version": 4, "deleted": True}]
+
+
+def test_activity_only_reports_readable_rooms():
+    all_rows = rows((4, 3, 10, 0), (5, 9, 50, 0))
+    readable = {4}
+    prev = activity_from_rows(all_rows, readable)
+    assert set(prev) == {4}
+    cur = activity_from_rows(rows((4, 3, 10, 0), (5, 10, 51, 0)), readable)
+    assert diff_activity(prev, cur) == []  # activity in the closed room 5 never leaks
+    # Room closed while streaming: it just disappears, no event that would hint at activity.
+    assert diff_activity(prev, activity_from_rows(rows((4, 3, 10, 0)), set())) == []
+
+
+def test_ticket_carries_a_nonce_and_is_single_use():
+    t1, t2 = make_ticket(SECRET, 7, 3), make_ticket(SECRET, 7, 3)
+    (u1, n1), (u2, n2) = read_ticket_claims(SECRET, t1, 3), read_ticket_claims(SECRET, t2, 3)
+    assert u1 == u2 == 7 and n1 and n2 and n1 != n2
+    ledger = TicketLedger(MemoryStore())
+    assert ledger.claim(n1) is True
+    assert ledger.claim(n1) is False  # replay
+    assert ledger.claim(n2) is True
+    assert ledger.claim(None) is False  # old tickets without a nonce are refused
+
+
+def test_ticket_ledger_refuses_when_store_is_down():
+    class Down:
+        def incr(self, key, ttl):
+            raise ConnectionError("redis down")
+
+    assert TicketLedger(Down()).claim("abc") is False
 
 
 def test_parse_seen():

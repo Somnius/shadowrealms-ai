@@ -46,7 +46,7 @@ def require_admin():
     def decorator(f):
         @jwt_required()
         def wrapper(*args, **kwargs):
-            user_id = get_jwt_identity()
+            user_id = int(get_jwt_identity())
             db = get_db()
             cursor = db.cursor()
             cursor.execute("SELECT role FROM users WHERE id = %s", (user_id,))
@@ -138,7 +138,7 @@ def get_all_users():
 def update_user(user_id):
     """Update user profile (username, email)"""
     try:
-        admin_id = get_jwt_identity()
+        admin_id = int(get_jwt_identity())
         data = request.get_json()
         
         if not data:
@@ -208,7 +208,7 @@ def update_user(user_id):
 def reset_user_password(user_id):
     """Reset user password to admin-chosen password"""
     try:
-        admin_id = get_jwt_identity()
+        admin_id = int(get_jwt_identity())
         data = request.get_json()
         
         new_password = (data or {}).get('new_password')
@@ -250,7 +250,7 @@ def reset_user_password(user_id):
 def ban_user(user_id):
     """Ban a user (temporary or permanent)"""
     try:
-        admin_id = get_jwt_identity()
+        admin_id = int(get_jwt_identity())
         data = request.get_json()
         
         ban_type = data.get('ban_type')  # 'temporary' or 'permanent'
@@ -303,7 +303,7 @@ def ban_user(user_id):
 def unban_user(user_id):
     """Unban a user"""
     try:
-        admin_id = get_jwt_identity()
+        admin_id = int(get_jwt_identity())
         
         db = get_db()
         cursor = db.cursor()
@@ -387,7 +387,7 @@ def get_user_characters(user_id):
 def convert_character_to_npc(character_id):
     """Convert a player character to NPC"""
     try:
-        admin_id = get_jwt_identity()
+        admin_id = int(get_jwt_identity())
         
         db = get_db()
         cursor = db.cursor()
@@ -413,7 +413,7 @@ def convert_character_to_npc(character_id):
 def kill_character(character_id):
     """Kill a character with AI-generated death description"""
     try:
-        admin_id = get_jwt_identity()
+        admin_id = int(get_jwt_identity())
         data = request.get_json()
         
         death_type = data.get('death_type', 'mid')  # 'soft', 'mid', 'horrible'
@@ -540,7 +540,7 @@ def list_invites():
 def create_invite():
     """Create a new invite code for players (or admin) to use at signup."""
     try:
-        admin_id = get_jwt_identity()
+        admin_id = int(get_jwt_identity())
         payload = request.get_json() or {}
 
         inv_type = (payload.get('type') or 'player').strip().lower()
@@ -670,7 +670,7 @@ def admin_list_downtime_requests():
 def admin_resolve_downtime_request(req_id):
     """Approve or reject a downtime request (reason recommended for reject)."""
     try:
-        admin_id = get_jwt_identity()
+        admin_id = int(get_jwt_identity())
         data = request.get_json()
         if not data:
             return jsonify({'error': 'JSON body required'}), 400

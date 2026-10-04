@@ -3,10 +3,13 @@ Live updates + chat sidebar data for the v0.9 shell (kept out of routes/messages
 
 - POST /api/campaigns/<id>/events/ticket   JWT → 60 s stream ticket (see services/live_events.py)
 - GET  /api/campaigns/<id>/events?ticket=  Server-Sent Events: hello / changed / bye, ": ping" keep-alives.
-       Polls max(id), count(*) per location every second server-side (one indexed query per stream)
-       and tells the browser which room changed; the browser then fetches with ?since_id=.
-       Streams end after ~55 s (event "bye") so the threaded dev server never pins threads forever;
-       concurrency is capped (StreamSlots). nginx must not buffer this path (nginx/nginx.conf).
+       The ticket is single-use. Every POLL_SECONDS the stream reads campaign_activity.version (one
+       primary-key row, bumped by a trigger on messages) with a pooled connection it holds only for
+       that query; when the version moved it reads campaign_location_activity for the campaign and
+       tells the browser which room changed; the browser then fetches with ?since_id=.
+       Only rooms the viewer may read are reported (closed rooms only for admin/helper/storyteller).
+       Streams end after ~55 s (event "bye"); concurrency is capped (StreamSlots).
+       nginx must not buffer this path (nginx/nginx.conf).
 - GET  /api/campaigns/<id>/unread[?seen=lid:id,...]  per-room unread counts for the room list
        (read state of the user's playing character; `seen` for users without one, e.g. admins).
 - GET  /api/campaigns/<id>/roster          members with their playing character (member panel).
@@ -29,18 +32,21 @@ from database import (
     ensure_messages_ai_message_kind_column,
     ensure_users_player_profile_columns,
     get_db,
+    poll_db,
 )
 from services.live_events import (
     SSE_PING,
     StreamSlots,
-    diff_snapshots,
-    last_ids,
+    TicketLedger,
+    activity_from_rows,
+    activity_last_ids,
+    diff_activity,
     make_ticket,
     parse_seen,
-    read_ticket,
-    snapshot_from_rows,
+    read_ticket_claims,
     sse,
 )
+from services.location_access import fetch_readable_location_ids
 from services.playing_character import effective_playing_character_id
 
 logger = logging.getLogger(__name__)
@@ -50,6 +56,7 @@ events_bp = Blueprint("events", __name__)
 STREAM_SECONDS = float(os.environ.get("SR_EVENTS_STREAM_SECONDS", "55"))
 POLL_SECONDS = float(os.environ.get("SR_EVENTS_POLL_SECONDS", "1"))
 PING_SECONDS = 10.0
+READABLE_REFRESH_SECONDS = 15.0  # re-check which rooms the viewer may read (room closed/opened)
 SLOTS = StreamSlots(
     total=int(os.environ.get("SR_EVENTS_MAX_STREAMS", "64")),
     per_user=int(os.environ.get("SR_EVENTS_MAX_STREAMS_PER_USER", "4")),
@@ -58,6 +65,18 @@ SLOTS = StreamSlots(
 
 def _secret() -> str:
     return current_app.config.get("JWT_SECRET_KEY") or current_app.config.get("SECRET_KEY") or ""
+
+
+_ledger = None
+
+
+def _ticket_ledger() -> TicketLedger:
+    global _ledger
+    if _ledger is None:
+        from services.app_security import get_throttle
+
+        _ledger = TicketLedger(get_throttle().store)  # Redis, in-memory fallback
+    return _ledger
 
 
 def _uid():
@@ -86,12 +105,31 @@ def _viewer(cursor, campaign_id: int, user_id: int):
     return cursor.fetchone() is not None, role, is_st
 
 
-_SNAPSHOT_SQL = """
-    SELECT location_id, MAX(id) AS last_id, COUNT(*) AS n
-    FROM messages
+_CAMPAIGN_VERSION_SQL = "SELECT version FROM campaign_activity WHERE campaign_id = %s"
+_ROOMS_SQL = """
+    SELECT location_id, version, last_message_id, reset_version
+    FROM campaign_location_activity
     WHERE campaign_id = %s
-    GROUP BY location_id
 """
+
+
+def _poll(campaign_id: int, user_id: int, readable):
+    """(campaign_version, room rows, readable). readable=None: (re)load the viewer's rooms."""
+    with poll_db() as conn:
+        cur = conn.cursor()
+        cur.execute(_CAMPAIGN_VERSION_SQL, (campaign_id,))
+        version = int((cur.fetchone() or {}).get("version") or 0)
+        if readable is None:
+            readable = fetch_readable_location_ids(cur, user_id, campaign_id)
+        cur.execute(_ROOMS_SQL, (campaign_id,))
+        return version, cur.fetchall(), readable
+
+
+def _version_only(campaign_id: int) -> int:
+    with poll_db() as conn:
+        cur = conn.cursor()
+        cur.execute(_CAMPAIGN_VERSION_SQL, (campaign_id,))
+        return int((cur.fetchone() or {}).get("version") or 0)
 
 
 @events_bp.route("/campaigns/<int:campaign_id>/events/ticket", methods=["POST"])
@@ -112,39 +150,49 @@ def events_ticket(campaign_id):
 
 @events_bp.route("/campaigns/<int:campaign_id>/events", methods=["GET"])
 def events_stream(campaign_id):
-    user_id = read_ticket(_secret(), request.args.get("ticket", ""), campaign_id)
-    if user_id is None:
+    claims = read_ticket_claims(_secret(), request.args.get("ticket", ""), campaign_id)
+    if claims is None:
         return jsonify({"error": "Invalid or expired ticket"}), 401
+    user_id, nonce = claims
+    if not _ticket_ledger().claim(nonce):
+        return jsonify({"error": "Ticket already used"}), 401
     conn = get_db()
     try:
         allowed, _, _ = _viewer(conn.cursor(), campaign_id, user_id)
-    except Exception:  # noqa: BLE001
+    finally:
         conn.close()
-        raise
     if not allowed:
-        conn.close()
         return jsonify({"error": "Unauthorized or campaign not found"}), 403
     if not SLOTS.acquire(user_id):
-        conn.close()
         return jsonify({"error": "Too many live connections; falling back to polling"}), 503
 
     def generate():
         try:
-            cursor = conn.cursor()
-            cursor.execute(_SNAPSHOT_SQL, (campaign_id,))
-            prev = snapshot_from_rows(cursor.fetchall())
-            conn.rollback()  # end the read transaction; each poll sees fresh commits
-            yield sse("hello", {"locations": last_ids(prev), "poll_seconds": POLL_SECONDS})
-            started = last_ping = time.monotonic()
+            version, rows, readable = _poll(campaign_id, user_id, None)
+            prev = activity_from_rows(rows, readable)
+            yield sse("hello", {"locations": activity_last_ids(prev), "poll_seconds": POLL_SECONDS})
+            started = last_ping = last_readable = time.monotonic()
             while time.monotonic() - started < STREAM_SECONDS:
                 time.sleep(POLL_SECONDS)
-                cursor.execute(_SNAPSHOT_SQL, (campaign_id,))
-                cur = snapshot_from_rows(cursor.fetchall())
-                conn.rollback()
-                for change in diff_snapshots(prev, cur):
-                    yield sse("changed", change)
-                prev = cur
                 now = time.monotonic()
+                refresh = now - last_readable >= READABLE_REFRESH_SECONDS
+                try:
+                    if refresh:
+                        version, rows, readable = _poll(campaign_id, user_id, None)
+                        last_readable = now
+                    else:
+                        v = _version_only(campaign_id)
+                        if v == version:
+                            rows = None
+                        else:
+                            version, rows, _ = _poll(campaign_id, user_id, readable)
+                except TimeoutError:
+                    rows = None  # pool busy: skip this tick
+                if rows is not None:
+                    cur = activity_from_rows(rows, readable)
+                    for change in diff_activity(prev, cur):
+                        yield sse("changed", change)
+                    prev = cur
                 if now - last_ping >= PING_SECONDS:
                     last_ping = now
                     yield SSE_PING
@@ -154,10 +202,6 @@ def events_stream(campaign_id):
         except Exception as e:  # noqa: BLE001
             logger.error(f"events stream for campaign {campaign_id} failed: {e}")
         finally:
-            try:
-                conn.close()
-            except Exception:  # noqa: BLE001
-                pass
             SLOTS.release(user_id)
 
     headers = {
@@ -195,11 +239,8 @@ def campaign_unread(campaign_id):
         character_id = effective_playing_character_id(cursor, user_id, campaign_id)
         conn.commit()  # effective_playing_character_id may backfill campaign_players
 
-        cursor.execute(
-            "SELECT id FROM locations WHERE campaign_id = %s AND (is_active IS NULL OR is_active = TRUE)",
-            (campaign_id,),
-        )
-        location_ids = [int(r["id"]) for r in cursor.fetchall()]
+        # Rooms the viewer may read: closed rooms only for admin/helper/storyteller.
+        location_ids = sorted(fetch_readable_location_ids(cursor, user_id, campaign_id))
 
         if character_id:
             tracking = "character"

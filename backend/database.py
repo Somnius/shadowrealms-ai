@@ -11,6 +11,7 @@ import logging
 from typing import Optional, Dict, Any
 from datetime import datetime
 import os
+import threading
 
 logger = logging.getLogger(__name__)
 
@@ -97,6 +98,55 @@ def get_db():
         conn.execute("PRAGMA foreign_keys = ON")
         
         return conn
+
+
+# Small per-process pool for very short reads that run often (the SSE stream polls once a second
+# per open stream, routes/events.py). A stream borrows a connection for one tiny query and gives
+# it back, so 40 open streams don't hold 40 PostgreSQL connections for ~55 s each.
+_POLL_POOL = None
+_POLL_POOL_PID = None
+_POLL_POOL_SEM = None
+_POLL_POOL_LOCK = threading.Lock()
+
+
+@contextlib.contextmanager
+def poll_db(timeout: float = 5.0):
+    """Borrow an autocommit RealDictCursor connection from the per-process poll pool (PostgreSQL)."""
+    global _POLL_POOL, _POLL_POOL_PID, _POLL_POOL_SEM
+    from psycopg2.pool import ThreadedConnectionPool
+
+    size = max(1, int(os.getenv("SR_EVENTS_DB_POOL", "4")))
+    with _POLL_POOL_LOCK:
+        if _POLL_POOL is None or _POLL_POOL_PID != os.getpid():  # gunicorn --preload forks
+            # minconn == maxconn: psycopg2 closes a returned connection when the pool already
+            # holds minconn idle ones, so a lower minconn would reconnect on almost every poll.
+            _POLL_POOL = ThreadedConnectionPool(
+                size, size,
+                dbname=os.getenv('DATABASE_NAME') or os.getenv('POSTGRES_DB', 'shadowrealms_db'),
+                user=os.getenv('DATABASE_USER') or os.getenv('POSTGRES_USER', 'shadowrealms'),
+                password=os.getenv('DATABASE_PASSWORD') or os.getenv('POSTGRES_PASSWORD', ''),
+                host=os.getenv('DATABASE_HOST', 'localhost'),
+                port=os.getenv('DATABASE_PORT', '5432'),
+                cursor_factory=psycopg2.extras.RealDictCursor,
+            )
+            _POLL_POOL_PID = os.getpid()
+            _POLL_POOL_SEM = threading.BoundedSemaphore(size)
+        pool, sem = _POLL_POOL, _POLL_POOL_SEM
+    if not sem.acquire(timeout=timeout):
+        raise TimeoutError("poll pool busy")
+    conn = None
+    broken = False
+    try:
+        conn = pool.getconn()
+        conn.autocommit = True
+        yield conn
+    except (psycopg2.OperationalError, psycopg2.InterfaceError):
+        broken = True
+        raise
+    finally:
+        if conn is not None:
+            pool.putconn(conn, close=broken or bool(conn.closed))
+        sem.release()
 
 
 def _pg_table_exists(cursor, table: str) -> bool:
@@ -783,6 +833,89 @@ def ensure_auth_security_schema(cursor):
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_auth_events_user ON auth_events(user_id, created_at DESC)")
 
 
+# Chat activity counters for the SSE stream (routes/events.py): one row per campaign and per room,
+# bumped by a trigger on messages so streams poll a primary-key row instead of scanning messages.
+# Same text as init_postgresql_schema.sql (CI diffs pg_dump after migrate_db()).
+MESSAGES_ACTIVITY_FUNCTION_SQL = """
+CREATE OR REPLACE FUNCTION messages_bump_activity() RETURNS trigger
+LANGUAGE plpgsql AS $$
+DECLARE
+    r RECORD;
+    is_reset BOOLEAN := TG_OP <> 'INSERT';
+BEGIN
+    IF TG_OP = 'DELETE' THEN
+        r := OLD;
+    ELSE
+        r := NEW;
+    END IF;
+    -- Campaign row first, then the room row: every writer locks in the same order (no deadlocks).
+    INSERT INTO campaign_activity AS a (campaign_id, version, updated_at)
+    VALUES (r.campaign_id, 1, NOW())
+    ON CONFLICT (campaign_id) DO UPDATE SET version = a.version + 1, updated_at = NOW();
+    INSERT INTO campaign_location_activity AS a
+        (location_id, campaign_id, version, last_message_id, reset_version, updated_at)
+    VALUES (r.location_id, r.campaign_id, 1, CASE WHEN is_reset THEN 0 ELSE r.id END,
+            CASE WHEN is_reset THEN 1 ELSE 0 END, NOW())
+    ON CONFLICT (location_id) DO UPDATE SET
+        campaign_id = EXCLUDED.campaign_id,
+        version = a.version + 1,
+        last_message_id = GREATEST(a.last_message_id, EXCLUDED.last_message_id),
+        reset_version = a.reset_version + EXCLUDED.reset_version,
+        updated_at = NOW();
+    IF TG_OP = 'UPDATE' AND OLD.location_id IS DISTINCT FROM NEW.location_id THEN
+        UPDATE campaign_location_activity
+           SET version = version + 1, reset_version = reset_version + 1, updated_at = NOW()
+         WHERE location_id = OLD.location_id;
+    END IF;
+    RETURN NULL;
+END;
+$$
+"""
+
+
+@once_per_process
+def ensure_campaign_activity_schema(cursor):
+    """campaign_activity / campaign_location_activity + trigger (also in init_postgresql_schema.sql)."""
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS campaign_activity (
+            campaign_id INTEGER PRIMARY KEY,
+            version     BIGINT NOT NULL DEFAULT 0,
+            updated_at  TIMESTAMP NOT NULL DEFAULT NOW()
+        )
+    """)
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS campaign_location_activity (
+            location_id     INTEGER PRIMARY KEY,
+            campaign_id     INTEGER NOT NULL,
+            version         BIGINT NOT NULL DEFAULT 0,
+            last_message_id INTEGER NOT NULL DEFAULT 0,
+            reset_version   BIGINT NOT NULL DEFAULT 0,
+            updated_at      TIMESTAMP NOT NULL DEFAULT NOW()
+        )
+    """)
+    cursor.execute(
+        "CREATE INDEX IF NOT EXISTS idx_campaign_location_activity_campaign "
+        "ON campaign_location_activity(campaign_id)"
+    )
+    cursor.execute(MESSAGES_ACTIVITY_FUNCTION_SQL)
+    cursor.execute("""
+        CREATE OR REPLACE TRIGGER trg_messages_activity
+            AFTER INSERT OR UPDATE OR DELETE ON messages
+            FOR EACH ROW EXECUTE FUNCTION messages_bump_activity()
+    """)
+    # Rooms with messages from before the trigger existed (data only; no-op once filled).
+    cursor.execute("""
+        INSERT INTO campaign_location_activity (location_id, campaign_id, version, last_message_id)
+        SELECT location_id, MIN(campaign_id), 1, MAX(id) FROM messages GROUP BY location_id
+        ON CONFLICT (location_id) DO NOTHING
+    """)
+    cursor.execute("""
+        INSERT INTO campaign_activity (campaign_id, version)
+        SELECT DISTINCT campaign_id, 1 FROM campaign_location_activity
+        ON CONFLICT (campaign_id) DO NOTHING
+    """)
+
+
 @once_per_process
 def ensure_dice_tables(cursor, db_kind: str) -> None:
     """
@@ -929,6 +1062,7 @@ def migrate_db():
                 ensure_ai_reply_grants_table(cursor)
                 ensure_campaign_bans_table(cursor)
                 ensure_auth_security_schema(cursor)
+                ensure_campaign_activity_schema(cursor)
                 ensure_dice_tables(cursor, 'postgresql')
                 backfill_campaign_players_active_character(cursor)
                 from services.ai_runtime_settings import ensure_app_settings_table
