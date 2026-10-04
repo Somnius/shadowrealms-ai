@@ -101,10 +101,15 @@ afterEach(async () => {
   });
 });
 
-function mount() {
+function mount(outside = null) {
   const showSuccess = jest.fn();
   const showError = jest.fn();
-  render(<LayaPanel token="jwt" showSuccess={showSuccess} showError={showError} />);
+  render(
+    <>
+      {outside}
+      <LayaPanel token="jwt" showSuccess={showSuccess} showError={showError} />
+    </>
+  );
   return { showSuccess, showError };
 }
 
@@ -126,6 +131,8 @@ test('keyboard shortcuts label the current message', async () => {
   const user = setupUser();
   mount();
   await screen.findByTestId('laya-controls');
+  await user.click(within(screen.getByTestId('laya-item-3')).getByText(/Eleni smiles/));
+  expect(screen.getByTestId('laya-list')).toHaveFocus();
   await user.keyboard('i4');
   expect(screen.getByRole('button', { name: /In character/ })).toHaveAttribute('aria-pressed', 'true');
   expect(screen.getByRole('button', { name: /Roleplay/ })).toHaveAttribute('aria-pressed', 'true');
@@ -140,6 +147,7 @@ test('save needs both answers; J moves to the next message', async () => {
   const user = setupUser();
   mount();
   await screen.findByTestId('laya-controls');
+  await user.click(within(screen.getByTestId('laya-item-3')).getByText(/Eleni smiles/));
   await user.keyboard('o');
   expect(screen.getByRole('button', { name: 'Save label' })).toBeDisabled();
   await user.keyboard('{Enter}');
@@ -177,4 +185,70 @@ test('Greek labels', async () => {
   await screen.findByTestId('laya-item-3');
   expect(screen.getByRole('button', { name: 'Εκτέλεση αξιολόγησης' })).toBeInTheDocument();
   expect(screen.getByText('Ουρά σήμανσης')).toBeInTheDocument();
+});
+
+test('shortcuts stay inside the panel and away from fields, links and buttons', async () => {
+  const user = setupUser();
+  mount(
+    <div>
+      <input aria-label="Outside field" />
+      <a href="#elsewhere">Outside link</a>
+    </div>
+  );
+  await screen.findByTestId('laya-controls');
+  const inCharacter = () => screen.getByRole('button', { name: /^In character/ });
+  const roleplay = () => screen.getByRole('button', { name: /Roleplay/ });
+
+  await user.click(screen.getByRole('textbox', { name: 'Outside field' }));
+  await user.keyboard('i4');
+  expect(screen.getByRole('textbox', { name: 'Outside field' })).toHaveValue('i4');
+  expect(inCharacter()).toHaveAttribute('aria-pressed', 'false');
+
+  screen.getByRole('link', { name: 'Outside link' }).focus();
+  await user.keyboard('i4j');
+  expect(inCharacter()).toHaveAttribute('aria-pressed', 'false');
+  expect(screen.getByTestId('laya-item-3')).toHaveAttribute('aria-current', 'true');
+
+  // A select inside the panel is a field too.
+  screen.getByRole('combobox', { name: 'Show' }).focus();
+  await user.keyboard('i');
+  expect(inCharacter()).toHaveAttribute('aria-pressed', 'false');
+
+  // Enter on a button inside the panel presses that button only; no label is saved.
+  await user.click(within(screen.getByTestId('laya-item-3')).getByText(/Eleni smiles/));
+  await user.keyboard('i4');
+  expect(roleplay()).toHaveAttribute('aria-pressed', 'true');
+  screen.getByRole('button', { name: 'Run evaluation' }).focus();
+  await user.keyboard('o');
+  expect(inCharacter()).toHaveAttribute('aria-pressed', 'true');
+  expect(calls.some((c) => c.method === 'PUT')).toBe(false);
+});
+
+test('a run stuck in "running" past the stale limit shows as failed and frees the button', async () => {
+  jest.useFakeTimers();
+  try {
+    evaluated = true;
+    const stuck = { id: 5, status: 'running', n: null };
+    global.fetch.mockImplementation(async (url) => {
+      if (String(url).startsWith('/api/admin/laya/report')) {
+        return respond(200, { run: stuck, report: null, history: [stuck], stale_after_sec: 1 });
+      }
+      return respond(200, { items: ITEMS, total: 2, page: 1, per_page: 25, counts: COUNTS, campaigns: [] });
+    });
+    mount();
+    await act(async () => { await Promise.resolve(); });
+    expect(await screen.findByText('Evaluation running…')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Running…' })).toBeDisabled();
+    for (let i = 0; i < 6; i += 1) {
+      // eslint-disable-next-line no-await-in-loop
+      await act(async () => { jest.advanceTimersByTime(1500); });
+    }
+    expect(await screen.findByText('The last evaluation failed. See the backend logs.')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Run evaluation' })).toBeEnabled();
+    const polls = global.fetch.mock.calls.filter(([u]) => String(u).startsWith('/api/admin/laya/report')).length;
+    await act(async () => { jest.advanceTimersByTime(10000); });
+    expect(global.fetch.mock.calls.filter(([u]) => String(u).startsWith('/api/admin/laya/report')).length).toBe(polls);
+  } finally {
+    jest.useRealTimers();
+  }
 });

@@ -42,6 +42,7 @@
     "rules_question": "Rules question"
   },
   "keys": {
+    "focus": "click a message first",
     "intent": "intent",
     "move": "next / previous",
     "ooc": "in / out of character",
