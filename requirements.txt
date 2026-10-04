@@ -1,5 +1,5 @@
 # ShadowRealms AI - Web-Based RPG Platform
-# Python dependencies for the new web platform
+# Not used by any build: the backend image installs backend/requirements.txt. Kept for reference.
 
 # Web Framework
 Flask>=3.0.0
