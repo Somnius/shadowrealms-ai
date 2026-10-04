@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import ReadmeModal from './ReadmeModal';
-import packageJson from '../../package.json';
+// Only the version: a named import lets Vite leave the rest of package.json out of the bundle.
+import { version as packageVersion } from '../../package.json';
 import { t } from '../i18n';
 import { Glyph } from '../design';
 
@@ -9,7 +10,7 @@ import { Glyph } from '../design';
  * We do not call `/api/version` here: backend `VERSION` in `.env` can lag behind the
  * built bundle and was overwriting this badge with stale values (e.g. v0.7.17).
  */
-const displayVersion = `v${packageJson.version}`;
+const displayVersion = `v${packageVersion}`;
 
 function Footer() {
   const [showReadme, setShowReadme] = useState(false);
