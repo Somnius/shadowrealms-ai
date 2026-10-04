@@ -298,3 +298,25 @@ services:
 ---
 
 **Your Docker environment is now properly configured for secure Flask development! 🚀**
+
+## Frontend: production build vs dev server (v0.9)
+
+nginx serves the **production build** of the frontend from `frontend/build/` (static files, gzip, long cache for hashed assets, a strict Content-Security-Policy). After pulling frontend changes, rebuild it:
+
+```bash
+./scripts/build-frontend.sh
+```
+
+nginx picks up the new files immediately.
+
+For live-reload development, start the dev server (it's behind the `dev` compose profile) and point nginx's `location /` back at it (see the comment in `nginx/nginx.conf`):
+
+```bash
+docker compose --profile dev up -d frontend
+```
+
+**Editing `nginx/nginx.conf`:** the file is bind-mounted as a single file, and editors or `sed -i` replace it with a new file that the running container doesn't see. After an edit, recreate nginx rather than reloading it:
+
+```bash
+docker compose up -d --force-recreate nginx
+```
