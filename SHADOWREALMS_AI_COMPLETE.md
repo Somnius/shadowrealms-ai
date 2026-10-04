@@ -1,6 +1,6 @@
 # ShadowRealms AI - Complete Platform Documentation
 
-> **This is the long-form project history**, written release by release since v0.4. Early sections describe plans and setups that have since changed (SQLite, the old React UI, `docker-compose` v1, port 3000). For the current setup and documentation see the [README](README.md) and the [docs index](docs/README.md). Latest release: **v0.10.0 "New foundations"** ([summary below](#version-0100---new-foundations), full notes in [docs/CHANGELOG.md](docs/CHANGELOG.md)).
+> **This is the long-form project history**, written release by release since v0.4. Early sections describe plans and setups that have since changed (SQLite, the old React UI, `docker-compose` v1, port 3000). For the current setup and documentation see the [README](README.md), the [docs index](docs/README.md) and the [tech stack](docs/TECH_STACK.md). Latest release: **v0.10.0 "New foundations"** ([summary below](#version-0100---new-foundations), full notes in [docs/CHANGELOG.md](docs/CHANGELOG.md)).
 
 ## Project Overview & Vision
 

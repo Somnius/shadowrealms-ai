@@ -17,6 +17,7 @@ Index of the documentation in this folder (current release: v0.10.0). The [proje
 - [CHARACTER_SHEET_BLOCKS.md](CHARACTER_SHEET_BLOCKS.md): how the character forge stores each sheet block, Classic and V5
 - [CAMPAIGN_MEMBERSHIP_AND_PLAYING_CHARACTER.md](CAMPAIGN_MEMBERSHIP_AND_PLAYING_CHARACTER.md): joining and leaving chronicles, the playing character per chronicle
 - [location-naming-world-of-darkness.md](location-naming-world-of-darkness.md): naming guide used for AI location suggestions
+- [TECH_STACK.md](TECH_STACK.md): AI models, technologies, versions and the tools the project was built with
 - [FEATURES.md](FEATURES.md): feature notes (what's new per release, admin tools, profile, dice theatre, chat actions, theme, invite codes)
 
 ## AI
