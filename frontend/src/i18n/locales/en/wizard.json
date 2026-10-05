@@ -216,6 +216,8 @@
     "addConviction": "+ Add conviction",
     "tenets": "Chronicle tenets (from your Storyteller)",
     "storySub": "Background narrative.",
-    "storyPlaceholder": "History, coterie, goals…"
+    "storyPlaceholder": "History, coterie, goals…",
+    "predatorDotNote": "+1 from {{type}}",
+    "xpDotNote": "+{{n}} from experience"
   }
 }

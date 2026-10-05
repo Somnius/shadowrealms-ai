@@ -216,6 +216,8 @@
     "addConviction": "+ Πρόσθεσε conviction",
     "tenets": "Αρχές του χρονικού (από τον Storyteller σου)",
     "storySub": "Το ιστορικό σου.",
-    "storyPlaceholder": "Παρελθόν, coterie, στόχοι…"
+    "storyPlaceholder": "Παρελθόν, coterie, στόχοι…",
+    "predatorDotNote": "+1 από {{type}}",
+    "xpDotNote": "+{{n}} από XP"
   }
 }
