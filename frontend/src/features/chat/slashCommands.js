@@ -25,21 +25,39 @@ export const SLASH_COMMANDS = [
   { name: '/ai rouse', args: '[hunger]', description: () => t('chat:slash.ai.rouse', 'V5 Rouse check'), admin: true },
   { name: '/ai clean', args: '<target>', description: () => t('chat:slash.ai.clean', 'Remove clutter (see /ai clean)'), admin: true },
   // Classic chronicles take a floor 2-10; V5 chronicles take no-bestial|no-messy on|off, successes 0-3.
-  { name: '/ai dice-diff', args: '<2-10 | no-bestial | no-messy | successes | restore>', description: () => t('chat:slash.ai.diceDiff', 'Room dice leniency (owner/admin): Classic floor 2-10, V5 no-bestial / no-messy / successes'), admin: true },
+  // `classic` / `v5` override args and description once the room's edition is known.
+  {
+    name: '/ai dice-diff',
+    args: '<2-10 | no-bestial | no-messy | successes | restore>',
+    description: () => t('chat:slash.ai.diceDiff', 'Room dice leniency (owner/admin): Classic floor 2-10, V5 no-bestial / no-messy / successes'),
+    admin: true,
+    classic: {
+      args: '<2-10 | restore>',
+      description: () => t('chat:slash.ai.diceDiffClassic', 'Room dice leniency (owner/admin): no 1s, one die at least the floor'),
+    },
+    v5: {
+      args: '<no-bestial on|off | no-messy on|off | successes 0-3 | restore>',
+      description: () => t('chat:slash.ai.diceDiffV5', 'Room dice leniency (owner/admin): no bestial failure, no messy critical, minimum successes'),
+    },
+  },
 ];
 
 /**
  * Suggestions for the current composer text. Only while the caret is still in the command part:
  * the text starts with "/" and has no newline; for "/ai x" the verb may still be being typed.
+ * `edition` ('classic' | 'v5', the room's campaign) picks edition-specific args and wording.
  */
-export function slashSuggestions(input, { isAdmin = false, limit = 8 } = {}) {
+export function slashSuggestions(input, { isAdmin = false, edition = null, limit = 8 } = {}) {
   const s = String(input || '');
   if (!s.startsWith('/') || s.includes('\n')) return [];
   const lower = s.toLowerCase();
   const visible = SLASH_COMMANDS.filter((c) => isAdmin || !c.admin);
   // Once a full command plus a space was typed (e.g. "/me waves"), stop suggesting.
   if (visible.some((c) => lower.startsWith(`${c.name} `) && lower.length > c.name.length + 1)) return [];
-  return visible.filter((c) => c.name.startsWith(lower.trimEnd()) || (lower.trimEnd() === c.name)).slice(0, limit);
+  return visible
+    .filter((c) => c.name.startsWith(lower.trimEnd()) || (lower.trimEnd() === c.name))
+    .slice(0, limit)
+    .map((c) => (edition && c[edition] ? { ...c, ...c[edition] } : c));
 }
 
 /** Text to put in the composer when a suggestion is accepted. */

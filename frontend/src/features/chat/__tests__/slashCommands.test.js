@@ -36,3 +36,16 @@ test('local commands are recognised', () => {
   expect(parseLocalCommand('/ai roll 5')).toBeNull();
   expect(parseLocalCommand('hello')).toBeNull();
 });
+
+test('/ai dice-diff shows the arguments of the room edition', () => {
+  const [generic] = slashSuggestions('/ai dice', { isAdmin: true });
+  expect(generic.args).toMatch(/2-10/);
+  expect(generic.args).toMatch(/no-bestial/);
+  const [classic] = slashSuggestions('/ai dice', { isAdmin: true, edition: 'classic' });
+  expect(classic.args).toBe('<2-10 | restore>');
+  expect(classic.description()).toMatch(/floor/);
+  const [v5] = slashSuggestions('/ai dice', { isAdmin: true, edition: 'v5' });
+  expect(v5.args).toMatch(/no-bestial on\|off/);
+  expect(v5.args).not.toMatch(/2-10/);
+  expect(v5.description()).toMatch(/bestial/);
+});
