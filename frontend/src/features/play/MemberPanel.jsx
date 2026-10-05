@@ -5,6 +5,7 @@ import ButtonLink from '../../app/ButtonLink';
 import { lineOf } from '../../app/hooks';
 import { t } from '../../i18n';
 import { Term, termHint } from '../../i18n/glossary';
+import { UnassignedOffer } from '../profile/BringIntoChronicle';
 
 const MAX_PORTRAIT_BYTES = 350000;
 
@@ -18,7 +19,7 @@ function readImage(file) {
 }
 
 /** "Your character" card: portrait, Hunger (V5), sheet + portrait actions. */
-function CharacterCard({ campaign, character, onOpenSheet, onPortrait, toast }) {
+function CharacterCard({ campaign, character, onOpenSheet, onPortrait, onCharacterAssigned, toast }) {
   const fileRef = useRef(null);
   if (!character) {
     return (
@@ -32,6 +33,7 @@ function CharacterCard({ campaign, character, onOpenSheet, onPortrait, toast }) 
             {t('hall:createCharacter', 'Create character')}
           </ButtonLink>
         ) : null}
+        {campaign ? <UnassignedOffer campaign={campaign} onAssigned={onCharacterAssigned} toast={toast} /> : null}
       </div>
     );
   }
@@ -98,7 +100,7 @@ function MemberRow({ m, canOpen, onOpenSheet, me }) {
 }
 
 /** Right panel: your character, then members (Storyteller first), then staff tools. */
-export default function MemberPanel({ campaign, character, members, user, canStaff, isAdmin, onOpenSheet, onPortrait, onDiceRules, onDiceHistory, toast }) {
+export default function MemberPanel({ campaign, character, members, user, canStaff, isAdmin, onOpenSheet, onPortrait, onCharacterAssigned, onDiceRules, onDiceHistory, toast }) {
   const st = members.filter((m) => m.is_storyteller);
   const players = members.filter((m) => !m.is_storyteller);
   const canOpen = (m) => canStaff || String(m.user_id) === String(user?.id);
@@ -108,7 +110,14 @@ export default function MemberPanel({ campaign, character, members, user, canSta
         <h3 id="panel-char" className="sr-panelcol__heading">
           {t('play:panel.yourCharacter', 'Your character')}
         </h3>
-        <CharacterCard campaign={campaign} character={character} onOpenSheet={onOpenSheet} onPortrait={onPortrait} toast={toast} />
+        <CharacterCard
+          campaign={campaign}
+          character={character}
+          onOpenSheet={onOpenSheet}
+          onPortrait={onPortrait}
+          onCharacterAssigned={onCharacterAssigned}
+          toast={toast}
+        />
       </section>
       {st.length ? (
         <section aria-labelledby="panel-st" className="sr-panelcol__section">
