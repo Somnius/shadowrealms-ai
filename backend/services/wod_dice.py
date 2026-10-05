@@ -255,6 +255,7 @@ def roll_storyteller_pool(
     *,
     specialty: bool = False,
     willpower: bool = False,
+    reroll_ones_cancel: bool = False,
     rng: Any = None,
 ) -> StorytellerRollResult:
     """Backwards-compatible name for :func:`roll_classic` (dice returned sorted)."""
@@ -263,6 +264,7 @@ def roll_storyteller_pool(
         difficulty,
         specialty=specialty,
         willpower=willpower,
+        reroll_ones_cancel=reroll_ones_cancel,
         leniency_floor=leniency_floor,
         rng=rng,
     )

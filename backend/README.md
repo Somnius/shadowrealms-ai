@@ -35,7 +35,7 @@ Main areas in `services/`:
 - **Security:** `app_security.py` (proxy trust, rate limits, headers, CORS), `auth_security.py` (password policy, bcrypt, lockouts), `auth_tokens.py` (JWT issue, refresh rotation, revocation). See [docs/SECURITY_MODEL.md](../docs/SECURITY_MODEL.md).
 - **Rules and dice:** `wod_dice.py` (Classic Revised), `v5_dice.py`, `dice_service.py`, `dice_chat.py`, `dice_markers.py`, `rules_edition.py`, `character_sheet_v5.py`. See [docs/dice-old-wod.md](../docs/dice-old-wod.md) and [docs/dice-v5.md](../docs/dice-v5.md).
 - **AI:** `ai_providers.py` and `ai_roles.py` (LM Studio, Ollama, Anthropic, OpenAI behind one interface, with fallback), `storyteller_prompt.py`, `character_prompt.py`, `language.py`, `classifier.py` and `ooc_monitor.py` (Laya / Jev / LLM fallback), `secret_store.py` (encrypted provider keys), `ai_slash_commands.py`. See [docs/AI_SYSTEMS.md](../docs/AI_SYSTEMS.md).
-- **RAG:** `vector_store.py` and `embedding_service.py` (one embedder for every collection), `rag_service.py`, `rule_book_service.py`.
+- **RAG:** `vector_store.py` and `embedding_service.py` (one embedder for every collection), `rag_service.py` (rule books: `rules_edition.py`, written by `books/import_books.py`).
 - **Play:** `live_events.py`, `playing_character.py`, `play_suspension.py`, `location_access.py`, `chat_cleanup.py`, `mail_service.py`.
 
 ## Tests

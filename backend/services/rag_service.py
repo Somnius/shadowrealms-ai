@@ -14,6 +14,8 @@ from datetime import datetime
 import chromadb
 import requests
 
+from services.log_safety import safe_log_value
+
 logger = logging.getLogger(__name__)
 
 # Rule-book share of the RAG budget when the message is about rules (placed first, so the
@@ -375,7 +377,12 @@ class RAGService:
         try:
             return self.client.get_collection(name, embedding_function=embedding_function())
         except Exception as e:  # noqa: BLE001 - not imported yet, or Chroma down
-            logger.debug(f"Rule book collection {name} unavailable: {e}")
+            # Not imported yet is normal; anything else (e.g. an embedding function conflict
+            # after a bad import) would hide the books silently, so say it out loud.
+            if 'does not exist' in str(e).lower() or 'not found' in str(e).lower():
+                logger.debug("Rule book collection %s not imported yet", name)
+            else:
+                logger.warning("Rule book collection %s unavailable: %s", name, safe_log_value(e, 300))
             return None
 
     def get_rule_book_context(
@@ -433,7 +440,9 @@ class RAGService:
                 meta = (metas[i] if i < len(metas) else None) or {}
                 chunks.append({'content': doc, 'metadata': meta, 'distance': dist,
                                'relevance': 1 - dist, 'collection': name})
-        chunks.sort(key=lambda c: (c['distance'], c['metadata'].get('precedence', 99)))
+        # Near-equal matches (within 0.05) go to the more authoritative book (lower precedence).
+        chunks.sort(key=lambda c: (round(c['distance'] / 0.05), c['metadata'].get('precedence', 99),
+                                   c['distance']))
         chunks = chunks[:plan['k']]
         logger.info(
             "Rule books: %d chunks (kinds %s, cutoff %.2f) for: %s",
@@ -490,6 +499,10 @@ class RAGService:
 
         if query_embedding is None:
             query_embedding = embed_query(prompt)
+        if query_embedding is None:
+            # The embedder is down: every search below would try it again (each with a long
+            # timeout), so answer without retrieved context instead of stalling the reply.
+            return prompt
         context = self.get_campaign_context(campaign_id, prompt, query_embedding=query_embedding)
 
         memory_parts = []

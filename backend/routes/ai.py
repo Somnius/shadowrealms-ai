@@ -786,7 +786,7 @@ def _storyteller_reply(mode: str, message: str, campaign_id: int, location_id: i
         # The message is embedded once; every vector search of this reply reuses it.
         query_embedding = embed_query(message)
         semantic_text = ''
-        if location_id and cfg['semantic']:
+        if location_id and cfg['semantic'] and query_embedding is not None:
             seen = {" ".join(str(r.get('content') or '').split()) for r in history_rows}
             seen.add(" ".join(message.split()))
             semantic_data = get_semantic_message_history(message, campaign_id, location_id,
