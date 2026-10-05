@@ -124,6 +124,9 @@ def test_drop_caps():
     assert join_lines(["V", "ampires walk the night."]) == "Vampires walk the night."
     assert join_lines(["T he night is long."]) == "The night is long."
     assert join_lines(["A", "vampire walks."]) == "A vampire walks."
+    words = {"the", "vampires"}
+    assert join_lines(["T he night."], is_word=lambda w: w.lower() in words) == "The night."
+    assert join_lines(["B line goes on."], is_word=lambda w: w.lower() in words) == "B line goes on."
 
 
 def test_cli_guards(capsys):

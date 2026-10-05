@@ -58,17 +58,28 @@ class HyphenVocab:
             w = w.lower()
             self.words[w] = self.words.get(w, 0) + 1
 
+    def is_word(self, w: str) -> bool:
+        return self.words.get(w.lower(), 0) >= 2
+
     def keep_hyphen(self, left: str, right: str) -> bool:
         k = (left + "-" + right).lower()
         return self.hyph.get(k, 0) > self.words.get((left + right).lower(), 0)
 
 
-def join_lines(lines: Iterable[str], keep_hyphen: Optional[Callable[[str, str], bool]] = None) -> str:
+_DROP_CAP = re.compile(r"^([B-HJ-Z]) ([a-z]{2,})")
+
+
+def join_lines(lines: Iterable[str], keep_hyphen: Optional[Callable[[str, str], bool]] = None,
+               is_word: Optional[Callable[[str], bool]] = None) -> str:
     """Join the lines of one paragraph: dehyphenate line-end hyphens before a lowercase letter,
     glue em/en dashes without a space, otherwise join with one space."""
     out = ""
     for ln in lines:
+        # a drop cap glued onto its line by position (or by OCR): "T he night"
         ln = ln.strip()
+        m = _DROP_CAP.match(ln)
+        if m and (is_word is None or is_word(m.group(1) + m.group(2))):
+            ln = m.group(1) + ln[2:]
         if not ln:
             continue
         if not out:
@@ -82,7 +93,8 @@ def join_lines(lines: Iterable[str], keep_hyphen: Optional[Callable[[str, str], 
                 out = out[:-1] + "-" + ln
             else:
                 out = out[:-1] + ln
-        elif re.fullmatch(r"[B-HJ-Z]", out) and ln[:1].islower():
+        elif re.fullmatch(r"[B-HJ-Z]", out) and ln[:1].islower() and \
+                (is_word is None or is_word(out + re.match(r"[a-z]*", ln).group(0))):
             out = out + ln                     # drop cap: "V" + "ampires" (not A/I, which are words)
         elif m and (ln[:1].isupper() or ln[:1].isdigit()):
             out = out[:-1] + "-" + ln          # "Camarilla-" + "Anarch": keep the hyphen, no space
@@ -90,8 +102,6 @@ def join_lines(lines: Iterable[str], keep_hyphen: Optional[Callable[[str, str], 
             out = out + ln
         else:
             out = out + " " + ln
-    # a drop cap glued onto its line by position: "T he night"
-    out = re.sub(r"^([B-HJ-Z]) (?=[a-z]{2})", r"\1", out)
     return out.replace("­", "")
 
 
