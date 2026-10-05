@@ -31,7 +31,7 @@ Administrative `/ai` commands are restricted to site admins in `POST /api/ai/sla
 4. **Botch**: only when **no die succeeded** (before cancelling) **and at least one 1** showed. If successes were rolled but 1s cancelled them all, that's a plain **failure**, not a botch. Book example (Revised p. 192): 9, 1, 1, 8, 1 at difficulty 8 is a failure.
 5. **Specialty**: each natural **10** counts as a success **and is rerolled**. A 10 on the reroll is rerolled again, with no limit (the code stops after 100 rerolls as a safety cap). 1s from the original pool cancel successes from the pool and from rerolls alike. A **1 on a reroll** depends on the chronicle's game line: in **Mage** it cancels one success (Mage: The Ascension Revised: "A botch on a re-roll does cancel a success as always"); in **Vampire**, **Werewolf** and custom systems it cancels nothing, rerolls only add (app ruling for Vampire, whose book is silent; Werewolf Revised says the same: "any ones rolled on bonus dice granted by a specialty do not subtract successes"). Roll results carry `reroll_ones_cancel`.
 6. **Willpower**: declared before the roll (`willpower: true`). Adds **1 automatic success** that 1s can't cancel. A Willpower roll therefore never botches and always has at least 1 net success. The app doesn't deduct the Willpower point from the sheet.
-7. **Exceptional success**: **5+ net successes**. The API field is `is_exceptional`. `is_critical` is kept for older clients and means the same thing for classic rolls. The chat text says "Exceptional success", not "critical".
+7. **Degrees of success** (Revised core: "Four Successes — Exceptional", "Five or More Successes — Phenomenal"; `rules/CLASSIC_REVISED.md` §1.2): 1 marginal, 2 moderate, 3 complete, **4 exceptional**, **5+ phenomenal**. The API fields are `is_exceptional` (exactly 4) and `is_phenomenal` (5+). `is_critical` is kept for older clients and the `dice_rolls` column and means 4+ for classic rolls. The chat text says "Exceptional success" / "Phenomenal success", never "critical". Before this fix the app called 5+ "exceptional"; the chat, the roll history and `/ai explain` derive the degree from the net successes, so older rolls show the right label.
 
 ## API
 
@@ -48,7 +48,7 @@ Administrative `/ai` commands are restricted to site admins in `POST /api/ai/sla
 - `specialty_rerolls`: the extra dice rolled for 10s
 - `successes`: net successes
 - `raw_successes` and `ones_count`
-- `is_botch`, `is_exceptional` and `is_critical` (same as `is_exceptional`)
+- `is_botch`, `is_exceptional` (4 net successes), `is_phenomenal` (5+) and `is_critical` (4+)
 - `willpower`, `specialty`, `difficulty`, `leniency_floor` and `message`
 
 `POST /api/campaigns/:id/roll/contested` takes `attacker_pool` and `defender_pool` (1–50 each) and `difficulty`. Each side is rolled with the rules above. A botch loses automatically; otherwise the side with more successes wins. Equal successes are a tie in classic (V5 differs: the acting character wins ties, see `dice-v5.md`). `specialty` and `willpower` on `POST /roll` must be JSON booleans and integer fields refuse booleans and fractions; bad types get **400**.
@@ -73,9 +73,9 @@ Code: `backend/services/dice_pools.py` (pools and tags), `backend/routes/ai.py` 
 
 ## Explaining a roll (`/ai explain`)
 
-Reply to a dice card with `/ai explain` (also `/ai explain this roll`, Greek `/ai εξήγησε`); any member of the chronicle can. Without a reply it explains the newest roll in the room the requester can see (hidden rolls only for admins, helpers and the owner). The answer, posted as a Storyteller line, shows the dice and the difficulty, then counts step by step: successes at or above the difficulty (core pp. 190–191), each 1 cancelling one (p. 192), specialty rerolls (p. 117, with the game line's rule for rerolled 1s), the Willpower success that 1s can't cancel (pp. 137, 193), and the net result. A botch is named only when no die succeeded and a 1 showed; successes cancelled by 1s are called a plain failure, not a botch (p. 192). A room leniency floor is named.
+Reply to a dice card with `/ai explain` (also `/ai explain this roll`, Greek `/ai εξήγησε`); any member of the chronicle can. Without a reply it explains the newest visible roll in the room; a hidden roll is explained only to staff who reply to its card, and only to them (never posted). The answer, posted as a Storyteller line, shows the dice and the difficulty, then counts step by step: successes at or above the difficulty (core pp. 190–191), each 1 cancelling one (p. 192), specialty rerolls (p. 117, with the game line's rule for rerolled 1s), the Willpower success that 1s can't cancel (pp. 137, 193), and the net result with its degree (4 exceptional, 5+ phenomenal). A botch is named only when no die succeeded and a 1 showed; successes cancelled by 1s are called a plain failure, not a botch (p. 192). A room leniency floor is named.
 
-The numbers come from the stored roll and are re-counted with `resolve_classic`; a disagreement with what was stored is reported, not hidden. A short Storyteller line may follow when an LLM is up (dropped if it adds numbers). Details, the language rules and the reply context for the Storyteller are in `dice-v5.md` → "Explaining a roll".
+The numbers come from the stored roll and are re-counted with `resolve_classic`; a disagreement with what was stored is reported, not hidden. A short Storyteller line may follow when an LLM is up (dropped if it has digits or contradicts the outcome). Details, the language rules and the reply context for the Storyteller are in `dice-v5.md` → "Explaining a roll".
 
 ## `/ai roll` syntax (classic campaigns)
 
