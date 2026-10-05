@@ -7,7 +7,7 @@ next to the SSE cap (SR_EVENTS_MAX_STREAMS, per process). For gthread workers `t
 worker heartbeat, not a per-request limit, so long streams are fine.
 
 --preload: the app (and migrate_db) is built once in the master, then forked; background
-threads (RAG re-embed, rule book backfill) are started in the first worker after the fork,
+threads (RAG re-embed) are started in the first worker after the fork,
 because threads don't survive fork() and locks held by them could deadlock the children.
 Every value can be overridden with the environment variable named next to it.
 """

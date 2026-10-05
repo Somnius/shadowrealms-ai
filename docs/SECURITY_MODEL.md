@@ -182,6 +182,15 @@ A breach returns `429 {"error": "...", "code": "RATE_LIMITED", "retry_after": <s
   connection between polls. Measured: 6 open streams added no connections beyond the pools
   (8 idle connections for 2 workers).
 
+## Rule books API
+
+`/api/rule-books/*` is admin only (`require_admin`, players get 403): `GET /status` and
+`DELETE /<book_id>`. Until v0.10 every endpoint there only needed a login, so any player could
+start `/process` (re-imported a PDF and duplicated its chunks) or read book text through
+`/search` and `/context`. Those endpoints are gone; books are imported outside the app. The
+campaign context endpoint (`POST /api/campaigns/<id>/context`, members) leaves rule books out.
+The Storyteller still quotes short rule-book passages in its replies, which is the point.
+
 ## Dice integrity
 
 - Dice results in chat come from the server. `POST /roll`, `/roll/<id>/reroll` and `/rouse`
@@ -237,7 +246,7 @@ client-controlled value also wrap it in `safe_log_value()`, which is what CodeQL
 | `max_requests` | 0 | no recycling (would drop streams) |
 | access log | stdout, path without query string | SSE tickets never land in logs |
 
-Background jobs (RAG re-embed, rule book backfill) are started in the first worker after the fork
+Background jobs (RAG re-embed) are started in the first worker after the fork
 (`post_fork`), not in the preloading master: threads don't survive `fork()`. The re-embed takes a
 PostgreSQL advisory lock anyway. The Laya classifier is loaded lazily on first use in each worker
 (never in the master): measured about 126 MB RSS for the master and about 690 MB per worker with

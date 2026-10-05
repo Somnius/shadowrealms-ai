@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- Rule books come from the new per-edition collections (`rule_books_v5`, `rule_books_classic`, plus `rule_books_chronicle` for books attached to one chronicle; contract in `docs/rules/RULE_BOOKS_RAG.md`). Classic is filtered to the chronicle's game line or `all`, so a Vampire chronicle never gets Werewolf rules; a custom system gets every line. The old `rule_books` collection is no longer read.
+- Laya's intent decides the rule-book search: rules, dice and combat questions get rules, sidebars and examples (4), roleplay gets lore and adventures (2), small talk gets none. It is computed once per message and the model router reuses it. Weak matches are dropped (`RULE_BOOK_MAX_DISTANCE`, provisional default 0.45). For rules questions the books come first with their own budget (`RULE_BOOK_BUDGET_TOKENS`, 1,200) and are cited as "Title › section, p. N".
+- A Storyteller reply embeds the player's message once instead of 8 times.
+- Mage: a 1 on a specialty reroll cancels a success (Mage Revised says so). Vampire, Werewolf and custom keep "rerolls only add".
+
+### Security
+- `/api/rule-books` is admin only. `/scan`, `/process`, `/search`, `/context` and `/systems` are gone (any player could re-import a book and duplicate its chunks). New: `GET /api/rule-books/status` and `DELETE /api/rule-books/<book_id>`. The old in-app PDF importer (`services/rule_book_service.py`) is removed.
+
 ## [0.10.0] - 2026-10-04 - New foundations
 
 Full plan and progress: `docs/ROADMAP_v0.10.md`.
