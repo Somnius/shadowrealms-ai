@@ -88,6 +88,27 @@ Roles (admin panel → **Ai System → Models per role**, stored in `app_setting
 - Budget (`services/storyteller_prompt.py`): the model context (`STORYTELLER_CONTEXT_TOKENS`, default 8192, lowered to LM Studio's `loaded_context_length` when smaller) minus the reply's `max_tokens` minus a 400-token reserve. Fixed parts first (instructions, campaign, character, location, NPCs), RAG sections in the user turn get 25%, room memory 10%, history the rest. Tokens are estimated at 3.5 ASCII / 2.0 other characters per token (gemma-4-e2b measured 5.3 English, 2.4 Greek).
 - If a model still reports a context overflow, the same model is retried with the prompt trimmed (up to twice, 60% each time); the chain then never falls back to Ollama, whose default context is smaller. `ai_meta.trimmed` counts the trims.
 
+### Rule books (RAG)
+
+The books are imported outside the app by `books/import_books.py`; the data contract is [rules/RULE_BOOKS_RAG.md](rules/RULE_BOOKS_RAG.md). The backend only reads (`services/rag_service.get_rule_book_context`, helpers in `services/rules_edition.py`).
+
+- **Collections.** `rule_books_v5` or `rule_books_classic` by the chronicle's `rules_edition`, plus `rule_books_chronicle` filtered to `campaign_id` = the chronicle (books attached to it on purpose, any edition, only the kind filter applies). The old `rule_books` collection is no longer read; it was empty on the live install.
+- **Game line.** Classic chunks are filtered to `line` in {the chronicle's line, `all`}, the line taken from `game_system` (vampire / werewolf / mage), so a Vampire chronicle never gets Werewolf rules. V5 is Vampire only. A **custom** (or unknown) game system gets every line: it uses the shared Storyteller dice and no line is more right than another.
+- **Laya's intent decides** (computed once per message, see the classifier section):
+
+  | Intent | Kinds | k |
+  |---|---|---|
+  | `rules_question`, `dice`, `combat` | rules, sidebar, example | 4 |
+  | `roleplay` | lore, adventure | 2 |
+  | `general` | no search at all | 0 |
+  | unknown (no Laya/Jev, or score < 0.6) | all five | 4, stricter cutoff |
+
+  `fiction` chunks are never used.
+- **Cutoff.** Chunks with a cosine distance above `RULE_BOOK_MAX_DISTANCE` (default 0.45) are dropped; for an unknown intent `RULE_BOOK_STRICT_MAX_DISTANCE` (default 0.35). These defaults are provisional: on a synthetic smoke set (9 made-up chunks, bge-m3) the right chunk scored 0.30–0.40 for most questions, but a combat question matched its chunk at 0.55 and "What happens with a botch?" at 0.46, so both were cut. The importer's eval on the real books is meant to calibrate them.
+- **Order and budget.** For a rules intent (and unknown) the rule-book section comes first in the RAG part of the prompt with its own budget (`RULE_BOOK_BUDGET_TOKENS`, default 1,200, never more than the RAG share), so the memory sections are cut before the books. For roleplay the lore chunks go last. Each chunk is cited as `[Title › heading_path, p. N]` followed by its text.
+- **One embedding per reply.** `_storyteller_reply` embeds the player's message once (`rag_service.embed_query`) and every query of that reply uses `query_embeddings`: the semantic message history, the five memory collections and the rule books. Before, one reply embedded the same text 8 times (5 memory queries, 2 rule-book queries with the legacy fallback, 1 history); a unit test with a fake embedder now counts 1.
+- **Admin API** (admin only): `GET /api/rule-books/status` lists each collection's books (title, edition, line, version, chunks per kind; metadatas read 500 at a time) and `DELETE /api/rule-books/<book_id>` removes a book (`?campaign_id=N` for a chronicle's book). The old `/scan`, `/process`, `/search`, `/context` and `/systems` endpoints and the in-app pdfplumber importer are gone.
+
 ### Dice pools from the character sheet
 
 The Storyteller used to guess pools ("Roll 3d10 for Stealth" when the sheet gives Dexterity 3 + Stealth 3, and in V5 it left out Hunger). Now the app computes them (`services/dice_pools.py`, pure):
@@ -118,7 +139,7 @@ The Storyteller used to guess pools ("Roll 3d10 for Stealth" when the sheet give
 
 - Admin setting `classifier_provider`: `auto` (default: Laya if installed, else LLM), `laya`, `jev`, `llm`. If the chosen one fails, `laya` and then `llm` are tried. If none works, nothing is flagged (fail open).
 - Used by `services/ooc_monitor.py` (warnings/bans when messages are saved in an OOC room) and by `POST /api/ai/chat` in OOC rooms (returns a short fixed moderator note in the player's language, or `ooc_no_reply`). Both go through `classify_cached` (2 min, per process), so the save + the chat call for one message classify it once. Site admins, helpers, the campaign owner and staff-voice posts are never moderated.
-- Intent routing: `SmartModelRouter.detect_task_type` uses the classifier's intent when the provider is Laya or Jev and the score is ≥ 0.6 (`rules_question` → new `TaskType.RULES`); with the `llm` provider it keeps the keyword rules, because a second LLM round trip per Storyteller message isn't worth it.
+- Intent routing: `LLMService.generate_response` classifies the player's message once (`classify_intent_cached`: Laya or Jev through `classify_cached`, never the `llm` provider) and puts it in the context as `laya_intent`. The rule-book search (above) and `SmartModelRouter.detect_task_type` both use it; the router no longer runs the classifier again. The router uses the intent when the score is ≥ 0.6 (`rules_question` → `TaskType.RULES`); with the `llm` provider or no classifier the intent is unknown and the router keeps the keyword rules, because a second LLM round trip per Storyteller message isn't worth it.
 - **Measured** (12 then 16 labelled EN/EL messages, LLM prompt): Ollama `llama3.2:3b` flagged 7 of 7 OOC messages as in character, so it is never used for this; `gemma-4-e2b` got 12/12 and, with the few-shot EN/EL prompt, 16/16, Latency with gemma-4-e2b loaded: ~0.13–0.18 s per message (measured 2026-10-04 through `/api/admin/classifier/test`; an earlier note said ~1.5 s). A small set: Laya is the real fix.
 - Admin panel → **Message classifier**: choose the provider, Jev key, and **Test laya / jev / llm** on a sample text (`POST /api/admin/classifier/test`).
 
@@ -139,6 +160,9 @@ Now (`services/assistant_grants.py`): `role` must be `user` or `assistant` (else
 | `STORYTELLER_EL_MODEL` | `llama-krikri-8b-instruct` | Default model of the Greek Storyteller role |
 | `UTILITY_PROVIDER` / `UTILITY_MODEL` | `ollama` / `llama3.2:3b` | Default of the utility role |
 | `EMBEDDING_MODEL` | `text-embedding-bge-m3` | LM Studio embedding model for all RAG collections |
+| `RULE_BOOK_MAX_DISTANCE` | `0.45` | Cosine distance above which a rule-book chunk is dropped (provisional) |
+| `RULE_BOOK_STRICT_MAX_DISTANCE` | `0.35` | The same when Laya's intent is unknown |
+| `RULE_BOOK_BUDGET_TOKENS` | `1200` | Rule-book share of the RAG budget for rules questions |
 | `OOC_VIOLATION_THRESHOLD` | `0.8` | P(in character) at which an OOC-room message is a violation |
 | `OPENAI_REASONING_EFFORT` | `none` | Sent to OpenAI chat completions for reasoning models only (o-series, gpt-5+); a 400 about it is retried once without it |
 | `STORYTELLER_ATTEMPT_TIMEOUT` | `45` | Seconds per model attempt for Storyteller replies |
