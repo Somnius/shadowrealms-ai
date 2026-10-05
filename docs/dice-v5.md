@@ -14,7 +14,8 @@ V5 is only available for `game_system = vampire`. It's chosen when the campaign 
 | API wrapper and chat text | `backend/services/dice_service.py`: `roll_v5_pool`, `format_v5_roll_for_chat` |
 | Routes | `backend/routes/dice.py`: `manual_roll`, `willpower_reroll`, `rouse_check_route`, `contested_roll`, `ai_roll` |
 | Posting rolls to chat (marker + result line) | `backend/services/dice_chat.py`, `backend/services/dice_markers.py` |
-| `/ai roll`, `/ai roll-hidden`, `/ai rouse` | `backend/services/ai_slash_commands.py` |
+| `/ai roll`, `/ai roll-hidden`, `/ai rouse`, `/ai explain` | `backend/services/ai_slash_commands.py` |
+| Roll explanations (`/ai explain`) | `backend/services/roll_explainer.py` |
 | Unit tests | `backend/tests/unit/test_v5_dice.py` |
 
 ## Rules as the app applies them
@@ -127,6 +128,19 @@ Every die stays uniformly random over the faces it may show. Normal dice keep th
 Commands (campaign owner or site admin, from inside the room): `/ai dice-diff` shows the switches, `/ai dice-diff no-bestial on|off`, `/ai dice-diff no-messy on|off`, `/ai dice-diff successes <0-3>`, `/ai dice-diff restore` (clears all, the Classic floor too). A number (`/ai dice-diff 7`) is refused in a V5 room with a hint. Site admins can set the same in **Room dice rules**, or with `PUT /api/campaigns/:id/locations/:loc/dice-leniency` and `{"dice_leniency_v5": {"no_bestial": true, "no_messy": false, "min_successes": 1}}` (missing keys are off, `null` clears; anything else, or a `dice_leniency_floor`, is a **400**).
 
 The roll's chat line and `/ai roll` output say which switches were on.
+
+## Explaining a roll (`/ai explain`)
+
+Any member of the chronicle can reply to a dice card with `/ai explain` (also `/ai explain this roll`, or `/ai εξήγησε` in Greek). Without a reply it explains the newest roll in the room that the requester can see; hidden rolls only for admins, helpers and the chronicle's owner, as in the chat. The answer is posted as a Storyteller line in the room:
+
+- the dice, with the Hunger dice set apart, the pool and the difficulty;
+- the counting step by step: 6+ is a success (core pp. 118–121), each pair of 10s adds 2 (pp. 120–121), successes against difficulty and the margin (p. 121);
+- the result and what it means in play: win, critical win, messy critical (p. 207), failure (win at a cost, p. 121), total failure (p. 122), bestial failure (p. 207: the Beast acts, typically a Compulsion, pp. 208–211);
+- a Willpower reroll (p. 122) shows the first roll, which dice changed and the cost; room leniency and a Hunger override are named.
+
+The numbers come from the stored roll (`dice_rolls` and the card's marker) and are re-counted with `resolve_v5`. If the re-count disagrees with what was stored, the answer says so. A Rouse check is explained too. After that, when an LLM is up, the Storyteller adds 2–3 sentences in the requester's language (Greek for `/ai εξήγησε`, a Greek line or a Greek UI) with the rule books searched as a dice question. The line is dropped if it brings a number the roll doesn't have; without an LLM only the breakdown is posted. `/ai respond` is a latency check, not the Storyteller, and says so.
+
+When a player replies to any message and asks the Storyteller (a normal line or `/chat`), the quoted message goes into the Storyteller's prompt: its author, kind and text, or for a dice card the same roll summary (`backend/services/reply_context.py`).
 
 ## `/ai roll` syntax (V5 campaigns)
 

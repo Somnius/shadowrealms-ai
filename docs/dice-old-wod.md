@@ -15,12 +15,13 @@ Every campaign has `rules_edition`: `classic` (the default, and what every campa
 | Classic rules (the one implementation) | `backend/services/wod_dice.py`: `resolve_classic` (pure, explicit dice), `roll_classic`, expression parsing |
 | API wrapper | `backend/services/dice_service.py`: `roll_d10_pool` delegates to `wod_dice.roll_classic` |
 | Roll API + access control | `backend/routes/dice.py`: `manual_roll`, `contested_roll`, `ai_roll` |
-| `/ai roll` and `/ai roll-hidden` (admin only) | `backend/services/ai_slash_commands.py` |
+| `/ai roll` and `/ai roll-hidden` (admin only), `/ai explain` (every member) | `backend/services/ai_slash_commands.py` |
+| Roll explanations (`/ai explain`) | `backend/services/roll_explainer.py` |
 | Player **Roll dice** UI (play view) | `frontend/src/features/dice/` (`useDiceActions.js` posts to `POST /api/campaigns/:id/roll`, `DiceDialogs.jsx`) and `frontend/src/components/dice/` (dice faces, roll overlay, edition fields) |
 | Chat rows for dice | `backend/routes/messages.py`: `ai_message_kind` values `dice_animation`, `dice_roll`, `dice_animation_hidden`, `dice_roll_hidden` |
 | Unit tests | `backend/tests/unit/test_wod_dice.py` |
 
-Administrative `/ai` commands are restricted to site admins in `POST /api/ai/slash` (`backend/routes/ai.py`). Hidden rolls are available to admin, helper or the campaign owner. All campaign members (and site admins) can use **Roll dice**.
+Administrative `/ai` commands are restricted to site admins in `POST /api/ai/slash` (`backend/routes/ai.py`); `/ai explain` is open to every member of the chronicle. Hidden rolls are available to admin, helper or the campaign owner. All campaign members (and site admins) can use **Roll dice**.
 
 ## Core mechanics (Vampire: The Masquerade Revised)
 
@@ -69,6 +70,12 @@ The AI Storyteller doesn't count dice itself. It asks for a roll with a tag such
 The reply is saved with a canonical tag, e.g. `[[roll: Dexterity + Stealth | 3 dice | difficulty 6]]`, and the response carries the same data as `roll_requests`. In the chat the requester gets a **Roll** chip that opens the roll dialog pre-filled (pool, difficulty, specialty checkbox, reason). Other players see the chip as text.
 
 Code: `backend/services/dice_pools.py` (pools and tags), `backend/routes/ai.py` (`resolve_roll_tags`, prompt block), `frontend/src/features/dice/rollRequests.js` and `RollRequestChips.jsx` (chips, dialog pre-fill), tests in `backend/tests/unit/test_dice_pools.py` and `frontend/src/features/dice/__tests__/rollRequests.test.jsx`. The AI side is described in [AI_SYSTEMS.md](AI_SYSTEMS.md) → "Dice pools from the character sheet".
+
+## Explaining a roll (`/ai explain`)
+
+Reply to a dice card with `/ai explain` (also `/ai explain this roll`, Greek `/ai εξήγησε`); any member of the chronicle can. Without a reply it explains the newest roll in the room the requester can see (hidden rolls only for admins, helpers and the owner). The answer, posted as a Storyteller line, shows the dice and the difficulty, then counts step by step: successes at or above the difficulty (core pp. 190–191), each 1 cancelling one (p. 192), specialty rerolls (p. 117, with the game line's rule for rerolled 1s), the Willpower success that 1s can't cancel (pp. 137, 193), and the net result. A botch is named only when no die succeeded and a 1 showed; successes cancelled by 1s are called a plain failure, not a botch (p. 192). A room leniency floor is named.
+
+The numbers come from the stored roll and are re-counted with `resolve_classic`; a disagreement with what was stored is reported, not hidden. A short Storyteller line may follow when an LLM is up (dropped if it adds numbers). Details, the language rules and the reply context for the Storyteller are in `dice-v5.md` → "Explaining a roll".
 
 ## `/ai roll` syntax (classic campaigns)
 
