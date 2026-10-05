@@ -89,6 +89,26 @@ test('the sheet modal has the same action, in Greek too', async () => {
   expect(screen.getByRole('button', { name: 'Εξαγωγή PDF' })).toBeInTheDocument();
 });
 
+test('a download that breaks off mid-body shows an error', async () => {
+  global.fetch = jest.fn(async () => ({
+    ok: true,
+    status: 200,
+    blob: async () => {
+      throw new TypeError('network error');
+    },
+  }));
+  const user = setupUser();
+  mountPanel();
+  await user.click(screen.getByRole('button', { name: 'Export PDF' }));
+  expect(await screen.findByText('Could not export the PDF.')).toBeInTheDocument();
+  expect(clicked).toHaveLength(0);
+});
+
+test('file names drop bidi controls', () => {
+  expect(pdfFileName('evil\u202Efdp.exe')).toBe('evilfdp.exe.pdf');
+  expect(pdfFileName('\u2067Κων\u200fσταντίνος\u2069')).toBe('Κωνσταντίνος.pdf');
+});
+
 test('file names keep Greek and drop path characters', () => {
   expect(pdfFileName('Κωνσταντίνος / Κ.')).toBe('Κωνσταντίνος Κ.pdf');
   expect(pdfFileName('a:b*c?"d"<e>|')).toBe('a b c d e.pdf');
