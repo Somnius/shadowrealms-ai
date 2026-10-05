@@ -20,5 +20,10 @@
     "otherSpecialties": "Other specialties:",
     "fromPredator": "(predator type)",
     "tenets": "Chronicle tenets"
+  },
+  "pdf": {
+    "export": "Export PDF",
+    "failed": "Could not export the PDF.",
+    "hint": "Fillable sheet for black-and-white printing"
   }
 }
