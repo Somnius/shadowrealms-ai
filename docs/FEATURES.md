@@ -16,7 +16,8 @@ Feature notes for ShadowRealms AI that don't have their own document. The full l
 4. [Dice theatre and hidden rolls](#dice-theatre-and-hidden-rolls)
 5. [Chat message actions and older history](#chat-message-actions-and-older-history)
 6. [Gothic theme and design system](#gothic-theme-and-design-system)
-7. [Invite Code System](#invite-code-system)
+7. [Character sheet PDF](#character-sheet-pdf)
+8. [Invite Code System](#invite-code-system)
 
 ---
 
@@ -110,6 +111,18 @@ v0.9.0 replaced the old gothic theme with a design system: original SVG glyphs a
 - Reference: [frontend/src/design/README.md](../frontend/src/design/README.md).
 - Guided theme preview: **`/showcase`**, and the component playground at **`/showcase/design`** (both open without signing in).
 - The pre-0.9 theme description (`gothic-theme.css`, `GothicDecorations`, `SimpleApp.js`) is archived in [archive/GOTHIC_THEME_V06.md](archive/GOTHIC_THEME_V06.md).
+
+---
+
+## Character sheet PDF
+
+**Export PDF** on the "Your character" card in the play panel (next to Character sheet and Portrait) and in the sheet window downloads the sheet as `<name>.pdf`, a fillable two-page form made for black-and-white printers.
+
+- **Endpoint:** `GET /api/characters/<id>/sheet.pdf`, `?paper=letter` for US Letter (A4 otherwise; the button picks Letter for en-US/CA/MX/PH browsers). Allowed for the character's owner, the chronicle's Storyteller (its creator) and admins/helpers; anyone else gets 404. Rate limited to 20 a minute. Code: `backend/services/character_sheet_pdf.py`.
+- **Editions:** V5 (identity, attributes, skills with specialties, disciplines with powers, advantages and flaws, health/willpower with superficial and aggravated rows, humanity, stains, hunger, blood potency, convictions and touchstones, chronicle tenets, background and notes) and Classic Revised for Vampire, Werewolf and Mage (attributes, abilities with custom rows, disciplines/backgrounds/virtues or gifts/spheres, humanity or path, willpower, blood pool by generation, health levels, merits and flaws, combat, description, possessions). `wod_meta.rituals` and `wod_meta.experience` (total, spent, unspent, log) print when the sheet has them.
+- **Fillable:** every value is a form field pre-filled from the saved sheet: text fields for words, one checkbox per dot or tracker box. On a crowded V5 sheet, entries that don't get a row of their own are listed under Notes, and long text shrinks to fit its box.
+- **Look:** black ink on white only (no grey, so mono printers print it clean): hairline frames, ornamental rules, the sigil as line art. Headings and labels are Cinzel; everything a player wrote is EB Garamond, Greek included. Both fonts are SIL OFL and live in `backend/assets/fonts` with their licences.
+- **Greek in the fields:** the pre-filled values are drawn into each field with the embedded EB Garamond, so they show correctly everywhere. When a player types into a field, the viewer redraws it with the field's own font, an embedded Latin + monotonic Greek cut of EB Garamond (`backend/scripts/build_form_font.py`). Tested: poppler redraws typed Greek in that font; PDFium (Chrome, Edge) shows typed Greek correctly but in a fallback sans. Not tested yet: Acrobat, macOS Preview, Firefox. Polytonic Greek and other characters outside the cut (e.g. ×) have no glyph in it.
 
 ---
 
