@@ -12,6 +12,7 @@ import { canUseStaffVoice, lineOf, readLocal, useIsMobile, useIsWide, writeLocal
 import DiceRollOverlay from '../../components/dice/DiceRollOverlay';
 import V5RerollPanel from '../../components/dice/V5RerollPanel';
 import MessageList from '../chat/MessageList';
+import Markdown from '../chat/markdown';
 import Composer, { voiceOptions } from '../chat/Composer';
 import { sendChatMessage } from '../chat/sendFlow';
 import { seenParam, useRoomMessages } from '../chat/useRoomMessages';
@@ -340,6 +341,7 @@ export default function PlayPage() {
           onAppend: room.appendMessages,
           onError: (msg) => toast({ tone: 'danger', title: msg }),
           onNotice: (n) => toast({ tone: n.tone, title: n.title, body: n.body, duration: 0 }),
+          onPrivateNotice: (n) => toast({ tone: 'arcane', title: n.title, body: <Markdown text={n.markdown} />, duration: 0 }),
           onAiPending: setAiPending,
           onAiFailed: (f) => setAiFailure({ ...f, locationId: location ? location.id : null }),
           onDiceMarker: dice.startFromMarker,

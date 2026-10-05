@@ -1179,6 +1179,7 @@ def execute_explain_command(
             "display_markdown": rx.message_text(note if note in ("nothing", "no_record") else "nothing", lang),
             "future_commands_suggestion": FUTURE_COMMAND_SUGGESTIONS,
         }
+    hidden = bool(rec.get("hidden"))
     explanation = rx.explain(rec, lang, note)
     display = explanation["markdown"]
     line = None
@@ -1191,20 +1192,27 @@ def execute_explain_command(
         )
         if line:
             display += "\n\n" + rx.storyteller_line_markdown(line, lang)
-    return {
+    out = {
         "ok": True,
         "command": "explain",
         "language": lang,
-        "display_markdown": display,
         "explain": {
             "facts": explanation["facts"],
             "mismatches": explanation["mismatches"],
             "target": "reply" if note is None else note,
-            "hidden": bool(rec.get("hidden")),
+            "hidden": hidden,
         },
         "storyteller_line": line,
         "future_commands_suggestion": FUTURE_COMMAND_SUGGESTIONS,
     }
+    if hidden:
+        # A hidden roll is never posted to the room: no display_markdown (the route grants that
+        # text for saving as a Storyteller line); the chat shows private_markdown to the
+        # requester only.
+        out["private_markdown"] = display
+    else:
+        out["display_markdown"] = display
+    return out
 
 
 def execute_ai_slash_command(

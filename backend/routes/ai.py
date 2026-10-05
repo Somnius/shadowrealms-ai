@@ -375,7 +375,10 @@ def ai_chat():
 @bp.route('/slash', methods=['POST'])
 @jwt_required()
 def ai_slash_command():
-    """Run a /ai command; any text it returns may then be saved once as an assistant message."""
+    """
+    Run a /ai command; any text it returns may then be saved once as an assistant message.
+    private_markdown (/ai explain of a hidden roll) is never granted: it is for the requester only.
+    """
     resp = _ai_slash_command_impl()
     response, status = resp if isinstance(resp, tuple) else (resp, 200)
     try:

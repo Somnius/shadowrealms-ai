@@ -225,3 +225,15 @@ test('a reply to the Storyteller carries reply_to_id to /ai/chat', async () => {
   await sendChatMessage(ctx({ api: plain.api }), 'no reply here');
   expect(plain.calls[1].body.reply_to_id).toBeUndefined();
 });
+
+test('a hidden-roll explanation is shown to the requester only, never saved', async () => {
+  const { api, calls } = fakeApi({
+    'POST /ai/slash': () => ({ ok: true, status: 200, data: { command: 'explain', private_markdown: '**Roll explained** — secret' } }),
+  });
+  const onPrivateNotice = jest.fn();
+  const c = ctx({ api, user: admin, location: ooc, onPrivateNotice });
+  await expect(sendChatMessage(c, '/ai explain', { replyTo: { id: 41 } })).resolves.toBe(true);
+  expect(calls.map((x) => `${x.method} ${x.path}`)).toEqual(['POST /campaigns/3/locations/4', 'POST /ai/slash']);
+  expect(onPrivateNotice).toHaveBeenCalledWith({ title: expect.any(String), markdown: '**Roll explained** — secret' });
+  expect(c.onAppend).not.toHaveBeenCalled();
+});
