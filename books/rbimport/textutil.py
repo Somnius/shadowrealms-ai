@@ -69,6 +69,14 @@ class HyphenVocab:
 _DROP_CAP = re.compile(r"^([B-HJ-Z]) ([a-z]{2,})")
 
 
+def _cap_joins(cap: str, rest: str, is_word: Optional[Callable[[str], bool]]) -> bool:
+    """Drop cap + rest of the word? Yes when the joined word is one the book uses, or when the rest
+    alone isn't ("W" "anna" -> "Wanna"); no for "B line" ("line" is a word, "Bline" isn't)."""
+    if is_word is None:
+        return True
+    return is_word(cap + rest) or not is_word(rest)
+
+
 def join_lines(lines: Iterable[str], keep_hyphen: Optional[Callable[[str, str], bool]] = None,
                is_word: Optional[Callable[[str], bool]] = None) -> str:
     """Join the lines of one paragraph: dehyphenate line-end hyphens before a lowercase letter,
@@ -78,7 +86,7 @@ def join_lines(lines: Iterable[str], keep_hyphen: Optional[Callable[[str, str], 
         # a drop cap glued onto its line by position (or by OCR): "T he night"
         ln = ln.strip()
         m = _DROP_CAP.match(ln)
-        if m and (is_word is None or is_word(m.group(1) + m.group(2))):
+        if m and _cap_joins(m.group(1), m.group(2), is_word):
             ln = m.group(1) + ln[2:]
         if not ln:
             continue
@@ -94,7 +102,7 @@ def join_lines(lines: Iterable[str], keep_hyphen: Optional[Callable[[str, str], 
             else:
                 out = out[:-1] + ln
         elif re.fullmatch(r"[B-HJ-Z]", out) and ln[:1].islower() and \
-                (is_word is None or is_word(out + re.match(r"[a-z]*", ln).group(0))):
+                _cap_joins(out, re.match(r"[a-z]*", ln).group(0), is_word):
             out = out + ln                     # drop cap: "V" + "ampires" (not A/I, which are words)
         elif m and (ln[:1].isupper() or ln[:1].isdigit()):
             out = out[:-1] + "-" + ln          # "Camarilla-" + "Anarch": keep the hyphen, no space
