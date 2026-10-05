@@ -336,3 +336,13 @@ def test_classify_intent_cached_once_and_fail_open(monkeypatch, app_settings):
     monkeypatch.setattr(classifier, "resolve_provider_name", lambda choice=None: "llm")
     classifier._verdict_cache.clear()
     assert classifier.classify_intent_cached("other") is None  # no LLM round trip per message
+
+
+def test_near_equal_matches_prefer_the_more_authoritative_book():
+    chunks = [
+        {'distance': 0.10, 'metadata': {'precedence': 40}},
+        {'distance': 0.11, 'metadata': {'precedence': 10}},
+        {'distance': 0.30, 'metadata': {'precedence': 10}},
+    ]
+    chunks.sort(key=lambda c: (round(c['distance'] / 0.05), c['metadata'].get('precedence', 99), c['distance']))
+    assert [c['metadata']['precedence'] for c in chunks][:2] == [10, 40]
