@@ -60,7 +60,11 @@ SUPPORTED_AI_SLASH_VERBS: List[str] = [
     "rouse",
     "clean",
     "dice-diff",
+    "explain",
 ]
+
+# `/ai explain` (and its Greek alias) is open to every member of the chronicle, not only staff.
+EXPLAIN_VERBS = frozenset({"explain", "εξήγησε"})
 
 # Shown in API hints / console (full detail: `/ai help`)
 FUTURE_COMMAND_SUGGESTIONS = [
@@ -72,6 +76,7 @@ FUTURE_COMMAND_SUGGESTIONS = [
     "/ai summarize <text> — OOC wall-of-text helper",
     "/ai roll <expr> — d10 pool by campaign rules: classic `4+3@7` (pool@TN), V5 `6@3h2` (pool@successes, Hunger)",
     "/ai roll-hidden <expr> — same as `/ai roll`, but hidden from normal players",
+    "/ai explain — explain a dice roll step by step (reply to the dice card; any member)",
     "/ai rouse [hunger] — V5 Rouse check (one die, 6+ = no Hunger gain)",
     "/ai clean … — remove clutter (see `/ai clean`)",
     "/ai dice-diff … — room dice leniency (owner/admin): Classic `<2-10|restore>`, V5 `no-bestial on|off`, `no-messy on|off`, `successes <0-3>`, `restore`",
@@ -129,6 +134,13 @@ def _format_time_utc_and_athens(label: str, dt_utc: datetime) -> str:
     )
 
 
+RESPOND_DIAGNOSTICS_NOTE = (
+    "_Diagnostics only: this measures the LLM round-trip. It is not the Storyteller and doesn't read "
+    "the chat or the message you replied to. To explain a dice roll, reply to the dice card with "
+    "`/ai explain`._"
+)
+
+
 def _format_respond_display(
     payload: str,
     received_at: datetime,
@@ -144,6 +156,7 @@ def _format_respond_display(
     )
     return (
         "**AI diagnostics — `/ai respond`**\n\n"
+        f"{RESPOND_DIAGNOSTICS_NOTE}\n\n"
         f"**Payload received:**\n{safe_payload}\n\n"
         f"{times}"
         f"**Latency (request → LLM reply):** {latency_ms} ms\n\n"
@@ -229,6 +242,7 @@ def execute_help_command(user_id: int, campaign_id: Optional[int] = None) -> Dic
 **Who can use what**
 - **Site administrators** can use every `/ai` verb below.
 - **Campaign owner** (creator of the campaign) can also use **`/ai clean …`** and **`/ai dice-diff …`** from inside a campaign room.
+- **Every member** of the chronicle can use **`/ai explain`** (explain a dice roll).
 - Everyone else: use **Roll dice** in the right sidebar for d10 pools in chat (classic or V5, per campaign).
 
 **Commands**
@@ -240,7 +254,8 @@ def execute_help_command(user_id: int, campaign_id: Optional[int] = None) -> Dic
 - **`/ai summarize …`** — OOC helper: compress a long pasted block into short bullets (needs LLM).
 __ROLL_HELP__
 - **`/ai roll-hidden …`** — Same roll math as **`/ai roll`**, but the result is hidden from normal players (shown to admin/storyteller only).
-- **`/ai respond …`** — Diagnostics: echo payload through the LLM with timing (needs LLM).
+- **`/ai respond …`** — **Diagnostics only**: echoes the text through the LLM and shows the latency (needs LLM). It is not the Storyteller and doesn't read the chat; to explain a dice roll use **`/ai explain`**.
+- **`/ai explain`** — Explains a dice roll step by step: reply to a dice card with **`/ai explain`** (or **`/ai explain this roll`**, Greek **`/ai εξήγησε`**); without a reply it explains the newest roll in this room you can see. The numbers come from the stored roll; the Storyteller may add a short line. **Every member of the chronicle** can use it.
 - **`/ai clean`** — Lists what you can remove from the **current room** (more targets later).
 - **`/ai clean ai`** — Deletes **admin `/ai` command lines** and the **assistant slash replies** tied to them in this room (does not remove normal storyteller chat).
 __DICE_DIFF_HELP__
@@ -982,7 +997,10 @@ def execute_respond_command(payload: str, user_id: int) -> Dict[str, Any]:
 
     hc = get_health_check_service().check_all_services()
     if not hc["llm_available"]:
-        display = "**`/ai respond`** — needs an LLM\n\n" + _llm_snapshot_for_errors()
+        display = (
+            "**`/ai respond`** — needs an LLM\n\n" + RESPOND_DIAGNOSTICS_NOTE + "\n\n"
+            + _llm_snapshot_for_errors()
+        )
         return {
             "ok": False,
             "command": "respond",
@@ -1036,6 +1054,159 @@ def execute_respond_command(payload: str, user_id: int) -> Dict[str, Any]:
     }
 
 
+# Numbers the Storyteller line may contain: those of the roll's facts (dice, difficulty,
+# successes, margin; roll_explainer's summary). Anything else means the model invented or
+# changed a number, and the line is dropped (the deterministic explanation is posted alone).
+_NUMBER_RE = re.compile(r"\d+")
+EXPLAIN_LLM_CONFIG = {"max_tokens": 180, "temperature": 0.6, "top_p": 0.9}
+
+
+def explain_language(verb: str, payload: str, user_id: Optional[int]) -> str:
+    """Greek for the Greek alias or a Greek payload, else the requester's UI language, else English."""
+    from services.language import detect_language, user_ui_language
+
+    if verb == "εξήγησε" or detect_language(payload or "") == "el":
+        return "el"
+    return user_ui_language(user_id) or "en"
+
+
+def numbers_within(text: str, allowed_text: str) -> bool:
+    """True when every number in text also appears in allowed_text."""
+    allowed = set(_NUMBER_RE.findall(allowed_text or ""))
+    return all(n in allowed for n in _NUMBER_RE.findall(text or ""))
+
+
+def explain_storyteller_line(
+    explanation: Dict[str, Any],
+    lang: str,
+    *,
+    campaign_id: Optional[int],
+    user_id: Optional[int],
+    rules_edition: str,
+    game_system: str,
+) -> Optional[str]:
+    """
+    2-3 sentences from the Storyteller on what the explained roll means in play, or None
+    (no LLM, a failed call, or a reply that brings numbers the explanation doesn't have).
+    The rule books are searched with a dice intent (services.rules_edition.rule_book_plan).
+    """
+    try:
+        from services.health_check import get_health_check_service
+        from services.llm_service import get_llm_service
+
+        if not get_health_check_service().check_all_services().get("llm_available"):
+            return None
+        prompt = (
+            "A player asked what this dice roll means. The app has already counted it; these facts "
+            "are final:\n"
+            f"{explanation['summary']}\n\n"
+            "In 2-3 short sentences, as the Storyteller, say what this result means at the table now. "
+            "Do not recount, change or add any numbers, and do not list the dice again."
+        )
+        context = {
+            "system_prompt": (
+                "You are the Storyteller of a World of Darkness chronicle, talking to a player out of "
+                "character about a dice roll that was already resolved by the app. The numbers you are "
+                "given are correct and final; never contradict them. No headings, no lists, no markdown."
+            ),
+            "campaign_id": campaign_id,
+            "rules_edition": rules_edition,
+            "game_system": game_system,
+            "player_user_id": user_id,
+            "reply_language": lang,
+            "ai_role": "storyteller",
+            # A question about dice: search the rule books' rules kinds (no classifier call).
+            "laya_intent": {"label": "dice", "score": 1.0},
+            "rag_budget_tokens": 600,
+        }
+        text = get_llm_service().generate_response(prompt, context, dict(EXPLAIN_LLM_CONFIG),
+                                                   raise_on_error=True)
+    except Exception as e:  # noqa: BLE001 - the deterministic part is posted without it
+        logger.warning("/ai explain: no Storyteller line: %s", e)
+        return None
+    text = " ".join(str(text or "").split())
+    if not text:
+        return None
+    if not numbers_within(text, explanation["summary"]):
+        logger.warning("/ai explain: Storyteller line dropped (numbers not in the roll)")
+        return None
+    return text
+
+
+def execute_explain_command(
+    verb: str,
+    payload: str,
+    user_id: int,
+    campaign_id: Optional[int],
+    location_id: Optional[int],
+    reply_to_id: Optional[int] = None,
+    *,
+    with_storyteller: bool = True,
+) -> Dict[str, Any]:
+    """
+    `/ai explain` — explain a dice roll (services.roll_explainer). Any member of the chronicle
+    (checked at the HTTP layer). The target is the replied-to dice card, else the newest roll
+    in the room the requester can see; hidden rolls only for admin / helper / the owner.
+    """
+    from services import roll_explainer as rx
+
+    if not campaign_id or location_id is None:
+        raise RequestValidationError("Open a campaign location first — `/ai explain` explains a roll in **this room**.")
+    lang = explain_language(verb, payload, user_id)
+    from database import get_db
+
+    conn = get_db()
+    try:
+        cur = conn.cursor()
+        cur.execute(
+            "SELECT u.role, c.created_by, c.game_system, c.rules_edition "
+            "FROM users u, campaigns c WHERE u.id = %s AND c.id = %s",
+            (user_id, campaign_id),
+        )
+        who = cur.fetchone() or {}
+        sees_hidden = rx.can_see_hidden(who.get("role"), user_id, who.get("created_by"))
+        game_system = str(who.get("game_system") or "")
+        rec, note = rx.find_roll(cur, int(campaign_id), int(location_id), reply_to_id, sees_hidden, game_system)
+        cur.close()
+    finally:
+        conn.close()
+
+    if rec is None:
+        return {
+            "ok": True,
+            "command": "explain",
+            "language": lang,
+            "display_markdown": rx.message_text(note if note in ("nothing", "no_record") else "nothing", lang),
+            "future_commands_suggestion": FUTURE_COMMAND_SUGGESTIONS,
+        }
+    explanation = rx.explain(rec, lang, note)
+    display = explanation["markdown"]
+    line = None
+    if with_storyteller:
+        from services.rules_edition import edition_of
+
+        line = explain_storyteller_line(
+            explanation, lang, campaign_id=campaign_id, user_id=user_id,
+            rules_edition=edition_of(who), game_system=game_system,
+        )
+        if line:
+            display += "\n\n" + rx.storyteller_line_markdown(line, lang)
+    return {
+        "ok": True,
+        "command": "explain",
+        "language": lang,
+        "display_markdown": display,
+        "explain": {
+            "facts": explanation["facts"],
+            "mismatches": explanation["mismatches"],
+            "target": "reply" if note is None else note,
+            "hidden": bool(rec.get("hidden")),
+        },
+        "storyteller_line": line,
+        "future_commands_suggestion": FUTURE_COMMAND_SUGGESTIONS,
+    }
+
+
 def execute_ai_slash_command(
     verb: str,
     payload: str,
@@ -1043,8 +1214,13 @@ def execute_ai_slash_command(
     *,
     campaign_id: Optional[int] = None,
     location_id: Optional[int] = None,
+    reply_to_id: Optional[int] = None,
 ) -> Dict[str, Any]:
     """Dispatch subcommand. Raises RequestValidationError for unknown verb or bad args."""
+    if verb in EXPLAIN_VERBS:
+        return execute_explain_command(
+            verb, payload, user_id, campaign_id, location_id, reply_to_id
+        )
     if verb == "help":
         return execute_help_command(user_id, campaign_id=campaign_id)
     if verb == "respond":

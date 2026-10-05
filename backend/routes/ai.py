@@ -16,6 +16,7 @@ from services.gpu_monitor import gpu_monitor_service
 from services.llm_service import get_llm_service, last_generation_meta
 from services.health_check import get_health_check_service, require_llm, require_ai_services
 from services.ai_slash_commands import (
+    EXPLAIN_VERBS,
     parse_ai_slash_line,
     execute_ai_slash_command,
     FUTURE_COMMAND_SUGGESTIONS,
@@ -396,6 +397,12 @@ def _ai_slash_command_impl():
         location_id = data.get('location_id')
         if not line:
             return jsonify({'error': 'line or message is required'}), 400
+        try:
+            # The message the /ai line replies to (the chat sends it with the line); /ai explain
+            # explains that roll.
+            reply_to_id = strict_int(data.get('reply_to_id'), 'reply_to_id', None, 1)
+        except RequestValidationError as e:
+            return jsonify({'error': e.public_message}), 400
 
         db_role = get_db()
         cur_role = db_role.cursor()
@@ -416,6 +423,8 @@ def _ai_slash_command_impl():
         verb, payload = parsed
         RELAXED_AI_VERBS = frozenset({'clean', 'dice-diff'})
         needs_relaxed_auth = verb in RELAXED_AI_VERBS
+        # /ai explain: every member of the chronicle (membership is checked below).
+        for_members = verb in EXPLAIN_VERBS
 
         owner_ok = False
         if site_role != "admin" and campaign_id:
@@ -447,7 +456,7 @@ def _ai_slash_command_impl():
                     "supported_commands": SUPPORTED_AI_SLASH_VERBS,
                     "future_commands_suggestion": FUTURE_COMMAND_SUGGESTIONS,
                 }), 403
-            if not needs_relaxed_auth and not (verb == 'help' and owner_ok):
+            if not needs_relaxed_auth and not for_members and not (verb == 'help' and owner_ok):
                 return jsonify({
                     "error": "Only site administrators may use /ai commands.",
                     "display_markdown": (
@@ -507,6 +516,16 @@ def _ai_slash_command_impl():
             finally:
                 cur_r.close()
                 db_r.close()
+        elif for_members and (not campaign_id or location_id is None):
+            return jsonify({
+                'error': 'campaign_id and location_id are required for /ai explain',
+                'display_markdown': (
+                    '**`/ai explain`**\n\n'
+                    'Use this inside a campaign room: reply to a dice card with `/ai explain`.'
+                ),
+                'supported_commands': SUPPORTED_AI_SLASH_VERBS,
+                'future_commands_suggestion': FUTURE_COMMAND_SUGGESTIONS,
+            }), 400
         elif verb == 'context' and (not campaign_id or location_id is None):
             return jsonify({
                 'error': 'campaign_id and location_id are required for /ai context',
@@ -542,7 +561,7 @@ def _ai_slash_command_impl():
                 )
                 if not cursor.fetchone():
                     return jsonify({'error': 'Campaign not found or access denied'}), 404
-                if verb == 'context':
+                if verb == 'context' or for_members:
                     cursor.execute("""
                         SELECT id FROM locations
                         WHERE id = %s AND campaign_id = %s AND is_active = TRUE
@@ -560,6 +579,7 @@ def _ai_slash_command_impl():
                 current_user_id,
                 campaign_id=campaign_id,
                 location_id=location_id,
+                reply_to_id=reply_to_id,
             )
         except RequestValidationError as e:
             return jsonify({
