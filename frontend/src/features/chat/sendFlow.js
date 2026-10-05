@@ -13,6 +13,7 @@
  *
  * Everything UI-related goes through callbacks so this stays testable and component-free.
  */
+import { canUseStaffVoice } from '../../app/hooks';
 import { buildDiceMarker } from '../../dice/diceMarker';
 import { t } from '../../i18n';
 
@@ -64,12 +65,6 @@ export function isExplainCommand(text) {
   return /^\s*\/ai\s+(explain|εξήγησε)(\s|$)/i.test(String(text || ''));
 }
 
-/** Site admin / helper or the chronicle's owner: may post with the staff voice. */
-export function canUseStaffVoice(user, campaign) {
-  if (user?.role === 'admin' || user?.role === 'helper') return true;
-  return campaign?.created_by != null && user?.id != null && String(campaign.created_by) === String(user.id);
-}
-
 export function staffKindFor(user, campaign) {
   if (user?.role === 'admin' || user?.role === 'helper') return 'admin';
   if (campaign?.created_by != null && user?.id != null && String(campaign.created_by) === String(user.id)) return 'storyteller';
@@ -105,6 +100,7 @@ export function optimisticMessage({ text, user, campaign, location, speakAs, cha
  * @param {object} ctx
  *  api(path, opts) → {ok,status,data}; campaign; location; user; speakAs; character;
  *  callbacks: onOptimistic(msg), onSaved(clientId, msg|null), onAppend(msgs), onError(text),
+ *             onPrivateNotice({title, markdown}) (shown to this user only, never saved),
  *             onAiPending(bool), onDiceMarker(marker), onRoomReload(), onLocationsChanged(),
  *             onReplyGone() (the replied-to message was deleted meanwhile)
  * @param {string} rawText
@@ -208,6 +204,13 @@ export async function sendChatMessage(ctx, rawText, opts = {}) {
         body: { line: text.trim(), campaign_id: campaign.id, location_id: location.id, ...(replyTo ? { reply_to_id: replyTo.id } : {}) },
       });
       const d = r.data || {};
+      // /ai explain of a hidden roll: for the requester only, never saved to the room.
+      if (r.ok && d.private_markdown) {
+        if (cb.onPrivateNotice) {
+          cb.onPrivateNotice({ title: t('chat:explain.privateTitle', 'Only you can see this (hidden roll)'), markdown: d.private_markdown });
+        }
+        return true;
+      }
       const content = d.display_markdown || d.llm_acknowledgment || null;
       const hasReply = Boolean(content && String(content).trim());
       if (!r.ok && !hasReply) {

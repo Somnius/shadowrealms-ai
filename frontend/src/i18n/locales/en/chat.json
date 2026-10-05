@@ -136,5 +136,8 @@
     "load": "Load older messages",
     "loading": "Loading older messages…",
     "beginning": "The beginning of {{room}}"
+  },
+  "explain": {
+    "privateTitle": "Only you can see this (hidden roll)"
   }
 }

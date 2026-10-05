@@ -92,6 +92,7 @@ def build_record_from_row(row: Dict[str, Any], marker: Optional[Dict[str, Any]] 
         },
         "marker": marker if isinstance(marker, dict) else None,
         "card_kind": (marker or {}).get("roll_kind") if isinstance(marker, dict) else None,
+        "hidden": bool((mods.get("posted") or {}).get("hidden")) if isinstance(mods.get("posted"), dict) else False,
     }
     edition = str(mods.get("rules_edition") or "").lower()
     if roll_type == "rouse":
@@ -749,7 +750,7 @@ def record_for_message(cursor, msg: Dict[str, Any], campaign_id: int, location_i
     if row:
         rec = build_record_from_row(row, marker, game_system)
         if rec is not None:
-            rec["hidden"] = is_hidden_kind(kind)
+            rec["hidden"] = bool(rec.get("hidden")) or is_hidden_kind(kind)
         return rec
     rec = build_record_from_marker(marker, game_system)
     if rec is not None:
@@ -767,6 +768,8 @@ def find_roll(cursor, campaign_id: int, location_id: int, reply_to_id: Optional[
     - (None, 'nothing') when the room has no roll, (None, 'no_record') when the dice row
       can't be read back.
     A hidden roll the requester can't see is treated like any non-roll message: never named.
+    The newest-roll fallback prefers visible rolls even for staff. record['hidden'] is True for
+    a hidden roll: its explanation must never be posted to the room (ai_slash_commands).
     """
     note = "latest"
     if reply_to_id is not None:
@@ -795,11 +798,14 @@ def find_roll(cursor, campaign_id: int, location_id: int, reply_to_id: Optional[
           AND (LOWER(COALESCE(m.ai_message_kind, '')) LIKE 'dice_roll%%'
                OR LOWER(COALESCE(m.ai_message_kind, '')) LIKE 'dice_rouse:%%')
     """
-    if not sees_hidden:
-        sql += hidden_dice_sql_filter("m.ai_message_kind")
-    sql += " ORDER BY m.id DESC LIMIT 1"
-    cursor.execute(sql, (campaign_id, location_id))
+    # Visible rolls first, for staff too: a hidden roll is only picked by replying to its card,
+    # or (staff) when the room has no visible roll at all.
+    cursor.execute(sql + hidden_dice_sql_filter("m.ai_message_kind") + " ORDER BY m.id DESC LIMIT 1",
+                   (campaign_id, location_id))
     msg = cursor.fetchone()
+    if not msg and sees_hidden:
+        cursor.execute(sql + " ORDER BY m.id DESC LIMIT 1", (campaign_id, location_id))
+        msg = cursor.fetchone()
     if not msg:
         return None, "nothing"
     rec = record_for_message(cursor, msg, campaign_id, location_id, game_system)

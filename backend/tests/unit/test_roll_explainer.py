@@ -285,8 +285,17 @@ def test_hidden_roll_only_for_those_who_see_hidden(room):
     assert rec["roll_id"] == 376
     rec, note = rx.find_roll(room.cursor(), 3, 4, hidden, sees_hidden=True)
     assert rec["roll_id"] == 377 and note is None and rec["hidden"]
+    # Staff without a reply: the newest *visible* roll, not the newer hidden one.
     rec, _ = rx.find_roll(room.cursor(), 3, 4, None, sees_hidden=True)
-    assert rec["roll_id"] == 377
+    assert rec["roll_id"] == 376 and not rec["hidden"]
+
+
+def test_staff_fallback_to_hidden_only_when_nothing_is_visible():
+    r = Room()
+    r.add_roll(10, v5_row([10, 10], [], 1, 4, is_critical=True, roll_id=377), hidden=True)
+    rec, note = rx.find_roll(r.cursor(), 3, 4, None, sees_hidden=True)
+    assert rec["roll_id"] == 377 and rec["hidden"] and note == "latest"
+    assert rx.find_roll(r.cursor(), 3, 4, None, sees_hidden=False) == (None, "nothing")
 
 
 def test_reply_in_another_room_is_ignored(room):
@@ -403,6 +412,18 @@ def test_explain_latest_and_nothing(run_explain, room, llm, monkeypatch):
     assert "no roll to explain" in r["display_markdown"] and "explain" not in r
 
 
+def test_hidden_roll_explanation_is_private(run_explain, room, llm):
+    hidden = room.add_roll(40, v5_row([10, 10], [], 1, 4, is_critical=True, roll_id=377), hidden=True)
+    room.role = "admin"
+    llm.reply = None
+    r = run_explain("/ai explain", hidden)
+    assert "display_markdown" not in r and "llm_acknowledgment" not in r
+    assert r["explain"]["hidden"] and "Critical win" in r["private_markdown"]
+    # Without a reply, staff get the newest visible roll, posted normally.
+    r = run_explain("/ai explain")
+    assert r["explain"]["facts"]["roll_id"] == 376 and "display_markdown" in r and "private_markdown" not in r
+
+
 def test_explain_needs_a_room():
     from services import ai_slash_commands as sc
     from services.request_validation import RequestValidationError
@@ -515,6 +536,18 @@ def test_player_member_may_explain_with_reply_target(client, ai_routes, monkeypa
     verb, payload, uid, kw = client.calls[0]
     assert verb == "explain" and payload == "this roll" and uid == 7
     assert kw == {"campaign_id": 3, "location_id": 4, "reply_to_id": 278}
+
+
+def test_route_never_grants_private_markdown(client, ai_routes, monkeypatch):
+    monkeypatch.setattr(ai_routes, "get_db", lambda: SlashDB(role="admin"))
+    granted = []
+    monkeypatch.setattr(ai_routes, "grant_assistant_reply", lambda *a: granted.append(a))
+    monkeypatch.setattr(ai_routes, "execute_ai_slash_command",
+                        lambda *a, **k: {"ok": True, "command": "explain", "private_markdown": "secret roll"})
+    r = client.post("/api/ai/slash", headers=client.headers,
+                    json={"line": "/ai explain", "campaign_id": 3, "location_id": 4, "reply_to_id": 41})
+    assert r.status_code == 200 and r.get_json()["private_markdown"] == "secret roll"
+    assert granted == []
 
 
 def test_player_still_cannot_use_other_ai_verbs(client, ai_routes, monkeypatch):
