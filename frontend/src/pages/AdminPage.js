@@ -1551,7 +1551,7 @@ function AdminPage({ token, user, displayTimezone = null, onAdminOpenCampaign = 
                   <tr key={ch.id}>
                     <td>{ch.id}</td>
                     <td className="is-name">{ch.name}</td>
-                    <td>{ch.campaign_id}</td>
+                    <td>{ch.campaign_id ?? '—'}</td>
                     <td>{ch.sheet_locked ? t('admin:common.yes', 'Yes') : t('admin:common.no', 'No')}</td>
                     <td>{ch.play_suspended ? (suspensionLabel(ch.play_suspension_reason_code) || t('admin:common.yes', 'Yes')) : '—'}</td>
                     <td>
