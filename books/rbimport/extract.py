@@ -27,7 +27,7 @@ from typing import Any, Dict, List, Optional, Tuple
 from .textutil import (HyphenVocab, clean_line, join_lines, label_to_int, letterspaced, norm_key)
 from .manifest import DEFAULT_SKIP_SECTIONS, page_list
 
-EXTRACTOR_VERSION = 12
+EXTRACTOR_VERSION = 13
 V5_SIDEBAR_FONTS = [r"GillSans", r"Futura", r"IBMPlexSans"]
 BAND = 0.09            # top/bottom fraction of the page treated as header/footer band
 FULL_WIDTH = 0.55      # a line wider than this fraction of the page is a full-width band
@@ -299,7 +299,7 @@ def build_paragraphs(seq: List[dict], forced: set, vocab: HyphenVocab, col_width
     def flush():
         nonlocal cur
         if cur:
-            cur["text"] = join_lines(cur.pop("lines"), vocab.keep_hyphen).strip()
+            cur["text"] = join_lines(cur.pop("lines"), vocab.keep_hyphen, vocab.is_word).strip()
             if cur["text"]:
                 paras.append(cur)
         cur = None
