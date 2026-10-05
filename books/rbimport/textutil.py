@@ -82,12 +82,16 @@ def join_lines(lines: Iterable[str], keep_hyphen: Optional[Callable[[str, str], 
                 out = out[:-1] + "-" + ln
             else:
                 out = out[:-1] + ln
+        elif re.fullmatch(r"[B-HJ-Z]", out) and ln[:1].islower():
+            out = out + ln                     # drop cap: "V" + "ampires" (not A/I, which are words)
         elif m and (ln[:1].isupper() or ln[:1].isdigit()):
             out = out[:-1] + "-" + ln          # "Camarilla-" + "Anarch": keep the hyphen, no space
         elif out.endswith(("—", "–")) or ln.startswith(("—",)):
             out = out + ln
         else:
             out = out + " " + ln
+    # a drop cap glued onto its line by position: "T he night"
+    out = re.sub(r"^([B-HJ-Z]) (?=[a-z]{2})", r"\1", out)
     return out.replace("­", "")
 
 
@@ -127,25 +131,29 @@ def find_bge_tokenizer() -> Optional[str]:
 
 
 class TokenCounter:
-    """bge-m3 tokenizer when `tokenizers` and its tokenizer.json are available, else words x 1.35."""
+    """bge-m3 tokenizer when `tokenizers` and its tokenizer.json are available, else words x 1.35.
+    `fallback` says why auto mode ended up with the estimate (None when it didn't)."""
 
     def __init__(self, mode: str = "auto"):
         self.name = "estimate"
         self._tok = None
+        self.fallback: Optional[str] = None
         if mode == "estimate":
             return
         path = mode if mode not in ("auto", "bge-m3") else find_bge_tokenizer()
         if not path:
             if mode == "bge-m3":
                 raise RuntimeError("bge-m3 tokenizer.json not found (set BGE_M3_TOKENIZER)")
+            self.fallback = "bge-m3 tokenizer.json not found (set BGE_M3_TOKENIZER or HF_HOME)"
             return
         try:
             from tokenizers import Tokenizer  # type: ignore
             self._tok = Tokenizer.from_file(path)
             self.name = "bge-m3"
-        except Exception:  # noqa: BLE001 - optional dependency
+        except Exception as e:  # noqa: BLE001 - optional dependency
             if mode == "bge-m3":
                 raise
+            self.fallback = f"cannot load the bge-m3 tokenizer ({type(e).__name__}: {str(e)[:120]})"
 
     def count(self, text: str) -> int:
         if self._tok is not None:

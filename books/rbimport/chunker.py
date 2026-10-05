@@ -14,7 +14,7 @@ from typing import Any, Dict, Iterable, List, Optional, Set, Tuple
 
 from .textutil import TokenCounter, norm_key, sha1, split_sentences
 
-CHUNKER_VERSION = 4
+CHUNKER_VERSION = 5
 TARGET = 300
 MAX_TOKENS = 512
 SEP = " › "   # " › "
@@ -22,8 +22,8 @@ STREAMS = {"body": "main", "example": "example", "sidebar": "sidebar", "fiction"
 
 
 def kind_for(stream: str, book_kind: str) -> str:
-    if book_kind == "adventure":
-        return "adventure"
+    if book_kind in ("adventure", "lore"):
+        return book_kind   # lore and adventure books are searched as a whole for roleplay
     return {"main": book_kind, "example": "example", "sidebar": "sidebar", "fiction": "fiction"}[stream]
 
 
@@ -236,7 +236,7 @@ def chunk_book(ext: Dict[str, Any], book: Dict[str, Any], counter: TokenCounter,
                 stats["dup_of"][seen[csha]] = stats["dup_of"].get(seen[csha], 0) + 1
             continue
         own.add(csha)
-        doc = f"{title}{SEP}{hp}\n\n{text}" if hp else f"{title}\n\n{text}"
+        doc = f"{title}{SEP}{hp}\n\n{text}"   # contract format even when heading_path is empty
         meta = {
             "book_id": book["book_id"], "title": title, "edition": book["edition"], "line": book["line"],
             "version": book["version"], "kind": kind_for(stream, book["kind"]), "heading_path": hp,

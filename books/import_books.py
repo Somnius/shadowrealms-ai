@@ -101,38 +101,59 @@ def cmd_extract(args, data, paths):
 def cmd_chunk(args, data, paths):
     books = select(args, data)
     ext = pipeline.extract_books(books, paths, workers=args.workers, force=args.force, log=log)
-    counter = TokenCounter(args.tokenizer)
-    log(f"token counter: {counter.name}")
+    counter = _counter(args, strict=False)
     res = pipeline.chunk_books(books, data["books"], ext, paths, counter, write=not args.dry_run)
     print_summary(summary_rows(books, res), os.path.join(paths.data, "chunk_summary"))
     return res
 
 
-def _chunks_for(book, paths, args, data, campaign_id=0):
-    if not campaign_id:
-        res = pipeline.load_chunks(book, paths)
-        if res is not None:
-            return res
-    ext = pipeline.extract_books([book], paths, workers=1, log=log)
+def _counter(args, strict: bool) -> TokenCounter:
+    """The token counter. Chunk ids and hashes depend on it, so import/attach refuse a silent
+    fallback to the estimate (that would re-embed every book)."""
     counter = TokenCounter(args.tokenizer)
+    if counter.fallback:
+        if strict:
+            sys.exit(f"error: {counter.fallback}. Fix that, or pass --tokenizer estimate on purpose "
+                     f"(chunks then differ from bge-m3-counted ones and get re-embedded).")
+        log(f"warning: {counter.fallback}; using the words x 1.35 estimate")
+    log(f"token counter: {counter.name}")
+    return counter
+
+
+def _chunks_for(book, paths, args, data, counter, campaign_id=0):
+    res = pipeline.load_chunks(book, paths, campaign_id, counter.name, data["books"])
+    if res is not None:
+        return res
+    ext = pipeline.extract_books([book], paths, workers=1, log=log)
     return pipeline.chunk_books([book], data["books"], ext, paths, counter, campaign_id=campaign_id)[book["book_id"]]
+
+
+def _fail(msg: str):
+    sys.exit(f"error: {msg}")
 
 
 def _store(args):
     from rbimport.store import Store
-    return Store(args.chroma_host, args.chroma_port, args.lmstudio_url)
+    try:
+        return Store(args.chroma_host, args.chroma_port, args.lmstudio_url)
+    except Exception as e:  # noqa: BLE001 - one line, not a traceback
+        _fail(f"cannot reach Chroma at {args.chroma_host}:{args.chroma_port} ({type(e).__name__}: {str(e)[:160]})")
 
 
 def cmd_import(args, data, paths):
-    from rbimport.store import upsert_book
-    books = select(args, data)
+    from rbimport.store import ImportFailed, upsert_book
+    if not (args.only or args.edition or args.all):
+        _fail("say what to import: --only <book_id,...>, --edition v5|classic, or --all")
+    # precedence order, so a book is de-duplicated against the current chunks of the books above it
+    books = sorted(select(args, data), key=pipeline._book_order)
+    counter = _counter(args, strict=True)
     state = pipeline.State(paths.state)
     store = None
     for b in books:
         if b["kind"] == "adventure":
             log(f"{b['book_id']}: adventure, not imported globally (use: attach --book {b['book_id']} --campaign <id>)")
             continue
-        res = _chunks_for(b, paths, args, data)
+        res = _chunks_for(b, paths, args, data, counter)
         if res.get("status") != "ok":
             log(f"{b['book_id']}: skipped ({res.get('status')})")
             continue
@@ -147,16 +168,22 @@ def cmd_import(args, data, paths):
             continue
         if store is None:
             store = _store(args)
-        upsert_book(store, state, b, res, batch=args.batch, pace_ms=args.pace_ms, resume=args.resume,
-                    force=args.force, log=log)
+        try:
+            upsert_book(store, state, b, res, batch=args.batch, pace_ms=args.pace_ms, resume=args.resume,
+                        force=args.force, log=log)
+        except ImportFailed as e:
+            _fail(str(e))
 
 
 def cmd_attach(args, data, paths):
-    from rbimport.store import upsert_book
+    from rbimport.store import ImportFailed, upsert_book
     b = find_book(data, args.book)
     if args.campaign <= 0:
-        sys.exit("--campaign must be a chronicle id (> 0)")
-    res = _chunks_for(b, paths, args, data, campaign_id=args.campaign)
+        _fail("--campaign must be a chronicle id (> 0)")
+    if b["kind"] != "adventure" and not args.force:
+        _fail(f"{b['book_id']} is kind {b['kind']}, not an adventure; pass --force to attach it anyway")
+    counter = _counter(args, strict=True)
+    res = _chunks_for(b, paths, args, data, counter, campaign_id=args.campaign)
     if res.get("status") != "ok":
         sys.exit(f"{b['book_id']}: cannot attach ({res.get('status')})")
     if args.dry_run:
@@ -164,8 +191,11 @@ def cmd_attach(args, data, paths):
             f"in {pipeline.target_collection(b, args.campaign)}")
         return
     state = pipeline.State(paths.state)
-    upsert_book(_store(args), state, b, res, batch=args.batch, pace_ms=args.pace_ms, resume=args.resume,
-                force=args.force, campaign_id=args.campaign, log=log)
+    try:
+        upsert_book(_store(args), state, b, res, batch=args.batch, pace_ms=args.pace_ms, resume=args.resume,
+                    force=args.force, campaign_id=args.campaign, log=log)
+    except ImportFailed as e:
+        _fail(str(e))
 
 
 def cmd_delete(args, data, paths):
@@ -189,7 +219,7 @@ def cmd_status(args, data, paths):
     print("|---|---|---|---|---|---|")
     for b in books:
         ext = pipeline._read_json(paths.extract_file(b)) or {}
-        ch = pipeline.load_chunks(b, paths)
+        ch = pipeline.load_chunks(b, paths, all_books=data["books"])
         e = state.data["books"].get(b["book_id"], {})
         imp = f"{e.get('status')} {e.get('done')}/{e.get('chunks')}" if e else "-"
         inc = store.count_book(pipeline.target_collection(b), b["book_id"]) if store else ""
@@ -200,16 +230,31 @@ def cmd_status(args, data, paths):
 
 def cmd_eval(args, data, paths):
     books = select(args, data)
+    if args.questions:
+        questions = evaluate.load_questions(args.questions, data["books"])
+        if args.check:
+            log(f"{args.questions}: {len(questions)} questions, every gold book is in the manifest")
+            return
     state = pipeline.State(paths.state)
     books = [b for b in books if state.data["books"].get(b["book_id"], {}).get("status") == "done"]
     if not books:
-        sys.exit("no imported books to evaluate (import first)")
+        _fail("no imported books to evaluate (import first)")
+    if args.questions:
+        have = {b["book_id"] for b in books}
+        todo = [q for q in questions if q["book_id"] in have]
+        log(f"eval: {len(todo)} of {len(questions)} questions (the rest are about books not imported)")
+        report = evaluate.run_questions(books, todo, _store(args).query, k=args.k)
+        base = evaluate.write_report(report, paths.eval)
+        with open(base + ".md", encoding="utf-8") as fh:
+            print(fh.read())
+        log(f"report: {base}.json / .md")
+        return
     queries = {}
     for b in books:
         ext = pipeline._read_json(paths.extract_file(b))
-        ch = pipeline.load_chunks(b, paths)
+        ch = pipeline.load_chunks(b, paths, all_books=data["books"])
         if not ext or not ch:
-            log(f"{b['book_id']}: no extract/chunk cache, skipped")
+            log(f"{b['book_id']}: no current extract/chunk cache, skipped")
             continue
         queries[b["book_id"]] = evaluate.sample_queries(b, ext, ch["chunks"], n=args.per_book, seed=args.seed)
     store = _store(args)
@@ -251,7 +296,8 @@ def main(argv=None):
     sub = p.add_subparsers(dest="cmd", required=True)
     sub.add_parser("extract", help="PDF -> cached blocks/sections (keyed by file sha256)")
     sub.add_parser("chunk", help="blocks -> chunks + summary table")
-    sub.add_parser("import", help="embed + upsert into rule_books_v5 / rule_books_classic (not adventures)")
+    im = sub.add_parser("import", help="embed + upsert into rule_books_v5 / rule_books_classic (not adventures)")
+    im.add_argument("--all", action="store_true", help="every non-adventure book in the manifest")
     st = sub.add_parser("status", help="extract/chunk/import state per book")
     st.add_argument("--chroma", action="store_true", help="also count each book's chunks in Chroma")
     d = sub.add_parser("delete", help="remove one book from its collection")
@@ -264,14 +310,22 @@ def main(argv=None):
     ev.add_argument("--per-book", type=int, default=40)
     ev.add_argument("--seed", type=int, default=0)
     ev.add_argument("-k", type=int, default=5)
+    ev.add_argument("--questions", help="hand-written question file (books/eval_questions.yaml) instead of sampled headings")
+    ev.add_argument("--check", action="store_true", help="with --questions: only validate the file")
     for sp in sub.choices.values():
         add_common(sp, suppress=True)
     args = p.parse_args(argv)
     args.workers = max(1, min(args.workers, 8))
     data = manifest.load(args.manifest)
     paths = pipeline.Paths(args.books_root, args.data_dir)
-    {"extract": cmd_extract, "chunk": cmd_chunk, "import": cmd_import, "status": cmd_status,
-     "delete": cmd_delete, "attach": cmd_attach, "eval": cmd_eval}[args.cmd](args, data, paths)
+    cmd = {"extract": cmd_extract, "chunk": cmd_chunk, "import": cmd_import, "status": cmd_status,
+           "delete": cmd_delete, "attach": cmd_attach, "eval": cmd_eval}[args.cmd]
+    try:
+        cmd(args, data, paths)
+    except Exception as e:  # noqa: BLE001 - one line for the operator; RB_DEBUG=1 for the traceback
+        if os.environ.get("RB_DEBUG"):
+            raise
+        _fail(f"{type(e).__name__}: {str(e)[:300]}")
 
 
 if __name__ == "__main__":
