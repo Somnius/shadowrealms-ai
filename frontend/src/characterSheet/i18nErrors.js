@@ -58,6 +58,15 @@ const PATTERNS = [
   [/^(.+) is not a (.+) clan Discipline\.$/, (m) => t('wizard:validation.v5DiscClan', '{{name}} is not a {{clan}} clan Discipline.', { name: m[1], clan: m[2] })],
   [/^Thin-bloods take (\d+)–(\d+) thin-blood Merits \(you have (\d+)\)\.$/, (m) => t('wizard:validation.v5ThinMerits', 'Thin-bloods take {{lo}}–{{hi}} thin-blood Merits (you have {{n}}).', { lo: m[1], hi: m[2], n: m[3] })],
   [/^Take as many thin-blood Flaws as thin-blood Merits \((\d+) Merits, (\d+) Flaws\)\.$/, (m) => t('wizard:validation.v5ThinFlaws', 'Take as many thin-blood Flaws as thin-blood Merits ({{m}} Merits, {{f}} Flaws).', { m: m[1], f: m[2] })],
+  // V5 starting experience (xpLedger)
+  [/^This age has no starting experience to spend\.$/, () => t('wizard:validation.v5XpNone', 'This age has no starting experience to spend.')],
+  [/^(.+) can't go above (\d+) dots\.$/, (m) => t('wizard:validation.v5XpMaxDots', "{{label}} can't go above {{max}} dots.", { label: m[1], max: m[2] })],
+  [/^Names are at most (\d+) characters\.$/, (m) => t('wizard:validation.v5NameLength', 'Names are at most {{max}} characters.', { max: m[1] })],
+  [/^Name each ritual bought with XP\.$/, () => t('wizard:validation.v5XpRitualName', 'Name each ritual bought with XP.')],
+  [/^Rituals are level 1 to 5\.$/, () => t('wizard:validation.v5XpRitualLevel', 'Rituals are level 1 to 5.')],
+  [/^A level (\d+) ritual needs Blood Sorcery \d+ \(you have (\d+)\)\.$/, (m) => t('wizard:validation.v5XpRitualBs', 'A level {{level}} ritual needs Blood Sorcery {{level}} (you have {{bs}}).', { level: m[1], bs: m[2] })],
+  [/^One XP purchase is not something this step can buy\.$/, () => t('wizard:validation.v5XpUnknown', 'One XP purchase is not something this step can buy.')],
+  [/^Starting experience overspent: (\d+) of (\d+) XP\.$/, (m) => t('wizard:validation.v5XpOver', 'Starting experience overspent: {{spent}} of {{total}} XP.', { spent: m[1], total: m[2] })],
 ];
 
 export function translateSheetError(msg) {

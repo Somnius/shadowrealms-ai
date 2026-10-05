@@ -43,3 +43,19 @@ test('sheet modal renders in Greek', async () => {
   expect(screen.getByRole('button', { name: 'Κλείσιμο' })).toBeInTheDocument();
   expect(screen.getByText('Ταυτότητα')).toBeInTheDocument();
 });
+
+test('starting experience messages are translated', async () => {
+  await act(() => setLanguage('el', { remember: false, save: false }));
+  [
+    'This age has no starting experience to spend.',
+    "Strength can't go above 5 dots.",
+    'Names are at most 100 characters.',
+    'Name each ritual bought with XP.',
+    'Rituals are level 1 to 5.',
+    'One XP purchase is not something this step can buy.',
+  ].forEach((msg) => expect(translateSheetError(msg)).not.toBe(msg));
+  expect(translateSheetError('A level 3 ritual needs Blood Sorcery 3 (you have 2).')).toBe(
+    'Ένα ritual επιπέδου 3 θέλει Blood Sorcery 3 (έχεις 2).'
+  );
+  expect(translateSheetError('Starting experience overspent: 24 of 15 XP.')).toBe('Ξόδεψες παραπάνω XP: 24 από 15.');
+});

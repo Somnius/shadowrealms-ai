@@ -16,7 +16,10 @@
  *   Discipline that isn't one of the two picks), advantages: [{name, dots, kind: 'merit'|'background'}],
  *   flaws: [{name, dots}], convictions: [{conviction, touchstone}],
  *   fledglingHumanity: bool (childer only: start at Humanity 8 instead of 7),
- *   thinBloodMerits: [{name}], thinBloodFlaws: [{name}] (thin-bloods: 1–3 each, equal counts)
+ *   thinBloodMerits: [{name}], thinBloodFlaws: [{name}] (thin-bloods: 1–3 each, equal counts),
+ *   xpPurchases: starting experience (neonates 15, ancillae 35), one entry per dot, in order:
+ *     {kind: 'attribute'|'skill', trait: key} | {kind: 'discipline', trait: name}
+ *     | {kind: 'specialty', skill: key, trait: name} | {kind: 'ritual', trait: name, level}
  * }
  */
 import {
@@ -30,6 +33,7 @@ import {
   V5_CLANS,
   V5_CONVICTIONS,
   V5_DISCIPLINE_DOTS,
+  V5_DISCIPLINES as V5_DISCIPLINES_ALL,
   V5_FLAWS_MIN_DOTS,
   V5_FLEDGLING_HUMANITY,
   V5_FREE_SPECIALTY_SKILLS,
@@ -44,6 +48,10 @@ import {
   V5_STARTING_HUNGER,
   V5_STARTING_RITUAL,
   V5_THIN_BLOOD_MERITS,
+  V5_ATTRIBUTES,
+  V5_NAME_MAX,
+  V5_XP_COSTS,
+  V5_XP_MAX_DOTS,
   generationBloodPotency,
   parsePredatorDiscipline,
   parsePredatorSpecialty,
@@ -238,7 +246,7 @@ export function validateThinBloodMeritsFlaws(sheet) {
 
 export function deriveV5(sheet) {
   const s = sheet || {};
-  const attrs = s.attributes || {};
+  const attrs = finalAttributes(s);
   const p = predatorInfo(s.predatorType);
   const age = V5_AGE_BRACKETS[s.age] || V5_AGE_BRACKETS.neonate;
   const gen = int(s.generation) || 13;
@@ -270,8 +278,30 @@ export function deriveV5(sheet) {
   };
 }
 
-/** Skills + specialties after the predator type's specialty (0-dot skill → 1 dot instead). */
+/** Attributes after XP dots. */
+export function finalAttributes(sheet) {
+  const out = Object.fromEntries(V5_ATTRIBUTE_KEYS.map((k) => [k, int(sheet?.attributes?.[k])]));
+  xpOf(sheet, 'attribute').forEach((x) => {
+    if (x.trait in out) out[x.trait] += 1;
+  });
+  return out;
+}
+
+/** Skills + specialties after the predator type's specialty and any XP dots/specialties. */
 export function finalSkills(sheet) {
+  const { skills, specialties } = creationSkills(sheet);
+  xpOf(sheet, 'skill').forEach((x) => {
+    if (x.trait in skills) skills[x.trait] += 1;
+  });
+  xpOf(sheet, 'specialty').forEach((x) => {
+    const name = String(x.trait || '').trim();
+    if (x.skill && name) specialties.push({ skill: x.skill, name, source: 'xp' });
+  });
+  return { skills, specialties };
+}
+
+/** Skills + specialties after the predator type's specialty (0-dot skill → 1 dot instead). */
+function creationSkills(sheet) {
   const skills = { ...emptyV5Skills(), ...(sheet?.skills || {}) };
   Object.keys(skills).forEach((k) => {
     skills[k] = int(skills[k]);
@@ -370,6 +400,116 @@ export function finalRituals(sheet) {
   return out;
 }
 
+// ---------- Starting experience (V5.md §4 step 14, XP costs p. 151) ----------
+
+function xpOf(sheet, kind) {
+  return (sheet?.xpPurchases || []).filter((x) => x && x.kind === kind);
+}
+
+/** XP a new character gets from its age: neonates 15, ancillae 35, childer none. */
+export function startingXp(sheet) {
+  if (sheet?.clan === THIN_BLOOD) return 0;
+  return V5_AGE_BRACKETS[sheet?.age]?.xp || 0;
+}
+
+const ATTRIBUTE_LABELS = Object.fromEntries([
+  ...V5_ATTRIBUTES.physical,
+  ...V5_ATTRIBUTES.social,
+  ...V5_ATTRIBUTES.mental,
+]);
+
+/** Disciplines XP can buy: everything but Thin-Blood Alchemy (thin-bloods buy nothing here). */
+export function xpDisciplineOptions(sheet, allDisciplines) {
+  if (sheet?.clan === THIN_BLOOD) return [];
+  return allDisciplines.filter((d) => d !== 'Thin-Blood Alchemy');
+}
+
+/** XP multiplier for a Discipline: Caitiff 6, clan 5, anything else 7. */
+export function disciplineXpMultiplier(sheet, name) {
+  if (sheet?.clan === CAITIFF) return V5_XP_COSTS.caitiff_discipline;
+  return (clanInfo(sheet?.clan)?.disciplines || []).includes(name)
+    ? V5_XP_COSTS.clan_discipline
+    : V5_XP_COSTS.other_discipline;
+}
+
+/**
+ * Walk sheet.xpPurchases in order and price each one. Dots are bought one at a time, each costing
+ * the new rating × the multiplier; a specialty is flat; a ritual is level × 3 and needs Blood
+ * Sorcery at least its level. Returns { total, spent, unspent, log, errors }, where log entries are
+ * { kind, trait, what, from, to, cost } (specialty: from 0 to 1; ritual: from 0 to its level).
+ */
+export function xpLedger(sheet, allDisciplines = V5_DISCIPLINES_ALL) {
+  const s = sheet || {};
+  const total = startingXp(s);
+  const purchases = (s.xpPurchases || []).filter(Boolean);
+  const log = [];
+  const errors = [];
+  const at = {};
+  const rows = disciplineRows(s);
+  const creation = creationSkills(s).skills;
+  const skillsNow = finalSkills(s).skills;
+  const bs = bloodSorceryLevel(s);
+  const discOk = xpDisciplineOptions(s, allDisciplines);
+
+  if (purchases.length && !total) errors.push('This age has no starting experience to spend.');
+  purchases.forEach((x) => {
+    const trait = String(x.trait || '').trim();
+    const step = (label, base, mult) => {
+      const id = `${x.kind}:${trait}`;
+      const from = at[id] ?? base;
+      const to = from + 1;
+      at[id] = to;
+      if (to > V5_XP_MAX_DOTS) errors.push(`${label} can't go above ${V5_XP_MAX_DOTS} dots.`);
+      log.push({ kind: x.kind, trait, what: label, from, to, cost: to * mult });
+    };
+    if (x.kind === 'attribute' && ATTRIBUTE_LABELS[trait]) {
+      step(ATTRIBUTE_LABELS[trait], int(s.attributes?.[trait]), V5_XP_COSTS.attribute);
+    } else if (x.kind === 'skill' && V5_SKILL_LABELS[trait]) {
+      step(V5_SKILL_LABELS[trait], creation[trait], V5_XP_COSTS.skill);
+    } else if (x.kind === 'discipline' && discOk.includes(trait)) {
+      const row = rows.find((r) => r.name === trait);
+      step(trait, row ? row.base + row.predator : 0, disciplineXpMultiplier(s, trait));
+    } else if (x.kind === 'specialty' && V5_SKILL_LABELS[x.skill]) {
+      const label = V5_SKILL_LABELS[x.skill];
+      if (!trait) errors.push(`Name the ${label} specialty.`);
+      else if (trait.length > V5_NAME_MAX) errors.push(`Names are at most ${V5_NAME_MAX} characters.`);
+      if (int(skillsNow[x.skill]) < 1) errors.push(`${label} needs at least one dot for a specialty.`);
+      log.push({ kind: 'specialty', trait, skill: x.skill, what: `${label} specialty: ${trait}`, from: 0, to: 1, cost: V5_XP_COSTS.specialty });
+    } else if (x.kind === 'ritual') {
+      const level = int(x.level);
+      if (!trait) errors.push('Name each ritual bought with XP.');
+      else if (trait.length > V5_NAME_MAX) errors.push(`Names are at most ${V5_NAME_MAX} characters.`);
+      if (level < 1 || level > V5_XP_MAX_DOTS) errors.push('Rituals are level 1 to 5.');
+      else if (level > bs) errors.push(`A level ${level} ritual needs Blood Sorcery ${level} (you have ${bs}).`);
+      log.push({ kind: 'ritual', trait, what: `Ritual: ${trait}`, from: 0, to: level, cost: level * V5_XP_COSTS.ritual });
+    } else {
+      errors.push('One XP purchase is not something this step can buy.');
+    }
+  });
+  const spent = log.reduce((sum, e) => sum + e.cost, 0);
+  if (spent > total && total) errors.push(`Starting experience overspent: ${spent} of ${total} XP.`);
+  return { total, spent, unspent: Math.max(0, total - spent), log, errors };
+}
+
+export function validateV5Experience(sheet, allDisciplines) {
+  return xpLedger(sheet, allDisciplines).errors[0] || null;
+}
+
+/** What one more purchase would cost, and the first problem it would cause (null if none). */
+export function xpPreview(sheet, purchase, allDisciplines) {
+  const before = xpLedger(sheet, allDisciplines);
+  const after = xpLedger({ ...sheet, xpPurchases: [...(sheet?.xpPurchases || []), purchase] }, allDisciplines);
+  const error = after.errors.find((e) => !before.errors.includes(e)) || null;
+  return { cost: after.spent - before.spent, error };
+}
+
+/** The wod_meta.experience block, or null when the age gives no XP. */
+export function experienceMeta(sheet) {
+  const l = xpLedger(sheet);
+  if (!l.total) return null;
+  return { total: l.total, spent: l.spent, unspent: l.unspent, log: l.log };
+}
+
 const sumDots = (rows) => (rows || []).reduce((s, r) => s + int(r?.dots), 0);
 const named = (rows) => (rows || []).filter((r) => r && String(r.name || '').trim());
 
@@ -445,6 +585,7 @@ export function validateV5Sheet(sheet, allDisciplines) {
     add(V5_SECTION_IDS.advantages, 'Each Advantage or Flaw is 1–5 dots.');
   }
   add(V5_SECTION_IDS.advantages, validateThinBloodMeritsFlaws(s));
+  add(V5_SECTION_IDS.experience, validateV5Experience(s, allDisciplines));
 
   // Convictions & touchstones
   const conv = (s.convictions || []).filter(
@@ -471,7 +612,7 @@ export function buildV5Payload(sheet) {
   skillsPayload.specialties = specialties;
   skillsPayload.distribution = s.skillDistribution;
 
-  const attributes = Object.fromEntries(V5_ATTRIBUTE_KEYS.map((k) => [k, int(s.attributes?.[k])]));
+  const attributes = finalAttributes(s);
   const pred = predatorAdvantages(s);
   const advantages = [
     ...named(s.advantages).map((a) => ({
@@ -513,6 +654,8 @@ export function buildV5Payload(sheet) {
   };
   const rituals = finalRituals(s);
   if (rituals.length) wodMeta.rituals = rituals;
+  const experience = experienceMeta(s);
+  if (experience) wodMeta.experience = experience;
   if (s.clan === THIN_BLOOD) {
     wodMeta.thin_blood_merits = namedList(s.thinBloodMerits).map((r) => String(r.name).trim());
     wodMeta.thin_blood_flaws = namedList(s.thinBloodFlaws).map((r) => String(r.name).trim());

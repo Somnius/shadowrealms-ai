@@ -10,14 +10,21 @@ import {
   bloodSorceryLevel,
   deriveV5,
   disciplineRows,
+  disciplineXpMultiplier,
   emptyV5Attributes,
+  experienceMeta,
+  finalAttributes,
   emptyV5Skills,
   finalDisciplines,
   finalRituals,
   finalSkills,
   predatorDisciplineOptions,
   startingRitualAllowed,
+  startingXp,
   validateV5Attributes,
+  validateV5Experience,
+  xpLedger,
+  xpPreview,
   validateV5Disciplines,
   validateV5Sheet,
   validateV5Skills,
@@ -417,5 +424,141 @@ describe('V5 starting ritual', () => {
     const after = { ...before, predatorType: 'Alleycat', predatorSpecialty: null, predatorDiscipline: '' };
     expect(bloodSorceryLevel(after)).toBe(0);
     expect(buildV5Payload(after).wod_meta.rituals).toBeUndefined();
+  });
+});
+
+describe('V5 starting experience', () => {
+  const buy = (extra, xpPurchases) => ({ ...goodSheet(), ...extra, xpPurchases });
+  const xpErr = (s) => validateV5Sheet(s, V5_DISCIPLINES)[V5_SECTION_IDS.experience];
+
+  it('gives neonates 15 XP, ancillae 35, childer and thin-bloods none', () => {
+    expect(startingXp({ age: 'neonate' })).toBe(15);
+    expect(startingXp({ age: 'ancilla' })).toBe(35);
+    expect(startingXp({ age: 'childer' })).toBe(0);
+    expect(startingXp({ age: 'neonate', clan: 'Thin-blood' })).toBe(0);
+  });
+
+  it('prices dots one at a time at the new rating (Resolve 2 → 3 is 15)', () => {
+    const s = buy({ attributes: { ...goodAttrs(), resolve: 2, wits: 1 } }, [{ kind: 'attribute', trait: 'resolve' }]);
+    expect(xpLedger(s).log).toEqual([{ kind: 'attribute', trait: 'resolve', what: 'Resolve', from: 2, to: 3, cost: 15 }]);
+    const two = xpLedger(buy({}, [{ kind: 'skill', trait: 'finance' }, { kind: 'skill', trait: 'finance' }]));
+    expect(two.log.map((e) => [e.from, e.to, e.cost])).toEqual([[0, 1, 3], [1, 2, 6]]);
+    expect(two).toMatchObject({ total: 15, spent: 9, unspent: 6 });
+  });
+
+  it('prices Disciplines as clan 5, other 7, Caitiff 6, counting the predator dot', () => {
+    expect(disciplineXpMultiplier({ clan: 'Brujah' }, 'Potence')).toBe(5);
+    expect(disciplineXpMultiplier({ clan: 'Brujah' }, 'Auspex')).toBe(7);
+    expect(disciplineXpMultiplier({ clan: 'Caitiff' }, 'Auspex')).toBe(6);
+    // Brujah: Celerity 1 from Alleycat → 2 costs 2 × 5
+    const l = xpLedger(buy({}, [{ kind: 'discipline', trait: 'Celerity' }]));
+    expect(l.log[0]).toMatchObject({ from: 1, to: 2, cost: 10 });
+    const out = xpLedger(buy({}, [{ kind: 'discipline', trait: 'Auspex' }]));
+    expect(out.log[0]).toMatchObject({ from: 0, to: 1, cost: 7 });
+    expect(finalDisciplines(buy({}, [{ kind: 'discipline', trait: 'Auspex' }])).find((d) => d.name === 'Auspex').level).toBe(1);
+  });
+
+  it('charges 3 per specialty, on a Skill with a dot (an XP dot counts)', () => {
+    const s = buy({}, [{ kind: 'specialty', skill: 'brawl', trait: 'Biting' }]);
+    expect(xpLedger(s).spent).toBe(3);
+    expect(xpErr(s)).toBeUndefined();
+    expect(validateV5Experience(buy({}, [{ kind: 'specialty', skill: 'finance', trait: 'Stocks' }]))).toBe(
+      'Finance needs at least one dot for a specialty.'
+    );
+    expect(
+      validateV5Experience(buy({}, [{ kind: 'skill', trait: 'finance' }, { kind: 'specialty', skill: 'finance', trait: 'Stocks' }]))
+    ).toBeNull();
+    expect(validateV5Experience(buy({}, [{ kind: 'specialty', skill: 'brawl', trait: ' ' }]))).toBe('Name the Brawl specialty.');
+  });
+
+  it('prices rituals at level × 3, up to the final Blood Sorcery rating', () => {
+    const tremere = (xp) =>
+      buy(
+        {
+          clan: 'Tremere',
+          disciplines: [{ name: 'Blood Sorcery', level: 2, powers: [] }, { name: 'Auspex', level: 1, powers: [] }],
+          predatorType: 'Bagger',
+          predatorDiscipline: 'Obfuscate',
+        },
+        xp
+      );
+    expect(xpLedger(tremere([{ kind: 'ritual', trait: 'Blood Walk', level: 2 }])).log[0]).toMatchObject({ from: 0, to: 2, cost: 6 });
+    expect(validateV5Experience(tremere([{ kind: 'ritual', trait: 'Deflection of Wooden Doom', level: 3 }]))).toBe(
+      'A level 3 ritual needs Blood Sorcery 3 (you have 2).'
+    );
+    // Blood Sorcery 2 → 3 (15) then a level 3 ritual (9) is 24 > 15
+    const both = tremere([{ kind: 'discipline', trait: 'Blood Sorcery' }, { kind: 'ritual', trait: 'Deflection of Wooden Doom', level: 3 }]);
+    expect(validateV5Experience(both)).toBe('Starting experience overspent: 24 of 15 XP.');
+    expect(validateV5Experience({ ...both, age: 'ancilla', generation: 11 })).toBeNull();
+    expect(validateV5Experience(tremere([{ kind: 'ritual', trait: '', level: 1 }]))).toBe('Name each ritual bought with XP.');
+    expect(validateV5Experience(tremere([{ kind: 'ritual', trait: 'X', level: 0 }]))).toBe('Rituals are level 1 to 5.');
+  });
+
+  it('allows unspent XP, refuses overspending, dots above 5 and XP for childer', () => {
+    expect(xpErr(buy({}, []))).toBeUndefined();
+    expect(xpErr(buy({}, [{ kind: 'attribute', trait: 'resolve' }]))).toBeUndefined(); // 2 → costs 10
+    const over = buy({}, [{ kind: 'attribute', trait: 'resolve' }, { kind: 'attribute', trait: 'resolve' }]); // 10 + 15
+    expect(xpErr(over)).toBe('Starting experience overspent: 25 of 15 XP.');
+    const five = buy({ age: 'ancilla', generation: 11 }, [{ kind: 'attribute', trait: 'strength' }, { kind: 'attribute', trait: 'strength' }]);
+    expect(validateV5Experience(five)).toBe("Strength can't go above 5 dots.");
+    expect(xpErr(buy({ age: 'childer' }, [{ kind: 'skill', trait: 'finance' }]))).toBe('This age has no starting experience to spend.');
+    expect(validateV5Experience(buy({}, [{ kind: 'discipline', trait: 'Thin-Blood Alchemy' }]))).toBe(
+      'One XP purchase is not something this step can buy.'
+    );
+  });
+
+  it('previews the cost and the problem of one more purchase', () => {
+    const s = buy({}, [{ kind: 'attribute', trait: 'resolve' }]);
+    expect(xpPreview(s, { kind: 'skill', trait: 'finance' })).toEqual({ cost: 3, error: null });
+    expect(xpPreview(s, { kind: 'attribute', trait: 'resolve' })).toEqual({
+      cost: 15,
+      error: 'Starting experience overspent: 25 of 15 XP.',
+    });
+  });
+
+  it('puts XP dots in the payload and records wod_meta.experience', () => {
+    const s = buy({ age: 'ancilla', generation: 11 }, [
+      { kind: 'attribute', trait: 'resolve' },
+      { kind: 'skill', trait: 'finance' },
+      { kind: 'specialty', skill: 'finance', trait: ' Stocks ' },
+      { kind: 'discipline', trait: 'Auspex' },
+    ]);
+    expect(finalAttributes(s).resolve).toBe(2);
+    const p = buildV5Payload(s);
+    expect(p.attributes.resolve).toBe(2);
+    expect(p.wod_meta.willpower.max).toBe(4); // Composure 2 + Resolve 2
+    expect(p.skills.mental.finance).toBe(1);
+    expect(p.skills.specialties).toContainEqual({ skill: 'finance', name: 'Stocks', source: 'xp' });
+    expect(p.wod_meta.disciplines.find((d) => d.name === 'Auspex')).toEqual({ name: 'Auspex', level: 1, powers: [] });
+    expect(p.wod_meta.experience).toEqual({
+      total: 35,
+      spent: 23,
+      unspent: 12,
+      log: [
+        { kind: 'attribute', trait: 'resolve', what: 'Resolve', from: 1, to: 2, cost: 10 },
+        { kind: 'skill', trait: 'finance', what: 'Finance', from: 0, to: 1, cost: 3 },
+        { kind: 'specialty', trait: 'Stocks', skill: 'finance', what: 'Finance specialty: Stocks', from: 0, to: 1, cost: 3 },
+        { kind: 'discipline', trait: 'Auspex', what: 'Auspex', from: 0, to: 1, cost: 7 },
+      ],
+    });
+    expect(experienceMeta(goodSheet())).toEqual({ total: 15, spent: 0, unspent: 15, log: [] });
+    expect(buildV5Payload({ ...goodSheet(), age: 'childer' }).wod_meta.experience).toBeUndefined();
+  });
+
+  it('marks XP rituals with source xp', () => {
+    const s = buy(
+      {
+        clan: 'Tremere',
+        disciplines: [{ name: 'Blood Sorcery', level: 2, powers: [] }, { name: 'Auspex', level: 1, powers: [] }],
+        predatorType: 'Bagger',
+        predatorDiscipline: 'Obfuscate',
+        startingRitual: 'Wake with Evening\'s Freshness',
+      },
+      [{ kind: 'ritual', trait: 'Blood Walk', level: 2 }]
+    );
+    expect(buildV5Payload(s).wod_meta.rituals).toEqual([
+      { name: "Wake with Evening's Freshness", level: 1, source: 'creation' },
+      { name: 'Blood Walk', level: 2, source: 'xp' },
+    ]);
   });
 });
