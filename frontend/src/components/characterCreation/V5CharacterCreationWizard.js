@@ -24,10 +24,12 @@ import {
   V5_NAME_MAX,
   V5_STARTING_HUMANITY,
   V5_THIN_BLOOD_MERITS,
+  V5_XP_MAX_DOTS,
   toKey,
 } from '../../characterSheet/v5/constants';
 import {
   attributeSpreadStatus,
+  bloodSorceryLevel,
   buildV5Payload,
   clanInfo,
   creationDisciplineOptions,
@@ -35,15 +37,21 @@ import {
   disciplineRows,
   emptyV5Attributes,
   emptyV5Skills,
+  finalAttributes,
+  finalSkills,
   fledglingHumanityAllowed,
   freeSpecialtyCount,
   startingRitualAllowed,
   predatorDisciplineOptions,
   predatorInfo,
   skillSpreadStatus,
+  startingXp,
   validateV5Sheet,
+  xpDisciplineOptions,
+  xpLedger,
+  xpPreview,
 } from '../../characterSheet/v5/validation';
-import { translateSheetErrors } from '../../characterSheet/i18nErrors';
+import { translateSheetError, translateSheetErrors } from '../../characterSheet/i18nErrors';
 import { t } from '../../i18n';
 import { Term } from '../../i18n/glossary';
 import { authFetch } from '../../app/http';
@@ -60,6 +68,7 @@ const SECTION_ORDER = [
   [V5_SECTION_IDS.disciplines, () => 'Disciplines'],
   [V5_SECTION_IDS.predator, () => 'Predator'],
   [V5_SECTION_IDS.advantages, () => 'Advantages'],
+  [V5_SECTION_IDS.experience, () => 'XP'],
   [V5_SECTION_IDS.humanity, () => 'Humanity'],
   [V5_SECTION_IDS.story, () => t('wizard:section.story', 'Story')],
 ];
@@ -158,6 +167,11 @@ function SourceDots({ label, row, maxRank = 5 }) {
   );
 }
 
+const XP_KINDS = ['attribute', 'skill', 'specialty', 'discipline', 'ritual'];
+const XP_KIND_LABELS = { attribute: 'Attribute', skill: 'Skill', specialty: 'Specialty', discipline: 'Discipline', ritual: 'Ritual' };
+const ATTRIBUTE_PAIRS = [...V5_ATTRIBUTES.physical, ...V5_ATTRIBUTES.social, ...V5_ATTRIBUTES.mental];
+const SKILL_PAIRS = V5_SKILL_KEYS.map((k) => [k, V5_SKILL_LABELS[k]]);
+
 const isBackgroundName = (name) =>
   V5_BACKGROUNDS.some((b) => String(name || '').toLowerCase().startsWith(b.toLowerCase()));
 
@@ -207,6 +221,9 @@ export default function V5CharacterCreationWizard({
   // Thin-blood Merits/Flaws: no dot value, 1–3 of each in matching numbers.
   const [thinBloodMerits, setThinBloodMerits] = useState([{ name: '' }]);
   const [thinBloodFlaws, setThinBloodFlaws] = useState([{ name: '' }]);
+  // Starting experience (neonates 15 XP, ancillae 35): one entry per dot, see v5/validation.js.
+  const [xpPurchases, setXpPurchases] = useState([]);
+  const [xpDraft, setXpDraft] = useState({ kind: 'attribute', trait: '', skill: '', level: 1 });
   const [fieldErrors, setFieldErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
 
@@ -247,8 +264,26 @@ export default function V5CharacterCreationWizard({
     fledglingHumanity,
     thinBloodMerits,
     thinBloodFlaws,
+    xpPurchases,
   };
   const derived = deriveV5(sheet);
+  const xp = xpLedger(sheet, V5_DISCIPLINES);
+  const xpTotal = startingXp(sheet);
+  const bsLevel = bloodSorceryLevel(sheet);
+  const xpKinds = XP_KINDS.filter((k) => k !== 'ritual' || bsLevel >= 1);
+  // A ritual draft falls back to Attribute when Blood Sorcery is gone.
+  const draft = xpKinds.includes(xpDraft.kind) ? xpDraft : { kind: 'attribute', trait: '', skill: '', level: 1 };
+  const draftPurchase =
+    draft.kind === 'specialty'
+      ? { kind: 'specialty', skill: draft.skill, trait: draft.trait }
+      : draft.kind === 'ritual'
+        ? { kind: 'ritual', trait: draft.trait, level: Number(draft.level) }
+        : { kind: draft.kind, trait: draft.trait };
+  const draftReady =
+    draft.kind === 'specialty' ? Boolean(draft.skill && draft.trait.trim()) : Boolean(draft.trait.trim());
+  const draftPreview = draftReady ? xpPreview(sheet, draftPurchase, V5_DISCIPLINES) : null;
+  const xpAttrs = finalAttributes(sheet);
+  const xpSkills = finalSkills(sheet).skills;
   const clanRow = clanInfo(clan);
   const pred = predatorInfo(predatorType);
   const discOptions = creationDisciplineOptions(clan, V5_DISCIPLINES);
@@ -264,6 +299,7 @@ export default function V5CharacterCreationWizard({
 
   const changeAge = (next) => {
     setAge(next);
+    if (!V5_AGE_BRACKETS[next].xp) setXpPurchases([]);
     const gens = V5_AGE_BRACKETS[next].generations;
     if (!gens.includes(Number(generation))) setGeneration(gens.includes(13) ? 13 : gens[gens.length - 1]);
   };
@@ -276,6 +312,7 @@ export default function V5CharacterCreationWizard({
     ]);
     setPredatorDiscipline('');
     setExtraPowers({});
+    setXpPurchases([]);
     if (next === THIN_BLOOD) {
       setAge('childer');
       setGeneration(14);
@@ -418,7 +455,7 @@ export default function V5CharacterCreationWizard({
           }}
         >
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-            {SECTION_ORDER.map(([id, label]) => (
+            {SECTION_ORDER.filter(([id]) => id !== V5_SECTION_IDS.experience || xpTotal > 0).map(([id, label]) => (
               <button
                 key={id}
                 type="button"
@@ -865,6 +902,145 @@ export default function V5CharacterCreationWizard({
               </div>
             ) : null}
           </ResponsiveSheetBlock>
+
+          {xpTotal > 0 ? (
+            <ResponsiveSheetBlock
+              sectionId={V5_SECTION_IDS.experience}
+              title={t('wizard:v5.xpTitle', 'Starting experience')}
+              subtitle={t('wizard:v5.xpSub', 'Optional: {{total}} XP to spend now, one dot at a time. Attributes new × 5, Skills new × 3, a new specialty 3, clan Disciplines new × 5, other Disciplines new × 7 (Caitiff new × 6), rituals level × 3. Unspent XP is kept.', { total: xpTotal })}
+              accent={ACCENT}
+            >
+              {inlineErr(V5_SECTION_IDS.experience)}
+              <p
+                id="v5-xp-count"
+                style={{ color: xp.spent > xp.total ? 'var(--sr-blood-300)' : 'var(--sr-ok-400)', fontSize: '12px', margin: '0 0 10px' }}
+              >
+                {t('wizard:v5.xpCount', 'Spent {{spent}} of {{total}} XP · {{left}} left', { spent: xp.spent, total: xp.total, left: xp.unspent })}
+              </p>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', alignItems: 'center', marginBottom: '12px' }}>
+                <select
+                  aria-label={t('wizard:v5.xpKind', 'What to buy')}
+                  value={draft.kind}
+                  onChange={(e) => setXpDraft({ kind: e.target.value, trait: '', skill: '', level: 1 })}
+                  style={{ ...inputStyle, flex: '0 1 160px', width: 'auto', padding: '8px' }}
+                >
+                  {xpKinds.map((k) => (
+                    <option key={k} value={k}>
+                      {XP_KIND_LABELS[k]}
+                    </option>
+                  ))}
+                </select>
+                {['attribute', 'skill', 'discipline'].includes(draft.kind) ? (
+                  <select
+                    aria-label={XP_KIND_LABELS[draft.kind]}
+                    value={draft.trait}
+                    onChange={(e) => setXpDraft({ ...draft, trait: e.target.value })}
+                    style={{ ...inputStyle, flex: '1 1 200px', width: 'auto', padding: '8px' }}
+                  >
+                    <option value="">{t('wizard:v5.choose', 'Choose…')}</option>
+                    {(draft.kind === 'attribute'
+                      ? ATTRIBUTE_PAIRS.map(([k, label]) => [k, label, xpAttrs[k]])
+                      : draft.kind === 'skill'
+                        ? SKILL_PAIRS.map(([k, label]) => [k, label, xpSkills[k]])
+                        : xpDisciplineOptions(sheet, V5_DISCIPLINES).map((d) => [d, d, discRows.find((r) => r.name === d)?.level || 0])
+                    ).map(([k, label, now]) => (
+                      <option key={k} value={k} disabled={now >= V5_XP_MAX_DOTS}>
+                        {label} ({now})
+                      </option>
+                    ))}
+                  </select>
+                ) : null}
+                {draft.kind === 'specialty' ? (
+                  <>
+                    <select
+                      aria-label={t('wizard:v5.xpSpecialtySkill', 'Specialty skill')}
+                      value={draft.skill}
+                      onChange={(e) => setXpDraft({ ...draft, skill: e.target.value })}
+                      style={{ ...inputStyle, flex: '1 1 160px', width: 'auto', padding: '8px' }}
+                    >
+                      <option value="">{t('wizard:v5.skillPick', 'Skill…')}</option>
+                      {SKILL_PAIRS.filter(([k]) => xpSkills[k] > 0).map(([k, label]) => (
+                        <option key={k} value={k}>
+                          {label}
+                        </option>
+                      ))}
+                    </select>
+                    <input
+                      aria-label={t('wizard:v5.xpSpecialtyName', 'Specialty name')}
+                      value={draft.trait}
+                      maxLength={V5_NAME_MAX}
+                      placeholder={t('wizard:v5.specialtyPlaceholder', 'Specialty (e.g. Grappling)')}
+                      onChange={(e) => setXpDraft({ ...draft, trait: e.target.value })}
+                      style={{ ...inputStyle, flex: '2 1 200px', width: 'auto', padding: '8px' }}
+                    />
+                  </>
+                ) : null}
+                {draft.kind === 'ritual' ? (
+                  <>
+                    <input
+                      aria-label={t('wizard:v5.xpRitualName', 'Ritual name')}
+                      value={draft.trait}
+                      maxLength={V5_NAME_MAX}
+                      onChange={(e) => setXpDraft({ ...draft, trait: e.target.value })}
+                      style={{ ...inputStyle, flex: '2 1 200px', width: 'auto', padding: '8px' }}
+                    />
+                    <select
+                      aria-label={t('wizard:v5.xpRitualLevel', 'Ritual level')}
+                      value={draft.level}
+                      onChange={(e) => setXpDraft({ ...draft, level: Number(e.target.value) })}
+                      style={{ ...inputStyle, flex: '0 1 110px', width: 'auto', padding: '8px' }}
+                    >
+                      {Array.from({ length: Math.min(V5_XP_MAX_DOTS, Math.max(1, bsLevel)) }, (_, i) => i + 1).map((lv) => (
+                        <option key={lv} value={lv}>
+                          {t('wizard:v5.xpLevelOption', 'Level {{n}}', { n: lv })}
+                        </option>
+                      ))}
+                    </select>
+                  </>
+                ) : null}
+                <button
+                  type="button"
+                  disabled={!draftPreview || Boolean(draftPreview.error)}
+                  onClick={() => {
+                    setXpPurchases((prev) => [...prev, draftPurchase]);
+                    if (draft.kind === 'specialty' || draft.kind === 'ritual') setXpDraft({ ...draft, trait: '' });
+                  }}
+                  style={{ padding: '8px 14px', fontSize: '12px', background: 'var(--sr-night-800)', color: 'var(--sr-arcane-300)', border: '1px solid var(--sr-arcane-700)', borderRadius: '6px', cursor: 'pointer' }}
+                >
+                  {draftPreview ? t('wizard:v5.xpBuy', 'Buy ({{cost}} XP)', { cost: draftPreview.cost }) : t('wizard:v5.xpBuyPick', 'Buy')}
+                </button>
+              </div>
+              {draftPreview?.error ? (
+                <p style={{ color: 'var(--sr-blood-300)', fontSize: '12px', margin: '0 0 10px' }}>{translateSheetError(draftPreview.error)}</p>
+              ) : null}
+              {xp.log.length ? (
+                <ul aria-label={t('wizard:v5.xpBought', 'Bought with XP')} style={{ listStyle: 'none', padding: 0, margin: 0 }}>
+                  {xp.log.map((e, i) => (
+                    <li key={i} style={{ ...rowStyle, color: 'var(--sr-bone-100)', fontSize: '13px' }}>
+                      <span>
+                        {e.kind === 'ritual'
+                          ? t('wizard:v5.xpRitualEntry', '{{name}}, Level {{level}}', { name: e.what, level: e.to })
+                          : e.kind === 'specialty'
+                            ? e.what
+                            : `${e.what} ${e.from} → ${e.to}`}
+                        <span style={{ color: 'var(--sr-ok-400)' }}> · {e.cost} XP</span>
+                      </span>
+                      <button
+                        type="button"
+                        aria-label={t('wizard:v5.xpRemove', 'Remove {{what}}', { what: e.what })}
+                        onClick={() => setXpPurchases((prev) => prev.filter((_, j) => j !== i))}
+                        style={{ padding: '4px 10px', background: 'var(--sr-night-800)', color: 'var(--sr-bone-300)', border: '1px solid var(--sr-night-600)', borderRadius: '6px', cursor: 'pointer' }}
+                      >
+                        ×
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p style={{ color: 'var(--sr-bone-300)', fontSize: '12px', margin: 0 }}>{t('wizard:v5.xpNothing', 'Nothing bought yet.')}</p>
+              )}
+            </ResponsiveSheetBlock>
+          ) : null}
 
           <ResponsiveSheetBlock
             sectionId={V5_SECTION_IDS.humanity}

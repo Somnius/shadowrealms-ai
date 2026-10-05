@@ -228,6 +228,21 @@
     "predatorDotNote": "+1 από {{type}}",
     "xpDotNote": "+{{n}} από XP",
     "startingRitual": "Αρχικό ritual (επίπεδο 1)",
-    "startingRitualPlaceholder": "προαιρετικό: ένα ritual Blood Sorcery επιπέδου 1"
+    "startingRitualPlaceholder": "προαιρετικό: ένα ritual Blood Sorcery επιπέδου 1",
+    "xpTitle": "Αρχικά XP",
+    "xpSub": "Προαιρετικό: {{total}} XP να ξοδέψεις τώρα, μία τελεία τη φορά. Attributes νέα × 5, Skills νέα × 3, νέα specialty 3, clan Disciplines νέα × 5, άλλα Disciplines νέα × 7 (Caitiff νέα × 6), rituals επίπεδο × 3. Τα XP που περισσεύουν μένουν.",
+    "xpCount": "Ξόδεψες {{spent}} από {{total}} XP · μένουν {{left}}",
+    "xpKind": "Τι αγοράζεις",
+    "xpSpecialtySkill": "Skill της specialty",
+    "xpSpecialtyName": "Όνομα specialty",
+    "xpRitualName": "Όνομα ritual",
+    "xpRitualLevel": "Επίπεδο ritual",
+    "xpLevelOption": "Επίπεδο {{n}}",
+    "xpBuy": "Αγορά ({{cost}} XP)",
+    "xpBuyPick": "Αγορά",
+    "xpBought": "Αγορασμένα με XP",
+    "xpRitualEntry": "{{name}}, επίπεδο {{level}}",
+    "xpRemove": "Αφαίρεση: {{what}}",
+    "xpNothing": "Δεν αγόρασες τίποτα ακόμα."
   }
 }

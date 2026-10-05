@@ -228,6 +228,21 @@
     "predatorDotNote": "+1 from {{type}}",
     "xpDotNote": "+{{n}} from XP",
     "startingRitual": "Starting ritual (Level 1)",
-    "startingRitualPlaceholder": "optional: one Level 1 Blood Sorcery ritual"
+    "startingRitualPlaceholder": "optional: one Level 1 Blood Sorcery ritual",
+    "xpTitle": "Starting experience",
+    "xpSub": "Optional: {{total}} XP to spend now, one dot at a time. Attributes new × 5, Skills new × 3, a new specialty 3, clan Disciplines new × 5, other Disciplines new × 7 (Caitiff new × 6), rituals level × 3. Unspent XP is kept.",
+    "xpCount": "Spent {{spent}} of {{total}} XP · {{left}} left",
+    "xpKind": "What to buy",
+    "xpSpecialtySkill": "Specialty skill",
+    "xpSpecialtyName": "Specialty name",
+    "xpRitualName": "Ritual name",
+    "xpRitualLevel": "Ritual level",
+    "xpLevelOption": "Level {{n}}",
+    "xpBuy": "Buy ({{cost}} XP)",
+    "xpBuyPick": "Buy",
+    "xpBought": "Bought with XP",
+    "xpRitualEntry": "{{name}}, Level {{level}}",
+    "xpRemove": "Remove {{what}}",
+    "xpNothing": "Nothing bought yet."
   }
 }

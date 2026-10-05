@@ -88,3 +88,58 @@ test('changing predator type clears the powers typed for its Discipline', () => 
   pick(document.getElementById('v5-field-predator-discipline'), 'Obfuscate');
   expect(screen.getByLabelText('Obfuscate power 1')).toHaveValue('');
 });
+
+describe('starting experience step', () => {
+  const buyLabel = () => screen.getByRole('button', { name: /^Buy/ });
+
+  test('neonates get 15 XP, childer get no step', () => {
+    renderForge();
+    expect(screen.getByText('Starting experience')).toBeInTheDocument();
+    expect(screen.getByText('Spent 0 of 15 XP · 15 left')).toBeInTheDocument();
+    pick(document.getElementById('v5-field-age'), 'childer');
+    expect(screen.queryByText('Starting experience')).toBeNull();
+    pick(document.getElementById('v5-field-age'), 'ancilla');
+    expect(screen.getByText('Spent 0 of 35 XP · 35 left')).toBeInTheDocument();
+  });
+
+  test('buys a dot, refuses to overspend, and can undo', () => {
+    renderForge();
+    pick(screen.getByLabelText('What to buy'), 'attribute');
+    pick(screen.getByLabelText('Attribute'), 'strength');
+    expect(buyLabel()).toHaveTextContent('Buy (10 XP)');
+    fireEvent.click(buyLabel());
+    expect(screen.getByText('Spent 10 of 15 XP · 5 left')).toBeInTheDocument();
+    expect(screen.getByRole('list', { name: 'Bought with XP' })).toHaveTextContent('Strength 1 → 2');
+    // Strength 2 → 3 is 15 more: over budget
+    expect(buyLabel()).toHaveTextContent('Buy (15 XP)');
+    expect(buyLabel()).toBeDisabled();
+    expect(screen.getByText('Starting experience overspent: 25 of 15 XP.')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Remove Strength' }));
+    expect(screen.getByText('Spent 0 of 15 XP · 15 left')).toBeInTheDocument();
+  });
+
+  test('an XP Discipline dot shows in the Disciplines block', () => {
+    renderForge(); // Brujah
+    pick(screen.getByLabelText('What to buy'), 'discipline');
+    pick(screen.getByLabelText('Discipline'), 'Auspex');
+    expect(buyLabel()).toHaveTextContent('Buy (7 XP)');
+    fireEvent.click(buyLabel());
+    const dots = screen.getByRole('group', { name: 'Auspex: 1 of 5' });
+    expect(dots.querySelectorAll('[data-dot="xp"]')).toHaveLength(1);
+    expect(screen.getByText('+1 from XP')).toBeInTheDocument();
+  });
+
+  test('rituals are offered only with Blood Sorcery, up to its rating', () => {
+    renderForge();
+    expect(screen.queryByRole('option', { name: 'Ritual' })).toBeNull();
+    pick(document.getElementById('v5-field-clan'), 'Tremere');
+    pick(screen.getByLabelText('Discipline at 2 dots'), 'Blood Sorcery');
+    pick(screen.getByLabelText('What to buy'), 'ritual');
+    pick(screen.getByLabelText('Ritual name'), 'Blood Walk');
+    pick(screen.getByLabelText('Ritual level'), '2');
+    expect(screen.queryByRole('option', { name: 'Level 3' })).toBeNull();
+    fireEvent.click(buyLabel());
+    expect(screen.getByText('Spent 6 of 15 XP · 9 left')).toBeInTheDocument();
+    expect(screen.getByRole('list', { name: 'Bought with XP' })).toHaveTextContent('Ritual: Blood Walk, Level 2');
+  });
+});
