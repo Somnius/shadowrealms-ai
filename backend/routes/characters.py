@@ -121,6 +121,53 @@ def _character_public_dict(row, owner_name=None, campaign_name=None):
         d['campaign_name'] = campaign_name
     return d
 
+
+_LOCKED_PC_CONFLICT = {
+    'error': (
+        'You already have a locked character in another '
+        'chronicle. Only a site administrator can grant '
+        'access to additional campaigns or multiple '
+        'locked characters.'
+    ),
+    'error_code': 'single_locked_pc_conflict',
+}
+
+
+def _locked_pc_conflict(cursor, user_id, campaign_id, exclude_character_id=None):
+    """
+    The 409 body when a player without allow_multi_campaign_play already has an active,
+    locked character in another chronicle; None when the character may go in. Characters
+    with no chronicle yet don't count.
+    """
+    cursor.execute(
+        "SELECT allow_multi_campaign_play FROM users WHERE id = %s",
+        (user_id,),
+    )
+    uallow = cursor.fetchone() or {}
+    if bool(uallow.get('allow_multi_campaign_play') or False):
+        return None
+    cursor.execute(
+        """
+        SELECT id, campaign_id, sheet_locked, is_active
+        FROM characters
+        WHERE user_id = %s
+        """,
+        (user_id,),
+    )
+    for er in cursor.fetchall():
+        if exclude_character_id is not None and int(er['id']) == int(exclude_character_id):
+            continue
+        if er.get('campaign_id') is None:
+            continue
+        if not bool(er.get('is_active', True)):
+            continue
+        if not _sheet_locked_bool(er.get('sheet_locked')):
+            continue
+        if int(er['campaign_id']) != int(campaign_id):
+            return dict(_LOCKED_PC_CONFLICT)
+    return None
+
+
 @bp.route('/', methods=['GET'])
 @jwt_required()
 def get_characters():
@@ -149,7 +196,7 @@ def get_characters():
                     SELECT ch.*, u.username as owner_name, c.name as campaign_name
                     FROM characters ch
                     JOIN users u ON ch.user_id = u.id
-                    JOIN campaigns c ON ch.campaign_id = c.id
+                    LEFT JOIN campaigns c ON ch.campaign_id = c.id
                     WHERE ch.campaign_id = %s
                     ORDER BY ch.created_at DESC
                 """, (campaign_id,))
@@ -158,7 +205,7 @@ def get_characters():
                     SELECT ch.*, u.username as owner_name, c.name as campaign_name
                     FROM characters ch
                     JOIN users u ON ch.user_id = u.id
-                    JOIN campaigns c ON ch.campaign_id = c.id
+                    LEFT JOIN campaigns c ON ch.campaign_id = c.id
                     ORDER BY ch.created_at DESC
                 """)
         else:
@@ -168,7 +215,7 @@ def get_characters():
                     SELECT ch.*, u.username as owner_name, c.name as campaign_name
                     FROM characters ch
                     JOIN users u ON ch.user_id = u.id
-                    JOIN campaigns c ON ch.campaign_id = c.id
+                    LEFT JOIN campaigns c ON ch.campaign_id = c.id
                     WHERE ch.user_id = %s AND ch.campaign_id = %s
                     ORDER BY ch.created_at DESC
                 """, (current_user_id, campaign_id))
@@ -177,7 +224,7 @@ def get_characters():
                     SELECT ch.*, u.username as owner_name, c.name as campaign_name
                     FROM characters ch
                     JOIN users u ON ch.user_id = u.id
-                    JOIN campaigns c ON ch.campaign_id = c.id
+                    LEFT JOIN campaigns c ON ch.campaign_id = c.id
                     WHERE ch.user_id = %s
                     ORDER BY ch.created_at DESC
                 """, (current_user_id,))
@@ -323,40 +370,11 @@ def create_character():
             ), 409
 
         if sheet_locked and user_role == 'player':
-            cursor.execute(
-                """
-                SELECT allow_multi_campaign_play FROM users WHERE id = %s
-                """,
-                (current_user_id,),
-            )
-            uallow = cursor.fetchone() or {}
-            allow_multi = bool(uallow.get('allow_multi_campaign_play') or False)
-            if not allow_multi:
-                cursor.execute(
-                    """
-                    SELECT id, campaign_id, sheet_locked, is_active
-                    FROM characters
-                    WHERE user_id = %s
-                    """,
-                    (current_user_id,),
-                )
-                for er in cursor.fetchall():
-                    if not bool(er.get('is_active', True)):
-                        continue
-                    if not _sheet_locked_bool(er.get('sheet_locked')):
-                        continue
-                    if int(er['campaign_id']) != int(campaign_id):
-                        cursor.close()
-                        db.close()
-                        return jsonify({
-                            'error': (
-                                'You already have a locked character in another '
-                                'chronicle. Only a site administrator can grant '
-                                'access to additional campaigns or multiple '
-                                'locked characters.'
-                            ),
-                            'error_code': 'single_locked_pc_conflict',
-                        }), 409
+            conflict = _locked_pc_conflict(cursor, current_user_id, campaign_id)
+            if conflict:
+                cursor.close()
+                db.close()
+                return jsonify(conflict), 409
 
         now = datetime.utcnow()
         cursor.execute(
@@ -518,6 +536,12 @@ def create_character_downtime_request(character_id):
             return jsonify({'error': 'Character not found'}), 404
         if str(ch['user_id']) != str(current_user_id):
             return jsonify({'error': 'Access denied'}), 403
+        if ch['campaign_id'] is None:
+            # Downtime goes to a chronicle's Storyteller; bring the character in first.
+            return jsonify({
+                'error': 'Bring this character into a chronicle first.',
+                'error_code': 'character_has_no_chronicle',
+            }), 400
 
         cursor.execute(
             """
@@ -572,7 +596,7 @@ def get_character(character_id):
             SELECT ch.*, u.username as owner_name, c.name as campaign_name
             FROM characters ch
             JOIN users u ON ch.user_id = u.id
-            JOIN campaigns c ON ch.campaign_id = c.id
+            LEFT JOIN campaigns c ON ch.campaign_id = c.id
             WHERE ch.id = %s
         """, (character_id,))
         
@@ -792,6 +816,141 @@ def delete_character(character_id):
     except Exception as e:
         logger.error(f"Error deleting character {safe_log_value(character_id)}: {safe_log_value(e)}")
         return jsonify({'error': 'Failed to delete character'}), 500
+    finally:
+        if 'db' in locals():
+            db.close()
+
+
+@bp.route('/<int:character_id>/assign', methods=['POST'])
+@jwt_required()
+def assign_character_to_chronicle(character_id):
+    """
+    Bring a character that has no chronicle yet into one: {campaign_id}. The owner (or
+    an admin/helper) may do it when the owner is a member of that chronicle and the
+    character fits it (game line, rules edition, one locked character rule, unique name).
+    Moving a character out of a chronicle is not supported.
+    """
+    try:
+        current_user_id = int(get_jwt_identity())
+    except (TypeError, ValueError):
+        return jsonify({'error': 'Invalid session'}), 401
+    data = request.get_json(silent=True) or {}
+    try:
+        campaign_id = int(data.get('campaign_id'))
+    except (TypeError, ValueError):
+        return jsonify({'error': 'Invalid campaign ID'}), 400
+
+    try:
+        db = get_db()
+        cursor = db.cursor()
+        _ensure_character_schema(cursor)
+        db.commit()
+
+        cursor.execute("SELECT role FROM users WHERE id = %s", (current_user_id,))
+        actor = cursor.fetchone()
+        if not actor:
+            return jsonify({'error': 'User not found'}), 404
+
+        cursor.execute("SELECT * FROM characters WHERE id = %s", (character_id,))
+        character = cursor.fetchone()
+        if not character:
+            return jsonify({'error': 'Character not found'}), 404
+        owner_id = int(character['user_id'])
+        if actor['role'] not in ('admin', 'helper') and owner_id != current_user_id:
+            return jsonify({'error': 'Access denied'}), 403
+        if character.get('campaign_id') is not None:
+            return jsonify({
+                'error': 'This character already belongs to a chronicle.',
+                'error_code': 'character_already_in_chronicle',
+            }), 400
+
+        # Same membership rule as creating a character in a chronicle, for the owner.
+        cursor.execute(
+            f"""
+            SELECT c.*
+            FROM campaigns c
+            WHERE c.id = %s AND {_campaign_is_active_sql('c')}
+              AND (
+                c.created_by = %s OR EXISTS (
+                  SELECT 1 FROM campaign_players cp
+                  WHERE cp.campaign_id = c.id AND cp.user_id = %s
+                )
+              )
+            """,
+            (campaign_id, owner_id, owner_id),
+        )
+        campaign = cursor.fetchone()
+        if not campaign:
+            return jsonify({'error': 'Campaign not found or access denied'}), 404
+
+        cgs = (campaign.get('game_system') or '').strip().lower()
+        if cgs in ('vampire', 'werewolf', 'mage') and (character.get('system_type') or '').lower() != cgs:
+            return jsonify({
+                'error': f'Character system_type must match this campaign ({cgs}).',
+                'error_code': 'game_line_mismatch',
+            }), 400
+        if edition_of(campaign) != edition_of(character):
+            return jsonify({
+                'error': 'This character uses different rules than that chronicle.',
+                'error_code': 'rules_edition_mismatch',
+            }), 400
+
+        cursor.execute(
+            "SELECT id FROM characters WHERE name = %s AND campaign_id = %s",
+            (character['name'], campaign_id),
+        )
+        if cursor.fetchone():
+            return jsonify({'error': 'Character name already exists in this campaign'}), 409
+
+        cursor.execute("SELECT role FROM users WHERE id = %s", (owner_id,))
+        owner = cursor.fetchone() or {}
+        if owner.get('role') == 'player' and _sheet_locked_bool(character.get('sheet_locked')):
+            conflict = _locked_pc_conflict(cursor, owner_id, campaign_id, character_id)
+            if conflict:
+                return jsonify(conflict), 409
+
+        cursor.execute(
+            """
+            UPDATE characters SET campaign_id = %s, updated_at = %s
+            WHERE id = %s AND campaign_id IS NULL
+            """,
+            (campaign_id, datetime.utcnow(), character_id),
+        )
+        if cursor.rowcount != 1:
+            db.rollback()
+            return jsonify({
+                'error': 'This character already belongs to a chronicle.',
+                'error_code': 'character_already_in_chronicle',
+            }), 400
+        ensure_campaign_players_active_character_id_column(cursor)
+        cursor.execute(
+            """
+            UPDATE campaign_players SET active_character_id = %s
+            WHERE campaign_id = %s AND user_id = %s
+              AND active_character_id IS NULL
+            """,
+            (character_id, campaign_id, owner_id),
+        )
+        db.commit()
+        logger.info(
+            "Character %s brought into campaign %s by user %s",
+            safe_log_value(character_id),
+            safe_log_value(campaign_id),
+            safe_log_value(current_user_id),
+        )
+        return jsonify({
+            'message': 'Character brought into the chronicle',
+            'character_id': character_id,
+            'campaign_id': campaign_id,
+            'campaign_name': campaign.get('name'),
+            'rules_edition': edition_of(character),
+        }), 200
+    except _INTEGRITY_ERRORS as e:
+        logger.error(f"Error assigning character {safe_log_value(character_id)} (integrity): {safe_log_value(e)}")
+        return jsonify({'error': 'Could not bring the character into that chronicle'}), 409
+    except Exception as e:
+        logger.error(f"Error assigning character {safe_log_value(character_id)}: {safe_log_value(e)}")
+        return jsonify({'error': 'Failed to bring the character into the chronicle'}), 500
     finally:
         if 'db' in locals():
             db.close()
