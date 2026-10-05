@@ -21,6 +21,8 @@
     "fromPredator": "(από τον predator type)",
     "tenets": "Αρχές του χρονικού",
     "ritualLevel": "Επίπεδο {{n}}",
-    "ritualFromXp": "αγορασμένο με XP"
+    "ritualFromXp": "αγορασμένο με XP",
+    "xpDots": "+{{n}} XP",
+    "xpSummary": "{{spent}} από {{total}} ξοδεμένα στη δημιουργία · {{left}} αξόδευτα"
   }
 }
