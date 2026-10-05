@@ -30,19 +30,34 @@ def test_experience_totals_are_consistent():
     assert sanity_check_v5(wod_meta=_xp(unspent=5))  # unspent != total - spent
     assert sanity_check_v5(wod_meta=_xp(total=None))
     assert sanity_check_v5(wod_meta=_xp(total=-1, spent=0, unspent=0, log=[]))
-    assert sanity_check_v5(wod_meta=_xp(spent=12, unspent=3))  # log costs 13 > 12 spent
+    assert sanity_check_v5(wod_meta=_xp(spent=12, unspent=3))  # log costs 13, spent 12
+    assert sanity_check_v5(wod_meta=_xp(spent=14, unspent=1))  # log costs 13, spent 14
+    # XP is also awarded in play, so total isn't tied to the age grant
+    assert sanity_check_v5(wod_meta=_xp(total=60, unspent=47)) == []
+    assert sanity_check_v5(wod_meta=_xp(total=10001, unspent=9988))
 
 
 def test_experience_log_entries_are_bounded():
     bad = [
-        {"kind": "attribute", "what": "Strength", "from": 5, "to": 6, "cost": 30},  # level above 5
-        {"kind": "attribute", "what": "Strength", "from": 3, "to": 3, "cost": 0},  # to not above from
-        {"kind": "humanity", "what": "Humanity", "from": 7, "to": 8, "cost": 0},  # unknown kind
-        {"kind": "skill", "what": "", "from": 0, "to": 1, "cost": 3},  # no what
-        {"kind": "skill", "what": "Brawl", "from": 0, "to": 1},  # no cost
-        {"kind": "skill", "what": "Brawl", "to": 1, "cost": 3},  # no from
+        {"kind": "attribute", "trait": "strength", "what": "Strength", "from": 5, "to": 6, "cost": 30},  # above 5
+        {"kind": "attribute", "trait": "strength", "what": "Strength", "from": 3, "to": 3, "cost": 0},  # to <= from
+        {"kind": "humanity", "trait": "humanity", "what": "Humanity", "from": 7, "to": 8, "cost": 0},  # unknown kind
+        {"trait": "brawl", "what": "Brawl", "from": 0, "to": 1, "cost": 3},  # no kind
+        {"kind": "skill", "trait": "brawl", "what": "", "from": 0, "to": 1, "cost": 3},  # no what
+        {"kind": "skill", "what": "Brawl", "from": 0, "to": 1, "cost": 3},  # no trait
+        {"kind": "skill", "trait": "x" * 121, "what": "Brawl", "from": 0, "to": 1, "cost": 3},  # trait too long
+        {"kind": "skill", "trait": "brawl", "what": "Brawl", "from": 0, "to": 1},  # no cost
+        {"kind": "skill", "trait": "brawl", "what": "Brawl", "to": 1, "cost": 3},  # no from
+        {"kind": "specialty", "trait": "Stocks", "what": "Stocks", "from": 0, "to": 1, "cost": 3},  # no skill
+        {"kind": "specialty", "trait": "Stocks", "skill": "banking", "what": "Stocks", "from": 0, "to": 1, "cost": 3},
+        {"kind": "skill", "trait": "academics", "specialty": "", "what": "Academics", "from": 0, "to": 1, "cost": 3},
     ]
     for entry in bad:
-        assert sanity_check_v5(wod_meta=_xp(spent=13, unspent=2, log=[entry])), entry
+        cost = entry.get("cost") if isinstance(entry.get("cost"), int) else 0
+        assert sanity_check_v5(wod_meta=_xp(total=100, spent=cost, unspent=100 - cost, log=[entry])), entry
+    free = {"kind": "skill", "trait": "academics", "specialty": "History", "what": "Academics",
+            "from": 0, "to": 1, "cost": 3}
+    assert sanity_check_v5(wod_meta=_xp(spent=3, unspent=12, log=[free])) == []
     assert sanity_check_v5(wod_meta=_xp(log="Resolve"))
-    assert sanity_check_v5(wod_meta=_xp(log=[{"kind": "skill", "what": "x", "from": 0, "to": 1, "cost": 0}] * 201))
+    assert sanity_check_v5(wod_meta=_xp(
+        spent=0, unspent=15, log=[{"kind": "skill", "trait": "x", "what": "x", "from": 0, "to": 1, "cost": 0}] * 201))
