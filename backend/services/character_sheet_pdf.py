@@ -365,6 +365,11 @@ class SheetCanvas:
         self._cb_refs: Dict[Tuple[str, float, str], Any] = {}
         form = c.acroForm  # registers /AcroForm in the catalog
         form.fonts[FORM_FONT_KEY] = _add_form_font(c._doc)
+        # reportlab writes one /Font key per font into /DR; with two fonts, write /DR here instead.
+        # /ZaDb is for viewers that redraw the checkboxes' /MK marks themselves.
+        zadb = form.getRefStr(PDFFromString("<< /Type /Font /Subtype /Type1 /BaseFont /ZapfDingbats /Name /ZaDb >>"))
+        form.extras["DR"] = PDFFromString(
+            f"<< /Font << /{FORM_FONT_KEY} {form.fonts[FORM_FONT_KEY]} /ZaDb {zadb} >> >>")
         self.form = form
         self._ink()
 
@@ -615,6 +620,7 @@ class SheetCanvas:
                 "Off": self._check_ap(mark, size, "Off"),
             })}),
             "MK": pdfdoc.PDFDictionary({"CA": pdfdoc.PDFString(ca)}),
+            "DA": pdfdoc.PDFString("/ZaDb 0 Tf 0 g"),
             "H": pdfdoc.PDFName("N"),
         }
         if tooltip:
