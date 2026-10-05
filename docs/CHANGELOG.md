@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Export PDF** for character sheets (play panel and sheet window): `GET /api/characters/<id>/sheet.pdf` (`?paper=letter`; owner, chronicle Storyteller and admins, others get 404) returns a fillable two-page sheet for V5 or Classic Revised, every value an editable field pre-filled from the saved sheet, in black and white for mono printers with Cinzel headings and EB Garamond text (Greek included). Prints rituals and experience when the sheet has them. See "Character sheet PDF" in `docs/FEATURES.md`.
 - Rule-book importer `books/import_books.py`: a deterministic script (PyMuPDF and rules, no AI reading the books) that turns the official books listed in `books/manifest.yaml` into chunks for `rule_books_v5`, `rule_books_classic` and, for adventures attached to one chronicle, `rule_books_chronicle` (data contract: `docs/rules/RULE_BOOKS_RAG.md`). Column-aware extraction, running heads and page numbers dropped, printed page numbers, outline-based heading paths, fiction/sidebar/example kinds, ~300-token sentence-aligned chunks that never cross a section. Cached by file hash, resumable and paced imports, and a retrieval eval with no AI judge. See "Importing rule books" in `books/README.md`. Hand-written retrieval questions (`books/eval_questions.yaml`, taken from the repo's rules specs) for `eval --questions`.
 
 ### Changed
