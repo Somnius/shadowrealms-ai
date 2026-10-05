@@ -276,6 +276,9 @@ def _v5_meta_lines(meta: Dict[str, Any]) -> List[str]:
     disc = _named_list(meta.get("disciplines"))
     if disc:
         lines.append(f"Disciplines: {disc}")
+    rit = _named_list(meta.get("rituals"))
+    if rit:
+        lines.append(f"Rituals: {rit}")
     adv = _named_list(meta.get("advantages"))
     if adv:
         lines.append(f"Advantages: {adv}")

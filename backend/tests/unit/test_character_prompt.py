@@ -178,3 +178,20 @@ def test_free_text_is_capped_and_single_line():
     tenets = next(line for line in text.split("\n") if line.startswith("Chronicle tenets: "))
     assert tenets.count("...") == MAX_LIST_ITEMS
     assert len(text) < 400_000
+
+
+def test_v5_rituals_reach_prompt():
+    meta = {
+        "edition": "v5",
+        "clan": "Tremere",
+        "disciplines": [{"name": "Blood Sorcery", "level": 2}],
+        "rituals": [
+            {"name": "Wake with Evening's Freshness", "level": 1, "source": "creation"},
+            {"name": "Blood Walk", "level": 2, "source": "xp"},
+        ],
+    }
+    row = {"name": "Ana", "system_type": "vampire", "wod_meta": json.dumps(meta)}
+    text = format_character_for_prompt(row, "v5")
+    assert "Rituals: Wake with Evening's Freshness 1, Blood Walk 2" in text.split("\n")
+    no_rit = format_character_for_prompt({**row, "wod_meta": json.dumps({"edition": "v5"})}, "v5")
+    assert "Rituals:" not in no_rit
