@@ -113,3 +113,16 @@ def is_campaign_storyteller_or_staff(
     if not crow or crow.get("created_by") is None:
         return False
     return str(crow["created_by"]) == str(user_id)
+
+
+def can_view_character_sheet(cursor: Any, user_id: int, character: Any) -> bool:
+    """Who may read a full character sheet (GET /api/characters/<id> and its PDF).
+
+    The character's owner, the Storyteller of its chronicle (the campaign creator), and site
+    admins/helpers.
+    """
+    if not character:
+        return False
+    if str(character.get("user_id")) == str(user_id):
+        return True
+    return is_campaign_storyteller_or_staff(cursor, user_id, character.get("campaign_id"))

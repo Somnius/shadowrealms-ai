@@ -16,7 +16,7 @@ from datetime import datetime
 from services.rules_edition import V5, edition_of
 from services.character_sheet_v5 import sanity_check_v5, stamp_v5_meta
 from services.log_safety import safe_log_value
-from services.playing_character import is_campaign_storyteller_or_staff
+from services.playing_character import can_view_character_sheet
 
 from database import (
     get_db,
@@ -584,8 +584,8 @@ def get_character(character_id):
         if not character:
             return jsonify({'error': 'Character not found'}), 404
         
-        # Check access permissions
-        if current_user['role'] not in ['admin', 'helper'] and int(character['user_id']) != int(current_user_id):
+        # owner, the chronicle's Storyteller, admins/helpers (same rule as the PDF)
+        if not can_view_character_sheet(cursor, current_user_id, character):
             return jsonify({'error': 'Access denied'}), 403
         
         ch = _character_public_dict(
@@ -628,11 +628,7 @@ def character_sheet_pdf(character_id):
             WHERE ch.id = %s
         """, (character_id,))
         row = cursor.fetchone()
-        allowed = bool(row) and (
-            int(row['user_id']) == current_user_id
-            or is_campaign_storyteller_or_staff(cursor, current_user_id, row['campaign_id'])
-        )
-        if not allowed:
+        if not can_view_character_sheet(cursor, current_user_id, row):
             return jsonify({'error': 'Character not found'}), 404
         ch = _character_public_dict(row, owner_name=row['owner_name'], campaign_name=row['campaign_name'])
     except Exception as e:
