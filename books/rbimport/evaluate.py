@@ -49,6 +49,67 @@ def sample_queries(book: dict, ext: dict, chunks: List[dict], n: int = 40, seed:
     return out
 
 
+def load_questions(path: str, books: List[dict]) -> List[dict]:
+    """Hand-written questions (books/eval_questions.yaml); raises ValueError on a bad entry."""
+    import yaml
+    from .manifest import parse_pages
+    with open(path, encoding="utf-8") as fh:
+        data = yaml.safe_load(fh) or {}
+    by_id = {b["book_id"]: b for b in books}
+    out, ids, errs = [], set(), []
+    for i, q in enumerate(data.get("questions") or []):
+        where = f"questions[{i}] ({q.get('id', '?')})"
+        if not q.get("id") or not q.get("q") or not q.get("book") or not q.get("pages"):
+            errs.append(f"{where}: needs id, q, book and pages")
+            continue
+        if q["id"] in ids:
+            errs.append(f"{where}: duplicate id")
+        ids.add(q["id"])
+        if q["book"] not in by_id:
+            errs.append(f"{where}: book {q['book']} is not in the manifest")
+            continue
+        try:
+            rngs = parse_pages(str(q["pages"]))
+            lo, hi = min(a for a, _ in rngs), max(b for _, b in rngs)
+        except Exception:  # noqa: BLE001
+            errs.append(f"{where}: bad pages {q['pages']!r}")
+            continue
+        out.append({"id": q["id"], "book_id": q["book"], "query": q["q"], "pages": [lo, hi]})
+    if errs:
+        raise ValueError("eval questions:\n  " + "\n  ".join(errs))
+    return out
+
+
+def run_questions(books: List[dict], questions: List[dict], query_fn: QueryFn, k: int = 5, slack: int = 1) -> Dict[str, Any]:
+    """Score hand-written questions: hit when a result is from the gold book and its printed page
+    is within the gold pages +- slack."""
+    by_id = {b["book_id"]: b for b in books}
+    rows, per = [], {}
+    leaks = {"edition": 0, "line": 0, "results": 0}
+    for q in questions:
+        b = by_id.get(q["book_id"])
+        if b is None:
+            continue
+        res = query_fn(collection_for(b), q["query"], k, where_for(b))
+        rank = None
+        for i, m in enumerate(res, 1):
+            leaks["results"] += 1
+            leaks["edition"] += m.get("edition") != b["edition"]
+            leaks["line"] += b["edition"] == "classic" and m.get("line") not in (b["line"], "all")
+            if rank is None and m.get("book_id") == b["book_id"] and \
+                    q["pages"][0] - slack <= int(m.get("page", -999)) <= q["pages"][1] + slack:
+                rank = i
+        st = per.setdefault(b["edition"], {"n": 0, "hit1": 0, "hit3": 0, "hit5": 0, "rr": 0.0})
+        st["n"] += 1
+        st["hit1"] += rank is not None and rank <= 1
+        st["hit3"] += rank is not None and rank <= 3
+        st["hit5"] += rank is not None and rank <= 5
+        st["rr"] += 1.0 / rank if rank else 0.0
+        rows.append(dict(q, rank=rank, top=[f"{m.get('book_id')} p{m.get('page')}" for m in res[:3]]))
+    return {"k": k, "mode": "questions", "per_edition": {e: _rates(v) for e, v in per.items()},
+            "leaks": leaks, "queries": rows}
+
+
 def where_for(book: dict) -> Optional[dict]:
     if book["edition"] == "classic":
         return {"line": {"$in": [book["line"], "all"]}}
@@ -107,9 +168,20 @@ def _rates(v: dict) -> dict:
 def write_report(report: Dict[str, Any], out_dir: str) -> str:
     os.makedirs(out_dir, exist_ok=True)
     stamp = time.strftime("%Y%m%d-%H%M%S")
-    base = os.path.join(out_dir, f"eval-{stamp}")
+    base = os.path.join(out_dir, f"eval-{stamp}" + ("-questions" if report.get("mode") == "questions" else ""))
     with open(base + ".json", "w", encoding="utf-8") as fh:
         json.dump(report, fh, ensure_ascii=False, indent=1)
+    if report.get("mode") == "questions":
+        lines = [f"# Rule book retrieval eval, hand-written questions ({stamp})", "",
+                 "Gold: the printed page the repo's rules specs cite, +-1 page.", "",
+                 "| edition | n | hit@1 | hit@3 | hit@5 | MRR |", "|---|---|---|---|---|---|"]
+        for ed, r in report["per_edition"].items():
+            lines.append(f"| {ed} | {r['n']} | {r['hit@1']} | {r['hit@3']} | {r['hit@5']} | {r['mrr']} |")
+        lk = report["leaks"]
+        lines += ["", f"Edition leaks: {lk['edition']} of {lk['results']} results. Classic line leaks: {lk['line']}."]
+        with open(base + ".md", "w", encoding="utf-8") as fh:
+            fh.write("\n".join(lines) + "\n")
+        return base
     lines = [f"# Rule book retrieval eval ({stamp})", "",
              "Deterministic: queries are sampled outline headings; gold is that section's page range.", "",
              "| book | style | n | hit@1 | hit@3 | hit@5 | MRR |", "|---|---|---|---|---|---|---|"]
