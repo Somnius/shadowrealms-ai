@@ -8,7 +8,7 @@ on:
       - "frontend/src/**"
       - "frontend/scripts/**"
       - "monitoring/**"
-      - "books/*.py"
+      - "books/**/*.py"
       - "scripts/**"
       - ".github/workflows/codeql.yml"
   pull_request:
