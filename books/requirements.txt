@@ -21,3 +21,11 @@ urllib3>=2.0.0
 # For importing to ChromaDB
 chromadb>=1.5.9,<2
 
+
+# Rule-book importer (import_books.py) and its tests (books/tests)
+pymupdf>=1.24
+pyyaml>=6.0
+pytest>=8.0
+numpy>=1.26           # backend/services/embedding_service.py imports it
+# Optional: exact bge-m3 token counts for chunk sizes (else words x 1.35)
+tokenizers>=0.19
