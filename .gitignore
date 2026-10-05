@@ -11,6 +11,7 @@ books/*
 !books/requirements.txt
 !books/README.md
 !books/manifest.yaml
+!books/eval_questions.yaml
 !books/rbimport/
 !books/tests/
 books/book-list.txt

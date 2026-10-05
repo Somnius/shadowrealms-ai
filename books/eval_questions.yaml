@@ -1,0 +1,58 @@
+# Hand-written retrieval questions for `import_books.py eval --questions books/eval_questions.yaml`.
+# Written from the repo's own rules specs (docs/rules/V5.md, docs/rules/CLASSIC_REVISED.md), not
+# from the books; gold pages are the printed core pages those specs cite. A question hits when a
+# result is from `book` and its printed page is inside `pages` (+-1 page).
+version: 1
+questions:
+# --- V5 corebook (docs/rules/V5.md) ---
+- {id: v5-01, book: v5-corebook, pages: "118", q: "What happens if my character has no dots in the Skill a roll needs?"}
+- {id: v5-02, book: v5-corebook, pages: "120", q: "Can penalties reduce a dice pool below one die?"}
+- {id: v5-03, book: v5-corebook, pages: "119", q: "When rolling Willpower or Health as a pool, do I use the full rating or the undamaged boxes?"}
+- {id: v5-04, book: v5-corebook, pages: "119", q: "What Difficulty is a routine or a straightforward task?"}
+- {id: v5-05, book: v5-corebook, pages: "120-121", q: "How does a critical success work with pairs of tens?"}
+- {id: v5-06, book: v5-corebook, pages: "121", q: "Does the margin of success change the damage dealt?"}
+- {id: v5-07, book: v5-corebook, pages: "205", q: "Do Hunger dice replace normal dice in the pool?"}
+- {id: v5-08, book: v5-corebook, pages: "207", q: "What is a messy critical?"}
+- {id: v5-09, book: v5-corebook, pages: "207", q: "What is a bestial failure?"}
+- {id: v5-10, book: v5-corebook, pages: "122", q: "How does spending Willpower to re-roll dice work?"}
+- {id: v5-11, book: v5-corebook, pages: "123", q: "What is a Rouse Check and can it be re-rolled?"}
+- {id: v5-12, book: v5-corebook, pages: "211", q: "What happens to Hunger when a Rouse Check fails at Hunger 5?"}
+- {id: v5-13, book: v5-corebook, pages: "123", q: "Who wins a tie in a contest?"}
+- {id: v5-14, book: v5-corebook, pages: "125", q: "What bonus does cover give in a firefight?"}
+- {id: v5-15, book: v5-corebook, pages: "125", q: "How do I attack more than one target at once?"}
+- {id: v5-16, book: v5-corebook, pages: "122", q: "How does teamwork add dice to a roll?"}
+- {id: v5-17, book: v5-corebook, pages: "126", q: "Why is Superficial damage halved for vampires?"}
+- {id: v5-18, book: v5-corebook, pages: "127", q: "What happens when the Health tracker is full of damage?"}
+- {id: v5-19, book: v5-corebook, pages: "158", q: "How much Superficial Willpower damage can be recovered each night?"}
+- {id: v5-20, book: v5-corebook, pages: "216-217", q: "What does Blood Potency give at each level?"}
+- {id: v5-21, book: v5-corebook, pages: "218", q: "What does a Blood Surge do?"}
+- {id: v5-22, book: v5-corebook, pages: "219", q: "How many Discipline powers can be active in one turn?"}
+- {id: v5-23, book: v5-corebook, pages: "219-220", q: "How does a vampire resist frenzy?"}
+- {id: v5-24, book: v5-corebook, pages: "208-211", q: "What are compulsions and how long do they last?"}
+- {id: v5-25, book: v5-corebook, pages: "239", q: "How does the Remorse roll for Stains work?"}
+- {id: v5-26, book: v5-corebook, pages: "240", q: "What happens when a Touchstone dies?"}
+- {id: v5-27, book: v5-corebook, pages: "174", q: "What is the difference between an Ambition and a Desire?"}
+- {id: v5-28, book: v5-corebook, pages: "241", q: "How much experience does it cost to raise Humanity?"}
+- {id: v5-29, book: v5-corebook, pages: "175-178", q: "Which predator types are there and what do they give?"}
+- {id: v5-30, book: v5-corebook, pages: "221-223", q: "What do sunlight and fire do to a vampire?"}
+- {id: v5-31, book: v5-corebook, pages: "152", q: "What are the nine Attributes?"}
+- {id: v5-32, book: v5-corebook, pages: "304", q: "What damage modifiers do weapons have?"}
+# --- Classic: Vampire Revised core (docs/rules/CLASSIC_REVISED.md) ---
+- {id: cl-01, book: vtm-revised-core, pages: "190-191", q: "How is a dice pool built from an Attribute and an Ability?"}
+- {id: cl-02, book: vtm-revised-core, pages: "192", q: "What happens when ones cancel successes, and what is a botch?"}
+- {id: cl-03, book: vtm-revised-core, pages: "117", q: "How do specialties work, and what happens on a 10?"}
+- {id: cl-04, book: vtm-revised-core, pages: "137", q: "Can I spend Willpower for an automatic success?"}
+- {id: cl-05, book: vtm-revised-core, pages: "193", q: "When can a character succeed without rolling?"}
+- {id: cl-06, book: vtm-revised-core, pages: "194-195", q: "How do extended and resisted actions work?"}
+- {id: cl-07, book: vtm-revised-core, pages: "192", q: "How do multiple actions in one turn split the dice pool?"}
+- {id: cl-08, book: vtm-revised-core, pages: "217", q: "How do vampires soak bashing damage?"}
+- {id: cl-09, book: vtm-revised-core, pages: "129-133", q: "Which Backgrounds can a character take?"}
+- {id: cl-10, book: vtm-revised-core, pages: "133-134", q: "What are the three Virtues?"}
+- {id: cl-11, book: vtm-revised-core, pages: "221-222", q: "How does degeneration lower Humanity?"}
+- {id: cl-12, book: vtm-revised-core, pages: "140-141", q: "What are the health levels and their wound penalties?"}
+- {id: cl-13, book: vtm-revised-core, pages: "137-140", q: "How many blood points can a vampire spend per turn?"}
+- {id: cl-14, book: vtm-revised-core, pages: "139", q: "What does the generation chart say about blood pool size?"}
+- {id: cl-15, book: vtm-revised-core, pages: "228-229", q: "When does a vampire frenzy and how is it resisted?"}
+- {id: cl-16, book: vtm-revised-core, pages: "229", q: "What is Rötschreck?"}
+- {id: cl-17, book: vtm-revised-core, pages: "202", q: "How does hunting for blood work?"}
+- {id: cl-18, book: vtm-revised-core, pages: "216", q: "What happens to a vampire in torpor?"}
