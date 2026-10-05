@@ -209,6 +209,7 @@ test('the chronicle owner explains in the staff voice; the Greek alias is recogn
   expect(calls[1].body).toEqual({ line: '/ai εξήγησε', campaign_id: 3, location_id: 4 });
   expect(isExplainCommand('/ai explain')).toBe(true);
   expect(isExplainCommand('/AI Explain this roll')).toBe(true);
+  expect(isExplainCommand('/ai εξηγησε')).toBe(true);
   expect(isExplainCommand('/ai explainer')).toBe(false);
   expect(isExplainCommand('/ai respond explain this roll')).toBe(false);
 });

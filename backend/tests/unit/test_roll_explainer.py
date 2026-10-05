@@ -101,6 +101,9 @@ def test_v5_willpower_reroll_explains_first_roll_and_final():
     assert e["facts"]["successes"] == 2 and e["facts"]["outcome"] == "win"
     # The first card is checked against the first roll, the stored row against the final one.
     assert e["mismatches"] == []
+    # Picked as the latest roll (no reply): no "the card you replied to" note.
+    md = rx.explain(rx.build_record_from_row(row, first_card), "en", "latest")["markdown"]
+    assert "The card you replied to" not in md and "**First roll:**" in md
 
 
 def test_v5_leniency_is_named():
@@ -184,6 +187,8 @@ def test_rouse_check():
            "modifiers": json.dumps({"rules_edition": "v5", "hunger_before": 2, "hunger_after": 3})}
     e = rx.explain(rx.build_record_from_row(row), "en")
     assert "Hunger **2 → 3**" in e["markdown"] and e["mismatches"] == []
+    el = rx.explain(rx.build_record_from_row(row), "el")["markdown"]
+    assert "Η δύναμη που απαίτησε το check ενεργοποιείται έτσι κι αλλιώς." in el
 
 
 # --- target selection ------------------------------------------------------------------------
@@ -634,6 +639,10 @@ def test_explain_refused_for_non_members_and_outside_a_room(client, ai_routes, m
     r = client.post("/api/ai/slash", headers=client.headers,
                     json={"line": "/ai explain", "campaign_id": 3, "location_id": 4, "reply_to_id": "x"})
     assert r.status_code == 400 and client.calls == []
+    for bad in ({"campaign_id": 3, "location_id": "abc"}, {"campaign_id": "3x", "location_id": 4},
+                {"campaign_id": 3, "location_id": True}):
+        r = client.post("/api/ai/slash", headers=client.headers, json={"line": "/ai explain", **bad})
+        assert r.status_code == 400 and client.calls == []
 
 
 def test_reply_context_block_for_a_dice_card(stub_psycopg, monkeypatch, room):

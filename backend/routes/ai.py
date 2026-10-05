@@ -412,6 +412,8 @@ def _ai_slash_command_impl():
             # The message the /ai line replies to (the chat sends it with the line); /ai explain
             # explains that roll.
             reply_to_id = strict_int(data.get('reply_to_id'), 'reply_to_id', None, 1)
+            campaign_id = strict_int(campaign_id, 'campaign_id', None, 1)
+            location_id = strict_int(location_id, 'location_id', None, 1)
         except RequestValidationError as e:
             return jsonify({'error': e.public_message}), 400
 

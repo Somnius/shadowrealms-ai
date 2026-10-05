@@ -60,9 +60,9 @@ export function normalizeInput(raw, isAdmin) {
   return s;
 }
 
-/** `/ai explain …` / `/ai εξήγησε …`: the one /ai verb every chronicle member may use. */
+/** `/ai explain …` / `/ai εξήγησε …` (accent optional): the one /ai verb every chronicle member may use. */
 export function isExplainCommand(text) {
-  return /^\s*\/ai\s+(explain|εξήγησε)(\s|$)/i.test(String(text || ''));
+  return /^\s*\/ai\s+(explain|εξήγησε|εξηγησε)(\s|$)/i.test(String(text || ''));
 }
 
 export function staffKindFor(user, campaign) {
