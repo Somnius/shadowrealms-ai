@@ -360,10 +360,14 @@ def api(monkeypatch):
         def cursor(self):
             return Cur()
 
+        def commit(self):
+            pass
+
         def close(self):
             pass
 
     monkeypatch.setattr(characters, "get_db", lambda: Conn())
+    monkeypatch.setattr(characters, "_ensure_character_schema", lambda cursor: None)
     app = Flask(__name__)
     app.config.update(JWT_SECRET_KEY="unit-test-secret-key-of-enough-length", TESTING=True)
     JWTManager(app)
@@ -398,3 +402,30 @@ def test_route_letter_paper(api):
     assert b"/MediaBox [ 0 0 612 792 ]" in r.data
     r = api("/api/characters/9/sheet.pdf?paper=bogus", "2")
     assert b"/MediaBox [ 0 0 595.2756 841.8898 ]" in r.data
+
+
+@pytest.mark.parametrize("uid,status", [("2", 200), ("3", 200), ("1", 200), ("4", 403)])
+def test_sheet_json_follows_the_same_rule(api, uid, status):
+    """GET /api/characters/<id>: owner, the chronicle's Storyteller and admins, like the PDF."""
+    r = api("/api/characters/9", uid)
+    assert r.status_code == status
+    if status == 200:
+        assert r.get_json()["character"]["name"] == GREEK_NAME
+
+
+def test_can_view_character_sheet_rule():
+    from services.playing_character import can_view_character_sheet
+
+    class Cur:
+        def execute(self, sql, args):
+            self.sql, self.args = sql, args
+
+        def fetchone(self):
+            if "FROM users" in self.sql:
+                return {"role": {1: "admin", 5: "helper"}.get(self.args[0], "player")}
+            return {"created_by": 3} if self.args[0] == 7 else None
+
+    ch = {"user_id": 2, "campaign_id": 7}
+    assert [can_view_character_sheet(Cur(), u, ch) for u in (2, 3, 1, 5, 4)] == [True, True, True, True, False]
+    assert not can_view_character_sheet(Cur(), 3, {"user_id": 2, "campaign_id": 8})  # not their chronicle
+    assert not can_view_character_sheet(Cur(), 2, None)
