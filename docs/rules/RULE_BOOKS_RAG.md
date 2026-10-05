@@ -15,7 +15,7 @@ The old `rule_books` collection is no longer written. It is empty on the live in
 ## Chunk
 
 - **id:** `"{book_id}:{chunk_index:05d}"` (deterministic, so re-imports `upsert` and a book is removed with `delete(where={"book_id": ...})`). In `rule_books_chronicle` the id is prefixed with the chronicle, `"c{campaign_id}:{book_id}:{chunk_index:05d}"`, because one adventure can be attached to several chronicles.
-- **document:** `"{title} › {heading_path}\n\n{text}"`. `text` is about 300 tokens (hard max 512), sentence-aligned, within one section of the book.
+- **document:** `"{title} › {heading_path}\n\n{text}"`. `text` is about 300 tokens (hard max 512), sentence-aligned, within one section of the book. The `{title} › ` prefix is there even when `heading_path` is empty.
 - **metadata** (all scalar, no lists):
 
 | Key | Type | Values |
@@ -25,14 +25,14 @@ The old `rule_books` collection is no longer written. It is empty on the live in
 | `edition` | str | `v5` or `classic` |
 | `line` | str | `vampire`, `werewolf`, `mage`, or `all` (applies to every line) |
 | `version` | str | `v5`, `revised` (later maybe `v20`, `2nd`) |
-| `kind` | str | `rules`, `sidebar`, `example`, `lore`, `fiction`, `adventure` |
+| `kind` | str | `rules`, `sidebar`, `example`, `lore`, `fiction`, `adventure` (sidebar/example/fiction only in rules books; every chunk of a lore book is `lore`, of an adventure `adventure`) |
 | `heading_path` | str | `Chapter › Section › Subsection` |
 | `page` | int | printed page number (what the book shows) |
 | `page_pdf` | int | 1-based page index in the PDF |
 | `chunk_index` | int | order within the book |
-| `precedence` | int | lower wins when books disagree (V5: corebook 10, Player's Guide v2 20, Companion 30, other supplements 40, lore 50) |
+| `precedence` | int | lower wins when books disagree (V5: corebook 10, Player's Guide v2 20, Companion 30, other supplements 40, lore 50, adventures 60; Classic: cores 10, guides and handbooks 30, clan/tradition/convention/tribe books 40) |
 | `official` | bool | always true for now (official books only) |
-| `year` | int | publication year |
+| `year` | int | publication year as printed in the PDF; 0 = not printed |
 | `campaign_id` | int | 0 for global, the chronicle id in `rule_books_chronicle` |
 | `content_sha` | str | sha1 of `text`, for de-duplication |
 

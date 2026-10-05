@@ -8,7 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- Rule-book importer `books/import_books.py`: a deterministic script (PyMuPDF and rules, no AI reading the books) that turns the official books listed in `books/manifest.yaml` into chunks for `rule_books_v5`, `rule_books_classic` and, for adventures attached to one chronicle, `rule_books_chronicle` (data contract: `docs/rules/RULE_BOOKS_RAG.md`). Column-aware extraction, running heads and page numbers dropped, printed page numbers, outline-based heading paths, fiction/sidebar/example kinds, ~300-token sentence-aligned chunks that never cross a section. Cached by file hash, resumable and paced imports, and a retrieval eval with no AI judge. See "Importing rule books" in `books/README.md`.
+- Rule-book importer `books/import_books.py`: a deterministic script (PyMuPDF and rules, no AI reading the books) that turns the official books listed in `books/manifest.yaml` into chunks for `rule_books_v5`, `rule_books_classic` and, for adventures attached to one chronicle, `rule_books_chronicle` (data contract: `docs/rules/RULE_BOOKS_RAG.md`). Column-aware extraction, running heads and page numbers dropped, printed page numbers, outline-based heading paths, fiction/sidebar/example kinds, ~300-token sentence-aligned chunks that never cross a section. Cached by file hash, resumable and paced imports, and a retrieval eval with no AI judge. See "Importing rule books" in `books/README.md`. Hand-written retrieval questions (`books/eval_questions.yaml`, taken from the repo's rules specs) for `eval --questions`.
 
 ### Changed
 - Rule books come from the new per-edition collections (`rule_books_v5`, `rule_books_classic`, plus `rule_books_chronicle` for books attached to one chronicle; contract in `docs/rules/RULE_BOOKS_RAG.md`). Classic is filtered to the chronicle's game line or `all`, so a Vampire chronicle never gets Werewolf rules; a custom system gets every line. The old `rule_books` collection is no longer read.
@@ -18,6 +18,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Security
 - `/api/rule-books` is admin only. `/scan`, `/process`, `/search`, `/context` and `/systems` are gone (any player could re-import a book and duplicate its chunks). New: `GET /api/rule-books/status` and `DELETE /api/rule-books/<book_id>`. The old in-app PDF importer (`services/rule_book_service.py`) is removed.
+
+### Removed
+- The old rule-book importers that wrote the `rule_books` collection nothing reads any more (`books/parse_books.py`, `books/import_to_rag.py`, `books/quick_import_core.py`, the location-naming ingest scripts) and their integration tests.
 
 ## [0.10.0] - 2026-10-04 - New foundations
 
