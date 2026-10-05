@@ -129,7 +129,7 @@ RULES_INTENTS = frozenset({"rules_question", "dice", "combat"})
 INTENT_MIN_SCORE = 0.6
 
 DEFAULT_RULE_BOOK_MAX_DISTANCE = 0.45
-DEFAULT_RULE_BOOK_STRICT_MAX_DISTANCE = 0.35
+DEFAULT_RULE_BOOK_STRICT_MAX_DISTANCE = 0.42
 
 
 def game_line(game_system: Any) -> Optional[str]:
