@@ -54,7 +54,7 @@ Administrative `/ai` commands are restricted to site admins in `POST /api/ai/sla
 
 ## Room leniency (`/ai dice-diff`)
 
-A room can have a leniency floor (2–10). Its dice never show 1, and with 2+ dice at least one die is ≥ the floor, so botches can't happen. Specialty rerolls are plain d10s.
+In a Classic chronicle a room can have a leniency floor (2–10), `locations.dice_leniency_floor`. Its dice never show 1, and with 2+ dice at least one die is ≥ the floor, so botches can't happen. Specialty rerolls are plain d10s. Set it with `/ai dice-diff <2-10>`, clear it with `/ai dice-diff restore` (campaign owner or site admin), or in **Room dice rules** (`PUT …/dice-leniency` with `dice_leniency_floor`). The V5 switches (`no-bestial`, `no-messy`, `successes`) are refused in a Classic room; V5 rooms use those instead of the floor, see `dice-v5.md`.
 
 ## Pools from the character sheet (Storyteller roll requests)
 
