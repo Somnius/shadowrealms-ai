@@ -146,15 +146,6 @@ def test_seeded_rolls_obey_rules():
             assert r["outcome"] == "fail" and 1 in r["hunger_dice"]
 
 
-def test_leniency_no_ones():
-    rng = random.Random(5)
-    for _ in range(300):
-        r = roll_v5(4, 2, 1, leniency_floor=7, rng=rng)
-        assert 1 not in r["results"]
-        assert max(r["results"]) >= 7
-        assert not r["is_bestial_failure"]
-
-
 def test_willpower_reroll_only_normal_dice():
     r = willpower_reroll([2, 3, 9], [1], 2, [0, 1], rng=FixedRng([6, 10]))
     assert r["normal_dice"] == [6, 10, 9]
@@ -220,7 +211,6 @@ def test_parse_v5_expression_errors(expr):
 
 def test_markdown_mentions_outcome():
     r = resolve_v5([10, 4], [10], 2)
-    r["leniency_floor"] = None
     md = format_v5_roll_markdown(r, "vampire")
     assert "Messy critical" in md
     assert "Hunger dice" in md
