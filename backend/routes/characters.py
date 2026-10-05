@@ -6,7 +6,9 @@ Character management and character sheets
 
 import os
 
-from flask import Blueprint, request, jsonify
+from urllib.parse import quote
+
+from flask import Blueprint, Response, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
 import logging
 import json
@@ -14,6 +16,7 @@ from datetime import datetime
 from services.rules_edition import V5, edition_of
 from services.character_sheet_v5 import sanity_check_v5, stamp_v5_meta
 from services.log_safety import safe_log_value
+from services.playing_character import is_campaign_storyteller_or_staff
 
 from database import (
     get_db,
@@ -598,6 +601,64 @@ def get_character(character_id):
     finally:
         if 'db' in locals():
             db.close()
+
+@bp.route('/<int:character_id>/sheet.pdf', methods=['GET'])
+@jwt_required()
+def character_sheet_pdf(character_id):
+    """Fillable PDF of the sheet (?paper=a4|letter): the owner, the chronicle's Storyteller, staff.
+
+    Anyone else gets 404, so the endpoint doesn't tell which character ids exist.
+    """
+    try:
+        current_user_id = int(get_jwt_identity())
+    except (TypeError, ValueError):
+        return jsonify({'error': 'Invalid session'}), 401
+    paper = (request.args.get('paper') or 'a4').strip().lower()
+    if paper not in ('a4', 'letter'):
+        paper = 'a4'
+    db = None
+    try:
+        db = get_db()
+        cursor = db.cursor()
+        cursor.execute("""
+            SELECT ch.*, u.username AS owner_name, c.name AS campaign_name
+            FROM characters ch
+            JOIN users u ON ch.user_id = u.id
+            LEFT JOIN campaigns c ON ch.campaign_id = c.id
+            WHERE ch.id = %s
+        """, (character_id,))
+        row = cursor.fetchone()
+        allowed = bool(row) and (
+            int(row['user_id']) == current_user_id
+            or is_campaign_storyteller_or_staff(cursor, current_user_id, row['campaign_id'])
+        )
+        if not allowed:
+            return jsonify({'error': 'Character not found'}), 404
+        ch = _character_public_dict(row, owner_name=row['owner_name'], campaign_name=row['campaign_name'])
+    except Exception as e:
+        logger.error(f"Error loading character {safe_log_value(character_id)} for PDF: {safe_log_value(e)}")
+        return jsonify({'error': 'Failed to retrieve character'}), 500
+    finally:
+        if db is not None:
+            db.close()
+
+    from services.character_sheet_pdf import build_sheet_pdf, safe_filename
+
+    try:
+        pdf = build_sheet_pdf(ch, paper=paper, chronicle_name=ch.get('campaign_name') or '',
+                              player_name=ch.get('owner_name') or '')
+    except Exception as e:
+        logger.exception(f"Error building sheet PDF for character {safe_log_value(character_id)}: {safe_log_value(e)}")
+        return jsonify({'error': 'Failed to build the PDF'}), 500
+    name = safe_filename(ch.get('name'))
+    ascii_name = name.encode('ascii', 'ignore').decode().strip() or 'character'
+    resp = Response(pdf, mimetype='application/pdf')
+    resp.headers['Content-Disposition'] = (
+        f'attachment; filename="{ascii_name}.pdf"; filename*=UTF-8\'\'{quote(name + ".pdf")}'
+    )
+    resp.headers['Cache-Control'] = 'private, no-store'
+    return resp
+
 
 @bp.route('/<int:character_id>', methods=['PUT'])
 @jwt_required()

@@ -116,6 +116,7 @@ ROUTE_LIMITS = {
     "auth.logout_all": ("10 per minute", user_or_ip_key),
     "events.events_ticket": ("30 per minute", user_or_ip_key),
     "messages.save_message": ("60 per minute;1000 per hour", user_or_ip_key),
+    "characters.character_sheet_pdf": ("20 per minute", user_or_ip_key),  # builds a PDF each time
 }
 AI_LIMIT = "12 per minute;300 per hour"      # every POST in the ai blueprint + dice.ai_roll
 DICE_LIMIT = "60 per minute"                 # other dice POSTs
