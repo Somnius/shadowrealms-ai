@@ -65,17 +65,6 @@ The script will automatically:
 - ✅ **Interactive Cleanup**: Asks which duplicate to keep before deletion
 - ✅ **Persistent Choices**: Remembers your duplicate resolution choices for future runs (no repeated prompts)
 
-### Parser Script (`parse_books.py`)
-- ✅ **Multi-core Processing**: Utilizes all CPU cores for parallel PDF processing
-- ✅ **GPU Acceleration**: GPU-accelerated embedding generation for 10-50x faster processing
-- ✅ **Optimized Performance**: Memory-efficient processing of large PDFs
-- ✅ **Text Extraction**: Extracts and cleans text from PDFs using pdfplumber
-- ✅ **Smart Chunking**: Chunks text for RAG/Vector database ingestion
-- ✅ **Embedding Generation**: Optional on-the-fly embedding creation (saves post-processing time)
-- ✅ **Caching**: Skips already processed PDFs (unless forced)
-- ✅ **JSON Output**: Structured JSON format with optional embeddings
-- ✅ **Progress Tracking**: Real-time progress bars for batch processing
-
 ## Duplicate Detection
 
 The sync script includes intelligent duplicate detection that runs after syncing files.
@@ -132,21 +121,26 @@ Install the deps once (`pip install -r books/requirements.txt`), then from the r
 ```bash
 python books/import_books.py extract                 # PDF -> blocks, cached in data/rule_books/cache (keyed by file sha256)
 python books/import_books.py chunk --dry-run         # chunk everything, print the summary table (also data/rule_books/chunk_summary.md)
-python books/import_books.py import --only v5-corebook,v5-players-guide
+python books/import_books.py import --only v5-corebook,v5-players-guide   # or --edition v5, or --all
 python books/import_books.py status --chroma
-python books/import_books.py eval --only v5-corebook
+python books/import_books.py eval --only v5-corebook                        # sampled headings
+python books/import_books.py eval --questions books/eval_questions.yaml     # hand-written questions
 python books/import_books.py attach --book v5-fall-of-london --campaign 12   # an adventure, for chronicle 12 only
 python books/import_books.py delete --book v5-camarilla                      # add --campaign N for an attached book
 ```
 
-Options (before or after the command): `--only id,id`, `--edition v5|classic`, `--dry-run` (no Chroma, no state file), `--chroma-host/--chroma-port` (default `CHROMADB_HOST`/`CHROMADB_PORT`, else localhost:8000), `--lmstudio-url` (default `LM_STUDIO_URL`, else localhost:1234; the model is `EMBEDDING_MODEL`, default bge-m3), `--batch 64`, `--pace-ms 200`, `--no-resume`, `--force`, `--workers 4` (max 8). `RULE_BOOKS_ROOT` points at the books folder if it isn't `books/World_of_Darkness`.
+Options (before or after the command): `--only id,id`, `--edition v5|classic`, `--dry-run` (no Chroma, no state file), `--chroma-host/--chroma-port` (default `CHROMADB_HOST`/`CHROMADB_PORT`, else localhost:8000), `--lmstudio-url` (default `LM_STUDIO_URL`, else localhost:1234; the model is `EMBEDDING_MODEL`, default bge-m3), `--batch 64`, `--pace-ms 200`, `--no-resume`, `--force`, `--workers 4` (max 8), `--tokenizer auto|bge-m3|estimate`. `RULE_BOOKS_ROOT` points at the books folder if it isn't `books/World_of_Darkness`.
 
 - **Embedding** goes through the backend's own `services.vector_store` (same embedding function and collection settings), so the backend reads the collections without a re-embed. LM Studio is shared with the live app: imports go in batches with a pause between them (`--pace-ms`).
-- **Resumable:** `data/rule_books/state.json` keeps, per book, the file hash, the chunk set hash, how many chunks are in and the timings. Ids are deterministic (`book_id:00042`) and written with upsert, so a stopped import just continues. If a book's chunks change (new PDF, new manifest settings, new importer version), the old chunks are removed first.
-- **Adventures** (`kind: adventure`) are never imported globally; `attach` puts one into `rule_books_chronicle` with that chronicle's `campaign_id` (ids get a `c<id>:` prefix).
+- **Resumable:** `data/rule_books/state.json` keeps, per book, the file hash, the chunk set hash, how many chunks are in and the timings. Ids are deterministic (`book_id:00042`) and written with upsert, so a stopped import just continues. If a book's chunks change (new PDF, new manifest settings, new importer version), the old chunks are removed first. A book marked done is still counted in Chroma, and imported again when chunks are missing (e.g. after the admin delete). If Chroma or LM Studio is down, the command stops with a one-line error and the book is marked `error`/`partial`; run it again to resume.
+- **Token counts** use the bge-m3 tokenizer (`tokenizers` and its `tokenizer.json` from the Hugging Face cache, or `BGE_M3_TOKENIZER`). Chunk ids depend on the counts, so `import`/`attach` refuse to fall back to the words × 1.35 estimate unless you pass `--tokenizer estimate`.
+- **Kinds:** rules books give `rules`, `sidebar`, `example` and `fiction` chunks; every chunk of a lore book is `lore` and of an adventure `adventure`.
+- **Adventures** (`kind: adventure`) are never imported globally; `attach` puts one into `rule_books_chronicle` with that chronicle's `campaign_id` (ids get a `c<id>:` prefix). Other books need `--force` to be attached.
 - **Image-only PDFs** (scans without a text layer) are found automatically, skipped and listed. No OCR for now.
-- **Duplicates:** a chunk whose text is already in a higher-precedence book of the same edition is skipped.
-- **eval** samples up to 40 outline headings per imported book (seeded), asks each as is and as "How does X work?", and scores hit@1/3/5 and MRR against that section's pages. It also counts edition leaks and, for Classic, line leaks. Reports go to `data/rule_books/eval/`.
+- **Duplicates:** a chunk whose text is already in a higher-precedence book of the same edition is skipped. When a higher-precedence book's chunks change, the books below it in that edition are chunked again on the next import (imports run in precedence order).
+- **eval** has two modes; reports go to `data/rule_books/eval/`.
+  - Default: up to 40 outline headings per imported book (seeded), each asked as is and as "How does X work?", scored hit@1/3/5 and MRR against that section's pages, plus edition leaks and (Classic) line leaks. The query is the heading itself, so this mostly checks the plumbing (sections, pages, filters, leaks), not how well real questions are answered.
+  - `--questions books/eval_questions.yaml`: about 50 hand-written questions taken from the repo's rules specs (`docs/rules/V5.md`, `docs/rules/CLASSIC_REVISED.md`); gold is the printed core page those specs cite, ±1. This is the better measure of retrieval quality. `--check` only validates the file.
 
 ### The manifest (`books/manifest.yaml`)
 
@@ -158,6 +152,8 @@ One entry per book. Required: `book_id` (slug), `path` (relative to `books/World
 - `sidebar_fonts`: regexes for the sidebar font (V5 default: Gill Sans / Futura / IBM Plex Sans)
 - `toc_fixes`: typo fixes for outline titles, e.g. `{Venture: Ventrue}`
 - `outline`: `auto` (PDF outline, else headings by font size), `toc`, `sizes` or `none`
+- `toc`: an outline to use instead of the PDF's, as `[level, title, pdf_page]` entries (a long top-level title the PDF outline repeats is dropped automatically, with a warning)
+- `page_map_from`: another copy of the same book that has printed page numbers; each paragraph takes the printed page of the matching page there (the text-only VtM Revised core uses the scan)
 - `skip_sections`: regexes for sections to leave out (default: contents, index, credits)
 - `notes`
 
@@ -165,196 +161,9 @@ The `excluded:` list at the end records files left out on purpose and why. To ad
 
 Tests (synthetic PDFs only, no book text): `python -m pytest -q books/tests`.
 
-## Parsing PDFs for RAG/Vector Database
-
-The older `parse_books.py` / `import_to_rag.py` path below writes the old `rule_books` collection, which the data contract retires; use `import_books.py` above.
-
-
-After syncing books, you can parse them for ingestion into your RAG system.
-
-> **Embeddings at import time.** Since v0.9 every ChromaDB collection is embedded by the app's own embedder (`EMBEDDING_MODEL`, default `text-embedding-bge-m3` in LM Studio, good for English and Greek). `import_to_rag.py` ignores any vectors stored in the parsed JSON and lets the collection embed the text, so `parse_books.py --embeddings` is no longer needed. The options below are kept for the parser itself.
-
-### Setup GPU Support (optional, only for `--embeddings`)
-
-For GPU-accelerated embedding generation in the parser:
-
-```bash
-cd books/
-source venv/bin/activate
-
-# Install GPU support
-pip install torch sentence-transformers
-
-# Verify GPU is detected
-python -c "import torch; print('GPU Available:' , torch.cuda.is_available())"
-```
-
-### Basic Usage
-
-```bash
-cd books/
-source venv/bin/activate
-
-# Parse all PDFs (text only)
-python parse_books.py
-
-# Use specific number of workers
-python parse_books.py --workers 8
-
-# Larger chunks for more context
-python parse_books.py --chunk-size 1500 --overlap 300
-
-# Reprocess everything
-python parse_books.py --force
-```
-
-### Parser Options
-
-**Performance:**
-- `--workers N` - Number of parallel processes (default: CPU cores - 1)
-- `--embeddings` - Generate embeddings (GPU-accelerated if available)
-- `--embedding-model MODEL` - Embedding model to use (default: all-MiniLM-L6-v2)
-- `--embedding-batch-size N` - Batch size for embeddings (default: 32)
-
-**Processing:**
-- `--chunk-size N` - Characters per chunk (default: 1000)
-- `--overlap N` - Overlap between chunks (default: 200)
-- `--force` - Reprocess all PDFs even if cached
-- `--output-dir DIR` - Custom output directory (default: books/parsed)
-
-**Embedding models:** the parser's `--embedding-model` only affects vectors stored in the JSON, which the importer ignores. What ends up in ChromaDB is always embedded with `EMBEDDING_MODEL` (bge-m3 by default); see [docs/AI_SYSTEMS.md](../docs/AI_SYSTEMS.md).
-
-### Output Format
-
-Parsed books are saved as JSON in `books/parsed/`:
-```json
-{
-  "metadata": {
-    "filename": "Book.pdf",
-    "relative_path": "World of Darkness/oWoD/Book.pdf",
-    "system": "World of Darkness",
-    "category": "oWoD",
-    "file_size": 5242880
-  },
-  "processing_info": {
-    "total_pages": 250,
-    "total_chunks": 500,
-    "chunk_size": 1000,
-    "embeddings_generated": true,
-    "embedding_model": "all-MiniLM-L6-v2",
-    "embedding_device": "cuda"
-  },
-  "chunks": [
-    {
-      "text": "...",
-      "page_number": 1,
-      "chunk_id": "abc123def456",
-      "word_count": 180,
-      "char_count": 950,
-      "embedding": [0.123, -0.456, ...],  // Only if --embeddings was used
-      "embedding_dim": 384  // Only if --embeddings was used
-    }
-  ]
-}
-```
-
-**With `--embeddings`:** files also carry vectors from the parser's model. The importer ignores them (see the note above).
-
-## Importing to RAG/Vector Database
-
-### ⚠️ Important: Selective Import Strategy
-
-**DO NOT import all books automatically!** Instead, use campaign-specific book sets for better performance and quality.
-
-### Why Selective Import?
-
-✅ **Better Retrieval Quality** - Less noise, more relevant results  
-✅ **Faster Searches** - Fewer vectors to compare  
-✅ **Lower Memory** - Only load what you need  
-✅ **No Rule Conflicts** - Avoid mixing incompatible systems/editions  
-✅ **Focused Context** - AI gets relevant rules, not everything  
-
-### Architecture
-
-Your system uses a smart two-tier approach:
-
-```
-Global (campaign_id: 0)
-└── Core WoD rules available to ALL campaigns
-
-Campaign-Specific (campaign_id: 1, 2, 3...)
-└── Only books relevant to that campaign
-```
-
-### Import Books Selectively
-
-Run the importer inside the backend container: it uses the app's embedder (LM Studio must be running with the embedding model available) and reaches ChromaDB on `localhost:8000`. `books/` is mounted at `/app/books`, so parsed files in `books/parsed/` are visible there.
-
-```bash
-# List available parsed books
-docker compose exec backend python books/import_to_rag.py --list
-
-# List predefined book sets (with their rules edition)
-docker compose exec backend python books/import_to_rag.py --list-sets
-
-# Import core rules globally (available to all campaigns)
-docker compose exec backend python books/import_to_rag.py --import-set core_only --campaign-id 0
-
-# Import the V5 core globally (chunks stamped rules_edition=v5)
-docker compose exec backend python books/import_to_rag.py --import-set vampire_v5_core --campaign-id 0
-
-# Import Vampire books for campaign #1
-docker compose exec backend python books/import_to_rag.py --import-set vampire_basic --campaign-id 1
-
-# Import Werewolf books for campaign #2
-docker compose exec backend python books/import_to_rag.py --import-set werewolf_full --campaign-id 2
-
-# Check what's imported (optionally --campaign-id N)
-docker compose exec backend python books/import_to_rag.py --list-imported
-```
-
-Every imported chunk is stamped with a `rules_edition` (`classic`, `v5` or `nwod`), and the Storyteller's rule-book search only uses chunks of the campaign's edition. The edition comes from the book set; for `--import-file`, from the book's category (`V5` gives `v5`, `nWoD` gives `nwod`, everything else `classic`). `--rules-edition classic|v5|nwod` overrides it.
-
-### Available Book Sets
-
-- **`core_only`** - Essential WoD mechanics (minimal)
-- **`vampire_basic`** - Core Vampire rules
-- **`vampire_full`** - Complete Vampire game
-- **`werewolf_full`** - Complete Werewolf game
-- **`mage_basic`** - Core Mage rules
-- **`crossover`** - Multi-game campaigns (start minimal)
-- **`vampire_v5_core`** - V5 corebook (2019 errata printing) + rules errata (`rules_edition: v5`)
-- **`vampire_v5_full`** - V5 core plus the main rules supplements (`rules_edition: v5`)
-
-All sets except the two V5 ones are `classic`.
-
-### Model Compatibility
-
-✅ **Works with BOTH LM Studio and Ollama**
-
-The embeddings are only for retrieval. Both models receive the same text chunks:
-```
-Query → Embedding → Vector Search → Text Chunks → LLM (LM Studio OR Ollama)
-```
-
-### Performance Impact
-
-**Small campaign (5-10 books, ~5K chunks):**
-- Retrieval: ~50-200ms
-- Context size: ~3-5 chunks
-- Token usage: Moderate
-
-**Large campaign (50+ books, ~50K chunks):**
-- Retrieval: ~500-2000ms ⚠️
-- Context size: Often irrelevant chunks mixed in
-- Token usage: Higher, less focused
-
-**Recommendation:** Keep campaigns under 15 books for best performance.
-
 ## Generated Files
 
 - `book-list.txt` - Complete list of all PDF files with their paths (auto-generated after each sync)
-- `parsed/` - Directory containing parsed JSON files (one per PDF)
 - `index.html` - Directory listings (rewritten to work locally)
 - All downloaded books and files in their original directory structure
 
@@ -425,25 +234,20 @@ You can safely interrupt the sync (Ctrl+C) at any time. Just run it again to res
 
 ## Directory Structure
 
-After running, the books directory will contain:
 ```
 books/
-├── sync.sh              # 1. Sync script - downloads books
-├── sync_wod_books.py    # Sync implementation
-├── parse_books.py       # 2. Parser - extracts text + embeddings
-├── import_to_rag.py     # 3. Importer - adds to vector DB
+├── sync.sh              # sync: downloads the books
+├── sync_wod_books.py    # sync implementation
+├── import_books.py      # rule-book importer (see "Importing rule books")
+├── rbimport/            # the importer's code
+├── manifest.yaml        # which books are imported, and how
+├── eval_questions.yaml  # hand-written retrieval questions
+├── tests/               # importer tests (synthetic PDFs)
 ├── requirements.txt     # Python dependencies
-├── README.md           # This file
-├── venv/               # Virtual environment (auto-created)
-├── book-list.txt       # Generated PDF list
-├── parsed/             # Parsed JSON files (auto-created)
-└── World of Darkness/  # Downloaded books (mirrors website)
+├── README.md            # this file
+├── venv/                # virtual environment of sync.sh (auto-created)
+├── book-list.txt        # generated PDF list
+└── World_of_Darkness/   # downloaded books (mirrors the source)
 ```
 
-**Workflow:**
-1. `./sync.sh` → Download PDFs
-2. `python parse_books.py` → Parse PDFs into `books/parsed/`
-3. `docker compose exec backend python books/import_to_rag.py --import-set vampire_basic --campaign-id 1` → Import selectively
-
-Note: The `venv/` directory is automatically created and managed by the sync script.
-
+Workflow: `./sync.sh` to download, then `python books/import_books.py chunk --dry-run` and `import` (see above).
