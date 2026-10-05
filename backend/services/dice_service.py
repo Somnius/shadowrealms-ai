@@ -107,13 +107,16 @@ class DiceService:
         pool_size: int,
         hunger: int = 0,
         difficulty: int = 1,
-        leniency_floor: int | None = None,
+        v5_leniency: Dict | None = None,
         rng=None,
     ) -> Dict:
-        """Roll a V5 pool (services.v5_dice) and add a chat-friendly message."""
+        """Roll a V5 pool (services.v5_dice) and add a chat-friendly message.
+
+        v5_leniency: the room's V5 switches (no_bestial / no_messy / min_successes) or None.
+        """
         from services.v5_dice import roll_v5
 
-        res = roll_v5(pool_size, hunger, difficulty, leniency_floor=leniency_floor, rng=rng)
+        res = roll_v5(pool_size, hunger, difficulty, v5_leniency=v5_leniency, rng=rng)
         res['message'] = DiceService.v5_message(res)
         return res
 
@@ -134,9 +137,12 @@ class DiceService:
             header = f"**{character_name}** rolls (V5)"
         if action_description:
             header += f" for **{action_description}**"
-        lf = roll_data.get('leniency_floor')
-        if lf is not None:
-            header += f"\n_Leniency floor **{lf}** (no 1s; with 2+ dice, one die ≥ {lf})._\n"
+        from services.v5_dice import describe_v5_leniency
+
+        lenient = describe_v5_leniency(roll_data.get('v5_leniency'))
+        if lenient:
+            where = "first roll only; the reroll is plain" if roll_data.get('rerolled') else "this roll"
+            header += f"\n_Room leniency (V5, {where}): {lenient}._\n"
 
         def show(d, hunger):
             if d >= 6:
@@ -473,7 +479,7 @@ class DiceService:
         leniency_line = ""
         if lf is not None:
             leniency_line = (
-                f"\n_Leniency floor **{lf}** (no 1s; with 2+ dice, one die ≥ {lf})._\n"
+                f"\n_Leniency floor **{lf}** (Classic: no 1s; with 2+ dice, one die ≥ {lf})._\n"
             )
         
         # Format dice results with color coding

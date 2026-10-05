@@ -15,11 +15,17 @@ Rules:
 - Willpower reroll: after the roll, the roller may reroll up to 3 NORMAL dice once.
 - Rouse check: roll 1 die; 6+ means no Hunger gain, otherwise Hunger +1 (max 5).
 
+Room leniency in V5 (``/ai dice-diff`` in a V5 chronicle; ``locations.dice_leniency_v5``) is
+three switches, not the Classic floor (see ``roll_v5``): ``no_bestial`` (Hunger dice never
+show 1), ``no_messy`` (Hunger dice never show 10) and ``min_successes`` 0-3 (at least that
+many dice show 6+). Willpower rerolls and Rouse checks are never touched by them.
+
 Every rolling function takes an optional ``rng`` (``randint``/``shuffle``).
 """
 
 from __future__ import annotations
 
+import json
 import random
 import re
 from typing import Any, Dict, List, Optional, Sequence, Tuple
@@ -46,10 +52,105 @@ def clamp_hunger(hunger: Any) -> int:
     return max(0, min(MAX_HUNGER, h))
 
 
-def _roll_dice(n: int, leniency_floor: Optional[int], rng: Any) -> List[int]:
-    from services.wod_dice import roll_d10s
+MAX_MIN_SUCCESSES = 3
+V5_LENIENCY_KEYS = ("no_bestial", "no_messy", "min_successes")
 
-    return roll_d10s(n, leniency_floor=leniency_floor, rng=rng)
+
+def normalize_v5_leniency(value: Any) -> Optional[Dict[str, Any]]:
+    """
+    Stored room setting (dict or JSON text) -> {no_bestial, no_messy, min_successes},
+    or None when nothing is switched on. Lenient: bad or unknown values count as off.
+    """
+    if isinstance(value, str):
+        try:
+            value = json.loads(value)
+        except ValueError:
+            return None
+    if not isinstance(value, dict):
+        return None
+    ms = value.get("min_successes")
+    ms = ms if isinstance(ms, int) and not isinstance(ms, bool) else 0
+    out = {
+        "no_bestial": value.get("no_bestial") is True,
+        "no_messy": value.get("no_messy") is True,
+        "min_successes": max(0, min(MAX_MIN_SUCCESSES, ms)),
+    }
+    if not out["no_bestial"] and not out["no_messy"] and out["min_successes"] == 0:
+        return None
+    return out
+
+
+def validate_v5_leniency(value: Any) -> Optional[Dict[str, Any]]:
+    """
+    Strict check of a client-sent V5 setting (admin API). None clears it. A dict may only
+    hold the three keys; missing keys are off; no_bestial/no_messy must be true/false,
+    min_successes an integer 0-3. Returns the normalized setting (None when all off).
+    """
+    if value is None:
+        return None
+    if not isinstance(value, dict):
+        raise RequestValidationError("dice_leniency_v5 must be an object or null.")
+    unknown = sorted(k for k in value if k not in V5_LENIENCY_KEYS)
+    if unknown:
+        raise RequestValidationError(f"Unknown dice_leniency_v5 key: {unknown[0]}.")
+    for k in ("no_bestial", "no_messy"):
+        if k in value and not isinstance(value[k], bool):
+            raise RequestValidationError(f"{k} must be true or false.")
+    ms = value.get("min_successes", 0)
+    if isinstance(ms, bool) or not isinstance(ms, int) or not 0 <= ms <= MAX_MIN_SUCCESSES:
+        raise RequestValidationError(f"min_successes must be an integer 0-{MAX_MIN_SUCCESSES}.")
+    return normalize_v5_leniency(value)
+
+
+def describe_v5_leniency(lenient: Optional[Dict[str, Any]]) -> str:
+    """Short English list of the active V5 switches ('' when none)."""
+    lenient = normalize_v5_leniency(lenient)
+    if not lenient:
+        return ""
+    parts = []
+    if lenient["no_bestial"]:
+        parts.append("no bestial failure (Hunger dice never show 1)")
+    if lenient["no_messy"]:
+        parts.append("no messy critical (Hunger dice never show 10)")
+    n = lenient["min_successes"]
+    if n:
+        parts.append(f"at least {n} {'die shows' if n == 1 else 'dice show'} 6+")
+    return "; ".join(parts)
+
+
+def _hunger_face_range(lenient: Optional[Dict[str, Any]]) -> Tuple[int, int]:
+    lo = 2 if lenient and lenient["no_bestial"] else 1
+    hi = 9 if lenient and lenient["no_messy"] else 10
+    return lo, hi
+
+
+def _roll_lenient_pool(n_normal: int, n_hunger: int, lenient: Optional[Dict[str, Any]], r: Any):
+    """
+    Roll the normal and Hunger dice of a V5 pool under the room's switches.
+
+    Each die is uniform over the faces it is allowed to show: normal dice 1-10, Hunger
+    dice 1-10 minus 1 (no_bestial) and/or 10 (no_messy). With no switches this is exactly
+    ``n_normal + n_hunger`` plain d10s in order.
+
+    min_successes N: when fewer than min(N, pool) dice show 6+, only the missing number of
+    failing dice is re-drawn, each uniformly over its allowed success faces (6-10, Hunger
+    6-9 with no_messy). Normal dice are re-drawn first (picked at random among the failing
+    ones); Hunger dice only when no failing normal die is left. All other dice stay as rolled.
+    """
+    normal = [r.randint(1, 10) for _ in range(n_normal)]
+    h_lo, h_hi = _hunger_face_range(lenient)
+    hunger = [r.randint(h_lo, h_hi) for _ in range(n_hunger)]
+    need = min(lenient["min_successes"], n_normal + n_hunger) if lenient else 0
+    short = need - sum(1 for d in normal + hunger if d >= SUCCESS_TN)
+    for dice, top in ((normal, 10), (hunger, h_hi)):
+        if short <= 0:
+            break
+        failing = [i for i, d in enumerate(dice) if d < SUCCESS_TN]
+        r.shuffle(failing)
+        for i in failing[:short]:
+            dice[i] = r.randint(SUCCESS_TN, top)
+            short -= 1
+    return normal, hunger
 
 
 def resolve_v5(
@@ -96,10 +197,13 @@ def roll_v5(
     hunger: int = 0,
     difficulty: int = DEFAULT_DIFFICULTY,
     *,
-    leniency_floor: Optional[int] = None,
+    v5_leniency: Optional[Dict[str, Any]] = None,
     rng: Any = None,
 ) -> Dict[str, Any]:
-    """Roll ``pool`` dice, of which ``min(hunger, pool)`` are Hunger dice."""
+    """
+    Roll ``pool`` dice, of which ``min(hunger, pool)`` are Hunger dice. ``v5_leniency`` is the
+    room's V5 switches (see ``_roll_lenient_pool``); None means plain random dice.
+    """
     r = _rng(rng)
     pool = int(pool)
     if pool < 1 or pool > MAX_POOL:
@@ -108,12 +212,10 @@ def roll_v5(
     if difficulty < 0 or difficulty > MAX_DIFFICULTY:
         raise RequestValidationError(f"Difficulty must be between 0 and {MAX_DIFFICULTY}.")
     h = min(clamp_hunger(hunger), pool)
-    dice = _roll_dice(pool, leniency_floor, r)
-    # Leniency guarantees one high die somewhere in the list; which slots are
-    # Hunger dice is fixed (last h), the list is already shuffled.
-    normal, hunger_dice = dice[: pool - h], dice[pool - h:]
+    lenient = normalize_v5_leniency(v5_leniency)
+    normal, hunger_dice = _roll_lenient_pool(pool - h, h, lenient, r)
     res = resolve_v5(normal, hunger_dice, difficulty)
-    res["leniency_floor"] = leniency_floor
+    res["v5_leniency"] = lenient
     res["rerolled"] = False
     res["rerolled_indices"] = []
     return res
@@ -169,22 +271,17 @@ def willpower_reroll(
     difficulty: int,
     indices: Sequence[Any],
     *,
-    leniency_floor: Optional[int] = None,
     rng: Any = None,
 ) -> Dict[str, Any]:
-    """Reroll up to 3 normal dice once. Hunger dice are never rerolled."""
+    """
+    Reroll up to 3 normal dice once. Hunger dice are never rerolled. The new dice are
+    always plain d10s: room leniency (no_bestial / no_messy only touch Hunger dice,
+    min_successes only the first roll) does not apply to a reroll.
+    """
     r = _rng(rng)
     idx = validate_reroll_indices(normal_dice, indices)
-    lf = leniency_floor
-    if lf is not None:
-        # Under leniency, rerolled dice also never show 1 (floor only applies to the
-        # original "one die >= floor" guarantee, which is already satisfied).
-        new_vals = [r.randint(2, 10) for _ in idx]
-    else:
-        new_vals = [r.randint(1, 10) for _ in idx]
-    res = apply_reroll(normal_dice, hunger_dice, difficulty, idx, new_vals)
-    res["leniency_floor"] = leniency_floor
-    return res
+    new_vals = [r.randint(1, 10) for _ in idx]
+    return apply_reroll(normal_dice, hunger_dice, difficulty, idx, new_vals)
 
 
 class NoWillpowerLeft(Exception):
@@ -317,12 +414,9 @@ def format_v5_roll_markdown(res: Dict[str, Any], game_system: str = "", command:
     sys_note = ""
     if game_system:
         sys_note = f"\n**Campaign system:** {game_system} · **Rules:** V5\n"
-    lf = res.get("leniency_floor")
-    if lf is not None:
-        sys_note += (
-            f"\n**Room leniency (floor {lf}):** no **1**s; with 2+ dice, at least one die is **≥ floor**. "
-            "Bestial failures cannot occur.\n"
-        )
+    lenient = describe_v5_leniency(res.get("v5_leniency"))
+    if lenient:
+        sys_note += f"\n**Room leniency (V5):** {lenient}.\n"
     normal = ", ".join(str(d) for d in res["normal_dice"]) or "—"
     hunger = ", ".join(str(d) for d in res["hunger_dice"]) or "—"
     label = outcome_label(res)

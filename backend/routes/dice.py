@@ -26,7 +26,7 @@ from services.v5_dice import (
     spend_willpower,
     willpower_track,
     format_rouse_markdown,
-    resolve_rouse,
+    normalize_v5_leniency,
     rouse_check,
     willpower_reroll as v5_willpower_reroll,
 )
@@ -112,24 +112,29 @@ def _campaign_rules(cursor, campaign_id: int):
 
 
 def _location_leniency(cursor, campaign_id: int, location_id):
-    """Return (ok, leniency_floor) for a location in this campaign."""
+    """
+    Return (ok, leniency_floor, v5_leniency) for a location in this campaign.
+    The floor is the Classic setting, v5_leniency the V5 switches (normalized, or None);
+    callers use the one that matches the campaign's edition.
+    """
     cursor.execute(
         """
-        SELECT dice_leniency_floor FROM locations
+        SELECT dice_leniency_floor, dice_leniency_v5 FROM locations
         WHERE id = %s AND campaign_id = %s AND is_active = TRUE
         """,
         (location_id, campaign_id),
     )
     loc_row = cursor.fetchone()
     if not loc_row:
-        return False, None
+        return False, None, None
+    v5 = normalize_v5_leniency(loc_row.get("dice_leniency_v5"))
     lf = loc_row.get("dice_leniency_floor")
     if lf is None:
-        return True, None
+        return True, None, v5
     try:
-        return True, int(lf)
+        return True, int(lf), v5
     except (TypeError, ValueError):
-        return True, None
+        return True, None, v5
 
 
 def _character_wod_meta(cursor, character_id: int) -> dict:
@@ -239,9 +244,10 @@ def manual_roll(campaign_id):
                 return jsonify({'error': 'Character not found or not yours in this campaign'}), 400
 
         leniency_floor = None
+        v5_leniency = None
         speaker = None
         if location_id is not None:
-            ok, leniency_floor = _location_leniency(cursor, campaign_id, location_id)
+            ok, leniency_floor, v5_leniency = _location_leniency(cursor, campaign_id, location_id)
             if not ok:
                 return jsonify({'error': 'Location not found in this campaign'}), 400
             try:
@@ -263,12 +269,12 @@ def manual_roll(campaign_id):
             else:
                 hunger = 0
             roll_result = dice_service.roll_v5_pool(
-                pool_size, hunger, difficulty, leniency_floor=leniency_floor
+                pool_size, hunger, difficulty, v5_leniency=v5_leniency
             )
             modifiers = {
                 'rules_edition': V5,
                 'pool_expression': pool_expression or None,
-                'leniency_floor': leniency_floor,
+                'v5_leniency': roll_result['v5_leniency'],
                 'hunger': roll_result['hunger'],
                 'normal_dice': roll_result['normal_dice'],
                 'hunger_dice': roll_result['hunger_dice'],
@@ -435,16 +441,16 @@ def willpower_reroll(campaign_id, roll_id):
 
         normal = mods.get('normal_dice') or []
         hunger = mods.get('hunger_dice') or []
-        leniency_floor = mods.get('leniency_floor')
         try:
+            # Plain d10s: room leniency only shapes the first roll (services.v5_dice).
             res = v5_willpower_reroll(
                 normal, hunger, int(row['difficulty']), data.get('indices'),
-                leniency_floor=leniency_floor,
             )
         except RequestValidationError as e:
             return jsonify({'error': e.public_message}), 400
         res['message'] = dice_service.v5_message(res)
-        res['leniency_floor'] = leniency_floor
+        # Shown on the reroll line as "first roll only".
+        res['v5_leniency'] = normalize_v5_leniency(mods.get('v5_leniency'))
 
         # The reroll costs 1 Willpower: 1 Superficial Willpower damage on the character's
         # sheet (a Superficial box turns Aggravated when the track is full). Rolls without
@@ -582,7 +588,7 @@ def rouse_check_route(campaign_id):
 
         if location_id is None:
             return jsonify({'error': 'location_id is required'}), 400
-        ok, leniency_floor = _location_leniency(cursor, campaign_id, location_id)
+        ok, _, _ = _location_leniency(cursor, campaign_id, location_id)
         if not ok:
             return jsonify({'error': 'Location not found in this campaign'}), 400
 
@@ -613,15 +619,8 @@ def rouse_check_route(campaign_id):
         else:
             hunger_before = hunger_arg if hunger_arg is not None else 0
 
-        # Room leniency: the single die never shows a failure below the floor's spirit
-        # (no 1s); otherwise a plain d10.
-        if leniency_floor is not None:
-            from services.wod_dice import roll_d10s
-
-            die = roll_d10s(1, leniency_floor=leniency_floor)[0]
-            res = resolve_rouse(die, hunger_before)
-        else:
-            res = rouse_check(hunger_before)
+        # Always a plain d10 against 6: room leniency never applies to Rouse checks.
+        res = rouse_check(hunger_before)
 
         if meta is not None and res['hunger_after'] != hunger_before:
             meta['hunger'] = res['hunger_after']
@@ -647,7 +646,6 @@ def rouse_check_route(campaign_id):
                     'rules_edition': V5,
                     'hunger_before': res['hunger_before'],
                     'hunger_after': res['hunger_after'],
-                    'leniency_floor': leniency_floor,
                 }),
             ),
         )
@@ -728,7 +726,7 @@ def contested_roll(campaign_id):
         if edition != V5 and (difficulty < 2 or difficulty > 10):
             return jsonify({'error': 'difficulty must be between 2 and 10'}), 400
         if location_id is not None:
-            ok, _ = _location_leniency(cursor, campaign_id, location_id)
+            ok = _location_leniency(cursor, campaign_id, location_id)[0]
             if not ok:
                 return jsonify({'error': 'Location not found in this campaign'}), 400
         for cid in (attacker_cid, defender_cid):
@@ -841,7 +839,7 @@ def ai_roll(campaign_id):
             context = {}
         location_id = _int_arg(data, 'location_id')
         if location_id is not None:
-            ok, _ = _location_leniency(cursor, campaign_id, location_id)
+            ok = _location_leniency(cursor, campaign_id, location_id)[0]
             if not ok:
                 return jsonify({'error': 'Location not found in this campaign'}), 400
         description = optional_str(data.get('description'), 'description', f'AI {action_type} roll')

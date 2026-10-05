@@ -6,6 +6,7 @@ Extensible: add new verbs in execute_ai_slash_command().
 
 from __future__ import annotations
 
+import json
 import logging
 import os
 import re
@@ -73,7 +74,7 @@ FUTURE_COMMAND_SUGGESTIONS = [
     "/ai roll-hidden <expr> — same as `/ai roll`, but hidden from normal players",
     "/ai rouse [hunger] — V5 Rouse check (one die, 6+ = no Hunger gain)",
     "/ai clean … — remove clutter (see `/ai clean`)",
-    "/ai dice-diff <2-10|restore> — room leniency for sidebar dice (owner/admin)",
+    "/ai dice-diff … — room dice leniency (owner/admin): Classic `<2-10|restore>`, V5 `no-bestial on|off`, `no-messy on|off`, `successes <0-3>`, `restore`",
 ]
 
 
@@ -170,14 +171,32 @@ def _truncate(s: str, max_chars: int) -> Tuple[str, bool]:
 _ROLL_HELP_CLASSIC = (
     "- **`/ai roll …`** — Server-side **classic (Revised)** d10 pool: `5`, `4+3@8`, `6 tn 7` "
     "(pool@difficulty 2–10, default 6). 1s cancel successes; botch only if no die succeeded and a 1 showed. "
-    "Uses this room’s leniency if **`/ai dice-diff`** is active."
+    "Uses this room’s leniency floor if **`/ai dice-diff`** is active."
 )
 _ROLL_HELP_V5 = (
     "- **`/ai roll …`** — Server-side **V5** pool: `pool[@difficulty][h<hunger>]`, e.g. `6`, `6@3`, `6@3h2` "
     "(difficulty = successes needed 0–10, default 1; Hunger 0–5). 6+ succeeds, pairs of 10s = criticals, "
-    "messy criticals and bestial failures from Hunger dice. Uses this room’s leniency if **`/ai dice-diff`** is active.\n"
+    "messy criticals and bestial failures from Hunger dice. Uses this room’s V5 switches if **`/ai dice-diff`** set any.\n"
     "- **`/ai rouse [hunger]`** — V5 Rouse check: one die, 6+ = no Hunger gain, else Hunger +1 (max 5). "
-    "Stateless: does not change any character sheet (the rouse API with a character does)."
+    "Stateless: does not change any character sheet (the rouse API with a character does). "
+    "Always a plain die: room leniency never applies to Rouse checks."
+)
+
+_DICE_DIFF_HELP_CLASSIC = (
+    "- **`/ai dice-diff <2–10>`** — **Classic** lenient dice for this **room** only: no **1**s; with **2+** dice, "
+    "**at least one** die is **≥** your floor (e.g. `7` → one die in 7–10, others 2–10). **Botches from 1s** "
+    "cannot occur. Affects **Roll dice** in the sidebar for everyone in this channel.\n"
+    "- **`/ai dice-diff restore`** — Clear leniency; rolls return to normal random d10s (1–10) and the "
+    "campaign's standard rules."
+)
+_DICE_DIFF_HELP_V5 = (
+    "- **`/ai dice-diff`** — **V5** room leniency for this **room** only: shows the current switches.\n"
+    "- **`/ai dice-diff no-bestial on|off`** — Hunger dice never show **1** (no **bestial failure**).\n"
+    "- **`/ai dice-diff no-messy on|off`** — Hunger dice never show **10** (no **messy critical** from Hunger tens).\n"
+    "- **`/ai dice-diff successes <0–3>`** — At least that many dice show **6+** (capped at the pool; "
+    "missing successes come from normal dice first, then Hunger dice).\n"
+    "- **`/ai dice-diff restore`** — All switches off. Normal dice keep their 1s; Willpower rerolls and "
+    "Rouse checks are always plain random dice."
 )
 
 
@@ -196,6 +215,15 @@ def execute_help_command(user_id: int, campaign_id: Optional[int] = None) -> Dic
     else:
         roll_help = _ROLL_HELP_CLASSIC
     dice_doc = "docs/dice-v5.md" if edition == "v5" else "docs/dice-old-wod.md"
+    if not campaign_id:
+        dice_diff_help = (
+            _DICE_DIFF_HELP_CLASSIC + "\n" + _DICE_DIFF_HELP_V5
+            + "\n- _Inside a campaign room, `/ai dice-diff` takes the settings of that campaign’s edition._"
+        )
+    elif edition == "v5":
+        dice_diff_help = _DICE_DIFF_HELP_V5
+    else:
+        dice_diff_help = _DICE_DIFF_HELP_CLASSIC
     display = """**`/ai help`** — slash commands
 
 **Who can use what**
@@ -215,14 +243,17 @@ __ROLL_HELP__
 - **`/ai respond …`** — Diagnostics: echo payload through the LLM with timing (needs LLM).
 - **`/ai clean`** — Lists what you can remove from the **current room** (more targets later).
 - **`/ai clean ai`** — Deletes **admin `/ai` command lines** and the **assistant slash replies** tied to them in this room (does not remove normal storyteller chat).
-- **`/ai dice-diff <2–10>`** — **Lenient dice** for this **room** only: no **1**s; with **2+** dice, **at least one** die is **≥** your floor (e.g. `7` → one die in 7–10, others 2–10). **Botches from 1s** cannot occur. Affects **Roll dice** in the sidebar for everyone in this channel.
-- **`/ai dice-diff restore`** — Clear leniency; rolls return to normal random d10s (1–10) and the campaign's standard rules.
+__DICE_DIFF_HELP__
 
 Site admins can also set the same option per room via **Admin Dice Rules** in the sidebar.
 
 See **__DICE_DOC__** for the dice rules used by the app and the Roll dice UI.
 """
-    display = display.replace("__ROLL_HELP__", roll_help).replace("__DICE_DOC__", dice_doc)
+    display = (
+        display.replace("__ROLL_HELP__", roll_help)
+        .replace("__DICE_DIFF_HELP__", dice_diff_help)
+        .replace("__DICE_DOC__", dice_doc)
+    )
     return {
         "ok": True,
         "command": "help",
@@ -487,11 +518,22 @@ def _fetch_campaign_rules(campaign_id: Optional[int]) -> Tuple[str, str]:
     return "", DEFAULT_RULES_EDITION
 
 
-def _fetch_location_dice_leniency_floor(
-    campaign_id: Optional[int], location_id: Optional[int]
-) -> Optional[int]:
-    if not campaign_id or location_id is None:
+def _valid_floor(v: Any) -> Optional[int]:
+    try:
+        iv = int(v)
+    except (TypeError, ValueError):
         return None
+    return iv if 2 <= iv <= 10 else None
+
+
+def _fetch_location_dice_leniency(
+    campaign_id: Optional[int], location_id: Optional[int]
+) -> Tuple[Optional[int], Optional[Dict[str, Any]]]:
+    """(Classic floor 2-10 or None, normalized V5 switches or None) of this room."""
+    from services.v5_dice import normalize_v5_leniency
+
+    if not campaign_id or location_id is None:
+        return None, None
     try:
         from database import get_db
 
@@ -499,7 +541,7 @@ def _fetch_location_dice_leniency_floor(
         cur = db.cursor()
         cur.execute(
             """
-            SELECT dice_leniency_floor FROM locations
+            SELECT dice_leniency_floor, dice_leniency_v5 FROM locations
             WHERE id = %s AND campaign_id = %s AND is_active = TRUE
             """,
             (location_id, campaign_id),
@@ -507,17 +549,14 @@ def _fetch_location_dice_leniency_floor(
         row = cur.fetchone()
         cur.close()
         db.close()
-        if not row:
-            return None
-        v = row.get("dice_leniency_floor")
-        if v is None:
-            return None
-        iv = int(v)
-        if 2 <= iv <= 10:
-            return iv
+        if row:
+            return (
+                _valid_floor(row.get("dice_leniency_floor")),
+                normalize_v5_leniency(row.get("dice_leniency_v5")),
+            )
     except Exception as e:
-        logger.warning("dice_leniency_floor lookup: %s", e)
-    return None
+        logger.warning("dice leniency lookup: %s", e)
+    return None, None
 
 
 def execute_clean_command(
@@ -570,19 +609,162 @@ def execute_clean_command(
     )
 
 
+_DICE_DIFF_RESTORE_WORDS = ("restore", "off", "none", "normal")
+_DICE_DIFF_V5_WORDS = ("no-bestial", "no-messy", "successes")
+_DICE_DIFF_V5_HINT = (
+    "This is a **V5** chronicle: the 2–10 floor is a Classic setting. V5 rooms use switches: "
+    "`/ai dice-diff no-bestial on|off`, `/ai dice-diff no-messy on|off`, "
+    "`/ai dice-diff successes <0–3>`, `/ai dice-diff restore`."
+)
+_DICE_DIFF_CLASSIC_HINT = (
+    "`no-bestial`, `no-messy` and `successes` are **V5** switches; this is a **Classic** chronicle. "
+    "Use `/ai dice-diff <2–10>` (floor) or `/ai dice-diff restore`."
+)
+_DICE_DIFF_V5_USAGE = (
+    "- **`/ai dice-diff no-bestial on|off`** — Hunger dice never show **1**, so no **bestial failure**.\n"
+    "- **`/ai dice-diff no-messy on|off`** — Hunger dice never show **10**, so no **messy critical** "
+    "from Hunger tens (normal 10s still make criticals).\n"
+    "- **`/ai dice-diff successes <0–3>`** — At least that many dice show **6+** (never more than the pool). "
+    "Missing successes are re-rolled on normal dice first, Hunger dice only if needed; other dice stay random.\n"
+    "- **`/ai dice-diff restore`** — All switches off: normal random dice.\n\n"
+    "_Normal dice keep their 1s (they don't matter in V5). Willpower rerolls and Rouse checks "
+    "are always plain random dice._"
+)
+
+
+def _dice_diff_result(display: str, floor: Optional[int], v5: Optional[Dict[str, Any]]) -> Dict[str, Any]:
+    return {
+        "ok": True,
+        "command": "dice-diff",
+        "dice_leniency_floor": floor,
+        "dice_leniency_v5": v5,
+        "display_markdown": display,
+        "future_commands_suggestion": FUTURE_COMMAND_SUGGESTIONS,
+    }
+
+
+def _v5_active_line(v5: Optional[Dict[str, Any]]) -> str:
+    from services.v5_dice import describe_v5_leniency
+
+    desc = describe_v5_leniency(v5)
+    return f"Active now: {desc}." if desc else "Active now: **nothing** (normal random dice)."
+
+
+def _v5_switch_sentence(switch: str, value: Any) -> str:
+    if switch == "no_bestial":
+        return (
+            "Hunger dice never show **1**, so a roll can't be a **bestial failure**."
+            if value else "Hunger dice can show **1** again (bestial failures possible)."
+        )
+    if switch == "no_messy":
+        return (
+            "Hunger dice never show **10**, so no **messy critical** from Hunger tens."
+            if value else "Hunger dice can show **10** again (messy criticals possible)."
+        )
+    if not value:
+        return "No minimum successes."
+    dice = "die shows" if value == 1 else "dice show"
+    return f"At least **{value}** {dice} **6+** on every roll (never more than the pool)."
+
+
+def _parse_v5_dice_diff(parts: List[str]) -> Tuple[str, Any]:
+    """`no-bestial on`, `no-messy off`, `successes 2` -> (switch key, value)."""
+    word = parts[0]
+    arg = parts[1] if len(parts) > 1 else ""
+    if len(parts) > 2:
+        raise RequestValidationError(_DICE_DIFF_V5_HINT)
+    if word in ("no-bestial", "no-messy"):
+        if arg not in ("on", "off"):
+            raise RequestValidationError(f"Usage: `/ai dice-diff {word} on` or `/ai dice-diff {word} off`.")
+        return word.replace("-", "_"), arg == "on"
+    if not arg.isdigit() or int(arg) > 3:
+        raise RequestValidationError("Usage: `/ai dice-diff successes <0–3>`.")
+    return "min_successes", int(arg)
+
+
+def _dice_diff_v5(raw: str, cur, conn, campaign_id: int, location_id: int) -> Dict[str, Any]:
+    from services.v5_dice import normalize_v5_leniency
+
+    cur.execute(
+        """
+        SELECT dice_leniency_floor, dice_leniency_v5 FROM locations
+        WHERE id = %s AND campaign_id = %s AND is_active = TRUE
+        """,
+        (location_id, campaign_id),
+    )
+    row = cur.fetchone() or {}
+    floor = _valid_floor(row.get("dice_leniency_floor"))
+    current = normalize_v5_leniency(row.get("dice_leniency_v5"))
+
+    if not raw:
+        note = ""
+        if floor is not None:
+            note = (
+                f"\n\n_A Classic floor (**{floor}**) is stored for this room; V5 rolls ignore it. "
+                "`/ai dice-diff restore` clears it._"
+            )
+        display = (
+            "**`/ai dice-diff`** — V5 dice leniency in **this room only**\n\n"
+            f"{_v5_active_line(current)}\n\n" + _DICE_DIFF_V5_USAGE + note
+        )
+        return _dice_diff_result(display, floor, current)
+
+    parts = raw.replace(",", " ").split()
+    if parts[0] in _DICE_DIFF_RESTORE_WORDS:
+        cur.execute(
+            """
+            UPDATE locations SET dice_leniency_floor = NULL, dice_leniency_v5 = NULL
+            WHERE id = %s AND campaign_id = %s AND is_active = TRUE
+            """,
+            (location_id, campaign_id),
+        )
+        conn.commit()
+        display = (
+            "**`/ai dice-diff restore`**\n\n"
+            "Leniency is **off** for this room. All V5 switches are cleared; dice are fully random again."
+        )
+        return _dice_diff_result(display, None, None)
+    if parts[0] not in _DICE_DIFF_V5_WORDS:
+        raise RequestValidationError(_DICE_DIFF_V5_HINT)
+
+    key, value = _parse_v5_dice_diff(parts)
+    settings = dict(current or {"no_bestial": False, "no_messy": False, "min_successes": 0})
+    settings[key] = value
+    new = normalize_v5_leniency(settings)
+    cur.execute(
+        """
+        UPDATE locations SET dice_leniency_v5 = %s
+        WHERE id = %s AND campaign_id = %s AND is_active = TRUE
+        """,
+        (json.dumps(new) if new else None, location_id, campaign_id),
+    )
+    conn.commit()
+    display = (
+        f"**`/ai dice-diff {' '.join(parts)}`**\n\n"
+        f"**This room** (V5): {_v5_switch_sentence(key, value)}\n\n"
+        f"{_v5_active_line(new)} Clear all with **`/ai dice-diff restore`**."
+    )
+    return _dice_diff_result(display, floor, new)
+
+
 def execute_dice_diff_command(
     payload: str,
     user_id: int,
     campaign_id: int,
     location_id: int,
 ) -> Dict[str, Any]:
-    """Set or clear Storyteller leniency floor for this location (owner or site admin)."""
+    """
+    Room dice leniency (owner or site admin). Classic chronicles: a floor 2-10
+    (services.wod_dice). V5 chronicles: the no-bestial / no-messy / successes switches
+    (services.v5_dice). Each edition refuses the other's settings with a hint.
+    """
     from database import get_db
 
+    _gs, edition = _fetch_campaign_rules(campaign_id)
     raw = (payload or "").strip().lower()
-    if not raw:
+    if not raw and edition != "v5":
         display = (
-            "**`/ai dice-diff`** — lenient **d10** rolls in **this room only**\n\n"
+            "**`/ai dice-diff`** — lenient **d10** rolls in **this room only** (Classic)\n\n"
             "- **`/ai dice-diff 7`** — Floor **7**: no **1**s; with **2+** dice, **one** die is always "
             "in **7–10**; other dice are **2–10**. Sidebar **Roll dice** uses this until restored.\n"
             "- **`/ai dice-diff restore`** — Back to normal **1–10** random dice and standard botch rules.\n\n"
@@ -598,10 +780,12 @@ def execute_dice_diff_command(
     conn = get_db()
     cur = conn.cursor()
     try:
-        if raw in ("restore", "off", "none", "normal"):
+        if edition == "v5":
+            return _dice_diff_v5(raw, cur, conn, campaign_id, location_id)
+        if raw in _DICE_DIFF_RESTORE_WORDS:
             cur.execute(
                 """
-                UPDATE locations SET dice_leniency_floor = NULL
+                UPDATE locations SET dice_leniency_floor = NULL, dice_leniency_v5 = NULL
                 WHERE id = %s AND campaign_id = %s AND is_active = TRUE
                 """,
                 (location_id, campaign_id),
@@ -619,6 +803,8 @@ def execute_dice_diff_command(
             )
         else:
             parts = raw.replace(",", " ").split()
+            if parts[0] in _DICE_DIFF_V5_WORDS:
+                raise RequestValidationError(_DICE_DIFF_CLASSIC_HINT)
             try:
                 v = int(parts[0])
             except (ValueError, IndexError) as e:
@@ -638,7 +824,7 @@ def execute_dice_diff_command(
             current = v
             display = (
                 f"**`/ai dice-diff {v}`**\n\n"
-                f"**This room** now uses leniency floor **{v}**: no **1**s; with multiple dice, "
+                f"**This room** now uses leniency floor **{v}** (Classic): no **1**s; with multiple dice, "
                 f"**at least one** die is **≥ {v}**. Clear with **`/ai dice-diff restore`**."
             )
         return {
@@ -666,13 +852,13 @@ def execute_roll_command(
     )
 
     game_system, edition = _fetch_campaign_rules(campaign_id)
-    lf = _fetch_location_dice_leniency_floor(campaign_id, location_id)
+    lf, v5_lenient = _fetch_location_dice_leniency(campaign_id, location_id)
 
     if edition == "v5":
         from services.v5_dice import format_v5_roll_markdown, parse_v5_roll_expression, roll_v5
 
         pool, diff, hunger = parse_v5_roll_expression(payload)
-        res = roll_v5(pool, hunger, diff, leniency_floor=lf)
+        res = roll_v5(pool, hunger, diff, v5_leniency=v5_lenient)
         return {
             "ok": True,
             "command": "roll",
@@ -694,7 +880,7 @@ def execute_roll_command(
                 "is_bestial_failure": res["is_bestial_failure"],
                 "is_total_failure": res["is_total_failure"],
                 "botch": False,
-                "leniency_floor": lf,
+                "v5_leniency": res["v5_leniency"],
             },
             "future_commands_suggestion": FUTURE_COMMAND_SUGGESTIONS,
         }
@@ -726,9 +912,11 @@ def execute_rouse_command(
     campaign_id: Optional[int] = None,
     location_id: Optional[int] = None,
 ) -> Dict[str, Any]:
-    """V5 Rouse check. Stateless: Hunger comes from the payload (default 0)."""
-    from services.v5_dice import format_rouse_markdown, resolve_rouse
-    from services.wod_dice import roll_d10s
+    """
+    V5 Rouse check. Stateless: Hunger comes from the payload (default 0).
+    Always a plain d10 against 6: room leniency never applies to Rouse checks.
+    """
+    from services.v5_dice import format_rouse_markdown, rouse_check
 
     _gs, edition = _fetch_campaign_rules(campaign_id)
     if campaign_id and edition != "v5":
@@ -739,8 +927,7 @@ def execute_rouse_command(
         if not raw.isdigit() or not (0 <= int(raw) <= 5):
             raise RequestValidationError("Usage: `/ai rouse` or `/ai rouse <hunger 0–5>`.")
         hunger = int(raw)
-    lf = _fetch_location_dice_leniency_floor(campaign_id, location_id)
-    res = resolve_rouse(roll_d10s(1, leniency_floor=lf)[0], hunger)
+    res = rouse_check(hunger)
     display = "**`/ai rouse`** — V5\n\n" + format_rouse_markdown(res)
     return {
         "ok": True,
