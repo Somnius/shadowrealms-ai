@@ -928,6 +928,7 @@ def execute_roll_command(
             "net_successes": result.net_successes,
             "botch": result.botch,
             "is_exceptional": result.exceptional,
+            "is_phenomenal": result.phenomenal,
             "leniency_floor": result.leniency_floor,
         },
         "future_commands_suggestion": FUTURE_COMMAND_SUGGESTIONS,

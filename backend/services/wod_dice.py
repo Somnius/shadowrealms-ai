@@ -22,7 +22,10 @@ Rules (Vampire: The Masquerade Revised core):
     nothing, rerolls only add.
 - Willpower: declared before the roll, adds 1 automatic success that 1s cannot
   cancel. A willpower roll therefore never botches and always has >= 1 net success.
-- 5+ net successes is an "exceptional success" (the Revised term; not "critical").
+- Degrees of success (Revised core: "Four Successes — Exceptional", "Five or More
+  Successes — Phenomenal"; docs/rules/CLASSIC_REVISED.md §1.2): 1 marginal, 2 moderate,
+  3 complete, 4 exceptional, 5+ phenomenal. ``classic_degree`` derives it from net successes,
+  so stored rolls whose old ``is_exceptional`` flag meant 5+ read correctly too.
 
 Every function that rolls takes an optional ``rng`` (anything with ``randint`` and
 ``shuffle``, e.g. ``random.Random(seed)``) so tests can be deterministic.
@@ -38,7 +41,8 @@ from typing import Any, List, Optional, Sequence, Tuple
 from services.request_validation import RequestValidationError
 
 MAX_POOL = 50
-EXCEPTIONAL_THRESHOLD = 5
+EXCEPTIONAL_THRESHOLD = 4  # exactly 4 net successes: exceptional
+PHENOMENAL_THRESHOLD = 5  # 5 or more: phenomenal
 # Hard cap on specialty explosions so a pathological rng cannot loop forever.
 MAX_SPECIALTY_REROLLS = 100
 
@@ -60,7 +64,8 @@ class StorytellerRollResult:
     reroll_ones: int = 0
     reroll_ones_cancel: bool = False
     willpower: bool = False
-    exceptional: bool = False
+    exceptional: bool = False  # exactly 4 net successes
+    phenomenal: bool = False  # 5 or more
 
 
 def parse_pool_expression(pool_str: str) -> int:
@@ -219,7 +224,8 @@ def resolve_classic(
         reroll_ones=reroll_ones,
         reroll_ones_cancel=bool(reroll_ones_cancel),
         willpower=bool(willpower),
-        exceptional=net >= EXCEPTIONAL_THRESHOLD,
+        exceptional=net == EXCEPTIONAL_THRESHOLD,
+        phenomenal=net >= PHENOMENAL_THRESHOLD,
     )
 
 
@@ -272,12 +278,28 @@ def roll_storyteller_pool(
     return res
 
 
+def classic_degree(net_successes: Any) -> str:
+    """'none' | 'marginal' | 'moderate' | 'complete' | 'exceptional' | 'phenomenal' from net successes."""
+    try:
+        n = int(net_successes)
+    except (TypeError, ValueError):
+        n = 0
+    if n <= 0:
+        return "none"
+    if n >= PHENOMENAL_THRESHOLD:
+        return "phenomenal"
+    return ("marginal", "moderate", "complete", "exceptional")[n - 1]
+
+
 def classic_outcome_label(result: StorytellerRollResult) -> str:
     if result.botch:
         return "Botch"
-    if result.net_successes == 0:
+    degree = classic_degree(result.net_successes)
+    if degree == "none":
         return "Failure"
-    if result.exceptional:
+    if degree == "phenomenal":
+        return "Phenomenal success"
+    if degree == "exceptional":
         return "Exceptional success"
     return "Success"
 
@@ -301,7 +323,9 @@ def format_storyteller_roll_markdown(
         outcome = "**BOTCH** (no die succeeded and at least one 1 was rolled)."
     elif n == 0:
         outcome = "**Failure** (no net successes)."
-    elif result.exceptional:
+    elif n >= PHENOMENAL_THRESHOLD:
+        outcome = f"**Phenomenal success** — {n} successes."
+    elif n == EXCEPTIONAL_THRESHOLD:
         outcome = f"**Exceptional success** — {n} successes."
     elif n == 1:
         outcome = "**1 success**."
@@ -330,6 +354,6 @@ def format_storyteller_roll_markdown(
         f"- **Net successes:** {n}\n\n"
         f"{outcome}\n\n"
         "_Revised: 1s cancel successes; botch only if no die succeeded and a 1 showed. "
-        "5+ successes = exceptional._\n"
+        "4 successes = exceptional, 5+ = phenomenal._\n"
         "_Syntax: `pool`, `4+3`, `6-1`, or `5@8` for pool@difficulty._"
     )

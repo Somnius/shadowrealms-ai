@@ -226,7 +226,8 @@ T = {
         "cl_fail": "**Result: Failure** — no successes.",
         "cl_success_one": "**Result: Success** — 1 net success (a marginal success).",
         "cl_success": "**Result: Success** — {n} net successes.",
-        "cl_exceptional": "**Result: Exceptional success** — {n} net successes (the app calls 5 or more exceptional).",
+        "cl_exceptional": "**Result: Exceptional success** — 4 net successes (Revised degrees of success: 1 marginal, 2 moderate, 3 complete, 4 exceptional, 5 or more phenomenal).",
+        "cl_phenomenal": "**Result: Phenomenal success** — {n} net successes (Revised degrees of success: 5 or more is phenomenal).",
         "cl_wp_saved": "_Without Willpower this would have been a botch; the bought success stands (pp. 137, 193)._",
         "cl_lenient": "_Room leniency floor {f} was on for this roll: no 1s, and with 2 or more dice one die is at least {f}. It shaped the dice; the counting is the normal rule._",
         "rouse_title": "**Rouse check** (V5, pp. 123, 211)",
@@ -298,7 +299,8 @@ T = {
         "cl_fail": "**Αποτέλεσμα: Αποτυχία** — καμία επιτυχία.",
         "cl_success_one": "**Αποτέλεσμα: Επιτυχία** — 1 καθαρή επιτυχία (οριακή επιτυχία).",
         "cl_success": "**Αποτέλεσμα: Επιτυχία** — {n} καθαρές επιτυχίες.",
-        "cl_exceptional": "**Αποτέλεσμα: Εξαιρετική επιτυχία** — {n} καθαρές επιτυχίες (η εφαρμογή λέει εξαιρετική από 5 και πάνω).",
+        "cl_exceptional": "**Αποτέλεσμα: Εξαιρετική επιτυχία** — 4 καθαρές επιτυχίες (βαθμοί επιτυχίας του Revised: 1 οριακή, 2 μέτρια, 3 πλήρης, 4 εξαιρετική, 5 ή περισσότερες εκπληκτική).",
+        "cl_phenomenal": "**Αποτέλεσμα: Εκπληκτική επιτυχία** — {n} καθαρές επιτυχίες (βαθμοί επιτυχίας του Revised: 5 ή περισσότερες είναι εκπληκτική).",
         "cl_wp_saved": "_Χωρίς το Willpower αυτό θα ήταν botch· η επιτυχία που αγοράστηκε μένει (σσ. 137, 193)._",
         "cl_lenient": "_Σε αυτή τη ρίψη ίσχυε το κατώτατο όριο επιείκειας {f} του δωματίου: κανένα 1, και με 2 ή περισσότερα ζάρια ένα ζάρι είναι τουλάχιστον {f}. Αυτό επηρέασε τα ζάρια· το μέτρημα είναι ο κανονικός κανόνας._",
         "rouse_title": "**Rouse check** (V5, σσ. 123, 211)",
@@ -560,8 +562,10 @@ def _explain_classic(rec: Dict[str, Any], lang: str) -> Dict[str, Any]:
         lines.append(tr["cl_fail_cancelled"])
     elif r.net_successes == 0:
         lines.append(tr["cl_fail"])
+    elif r.phenomenal:
+        lines.append(tr["cl_phenomenal"].format(n=r.net_successes))
     elif r.exceptional:
-        lines.append(tr["cl_exceptional"].format(n=r.net_successes))
+        lines.append(tr["cl_exceptional"])
     elif r.net_successes == 1:
         lines.append(tr["cl_success_one"])
     else:
@@ -594,6 +598,7 @@ def _explain_classic(rec: Dict[str, Any], lang: str) -> Dict[str, Any]:
         "net_successes": r.net_successes,
         "is_botch": r.botch,
         "is_exceptional": r.exceptional,
+        "is_phenomenal": r.phenomenal,
         "label": label,
         "leniency_floor": r.leniency_floor,
     }

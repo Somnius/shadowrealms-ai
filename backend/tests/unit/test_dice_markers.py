@@ -46,6 +46,21 @@ def test_classic_marker():
     assert dm.sanitize_marker(json.dumps(m), "dice_animation:r9-bb", now=NOW) is not None
 
 
+def test_classic_marker_degree_from_net_successes():
+    def mk(successes, **flags):
+        res = {"rules_edition": "classic", "results": [6] * 6, "difficulty": 6, "successes": successes,
+               "is_botch": False, **flags}
+        return dm.build_marker(res, animation_id="r9-bb", roll_id=9, started_at_ms=NOW)
+
+    m4, m5, m3 = mk(4), mk(5), mk(3)
+    assert m4["is_exceptional"] and not m4["is_phenomenal"] and m4["is_critical"]
+    assert m5["is_phenomenal"] and not m5["is_exceptional"] and m5["is_critical"]
+    assert not (m3["is_exceptional"] or m3["is_phenomenal"] or m3["is_critical"])
+    # An old result that flagged 5 successes "exceptional" becomes phenomenal.
+    old = mk(5, is_exceptional=True)
+    assert old["is_phenomenal"] and not old["is_exceptional"]
+
+
 def test_animation_ids_are_unique_per_post():
     a, b = dm.new_animation_id(5), dm.new_animation_id(5)
     assert a != b and a.startswith("r5-") and a == a.lower()

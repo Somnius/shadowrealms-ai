@@ -4,6 +4,7 @@ import pytest
 
 from services.wod_dice import (
     StorytellerRollResult,
+    classic_degree,
     classic_outcome_label,
     format_storyteller_roll_markdown,
     parse_pool_expression,
@@ -73,12 +74,31 @@ def test_ten_is_always_success_even_at_difficulty_10():
     assert r.raw_successes == 1
 
 
-def test_exceptional_at_five():
+def test_degrees_four_exceptional_five_phenomenal():
+    # Revised core: "Four Successes — Exceptional", "Five or More Successes — Phenomenal".
     r = resolve_classic([6, 6, 7, 8, 9], 6)
-    assert r.net_successes == 5 and r.exceptional
-    assert classic_outcome_label(r) == "Exceptional success"
+    assert r.net_successes == 5 and r.phenomenal and not r.exceptional
+    assert classic_outcome_label(r) == "Phenomenal success"
     r4 = resolve_classic([6, 6, 7, 8], 6)
-    assert not r4.exceptional
+    assert r4.exceptional and not r4.phenomenal
+    assert classic_outcome_label(r4) == "Exceptional success"
+    r3 = resolve_classic([6, 6, 7], 6)
+    assert not r3.exceptional and not r3.phenomenal and classic_outcome_label(r3) == "Success"
+    assert [classic_degree(n) for n in (0, 1, 2, 3, 4, 5, 9)] == [
+        "none", "marginal", "moderate", "complete", "exceptional", "phenomenal", "phenomenal"]
+
+
+def test_result_dict_flags():
+    from services.dice_service import DiceService
+
+    d4 = DiceService.classic_result_dict(resolve_classic([6, 6, 7, 8], 6))
+    assert d4["is_exceptional"] and not d4["is_phenomenal"] and d4["is_critical"]
+    assert d4["message"].startswith("**Exceptional success!**")
+    d5 = DiceService.classic_result_dict(resolve_classic([6, 6, 7, 8, 9], 6))
+    assert d5["is_phenomenal"] and not d5["is_exceptional"] and d5["is_critical"]
+    assert d5["message"].startswith("**Phenomenal success!**")
+    d3 = DiceService.classic_result_dict(resolve_classic([6, 6, 7], 6))
+    assert not d3["is_critical"]
 
 
 def test_willpower_adds_uncancellable_success():
@@ -107,11 +127,13 @@ def test_original_ones_cancel_reroll_successes_too():
     assert r.net_successes == 1  # 1 + 1 - 1
 
 
-def test_formatter_uses_exceptional_not_critical():
-    r = resolve_classic([6, 6, 7, 8, 9], 6)
-    md = format_storyteller_roll_markdown(r, "vampire")
-    assert "Exceptional success" in md
-    assert "CRITICAL" not in md.upper().replace("EXCEPTIONAL", "")
+def test_formatter_uses_degrees_not_critical():
+    md = format_storyteller_roll_markdown(resolve_classic([6, 6, 7, 8, 9], 6), "vampire")
+    assert "**Phenomenal success** — 5 successes." in md
+    assert "4 successes = exceptional, 5+ = phenomenal" in md
+    assert "CRITICAL" not in md.upper()
+    md4 = format_storyteller_roll_markdown(resolve_classic([6, 6, 7, 8], 6), "vampire")
+    assert "**Exceptional success** — 4 successes." in md4
 
 
 # --- rolling with injected rng ------------------------------------------------

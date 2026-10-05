@@ -83,7 +83,7 @@ def rules_edition_label(edition: Any) -> str:
 
 _CLASSIC_BRIEF = """RULES: Classic World of Darkness (Revised Storyteller system). Use ONLY these mechanics.
 - Dice: pools of d10 = Attribute + Ability. Difficulty is a target number 2-10 (default 6); each die >= difficulty is a success.
-- Each 1 cancels one success. Botch only if no die succeeded and at least one 1 showed. 5+ successes = exceptional success.
+- Each 1 cancels one success. Botch only if no die succeeded and at least one 1 showed. 4 successes = exceptional, 5+ = phenomenal.
 - Specialty: natural 10s count and are rerolled (rerolls only add). Willpower: spend 1 point before rolling for 1 automatic success.
 - Traits: Attributes (Physical/Social/Mental), Abilities (Talents/Skills/Knowledges), Backgrounds, Virtues, Willpower, Humanity/Path.
 - Never use V5 terms (Hunger dice, Rouse checks, messy criticals, Blood Potency) in this chronicle."""
