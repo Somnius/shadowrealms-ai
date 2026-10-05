@@ -167,6 +167,17 @@ def test_classic_exceptional_and_leniency():
     assert "leniency floor 4" in e["markdown"]
 
 
+def test_names_and_reason_are_plain_text():
+    row = v5_row([7], [], 1, 1)
+    row["action_description"] = "**Bold** [click](https://evil.example) `code` # head > quote"
+    row["character_name"] = "_Eve_](javascript:alert(1))"
+    md = rx.explain(rx.build_record_from_row(row), "en")["markdown"]
+    first, second = md.split("\n")[:2]
+    assert first == "**Roll explained** — V5 · roll #375 · Bold click code head quote"
+    assert second == "Rolled by **Eve**."
+    assert "http" not in md and "javascript" not in md and "`code`" not in md
+
+
 def test_rouse_check():
     row = {"id": 9, "roll_type": "rouse", "action_description": "Rouse check", "difficulty": 6,
            "results": "[4]", "successes": 0, "is_botch": False, "is_critical": False,
