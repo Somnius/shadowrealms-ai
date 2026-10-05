@@ -2,7 +2,8 @@
  * Slash command registry for composer autocomplete.
  *
  * `/ai …` verbs mirror backend/services/ai_slash_commands.py SUPPORTED_AI_SLASH_VERBS (site admins only,
- * the server runs them via POST /api/ai/slash). Local commands are handled in the browser.
+ * except `/ai explain`, which every member may use; the server runs them via POST /api/ai/slash).
+ * Local commands are handled in the browser.
  * TODO(backend): GET /api/ai/slash/commands would let client and server never drift.
  */
 import { t } from '../../i18n';
@@ -12,9 +13,11 @@ export const SLASH_COMMANDS = [
   { name: '/roll', args: '', description: () => t('chat:slash.roll', 'Open the dice roller for this room'), local: 'roll' },
   { name: '/me', args: '<action>', description: () => t('chat:slash.me', 'Post an action / emote line'), local: 'me' },
   { name: '/chat', args: '<message>', description: () => t('chat:slash.chat', 'Ask the AI assistant directly (out of the story)') },
+  // /ai explain (everyone): reply to a dice card to explain that roll, else the latest roll here
+  { name: '/ai explain', args: '', description: () => t('chat:slash.ai.explain', 'Explain a dice roll step by step (reply to the dice card)') },
   // /ai verbs (site admins)
   { name: '/ai help', args: '', description: () => t('chat:slash.ai.help', 'List all /ai commands'), admin: true },
-  { name: '/ai respond', args: '[note]', description: () => t('chat:slash.ai.respond', 'Ask the Storyteller to respond to the scene'), admin: true },
+  { name: '/ai respond', args: '[note]', description: () => t('chat:slash.ai.respond', 'Diagnostics only: LLM echo with latency (to explain a roll use /ai explain)'), admin: true },
   { name: '/ai health', args: '', description: () => t('chat:slash.ai.health', 'LLM / vector store health snapshot'), admin: true },
   { name: '/ai model', args: '', description: () => t('chat:slash.ai.model', 'Configured and active model'), admin: true },
   { name: '/ai ping', args: '', description: () => t('chat:slash.ai.ping', 'Tiny generation to measure latency'), admin: true },

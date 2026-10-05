@@ -25,7 +25,8 @@
     "chat": "Ask the AI assistant directly (out of the story)",
     "ai": {
       "help": "List all /ai commands",
-      "respond": "Ask the Storyteller to respond to the scene",
+      "explain": "Explain a dice roll step by step (reply to the dice card)",
+      "respond": "Diagnostics only: LLM echo with latency (to explain a roll use /ai explain)",
       "health": "LLM / vector store health snapshot",
       "model": "Configured and active model",
       "ping": "Tiny generation to measure latency",
@@ -69,7 +70,7 @@
     "ooc": "OOC"
   },
   "error": {
-    "aiAdminOnly": "Only site administrators can use /ai commands. Use the dice button to roll.",
+    "aiAdminOnly": "Only site administrators can use /ai commands (everyone can use /ai explain). Use the dice button to roll.",
     "chatUsage": "Usage: /chat followed by your message to the AI assistant.",
     "saveFailed": "Your message could not be saved.",
     "aiSaveFailed": "The Storyteller’s reply could not be saved.",

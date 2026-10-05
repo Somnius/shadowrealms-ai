@@ -5,11 +5,17 @@ test('nothing is suggested unless the line starts with /', () => {
   expect(slashSuggestions('')).toEqual([]);
 });
 
-test('players see local commands only; /ai verbs are admin-only', () => {
+test('players see local commands and /ai explain; the other /ai verbs are admin-only', () => {
   const names = slashSuggestions('/', { isAdmin: false, limit: 50 }).map((c) => c.name);
-  expect(names).toEqual(expect.arrayContaining(['/roll', '/me', '/chat']));
-  expect(names.some((n) => n.startsWith('/ai'))).toBe(false);
-  expect(slashSuggestions('/ai', { isAdmin: false })).toEqual([]);
+  expect(names).toEqual(expect.arrayContaining(['/roll', '/me', '/chat', '/ai explain']));
+  expect(names.filter((n) => n.startsWith('/ai'))).toEqual(['/ai explain']);
+  expect(slashSuggestions('/ai', { isAdmin: false }).map((c) => c.name)).toEqual(['/ai explain']);
+});
+
+test('/ai respond is described as diagnostics, pointing to /ai explain', () => {
+  const [respond] = slashSuggestions('/ai respond', { isAdmin: true });
+  expect(respond.description()).toMatch(/^Diagnostics only/);
+  expect(respond.description()).toContain('/ai explain');
 });
 
 test('admins get the backend /ai verbs, filtered by prefix', () => {

@@ -1,4 +1,4 @@
-import { normalizeInput, sendChatMessage } from '../sendFlow';
+import { isExplainCommand, normalizeInput, sendChatMessage } from '../sendFlow';
 
 const campaign = { id: 3, created_by: 1 };
 const ic = { id: 7, type: 'custom' };
@@ -181,4 +181,47 @@ test('roll requests from /ai/chat ride along on the saved reply; the saved text 
   await sendChatMessage(c, 'I sneak.');
   expect(calls[2].body).toEqual({ content: text, message_type: 'ic', role: 'assistant' });
   expect(c.onAppend).toHaveBeenCalledWith([expect.objectContaining({ id: 31, content: text, roll_requests: reqs })]);
+});
+
+test('/ai explain is open to players: player voice, the reply target goes to /ai/slash, the answer is saved', async () => {
+  const { api, calls } = fakeApi({
+    'POST /campaigns/3/locations/4': (body) => ({ ok: true, status: 201, data: { data: { id: body.role === 'assistant' ? 31 : 30, ...body } } }),
+    'POST /ai/slash': () => ({ ok: true, status: 200, data: { command: 'explain', display_markdown: '**Roll explained** — V5' } }),
+  });
+  const c = ctx({ api, location: ooc, speakAs: 'character' });
+  const replyTo = { id: 278, author: 'p', excerpt: 'Dice Roll (V5)', role: 'user' };
+  await expect(sendChatMessage(c, '/ai explain this roll', { replyTo })).resolves.toBe(true);
+  expect(calls.map((x) => `${x.method} ${x.path}`)).toEqual(['POST /campaigns/3/locations/4', 'POST /ai/slash', 'POST /campaigns/3/locations/4']);
+  expect(calls[0].body).toMatchObject({ content: '/ai explain this roll', speak_as: 'player', ai_message_kind: 'slash_user', reply_to_id: 278 });
+  expect(calls[0].body.character_id).toBeUndefined();
+  expect(calls[1].body).toEqual({ line: '/ai explain this roll', campaign_id: 3, location_id: 4, reply_to_id: 278 });
+  expect(calls[2].body).toMatchObject({ content: '**Roll explained** — V5', role: 'assistant', ai_message_kind: 'slash_assistant' });
+  expect(c.onError).not.toHaveBeenCalled();
+});
+
+test('the chronicle owner explains in the staff voice; the Greek alias is recognised', async () => {
+  const { api, calls } = fakeApi({
+    'POST /ai/slash': () => ({ ok: true, status: 200, data: { command: 'explain', display_markdown: 'x' } }),
+  });
+  const owner = { id: 1, username: 'o', role: 'player' };
+  await sendChatMessage(ctx({ api, user: owner, location: ooc }), '/ai εξήγησε');
+  expect(calls[0].body).toMatchObject({ speak_as: 'staff' });
+  expect(calls[1].body).toEqual({ line: '/ai εξήγησε', campaign_id: 3, location_id: 4 });
+  expect(isExplainCommand('/ai explain')).toBe(true);
+  expect(isExplainCommand('/AI Explain this roll')).toBe(true);
+  expect(isExplainCommand('/ai explainer')).toBe(false);
+  expect(isExplainCommand('/ai respond explain this roll')).toBe(false);
+});
+
+test('a reply to the Storyteller carries reply_to_id to /ai/chat', async () => {
+  const { api, calls } = fakeApi({
+    'POST /campaigns/3/locations/7': (body) => ({ ok: true, status: 201, data: { data: { id: 40, ...body } } }),
+    'POST /ai/chat': () => ({ ok: true, status: 200, data: { response: 'The Beast stirs.' } }),
+  });
+  await sendChatMessage(ctx({ api }), 'What does that mean for me?', { replyTo: { id: 278 } });
+  expect(calls[1].path).toBe('/ai/chat');
+  expect(calls[1].body).toMatchObject({ message: 'What does that mean for me?', reply_to_id: 278 });
+  const plain = fakeApi({});
+  await sendChatMessage(ctx({ api: plain.api }), 'no reply here');
+  expect(plain.calls[1].body.reply_to_id).toBeUndefined();
 });
