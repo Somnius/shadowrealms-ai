@@ -36,7 +36,12 @@ class CountingEF:
 
     def __call__(self, texts):
         self.texts.extend(texts)
-        return [[0.1, 0.2, 0.3] for _ in texts]
+        # Chroma's wrapper returns numpy float32 vectors; a float subclass stands in for them.
+        return [[NpFloat(0.1), NpFloat(0.2), NpFloat(0.3)] for _ in texts]
+
+
+class NpFloat(float):
+    pass
 
 
 def _match(meta, where):
@@ -260,6 +265,7 @@ def test_one_embedding_per_reply(env):
     env.books("rule_books_chronicle", chunk("night-adventure", 1, 0.1, kind="adventure", campaign_id=5))
     msg = "How does frenzy work?"
     emb = rs.embed_query(msg)  # routes/ai.py _storyteller_reply
+    assert all(type(x) is float for x in emb)  # query_embeddings refuses numpy floats
     env.svc.retrieve_relevant_messages(msg, 5, 2, limit=3, min_relevance=0.5, query_embedding=emb)
     env.svc.augment_prompt(msg, 5, rules_edition="classic", game_system="vampire", intent=RULES,
                            max_tokens=1500, query_embedding=emb)

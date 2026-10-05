@@ -38,7 +38,9 @@ def embed_query(text: str) -> Optional[List[float]]:
     from services.vector_store import embedding_function
 
     try:
-        return list(embedding_function()([str(text or '')])[0])
+        # Chroma's embedding-function wrapper hands back numpy float32 arrays, which
+        # query_embeddings refuses: plain floats.
+        return [float(x) for x in embedding_function()([str(text or '')])[0]]
     except Exception as e:  # noqa: BLE001 - retrieval must never break a reply
         logger.warning(f"Could not embed the query: {e}")
         return None
