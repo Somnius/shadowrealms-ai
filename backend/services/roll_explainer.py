@@ -22,6 +22,7 @@ Page refs are the ones docs/rules/V5.md and docs/rules/CLASSIC_REVISED.md cite.
 from __future__ import annotations
 
 import json
+import re
 from typing import Any, Dict, List, Optional, Sequence, Tuple
 
 from services.message_actions import hidden_dice_sql_filter, is_hidden_kind
@@ -327,6 +328,24 @@ T = {
         "recount_says": "{field}: ξαναμέτρημα {a}, αποθηκευμένο {b}",
     },
 }
+
+
+_MD_LINK_RE = re.compile(r"!?\[([^\]\n]*)\]\([^)\n]*\)")
+_MD_CONTROL_RE = re.compile(r"[`*_~#>|\[\]()<>!\\]")
+_URL_RE = re.compile(r"\b(?:https?|ftp|javascript|data):\S*", re.IGNORECASE)
+
+
+def plain_text(value: Any, limit: int) -> str:
+    """
+    Player-written text (roll reason, character or user name) as plain words for the
+    Storyteller-attributed explanation: links reduced to their label, URLs and markdown
+    control characters (backticks, emphasis, headings, quotes, brackets) removed, one line.
+    """
+    t = _MD_LINK_RE.sub(r"\1", str(value or ""))
+    t = _URL_RE.sub("", t)
+    t = _MD_CONTROL_RE.sub("", t)
+    t = " ".join(t.split())
+    return t[:limit].rstrip()
 
 
 def _t(lang: str) -> Dict[str, Any]:
@@ -645,11 +664,11 @@ def explain(rec: Dict[str, Any], lang: str = "en", note: Optional[str] = None) -
     head = [part["rules"]]
     if rec.get("roll_id") is not None:
         head.append(tr["roll_no"].format(id=rec["roll_id"]))
-    action = (rec.get("action") or "").strip()
+    action = plain_text(rec.get("action"), 80)
     if action and action.lower() not in ("dice roll", "rouse check"):
-        head.append(action[:80])
+        head.append(action)
     lines = [f"{tr['title']} — {' · '.join(head)}"]
-    who = rec.get("character_name") or rec.get("username")
+    who = plain_text(rec.get("character_name") or rec.get("username"), 60)
     if who:
         lines.append(tr["by"].format(who=who))
     if note == "latest":
