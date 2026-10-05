@@ -29,7 +29,7 @@ V5 is only available for `game_system = vampire`. It's chosen when the campaign 
 - **Bestial failure**: the roll fails and any Hunger die shows a 1.
 - **Willpower reroll**: after the roll, the roller may reroll **up to 3 normal dice**, once. Hunger dice can't be rerolled. It costs **1 Willpower**: when the roll has a character, the server marks **1 Superficial Willpower damage** on the sheet (`wod_meta.willpower`, not halved), in the same transaction as the reroll. If every box is already filled, one Superficial box turns Aggravated instead (core p. 126). **App ruling:** a track full of Aggravated damage has nothing left to spend, so the reroll is refused. Rolls without a character (NPC / storyteller) cost nothing.
 - **Rouse check**: roll one die. On **6+**, Hunger doesn't change; otherwise Hunger goes up by 1, to a maximum of 5. A failed Rouse at Hunger 5 sets `at_max_hunger`, meaning the ST should call for a hunger frenzy test.
-- **Room leniency** (`/ai dice-diff`): no die shows 1, and with 2+ dice at least one die is ≥ the floor. Bestial failures therefore can't happen. Reroll dice are 2–10.
+- **Room leniency**: see below. V5 rooms don't use the Classic floor.
 
 ## API
 
@@ -57,7 +57,7 @@ Response: `{roll_id, rules_edition: "v5", roll_result, chat_message, server_post
 | `outcome` | `"win"` or `"fail"` |
 | `is_critical`, `is_messy_critical`, `is_bestial_failure`, `is_total_failure` | |
 | `is_botch` | always `false` |
-| `leniency_floor`, `roll_id`, `can_reroll` | `can_reroll` is true when there are normal dice |
+| `v5_leniency`, `roll_id`, `can_reroll` | the room's switches used for this roll (or `null`); `can_reroll` is true when there are normal dice |
 
 The roll is stored in `dice_rolls`. `difficulty` holds the successes needed, `is_critical` holds the V5 critical, and the `modifiers` JSON holds `rules_edition`, `hunger`, `normal_dice`, `hunger_dice` and `rerolled` (plus `posted: {hidden, speak_as}` when it was posted to a room).
 
@@ -113,6 +113,20 @@ The AI Storyteller doesn't count dice itself. It asks for a roll with a tag such
 The reply is saved with a canonical tag, e.g. `[[roll: Dexterity + Stealth | 4 dice | 2 hunger | difficulty 3]]`, and the response carries the same data as `roll_requests`. In the chat the requester gets a **Roll** chip that opens the roll dialog pre-filled (pool, difficulty, reason); Hunger in the dialog still follows the sheet, so a Rouse check made in between is respected. Other players see the chip as text.
 
 Code: `backend/services/dice_pools.py` (pools and tags), `backend/routes/ai.py` (`resolve_roll_tags`, prompt block), `frontend/src/features/dice/rollRequests.js` and `RollRequestChips.jsx` (chips, dialog pre-fill), tests in `backend/tests/unit/test_dice_pools.py` and `frontend/src/features/dice/__tests__/rollRequests.test.jsx`. The AI side is described in [AI_SYSTEMS.md](AI_SYSTEMS.md) → "Dice pools from the character sheet".
+
+## Room leniency (`/ai dice-diff` in a V5 chronicle)
+
+A V5 room can have three switches, stored in `locations.dice_leniency_v5` (JSON, `NULL` = all off). The Classic floor (`dice_leniency_floor`) is ignored in V5 rooms.
+
+- **no_bestial**: Hunger dice never show 1, so a roll can't be a bestial failure.
+- **no_messy**: Hunger dice never show 10, so no messy critical from Hunger tens. Normal 10s still make criticals.
+- **min_successes** (0–3): at least that many dice show 6+, never more than the pool. After the roll, only the missing number of failing dice is re-drawn, each to a random 6–10 (a Hunger die 6–9 with no_messy). Normal dice are picked first, at random among the failing ones; Hunger dice only when no failing normal die is left. A Hunger 1 can therefore still be there, so min_successes alone doesn't stop bestial failures.
+
+Every die stays uniformly random over the faces it may show. Normal dice keep their 1s (they don't matter in V5). The switches apply to Roll dice in the sidebar and `/ai roll`. **Willpower rerolls** are plain d10s (they only touch normal dice, and min_successes is for the first roll). **Rouse checks** are always one plain d10 against 6. Contested and AI rolls don't use room leniency (as before).
+
+Commands (campaign owner or site admin, from inside the room): `/ai dice-diff` shows the switches, `/ai dice-diff no-bestial on|off`, `/ai dice-diff no-messy on|off`, `/ai dice-diff successes <0-3>`, `/ai dice-diff restore` (clears all, the Classic floor too). A number (`/ai dice-diff 7`) is refused in a V5 room with a hint. Site admins can set the same in **Room dice rules**, or with `PUT /api/campaigns/:id/locations/:loc/dice-leniency` and `{"dice_leniency_v5": {"no_bestial": true, "no_messy": false, "min_successes": 1}}` (missing keys are off, `null` clears; anything else, or a `dice_leniency_floor`, is a **400**).
+
+The roll's chat line and `/ai roll` output say which switches were on.
 
 ## `/ai roll` syntax (V5 campaigns)
 
