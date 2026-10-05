@@ -19,7 +19,7 @@ function readImage(file) {
 }
 
 /** "Your character" card: portrait, Hunger (V5), sheet + portrait actions. */
-function CharacterCard({ campaign, character, onOpenSheet, onPortrait, onCharacterAssigned, toast }) {
+function CharacterCard({ campaign, character, onOpenSheet, onPortrait, toast }) {
   const fileRef = useRef(null);
   if (!character) {
     return (
@@ -33,7 +33,6 @@ function CharacterCard({ campaign, character, onOpenSheet, onPortrait, onCharact
             {t('hall:createCharacter', 'Create character')}
           </ButtonLink>
         ) : null}
-        {campaign ? <UnassignedOffer campaign={campaign} onAssigned={onCharacterAssigned} toast={toast} /> : null}
       </div>
     );
   }
@@ -110,14 +109,8 @@ export default function MemberPanel({ campaign, character, members, user, canSta
         <h3 id="panel-char" className="sr-panelcol__heading">
           {t('play:panel.yourCharacter', 'Your character')}
         </h3>
-        <CharacterCard
-          campaign={campaign}
-          character={character}
-          onOpenSheet={onOpenSheet}
-          onPortrait={onPortrait}
-          onCharacterAssigned={onCharacterAssigned}
-          toast={toast}
-        />
+        <CharacterCard campaign={campaign} character={character} onOpenSheet={onOpenSheet} onPortrait={onPortrait} toast={toast} />
+        {!character && campaign ? <UnassignedOffer campaign={campaign} onAssigned={onCharacterAssigned} toast={toast} /> : null}
       </section>
       {st.length ? (
         <section aria-labelledby="panel-st" className="sr-panelcol__section">
