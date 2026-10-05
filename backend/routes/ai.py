@@ -228,6 +228,8 @@ def ai_chat():
         try:
             message = chat_text(message, 'Message', MAX_CHAT_MESSAGE_CHARS)
             location_id = strict_int(location_id, 'location', None, 1)
+            # The message this one replies to (the chat's reply quote); see build_reply_context.
+            reply_to_id = strict_int(data.get('reply_to_id'), 'reply_to_id', None, 1)
             if not isinstance(context, dict):
                 raise RequestValidationError('context must be an object')
         except RequestValidationError as e:
@@ -312,18 +314,24 @@ def ai_chat():
             }), 200
 
         # In-character and other locations: full storyteller pipeline
+        from services.reply_context import build_reply_context
+
+        reply_context = build_reply_context(campaign_id, location_id, current_user_id, reply_to_id)
         # Generate AI response based on performance mode
         if performance_mode.value == 'slow':
             # Efficient mode - basic response
-            response = generate_efficient_response(message, context, campaign_id, location_id, current_user_id)
+            response = generate_efficient_response(message, context, campaign_id, location_id, current_user_id,
+                                                   reply_context=reply_context)
             response_type = 'efficient'
         elif performance_mode.value == 'medium':
             # Balanced mode - normal response
-            response = generate_balanced_response(message, context, campaign_id, location_id, current_user_id)
+            response = generate_balanced_response(message, context, campaign_id, location_id, current_user_id,
+                                                  reply_context=reply_context)
             response_type = 'balanced'
         else:
             # Fast mode - full response
-            response = generate_full_response(message, context, campaign_id, location_id, current_user_id)
+            response = generate_full_response(message, context, campaign_id, location_id, current_user_id,
+                                              reply_context=reply_context)
             response_type = 'full'
 
         roll_requests = []
@@ -755,9 +763,12 @@ SEMANTIC_BUDGET_SHARE = 0.10
 
 
 def _storyteller_reply(mode: str, message: str, campaign_id: int, location_id: int = None,
-                       user_id: int = None) -> Optional[str]:
+                       user_id: int = None, reply_context: str = '') -> Optional[str]:
     """
     One Storyteller reply; None when no model could answer.
+
+    reply_context: the message the player replied to (services.reply_context), a fixed part
+    of the prompt right before the closing instructions.
 
     The prompt is built to fit the model's context (services.storyteller_prompt): fixed parts
     first (instructions, campaign, character, location, NPCs), then the newest room history
@@ -797,6 +808,8 @@ def _storyteller_reply(mode: str, message: str, campaign_id: int, location_id: i
                             npc_lines.append(f"{npc['name']}'s {npc_hist['formatted']}")
                 fixed.append("\n".join(npc_lines))
             history_rows = get_recent_messages(location_id, campaign_id, limit=cfg['history_rows'])['messages']
+        if reply_context:
+            fixed.append(reply_context)
         fixed.append(cfg['outro'])
         fixed.append(sp.IN_WORLD_RULE)
         if roll_rule:  # last, with the in-world rule: the roll tag is its one exception
@@ -863,19 +876,22 @@ def resolve_roll_tags(response: str, user_id: int, campaign_id: int):
         return response, []
 
 
-def generate_efficient_response(message: str, context: dict, campaign_id: int, location_id: int = None, user_id: int = None) -> Optional[str]:
+def generate_efficient_response(message: str, context: dict, campaign_id: int, location_id: int = None, user_id: int = None,
+                             reply_context: str = '') -> Optional[str]:
     """Generate efficient (basic) AI response; None when no model could answer."""
-    return _storyteller_reply('efficient', message, campaign_id, location_id, user_id)
+    return _storyteller_reply('efficient', message, campaign_id, location_id, user_id, reply_context)
 
 
-def generate_balanced_response(message: str, context: dict, campaign_id: int, location_id: int = None, user_id: int = None) -> Optional[str]:
+def generate_balanced_response(message: str, context: dict, campaign_id: int, location_id: int = None, user_id: int = None,
+                             reply_context: str = '') -> Optional[str]:
     """Generate balanced AI response; None when no model could answer."""
-    return _storyteller_reply('balanced', message, campaign_id, location_id, user_id)
+    return _storyteller_reply('balanced', message, campaign_id, location_id, user_id, reply_context)
 
 
-def generate_full_response(message: str, context: dict, campaign_id: int, location_id: int = None, user_id: int = None) -> Optional[str]:
+def generate_full_response(message: str, context: dict, campaign_id: int, location_id: int = None, user_id: int = None,
+                             reply_context: str = '') -> Optional[str]:
     """Generate full AI response; None when no model could answer."""
-    return _storyteller_reply('full', message, campaign_id, location_id, user_id)
+    return _storyteller_reply('full', message, campaign_id, location_id, user_id, reply_context)
 
 
 OOC_ROOM_NOTES = {
