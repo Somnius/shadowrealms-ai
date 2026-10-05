@@ -244,9 +244,9 @@ def test_kinds_k_and_chronicle_books(env):
 
 def test_cutoff_drops_weak_matches(env, monkeypatch):
     env.books("rule_books_classic", chunk("vtm-revised-core", 1, 0.30),
-              chunk("vtm-revised-core", 2, 0.40), chunk("vtm-revised-core", 3, 0.80))
+              chunk("vtm-revised-core", 2, 0.44), chunk("vtm-revised-core", 3, 0.80))
     got = env.svc.get_rule_book_context("q", 5, "classic", "vampire", RULES)
-    assert [c["distance"] for c in got] == [0.30, 0.40]
+    assert [c["distance"] for c in got] == [0.30, 0.44]
     got = env.svc.get_rule_book_context("q", 5, "classic", "vampire", None)  # unknown: stricter
     assert [c["distance"] for c in got] == [0.30]
     monkeypatch.setenv("RULE_BOOK_MAX_DISTANCE", "0.2")
