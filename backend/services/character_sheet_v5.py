@@ -71,12 +71,22 @@ def _check_track(errors: List[str], label: str, track: Any) -> None:
 
 
 _XP_KINDS = ("attribute", "skill", "specialty", "discipline", "ritual")
+_ALL_SKILLS = tuple(k for names in V5_SKILLS.values() for k in names)
+# Creation grants 15 (neonate) or 35 (ancilla), but XP is also awarded in play (V5.md: 1 per
+# session + 1 per story), so total is only kept sane here, not tied to the age.
 _XP_MAX = 10000
+_NAME_MAX = 120
+# Same cap as V5_RITUALS_MAX in frontend/src/characterSheet/v5/constants.js.
+RITUALS_MAX = 12
 _XP_LOG_MAX = 200
 
 
 def _check_experience(errors: List[str], xp: Any) -> None:
-    """wod_meta.experience: {total, spent, unspent, log: [{kind, trait, what, from, to, cost}]}."""
+    """wod_meta.experience: {total, spent, unspent, log: [{kind, trait, what, from, to, cost}]}.
+
+    specialty entries also carry `skill`; a skill's first dot in Academics/Craft/Performance/
+    Science may carry `specialty` (its free specialty). When a log is present, spent = its costs.
+    """
     if xp is None:
         return
     if not isinstance(xp, dict):
@@ -104,8 +114,17 @@ def _check_experience(errors: List[str], xp: Any) -> None:
         if not isinstance(e, dict):
             errors.append(f"{label} must be an object")
             continue
-        if e.get("kind") is not None and e.get("kind") not in _XP_KINDS:
+        kind = e.get("kind")
+        if kind not in _XP_KINDS:
             errors.append(f"{label}.kind must be one of {', '.join(_XP_KINDS)}")
+        trait = e.get("trait")
+        if not isinstance(trait, str) or not trait.strip() or len(trait) > _NAME_MAX:
+            errors.append(f"{label}.trait is required (at most {_NAME_MAX} characters)")
+        if kind == "specialty" and e.get("skill") not in _ALL_SKILLS:
+            errors.append(f"{label}.skill must be a V5 skill key")
+        sp = e.get("specialty")
+        if sp is not None and (not isinstance(sp, str) or not sp.strip() or len(sp) > _NAME_MAX):
+            errors.append(f"{label}.specialty must be a name of at most {_NAME_MAX} characters")
         what = e.get("what")
         if not isinstance(what, str) or not what.strip() or len(what) > 160:
             errors.append(f"{label}.what is required (at most 160 characters)")
@@ -120,8 +139,8 @@ def _check_experience(errors: List[str], xp: Any) -> None:
         _check_range(errors, f"{label}.cost", e.get("cost"), 0, 100)
         if _is_int(e.get("cost")):
             cost_sum += e["cost"]
-    if _is_int(spent) and cost_sum > spent:
-        errors.append("wod_meta.experience.log costs more than spent")
+    if _is_int(spent) and cost_sum != spent:
+        errors.append("wod_meta.experience.spent must equal the sum of the log costs")
 
 
 def sanity_check_v5(
@@ -175,8 +194,8 @@ def sanity_check_v5(
                         _check_range(errors, f"wod_meta.disciplines[{i}].level", d.get("level"), 0, 5)
             rituals = wod_meta.get("rituals")
             if rituals is not None:
-                if not isinstance(rituals, list) or len(rituals) > 10:
-                    errors.append("wod_meta.rituals must be a list of at most 10 rituals")
+                if not isinstance(rituals, list) or len(rituals) > RITUALS_MAX:
+                    errors.append(f"wod_meta.rituals must be a list of at most {RITUALS_MAX} rituals")
                 else:
                     for i, r in enumerate(rituals):
                         if not isinstance(r, dict) or not isinstance(r.get("name"), str) \
