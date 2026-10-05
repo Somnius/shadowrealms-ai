@@ -232,7 +232,7 @@
     "startingRitual": "Starting ritual (Level 1)",
     "startingRitualPlaceholder": "optional: one Level 1 Blood Sorcery ritual",
     "xpTitle": "Starting experience",
-    "xpSub": "Optional: {{total}} XP to spend now, one dot at a time. Attributes new × 5, Skills new × 3, a new specialty 3, clan Disciplines new × 5, other Disciplines new × 7 (Caitiff new × 6), rituals level × 3. Unspent XP is kept.",
+    "xpSub": "Optional: {{total}} XP to spend now, one dot at a time. Attributes new × {{attr}}, Skills new × {{skill}}, a new specialty {{spec}}, clan Disciplines new × {{clan}}, other Disciplines new × {{other}} (Caitiff new × {{caitiff}}), rituals level × {{ritual}}. Unspent XP is kept.",
     "xpCount": "Spent {{spent}} of {{total}} XP · {{left}} left",
     "xpKind": "What to buy",
     "xpSpecialtySkill": "Specialty skill",
@@ -245,6 +245,13 @@
     "xpBought": "Bought with XP",
     "xpRitualEntry": "{{name}}, Level {{level}}",
     "xpRemove": "Remove {{what}}",
-    "xpNothing": "Nothing bought yet."
+    "xpNothing": "Nothing bought yet.",
+    "xpKindAttribute": "Attribute",
+    "xpKindSkill": "Skill",
+    "xpKindSpecialty": "Specialty",
+    "xpKindDiscipline": "Discipline",
+    "xpKindRitual": "Ritual",
+    "xpFreeSpecialty": "Free {{skill}} specialty",
+    "xpFreeSpecialtyPlaceholder": "its free specialty (required)"
   }
 }

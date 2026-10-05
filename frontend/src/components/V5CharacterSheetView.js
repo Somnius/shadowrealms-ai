@@ -138,7 +138,7 @@ export default function V5CharacterSheetView({ character }) {
       {rows.map(([k, label]) => {
         const sp = specialties
           .filter((s) => s && s.skill === k)
-          .map((s) => (s.source === 'xp' ? `${s.name} (XP)` : s.name));
+          .map((s) => (s.source === 'xp' ? t('sheet:v5.xpSpecialty', '{{name}} – XP', { name: s.name }) : s.name));
         return (
           <div
             key={k}
