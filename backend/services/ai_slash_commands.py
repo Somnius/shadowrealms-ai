@@ -64,7 +64,8 @@ SUPPORTED_AI_SLASH_VERBS: List[str] = [
 ]
 
 # `/ai explain` (and its Greek alias) is open to every member of the chronicle, not only staff.
-EXPLAIN_VERBS = frozenset({"explain", "εξήγησε"})
+GREEK_EXPLAIN_VERBS = frozenset({"εξήγησε", "εξηγησε"})
+EXPLAIN_VERBS = frozenset({"explain"}) | GREEK_EXPLAIN_VERBS
 
 # Shown in API hints / console (full detail: `/ai help`)
 FUTURE_COMMAND_SUGGESTIONS = [
@@ -1054,26 +1055,91 @@ def execute_respond_command(payload: str, user_id: int) -> Dict[str, Any]:
     }
 
 
-# Numbers the Storyteller line may contain: those of the roll's facts (dice, difficulty,
-# successes, margin; roll_explainer's summary). Anything else means the model invented or
-# changed a number, and the line is dropped (the deterministic explanation is posted alone).
-_NUMBER_RE = re.compile(r"\d+")
+# The Storyteller line after /ai explain must not carry numbers (the breakdown has them all) nor
+# contradict the outcome; storyteller_line_problem() checks both and the line is dropped
+# (the deterministic explanation is posted alone).
 EXPLAIN_LLM_CONFIG = {"max_tokens": 180, "temperature": 0.6, "top_p": 0.9}
+EXPLAIN_HEALTH_TTL_S = 30.0
+_explain_health = {"at": None, "ok": False}
+
+_DIGIT_RE = re.compile(r"\d")
+# Matched on lowercased text without Greek accents (_fold). Singular / verb forms only: a failed
+# V5 roll can still have "some successes".
+_SUCCESS_RE = re.compile(
+    r"\b(succeed\w*|successful\w*|success\b|you (?:win|won|pass|passed|made it|pull it off)"
+    r"|πετυχ\w*|επιτυχια\b|επιτυχημεν\w*|κερδισ\w*|τα καταφερ\w*|καταφερν\w*)"
+)
+_FAILURE_RE = re.compile(
+    r"\b(fail\w*|botch\w*|you (?:lose|lost)|απετυχ\w*|αποτυχ\w*|αποτυγχ\w*|εχασ\w*)"
+)
+_NEGATIONS = frozenset(
+    "not no never without nor cannot can't don't didn't won't isn't wasn't doesn't n't "
+    "δεν δε μην μη οχι χωρις καμια κανενα ουτε".split()
+)
+
+
+def _fold(text: str) -> str:
+    """Lowercase, Greek accents removed (πέτυχες -> πετυχες), apostrophes kept."""
+    import unicodedata
+
+    norm = unicodedata.normalize("NFD", (text or "").lower().replace("’", "'"))
+    return "".join(c for c in norm if unicodedata.category(c) != "Mn")
+
+
+def _says(regex: "re.Pattern[str]", folded: str) -> bool:
+    """A match of regex that isn't negated by one of the three words before it."""
+    for m in regex.finditer(folded):
+        before = re.findall(r"[\w']+", folded[: m.start()])[-3:]
+        if not any(w in _NEGATIONS or w.endswith("n't") for w in before):
+            return True
+    return False
+
+
+def roll_succeeded(facts: Dict[str, Any]) -> bool:
+    if facts.get("rouse"):
+        return bool(facts.get("success"))
+    if facts.get("rules_edition") == "v5":
+        return facts.get("outcome") == "win"
+    return int(facts.get("net_successes") or 0) > 0
+
+
+def storyteller_line_problem(text: str, facts: Dict[str, Any]) -> Optional[str]:
+    """Why the Storyteller line can't be posted ('digits' / 'outcome'), or None."""
+    if _DIGIT_RE.search(text or ""):
+        return "digits"
+    folded = _fold(text)
+    if roll_succeeded(facts):
+        if _says(_FAILURE_RE, folded):
+            return "outcome"
+    elif _says(_SUCCESS_RE, folded):
+        return "outcome"
+    return None
+
+
+def llm_available_cached(now: Optional[float] = None) -> bool:
+    """The health check's llm_available, cached EXPLAIN_HEALTH_TTL_S seconds. Never raises."""
+    now = time.monotonic() if now is None else now
+    at = _explain_health["at"]
+    if at is not None and now - at < EXPLAIN_HEALTH_TTL_S:
+        return _explain_health["ok"]
+    try:
+        from services.health_check import get_health_check_service
+
+        ok = bool(get_health_check_service().check_all_services().get("llm_available"))
+    except Exception as e:  # noqa: BLE001
+        logger.warning("/ai explain: health check failed: %s", e)
+        ok = False
+    _explain_health.update(at=now, ok=ok)
+    return ok
 
 
 def explain_language(verb: str, payload: str, user_id: Optional[int]) -> str:
     """Greek for the Greek alias or a Greek payload, else the requester's UI language, else English."""
     from services.language import detect_language, user_ui_language
 
-    if verb == "εξήγησε" or detect_language(payload or "") == "el":
+    if verb in GREEK_EXPLAIN_VERBS or detect_language(payload or "") == "el":
         return "el"
     return user_ui_language(user_id) or "en"
-
-
-def numbers_within(text: str, allowed_text: str) -> bool:
-    """True when every number in text also appears in allowed_text."""
-    allowed = set(_NUMBER_RE.findall(allowed_text or ""))
-    return all(n in allowed for n in _NUMBER_RE.findall(text or ""))
 
 
 def explain_storyteller_line(
@@ -1087,21 +1153,23 @@ def explain_storyteller_line(
 ) -> Optional[str]:
     """
     2-3 sentences from the Storyteller on what the explained roll means in play, or None
-    (no LLM, a failed call, or a reply that brings numbers the explanation doesn't have).
+    (no LLM, a failed call, a reply with digits or one that contradicts the outcome).
     The rule books are searched with a dice intent (services.rules_edition.rule_book_plan).
     """
+    if not llm_available_cached():
+        return None
     try:
-        from services.health_check import get_health_check_service
         from services.llm_service import get_llm_service
 
-        if not get_health_check_service().check_all_services().get("llm_available"):
-            return None
+        outcome = "the roll SUCCEEDED" if roll_succeeded(explanation["facts"]) else "the roll FAILED"
         prompt = (
             "A player asked what this dice roll means. The app has already counted it; these facts "
             "are final:\n"
-            f"{explanation['summary']}\n\n"
+            f"{explanation['summary']}\n"
+            f"In short: {outcome}.\n\n"
             "In 2-3 short sentences, as the Storyteller, say what this result means at the table now. "
-            "Do not recount, change or add any numbers, and do not list the dice again."
+            "Write no digits and no numbers at all, do not recount anything, do not list the dice, "
+            "and never say the opposite of the outcome above."
         )
         context = {
             "system_prompt": (
@@ -1127,8 +1195,9 @@ def explain_storyteller_line(
     text = " ".join(str(text or "").split())
     if not text:
         return None
-    if not numbers_within(text, explanation["summary"]):
-        logger.warning("/ai explain: Storyteller line dropped (numbers not in the roll)")
+    problem = storyteller_line_problem(text, explanation["facts"])
+    if problem:
+        logger.warning("/ai explain: Storyteller line dropped (%s)", problem)
         return None
     return text
 

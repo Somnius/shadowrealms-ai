@@ -347,6 +347,9 @@ def llm(monkeypatch):
     lm.get_llm_service = lambda: LLM()
     monkeypatch.setitem(sys.modules, "services.health_check", hc)
     monkeypatch.setitem(sys.modules, "services.llm_service", lm)
+    from services import ai_slash_commands as sc
+
+    monkeypatch.setitem(sc._explain_health, "at", None)  # no cached health between tests
     return state
 
 
@@ -385,6 +388,8 @@ def test_explain_greek_alias(run_explain, room, llm):
     r = run_explain("/ai εξήγησε", room.first)
     assert r["language"] == "el" and "Αποτέλεσμα: Bestial failure" in r["display_markdown"]
     assert llm.calls[0][1]["reply_language"] == "el"
+    r = run_explain("/ai εξηγησε", room.first)  # without the accent
+    assert r["command"] == "explain" and r["language"] == "el"
 
 
 def test_explain_without_llm_posts_the_breakdown_alone(run_explain, room, llm):
@@ -398,6 +403,56 @@ def test_storyteller_line_with_invented_numbers_is_dropped(run_explain, room, ll
     llm.reply = "You actually rolled 3 successes, so you win."
     r = run_explain("/ai explain", room.first)
     assert r["storyteller_line"] is None and "3 successes" not in r["display_markdown"]
+
+
+def test_storyteller_line_problems():
+    from services.ai_slash_commands import storyteller_line_problem as problem
+
+    failed = {"rules_edition": "v5", "outcome": "fail"}
+    won = {"rules_edition": "v5", "outcome": "win"}
+    assert problem("The Beast claws at you; a Compulsion takes hold.", failed) is None
+    assert problem("Hunger rises by 1.", failed) == "digits"
+    assert problem("You succeed, but barely.", failed) == "outcome"
+    assert problem("You win this one.", failed) == "outcome"
+    assert problem("You did not succeed, and the Beast stirs.", failed) is None
+    assert problem("It isn't a success; the Beast answers.", failed) is None
+    assert problem("Πέτυχες, αλλά με κόστος.", failed) == "outcome"
+    assert problem("Δεν πέτυχες· το Θηρίο ξυπνά.", failed) is None
+    assert problem("You fail to hold the Beast.", won) == "outcome"
+    assert problem("Απέτυχες.", won) == "outcome"
+    assert problem("You did not fail: the door gives way.", won) is None
+    assert problem("You get some successes, just not enough.", failed) is None
+    classic_botch = {"rules_edition": "classic", "net_successes": 0}
+    assert problem("A botch: something goes badly wrong.", classic_botch) is None
+    assert problem("You succeed.", {"rules_edition": "classic", "net_successes": 2}) is None
+    assert problem("You fail.", {"rouse": True, "success": True}) == "outcome"
+
+
+def test_storyteller_line_contradicting_the_outcome_is_dropped(run_explain, room, llm):
+    llm.reply = "You succeed, the Beast stays quiet."
+    r = run_explain("/ai explain", room.first)
+    assert r["storyteller_line"] is None and "Storyteller:" not in r["display_markdown"]
+    prompt = llm.calls[0][0]
+    assert "the roll FAILED" in prompt and "no digits" in prompt
+
+
+def test_health_check_is_cached_for_the_explain_call(monkeypatch):
+    from services import ai_slash_commands as sc
+
+    checks = []
+    hc = types.ModuleType("services.health_check")
+
+    class HC:
+        def check_all_services(self):
+            checks.append(1)
+            return {"llm_available": True}
+
+    hc.get_health_check_service = lambda: HC()
+    monkeypatch.setitem(sys.modules, "services.health_check", hc)
+    monkeypatch.setitem(sc._explain_health, "at", None)
+    assert sc.llm_available_cached(now=100.0) and sc.llm_available_cached(now=125.0)
+    assert len(checks) == 1
+    assert sc.llm_available_cached(now=131.0) and len(checks) == 2
 
 
 def test_explain_latest_and_nothing(run_explain, room, llm, monkeypatch):
