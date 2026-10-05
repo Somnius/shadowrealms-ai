@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Button, Checkbox, Input, Modal, Spinner, Textarea } from '../../design';
+import { Button, Checkbox, Input, Modal, Select, Spinner, Textarea } from '../../design';
 import RollEditionFields, { RollHelp } from '../../components/dice/RollEditionFields';
 import { describeRollRow } from '../../dice/historyRow';
 import { editionLabel, editionOf, V5 } from '../../rules/rulesEdition';
@@ -146,20 +146,30 @@ export function RollDialog({ open, onClose, campaign, location, character, speak
   );
 }
 
-/** Admin: per-room dice leniency floor (PUT …/dice-leniency). */
+const V5_OFF = { no_bestial: false, no_messy: false, min_successes: 0 };
+
+/**
+ * Admin: per-room dice leniency (PUT …/dice-leniency), per edition.
+ * Classic: a floor 2-10 (no 1s, one die at least the floor). V5: switches for Hunger dice
+ * (no bestial failure / no messy critical) and a minimum number of 6+ dice (0-3).
+ */
 export function DiceRulesDialog({ open, onClose, api, campaign, location, onSaved, toast }) {
+  const isV5 = editionOf(campaign) === V5;
   const [floor, setFloor] = useState('');
+  const [v5, setV5] = useState(V5_OFF);
   const [saving, setSaving] = useState(false);
   useEffect(() => {
     if (open) {
       const f = location?.dice_leniency_floor;
       setFloor(f !== undefined && f !== null && f !== '' ? String(f) : '');
+      setV5({ ...V5_OFF, ...(location?.dice_leniency_v5 || {}) });
     }
   }, [open, location]);
 
   const save = async (restore) => {
     let body;
-    if (restore) body = { dice_leniency_floor: null };
+    if (isV5) body = { dice_leniency_v5: restore ? null : v5 };
+    else if (restore) body = { dice_leniency_floor: null };
     else {
       const n = parseInt(String(floor).trim(), 10);
       if (!(n >= 2 && n <= 10)) {
@@ -175,17 +185,17 @@ export function DiceRulesDialog({ open, onClose, api, campaign, location, onSave
       toast({ tone: 'danger', title: r.data.error || t('dice:rules.failed', 'Could not update the dice rules.') });
       return;
     }
-    toast({
-      tone: 'ok',
-      title:
-        r.data.dice_leniency_floor != null
-          ? t('dice:rules.saved', 'Leniency floor {{n}} saved for this room.', { n: r.data.dice_leniency_floor })
-          : t('dice:rules.off', 'Leniency off: normal d10 randomness for this room.'),
-    });
+    let title = t('dice:rules.off', 'Leniency off: normal d10 randomness for this room.');
+    if (isV5 && r.data.dice_leniency_v5) title = t('dice:rules.savedV5', 'V5 dice rules saved for this room.');
+    else if (!isV5 && r.data.dice_leniency_floor != null) {
+      title = t('dice:rules.saved', 'Leniency floor {{n}} saved for this room.', { n: r.data.dice_leniency_floor });
+    }
+    toast({ tone: 'ok', title });
     onSaved();
     onClose();
   };
 
+  const room = location?.name || '';
   return (
     <Modal
       open={open}
@@ -193,7 +203,11 @@ export function DiceRulesDialog({ open, onClose, api, campaign, location, onSave
       title={t('dice:rules.title', 'Room dice rules')}
       icon="d10-crit"
       size="sm"
-      description={t('dice:rules.body', 'Only for {{room}}. Floor 2-10: no 1s; with 2+ dice, one die is always at least the floor. Same as /ai dice-diff.', { room: location?.name || '' })}
+      description={
+        isV5
+          ? t('dice:rules.bodyV5', 'Only for {{room}} (V5). The first two switches only change Hunger dice; normal dice keep their 1s. Willpower rerolls and Rouse checks stay random. Same as /ai dice-diff.', { room })
+          : t('dice:rules.body', 'Only for {{room}} (Classic). Floor 2-10: no 1s; with 2+ dice, one die is always at least the floor. Same as /ai dice-diff <2-10>.', { room })
+      }
       footer={
         <>
           <Button variant="ghost" onClick={() => save(true)} disabled={saving}>
@@ -205,15 +219,44 @@ export function DiceRulesDialog({ open, onClose, api, campaign, location, onSave
         </>
       }
     >
-      <Input
-        type="number"
-        min={2}
-        max={10}
-        label={t('dice:rules.floor', 'Leniency floor (2-10)')}
-        value={floor}
-        onChange={(e) => setFloor(e.target.value)}
-        disabled={saving}
-      />
+      {isV5 ? (
+        <div className="sr-stack">
+          <Checkbox
+            label={t('dice:rules.noBestial', 'No bestial failure (Hunger dice never show 1)')}
+            checked={v5.no_bestial}
+            onChange={(e) => setV5({ ...v5, no_bestial: e.target.checked })}
+            disabled={saving}
+          />
+          <Checkbox
+            label={t('dice:rules.noMessy', 'No messy critical (Hunger dice never show 10)')}
+            checked={v5.no_messy}
+            onChange={(e) => setV5({ ...v5, no_messy: e.target.checked })}
+            disabled={saving}
+          />
+          <Select
+            label={t('dice:rules.minSuccesses', 'At least this many dice show 6+')}
+            hint={t('dice:rules.minSuccessesHint', 'Never more than the pool. Missing successes come from normal dice first, then Hunger dice.')}
+            value={String(v5.min_successes)}
+            onChange={(e) => setV5({ ...v5, min_successes: Number(e.target.value) })}
+            disabled={saving}
+          >
+            <option value="0">{t('dice:rules.minNone', 'No minimum')}</option>
+            <option value="1">1</option>
+            <option value="2">2</option>
+            <option value="3">3</option>
+          </Select>
+        </div>
+      ) : (
+        <Input
+          type="number"
+          min={2}
+          max={10}
+          label={t('dice:rules.floor', 'Leniency floor (2-10)')}
+          value={floor}
+          onChange={(e) => setFloor(e.target.value)}
+          disabled={saving}
+        />
+      )}
     </Modal>
   );
 }
