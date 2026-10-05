@@ -325,6 +325,13 @@ class LLMService:
             context['reply_language'] = resolve_reply_language(
                 context['player_message'], context.get('player_user_id') or context.get('user_id')
             )
+        # Laya's intent, once per message: it gates the rule-book search and picks the model
+        # (SmartModelRouter.detect_task_type reuses context['laya_intent']). None = unknown.
+        if 'laya_intent' not in context and not context.get('skip_classifier'):
+            from services.classifier import classify_intent_cached
+
+            context['laya_intent'] = classify_intent_cached(context['player_message'])
+
         # Get campaign context for RAG augmentation
         campaign_id = context.get('campaign_id')
         user_id = context.get('user_id')
@@ -334,6 +341,9 @@ class LLMService:
             augmented_prompt = self.rag_service.augment_prompt(
                 prompt, campaign_id, user_id, rules_edition=context.get('rules_edition'),
                 max_tokens=context.get('rag_budget_tokens'),
+                game_system=context.get('game_system'),
+                intent=context.get('laya_intent'),
+                query_embedding=context.get('query_embedding'),
             )
             logger.info(f"Augmented prompt with RAG context for campaign {campaign_id}")
         else:

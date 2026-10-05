@@ -138,7 +138,12 @@ class SmartModelRouter:
         message (context['player_message']) rather than the RAG-augmented prompt.
         """
         text = str(context.get('player_message') or prompt or '')
-        if not context.get('skip_classifier'):
+        if 'laya_intent' in context:
+            # Already classified for this message (LLMService.generate_response): reuse it.
+            intent = context['laya_intent']
+            if intent and intent.get('score', 0) >= INTENT_MIN_SCORE and intent.get('label') in INTENT_TASK_TYPES:
+                return INTENT_TASK_TYPES[intent['label']]
+        elif not context.get('skip_classifier'):
             try:
                 from services.classifier import classify_intent_fast
 
