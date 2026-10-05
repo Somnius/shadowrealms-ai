@@ -252,7 +252,7 @@ def rule_book_text(document: Any, metadata: Any) -> str:
 def reroll_ones_cancel(game_system: Any) -> bool:
     """
     Whether 1s on Classic specialty rerolls cancel successes. Mage Revised says they do
-    ("A botch on a re-roll does cancel a success as always"); Werewolf Revised reportedly
-    says they don't; Vampire Revised is silent, so every other line keeps "rerolls only add".
+    ("A botch on a re-roll does cancel a success as always"); Werewolf Revised says they
+    don't ("any ones rolled on bonus dice granted by a specialty do not subtract"), Vampire Revised is silent, so every other line keeps "rerolls only add".
     """
     return game_line(game_system) == "mage"

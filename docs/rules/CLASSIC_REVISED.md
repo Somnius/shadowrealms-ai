@@ -53,7 +53,7 @@ Conventions:
 - **Revised effect:** on a roll covered by the specialty, each die showing **10** counts as a success **and is rerolled**. A rerolled 10 is rerolled again, with no limit.
 - **AMBIGUOUS in this book:** the Vampire Revised text doesn't say whether a **1** on a reroll cancels a success. The app decides per game line (`services/rules_edition.reroll_ones_cancel`):
   - **Mage:** a rerolled 1 cancels one success. Mage: The Ascension Revised says so: "A botch on a re-roll does cancel a success as always".
-  - **Vampire, Werewolf, custom:** a rerolled 1 cancels nothing (rerolls only add). Vampire is the app's ruling; Werewolf Revised reportedly says rerolled 1s don't subtract (not checked against the book yet).
+  - **Vampire, Werewolf, custom:** a rerolled 1 cancels nothing (rerolls only add). Vampire is the app's ruling; Werewolf follows its book (Werewolf Revised: "any ones rolled on bonus dice granted by a specialty do not subtract successes from the final total").
 - **V20 differs** (V20 p. 96): a specialty 10 counts as **two successes**, with no reroll. At commit d5686c4 the app code used the V20 rule. Pick one per ruleset flag: `specialty_mode: "revised_reroll" | "v20_double"`.
 
 ### 1.5 Willpower for an automatic success (core pp. 137, 193)

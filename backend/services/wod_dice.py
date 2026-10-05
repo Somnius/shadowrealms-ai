@@ -16,7 +16,8 @@ Rules (Vampire: The Masquerade Revised core):
   services.rules_edition.reroll_ones_cancel):
   - Mage (Mage: The Ascension Revised: "A botch on a re-roll does cancel a success as
     always"): a rerolled 1 cancels one success.
-  - Werewolf (Revised reportedly says rerolled 1s don't subtract; not checked here),
+  - Werewolf (Revised: "any ones rolled on bonus dice granted by a specialty do not
+    subtract successes"),
     Vampire (Revised is silent; app ruling) and custom systems: a rerolled 1 cancels
     nothing, rerolls only add.
 - Willpower: declared before the roll, adds 1 automatic success that 1s cannot
