@@ -19,6 +19,8 @@
     "trackers": "Trackers",
     "otherSpecialties": "Other specialties:",
     "fromPredator": "(predator type)",
-    "tenets": "Chronicle tenets"
+    "tenets": "Chronicle tenets",
+    "ritualLevel": "Level {{n}}",
+    "ritualFromXp": "bought with XP"
   }
 }

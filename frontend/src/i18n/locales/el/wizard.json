@@ -218,6 +218,8 @@
     "storySub": "Το ιστορικό σου.",
     "storyPlaceholder": "Παρελθόν, coterie, στόχοι…",
     "predatorDotNote": "+1 από {{type}}",
-    "xpDotNote": "+{{n}} από XP"
+    "xpDotNote": "+{{n}} από XP",
+    "startingRitual": "Αρχικό ritual (επίπεδο 1)",
+    "startingRitualPlaceholder": "προαιρετικό: ένα ritual Blood Sorcery επιπέδου 1"
   }
 }

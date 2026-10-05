@@ -21,6 +21,7 @@ import {
   V5_SKILL_KEYS,
   V5_SKILL_LABELS,
   V5_FLEDGLING_HUMANITY,
+  V5_NAME_MAX,
   V5_STARTING_HUMANITY,
   V5_THIN_BLOOD_MERITS,
   toKey,
@@ -36,6 +37,7 @@ import {
   emptyV5Skills,
   fledglingHumanityAllowed,
   freeSpecialtyCount,
+  startingRitualAllowed,
   predatorDisciplineOptions,
   predatorInfo,
   skillSpreadStatus,
@@ -193,6 +195,8 @@ export default function V5CharacterCreationWizard({
   const [predatorDiscipline, setPredatorDiscipline] = useState('');
   // Powers for a predator Discipline that isn't one of the two picks: { [discipline]: [power] }.
   const [extraPowers, setExtraPowers] = useState({});
+  // One optional Level 1 ritual with Blood Sorcery 1+ (V5.md §4 step 6).
+  const [startingRitual, setStartingRitual] = useState('');
   const [meritRows, setMeritRows] = useState(() => [createEmptyMeritRow()]);
   const [meritNotes, setMeritNotes] = useState('');
   const [convictions, setConvictions] = useState([{ conviction: '', touchstone: '' }]);
@@ -236,6 +240,7 @@ export default function V5CharacterCreationWizard({
     predatorSpecialty,
     predatorDiscipline,
     extraPowers,
+    startingRitual,
     advantages,
     flaws,
     convictions,
@@ -736,6 +741,21 @@ export default function V5CharacterCreationWizard({
                 </div>
               );
             })}
+            {startingRitualAllowed(sheet) ? (
+              <div style={{ marginTop: '6px', maxWidth: '420px' }}>
+                <label htmlFor="v5-field-starting-ritual" style={labelStyle}>
+                  {t('wizard:v5.startingRitual', 'Starting ritual (Level 1)')}
+                </label>
+                <input
+                  id="v5-field-starting-ritual"
+                  value={startingRitual}
+                  maxLength={V5_NAME_MAX}
+                  onChange={(e) => setStartingRitual(e.target.value)}
+                  placeholder={t('wizard:v5.startingRitualPlaceholder', 'optional: one Level 1 Blood Sorcery ritual')}
+                  style={inputStyle}
+                />
+              </div>
+            ) : null}
           </ResponsiveSheetBlock>
 
           <ResponsiveSheetBlock

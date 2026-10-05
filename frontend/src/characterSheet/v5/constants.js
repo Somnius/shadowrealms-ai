@@ -59,6 +59,11 @@ export const V5_FLEDGLING_HUMANITY = V5_RULES.humanity.start_fledgling_option; /
 /** Thin-blood Merits: 1–3, with the same number of thin-blood Flaws, no dot value (p. 142, 182). */
 export const V5_THIN_BLOOD_MERITS = V5_RULES.creation.thin_blood.merits; // [1, 3]
 export const V5_STARTING_HUNGER = 1;
+export const BLOOD_SORCERY = 'Blood Sorcery';
+/** One optional Level 1 ritual at creation with Blood Sorcery 1+ (Blood Sorcery chapter). */
+export const V5_STARTING_RITUAL = V5_RULES.creation.starting_ritual; // { count: 1, level: 1 }
+/** Longest name the forge accepts for a ritual, power or XP specialty (backend caps the same). */
+export const V5_NAME_MAX = 100;
 export const V5_CONVICTIONS = V5_RULES.creation.convictions; // [1, 3]
 
 export { V5_BACKGROUNDS, V5_CLANS, V5_DISCIPLINES, V5_PREDATOR_TYPES };

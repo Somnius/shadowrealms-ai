@@ -19,6 +19,8 @@
     "trackers": "Μετρητές",
     "otherSpecialties": "Άλλες specialties:",
     "fromPredator": "(από τον predator type)",
-    "tenets": "Αρχές του χρονικού"
+    "tenets": "Αρχές του χρονικού",
+    "ritualLevel": "Επίπεδο {{n}}",
+    "ritualFromXp": "αγορά με XP"
   }
 }
