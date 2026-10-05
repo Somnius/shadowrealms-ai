@@ -24,6 +24,8 @@ import {
   V5_NAME_MAX,
   V5_STARTING_HUMANITY,
   V5_THIN_BLOOD_MERITS,
+  V5_FREE_SPECIALTY_SKILLS,
+  V5_XP_COSTS,
   V5_XP_MAX_DOTS,
   toKey,
 } from '../../characterSheet/v5/constants';
@@ -168,7 +170,14 @@ function SourceDots({ label, row, maxRank = 5 }) {
 }
 
 const XP_KINDS = ['attribute', 'skill', 'specialty', 'discipline', 'ritual'];
-const XP_KIND_LABELS = { attribute: 'Attribute', skill: 'Skill', specialty: 'Specialty', discipline: 'Discipline', ritual: 'Ritual' };
+// Functions so t() runs at render time.
+const XP_KIND_LABELS = {
+  attribute: () => t('wizard:v5.xpKindAttribute', 'Attribute'),
+  skill: () => t('wizard:v5.xpKindSkill', 'Skill'),
+  specialty: () => t('wizard:v5.xpKindSpecialty', 'Specialty'),
+  discipline: () => t('wizard:v5.xpKindDiscipline', 'Discipline'),
+  ritual: () => t('wizard:v5.xpKindRitual', 'Ritual'),
+};
 const ATTRIBUTE_PAIRS = [...V5_ATTRIBUTES.physical, ...V5_ATTRIBUTES.social, ...V5_ATTRIBUTES.mental];
 const SKILL_PAIRS = V5_SKILL_KEYS.map((k) => [k, V5_SKILL_LABELS[k]]);
 
@@ -223,7 +232,7 @@ export default function V5CharacterCreationWizard({
   const [thinBloodFlaws, setThinBloodFlaws] = useState([{ name: '' }]);
   // Starting experience (neonates 15 XP, ancillae 35): one entry per dot, see v5/validation.js.
   const [xpPurchases, setXpPurchases] = useState([]);
-  const [xpDraft, setXpDraft] = useState({ kind: 'attribute', trait: '', skill: '', level: 1 });
+  const [xpDraft, setXpDraft] = useState({ kind: 'attribute', trait: '', skill: '', specialty: '', level: 1 });
   const [fieldErrors, setFieldErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
 
@@ -272,18 +281,23 @@ export default function V5CharacterCreationWizard({
   const bsLevel = bloodSorceryLevel(sheet);
   const xpKinds = XP_KINDS.filter((k) => k !== 'ritual' || bsLevel >= 1);
   // A ritual draft falls back to Attribute when Blood Sorcery is gone.
-  const draft = xpKinds.includes(xpDraft.kind) ? xpDraft : { kind: 'attribute', trait: '', skill: '', level: 1 };
+  const draft = xpKinds.includes(xpDraft.kind) ? xpDraft : { kind: 'attribute', trait: '', skill: '', specialty: '', level: 1 };
   const draftPurchase =
     draft.kind === 'specialty'
       ? { kind: 'specialty', skill: draft.skill, trait: draft.trait }
       : draft.kind === 'ritual'
         ? { kind: 'ritual', trait: draft.trait, level: Number(draft.level) }
-        : { kind: draft.kind, trait: draft.trait };
+        : draft.kind === 'skill' && draft.specialty.trim()
+          ? { kind: 'skill', trait: draft.trait, specialty: draft.specialty }
+          : { kind: draft.kind, trait: draft.trait };
   const draftReady =
     draft.kind === 'specialty' ? Boolean(draft.skill && draft.trait.trim()) : Boolean(draft.trait.trim());
   const draftPreview = draftReady ? xpPreview(sheet, draftPurchase, V5_DISCIPLINES) : null;
   const xpAttrs = finalAttributes(sheet);
   const xpSkills = finalSkills(sheet).skills;
+  // A first dot in Academics/Craft/Performance/Science brings a free specialty: ask for its name.
+  const draftNeedsFreeSpecialty =
+    draft.kind === 'skill' && V5_FREE_SPECIALTY_SKILLS.includes(draft.trait) && xpSkills[draft.trait] === 0;
   const clanRow = clanInfo(clan);
   const pred = predatorInfo(predatorType);
   const discOptions = creationDisciplineOptions(clan, V5_DISCIPLINES);
@@ -907,12 +921,22 @@ export default function V5CharacterCreationWizard({
             <ResponsiveSheetBlock
               sectionId={V5_SECTION_IDS.experience}
               title={t('wizard:v5.xpTitle', 'Starting experience')}
-              subtitle={t('wizard:v5.xpSub', 'Optional: {{total}} XP to spend now, one dot at a time. Attributes new × 5, Skills new × 3, a new specialty 3, clan Disciplines new × 5, other Disciplines new × 7 (Caitiff new × 6), rituals level × 3. Unspent XP is kept.', { total: xpTotal })}
+              subtitle={t('wizard:v5.xpSub', 'Optional: {{total}} XP to spend now, one dot at a time. Attributes new × {{attr}}, Skills new × {{skill}}, a new specialty {{spec}}, clan Disciplines new × {{clan}}, other Disciplines new × {{other}} (Caitiff new × {{caitiff}}), rituals level × {{ritual}}. Unspent XP is kept.', {
+                total: xpTotal,
+                attr: V5_XP_COSTS.attribute,
+                skill: V5_XP_COSTS.skill,
+                spec: V5_XP_COSTS.specialty,
+                clan: V5_XP_COSTS.clan_discipline,
+                other: V5_XP_COSTS.other_discipline,
+                caitiff: V5_XP_COSTS.caitiff_discipline,
+                ritual: V5_XP_COSTS.ritual,
+              })}
               accent={ACCENT}
             >
               {inlineErr(V5_SECTION_IDS.experience)}
               <p
                 id="v5-xp-count"
+                aria-live="polite"
                 style={{ color: xp.spent > xp.total ? 'var(--sr-blood-300)' : 'var(--sr-ok-400)', fontSize: '12px', margin: '0 0 10px' }}
               >
                 {t('wizard:v5.xpCount', 'Spent {{spent}} of {{total}} XP · {{left}} left', { spent: xp.spent, total: xp.total, left: xp.unspent })}
@@ -921,20 +945,20 @@ export default function V5CharacterCreationWizard({
                 <select
                   aria-label={t('wizard:v5.xpKind', 'What to buy')}
                   value={draft.kind}
-                  onChange={(e) => setXpDraft({ kind: e.target.value, trait: '', skill: '', level: 1 })}
+                  onChange={(e) => setXpDraft({ kind: e.target.value, trait: '', skill: '', specialty: '', level: 1 })}
                   style={{ ...inputStyle, flex: '0 1 160px', width: 'auto', padding: '8px' }}
                 >
                   {xpKinds.map((k) => (
                     <option key={k} value={k}>
-                      {XP_KIND_LABELS[k]}
+                      {XP_KIND_LABELS[k]()}
                     </option>
                   ))}
                 </select>
                 {['attribute', 'skill', 'discipline'].includes(draft.kind) ? (
                   <select
-                    aria-label={XP_KIND_LABELS[draft.kind]}
+                    aria-label={XP_KIND_LABELS[draft.kind]()}
                     value={draft.trait}
-                    onChange={(e) => setXpDraft({ ...draft, trait: e.target.value })}
+                    onChange={(e) => setXpDraft({ ...draft, trait: e.target.value, specialty: '' })}
                     style={{ ...inputStyle, flex: '1 1 200px', width: 'auto', padding: '8px' }}
                   >
                     <option value="">{t('wizard:v5.choose', 'Choose…')}</option>
@@ -949,6 +973,16 @@ export default function V5CharacterCreationWizard({
                       </option>
                     ))}
                   </select>
+                ) : null}
+                {draftNeedsFreeSpecialty ? (
+                  <input
+                    aria-label={t('wizard:v5.xpFreeSpecialty', 'Free {{skill}} specialty', { skill: V5_SKILL_LABELS[draft.trait] })}
+                    value={draft.specialty}
+                    maxLength={V5_NAME_MAX}
+                    placeholder={t('wizard:v5.xpFreeSpecialtyPlaceholder', 'its free specialty (required)')}
+                    onChange={(e) => setXpDraft({ ...draft, specialty: e.target.value })}
+                    style={{ ...inputStyle, flex: '2 1 200px', width: 'auto', padding: '8px' }}
+                  />
                 ) : null}
                 {draft.kind === 'specialty' ? (
                   <>
@@ -1004,6 +1038,7 @@ export default function V5CharacterCreationWizard({
                   onClick={() => {
                     setXpPurchases((prev) => [...prev, draftPurchase]);
                     if (draft.kind === 'specialty' || draft.kind === 'ritual') setXpDraft({ ...draft, trait: '' });
+                    else if (draftNeedsFreeSpecialty) setXpDraft({ ...draft, specialty: '' });
                   }}
                   style={{ padding: '8px 14px', fontSize: '12px', background: 'var(--sr-night-800)', color: 'var(--sr-arcane-300)', border: '1px solid var(--sr-arcane-700)', borderRadius: '6px', cursor: 'pointer' }}
                 >
@@ -1011,24 +1046,24 @@ export default function V5CharacterCreationWizard({
                 </button>
               </div>
               {draftPreview?.error ? (
-                <p style={{ color: 'var(--sr-blood-300)', fontSize: '12px', margin: '0 0 10px' }}>{translateSheetError(draftPreview.error)}</p>
+                <p role="alert" style={{ color: 'var(--sr-blood-300)', fontSize: '12px', margin: '0 0 10px' }}>{translateSheetError(draftPreview.error)}</p>
               ) : null}
               {xp.log.length ? (
                 <ul aria-label={t('wizard:v5.xpBought', 'Bought with XP')} style={{ listStyle: 'none', padding: 0, margin: 0 }}>
-                  {xp.log.map((e, i) => (
-                    <li key={i} style={{ ...rowStyle, color: 'var(--sr-bone-100)', fontSize: '13px' }}>
+                  {xp.log.map((e) => (
+                    <li key={e.purchase} style={{ ...rowStyle, color: 'var(--sr-bone-100)', fontSize: '13px' }}>
                       <span>
                         {e.kind === 'ritual'
                           ? t('wizard:v5.xpRitualEntry', '{{name}}, Level {{level}}', { name: e.what, level: e.to })
                           : e.kind === 'specialty'
                             ? e.what
-                            : `${e.what} ${e.from} → ${e.to}`}
+                            : `${e.what} ${e.from} → ${e.to}${e.specialty ? ` (${e.specialty})` : ''}`}
                         <span style={{ color: 'var(--sr-ok-400)' }}> · {e.cost} XP</span>
                       </span>
                       <button
                         type="button"
                         aria-label={t('wizard:v5.xpRemove', 'Remove {{what}}', { what: e.what })}
-                        onClick={() => setXpPurchases((prev) => prev.filter((_, j) => j !== i))}
+                        onClick={() => setXpPurchases((prev) => prev.filter((_, j) => j !== e.purchase))}
                         style={{ padding: '4px 10px', background: 'var(--sr-night-800)', color: 'var(--sr-bone-300)', border: '1px solid var(--sr-night-600)', borderRadius: '6px', cursor: 'pointer' }}
                       >
                         ×

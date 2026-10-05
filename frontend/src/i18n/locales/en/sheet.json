@@ -23,6 +23,7 @@
     "ritualLevel": "Level {{n}}",
     "ritualFromXp": "bought with XP",
     "xpDots": "+{{n}} XP",
-    "xpSummary": "{{spent}} of {{total}} spent at creation · {{left}} unspent"
+    "xpSummary": "{{spent}} of {{total}} spent at creation · {{left}} unspent",
+    "xpSpecialty": "{{name}} – XP"
   }
 }

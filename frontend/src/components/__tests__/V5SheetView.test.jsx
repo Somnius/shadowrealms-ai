@@ -55,5 +55,5 @@ test('marks dots and specialties bought with starting XP', () => {
   expect(screen.getByText('13 of 15 spent at creation · 2 unspent')).toBeInTheDocument();
   expect(container.querySelectorAll('[data-xp-dots]')).toHaveLength(1);
   expect(screen.getByText('Resolve').parentElement).toHaveTextContent('Resolve +1 XP');
-  expect(screen.getByText('(Stocks (XP))')).toBeInTheDocument();
+  expect(screen.getByText('(Stocks – XP)')).toBeInTheDocument();
 });

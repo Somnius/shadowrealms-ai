@@ -23,6 +23,7 @@
     "ritualLevel": "Επίπεδο {{n}}",
     "ritualFromXp": "αγορασμένο με XP",
     "xpDots": "+{{n}} XP",
-    "xpSummary": "{{spent}} από {{total}} ξοδεμένα στη δημιουργία · {{left}} αξόδευτα"
+    "xpSummary": "{{spent}} από {{total}} ξοδεμένα στη δημιουργία · {{left}} αξόδευτα",
+    "xpSpecialty": "{{name}} – XP"
   }
 }

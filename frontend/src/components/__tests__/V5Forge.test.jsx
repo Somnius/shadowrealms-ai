@@ -143,3 +143,44 @@ describe('starting experience step', () => {
     expect(screen.getByRole('list', { name: 'Bought with XP' })).toHaveTextContent('Ritual: Blood Walk, Level 2');
   });
 });
+
+describe('starting experience step: review fixes', () => {
+  const buyButton = () => screen.getByRole('button', { name: /^Buy/ });
+
+  test('the running total is a polite live region and the preview error an alert', () => {
+    renderForge();
+    expect(document.getElementById('v5-xp-count')).toHaveAttribute('aria-live', 'polite');
+    pick(screen.getByLabelText('What to buy'), 'attribute');
+    pick(screen.getByLabelText('Attribute'), 'strength');
+    fireEvent.click(buyButton());
+    expect(screen.getByRole('alert')).toHaveTextContent('Starting experience overspent: 25 of 15 XP.');
+  });
+
+  test('a first XP dot in Academics asks for its free specialty', () => {
+    renderForge();
+    pick(screen.getByLabelText('What to buy'), 'skill');
+    pick(screen.getByLabelText('Skill'), 'academics');
+    expect(buyButton()).toBeDisabled();
+    expect(screen.getByRole('alert')).toHaveTextContent('Academics comes with a free specialty — name it.');
+    pick(screen.getByLabelText('Free Academics specialty'), 'History');
+    expect(buyButton()).toHaveTextContent('Buy (3 XP)');
+    fireEvent.click(buyButton());
+    expect(screen.getByRole('list', { name: 'Bought with XP' })).toHaveTextContent('Academics 0 → 1 (History)');
+    // the second dot needs nothing more
+    expect(screen.queryByLabelText('Free Academics specialty')).toBeNull();
+    expect(buyButton()).toHaveTextContent('Buy (6 XP)');
+  });
+
+  test('removing a purchase removes that purchase', () => {
+    renderForge();
+    pick(screen.getByLabelText('What to buy'), 'skill');
+    pick(screen.getByLabelText('Skill'), 'finance');
+    fireEvent.click(buyButton());
+    pick(screen.getByLabelText('Skill'), 'occult');
+    fireEvent.click(buyButton());
+    fireEvent.click(screen.getByRole('button', { name: 'Remove Finance' }));
+    const list = screen.getByRole('list', { name: 'Bought with XP' });
+    expect(list).toHaveTextContent('Occult 0 → 1');
+    expect(list).not.toHaveTextContent('Finance');
+  });
+});
