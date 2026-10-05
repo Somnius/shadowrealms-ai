@@ -44,3 +44,16 @@ test('thin-bloods get no Discipline rows', () => {
   expect(screen.queryByLabelText('Discipline at 2 dots')).toBeNull();
   expect(screen.getByText('Thin-bloods start with no Disciplines.')).toBeInTheDocument();
 });
+
+test('Blood Sorcery shows the optional starting ritual input', () => {
+  tremereBagger('Blood Sorcery');
+  const input = screen.getByLabelText('Starting ritual (Level 1)');
+  pick(input, 'Ward against Ghouls');
+  expect(input).toHaveValue('Ward against Ghouls');
+});
+
+test('no Blood Sorcery, no starting ritual input', () => {
+  renderForge();
+  pick(screen.getByLabelText('Discipline at 2 dots'), 'Potence');
+  expect(screen.queryByLabelText('Starting ritual (Level 1)')).toBeNull();
+});

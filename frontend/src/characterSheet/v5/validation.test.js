@@ -7,13 +7,16 @@ import {
 import {
   attributeSpreadStatus,
   buildV5Payload,
+  bloodSorceryLevel,
   deriveV5,
   disciplineRows,
   emptyV5Attributes,
   emptyV5Skills,
   finalDisciplines,
+  finalRituals,
   finalSkills,
   predatorDisciplineOptions,
+  startingRitualAllowed,
   validateV5Attributes,
   validateV5Disciplines,
   validateV5Sheet,
@@ -372,5 +375,38 @@ describe('V5 discipline rows (forge display)', () => {
 
   it('gives thin-bloods no rows and no predator dot', () => {
     expect(disciplineRows({ clan: 'Thin-blood', disciplines: [], predatorDiscipline: 'Celerity' })).toEqual([]);
+  });
+});
+
+describe('V5 starting ritual', () => {
+  const tremere = (extra) => ({
+    ...goodSheet(),
+    clan: 'Tremere',
+    disciplines: [
+      { name: 'Auspex', level: 2, powers: [] },
+      { name: 'Dominate', level: 1, powers: [] },
+    ],
+    predatorType: 'Bagger',
+    predatorSpecialty: 0,
+    predatorDiscipline: 'Obfuscate',
+    ...extra,
+  });
+
+  it('needs at least one dot of Blood Sorcery, the predator dot counts', () => {
+    expect(startingRitualAllowed(tremere())).toBe(false);
+    expect(startingRitualAllowed(tremere({ predatorDiscipline: 'Blood Sorcery' }))).toBe(true);
+    expect(bloodSorceryLevel(tremere({ predatorDiscipline: 'Blood Sorcery' }))).toBe(1);
+    expect(
+      startingRitualAllowed(tremere({ disciplines: [{ name: 'Blood Sorcery', level: 2 }, { name: 'Auspex', level: 1 }] }))
+    ).toBe(true);
+  });
+
+  it('is saved as a Level 1 ritual only when allowed and named', () => {
+    const withBs = tremere({ predatorDiscipline: 'Blood Sorcery', startingRitual: '  Ward against Ghouls ' });
+    expect(finalRituals(withBs)).toEqual([{ name: 'Ward against Ghouls', level: 1, source: 'creation' }]);
+    expect(buildV5Payload(withBs).wod_meta.rituals).toEqual([{ name: 'Ward against Ghouls', level: 1, source: 'creation' }]);
+    expect(finalRituals(tremere({ startingRitual: 'Ward against Ghouls' }))).toEqual([]);
+    expect(finalRituals(tremere({ predatorDiscipline: 'Blood Sorcery', startingRitual: '   ' }))).toEqual([]);
+    expect(buildV5Payload(goodSheet()).wod_meta.rituals).toBeUndefined();
   });
 });

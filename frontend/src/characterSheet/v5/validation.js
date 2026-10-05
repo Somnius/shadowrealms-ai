@@ -11,6 +11,7 @@
  *   specialties: [{skill, name}] (free ones, not the predator one),
  *   disciplines: [{name, level, powers: []}] (creation 2 + 1, BEFORE the predator dot),
  *   predatorType, predatorSpecialty (index into the type's specialty_choice),
+ *   startingRitual: string (one free Level 1 ritual with Blood Sorcery 1+),
  *   predatorDiscipline (name), extraPowers: {[discipline]: [power]} (powers for a predator/XP
  *   Discipline that isn't one of the two picks), advantages: [{name, dots, kind: 'merit'|'background'}],
  *   flaws: [{name, dots}], convictions: [{conviction, touchstone}],
@@ -19,6 +20,7 @@
  * }
  */
 import {
+  BLOOD_SORCERY,
   CAITIFF,
   THIN_BLOOD,
   V5_AGE_BRACKETS,
@@ -40,6 +42,7 @@ import {
   V5_SKILL_LABELS,
   V5_STARTING_HUMANITY,
   V5_STARTING_HUNGER,
+  V5_STARTING_RITUAL,
   V5_THIN_BLOOD_MERITS,
   generationBloodPotency,
   parsePredatorDiscipline,
@@ -337,6 +340,36 @@ export function finalDisciplines(sheet) {
     }));
 }
 
+// ---------- Rituals ----------
+
+/** Final Blood Sorcery rating (picks + predator dot + XP dots). */
+export function bloodSorceryLevel(sheet) {
+  return disciplineRows(sheet).find((r) => r.name === BLOOD_SORCERY)?.level || 0;
+}
+
+/** The free Level 1 ritual needs at least one dot in Blood Sorcery. */
+export function startingRitualAllowed(sheet) {
+  return bloodSorceryLevel(sheet) >= 1;
+}
+
+/**
+ * Rituals for wod_meta.rituals: the free starting one (if allowed and named), then XP ones.
+ * [{ name, level, source: 'creation'|'xp' }]
+ */
+export function finalRituals(sheet) {
+  const out = [];
+  const start = String(sheet?.startingRitual || '').trim();
+  if (start && startingRitualAllowed(sheet)) {
+    out.push({ name: start, level: V5_STARTING_RITUAL.level, source: 'creation' });
+  }
+  (sheet?.xpPurchases || []).forEach((x) => {
+    if (x?.kind === 'ritual' && String(x.trait || '').trim()) {
+      out.push({ name: String(x.trait).trim(), level: int(x.level), source: 'xp' });
+    }
+  });
+  return out;
+}
+
 const sumDots = (rows) => (rows || []).reduce((s, r) => s + int(r?.dots), 0);
 const named = (rows) => (rows || []).filter((r) => r && String(r.name || '').trim());
 
@@ -478,6 +511,8 @@ export function buildV5Payload(sheet) {
     advantages,
     flaws,
   };
+  const rituals = finalRituals(s);
+  if (rituals.length) wodMeta.rituals = rituals;
   if (s.clan === THIN_BLOOD) {
     wodMeta.thin_blood_merits = namedList(s.thinBloodMerits).map((r) => String(r.name).trim());
     wodMeta.thin_blood_flaws = namedList(s.thinBloodFlaws).map((r) => String(r.name).trim());

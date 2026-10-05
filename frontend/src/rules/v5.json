@@ -933,6 +933,13 @@
       "powers_per_dot": 1,
       "caitiff": "any two Disciplines, 2 and 1"
     },
+    "starting_ritual": {
+      "count": 1,
+      "level": 1,
+      "requires": "at least one dot in Blood Sorcery",
+      "optional": true,
+      "ref": "Blood Sorcery chapter (rituals)"
+    },
     "advantages_dots": 7,
     "flaws_min_dots": 2,
     "flaws_max_dots": null,

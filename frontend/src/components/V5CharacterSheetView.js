@@ -109,6 +109,7 @@ export default function V5CharacterSheetView({ character }) {
   const sk = obj(character?.skills);
   const specialties = Array.isArray(sk.specialties) ? sk.specialties : [];
   const disciplines = Array.isArray(wm.disciplines) ? wm.disciplines : [];
+  const rituals = Array.isArray(wm.rituals) ? wm.rituals.filter((r) => r && r.name) : [];
   const advantages = Array.isArray(wm.advantages) ? wm.advantages : [];
   const flaws = Array.isArray(wm.flaws) ? wm.flaws : [];
   const touchstones = Array.isArray(wm.touchstones) ? wm.touchstones : [];
@@ -210,6 +211,20 @@ export default function V5CharacterSheetView({ character }) {
                 <div style={{ color: 'var(--sr-bone-300)', fontSize: '12px', marginTop: '2px' }}>{d.powers.join(' · ')}</div>
               ) : null}
             </div>
+          ))}
+        </ResponsiveSheetBlock>
+      ) : null}
+
+      {rituals.length ? (
+        <ResponsiveSheetBlock sectionId="v5-view-rituals" title="Rituals" accent={ACCENT}>
+          {rituals.map((r, i) => (
+            <p key={i} style={{ margin: '0 0 6px', color: 'var(--sr-bone-100)' }}>
+              <strong>{String(r.name)}</strong>{' '}
+              <span style={{ color: 'var(--sr-bone-300)', fontSize: '12px' }}>
+                {t('sheet:v5.ritualLevel', 'Level {{n}}', { n: n(r.level) })}
+                {r.source === 'xp' ? ` · ${t('sheet:v5.ritualFromXp', 'bought with XP')}` : ''}
+              </span>
+            </p>
           ))}
         </ResponsiveSheetBlock>
       ) : null}
