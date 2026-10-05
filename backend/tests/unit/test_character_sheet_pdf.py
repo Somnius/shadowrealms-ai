@@ -267,6 +267,12 @@ def test_tabs_become_spaces():
     assert _fields(build_sheet_pdf(ch))["background"] == "Sire Θεόδωρος"
 
 
+def test_form_resources_hold_both_fonts(v5_pdf):
+    dr = re.search(rb"/DR << /Font << /SRG \d+ 0 R /ZaDb \d+ 0 R >> >>", v5_pdf)
+    assert dr, "one /Font dictionary with the Garamond form font and ZapfDingbats"
+    assert b"/DA (/ZaDb 0 Tf 0 g)" in v5_pdf
+
+
 def test_fields_are_editable(v5_pdf):
     for w in _widgets(v5_pdf):
         ff = re.search(rb"/Ff (\d+)", w)
