@@ -14,7 +14,7 @@ The old `rule_books` collection is no longer written. It is empty on the live in
 
 ## Chunk
 
-- **id:** `"{book_id}:{chunk_index:05d}"` (deterministic, so re-imports `upsert` and a book is removed with `delete(where={"book_id": ...})`).
+- **id:** `"{book_id}:{chunk_index:05d}"` (deterministic, so re-imports `upsert` and a book is removed with `delete(where={"book_id": ...})`). In `rule_books_chronicle` the id is prefixed with the chronicle, `"c{campaign_id}:{book_id}:{chunk_index:05d}"`, because one adventure can be attached to several chronicles.
 - **document:** `"{title} › {heading_path}\n\n{text}"`. `text` is about 300 tokens (hard max 512), sentence-aligned, within one section of the book.
 - **metadata** (all scalar, no lists):
 
