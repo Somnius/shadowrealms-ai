@@ -10,9 +10,14 @@ export default function SheetPdfButton({ character, size = 'sm', variant = 'ghos
   if (!character || character.id == null) return null;
   const run = async () => {
     setBusy(true);
+    const failed = () => {
+      if (toaster) toaster.toast({ tone: 'danger', title: t('sheet:pdf.failed', 'Could not export the PDF.') });
+    };
     try {
       const r = await downloadSheetPdf(character.id, character.name);
-      if (!r.ok && toaster) toaster.toast({ tone: 'danger', title: t('sheet:pdf.failed', 'Could not export the PDF.') });
+      if (!r.ok) failed();
+    } catch {
+      failed();
     } finally {
       setBusy(false);
     }

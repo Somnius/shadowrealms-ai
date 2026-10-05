@@ -9,6 +9,8 @@ export function pdfFileName(name) {
   const base = String(name || '')
     // eslint-disable-next-line no-control-regex
     .replace(/[\\/:*?"<>|\u0000-\u001f\u007f]+/g, ' ')
+    // bidi controls could make "evil\u202Efdp.exe" look like another file type
+    .replace(/[\u061c\u200e\u200f\u202a-\u202e\u2066-\u2069]/g, '')
     .replace(/\s+/g, ' ')
     .replace(/^[\s.]+|[\s.]+$/g, '')
     .slice(0, 80);
@@ -25,17 +27,17 @@ export function defaultPaper(langs = typeof navigator !== 'undefined' ? navigato
 export async function downloadSheetPdf(characterId, name, { paper = defaultPaper() } = {}) {
   const token = getCurrentToken();
   const query = paper === 'letter' ? '?paper=letter' : '';
-  let res;
+  let blob;
   try {
-    res = await authFetch(`${API_URL}/characters/${encodeURIComponent(characterId)}/sheet.pdf${query}`, {
+    const res = await authFetch(`${API_URL}/characters/${encodeURIComponent(characterId)}/sheet.pdf${query}`, {
       headers: token ? { Authorization: `Bearer ${token}` } : {},
       credentials: 'same-origin',
     });
+    if (!res.ok) return { ok: false, status: res.status };
+    blob = await res.blob();
   } catch {
-    return { ok: false, status: 0 };
+    return { ok: false, status: 0 }; // network error, or the body broke off mid-download
   }
-  if (!res.ok) return { ok: false, status: res.status };
-  const blob = await res.blob();
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
