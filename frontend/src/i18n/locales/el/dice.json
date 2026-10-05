@@ -162,6 +162,8 @@
     "botch": "Botch",
     "exceptional": "Εξαιρετική επιτυχία",
     "exceptionalCount": "Εξαιρετική επιτυχία ({{count}})",
+    "phenomenal": "Εκπληκτική επιτυχία",
+    "phenomenalCount": "Εκπληκτική επιτυχία ({{count}})",
     "successCount_one": "Επιτυχία ({{count}} επιτυχία)",
     "successCount_other": "Επιτυχία ({{count}} επιτυχίες)",
     "win": "Επιτυχία"

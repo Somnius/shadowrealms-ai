@@ -153,7 +153,9 @@ export function rollMood(result) {
   if (r.is_botch || r.botch) return 'botch';
   const s = Number(r.successes ?? 0);
   if (s <= 0) return 'fail';
-  if (r.is_exceptional || r.is_critical) return 'exceptional';
+  // Exceptional (4) or phenomenal (5+) net successes: the gold flare. From the count, so older
+  // rolls (flags meant 5+) and new ones agree.
+  if (s >= 4) return 'exceptional';
   return 'win';
 }
 

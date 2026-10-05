@@ -68,7 +68,7 @@ function rollForced(edition, outcome) {
   return within(card).getByTestId(`stage-${edition}`);
 }
 
-const MOOD = { botch: 'botch', exceptional: 'exceptional', bestial: 'bestial', messy: 'messy', critical: 'critical' };
+const MOOD = { botch: 'botch', exceptional: 'exceptional', phenomenal: 'exceptional', bestial: 'bestial', messy: 'messy', critical: 'critical' };
 
 describe.each([
   ['classic', CLASSIC_OUTCOMES],
@@ -97,7 +97,8 @@ test('V5 effect labels: messy critical, bestial failure, total failure, critical
   expect(within(rollForced('v5', 'total')).getByTestId('outcome-total')).toHaveTextContent('Total failure');
   expect(within(rollForced('v5', 'critical')).getByTestId('outcome-critical')).toHaveTextContent('Critical win');
   expect(within(rollForced('classic', 'botch')).getByTestId('outcome-botch')).toHaveTextContent('Botch');
-  expect(within(rollForced('classic', 'exceptional')).getByTestId('outcome-exceptional')).toHaveTextContent('Exceptional success');
+  expect(within(rollForced('classic', 'exceptional')).getByTestId('outcome-exceptional')).toHaveTextContent('Exceptional success (4)');
+  expect(within(rollForced('classic', 'phenomenal')).getByTestId('outcome-phenomenal')).toHaveTextContent('Phenomenal success');
 });
 
 test('an impossible outcome adjusts the pool and says so', () => {

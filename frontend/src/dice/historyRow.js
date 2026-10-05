@@ -49,11 +49,8 @@ export function describeRollRow(row) {
   const rerolls = Array.isArray(mods.specialty_rerolls) && mods.specialty_rerolls.length
     ? ` ${t('dice:history.rerolls', '+rerolls [{{dice}}]', { dice: list(mods.specialty_rerolls) })}`
     : '';
-  const out = classicOutcome({
-    successes: r.successes,
-    is_botch: r.is_botch,
-    is_exceptional: r.is_critical,
-  });
+  // The degree comes from the net successes (the stored is_critical meant 5+ on older rows).
+  const out = classicOutcome({ successes: r.successes, is_botch: r.is_botch });
   return (
     t('dice:history.classicHead', 'Pool {{pool}}, TN {{difficulty}}', { pool: r.dice_pool, difficulty: r.difficulty }) +
     `${extras.length ? `, ${extras.join(', ')}` : ''}` +

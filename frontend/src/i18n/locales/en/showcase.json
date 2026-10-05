@@ -112,7 +112,7 @@
     "v5r2": "Each pair of 10s adds two more: a critical.",
     "v5r3": "Red Hunger dice can make a win messy or a failure bestial.",
     "c1": "Roll your pool against a difficulty from 3 to 10.",
-    "c2": "Every 1 cancels a success. Five or more is exceptional.",
+    "c2": "Every 1 cancels a success. Four is exceptional, five or more phenomenal.",
     "c3": "No successes and a 1 on the table: a botch.",
     "pool": "Dice pool",
     "hunger": "Hunger",
@@ -126,8 +126,9 @@
     "lede": "Each chronicle picks its rules: the classic Revised dice or V5 with Hunger. Pick a pool and roll, or force an outcome to see every effect the table can show. The dice are resolved by the same code the game uses."
   },
   "explain": {
-    "success": "Hits at or above the difficulty, minus one for every 1. One to four is a plain success.",
-    "exceptional": "Five or more net successes: an exceptional success.",
+    "success": "Hits at or above the difficulty, minus one for every 1. One to three is a plain success.",
+    "exceptional": "Four net successes: an exceptional success.",
+    "phenomenal": "Five or more net successes: a phenomenal success.",
     "failure": "The 1s cancelled every hit (or nothing hit). Nothing happens, for better or worse.",
     "botch": "Not one die hit and a 1 showed: a botch. Something goes badly wrong.",
     "win": "Successes (6 or more) meet the Difficulty.",

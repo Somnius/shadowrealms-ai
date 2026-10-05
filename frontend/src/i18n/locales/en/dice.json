@@ -162,6 +162,8 @@
     "botch": "Botch",
     "exceptional": "Exceptional success",
     "exceptionalCount": "Exceptional success ({{count}})",
+    "phenomenal": "Phenomenal success",
+    "phenomenalCount": "Phenomenal success ({{count}})",
     "successCount_one": "Success ({{count}} success)",
     "successCount_other": "Success ({{count}} successes)",
     "win": "Win"

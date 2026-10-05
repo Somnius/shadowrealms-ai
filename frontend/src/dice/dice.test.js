@@ -1,4 +1,4 @@
-import { classicOutcome, classifyClassicDie, resolveClassicDice } from './classicDiceDisplay';
+import { classicDegree, classicOutcome, classifyClassicDie, resolveClassicDice } from './classicDiceDisplay';
 import { classifyV5Die, resolveV5Dice, v5Badges, v5Outcome, v5SummaryLine } from './v5DiceDisplay';
 import { buildDiceMarker, overlayFromMarker } from './diceMarker';
 
@@ -35,10 +35,23 @@ describe('classic dice (Revised)', () => {
     expect(r.successes).toBe(2);
   });
 
-  it('5+ net successes is exceptional', () => {
-    const r = resolveClassicDice([6, 7, 8, 9, 10], 6);
-    expect(r.is_exceptional).toBe(true);
-    expect(classicOutcome(r).key).toBe('exceptional');
+  it('4 net successes is exceptional, 5+ phenomenal (Revised degrees)', () => {
+    const r4 = resolveClassicDice([6, 7, 8, 9], 6);
+    expect(r4.is_exceptional).toBe(true);
+    expect(r4.is_phenomenal).toBe(false);
+    expect(classicOutcome(r4)).toMatchObject({ key: 'exceptional', label: 'Exceptional success (4)' });
+    const r5 = resolveClassicDice([6, 7, 8, 9, 10], 6);
+    expect(r5.is_exceptional).toBe(false);
+    expect(r5.is_phenomenal).toBe(true);
+    expect(classicOutcome(r5)).toMatchObject({ key: 'phenomenal', label: 'Phenomenal success (5)' });
+    expect(classicOutcome(resolveClassicDice([6, 7, 8], 6)).key).toBe('success');
+    expect([0, 1, 2, 3, 4, 5, 6].map(classicDegree))
+      .toEqual(['none', 'marginal', 'moderate', 'complete', 'exceptional', 'phenomenal', 'phenomenal']);
+  });
+
+  it('an older stored roll flagged exceptional at 5+ reads as phenomenal', () => {
+    expect(classicOutcome({ successes: 5, is_exceptional: true }).key).toBe('phenomenal');
+    expect(classicOutcome({ successes: 4, is_exceptional: false }).key).toBe('exceptional');
   });
 
   it('classifies dice against the TN', () => {

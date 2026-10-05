@@ -7,12 +7,22 @@
  * - specialty: natural 10s count and are rerolled (rerolled 10s explode again);
  *   rerolled 1s do not cancel
  * - Willpower: +1 automatic success that 1s cannot cancel
- * - 5+ net successes = exceptional
+ * - degrees of success (Revised core): 4 net successes = exceptional, 5+ = phenomenal. The degree is
+ *   always derived from net successes, so older rolls whose is_exceptional flag meant 5+ read right.
  */
 
 import { t } from '../i18n';
 
-export const EXCEPTIONAL_THRESHOLD = 5;
+export const EXCEPTIONAL_THRESHOLD = 4;
+export const PHENOMENAL_THRESHOLD = 5;
+
+/** 'none' | 'marginal' | 'moderate' | 'complete' | 'exceptional' | 'phenomenal' (net successes). */
+export function classicDegree(successes) {
+  const n = Number(successes) || 0;
+  if (n <= 0) return 'none';
+  if (n >= PHENOMENAL_THRESHOLD) return 'phenomenal';
+  return ['marginal', 'moderate', 'complete', 'exceptional'][n - 1];
+}
 
 /** Pure resolution of already-rolled dice. */
 export function resolveClassicDice(dice, difficulty = 6, { specialtyRerolls = [], willpower = false } = {}) {
@@ -34,7 +44,8 @@ export function resolveClassicDice(dice, difficulty = 6, { specialtyRerolls = []
     ones,
     successes,
     is_botch: isBotch,
-    is_exceptional: successes >= EXCEPTIONAL_THRESHOLD,
+    is_exceptional: successes === EXCEPTIONAL_THRESHOLD,
+    is_phenomenal: successes >= PHENOMENAL_THRESHOLD,
     willpower: Boolean(willpower),
   };
 }
@@ -56,10 +67,18 @@ export function classicOutcome(result) {
   const r = result || {};
   const successes = Number(r.successes ?? r.net_successes ?? 0);
   const botch = Boolean(r.is_botch ?? r.botch);
-  const exceptional = Boolean(r.is_exceptional ?? successes >= EXCEPTIONAL_THRESHOLD);
+  // From net successes, not the stored flag (older rolls flagged 5+ as exceptional).
+  const degree = classicDegree(successes);
   if (botch) return { key: 'botch', label: t('dice:outcome.botch', 'Botch'), tone: 'danger', term: 'botch' };
   if (successes <= 0) return { key: 'failure', label: t('dice:outcome.failure', 'Failure'), tone: 'muted' };
-  if (exceptional) {
+  if (degree === 'phenomenal') {
+    return {
+      key: 'phenomenal',
+      label: t('dice:outcome.phenomenalCount', 'Phenomenal success ({{count}})', { count: successes }),
+      tone: 'gold',
+    };
+  }
+  if (degree === 'exceptional') {
     return {
       key: 'exceptional',
       label: t('dice:outcome.exceptionalCount', 'Exceptional success ({{count}})', { count: successes }),
