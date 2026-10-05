@@ -222,25 +222,32 @@ def cmd_eval(args, data, paths):
     log(f"report: {base}.json / .md")
 
 
+def add_common(p, suppress: bool):
+    """Options accepted before or after the subcommand (after it, they override)."""
+    def opt(*names, default=None, **kw):
+        p.add_argument(*names, default=argparse.SUPPRESS if suppress else default, **kw)
+    opt("--manifest", default=os.path.join(pipeline.HERE, "manifest.yaml"))
+    opt("--books-root", default=os.environ.get("RULE_BOOKS_ROOT") or pipeline.BOOKS_ROOT,
+        help="folder the manifest paths are relative to (env RULE_BOOKS_ROOT)")
+    opt("--data-dir", default=pipeline.DATA, help="cache, state and eval reports (default data/rule_books)")
+    opt("--only", help="comma-separated book_ids")
+    opt("--edition", choices=sorted(manifest.EDITIONS))
+    opt("--dry-run", default=False, action="store_true", help="no writes to Chroma or state.json (chunk: no chunk cache)")
+    opt("--chroma-host", default=os.environ.get("CHROMADB_HOST") or "localhost")
+    opt("--chroma-port", type=int, default=int(os.environ.get("CHROMADB_PORT") or 8000))
+    opt("--lmstudio-url", default=os.environ.get("LM_STUDIO_URL") or "http://localhost:1234")
+    opt("--pace-ms", type=int, default=200, help="sleep between upsert batches (LM Studio is shared)")
+    opt("--batch", type=int, default=64, help="chunks per upsert")
+    opt("--resume", dest="resume", default=True, action="store_true", help="continue a partial import (default)")
+    opt("--no-resume", dest="resume", default=True, action="store_false")
+    opt("--force", default=False, action="store_true", help="re-extract / re-import even when unchanged")
+    opt("--workers", type=int, default=4, help="extract processes (max 8)")
+    opt("--tokenizer", default="auto", help="auto (bge-m3 tokenizer.json if found), bge-m3, estimate, or a tokenizer.json path")
+
+
 def main(argv=None):
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    p.add_argument("--manifest", default=os.path.join(pipeline.HERE, "manifest.yaml"))
-    p.add_argument("--books-root", default=os.environ.get("RULE_BOOKS_ROOT") or pipeline.BOOKS_ROOT,
-                   help="folder the manifest paths are relative to (env RULE_BOOKS_ROOT)")
-    p.add_argument("--data-dir", default=pipeline.DATA, help="cache, state and eval reports (default data/rule_books)")
-    p.add_argument("--only", help="comma-separated book_ids")
-    p.add_argument("--edition", choices=sorted(manifest.EDITIONS))
-    p.add_argument("--dry-run", action="store_true", help="no writes to Chroma or state.json (chunk: no chunk cache)")
-    p.add_argument("--chroma-host", default=os.environ.get("CHROMADB_HOST") or "localhost")
-    p.add_argument("--chroma-port", type=int, default=int(os.environ.get("CHROMADB_PORT") or 8000))
-    p.add_argument("--lmstudio-url", default=os.environ.get("LM_STUDIO_URL") or "http://localhost:1234")
-    p.add_argument("--pace-ms", type=int, default=200, help="sleep between upsert batches (LM Studio is shared)")
-    p.add_argument("--batch", type=int, default=64, help="chunks per upsert")
-    p.add_argument("--resume", dest="resume", action="store_true", default=True, help="continue a partial import (default)")
-    p.add_argument("--no-resume", dest="resume", action="store_false")
-    p.add_argument("--force", action="store_true", help="re-extract / re-import even when unchanged")
-    p.add_argument("--workers", type=int, default=4, help="extract processes (max 8)")
-    p.add_argument("--tokenizer", default="auto", help="auto (bge-m3 tokenizer.json if found), bge-m3, estimate, or a tokenizer.json path")
+    add_common(p, suppress=False)
     sub = p.add_subparsers(dest="cmd", required=True)
     sub.add_parser("extract", help="PDF -> cached blocks/sections (keyed by file sha256)")
     sub.add_parser("chunk", help="blocks -> chunks + summary table")
@@ -257,6 +264,8 @@ def main(argv=None):
     ev.add_argument("--per-book", type=int, default=40)
     ev.add_argument("--seed", type=int, default=0)
     ev.add_argument("-k", type=int, default=5)
+    for sp in sub.choices.values():
+        add_common(sp, suppress=True)
     args = p.parse_args(argv)
     args.workers = max(1, min(args.workers, 8))
     data = manifest.load(args.manifest)

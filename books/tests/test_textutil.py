@@ -58,3 +58,12 @@ def test_token_estimate():
     c = TokenCounter("estimate")
     assert c.name == "estimate"
     assert c.count("one two three four") == 6
+
+
+def test_heading_case_fixes():
+    from rbimport.extract import _fix_case
+    assert _fix_case("ArCAne") == "Arcane"
+    assert _fix_case("ChApter four: the trouble") == "Chapter Four: the Trouble"
+    assert _fix_case("quell the beast") == "Quell the Beast"
+    assert _fix_case("THE BLOOD POTENCY") == "The Blood Potency"
+    assert _fix_case("McCarthy and Ventrue") == "McCarthy and Ventrue"

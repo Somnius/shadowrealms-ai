@@ -18,7 +18,7 @@ REPO = os.path.dirname(HERE)
 BOOKS_ROOT = os.path.join(HERE, "World_of_Darkness")
 DATA = os.path.join(REPO, "data", "rule_books")
 EXTRACT_FIELDS = ("include", "exclude", "page_offset", "strip_lines", "sidebar_fonts", "toc_fixes",
-                  "skip_sections", "toc_strip_prefix", "use_toc", "edition")
+                  "skip_sections", "toc_strip_prefix", "outline", "edition")
 
 
 class Paths:
