@@ -25,5 +25,10 @@
     "xpDots": "+{{n}} XP",
     "xpSummary": "{{spent}} of {{total}} spent at creation · {{left}} unspent",
     "xpSpecialty": "{{name}} – XP"
+  },
+  "pdf": {
+    "export": "Export PDF",
+    "failed": "Could not export the PDF.",
+    "hint": "Fillable sheet for black-and-white printing"
   }
 }

@@ -2,6 +2,7 @@ import { useRef } from 'react';
 import { Avatar, Badge, Button, DotTrack, Glyph } from '../../design';
 import { editionOf, V5 } from '../../rules/rulesEdition';
 import ButtonLink from '../../app/ButtonLink';
+import SheetPdfButton from '../../components/SheetPdfButton';
 import { lineOf } from '../../app/hooks';
 import { t } from '../../i18n';
 import { Term, termHint } from '../../i18n/glossary';
@@ -17,7 +18,7 @@ function readImage(file) {
   });
 }
 
-/** "Your character" card: portrait, Hunger (V5), sheet + portrait actions. */
+/** "Your character" card: portrait, Hunger (V5), sheet, portrait and PDF actions. */
 function CharacterCard({ campaign, character, onOpenSheet, onPortrait, toast }) {
   const fileRef = useRef(null);
   if (!character) {
@@ -63,6 +64,7 @@ function CharacterCard({ campaign, character, onOpenSheet, onPortrait, toast }) 
         <Button size="sm" variant="ghost" icon="quill" onClick={() => fileRef.current && fileRef.current.click()}>
           {t('play:panel.portrait', 'Portrait')}
         </Button>
+        <SheetPdfButton character={character} />
         <input ref={fileRef} type="file" accept="image/*" className="sr-visually-hidden" tabIndex={-1} onChange={pick} aria-hidden="true" />
       </div>
     </div>

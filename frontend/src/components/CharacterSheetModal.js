@@ -3,6 +3,7 @@ import './sheet.css';
 import DotTrack from './characterCreation/DotTrack';
 import ResponsiveSheetBlock from './characterCreation/ResponsiveSheetBlock';
 import V5CharacterSheetView from './V5CharacterSheetView';
+import SheetPdfButton from './SheetPdfButton';
 import { editionLabel, editionOf, V5 } from '../rules/rulesEdition';
 import {
   KNOWLEDGES,
@@ -131,6 +132,7 @@ export default function CharacterSheetModal({ character, gameSystem, onClose }) 
       icon={theme === 'werewolf' ? 'line-werewolf' : theme === 'mage' ? 'line-mage' : 'line-vampire'}
       title={character.name || t('sheet:untitled', 'Character')}
       closeLabel={t('sheet:close', 'Close')}
+      footer={<SheetPdfButton character={character} variant="secondary" />}
       description={
         character.campaign_name || gs === 'vampire' || isV5Sheet ? (
           <span className="sr-sheet__sub">
