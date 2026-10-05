@@ -409,4 +409,13 @@ describe('V5 starting ritual', () => {
     expect(finalRituals(tremere({ predatorDiscipline: 'Blood Sorcery', startingRitual: '   ' }))).toEqual([]);
     expect(buildV5Payload(goodSheet()).wod_meta.rituals).toBeUndefined();
   });
+
+  it('is dropped from the payload when a predator type change takes Blood Sorcery to 0', () => {
+    const before = tremere({ predatorDiscipline: 'Blood Sorcery', startingRitual: 'Ward against Ghouls' });
+    expect(buildV5Payload(before).wod_meta.rituals).toHaveLength(1);
+    // The forge resets the predator Discipline when the type changes; the typed name stays in state.
+    const after = { ...before, predatorType: 'Alleycat', predatorSpecialty: null, predatorDiscipline: '' };
+    expect(bloodSorceryLevel(after)).toBe(0);
+    expect(buildV5Payload(after).wod_meta.rituals).toBeUndefined();
+  });
 });
