@@ -1,0 +1,1011 @@
+# Rule books to import into ChromaDB (books/import_books.py). Data contract: docs/rules/RULE_BOOKS_RAG.md.
+# path is relative to books/World_of_Darkness. Fields are explained in books/README.md.
+# year = the copyright year printed in the PDF; 0 = not printed in this PDF.
+# precedence (lower wins): V5 corebook 10, Players Guide 20, Companion 30, supplements 40, lore 50,
+# adventures 60; Classic cores 10, guides and handbooks 30, clan/tradition/convention/tribe books 40.
+# kind adventure: never imported globally, only attached to one chronicle (import_books.py attach).
+version: 1
+books:
+- book_id: v5-corebook
+  path: V5/Vampire the Masquerade - Corebook (Sept.2019 Update With Errata).pdf
+  title: 'Vampire: The Masquerade Corebook (2019)'
+  edition: v5
+  line: vampire
+  version: v5
+  kind: rules
+  precedence: 10
+  year: 2019
+  exclude: 431-436
+  toc_fixes:
+    Venture: Ventrue
+  notes: Sept. 2019 update; the errata are already in the text, so the appended errata pages 431-436 are skipped.
+- book_id: v5-players-guide
+  path: V5/Player's Guide (v2) (Hi-Res).pdf
+  title: Players Guide (v2)
+  edition: v5
+  line: vampire
+  version: v5
+  kind: rules
+  precedence: 20
+  year: 2023
+- book_id: v5-companion
+  path: V5/Companion.pdf
+  title: 'Vampire: The Masquerade Companion'
+  edition: v5
+  line: vampire
+  version: v5
+  kind: rules
+  precedence: 30
+  year: 2020
+  notes: 'No outline: headings come from font sizes.'
+- book_id: v5-st-screen
+  path: V5/Storytellers Screen.pdf
+  title: Storyteller Screen
+  edition: v5
+  line: vampire
+  version: v5
+  kind: rules
+  precedence: 40
+  year: 0
+  notes: Official screen inserts (text). Year not printed in the PDF.
+- book_id: v5-camarilla
+  path: V5/Camarilla.pdf
+  title: Camarilla
+  edition: v5
+  line: vampire
+  version: v5
+  kind: rules
+  precedence: 40
+  year: 2018
+  notes: No copyright year printed in this PDF; Camarilla was published in 2018.
+- book_id: v5-sabbat
+  path: V5/Sabbat - The Black Hand.pdf
+  title: 'Sabbat: The Black Hand'
+  edition: v5
+  line: vampire
+  version: v5
+  kind: rules
+  precedence: 40
+  year: 2021
+- book_id: v5-cults-of-the-blood-gods
+  path: V5/Cults of the Blood Gods.pdf
+  title: Cults of the Blood Gods
+  edition: v5
+  line: vampire
+  version: v5
+  kind: rules
+  precedence: 40
+  year: 2022
+- book_id: v5-blood-sigils
+  path: V5/Blood Sigils (Hi-Res).pdf
+  title: Blood Sigils
+  edition: v5
+  line: vampire
+  version: v5
+  kind: rules
+  precedence: 40
+  year: 2023
+- book_id: v5-gehenna-war
+  path: V5/Gehenna War [Updated With Errata].pdf
+  title: The Gehenna War
+  edition: v5
+  line: vampire
+  version: v5
+  kind: rules
+  precedence: 40
+  year: 2024
+- book_id: v5-tattered-facade
+  path: V5/Tattered Facade [HI-Res] [2025-07-17].pdf
+  title: Tattered Facade
+  edition: v5
+  line: vampire
+  version: v5
+  kind: rules
+  precedence: 40
+  year: 2025
+- book_id: v5-forbidden-religions
+  path: V5/Forbidden Religions [2021-11-02].pdf
+  title: Forbidden Religions
+  edition: v5
+  line: vampire
+  version: v5
+  kind: rules
+  precedence: 40
+  year: 2021
+- book_id: v5-children-of-the-blood
+  path: V5/Children Of The Blood.pdf
+  title: Children of the Blood
+  edition: v5
+  line: vampire
+  version: v5
+  kind: rules
+  precedence: 40
+  year: 2021
+- book_id: v5-courts-of-the-damned
+  path: V5/Courts of the Damned.pdf
+  title: Courts of the Damned
+  edition: v5
+  line: vampire
+  version: v5
+  kind: rules
+  precedence: 40
+  year: 2026
+- book_id: v5-in-memoriam
+  path: V5/In Memoriam.pdf
+  title: In Memoriam
+  edition: v5
+  line: vampire
+  version: v5
+  kind: rules
+  precedence: 40
+  year: 2025
+- book_id: v5-blood-stained-love
+  path: V5/Blood-Stained Love (Digital)(Hi-Res).pdf
+  title: Blood-Stained Love
+  edition: v5
+  line: vampire
+  version: v5
+  kind: rules
+  precedence: 40
+  year: 2023
+- book_id: v5-succubus-club
+  path: V5/Live From The Succubus Club [2025-12-19].pdf
+  title: Live from the Succubus Club
+  edition: v5
+  line: vampire
+  version: v5
+  kind: rules
+  precedence: 40
+  year: 2025
+- book_id: v5-second-inquisition
+  path: V5/Second Inquisition.pdf
+  title: Second Inquisition
+  edition: v5
+  line: vampire
+  version: v5
+  kind: lore
+  precedence: 50
+  year: 2021
+  notes: 'No outline: headings come from font sizes.'
+- book_id: v5-chicago-by-night
+  path: V5/Chicago By Night.pdf
+  title: Chicago by Night
+  edition: v5
+  line: vampire
+  version: v5
+  kind: lore
+  precedence: 50
+  year: 2018
+- book_id: v5-chicago-folios
+  path: V5/The Chicago Folios (Final) [2020-03-10] .pdf
+  title: The Chicago Folios
+  edition: v5
+  line: vampire
+  version: v5
+  kind: lore
+  precedence: 50
+  year: 2020
+  notes: Final version; the earlier non-final copy is excluded.
+- book_id: v5-book-of-nod
+  path: V5/The Book Of Nod (Renegade Version).pdf
+  title: The Book of Nod
+  edition: v5
+  line: vampire
+  version: v5
+  kind: lore
+  precedence: 50
+  year: 2021
+- book_id: v5-nod-apocrypha
+  path: V5/The Book Of Nod Apocrypha (Digital)(Hi-Res).pdf
+  title: The Book of Nod Apocrypha
+  edition: v5
+  line: vampire
+  version: v5
+  kind: lore
+  precedence: 50
+  year: 2023
+- book_id: v5-revelations-dark-mother
+  path: V5/Revelations of the Dark Mother (Hi-Res) [2024-08-04].pdf
+  title: Revelations of the Dark Mother
+  edition: v5
+  line: vampire
+  version: v5
+  kind: lore
+  precedence: 50
+  year: 2024
+- book_id: v5-la-by-night-loresheets
+  path: V5/La By Night Loresheets.pdf
+  title: L.A. by Night Loresheets
+  edition: v5
+  line: vampire
+  version: v5
+  kind: lore
+  precedence: 50
+  year: 0
+  notes: Year not printed in the PDF.
+- book_id: v5-choice-of-games-loresheets
+  path: V5/Choice of Games Loresheets [2022-10-11].pdf
+  title: Choice of Games Loresheets
+  edition: v5
+  line: vampire
+  version: v5
+  kind: lore
+  precedence: 50
+  year: 0
+  notes: Year not printed in the PDF.
+- book_id: v5-storytellers-toolkit
+  path: V5/Storyteller's Toolkit [OEF][2022-02-18].pdf
+  title: Storyteller's Toolkit
+  edition: v5
+  line: vampire
+  version: v5
+  kind: lore
+  precedence: 50
+  year: 2021
+- book_id: v5-taste-of-the-moon
+  path: V5/A Taste Of The Moon.pdf
+  title: A Taste of the Moon
+  edition: v5
+  line: vampire
+  version: v5
+  kind: adventure
+  precedence: 60
+  year: 2023
+  notes: Same content as 'Taste Of The Moon.pdf'; this copy has the outline and page labels.
+- book_id: v5-ascension-night
+  path: V5/Ascension Night - Jumpstart (With Bookmakrs).pdf
+  title: Ascension Night (Jumpstart)
+  edition: v5
+  line: vampire
+  version: v5
+  kind: adventure
+  precedence: 60
+  year: 2018
+- book_id: v5-auld-sanguine
+  path: V5/Auld Sanguine - New Year's Eve Story (v4).pdf
+  title: Auld Sanguine
+  edition: v5
+  line: vampire
+  version: v5
+  kind: adventure
+  precedence: 60
+  year: 2021
+- book_id: v5-fall-of-london
+  path: V5/Fall of London.pdf
+  title: The Fall of London
+  edition: v5
+  line: vampire
+  version: v5
+  kind: adventure
+  precedence: 60
+  year: 2023
+- book_id: v5-last-dance-at-renaulds
+  path: V5/Last Dance At Renaulds (Playrenegade S1 Adventures).pdf
+  title: Last Dance at Renauld's
+  edition: v5
+  line: vampire
+  version: v5
+  kind: adventure
+  precedence: 60
+  year: 2022
+- book_id: v5-let-the-streets-run-red
+  path: V5/Let the Streets Run Red - VtM - V5 (updated) [2020].pdf
+  title: Let the Streets Run Red
+  edition: v5
+  line: vampire
+  version: v5
+  kind: adventure
+  precedence: 60
+  year: 2020
+  include: 253-504
+  notes: The PDF holds two copies of the book; pages 1-252 are the duplicate.
+- book_id: v5-love-bites
+  path: V5/Love Bites (Hi-Res) NYE 2024 [2024-12-07].pdf
+  title: Love Bites
+  edition: v5
+  line: vampire
+  version: v5
+  kind: adventure
+  precedence: 60
+  year: 2023
+- book_id: v5-make-blood-boil
+  path: V5/Make Blood Boil.pdf
+  title: Make Blood Boil (Jumpstart)
+  edition: v5
+  line: vampire
+  version: v5
+  kind: adventure
+  precedence: 60
+  year: 2018
+- book_id: v5-new-blood
+  path: V5/New Blood - v5 Starter Set (Complete).pdf
+  title: New Blood (Starter Set)
+  edition: v5
+  line: vampire
+  version: v5
+  kind: adventure
+  precedence: 60
+  year: 2019
+- book_id: v5-reins-of-power
+  path: V5/Reins of Power (Hi-Res) NYE 2025 [2024-12-07].pdf
+  title: Reins of Power
+  edition: v5
+  line: vampire
+  version: v5
+  kind: adventure
+  precedence: 60
+  year: 2024
+- book_id: v5-crimson-gutter
+  path: V5/The Crimson Gutter (High Res).pdf
+  title: The Crimson Gutter
+  edition: v5
+  line: vampire
+  version: v5
+  kind: adventure
+  precedence: 60
+  year: 2023
+- book_id: v5-the-monsters
+  path: V5/The Monster(s) - A Vampire The Masquerade 5th Edition Quickstart (With Bookmarks).pdf
+  title: The Monster(s) (Quickstart)
+  edition: v5
+  line: vampire
+  version: v5
+  kind: adventure
+  precedence: 60
+  year: 2018
+- book_id: v5-primogens-gambit
+  path: V5/The Primogen's Gambit (Hi-Res) (PlayRenegade S2 Adventures).pdf
+  title: The Primogen's Gambit
+  edition: v5
+  line: vampire
+  version: v5
+  kind: adventure
+  precedence: 60
+  year: 2022
+- book_id: v5-three-knives
+  path: V5/Three Knives to Midnight - A New Year's Story for Vampire the Masquerade [OEF][2025-11-26].pdf
+  title: Three Knives to Midnight
+  edition: v5
+  line: vampire
+  version: v5
+  kind: adventure
+  precedence: 60
+  year: 2025
+- book_id: v5-tradition-of-destruction
+  path: V5/Tradition of Desctruction (Free RPG Day) [OEF][2023].pdf
+  title: Tradition of Destruction
+  edition: v5
+  line: vampire
+  version: v5
+  kind: adventure
+  precedence: 60
+  year: 2025
+- book_id: v5-trails-of-ash-and-bone
+  path: V5/Trails Of Ash And Bone.pdf
+  title: Trails of Ash and Bone
+  edition: v5
+  line: vampire
+  version: v5
+  kind: adventure
+  precedence: 60
+  year: 2021
+- book_id: v5-under-a-changing-moon
+  path: V5/Under A Changing Moon [Hi Res].pdf
+  title: Under a Changing Moon
+  edition: v5
+  line: vampire
+  version: v5
+  kind: adventure
+  precedence: 60
+  year: 2025
+- book_id: v5-under-the-skin
+  path: V5/Under The Skin (PlayRenegade S4 Adventures) (Hi-Res) [2024-10-07].pdf
+  title: Under the Skin
+  edition: v5
+  line: vampire
+  version: v5
+  kind: adventure
+  precedence: 60
+  year: 2024
+- book_id: v5-wine-dark-waters
+  path: V5/Wine-Dark Waters (PlayRenegade S3 Adventures).pdf
+  title: Wine-Dark Waters
+  edition: v5
+  line: vampire
+  version: v5
+  kind: adventure
+  precedence: 60
+  year: 2024
+- book_id: vtm-revised-core
+  path: oWoD/WOD - Vampire - The Masquerade - Player's Guide (Revised - Text Only).pdf
+  title: 'Vampire: The Masquerade Revised'
+  edition: classic
+  line: vampire
+  version: revised
+  kind: rules
+  precedence: 10
+  year: 1998
+  strip_lines:
+  - ^file:///
+  - ^((Previous|Next|Up|Contents)\s*)+$
+  - '^Vampire: the Masquerade Revised - '
+  - ^John Black$
+  - ^Digitally signed by
+  - '^DN: '
+  - '^Reason: '
+  - '^Date: \d{4}'
+  - ^Signature$
+  - ^Not Verified$
+  notes: 'Mis-named file: it is the Revised core rulebook (a web capture, text only). No printed page numbers: page = PDF page. Year not printed (Revised was published 1998).'
+- book_id: wta-revised-core
+  path: Classic World of Darkness/Werewolf (c)/Core/Werewolf the Apocalypse Core (Revised).pdf
+  title: 'Werewolf: The Apocalypse Revised'
+  edition: classic
+  line: werewolf
+  version: revised
+  kind: rules
+  precedence: 10
+  year: 2000
+  notes: Scan with an OCR text layer; no outline.
+- book_id: mta-revised-core
+  path: Classic World of Darkness/Mage (c)/Core/Mage the Ascension Revised.pdf
+  title: 'Mage: The Ascension Revised'
+  edition: classic
+  line: mage
+  version: revised
+  kind: rules
+  precedence: 10
+  year: 2000
+- book_id: vtm-guide-camarilla
+  path: Classic World of Darkness/Vampire/Guides and Handbooks (not complete)/Guide to the Camarilla (revised).pdf
+  title: Guide to the Camarilla
+  edition: classic
+  line: vampire
+  version: revised
+  kind: rules
+  precedence: 30
+  year: 1999
+- book_id: vtm-guide-sabbat
+  path: Classic World of Darkness/Vampire/Guides and Handbooks (not complete)/Guide to the Sabbat (revised).pdf
+  title: Guide to the Sabbat
+  edition: classic
+  line: vampire
+  version: revised
+  kind: rules
+  precedence: 30
+  year: 1999
+- book_id: vtm-guide-anarchs
+  path: Classic World of Darkness/Vampire/Guides and Handbooks (not complete)/Guide to the Anarchs (revised).pdf
+  title: Guide to the Anarchs
+  edition: classic
+  line: vampire
+  version: revised
+  kind: rules
+  precedence: 30
+  year: 2002
+- book_id: vtm-storytellers-handbook
+  path: Classic World of Darkness/Vampire/Guides and Handbooks (not complete)/Storyteller's Handbook (revised).pdf
+  title: Storytellers Handbook (Vampire Revised)
+  edition: classic
+  line: vampire
+  version: revised
+  kind: rules
+  precedence: 30
+  year: 2000
+- book_id: vtm-players-guide-revised
+  path: Classic World of Darkness/Vampire/Guides and Handbooks (not complete)/Player's Guide (revised).pdf
+  title: Players Guide (Vampire Revised)
+  edition: classic
+  line: vampire
+  version: revised
+  kind: rules
+  precedence: 30
+  year: 0
+  notes: 'Image-only scan: skipped until it is OCR''d.'
+- book_id: vtm-storyteller-companion-revised
+  path: Classic World of Darkness/Vampire/Guides and Handbooks (not complete)/Storyteller Companion (revised).pdf
+  title: Storyteller Companion (Vampire Revised)
+  edition: classic
+  line: vampire
+  version: revised
+  kind: rules
+  precedence: 30
+  year: 0
+  notes: 'Image-only scan: skipped until it is OCR''d.'
+- book_id: vtm-clanbook-assamite
+  path: Classic World of Darkness/Vampire/Clanbooks - Revised/Revised - Clanbook Assamite.pdf
+  title: 'Clanbook: Assamite (Revised)'
+  edition: classic
+  line: vampire
+  version: revised
+  kind: rules
+  precedence: 40
+  year: 2000
+- book_id: vtm-clanbook-brujah
+  path: Classic World of Darkness/Vampire/Clanbooks - Revised/Revised - Clanbook Brujah.pdf
+  title: 'Clanbook: Brujah (Revised)'
+  edition: classic
+  line: vampire
+  version: revised
+  kind: rules
+  precedence: 40
+  year: 2000
+- book_id: vtm-clanbook-followers-of-set
+  path: Classic World of Darkness/Vampire/Clanbooks - Revised/Revised - Clanbook Followers of Set.pdf
+  title: 'Clanbook: Followers of Set (Revised)'
+  edition: classic
+  line: vampire
+  version: revised
+  kind: rules
+  precedence: 40
+  year: 2001
+- book_id: vtm-clanbook-gangrel
+  path: Classic World of Darkness/Vampire/Clanbooks - Revised/Revised - Clanbook Gangrel.pdf
+  title: 'Clanbook: Gangrel (Revised)'
+  edition: classic
+  line: vampire
+  version: revised
+  kind: rules
+  precedence: 40
+  year: 2000
+- book_id: vtm-clanbook-giovanni
+  path: Classic World of Darkness/Vampire/Clanbooks - Revised/Revised - Clanbook Giovanni.pdf
+  title: 'Clanbook: Giovanni (Revised)'
+  edition: classic
+  line: vampire
+  version: revised
+  kind: rules
+  precedence: 40
+  year: 2001
+- book_id: vtm-clanbook-lasombra
+  path: Classic World of Darkness/Vampire/Clanbooks - Revised/Revised - Clanbook Lasombra.pdf
+  title: 'Clanbook: Lasombra (Revised)'
+  edition: classic
+  line: vampire
+  version: revised
+  kind: rules
+  precedence: 40
+  year: 2001
+- book_id: vtm-clanbook-malkavian
+  path: Classic World of Darkness/Vampire/Clanbooks - Revised/Revised - Clanbook Malkavian.pdf
+  title: 'Clanbook: Malkavian (Revised)'
+  edition: classic
+  line: vampire
+  version: revised
+  kind: rules
+  precedence: 40
+  year: 2000
+- book_id: vtm-clanbook-nosferatu
+  path: Classic World of Darkness/Vampire/Clanbooks - Revised/Revised - Clanbook Nosferatu.pdf
+  title: 'Clanbook: Nosferatu (Revised)'
+  edition: classic
+  line: vampire
+  version: revised
+  kind: rules
+  precedence: 40
+  year: 2000
+- book_id: vtm-clanbook-ravnos
+  path: Classic World of Darkness/Vampire/Clanbooks - Revised/Revised - Clanbook Ravnos.pdf
+  title: 'Clanbook: Ravnos (Revised)'
+  edition: classic
+  line: vampire
+  version: revised
+  kind: rules
+  precedence: 40
+  year: 2001
+- book_id: vtm-clanbook-toreador
+  path: Classic World of Darkness/Vampire/Clanbooks - Revised/Revised - Clanbook Toreador.pdf
+  title: 'Clanbook: Toreador (Revised)'
+  edition: classic
+  line: vampire
+  version: revised
+  kind: rules
+  precedence: 40
+  year: 2000
+- book_id: vtm-clanbook-tremere
+  path: Classic World of Darkness/Vampire/Clanbooks - Revised/Revised - Clanbook Tremere.pdf
+  title: 'Clanbook: Tremere (Revised)'
+  edition: classic
+  line: vampire
+  version: revised
+  kind: rules
+  precedence: 40
+  year: 2000
+- book_id: vtm-clanbook-tzimisce
+  path: Classic World of Darkness/Vampire/Clanbooks - Revised/Revised - Clanbook Tzimisce.pdf
+  title: 'Clanbook: Tzimisce (Revised)'
+  edition: classic
+  line: vampire
+  version: revised
+  kind: rules
+  precedence: 40
+  year: 2001
+- book_id: vtm-clanbook-ventrue
+  path: Classic World of Darkness/Vampire/Clanbooks - Revised/Revised - Clanbook Ventrue.pdf
+  title: 'Clanbook: Ventrue (Revised)'
+  edition: classic
+  line: vampire
+  version: revised
+  kind: rules
+  precedence: 40
+  year: 2000
+- book_id: mta-guide-traditions
+  path: Classic World of Darkness/Mage (c)/Revised/Guide to the Traditions.pdf
+  title: Guide to the Traditions
+  edition: classic
+  line: mage
+  version: revised
+  kind: rules
+  precedence: 30
+  year: 0
+  notes: Year not printed in the PDF.
+- book_id: mta-storytellers-handbook
+  path: Classic World of Darkness/Mage (c)/Revised/Storyteller's Handbook.pdf
+  title: Storytellers Handbook (Mage Revised)
+  edition: classic
+  line: mage
+  version: revised
+  kind: rules
+  precedence: 30
+  year: 2002
+- book_id: mta-tradition-akashic-brotherhood
+  path: Classic World of Darkness/Mage (c)/Tradition Books - Revised/Akashic Brotherhood Revised.pdf
+  title: 'Tradition Book: Akashic Brotherhood (Revised)'
+  edition: classic
+  line: mage
+  version: revised
+  kind: rules
+  precedence: 40
+  year: 2001
+- book_id: mta-tradition-celestial-chorus
+  path: Classic World of Darkness/Mage (c)/Tradition Books - Revised/Celestial Chorus Revised.pdf
+  title: 'Tradition Book: Celestial Chorus (Revised)'
+  edition: classic
+  line: mage
+  version: revised
+  kind: rules
+  precedence: 40
+  year: 2001
+- book_id: mta-tradition-cult-of-ecstasy
+  path: Classic World of Darkness/Mage (c)/Tradition Books - Revised/Cult of Ecstasy Revised.pdf
+  title: 'Tradition Book: Cult of Ecstasy (Revised)'
+  edition: classic
+  line: mage
+  version: revised
+  kind: rules
+  precedence: 40
+  year: 0
+  notes: Year not printed in the PDF.
+- book_id: mta-tradition-dreamspeakers
+  path: Classic World of Darkness/Mage (c)/Tradition Books - Revised/Dreamspeakers Revised.pdf
+  title: 'Tradition Book: Dreamspeakers (Revised)'
+  edition: classic
+  line: mage
+  version: revised
+  kind: rules
+  precedence: 40
+  year: 0
+  notes: Year not printed in the PDF.
+- book_id: mta-tradition-euthanatos
+  path: Classic World of Darkness/Mage (c)/Tradition Books - Revised/Euthanatos Revised.pdf
+  title: 'Tradition Book: Euthanatos (Revised)'
+  edition: classic
+  line: mage
+  version: revised
+  kind: rules
+  precedence: 40
+  year: 2002
+- book_id: mta-tradition-order-of-hermes
+  path: Classic World of Darkness/Mage (c)/Tradition Books - Revised/Order of Hermes Revised.pdf
+  title: 'Tradition Book: Order of Hermes (Revised)'
+  edition: classic
+  line: mage
+  version: revised
+  kind: rules
+  precedence: 40
+  year: 2003
+- book_id: mta-tradition-sons-of-ether
+  path: Classic World of Darkness/Mage (c)/Tradition Books - Revised/Sons of Ether Revised.pdf
+  title: 'Tradition Book: Sons of Ether (Revised)'
+  edition: classic
+  line: mage
+  version: revised
+  kind: rules
+  precedence: 40
+  year: 0
+  notes: Year not printed in the PDF.
+- book_id: mta-tradition-verbena
+  path: Classic World of Darkness/Mage (c)/Tradition Books - Revised/Verbena Revised.pdf
+  title: 'Tradition Book: Verbena (Revised)'
+  edition: classic
+  line: mage
+  version: revised
+  kind: rules
+  precedence: 40
+  year: 0
+  notes: Year not printed in the PDF.
+- book_id: mta-tradition-virtual-adepts
+  path: Classic World of Darkness/Mage (c)/Tradition Books - Revised/Virtual Adepts Revised.pdf
+  title: 'Tradition Book: Virtual Adepts (Revised)'
+  edition: classic
+  line: mage
+  version: revised
+  kind: rules
+  precedence: 40
+  year: 2003
+- book_id: mta-tradition-hollow-ones
+  path: Classic World of Darkness/Mage (c)/Tradition Books - Revised/Hollow Ones.pdf
+  title: 'Tradition Book: Hollow Ones (Revised)'
+  edition: classic
+  line: mage
+  version: revised
+  kind: rules
+  precedence: 40
+  year: 0
+  notes: Year not printed in the PDF.
+- book_id: mta-convention-iteration-x
+  path: Classic World of Darkness/Mage (c)/Convention Books/Iteration X Revised.pdf
+  title: 'Convention Book: Iteration X (Revised)'
+  edition: classic
+  line: mage
+  version: revised
+  kind: rules
+  precedence: 40
+  year: 2001
+- book_id: mta-convention-nwo
+  path: Classic World of Darkness/Mage (c)/Convention Books/N.W.O. Revised.pdf
+  title: 'Convention Book: N.W.O. (Revised)'
+  edition: classic
+  line: mage
+  version: revised
+  kind: rules
+  precedence: 40
+  year: 0
+  notes: Year not printed in the PDF (only a 2012/2013 PDF-reissue copyright, or none).
+- book_id: mta-convention-progenitors
+  path: Classic World of Darkness/Mage (c)/Convention Books/Progenitors Revised.pdf
+  title: 'Convention Book: Progenitors (Revised)'
+  edition: classic
+  line: mage
+  version: revised
+  kind: rules
+  precedence: 40
+  year: 0
+  notes: Year not printed in the PDF (only a 2012/2013 PDF-reissue copyright, or none).
+- book_id: mta-convention-syndicate
+  path: Classic World of Darkness/Mage (c)/Convention Books/Syndicate Revised.pdf
+  title: 'Convention Book: Syndicate (Revised)'
+  edition: classic
+  line: mage
+  version: revised
+  kind: rules
+  precedence: 40
+  year: 0
+  notes: Year not printed in the PDF (only a 2012/2013 PDF-reissue copyright, or none).
+- book_id: mta-convention-void-engineers
+  path: Classic World of Darkness/Mage (c)/Convention Books/Void Engineers Revised.pdf
+  title: 'Convention Book: Void Engineers (Revised)'
+  edition: classic
+  line: mage
+  version: revised
+  kind: rules
+  precedence: 40
+  year: 0
+  notes: Year not printed in the PDF (only a 2012/2013 PDF-reissue copyright, or none).
+- book_id: wta-umbra-velvet-shadow
+  path: oWoD/WOD - Werewolf - The Apocalypse - Umbra - The Velvet Shadows (Revised).pdf
+  title: 'Umbra: The Velvet Shadow (Revised)'
+  edition: classic
+  line: werewolf
+  version: revised
+  kind: rules
+  precedence: 40
+  year: 2001
+  notes: Scan with an OCR text layer. The Classic-folder copy of this book is image-only.
+- book_id: wta-storytellers-handbook
+  path: Classic World of Darkness/Werewolf (c)/Guides/Storytellers Handbook (revised).pdf
+  title: Storytellers Handbook (Werewolf Revised)
+  edition: classic
+  line: werewolf
+  version: revised
+  kind: rules
+  precedence: 30
+  year: 0
+  notes: 'Image-only scan: skipped until it is OCR''d.'
+- book_id: wta-tribebook-black-furies
+  path: Classic World of Darkness/Werewolf (c)/Tribe Books - Revised/Black Furies (Revised).pdf
+  title: 'Tribebook: Black Furies (Revised)'
+  edition: classic
+  line: werewolf
+  version: revised
+  kind: rules
+  precedence: 40
+  year: 0
+  notes: 'Image-only scan: skipped until it is OCR''d.'
+- book_id: wta-tribebook-bone-gnawers
+  path: Classic World of Darkness/Werewolf (c)/Tribe Books - Revised/Bone Gnawers (Revised).pdf
+  title: 'Tribebook: Bone Gnawers (Revised)'
+  edition: classic
+  line: werewolf
+  version: revised
+  kind: rules
+  precedence: 40
+  year: 0
+  notes: 'Image-only scan: skipped until it is OCR''d.'
+- book_id: wta-tribebook-children-of-gaia
+  path: Classic World of Darkness/Werewolf (c)/Tribe Books - Revised/Children Of Gaia (Revised).pdf
+  title: 'Tribebook: Children Of Gaia (Revised)'
+  edition: classic
+  line: werewolf
+  version: revised
+  kind: rules
+  precedence: 40
+  year: 0
+  notes: 'Image-only scan: skipped until it is OCR''d.'
+- book_id: wta-tribebook-fianna
+  path: Classic World of Darkness/Werewolf (c)/Tribe Books - Revised/Fianna (Revised).pdf
+  title: 'Tribebook: Fianna (Revised)'
+  edition: classic
+  line: werewolf
+  version: revised
+  kind: rules
+  precedence: 40
+  year: 0
+  notes: 'Image-only scan: skipped until it is OCR''d.'
+- book_id: wta-tribebook-get-of-fenris
+  path: Classic World of Darkness/Werewolf (c)/Tribe Books - Revised/Get of Fenris Revised.pdf
+  title: 'Tribebook: Get of Fenris (Revised)'
+  edition: classic
+  line: werewolf
+  version: revised
+  kind: rules
+  precedence: 40
+  year: 0
+  notes: 'Image-only scan: skipped until it is OCR''d.'
+- book_id: wta-tribebook-glass-walkers
+  path: Classic World of Darkness/Werewolf (c)/Tribe Books - Revised/Glass Walkers (Revised).pdf
+  title: 'Tribebook: Glass Walkers (Revised)'
+  edition: classic
+  line: werewolf
+  version: revised
+  kind: rules
+  precedence: 40
+  year: 0
+  notes: 'Image-only scan: skipped until it is OCR''d.'
+- book_id: wta-tribebook-red-talons
+  path: Classic World of Darkness/Werewolf (c)/Tribe Books - Revised/Red Talons (Revised).pdf
+  title: 'Tribebook: Red Talons (Revised)'
+  edition: classic
+  line: werewolf
+  version: revised
+  kind: rules
+  precedence: 40
+  year: 0
+  notes: 'Image-only scan: skipped until it is OCR''d.'
+- book_id: wta-tribebook-shadow-lords
+  path: Classic World of Darkness/Werewolf (c)/Tribe Books - Revised/Shadow Lords (Revised).pdf
+  title: 'Tribebook: Shadow Lords (Revised)'
+  edition: classic
+  line: werewolf
+  version: revised
+  kind: rules
+  precedence: 40
+  year: 0
+  notes: 'Image-only scan: skipped until it is OCR''d.'
+- book_id: wta-tribebook-silent-striders
+  path: Classic World of Darkness/Werewolf (c)/Tribe Books - Revised/Silent Striders (Revised).pdf
+  title: 'Tribebook: Silent Striders (Revised)'
+  edition: classic
+  line: werewolf
+  version: revised
+  kind: rules
+  precedence: 40
+  year: 0
+  notes: 'Image-only scan: skipped until it is OCR''d.'
+- book_id: wta-tribebook-silver-fangs
+  path: Classic World of Darkness/Werewolf (c)/Tribe Books - Revised/Silver Fangs (Revised).pdf
+  title: 'Tribebook: Silver Fangs (Revised)'
+  edition: classic
+  line: werewolf
+  version: revised
+  kind: rules
+  precedence: 40
+  year: 0
+  notes: 'Image-only scan: skipped until it is OCR''d.'
+- book_id: wta-tribebook-stargazers
+  path: Classic World of Darkness/Werewolf (c)/Tribe Books - Revised/Stargazers (Revised).pdf
+  title: 'Tribebook: Stargazers (Revised)'
+  edition: classic
+  line: werewolf
+  version: revised
+  kind: rules
+  precedence: 40
+  year: 0
+  notes: 'Image-only scan: skipped until it is OCR''d.'
+- book_id: wta-tribebook-uktena
+  path: Classic World of Darkness/Werewolf (c)/Tribe Books - Revised/Uktena (Revised).pdf
+  title: 'Tribebook: Uktena (Revised)'
+  edition: classic
+  line: werewolf
+  version: revised
+  kind: rules
+  precedence: 40
+  year: 0
+  notes: 'Image-only scan: skipped until it is OCR''d.'
+- book_id: wta-tribebook-wendigo
+  path: Classic World of Darkness/Werewolf (c)/Tribe Books - Revised/Wendigo (Revised).pdf
+  title: 'Tribebook: Wendigo (Revised)'
+  edition: classic
+  line: werewolf
+  version: revised
+  kind: rules
+  precedence: 40
+  year: 0
+  notes: 'Image-only scan: skipped until it is OCR''d.'
+
+# Files deliberately left out (official books only, no duplicates, no LARP/fiction/art/sheets).
+excluded:
+- path: V5/Anarch.pdf
+  reason: Russian translation
+- path: V5/V5 Rules Errata 1.0 - August 2018.pdf
+  reason: errata already in the Sept. 2019 corebook text
+- path: V5/V5 Rules Errata 2.0 - September 2019.pdf
+  reason: errata already in the Sept. 2019 corebook text
+- path: V5/The Last Night - Pre-Alpha Scenario [2017-06].pdf
+  reason: pre-alpha rules
+- path: V5/The Chicago Folios.pdf
+  reason: non-final copy of The Chicago Folios
+- path: V5/Blood Sigils (Low-Res).pdf
+  reason: duplicate (Hi-Res kept)
+- path: V5/Tattered Facade [Low-Res] [2025-07-17].pdf
+  reason: duplicate (Hi-Res kept)
+- path: V5/The Book Of Nod Apocrypha (Low-Res).pdf
+  reason: duplicate (Hi-Res kept)
+- path: V5/The Primogens Gambit (Low-Res) (PlayRenegade S2 Adventures).pdf
+  reason: duplicate (Hi-Res kept)
+- path: V5/The Primogens Gambit Digital (Hi-Res).pdf
+  reason: duplicate
+- path: V5/Under The Skin (PlayRenegade S4 Adventures) (Low-Res) [2024-10-07].pdf
+  reason: duplicate (Hi-Res kept)
+- path: V5/Under The Skin (PlayRenegade S4 Adventures).pdf
+  reason: duplicate (Hi-Res kept)
+- path: V5/Under A Changing Moon [Low Res].pdf
+  reason: duplicate (Hi-Res kept)
+- path: V5/Taste Of The Moon.pdf
+  reason: duplicate of A Taste Of The Moon.pdf
+- path: V5/Storytellers Screen - (Fanmade).pdf
+  reason: fan-made
+- path: V5/Storytellers Screen Outer.pdf
+  reason: screen art, image only
+- path: V5/Clans - Reference Sheet.pdf
+  reason: reference sheet, image only
+- path: V5/Descendant Of Adana.pdf
+  reason: single image
+- path: V5/Vampire The Masquerade Coteries of New York Artbook.pdf
+  reason: art book
+- path: V5/Vampire The Masquerade Shadows of New York Artbook.pdf
+  reason: art book
+- path: V5/Enlightenment In Blood (With Bookmarks) - A Vampire The Masquerade LARP.pdf
+  reason: LARP
+- path: V5/War of Ages [2023-05-02].pdf
+  reason: 'LARP (Mind''s Eye Theatre): the text mentions LARP/Mind''s Eye 649 times'
+- path: V5/The Lost Childer Play Guide [2020-04-26].pdf
+  reason: Storytellers Vault (community content)
+- path: V5/Bleed And How To Deal With It.pdf
+  reason: 'not verifiably official: no publisher or copyright line in the PDF'
+- path: V5/Fatal Choices (Gehenna Gaming).pdf
+  reason: 'not verifiably official: no publisher or copyright line in the PDF (Gehenna Gaming release)'
+- path: V5/Fledgling Handouts [2023-07-12].pdf
+  reason: handouts, not a book
+- path: V5/Month Of Darkness Antagonist (The Dominatrix) [2022-10-26].pdf
+  reason: 3-page promo handout, not a book
+- path: V5/Month Of Darkness Character Development Questions [2024-12-07].pdf
+  reason: 1-page promo handout, not a book
+- path: Classic World of Darkness/Vampire/Core/Vampire -  the Masquerade - Revised.pdf
+  reason: duplicate of the Revised core (scan); the text-only oWoD copy is used
+- path: oWoD/WOD - Vampire - The Masquerade - Guide to the Camarilla.pdf
+  reason: duplicate, image-only (the Classic-folder copy has a text layer)
+- path: oWoD/WOD - Vampire - The Masquerade - Guide to the Sabbat.pdf
+  reason: duplicate, image-only (the Classic-folder copy has a text layer)
+- path: Classic World of Darkness/Werewolf (c)/Misc/Umbra - Revised.pdf
+  reason: duplicate, image-only (the oWoD copy has an OCR layer)
