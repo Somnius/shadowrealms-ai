@@ -704,7 +704,13 @@ export default function V5CharacterCreationWizard({
                       <select
                         aria-label={t('wizard:v5.discAt', { one: 'Discipline at {{count}} dot', other: 'Discipline at {{count}} dots' }, { count: row.base })}
                         value={row.name}
-                        onChange={(e) => setDisc(row.pick, { name: e.target.value })}
+                        onChange={(e) => {
+                          // A new name starts with no powers, except the ones already typed on
+                          // that Discipline's own (predator/XP) row, which this pick now absorbs.
+                          const next = e.target.value;
+                          const absorbed = discRows.find((r) => r.pick == null && r.name === next);
+                          setDisc(row.pick, { name: next, powers: absorbed ? absorbed.powers : [] });
+                        }}
                         style={{ ...inputStyle, flex: '1 1 200px', width: 'auto', padding: '8px' }}
                       >
                         <option value="">{t('wizard:v5.discAtPick', { one: 'Discipline at {{count}} dot…', other: 'Discipline at {{count}} dots…' }, { count: row.base })}</option>
@@ -723,7 +729,7 @@ export default function V5CharacterCreationWizard({
                     <div style={{ color: 'var(--sr-gold-400)', fontSize: '12px', marginTop: '4px' }}>
                       {row.predator ? t('wizard:v5.predatorDotNote', '+1 from {{type}}', { type: predatorType }) : null}
                       {row.predator && row.xp ? ' · ' : null}
-                      {row.xp ? t('wizard:v5.xpDotNote', '+{{n}} from experience', { n: row.xp }) : null}
+                      {row.xp ? t('wizard:v5.xpDotNote', '+{{n}} from XP', { n: row.xp }) : null}
                     </div>
                   ) : null}
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '6px' }}>
@@ -773,6 +779,7 @@ export default function V5CharacterCreationWizard({
                 setPredatorType(e.target.value);
                 setPredatorSpecialty(null);
                 setPredatorDiscipline('');
+                setExtraPowers({});
               }}
               style={{ ...inputStyle, maxWidth: '420px', marginBottom: '12px' }}
             >

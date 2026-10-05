@@ -57,3 +57,34 @@ test('no Blood Sorcery, no starting ritual input', () => {
   pick(screen.getByLabelText('Discipline at 2 dots'), 'Potence');
   expect(screen.queryByLabelText('Starting ritual (Level 1)')).toBeNull();
 });
+
+test('a pick that changes Discipline drops its powers and absorbs the predator row', () => {
+  renderForge();
+  pick(document.getElementById('v5-field-clan'), 'Tremere');
+  pick(screen.getByLabelText('Discipline at 2 dots'), 'Auspex');
+  pick(screen.getByLabelText('Discipline at 1 dot'), 'Dominate');
+  pick(screen.getByLabelText('Dominate power 1'), 'Cloud Memory');
+  pick(document.getElementById('v5-field-predator'), 'Bagger');
+  pick(document.getElementById('v5-field-predator-discipline'), 'Blood Sorcery');
+  pick(screen.getByLabelText('Blood Sorcery power 1'), 'A Taste for Blood');
+
+  // Dominate → Blood Sorcery: the predator-only row merges into the pick, its power kept
+  pick(screen.getByLabelText('Discipline at 1 dot'), 'Blood Sorcery');
+  expect(screen.getByRole('group', { name: 'Blood Sorcery: 2 of 5' })).toBeInTheDocument();
+  expect(screen.getByLabelText('Blood Sorcery power 1')).toHaveValue('A Taste for Blood');
+  expect(screen.getByLabelText('Blood Sorcery power 2')).toHaveValue('');
+  expect(screen.queryByDisplayValue('Cloud Memory')).toBeNull();
+
+  // Blood Sorcery → Dominate: the Dominate pick starts empty, not with Blood Sorcery powers
+  pick(screen.getByLabelText('Discipline at 1 dot'), 'Dominate');
+  expect(screen.getByLabelText('Dominate power 1')).toHaveValue('');
+});
+
+test('changing predator type clears the powers typed for its Discipline', () => {
+  tremereBagger('Obfuscate');
+  pick(screen.getByLabelText('Obfuscate power 1'), 'Cloak of Shadows');
+  pick(document.getElementById('v5-field-predator'), 'Alleycat');
+  pick(document.getElementById('v5-field-predator'), 'Bagger');
+  pick(document.getElementById('v5-field-predator-discipline'), 'Obfuscate');
+  expect(screen.getByLabelText('Obfuscate power 1')).toHaveValue('');
+});
