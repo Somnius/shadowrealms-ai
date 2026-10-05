@@ -56,9 +56,16 @@
     "saved": "Leniency floor {{n}} saved for this room.",
     "off": "Leniency off: normal d10 randomness for this room.",
     "title": "Room dice rules",
-    "body": "Only for {{room}}. Floor 2-10: no 1s; with 2+ dice, one die is always at least the floor. Same as /ai dice-diff.",
+    "body": "Only for {{room}} (Classic). Floor 2-10: no 1s; with 2+ dice, one die is always at least the floor. Same as /ai dice-diff <2-10>.",
     "restore": "Restore normal",
-    "floor": "Leniency floor (2-10)"
+    "floor": "Leniency floor (2-10)",
+    "bodyV5": "Only for {{room}} (V5). The first two switches only change Hunger dice; normal dice keep their 1s. Willpower rerolls and Rouse checks stay random. Same as /ai dice-diff.",
+    "savedV5": "V5 dice rules saved for this room.",
+    "noBestial": "No bestial failure (Hunger dice never show 1)",
+    "noMessy": "No messy critical (Hunger dice never show 10)",
+    "minSuccesses": "At least this many dice show 6+",
+    "minSuccessesHint": "Never more than the pool. Missing successes come from normal dice first, then Hunger dice.",
+    "minNone": "No minimum"
   },
   "defaultReason": "Dice roll",
   "posted": {

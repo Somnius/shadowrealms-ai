@@ -35,7 +35,7 @@
       "rollHidden": "Όπως το /ai roll, κρυφό από τους παίκτες",
       "rouse": "V5 Rouse Check",
       "clean": "Καθάρισμα μηνυμάτων (δες /ai clean)",
-      "diceDiff": "Επιείκεια ζαριών της τοποθεσίας (ιδιοκτήτης/διαχ.)"
+      "diceDiff": "Επιείκεια ζαριών της τοποθεσίας (ιδιοκτήτης/διαχ.): Classic όριο 2-10, V5 no-bestial / no-messy / successes"
     }
   },
   "list": {

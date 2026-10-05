@@ -24,7 +24,8 @@ export const SLASH_COMMANDS = [
   { name: '/ai roll-hidden', args: '<pool@diff>', description: () => t('chat:slash.ai.rollHidden', 'Same as /ai roll, hidden from players'), admin: true },
   { name: '/ai rouse', args: '[hunger]', description: () => t('chat:slash.ai.rouse', 'V5 Rouse check'), admin: true },
   { name: '/ai clean', args: '<target>', description: () => t('chat:slash.ai.clean', 'Remove clutter (see /ai clean)'), admin: true },
-  { name: '/ai dice-diff', args: '<2-10|restore>', description: () => t('chat:slash.ai.diceDiff', 'Room dice leniency (owner/admin)'), admin: true },
+  // Classic chronicles take a floor 2-10; V5 chronicles take no-bestial|no-messy on|off, successes 0-3.
+  { name: '/ai dice-diff', args: '<2-10 | no-bestial | no-messy | successes | restore>', description: () => t('chat:slash.ai.diceDiff', 'Room dice leniency (owner/admin): Classic floor 2-10, V5 no-bestial / no-messy / successes'), admin: true },
 ];
 
 /**
