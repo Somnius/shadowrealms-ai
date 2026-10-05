@@ -58,4 +58,6 @@ test('starting experience messages are translated', async () => {
     'Ένα ritual επιπέδου 3 θέλει Blood Sorcery 3 (έχεις 2).'
   );
   expect(translateSheetError('Starting experience overspent: 24 of 15 XP.')).toBe('Ξόδεψες παραπάνω XP: 24 από 15.');
+  expect(translateSheetError('At most 12 rituals (you have 13).')).toBe('Το πολύ 12 rituals (έχεις 13).');
+  expect(translateSheetError('Brawl already has the Grappling specialty.')).toBe('Το Brawl έχει ήδη την specialty Grappling.');
 });

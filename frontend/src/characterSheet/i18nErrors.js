@@ -67,6 +67,8 @@ const PATTERNS = [
   [/^A level (\d+) ritual needs Blood Sorcery \d+ \(you have (\d+)\)\.$/, (m) => t('wizard:validation.v5XpRitualBs', 'A level {{level}} ritual needs Blood Sorcery {{level}} (you have {{bs}}).', { level: m[1], bs: m[2] })],
   [/^One XP purchase is not something this step can buy\.$/, () => t('wizard:validation.v5XpUnknown', 'One XP purchase is not something this step can buy.')],
   [/^Starting experience overspent: (\d+) of (\d+) XP\.$/, (m) => t('wizard:validation.v5XpOver', 'Starting experience overspent: {{spent}} of {{total}} XP.', { spent: m[1], total: m[2] })],
+  [/^At most (\d+) rituals \(you have (\d+)\)\.$/, (m) => t('wizard:validation.v5RitualsMax', 'At most {{max}} rituals (you have {{n}}).', { max: m[1], n: m[2] })],
+  [/^(.+) already has the (.+) specialty\.$/, (m) => t('wizard:validation.v5SpecialtyDuplicate', '{{skill}} already has the {{name}} specialty.', { skill: m[1], name: m[2] })],
 ];
 
 export function translateSheetError(msg) {

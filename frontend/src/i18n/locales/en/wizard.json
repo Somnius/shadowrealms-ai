@@ -52,6 +52,8 @@
     "v5XpRitualBs": "A level {{level}} ritual needs Blood Sorcery {{level}} (you have {{bs}}).",
     "v5XpUnknown": "One XP purchase is not something this step can buy.",
     "v5XpOver": "Starting experience overspent: {{spent}} of {{total}} XP.",
+    "v5RitualsMax": "At most {{max}} rituals (you have {{n}}).",
+    "v5SpecialtyDuplicate": "{{skill}} already has the {{name}} specialty.",
     "v5ThinNoDisc": "Thin-bloods start with no Disciplines.",
     "v5DiscPickAny": "Pick two Disciplines: one at 2 dots and one at 1 dot.",
     "v5DiscPickClan": "Pick two clan Disciplines: one at 2 dots and one at 1 dot."

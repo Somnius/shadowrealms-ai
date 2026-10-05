@@ -18,7 +18,8 @@
  *   fledglingHumanity: bool (childer only: start at Humanity 8 instead of 7),
  *   thinBloodMerits: [{name}], thinBloodFlaws: [{name}] (thin-bloods: 1–3 each, equal counts),
  *   xpPurchases: starting experience (neonates 15, ancillae 35), one entry per dot, in order:
- *     {kind: 'attribute'|'skill', trait: key} | {kind: 'discipline', trait: name}
+ *     {kind: 'attribute'|'skill', trait: key, specialty?: name (free one with a first dot in
+ *     Academics/Craft/Performance/Science)} | {kind: 'discipline', trait: name}
  *     | {kind: 'specialty', skill: key, trait: name} | {kind: 'ritual', trait: name, level}
  * }
  */
@@ -52,6 +53,7 @@ import {
   V5_NAME_MAX,
   V5_XP_COSTS,
   V5_XP_MAX_DOTS,
+  V5_RITUALS_MAX,
   generationBloodPotency,
   parsePredatorDiscipline,
   parsePredatorSpecialty,
@@ -161,6 +163,22 @@ export function validateV5Specialties(specialties, skills) {
     if (int(skills?.[k]) > 0 && !list.some((s) => s.skill === k)) {
       return `${V5_SKILL_LABELS[k]} comes with a free specialty — name it.`;
     }
+  }
+  return null;
+}
+
+const specialtyKey = (skill, name) => `${skill}:${String(name || '').trim().toLowerCase()}`;
+
+/** First specialty that repeats on the same skill (case-insensitive), as an error message. */
+export function duplicateSpecialtyError(specialties) {
+  const seen = new Set();
+  for (const sp of specialties || []) {
+    if (!sp || !sp.skill || !String(sp.name || '').trim()) continue;
+    const key = specialtyKey(sp.skill, sp.name);
+    if (seen.has(key)) {
+      return `${V5_SKILL_LABELS[sp.skill] || sp.skill} already has the ${String(sp.name).trim()} specialty.`;
+    }
+    seen.add(key);
   }
   return null;
 }
@@ -291,7 +309,13 @@ export function finalAttributes(sheet) {
 export function finalSkills(sheet) {
   const { skills, specialties } = creationSkills(sheet);
   xpOf(sheet, 'skill').forEach((x) => {
-    if (x.trait in skills) skills[x.trait] += 1;
+    if (!(x.trait in skills)) return;
+    // A first dot in Academics/Craft/Performance/Science brings its free specialty.
+    const free = String(x.specialty || '').trim();
+    if (skills[x.trait] === 0 && V5_FREE_SPECIALTY_SKILLS.includes(x.trait) && free) {
+      specialties.push({ skill: x.trait, name: free });
+    }
+    skills[x.trait] += 1;
   });
   xpOf(sheet, 'specialty').forEach((x) => {
     const name = String(x.trait || '').trim();
@@ -436,7 +460,9 @@ export function disciplineXpMultiplier(sheet, name) {
  * Walk sheet.xpPurchases in order and price each one. Dots are bought one at a time, each costing
  * the new rating × the multiplier; a specialty is flat; a ritual is level × 3 and needs Blood
  * Sorcery at least its level. Returns { total, spent, unspent, log, errors }, where log entries are
- * { kind, trait, what, from, to, cost } (specialty: from 0 to 1; ritual: from 0 to its level).
+ * { kind, trait, what, from, to, cost, purchase } (specialty: from 0 to 1; ritual: from 0 to its
+ * level; a skill's first dot in Academics/Craft/Performance/Science also has `specialty`).
+ * `purchase` is the index in sheet.xpPurchases (the forge removes by it; not saved).
  */
 export function xpLedger(sheet, allDisciplines = V5_DISCIPLINES_ALL) {
   const s = sheet || {};
@@ -450,42 +476,69 @@ export function xpLedger(sheet, allDisciplines = V5_DISCIPLINES_ALL) {
   const skillsNow = finalSkills(s).skills;
   const bs = bloodSorceryLevel(s);
   const discOk = xpDisciplineOptions(s, allDisciplines);
+  const specialtiesSeen = creationSkills(s).specialties.map((sp) => specialtyKey(sp.skill, sp.name));
+  const nameOk = (name) => {
+    if (name.length > V5_NAME_MAX) errors.push(`Names are at most ${V5_NAME_MAX} characters.`);
+  };
+  const newSpecialty = (skill, name) => {
+    const key = specialtyKey(skill, name);
+    if (specialtiesSeen.includes(key)) errors.push(`${V5_SKILL_LABELS[skill]} already has the ${name} specialty.`);
+    specialtiesSeen.push(key);
+  };
 
   if (purchases.length && !total) errors.push('This age has no starting experience to spend.');
-  purchases.forEach((x) => {
+  (s.xpPurchases || []).forEach((x, purchase) => {
+    if (!x) return;
     const trait = String(x.trait || '').trim();
-    const step = (label, base, mult) => {
+    const add = (entry) => log.push({ ...entry, purchase });
+    const step = (label, base, mult, extra) => {
       const id = `${x.kind}:${trait}`;
       const from = at[id] ?? base;
       const to = from + 1;
       at[id] = to;
       if (to > V5_XP_MAX_DOTS) errors.push(`${label} can't go above ${V5_XP_MAX_DOTS} dots.`);
-      log.push({ kind: x.kind, trait, what: label, from, to, cost: to * mult });
+      add({ kind: x.kind, trait, what: label, from, to, cost: to * mult, ...(extra ? extra(from) : {}) });
     };
     if (x.kind === 'attribute' && ATTRIBUTE_LABELS[trait]) {
       step(ATTRIBUTE_LABELS[trait], int(s.attributes?.[trait]), V5_XP_COSTS.attribute);
     } else if (x.kind === 'skill' && V5_SKILL_LABELS[trait]) {
-      step(V5_SKILL_LABELS[trait], creation[trait], V5_XP_COSTS.skill);
+      const label = V5_SKILL_LABELS[trait];
+      step(label, creation[trait], V5_XP_COSTS.skill, (from) => {
+        if (from !== 0 || !V5_FREE_SPECIALTY_SKILLS.includes(trait)) return null;
+        const free = String(x.specialty || '').trim();
+        if (!free) {
+          errors.push(`${label} comes with a free specialty — name it.`);
+          return null;
+        }
+        nameOk(free);
+        newSpecialty(trait, free);
+        return { specialty: free };
+      });
     } else if (x.kind === 'discipline' && discOk.includes(trait)) {
       const row = rows.find((r) => r.name === trait);
       step(trait, row ? row.base + row.predator : 0, disciplineXpMultiplier(s, trait));
     } else if (x.kind === 'specialty' && V5_SKILL_LABELS[x.skill]) {
       const label = V5_SKILL_LABELS[x.skill];
       if (!trait) errors.push(`Name the ${label} specialty.`);
-      else if (trait.length > V5_NAME_MAX) errors.push(`Names are at most ${V5_NAME_MAX} characters.`);
+      else {
+        nameOk(trait);
+        newSpecialty(x.skill, trait);
+      }
       if (int(skillsNow[x.skill]) < 1) errors.push(`${label} needs at least one dot for a specialty.`);
-      log.push({ kind: 'specialty', trait, skill: x.skill, what: `${label} specialty: ${trait}`, from: 0, to: 1, cost: V5_XP_COSTS.specialty });
+      add({ kind: 'specialty', trait, skill: x.skill, what: `${label} specialty: ${trait}`, from: 0, to: 1, cost: V5_XP_COSTS.specialty });
     } else if (x.kind === 'ritual') {
       const level = int(x.level);
       if (!trait) errors.push('Name each ritual bought with XP.');
-      else if (trait.length > V5_NAME_MAX) errors.push(`Names are at most ${V5_NAME_MAX} characters.`);
+      else nameOk(trait);
       if (level < 1 || level > V5_XP_MAX_DOTS) errors.push('Rituals are level 1 to 5.');
       else if (level > bs) errors.push(`A level ${level} ritual needs Blood Sorcery ${level} (you have ${bs}).`);
-      log.push({ kind: 'ritual', trait, what: `Ritual: ${trait}`, from: 0, to: level, cost: level * V5_XP_COSTS.ritual });
+      add({ kind: 'ritual', trait, what: `Ritual: ${trait}`, from: 0, to: level, cost: level * V5_XP_COSTS.ritual });
     } else {
       errors.push('One XP purchase is not something this step can buy.');
     }
   });
+  const rituals = finalRituals(s).length;
+  if (rituals > V5_RITUALS_MAX) errors.push(`At most ${V5_RITUALS_MAX} rituals (you have ${rituals}).`);
   const spent = log.reduce((sum, e) => sum + e.cost, 0);
   if (spent > total && total) errors.push(`Starting experience overspent: ${spent} of ${total} XP.`);
   return { total, spent, unspent: Math.max(0, total - spent), log, errors };
@@ -499,7 +552,11 @@ export function validateV5Experience(sheet, allDisciplines) {
 export function xpPreview(sheet, purchase, allDisciplines) {
   const before = xpLedger(sheet, allDisciplines);
   const after = xpLedger({ ...sheet, xpPurchases: [...(sheet?.xpPurchases || []), purchase] }, allDisciplines);
-  const error = after.errors.find((e) => !before.errors.includes(e)) || null;
+  // Count each message, so a second copy of an existing problem still shows.
+  const counts = (list) => list.reduce((m, e) => m.set(e, (m.get(e) || 0) + 1), new Map());
+  const had = counts(before.errors);
+  const now = counts(after.errors);
+  const error = after.errors.find((e) => now.get(e) > (had.get(e) || 0)) || null;
   return { cost: after.spent - before.spent, error };
 }
 
@@ -507,7 +564,7 @@ export function xpPreview(sheet, purchase, allDisciplines) {
 export function experienceMeta(sheet) {
   const l = xpLedger(sheet);
   if (!l.total) return null;
-  return { total: l.total, spent: l.spent, unspent: l.unspent, log: l.log };
+  return { total: l.total, spent: l.spent, unspent: l.unspent, log: l.log.map(({ purchase, ...e }) => e) };
 }
 
 const sumDots = (rows) => (rows || []).reduce((s, r) => s + int(r?.dots), 0);
@@ -547,6 +604,7 @@ export function validateV5Sheet(sheet, allDisciplines) {
   add(V5_SECTION_IDS.attributes, validateV5Attributes(s.attributes));
   add(V5_SECTION_IDS.skills, validateV5Skills(s.skills, s.skillDistribution));
   add(V5_SECTION_IDS.skills, validateV5Specialties(s.specialties, s.skills));
+  add(V5_SECTION_IDS.skills, duplicateSpecialtyError(creationSkills(s).specialties));
   add(V5_SECTION_IDS.disciplines, validateV5Disciplines(s.disciplines, s.clan, allDisciplines));
 
   // Predator type (thin-bloods may skip it)

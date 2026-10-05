@@ -52,6 +52,8 @@
     "v5XpRitualBs": "Ένα ritual επιπέδου {{level}} θέλει Blood Sorcery {{level}} (έχεις {{bs}}).",
     "v5XpUnknown": "Μια αγορά με XP δεν είναι κάτι που μπορεί να αγοραστεί εδώ.",
     "v5XpOver": "Ξόδεψες παραπάνω XP: {{spent}} από {{total}}.",
+    "v5RitualsMax": "Το πολύ {{max}} rituals (έχεις {{n}}).",
+    "v5SpecialtyDuplicate": "Το {{skill}} έχει ήδη την specialty {{name}}.",
     "v5ThinNoDisc": "Οι thin-bloods ξεκινούν χωρίς Disciplines.",
     "v5DiscPickAny": "Διάλεξε δύο Disciplines: μία με 2 τελείες και μία με 1.",
     "v5DiscPickClan": "Διάλεξε δύο Disciplines του clan: μία με 2 τελείες και μία με 1."

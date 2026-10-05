@@ -11,6 +11,7 @@ import {
   deriveV5,
   disciplineRows,
   disciplineXpMultiplier,
+  duplicateSpecialtyError,
   emptyV5Attributes,
   experienceMeta,
   finalAttributes,
@@ -440,7 +441,7 @@ describe('V5 starting experience', () => {
 
   it('prices dots one at a time at the new rating (Resolve 2 → 3 is 15)', () => {
     const s = buy({ attributes: { ...goodAttrs(), resolve: 2, wits: 1 } }, [{ kind: 'attribute', trait: 'resolve' }]);
-    expect(xpLedger(s).log).toEqual([{ kind: 'attribute', trait: 'resolve', what: 'Resolve', from: 2, to: 3, cost: 15 }]);
+    expect(xpLedger(s).log).toEqual([{ kind: 'attribute', trait: 'resolve', what: 'Resolve', from: 2, to: 3, cost: 15, purchase: 0 }]);
     const two = xpLedger(buy({}, [{ kind: 'skill', trait: 'finance' }, { kind: 'skill', trait: 'finance' }]));
     expect(two.log.map((e) => [e.from, e.to, e.cost])).toEqual([[0, 1, 3], [1, 2, 6]]);
     expect(two).toMatchObject({ total: 15, spent: 9, unspent: 6 });
@@ -560,5 +561,80 @@ describe('V5 starting experience', () => {
       { name: "Wake with Evening's Freshness", level: 1, source: 'creation' },
       { name: 'Blood Walk', level: 2, source: 'xp' },
     ]);
+  });
+});
+
+describe('V5 starting experience: review fixes', () => {
+  const buy = (extra, xpPurchases) => ({ ...goodSheet(), ...extra, xpPurchases });
+  const tremere = (extra, xp) =>
+    buy(
+      {
+        clan: 'Tremere',
+        disciplines: [{ name: 'Blood Sorcery', level: 2, powers: [] }, { name: 'Auspex', level: 1, powers: [] }],
+        predatorType: 'Bagger',
+        predatorDiscipline: 'Obfuscate',
+        ...extra,
+      },
+      xp
+    );
+  const ritual1 = (i) => ({ kind: 'ritual', trait: `Ritual ${i}`, level: 1 });
+
+  it('caps rituals at 12, which an ancilla can just reach (free one + 11 on 35 XP)', () => {
+    const eleven = Array.from({ length: 11 }, (_, i) => ritual1(i));
+    const ok = tremere({ age: 'ancilla', generation: 11, startingRitual: 'Free one' }, eleven);
+    expect(xpLedger(ok).spent).toBe(33);
+    expect(validateV5Experience(ok)).toBeNull();
+    expect(buildV5Payload(ok).wod_meta.rituals).toHaveLength(12);
+    const thirteen = tremere({ age: 'ancilla', generation: 11, startingRitual: 'Free one' }, [...eleven, ritual1(11)]);
+    expect(xpLedger(thirteen).errors).toContain('At most 12 rituals (you have 13).');
+  });
+
+  it('tags each log entry with its purchase index, even after an unknown purchase', () => {
+    const l = xpLedger(buy({}, [{ kind: 'nonsense' }, { kind: 'skill', trait: 'finance' }]));
+    expect(l.log).toHaveLength(1);
+    expect(l.log[0].purchase).toBe(1);
+    expect(experienceMeta(buy({}, [{ kind: 'skill', trait: 'finance' }])).log[0]).not.toHaveProperty('purchase');
+  });
+
+  it('previews a second copy of a problem that is already there', () => {
+    const s = tremere({}, [{ kind: 'ritual', trait: 'Too high', level: 3 }]);
+    expect(xpPreview(s, { kind: 'ritual', trait: 'Also too high', level: 3 }).error).toBe(
+      'A level 3 ritual needs Blood Sorcery 3 (you have 2).'
+    );
+  });
+
+  it('refuses duplicate specialties on a skill, case-insensitive, also against free and predator ones', () => {
+    expect(duplicateSpecialtyError([{ skill: 'brawl', name: 'Grappling' }, { skill: 'brawl', name: ' grappling ' }])).toBe(
+      'Brawl already has the grappling specialty.'
+    );
+    expect(duplicateSpecialtyError([{ skill: 'brawl', name: 'Grappling' }, { skill: 'melee', name: 'Grappling' }])).toBeNull();
+    // free Brawl (Grappling) vs XP brawl GRAPPLING
+    expect(validateV5Experience(buy({}, [{ kind: 'specialty', skill: 'brawl', trait: 'GRAPPLING' }]))).toBe(
+      'Brawl already has the GRAPPLING specialty.'
+    );
+    // two identical XP ones
+    const twice = buy({}, [
+      { kind: 'specialty', skill: 'stealth', trait: 'Crowds' },
+      { kind: 'specialty', skill: 'stealth', trait: 'crowds' },
+    ]);
+    expect(validateV5Experience(twice)).toBe('Stealth already has the crowds specialty.');
+    // Alleycat's Brawl (Grappling) duplicates the free one
+    expect(validateV5Sheet({ ...goodSheet(), predatorSpecialty: 1 }, V5_DISCIPLINES)[V5_SECTION_IDS.skills]).toBe(
+      'Brawl already has the Grappling specialty.'
+    );
+  });
+
+  it('a first XP dot in Academics, Craft, Performance or Science needs its free specialty', () => {
+    const bare = buy({}, [{ kind: 'skill', trait: 'academics' }]);
+    expect(validateV5Experience(bare)).toBe('Academics comes with a free specialty — name it.');
+    const named = buy({}, [{ kind: 'skill', trait: 'academics', specialty: 'History' }]);
+    expect(validateV5Experience(named)).toBeNull();
+    expect(xpLedger(named).log[0]).toMatchObject({ from: 0, to: 1, cost: 3, specialty: 'History' });
+    const p = buildV5Payload(named);
+    expect(p.skills.mental.academics).toBe(1);
+    expect(p.skills.specialties).toContainEqual({ skill: 'academics', name: 'History' });
+    // not for a second dot, nor for other skills
+    expect(validateV5Experience(buy({}, [{ kind: 'skill', trait: 'finance' }]))).toBeNull();
+    expect(xpPreview(named, { kind: 'skill', trait: 'academics' })).toEqual({ cost: 6, error: null });
   });
 });
