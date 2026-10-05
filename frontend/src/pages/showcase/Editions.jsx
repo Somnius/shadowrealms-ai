@@ -15,6 +15,7 @@ function outcomeOptions(edition) {
     random: t('showcase:editions.random', 'Fate decides'),
     success: edition === 'v5' ? t('dice:outcome.win', 'Win') : t('dice:outcome.success', 'Success'),
     exceptional: t('dice:outcome.exceptional', 'Exceptional success'),
+    phenomenal: t('dice:outcome.phenomenal', 'Phenomenal success'),
     failure: t('dice:outcome.failure', 'Failure'),
     botch: t('dice:outcome.botch', 'Botch'),
     critical: t('dice:outcome.criticalWin', 'Critical win'),
@@ -28,8 +29,9 @@ function outcomeOptions(edition) {
 /** What the visitor just saw, in words (keyed by the badge key). */
 function explain(key) {
   return {
-    success: t('showcase:explain.success', 'Hits at or above the difficulty, minus one for every 1. One to four is a plain success.'),
-    exceptional: t('showcase:explain.exceptional', 'Five or more net successes: an exceptional success.'),
+    success: t('showcase:explain.success', 'Hits at or above the difficulty, minus one for every 1. One to three is a plain success.'),
+    exceptional: t('showcase:explain.exceptional', 'Four net successes: an exceptional success.'),
+    phenomenal: t('showcase:explain.phenomenal', 'Five or more net successes: a phenomenal success.'),
     failure: t('showcase:explain.failure', 'The 1s cancelled every hit (or nothing hit). Nothing happens, for better or worse.'),
     botch: t('showcase:explain.botch', 'Not one die hit and a 1 showed: a botch. Something goes badly wrong.'),
     win: t('showcase:explain.win', 'Successes (6 or more) meet the Difficulty.'),
@@ -147,7 +149,7 @@ function EditionCard({ edition, onOverlay }) {
         ) : (
           <>
             <li>{t('showcase:editions.c1', 'Roll your pool against a difficulty from 3 to 10.')}</li>
-            <li>{t('showcase:editions.c2', 'Every 1 cancels a success. Five or more is exceptional.')}</li>
+            <li>{t('showcase:editions.c2', 'Every 1 cancels a success. Four is exceptional, five or more phenomenal.')}</li>
             <li>{t('showcase:editions.c3', 'No successes and a 1 on the table: a botch.')}</li>
           </>
         )}

@@ -66,7 +66,8 @@ function outcomeV5(r) {
 
 /**
  * Classic (Revised/V20): success >= difficulty, 1s cancel, botch only when no die succeeded and a 1
- * showed, specialty rerolls only add, Willpower adds 1 uncancellable success, exceptional = 5+.
+ * showed, specialty rerolls only add, Willpower adds 1 uncancellable success; degrees from net
+ * successes: 4 = exceptional, 5+ = phenomenal (a stored is_exceptional flag is not trusted: it meant 5+).
  */
 export function analyzeClassic({ dice = [], difficulty = 6, rerolls = [], willpower = false, flags } = {}) {
   const values = dice.map(Number);
@@ -79,7 +80,8 @@ export function analyzeClassic({ dice = [], difficulty = 6, rerolls = [], willpo
     if (flags.successes != null) successes = flags.successes;
     if (flags.is_botch != null) isBotch = !!flags.is_botch;
   }
-  const isExceptional = flags && flags.is_exceptional != null ? !!flags.is_exceptional : successes >= 5;
+  const isExceptional = successes === 4;
+  const isPhenomenal = successes >= 5;
   const out = {
     edition: 'classic',
     dice: [
@@ -105,9 +107,10 @@ export function analyzeClassic({ dice = [], difficulty = 6, rerolls = [], willpo
     willpower,
     isBotch,
     isExceptional,
+    isPhenomenal,
     win: successes > 0,
   };
-  out.outcome = isBotch ? 'botch' : successes === 0 ? 'failure' : isExceptional ? 'exceptional' : 'success';
+  out.outcome = isBotch ? 'botch' : successes === 0 ? 'failure' : isPhenomenal ? 'phenomenal' : isExceptional ? 'exceptional' : 'success';
   return out;
 }
 
@@ -122,6 +125,7 @@ export function outcomeLabels() {
     failure: t('dice:outcome.failure', 'Failure'),
     botch: t('dice:outcome.botch', 'Botch'),
     exceptional: t('dice:outcome.exceptional', 'Exceptional success'),
+    phenomenal: t('dice:outcome.phenomenal', 'Phenomenal success'),
   };
 }
 
@@ -135,4 +139,5 @@ export const OUTCOME_LABELS = {
   failure: 'Failure',
   botch: 'Botch',
   exceptional: 'Exceptional success',
+  phenomenal: 'Phenomenal success',
 };

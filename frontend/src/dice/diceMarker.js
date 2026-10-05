@@ -43,6 +43,7 @@ export function normalizeRollResult(raw) {
     successes: num(r.successes ?? r.net_successes),
     is_botch: Boolean(r.is_botch ?? r.botch),
     is_exceptional: Boolean(r.is_exceptional),
+    is_phenomenal: Boolean(r.is_phenomenal),
     specialty: Boolean(r.specialty),
     // Extra dice rolled for natural 10s with a specialty (CLASSIC_REVISED.md §1).
     specialty_rerolls: Array.isArray(r.specialty_rerolls) ? r.specialty_rerolls : [],
@@ -89,9 +90,11 @@ export function buildDiceMarker(rawResult, { animationId, startedAtMs, durationM
     dice_preview: preview,
     extra_dice_count: Math.max(0, r.results.length - preview.length),
     pool_size: r.results.length,
-    // Older clients read is_critical; for classic it means "exceptional".
-    is_critical: r.is_exceptional,
-    is_exceptional: r.is_exceptional,
+    // Degrees from net successes: 4 exceptional, 5+ phenomenal. Older clients read is_critical
+    // (for classic: exceptional or better, 4+).
+    is_critical: r.successes >= 4,
+    is_exceptional: r.successes === 4,
+    is_phenomenal: r.successes >= 5,
     specialty: r.specialty,
     specialty_rerolls: r.specialty_rerolls.slice(0, MAX_PREVIEW_DICE),
     willpower: r.willpower,
@@ -129,6 +132,7 @@ export function overlayFromMarker(m) {
       is_botch: Boolean(marker.is_botch || marker.isBotch),
       is_critical: Boolean(marker.is_critical || marker.isCritical),
       is_exceptional: Boolean(marker.is_exceptional),
+      is_phenomenal: Boolean(marker.is_phenomenal),
       is_messy_critical: Boolean(marker.is_messy_critical),
       is_bestial_failure: Boolean(marker.is_bestial_failure),
       is_total_failure: Boolean(marker.is_total_failure),

@@ -254,7 +254,7 @@ function AtmosphereDemo() {
         <DiceRollViz edition="v5" normal={[4, 3, 5]} hunger={[1, 2]} difficulty={2} rollKey={key} title="V5 — bestial failure" />
         <DiceRollViz edition="v5" normal={[10, 10, 8, 2, 6, 9]} hunger={[]} difficulty={4} rollKey={key} title="V5 — critical win" />
         <DiceRollViz edition="classic" dice={[1, 3, 4, 1, 2]} difficulty={6} rollKey={key} title="Classic — botch" />
-        <DiceRollViz edition="classic" dice={[8, 9, 10, 7, 6, 6]} difficulty={6} rollKey={key} title="Classic — exceptional" />
+        <DiceRollViz edition="classic" dice={[8, 9, 10, 7, 6, 6]} difficulty={6} rollKey={key} title="Classic — phenomenal" />
       </div>
     </div>
   );

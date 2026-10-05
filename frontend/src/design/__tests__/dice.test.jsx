@@ -38,10 +38,13 @@ describe('classic analysis (docs/dice-old-wod.md)', () => {
     expect(analyzeClassic({ dice: [1, 3, 4], difficulty: 6 }).outcome).toBe('botch');
     expect(analyzeClassic({ dice: [1, 3, 4], difficulty: 6, willpower: true }).successes).toBe(1);
   });
-  test('5+ net successes is exceptional; specialty rerolls only add', () => {
+  test('5+ net successes is phenomenal, 4 exceptional; specialty rerolls only add', () => {
     const r = analyzeClassic({ dice: [8, 9, 10, 7, 6, 1], difficulty: 6, rerolls: [7] });
     expect(r.successes).toBe(5);
-    expect(r.outcome).toBe('exceptional');
+    expect(r.outcome).toBe('phenomenal');
+    expect(analyzeClassic({ dice: [8, 9, 10, 7], difficulty: 6 }).outcome).toBe('exceptional');
+    // An old flag (exceptional meant 5+) doesn't override the count.
+    expect(analyzeClassic({ dice: [8, 9, 10, 7, 6], difficulty: 6, flags: { successes: 5, is_exceptional: true } }).outcome).toBe('phenomenal');
   });
 });
 

@@ -23,6 +23,7 @@ const OUTCOME_GLYPH = {
   failure: 'eye-shut',
   botch: 'd10-botch',
   exceptional: 'd10-crit',
+  phenomenal: 'd10-crit',
 };
 
 /** Normalise props / an API roll_result into analysis input. */

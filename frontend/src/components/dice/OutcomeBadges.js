@@ -23,6 +23,7 @@ export const OUTCOME_GLYPH = {
   failure: 'eye-shut',
   botch: 'd10-botch',
   exceptional: 'd10-crit',
+  phenomenal: 'd10-crit',
   success: 'd10',
 };
 

@@ -9,12 +9,12 @@ import { resolveClassicDice, classicOutcome } from '../../dice/classicDiceDispla
 import { resolveV5Dice, v5Badges } from '../../dice/v5DiceDisplay';
 import { rollMood } from '../../design';
 
-export const CLASSIC_OUTCOMES = ['random', 'success', 'exceptional', 'failure', 'botch'];
+export const CLASSIC_OUTCOMES = ['random', 'success', 'exceptional', 'phenomenal', 'failure', 'botch'];
 export const V5_OUTCOMES = ['random', 'success', 'critical', 'messy', 'failure', 'bestial', 'total'];
 
 /** Badge key (OutcomeBadges / v5Badges / classicOutcome) each forced outcome must produce. */
 export const EXPECTED_KEY = {
-  classic: { success: 'success', exceptional: 'exceptional', failure: 'failure', botch: 'botch' },
+  classic: { success: 'success', exceptional: 'exceptional', phenomenal: 'phenomenal', failure: 'failure', botch: 'botch' },
   v5: { success: 'win', critical: 'critical', messy: 'messy', failure: 'fail', bestial: 'bestial', total: 'total' },
 };
 
@@ -58,10 +58,19 @@ function classicDiceFor(outcome, pool, tn, rnd) {
         rnd
       );
     }
-    case 'exceptional': {
-      // 5+ net successes.
-      const hits = randInt(5, n, rnd);
-      const ones = Math.min(n - hits, hits - 5 > 0 ? randInt(0, hits - 5, rnd) : 0);
+    case 'exceptional':
+    case 'phenomenal': {
+      // Exceptional: exactly 4 net successes; phenomenal: 5 or more.
+      let hits;
+      let ones;
+      if (outcome === 'exceptional') {
+        // Sometimes one more hit cancelled by a 1 (needs room for both).
+        ones = n >= 6 && rnd() < 0.5 ? 1 : 0;
+        hits = 4 + ones;
+      } else {
+        hits = randInt(5, n, rnd);
+        ones = Math.min(n - hits, hits - 5 > 0 ? randInt(0, hits - 5, rnd) : 0);
+      }
       return shuffle(
         [
           ...Array.from({ length: hits }, () => classicHit(tn, rnd)),
@@ -73,8 +82,8 @@ function classicDiceFor(outcome, pool, tn, rnd) {
     }
     case 'success':
     default: {
-      // 1–4 net successes.
-      const net = randInt(1, Math.min(4, n), rnd);
+      // 1–3 net successes.
+      const net = randInt(1, Math.min(3, n), rnd);
       const ones = n - net >= 2 && rnd() < 0.4 ? 1 : 0;
       const hits = net + ones;
       return shuffle(
@@ -100,8 +109,9 @@ export function rollClassic({ pool = 5, difficulty = 6, outcome = 'random' } = {
   if (outcome === 'random' || !EXPECTED_KEY.classic[outcome]) {
     dice = Array.from({ length: n }, () => randInt(1, 10, rnd));
   } else {
-    if (outcome === 'exceptional' && n < 5) {
-      n = 5;
+    const minPool = outcome === 'exceptional' ? 4 : outcome === 'phenomenal' ? 5 : 1;
+    if (n < minPool) {
+      n = minPool;
       adjusted.push({ field: 'pool', value: n });
     }
     dice = classicDiceFor(outcome, n, tn, rnd);
