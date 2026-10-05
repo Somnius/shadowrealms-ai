@@ -35,7 +35,9 @@
       "rollHidden": "Same as /ai roll, hidden from players",
       "rouse": "V5 Rouse check",
       "clean": "Remove clutter (see /ai clean)",
-      "diceDiff": "Room dice leniency (owner/admin): Classic floor 2-10, V5 no-bestial / no-messy / successes"
+      "diceDiff": "Room dice leniency (owner/admin): Classic floor 2-10, V5 no-bestial / no-messy / successes",
+      "diceDiffClassic": "Room dice leniency (owner/admin): no 1s, one die at least the floor",
+      "diceDiffV5": "Room dice leniency (owner/admin): no bestial failure, no messy critical, minimum successes"
     }
   },
   "list": {

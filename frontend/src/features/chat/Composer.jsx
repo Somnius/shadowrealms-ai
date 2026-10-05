@@ -81,6 +81,7 @@ export default function Composer({
   busy = false,
   disabled = false,
   isAdmin = false,
+  edition = null,
   draftKey,
   inputRef,
   replyTo = null,
@@ -115,7 +116,7 @@ export default function Composer({
     }
   }, [storeKey]);
 
-  const suggestions = useMemo(() => (dismissed ? [] : slashSuggestions(text, { isAdmin })), [text, isAdmin, dismissed]);
+  const suggestions = useMemo(() => (dismissed ? [] : slashSuggestions(text, { isAdmin, edition })), [text, isAdmin, edition, dismissed]);
   const open = suggestions.length > 0;
   useEffect(() => setActive(0), [text]);
 

@@ -26,6 +26,7 @@ import ChannelList, { isOpenRoom, localizeRooms, roomGlyph, sortRooms } from './
 import MemberPanel from './MemberPanel';
 import QuickSwitcher from './QuickSwitcher';
 import { closedRoomCopy } from './closedRoom';
+import { editionOf } from '../../rules/rulesEdition';
 import { t } from '../../i18n';
 import '../chat/chat.css';
 import './play.css';
@@ -536,6 +537,7 @@ export default function PlayPage() {
                 busy={sending}
                 disabled={!ready || closed}
                 isAdmin={isAdmin}
+                edition={campaign ? editionOf(campaign) : null}
                 replyTo={closed ? null : actions.replyTo}
                 onCancelReply={actions.clearReply}
               />
