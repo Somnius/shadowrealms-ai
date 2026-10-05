@@ -118,6 +118,17 @@ def sanity_check_v5(
                             errors.append(f"wod_meta.disciplines[{i}] must be an object")
                             continue
                         _check_range(errors, f"wod_meta.disciplines[{i}].level", d.get("level"), 0, 5)
+            rituals = wod_meta.get("rituals")
+            if rituals is not None:
+                if not isinstance(rituals, list) or len(rituals) > 10:
+                    errors.append("wod_meta.rituals must be a list of at most 10 rituals")
+                else:
+                    for i, r in enumerate(rituals):
+                        if not isinstance(r, dict) or not isinstance(r.get("name"), str) \
+                                or not r["name"].strip() or len(r["name"]) > 120:
+                            errors.append(f"wod_meta.rituals[{i}] needs a name (at most 120 characters)")
+                            continue
+                        _check_range(errors, f"wod_meta.rituals[{i}].level", r.get("level"), 1, 5)
             ed = wod_meta.get("edition")
             if ed is not None and ed != "v5":
                 errors.append("wod_meta.edition must be 'v5' for a V5 character")

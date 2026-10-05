@@ -59,6 +59,7 @@ Code: `frontend/src/components/characterCreation/V5CharacterCreationWizard.js`, 
 | `attributes` | 9 Attributes, spread 4 / 3 / 3 / 3 / 2 / 2 / 2 / 2 / 1 | `attributes` JSON |
 | `skills` | Skill distribution (Jack of all trades, Balanced, Specialist) and specialties | `skills` JSON (`physical` / `social` / `mental`, `specialties`, `distribution`) |
 | `disciplines` | Two clan Disciplines at 2 and 1 dots, one power per dot | `wod_meta.disciplines` |
+| `rituals` | With Blood Sorcery 1+: one Level 1 ritual chosen at creation (optional) | `wod_meta.rituals` (`[{name, level}]`, at most 10, level 1-5) |
 | `predator` | Predator type and its specialty, Discipline dot, advantages and flaws | `wod_meta.predator_type` (+ entries in advantages and flaws) |
 | `advantages` | 7 dots of Merits and Backgrounds, at least 2 dots of Flaws (Thin-blood: their own merits and flaws) | `wod_meta.advantages`, `wod_meta.flaws`, mirrored into `merits_flaws.entries` |
 | `humanity` | Convictions and Touchstones, chronicle tenets; Humanity 7 (8 with the fledgling option) | `wod_meta.touchstones`, `wod_meta.humanity` |
