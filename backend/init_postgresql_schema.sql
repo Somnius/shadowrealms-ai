@@ -93,7 +93,8 @@ CREATE TABLE IF NOT EXISTS locations (
     is_active           BOOLEAN NOT NULL DEFAULT TRUE,
     is_open             BOOLEAN NOT NULL DEFAULT TRUE,
     closure_reason      TEXT,
-    dice_leniency_floor INTEGER                                          -- NULL = normal RNG
+    dice_leniency_floor INTEGER,                                         -- Classic floor 2-10; NULL = normal RNG
+    dice_leniency_v5    TEXT                                             -- V5 switches JSON; NULL = off
 );
 
 CREATE INDEX IF NOT EXISTS idx_locations_campaign ON locations(campaign_id, is_active);
