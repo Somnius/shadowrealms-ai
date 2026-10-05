@@ -9,12 +9,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - Rule-book importer `books/import_books.py`: a deterministic script (PyMuPDF and rules, no AI reading the books) that turns the official books listed in `books/manifest.yaml` into chunks for `rule_books_v5`, `rule_books_classic` and, for adventures attached to one chronicle, `rule_books_chronicle` (data contract: `docs/rules/RULE_BOOKS_RAG.md`). Column-aware extraction, running heads and page numbers dropped, printed page numbers, outline-based heading paths, fiction/sidebar/example kinds, ~300-token sentence-aligned chunks that never cross a section. Cached by file hash, resumable and paced imports, and a retrieval eval with no AI judge. See "Importing rule books" in `books/README.md`. Hand-written retrieval questions (`books/eval_questions.yaml`, taken from the repo's rules specs) for `eval --questions`.
+- Characters that don't belong to a chronicle yet (e.g. an imported sheet for a new player) now show up for their owner and staff: Profile → Characters marks them "No chronicle yet" and offers **Bring into a chronicle**, which lists your chronicles with the same rules edition and game line. In a chronicle where you have no character, the play panel offers them next to Create character. New `POST /api/characters/<id>/assign` with the same checks as creating a character there. See `docs/CAMPAIGN_MEMBERSHIP_AND_PLAYING_CHARACTER.md`.
 
 ### Changed
 - Rule books come from the new per-edition collections (`rule_books_v5`, `rule_books_classic`, plus `rule_books_chronicle` for books attached to one chronicle; contract in `docs/rules/RULE_BOOKS_RAG.md`). Classic is filtered to the chronicle's game line or `all`, so a Vampire chronicle never gets Werewolf rules; a custom system gets every line. The old `rule_books` collection is no longer read.
 - Laya's intent decides the rule-book search: rules, dice and combat questions get rules, sidebars and examples (4), roleplay gets lore and adventures (2), small talk gets none. It is computed once per message and the model router reuses it. Weak matches are dropped (`RULE_BOOK_MAX_DISTANCE`, provisional default 0.45). For rules questions the books come first with their own budget (`RULE_BOOK_BUDGET_TOKENS`, 1,200) and are cited as "Title › section, p. N".
 - A Storyteller reply embeds the player's message once instead of 8 times.
 - Mage: a 1 on a specialty reroll cancels a success (Mage Revised says so). Vampire, Werewolf and custom keep "rerolls only add".
+
+### Fixed
+- A character with no chronicle was invisible: `GET /api/characters/` and `GET /api/characters/<id>` joined campaigns with an inner join, so its owner and admins couldn't see or open it. Creating a locked character no longer fails with a 500 when the player already has a locked character without a chronicle. Downtime requests need the character to be in a chronicle.
 
 ### Security
 - `/api/rule-books` is admin only. `/scan`, `/process`, `/search`, `/context` and `/systems` are gone (any player could re-import a book and duplicate its chunks). New: `GET /api/rule-books/status` and `DELETE /api/rule-books/<book_id>`. The old in-app PDF importer (`services/rule_book_service.py`) is removed.
