@@ -429,19 +429,39 @@ def classify_cached(text: str, campaign_ctx: Optional[Dict[str, Any]] = None, *,
     return res
 
 
+def _classify_fast(text: str, campaign_ctx: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+    """classify() with only the cheap classifiers (laya, or jev when chosen), never the llm one."""
+    name = resolve_provider_name()
+    if name == "llm":
+        raise ClassifierUnavailable("llm provider: no fast intent")
+    return classify(text, campaign_ctx, provider=name,
+                    builder=lambda n: build_provider(n) if n != "llm" else _NoLLM())
+
+
 def classify_intent_fast(text: str) -> Optional[Dict[str, Any]]:
     """
     Intent for model routing, only from a cheap classifier (laya, or jev when chosen). The llm
     provider would add a whole extra LLM round trip to every Storyteller message, so with it
     this returns None and the router keeps its keyword rules.
     """
-    name = resolve_provider_name()
-    if name == "llm":
-        return None
     try:
-        res = classify(text, provider=name, builder=lambda n: build_provider(n) if n != "llm" else _NoLLM())
-        return res["intent"]
+        return _classify_fast(text)["intent"]
     except ClassifierUnavailable:
+        return None
+
+
+def classify_intent_cached(text: str) -> Optional[Dict[str, Any]]:
+    """
+    classify_intent_fast through the verdict cache (classify_cached): the Storyteller computes
+    a message's intent once and both rule-book retrieval and model routing use it. None when
+    no cheap classifier is available (callers fail open).
+    """
+    try:
+        return classify_cached(text, classify_fn=_classify_fast)["intent"]
+    except ClassifierUnavailable:
+        return None
+    except Exception as e:  # noqa: BLE001 - a reply never fails on the classifier
+        logger.warning("Intent classifier failed: %s", e)
         return None
 
 

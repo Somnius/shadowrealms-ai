@@ -112,83 +112,137 @@ def storyteller_rules_brief(edition: Any, game_system: Any = "") -> str:
 
 
 # ---------------------------------------------------------------------------
-# Rule book chunks (ChromaDB ``rule_books`` metadata)
+# Rule book retrieval (docs/rules/RULE_BOOKS_RAG.md is the data contract)
 # ---------------------------------------------------------------------------
 
-# Every edition a rule book chunk may be stamped with (books/import_to_rag.py also uses 'nwod').
-BOOK_EDITIONS = (CLASSIC, V5, "nwod")
+RULE_BOOK_COLLECTIONS = {V5: "rule_books_v5", CLASSIC: "rule_books_classic"}
+CHRONICLE_BOOKS_COLLECTION = "rule_books_chronicle"
+ALL_RULE_BOOK_COLLECTIONS = (*RULE_BOOK_COLLECTIONS.values(), CHRONICLE_BOOKS_COLLECTION)
 
-_NWOD_CATEGORIES = frozenset({"nwod", "new world of darkness"})
-_V5_TEXT_RE = re.compile(r"(?<![a-z0-9])(v5|5th ed(ition)?|fifth edition)(?![a-z0-9])")
+GAME_LINES = ("vampire", "werewolf", "mage")
+RULE_KINDS = ("rules", "sidebar", "example")
+LORE_KINDS = ("lore", "adventure")
+RULES_INTENTS = frozenset({"rules_question", "dice", "combat"})
+# Laya's intent counts only at this score or above (same as smart_model_router).
+INTENT_MIN_SCORE = 0.6
+
+DEFAULT_RULE_BOOK_MAX_DISTANCE = 0.45
+DEFAULT_RULE_BOOK_STRICT_MAX_DISTANCE = 0.35
 
 
-def rules_edition_for_book(
-    category: Any = None, path: Any = None, *names: Any
-) -> str:
+def game_line(game_system: Any) -> Optional[str]:
+    """'vampire' / 'werewolf' / 'mage' from a campaign's game_system; None for custom and the rest."""
+    gs = str(game_system or "").strip().lower()
+    if re.search(r"vampire|masquerade|vtm", gs):
+        return "vampire"
+    if re.search(r"werewolf|apocalypse|garou|wta", gs):
+        return "werewolf"
+    if re.search(r"mage|ascension|mta", gs):
+        return "mage"
+    return None
+
+
+def rule_book_lines(game_system: Any, rules_edition: Any) -> Optional[list]:
     """
-    Rules edition of a rule book from what we know about it (pure).
-
-    - ``category`` is the books/ sub-folder that parse_books.py stores ('V5', 'oWoD',
-      'Classic World of Darkness', 'nWoD', 'New World of Darkness').
-    - ``path`` is the PDF/JSON path; a folder named V5 / nWoD decides like a category.
-    - ``names`` (filename, book name, book id) mark V5 when they say "V5" / "5th edition".
-    Anything else is ``classic`` (the default edition).
+    Values of the chunk ``line`` a chronicle may get: its own line plus ``all``. V5 is
+    Vampire only. A custom (or unknown) game system gets every line (None = no filter):
+    it uses the shared Storyteller dice and its owner picked no line, so no book is
+    more right than another.
     """
-    cat = str(category or "").strip().lower()
-    if cat == V5:
-        return V5
-    if cat in _NWOD_CATEGORIES:
-        return "nwod"
-    parts = [p.strip().lower() for p in re.split(r"[\\/]", str(path or "")) if p.strip()]
-    for p in parts[:-1]:  # folders only
-        if p == V5:
-            return V5
-        if p in _NWOD_CATEGORIES:
-            return "nwod"
-    text = " ".join(str(n or "") for n in (parts[-1] if parts else "", *names)).lower()
-    if _V5_TEXT_RE.search(text):
-        return V5
-    return CLASSIC
+    if normalize_rules_edition(rules_edition) == V5:
+        return ["vampire", "all"]
+    line = game_line(game_system)
+    return [line, "all"] if line else None
 
 
-def rule_book_edition_allowed(metadata: Any, rules_edition: Any) -> bool:
-    """
-    Whether a rule book chunk may be shown to a campaign of ``rules_edition``: chunks of
-    that edition and untagged (legacy) chunks pass; chunks of any other edition never do.
-    """
-    want = normalize_rules_edition(rules_edition, default=None)
-    if not want:
-        return True
+def _env_float(name: str, default: float) -> float:
+    import os
+
     try:
-        tag = metadata.get("rules_edition") if metadata else None
-    except AttributeError:
-        tag = None
-    tag = str(tag or "").strip().lower()
-    return not tag or tag == want
+        return float(os.environ.get(name, "") or default)
+    except ValueError:
+        return default
 
 
-def rule_book_where(campaign_id: Any, rules_edition: Optional[str] = None) -> dict:
+def rule_book_max_distance() -> float:
+    """RULE_BOOK_MAX_DISTANCE: cosine distance above which a chunk is dropped."""
+    return _env_float("RULE_BOOK_MAX_DISTANCE", DEFAULT_RULE_BOOK_MAX_DISTANCE)
+
+
+def rule_book_strict_max_distance() -> float:
+    """RULE_BOOK_STRICT_MAX_DISTANCE: the cutoff when Laya's intent is unknown."""
+    return _env_float("RULE_BOOK_STRICT_MAX_DISTANCE", DEFAULT_RULE_BOOK_STRICT_MAX_DISTANCE)
+
+
+def rule_book_plan(intent: Any) -> Optional[dict]:
     """
-    ChromaDB ``where`` for rule book chunks: global books (campaign_id 0) plus this
-    campaign's own uploads, optionally narrowed to one rules edition.
+    What to search for one message, from Laya's intent ({label, score} or None):
+    - rules_question / dice / combat: kinds rules|sidebar|example, k=4;
+    - roleplay: kinds lore|adventure, k=2;
+    - general: None (no rule book search);
+    - unknown (no classifier, low score): rules and lore kinds, k=4, stricter cutoff.
+    Returns {kinds, k, max_distance, rules} or None.
     """
+    label, score = None, 0.0
+    if isinstance(intent, dict):
+        label = intent.get("label")
+        try:
+            score = float(intent.get("score") or 0)
+        except (TypeError, ValueError):
+            score = 0.0
+    if label and score >= INTENT_MIN_SCORE:
+        if label in RULES_INTENTS:
+            return {"kinds": list(RULE_KINDS), "k": 4, "max_distance": rule_book_max_distance(), "rules": True}
+        if label == "roleplay":
+            return {"kinds": list(LORE_KINDS), "k": 2, "max_distance": rule_book_max_distance(), "rules": False}
+        if label == "general":
+            return None
+    return {"kinds": list(RULE_KINDS + LORE_KINDS), "k": 4,
+            "max_distance": rule_book_strict_max_distance(), "rules": True}
+
+
+def _and(clauses: list) -> dict:
+    return clauses[0] if len(clauses) == 1 else {"$and": clauses}
+
+
+def rule_book_queries(campaign_id: Any, rules_edition: Any, game_system: Any, kinds: list) -> list:
+    """
+    (collection name, where) pairs to search: the edition's global books (line-filtered)
+    and the books attached to this chronicle (rule_books_chronicle, campaign_id = it).
+    Chronicle books were attached on purpose, so only the kinds narrow them.
+    """
+    ed = normalize_rules_edition(rules_edition) or DEFAULT_RULES_EDITION
+    kind_filter = {"kind": {"$in": list(kinds)}}
+    global_where = [kind_filter]
+    lines = rule_book_lines(game_system, ed)
+    if lines:
+        global_where.append({"line": {"$in": lines}})
+    out = [(RULE_BOOK_COLLECTIONS[ed], _and(global_where))]
     try:
         cid = int(campaign_id)
     except (TypeError, ValueError):
         cid = 0
-    ids = [0] if cid == 0 else [0, cid]
-    campaign_filter = {"campaign_id": {"$in": ids}}
-    if rules_edition:
-        return {"$and": [campaign_filter, {"rules_edition": str(rules_edition)}]}
-    return campaign_filter
+    if cid > 0:
+        out.append((CHRONICLE_BOOKS_COLLECTION, _and([{"campaign_id": cid}, kind_filter])))
+    return out
 
 
-def rule_book_fallback_where(campaign_id: Any, rules_edition: str) -> dict:
-    """
-    Fallback ``where`` when no chunk is tagged with ``rules_edition``: the campaign
-    filter minus every OTHER edition, so only untagged (legacy) chunks can match.
-    Callers also check results with rule_book_edition_allowed, so this stays safe
-    whatever ChromaDB does with chunks that lack the key.
-    """
-    others = [e for e in BOOK_EDITIONS if e != str(rules_edition)]
-    return {"$and": [rule_book_where(campaign_id), {"rules_edition": {"$nin": others}}]}
+def rule_book_citation(metadata: Any) -> str:
+    """'Title › heading_path, p. N' for a chunk."""
+    meta = metadata or {}
+    title = str(meta.get("title") or meta.get("book_id") or "Rule book")
+    head = str(meta.get("heading_path") or "").strip()
+    cite = f"{title} › {head}" if head else title
+    page = meta.get("page")
+    return f"{cite}, p. {page}" if page not in (None, "", 0) else cite
+
+
+def rule_book_text(document: Any, metadata: Any) -> str:
+    """The chunk text without the '{title} › {heading_path}' line the document starts with."""
+    doc = str(document or "")
+    meta = metadata or {}
+    head = f"{meta.get('title') or ''} › {meta.get('heading_path') or ''}"
+    if meta.get("title") and doc.startswith(head):
+        return doc[len(head):].lstrip("\n")
+    return doc
+

@@ -164,15 +164,6 @@ def create_app(config_class=Config):
 
 def start_background_jobs(app):
     """Startup jobs in daemon threads; failures never block startup."""
-    # One-off, idempotent: stamp rules_edition on untagged rule book chunks so classic
-    # campaigns never get V5 chunks.
-    try:
-        from services.rag_service import backfill_rule_book_editions_in_background
-
-        backfill_rule_book_editions_in_background(app.config)
-    except Exception as e:  # noqa: BLE001
-        logger.warning("Could not start rule book edition backfill: %s", e)
-
     # Idempotent: rebuild ChromaDB collections embedded with another model than EMBEDDING_MODEL
     # (services/vector_store.py). Skipped when the embedder is down; pg advisory lock inside.
     try:

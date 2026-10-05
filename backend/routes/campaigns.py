@@ -1139,13 +1139,19 @@ def get_campaign_context(campaign_id):
             conn.close()
             return jsonify({'error': 'Campaign not found'}), 404
         
-        # Get context from RAG
+        # Get context from RAG (the query embedded once for every search)
+        from services.rag_service import embed_query
+
         rag_service = get_rag_service()
-        context = rag_service.get_campaign_context(campaign_id, query)
+        emb = embed_query(query) if query else None
+        context = rag_service.get_campaign_context(campaign_id, query, query_embedding=emb)
         
-        # Augment prompt if provided
+        # Augment prompt if provided. No rule book text here: any member can call this,
+        # and the rule-book API is admin-only (docs/SECURITY_MODEL.md).
         if query:
-            augmented_prompt = rag_service.augment_prompt(query, campaign_id, user_id)
+            augmented_prompt = rag_service.augment_prompt(
+                query, campaign_id, user_id, include_rule_books=False, query_embedding=emb
+            )
             context['augmented_prompt'] = augmented_prompt
         
         cursor.close()

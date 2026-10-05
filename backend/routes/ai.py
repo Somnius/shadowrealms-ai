@@ -9,7 +9,7 @@ from flask_jwt_extended import jwt_required, get_jwt_identity
 import logging
 import json
 from datetime import datetime
-from typing import Optional
+from typing import Optional, Tuple
 
 from database import get_db
 from services.gpu_monitor import gpu_monitor_service
@@ -746,6 +746,7 @@ def _storyteller_reply(mode: str, message: str, campaign_id: int, location_id: i
     """
     from services import storyteller_prompt as sp
     from services.ai_roles import storyteller_context_tokens
+    from services.rag_service import embed_query
 
     cfg = STORYTELLER_MODES[mode]
     try:
@@ -782,12 +783,15 @@ def _storyteller_reply(mode: str, message: str, campaign_id: int, location_id: i
             fixed[-1] += "\n" + roll_rule
 
         used = sum(sp.estimate_tokens(x) for x in fixed) + sp.estimate_tokens(message) + rag_budget
+        # The message is embedded once; every vector search of this reply reuses it.
+        query_embedding = embed_query(message)
         semantic_text = ''
         if location_id and cfg['semantic']:
             seen = {" ".join(str(r.get('content') or '').split()) for r in history_rows}
             seen.add(" ".join(message.split()))
             semantic_data = get_semantic_message_history(message, campaign_id, location_id,
-                                                         limit=cfg['semantic'], exclude=seen)
+                                                         limit=cfg['semantic'], exclude=seen,
+                                                         query_embedding=query_embedding)
             if semantic_data['count'] > 0:
                 semantic_text = sp.truncate_to_tokens(semantic_data['formatted'],
                                                       int(budget * SEMANTIC_BUDGET_SHARE))
@@ -801,10 +805,13 @@ def _storyteller_reply(mode: str, message: str, campaign_id: int, location_id: i
             mode, budget, used, n_hist,
         )
         parts = fixed[:-1] + [x for x in (semantic_text, history_text) if x] + fixed[-1:]
+        rules_edition, game_system = get_campaign_rules(campaign_id)
         llm_context = {
             'system_prompt': "\n\n".join(p for p in parts if p),
             'campaign_id': campaign_id,
-            'rules_edition': get_campaign_rules_edition(campaign_id),
+            'rules_edition': rules_edition,
+            'game_system': game_system,
+            'query_embedding': query_embedding,
             # Only for the reply-language fallback (users.ui_language). Not 'user_id': that
             # would switch on LLMService.store_interaction, which was never on for chat.
             'player_user_id': user_id,
@@ -1056,22 +1063,28 @@ def get_context_manager():
         _context_manager = AIContextManager(max_context_tokens=4000)
     return _context_manager
 
-def get_campaign_rules_edition(campaign_id) -> str:
-    """rules_edition of a campaign ('classic' when missing/unknown)."""
+def get_campaign_rules(campaign_id) -> Tuple[str, Optional[str]]:
+    """(rules_edition, game_system) of a campaign; ('classic', None) when missing/unknown."""
     if not campaign_id:
-        return DEFAULT_RULES_EDITION
+        return DEFAULT_RULES_EDITION, None
     db = None
     try:
         db = get_db()
         cursor = db.cursor()
-        cursor.execute("SELECT rules_edition FROM campaigns WHERE id = %s", (campaign_id,))
-        return edition_of(cursor.fetchone())
+        cursor.execute("SELECT rules_edition, game_system FROM campaigns WHERE id = %s", (campaign_id,))
+        row = cursor.fetchone()
+        return edition_of(row), (row or {}).get('game_system')
     except Exception as e:
         logger.error("Error reading rules_edition for campaign %s: %s", safe_log_value(campaign_id), safe_log_value(e))
-        return DEFAULT_RULES_EDITION
+        return DEFAULT_RULES_EDITION, None
     finally:
         if db is not None:
             db.close()
+
+
+def get_campaign_rules_edition(campaign_id) -> str:
+    """rules_edition of a campaign ('classic' when missing/unknown)."""
+    return get_campaign_rules(campaign_id)[0]
 
 
 def get_campaign_context(campaign_id: int) -> str:
@@ -1225,8 +1238,9 @@ SEMANTIC_MIN_RELEVANCE = 0.5
 
 
 def get_semantic_message_history(query: str, campaign_id: int, location_id: int = None, limit: int = 5,
-                                 exclude=None) -> dict:
-    """Get semantically relevant messages from long-term memory (skipping texts in `exclude`)"""
+                                 exclude=None, query_embedding=None) -> dict:
+    """Get semantically relevant messages from long-term memory (skipping texts in `exclude`;
+    query_embedding: `query` already embedded)"""
     try:
         from services.rag_service import get_rag_service
         rag_service = get_rag_service()
@@ -1237,7 +1251,8 @@ def get_semantic_message_history(query: str, campaign_id: int, location_id: int 
             campaign_id=campaign_id,
             location_id=location_id,
             limit=limit + len(exclude or ()),
-            min_relevance=SEMANTIC_MIN_RELEVANCE
+            min_relevance=SEMANTIC_MIN_RELEVANCE,
+            query_embedding=query_embedding,
         )
         if exclude:
             relevant_messages = [m for m in relevant_messages

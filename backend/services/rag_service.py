@@ -16,6 +16,40 @@ import requests
 
 logger = logging.getLogger(__name__)
 
+# Rule-book share of the RAG budget when the message is about rules (placed first, so the
+# memory sections are cut before the books are).
+DEFAULT_RULE_BOOK_BUDGET_TOKENS = 1200
+
+
+def rule_book_budget_tokens() -> int:
+    """RULE_BOOK_BUDGET_TOKENS env, default 1,200."""
+    try:
+        return max(0, int(os.environ.get('RULE_BOOK_BUDGET_TOKENS', '') or DEFAULT_RULE_BOOK_BUDGET_TOKENS))
+    except ValueError:
+        return DEFAULT_RULE_BOOK_BUDGET_TOKENS
+
+
+def embed_query(text: str) -> Optional[List[float]]:
+    """
+    The message's embedding with the app's embedder, or None when it is unavailable.
+    One reply embeds the player's message once and passes it to every collection query
+    (query_embeddings), instead of each query embedding the same text again.
+    """
+    from services.vector_store import embedding_function
+
+    try:
+        return list(embedding_function()([str(text or '')])[0])
+    except Exception as e:  # noqa: BLE001 - retrieval must never break a reply
+        logger.warning(f"Could not embed the query: {e}")
+        return None
+
+
+def _query_args(query: str, query_embedding: Optional[List[float]]) -> Dict[str, Any]:
+    if query_embedding is not None:
+        return {'query_embeddings': [query_embedding]}
+    return {'query_texts': [query]}
+
+
 def connect_chroma(config: Dict[str, Any]):
     """ChromaDB HTTP client from config/env (CHROMADB_HOST / CHROMADB_PORT)."""
     host = config.get('CHROMADB_HOST') or os.environ.get('CHROMADB_HOST') or 'localhost'
@@ -57,7 +91,6 @@ class RAGService:
             'world': 'world_memory',
             'sessions': 'session_memory',
             'rules': 'rules_memory',
-            'rule_books': 'rule_books',
             'messages': 'message_memory',
         }
         
@@ -129,14 +162,15 @@ class RAGService:
             logger.error(f"Error storing memory: {e}")
             return None
     
-    def retrieve_memories(self, query: str, memory_type: str, campaign_id: int, limit: int = 5) -> List[Dict[str, Any]]:
-        """Retrieve relevant memories for a query"""
+    def retrieve_memories(self, query: str, memory_type: str, campaign_id: int, limit: int = 5,
+                          query_embedding: Optional[List[float]] = None) -> List[Dict[str, Any]]:
+        """Retrieve relevant memories for a query (query_embedding: the query already embedded)"""
         try:
             collection = self._get_collection(memory_type)
             
             # Query with campaign filter
             results = collection.query(
-                query_texts=[query],
+                **_query_args(query, query_embedding),
                 n_results=limit,
                 where={"campaign_id": campaign_id}
             )
@@ -232,7 +266,8 @@ class RAGService:
             logger.warning(f"Could not delete message embeddings: {e}")
 
     def retrieve_relevant_messages(self, query: str, campaign_id: int, location_id: int = None, 
-                                     limit: int = 5, min_relevance: float = 0.7) -> List[Dict[str, Any]]:
+                                     limit: int = 5, min_relevance: float = 0.7,
+                                     query_embedding: Optional[List[float]] = None) -> List[Dict[str, Any]]:
         """Retrieve semantically relevant messages from conversation history"""
         try:
             # Ensure messages collection exists
@@ -249,7 +284,7 @@ class RAGService:
             
             # Query for relevant messages
             results = collection.query(
-                query_texts=[query],
+                **_query_args(query, query_embedding),
                 n_results=limit * 2,  # Get extra results to filter by relevance
                 where=where_clause
             )
@@ -295,8 +330,9 @@ class RAGService:
         
         return self.store_memory(content, 'rules', context, metadata)
     
-    def get_campaign_context(self, campaign_id: int, query: str = None) -> Dict[str, Any]:
-        """Get comprehensive campaign context"""
+    def get_campaign_context(self, campaign_id: int, query: str = None,
+                             query_embedding: Optional[List[float]] = None) -> Dict[str, Any]:
+        """Get comprehensive campaign context (query_embedding: `query` already embedded)"""
         context = {
             'campaign_data': [],
             'characters': [],
@@ -307,7 +343,7 @@ class RAGService:
         
         # Get campaign data
         if query:
-            context['campaign_data'] = self.retrieve_memories(query, 'campaigns', campaign_id, 3)
+            context['campaign_data'] = self.retrieve_memories(query, 'campaigns', campaign_id, 3, query_embedding)
         else:
             # Get all campaign data
             try:
@@ -322,211 +358,173 @@ class RAGService:
             except Exception as e:
                 logger.error(f"Error getting campaign data: {e}")
         
-        # Get character data
-        context['characters'] = self.retrieve_memories(query or "character", 'characters', campaign_id, 5)
-        
-        # Get world data
-        context['world_data'] = self.retrieve_memories(query or "world", 'world', campaign_id, 3)
-        
-        # Get recent sessions
-        context['recent_sessions'] = self.retrieve_memories(query or "session", 'sessions', campaign_id, 3)
-        
-        # Get rules
-        context['rules'] = self.retrieve_memories(query or "rules", 'rules', campaign_id, 2)
+        emb = query_embedding if query else None
+        context['characters'] = self.retrieve_memories(query or "character", 'characters', campaign_id, 5, emb)
+        context['world_data'] = self.retrieve_memories(query or "world", 'world', campaign_id, 3, emb)
+        context['recent_sessions'] = self.retrieve_memories(query or "session", 'sessions', campaign_id, 3, emb)
+        context['rules'] = self.retrieve_memories(query or "rules", 'rules', campaign_id, 2, emb)
         
         return context
     
-    @staticmethod
-    def rule_book_where(campaign_id: int, rules_edition: Optional[str] = None) -> Dict[str, Any]:
-        """See services.rules_edition.rule_book_where."""
-        from services.rules_edition import rule_book_where
+    def _rule_book_collection(self, name: str):
+        """A rule book collection (written by books/import_books.py), or None when missing."""
+        from services.vector_store import embedding_function
 
-        return rule_book_where(campaign_id, rules_edition)
-
-    @staticmethod
-    def rule_book_fallback_where(campaign_id: int, rules_edition: str) -> Dict[str, Any]:
-        """See services.rules_edition.rule_book_fallback_where (never matches another edition)."""
-        from services.rules_edition import rule_book_fallback_where
-
-        return rule_book_fallback_where(campaign_id, rules_edition)
+        try:
+            return self.client.get_collection(name, embedding_function=embedding_function())
+        except Exception as e:  # noqa: BLE001 - not imported yet, or Chroma down
+            logger.debug(f"Rule book collection {name} unavailable: {e}")
+            return None
 
     def get_rule_book_context(
         self,
         query: str,
         campaign_id: int,
-        n_results: int = 5,
         rules_edition: Optional[str] = None,
+        game_system: Optional[str] = None,
+        intent: Optional[Dict[str, Any]] = None,
+        query_embedding: Optional[List[float]] = None,
+        plan: Optional[Dict[str, Any]] = None,
     ) -> List[Dict[str, Any]]:
         """
-        Get relevant context from official rule books using semantic search.
-        
-        Args:
-            query: The query to search for
-            campaign_id: Campaign ID; global books (campaign_id 0) are always included
-            n_results: Number of chunks to retrieve
-            rules_edition: 'classic' / 'v5' to keep only that edition's books. When no
-                chunk carries that tag, untagged (legacy) chunks are tried; chunks of
-                another edition are never returned.
-            
-        Returns:
-            List of relevant rule book chunks with metadata
+        Rule book chunks for one message (docs/rules/RULE_BOOKS_RAG.md).
+
+        Laya's intent picks the kinds and how many (services.rules_edition.rule_book_plan;
+        general → nothing, no query at all). Searches the edition's global books, filtered
+        to the chronicle's game line or 'all', plus the books attached to this chronicle;
+        drops chunks farther than the plan's cosine distance; best first, at most k.
         """
-        from services.rules_edition import rule_book_edition_allowed
+        from services.rules_edition import rule_book_plan, rule_book_queries
 
-        try:
-            collection = self._get_collection('rule_books')
-
-            def _query(where):
-                return collection.query(
-                    query_texts=[query],
-                    n_results=n_results,
-                    where=where,
-                    include=['documents', 'metadatas', 'distances']
-                )
-
-            results = _query(self.rule_book_where(campaign_id, rules_edition))
-            if rules_edition and not (results.get('documents') and results['documents'][0]):
-                logger.info(
-                    "No rule book chunks tagged rules_edition=%s; trying untagged chunks only",
-                    rules_edition,
-                )
-                results = _query(self.rule_book_fallback_where(campaign_id, rules_edition))
-            
-            rule_book_context = []
-            if results['documents'] and results['documents'][0]:
-                for i, doc in enumerate(results['documents'][0]):
-                    metadata = (results['metadatas'][0][i] if results['metadatas'] else None) or {}
-                    if rules_edition and not rule_book_edition_allowed(metadata, rules_edition):
-                        continue
-                    chunk = {
-                        'content': doc,
-                        'metadata': metadata,
-                        'distance': results['distances'][0][i] if results['distances'] else 0.0,
-                        'relevance': 1 - (results['distances'][0][i] if results['distances'] else 0.0)
-                    }
-                    rule_book_context.append(chunk)
-            
-            logger.info(f"Retrieved {len(rule_book_context)} rule book chunks for query: {query[:50]}...")
-            return rule_book_context
-            
-        except Exception as e:
-            logger.error(f"Error retrieving rule book context: {e}")
+        plan = plan if plan is not None else rule_book_plan(intent)
+        if not plan:
             return []
+        targets = []
+        for name, where in rule_book_queries(campaign_id, rules_edition, game_system, plan['kinds']):
+            col = self._rule_book_collection(name)
+            if col is not None:
+                targets.append((name, col, where))
+        if not targets:
+            return []
+        if query_embedding is None:
+            query_embedding = embed_query(query)
+            if query_embedding is None:
+                return []
 
-    def backfill_rule_book_editions(self, batch_size: int = 500) -> int:
-        """
-        Stamp ``rules_edition`` on rule book chunks that have none (imported before
-        editions existed, or by the old in-app importer). The edition comes from the
-        chunk's category / filename / book name (services.rules_edition.rules_edition_for_book):
-        V5 when they say so, otherwise classic. Idempotent; returns how many were tagged.
-        """
-        from services.rules_edition import rules_edition_for_book
-
-        collection = self._get_collection('rule_books')
-        tagged = 0
-        offset = 0
-        while True:
-            page = collection.get(include=['metadatas'], limit=batch_size, offset=offset)
-            ids = page.get('ids') or []
-            if not ids:
-                break
-            upd_ids, upd_meta = [], []
-            for cid, meta in zip(ids, page.get('metadatas') or [{}] * len(ids)):
-                meta = dict(meta or {})
-                if meta.get('rules_edition'):
-                    continue
-                meta['rules_edition'] = rules_edition_for_book(
-                    meta.get('category'), meta.get('file_path') or meta.get('filename'),
-                    meta.get('filename'), meta.get('book_name'), meta.get('book_id'),
+        chunks = []
+        for name, col, where in targets:
+            try:
+                res = col.query(
+                    query_embeddings=[query_embedding], n_results=plan['k'], where=where,
+                    include=['documents', 'metadatas', 'distances'],
                 )
-                upd_ids.append(cid)
-                upd_meta.append(meta)
-            if upd_ids:
-                collection.update(ids=upd_ids, metadatas=upd_meta)
-                tagged += len(upd_ids)
-            if len(ids) < batch_size:
+            except Exception as e:  # noqa: BLE001
+                logger.error(f"Error querying {name}: {e}")
+                continue
+            docs = (res.get('documents') or [[]])[0] or []
+            metas = (res.get('metadatas') or [[]])[0] or []
+            dists = (res.get('distances') or [[]])[0] or []
+            for i, doc in enumerate(docs):
+                dist = float(dists[i]) if i < len(dists) and dists[i] is not None else 1.0
+                if dist > plan['max_distance']:
+                    continue
+                meta = (metas[i] if i < len(metas) else None) or {}
+                chunks.append({'content': doc, 'metadata': meta, 'distance': dist,
+                               'relevance': 1 - dist, 'collection': name})
+        chunks.sort(key=lambda c: (c['distance'], c['metadata'].get('precedence', 99)))
+        chunks = chunks[:plan['k']]
+        logger.info(
+            "Rule books: %d chunks (kinds %s, cutoff %.2f) for: %s",
+            len(chunks), ",".join(plan['kinds']), plan['max_distance'], (query or '')[:50],
+        )
+        return chunks
+
+    @staticmethod
+    def format_rule_book_chunks(chunks: List[Dict[str, Any]]) -> List[str]:
+        """Prompt lines for rule book chunks: '[Title › heading_path, p. N]' then the text."""
+        from services.rules_edition import rule_book_citation, rule_book_text
+
+        return [f"[{rule_book_citation(c['metadata'])}]\n{rule_book_text(c['content'], c['metadata'])}"
+                for c in chunks]
+
+    @staticmethod
+    def _fit(parts: List[str], max_tokens: Optional[int]) -> List[str]:
+        """Keep whole parts in order while they fit; cut the last one; no dangling header."""
+        if max_tokens is None or not parts:
+            return parts
+        from services.storyteller_prompt import estimate_tokens, truncate_to_tokens
+
+        kept, used = [], 0
+        for part in parts:
+            cost = estimate_tokens(part) + 1
+            if used + cost > max_tokens:
+                room = max_tokens - used
+                if room > 80 and not part.startswith("==="):
+                    kept.append(truncate_to_tokens(part, room))
                 break
-            offset += batch_size
-        if tagged:
-            logger.info("Tagged %s untagged rule book chunks with rules_edition", tagged)
-        return tagged
-    
+            kept.append(part)
+            used += cost
+        while kept and kept[-1].startswith("==="):
+            kept.pop()
+        return kept
+
     def augment_prompt(self, prompt: str, campaign_id: int, user_id: int = None, include_rule_books: bool = True,
-                       n_rule_book_chunks: int = 5, rules_edition: Optional[str] = None,
-                       max_tokens: Optional[int] = None) -> str:
+                       rules_edition: Optional[str] = None, max_tokens: Optional[int] = None,
+                       game_system: Optional[str] = None, intent: Optional[Dict[str, Any]] = None,
+                       query_embedding: Optional[List[float]] = None) -> str:
         """
         Augment prompt with relevant context from memory.
 
         The campaign record itself is not added: callers put the campaign header in the
         system prompt already. max_tokens caps the added sections (whole sections/chunks are
         dropped from the end, the last one is cut); the request itself is always kept.
+
+        The prompt is embedded once (or query_embedding is used) for every query here.
+        Rule books follow Laya's intent (services.rules_edition.rule_book_plan). For a rules
+        message they come first with their own budget (RULE_BOOK_BUDGET_TOKENS, within
+        max_tokens), so the memory sections are cut before them; lore chunks go last.
         """
-        # Get campaign context
-        context = self.get_campaign_context(campaign_id, prompt)
-        
-        # Build context string
-        context_parts = []
-        
-        # Add character data
-        if context['characters']:
-            context_parts.append("=== CHARACTERS ===")
-            for memory in context['characters']:
-                context_parts.append(memory['content'])
-        
-        # Add world data
-        if context['world_data']:
-            context_parts.append("=== WORLD SETTING ===")
-            for memory in context['world_data']:
-                context_parts.append(memory['content'])
-        
-        # Add recent sessions
-        if context['recent_sessions']:
-            context_parts.append("=== RECENT SESSIONS ===")
-            for memory in context['recent_sessions']:
-                context_parts.append(memory['content'])
-        
-        # Add rules
-        if context['rules']:
-            context_parts.append("=== GAME RULES ===")
-            for memory in context['rules']:
-                context_parts.append(memory['content'])
-        
-        # Add rule book context (NEW!)
-        if include_rule_books:
-            rule_book_context = self.get_rule_book_context(
-                prompt, campaign_id, n_rule_book_chunks, rules_edition=rules_edition
+        from services.rules_edition import rule_book_plan
+
+        if query_embedding is None:
+            query_embedding = embed_query(prompt)
+        context = self.get_campaign_context(campaign_id, prompt, query_embedding=query_embedding)
+
+        memory_parts = []
+        for key, header in (('characters', 'CHARACTERS'), ('world_data', 'WORLD SETTING'),
+                            ('recent_sessions', 'RECENT SESSIONS'), ('rules', 'GAME RULES')):
+            if context[key]:
+                memory_parts.append(f"=== {header} ===")
+                memory_parts.extend(m['content'] for m in context[key])
+
+        book_parts = []
+        plan = rule_book_plan(intent) if include_rule_books else None
+        if plan:
+            chunks = self.get_rule_book_context(
+                prompt, campaign_id, rules_edition=rules_edition, game_system=game_system,
+                query_embedding=query_embedding, plan=plan,
             )
-            if rule_book_context:
-                context_parts.append("=== OFFICIAL RULE BOOKS ===")
-                for chunk in rule_book_context:
-                    source = f"[{chunk['metadata'].get('filename', 'Unknown')} p.{chunk['metadata'].get('page_number', '?')}]"
-                    context_parts.append(f"{source}\n{chunk['content']}")
-        
-        if max_tokens is not None and context_parts:
-            from services.storyteller_prompt import estimate_tokens, truncate_to_tokens
+            if chunks:
+                book_parts = ["=== OFFICIAL RULE BOOKS ==="] + self.format_rule_book_chunks(chunks)
 
-            kept, used = [], 0
-            for part in context_parts:
-                cost = estimate_tokens(part) + 1
-                if used + cost > max_tokens:
-                    room = max_tokens - used
-                    if room > 80 and not part.startswith("==="):
-                        kept.append(truncate_to_tokens(part, room))
-                    break
-                kept.append(part)
-                used += cost
-            while kept and kept[-1].startswith("==="):  # no dangling section header
-                kept.pop()
-            context_parts = kept
+        if plan and plan['rules'] and book_parts:
+            book_budget = rule_book_budget_tokens()
+            if max_tokens is not None:
+                book_budget = min(book_budget, max_tokens)
+            book_parts = self._fit(book_parts, book_budget)
+            if max_tokens is not None:
+                from services.storyteller_prompt import estimate_tokens
 
-        # Combine with original prompt
+                left = max_tokens - sum(estimate_tokens(p) + 1 for p in book_parts)
+                memory_parts = self._fit(memory_parts, max(0, left))
+            context_parts = book_parts + memory_parts
+        else:
+            context_parts = self._fit(memory_parts + book_parts, max_tokens)
+
         if context_parts:
             context_string = "\n\n".join(context_parts)
-            augmented_prompt = f"{context_string}\n\n=== CURRENT REQUEST ===\n{prompt}"
-        else:
-            augmented_prompt = prompt
-        
-        return augmented_prompt
+            return f"{context_string}\n\n=== CURRENT REQUEST ===\n{prompt}"
+        return prompt
     
     def store_interaction(self, prompt: str, response: str, campaign_id: int, user_id: int, interaction_type: str = "general") -> str:
         """Store AI interaction for future reference"""
@@ -560,7 +558,10 @@ class RAGService:
             status['chromadb_connected'] = True
             
             # Get collection info
-            for memory_type, collection_name in self.collections.items():
+            from services.rules_edition import ALL_RULE_BOOK_COLLECTIONS
+
+            names = list(self.collections.items()) + [(n, n) for n in ALL_RULE_BOOK_COLLECTIONS]
+            for memory_type, collection_name in names:
                 try:
                     collection = self.client.get_collection(collection_name)  # count only: any embedder
                     count = collection.count()
@@ -579,22 +580,6 @@ class RAGService:
             status['error'] = str(e)
         
         return status
-
-def backfill_rule_book_editions_in_background(config: Dict[str, Any]) -> None:
-    """
-    Run RAGService.backfill_rule_book_editions once, in a daemon thread, so a slow or
-    missing ChromaDB never delays or blocks app startup. Failures are only logged.
-    """
-    import threading
-
-    def _run():
-        try:
-            create_rag_service(config).backfill_rule_book_editions()
-        except Exception as e:  # noqa: BLE001 - startup helper, must never raise
-            logger.warning("Rule book rules_edition backfill skipped: %s", e)
-
-    threading.Thread(target=_run, name="rule-book-edition-backfill", daemon=True).start()
-
 
 def create_rag_service(config: Dict[str, Any]) -> RAGService:
     """Create and initialize RAG service"""
