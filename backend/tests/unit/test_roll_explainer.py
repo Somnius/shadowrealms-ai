@@ -166,7 +166,8 @@ def test_classic_willpower_success_saves_a_botch():
 def test_classic_exceptional_and_leniency():
     row = classic_row([7, 3, 10, 4, 5, 6, 10, 7], 6, 5, leniency_floor=4)
     e = rx.explain(rx.build_record_from_row(row), "en")
-    assert e["facts"]["net_successes"] == 5 and "**Result: Exceptional success**" in e["markdown"]
+    assert e["facts"]["net_successes"] == 5 and "**Result: Phenomenal success**" in e["markdown"]
+    assert e["facts"]["is_phenomenal"] and not e["facts"]["is_exceptional"]
     assert "leniency floor 4" in e["markdown"]
 
 
@@ -179,6 +180,17 @@ def test_names_and_reason_are_plain_text():
     assert first == "**Roll explained** — V5 · roll #375 · Bold click code head quote"
     assert second == "Rolled by **Eve**."
     assert "http" not in md and "javascript" not in md and "`code`" not in md
+
+
+def test_classic_four_is_exceptional_and_old_rows_read_as_phenomenal():
+    e = rx.explain(rx.build_record_from_row(classic_row([7, 8, 9, 6], 6, 4)), "en")
+    assert "**Result: Exceptional success** — 4 net successes" in e["markdown"]
+    el = rx.explain(rx.build_record_from_row(classic_row([7, 8, 9, 6, 10], 6, 5)), "el")["markdown"]
+    assert "Εκπληκτική επιτυχία" in el
+    # A stored row from before the fix (is_critical meant 5+) is explained from its dice.
+    old = classic_row([7, 8, 9, 6, 10], 6, 5)
+    e = rx.explain(rx.build_record_from_row(old), "en")
+    assert "Phenomenal success" in e["markdown"] and e["mismatches"] == []
 
 
 def test_rouse_check():

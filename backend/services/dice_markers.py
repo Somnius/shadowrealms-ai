@@ -24,7 +24,7 @@ MARKER_KEYS = frozenset({
     "animation_id", "started_at_ms", "duration_ms", "rules_edition", "difficulty", "successes",
     "is_botch", "dice_preview", "hunger_flags", "extra_dice_count", "pool_size", "margin",
     "outcome", "is_critical", "is_messy_critical", "is_bestial_failure", "is_total_failure",
-    "is_exceptional", "specialty", "specialty_rerolls", "willpower", "diceFinal",
+    "is_exceptional", "is_phenomenal", "specialty", "specialty_rerolls", "willpower", "diceFinal",
     "roll_id", "roll_kind",
 })
 MAX_MARKER_CHARS = 2000
@@ -102,7 +102,8 @@ def build_marker(result: Dict[str, Any], *, animation_id: str, roll_id: int,
         }
     results = list(r.get("results") or r.get("dice") or [])
     preview = results[:MAX_PREVIEW_DICE]
-    exceptional = bool(r.get("is_exceptional"))
+    # Degree from net successes (4 exceptional, 5+ phenomenal), not from a passed-in flag.
+    net = _num(r.get("successes", r.get("net_successes")))
     return {
         **base,
         "rules_edition": "classic",
@@ -112,8 +113,9 @@ def build_marker(result: Dict[str, Any], *, animation_id: str, roll_id: int,
         "dice_preview": preview,
         "extra_dice_count": max(0, len(results) - len(preview)),
         "pool_size": len(results),
-        "is_critical": exceptional,
-        "is_exceptional": exceptional,
+        "is_critical": net >= 4,
+        "is_exceptional": net == 4,
+        "is_phenomenal": net >= 5,
         "specialty": bool(r.get("specialty")),
         "specialty_rerolls": list(r.get("specialty_rerolls") or [])[:MAX_PREVIEW_DICE],
         "willpower": bool(r.get("willpower")),

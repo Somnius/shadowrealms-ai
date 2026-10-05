@@ -49,6 +49,7 @@ class DiceService:
                 'is_botch': False,
                 'is_critical': False,
                 'is_exceptional': False,
+                'is_phenomenal': False,
                 'difficulty': difficulty,
                 'specialty': specialty,
                 'willpower': willpower,
@@ -77,6 +78,8 @@ class DiceService:
             message = "**BOTCH!** No die succeeded and a 1 showed."
         elif successes == 0:
             message = "**Failure** - No successes"
+        elif r.phenomenal:
+            message = f"**Phenomenal success!** {successes} successes"
         elif r.exceptional:
             message = f"**Exceptional success!** {successes} successes"
         elif successes == 1:
@@ -91,9 +94,11 @@ class DiceService:
             'successes': successes,
             'raw_successes': r.raw_successes,
             'is_botch': r.botch,
-            # Kept for older clients: for classic this means "exceptional" (5+ successes).
-            'is_critical': r.exceptional,
+            # Kept for older clients (and the dice_rolls column): for classic it means an
+            # exceptional or phenomenal success (4+ net successes; before the fix it meant 5+).
+            'is_critical': r.exceptional or r.phenomenal,
             'is_exceptional': r.exceptional,
+            'is_phenomenal': r.phenomenal,
             'difficulty': r.difficulty,
             'specialty': r.specialty,
             'willpower': r.willpower,
