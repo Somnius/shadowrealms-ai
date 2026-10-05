@@ -218,7 +218,7 @@
     "storySub": "Background narrative.",
     "storyPlaceholder": "History, coterie, goals…",
     "predatorDotNote": "+1 from {{type}}",
-    "xpDotNote": "+{{n}} from experience",
+    "xpDotNote": "+{{n}} from XP",
     "startingRitual": "Starting ritual (Level 1)",
     "startingRitualPlaceholder": "optional: one Level 1 Blood Sorcery ritual"
   }
