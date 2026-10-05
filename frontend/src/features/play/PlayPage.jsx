@@ -81,8 +81,10 @@ export function PlayRedirect() {
 function usePlayData(campaignId) {
   const api = useApi();
   const { user } = useAuth();
-  const { byId, chronicles } = useChronicles();
+  const { byId, chronicles, reload: reloadChronicles } = useChronicles();
   const [data, setData] = useState({ status: 'loading' });
+  const [nonce, setNonce] = useState(0);
+  const loadedFor = useRef(null);
 
   const loadLocations = useCallback(async () => {
     const r = await api(`/campaigns/${campaignId}/locations`);
@@ -91,7 +93,9 @@ function usePlayData(campaignId) {
 
   useEffect(() => {
     let cancelled = false;
-    setData({ status: 'loading' });
+    // A reload of the same chronicle (nonce) keeps the page on screen.
+    if (loadedFor.current !== campaignId) setData({ status: 'loading' });
+    loadedFor.current = campaignId;
     (async () => {
       const [detail, locs, chars, roster] = await Promise.all([
         api(`/campaigns/${campaignId}`),
@@ -115,7 +119,7 @@ function usePlayData(campaignId) {
     return () => {
       cancelled = true;
     };
-  }, [api, campaignId]);
+  }, [api, campaignId, nonce]);
 
   // Inside a chronicle you always play that chronicle's character (no global "active character").
   const listEntry = byId(campaignId);
@@ -130,7 +134,13 @@ function usePlayData(campaignId) {
     setData((d) => ({ ...d, characters: (d.characters || []).map((c) => (c.id === id ? { ...c, ...patch } : c)) }));
   }, []);
 
-  return { ...data, character, loadLocations, updateCharacter, chronicles };
+  // After bringing a character into this chronicle: reload the play data and the chronicle list.
+  const reload = useCallback(() => {
+    setNonce((n) => n + 1);
+    reloadChronicles();
+  }, [reloadChronicles]);
+
+  return { ...data, character, loadLocations, updateCharacter, chronicles, reload };
 }
 
 export default function PlayPage() {
@@ -413,6 +423,7 @@ export default function PlayPage() {
       isAdmin={isAdmin}
       onOpenSheet={(cid) => openSheet(cid, campaign.game_system)}
       onPortrait={onPortrait}
+      onCharacterAssigned={play.reload}
       onDiceRules={() => setRulesOpen(true)}
       onDiceHistory={() => setHistoryOpen(true)}
       toast={toast}

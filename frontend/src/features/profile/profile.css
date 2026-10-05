@@ -10,6 +10,7 @@
 }
 .sr-app .sr-char { display: flex; flex-direction: column; gap: var(--sr-space-3); padding: var(--sr-space-4); height: 100%; }
 .sr-app .sr-char__text { display: flex; flex-direction: column; min-width: 0; }
+.sr-app .sr-char__text .sr-badge { align-self: flex-start; margin-top: var(--sr-space-1); }
 .sr-app .sr-char__name { font-family: var(--sr-font-display); font-variant-numeric: lining-nums; font-size: var(--sr-text-lg); letter-spacing: var(--sr-tracking-display); }
 .sr-app .sr-downtime { list-style: none; margin: 0; padding: 0; }
 .sr-app .sr-downtime li { padding: var(--sr-space-3) 0; border-bottom: 1px solid var(--sr-border); }
