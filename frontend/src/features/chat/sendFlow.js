@@ -4,6 +4,8 @@
  * 1. POST the user's line to the room (speak_as, character_id, message_type ic/ooc/action).
  * 2. `/ai <verb>` (site admins): POST /api/ai/slash, then save the returned text as an assistant line
  *    (`slash_assistant`), or for `/ai roll[-hidden]` the dice marker + final line.
+ *    `/ai explain` (`/ai εξήγησε`) is open to every member: it explains the replied-to dice roll.
+ *    The reply target goes to /api/ai/slash and /api/ai/chat as reply_to_id.
  *    `/chat <text>`: POST /api/ai/chat with assistant_direct, save the reply (`chat_assistant`).
  *    Anything else: POST /api/ai/chat; OOC rooms may answer `ooc_no_reply`.
  * 3. The browser saves AI replies as role "assistant" messages; the server only accepts text it
@@ -55,6 +57,17 @@ export function normalizeInput(raw, isAdmin) {
   if (!s) return s;
   if (isAdmin && /^\s*\/ai\s*$/i.test(s)) return '/ai help';
   return s;
+}
+
+/** `/ai explain …` / `/ai εξήγησε …`: the one /ai verb every chronicle member may use. */
+export function isExplainCommand(text) {
+  return /^\s*\/ai\s+(explain|εξήγησε)(\s|$)/i.test(String(text || ''));
+}
+
+/** Site admin / helper or the chronicle's owner: may post with the staff voice. */
+export function canUseStaffVoice(user, campaign) {
+  if (user?.role === 'admin' || user?.role === 'helper') return true;
+  return campaign?.created_by != null && user?.id != null && String(campaign.created_by) === String(user.id);
 }
 
 export function staffKindFor(user, campaign) {
@@ -117,7 +130,8 @@ export async function sendChatMessage(ctx, rawText, opts = {}) {
   const text = normalizeInput(rawText, isAdmin);
   if (!text) return false;
 
-  if (/^\s*\/ai(\s+|$)/i.test(text) && !isAdmin) {
+  const explain = isExplainCommand(text);
+  if (/^\s*\/ai(\s+|$)/i.test(text) && !isAdmin && !explain) {
     cb.onError(t('chat:error.aiAdminOnly', 'Only site administrators can use /ai commands. Use the dice button to roll.'));
     return false;
   }
@@ -133,7 +147,9 @@ export async function sendChatMessage(ctx, rawText, opts = {}) {
   const roomPath = `/campaigns/${campaign.id}/locations/${location.id}`;
 
   const replyTo = opts.replyTo && opts.replyTo.id != null ? opts.replyTo : null;
-  const temp = optimisticMessage({ text, user, campaign, location, speakAs: slashMatch ? 'staff' : speakAs, character, messageType, replyTo });
+  // /ai commands are posted with the staff voice; a player's /ai explain uses the player voice.
+  const slashVoice = explain && !canUseStaffVoice(user, campaign) ? 'player' : 'staff';
+  const temp = optimisticMessage({ text, user, campaign, location, speakAs: slashMatch ? slashVoice : speakAs, character, messageType, replyTo });
   cb.onOptimistic(temp);
 
   const save = await api(roomPath, {
@@ -143,7 +159,7 @@ export async function sendChatMessage(ctx, rawText, opts = {}) {
       message_type: messageType,
       role: 'user',
       // /ai commands are staff tools, never the character's in-character line.
-      speak_as: slashMatch ? 'staff' : speakAs,
+      speak_as: slashMatch ? slashVoice : speakAs,
       ...(!slashMatch && speakAs === 'character' && character?.id ? { character_id: character.id } : {}),
       ...(slashMatch ? { ai_message_kind: 'slash_user' } : chatMatch ? { ai_message_kind: 'chat_user' } : {}),
       ...(replyTo ? { reply_to_id: replyTo.id } : {}),
@@ -189,7 +205,7 @@ export async function sendChatMessage(ctx, rawText, opts = {}) {
     if (slashMatch) {
       const r = await api('/ai/slash', {
         method: 'POST',
-        body: { line: text.trim(), campaign_id: campaign.id, location_id: location.id },
+        body: { line: text.trim(), campaign_id: campaign.id, location_id: location.id, ...(replyTo ? { reply_to_id: replyTo.id } : {}) },
       });
       const d = r.data || {};
       const content = d.display_markdown || d.llm_acknowledgment || null;
@@ -248,6 +264,8 @@ export async function sendChatMessage(ctx, rawText, opts = {}) {
           assistant_direct: true,
         }
       : { message: text, campaign_id: campaign.id, location: location.id, location_type: location.type };
+    // The quoted message reaches the Storyteller's prompt (backend services/reply_context.py).
+    if (replyTo) body.reply_to_id = replyTo.id;
     // Ask the Storyteller; on failure the room shows one inline notice with a Retry (the player's
     // message is already saved, so a retry only asks again).
     const askAi = async () => {
