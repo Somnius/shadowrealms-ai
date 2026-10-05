@@ -26,7 +26,6 @@ On startup `create_app()` runs `init_db()` and `migrate_db()` (`database.py`), w
 | `services/` | Logic used by the routes, see below |
 | `tests/unit/` | pytest unit tests (no database, Redis or AI needed); run in CI |
 | `reembed_rag.py` | Re-embed every ChromaDB collection with `EMBEDDING_MODEL` |
-| `ingest_location_naming_rag.py` | Load the location naming guide into RAG |
 | `invites.template.json` | Template for `invites.json` (gitignored, the real invite codes) |
 | `migrate_sqlite_to_postgresql.py`, `migrate_users_only.py`, `migrations/`, `test_postgresql_migration.py` | Tools from the SQLite to PostgreSQL move (v0.7.6); not needed for new installs |
 
