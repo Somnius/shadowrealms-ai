@@ -125,7 +125,7 @@ export function UnassignedOffer({ campaign, onAssigned, toast }) {
     if (onAssigned) onAssigned(ch);
   };
   return (
-    <div className="sr-stack sr-stack--tight">
+    <div className="sr-stack sr-stack--tight sr-member-offer">
       <p className="sr-muted sr-small">{t('profile:bring.offer', 'Or bring a character that has no chronicle yet:')}</p>
       {chars.map((ch) => (
         <Button key={ch.id} size="sm" variant="secondary" icon="mask" loading={busy === ch.id} disabled={busy != null} onClick={() => bring(ch)}>
