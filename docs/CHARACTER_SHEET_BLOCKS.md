@@ -62,10 +62,25 @@ Code: `frontend/src/components/characterCreation/V5CharacterCreationWizard.js`, 
 | `rituals` | With Blood Sorcery 1+: one Level 1 ritual chosen at creation (optional) | `wod_meta.rituals` (`[{name, level, source}]`, at most 10, `level` required 1-5, `source` is `'creation'` for the free one or `'xp'` when bought with starting experience) |
 | `predator` | Predator type and its specialty, Discipline dot, advantages and flaws | `wod_meta.predator_type` (+ entries in advantages and flaws) |
 | `advantages` | 7 dots of Merits and Backgrounds, at least 2 dots of Flaws (Thin-blood: their own merits and flaws) | `wod_meta.advantages`, `wod_meta.flaws`, mirrored into `merits_flaws.entries` |
+| `experience` | Neonates (15 XP) and ancillae (35 XP), optional: buy Attribute, Skill and Discipline dots one at a time, new specialties and rituals (level up to Blood Sorcery); unspent XP allowed, no overspending | XP dots folded into `attributes`, `skills` (XP specialties have `source: 'xp'`), `wod_meta.disciplines` and `wod_meta.rituals` (`source: 'xp'`); the ledger in `wod_meta.experience` (below) |
 | `humanity` | Convictions and Touchstones, chronicle tenets; Humanity 7 (8 with the fledgling option) | `wod_meta.touchstones`, `wod_meta.humanity` |
 | `story` | Background text | `background` |
 
 Derived values are stored in `wod_meta` too: `edition: "v5"`, `hunger`, `blood_potency`, `health` and `willpower` (each `{ max, superficial, aggravated }`), `stains`.
+
+`wod_meta.experience` (only when the age gives XP):
+
+```json
+{
+  "total": 15, "spent": 13, "unspent": 2,
+  "log": [
+    { "kind": "attribute", "trait": "resolve", "what": "Resolve", "from": 1, "to": 2, "cost": 10 },
+    { "kind": "specialty", "trait": "Stocks", "skill": "finance", "what": "Finance specialty: Stocks", "from": 0, "to": 1, "cost": 3 }
+  ]
+}
+```
+
+`kind` is `attribute` / `skill` (`trait` = storage key), `discipline` (`trait` = name), `specialty` (`skill` + `trait` = name, from 0 to 1) or `ritual` (`trait` = name, from 0 to the ritual level). One log entry per dot, in the order bought; `cost` is the new rating × the multiplier from V5.md §4 (XP costs). Backend bounds (`character_sheet_v5.py`): `total`, `spent`, `unspent` required ints, `spent ≤ total`, `unspent = total − spent`, at most 200 log entries, `from`/`to` 0-5 with `to > from`, `cost` 0-100, and the log may not cost more than `spent`. The read-only sheet shows "+N XP" next to XP-bought dots and "(XP)" after XP specialties.
 
 ## Out of scope
 
