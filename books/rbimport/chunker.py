@@ -14,7 +14,7 @@ from typing import Any, Dict, Iterable, List, Optional, Set, Tuple
 
 from .textutil import TokenCounter, norm_key, sha1, split_sentences
 
-CHUNKER_VERSION = 3
+CHUNKER_VERSION = 4
 TARGET = 300
 MAX_TOKENS = 512
 SEP = " › "   # " › "
@@ -165,10 +165,11 @@ def _pack(units: List[_Unit], target: int, limit: int) -> List[Tuple[List[_Unit]
     return merged
 
 
-def _fit(units: List[_Unit], n_o: int, header: str, counter: TokenCounter, max_tokens: int):
-    """Guarantee the hard max on the whole document (sentence token sums can undercount)."""
+def _fit(units: List[_Unit], n_o: int, header, counter: TokenCounter, max_tokens: int):
+    """Guarantee the hard max on the whole document (sentence token sums can undercount).
+    header(unit) -> the document header for a chunk starting with that unit."""
     new = units[n_o:]
-    if len(new) < 2 or counter.count(header + _join(units)) + 8 <= max_tokens:
+    if len(new) < 2 or counter.count(header(new[0]) + _join(units)) <= max_tokens:
         return [(units, n_o)]
     half = len(new) // 2
     return _fit(units[:n_o] + new[:half], n_o, header, counter, max_tokens) + \
@@ -183,6 +184,12 @@ def _join(units: Iterable[_Unit]) -> str:
         else:
             out += ("\n" if u.para_start else " ") + u.text
     return out
+
+
+def _heading_path(hp_base: str, sub: Optional[str]) -> str:
+    if sub and norm_key(sub) != (norm_key(hp_base.split(SEP)[-1]) if hp_base else ""):
+        return f"{hp_base}{SEP}{sub}" if hp_base else sub
+    return hp_base
 
 
 def chunk_book(ext: Dict[str, Any], book: Dict[str, Any], counter: TokenCounter,
@@ -204,7 +211,8 @@ def chunk_book(ext: Dict[str, Any], book: Dict[str, Any], counter: TokenCounter,
         header_tok = counter.count(f"{title}{SEP}{hp_base}") + 4
         limit = max(64, max_tokens - header_tok - 16)
         streams = _units_for_section(blocks, path[-1] if path else "", counter, limit)
-        header = f"{title}{SEP}{hp_base}\n\n"
+        def header(u, hp_base=hp_base):
+            return f"{title}{SEP}{_heading_path(hp_base, u.sub)}\n\n"
         for stream, units in streams.items():
             for packed, n_o in _pack(units, target, limit):
                 for units_, n_o2 in _fit(packed, n_o, header, counter, max_tokens):
@@ -217,10 +225,7 @@ def chunk_book(ext: Dict[str, Any], book: Dict[str, Any], counter: TokenCounter,
     own: Set[str] = set()
     for idx, (_, stream, hp_base, units_, first) in enumerate(raw):
         text = _join(units_)
-        sub = first.sub
-        hp = hp_base
-        if sub and norm_key(sub) not in (norm_key(hp_base.split(SEP)[-1]) if hp_base else "",):
-            hp = f"{hp_base}{SEP}{sub}" if hp_base else sub
+        hp = _heading_path(hp_base, first.sub)
         if _junk(text):
             stats["dropped_junk"] += 1
             continue

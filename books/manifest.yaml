@@ -430,12 +430,6 @@ books:
   - ^((Previous|Next|Up|Contents)\s*)+$
   - '^Vampire: the Masquerade Revised - '
   - ^John Black$
-  - ^Digitally signed by
-  - '^DN: '
-  - '^Reason: '
-  - '^Date: \d{4}'
-  - ^Signature$
-  - ^Not Verified$
   notes: 'Mis-named file: it is the Revised core rulebook (a web capture, text only). No printed page numbers: page = PDF page. Year not printed (Revised was published 1998).'
 - book_id: wta-revised-core
   path: Classic World of Darkness/Werewolf (c)/Core/Werewolf the Apocalypse Core (Revised).pdf
@@ -446,7 +440,8 @@ books:
   kind: rules
   precedence: 10
   year: 2000
-  notes: Scan with an OCR text layer; no outline.
+  outline: none
+  notes: 'Scan with an OCR text layer: no outline and no usable heading fonts, so heading_path stays empty.'
 - book_id: mta-revised-core
   path: Classic World of Darkness/Mage (c)/Core/Mage the Ascension Revised.pdf
   title: 'Mage: The Ascension Revised'
@@ -801,7 +796,10 @@ books:
   kind: rules
   precedence: 40
   year: 2001
-  notes: Scan with an OCR text layer. The Classic-folder copy of this book is image-only.
+  strip_lines:
+  - ^apleif$
+  outline: none
+  notes: Scan with an OCR text layer (no usable headings). The Classic-folder copy of this book is image-only.
 - book_id: wta-storytellers-handbook
   path: Classic World of Darkness/Werewolf (c)/Guides/Storytellers Handbook (revised).pdf
   title: Storytellers Handbook (Werewolf Revised)

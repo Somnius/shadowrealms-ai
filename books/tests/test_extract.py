@@ -99,12 +99,17 @@ def test_outline_sections_and_typo_fix(mk):
 
 
 def test_font_size_headings_without_outline(mk):
-    p1 = [(50, 80, "Big Chapter", "tibo", 18)] + _col(50, 110, "One", 4) + [(50, 180, "Small Section", "tibo", 14)] + _col(50, 200, "Two", 4)
-    p2 = [(50, 80, "Second Chapter", "tibo", 18)] + _col(50, 110, "Three", 4) + [(50, 180, "Other Section", "tibo", 14)] + _col(50, 200, "Four", 4)
+    # heading words also appear in the text (real headings do; OCR garbage doesn't)
+    p1 = [(50, 80, "Big Chapter", "tibo", 18)] + _col(50, 110, "Big chapter", 4) + [(50, 180, "Small Section", "tibo", 14)] + _col(50, 200, "Small section", 4)
+    p2 = [(50, 80, "Second Chapter", "tibo", 18)] + _col(50, 110, "Second", 4) + [(50, 180, "Other Section", "tibo", 14)] + _col(50, 200, "Other", 4)
+    p2 += [(50, 400, "Xqzt Vrrpk", "tibo", 14)] + _col(50, 420, "Five", 4)
     res = extract_book(mk([p1, p2]), book())
     assert res["outline"] == "font sizes"
     paths = [s["path"] for s in res["sections"]]
     assert ["Big Chapter", "Small Section"] in paths and ["Second Chapter", "Other Section"] in paths
+    assert not any("Xqzt" in t for p in paths for t in p)
+    res = extract_book(mk([p1, p2], name="n.pdf"), book(outline="none"))
+    assert res["sections"] == [] and res["outline"] == "none (manifest)"
 
 
 def test_strip_lines_and_page_range(mk):

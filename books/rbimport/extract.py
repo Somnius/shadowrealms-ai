@@ -27,7 +27,7 @@ from typing import Any, Dict, List, Optional, Tuple
 from .textutil import (HyphenVocab, clean_line, join_lines, label_to_int, letterspaced, norm_key)
 from .manifest import DEFAULT_SKIP_SECTIONS, page_list
 
-EXTRACTOR_VERSION = 5
+EXTRACTOR_VERSION = 9
 V5_SIDEBAR_FONTS = [r"GillSans", r"Futura", r"IBMPlexSans"]
 BAND = 0.09            # top/bottom fraction of the page treated as header/footer band
 FULL_WIDTH = 0.55      # a line wider than this fraction of the page is a full-width band
@@ -37,6 +37,9 @@ _BOLD = re.compile(r"Bold|Semi|Demi|Black|Heavy|SC700", re.I)
 _ITALIC = re.compile(r"Italic|Oblique|-It\b|Ital", re.I)
 _NUMBER_ONLY = re.compile(r"^[\divxlcIVXLC][\d ivxlcIVXLC]{0,8}$")
 _TERMINAL = ("." , "!", "?", "”", "\"", "’", ":", ")", "…")
+# digital-signature stamps some scans carry on every page
+DEFAULT_STRIP = [r"^Digitally signed by\b", r"^DN: (cn|CN)=", r"^Signature( Not Verified| not)?$", r"^(Not )?Verified$",
+                 r"^Reason: ", r"^Date: \d{4}[.\-/]\d"]
 _EXAMPLE = re.compile(r"^(EXAMPLE|Example)S?\b")
 
 
@@ -361,9 +364,19 @@ def normalise_title(t: str, fixes: Dict[str, str]) -> str:
 _SMALL_WORDS = {"a", "an", "the", "of", "and", "or", "in", "on", "to", "for", "at", "by", "with", "vs"}
 
 
+def _garbled_case(t: str) -> bool:
+    """Small-caps fonts whose capitals come out mid-word: 'ArCAne', 'ChApter', 'vAmpire'."""
+    for w in re.findall(r"[A-Za-z']+", t):
+        if re.match(r"^[a-z]+[A-Z]", w):
+            return True
+        if re.search(r"[a-z][A-Z]", w) and not re.match(r"^(Mc|Mac|De|Di|Da|La|Le|Van|Von|O')", w):
+            return True
+    return False
+
+
 def _fix_case(t: str) -> str:
     """ALL CAPS and small-caps (all lowercase) headings -> title case."""
-    if (t.isupper() and len(t) > 3) or (t.islower() and len(t) > 2):
+    if (t.isupper() and len(t) > 3) or (t.islower() and len(t) > 2) or _garbled_case(t):
         words = t.lower().split(" ")
         t = " ".join(w if (i and w in _SMALL_WORDS) else w[:1].upper() + w[1:] for i, w in enumerate(words))
     return t
@@ -383,8 +396,6 @@ def _common_prefix(titles: List[str]) -> str:
 
 
 def toc_entries(doc, book: Dict[str, Any], used: set) -> List[Tuple[int, str, int]]:
-    if book.get("use_toc") is False:
-        return []
     raw = [(lvl, title, page) for lvl, title, page in doc.get_toc(simple=True)]
     raw = [(lvl, normalise_title(t, book.get("toc_fixes") or {}), p) for lvl, t, p in raw]
     raw = [(lvl, t, p) for lvl, t, p in raw if p >= 1 and t]
@@ -436,8 +447,26 @@ def place_sections(entries, seq: List[dict], fixes: Optional[Dict[str, str]] = N
     return pos
 
 
-def heading_entries_by_size(seq: List[dict], body_size: float) -> Tuple[List[Tuple[int, str, int]], List[int]]:
-    """Fallback outline for books without one: big non-italic heading lines, up to 3 size levels."""
+def _clean_title(t: str, vocab: Optional[HyphenVocab] = None) -> bool:
+    """Reject OCR garbage and sentence fragments as headings: starts with a capital or digit, mostly
+    letters, no letter runs like 'Ooooo', and most words are words this book uses elsewhere."""
+    chars = [c for c in t if not c.isspace()]
+    if not chars or not (t[:1].isupper() or t[:1].isdigit()) or re.search(r"[\\^|{}<>~_]|(\w)\1{3,}", t):
+        return False
+    if sum(c.isalpha() for c in chars) < 0.75 * len(chars):
+        return False
+    words = [w.lower() for w in re.findall(r"[A-Za-z]{3,}", t)]
+    if not words or len(t.split()) > 10 or re.search(r"[.!?]\s", t):
+        return False   # sentences, not headings
+    if vocab is not None:
+        known = sum(vocab.words.get(w, 0) >= 3 for w in words)
+        return known >= 0.7 * len(words)
+    return True
+
+
+def heading_entries_by_size(seq: List[dict], body_size: float, vocab: Optional[HyphenVocab] = None) -> Tuple[List[Tuple[int, str, int]], List[int]]:
+    """Fallback outline for books without one: big non-italic heading lines, up to 3 size levels.
+    Too few headings (under 3 per 100 pages, e.g. an OCR layer) means no usable structure."""
     cands: List[Tuple[float, str, int]] = []   # (size, text, line index)
     i = 0
     while i < len(seq):
@@ -449,7 +478,8 @@ def heading_entries_by_size(seq: List[dict], body_size: float) -> Tuple[List[Tup
                     and len(text) < 120 and not seq[j]["italic"]:
                 text += " " + seq[j]["text"]
                 j += 1
-            cands.append((round(l["size"]), text, i))
+            if _clean_title(text, vocab):
+                cands.append((round(l["size"]), text, i))
             i = j
             continue
         i += 1
@@ -462,6 +492,9 @@ def heading_entries_by_size(seq: List[dict], body_size: float) -> Tuple[List[Tup
             continue
         entries.append((lvl, normalise_title(text, {}), seq[idx]["page"]))
         pos.append(idx)
+    pages = len({l["page"] for l in seq})
+    if len(entries) < 0.03 * pages:
+        return [], []
     return entries, pos
 
 
@@ -529,7 +562,7 @@ def extract_book(pdf_path: str, book: Dict[str, Any]) -> Dict[str, Any]:
         page = doc[p - 1]
         raw.append((p, page.rect.height, page.rect.width, read_page_lines(page, p)))
     running = find_running_lines([(p, h, ls) for p, h, _, ls in raw])
-    strip_res = [re.compile(rx) for rx in book.get("strip_lines") or []]
+    strip_res = [re.compile(rx) for rx in DEFAULT_STRIP + list(book.get("strip_lines") or [])]
     pages, numbers = strip_running(raw, running, strip_res)
     body_size, body_font = body_style(pages)
     side_src = book.get("sidebar_fonts")
@@ -554,10 +587,16 @@ def extract_book(pdf_path: str, book: Dict[str, Any]) -> Dict[str, Any]:
 
     entries = toc_entries(doc, book, set(used))
     outline = "pdf outline"
+    mode = book.get("outline", "auto")
+    if mode in ("sizes", "none"):
+        entries = []
     if entries:
         pos = place_sections(entries, seq, book.get("toc_fixes"))
+    elif mode in ("none", "toc"):
+        pos = []
+        outline = "none (manifest)" if mode == "none" else "none"
     else:
-        entries, pos = heading_entries_by_size(seq, body_size)
+        entries, pos = heading_entries_by_size(seq, body_size, vocab)
         outline = "font sizes" if entries else "none"
     paras = build_paragraphs(seq, set(pos), vocab, col_width)
     page_map, page_src = printed_pages(doc, used, numbers, book, warnings)
@@ -624,7 +663,7 @@ def extract_book(pdf_path: str, book: Dict[str, Any]) -> Dict[str, Any]:
         "sections": [{k: v for k, v in s.items() if k != "pos"} for s in sections],
         "blocks": blocks,
     })
-    if not entries:
+    if not entries and mode != "none":
         warnings.append("no outline and no size-based headings: heading_path empty")
     return result
 
