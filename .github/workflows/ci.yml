@@ -7,7 +7,7 @@ on:
       - "backend/**"
       - "frontend/**"
       - "monitoring/**"
-      - "books/*.py"
+      - "books/**"
       - "scripts/**"
       - "tests/**"
       - "docker-compose.yml"
@@ -49,6 +49,8 @@ jobs:
       - run: pip install pytest cryptography itsdangerous flask flask-jwt-extended "flask-limiter>=4.1.1" bcrypt
       - name: Pure unit tests (dice, rules edition, character prompt, AI providers, classifier, auth security)
         run: python -m pytest -q backend/tests/unit
+      - name: Rule-book importer tests (synthetic PDFs)
+        run: pip install pymupdf pyyaml && python -m pytest -q books/tests
 
   schema:
     name: PostgreSQL schema + migrate_db
