@@ -23,6 +23,7 @@ class DiceService:
         leniency_floor: int | None = None,
         willpower: bool = False,
         rng=None,
+        reroll_ones_cancel: bool = False,
     ) -> Dict:
         """
         Roll a classic (oWoD Revised) d10 pool. Delegates to services.wod_dice so the
@@ -35,6 +36,8 @@ class DiceService:
             leniency_floor: room leniency floor (2-10) or None
             willpower: +1 automatic success that 1s cannot cancel
             rng: optional random.Random for deterministic tests
+            reroll_ones_cancel: 1s on specialty rerolls cancel successes (Mage;
+                services.rules_edition.reroll_ones_cancel)
         """
         from services.wod_dice import roll_classic
 
@@ -62,6 +65,7 @@ class DiceService:
             willpower=willpower,
             leniency_floor=leniency_floor,
             rng=rng,
+            reroll_ones_cancel=reroll_ones_cancel,
         )
         return DiceService.classic_result_dict(r)
 
@@ -83,6 +87,7 @@ class DiceService:
             'rules_edition': 'classic',
             'results': list(r.dice),
             'specialty_rerolls': list(r.specialty_rerolls),
+            'reroll_ones_cancel': r.reroll_ones_cancel,
             'successes': successes,
             'raw_successes': r.raw_successes,
             'is_botch': r.botch,

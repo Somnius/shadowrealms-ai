@@ -51,7 +51,9 @@ Conventions:
 
 - A specialty can be taken only for a Trait rated **4 or more**. Exception: the book recommends taking one early for Expression, Crafts, Performance, Academics and Science (p. 120).
 - **Revised effect:** on a roll covered by the specialty, each die showing **10** counts as a success **and is rerolled**. A rerolled 10 is rerolled again, with no limit.
-- **AMBIGUOUS:** the text doesn't say whether a **1** on a reroll cancels a success. Recommended default: rerolled 1s don't cancel (bonus dice only add). Make it configurable.
+- **AMBIGUOUS in this book:** the Vampire Revised text doesn't say whether a **1** on a reroll cancels a success. The app decides per game line (`services/rules_edition.reroll_ones_cancel`):
+  - **Mage:** a rerolled 1 cancels one success. Mage: The Ascension Revised says so: "A botch on a re-roll does cancel a success as always".
+  - **Vampire, Werewolf, custom:** a rerolled 1 cancels nothing (rerolls only add). Vampire is the app's ruling; Werewolf Revised reportedly says rerolled 1s don't subtract (not checked against the book yet).
 - **V20 differs** (V20 p. 96): a specialty 10 counts as **two successes**, with no reroll. At commit d5686c4 the app code used the V20 rule. Pick one per ruleset flag: `specialty_mode: "revised_reroll" | "v20_double"`.
 
 ### 1.5 Willpower for an automatic success (core pp. 137, 193)
@@ -468,7 +470,7 @@ There are 13 clans plus Caitiff (core ch. 2 intro, p. 64). Clan Disciplines are 
 
 1. The freebie cost chart (p. 104) and the creation summary (p. 103) didn't survive extraction. Costs come from V20 p. 82, cross-checked against the Revised worked example where it covers them. Attribute 5 and Virtue 2 are V20-only.
 2. The Revised starting-blood rule is only shown in an example (1d10). V20 states it.
-3. Specialty rerolls: whether 1s on rerolled dice cancel is unspecified.
+3. Specialty rerolls: whether 1s on rerolled dice cancel is unspecified in Vampire Revised. Settled per line (§ 1.4): Mage cancels (Mage Revised says so), Vampire/Werewolf/custom don't.
 4. Willpower success on a roll that would otherwise botch: the outcome is only implied.
 5. Extended action botch: "may have to start over" or the action ends, at ST discretion.
 6. Clan Discipline lines for 8 clans came from V20. The Malkavian line differs between Revised and V20.
