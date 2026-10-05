@@ -15,7 +15,7 @@ from services.dice_chat import (
     post_roll,
     resolve_speaker,
 )
-from services.rules_edition import CLASSIC, V5, edition_of
+from services.rules_edition import CLASSIC, V5, edition_of, reroll_ones_cancel
 from services.wod_dice import parse_pool_expression
 from services.request_validation import (
     RequestValidationError, body_object, optional_str, strict_bool, strict_int,
@@ -286,10 +286,12 @@ def manual_roll(campaign_id):
             roll_result = dice_service.roll_d10_pool(
                 pool_size, difficulty, specialty,
                 leniency_floor=leniency_floor, willpower=willpower,
+                reroll_ones_cancel=reroll_ones_cancel(game_system),
             )
             modifiers = {
                 'rules_edition': CLASSIC,
                 'specialty': specialty,
+                'reroll_ones_cancel': roll_result['reroll_ones_cancel'],
                 'specialty_rerolls': roll_result.get('specialty_rerolls') or [],
                 'willpower': willpower,
                 'pool_expression': pool_expression or None,

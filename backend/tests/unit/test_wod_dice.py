@@ -193,3 +193,45 @@ def test_parse_roll_expression():
     assert parse_roll_expression("6 tn 7") == (6, 7)
     with pytest.raises(ValueError):
         parse_roll_expression("5@11")
+
+
+# --- specialty reroll 1s per game line ------------------------------------------------------
+
+def test_mage_reroll_ones_cancel_successes():
+    # Mage Revised: "A botch on a re-roll does cancel a success as always"
+    r = resolve_classic([10, 4, 3], 6, specialty_rerolls=[7, 1], reroll_ones_cancel=True)
+    assert r.reroll_ones == 1
+    assert r.net_successes == 1  # 1 raw + 1 reroll - 1 rerolled 1
+    assert r.botch is False  # a reroll needs a 10, so never a botch
+    r = resolve_classic([10, 2], 6, specialty_rerolls=[1], reroll_ones_cancel=True)
+    assert r.net_successes == 0 and r.botch is False
+
+
+def test_reroll_ones_rule_by_game_line():
+    from services.rules_edition import reroll_ones_cancel
+
+    assert reroll_ones_cancel("mage") is True
+    assert reroll_ones_cancel("Mage: The Ascension") is True
+    for gs in ("vampire", "werewolf", "custom", "", None):
+        assert reroll_ones_cancel(gs) is False
+
+
+def test_roll_classic_and_dice_service_pass_the_reroll_rule():
+    from services.dice_service import DiceService
+
+    r = roll_classic(2, 6, specialty=True, rng=FixedRng([10, 3, 1]), reroll_ones_cancel=True)
+    assert r.specialty_rerolls == [1] and r.net_successes == 0
+    r = roll_classic(2, 6, specialty=True, rng=FixedRng([10, 3, 1]))
+    assert r.net_successes == 1
+    d = DiceService.roll_d10_pool(2, 6, True, rng=FixedRng([10, 3, 1]), reroll_ones_cancel=True)
+    assert d["successes"] == 0 and d["reroll_ones_cancel"] is True
+    md = format_storyteller_roll_markdown(
+        resolve_classic([10, 3], 6, specialty_rerolls=[1], reroll_ones_cancel=True), "mage")
+    assert "1 × 1 cancel" in md
+
+
+def test_mage_storyteller_brief_states_the_reroll_rule():
+    from services.rules_edition import storyteller_rules_brief
+
+    assert "a 1 on a reroll cancels a success" in storyteller_rules_brief("classic", "mage")
+    assert "rerolls only add" in storyteller_rules_brief("classic", "werewolf")

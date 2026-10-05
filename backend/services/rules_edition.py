@@ -108,6 +108,8 @@ def storyteller_rules_brief(edition: Any, game_system: Any = "") -> str:
     gs = str(game_system or "").strip().lower()
     if gs == "vampire":
         return _CLASSIC_BRIEF + "\n" + _CLASSIC_VAMPIRE_EXTRA
+    if reroll_ones_cancel(gs):
+        return _CLASSIC_BRIEF.replace("(rerolls only add)", "(a 1 on a reroll cancels a success)")
     return _CLASSIC_BRIEF
 
 
@@ -246,3 +248,11 @@ def rule_book_text(document: Any, metadata: Any) -> str:
         return doc[len(head):].lstrip("\n")
     return doc
 
+
+def reroll_ones_cancel(game_system: Any) -> bool:
+    """
+    Whether 1s on Classic specialty rerolls cancel successes. Mage Revised says they do
+    ("A botch on a re-roll does cancel a success as always"); Werewolf Revised reportedly
+    says they don't; Vampire Revised is silent, so every other line keeps "rerolls only add".
+    """
+    return game_line(game_system) == "mage"

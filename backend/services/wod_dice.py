@@ -11,9 +11,14 @@ Rules (Vampire: The Masquerade Revised core):
 - Botch: only when NO die was a success before cancelling AND at least one 1 showed.
   If there were successes but 1s cancelled them all, it is a simple failure.
 - Specialty: each natural 10 counts as a success and is rolled again; a 10 on the
-  reroll explodes again. Reroll dice only ADD successes.
-  App ruling (the book is silent): a 1 on a specialty reroll cancels nothing.
-  1s from the original pool cancel successes from the pool and from rerolls alike.
+  reroll explodes again. 1s from the original pool cancel successes from the pool and
+  from rerolls alike. A 1 on a reroll depends on the game line (``reroll_ones_cancel``,
+  services.rules_edition.reroll_ones_cancel):
+  - Mage (Mage: The Ascension Revised: "A botch on a re-roll does cancel a success as
+    always"): a rerolled 1 cancels one success.
+  - Werewolf (Revised reportedly says rerolled 1s don't subtract; not checked here),
+    Vampire (Revised is silent; app ruling) and custom systems: a rerolled 1 cancels
+    nothing, rerolls only add.
 - Willpower: declared before the roll, adds 1 automatic success that 1s cannot
   cancel. A willpower roll therefore never botches and always has >= 1 net success.
 - 5+ net successes is an "exceptional success" (the Revised term; not "critical").
@@ -50,6 +55,9 @@ class StorytellerRollResult:
     specialty: bool = False
     specialty_rerolls: List[int] = field(default_factory=list)
     reroll_successes: int = 0
+    # 1s among the rerolls, and whether they cancelled successes (Mage).
+    reroll_ones: int = 0
+    reroll_ones_cancel: bool = False
     willpower: bool = False
     exceptional: bool = False
 
@@ -176,19 +184,23 @@ def resolve_classic(
     willpower: bool = False,
     leniency_floor: Optional[int] = None,
     specialty: Optional[bool] = None,
+    reroll_ones_cancel: bool = False,
 ) -> StorytellerRollResult:
     """
     Resolve an already-rolled classic pool (pure; no randomness).
 
     ``dice`` are the original pool; ``specialty_rerolls`` are the extra dice rolled
-    for natural 10s (only meaningful for specialty rolls).
+    for natural 10s (only meaningful for specialty rolls). ``reroll_ones_cancel``: 1s
+    on rerolls cancel successes too (Mage; see the module docstring).
     """
     dice = [int(d) for d in dice]
     rerolls = [int(d) for d in specialty_rerolls]
     raw_successes = sum(1 for d in dice if d >= difficulty)
     ones = sum(1 for d in dice if d == 1)
     reroll_successes = sum(1 for d in rerolls if d >= difficulty)
-    dice_net = max(0, raw_successes + reroll_successes - ones)
+    reroll_ones = sum(1 for d in rerolls if d == 1)
+    cancelling = ones + (reroll_ones if reroll_ones_cancel else 0)
+    dice_net = max(0, raw_successes + reroll_successes - cancelling)
     net = dice_net + (1 if willpower else 0)
     botch = (not willpower) and raw_successes == 0 and ones > 0
     return StorytellerRollResult(
@@ -203,6 +215,8 @@ def resolve_classic(
         specialty=bool(rerolls) if specialty is None else bool(specialty),
         specialty_rerolls=rerolls,
         reroll_successes=reroll_successes,
+        reroll_ones=reroll_ones,
+        reroll_ones_cancel=bool(reroll_ones_cancel),
         willpower=bool(willpower),
         exceptional=net >= EXCEPTIONAL_THRESHOLD,
     )
@@ -216,6 +230,7 @@ def roll_classic(
     willpower: bool = False,
     leniency_floor: Optional[int] = None,
     rng: Any = None,
+    reroll_ones_cancel: bool = False,
 ) -> StorytellerRollResult:
     """Roll and resolve a classic pool."""
     r = _rng(rng)
@@ -228,6 +243,7 @@ def roll_classic(
         willpower=willpower,
         leniency_floor=leniency_floor,
         specialty=specialty,
+        reroll_ones_cancel=reroll_ones_cancel,
     )
 
 
@@ -293,7 +309,9 @@ def format_storyteller_roll_markdown(
     if result.specialty_rerolls:
         extra += (
             f"- **Specialty rerolls (10s):** {', '.join(str(d) for d in result.specialty_rerolls)}"
-            f" → +{result.reroll_successes}\n"
+            f" → +{result.reroll_successes}"
+            + (f", {result.reroll_ones} × 1 cancel" if result.reroll_ones_cancel and result.reroll_ones else "")
+            + "\n"
         )
     if result.willpower:
         extra += "- **Willpower:** +1 automatic success (cannot be cancelled)\n"
