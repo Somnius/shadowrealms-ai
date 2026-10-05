@@ -16,6 +16,8 @@ from flask import Blueprint, current_app, jsonify, request
 from routes.admin import require_admin
 from services.rules_edition import ALL_RULE_BOOK_COLLECTIONS, CHRONICLE_BOOKS_COLLECTION, RULE_BOOK_COLLECTIONS
 
+from services.log_safety import safe_log_value
+
 logger = logging.getLogger(__name__)
 
 bp = Blueprint('rule_books', __name__)
@@ -137,7 +139,7 @@ def delete_rule_book(book_id):
                 deleted[name] = n
         if not deleted:
             return jsonify({"success": False, "error": "Book not found"}), 404
-        logger.info("Rule book %s removed: %s", book_id, deleted)
+        logger.info("Rule book %s removed: %s", safe_log_value(book_id), deleted)
         return jsonify({"success": True, "book_id": book_id, "deleted": deleted}), 200
     except Exception as e:
         logger.error("Rule book delete failed: %s", e)
