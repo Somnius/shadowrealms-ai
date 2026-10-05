@@ -227,6 +227,46 @@ def test_classic_other_lines(line, key):
         assert f["sphere.forces.2"] == "Yes"
 
 
+def _rects(pdf: bytes):
+    for w in _widgets(pdf):
+        m = re.search(rb"/Rect \[\s*([-\d.]+)\s+([-\d.]+)\s+([-\d.]+)\s+([-\d.]+)\s*\]", w)
+        yield [float(v) for v in m.groups()]
+
+
+@pytest.mark.parametrize("paper,height", [("a4", 841.89), ("letter", 792.0)])
+def test_v5_crowded_sheet_stays_on_two_pages(paper, height):
+    """Long lists give up rows rather than run off the page; what has no row goes to Notes."""
+    ch = copy.deepcopy(V5_CHAR)
+    wm = ch["wod_meta"]
+    wm["advantages"] = [{"name": f"Advantage {i}", "dots": 1 + i % 5} for i in range(15)]
+    wm["flaws"] = [{"name": f"Flaw {i}", "dots": 1} for i in range(9)]
+    wm["touchstones"] = [{"name": f"Touchstone {i}", "conviction": f"Conviction {i}"} for i in range(8)]
+    wm["rituals"] = [{"name": f"Ritual {i}", "level": 1 + i % 5} for i in range(14)]
+    wm["experience"]["log"] = [{"date": "2026-10-01", "amount": 3, "note": f"Session {i}"} for i in range(30)]
+    wm["disciplines"] = [{"name": f"Discipline {i}", "level": 2, "powers": list("abcdefgh")} for i in range(8)]
+    pdf = build_sheet_pdf(ch, paper=paper)
+    assert len(re.findall(rb"/Type /Page\b", pdf)) == 2
+    for x0, y0, x1, y1 in _rects(pdf):
+        assert 24 <= y0 < y1 <= height - 24, (y0, y1)
+    f = _fields(pdf)
+    notes = f["notes"]
+    shown_adv = sum(1 for k in f if re.fullmatch(r"adv\d+\.name", k))
+    assert all(f"Advantage {i}" in notes for i in range(shown_adv, 15))
+    assert "Touchstone 7" in notes
+    rituals = {v for k, v in f.items() if re.fullmatch(r"ritual\d+\.name", k)}
+    assert all(f"Ritual {i}" in rituals or f"Ritual {i} (" in notes for i in range(14))
+    assert "Bane Severity 2" in notes
+    # a discipline's extra powers share its last line
+    last = max(int(m.group(1)) for k in f if (m := re.fullmatch(r"disc1\.power(\d+)", k)))
+    assert f[f"disc1.power{last}"].endswith("; h")
+
+
+def test_tabs_become_spaces():
+    ch = copy.deepcopy(V5_CHAR)
+    ch["background"] = "Sire\tΘεόδωρος"
+    assert _fields(build_sheet_pdf(ch))["background"] == "Sire Θεόδωρος"
+
+
 def test_fields_are_editable(v5_pdf):
     for w in _widgets(v5_pdf):
         ff = re.search(rb"/Ff (\d+)", w)

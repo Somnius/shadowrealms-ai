@@ -479,6 +479,7 @@ class SheetCanvas:
         """Editable text field; its appearance is drawn with the embedded EB Garamond."""
         c = self.c
         value = _s(value) if not isinstance(value, str) else value.strip()
+        value = value.replace("\t", " ")  # no tab glyph in the fonts
         name = self.unique(name)
         self._ap += 1
         xo = f"SRap{self._ap}"
@@ -490,7 +491,7 @@ class SheetCanvas:
         c.clipPath(p, stroke=0, fill=0)
         c.setFillGray(0)
         if value:
-            self._draw_value(value, w, h, size, multiline, align)
+            size = self._draw_value(value, w, h, size, multiline, align)
         c.restoreState()
         c._code.append("EMC")
         c.endForm()
@@ -515,22 +516,33 @@ class SheetCanvas:
             self.hline(x, x + w, y)
         return name
 
-    def _draw_value(self, value: str, w, h, size, multiline, align):
+    def _draw_value(self, value: str, w, h, size, multiline, align) -> float:
+        """Draw the pre-filled value; returns the font size used (shrunk until the value fits)."""
         c = self.c
         pad = 2.0
         if multiline:
-            leading = size * 1.17
-            lines: List[str] = []
-            for para in value.replace("\r\n", "\n").split("\n"):
-                lines.extend(simpleSplit(para, SERIF, size, w - 2 * pad) or [""])
-            y = h - pad - size * 0.82
-            c.setFont(SERIF, size)
+            paras = value.replace("\r\n", "\n").split("\n")
+            s = size
+            while True:
+                leading = s * 1.17
+                lines: List[str] = []
+                for para in paras:
+                    lines.extend(simpleSplit(para, SERIF, s, w - 2 * pad) or [""])
+                block = (len(lines) - 1) * leading + s * 1.1  # ascender to descender
+                if block <= h - 2 or s <= 5.5:
+                    break
+                s -= 0.25
+            if h < 24:  # one- or two-line answer on an underline: centre it in the box
+                y = (h + block) / 2 - s * 0.82
+            else:
+                y = h - pad - s * 0.82
+            c.setFont(SERIF, s)
             for ln in lines:
-                if y < -size * 0.2:
+                if y < -s * 0.2:
                     break
                 c.drawString(pad, y, ln)
                 y -= leading
-            return
+            return s
         s = size
         while s > 6 and pdfmetrics.stringWidth(value, SERIF, s) > w - 2 * pad:
             s -= 0.25
@@ -542,6 +554,7 @@ class SheetCanvas:
             c.drawRightString(w - pad, y, value)
         else:
             c.drawString(pad, y, value)
+        return s
 
     def _check_ap(self, mark: str, size: float, state: str):
         key = (mark, round(size, 2), state)
@@ -694,7 +707,9 @@ def _identity(sc: SheetCanvas, cols: Sequence[Sequence[Tuple[str, str, Any]]], y
             text = _s(val)
             # long answers (concept, ambition) wrap onto two smaller lines instead of shrinking away
             wrap = pdfmetrics.stringWidth(text, SERIF, size) > cw - lw - 4 and key != "name"
-            sc.field(key, x + lw, base - 2.5, cw - lw, 16.5, text, size=7.2 if wrap else size,
+            # a wrapped answer may use the row's full height, up to the underline above
+            sc.field(key, x + lw, base - 2.5, cw - lw, pitch - 0.5 if wrap else 16.5, text,
+                     size=7.2 if wrap else size,
                      multiline=wrap, tooltip=lbl)
     return y - 14 - (max(len(c) for c in cols) - 1) * pitch - 10
 
@@ -764,8 +779,20 @@ def _notes_box(sc: SheetCanvas, name: str, title: str, x, y, w, h, value: str, s
     sc.field(name, x, y - h, w, h - 12, value, size=size, multiline=True, underline=False, tooltip=title)
 
 
-def _rituals(sc: SheetCanvas, rituals: List[Any], y: float) -> float:
-    rows = max(2, math.ceil((len(rituals) + 1) / 2))
+def _ritual_rows(rituals: List[Any]) -> int:
+    """Two columns, every saved ritual plus one blank line."""
+    return max(2, math.ceil((len(rituals) + 1) / 2))
+
+
+def _ritual_text(r: Any) -> str:
+    if isinstance(r, dict):
+        lvl = _n(r.get("level"), 0, 5)
+        return f"{_s(r.get('name'))} ({lvl})" if lvl else _s(r.get("name"))
+    return _s(r)
+
+
+def _rituals(sc: SheetCanvas, rituals: List[Any], y: float, rows: Optional[int] = None) -> float:
+    rows = rows or _ritual_rows(rituals)
     y = sc.section("Rituals", y)
     cols, cw = _columns(sc, 2, gap=22)
     for i in range(rows * 2):
@@ -814,6 +841,67 @@ def _power_names(powers: Any) -> List[str]:
         else:
             out.append(_s(p))
     return [p for p in out if p]
+
+
+V5_NOTES_MIN = 90.0  # height kept for Background & Notes at the foot of page 2
+
+
+def _v5_page2_height(adv_rows: int, touch_rows: int, rit_rows: int, log_h: float) -> float:
+    """Height of page 2 below the header, matching the drawing code in _render_v5."""
+    h = 15 + 21 + (adv_rows - 1) * 13 + 10          # advantages & flaws
+    h += 15 + 10 + 84                               # trackers
+    h += 15 + 12 + touch_rows * 21 + 4 + 36         # convictions, touchstones, tenets
+    if rit_rows:
+        h += 15 + 9 + (rit_rows - 1) * 13.5 + 9
+    h += 15 + 18 + (log_h + 4 if log_h else 0)      # experience
+    return h + 15 + V5_NOTES_MIN
+
+
+def _v5_page2_rows(avail: float, n_adv: int, n_flaw: int, n_touch: int, rituals: List[Any],
+                   log_h: float) -> Tuple[int, int, int]:
+    """Rows for advantages, touchstones and rituals so page 2 never runs off the paper.
+
+    Blank rows go first; past that the longest list gives way, and what doesn't fit is listed
+    under Notes (see _v5_overflow), so nothing saved is lost.
+    """
+    adv = max(6, n_adv, n_flaw)
+    touch = max(3, n_touch)
+    rit = _ritual_rows(rituals) if rituals else 0
+    floor = {"adv": max(4, n_adv, n_flaw), "touch": max(2, n_touch),
+             "rit": max(1, math.ceil(len(rituals) / 2)) if rituals else 0}
+    while _v5_page2_height(adv, touch, rit, log_h) > avail:
+        rows = {"adv": adv, "touch": touch, "rit": rit}
+        spare = [k for k in rows if rows[k] > floor[k]]
+        if not spare:
+            floor = {"adv": 4, "touch": 2, "rit": 1 if rituals else 0}
+            spare = [k for k in rows if rows[k] > floor[k]]
+            if not spare:
+                break
+        k = max(spare, key=lambda k: rows[k] * (21 if k == "touch" else 13))
+        if k == "adv":
+            adv -= 1
+        elif k == "touch":
+            touch -= 1
+        else:
+            rit -= 1
+    return adv, touch, rit
+
+
+def _v5_overflow(advs, flaws, touch, rituals) -> List[str]:
+    """Lines for the Notes box: entries that didn't get a row of their own."""
+    def trait(a):
+        nm, dots = _s(a.get("name")), _n(a.get("dots", a.get("level")), 0, 5)
+        return f"{nm} ({dots})" if dots else nm
+    out = []
+    if advs:
+        out.append("More advantages: " + "; ".join(trait(a) for a in advs))
+    if flaws:
+        out.append("More flaws: " + "; ".join(trait(a) for a in flaws))
+    for t in touch:
+        out.append("Touchstone: " + " — ".join(p for p in (_s(t.get("name")), _s(t.get("conviction"))) if p))
+    if rituals:
+        out.append("More rituals: " + "; ".join(_ritual_text(r) for r in rituals))
+    return out
 
 
 def _render_v5(sc: SheetCanvas, ch: Dict[str, Any], chronicle: str, player: str) -> None:
@@ -883,17 +971,14 @@ def _render_v5(sc: SheetCanvas, ch: Dict[str, Any], chronicle: str, player: str)
         sc.named_trait(f"disc{i + 1}", x + pad, top - 13, dw_ - 2 * pad, _s(d.get("name")),
                        _n(d.get("level", d.get("dots")), 0, 5))
         powers = _power_names(d.get("powers"))
+        if len(powers) > lines:  # keep every saved power: the last line holds the rest
+            powers = powers[:lines - 1] + ["; ".join(powers[lines - 1:])]
         lh = (box_h - 22) / lines
         for j in range(lines):
             py = top - 22 - (j + 1) * lh + 2
             sc.diamond(x + pad + 2, py + 3.5, 1.1, fill=False)
             sc.field(f"disc{i + 1}.power{j + 1}", x + pad + 6, py, dw_ - 2 * pad - 6, min(11.5, lh - 1),
                      powers[j] if j < len(powers) else "", size=8.4, tooltip="Power")
-        if len(powers) > lines:
-            extra = "; ".join(powers[lines:])
-            # keep every saved power: the last line holds the rest
-            sc.c.setFont(SERIF_ITALIC, 6.5)
-            sc.c.drawString(x + pad, top - box_h + 2, ("+ " + extra)[:80])
     sc.footer(f"{name} · {chronicle}" if chronicle else name, 1, 2)
     sc.page()
 
@@ -903,8 +988,16 @@ def _render_v5(sc: SheetCanvas, ch: Dict[str, Any], chronicle: str, player: str)
 
     advs = [a for a in _list(wm.get("advantages")) if isinstance(a, dict)]
     flaws = [a for a in _list(wm.get("flaws")) if isinstance(a, dict)]
+    touch = [t for t in _list(wm.get("touchstones")) if isinstance(t, dict)]
+    rituals = _list(wm.get("rituals"))
+    xp = _obj(wm.get("experience"))
+    log_h = 34.0 if _xp_strings(xp)[3] else 0.0
+    adv_rows, touch_rows, rit_rows = _v5_page2_rows(y - sc.bottom, len(advs), len(flaws), len(touch),
+                                                     rituals, log_h)
+    overflow = _v5_overflow(advs[adv_rows:], flaws[adv_rows:], touch[touch_rows:], rituals[rit_rows * 2:])
+
     y = sc.section("Advantages & Flaws", y)
-    rows = min(12, max(6, len(advs), len(flaws)))
+    rows = adv_rows
     cols2, cw2 = _columns(sc, 2, gap=22)
     for col, (title, items, key) in enumerate((("Merits & Backgrounds", advs, "adv"), ("Flaws", flaws, "flaw"))):
         x = cols2[col]
@@ -947,9 +1040,8 @@ def _render_v5(sc: SheetCanvas, ch: Dict[str, Any], chronicle: str, player: str)
                shape="circle", label_w=78)
     y = ty - 84
 
-    touch = [t for t in _list(wm.get("touchstones")) if isinstance(t, dict)]
     y = sc.section("Convictions & Touchstones", y)
-    rows = min(6, max(3, len(touch)))
+    rows = touch_rows
     _col_title(sc, cols2[0], cw2, y - 8, "Conviction")
     _col_title(sc, cols2[1], cw2, y - 8, "Touchstone")
     rh = 21.0
@@ -969,21 +1061,19 @@ def _render_v5(sc: SheetCanvas, ch: Dict[str, Any], chronicle: str, player: str)
              multiline=True)
     y -= th + 6
 
-    rituals = _list(wm.get("rituals"))
     if rituals:
-        y = _rituals(sc, rituals, y)
+        y = _rituals(sc, rituals, y, rit_rows)
 
-    xp = _obj(wm.get("experience"))
     y = sc.section("Experience", y)
-    log_h = 34.0 if _xp_strings(xp)[3] else 0.0
     y = _experience(sc, xp, sc.x0, y, sc.x1 - sc.x0, log_h)
 
     y = sc.section("Background & Notes", y)
-    h = y - sc.bottom - 2
+    h = max(30.0, y - sc.bottom - 2)
     bw = (sc.x1 - sc.x0 - 14) * 0.6
     mf = _obj(ch.get("merits_flaws"))
     notes = "\n".join(p for p in (_s(mf.get("notes")),
-                                  ("Specialties: " + "; ".join(other_spec)) if other_spec else "") if p)
+                                  ("Specialties: " + "; ".join(other_spec)) if other_spec else "",
+                                  *overflow) if p)
     _notes_box(sc, "background", "Background", sc.x0, y, bw, h, _s(ch.get("background")), size=8.2)
     _notes_box(sc, "notes", "Notes", sc.x0 + bw + 14, y, sc.x1 - sc.x0 - bw - 14, h, notes, size=8.2)
     sc.footer(f"{name} · {chronicle}" if chronicle else name, 2, 2)
