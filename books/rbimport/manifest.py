@@ -14,7 +14,7 @@ CHRONICLE_COLLECTION = "rule_books_chronicle"
 SLUG = re.compile(r"^[a-z0-9][a-z0-9-]*$")
 REQUIRED = ("book_id", "path", "title", "edition", "line", "version", "kind", "precedence", "year")
 KNOWN = set(REQUIRED) | {"official", "include", "exclude", "page_offset", "notes", "sidebar_fonts",
-                         "strip_lines", "toc_fixes", "skip_sections", "toc_strip_prefix", "outline"}
+                         "strip_lines", "toc_fixes", "skip_sections", "toc_strip_prefix", "outline", "toc", "page_map_from"}
 OUTLINES = {"auto", "toc", "sizes", "none"}
 DEFAULT_SKIP_SECTIONS = [r"^(table of )?contents$", r"^index$", r"^credits$"]
 
@@ -101,6 +101,11 @@ def validate(data: Dict[str, Any], books_root: Optional[str] = None) -> List[str
                 errs.append(f"{where}: {k} must be an integer")
         if b.get("official", True) is not True:
             errs.append(f"{where}: only official books are imported")
+        toc = b.get("toc")
+        if toc is not None and not (isinstance(toc, list) and all(
+                isinstance(e, list) and len(e) == 3 and isinstance(e[0], int) and isinstance(e[2], int) and e[1]
+                for e in toc)):
+            errs.append(f"{where}: toc must be a list of [level, title, pdf_page]")
         if b.get("outline", "auto") not in OUTLINES:
             errs.append(f"{where}: outline must be one of {sorted(OUTLINES)}")
         if b.get("page_offset") is not None and not isinstance(b["page_offset"], int):

@@ -430,7 +430,24 @@ books:
   - ^((Previous|Next|Up|Contents)\s*)+$
   - '^Vampire: the Masquerade Revised - '
   - ^John Black$
-  notes: 'Mis-named file: it is the Revised core rulebook (a web capture, text only). No printed page numbers: page = PDF page. Year not printed (Revised was published 1998).'
+  toc:
+  - [1, Table of Contents, 1]
+  - [1, 'Prologue: A Gathering of Beasts', 2]
+  - [1, Introduction, 10]
+  - [1, A World of Darkness, 17]
+  - [1, Clans and Sects, 61]
+  - [1, Character and Traits, 104]
+  - [1, Disciplines, 169]
+  - [1, Rules, 223]
+  - [1, Systems, 236]
+  - [1, A History of the Kindred, 286]
+  - [1, Storytelling, 301]
+  - [1, Antagonists, 318]
+  - [1, Appendix, 337]
+  - [1, 'Epilogue: Under the Horns of Blood', 369]
+  page_map_from: Classic World of Darkness/Vampire/Core/Vampire -  the Masquerade - Revised.pdf
+  notes: 'Mis-named file: it is the Revised core rulebook (a web capture, text only). Its PDF outline titles chapters six, seven and nine ''Prologue: A Gathering of Beasts'' again; toc gives the PDF outline''s
+    pages with the chapter titles from the book''s introduction. It has no printed page numbers, so they are mapped from the scanned copy (page_map_from). Year not printed (Revised was published 1998).'
 - book_id: wta-revised-core
   path: Classic World of Darkness/Werewolf (c)/Core/Werewolf the Apocalypse Core (Revised).pdf
   title: 'Werewolf: The Apocalypse Revised'
@@ -1000,7 +1017,7 @@ excluded:
 - path: V5/Month Of Darkness Character Development Questions [2024-12-07].pdf
   reason: 1-page promo handout, not a book
 - path: Classic World of Darkness/Vampire/Core/Vampire -  the Masquerade - Revised.pdf
-  reason: duplicate of the Revised core (scan); the text-only oWoD copy is used
+  reason: duplicate of the Revised core (scan); the text-only oWoD copy is imported and takes its printed page numbers from this one
 - path: oWoD/WOD - Vampire - The Masquerade - Guide to the Camarilla.pdf
   reason: duplicate, image-only (the Classic-folder copy has a text layer)
 - path: oWoD/WOD - Vampire - The Masquerade - Guide to the Sabbat.pdf
