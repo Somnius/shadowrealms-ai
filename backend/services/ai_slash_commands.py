@@ -671,13 +671,14 @@ def _parse_v5_dice_diff(parts: List[str]) -> Tuple[str, Any]:
     """`no-bestial on`, `no-messy off`, `successes 2` -> (switch key, value)."""
     word = parts[0]
     arg = parts[1] if len(parts) > 1 else ""
-    if len(parts) > 2:
-        raise RequestValidationError(_DICE_DIFF_V5_HINT)
     if word in ("no-bestial", "no-messy"):
+        if len(parts) > 2:
+            raise RequestValidationError(f"Usage: `/ai dice-diff {word} on` or `/ai dice-diff {word} off`.")
         if arg not in ("on", "off"):
             raise RequestValidationError(f"Usage: `/ai dice-diff {word} on` or `/ai dice-diff {word} off`.")
         return word.replace("-", "_"), arg == "on"
-    if not arg.isdigit() or int(arg) > 3:
+    # fullmatch on ASCII digits: str.isdigit() accepts "²", which int() can't parse
+    if len(parts) > 2 or not re.fullmatch(r"[0-3]", arg):
         raise RequestValidationError("Usage: `/ai dice-diff successes <0–3>`.")
     return "min_successes", int(arg)
 
@@ -692,7 +693,9 @@ def _dice_diff_v5(raw: str, cur, conn, campaign_id: int, location_id: int) -> Di
         """,
         (location_id, campaign_id),
     )
-    row = cur.fetchone() or {}
+    row = cur.fetchone()
+    if row is None:
+        raise RequestValidationError("This room isn't part of the chronicle (or was removed).")
     floor = _valid_floor(row.get("dice_leniency_floor"))
     current = normalize_v5_leniency(row.get("dice_leniency_v5"))
 
@@ -782,6 +785,15 @@ def execute_dice_diff_command(
     try:
         if edition == "v5":
             return _dice_diff_v5(raw, cur, conn, campaign_id, location_id)
+        cur.execute(
+            """
+            SELECT dice_leniency_floor FROM locations
+            WHERE id = %s AND campaign_id = %s AND is_active = TRUE
+            """,
+            (location_id, campaign_id),
+        )
+        if cur.fetchone() is None:
+            raise RequestValidationError("This room isn't part of the chronicle (or was removed).")
         if raw in _DICE_DIFF_RESTORE_WORDS:
             cur.execute(
                 """
@@ -924,7 +936,7 @@ def execute_rouse_command(
     raw = (payload or "").strip()
     hunger = 0
     if raw:
-        if not raw.isdigit() or not (0 <= int(raw) <= 5):
+        if not re.fullmatch(r"[0-5]", raw):
             raise RequestValidationError("Usage: `/ai rouse` or `/ai rouse <hunger 0–5>`.")
         hunger = int(raw)
     res = rouse_check(hunger)

@@ -431,3 +431,21 @@ def test_ai_roll_command_classic_keeps_the_floor(stub_psycopg, monkeypatch):
     for _ in range(200):
         dice = sc.execute_roll_command("4", 1, campaign_id=3, location_id=4)["roll"]["dice"]
         assert 1 not in dice and max(dice) >= 7
+
+
+def test_hardening_unicode_digits_and_missing_room():
+    from services import ai_slash_commands as sc
+    from services.request_validation import RequestValidationError
+    for bad in (["successes", "²"], ["successes", "4"], ["no-messy", "on", "off"]):
+        with pytest.raises(RequestValidationError) as e:
+            sc._parse_v5_dice_diff(bad)
+        assert "Usage" in str(e.value)
+
+    class NoRoom(FakeCursor):
+        def execute(self, sql, params=()):
+            super().execute(sql, params)
+            if " ".join(sql.split()).startswith("SELECT dice_leniency"):
+                self.row = None
+    db = FakeDB("v5")
+    with pytest.raises(RequestValidationError):
+        sc._dice_diff_v5("no-bestial on", NoRoom(db), db, 1, 99)
