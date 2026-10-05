@@ -262,6 +262,12 @@ def put_current_user_me():
                         403,
                     )
                 ch_cid = crow.get("campaign_id")
+                if ch_cid is None:
+                    # A character without a chronicle can't be anyone's playing character yet.
+                    return jsonify({
+                        "error": "Bring this character into a chronicle first.",
+                        "error_code": "character_has_no_chronicle",
+                    }), 400
                 if ch_cid is not None:
                     cursor.execute(
                         """

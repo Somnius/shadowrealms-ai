@@ -19,7 +19,7 @@ export function fitsChronicle(ch, chronicle) {
 }
 
 /** Server refusals of POST /characters/<id>/assign in the interface language. */
-export function assignErrorText(data) {
+export function assignErrorText(data, status) {
   switch (data && data.error_code) {
     case 'rules_edition_mismatch':
       return t('profile:bring.error.edition', 'This character uses different rules than that chronicle.');
@@ -30,6 +30,9 @@ export function assignErrorText(data) {
     case 'character_already_in_chronicle':
       return t('profile:bring.error.already', 'This character already belongs to a chronicle.');
     default:
+      if (status === 404) {
+        return t('profile:bring.error.unavailable', "That chronicle isn't available any more.");
+      }
       return errorText(data, t('profile:bring.failed', 'Could not bring the character into the chronicle.'));
   }
 }
@@ -53,7 +56,7 @@ export function BringIntoChronicleDialog({ character, chronicles, onClose, onDon
     const r = await assignCharacter(api, character.id, cid);
     setBusy(false);
     if (!r.ok) {
-      toast({ tone: 'danger', title: assignErrorText(r.data) });
+      toast({ tone: 'danger', title: assignErrorText(r.data, r.status) });
       return;
     }
     toast({
@@ -118,7 +121,7 @@ export function UnassignedOffer({ campaign, onAssigned, toast }) {
     const r = await assignCharacter(api, ch.id, campaign.id);
     setBusy(null);
     if (!r.ok) {
-      toast({ tone: 'danger', title: assignErrorText(r.data) });
+      toast({ tone: 'danger', title: assignErrorText(r.data, r.status) });
       return;
     }
     toast({ tone: 'ok', title: t('profile:bring.done', '{{name}} joined {{chronicle}}.', { name: ch.name, chronicle: campaign.name || '' }) });

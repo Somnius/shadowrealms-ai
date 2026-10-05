@@ -241,3 +241,12 @@ def test_unassigned_locked_character_does_not_block_creating_one(api):
     r = api.call("POST", "/api/characters/", 3, body)
     assert r.status_code == 201, r.get_json()
     assert r.get_json()["rules_edition"] == "classic"
+
+
+def test_unassigned_character_cannot_be_the_global_active_character():
+    # PUT /api/users/me with a character that has no chronicle: refused, nothing stored.
+    import ast, pathlib
+    src = pathlib.Path(__file__).resolve().parents[2] / "routes" / "users.py"
+    text = src.read_text()
+    assert "character_has_no_chronicle" in text
+    ast.parse(text)

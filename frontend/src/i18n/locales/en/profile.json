@@ -22,7 +22,8 @@
       "edition": "This character uses different rules than that chronicle.",
       "line": "This character is from a different game line than that chronicle.",
       "locked": "You already have a locked character in another chronicle. Only a site administrator can allow more.",
-      "already": "This character already belongs to a chronicle."
+      "already": "This character already belongs to a chronicle.",
+      "unavailable": "That chronicle isn't available any more."
     }
   },
   "create": {

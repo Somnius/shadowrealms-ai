@@ -928,8 +928,12 @@ def assign_character_to_chronicle(character_id):
             UPDATE campaign_players SET active_character_id = %s
             WHERE campaign_id = %s AND user_id = %s
               AND active_character_id IS NULL
+              AND EXISTS (
+                SELECT 1 FROM characters
+                WHERE id = %s AND is_active IS TRUE AND COALESCE(play_suspended, FALSE) IS FALSE
+              )
             """,
-            (character_id, campaign_id, owner_id),
+            (character_id, campaign_id, owner_id, character_id),
         )
         db.commit()
         logger.info(
