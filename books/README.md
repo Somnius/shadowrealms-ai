@@ -123,7 +123,52 @@ Your choices are automatically saved to `.duplicate_choices.json`. The next time
 
 To reset your choices, simply delete `.duplicate_choices.json` in the books directory.
 
+## Importing rule books
+
+`import_books.py` puts the official rule books into ChromaDB for Laya's rules answers. It is a plain script (PyMuPDF and fixed rules); no AI reads the books. What it writes is described in `docs/rules/RULE_BOOKS_RAG.md`: `rule_books_v5`, `rule_books_classic`, and `rule_books_chronicle` for adventures attached to one chronicle.
+
+Install the deps once (`pip install -r books/requirements.txt`), then from the repo root:
+
+```bash
+python books/import_books.py extract                 # PDF -> blocks, cached in data/rule_books/cache (keyed by file sha256)
+python books/import_books.py chunk --dry-run         # chunk everything, print the summary table (also data/rule_books/chunk_summary.md)
+python books/import_books.py import --only v5-corebook,v5-players-guide
+python books/import_books.py status --chroma
+python books/import_books.py eval --only v5-corebook
+python books/import_books.py attach --book v5-fall-of-london --campaign 12   # an adventure, for chronicle 12 only
+python books/import_books.py delete --book v5-camarilla                      # add --campaign N for an attached book
+```
+
+Options (before or after the command): `--only id,id`, `--edition v5|classic`, `--dry-run` (no Chroma, no state file), `--chroma-host/--chroma-port` (default `CHROMADB_HOST`/`CHROMADB_PORT`, else localhost:8000), `--lmstudio-url` (default `LM_STUDIO_URL`, else localhost:1234; the model is `EMBEDDING_MODEL`, default bge-m3), `--batch 64`, `--pace-ms 200`, `--no-resume`, `--force`, `--workers 4` (max 8). `RULE_BOOKS_ROOT` points at the books folder if it isn't `books/World_of_Darkness`.
+
+- **Embedding** goes through the backend's own `services.vector_store` (same embedding function and collection settings), so the backend reads the collections without a re-embed. LM Studio is shared with the live app: imports go in batches with a pause between them (`--pace-ms`).
+- **Resumable:** `data/rule_books/state.json` keeps, per book, the file hash, the chunk set hash, how many chunks are in and the timings. Ids are deterministic (`book_id:00042`) and written with upsert, so a stopped import just continues. If a book's chunks change (new PDF, new manifest settings, new importer version), the old chunks are removed first.
+- **Adventures** (`kind: adventure`) are never imported globally; `attach` puts one into `rule_books_chronicle` with that chronicle's `campaign_id` (ids get a `c<id>:` prefix).
+- **Image-only PDFs** (scans without a text layer) are found automatically, skipped and listed. No OCR for now.
+- **Duplicates:** a chunk whose text is already in a higher-precedence book of the same edition is skipped.
+- **eval** samples up to 40 outline headings per imported book (seeded), asks each as is and as "How does X work?", and scores hit@1/3/5 and MRR against that section's pages. It also counts edition leaks and, for Classic, line leaks. Reports go to `data/rule_books/eval/`.
+
+### The manifest (`books/manifest.yaml`)
+
+One entry per book. Required: `book_id` (slug), `path` (relative to `books/World_of_Darkness`), `title`, `edition` (`v5`/`classic`), `line` (`vampire`/`werewolf`/`mage`/`all`), `version` (`v5`/`revised`), `kind` (`rules`/`lore`/`adventure`), `precedence` (lower wins), `year` (0 = not printed in the PDF). Optional:
+
+- `include` / `exclude`: PDF page ranges, e.g. `exclude: 431-436`
+- `page_offset`: printed page = PDF page + offset, when the PDF has no page labels and no printed page numbers the script can find
+- `strip_lines`: regexes for lines to drop (web-capture headers, stamps)
+- `sidebar_fonts`: regexes for the sidebar font (V5 default: Gill Sans / Futura / IBM Plex Sans)
+- `toc_fixes`: typo fixes for outline titles, e.g. `{Venture: Ventrue}`
+- `outline`: `auto` (PDF outline, else headings by font size), `toc`, `sizes` or `none`
+- `skip_sections`: regexes for sections to leave out (default: contents, index, credits)
+- `notes`
+
+The `excluded:` list at the end records files left out on purpose and why. To add a book: add an entry, run `chunk --dry-run --only <id>` and check its row in the table (pages, chunks, % with a heading path, kinds, warnings), then `import --only <id>`.
+
+Tests (synthetic PDFs only, no book text): `python -m pytest -q books/tests`.
+
 ## Parsing PDFs for RAG/Vector Database
+
+The older `parse_books.py` / `import_to_rag.py` path below writes the old `rule_books` collection, which the data contract retires; use `import_books.py` above.
+
 
 After syncing books, you can parse them for ingestion into your RAG system.
 
