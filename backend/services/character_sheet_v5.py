@@ -128,6 +128,8 @@ def sanity_check_v5(
                                 or not r["name"].strip() or len(r["name"]) > 120:
                             errors.append(f"wod_meta.rituals[{i}] needs a name (at most 120 characters)")
                             continue
+                        if r.get("level") is None:
+                            errors.append(f"wod_meta.rituals[{i}].level is required")
                         _check_range(errors, f"wod_meta.rituals[{i}].level", r.get("level"), 1, 5)
             ed = wod_meta.get("edition")
             if ed is not None and ed != "v5":
