@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { Fragment, useState } from 'react';
 import ReadmeModal from './ReadmeModal';
 // Only the version: a named import lets Vite leave the rest of package.json out of the bundle.
 import { version as packageVersion } from '../../package.json';
@@ -10,6 +10,13 @@ import { Glyph } from '../design';
  * We do not call `/api/version` here: backend `VERSION` in `.env` can lag behind the
  * built bundle and was overwriting this badge with stale values (e.g. v0.7.17).
  */
+// The AI coding tools the project was built with (credited in the footer).
+const CREDIT_TOOLS = [
+  { name: 'Cursor', href: 'https://cursor.sh' },
+  { name: 'OpenCode', href: 'https://opencode.ai' },
+  { name: 'Claude', href: 'https://claude.com/claude-code' },
+];
+
 const displayVersion = `v${packageVersion}`;
 
 function Footer() {
@@ -146,7 +153,7 @@ function Footer() {
         </div>
       </div>
 
-      {/* Cursor Credit */}
+      {/* AI tools credit */}
       <div style={{
         marginTop: '15px',
         paddingTop: '15px',
@@ -155,26 +162,22 @@ function Footer() {
         fontSize: '12px',
         fontFamily: 'var(--sr-font-body)'
       }}>
-        {t('footer:builtWith', 'Built with the help of')}{' '}
-        <a 
-          href="https://cursor.sh" 
-          target="_blank" 
-          rel="noopener noreferrer"
-          style={{
-            color: 'var(--sr-arcane-400)',
-            textDecoration: 'none',
-            fontWeight: 'bold',
-            transition: 'color 0.2s'
-          }}
-          onMouseOver={(e) => {
-            e.target.style.color = 'var(--sr-arcane-300)';
-          }}
-          onMouseOut={(e) => {
-            e.target.style.color = 'var(--sr-arcane-400)';
-          }}
-        >
-          Cursor AI
-        </a>
+        {t('footer:builtWith', 'Blood-bound to')}{' '}
+        {CREDIT_TOOLS.map((tool, i) => (
+          <Fragment key={tool.name}>
+            {i > 0 ? (i === CREDIT_TOOLS.length - 1 ? ' & ' : ', ') : null}
+            <a
+              href={tool.href}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{ color: 'var(--sr-arcane-400)', textDecoration: 'none', fontWeight: 'bold' }}
+            >
+              {tool.name}
+            </a>
+          </Fragment>
+        ))}
+        {'. '}
+        {t('footer:builtWithAfter', 'No humans were Embraced in the making of this app. The Masquerade holds.')}
         {' '}<Glyph name="ai-sigil" size={14} style={{ color: 'var(--sr-arcane-400)', verticalAlign: '-2px' }} />
       </div>
     </footer>

@@ -2,7 +2,8 @@
   "readmeTitle": "Show the README",
   "madeWith": "Made with",
   "madeFor": "for tabletop RPG games by",
-  "builtWith": "Built with the help of",
+  "builtWith": "Blood-bound to",
+  "builtWithAfter": "No humans were Embraced in the making of this app. The Masquerade holds.",
   "readme": {
     "failed": "Failed to load README.md: {{error}}",
     "close": "Close",
