@@ -302,7 +302,7 @@ T = {
         "cl_wp_saved": "_Χωρίς το Willpower αυτό θα ήταν botch· η επιτυχία που αγοράστηκε μένει (σσ. 137, 193)._",
         "cl_lenient": "_Σε αυτή τη ρίψη ίσχυε το κατώτατο όριο επιείκειας {f} του δωματίου: κανένα 1, και με 2 ή περισσότερα ζάρια ένα ζάρι είναι τουλάχιστον {f}. Αυτό επηρέασε τα ζάρια· το μέτρημα είναι ο κανονικός κανόνας._",
         "rouse_title": "**Rouse check** (V5, σσ. 123, 211)",
-        "rouse_rule": "Ένα ζάρι, χωρίς ζάρια Hunger: με 6 ή παραπάνω το Hunger μένει ίδιο· αλλιώς Hunger +1 (έως 5). Το αποτέλεσμα που ζήτησε το check γίνεται έτσι κι αλλιώς.",
+        "rouse_rule": "Ένα ζάρι, χωρίς ζάρια Hunger: με 6 ή παραπάνω το Hunger μένει ίδιο· αλλιώς Hunger +1 (έως 5). Η δύναμη που απαίτησε το check ενεργοποιείται έτσι κι αλλιώς.",
         "rouse_ok": "Έφερε **{die}** → επιτυχία: το Hunger μένει **{h}**.",
         "rouse_fail": "Έφερε **{die}** → αποτυχία: Hunger **{a} → {b}**.",
         "rouse_max": "Έφερε **{die}** → αποτυχία με Hunger **5**: το Hunger δεν ανεβαίνει άλλο, οπότε ο βρικόλακας κάνει τεστ hunger frenzy με δυσκολία 4 (σ. 211).",
@@ -421,7 +421,7 @@ def _v5_compare(derived: Dict[str, Any], stored: Dict[str, Any], marker: Optiona
     return uniq
 
 
-def _explain_v5(rec: Dict[str, Any], lang: str) -> Dict[str, Any]:
+def _explain_v5(rec: Dict[str, Any], lang: str, replied: bool = False) -> Dict[str, Any]:
     from services.v5_dice import describe_v5_leniency, resolve_v5
 
     tr = _t(lang)
@@ -452,7 +452,7 @@ def _explain_v5(rec: Dict[str, Any], lang: str) -> Dict[str, Any]:
         elif rec.get("willpower_cost") == "aggravated":
             wp += tr["wp_cost_agg"]
         lines.append(wp)
-        if rec.get("card_kind") == "manual":
+        if replied and rec.get("card_kind") == "manual":  # only when the user picked that card
             lines.append(tr["card_first"])
         lines.append("")
     lines.append(tr["dice"].format(dice=_v5_dice_text(normal, hunger)))
@@ -657,7 +657,7 @@ def explain(rec: Dict[str, Any], lang: str = "en", note: Optional[str] = None) -
     if edition == ROUSE:
         part = _explain_rouse(rec, lang)
     elif edition == V5:
-        part = _explain_v5(rec, lang)
+        part = _explain_v5(rec, lang, replied=note is None)
     else:
         part = _explain_classic(rec, lang)
 
