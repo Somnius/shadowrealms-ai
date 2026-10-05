@@ -1,7 +1,7 @@
 # Security model (v0.9 phase 5)
 
-How sign-in, sessions, limits and the production server work since the site became publicly
-reachable at https://srai.srv-box.com. Testing practices are in
+How sign-in, sessions, limits and the production server work for an instance that is reachable
+from the internet (behind your own reverse proxy and domain). Testing practices are in
 [SECURITY_AND_TESTING.md](SECURITY_AND_TESTING.md).
 
 Sources used for the design: OWASP Authentication, Session Management, Password Storage and

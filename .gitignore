@@ -505,5 +505,5 @@ backups/
 .env.backup-before-postgresql
 CLAUDE.md
 
-# Basic-auth gate for srai.srv-box.com (local only)
+# Basic-auth gate for the test instance (local only)
 .srai-gate-credentials.txt

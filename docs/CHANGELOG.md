@@ -78,7 +78,7 @@ Full plan and progress: `docs/ROADMAP_v0.10.md`.
 ### Changed
 - **New chronicle**: pick the edition first (Classic or V5), then a game line from that edition: Classic offers Vampire / Werewolf / Mage (Revised) and a custom system, V5 offers Vampire: The Masquerade (5th Edition).
 - **V5 Willpower reroll** now costs 1 Superficial Willpower on the sheet (a full track turns a box Aggravated; a track full of Aggravated refuses the reroll).
-- The public instance at `srai.srv-box.com` is open; the preview gate was removed. Everything sits behind the app's own login.
+- The maintainer's test instance is open; the preview gate was removed. Everything sits behind the app's own login.
 - Documentation sweep: new README with screenshots, docs index, CONTRIBUTING, Docker setup with every env variable, testing docs, issue and PR templates; 15 historical docs moved to `docs/archive/`; `scripts/version-bump.sh` only touches version markers now.
 
 ### Fixed
@@ -102,7 +102,7 @@ Full plan and progress: `docs/ROADMAP_v0.9.md`.
 - **Laya classifier** (`ml/laya/`): trained locally for OOC vs in-character moderation and message intent (EN/EL); optional Typesafe Jev.
 - **Security**: rate limits and lockouts, token revocation and refresh rotation, password policy, audit log, gunicorn, production frontend build with a strict CSP. `docs/SECURITY_MODEL.md`, `SECURITY.md`.
 - **CI**: Python checks, backend unit tests (250+), schema check, frontend tests (360+) and build, CodeQL, Dependabot.
-- Public access at `srai.srv-box.com` (behind a preview gate).
+- Public access to the maintainer's test instance (behind a preview gate).
 
 ### Changed
 - Classic dice now follow Revised: a botch needs no successes rolled at all, specialties re-roll 10s, Willpower is one uncancellable success, 5+ is "exceptional".

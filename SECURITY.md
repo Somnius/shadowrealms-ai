@@ -1,6 +1,6 @@
 # Security Policy
 
-ShadowRealms AI is a hobby project that you host yourself (Docker + a local LLM). The instance at srai.srv-box.com is my personal one. It's open, with the app's own login, but it isn't a public service. Please don't scan or attack it. If you find something, report it against the code and I'll check it there.
+ShadowRealms AI is a hobby project that you host yourself (Docker + a local LLM). My own running instance is a private test server, not a public service. Please don't scan or attack it. If you find something, report it against the code and I'll check it there.
 
 ## Supported versions
 
@@ -18,7 +18,7 @@ I'll reply as soon as I can, usually within a week, and let you know if and when
 
 In scope: the code in this repository (backend, frontend, nginx config, Docker setup, scripts) running as documented.
 
-Out of scope: my instance at srai.srv-box.com, setups that ignore the steps below (default secrets, services exposed without HTTPS), third-party services like LM Studio, Ollama or cloud AI providers, and findings from `npm audit` that only affect build and test tooling such as Tailwind (it never ships to the browser).
+Out of scope: my own running instance, setups that ignore the steps below (default secrets, services exposed without HTTPS), third-party services like LM Studio, Ollama or cloud AI providers, and findings from `npm audit` that only affect build and test tooling such as Tailwind (it never ships to the browser).
 
 ## How it's protected
 

@@ -38,7 +38,7 @@ async function page(name) {
   await p.send('Emulation.setFocusEmulationEnabled', { enabled: true });
   // Safety: the recording browser may only talk to the demo origin (never the live site on :80)
   await p.send('Network.enable');
-  await p.send('Network.setBlockedURLs', { urls: ['http://127.0.0.1/*', 'http://localhost/*', 'http://127.0.0.1:80/*', 'http://localhost:80/*', '*srv-box*', 'http://10.0.0.3*'] });
+  await p.send('Network.setBlockedURLs', { urls: ['http://127.0.0.1/*', 'http://localhost/*', 'http://127.0.0.1:80/*', 'http://localhost:80/*', ...(process.env.TRAILER_BLOCK_URLS || '').split(',').filter(Boolean)] });
   // No spell-check squiggles under typed text
   await p.send('Page.addScriptToEvaluateOnNewDocument', { source: `document.addEventListener('focusin', (e) => { if (e.target && 'spellcheck' in e.target) e.target.spellcheck = false; }, true);` });
   pages[name] = p;
