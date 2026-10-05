@@ -31,7 +31,6 @@ Legacy (may not match the current app):
 | `test_phase2.py` | Phase 2 RAG and vector memory |
 | `test_user_experience.py` | End-to-end API workflows |
 | `test_comprehensive_verification.py`, `test_deep_verification.py` | System verification |
-| `test_rule_books.py`, `test_core_books_rag.py`, `test_rag_imported_books.py`, `test_rag_game_scenarios.py`, `test_lm_studio_rag_integration.py` | Rule books and RAG |
 | `test_ai_memory_system.py` | AI memory |
 | `test_api_endpoints.py`, `test_frontend_backend_integration.py` | API checks |
 | `test_modules.py` | Backend module imports |
