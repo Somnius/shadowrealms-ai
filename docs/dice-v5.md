@@ -131,16 +131,16 @@ The roll's chat line and `/ai roll` output say which switches were on.
 
 ## Explaining a roll (`/ai explain`)
 
-Any member of the chronicle can reply to a dice card with `/ai explain` (also `/ai explain this roll`, or `/ai εξήγησε` in Greek). Without a reply it explains the newest roll in the room that the requester can see; hidden rolls only for admins, helpers and the chronicle's owner, as in the chat. The answer is posted as a Storyteller line in the room:
+Any member of the chronicle can reply to a dice card with `/ai explain` (also `/ai explain this roll`, or `/ai εξήγησε` / `/ai εξηγησε` in Greek). Without a reply it explains the newest visible roll in the room, for staff too. Hidden rolls: only admins, helpers and the chronicle's owner can explain one, by replying to its card (or when the room has no visible roll), and the answer is never posted to the room: the API returns it as `private_markdown` (no assistant grant) and the chat shows it to the requester only, in a notice. Otherwise the answer is posted as a Storyteller line in the room:
 
 - the dice, with the Hunger dice set apart, the pool and the difficulty;
 - the counting step by step: 6+ is a success (core pp. 118–121), each pair of 10s adds 2 (pp. 120–121), successes against difficulty and the margin (p. 121);
 - the result and what it means in play: win, critical win, messy critical (p. 207), failure (win at a cost, p. 121), total failure (p. 122), bestial failure (p. 207: the Beast acts, typically a Compulsion, pp. 208–211);
 - a Willpower reroll (p. 122) shows the first roll, which dice changed and the cost; room leniency and a Hunger override are named.
 
-The numbers come from the stored roll (`dice_rolls` and the card's marker) and are re-counted with `resolve_v5`. If the re-count disagrees with what was stored, the answer says so. A Rouse check is explained too. After that, when an LLM is up, the Storyteller adds 2–3 sentences in the requester's language (Greek for `/ai εξήγησε`, a Greek line or a Greek UI) with the rule books searched as a dice question. The line is dropped if it brings a number the roll doesn't have; without an LLM only the breakdown is posted. `/ai respond` is a latency check, not the Storyteller, and says so.
+The numbers come from the stored roll (`dice_rolls` and the card's marker) and are re-counted with `resolve_v5`. If the re-count disagrees with what was stored, the answer says so. A Rouse check is explained too. The roll reason and the character / player name are shown as plain text (no links or markdown). After that, when an LLM is up (health check cached for 30 seconds), the Storyteller adds 2–3 sentences in the requester's language (Greek for `/ai εξήγησε`, a Greek line or a Greek UI) with the rule books searched as a dice question. The line is dropped if it contains any digit, or if it contradicts the outcome (says the roll succeeded when it failed, or the other way round; negations such as "didn't succeed" / "δεν πέτυχες" are fine). Without an LLM only the breakdown is posted. `/ai respond` is a latency check, not the Storyteller, and says so.
 
-When a player replies to any message and asks the Storyteller (a normal line or `/chat`), the quoted message goes into the Storyteller's prompt: its author, kind and text, or for a dice card the same roll summary (`backend/services/reply_context.py`).
+When a player replies to any message and asks the Storyteller (a normal line or `/chat`), the quoted message goes into the Storyteller's prompt: its author, kind and text, or for a dice card the same roll summary (`backend/services/reply_context.py`). The quote is fenced and the prompt says it is data, not instructions. A quoted hidden roll is passed only as "a hidden dice roll", never its dice, since the answer is public.
 
 ## `/ai roll` syntax (V5 campaigns)
 
