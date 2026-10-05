@@ -261,6 +261,141 @@ def test_v5_crowded_sheet_stays_on_two_pages(paper, height):
     assert f[f"disc1.power{last}"].endswith("; h")
 
 
+# --- hostile or odd sheets never break the export -------------------------------------------
+
+BAD_NUMBERS = [float("inf"), float("nan"), "1e400", 10 ** 400, -float("inf"), "x", None, [], {}]
+
+
+def _numbers(ch):
+    """Every number on the sheet replaced with something that isn't one."""
+    def walk(v, i=[0]):
+        if isinstance(v, dict):
+            return {k: walk(x) for k, x in v.items()}
+        if isinstance(v, list):
+            return [walk(x) for x in v]
+        if isinstance(v, (int, float)) and not isinstance(v, bool):
+            i[0] += 1
+            return BAD_NUMBERS[i[0] % len(BAD_NUMBERS)]
+        return v
+    ch = walk(copy.deepcopy(ch))
+    ch["wod_meta"]["experience"] = {"total": float("inf"), "spent": "1e400", "unspent": float("nan")}
+    ch["wod_meta"]["generation"] = "1e400"
+    return ch
+
+
+def _text(ch):
+    ch = copy.deepcopy(ch)
+    bad = "Ζ\ud800ω\x00\x07\x1b\x7f\r\nend\udfff"
+    ch["name"] = "Κων\ud83dσταντίνος\x00"
+    ch["background"] = bad
+    wm = ch["wod_meta"]
+    wm["concept"] = bad
+    wm["disciplines"] = [{"name": bad, "level": 2, "powers": [bad, {"name": bad, "level": "\x00"}]}]
+    wm["touchstones"] = [{"name": bad, "conviction": bad}]
+    wm["rituals"] = [{"name": bad, "level": 1}, bad]
+    return ch
+
+
+def _lists(ch):
+    ch = copy.deepcopy(ch)
+    wm = ch["wod_meta"]
+    many = [{"name": f"Entry {i}", "dots": i % 6, "level": i % 6, "powers": [f"P{j}" for j in range(30)]}
+            for i in range(3000)]
+    for k in ("disciplines", "advantages", "flaws", "backgrounds", "rituals"):
+        wm[k] = copy.deepcopy(many)
+    wm["touchstones"] = [{"name": f"T{i}", "conviction": f"C{i}"} for i in range(3000)]
+    wm["thin_blood_flaws"] = [f"Flaw {i}" for i in range(500)]
+    wm["experience"] = {"total": 1, "log": [{"note": f"n{i}", "amount": 1} for i in range(3000)]}
+    ch["merits_flaws"] = {"entries": [{"name": f"M{i}", "points": i % 7 - 3} for i in range(3000)]}
+    ch["skills"] = dict(ch.get("skills") or {})
+    ch["skills"]["specialties"] = [{"skill": "academics", "name": f"S{i}"} for i in range(3000)]
+    ch["skills"]["custom"] = {c: [{"key": f"k{i}", "label": f"Custom {i}", "dots": 2} for i in range(500)]
+                              for c in ("talents", "skills", "knowledges")}
+    return ch
+
+
+def _huge(ch):
+    ch = copy.deepcopy(ch)
+    big = ("Κείμενο με ελληνικά and English words. " * 30 + "\n") * 1000  # ~1.2 MB of UTF-8
+    ch["background"] = big
+    ch["name"] = "Κωνσταντίνος " * 800
+    ch["merits_flaws"] = {"notes": big}
+    ch["skills"] = dict(ch.get("skills") or {}, notes=big)
+    wm = ch["wod_meta"]
+    for k in ("concept", "ambition", "desire", "clan", "sire", "chronicle_tenets", "nature", "weakness"):
+        wm[k] = big[:100000]
+    return ch
+
+
+@pytest.mark.parametrize("base", [V5_CHAR, CLASSIC_CHAR], ids=["v5", "classic"])
+@pytest.mark.parametrize("mangle", [_numbers, _text, _lists, _huge], ids=lambda f: f.__name__.strip("_"))
+@pytest.mark.parametrize("paper", ["a4", "letter"])
+def test_never_raises(base, mangle, paper):
+    import time
+
+    ch = mangle(base)
+    t = time.monotonic()
+    pdf = build_sheet_pdf(ch, paper=paper)
+    took = time.monotonic() - t
+    assert pdf.startswith(b"%PDF-") and len(re.findall(rb"/Type /Page\b", pdf)) == 2
+    assert took < 2.0 and len(pdf) < 3_000_000, (took, len(pdf))
+    height = 841.89 if paper == "a4" else 792.0
+    for x0, y0, x1, y1 in _rects(pdf):
+        assert 24 <= y0 < y1 <= height - 24
+    f = _fields(pdf)
+    for v in f.values():
+        assert not re.search(r"[\x00-\x09\x0b-\x1f\x7f\ud800-\udfff]", v), repr(v[:80])
+        assert len(v) <= 20000
+    if mangle is _text:
+        assert f["name"] == "Κων\ufffdσταντίνος" and f["background"] == "Ζ\ufffdω\nend\ufffd"
+    if mangle is _huge:
+        assert f["background"].endswith("…") and len(f["name"]) <= 500
+
+
+def test_classic_overflow_goes_to_notes():
+    ch = copy.deepcopy(CLASSIC_CHAR)
+    wm = ch["wod_meta"]
+    wm["disciplines"] = [{"name": f"Disc {i}", "dots": 1} for i in range(12)]
+    wm["backgrounds"] = [{"name": f"Bg {i}", "dots": 2} for i in range(11)]
+    wm["rituals"] = [{"name": f"Rite {i}", "level": 1} for i in range(60)]
+    ch["skills"]["custom"] = {"knowledges": [{"key": f"k{i}", "label": f"Lore {i}", "dots": 1} for i in range(6)]}
+    ch["skills"]["notes"] = "Ability notes here"
+    ch["merits_flaws"]["entries"] = [{"name": f"Merit {i}", "points": 1} for i in range(30)]
+    for paper, height in (("a4", 841.89), ("letter", 792.0)):
+        pdf = build_sheet_pdf(ch, paper=paper)
+        for x0, y0, x1, y1 in _rects(pdf):
+            assert 24 <= y0 < y1 <= height - 24
+        f = _fields(pdf)
+        notes = f["notes"]
+        assert "Owes a boon." in notes and "Ability notes here" in notes
+        assert "More disciplines: Disc 9 (1); Disc 10 (1); Disc 11 (1)" in notes
+        assert "Bg 10 (2)" in notes
+        assert "Lore 5 (1)" in notes and f["knowledges.custom3.name"] == "Lore 2"
+        shown = {v for k, v in f.items() if re.fullmatch(r"merit\d+\.name", k) and v}
+        assert all(f"Merit {i}" in shown or f"Merit {i} (+1)" in notes for i in range(30))
+        rites = {v for k, v in f.items() if re.fullmatch(r"ritual\d+\.name", k) and v}
+        assert 2 <= len(rites) < 60
+        assert all(f"Rite {i}" in rites or f"Rite {i} (1)" in notes for i in range(60))
+
+
+def test_v5_age_player_and_thin_blood():
+    ch = copy.deepcopy(V5_CHAR)
+    ch["wod_meta"].update(age="neonate", clan="Thin-Blood", thin_blood_flaws=["Baby Teeth"],
+                          thin_blood_merits=["Day Drinker"])
+    f = _fields(build_sheet_pdf(ch, player_name="lef"))
+    assert f["age"] == "neonate" and f["player"] == "lef"
+    assert f["flaw2.name"] == "Baby Teeth (thin-blood)" and f["adv2.name"] == "Day Drinker (thin-blood)"
+
+
+def test_v5_many_disciplines_listed_under_notes():
+    ch = copy.deepcopy(V5_CHAR)
+    ch["wod_meta"]["disciplines"] = [{"name": f"Disc {i}", "level": 1, "powers": [f"Power {i}"]} for i in range(11)]
+    f = _fields(build_sheet_pdf(ch, paper="letter"))
+    boxes = sum(1 for k in f if re.fullmatch(r"disc\d+\.name", k))
+    assert boxes <= 9
+    assert all(f"Disc {i} (1): Power {i}" in f["notes"] for i in range(boxes, 11))
+
+
 def test_tabs_become_spaces():
     ch = copy.deepcopy(V5_CHAR)
     ch["background"] = "Sire\tΘεόδωρος"
