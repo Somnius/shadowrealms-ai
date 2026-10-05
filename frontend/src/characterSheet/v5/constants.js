@@ -80,6 +80,8 @@ export const V5_XP_COSTS = {
 };
 /** No trait goes above 5 dots (rituals above level 5) for a starting character. */
 export const V5_XP_MAX_DOTS = 5;
+/** Most rituals a sheet stores (free one + 11 level-1 rituals on an ancilla's 35 XP). Backend: same cap. */
+export const V5_RITUALS_MAX = 12;
 
 export { V5_BACKGROUNDS, V5_CLANS, V5_DISCIPLINES, V5_PREDATOR_TYPES };
 export const V5_CLAN_NAMES = V5_CLANS.map((c) => c.name);
