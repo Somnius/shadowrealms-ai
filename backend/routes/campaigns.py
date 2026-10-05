@@ -636,6 +636,7 @@ def get_or_update_campaign(campaign_id):
             ch = cursor.fetchone()
             if (
                 ch
+                and ch.get("campaign_id") is not None
                 and int(ch["campaign_id"]) == int(campaign_id)
                 and bool(ch.get("play_suspended") or False)
             ):
