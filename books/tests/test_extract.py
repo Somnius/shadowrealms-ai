@@ -123,3 +123,26 @@ def test_strip_lines_and_page_range(mk):
 def test_image_only_detected(mk):
     res = extract_book(mk([[(50, 100, "x", "tiro", 10)]] * 3), book())
     assert res["status"] == "image-only"
+
+
+def test_repeated_long_root_dropped_short_kept_manual_toc(mk):
+    pages = [[(50, 80, f"Heading {p}", "tibo", 16)] + _col(50, 110, f"Pg{p}", 4) for p in range(5)]
+    toc = [[1, "Prologue: A Gathering of Beasts", 1], [1, "Rules", 2], [1, "Prologue: A Gathering of Beasts", 3],
+           [1, "Time", 4], [1, "Time", 5]]
+    res = extract_book(mk(pages, toc), book())
+    titles = [s["title"] for s in res["sections"]]
+    assert titles == ["Prologue: A Gathering of Beasts", "Rules", "Time", "Time"]
+    assert any("repeated top-level" in w for w in res["warnings"])
+    res = extract_book(mk(pages, toc, name="m.pdf"), book(toc=[[1, "Intro", 1], [1, "Systems", 3]]))
+    assert [s["title"] for s in res["sections"]] == ["Intro", "Systems"]
+    sec = {s["id"]: s["title"] for s in res["sections"]}
+    assert {sec[b["section"]] for b in res["blocks"] if "Pg3 line" in b["text"]} == {"Systems"}
+
+
+def test_italic_example_is_example(mk):
+    items = _col(50, 80, "Body", 3)
+    items += [(50, 130, "Example: Anna rolls five dice for her", "tiit", 10)]
+    items += [(50, 143 + i * 13, f"italic example line {i} goes on and on.", "tiit", 10) for i in range(4)]
+    res = extract_book(mk([items]), book())
+    kinds = {b["kind"] for b in res["blocks"] if "Anna rolls" in b["text"]}
+    assert kinds == {"example"}

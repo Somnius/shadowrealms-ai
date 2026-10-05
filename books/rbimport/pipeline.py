@@ -18,7 +18,7 @@ REPO = os.path.dirname(HERE)
 BOOKS_ROOT = os.path.join(HERE, "World_of_Darkness")
 DATA = os.path.join(REPO, "data", "rule_books")
 EXTRACT_FIELDS = ("include", "exclude", "page_offset", "strip_lines", "sidebar_fonts", "toc_fixes",
-                  "skip_sections", "toc_strip_prefix", "outline", "edition")
+                  "skip_sections", "toc_strip_prefix", "outline", "toc", "page_map_from", "edition")
 
 
 class Paths:
@@ -92,7 +92,7 @@ def extract_books(books: List[dict], paths: Paths, workers: int = 4, force: bool
         if cached and cached.get("key") == key and not force:
             results[b["book_id"]] = cached
             continue
-        jobs.append((pdf, b, key, fsha, paths.extract_file(b)))
+        jobs.append((pdf, dict(b, _books_root=paths.books_root), key, fsha, paths.extract_file(b)))
     if jobs:
         log(f"extracting {len(jobs)} book(s) with {min(workers, len(jobs))} worker(s); {len(results)} cached")
         workers = max(1, min(workers, 8, len(jobs)))
@@ -122,9 +122,11 @@ def chunk_books(books: List[dict], all_books: List[dict], extracts: Dict[str, di
     higher-precedence book of the same edition (in this run or in its chunk cache) is skipped."""
     out: Dict[str, dict] = {}
     seen: Dict[str, Dict[str, str]] = {}   # edition -> {content_sha: book_id}
+    used: Dict[str, Dict[str, str]] = {}   # edition -> {book_id: chunks_sha} of the books seen so far
     selected = {b["book_id"] for b in books}
     for b in sorted(all_books, key=_book_order):
         ed = seen.setdefault(b["edition"], {})
+        before = used.setdefault(b["edition"], {})
         if b["book_id"] in selected:
             ext = extracts.get(b["book_id"])
             if not ext or ext.get("status") != "ok":
@@ -136,28 +138,57 @@ def chunk_books(books: List[dict], all_books: List[dict], extracts: Dict[str, di
                         "counter": counter.name,
                         "chunker_version": chunker.CHUNKER_VERSION, "warnings": ext.get("warnings", []),
                         "pages_used": ext.get("pages_used"), "outline": ext.get("outline"),
-                        "page_numbers": ext.get("page_numbers")})
+                        "page_numbers": ext.get("page_numbers"), "dedup_key": dedup_key(before)})
             res["chunks_sha"] = sha1(json.dumps([[c["id"], c["document"], c["metadata"]] for c in res["chunks"]],
                                                 sort_keys=True, ensure_ascii=False))
             if write:
                 _write_json(paths.chunks_file(b, campaign_id), res)
             out[b["book_id"]] = res
-            chunks = res["chunks"]
+            chunks, csha = res["chunks"], res["chunks_sha"]
         else:
             cached = _read_json(paths.chunks_file(b))
             chunks = cached.get("chunks", []) if cached else []
+            csha = cached.get("chunks_sha") if cached else None
+        if csha:
+            before[b["book_id"]] = csha
         for c in chunks:
             ed.setdefault(c["metadata"]["content_sha"], b["book_id"])
     return out
 
 
-def load_chunks(book: dict, paths: Paths, campaign_id: int = 0) -> Optional[dict]:
-    """Cached chunks if they still match the cached extract (else None: run extract/chunk)."""
+def dedup_key(before: Dict[str, str]) -> str:
+    """Identity of the higher-precedence chunk sets a book was de-duplicated against."""
+    return sha1(json.dumps(sorted(before.items())))
+
+
+def higher_books_key(book: dict, all_books: List[dict], paths: "Paths") -> str:
+    """dedup_key for `book` from the chunk caches as they are now."""
+    before: Dict[str, str] = {}
+    for b in sorted(all_books, key=_book_order):
+        if b["book_id"] == book["book_id"]:
+            break
+        if b["edition"] != book["edition"]:
+            continue
+        cached = _read_json(paths.chunks_file(b))
+        if cached and cached.get("chunks_sha"):
+            before[b["book_id"]] = cached["chunks_sha"]
+    return dedup_key(before)
+
+
+def load_chunks(book: dict, paths: Paths, campaign_id: int = 0, counter_name: Optional[str] = None,
+                all_books: Optional[List[dict]] = None) -> Optional[dict]:
+    """Cached chunks if still valid, else None (run extract/chunk). Valid = same extract, chunker
+    version, token counter, and the same higher-precedence chunk sets it was de-duplicated against
+    (a changed corebook re-chunks the supplements of its edition)."""
     res = _read_json(paths.chunks_file(book, campaign_id))
     ext = _read_json(paths.extract_file(book))
     if not res or not ext or res.get("extract_key") != ext.get("key"):
         return None
     if res.get("chunker_version") != chunker.CHUNKER_VERSION:
+        return None
+    if counter_name is not None and res.get("counter") != counter_name:
+        return None
+    if all_books is not None and res.get("dedup_key") != higher_books_key(book, all_books, paths):
         return None
     return res
 

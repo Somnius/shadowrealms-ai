@@ -27,7 +27,7 @@ from typing import Any, Dict, List, Optional, Tuple
 from .textutil import (HyphenVocab, clean_line, join_lines, label_to_int, letterspaced, norm_key)
 from .manifest import DEFAULT_SKIP_SECTIONS, page_list
 
-EXTRACTOR_VERSION = 9
+EXTRACTOR_VERSION = 12
 V5_SIDEBAR_FONTS = [r"GillSans", r"Futura", r"IBMPlexSans"]
 BAND = 0.09            # top/bottom fraction of the page treated as header/footer band
 FULL_WIDTH = 0.55      # a line wider than this fraction of the page is a full-width band
@@ -395,8 +395,12 @@ def _common_prefix(titles: List[str]) -> str:
     return pre[:k + 3] if k > 0 else ""
 
 
-def toc_entries(doc, book: Dict[str, Any], used: set) -> List[Tuple[int, str, int]]:
-    raw = [(lvl, title, page) for lvl, title, page in doc.get_toc(simple=True)]
+def toc_entries(doc, book: Dict[str, Any], used: set, warnings: Optional[List[str]] = None) -> List[Tuple[int, str, int]]:
+    """Outline entries (level, title, pdf page): the manifest `toc` list if given, else the PDF's."""
+    if book.get("toc"):
+        raw = [(int(l), str(t), int(p)) for l, t, p in book["toc"]]
+    else:
+        raw = [(lvl, title, page) for lvl, title, page in doc.get_toc(simple=True)]
     raw = [(lvl, normalise_title(t, book.get("toc_fixes") or {}), p) for lvl, t, p in raw]
     raw = [(lvl, t, p) for lvl, t, p in raw if p >= 1 and t]
     pre = book.get("toc_strip_prefix") or _common_prefix([t for _, t, _ in raw])
@@ -411,7 +415,19 @@ def toc_entries(doc, book: Dict[str, Any], used: set) -> List[Tuple[int, str, in
             raw = raw[1:]   # one root wrapping the whole book ("... (Cover)"): drop it
             continue
         break
-    return raw
+    # a long top-level title repeated later (a web capture titles pages "Prologue: A Gathering of
+    # Beasts" again and again) is not a new chapter: drop the repeats, their pages stay with the
+    # chapter before. Short repeated titles ("Paradox", "Time" in Mage) are real, distinct sections.
+    seen, out = set(), []
+    for l, t, p in raw:
+        if l == 1 and norm_key(t) in seen and len(t.split()) >= 3:
+            if warnings is not None:
+                warnings.append(f"outline: repeated top-level entry {t!r} at PDF page {p} dropped")
+            continue
+        if l == 1:
+            seen.add(norm_key(t))
+        out.append((l, t, p))
+    return out
 
 
 def place_sections(entries, seq: List[dict], fixes: Optional[Dict[str, str]] = None) -> List[int]:
@@ -585,7 +601,7 @@ def extract_book(pdf_path: str, book: Dict[str, Any]) -> Dict[str, Any]:
         seq.extend(ordered)
     classify_lines(seq, body_size, sidebar_res)
 
-    entries = toc_entries(doc, book, set(used))
+    entries = toc_entries(doc, book, set(used), warnings)
     outline = "pdf outline"
     mode = book.get("outline", "auto")
     if mode in ("sizes", "none"):
@@ -635,10 +651,10 @@ def extract_book(pdf_path: str, book: Dict[str, Any]) -> Dict[str, Any]:
             kind = "heading"
         elif cat in ("sidebar", "sidebar_heading"):
             kind = "sidebar"
+        elif _EXAMPLE.match(text) or (para.get("runin") or "").upper().startswith("EXAMPLE"):
+            kind = "example"   # also an italic example: an EXAMPLE label beats the fiction style
         elif cat == "fiction":
             kind = "fiction"
-        elif _EXAMPLE.match(text) or (para.get("runin") or "").upper().startswith("EXAMPLE"):
-            kind = "example"
         else:
             kind = "body"
         blocks.append({"section": sec["id"] if sec else -1, "page_pdf": para["page"],
@@ -654,6 +670,8 @@ def extract_book(pdf_path: str, book: Dict[str, Any]) -> Dict[str, Any]:
             if nxt is not None and nxt["kind"] in ("body", "example", "fiction") and nxt["section"] == b["section"]:
                 b["kind"] = "heading"
     _mark_examples(blocks)
+    if book.get("page_map_from"):
+        page_src = map_pages_from_copy(blocks, book["page_map_from"], book.get("_books_root", ""), warnings)
     for b in blocks:
         if b["kind"] == "heading":
             b["text"] = _fix_case(_apply_fixes(b["text"], book.get("toc_fixes")))
@@ -666,6 +684,48 @@ def extract_book(pdf_path: str, book: Dict[str, Any]) -> Dict[str, Any]:
     if not entries and mode != "none":
         warnings.append("no outline and no size-based headings: heading_path empty")
     return result
+
+
+def _shingles(text: str, n: int = 5) -> set:
+    w = re.findall(r"[a-z0-9]+", text.lower())
+    return {" ".join(w[i:i + n]) for i in range(max(0, len(w) - n + 1))}
+
+
+def map_pages_from_copy(blocks: List[dict], ref_rel: str, root: str, warnings: List[str]) -> str:
+    """Printed page numbers from another copy of the same book that has them (a text-only web
+    capture has none): each paragraph gets the printed page of the copy's page sharing the most
+    5-word shingles with it (never far behind or ahead of the one before); unmatched paragraphs keep
+    the page of the paragraph before."""
+    import os
+    import pymupdf
+    path = ref_rel if os.path.isabs(ref_rel) else os.path.join(root, ref_rel)
+    ref = pymupdf.open(path)
+    raw = [(p, ref[p - 1].rect.height, ref[p - 1].rect.width, read_page_lines(ref[p - 1], p))
+           for p in range(1, ref.page_count + 1)]
+    running = find_running_lines([(p, h, ls) for p, h, _, ls in raw])
+    _, numbers = strip_running(raw, running, [])
+    printed, _ = printed_pages(ref, list(range(1, ref.page_count + 1)), numbers, {}, [])
+    index: Dict[str, List[int]] = collections.defaultdict(list)
+    for p, _, _, lines in raw:
+        for sh in _shingles(" ".join(l["text"] for l in lines)):
+            index[sh].append(p)
+    matched, last = 0, None
+    for b in blocks:
+        votes = collections.Counter()
+        for sh in _shingles(b["text"]):
+            for p in index.get(sh, ()):
+                votes[p] += 1
+        if votes and votes.most_common(1)[0][1] >= 2:
+            cand = printed.get(votes.most_common(1)[0][0])
+            # the book runs forward: ignore a match far behind or far ahead of the last one
+            if cand is not None and (last is None or last - 1 <= cand <= last + 20):
+                last = cand
+                matched += 1
+        if last is not None:
+            b["page"] = last
+    warnings[:] = [w for w in warnings if not w.startswith("no page labels")]
+    warnings.append(f"printed pages mapped from {os.path.basename(path)}: {matched} of {len(blocks)} paragraphs matched")
+    return "mapped from another copy"
 
 
 def _mark_examples(blocks: List[dict]):
