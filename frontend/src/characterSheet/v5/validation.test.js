@@ -8,6 +8,7 @@ import {
   attributeSpreadStatus,
   buildV5Payload,
   deriveV5,
+  disciplineRows,
   emptyV5Attributes,
   emptyV5Skills,
   finalDisciplines,
@@ -328,5 +329,48 @@ describe('V5 thin-blood Merits and Flaws (V5.md §2.7 / §4 step 2)', () => {
     expect(p.wod_meta.thin_blood_merits).toEqual(['Day Drinker']);
     expect(p.wod_meta.thin_blood_flaws).toEqual(['Baby Teeth']);
     expect(p.merits_flaws.entries).toContainEqual({ name: 'Day Drinker', points: 0, note: 'thin-blood merit' });
+  });
+});
+
+describe('V5 discipline rows (forge display)', () => {
+  const tremere = (predatorDiscipline) => ({
+    clan: 'Tremere',
+    disciplines: [
+      { name: 'Blood Sorcery', level: 2, powers: ['Corrosive Vitae', 'Extinguish Vitae', 'Shape of Blood'] },
+      { name: 'Auspex', level: 1, powers: [] },
+    ],
+    predatorType: 'Bagger',
+    predatorDiscipline,
+    extraPowers: { Obfuscate: ['Cloak of Shadows'] },
+  });
+
+  it('puts the predator dot on the matching pick, one power slot per final dot', () => {
+    const rows = disciplineRows(tremere('Blood Sorcery'));
+    expect(rows[0]).toMatchObject({ name: 'Blood Sorcery', pick: 0, base: 2, predator: 1, xp: 0, level: 3 });
+    expect(rows[0].powers).toHaveLength(3);
+    expect(rows[1]).toMatchObject({ name: 'Auspex', base: 1, predator: 0, level: 1 });
+    expect(rows).toHaveLength(2);
+    expect(finalDisciplines(tremere('Blood Sorcery'))[0]).toEqual({
+      name: 'Blood Sorcery',
+      level: 3,
+      powers: ['Corrosive Vitae', 'Extinguish Vitae', 'Shape of Blood'],
+    });
+  });
+
+  it('gives a predator Discipline outside the picks its own row with extraPowers', () => {
+    const rows = disciplineRows(tremere('Obfuscate'));
+    expect(rows[2]).toMatchObject({ name: 'Obfuscate', pick: null, base: 0, predator: 1, level: 1 });
+    expect(finalDisciplines(tremere('Obfuscate'))[0].powers).toEqual(['Corrosive Vitae', 'Extinguish Vitae']);
+    expect(finalDisciplines(tremere('Obfuscate'))[2]).toEqual({ name: 'Obfuscate', level: 1, powers: ['Cloak of Shadows'] });
+  });
+
+  it('keeps empty picks for the forge but leaves them out of the payload', () => {
+    const s = { clan: 'Tremere', disciplines: [{ name: '', level: 2 }, { name: '', level: 1 }], predatorDiscipline: '' };
+    expect(disciplineRows(s)).toHaveLength(2);
+    expect(finalDisciplines(s)).toEqual([]);
+  });
+
+  it('gives thin-bloods no rows and no predator dot', () => {
+    expect(disciplineRows({ clan: 'Thin-blood', disciplines: [], predatorDiscipline: 'Celerity' })).toEqual([]);
   });
 });

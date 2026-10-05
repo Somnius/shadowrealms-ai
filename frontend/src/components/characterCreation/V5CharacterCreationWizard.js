@@ -31,6 +31,7 @@ import {
   clanInfo,
   creationDisciplineOptions,
   deriveV5,
+  disciplineRows,
   emptyV5Attributes,
   emptyV5Skills,
   fledglingHumanityAllowed,
@@ -116,6 +117,45 @@ function SpreadChips({ status }) {
   );
 }
 
+const DOT_COLOURS = { base: ACCENT, predator: 'var(--sr-gold-400)', xp: 'var(--sr-ok-400)' };
+
+/**
+ * Read-only Discipline dots, coloured by source: creation dots, the predator type's dot, XP dots.
+ */
+function SourceDots({ label, row, maxRank = 5 }) {
+  const sources = [
+    ...Array(row.base).fill('base'),
+    ...Array(row.predator).fill('predator'),
+    ...Array(row.xp).fill('xp'),
+  ];
+  return (
+    <div
+      role="group"
+      aria-label={t('wizard:dots.labelled', '{{label}}: {{rank}} of {{max}}', { label, rank: row.level, max: maxRank })}
+      style={{ display: 'flex', alignItems: 'center', gap: '5px' }}
+    >
+      {Array.from({ length: Math.max(maxRank, sources.length) }, (_, i) => {
+        const src = sources[i];
+        const c = src ? DOT_COLOURS[src] : null;
+        return (
+          <span
+            key={i}
+            data-dot={src || 'empty'}
+            style={{
+              width: '18px',
+              height: '18px',
+              borderRadius: '50%',
+              boxSizing: 'border-box',
+              border: `2px ${src && src !== 'base' ? 'dashed' : 'solid'} ${c || 'var(--sr-night-600)'}`,
+              background: c ? `radial-gradient(circle at 30% 30%, ${c}, var(--sr-arcane-700))` : 'transparent',
+            }}
+          />
+        );
+      })}
+    </div>
+  );
+}
+
 const isBackgroundName = (name) =>
   V5_BACKGROUNDS.some((b) => String(name || '').toLowerCase().startsWith(b.toLowerCase()));
 
@@ -151,6 +191,8 @@ export default function V5CharacterCreationWizard({
   const [predatorType, setPredatorType] = useState('');
   const [predatorSpecialty, setPredatorSpecialty] = useState(null);
   const [predatorDiscipline, setPredatorDiscipline] = useState('');
+  // Powers for a predator Discipline that isn't one of the two picks: { [discipline]: [power] }.
+  const [extraPowers, setExtraPowers] = useState({});
   const [meritRows, setMeritRows] = useState(() => [createEmptyMeritRow()]);
   const [meritNotes, setMeritNotes] = useState('');
   const [convictions, setConvictions] = useState([{ conviction: '', touchstone: '' }]);
@@ -193,6 +235,7 @@ export default function V5CharacterCreationWizard({
     predatorType,
     predatorSpecialty,
     predatorDiscipline,
+    extraPowers,
     advantages,
     flaws,
     convictions,
@@ -204,6 +247,7 @@ export default function V5CharacterCreationWizard({
   const clanRow = clanInfo(clan);
   const pred = predatorInfo(predatorType);
   const discOptions = creationDisciplineOptions(clan, V5_DISCIPLINES);
+  const discRows = disciplineRows(sheet);
   const predDiscOptions = predatorDisciplineOptions(predatorType, clan);
   const dist = V5_SKILL_DISTRIBUTIONS[skillDistribution];
   const skillMax = Math.max(...Object.keys(dist.counts).map(Number));
@@ -226,6 +270,7 @@ export default function V5CharacterCreationWizard({
       { name: '', level: V5_DISCIPLINE_DOTS[1], powers: [] },
     ]);
     setPredatorDiscipline('');
+    setExtraPowers({});
     if (next === THIN_BLOOD) {
       setAge('childer');
       setGeneration(14);
@@ -639,43 +684,58 @@ export default function V5CharacterCreationWizard({
             accent={ACCENT}
           >
             {inlineErr(V5_SECTION_IDS.disciplines)}
-            {clan !== THIN_BLOOD &&
-              disciplines.map((d, i) => (
-                <div key={i} style={{ marginBottom: '14px' }}>
+            {discRows.map((row, i) => {
+              const discLabel = row.name || `Discipline ${i + 1}`;
+              const setPower = (p, value) => {
+                const powers = [...row.powers];
+                powers[p] = value;
+                if (row.pick != null) setDisc(row.pick, { powers });
+                else setExtraPowers((prev) => ({ ...prev, [row.name]: powers }));
+              };
+              return (
+                <div key={row.pick != null ? `pick-${row.pick}` : `extra-${row.name}`} style={{ marginBottom: '14px' }}>
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', alignItems: 'center' }}>
-                    <select
-                      aria-label={t('wizard:v5.discAt', { one: 'Discipline at {{count}} dot', other: 'Discipline at {{count}} dots' }, { count: d.level })}
-                      value={d.name}
-                      onChange={(e) => setDisc(i, { name: e.target.value })}
-                      style={{ ...inputStyle, flex: '1 1 200px', width: 'auto', padding: '8px' }}
-                    >
-                      <option value="">{t('wizard:v5.discAtPick', { one: 'Discipline at {{count}} dot…', other: 'Discipline at {{count}} dots…' }, { count: d.level })}</option>
-                      {discOptions.map((o) => (
-                        <option key={o} value={o}>
-                          {o}
-                        </option>
-                      ))}
-                    </select>
-                    <DotTrack value={d.level} maxRank={5} accent={ACCENT} disabled onChange={() => {}} />
+                    {row.pick != null ? (
+                      <select
+                        aria-label={t('wizard:v5.discAt', { one: 'Discipline at {{count}} dot', other: 'Discipline at {{count}} dots' }, { count: row.base })}
+                        value={row.name}
+                        onChange={(e) => setDisc(row.pick, { name: e.target.value })}
+                        style={{ ...inputStyle, flex: '1 1 200px', width: 'auto', padding: '8px' }}
+                      >
+                        <option value="">{t('wizard:v5.discAtPick', { one: 'Discipline at {{count}} dot…', other: 'Discipline at {{count}} dots…' }, { count: row.base })}</option>
+                        {discOptions.map((o) => (
+                          <option key={o} value={o}>
+                            {o}
+                          </option>
+                        ))}
+                      </select>
+                    ) : (
+                      <strong style={{ flex: '1 1 200px', color: 'var(--sr-bone-100)', fontSize: '14px', padding: '8px 0' }}>{row.name}</strong>
+                    )}
+                    <SourceDots label={discLabel} row={row} />
                   </div>
+                  {row.predator || row.xp ? (
+                    <div style={{ color: 'var(--sr-gold-400)', fontSize: '12px', marginTop: '4px' }}>
+                      {row.predator ? t('wizard:v5.predatorDotNote', '+1 from {{type}}', { type: predatorType }) : null}
+                      {row.predator && row.xp ? ' · ' : null}
+                      {row.xp ? t('wizard:v5.xpDotNote', '+{{n}} from experience', { n: row.xp }) : null}
+                    </div>
+                  ) : null}
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '6px' }}>
-                    {Array.from({ length: d.level }, (_, p) => (
+                    {row.powers.map((pw, p) => (
                       <input
                         key={p}
-                        value={d.powers[p] || ''}
-                        aria-label={t('wizard:v5.powerLabel', '{{disc}} power {{n}}', { disc: d.name || `Discipline ${i + 1}`, n: p + 1 })}
+                        value={pw}
+                        aria-label={t('wizard:v5.powerLabel', '{{disc}} power {{n}}', { disc: discLabel, n: p + 1 })}
                         placeholder={t('wizard:v5.powerPlaceholder', 'Power {{n}} (optional)', { n: p + 1 })}
-                        onChange={(e) => {
-                          const powers = [...d.powers];
-                          powers[p] = e.target.value;
-                          setDisc(i, { powers });
-                        }}
+                        onChange={(e) => setPower(p, e.target.value)}
                         style={{ ...inputStyle, flex: '1 1 180px', width: 'auto', padding: '6px 8px', fontSize: '12px' }}
                       />
                     ))}
                   </div>
                 </div>
-              ))}
+              );
+            })}
           </ResponsiveSheetBlock>
 
           <ResponsiveSheetBlock

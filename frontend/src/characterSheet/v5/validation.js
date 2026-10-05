@@ -11,7 +11,8 @@
  *   specialties: [{skill, name}] (free ones, not the predator one),
  *   disciplines: [{name, level, powers: []}] (creation 2 + 1, BEFORE the predator dot),
  *   predatorType, predatorSpecialty (index into the type's specialty_choice),
- *   predatorDiscipline (name), advantages: [{name, dots, kind: 'merit'|'background'}],
+ *   predatorDiscipline (name), extraPowers: {[discipline]: [power]} (powers for a predator/XP
+ *   Discipline that isn't one of the two picks), advantages: [{name, dots, kind: 'merit'|'background'}],
  *   flaws: [{name, dots}], convictions: [{conviction, touchstone}],
  *   fledglingHumanity: bool (childer only: start at Humanity 8 instead of 7),
  *   thinBloodMerits: [{name}], thinBloodFlaws: [{name}] (thin-bloods: 1–3 each, equal counts)
@@ -288,22 +289,52 @@ export function finalSkills(sheet) {
   return { skills, specialties };
 }
 
-/** Disciplines after the predator type's extra dot. */
+/**
+ * One row per Discipline with where its dots come from, for the forge display and the payload.
+ * Clan picks keep their index (`pick`, empty names included so the forge can render the selects);
+ * a predator or XP Discipline that isn't a pick gets its own row (`pick: null`), whose powers
+ * come from sheet.extraPowers[name]. `powers` has one slot per final dot.
+ * [{ name, pick, base, predator: 0|1, xp, level, powers }]
+ */
+export function disciplineRows(sheet) {
+  const s = sheet || {};
+  if (s.clan === THIN_BLOOD) return [];
+  const extraPowers = s.extraPowers || {};
+  const rows = (s.disciplines || []).map((d, i) => ({
+    name: d?.name || '',
+    pick: i,
+    base: int(d?.level),
+    predator: 0,
+    xp: 0,
+    raw: d?.powers || [],
+  }));
+  const ensure = (name) => {
+    let r = rows.find((x) => x.name && x.name === name);
+    if (!r) {
+      r = { name, pick: null, base: 0, predator: 0, xp: 0, raw: extraPowers[name] || [] };
+      rows.push(r);
+    }
+    return r;
+  };
+  if (s.predatorDiscipline) ensure(s.predatorDiscipline).predator = 1;
+  (s.xpPurchases || []).forEach((x) => {
+    if (x?.kind === 'discipline' && x.trait) ensure(x.trait).xp += 1;
+  });
+  return rows.map(({ raw, ...r }) => {
+    const level = r.base + r.predator + r.xp;
+    return { ...r, level, powers: Array.from({ length: level }, (_, i) => String(raw[i] || '')) };
+  });
+}
+
+/** Disciplines after the predator type's extra dot and any XP dots: [{name, level, powers}]. */
 export function finalDisciplines(sheet) {
-  const list = (sheet?.disciplines || [])
-    .filter((d) => d && d.name)
-    .map((d) => ({
-      name: d.name,
-      level: int(d.level),
-      powers: (d.powers || []).map((x) => String(x || '').trim()).filter(Boolean),
+  return disciplineRows(sheet)
+    .filter((r) => r.name && r.level > 0)
+    .map((r) => ({
+      name: r.name,
+      level: r.level,
+      powers: r.powers.map((x) => x.trim()).filter(Boolean),
     }));
-  const extra = sheet?.predatorDiscipline;
-  if (extra && sheet?.clan !== THIN_BLOOD) {
-    const hit = list.find((d) => d.name === extra);
-    if (hit) hit.level += 1;
-    else list.push({ name: extra, level: 1, powers: [] });
-  }
-  return list;
 }
 
 const sumDots = (rows) => (rows || []).reduce((s, r) => s + int(r?.dots), 0);
