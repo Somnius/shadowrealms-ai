@@ -8,6 +8,7 @@ from flask_jwt_extended import jwt_required, get_jwt_identity
 from database import (
     get_db,
     ensure_locations_dice_leniency_floor_column,
+    ensure_locations_dice_leniency_v5_column,
     ensure_locations_player_access_columns,
 )
 from services.location_access import (
@@ -19,8 +20,12 @@ from services.location_access import (
 from services.location_naming_context import build_enriched_suggestion_prompt
 from services.location_suggestion_parse import parse_location_suggestions
 from services.health_check import require_llm
+import json
 import logging
 from services.log_safety import safe_log_value
+from services.request_validation import RequestValidationError
+from services.rules_edition import V5, edition_of
+from services.v5_dice import normalize_v5_leniency, validate_v5_leniency
 import os
 from datetime import datetime
 
@@ -228,6 +233,7 @@ def get_campaign_locations(campaign_id):
                 'creator_name': row['creator_name'],
                 'character_count': row['character_count'],
                 'dice_leniency_floor': row.get('dice_leniency_floor'),
+                'dice_leniency_v5': normalize_v5_leniency(row.get('dice_leniency_v5')),
                 'is_open': is_open,
                 'closure_reason': row.get('closure_reason'),
             })
@@ -248,7 +254,13 @@ def get_campaign_locations(campaign_id):
 )
 @jwt_required()
 def location_dice_leniency(campaign_id, location_id):
-    """Site admins: read/update Storyteller leniency floor for this room (2–10 or off)."""
+    """
+    Site admins: read/update this room's dice leniency.
+    Classic campaigns: {dice_leniency_floor: 2-10 | null} (services.wod_dice).
+    V5 campaigns: {dice_leniency_v5: {no_bestial, no_messy, min_successes} | null}
+    (services.v5_dice); the PUT replaces the whole setting, missing keys are off.
+    Sending the other edition's field is a 400.
+    """
     try:
         user_id = int(get_jwt_identity())
     except (TypeError, ValueError):
@@ -257,66 +269,88 @@ def location_dice_leniency(campaign_id, location_id):
     conn = get_db()
     cursor = conn.cursor()
     try:
-        ensure_locations_dice_leniency_floor_column(cursor)
-        conn.commit()
-    except Exception:
-        conn.rollback()
-
-    cursor.execute("SELECT role FROM users WHERE id = %s", (user_id,))
-    urow = cursor.fetchone()
-    if not urow or (urow.get('role') or '').strip().lower() != 'admin':
-        cursor.close()
-        conn.close()
-        return jsonify({'error': 'Site admin access required'}), 403
-
-    cursor.execute(
-        """
-        SELECT dice_leniency_floor FROM locations
-        WHERE id = %s AND campaign_id = %s AND is_active = TRUE
-        """,
-        (location_id, campaign_id),
-    )
-    row = cursor.fetchone()
-    if not row:
-        cursor.close()
-        conn.close()
-        return jsonify({'error': 'Location not found'}), 404
-
-    if request.method == 'GET':
-        v = row.get('dice_leniency_floor')
-        cursor.close()
-        conn.close()
-        return jsonify({'dice_leniency_floor': v}), 200
-
-    data = request.get_json() or {}
-    raw = data.get('dice_leniency_floor')
-    if raw is None or raw == '' or (
-        isinstance(raw, str) and raw.strip().lower() in ('null', 'none', 'restore')
-    ):
-        newv = None
-    else:
         try:
-            newv = int(raw)
-        except (TypeError, ValueError):
-            cursor.close()
-            conn.close()
-            return jsonify({'error': 'dice_leniency_floor must be integer 2–10 or null'}), 400
-        if newv < 2 or newv > 10:
-            cursor.close()
-            conn.close()
-            return jsonify({'error': 'dice_leniency_floor must be 2–10'}), 400
+            ensure_locations_dice_leniency_floor_column(cursor)
+            ensure_locations_dice_leniency_v5_column(cursor)
+            conn.commit()
+        except Exception:
+            conn.rollback()
 
-    cursor.execute(
-        """
-        UPDATE locations SET dice_leniency_floor = %s
-        WHERE id = %s AND campaign_id = %s
-        """,
-        (newv, location_id, campaign_id),
-    )
-    conn.commit()
-    cursor.close()
-    conn.close()
-    return jsonify({'dice_leniency_floor': newv, 'message': 'Updated'}), 200
+        cursor.execute("SELECT role FROM users WHERE id = %s", (user_id,))
+        urow = cursor.fetchone()
+        if not urow or (urow.get('role') or '').strip().lower() != 'admin':
+            return jsonify({'error': 'Site admin access required'}), 403
+
+        cursor.execute(
+            """
+            SELECT l.dice_leniency_floor, l.dice_leniency_v5, c.rules_edition
+            FROM locations l JOIN campaigns c ON c.id = l.campaign_id
+            WHERE l.id = %s AND l.campaign_id = %s AND l.is_active = TRUE
+            """,
+            (location_id, campaign_id),
+        )
+        row = cursor.fetchone()
+        if not row:
+            return jsonify({'error': 'Location not found'}), 404
+        edition = edition_of(row)
+
+        if request.method == 'GET':
+            out = {'rules_edition': edition, 'dice_leniency_floor': row.get('dice_leniency_floor')}
+            if edition == V5:
+                out['dice_leniency_v5'] = normalize_v5_leniency(row.get('dice_leniency_v5'))
+            return jsonify(out), 200
+
+        data = request.get_json(silent=True)
+        if not isinstance(data, dict):
+            return jsonify({'error': 'JSON object body required'}), 400
+
+        if edition == V5:
+            if data.get('dice_leniency_floor') is not None:
+                return jsonify({'error': 'V5 rooms use dice_leniency_v5 '
+                                         '(no_bestial, no_messy, min_successes), not a floor'}), 400
+            if 'dice_leniency_v5' not in data:
+                return jsonify({'error': 'dice_leniency_v5 is required (object or null)'}), 400
+            try:
+                v5 = validate_v5_leniency(data.get('dice_leniency_v5'))
+            except RequestValidationError as e:
+                return jsonify({'error': e.public_message}), 400
+            cursor.execute(
+                """
+                UPDATE locations SET dice_leniency_v5 = %s
+                WHERE id = %s AND campaign_id = %s
+                """,
+                (json.dumps(v5) if v5 else None, location_id, campaign_id),
+            )
+            conn.commit()
+            return jsonify({'rules_edition': edition, 'dice_leniency_v5': v5, 'message': 'Updated'}), 200
+
+        if data.get('dice_leniency_v5') is not None:
+            return jsonify({'error': 'dice_leniency_v5 is for V5 rooms; Classic rooms use dice_leniency_floor'}), 400
+        raw = data.get('dice_leniency_floor')
+        if raw is None or raw == '' or (
+            isinstance(raw, str) and raw.strip().lower() in ('null', 'none', 'restore')
+        ):
+            newv = None
+        else:
+            try:
+                newv = int(raw)
+            except (TypeError, ValueError):
+                return jsonify({'error': 'dice_leniency_floor must be integer 2–10 or null'}), 400
+            if newv < 2 or newv > 10:
+                return jsonify({'error': 'dice_leniency_floor must be 2–10'}), 400
+
+        cursor.execute(
+            """
+            UPDATE locations SET dice_leniency_floor = %s
+            WHERE id = %s AND campaign_id = %s
+            """,
+            (newv, location_id, campaign_id),
+        )
+        conn.commit()
+        return jsonify({'dice_leniency_floor': newv, 'message': 'Updated'}), 200
+    finally:
+        cursor.close()
+        conn.close()
 
 
 @locations_bp.route('/locations/<int:location_id>', methods=['GET'])
