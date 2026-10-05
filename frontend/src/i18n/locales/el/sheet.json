@@ -20,5 +20,10 @@
     "otherSpecialties": "Άλλες specialties:",
     "fromPredator": "(από τον predator type)",
     "tenets": "Αρχές του χρονικού"
+  },
+  "pdf": {
+    "export": "Εξαγωγή PDF",
+    "failed": "Δεν ήταν δυνατή η εξαγωγή του PDF.",
+    "hint": "Συμπληρώσιμο φύλλο για ασπρόμαυρη εκτύπωση"
   }
 }
