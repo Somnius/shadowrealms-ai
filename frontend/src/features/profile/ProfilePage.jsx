@@ -11,6 +11,8 @@ import { formatDateTimeInZone } from '../../utils/userTimeFormat';
 import { t } from '../../i18n';
 import { useSignOutEverywhere } from '../../app/SignOutEverywhere';
 import PasswordRules, { brokenRule, passwordProblem } from '../auth/PasswordRules';
+import { useChronicles } from '../../app/ChroniclesContext';
+import { BringIntoChronicleDialog, isUnassigned } from './BringIntoChronicle';
 import './profile.css';
 
 const MAX_IMAGE = 360000;
@@ -270,7 +272,9 @@ function CharactersSection() {
   const { toast } = useToast();
   const { openSheet } = useSheet();
   const { user } = useAuth();
+  const { chronicles, reload: reloadChronicles } = useChronicles();
   const [chars, setChars] = useState(null);
+  const [bringing, setBringing] = useState(null);
   const load = useCallback(async () => {
     const r = await api('/characters/');
     // Admins get every character from this endpoint; the profile lists your own.
@@ -313,9 +317,13 @@ function CharactersSection() {
                 <Avatar src={ch.portrait_url} name={ch.name} size={56} alt="" sigil="mask" />
                 <div className="sr-char__text">
                   <strong className="sr-char__name">{ch.name}</strong>
-                  <Link to={`/c/${ch.campaign_id}`} className="sr-small">
-                    {ch.campaign_name}
-                  </Link>
+                  {isUnassigned(ch) ? (
+                    <Badge tone="warn">{t('profile:characters.noChronicle', 'No chronicle yet')}</Badge>
+                  ) : (
+                    <Link to={`/c/${ch.campaign_id}`} className="sr-small">
+                      {ch.campaign_name}
+                    </Link>
+                  )}
                 </div>
               </div>
               {ch.play_suspended ? (
@@ -330,11 +338,29 @@ function CharactersSection() {
                   {t('play:panel.sheet', 'Character sheet')}
                 </Button>
                 <ImagePicker label={t('play:panel.portrait', 'Portrait')} toast={toast} onPick={(url) => setPortrait(ch, url)} />
+                {isUnassigned(ch) ? (
+                  <Button size="sm" variant="primary" icon="quill" onClick={() => setBringing(ch)}>
+                    {t('profile:bring.action', 'Bring into a chronicle')}
+                  </Button>
+                ) : null}
               </div>
             </Card>
           </li>
         ))}
       </ul>
+      {bringing ? (
+        <BringIntoChronicleDialog
+          character={bringing}
+          chronicles={chronicles}
+          toast={toast}
+          onClose={() => setBringing(null)}
+          onDone={() => {
+            setBringing(null);
+            load();
+            reloadChronicles();
+          }}
+        />
+      ) : null}
     </div>
   );
 }
@@ -350,7 +376,8 @@ function DowntimeSection() {
   const [busy, setBusy] = useState(false);
   const load = useCallback(async () => {
     const [c, d] = await Promise.all([api('/characters/'), api('/characters/downtime-requests/mine')]);
-    const list = c.ok && Array.isArray(c.data.characters) ? ownCharacters(c.data.characters, user) : [];
+    // Downtime goes to a chronicle's Storyteller: characters without one can't ask yet.
+    const list = c.ok && Array.isArray(c.data.characters) ? ownCharacters(c.data.characters, user).filter((ch) => !isUnassigned(ch)) : [];
     setChars(list);
     setCharId((cur) => cur || (list[0] ? String(list[0].id) : ''));
     setMine(d.ok && Array.isArray(d.data.requests) ? d.data.requests : []);

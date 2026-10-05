@@ -4,7 +4,27 @@
     "body": "Inside a chronicle you always play that chronicle’s character. Sheets lock after creation; ask for changes through downtime.",
     "empty": "No characters yet",
     "emptyBody": "Join or create a chronicle, then forge a character for it.",
-    "suspended": "Unavailable for play"
+    "suspended": "Unavailable for play",
+    "noChronicle": "No chronicle yet"
+  },
+  "bring": {
+    "action": "Bring into a chronicle",
+    "title": "Bring {{name}} into a chronicle",
+    "body": "Only your chronicles with the same rules as this sheet are listed. Once in, the character stays in that chronicle.",
+    "chronicle": "Chronicle",
+    "submit": "Bring into chronicle",
+    "none": "None of your chronicles uses the same rules as this character. Join one first, or ask its Storyteller to add you.",
+    "done": "{{name}} joined {{chronicle}}.",
+    "failed": "Could not bring the character into the chronicle.",
+    "offer": "Or bring a character that has no chronicle yet:",
+    "here": "Bring {{name}} here",
+    "error": {
+      "edition": "This character uses different rules than that chronicle.",
+      "line": "This character is from a different game line than that chronicle.",
+      "locked": "You already have a locked character in another chronicle. Only a site administrator can allow more.",
+      "already": "This character already belongs to a chronicle.",
+      "unavailable": "That chronicle isn't available any more."
+    }
   },
   "create": {
     "title": "New character",

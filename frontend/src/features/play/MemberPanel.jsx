@@ -6,6 +6,7 @@ import SheetPdfButton from '../../components/SheetPdfButton';
 import { lineOf } from '../../app/hooks';
 import { t } from '../../i18n';
 import { Term, termHint } from '../../i18n/glossary';
+import { UnassignedOffer } from '../profile/BringIntoChronicle';
 
 const MAX_PORTRAIT_BYTES = 350000;
 
@@ -100,7 +101,7 @@ function MemberRow({ m, canOpen, onOpenSheet, me }) {
 }
 
 /** Right panel: your character, then members (Storyteller first), then staff tools. */
-export default function MemberPanel({ campaign, character, members, user, canStaff, isAdmin, onOpenSheet, onPortrait, onDiceRules, onDiceHistory, toast }) {
+export default function MemberPanel({ campaign, character, members, user, canStaff, isAdmin, onOpenSheet, onPortrait, onCharacterAssigned, onDiceRules, onDiceHistory, toast }) {
   const st = members.filter((m) => m.is_storyteller);
   const players = members.filter((m) => !m.is_storyteller);
   const canOpen = (m) => canStaff || String(m.user_id) === String(user?.id);
@@ -111,6 +112,7 @@ export default function MemberPanel({ campaign, character, members, user, canSta
           {t('play:panel.yourCharacter', 'Your character')}
         </h3>
         <CharacterCard campaign={campaign} character={character} onOpenSheet={onOpenSheet} onPortrait={onPortrait} toast={toast} />
+        {!character && campaign ? <UnassignedOffer campaign={campaign} onAssigned={onCharacterAssigned} toast={toast} /> : null}
       </section>
       {st.length ? (
         <section aria-labelledby="panel-st" className="sr-panelcol__section">
