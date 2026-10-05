@@ -399,3 +399,35 @@ def test_route_classic_keeps_floor_api(loc_client):
 
 def test_route_admin_only(loc_client):
     assert loc_client(FakeDB("v5", role="player")).get(URL).status_code == 403
+
+
+# --- roll paths -----------------------------------------------------------------------------
+
+def test_sidebar_roll_reads_both_room_settings(stub_psycopg):
+    from routes.dice import _location_leniency
+
+    db = FakeDB("v5", floor=7, v5=json.dumps(lenient(no_bestial=True)))
+    assert _location_leniency(db.cursor(), 3, 4) == (True, 7, lenient(no_bestial=True))
+    assert _location_leniency(FakeDB("classic", floor=5).cursor(), 3, 4) == (True, 5, None)
+
+
+def test_ai_roll_command_uses_the_v5_switches(stub_psycopg, monkeypatch):
+    from services import ai_slash_commands as sc
+
+    monkeypatch.setattr(sc, "_fetch_campaign_rules", lambda cid: ("vampire", "v5"))
+    monkeypatch.setattr(sc, "_fetch_location_dice_leniency", lambda cid, lid: (7, lenient(no_bestial=True)))
+    for _ in range(200):
+        r = sc.execute_roll_command("4h4", 1, campaign_id=3, location_id=4)
+        assert 1 not in r["roll"]["hunger_dice"]
+        assert r["roll"]["v5_leniency"] == lenient(no_bestial=True)
+    assert "Room leniency (V5):** no bestial failure" in r["display_markdown"]
+
+
+def test_ai_roll_command_classic_keeps_the_floor(stub_psycopg, monkeypatch):
+    from services import ai_slash_commands as sc
+
+    monkeypatch.setattr(sc, "_fetch_campaign_rules", lambda cid: ("vampire", "classic"))
+    monkeypatch.setattr(sc, "_fetch_location_dice_leniency", lambda cid, lid: (7, lenient(no_bestial=True)))
+    for _ in range(200):
+        dice = sc.execute_roll_command("4", 1, campaign_id=3, location_id=4)["roll"]["dice"]
+        assert 1 not in dice and max(dice) >= 7
