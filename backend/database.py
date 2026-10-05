@@ -285,6 +285,28 @@ def ensure_locations_dice_leniency_floor_column(cursor):
 
 
 @once_per_process
+def ensure_locations_dice_leniency_v5_column(cursor):
+    """Per-room V5 leniency switches as JSON text {no_bestial, no_messy, min_successes}; NULL = off."""
+    db_type = os.getenv("DATABASE_TYPE", "sqlite").lower()
+    if db_type == "postgresql":
+        cursor.execute(
+            "ALTER TABLE locations ADD COLUMN IF NOT EXISTS dice_leniency_v5 TEXT"
+        )
+    else:
+        cursor.execute(
+            "SELECT name FROM sqlite_master WHERE type='table' AND name='locations'"
+        )
+        if not cursor.fetchone():
+            return
+        cursor.execute("PRAGMA table_info(locations)")
+        cols = [row["name"] for row in cursor.fetchall()]
+        if "dice_leniency_v5" not in cols:
+            cursor.execute(
+                "ALTER TABLE locations ADD COLUMN dice_leniency_v5 TEXT"
+            )
+
+
+@once_per_process
 def ensure_locations_player_access_columns(cursor):
     """Storyteller may close a location to players (is_open=false) with optional closure_reason."""
     db_type = os.getenv("DATABASE_TYPE", "sqlite").lower()
@@ -1103,6 +1125,7 @@ def migrate_db():
                 ensure_messages_speaker_mode_column(cursor)
                 ensure_messages_reply_to_column(cursor)
                 ensure_locations_dice_leniency_floor_column(cursor)
+                ensure_locations_dice_leniency_v5_column(cursor)
                 ensure_locations_player_access_columns(cursor)
                 ensure_character_portrait_url_column(cursor)
                 ensure_users_player_profile_columns(cursor)
@@ -1490,6 +1513,7 @@ def migrate_db():
         ensure_messages_speaker_mode_column(cursor)
         ensure_messages_reply_to_column(cursor)
         ensure_locations_dice_leniency_floor_column(cursor)
+        ensure_locations_dice_leniency_v5_column(cursor)
         ensure_locations_player_access_columns(cursor)
         ensure_dice_tables(cursor, 'sqlite')
         backfill_campaign_players_active_character(cursor)
