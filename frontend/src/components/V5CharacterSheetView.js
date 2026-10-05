@@ -113,14 +113,32 @@ export default function V5CharacterSheetView({ character }) {
   const advantages = Array.isArray(wm.advantages) ? wm.advantages : [];
   const flaws = Array.isArray(wm.flaws) ? wm.flaws : [];
   const touchstones = Array.isArray(wm.touchstones) ? wm.touchstones : [];
+  // Dots bought with starting experience, from wod_meta.experience.log: { 'skill:brawl': 1 }
+  const experience = obj(wm.experience);
+  const xpDots = {};
+  (Array.isArray(experience.log) ? experience.log : []).forEach((e) => {
+    if (e && ['attribute', 'skill', 'discipline'].includes(e.kind) && e.trait) {
+      const id = `${e.kind}:${e.trait}`;
+      xpDots[id] = (xpDots[id] || 0) + 1;
+    }
+  });
+  const xpNote = (kind, trait) =>
+    xpDots[`${kind}:${trait}`] ? (
+      <span data-xp-dots={xpDots[`${kind}:${trait}`]} style={{ color: 'var(--sr-ok-400)', fontSize: '11px' }}>
+        {' '}
+        {t('sheet:v5.xpDots', '+{{n}} XP', { n: xpDots[`${kind}:${trait}`] })}
+      </span>
+    ) : null;
 
-  const column = (title, rows, values) => (
+  const column = (title, rows, values, kind) => (
     <div style={{ flex: '1 1 200px', minWidth: 0 }}>
       <div style={{ textAlign: 'center', fontFamily: 'var(--sr-font-display)', fontSize: '12px', color: ACCENT, marginBottom: '10px', textTransform: 'capitalize' }}>
         {title}
       </div>
       {rows.map(([k, label]) => {
-        const sp = specialties.filter((s) => s && s.skill === k).map((s) => s.name);
+        const sp = specialties
+          .filter((s) => s && s.skill === k)
+          .map((s) => (s.source === 'xp' ? `${s.name} (XP)` : s.name));
         return (
           <div
             key={k}
@@ -129,6 +147,7 @@ export default function V5CharacterSheetView({ character }) {
             <span style={{ color: 'var(--sr-bone-300)', fontSize: '12px', flex: 1 }}>
               {label}
               {sp.length ? <span style={{ color: 'var(--sr-bone-300)' }}> ({sp.join(', ')})</span> : null}
+              {xpNote(kind, k)}
             </span>
             <StaticDots value={values[k]} />
           </div>
@@ -152,6 +171,9 @@ export default function V5CharacterSheetView({ character }) {
           {p('Sire', wm.sire)}
           {p('Ambition', wm.ambition)}
           {p('Desire', wm.desire)}
+          {n(experience.total)
+            ? p('XP', t('sheet:v5.xpSummary', '{{spent}} of {{total}} spent at creation · {{left}} unspent', { spent: n(experience.spent), total: n(experience.total), left: n(experience.unspent) }))
+            : null}
         </div>
       </ResponsiveSheetBlock>
 
@@ -180,7 +202,7 @@ export default function V5CharacterSheetView({ character }) {
       <ResponsiveSheetBlock sectionId="v5-view-attributes" title={<Term id="attributes" />} accent={ACCENT}>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '16px' }}>
           {['physical', 'social', 'mental'].map((c) => (
-            <React.Fragment key={c}>{column(c, V5_ATTRIBUTES[c], attrs)}</React.Fragment>
+            <React.Fragment key={c}>{column(c, V5_ATTRIBUTES[c], attrs, 'attribute')}</React.Fragment>
           ))}
         </div>
       </ResponsiveSheetBlock>
@@ -188,7 +210,7 @@ export default function V5CharacterSheetView({ character }) {
       <ResponsiveSheetBlock sectionId="v5-view-skills" title={<Term id="skills" />} accent={ACCENT}>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '16px' }}>
           {['physical', 'social', 'mental'].map((c) => (
-            <React.Fragment key={c}>{column(c, V5_SKILLS[c], obj(sk[c]))}</React.Fragment>
+            <React.Fragment key={c}>{column(c, V5_SKILLS[c], obj(sk[c]), 'skill')}</React.Fragment>
           ))}
         </div>
         {specialties.some((s) => s && !V5_SKILL_LABELS[s.skill]) ? (
@@ -206,6 +228,7 @@ export default function V5CharacterSheetView({ character }) {
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                 <strong style={{ minWidth: '140px' }}>{d.name}</strong>
                 <StaticDots value={d.level} />
+                {xpNote('discipline', d.name)}
               </div>
               {Array.isArray(d.powers) && d.powers.length ? (
                 <div style={{ color: 'var(--sr-bone-300)', fontSize: '12px', marginTop: '2px' }}>{d.powers.join(' · ')}</div>
