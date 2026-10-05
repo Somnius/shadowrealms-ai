@@ -66,6 +66,21 @@ export const V5_STARTING_RITUAL = V5_RULES.creation.starting_ritual; // { count:
 export const V5_NAME_MAX = 100;
 export const V5_CONVICTIONS = V5_RULES.creation.convictions; // [1, 3]
 
+/** XP costs (V5.md §4, core p. 151): the multiplier of "new × N" / "level × N", or the flat cost. */
+const XP_COSTS = V5_RULES.experience.costs;
+const xpNumber = (v) => (typeof v === 'number' ? v : parseInt(String(v).match(/\d+/)[0], 10));
+export const V5_XP_COSTS = {
+  attribute: xpNumber(XP_COSTS.attribute), // new × 5
+  skill: xpNumber(XP_COSTS.skill), // new × 3
+  specialty: xpNumber(XP_COSTS.specialty), // 3
+  clan_discipline: xpNumber(XP_COSTS.clan_discipline), // new × 5
+  other_discipline: xpNumber(XP_COSTS.other_discipline), // new × 7
+  caitiff_discipline: xpNumber(XP_COSTS.caitiff_discipline), // new × 6
+  ritual: xpNumber(XP_COSTS.blood_sorcery_ritual), // level × 3
+};
+/** No trait goes above 5 dots (rituals above level 5) for a starting character. */
+export const V5_XP_MAX_DOTS = 5;
+
 export { V5_BACKGROUNDS, V5_CLANS, V5_DISCIPLINES, V5_PREDATOR_TYPES };
 export const V5_CLAN_NAMES = V5_CLANS.map((c) => c.name);
 export const THIN_BLOOD = 'Thin-blood';
@@ -121,5 +136,6 @@ export const V5_SECTION_IDS = {
   predator: 'v5-section-predator',
   advantages: 'v5-section-advantages',
   humanity: 'v5-section-humanity',
+  experience: 'v5-section-experience',
   story: 'v5-section-story',
 };
