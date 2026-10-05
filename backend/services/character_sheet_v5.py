@@ -6,7 +6,8 @@ Storage is the same TEXT JSON columns as classic sheets:
   intelligence, wits, resolve} (1-5 in play; 0 accepted for unfinished drafts)
 - skills: {physical{...}, social{...}, mental{...}, specialties[{skill,name}], distribution} (0-5)
 - wod_meta: {edition:'v5', hunger 0-5, humanity 0-10, stains 0-10, blood_potency 0-10,
-  generation, health{max,superficial,aggravated}, willpower{...}, disciplines[{name,level,powers}], ...}
+  generation, health{max,superficial,aggravated}, willpower{...}, disciplines[{name,level,powers}],
+  rituals[{name,level,source}], experience{total,spent,unspent,log[{kind,trait,what,from,to,cost}]}, ...}
 
 Missing keys are fine (sheets are filled in over time); present values must be in range.
 """
@@ -67,6 +68,60 @@ def _check_track(errors: List[str], label: str, track: Any) -> None:
     _check_range(errors, f"{label}.aggravated", agg, 0, hi)
     if _is_int(sup) and _is_int(agg) and sup + agg > hi:
         errors.append(f"{label}: superficial + aggravated cannot exceed max ({hi})")
+
+
+_XP_KINDS = ("attribute", "skill", "specialty", "discipline", "ritual")
+_XP_MAX = 10000
+_XP_LOG_MAX = 200
+
+
+def _check_experience(errors: List[str], xp: Any) -> None:
+    """wod_meta.experience: {total, spent, unspent, log: [{kind, trait, what, from, to, cost}]}."""
+    if xp is None:
+        return
+    if not isinstance(xp, dict):
+        errors.append("wod_meta.experience must be an object")
+        return
+    for k in ("total", "spent", "unspent"):
+        if xp.get(k) is None:
+            errors.append(f"wod_meta.experience.{k} is required")
+        _check_range(errors, f"wod_meta.experience.{k}", xp.get(k), 0, _XP_MAX)
+    total, spent, unspent = xp.get("total"), xp.get("spent"), xp.get("unspent")
+    if all(_is_int(v) for v in (total, spent, unspent)):
+        if spent > total:
+            errors.append("wod_meta.experience.spent cannot exceed total")
+        elif unspent != total - spent:
+            errors.append("wod_meta.experience.unspent must be total - spent")
+    log = xp.get("log")
+    if log is None:
+        return
+    if not isinstance(log, list) or len(log) > _XP_LOG_MAX:
+        errors.append(f"wod_meta.experience.log must be a list of at most {_XP_LOG_MAX} entries")
+        return
+    cost_sum = 0
+    for i, e in enumerate(log):
+        label = f"wod_meta.experience.log[{i}]"
+        if not isinstance(e, dict):
+            errors.append(f"{label} must be an object")
+            continue
+        if e.get("kind") is not None and e.get("kind") not in _XP_KINDS:
+            errors.append(f"{label}.kind must be one of {', '.join(_XP_KINDS)}")
+        what = e.get("what")
+        if not isinstance(what, str) or not what.strip() or len(what) > 160:
+            errors.append(f"{label}.what is required (at most 160 characters)")
+        for k in ("from", "to"):
+            if e.get(k) is None:
+                errors.append(f"{label}.{k} is required")
+            _check_range(errors, f"{label}.{k}", e.get(k), 0, 5)
+        if _is_int(e.get("from")) and _is_int(e.get("to")) and e["to"] <= e["from"]:
+            errors.append(f"{label}: to must be above from")
+        if e.get("cost") is None:
+            errors.append(f"{label}.cost is required")
+        _check_range(errors, f"{label}.cost", e.get("cost"), 0, 100)
+        if _is_int(e.get("cost")):
+            cost_sum += e["cost"]
+    if _is_int(spent) and cost_sum > spent:
+        errors.append("wod_meta.experience.log costs more than spent")
 
 
 def sanity_check_v5(
@@ -131,6 +186,7 @@ def sanity_check_v5(
                         if r.get("level") is None:
                             errors.append(f"wod_meta.rituals[{i}].level is required")
                         _check_range(errors, f"wod_meta.rituals[{i}].level", r.get("level"), 1, 5)
+            _check_experience(errors, wod_meta.get("experience"))
             ed = wod_meta.get("edition")
             if ed is not None and ed != "v5":
                 errors.append("wod_meta.edition must be 'v5' for a V5 character")
