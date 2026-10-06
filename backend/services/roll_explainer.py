@@ -651,6 +651,31 @@ def _explain_rouse(rec: Dict[str, Any], lang: str) -> Dict[str, Any]:
 # ---------------------------------------------------------------------------------------------
 
 
+# "1 successes" / "1 επιτυχίες": the templates use the plural, so fix the singular after a lone 1.
+_ONE = r"(?<![\d.,−-])1(\*\*)? "
+_SINGULAR = {
+    "en": [
+        (_ONE + r"net successes", r"1\1 net success"),
+        (_ONE + r"successes reach", r"1\1 success reaches"),
+        (_ONE + r"successes", r"1\1 success"),
+        (_ONE + r"dice\b", r"1\1 die"),
+    ],
+    "el": [
+        (_ONE + r"καθαρές επιτυχίες", r"1\1 καθαρή επιτυχία"),
+        (_ONE + r"επιτυχίες φτάνουν", r"1\1 επιτυχία φτάνει"),
+        (_ONE + r"επιτυχίες", r"1\1 επιτυχία"),
+        (_ONE + r"ζάρια", r"1\1 ζάρι"),
+    ],
+}
+
+
+def singular_after_one(text: str, lang: str) -> str:
+    """Grammatical singular after the number 1 in an explanation (EN and EL)."""
+    for pattern, repl in _SINGULAR.get(lang if lang in _SINGULAR else "en", []):
+        text = re.sub(pattern, repl, text)
+    return text
+
+
 def explain(rec: Dict[str, Any], lang: str = "en", note: Optional[str] = None) -> Dict[str, Any]:
     """
     record -> {markdown, summary (English one-liner for prompts), facts, mismatches, lang}.
@@ -693,7 +718,7 @@ def explain(rec: Dict[str, Any], lang: str = "en", note: Optional[str] = None) -
         lines.append(tr["check_bad"].format(rules=part["rules"], diffs=diffs))
     elif rec.get("source") != "card":
         lines.append(tr["check_ok"].format(rules=part["rules"]))
-    markdown = "\n".join(lines).strip()
+    markdown = singular_after_one("\n".join(lines).strip(), lang)
     while "\n\n\n" in markdown:
         markdown = markdown.replace("\n\n\n", "\n\n")
     return {

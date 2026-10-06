@@ -756,3 +756,18 @@ def test_ai_chat_sends_the_reply_context_to_the_storyteller(client, ai_routes, m
     r = client.post("/api/ai/chat", headers=client.headers,
                     json={"message": "hi", "campaign_id": 3, "location": 4, "reply_to_id": True})
     assert r.status_code == 400
+
+
+def test_singular_after_one_en_and_el():
+    from services.roll_explainer import singular_after_one as one
+    assert one("3. **1 επιτυχίες** έναντι", "el") == "3. **1 επιτυχία** έναντι"
+    assert one("1 επιτυχίες φτάνουν τη δυσκολία 1", "el") == "1 επιτυχία φτάνει τη δυσκολία 1"
+    assert one("**1 καθαρές επιτυχίες**", "el") == "**1 καθαρή επιτυχία**"
+    assert one("1 ζάρια (0 Hunger)", "el") == "1 ζάρι (0 Hunger)"
+    assert one("**1 successes** against", "en") == "**1 success** against"
+    assert one("1 successes reach difficulty 1", "en") == "1 success reaches difficulty 1"
+    assert one("1 dice (0 Hunger)", "en") == "1 die (0 Hunger)"
+    # left alone: plurals after other numbers, dice lists, "1 of 2", margins
+    for text, lang in (("**10 επιτυχίες**", "el"), ("4 · 1 · 1 · 4", "el"), ("1 από τις 2 επιτυχίες", "el"),
+                       ("**11 successes**", "en"), ("margin **−1**", "en")):
+        assert one(text, lang) == text
