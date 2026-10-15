@@ -30,19 +30,43 @@ def rms_db(seg):
     return float(to_db(np.sqrt(np.mean(seg ** 2)))) if len(seg) else float("nan")
 
 
-def onset(x, sr, t, search=0.15, window=(1.0, 0.6)):
-    """Largest 1 ms energy jump within +-search s of t (and anywhere in [t-window[0], t+window[1]])."""
+def onset(x, sr, t, search=0.15, window=(1.0, 0.6), hp_hz=200.0, rise_db=6.0):
+    """Onset of the event cued at t, on a 1 ms RMS envelope of the signal high-passed at hp_hz
+    (unfiltered, the sub drone's 37 Hz cycles swing the envelope by 15 dB and hide a quiet bell).
+    First attack: the first 1 ms frame within +-search s of t that is >= 3 dB above the loudest
+    frame 5-25 ms before it (so a ramped attack is not its own baseline) and is followed within
+    5 ms by a frame >= rise_db above that baseline. Also the largest single-frame jump (within
+    +-search, and anywhere in [t-window[0], t+window[1]]). 't' is the first attack, or the largest
+    jump when nothing rises that much."""
     hop = sr // 1000
     a, b = int((t - window[0]) * sr), int((t + window[1]) * sr)
-    env = np.array([np.sqrt(np.mean(x[s:s + hop] ** 2)) for s in range(a, b, hop)])
-    env_db = to_db(env)
+    lead = min(a, int(0.5 * sr))
+    seg = x[a - lead:b]
+    if hp_hz:
+        seg = signal.sosfilt(signal.butter(2, hp_hz, btype="high", fs=sr, output="sos"), seg, axis=0)
+    seg = seg[lead:]
+    env_db = to_db(np.array([np.sqrt(np.mean(seg[s:s + hop] ** 2)) for s in range(0, b - a, hop)]))
     jump = np.diff(env_db)
     i_any = int(np.argmax(jump))
     lo, hi = int((window[0] - search) * 1000), int((window[0] + search) * 1000)
     i = lo + int(np.argmax(jump[lo:hi]))
-    return {"t": round(t - window[0] + (i + 1) / 1000, 3), "jump_db": round(float(jump[i]), 1),
+    attack = base = None
+    for j in range(lo + 1, hi + 1):
+        base = float(env_db[max(0, j - 25):max(1, j - 5)].max())
+        peak = float(env_db[j:j + 6].max())
+        # the entry frame must belong to the attack (within 12 dB of its level), and the attack must be
+        # a real event (>= -45 dBFS), not the noise floor of a near-silent stem
+        if env_db[j] >= base + 3.0 and peak >= base + rise_db and peak >= -45.0 and env_db[j] >= peak - 12.0:
+            attack = j
+            break
+    t0 = t - window[0]
+    at = None if attack is None else round(t0 + attack / 1000, 3)
+    return {"t": at if at is not None else round(t0 + (i + 1) / 1000, 3), "attack_t": at,
+            "attack_before_dbfs": None if attack is None else round(base, 1),
+            "attack_dbfs": None if attack is None else round(float(env_db[attack:attack + 6].max()), 1),
+            "jump_t": round(t0 + (i + 1) / 1000, 3), "jump_db": round(float(jump[i]), 1),
             "before_dbfs": round(float(env_db[i]), 1), "after_dbfs": round(float(env_db[i + 1]), 1),
-            "largest_anywhere_t": round(t - window[0] + (i_any + 1) / 1000, 3), "largest_anywhere_db": round(float(jump[i_any]), 1)}
+            "largest_anywhere_t": round(t0 + (i_any + 1) / 1000, 3), "largest_anywhere_db": round(float(jump[i_any]), 1)}
 
 
 def main():
@@ -112,14 +136,25 @@ def main():
         vals = [band_rms(seg, 20, 120), band_rms(seg, 120, 500), band_rms(seg, 500, 2000), band_rms(seg, 2000, 6000), band_rms(seg, 6000, 16000)]
         print(f"  {name:12s} {a:5.1f}-{b:5.1f}: " + " | ".join(f"{v:6.1f}" for v in vals))
 
-    # the hits: energy envelope at 1 ms, the biggest jump near each cue
+    # the hits: 1 ms energy envelope (high-passed at 200 Hz), first attack and biggest jump near each
+    # cue, on the master and (when the stems are next to it) on the perc and fx stems
     onsets = {}
-    print()
+    stems = {k: sf.read(path.parent / "score_stems" / f"{k}.wav", dtype="float64", always_2d=True)[0]
+             for k in ("perc", "fx") if (path.parent / "score_stems" / f"{k}.wav").exists()}
+    print("\nonsets (1 ms RMS envelope, > 200 Hz): first attack = first frame >= 3 dB over the 5-25 ms before it, "
+          "+6 dB within 5 ms; tolerance +-5 ms")
     for name, t in (("hit", C.hit), ("hit2 (botch)", C.hit2), ("theme downbeat", C.theme), ("last bell", C.last_bell)):
         o = onsets[name] = onset(x, sr, t)
         flag = "" if abs(o["t"] - t) <= 0.005 else "   <-- OFF by {:+.3f} s".format(o["t"] - t)
-        print(f"{name:15s} cue {t:7.3f}: onset {o['t']:7.3f} s (jump {o['jump_db']:5.1f} dB, {o['before_dbfs']:6.1f} -> {o['after_dbfs']:6.1f} dBFS; "
-              f"largest jump in [{t - 1.0:.1f}, {t + 0.6:.1f}] at {o['largest_anywhere_t']:.3f}, {o['largest_anywhere_db']:.1f} dB){flag}")
+        att = (f"first attack {o['attack_t']:7.3f} s ({o['attack_before_dbfs']:6.1f} -> {o['attack_dbfs']:6.1f} dBFS)" if o["attack_t"] is not None
+               else "no 6 dB attack in the window")
+        print(f"{name:15s} cue {t:7.3f}: {att}; largest jump {o['jump_t']:7.3f} s ({o['jump_db']:4.1f} dB, "
+              f"{o['before_dbfs']:6.1f} -> {o['after_dbfs']:6.1f}); largest in [{t - 1.0:.1f}, {t + 0.6:.1f}] at {o['largest_anywhere_t']:.3f}{flag}")
+        for k, s in stems.items():
+            so = o[f"stem_{k}"] = onset(s, sr, t)
+            sflag = "" if abs(so["t"] - t) <= 0.005 else "   <-- OFF by {:+.3f} s".format(so["t"] - t)
+            print(f"{'':15s}   {k:4s} stem: first attack {so['attack_t'] if so['attack_t'] is not None else '   none'} s, "
+                  f"largest jump {so['jump_t']:7.3f} s ({so['jump_db']:4.1f} dB){sflag}")
     w50 = sr // 20
     r50 = np.array([np.sqrt(np.mean(x[s:s + w50] ** 2)) for s in range(0, n - w50, w50)])
     j = int(np.argmax(r50))
