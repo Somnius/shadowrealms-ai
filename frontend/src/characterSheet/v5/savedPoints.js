@@ -67,6 +67,7 @@ function skillDots(skills, skill) {
 /** May the sheet (its wod_meta) take this loresheet: clan, thin-blood, Disciplines it has? */
 export function loresheetOpen(ls, meta) {
   if (ls.clans_only && !ls.clans_only.includes(meta?.clan)) return false;
+  if (ls.clans_excluded && ls.clans_excluded.includes(meta?.clan)) return false;
   if (ls.thin_blood_only && meta?.clan !== THIN_BLOOD) return false;
   if (ls.disciplines_only) {
     const have = (Array.isArray(meta?.disciplines) ? meta.disciplines : []).filter((d) => d && count(d.level || d.dots)).map((d) => d.name);
@@ -92,7 +93,9 @@ function catalogProblems(add, meta, items, changes, settings) {
       }
       const levels = ch.row.levels || [];
       if (new Set(levels).size !== levels.length) add('loresheet_levels', { name: ch.name, dots: ch.to, levels });
-      if (!loresheetOpen(ls, meta)) add('loresheet_restricted', { name: ch.name, clan: meta?.clan });
+      // a level with its own restriction (Tegyrius ••••: Banu Haqim only) counts only when taken
+      const closedLevel = (ls.levels || []).some((lv) => levels.includes(lv.dots) && lv.clans_only && !lv.clans_only.includes(meta?.clan));
+      if (!loresheetOpen(ls, meta) || closedLevel) add('loresheet_restricted', { name: ch.name, clan: meta?.clan });
       book(ch, ls, 'loresheet');
       return;
     }

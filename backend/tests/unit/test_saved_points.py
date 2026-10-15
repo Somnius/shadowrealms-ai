@@ -443,3 +443,41 @@ def test_a_loresheet_row_is_matched_by_its_id_too():
     m["advantages"].append({"id": "loresheet:the-bahari", "name": "The Bahari", "dots": 2, "kind": "loresheet", "levels": [2]})
     item = {"id": "loresheet:the-bahari", "name": "Bahari Again", "kind": "loresheet", "levels": [2]}
     assert "adv_unknown" in codes(check(m, item))
+
+
+def test_a_requirement_the_sheet_shows_is_checked_on_the_rows_after_the_spend():
+    """Forge v2 part F: a printed rating (Haven ••, Fame ••+, Mobile, a Discipline at 3) is verified
+    on the sheet as the spend leaves it; one only a person can judge ("Autark only") stays flagged."""
+    cat = {**CATALOG, "advantages": CATALOG["advantages"] + [
+        {"id": "background:haven", "name": "Haven", "kind": "background", "group": "Haven", "dots": {"min": 1, "max": 5},
+         "repeatable": True, "book": "v5-corebook"},
+        {"id": "merit:moral-dissident", "name": "Moral Dissident", "kind": "merit", "dots": {"min": 2, "max": 2},
+         "requires": "Autark only", "book": "v5-courts-of-the-damned"},
+    ]}
+    m = rich()
+    m["advantages"].append({"id": "background:haven", "name": "Haven", "dots": 2, "kind": "background"})
+    assert codes(validate_spend(m, adv({"name": "Cell", "dots": 1}), cat, {}, skills())) == []
+    # the spend itself can bring the rating: Haven raised to 2 and Cell in one spend
+    m2 = rich()
+    m2["advantages"].append({"id": "background:haven", "name": "Haven", "dots": 1, "kind": "background"})
+    both = adv({"id": "background:haven", "name": "Haven", "dots": 1}, {"name": "Cell", "dots": 1})
+    assert codes(validate_spend(m2, both, cat, {}, skills())) == []
+    assert codes(validate_spend(rich(), adv({"name": "Moral Dissident", "dots": 2}), cat, {}, skills())) == ["adv_requires"]
+
+
+def test_loresheet_restrictions_from_the_supplements():
+    cat = {**CATALOG, "loresheets": CATALOG["loresheets"] + [
+        {"id": "loresheet:angel", "name": "Child of the Angel Michael", "clans_only": None, "clans_excluded": ["clan:toreador"],
+         "disciplines_only": None, "thin_blood_only": False, "levels": [{"dots": n, "name": f"L{n}"} for n in range(1, 6)],
+         "book": "v5-cults-of-the-blood-gods"},
+        {"id": "loresheet:tegyrius", "name": "Tegyrius the Vizier", "clans_only": None, "disciplines_only": None,
+         "thin_blood_only": False, "book": "v5-gehenna-war",
+         "levels": [{"dots": n, "name": f"L{n}", **({"clans_only": ["clan:banu-haqim"]} if n == 4 else {})} for n in range(1, 6)]},
+    ]}
+    lore = lambda name, level: {"name": name, "kind": "loresheet", "levels": [level]}  # noqa: E731
+    m = meta(saved={"advantage_dots": 5})
+    assert codes(validate_spend(m, adv(lore("Child of the Angel Michael", 1)), cat, {}, skills())) == ["loresheet_restricted"]
+    assert codes(validate_spend(meta(clan="Ventrue", saved={"advantage_dots": 5}), adv(lore("Child of the Angel Michael", 1)), cat, {}, skills())) == []
+    assert codes(validate_spend(m, adv(lore("Tegyrius the Vizier", 2)), cat, {}, skills())) == []
+    assert codes(validate_spend(m, adv(lore("Tegyrius the Vizier", 4)), cat, {}, skills())) == ["loresheet_restricted"]
+    assert codes(validate_spend(meta(clan="Banu Haqim", saved={"advantage_dots": 5}), adv(lore("Tegyrius the Vizier", 4)), cat, {}, skills())) == []

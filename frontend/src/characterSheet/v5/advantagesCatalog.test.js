@@ -98,9 +98,10 @@ describe('ratings', () => {
   });
 
   it('reads dot requirements, others stay hints', () => {
-    expect(dotRequirement(entry('merit:laboratory'))).toEqual({ name: 'Haven', dots: 2, onlyAbove1: false });
-    expect(dotRequirement({ requires: 'more than one dot: Haven ••' })).toEqual({ name: 'Haven', dots: 2, onlyAbove1: true });
-    expect(dotRequirement({ requires: 'Fame ••+' })).toEqual({ name: 'Fame', dots: 2, onlyAbove1: false });
+    const adv = (name, dots, onlyAbove1 = false) => ({ name, dots, onlyAbove1, kind: 'advantage' });
+    expect(dotRequirement(entry('merit:laboratory'))).toEqual(adv('Haven', 2));
+    expect(dotRequirement({ requires: 'more than one dot: Haven ••' })).toEqual(adv('Haven', 2, true));
+    expect(dotRequirement({ requires: 'Fame ••+' })).toEqual(adv('Fame', 2));
     expect(dotRequirement({ requires: 'Blood Potency 1 or lower' })).toBeNull();
   });
 });

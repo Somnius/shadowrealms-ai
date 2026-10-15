@@ -9,7 +9,7 @@ import {
   V5_XP_COSTS,
   V5_XP_MAX_DOTS,
 } from '../../../characterSheet/v5/constants';
-import { finalAttributes, finalRituals, finalSkills, inBooks, xpDisciplineOptions, xpPreview } from '../../../characterSheet/v5/validation';
+import { finalAttributes, finalRituals, finalSkills, inBooks, ritualPrereqMissing, xpDisciplineOptions, xpPreview } from '../../../characterSheet/v5/validation';
 import { translateSheetError } from '../../../characterSheet/i18nErrors';
 import { disciplineNames, ritualsOf } from '../../../characterSheet/v5/rulesData';
 import { t } from '../../../i18n';
@@ -50,8 +50,9 @@ export default function ExperienceStep() {
   const xpAttrs = finalAttributes(sheet);
   const takenRituals = finalRituals(sheet).map((r) => r.name);
   const catalogRitual = draft.kind === 'ritual' ? ritualsOf('ritual', 5).find((r) => r.name === draft.trait) : null;
-  // Rituals from the chronicle's books only.
-  const xpRituals = ritualsOf('ritual', bsLevel).filter(inBooks(f.settings));
+  // Rituals from the chronicle's books only, and only when the sheet has the power a ritual needs
+  // (the Koldunic rituals: Koldunic Sorcery).
+  const xpRituals = ritualsOf('ritual', bsLevel).filter((r) => inBooks(f.settings)(r) && !ritualPrereqMissing(sheet, r));
   const xpSkills = finalSkills(sheet).skills;
   // A first dot in Academics/Craft/Performance/Science brings a free specialty: ask for its name.
   const draftNeedsFreeSpecialty =

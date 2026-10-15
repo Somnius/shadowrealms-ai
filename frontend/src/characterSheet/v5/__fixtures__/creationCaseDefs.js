@@ -754,6 +754,121 @@ export const CASE_DEFS = [
     expect: ['ritual_level'],
   },
 
+  // supplement data (Forge v2 part F): restrictions printed on a sheet or a level, Koldunic Sorcery,
+  // Flaws the book gives no rating, Merit prerequisites, two entries of one name
+  {
+    name: 'loresheets: Child of the Angel Michael is open to a Brujah',
+    sheet: () => brujah0({ advantages: [...brujah0().advantages.slice(0, 2), { id: 'loresheet:child-of-the-angel-michael', name: 'Child of the Angel Michael', dots: 2, kind: 'loresheet', levels: [2] }] }),
+    expect: [],
+  },
+  {
+    name: 'loresheets: Child of the Angel Michael is unavailable to Nosferatu',
+    sheet: () =>
+      brujah0({
+        clan: 'Nosferatu',
+        disciplines: [
+          { name: 'Potence', level: 2, powers: ['Lethal Body', 'Prowess'] },
+          { name: 'Obfuscate', level: 1, powers: ['Cloak of Shadows'] },
+        ],
+        advantages: [...brujah0().advantages.slice(0, 2), { id: 'loresheet:child-of-the-angel-michael', name: 'Child of the Angel Michael', dots: 2, kind: 'loresheet', levels: [2] }],
+      }),
+    expect: ['loresheet_restricted'],
+  },
+  {
+    name: 'loresheets: Tegyrius the Vizier levels 1–3 are open to anyone',
+    sheet: () => brujah0({ advantages: [{ name: 'Resources', dots: 1, kind: 'background' }, { id: 'loresheet:tegyrius-the-vizier', name: 'Tegyrius the Vizier', dots: 6, kind: 'loresheet', levels: [1, 2, 3] }] }),
+    expect: [],
+  },
+  {
+    name: 'loresheets: Tegyrius the Vizier level 4 is Banu Haqim only',
+    sheet: () => brujah0({ advantages: [{ name: 'Resources', dots: 3, kind: 'background' }, { id: 'loresheet:tegyrius-the-vizier', name: 'Tegyrius the Vizier', dots: 4, kind: 'loresheet', levels: [4] }] }),
+    expect: ['loresheet_restricted'],
+  },
+  {
+    name: 'loresheets: an Anarch sheet whose level names our sources lack can be taken',
+    sheet: () => brujah0({ advantages: [...brujah0().advantages.slice(0, 2), { id: 'loresheet:salvador-garcia', name: 'Salvador Garcia', dots: 2, kind: 'loresheet', levels: [2] }] }),
+    expect: [],
+  },
+  {
+    name: 'powers: Koldunic Sorcery is for the Tzimisce only',
+    sheet: () =>
+      tremere({ disciplines: [{ name: 'Blood Sorcery', level: 2, powers: ['Koldunic Sorcery', 'Extinguish Vitae', 'Blood of Potency'] }, tremere().disciplines[1]] }),
+    expect: ['power_clan'],
+  },
+  {
+    name: 'powers: a Tzimisce buys Blood Sorcery with XP and takes Koldunic Sorcery with it',
+    sheet: () =>
+      tzimisce({
+        disciplines: [
+          { name: 'Animalism', level: 2, powers: ['Bond Famulus', 'Feral Whispers'] },
+          { name: 'Dominate', level: 1, powers: ['Compel'] },
+        ],
+        extraPowers: { Auspex: ['Heightened Senses'], 'Blood Sorcery': ['Koldunic Sorcery'] },
+        xpPurchases: [{ kind: 'discipline', trait: 'Blood Sorcery' }],
+      }),
+    expect: [],
+  },
+  {
+    name: 'rituals: a Koldunic ritual needs the Koldunic Sorcery power',
+    sheet: () => tremere({ xpPurchases: [{ kind: 'ritual', trait: 'Elemental Grasp', level: 2 }, { kind: 'discipline', trait: 'Dominate' }] }),
+    expect: ['ritual_prereq'],
+  },
+  {
+    name: 'advantages: a Flaw the book gives no rating takes the dots the player picks',
+    sheet: () =>
+      brujah0({
+        predatorDiscipline: 'Potence',
+        disciplines: [
+          { name: 'Potence', level: 2, powers: ['Lethal Body', 'Prowess', 'Brutal Feed'] },
+          { name: 'Presence', level: 1, powers: ['Awe'] },
+        ],
+        extraPowers: {},
+        flaws: [{ id: 'flaw:ingrained-killer-instinct', name: 'Killer Instinct', dots: 2 }],
+      }),
+    expect: [],
+  },
+  {
+    name: 'advantages: an Ingrained Discipline Flaw needs that Discipline at 3',
+    sheet: () => brujah0({ flaws: [{ id: 'flaw:ingrained-killer-instinct', name: 'Killer Instinct', dots: 2 }] }),
+    expect: ['adv_requires'],
+  },
+  {
+    name: 'advantages: Influencer (Succubus Club) needs Fame 2',
+    sheet: () =>
+      brujah0({
+        advantages: [
+          { name: 'Resources', dots: 3, kind: 'background' },
+          { name: 'Haven', dots: 2, kind: 'background' },
+          { id: 'merit:influencer', name: 'Influencer', dots: 1, kind: 'merit' },
+        ],
+      }),
+    expect: ['adv_requires'],
+  },
+  {
+    name: 'advantages: Influencer with Fame 2',
+    sheet: () =>
+      brujah0({
+        advantages: [
+          { name: 'Resources', dots: 3, kind: 'background' },
+          { name: 'Fame', dots: 2, kind: 'background' },
+          { id: 'merit:influencer', name: 'Influencer', dots: 1, kind: 'merit' },
+        ],
+      }),
+    expect: [],
+  },
+  {
+    name: "advantages: the Ashfinders' Influencer is another Merit (by id): no Fame needed",
+    sheet: () =>
+      brujah0({
+        advantages: [
+          { name: 'Resources', dots: 3, kind: 'background' },
+          { name: 'Haven', dots: 2, kind: 'background' },
+          { id: 'merit:influencer-ashfinders', name: 'Influencer', dots: 2, kind: 'merit' },
+        ],
+      }),
+    expect: [],
+  },
+
   // the chronicle's creation settings
   { name: 'settings: clan left out', settings: { allowed_clans: ['Tremere'] }, sheet: () => brujah0(), expect: ['clan_not_allowed'] },
   { name: 'settings: predator type left out', settings: { allowed_predators: ['Siren'] }, sheet: () => brujah0(), expect: ['predator_not_allowed'] },

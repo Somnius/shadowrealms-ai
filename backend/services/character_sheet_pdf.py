@@ -1365,7 +1365,9 @@ def _reference_advantages(wm: Dict[str, Any], catalog: Dict[str, Any], clan: Any
         lore.append(("entry", _ref_entry(name, ls, lang, books, level=sum(t for t in taken if t))))
         for lv in _list(ls.get("levels")):
             if isinstance(lv, dict) and _n(lv.get("dots"), 0, 10) in taken - {0}:
-                lore.append(("entry", _ref_entry(lv.get("name"), lv, lang, books, prefix=name, level=lv.get("dots"))))
+                # the Anarch sheets: our sources give no English level names
+                lv_name = lv.get("name") or f"Level {_n(lv.get('dots'), 0, 10)}"
+                lore.append(("entry", _ref_entry(lv_name, lv, lang, books, prefix=name, level=lv.get("dots"))))
     for flaw, key in ((False, "thin_blood_merits"), (True, "thin_blood_flaws")):
         for n in _list(wm.get(key))[:REF_ITEMS]:
             add(flaw, _lookup(thin_idx[flaw], n.get("id") if isinstance(n, dict) else None,

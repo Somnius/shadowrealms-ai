@@ -9,13 +9,22 @@ import { THIN_BLOOD, V5_THIN_BLOOD_MERITS } from '../../../characterSheet/v5/con
 import {
   advantageDotChoices,
   advantageOptions,
+  advantageUnrated,
   clanFlaws,
   clanInfo,
+  loresheetLevelAllowed,
   loresheetOptions,
   resolvePredatorGrants,
   thinBloodOptions,
 } from '../../../characterSheet/v5/validation';
-import { advantageEntries, findAdvantage, findLoresheet, loresheetEntries } from '../../../characterSheet/v5/rulesData';
+import {
+  advantageEntries,
+  findAdvantage,
+  findLoresheet,
+  loresheetEntries,
+  optionName,
+  sharedNames,
+} from '../../../characterSheet/v5/rulesData';
 import { t } from '../../../i18n';
 import { Term } from '../../../i18n/glossary';
 import { newAdvRow, newLoreRow } from './useV5ForgeState';
@@ -40,8 +49,10 @@ const KIND_LABEL = {
 const sectionStyle = { marginTop: '14px', paddingTop: '10px', borderTop: '1px solid var(--sr-night-700)' };
 const headingStyle = { ...labelStyle, fontSize: '14px', fontFamily: 'var(--sr-font-display)', marginBottom: '8px' };
 
-/** <optgroup>s of entries by their book group, keeping the catalog order. */
+/** <optgroup>s of entries by their book group, keeping the catalog order. Two entries of one name
+ * (Succubus Club's and the Ashfinders' Influencer) show their book. */
 function GroupedOptions({ entries, takenIds, current }) {
+  const shared = sharedNames(entries);
   const groups = [];
   entries.forEach((e) => {
     let g = groups.find((x) => x.name === e.group);
@@ -51,10 +62,10 @@ function GroupedOptions({ entries, takenIds, current }) {
   return groups.map((g) => (
     <optgroup key={g.name} label={g.name}>
       {g.entries.map((e) => {
-        const r = ratingLabel(advantageDotChoices(e));
+        const r = advantageUnrated(e) ? '?' : ratingLabel(advantageDotChoices(e));
         return (
           <option key={e.id} value={e.id} disabled={e.id !== current && takenIds(e)}>
-            {e.name}
+            {optionName(e, shared)}
             {r ? ` (${r})` : ''}
           </option>
         );
@@ -172,6 +183,11 @@ function AdvRow({ row, index, rows, setRows, clan, settings, fixedIds }) {
           {dots(level.dots)} {level.name}
         </div>
       ) : null}
+      {advantageUnrated(entry) ? (
+        <div style={{ color: 'var(--sr-gold-400)', fontSize: '12px', marginTop: '4px' }}>
+          {t('wizard:v5.grantNoRating', 'the book prints no rating: ask your Storyteller')}
+        </div>
+      ) : null}
       {entry?.requires ? (
         <div style={{ color: 'var(--sr-bone-300)', fontSize: '12px', marginTop: '4px' }}>
           {t('wizard:v5.advRequires', 'Needs: {{req}}', { req: entry.requires })}
@@ -214,6 +230,7 @@ function LoreRow({ row, index }) {
   const set = (patch) => f.setLoreRows((prev) => prev.map((r) => (r.key === row.key ? { ...r, ...patch } : r)));
   const sheet = row.id ? findLoresheet({ id: row.id, name: row.name }) : null;
   const offered = loresheetOptions(f.sheet, f.settings);
+  const shared = sharedNames(loresheetEntries());
   const takenElsewhere = f.loreRows.filter((r) => r.key !== row.key).map((r) => r.id);
   const total = row.levels.reduce((s, n) => s + n, 0);
   return (
@@ -229,10 +246,10 @@ function LoreRow({ row, index }) {
           style={{ ...inputStyle, flex: '2 1 260px', width: 'auto', padding: '8px' }}
         >
           <option value="">{t('wizard:v5.choose', 'Choose…')}</option>
-          {sheet && !offered.includes(sheet) ? <option value={sheet.id}>{sheet.name}</option> : null}
+          {sheet && !offered.includes(sheet) ? <option value={sheet.id}>{optionName(sheet, shared)}</option> : null}
           {offered.map((l) => (
             <option key={l.id} value={l.id} disabled={takenElsewhere.includes(l.id)}>
-              {l.name}
+              {optionName(l, shared)}
               {l.restriction ? ` (${l.restriction})` : ''}
             </option>
           ))}
@@ -252,25 +269,43 @@ function LoreRow({ row, index }) {
         </button>
       </div>
       <CatalogNote entry={sheet} />
+      {sheet && sheet.levels.some((lv) => !lv.name) ? (
+        <p style={{ ...noteStyle, fontSize: '12px', margin: '4px 0 0' }}>
+          {t('wizard:v5.loreNamesUnknown', '(names not in our sources)')}
+        </p>
+      ) : null}
       {sheet ? (
         <div role="group" aria-label={t('wizard:v5.loreLevels', '{{name}} levels', { name: sheet.name })} style={{ marginTop: '6px', display: 'grid', gap: '6px' }}>
-          {sheet.levels.map((lv) => (
-            <div key={lv.dots}>
-              <label style={{ display: 'flex', gap: '8px', alignItems: 'baseline', cursor: 'pointer', color: 'var(--sr-bone-100)', fontSize: '13px' }}>
-                <input
-                  type="checkbox"
-                  aria-label={t('wizard:v5.loreLevelLabel', 'Level {{n}}: {{name}}', { n: lv.dots, name: lv.name })}
-                  checked={row.levels.includes(lv.dots)}
-                  onChange={(e) =>
-                    set({ levels: e.target.checked ? [...row.levels, lv.dots] : row.levels.filter((n) => n !== lv.dots) })
-                  }
-                />
-                <span aria-hidden="true" style={{ color: 'var(--sr-blood-400)', minWidth: '52px' }}>{dots(lv.dots)}</span>
-                <span lang="en" aria-hidden="true">{lv.name}</span>
-              </label>
-              <CatalogNote entry={lv.desc ? { desc: lv.desc } : null} style={{ marginLeft: '70px', marginTop: '0' }} />
-            </div>
-          ))}
+          {sheet.levels.map((lv) => {
+            const name = lv.name || t('wizard:v5.loreLevelUnnamed', 'Level {{n}}', { n: lv.dots });
+            const taken = row.levels.includes(lv.dots);
+            // A level with its own restriction (Tegyrius ••••: Banu Haqim only) isn't offered to
+            // other clans; one already taken stays, so the check can say why.
+            const open = loresheetLevelAllowed(lv, f.sheet);
+            return (
+              <div key={lv.dots}>
+                <label style={{ display: 'flex', gap: '8px', alignItems: 'baseline', cursor: open || taken ? 'pointer' : 'default', color: open ? 'var(--sr-bone-100)' : 'var(--sr-bone-300)', fontSize: '13px' }}>
+                  <input
+                    type="checkbox"
+                    aria-label={t('wizard:v5.loreLevelLabel', 'Level {{n}}: {{name}}', { n: lv.dots, name })}
+                    checked={taken}
+                    disabled={!open && !taken}
+                    onChange={(e) =>
+                      set({ levels: e.target.checked ? [...row.levels, lv.dots] : row.levels.filter((n) => n !== lv.dots) })
+                    }
+                  />
+                  <span aria-hidden="true" style={{ color: 'var(--sr-blood-400)', minWidth: '52px' }}>{dots(lv.dots)}</span>
+                  <span lang="en" aria-hidden="true">{name}</span>
+                  {lv.restriction ? (
+                    <span style={{ color: 'var(--sr-gold-400)', fontSize: '12px' }}>
+                      {t('wizard:v5.loreLevelOnly', '({{restriction}})', { restriction: lv.restriction })}
+                    </span>
+                  ) : null}
+                </label>
+                <CatalogNote entry={lv.desc ? { desc: lv.desc } : null} style={{ marginLeft: '70px', marginTop: '0' }} />
+              </div>
+            );
+          })}
         </div>
       ) : null}
     </div>

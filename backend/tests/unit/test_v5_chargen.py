@@ -603,3 +603,59 @@ def test_loresheets_and_rows_without_a_book():
         for pw in d["powers"]:
             pw.pop("book", None)
     assert validate_creation(c["payload"], bare, {"allowed_books": ["some-other-book"]}) == []
+
+
+# ---------- supplement rules (Forge v2 part F) ----------
+
+def test_koldunic_sorcery_first_dot_and_again_per_element():
+    """Blood Sigils p. 61: Tzimisce only (a shared vector), taken with the first Blood Sorcery dot,
+    taken again for each further element."""
+    c = case("powers: a Tzimisce buys Blood Sorcery with XP and takes Koldunic Sorcery with it")
+    meta = c["payload"]["wod_meta"]
+    bs = next(d for d in meta["disciplines"] if d["name"] == "Blood Sorcery")
+    bs["powers"] = ["A Taste for Blood", "Koldunic Sorcery"]
+    bs["level"] = 2
+    problems = validate_creation(c["payload"], CATALOG, None)
+    assert {"code": "power_first_dot", "params": {"power": "Koldunic Sorcery", "discipline": "Blood Sorcery"}} in problems
+    bs["powers"] = ["Koldunic Sorcery", "Koldunic Sorcery"]
+    assert "power_duplicate" not in codes(validate_creation(c["payload"], CATALOG, None))
+    bs["powers"] = ["A Taste for Blood", "A Taste for Blood"]
+    assert "power_duplicate" in codes(validate_creation(c["payload"], CATALOG, None))
+
+
+def test_a_flaw_without_a_printed_rating_takes_1_to_5():
+    c = case("advantages: a Flaw the book gives no rating takes the dots the player picks")
+    flaws = c["payload"]["wod_meta"]["flaws"]
+    row = next(f for f in flaws if f.get("id") == "flaw:ingrained-killer-instinct")
+    for dots, want in ((1, []), (5, []), (6, ["adv_dots_range"])):
+        row["dots"] = dots
+        got = [x for x in codes(validate_creation(c["payload"], CATALOG, None)) if x not in ("flaw_over", "flaw_under")]
+        assert got == want, dots
+
+
+def test_requirements_the_check_reads():
+    from services.v5_chargen import _Catalog, requirement
+
+    cat = _Catalog(CATALOG)
+
+    def req(text):
+        r = requirement({"requires": text}, cat)
+        return r and {k: v for k, v in r.items() if k != "entry"}
+
+    assert req("Fame ••+") == {"kind": "advantage", "name": "Fame", "dots": 2, "above_1": False}
+    assert req("Mawla 1+") == {"kind": "advantage", "name": "Mawla", "dots": 1, "above_1": False}
+    assert req("Mobile")["dots"] == 1
+    assert req("Dominate •••+, Storyteller's consent") == {"kind": "discipline", "name": "Dominate", "dots": 3, "above_1": False}
+    assert req("more than one dot: Haven ••")["above_1"] is True
+    assert req("ancilla or older") == {"kind": "age"}
+    for hint in ("Autark only", "Gangrel, Ministry, or Tzimisce", "Ministry", "Blood Potency 1 or lower"):
+        assert req(hint) is None, hint
+
+
+def test_two_entries_of_one_name_are_told_apart_by_id():
+    c = case("advantages: the Ashfinders' Influencer is another Merit (by id): no Fame needed")
+    assert validate_creation(c["payload"], CATALOG, None) == []
+    row = next(a for a in c["payload"]["wod_meta"]["advantages"] if a.get("id") == "merit:influencer-ashfinders")
+    row["id"] = "merit:influencer"  # the Succubus Club one (Fame ••+, 1 dot)
+    got = codes(validate_creation(c["payload"], CATALOG, None))
+    assert "adv_requires" in got and "adv_dots_range" in got

@@ -29,7 +29,8 @@
     "fromClan": "(από το clan)",
     "customRow": "(εκτός καταλόγου)",
     "savedSpecialty": "{{name}} – αποθηκευμένοι πόντοι",
-    "savedDots": "+{{n}} από αποθηκευμένους πόντους"
+    "savedDots": "+{{n}} από αποθηκευμένους πόντους",
+    "loreLevelUnnamed": "Επίπεδο {{n}}"
   },
   "pdf": {
     "export": "Εξαγωγή PDF",

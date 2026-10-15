@@ -44,17 +44,18 @@ KEEP = {
     "predator_types": ("id", "name", "aliases", "book", "also_in", "page", "specialty_choice", "discipline_choice",
                        "humanity", "blood_potency", "max_blood_potency", "forbidden_clans", "advantages",
                        "flaws", "ancilla_only"),
-    "rituals": ("id", "name", "aliases", "book", "also_in", "page", "level", "discipline", "prerequisite"),
+    "rituals": ("id", "name", "aliases", "book", "also_in", "page", "level", "discipline", "prerequisite", "koldunic"),
     "ceremonies": ("id", "name", "aliases", "book", "also_in", "page", "level", "discipline", "prerequisite"),
     # forge v2 C: only when the catalog has them (advantages.json, loresheets.json)
     "advantages": ("id", "name", "aliases", "kind", "group", "dots", "book", "also_in", "page", "thin_blood", "caitiff",
                    "ghoul_only", "coterie", "clans_only", "cannot_buy_for", "repeatable", "max_instances",
                    "requires", "levels"),
-    "loresheets": ("id", "name", "aliases", "book", "also_in", "page", "restriction", "clans_only", "disciplines_only",
-                   "thin_blood_only", "levels"),
+    "loresheets": ("id", "name", "aliases", "book", "also_in", "page", "restriction", "clans_only", "clans_excluded",
+                   "disciplines_only", "thin_blood_only", "levels"),
 }
 OPTIONAL = ("advantages", "loresheets")
-POWER_KEEP = ("id", "name", "aliases", "book", "also_in", "page", "level", "amalgam", "prerequisite")
+POWER_KEEP = ("id", "name", "aliases", "book", "also_in", "page", "level", "amalgam", "prerequisite", "clans_only",
+              "repeatable", "at_first_dot")
 NAMED_KEEP = ("name",)  # clan bane / compulsion: the name only
 
 
@@ -78,8 +79,9 @@ def snapshot(catalog: Dict[str, Any]) -> Dict[str, Any]:
                 row["discipline_choice"] = [
                     {k: d[k] for k in ("discipline", "clans_only") if k in d} for d in row.get("discipline_choice") or []
                 ]
-            if isinstance(row.get("levels"), list):  # names and dots only
-                row["levels"] = [{k: lv[k] for k in ("dots", "name") if k in lv} for lv in row["levels"] if isinstance(lv, dict)]
+            if isinstance(row.get("levels"), list):  # names, dots and a level's own clan restriction
+                row["levels"] = [{k: lv[k] for k in ("dots", "name", "clans_only") if k in lv} for lv in row["levels"]
+                                 if isinstance(lv, dict)]
             rows.append(row)
         if rows or kind not in OPTIONAL:
             out[kind] = rows

@@ -59,6 +59,7 @@ from services.v5_chargen import (
     FREE_SPECIALTY_SKILLS,
     advantage_entries,
     check_advantage_rows,
+    requirement_on_sheet,
 )
 
 SPEND_KINDS = ("saved_advantage", "saved_specialty")
@@ -352,9 +353,9 @@ def clamp_saved(wod_meta: Any, skills: Any, settings: Any) -> Dict[str, int]:
 
 # ---------- the rule check ----------
 
-def _spend_only(add, meta: dict, items, changes, item_entries, row_entries, catalog) -> None:
+def _spend_only(add, meta: dict, items, changes, item_entries, row_entries, catalog, new_rows=()) -> None:
     """What a spend adds to the creation row check: a name the catalog lacks (a spend has no custom
-    rows), taken too often, a prerequisite to verify."""
+    rows), taken too often, a prerequisite not met or that a person has to verify."""
     for item, change, entry in zip(items, changes, item_entries):
         name = item["name"]
         installed = bool(catalog.get("loresheets" if item["kind"] == "loresheet" else "advantages"))
@@ -374,8 +375,9 @@ def _spend_only(add, meta: dict, items, changes, item_entries, row_entries, cata
                 add("adv_repeat", name=name)
         req = entry.get("requires")
         if isinstance(req, str) and req.strip():
-            # "ancilla or older" is known from the sheet; anything else a person checks.
-            if not (req.strip().lower() == "ancilla or older" and meta.get("age") == "ancilla"):
+            # A rating the sheet shows (Fame ••+, Haven ••, Mobile, a Discipline at 3, ancilla or
+            # older) is checked on the rows as the spend leaves them; anything else a person checks.
+            if requirement_on_sheet(meta, list(new_rows), entry, change["to"], catalog) is not True:
                 add("adv_requires", name=name, requires=req.strip())
 
 
@@ -422,7 +424,7 @@ def validate_spend(
             add(p["code"], **p["params"])
         item_entries = advantage_entries(meta, items, catalog)
         row_entries = advantage_entries(meta, [r for r in rows if isinstance(r, dict) and r.get("kind") != "loresheet"], catalog)
-        _spend_only(add, meta, items, changes, item_entries, row_entries, catalog)
+        _spend_only(add, meta, items, changes, item_entries, row_entries, catalog, new_rows)
     else:
         if not s["saved_points"]["allow_specialty"]:
             add("specialty_not_allowed")

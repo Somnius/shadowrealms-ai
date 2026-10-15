@@ -1,6 +1,6 @@
 import ResponsiveSheetBlock from '../ResponsiveSheetBlock';
 import { CAITIFF, THIN_BLOOD, V5_NAME_MAX, V5_SECTION_IDS } from '../../../characterSheet/v5/constants';
-import { inBooks, startingCeremonyOptions, startingRitualAllowed } from '../../../characterSheet/v5/validation';
+import { inBooks, powerAllowed, ritualPrereqMissing, startingCeremonyOptions, startingRitualAllowed } from '../../../characterSheet/v5/validation';
 import { powersOf, ritualsOf } from '../../../characterSheet/v5/rulesData';
 import { t } from '../../../i18n';
 import { Term } from '../../../i18n/glossary';
@@ -16,7 +16,8 @@ export default function DisciplinesStep() {
   const f = useForge();
   const { clan, discRows, setDisc } = f;
   const fits = inBooks(f.settings);
-  const rituals = ritualsOf('ritual', 1).filter((r) => fits(r) || r.name === f.startingRitual);
+  // a ritual whose printed prerequisite power the sheet lacks isn't offered (one already chosen stays)
+  const rituals = ritualsOf('ritual', 1).filter((r) => (fits(r) && !ritualPrereqMissing(f.sheet, r)) || r.name === f.startingRitual);
   const ceremonies = startingCeremonyOptions(f.sheet).filter((r) => fits(r) || r.name === f.startingCeremony);
   return (
     <ResponsiveSheetBlock
@@ -95,7 +96,8 @@ export default function DisciplinesStep() {
                 }
                 const taken = row.powers.filter((x, j) => j !== p && x);
                 const chosen = catalog.find((x) => x.name === pw);
-                const offered = catalog.filter((x) => x.level <= row.level && fits(x));
+                // a power for other clans (Koldunic Sorcery: Tzimisce) isn't offered
+                const offered = catalog.filter((x) => x.level <= row.level && fits(x) && powerAllowed(x, clan));
                 return (
                   <div key={p} style={{ flex: '1 1 240px', minWidth: 0 }}>
                     <select
@@ -107,7 +109,7 @@ export default function DisciplinesStep() {
                       <option value="">{t('wizard:v5.powerPick', 'Power {{n}}…', { n: p + 1 })}</option>
                       {pw && !offered.some((x) => x.name === pw) ? <option value={pw}>{pw}</option> : null}
                       {offered.map((x) => (
-                          <option key={x.id || x.name} value={x.name} disabled={taken.includes(x.name)}>
+                          <option key={x.id || x.name} value={x.name} disabled={taken.includes(x.name) && !x.repeatable}>
                             {t('wizard:v5.powerOption', '{{name}} (level {{level}})', { name: x.name, level: x.level })}
                             {x.amalgam ? ` · ${x.amalgam.discipline} ${x.amalgam.level}` : ''}
                           </option>

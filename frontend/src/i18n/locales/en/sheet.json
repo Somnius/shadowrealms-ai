@@ -29,7 +29,8 @@
     "fromClan": "(clan)",
     "customRow": "(custom)",
     "savedSpecialty": "{{name}} – saved points",
-    "savedDots": "+{{n}} from saved points"
+    "savedDots": "+{{n}} from saved points",
+    "loreLevelUnnamed": "Level {{n}}"
   },
   "pdf": {
     "export": "Export PDF",

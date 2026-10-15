@@ -546,6 +546,7 @@ export function startingCeremonyOptions(sheet) {
  * taken, and no power twice. Disciplines the catalog has no powers for are free text (unchecked).
  */
 export function validateV5Powers(sheet) {
+  const s = sheet || {};
   const rows = disciplineRows(sheet).filter((r) => r.name);
   const level = Object.fromEntries(rows.map((r) => [r.name, r.level]));
   // A prerequisite may sit in another Discipline (Messenger's Command: Animal Messenger + Compel or Mesmerize).
@@ -555,11 +556,15 @@ export function validateV5Powers(sheet) {
     if (!list.length) continue;
     const chosen = r.powers.map((x) => String(x || '').trim()).filter(Boolean);
     const seen = new Set();
-    for (const name of chosen) {
-      if (seen.has(name)) return `${r.name}: ${name} is taken twice.`;
-      seen.add(name);
+    for (const [i, name] of chosen.entries()) {
       const pw = list.find((x) => x.name === name || (x.aliases || []).includes(name));
+      // Koldunic Sorcery is taken again for each further element (Blood Sigils p. 61)
+      if (seen.has(name) && !pw?.repeatable) return `${r.name}: ${name} is taken twice.`;
+      const firstTime = !seen.has(name);
+      seen.add(name);
       if (!pw) return `${name} is not a ${r.name} power.`;
+      if (pw.clans_only && !pw.clans_only.includes(s.clan)) return `${name} is only for ${pw.clans_only.join(', ')}.`;
+      if (pw.at_first_dot && firstTime && i !== 0) return `${name} is taken with the first ${r.name} dot.`;
       if (pw.level > r.level) return `${name} is a level ${pw.level} power; ${r.name} is at ${r.level}.`;
       if (pw.amalgam && (level[pw.amalgam.discipline] || 0) < pw.amalgam.level) {
         return `${name} also needs ${pw.amalgam.discipline} ${pw.amalgam.level}.`;
@@ -569,6 +574,35 @@ export function validateV5Powers(sheet) {
     }
   }
   return null;
+}
+
+/** May the sheet's clan take this power (Koldunic Sorcery: Tzimisce only)? */
+export function powerAllowed(power, clan) {
+  return !power?.clans_only || power.clans_only.includes(clan);
+}
+
+/** Every power the sheet has chosen, in any Discipline (prerequisites may sit in another one). */
+function chosenPowers(sheet) {
+  return disciplineRows(sheet).flatMap((r) => r.powers.map((x) => String(x || '').trim()).filter(Boolean));
+}
+
+/**
+ * The first prerequisite group of a ritual the sheet lacks ([name, …], any one will do), or null:
+ * Blood Sigils' Koldunic rituals need the Koldunic Sorcery power, Tattered Façade's Grim Chrysalis
+ * Shape the Sanguine Sacrament (as printed under each ritual).
+ */
+export function ritualPrereqMissing(sheet, ritual) {
+  const have = chosenPowers(sheet);
+  return (ritual?.prerequisite || []).find((g) => !g.some((pre) => have.includes(pre))) || null;
+}
+
+/** First problem with the free starting ritual (its prerequisite power), or null. */
+export function validateV5Rituals(sheet) {
+  const start = String(sheet?.startingRitual || '').trim();
+  if (!start || !startingRitualAllowed(sheet)) return null;
+  const known = ritualsOf('ritual').find((r) => r.name === start);
+  const missing = known ? ritualPrereqMissing(sheet, known) : null;
+  return missing ? `The ${known.name} ritual needs the ${missing.join(' or ')} power.` : null;
 }
 
 /**
@@ -704,6 +738,8 @@ export function xpLedger(sheet, allDisciplines = disciplineNames()) {
       // A catalog ritual costs its printed level (the server re-prices it the same way).
       const known = ritualsOf('ritual').find((r) => r.name === trait);
       if (known && known.level !== level) errors.push(`${trait} is a level ${known.level} ritual.`);
+      const missing = known ? ritualPrereqMissing(s, known) : null;
+      if (missing) errors.push(`The ${known.name} ritual needs the ${missing.join(' or ')} power.`);
       add({ kind: 'ritual', trait, what: `Ritual: ${trait}`, from: 0, to: level, cost: level * V5_XP_COSTS.ritual });
     } else {
       errors.push('One XP purchase is not something this step can buy.');
@@ -774,10 +810,18 @@ export function ownFlawDots(sheet) {
 /** Ratings printed "•+" go up to this at creation. */
 const OPEN_MAX_DOTS = 5;
 
-/** The dot values a catalog entry may take: its allowed list, else min..max ([] for none). */
+/**
+ * A Merit or Flaw the book gives no dot value (Tattered Façade's Ingrained Discipline Flaws): the
+ * player picks 1–5 with the Storyteller. Thin-blood Merits and Flaws have no dots by design.
+ */
+export function advantageUnrated(entry) {
+  return Boolean(entry) && !entry.dots && !entry.thin_blood;
+}
+
+/** The dot values a catalog entry may take: its allowed list, else min..max (1–5 unrated, [] for thin-blood ones). */
 export function advantageDotChoices(entry) {
   const d = entry?.dots;
-  if (!d) return [];
+  if (!d) return advantageUnrated(entry) ? [1, 2, 3, 4, 5] : [];
   if (Array.isArray(d.allowed)) return [...d.allowed].map(int).sort((a, b) => a - b);
   const lo = Math.max(1, int(d.min) || 1);
   const hi = d.max == null ? Math.max(lo, OPEN_MAX_DOTS) : int(d.max);
@@ -833,6 +877,8 @@ export function loresheetAllowed(ls, sheet) {
   if (!ls) return true;
   const clan = sheet?.clan;
   if (ls.clans_only && !ls.clans_only.includes(clan)) return false;
+  // "Unavailable to Nosferatu characters" (Child of the Angel Michael, Cults p. 229)
+  if (ls.clans_excluded && ls.clans_excluded.includes(clan)) return false;
   if (ls.thin_blood_only && clan !== THIN_BLOOD) return false;
   if (ls.disciplines_only) {
     const have = finalDisciplines(sheet).map((d) => d.name);
@@ -841,18 +887,47 @@ export function loresheetAllowed(ls, sheet) {
   return true;
 }
 
+/**
+ * May the sheet take this level of a loresheet? A level can carry its own restriction (Tegyrius
+ * the Vizier ••••: Banu Haqim only; Hesha Ruhadze •••• and •••••: Ministry only); the rest of the
+ * sheet stays open.
+ */
+export function loresheetLevelAllowed(level, sheet) {
+  return !level?.clans_only || level.clans_only.includes(sheet?.clan);
+}
+
 /** Loresheets open to the sheet (from the chronicle's books when `settings` are given). */
 export function loresheetOptions(sheet, settings = null) {
   return loresheetEntries().filter((l) => loresheetAllowed(l, sheet) && bookAllowed(settings, l));
 }
 
-/** "Haven ••" or "more than one dot: Haven ••": another Background at that rating. */
-const DOT_REQUIREMENT = /^(more than one dot:\s*)?([A-Za-z][\w' -]*?)\s+(•+)\+?$/;
+/**
+ * "Haven ••", "Fame ••+", "Mawla 1+", "more than one dot: Haven ••", "Mobile", "Dominate",
+ * "Animalism •••+, Storyteller's consent": a Background, Merit or Discipline at a rating (1 when
+ * none is printed). services/v5_chargen.py requirement() reads the same strings.
+ */
+const DOT_REQUIREMENT = /^(more than one dot:\s*)?([A-Za-z][\w' -]*?)(?:\s+(•+)\+?|\s+([1-5])\+)?\s*(?:,.*)?$/;
 
-/** { name, dots, onlyAbove1 } for a requirement the forge can check, else null (shown as a hint only). */
+/**
+ * { name, dots, onlyAbove1, kind: 'discipline' | 'advantage' } for a requirement the forge can
+ * check: it names a Discipline or a catalog Background/Merit. Anything else ("Autark only",
+ * "Gangrel, Ministry, or Tzimisce") is a hint for the Storyteller: null.
+ */
 export function dotRequirement(entry) {
   const m = String(entry?.requires || '').trim().match(DOT_REQUIREMENT);
-  return m ? { name: m[2], dots: m[3].length, onlyAbove1: Boolean(m[1]) } : null;
+  if (!m) return null;
+  const name = m[2].trim();
+  const dots = m[3] ? m[3].length : m[4] ? Number(m[4]) : 1;
+  const onlyAbove1 = Boolean(m[1]);
+  const disc = disciplineNames().find((d) => d.toLowerCase() === name.toLowerCase());
+  if (disc) return { name: disc, dots, onlyAbove1, kind: 'discipline' };
+  const want = name.toLowerCase();
+  const target = advantageEntries().find(
+    (a) => a.kind !== 'flaw' && [a.name, ...(a.aliases || [])].some((n) => String(n).toLowerCase() === want)
+  );
+  // a printed rating ("Name ••", "Name 1+") is a Background at that rating, catalog entry or not
+  if (target || m[3] || m[4]) return { name: target ? target.name : name, dots, onlyAbove1, kind: 'advantage' };
+  return null;
 }
 
 /**
@@ -890,6 +965,8 @@ export function validateV5AdvantageRows(sheet) {
     if (r.kind === 'loresheet') {
       if (!(r.levels || []).length) return `Pick at least one level of ${e.name}.`;
       if (!loresheetAllowed(e, s)) return `${s.clan} can't take ${e.name} at creation.`;
+      const closed = (e.levels || []).find((lv) => (r.levels || []).includes(lv.dots) && !loresheetLevelAllowed(lv, s));
+      if (closed) return `${s.clan} can't take ${e.name} level ${closed.dots} at creation.`;
       if (counts[e.id] > 1) return `${e.name} can be taken only once.`;
       continue;
     }
@@ -903,8 +980,9 @@ export function validateV5AdvantageRows(sheet) {
       return `${e.name} can be taken at most ${e.max_instances} times.`;
     }
     const req = dotRequirement(e);
-    if (req && (!req.onlyAbove1 || int(r.dots) > 1) && backgroundDots(req.name) < req.dots) {
-      return `${e.name} needs ${req.name} at ${req.dots} dots or more.`;
+    const have = (q) => (q.kind === 'discipline' ? finalDisciplines(s).find((d) => d.name === q.name)?.level || 0 : backgroundDots(q.name));
+    if (req && (!req.onlyAbove1 || int(r.dots) > 1) && have(req) < req.dots) {
+      return req.dots > 1 ? `${e.name} needs ${req.name} at ${req.dots} dots or more.` : `${e.name} needs ${req.name} on the sheet.`;
     }
     // Archaic and Living in the Past (core p. 180); the forge's oldest age is ancilla
     if (/^ancilla or older$/i.test(String(e.requires || '').trim()) && s.age !== 'ancilla') {
@@ -1087,7 +1165,7 @@ export function validateV5Sheet(sheet, allDisciplines = disciplineNames(), setti
   add(V5_SECTION_IDS.skills, validateV5Specialties(s.specialties, s.skills));
   add(V5_SECTION_IDS.skills, duplicateSpecialtyError(creationSkills(s).specialties));
   add(V5_SECTION_IDS.disciplines, validateV5Disciplines(s.disciplines, s.clan, allDisciplines));
-  add(V5_SECTION_IDS.disciplines, validateV5Powers(s));
+  add(V5_SECTION_IDS.disciplines, validateV5Powers(s) || validateV5Rituals(s));
 
   // Predator type (thin-bloods may skip it)
   const p = predatorInfo(s.predatorType);

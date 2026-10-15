@@ -13,13 +13,18 @@
  *             (group: an option that stands for any entry of that group, e.g. "any Mythic Flaw")
  *   power     { id, name, level, amalgam: { discipline, level } | null,
  *               prerequisite: [[name]] | null (every group needed, any name of a group will do),
- *               dice_pool, rouse_cost, desc, book, page }
- *   ritual    { id, name, level, kind: 'ritual' | 'ceremony', prerequisite: [[name]] | null, desc, book, page }
+ *               clans_only: [name] | null, repeatable, at_first_dot (Koldunic Sorcery: Tzimisce only,
+ *               taken with the first Blood Sorcery dot, again per element), dice_pool, rouse_cost, desc, book, page }
+ *   ritual    { id, name, level, kind: 'ritual' | 'ceremony', prerequisite: [[name]] | null, koldunic, desc, book, page }
+ *   formula   { id, name, level, prerequisite: [[name]] | null (a power or another formula), desc, book, page }
+ *             (data only: the forge offers no formulae at creation or for XP)
  *   advantage { id, name, kind: 'background' | 'merit' | 'flaw', group, dots: { min, max } | { allowed } | null,
  *               levels: [{ dots, name }], thin_blood, caitiff, ghoul_only, coterie, clans_only: [name] | null,
  *               cannot_buy_for: [name], repeatable, max_instances, requires, excludes: [id], aliases, desc, book, page }
- *   loresheet { id, name, restriction, clans_only: [name] | null, disciplines_only: [name] | null,
- *               thin_blood_only, levels: [{ dots, name, desc }], aliases, desc, book, page }
+ *   loresheet { id, name, restriction, clans_only: [name] | null, clans_excluded: [name] | null,
+ *               disciplines_only: [name] | null, thin_blood_only,
+ *               levels: [{ dots, name (null: not in our sources, the Anarch sheets), restriction,
+ *                          clans_only: [name] | null, desc }], source, aliases, desc, book, page }
  * Clans also carry caitiff / thin_blood and `creation` ({ flaws: [{ id, name, dots }],
  * no_positive_status }, the Caitiff rules); without the catalog advantages and loresheets are empty
  * and the forge falls back to free text. Every catalog entry also carries `also_in`: [book_id], the
@@ -93,6 +98,7 @@ function fromRulesJson() {
       page: null,
     })),
     rituals: [],
+    formulae: [],
     advantages: [],
     loresheets: [],
     books: [],
@@ -135,12 +141,21 @@ function fromCatalog(cat) {
       };
     }),
   });
+  const formulaName = Object.fromEntries((cat.formulae || []).map((x) => [x.id, x.name]));
   const pname = (x) => {
     const id = typeof x === 'string' ? x : x?.power_id;
     return powerName[id] || nameFromId(id).name;
   };
-  // {power_id} | {any_of: [...]} | {all_of: [{power_id} | {any_of}]} → [[name]]: all groups, any name in a group.
-  const group = (p) => (p.power_id ? [pname(p)] : Array.isArray(p.any_of) ? p.any_of.map(pname) : null);
+  // {power_id} | {formula_id} | {any_of: [...]} | {all_of: [{power_id} | {any_of}]} → [[name]]: all groups,
+  // any name in a group. A formula may need another formula (the Ashfinders' Concoct Ashe, Cults p. 45).
+  const group = (p) =>
+    p.power_id
+      ? [pname(p)]
+      : p.formula_id
+        ? [formulaName[p.formula_id] || nameFromId(p.formula_id).name]
+        : Array.isArray(p.any_of)
+          ? p.any_of.map(pname)
+          : null;
   const prereq = (p) => {
     if (!p) return null;
     if (Array.isArray(p.all_of)) {
@@ -157,6 +172,7 @@ function fromCatalog(cat) {
     kind,
     discipline: discName[r.discipline] || null,
     prerequisite: prereq(r.prerequisite),
+    koldunic: Boolean(r.koldunic),
     desc: pickDesc(r),
     book: r.book,
     also_in: alsoIn(r),
@@ -199,6 +215,9 @@ function fromCatalog(cat) {
         level: p.level,
         amalgam: p.amalgam ? { discipline: discName[p.amalgam.discipline] || nameFromId(p.amalgam.discipline).name, level: p.amalgam.level } : null,
         prerequisite: prereq(p.prerequisite),
+        clans_only: clanNamesOf(p.clans_only),
+        repeatable: Boolean(p.repeatable),
+        at_first_dot: Boolean(p.at_first_dot),
         dice_pool: p.dice_pool || null,
         rouse_cost: p.rouse_cost ?? null,
         desc: pickDesc(p),
@@ -230,6 +249,16 @@ function fromCatalog(cat) {
       page: p.page,
     })),
     rituals: [...(cat.rituals || []).map(ritualOf('ritual')), ...(cat.ceremonies || []).map(ritualOf('ceremony'))],
+    formulae: (cat.formulae || []).map((x) => ({
+      id: x.id,
+      name: x.name,
+      level: x.level,
+      prerequisite: prereq(x.prerequisite),
+      desc: pickDesc(x),
+      book: x.book,
+      also_in: alsoIn(x),
+      page: x.page,
+    })),
     advantages: (cat.advantages || []).map((a) => ({
       id: a.id,
       name: a.name,
@@ -258,11 +287,19 @@ function fromCatalog(cat) {
       name: l.name,
       restriction: l.restriction || null,
       clans_only: clanNamesOf(l.clans_only),
+      clans_excluded: clanNamesOf(l.clans_excluded),
       disciplines_only: Array.isArray(l.disciplines_only) && l.disciplines_only.length
         ? l.disciplines_only.map((d) => discName[d] || nameFromId(d).name)
         : null,
       thin_blood_only: Boolean(l.thin_blood_only),
-      levels: (l.levels || []).map((x) => ({ dots: x.dots, name: x.name, desc: pickDesc(x) })),
+      levels: (l.levels || []).map((x) => ({
+        dots: x.dots,
+        name: x.name ?? null,
+        restriction: x.restriction || null,
+        clans_only: clanNamesOf(x.clans_only),
+        desc: pickDesc(x),
+      })),
+      source: l.source || 'pdf',
       aliases: l.aliases || [],
       desc: pickDesc(l),
       book: l.book,
@@ -307,6 +344,33 @@ export function powersOf(discipline) {
 /** Rituals ('ritual') or Oblivion ceremonies ('ceremony') of a level or lower. */
 export function ritualsOf(kind, maxLevel = 5) {
   return current.rituals.filter((r) => r.kind === kind && r.level <= maxLevel);
+}
+
+/** Thin-blood alchemy formulae (data only; empty without the catalog). */
+export const formulaEntries = () => current.formulae || [];
+
+/**
+ * Lower-cased names that more than one of these entries carries (two "Annabelle" loresheets, two
+ * "Influencer" Merits): a dropdown shows the book next to them.
+ */
+export function sharedNames(entries) {
+  const seen = new Map();
+  (entries || []).forEach((e) => {
+    const k = String(e?.name || '').trim().toLowerCase();
+    if (k) seen.set(k, (seen.get(k) || 0) + 1);
+  });
+  return new Set([...seen].filter(([, n]) => n > 1).map(([k]) => k));
+}
+
+/** "Annabelle" or, when `shared` holds the name, "Annabelle · L.A. by Night Loresheets". */
+export function optionName(entry, shared) {
+  const name = entry?.name || '';
+  return shared && shared.has(name.trim().toLowerCase()) && entry.book ? `${name} · ${bookTitle(entry.book)}` : name;
+}
+
+/** A loresheet level's name, or "Level N" when our sources don't give it (the Anarch sheets). */
+export function levelName(level) {
+  return level?.name || `Level ${level?.dots ?? '?'}`;
 }
 
 /** Catalog Merits, Backgrounds and Flaws (empty without the catalog). */

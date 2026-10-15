@@ -716,6 +716,19 @@ def test_reference_advantages_and_loresheets():
     assert by_name["Sacrifice the Children"]["desc"] == "Level 3 benefit." and by_name["Sacrifice the Children"]["ref"] == ""
 
 
+def test_reference_loresheet_levels_without_names():
+    """An online-only sheet (the Anarch ones) has no English level names: the level reads "Level N"."""
+    catalog = copy.deepcopy(ADV_CATALOG)
+    catalog["loresheets"].append({"id": "loresheet:salvador-garcia", "name": "Salvador Garcia", "book": "v5-anarch",
+                                  "page": 190, "levels": [{"dots": n, "name": None} for n in range(1, 6)]})
+    ch = copy.deepcopy(V5_CHAR)
+    ch["wod_meta"].update(advantages=[{"id": "loresheet:salvador-garcia", "name": "Salvador Garcia", "dots": 2,
+                                       "kind": "loresheet", "levels": [2]}], flaws=[])
+    entries = [(e["prefix"], e["name"], e["level"]) for e in _entries(v5_reference(ch, catalog))]
+    assert ("Salvador Garcia", "Level 2", 2) in entries
+    assert build_sheet_pdf(ch, catalog=catalog).startswith(b"%PDF-")
+
+
 def test_reference_advantages_of_older_and_caitiff_sheets():
     ch = copy.deepcopy(V5_CHAR)
     ch["wod_meta"].update(clan="Caitiff", predator_type="", disciplines=[], rituals=[],

@@ -109,14 +109,15 @@ PROBLEM_CODES = (
     "skill_dist", "specialty_count", "specialty_skill", "specialty_missing", "specialty_duplicate",
     "disc_thin_blood", "disc_pick", "disc_clan",
     "power_unknown", "power_level", "power_amalgam", "power_prereq", "power_duplicate", "power_count",
+    "power_clan", "power_first_dot",
     "predator_missing", "predator_forbidden", "predator_specialty", "predator_discipline",
     "predator_grant", "predator_bp", "predator_ancilla",
-    "adv_over", "flaw_under", "flaw_over", "adv_dots_range", "adv_unknown", "adv_restricted",
+    "adv_over", "flaw_under", "flaw_over", "adv_dots_range", "adv_unknown", "adv_restricted", "adv_requires",
     "loresheet_restricted", "loresheet_levels", "custom_row", "caitiff_status",
     "thin_blood_merits", "thin_blood_only",
     "conviction_count", "conviction_pairs", "derived_value",
     "xp_none", "xp_total", "xp_log", "xp_price", "xp_over", "xp_max_dots", "name_length",
-    "ritual_level", "ritual_blood_sorcery", "ritual_start", "ceremony_start", "ritual_count",
+    "ritual_level", "ritual_blood_sorcery", "ritual_start", "ceremony_start", "ritual_count", "ritual_prereq",
     "clan_not_allowed", "predator_not_allowed", "age_not_allowed", "fledgling_not_allowed",
     "book_not_allowed",
 )
@@ -302,6 +303,11 @@ class _Catalog:
                     "level": _int(pw.get("level")),
                     "amalgam": (disc(am.get("discipline")), _int(am.get("level"))) if am else None,
                     "prerequisite": prereq(pw.get("prerequisite")),
+                    # Koldunic Sorcery (Blood Sigils p. 61): Tzimisce only, taken with the first
+                    # Blood Sorcery dot, and again for each further element
+                    "clans_only": [clan(c) for c in _strs(pw.get("clans_only"))],
+                    "repeatable": pw.get("repeatable") is True,
+                    "at_first_dot": pw.get("at_first_dot") is True,
                     **_source(pw),
                 })
             index(self.disciplines, [d.get("name"), *_strs(d.get("aliases"))],
@@ -755,16 +761,21 @@ def _check_powers(p: _Problems, sh: _Sheet, cat: _Catalog) -> None:
         if len(chosen) > level:
             p.add("power_count", discipline=name, have=len(chosen), max=level)
         taken = set()
-        for pw_name in chosen:
+        for i, pw_name in enumerate(chosen):
             pw = next((x for x in entry["powers"] if _norm(pw_name) in x["keys"]), None)
             key = pw["id"] if pw else _norm(pw_name)
-            if key in taken:
+            if key in taken and not (pw and pw["repeatable"]):
                 p.add("power_duplicate", discipline=name, power=pw_name)
                 continue
+            first_time = key not in taken
             taken.add(key)
             if not pw:
                 p.add("power_unknown", discipline=name, power=pw_name)
                 continue
+            if pw["clans_only"] and _norm(sh.clan_name) not in {_norm(c) for c in pw["clans_only"]}:
+                p.add("power_clan", power=pw["name"], clans=", ".join(pw["clans_only"]))
+            if pw["at_first_dot"] and first_time and i != 0:
+                p.add("power_first_dot", power=pw["name"], discipline=name)
             if pw["level"] > level:
                 p.add("power_level", discipline=name, power=pw["name"], level=pw["level"], rating=level)
             if pw["amalgam"] and sh.level.get(_norm(pw["amalgam"][0]), 0) < pw["amalgam"][1]:
@@ -819,6 +830,15 @@ def _check_advantages(p: _Problems, sh: _Sheet, cat: _Catalog, s: Dict[str, Any]
     if cap is not None and flaw_dots > cap:
         p.add("flaw_over", max=cap, have=flaw_dots)
     _check_rows(p, cat, sh.clan, own_adv, own_flaws, sh.level, s)
+    # A Merit's printed prerequisite the check can verify (Influencer: Fame ••+, Armored: Mobile,
+    # Archaic: ancilla or older); other requirements are for the Storyteller.
+    if cat.advantages:
+        for row, flaw in [(r, False) for r in own_adv] + [(r, True) for r in own_flaws]:
+            if row.get("custom") is True or row.get("kind") == "loresheet" or _sid(row.get("id")).startswith("loresheet:"):
+                continue
+            entry = cat.advantage(row, flaw, sh.clan)
+            if entry is not None and requirement_met(entry, _int(row.get("dots")), sh.advantages, sh.level, sh.age, cat) is False:
+                p.add("adv_requires", name=_str(row.get("name")), requires=_str(entry.get("requires")))
 
     tb_merits = _names(sh.meta.get("thin_blood_merits"))
     tb_flaws = _names(sh.meta.get("thin_blood_flaws"))
@@ -832,7 +852,8 @@ def _check_advantages(p: _Problems, sh: _Sheet, cat: _Catalog, s: Dict[str, Any]
 
 def _check_rituals(p: _Problems, sh: _Sheet, cat: _Catalog) -> None:
     """At creation one free Level 1 ritual (Blood Sorcery 1+) and one free Level 1 Oblivion
-    ceremony (its prerequisite power taken); the XP ones match the XP log; at most RITUALS_MAX."""
+    ceremony (its prerequisite power taken); every ritual's printed prerequisite power taken
+    (ritual_prereq); the XP ones match the XP log; at most RITUALS_MAX."""
     start = [r for r in sh.rituals if r.get("source") != "xp"]
     start_rituals = [r for r in start if (r.get("kind") or "ritual") != "ceremony"]
     start_ceremonies = [r for r in start if r.get("kind") == "ceremony"]
@@ -859,6 +880,16 @@ def _check_rituals(p: _Problems, sh: _Sheet, cat: _Catalog) -> None:
             or (known and any(not any(_norm(x) in taken for x in g) for g in known["prerequisite"]))
         ):
             p.add("ceremony_start")
+    # A ritual's printed prerequisite power (Blood Sigils' Koldunic rituals need Koldunic Sorcery;
+    # Tattered Facade's need Shape the Sanguine Sacrament): the starting ritual and the XP ones.
+    pool = set().union(*(_powers_taken(sh, cat, n) for n, _, _ in sh.discs))
+    for r in sh.rituals:
+        if r.get("kind") == "ceremony":
+            continue  # the starting ceremony's prerequisite is ceremony_start
+        known = cat.rituals.get(_norm(r.get("name")))
+        missing = next((g for g in (known or {}).get("prerequisite", []) if not any(_norm(x) in pool for x in g)), None)
+        if missing:
+            p.add("ritual_prereq", ritual=known["name"], needs=" or ".join(missing))
     if len(sh.rituals) > RITUALS_MAX:
         p.add("ritual_count", max=RITUALS_MAX, have=len(sh.rituals))
     bought = Counter((_norm(r.get("name")), _int(r.get("level"))) for r in sh.rituals if r.get("source") == "xp")
@@ -1076,6 +1107,15 @@ def _check_rows(p: _Problems, cat: _Catalog, clan: Optional[dict], own_adv: List
             continue
         if ls is not None and (
             (_strs(ls.get("clans_only")) and not in_clans(_strs(ls.get("clans_only"))))
+            # "Unavailable to Nosferatu characters" (Child of the Angel Michael)
+            or (_strs(ls.get("clans_excluded")) and in_clans(_strs(ls.get("clans_excluded"))))
+            # a level of its own restricted (Tegyrius the Vizier ••••, Hesha Ruhadze •••• and •••••):
+            # only the levels taken count, the rest of the sheet is open
+            or any(
+                _strs(lv.get("clans_only")) and not in_clans(_strs(lv.get("clans_only")))
+                for lv in _dicts(ls.get("levels"))
+                if lv.get("dots") in [x for x in _list(row.get("levels")) if isinstance(x, int)]
+            )
             or (ls.get("thin_blood_only") is True and not clan["thin_blood"])
             or (_strs(ls.get("disciplines_only")) and not any(
                 final_level.get(_norm(cat.disc_names.get(d) or _name_from_id(d)), 0) > 0
@@ -1102,6 +1142,72 @@ def _check_rows(p: _Problems, cat: _Catalog, clan: Optional[dict], own_adv: List
         )
         if (clan["caitiff"] or clan["no_positive_status"]) and is_status and dots > 0:
             p.add("caitiff_status", clan=clan["name"])
+
+
+# "Haven ••", "Fame ••+", "Mawla 1+", "more than one dot: Haven ••", "Animalism •••+, Storyteller's
+# consent", "Mobile", "Dominate": a Background, Merit or Discipline at a rating (1 when none is printed).
+_REQUIREMENT = re.compile(r"^(more than one dot:\s*)?([A-Za-z][\w' -]*?)(?:\s+(•+)\+?|\s+([1-5])\+)?\s*(?:,.*)?$")
+
+
+def requirement(entry: dict, cat: "_Catalog") -> Optional[Dict[str, Any]]:
+    """What a catalog entry's `requires` asks for, when the check can verify it:
+    {kind: 'age'} for "ancilla or older"; {kind: 'discipline' | 'advantage', name, dots, above_1,
+    entry} when it names a Discipline or a catalog Background/Merit. Anything else ("Autark only",
+    "Gangrel, Ministry, or Tzimisce") is for the Storyteller: None."""
+    req = _str(entry.get("requires"))
+    if not req:
+        return None
+    if req.lower() == "ancilla or older":
+        return {"kind": "age"}
+    m = _REQUIREMENT.match(req)
+    if not m:
+        return None
+    name = m.group(2).strip()
+    dots = len(m.group(3)) if m.group(3) else int(m.group(4)) if m.group(4) else 1
+    above_1 = bool(m.group(1))
+    if cat.discipline(name):
+        return {"kind": "discipline", "name": cat.discipline(name)["name"], "dots": dots, "above_1": above_1}
+    target = next((a for a in cat.advantages if a.get("kind") in ("background", "merit") and _norm(name) in _keys_of(a)), None)
+    if target is not None:
+        return {"kind": "advantage", "name": _str(target.get("name")), "dots": dots, "above_1": above_1, "entry": target}
+    if m.group(3) or m.group(4):  # a printed rating ("Name ••", "Name 1+"): a Background, catalog entry or not
+        return {"kind": "advantage", "name": name, "dots": dots, "above_1": above_1, "entry": None}
+    return None
+
+
+def requirement_met(entry: dict, dots: int, rows: List[dict], levels: Dict[str, int], age: Any,
+                    cat: "_Catalog") -> Optional[bool]:
+    """Does the sheet meet the entry's `requires`? rows: the sheet's Advantage rows (the predator
+    type's included); levels: final Discipline ratings by normalised name. A Background's rating is
+    the predator type's rows of it plus the highest own row (two havens are not added up), as in the
+    forge's validateV5AdvantageRows. None when the requirement can't be verified (or there is none)."""
+    req = requirement(entry, cat)
+    if req is None:
+        return None
+    if req["kind"] == "age":
+        return age == "ancilla"
+    if req["above_1"] and dots <= 1:
+        return True
+    if req["kind"] == "discipline":
+        return levels.get(_norm(req["name"]), 0) >= req["dots"]
+    target = req["entry"] or {"name": req["name"]}
+    tid, keys = _sid(target.get("id")), _keys_of(target) | {_norm(req["name"])}
+
+    def same(r: dict) -> bool:
+        return (bool(tid) and _sid(r.get("id")) == tid) or bool({_norm(n) for n in _name_variants(r.get("name"))} & keys)
+
+    hits = [r for r in rows if r.get("kind") != "loresheet" and same(r)]
+    pred = sum(_int(r.get("dots")) for r in hits if r.get("kind") == "predator")
+    own = max([_int(r.get("dots")) for r in hits if r.get("kind") != "predator"] or [0])
+    return pred + own >= req["dots"]
+
+
+def requirement_on_sheet(meta: Any, rows: Any, entry: dict, dots: int, catalog: Any) -> Optional[bool]:
+    """requirement_met for a sheet's wod_meta (its Disciplines and age) with these Advantage rows
+    (services/saved_points.py: the rows as a spend would leave them). None: nothing to verify."""
+    cat = _Catalog(catalog)
+    sh = _Sheet({"wod_meta": meta if isinstance(meta, dict) else {}}, cat)
+    return requirement_met(entry, dots, _dicts(rows), sh.level, sh.age, cat)
 
 
 def check_advantage_rows(meta: Any, rows: Any, catalog: Any, settings: Any = None) -> List[Dict[str, Any]]:

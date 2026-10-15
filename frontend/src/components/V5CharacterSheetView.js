@@ -158,7 +158,10 @@ function AdvantageRow({ a, special }) {
           {levels.map((l, j) => (
             <React.Fragment key={l.dots}>
               {j ? ' · ' : ''}
-              <CatalogItem name={`${'●'.repeat(l.dots)} ${l.name}`} entry={l.desc ? { desc: l.desc } : null} />
+              <CatalogItem
+                name={`${'●'.repeat(l.dots)} ${l.name || t('sheet:v5.loreLevelUnnamed', 'Level {{n}}', { n: l.dots })}`}
+                entry={l.desc ? { desc: l.desc } : null}
+              />
             </React.Fragment>
           ))}
         </div>

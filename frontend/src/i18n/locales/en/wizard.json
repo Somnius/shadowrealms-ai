@@ -347,7 +347,10 @@
     "savedDotsLost_one": "This chronicle saves at most {{cap}}, so {{count}} unspent dot is lost.",
     "savedDotsLost_other": "This chronicle saves at most {{cap}}, so {{count}} unspent dots are lost.",
     "savedSpecialty": "The free specialty of your choice is unused: it will be saved for later (spend it from your sheet, the Storyteller approves).",
-    "savedSpecialtyOff": "The free specialty of your choice is unused, and this chronicle doesn't save it for later."
+    "savedSpecialtyOff": "The free specialty of your choice is unused, and this chronicle doesn't save it for later.",
+    "loreNamesUnknown": "(names not in our sources)",
+    "loreLevelUnnamed": "Level {{n}}",
+    "loreLevelOnly": "({{restriction}})"
   },
   "guided": {
     "bannerLabel": "Suggested by the guide",
@@ -449,6 +452,10 @@
     "fledgling_not_allowed": "The Storyteller doesn't offer the Humanity 8 fledgling start in this chronicle.",
     "book_not_allowed": "{{name}} comes from a book this chronicle doesn't use ({{book}}).",
     "unknown": "The sheet breaks a creation rule ({{code}}).",
-    "refused": "The server refused the sheet:"
+    "refused": "The server refused the sheet:",
+    "power_clan": "{{power}} is only for {{clans}}.",
+    "power_first_dot": "{{power}} is taken with the first {{discipline}} dot.",
+    "adv_requires": "{{name}} needs {{requires}}.",
+    "ritual_prereq": "The {{ritual}} ritual needs the {{needs}} power."
   }
 }

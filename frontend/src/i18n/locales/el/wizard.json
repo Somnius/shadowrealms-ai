@@ -347,7 +347,10 @@
     "savedDotsLost_one": "Αυτό το χρονικό κρατά το πολύ {{cap}}, οπότε {{count}} αξόδευτη τελεία χάνεται.",
     "savedDotsLost_other": "Αυτό το χρονικό κρατά το πολύ {{cap}}, οπότε {{count}} αξόδευτες τελείες χάνονται.",
     "savedSpecialty": "Η δωρεάν specialty της επιλογής σου είναι αχρησιμοποίητη: θα κρατηθεί για αργότερα (ξόδεψέ τη από το φύλλο σου, εγκρίνει ο Storyteller).",
-    "savedSpecialtyOff": "Η δωρεάν specialty της επιλογής σου είναι αχρησιμοποίητη, και αυτό το χρονικό δεν την κρατά για αργότερα."
+    "savedSpecialtyOff": "Η δωρεάν specialty της επιλογής σου είναι αχρησιμοποίητη, και αυτό το χρονικό δεν την κρατά για αργότερα.",
+    "loreNamesUnknown": "(τα ονόματα δεν υπάρχουν στις πηγές μας)",
+    "loreLevelUnnamed": "Επίπεδο {{n}}",
+    "loreLevelOnly": "({{restriction}})"
   },
   "guided": {
     "bannerLabel": "Πρόταση του οδηγού",
@@ -449,6 +452,10 @@
     "fledgling_not_allowed": "Ο Storyteller δεν δίνει σε αυτό το χρονικό την επιλογή να ξεκινά ο fledgling με Humanity 8.",
     "book_not_allowed": "Το {{name}} είναι από βιβλίο που δεν χρησιμοποιεί αυτό το χρονικό ({{book}}).",
     "unknown": "Το φύλλο παραβαίνει έναν κανόνα δημιουργίας ({{code}}).",
-    "refused": "Ο server δεν δέχτηκε το φύλλο:"
+    "refused": "Ο server δεν δέχτηκε το φύλλο:",
+    "power_clan": "Το {{power}} είναι μόνο για {{clans}}.",
+    "power_first_dot": "Το {{power}} παίρνεται με την πρώτη τελεία {{discipline}}.",
+    "adv_requires": "Το {{name}} απαιτεί {{requires}}.",
+    "ritual_prereq": "Το ritual {{ritual}} θέλει τη δύναμη {{needs}}."
   }
 }

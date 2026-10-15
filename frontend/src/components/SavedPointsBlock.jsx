@@ -3,7 +3,7 @@ import { Badge, Button, Input, Select } from '../design';
 import ResponsiveSheetBlock from './characterCreation/ResponsiveSheetBlock';
 import { apiFetch, errorText, getCurrentToken } from '../app/http';
 import { V5_SKILL_KEYS, V5_SKILL_LABELS } from '../characterSheet/v5/constants';
-import { advantageEntries, findLoresheet, loresheetEntries } from '../characterSheet/v5/rulesData';
+import { advantageEntries, findLoresheet, loresheetEntries, optionName, sharedNames } from '../characterSheet/v5/rulesData';
 import { advantageOptions } from '../characterSheet/v5/validation';
 import { bookAllowed } from '../characterSheet/v5/creationSettings';
 import { useV5Catalog } from '../rules/v5Catalog';
@@ -97,16 +97,19 @@ function CatalogPicker({ id, label, value, onChange, wm, own, settings }) {
     r.kind === 'loresheet'
       ? t('sheet:spend.ownLore', '{{name}} (levels {{levels}})', { name: r.name, levels: (r.levels || []).join(', ') || '–' })
       : `${r.name} (${r.dots})`;
-  const group = (title, entries, prefix) =>
-    entries.length ? (
+  const group = (title, entries, prefix) => {
+    // two entries of one name (two Annabelle loresheets) show their book
+    const shared = sharedNames(entries);
+    return entries.length ? (
       <optgroup label={title}>
         {entries.map((e) => (
           <option key={e.id} value={`${prefix}:${e.id}`}>
-            {e.name}
+            {optionName(e, shared)}
           </option>
         ))}
       </optgroup>
     ) : null;
+  };
   return (
     <Select id={id} label={label} value={value} placeholder={t('sheet:spend.pick', 'Choose…')} onChange={onChange} fieldClassName="sr-spend__grow" lang="en">
       {own.length ? (
@@ -191,7 +194,10 @@ function SpendForm({ character, info, onSent, onCancel }) {
       onChange={(e) => setItem(i, { level: e.target.value })}
       options={LEVELS.map((n) => {
         const lv = (p.entry?.levels || []).find((l) => l.dots === n);
-        return { value: String(n), label: lv ? `${'●'.repeat(n)} ${lv.name}` : '●'.repeat(n), disabled: p.taken.includes(n) };
+        const name = lv ? lv.name || t('sheet:v5.loreLevelUnnamed', 'Level {{n}}', { n }) : '';
+        // a level with its own restriction (Tegyrius ••••: Banu Haqim only) isn't offered to others
+        const closed = Boolean(lv?.clans_only && !lv.clans_only.includes(wm.clan));
+        return { value: String(n), label: lv ? `${'●'.repeat(n)} ${name}` : '●'.repeat(n), disabled: p.taken.includes(n) || closed };
       })}
     />
   );
