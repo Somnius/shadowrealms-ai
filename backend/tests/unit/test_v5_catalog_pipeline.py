@@ -533,3 +533,118 @@ def test_loresheet_dots_from_glyphs_and_geometry():
         LX(f"{'•' * n} Ray {n}: invented", 70.0) for n in (1, 2, 3, 4)]
     rec, report = loresheets.parse_page(glyphs)
     assert [lv["dots"] for lv in rec["levels"]] == [1, 2, 3, 4] and report
+
+
+# --------------------------------------------------------------------------- Tier-2 loresheets (part F)
+
+def B(t, x, y, h=12.0):
+    return {"t": t, "x": x, "y": y, "h": h, "f": 0}
+
+
+def _body(xs, y0=420.0, n=6):
+    return [B("invented body text runs on", x, y0 + 13 * i) for x in xs for i in range(n)]
+
+
+def test_tier2_glyph_page_dots_in_their_own_box_and_wrapped_names():
+    page = [B("T H E  MOON  COU RT", 120, 70, 40.0), B("(TOR E A DOR CH A R ACT E R S ON LY )", 150, 115, 14.0),
+            B("LORE", 290, 390, 10.7)] + _body((80, 240, 400)) + [
+        B("•", 60, 430), B("First Light: invented", 80, 430),
+        B("•• Second Light: invented", 80, 500),
+        B("•••", 220, 430), B("A Light That", 240, 430), B("Wraps: invented", 240, 443),
+        B("••••", 380, 430), B("Ray of the", 400, 430), B("Fourth: invented", 400, 441),
+        B("••••• Who Goes There? invented", 400, 520)]
+    rec, report = loresheets.parse_boxes(page, "v5-test", 9, glyphs=True)
+    assert report == []
+    assert [(lv["dots"], lv["name"]) for lv in rec["levels"]] == [
+        (1, "First Light"), (2, "Second Light"), (3, "A Light That Wraps"), (4, "Ray of the Fourth"),
+        (5, "Who Goes There?")]
+    assert loresheets.despace(rec["title_raw"]) == "THEMOONCOURT"
+    assert loresheets.despace(rec["restriction_raw"]) == "TOREADORCHARACTERSONLY"
+
+
+def test_tier2_no_glyph_page_reads_indents_in_order():
+    # the 4-dot indent is wider than 4 x 8 pt in some books: five growing indents are dots 1-5
+    page = [B("the sun court", 120, 70, 40.0), B("Lore", 290, 390, 10.7)] + _body((71, 233, 396)) + [
+        B("Dawn: invented", 79, 412), B("Noon: invented", 87, 530), B("Dusk: invented", 258, 412),
+        B("Night: invented", 269, 596), B("Last Light: invented", 437, 503)]
+    rec, report = loresheets.parse_boxes(page, "v5-test", 3, glyphs=False)
+    assert report == [] and [lv["name"] for lv in rec["levels"]] == ["Dawn", "Noon", "Dusk", "Night", "Last Light"]
+    rec, report = loresheets.parse_boxes(page[:-1], "v5-test", 3, glyphs=False)
+    assert [lv["dots"] for lv in rec["levels"]] == [1, 2, 3] and report  # never guessed
+
+
+def test_tier2_continuation_pages_and_one_letter_titles():
+    first = [B("Q", 297, 72, 39.0), B("Q", 314, 143, 88.0), B("LORE", 290, 390, 10.7)] + _body((80,)) + [
+        B("• One: a", 80, 430), B("•• Two: b", 80, 460)]
+    rest = _body((80,), y0=100) + [B("••• Three: c", 80, 130), B("•••• Four: d", 80, 160), B("••••• Five: e", 80, 190)]
+    recs, report = loresheets.parse_book([(5, first), (6, rest)], "v5-test", glyphs=True)
+    assert report == [] and len(recs) == 1
+    assert recs[0]["pages"] == [5, 6] and recs[0]["title_raw"] == "Q"
+    assert [lv["name"] for lv in recs[0]["levels"]] == ["One", "Two", "Three", "Four", "Five"]
+
+
+@pytest.mark.parametrize("text,expected", [
+    ("ventrue characters only", {"clans_only": ["clan:ventrue"]}),
+    ("Bloodline, Hecata characters only", {"clans_only": ["clan:hecata"]}),
+    ("Salubri or Tremere Only", {"clans_only": ["clan:salubri", "clan:tremere"]}),
+    ("Tremere and Banu Haqim only", {"clans_only": ["clan:tremere", "clan:banu-haqim"]}),
+    ("The Ministry only", {"clans_only": ["clan:ministry"]}),
+    ("Thin-blooded characters only", {"thin_blood_only": True}),
+    ("Thin-Blood Alchemists only", {"thin_blood_only": True, "disciplines_only": ["discipline:thin-blood-alchemy"]}),
+    ("Blood Sorcery users only", {"disciplines_only": ["discipline:blood-sorcery"]}),
+    ("Unavailable to Nosferatu characters", {"clans_excluded": ["clan:nosferatu"]}),
+    ("Church of Set members", {}),
+])
+def test_structured_restriction(text, expected):
+    base = {"clans_only": None, "disciplines_only": None, "thin_blood_only": False}
+    assert loresheets.structured_restriction(text) == {**base, **expected}
+
+
+def test_level_restriction_split():
+    assert loresheets.split_level_restriction("Perception is Power (Banu Haqim characters only)") == (
+        "Perception is Power", "Banu Haqim characters only")
+    assert loresheets.split_level_restriction("Legendary Lineage (choose one)") == ("Legendary Lineage (choose one)", None)
+
+
+def test_consolidate_loresheets_tier1_keeps_and_reprints_go_to_also_in():
+    lv = [{"dots": d, "name": f"L{d}"} for d in range(1, 6)]
+    recs = [
+        {"id": "loresheet:x", "name": "X", "book": "v5-supp-b", "page": 9, "levels": lv, "clans_only": None},
+        {"id": "loresheet:x", "name": "X", "book": "v5-core", "page": 400, "levels": lv, "clans_only": None},
+        {"id": "loresheet:x", "name": "Old X", "book": "v5-supp-a", "page": 3,
+         "levels": lv[:2] + [{"dots": 3, "name": "Other"}] + lv[3:], "clans_only": None},
+        {"id": "loresheet:x", "name": "X", "book": "v5-online", "page": 5, "source": "online",
+         "levels": [{"dots": d, "name": None} for d in range(1, 6)], "clans_only": ["clan:y"]},
+    ]
+    report = []
+    out = merge.consolidate_loresheets(recs, {"v5-core": 10, "v5-supp-a": 40, "v5-supp-b": 40, "v5-online": 40},
+                                       {"v5-supp-a": 2019, "v5-supp-b": 2025, "v5-online": 2019}, report)
+    assert len(out) == 1 and (out[0]["book"], out[0]["page"]) == ("v5-core", 400)
+    assert out[0]["also_in"] == [{"book": "v5-online", "page": 5}, {"book": "v5-supp-a", "page": 3},
+                                 {"book": "v5-supp-b", "page": 9}]
+    assert out[0]["aliases"] == ["Old X"]
+    assert len(report) == 1 and "level 3 name differs" in report[0]  # null names and online facts are not conflicts
+
+
+def test_loresheets_vs_wiki():
+    wiki = """== Camarilla Loresheets ==
+{| class="mildtable"
+! Name !! Restrictions !! Description !! Source
+|-
+| '''Moon Court''' || Tremere only || invented || *Page 12
+|-
+| '''Sun Court''' || N/A || invented || *Page 14
+|}
+"""
+    rows = crosscheck.wiki_loresheet_rows(wiki)
+    assert [(r["book"], r["name"], r["page"]) for r in rows] == [("v5-camarilla", "Moon Court", 12),
+                                                                ("v5-camarilla", "Sun Court", 14)]
+    entries = [{"id": "loresheet:moon-court", "name": "Moon Court", "book": "v5-camarilla", "page": 13,
+                "clans_only": None, "levels": [], "also_in": []},
+               {"id": "loresheet:star-court", "name": "Star Court", "book": "v5-camarilla", "page": 20,
+                "clans_only": None, "levels": [], "also_in": []}]
+    out = crosscheck.loresheets_vs_wiki(entries, rows, common.slug)
+    assert any("moon-court: wiki gives v5-camarilla p.12" in x for x in out)
+    assert any("moon-court: wiki restriction 'Tremere only'" in x for x in out)
+    assert any("'Sun Court'" in x and "not in the catalog" in x for x in out)
+    assert any("star-court" in x and "not on the wiki" in x for x in out)

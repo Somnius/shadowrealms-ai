@@ -82,32 +82,80 @@ TIER1: tuple[Book, ...] = (
     ),
 )
 
-# Tier-2 books that Tier-1 catalogs cite (predator types first printed outside the Tier-1
-# books, the Cults originals of PG's reprints). Offsets from the inventory; their pages are
-# not extracted by this build (`pages` only caches Tier 1).
-TIER2_CITED: tuple[Book, ...] = (
-    Book(book_id="v5-cults-of-the-blood-gods", offset=3, dot_glyph="\u2022", tier=2),
-    Book(book_id="v5-in-memoriam", offset=2, dot_glyph="\u2022", tier=2),
-    Book(book_id="v5-let-the-streets-run-red", offset=1, dot_glyph="\u2022", tier=2),
+# Tier-2 books (supplements; Forge v2 part F). Their entries carry their own book_id, so a
+# chronicle's allowed_books switch can turn them off; books.json marks them tier 2. dot_glyph None:
+# the book draws its rating dots as graphics (no text), so ratings come from geometry or from the
+# rendered page (manual records). Offsets from the inventory, re-checked with `pages <book_id>`.
+TIER2: tuple[Book, ...] = (
+    Book(book_id="v5-camarilla", offset=1, dot_glyph=None, tier=2,
+         ranges={"loresheets": [(184, 190)]}, footer_samples=(50, 184)),
+    Book(book_id="v5-cults-of-the-blood-gods", offset=3, dot_glyph="\u2022", tier=2,
+         ranges={"loresheets": [(220, 231)]}, footer_samples=(68, 220)),
+    Book(book_id="v5-children-of-the-blood", offset=1, dot_glyph="\u2022", tier=2,
+         ranges={"loresheets": [(101, 108)]}, footer_samples=(27, 101)),
+    Book(book_id="v5-forbidden-religions", offset=1, dot_glyph="\u2022", tier=2,
+         ranges={"loresheets": [(88, 93)]}, footer_samples=(23, 88)),
+    Book(book_id="v5-blood-sigils", offset=2, dot_glyph="\u2022", tier=2,
+         ranges={"loresheets": [(177, 180)]}, footer_samples=(92, 177)),
+    Book(book_id="v5-gehenna-war", offset=2, dot_glyph=None, tier=2,
+         ranges={"loresheets": [(157, 159)]}, footer_samples=(39, 157)),
+    Book(book_id="v5-courts-of-the-damned", offset=2, dot_glyph="\u2022", tier=2,
+         ranges={"loresheets": [(218, 222)]}, footer_samples=(55, 218)),
+    Book(book_id="v5-in-memoriam", offset=2, dot_glyph="\u2022", tier=2,
+         ranges={"loresheets": [(149, 154)]}, footer_samples=(39, 149)),
+    Book(book_id="v5-succubus-club", offset=2, dot_glyph="\u2022", tier=2,
+         ranges={"loresheets": [(158, 166)]}, footer_samples=(41, 158)),
+    Book(book_id="v5-tattered-facade", offset=2, dot_glyph="\u2022", tier=2,
+         ranges={"loresheets": [(171, 174)]}, footer_samples=(88, 171)),
+    Book(book_id="v5-chicago-by-night", offset=1, dot_glyph="\u2022", tier=2,
+         ranges={"loresheets": [(262, 287)]}, footer_samples=(89, 262)),
+    Book(book_id="v5-chicago-folios", offset=1, dot_glyph="\u2022", tier=2,
+         ranges={"loresheets": [(158, 169)]}, footer_samples=(44, 158)),
+    Book(book_id="v5-nod-apocrypha", offset=2, dot_glyph="\u2022", tier=2,
+         ranges={"loresheets": [(37, 40)]}, footer_samples=(28, 37)),
+    # one-sheet-per-page handouts: printed page = PDF page (LA by Night prints 1-10; the Choice
+    # of Games file prints no page numbers, so its "page" is the PDF page)
+    Book(book_id="v5-la-by-night-loresheets", offset=0, dot_glyph=None, tier=2,
+         ranges={"loresheets": [(1, 10)]}, footer_samples=(1, 10)),
+    Book(book_id="v5-choice-of-games-loresheets", offset=0, dot_glyph=None, tier=2,
+         ranges={"loresheets": [(1, 4)]}),
+    # adventures: the PDF of Let the Streets Run Red holds the book twice; pdf 1-252 is the
+    # updated text (it fills the second copy's "XX" page references), so offset +1 reads it
+    Book(book_id="v5-fall-of-london", offset=2, dot_glyph=None, tier=2,
+         ranges={"loresheets": [(233, 238)]}, footer_samples=(65, 233)),
+    Book(book_id="v5-let-the-streets-run-red", offset=1, dot_glyph="\u2022", tier=2,
+         ranges={"loresheets": [(224, 233)]}, footer_samples=(76, 224)),
+    Book(book_id="v5-trails-of-ash-and-bone", offset=1, dot_glyph="\u2022", tier=2,
+         ranges={"loresheets": [(170, 172)]}, footer_samples=(49, 170)),
+    # the Anarch PDF on disk is a Russian translation: nothing is extracted from it; its
+    # entries are facts from the online source (source "online"), see manual/loresheets.json
+    Book(book_id="v5-anarch", offset=0, dot_glyph=None, tier=2, extractable=False),
 )
 
-BY_ID = {b.book_id: b for b in TIER1}
-ALL_CITED = {b.book_id: b for b in TIER1 + TIER2_CITED}
+TIER1_IDS = {b.book_id for b in TIER1}
+BY_ID = {b.book_id: b for b in TIER1 + TIER2}
+ALL_CITED = BY_ID
 
 
 def get(book_id: str) -> Book:
     try:
         return BY_ID[book_id]
     except KeyError:
-        raise SystemExit(f"unknown book_id {book_id!r}; Tier-1 books: {', '.join(BY_ID)}") from None
+        raise SystemExit(f"unknown book_id {book_id!r}; known: {', '.join(BY_ID)}") from None
 
 
 def load_manifest() -> dict:
-    """book_id -> manifest entry (needs pyyaml)."""
+    """book_id -> manifest entry (needs pyyaml). Files the RAG import leaves out on purpose
+    (`excluded:`) can still carry a book_id, title and precedence when the catalog cites them
+    (the Russian Anarch PDF); those come back too, marked "excluded": True."""
     import yaml
 
     data = yaml.safe_load(MANIFEST.read_text(encoding="utf-8"))
-    return {b["book_id"]: b for b in data.get("books", [])}
+    out = {b["book_id"]: b for b in data.get("books", [])}
+    for x in data.get("excluded") or []:
+        if isinstance(x, dict) and x.get("book_id"):
+            out.setdefault(x["book_id"], dict(x, excluded=True))
+    return out
 
 
 def books_root() -> Path:

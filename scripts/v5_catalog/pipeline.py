@@ -84,8 +84,11 @@ def extract() -> list[str]:
             p["core_pool_page"] = pools[p["name"]]["page"]
     adv, lore, rep = extract_advantages(manifest)
     report += ["### Advantages and loresheets"] + rep
+    lore_t2, rep = extract_loresheets_tier2(manifest)
+    report += ["### Tier-2 loresheets (supplements)"] + rep
     _dump(EXTRACTED / "advantages.pdf.json", adv)
     _dump(EXTRACTED / "loresheets.pdf.json", lore)
+    _dump(EXTRACTED / "loresheets.tier2.pdf.json", lore_t2)
     _dump(EXTRACTED / "powers.pdf.json", powers)
     _dump(EXTRACTED / "sections.pdf.json", sections)
     _dump(EXTRACTED / "clans.pdf.json", {"clans": clan_recs, "bane_variants": bane_variants})
@@ -100,7 +103,7 @@ def extract_advantages(manifest: dict) -> tuple[dict, list[dict], list[str]]:
     from .sources.pdf import PdfBook
 
     report: list[str] = []
-    pdfs = {bid: PdfBook(bid, manifest=manifest) for bid in books.BY_ID}
+    pdfs = {bid: PdfBook(bid, manifest=manifest) for bid in books.TIER1_IDS}
     precedence = _precedence(manifest)
     master, rep = adv_parser.parse_master(pdfs[MASTER_LIST[0]].lines(MASTER_LIST[1], MASTER_LIST[2]))
     report += rep
@@ -132,6 +135,24 @@ def extract_advantages(manifest: dict) -> tuple[dict, list[dict], list[str]]:
     return {"master": master, "chapter_only": only, "levels": levels}, lore, report
 
 
+def extract_loresheets_tier2(manifest: dict) -> tuple[list[dict], list[str]]:
+    """Every supplement's loresheet pages (books.TIER2 ranges) through the box parser."""
+    from .sources.pdf import PdfBook
+
+    out, report = [], []
+    for b in books.TIER2:
+        if not b.extractable or "loresheets" not in b.ranges:
+            continue
+        pb = PdfBook(b.book_id, manifest=manifest)
+        for a, z in b.ranges["loresheets"]:
+            recs, rep = lore_parser.parse_book([(p, pb.boxes(b.pdf_page(p))) for p in range(a, z + 1)],
+                                               b.book_id, b.dot_glyph is not None)
+            out += recs
+            report += rep
+    report.append(f"Tier-2 loresheets: {len(out)} sheets read from {len({r['book'] for r in out})} books.")
+    return out, report
+
+
 # --------------------------------------------------------------------------- build
 
 def _manual(name: str) -> dict:
@@ -143,9 +164,13 @@ def _precedence(manifest: dict) -> dict:
     return {bid: int(manifest[bid]["precedence"]) for bid in books.ALL_CITED if bid in manifest}
 
 
+def _years(manifest: dict) -> dict:
+    return {bid: int(manifest[bid].get("year") or 0) or None for bid in books.ALL_CITED if bid in manifest}
+
+
 def build_books(manifest: dict) -> dict:
     entries = []
-    for b in books.TIER1 + books.TIER2_CITED:
+    for b in books.TIER1 + books.TIER2:
         m = manifest[b.book_id]
         entries.append({
             "book_id": b.book_id, "title": m["title"], "precedence": int(m["precedence"]),
@@ -282,7 +307,7 @@ def build_predators(extracted: list[dict], prec: dict, report: list[str]) -> dic
         ex = by_id.get(e["id"])
         if ex:
             compare_predator(e, ex, report)
-        elif e["book"] in books.BY_ID:
+        elif e["book"] in books.TIER1_IDS:
             report.append(f"- {e['id']}: manual record has no PDF extraction to compare with")
         entries.append(e)
     missing = set(by_id) - {e["id"] for e in entries}
@@ -355,22 +380,73 @@ def build_advantages(extracted: dict, prec: dict, report: list[str]) -> dict:
     return {"catalog": "advantages", "version": 1, "entries": recs}
 
 
-def build_loresheets(extracted: list[dict], prec: dict, report: list[str]) -> dict:
-    recs = merge.apply_manual(extracted, _manual("loresheets"), report)
+def tier2_loresheets(extracted: list[dict], sheets: list[dict], report: list[str]) -> list[dict]:
+    """Supplement pages (book, page, title_raw, restriction_raw, levels) + the sheet list in
+    manual/loresheets.json "sheets" (name with its word spacing, restriction as printed, an id
+    when a reprint is named differently) -> loresheet records. The printed title and restriction
+    must equal the listed ones once spaces are removed; any difference is reported."""
+    table = {(x["book"], x["page"]): x for x in sheets}
+    used = set()
+    out = []
+    for r in extracted:
+        key = (r["book"], r["page"])
+        sh = table.get(key)
+        if sh is None:
+            report.append(f"- loresheet page {r['book']} p.{r['page']} ({r['title_raw']!r}) is not in "
+                          f"manual/loresheets.json sheets")
+            continue
+        used.add(key)
+        if lore_parser.despace(sh["name"]) not in lore_parser.despace(r["title_raw"]):
+            report.append(f"- {r['book']} p.{r['page']}: printed title {r['title_raw']!r} is not {sh['name']!r}")
+        if lore_parser.despace(sh.get("restriction")) != lore_parser.despace(r["restriction_raw"]):
+            report.append(f"- {r['book']} p.{r['page']}: printed restriction {r['restriction_raw']!r} "
+                          f"is not {sh.get('restriction')!r}")
+        levels = []
+        for lv in r["levels"]:
+            name, restr = lore_parser.split_level_restriction(lv["name"])
+            level = {"dots": lv["dots"], "name": name}
+            if restr:
+                level["restriction"] = restr
+                struct = lore_parser.structured_restriction(restr)
+                if struct["clans_only"]:
+                    level["clans_only"] = struct["clans_only"]
+            levels.append(level)
+        rec = {"id": sh.get("id") or f"loresheet:{c.slug(sh['name'])}", "name": sh["name"],
+               "book": r["book"], "page": r["page"], "restriction": sh.get("restriction"),
+               "levels": levels, "source": "pdf"}
+        rec.update(lore_parser.structured_restriction(sh.get("restriction")))
+        out.append(rec)
+    for key in sorted(set(table) - used):
+        report.append(f"- manual/loresheets.json sheets: {key[0]} p.{key[1]} matched no extracted page")
+    return out
+
+
+def build_loresheets(extracted: list[dict], extracted_t2: list[dict], prec: dict, years: dict,
+                     report: list[str]) -> dict:
+    man = _manual("loresheets")
+    recs = list(extracted) + tier2_loresheets(extracted_t2, man.get("sheets", []), report)
+    recs = merge.apply_manual(recs, man, report)
+    recs = merge.consolidate_loresheets(recs, prec, years, report)
     out = []
     for r in recs:
         e = {k: r.get(k) for k in ("id", "name", "book", "page", "restriction", "clans_only",
-                                   "disciplines_only", "thin_blood_only", "levels")}
+                                   "disciplines_only", "thin_blood_only")}
+        if r.get("clans_excluded"):
+            e["clans_excluded"] = r["clans_excluded"]
+        e["levels"] = [{k: lv[k] for k in ("dots", "name", "restriction", "clans_only") if k in lv}
+                       for lv in r["levels"]]
         e["thin_blood_only"] = bool(e["thin_blood_only"])
         e["also_in"] = r.get("also_in", [])
         e["aliases"] = r.get("aliases", [])
         e["source"] = r.get("source", "pdf")
+        if r.get("source_urls"):
+            e["source_urls"] = r["source_urls"]
         if r.get("manual_fields"):
             e["manual_fields"] = sorted(r["manual_fields"])
         if [lv["dots"] for lv in e["levels"]] != [1, 2, 3, 4, 5]:
             report.append(f"- {e['id']}: levels are not 1-5 after the manual records")
         out.append(e)
-    out.sort(key=lambda e: (prec.get(e["book"], 99), e["page"]))
+    out.sort(key=lambda e: (prec.get(e["book"], 99), e["book"], e["page"]))
     return {"catalog": "loresheets", "version": 1, "entries": out}
 
 
@@ -380,7 +456,7 @@ def build(out_dir: Path | None = None) -> list[str]:
     prec = _precedence(manifest)
     report = ["", "## Build"]
     for f in ("powers.pdf.json", "sections.pdf.json", "clans.pdf.json", "predator_types.pdf.json",
-              "advantages.pdf.json", "loresheets.pdf.json"):
+              "advantages.pdf.json", "loresheets.pdf.json", "loresheets.tier2.pdf.json"):
         if not (EXTRACTED / f).exists():
             raise SystemExit(f"missing {EXTRACTED / f}: run `python -m scripts.v5_catalog extract` first")
     files = {"books": build_books(manifest)}
@@ -389,7 +465,9 @@ def build(out_dir: Path | None = None) -> list[str]:
     files["clans"] = build_clans(_load(EXTRACTED / "clans.pdf.json"), prec, report)
     files["predator_types"] = build_predators(_load(EXTRACTED / "predator_types.pdf.json"), prec, report)
     files["advantages"] = build_advantages(_load(EXTRACTED / "advantages.pdf.json"), prec, report)
-    files["loresheets"] = build_loresheets(_load(EXTRACTED / "loresheets.pdf.json"), prec, report)
+    files["loresheets"] = build_loresheets(_load(EXTRACTED / "loresheets.pdf.json"),
+                                           _load(EXTRACTED / "loresheets.tier2.pdf.json"), prec,
+                                           _years(manifest), report)
     merge.attach_descriptions(files, load_descriptions(), report)
     for name, data in files.items():
         _dump(out_dir / f"{name}.json", data)
@@ -425,6 +503,13 @@ def needs_review(files: dict) -> list[str]:
     for e in files["advantages"]["entries"]:
         if e["dots"] is None and not e["thin_blood"]:
             out.append(f"- {e['id']}: no dot rating printed (dots null)")
+    for e in files["loresheets"]["entries"]:
+        unnamed = [lv["dots"] for lv in e["levels"] if lv["name"] is None]
+        if unnamed:
+            out.append(f"- {e['id']} ({e['book']} p.{e['page']}, source {e['source']}): level names "
+                       f"{unnamed} unknown (no English text to verify them; names null)")
+        if "levels" in (e.get("manual_fields") or []) and e["book"] not in books.TIER1_IDS:
+            out.append(f"- {e['id']}: level ratings set by a manual record (see manual/loresheets.json why)")
     for e in files["clans"]["entries"]:
         if e["bane"] is None:
             out.append(f"- {e['id']}: no clan bane (bane null)")
@@ -451,12 +536,27 @@ def counts(files: dict) -> list[str]:
     return lines
 
 
+def crosscheck_loresheets() -> list[str]:
+    """Loresheets vs the cached VTM Wiki list (fetch paradoxwikis Loresheets), for review."""
+    f = books.BUILD_DIR.parent / "online" / "paradoxwikis" / "loresheets.json"
+    if not f.exists():
+        return ["", "## Cross-check: loresheets vs VTM Wiki", "", "no cached wiki page (fetch paradoxwikis Loresheets)"]
+    rec = _load(f)
+    entries = _load(books.CATALOG_DIR / "loresheets.json")["entries"]
+    rows = crosscheck.wiki_loresheet_rows(rec["text"])
+    out = crosscheck.loresheets_vs_wiki(entries, rows, c.slug)
+    return ["", "## Cross-check: loresheets vs VTM Wiki", "",
+            f"Wiki revision {rec['revision']} ({rec['fetched']}): {len(rows)} rows; {len(out)} disagreements "
+            "(the catalog keeps what the PDF prints).", ""] + out
+
+
 # --------------------------------------------------------------------------- commands
 
 def run(cmd: str, args: list[str]) -> int:
     if cmd == "extract":
         rep = extract()
         rep += build()
+        rep += crosscheck_loresheets()
         rep += ["", "## Checks", ""] + checks.run_all(books.CATALOG_DIR, page_cache=True)
         REPORT.write_text("\n".join(rep) + "\n", encoding="utf-8")
         print(f"wrote {REPORT}")

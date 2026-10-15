@@ -90,7 +90,7 @@ def test_the_repo_catalog_loads():
         pytest.skip("no catalog installed here")
     assert len(data["clans"]) == 16
     assert v5_catalog.find(data, "clans", "Hecata")
-    assert len(data["advantages"]) == 170 and len(data["loresheets"]) == 32
+    assert len(data["advantages"]) == 170 and len(data["loresheets"]) == 157
     ashur = v5_catalog.find(data, "loresheets", "Harbingers of Ashur")
     assert all(lv["desc"]["en"] and lv["desc"]["el"] for lv in ashur["levels"])
 

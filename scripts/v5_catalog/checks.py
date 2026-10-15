@@ -153,9 +153,14 @@ def reference_problems(data: dict) -> list[str]:
         check_book(e["id"], e)
         if [lv["dots"] for lv in e["levels"]] != [1, 2, 3, 4, 5]:
             out.append(f"- {e['id']}: levels must be dots 1-5 once each")
-        for cl in e.get("clans_only") or []:
+        level_clans = [cl for lv in e["levels"] for cl in lv.get("clans_only") or []]
+        for cl in (e.get("clans_only") or []) + (e.get("clans_excluded") or []) + level_clans:
             if cl not in clan_ids:
                 out.append(f"- {e['id']}: clan {cl} does not exist")
+        if e.get("source") != "online" and any(lv.get("name") is None for lv in e["levels"]):
+            out.append(f"- {e['id']}: a level name is null on an entry read from a book (only online facts may lack it)")
+        if e.get("source") == "online" and not e.get("source_urls"):
+            out.append(f"- {e['id']}: an online entry needs source_urls")
         for d in e.get("disciplines_only") or []:
             if d not in disc_ids:
                 out.append(f"- {e['id']}: Discipline {d} does not exist")

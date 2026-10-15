@@ -1,9 +1,10 @@
 {
   "catalog": "loresheets",
-  "notes": "Level ratings the geometry parse could not place, read from the rendered corebook pages (pdftoppm). PG titles whose text layer lost the word spaces are renamed.",
+  "notes": "Level ratings the geometry parse could not place, read from the rendered corebook pages (pdftoppm). PG titles whose text layer lost the word spaces are renamed. Supplements (Forge v2 part F): `sheets` lists every supplement loresheet page with its name and printed restriction (the PDF prints most titles letter-spaced, so the build checks them with spaces removed); `add` holds the Anarch sheets, whose facts come from the VTM Wiki (the Anarch PDF on disk is a Russian translation): names, pages and restrictions only, level names left null.",
   "patch": [
     {
       "id": "loresheet:the-circulatory-system",
+      "book": "v5-corebook",
       "set": {
         "levels": [
           {
@@ -32,6 +33,7 @@
     },
     {
       "id": "loresheet:golconda",
+      "book": "v5-corebook",
       "set": {
         "levels": [
           {
@@ -60,6 +62,7 @@
     },
     {
       "id": "loresheet:descendant-of-vasantasena",
+      "book": "v5-corebook",
       "set": {
         "levels": [
           {
@@ -88,6 +91,7 @@
     },
     {
       "id": "loresheet:descendant-of-xaviar",
+      "book": "v5-corebook",
       "set": {
         "levels": [
           {
@@ -113,6 +117,35 @@
         ]
       },
       "why": "core pr 406 rendered: •••• Monstrous Bat"
+    },
+    {
+      "id": "loresheet:the-ashfinders",
+      "book": "v5-children-of-the-blood",
+      "set": {
+        "levels": [
+          {
+            "dots": 1,
+            "name": "Influencer"
+          },
+          {
+            "dots": 2,
+            "name": "Shard Defense"
+          },
+          {
+            "dots": 3,
+            "name": "Addiction Resistance"
+          },
+          {
+            "dots": 4,
+            "name": "Strange New Forms"
+          },
+          {
+            "dots": 5,
+            "name": "Cook"
+          }
+        ]
+      },
+      "why": "Children of the Blood pr 103 (rendered, pdftoppm -r 110) prints five dots before both Strange New Forms and Cook and no four-dot lore: a misprint. Strange New Forms is placed at 4 (it is printed between the 3-dot and 5-dot lores, and a sheet has one lore per rating); listed for review in the report."
     }
   ],
   "rename": [
@@ -120,19 +153,1137 @@
       "from": "loresheet:childrenoftenochtitlan",
       "into": "loresheet:children-of-tenochtitlan",
       "name": "Children of Tenochtitlan",
+      "book": "v5-players-guide",
       "why": "PG pr 224 title set without word spaces in the text layer"
     },
     {
       "from": "loresheet:f-lesh-e-aters",
       "into": "loresheet:flesh-eaters",
       "name": "Flesh-Eaters",
+      "book": "v5-players-guide",
       "why": "PG pr 225 letter-spaced title"
     },
     {
       "from": "loresheet:nasyon-san-an",
       "into": "loresheet:nasyon-san-an",
       "name": "Nasyon San An",
+      "book": "v5-players-guide",
       "why": "PG pr 229 title case"
+    }
+  ],
+  "sheets": [
+    {
+      "book": "v5-camarilla",
+      "page": 184,
+      "name": "Carmelita Neillson"
+    },
+    {
+      "book": "v5-camarilla",
+      "page": 185,
+      "name": "Fatima al-Faqadi"
+    },
+    {
+      "book": "v5-camarilla",
+      "page": 186,
+      "name": "Fiorenza Savona"
+    },
+    {
+      "book": "v5-camarilla",
+      "page": 187,
+      "name": "Pure Ventrue Lineage",
+      "restriction": "Ventrue character only"
+    },
+    {
+      "book": "v5-camarilla",
+      "page": 188,
+      "name": "The Cult of Mithras"
+    },
+    {
+      "book": "v5-camarilla",
+      "page": 189,
+      "name": "The Pyramid"
+    },
+    {
+      "book": "v5-camarilla",
+      "page": 190,
+      "name": "Victoria Ash"
+    },
+    {
+      "book": "v5-cults-of-the-blood-gods",
+      "page": 220,
+      "name": "Bankers of Dunsirn",
+      "restriction": "Bloodline; Hecata characters only"
+    },
+    {
+      "book": "v5-cults-of-the-blood-gods",
+      "page": 221,
+      "name": "Children of Tenochtitlan",
+      "restriction": "Bloodline; Hecata characters only"
+    },
+    {
+      "book": "v5-cults-of-the-blood-gods",
+      "page": 222,
+      "name": "The Nation of Blood",
+      "restriction": "Bloodline; Hecata characters only",
+      "id": "loresheet:nasyon-san-an"
+    },
+    {
+      "book": "v5-cults-of-the-blood-gods",
+      "page": 223,
+      "name": "Flesh-Eaters",
+      "restriction": "Bloodline; Hecata characters only"
+    },
+    {
+      "book": "v5-cults-of-the-blood-gods",
+      "page": 224,
+      "name": "Harbingers of Ashur",
+      "restriction": "Bloodline; Hecata characters only"
+    },
+    {
+      "book": "v5-cults-of-the-blood-gods",
+      "page": 225,
+      "name": "La Famiglia Giovanni",
+      "restriction": "Bloodline; Hecata characters only"
+    },
+    {
+      "book": "v5-cults-of-the-blood-gods",
+      "page": 226,
+      "name": "The Criminal Puttanesca",
+      "restriction": "Bloodline; Hecata characters only"
+    },
+    {
+      "book": "v5-cults-of-the-blood-gods",
+      "page": 227,
+      "name": "The Gorgons",
+      "restriction": "Bloodline; Hecata characters only"
+    },
+    {
+      "book": "v5-cults-of-the-blood-gods",
+      "page": 228,
+      "name": "Calling the Family Reunion",
+      "restriction": "Hecata characters only"
+    },
+    {
+      "book": "v5-cults-of-the-blood-gods",
+      "page": 229,
+      "name": "Child of the Angel Michael",
+      "restriction": "Unavailable to Nosferatu characters"
+    },
+    {
+      "book": "v5-cults-of-the-blood-gods",
+      "page": 230,
+      "name": "Servitor of Irad"
+    },
+    {
+      "book": "v5-cults-of-the-blood-gods",
+      "page": 231,
+      "name": "The Promise of 1528"
+    },
+    {
+      "book": "v5-children-of-the-blood",
+      "page": 101,
+      "name": "Little Siblings",
+      "restriction": "Bloodline, Hecata characters only"
+    },
+    {
+      "book": "v5-children-of-the-blood",
+      "page": 102,
+      "name": "Grudge Masters",
+      "restriction": "Bloodline, Hecata characters only"
+    },
+    {
+      "book": "v5-children-of-the-blood",
+      "page": 103,
+      "name": "The Ashfinders",
+      "restriction": "Thin-blooded characters only"
+    },
+    {
+      "book": "v5-children-of-the-blood",
+      "page": 104,
+      "name": "Amaranthan"
+    },
+    {
+      "book": "v5-children-of-the-blood",
+      "page": 105,
+      "name": "Cleopatras",
+      "restriction": "Nosferatu characters only"
+    },
+    {
+      "book": "v5-children-of-the-blood",
+      "page": 106,
+      "name": "Meneleans"
+    },
+    {
+      "book": "v5-children-of-the-blood",
+      "page": 107,
+      "name": "The One True Way"
+    },
+    {
+      "book": "v5-children-of-the-blood",
+      "page": 108,
+      "name": "Starfall Ranch",
+      "restriction": "Malkavian characters only"
+    },
+    {
+      "book": "v5-forbidden-religions",
+      "page": 88,
+      "name": "1444 Chamber",
+      "restriction": "Hecata characters only"
+    },
+    {
+      "book": "v5-forbidden-religions",
+      "page": 89,
+      "name": "Blood Asceticism"
+    },
+    {
+      "book": "v5-forbidden-religions",
+      "page": 90,
+      "name": "Gehenna Cults"
+    },
+    {
+      "book": "v5-forbidden-religions",
+      "page": 91,
+      "name": "Plagues of Gehenna"
+    },
+    {
+      "book": "v5-forbidden-religions",
+      "page": 92,
+      "name": "Praepositor",
+      "restriction": "Tremere characters only"
+    },
+    {
+      "book": "v5-forbidden-religions",
+      "page": 93,
+      "name": "Spear of Orthia",
+      "restriction": "Ventrue characters only"
+    },
+    {
+      "book": "v5-blood-sigils",
+      "page": 177,
+      "name": "Descendant of Al-Ashrad",
+      "restriction": "Banu Haqim characters only"
+    },
+    {
+      "book": "v5-blood-sigils",
+      "page": 178,
+      "name": "Student of Kirin Taunk",
+      "restriction": "Thin-Blood Alchemists only"
+    },
+    {
+      "book": "v5-blood-sigils",
+      "page": 179,
+      "name": "Veins of the Earth"
+    },
+    {
+      "book": "v5-blood-sigils",
+      "page": 180,
+      "name": "Vienna Zero",
+      "restriction": "Blood Sorcery users only"
+    },
+    {
+      "book": "v5-gehenna-war",
+      "page": 157,
+      "name": "Beckett"
+    },
+    {
+      "book": "v5-gehenna-war",
+      "page": 158,
+      "name": "The Eternal Arena"
+    },
+    {
+      "book": "v5-gehenna-war",
+      "page": 159,
+      "name": "Tegyrius the Vizier"
+    },
+    {
+      "book": "v5-courts-of-the-damned",
+      "page": 218,
+      "name": "Descendant of Count Jocalo",
+      "restriction": "Ministry only"
+    },
+    {
+      "book": "v5-courts-of-the-damned",
+      "page": 219,
+      "name": "Descendant of Marconius",
+      "restriction": "Lasombra only"
+    },
+    {
+      "book": "v5-courts-of-the-damned",
+      "page": 220,
+      "name": "Descendant of Meerlinda",
+      "restriction": "Tremere only"
+    },
+    {
+      "book": "v5-courts-of-the-damned",
+      "page": 221,
+      "name": "Descendant of Menele",
+      "restriction": "Brujah only"
+    },
+    {
+      "book": "v5-courts-of-the-damned",
+      "page": 222,
+      "name": "Descendant of Rasalon",
+      "restriction": "Nosferatu only"
+    },
+    {
+      "book": "v5-in-memoriam",
+      "page": 149,
+      "name": "Birth of the Anarch Free States"
+    },
+    {
+      "book": "v5-in-memoriam",
+      "page": 150,
+      "name": "Childe of the Revolution"
+    },
+    {
+      "book": "v5-in-memoriam",
+      "page": 151,
+      "name": "Descendant of Dracula",
+      "restriction": "Tzimisce characters only"
+    },
+    {
+      "book": "v5-in-memoriam",
+      "page": 152,
+      "name": "The Order of Repentants"
+    },
+    {
+      "book": "v5-in-memoriam",
+      "page": 153,
+      "name": "The Red Lady"
+    },
+    {
+      "book": "v5-in-memoriam",
+      "page": 154,
+      "name": "The Vanderbilt Ventrue",
+      "restriction": "Ventrue characters only"
+    },
+    {
+      "book": "v5-succubus-club",
+      "page": 158,
+      "name": "Descendant of Idder",
+      "restriction": "Banu Haqim only"
+    },
+    {
+      "book": "v5-succubus-club",
+      "page": 159,
+      "name": "Descendant of Kerwiya",
+      "restriction": "Gangrel only"
+    },
+    {
+      "book": "v5-succubus-club",
+      "page": 160,
+      "name": "Descendant of Phaedyme",
+      "restriction": "Ravnos only"
+    },
+    {
+      "book": "v5-succubus-club",
+      "page": 161,
+      "name": "Descendant of the Fallen Lord",
+      "restriction": "Salubri only"
+    },
+    {
+      "book": "v5-succubus-club",
+      "page": 162,
+      "name": "Succubus Club Copycat"
+    },
+    {
+      "book": "v5-succubus-club",
+      "page": 163,
+      "name": "The Pony Express"
+    },
+    {
+      "book": "v5-succubus-club",
+      "page": 164,
+      "name": "Road Courier"
+    },
+    {
+      "book": "v5-succubus-club",
+      "page": 165,
+      "name": "Stories of the Daughters"
+    },
+    {
+      "book": "v5-succubus-club",
+      "page": 166,
+      "name": "Temple of Boom Contract"
+    },
+    {
+      "book": "v5-tattered-facade",
+      "page": 171,
+      "name": "Descendant of the Ankou",
+      "restriction": "Malkavian characters only"
+    },
+    {
+      "book": "v5-tattered-facade",
+      "page": 172,
+      "name": "Descendant of Baron Vollgirre",
+      "restriction": "Toreador characters only"
+    },
+    {
+      "book": "v5-tattered-facade",
+      "page": 173,
+      "name": "Descendant of Montano",
+      "restriction": "Lasombra characters only"
+    },
+    {
+      "book": "v5-tattered-facade",
+      "page": 174,
+      "name": "Little Siblings",
+      "restriction": "Bloodline, Hecata characters only"
+    },
+    {
+      "book": "v5-chicago-by-night",
+      "page": 262,
+      "name": "Annabelle"
+    },
+    {
+      "book": "v5-chicago-by-night",
+      "page": 263,
+      "name": "Ballard Industries"
+    },
+    {
+      "book": "v5-chicago-by-night",
+      "page": 264,
+      "name": "Blacksite 24"
+    },
+    {
+      "book": "v5-chicago-by-night",
+      "page": 266,
+      "name": "The Blue Velvet"
+    },
+    {
+      "book": "v5-chicago-by-night",
+      "page": 267,
+      "name": "The Book of Nod"
+    },
+    {
+      "book": "v5-chicago-by-night",
+      "page": 268,
+      "name": "Capone Gang"
+    },
+    {
+      "book": "v5-chicago-by-night",
+      "page": 270,
+      "name": "The Cobweb",
+      "restriction": "Malkavian characters only"
+    },
+    {
+      "book": "v5-chicago-by-night",
+      "page": 271,
+      "name": "Cultivar"
+    },
+    {
+      "book": "v5-chicago-by-night",
+      "page": 272,
+      "name": "Cult of Shalim"
+    },
+    {
+      "book": "v5-chicago-by-night",
+      "page": 273,
+      "name": "Descendant of Lodin",
+      "restriction": "Ventrue characters only"
+    },
+    {
+      "book": "v5-chicago-by-night",
+      "page": 274,
+      "name": "Descendant of Montano",
+      "restriction": "Lasombra characters only"
+    },
+    {
+      "book": "v5-chicago-by-night",
+      "page": 275,
+      "name": "Fires and Floods and Devil's Night"
+    },
+    {
+      "book": "v5-chicago-by-night",
+      "page": 276,
+      "name": "FIRSTLIGHT"
+    },
+    {
+      "book": "v5-chicago-by-night",
+      "page": 277,
+      "name": "Kevin Jackson"
+    },
+    {
+      "book": "v5-chicago-by-night",
+      "page": 278,
+      "name": "Kindred Iconography"
+    },
+    {
+      "book": "v5-chicago-by-night",
+      "page": 279,
+      "name": "The Labyrinth"
+    },
+    {
+      "book": "v5-chicago-by-night",
+      "page": 280,
+      "name": "Lupine Expert"
+    },
+    {
+      "book": "v5-chicago-by-night",
+      "page": 281,
+      "name": "Nathaniel Bordruff"
+    },
+    {
+      "book": "v5-chicago-by-night",
+      "page": 282,
+      "name": "The Painted Lady"
+    },
+    {
+      "book": "v5-chicago-by-night",
+      "page": 283,
+      "name": "Revenant Family: Ducheski",
+      "restriction": "Tremere characters only"
+    },
+    {
+      "book": "v5-chicago-by-night",
+      "page": 284,
+      "name": "The Society of St. Leopold"
+    },
+    {
+      "book": "v5-chicago-by-night",
+      "page": 286,
+      "name": "Talley"
+    },
+    {
+      "book": "v5-chicago-by-night",
+      "page": 287,
+      "name": "Wauneka"
+    },
+    {
+      "book": "v5-chicago-folios",
+      "page": 158,
+      "name": "Archons"
+    },
+    {
+      "book": "v5-chicago-folios",
+      "page": 159,
+      "name": "The Convention of Chicago"
+    },
+    {
+      "book": "v5-chicago-folios",
+      "page": 160,
+      "name": "Descendant of Menele",
+      "restriction": "Brujah characters only"
+    },
+    {
+      "book": "v5-chicago-folios",
+      "page": 161,
+      "name": "Goblin Roads"
+    },
+    {
+      "book": "v5-chicago-folios",
+      "page": 162,
+      "name": "Justicar Lucinde"
+    },
+    {
+      "book": "v5-chicago-folios",
+      "page": 163,
+      "name": "Khalid al-Rashid"
+    },
+    {
+      "book": "v5-chicago-folios",
+      "page": 164,
+      "name": "Kindred Dueling"
+    },
+    {
+      "book": "v5-chicago-folios",
+      "page": 165,
+      "name": "Malkavian Family",
+      "restriction": "Malkavian characters only"
+    },
+    {
+      "book": "v5-chicago-folios",
+      "page": 166,
+      "name": "Occult Artifacts",
+      "restriction": "Tremere and Banu Haqim only"
+    },
+    {
+      "book": "v5-chicago-folios",
+      "page": 167,
+      "name": "The Pony Express"
+    },
+    {
+      "book": "v5-chicago-folios",
+      "page": 168,
+      "name": "Sheriff Damien"
+    },
+    {
+      "book": "v5-chicago-folios",
+      "page": 169,
+      "name": "The Wolf Pack"
+    },
+    {
+      "book": "v5-nod-apocrypha",
+      "page": 37,
+      "name": "The Book of Nod"
+    },
+    {
+      "book": "v5-nod-apocrypha",
+      "page": 38,
+      "name": "Gehenna Cults"
+    },
+    {
+      "book": "v5-nod-apocrypha",
+      "page": 39,
+      "name": "Machinations of Saulot",
+      "restriction": "Salubri or Tremere only"
+    },
+    {
+      "book": "v5-nod-apocrypha",
+      "page": 40,
+      "name": "Servitor of Irad"
+    },
+    {
+      "book": "v5-la-by-night-loresheets",
+      "page": 1,
+      "name": "Victor Temple"
+    },
+    {
+      "book": "v5-la-by-night-loresheets",
+      "page": 2,
+      "name": "Nelli G"
+    },
+    {
+      "book": "v5-la-by-night-loresheets",
+      "page": 3,
+      "name": "Jasper"
+    },
+    {
+      "book": "v5-la-by-night-loresheets",
+      "page": 4,
+      "name": "Annabelle",
+      "id": "loresheet:annabelle-la-by-night"
+    },
+    {
+      "book": "v5-la-by-night-loresheets",
+      "page": 5,
+      "name": "X"
+    },
+    {
+      "book": "v5-la-by-night-loresheets",
+      "page": 6,
+      "name": "Eva"
+    },
+    {
+      "book": "v5-la-by-night-loresheets",
+      "page": 7,
+      "name": "Ramona"
+    },
+    {
+      "book": "v5-la-by-night-loresheets",
+      "page": 8,
+      "name": "Baron Isaac Abrams"
+    },
+    {
+      "book": "v5-la-by-night-loresheets",
+      "page": 9,
+      "name": "Carver"
+    },
+    {
+      "book": "v5-la-by-night-loresheets",
+      "page": 10,
+      "name": "Ib"
+    },
+    {
+      "book": "v5-choice-of-games-loresheets",
+      "page": 1,
+      "name": "Road Courier"
+    },
+    {
+      "book": "v5-choice-of-games-loresheets",
+      "page": 2,
+      "name": "Amanda Chastain"
+    },
+    {
+      "book": "v5-choice-of-games-loresheets",
+      "page": 3,
+      "name": "Sheriff Qui"
+    },
+    {
+      "book": "v5-choice-of-games-loresheets",
+      "page": 4,
+      "name": "The Parthenon Troupe"
+    },
+    {
+      "book": "v5-fall-of-london",
+      "page": 233,
+      "name": "Agent of Justicar Parr"
+    },
+    {
+      "book": "v5-fall-of-london",
+      "page": 234,
+      "name": "Court of Shadows"
+    },
+    {
+      "book": "v5-fall-of-london",
+      "page": 235,
+      "name": "Hunt Club"
+    },
+    {
+      "book": "v5-fall-of-london",
+      "page": 236,
+      "name": "London Under London",
+      "restriction": "Nosferatu characters only"
+    },
+    {
+      "book": "v5-fall-of-london",
+      "page": 237,
+      "name": "Operation Antigen"
+    },
+    {
+      "book": "v5-fall-of-london",
+      "page": 238,
+      "name": "Oskar Anasov"
+    },
+    {
+      "book": "v5-let-the-streets-run-red",
+      "page": 224,
+      "name": "The Anubi"
+    },
+    {
+      "book": "v5-let-the-streets-run-red",
+      "page": 225,
+      "name": "Eletria"
+    },
+    {
+      "book": "v5-let-the-streets-run-red",
+      "page": 226,
+      "name": "Kindred Social Media Influencer"
+    },
+    {
+      "book": "v5-let-the-streets-run-red",
+      "page": 227,
+      "name": "Juggler"
+    },
+    {
+      "book": "v5-let-the-streets-run-red",
+      "page": 228,
+      "name": "Lost Secrets of the Milwaukee Chantry"
+    },
+    {
+      "book": "v5-let-the-streets-run-red",
+      "page": 229,
+      "name": "Mark Decker"
+    },
+    {
+      "book": "v5-let-the-streets-run-red",
+      "page": 230,
+      "name": "Maxwell"
+    },
+    {
+      "book": "v5-let-the-streets-run-red",
+      "page": 231,
+      "name": "The Milwaukee “Null Zone”",
+      "id": "loresheet:the-milwaukee-null-zone"
+    },
+    {
+      "book": "v5-let-the-streets-run-red",
+      "page": 233,
+      "name": "Modius"
+    },
+    {
+      "book": "v5-trails-of-ash-and-bone",
+      "page": 170,
+      "name": "The Ruby Throat"
+    },
+    {
+      "book": "v5-trails-of-ash-and-bone",
+      "page": 171,
+      "name": "Descendant of Roger de Camden",
+      "restriction": "Hecata characters only"
+    },
+    {
+      "book": "v5-trails-of-ash-and-bone",
+      "page": 172,
+      "name": "Relics of the Veil"
+    }
+  ],
+  "add": [
+    {
+      "id": "loresheet:salvador-garcia",
+      "name": "Salvador Garcia",
+      "book": "v5-anarch",
+      "page": 190,
+      "restriction": null,
+      "clans_only": null,
+      "disciplines_only": null,
+      "thin_blood_only": false,
+      "levels": [
+        {
+          "dots": 1,
+          "name": null
+        },
+        {
+          "dots": 2,
+          "name": null
+        },
+        {
+          "dots": 3,
+          "name": null
+        },
+        {
+          "dots": 4,
+          "name": null
+        },
+        {
+          "dots": 5,
+          "name": null
+        }
+      ],
+      "source": "online",
+      "source_urls": [
+        {
+          "url": "https://vtm.paradoxwikis.com/Loresheets",
+          "site": "paradoxwikis",
+          "revision": 13281,
+          "fetched": "2026-10-16"
+        }
+      ],
+      "why": "VTM Wiki Loresheets (Anarch section): name, page, restriction; the Russian PDF on disk shows the sheet on the same page. English level names are not verifiable: null."
+    },
+    {
+      "id": "loresheet:agata-starek",
+      "name": "Agata Starek",
+      "book": "v5-anarch",
+      "page": 191,
+      "restriction": null,
+      "clans_only": null,
+      "disciplines_only": null,
+      "thin_blood_only": false,
+      "levels": [
+        {
+          "dots": 1,
+          "name": null
+        },
+        {
+          "dots": 2,
+          "name": null
+        },
+        {
+          "dots": 3,
+          "name": null
+        },
+        {
+          "dots": 4,
+          "name": null
+        },
+        {
+          "dots": 5,
+          "name": null
+        }
+      ],
+      "source": "online",
+      "source_urls": [
+        {
+          "url": "https://vtm.paradoxwikis.com/Loresheets",
+          "site": "paradoxwikis",
+          "revision": 13281,
+          "fetched": "2026-10-16"
+        }
+      ],
+      "why": "VTM Wiki Loresheets (Anarch section): name, page, restriction; the Russian PDF on disk shows the sheet on the same page. English level names are not verifiable: null."
+    },
+    {
+      "id": "loresheet:hesha-ruhadze",
+      "name": "Hesha Ruhadze",
+      "book": "v5-anarch",
+      "page": 192,
+      "restriction": null,
+      "clans_only": null,
+      "disciplines_only": null,
+      "thin_blood_only": false,
+      "levels": [
+        {
+          "dots": 1,
+          "name": null
+        },
+        {
+          "dots": 2,
+          "name": null
+        },
+        {
+          "dots": 3,
+          "name": null
+        },
+        {
+          "dots": 4,
+          "name": null,
+          "restriction": "Ministry characters only",
+          "clans_only": [
+            "clan:ministry"
+          ]
+        },
+        {
+          "dots": 5,
+          "name": null,
+          "restriction": "Ministry characters only",
+          "clans_only": [
+            "clan:ministry"
+          ]
+        }
+      ],
+      "source": "online",
+      "source_urls": [
+        {
+          "url": "https://vtm.paradoxwikis.com/Loresheets",
+          "site": "paradoxwikis",
+          "revision": 13281,
+          "fetched": "2026-10-16"
+        }
+      ],
+      "why": "VTM Wiki Loresheets (Anarch): page 192, levels 4 and 5 Ministry characters only; the Russian PDF p.192 prints the same two lores as Ministry-only. English level names are not verifiable: null."
+    },
+    {
+      "id": "loresheet:the-church-of-set",
+      "name": "The Church of Set",
+      "book": "v5-anarch",
+      "page": 193,
+      "restriction": null,
+      "clans_only": null,
+      "disciplines_only": null,
+      "thin_blood_only": false,
+      "levels": [
+        {
+          "dots": 1,
+          "name": null
+        },
+        {
+          "dots": 2,
+          "name": null
+        },
+        {
+          "dots": 3,
+          "name": null
+        },
+        {
+          "dots": 4,
+          "name": null
+        },
+        {
+          "dots": 5,
+          "name": null
+        }
+      ],
+      "source": "online",
+      "source_urls": [
+        {
+          "url": "https://vtm.paradoxwikis.com/Loresheets",
+          "site": "paradoxwikis",
+          "revision": 13281,
+          "fetched": "2026-10-16"
+        }
+      ],
+      "why": "VTM Wiki Loresheets (Anarch): page 193. The wiki lists 'Church of Set members' as a restriction, but the Russian PDF prints no restriction line under the title: left null and reported. English level names are not verifiable: null."
+    },
+    {
+      "id": "loresheet:descendant-of-xaviar",
+      "name": "Descendant of Xaviar",
+      "book": "v5-anarch",
+      "page": 194,
+      "restriction": "Gangrel characters only",
+      "clans_only": null,
+      "disciplines_only": null,
+      "thin_blood_only": false,
+      "levels": [
+        {
+          "dots": 1,
+          "name": null
+        },
+        {
+          "dots": 2,
+          "name": null
+        },
+        {
+          "dots": 3,
+          "name": null
+        },
+        {
+          "dots": 4,
+          "name": null
+        },
+        {
+          "dots": 5,
+          "name": null
+        }
+      ],
+      "source": "online",
+      "source_urls": [
+        {
+          "url": "https://vtm.paradoxwikis.com/Loresheets",
+          "site": "paradoxwikis",
+          "revision": 13281,
+          "fetched": "2026-10-16"
+        }
+      ],
+      "why": "Reprint of the corebook sheet (wiki: Anarch p.194 or Corebook p.406); only adds also_in."
+    },
+    {
+      "id": "loresheet:descendant-of-tyler",
+      "name": "Descendant of Tyler",
+      "book": "v5-anarch",
+      "page": 195,
+      "restriction": "Brujah characters only",
+      "clans_only": null,
+      "disciplines_only": null,
+      "thin_blood_only": false,
+      "levels": [
+        {
+          "dots": 1,
+          "name": null
+        },
+        {
+          "dots": 2,
+          "name": null
+        },
+        {
+          "dots": 3,
+          "name": null
+        },
+        {
+          "dots": 4,
+          "name": null
+        },
+        {
+          "dots": 5,
+          "name": null
+        }
+      ],
+      "source": "online",
+      "source_urls": [
+        {
+          "url": "https://vtm.paradoxwikis.com/Loresheets",
+          "site": "paradoxwikis",
+          "revision": 13281,
+          "fetched": "2026-10-16"
+        }
+      ],
+      "why": "Reprint of the corebook sheet (wiki: Anarch p.195 or Corebook p.397); only adds also_in."
+    },
+    {
+      "id": "loresheet:ruins-of-carthage",
+      "name": "Ruins of Carthage",
+      "book": "v5-anarch",
+      "page": 196,
+      "restriction": null,
+      "clans_only": null,
+      "disciplines_only": null,
+      "thin_blood_only": false,
+      "levels": [
+        {
+          "dots": 1,
+          "name": null
+        },
+        {
+          "dots": 2,
+          "name": null
+        },
+        {
+          "dots": 3,
+          "name": null
+        },
+        {
+          "dots": 4,
+          "name": null
+        },
+        {
+          "dots": 5,
+          "name": null
+        }
+      ],
+      "source": "online",
+      "source_urls": [
+        {
+          "url": "https://vtm.paradoxwikis.com/Loresheets",
+          "site": "paradoxwikis",
+          "revision": 13281,
+          "fetched": "2026-10-16"
+        }
+      ],
+      "why": "VTM Wiki Loresheets (Anarch section): name, page, restriction; the Russian PDF on disk shows the sheet on the same page. English level names are not verifiable: null."
+    },
+    {
+      "id": "loresheet:blood-plagued",
+      "name": "Blood Plagued",
+      "book": "v5-anarch",
+      "page": 197,
+      "restriction": null,
+      "clans_only": null,
+      "disciplines_only": null,
+      "thin_blood_only": false,
+      "levels": [
+        {
+          "dots": 1,
+          "name": null
+        },
+        {
+          "dots": 2,
+          "name": null
+        },
+        {
+          "dots": 3,
+          "name": null
+        },
+        {
+          "dots": 4,
+          "name": null
+        },
+        {
+          "dots": 5,
+          "name": null
+        }
+      ],
+      "source": "online",
+      "source_urls": [
+        {
+          "url": "https://vtm.paradoxwikis.com/Loresheets",
+          "site": "paradoxwikis",
+          "revision": 13281,
+          "fetched": "2026-10-16"
+        }
+      ],
+      "why": "VTM Wiki Loresheets (Anarch section): name, page, restriction; the Russian PDF on disk shows the sheet on the same page. English level names are not verifiable: null."
+    },
+    {
+      "id": "loresheet:anarch-revolt",
+      "name": "Anarch Revolt",
+      "book": "v5-anarch",
+      "page": 198,
+      "restriction": null,
+      "clans_only": null,
+      "disciplines_only": null,
+      "thin_blood_only": false,
+      "levels": [
+        {
+          "dots": 1,
+          "name": null
+        },
+        {
+          "dots": 2,
+          "name": null
+        },
+        {
+          "dots": 3,
+          "name": null
+        },
+        {
+          "dots": 4,
+          "name": null
+        },
+        {
+          "dots": 5,
+          "name": null
+        }
+      ],
+      "source": "online",
+      "source_urls": [
+        {
+          "url": "https://vtm.paradoxwikis.com/Loresheets",
+          "site": "paradoxwikis",
+          "revision": 13281,
+          "fetched": "2026-10-16"
+        }
+      ],
+      "why": "VTM Wiki Loresheets (Anarch section): name, page, restriction; the Russian PDF on disk shows the sheet on the same page. English level names are not verifiable: null."
     }
   ]
 }

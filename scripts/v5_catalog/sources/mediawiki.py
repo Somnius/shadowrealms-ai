@@ -31,7 +31,8 @@ def load_sources(path: Path) -> dict:
 
 
 def http_get_json(url: str) -> dict:  # pragma: no cover - network, never called in tests
-    req = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})
+    # without an Accept header the wiki answers urllib with an HTML client-challenge page
+    req = urllib.request.Request(url, headers={"User-Agent": USER_AGENT, "Accept": "application/json"})
     with urllib.request.urlopen(req, timeout=30) as resp:
         return json.loads(resp.read().decode("utf-8"))
 

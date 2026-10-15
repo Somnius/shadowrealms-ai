@@ -959,9 +959,14 @@ books:
   notes: 'Image-only scan: skipped until it is OCR''d.'
 
 # Files deliberately left out (official books only, no duplicates, no LARP/fiction/art/sheets).
+# An entry may carry book_id/title/precedence when the V5 catalog cites the book anyway.
 excluded:
 - path: V5/Anarch.pdf
   reason: Russian translation
+  # not imported, but the V5 catalog (docs/rules/v5/catalog) cites this book by id
+  book_id: v5-anarch
+  title: Anarch
+  precedence: 40
 - path: V5/V5 Rules Errata 1.0 - August 2018.pdf
   reason: errata already in the Sept. 2019 corebook text
 - path: V5/V5 Rules Errata 2.0 - September 2019.pdf

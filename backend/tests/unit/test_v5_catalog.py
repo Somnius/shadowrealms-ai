@@ -60,7 +60,12 @@ def test_books_match_manifest(data):
     manifest_path = REPO / "books" / "manifest.yaml"
     if not manifest_path.exists():
         pytest.skip("books/manifest.yaml not on disk")
-    manifest = {b["book_id"]: b for b in yaml.safe_load(manifest_path.read_text(encoding="utf-8"))["books"]}
+    raw = yaml.safe_load(manifest_path.read_text(encoding="utf-8"))
+    manifest = {b["book_id"]: b for b in raw["books"]}
+    # a file left out of the RAG import (the Russian Anarch PDF) can still be cited by book_id
+    for x in raw.get("excluded") or []:
+        if x.get("book_id"):
+            manifest.setdefault(x["book_id"], x)
     for b in _entries(data, "books"):
         assert b["book_id"] in manifest, b["book_id"]
         m = manifest[b["book_id"]]
@@ -73,9 +78,16 @@ def test_counts(data):
     assert len(_entries(data, "disciplines")) == 12
     assert len(_entries(data, "predator_types")) == 18
     assert len(_entries(data, "advantages")) == 170
-    assert len(_entries(data, "loresheets")) == 32
+    assert len(_entries(data, "loresheets")) == 157
     lore_books = [e["book"] for e in _entries(data, "loresheets")]
     assert (lore_books.count("v5-corebook"), lore_books.count("v5-players-guide")) == (25, 7)
+    assert {b: lore_books.count(b) for b in sorted(set(lore_books)) if b not in ("v5-corebook", "v5-players-guide")} == {
+        "v5-anarch": 7, "v5-blood-sigils": 4, "v5-camarilla": 5, "v5-chicago-by-night": 22,
+        "v5-chicago-folios": 10, "v5-children-of-the-blood": 8, "v5-choice-of-games-loresheets": 3,
+        "v5-courts-of-the-damned": 5, "v5-cults-of-the-blood-gods": 5, "v5-fall-of-london": 6,
+        "v5-forbidden-religions": 6, "v5-gehenna-war": 3, "v5-in-memoriam": 6, "v5-la-by-night-loresheets": 10,
+        "v5-let-the-streets-run-red": 9, "v5-nod-apocrypha": 1, "v5-succubus-club": 9, "v5-tattered-facade": 3,
+        "v5-trails-of-ash-and-bone": 3}
     names = {d["name"] for d in _entries(data, "disciplines")}
     assert {"Oblivion", "Thin-Blood Alchemy"} <= names
     for name in ("rituals", "ceremonies", "formulae"):
@@ -147,11 +159,13 @@ def test_advantage_descriptions(data):
 
 
 def test_loresheet_descriptions(data):
-    """All 32 loresheets and each of their 5 levels carry EN + EL."""
+    """All 157 loresheets and each of their named levels carry EN + EL (an online-only sheet's
+    unnamed levels have nothing to describe)."""
     lore = _entries(data, "loresheets")
-    assert len(lore) == 32
+    assert len(lore) == 157
     assert [e["id"] for e in lore if not _has_desc(e)] == []
-    assert [f"{e['id']}:{lv['dots']}" for e in lore for lv in e["levels"] if not _has_desc(lv)] == []
+    assert [f"{e['id']}:{lv['dots']}" for e in lore for lv in e["levels"]
+            if lv["name"] is not None and not _has_desc(lv)] == []
 
 
 def test_no_book_text_fields():
@@ -206,7 +220,58 @@ def test_advantages_facts(data):
 def test_loresheet_levels(data):
     for e in _entries(data, "loresheets"):
         assert [lv["dots"] for lv in e["levels"]] == [1, 2, 3, 4, 5], e["id"]
-        assert all(lv["name"] for lv in e["levels"]), e["id"]
+        if e["source"] != "online":
+            assert all(lv["name"] for lv in e["levels"]), e["id"]
     lore = {e["id"]: e for e in _entries(data, "loresheets")}
     assert lore["loresheet:descendant-of-hardestadt"]["clans_only"] == ["clan:ventrue"]
     assert lore["loresheet:theo-bell"]["levels"][4]["name"] == "Sect Neutrality"
+
+
+def test_supplement_books_are_tier_2(data):
+    books = {b["book_id"]: b for b in _entries(data, "books")}
+    assert {b for b, x in books.items() if x["tier"] == 1} == {"v5-corebook", "v5-players-guide", "v5-companion"}
+    assert books["v5-anarch"]["extractable"] is False
+    used = {e["book"] for name in ("loresheets", "advantages", "rituals", "ceremonies", "formulae")
+            for e in _entries(data, name)}
+    assert used <= set(books)
+
+
+def test_supplement_loresheets(data):
+    lore = {e["id"]: e for e in _entries(data, "loresheets")}
+    # a supplement reprint of a Tier-1 sheet is an also_in, never its own entry
+    nasyon = lore["loresheet:nasyon-san-an"]
+    assert (nasyon["book"], nasyon["page"]) == ("v5-players-guide", 229)
+    assert {"book": "v5-cults-of-the-blood-gods", "page": 222} in nasyon["also_in"]
+    assert "The Nation of Blood" in nasyon["aliases"]
+    assert {"book": "v5-camarilla", "page": 184} in lore["loresheet:carmelita-neillson"]["also_in"]
+    assert {"book": "v5-anarch", "page": 195} in lore["loresheet:descendant-of-tyler"]["also_in"]
+    # between supplements the lower precedence wins (rules 40 over lore 50), then the earlier book
+    pony = lore["loresheet:the-pony-express"]
+    assert (pony["book"], pony["also_in"]) == ("v5-succubus-club", [{"book": "v5-chicago-folios", "page": 167}])
+    assert lore["loresheet:little-siblings"]["book"] == "v5-children-of-the-blood"
+    assert lore["loresheet:descendant-of-montano"]["book"] == "v5-tattered-facade"
+    # two different sheets with one name keep two ids
+    assert lore["loresheet:annabelle"]["book"] == "v5-chicago-by-night"
+    assert lore["loresheet:annabelle-la-by-night"]["name"] == "Annabelle"
+    # restrictions as printed, structured for the forge
+    assert lore["loresheet:child-of-the-angel-michael"]["clans_excluded"] == ["clan:nosferatu"]
+    assert lore["loresheet:occult-artifacts"]["clans_only"] == ["clan:tremere", "clan:banu-haqim"]
+    kirin = lore["loresheet:student-of-kirin-taunk"]
+    assert kirin["thin_blood_only"] and kirin["disciplines_only"] == ["discipline:thin-blood-alchemy"]
+    assert lore["loresheet:vienna-zero"]["disciplines_only"] == ["discipline:blood-sorcery"]
+    tegyrius = lore["loresheet:tegyrius-the-vizier"]["levels"][3]
+    assert (tegyrius["name"], tegyrius["clans_only"]) == ("Perception is Power", ["clan:banu-haqim"])
+    assert lore["loresheet:mark-decker"]["levels"][4]["clans_only"] == ["clan:gangrel"]
+    # the Ashfinders misprint (two five-dot lores) is a reviewed manual record
+    assert "levels" in lore["loresheet:the-ashfinders"]["manual_fields"]
+
+
+def test_anarch_loresheets_are_online_facts_only(data):
+    anarch = [e for e in _entries(data, "loresheets") if e["book"] == "v5-anarch"]
+    assert sorted(e["name"] for e in anarch) == ["Agata Starek", "Anarch Revolt", "Blood Plagued", "Hesha Ruhadze",
+                                                "Ruins of Carthage", "Salvador Garcia", "The Church of Set"]
+    for e in anarch:
+        assert e["source"] == "online" and e["source_urls"][0]["site"] == "paradoxwikis", e["id"]
+        assert all(lv["name"] is None for lv in e["levels"]), e["id"]
+    hesha = next(e for e in anarch if e["name"] == "Hesha Ruhadze")
+    assert [lv.get("clans_only") for lv in hesha["levels"]] == [None, None, None, ["clan:ministry"], ["clan:ministry"]]

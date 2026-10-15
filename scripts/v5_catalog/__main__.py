@@ -1,7 +1,7 @@
 """python -m scripts.v5_catalog <command> (run from the repo root).
 
 Commands
-  pages <book_id>|all      cache every page the catalogs read (pdftotext -layout, one page at a
+  pages <book_id>|tier1|all  cache every page the catalogs read (pdftotext -layout, one page at a
                            time, nice 10) and print footer samples that prove the page offset
   show <book_id> <printed> print one page in reading order (column-split), for review
   extract [all]            parse the cached pages -> data/catalog-build/v5/extracted/*.json
@@ -25,7 +25,12 @@ from . import books
 def cmd_pages(args: list[str]) -> int:
     from .sources.pdf import PdfBook
 
-    ids = list(books.BY_ID) if not args or args[0] == "all" else args
+    if not args or args[0] == "all":
+        ids = [bid for bid, b in books.BY_ID.items() if b.extractable]
+    elif args[0] == "tier1":
+        ids = list(books.TIER1_IDS)
+    else:
+        ids = args
     manifest = books.load_manifest()
     for book_id in ids:
         pb = PdfBook(book_id, manifest=manifest)

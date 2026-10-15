@@ -28,7 +28,8 @@ def strip_local(rec: dict) -> dict:
 
 def apply_manual(records: list[dict], manual: dict, report: list[str]) -> list[dict]:
     """manual = {"exclude": [{id, why}], "merge": [{from, into, why}],
-    "rename": [{from, into, name, why}], "patch": [{id, set, why}], "add": [records]}.
+    "rename": [{from, into, name, book?, why}], "patch": [{id, set, book?, why}], "add": [records]}.
+    `book` limits a rename or patch to that book's record (a reprint elsewhere shares the id).
     Returns a new list."""
     recs = [copy.deepcopy(r) for r in records]
     for ex in manual.get("exclude", []):
@@ -49,7 +50,7 @@ def apply_manual(records: list[dict], manual: dict, report: list[str]) -> list[d
         if not hit:
             report.append(f"- manual merge matched nothing: {mg['from']}")
     for rn in manual.get("rename", []):
-        hit = [r for r in recs if r["id"] == rn["from"]]
+        hit = [r for r in recs if r["id"] == rn["from"] and (not rn.get("book") or r.get("book") == rn["book"])]
         if not hit:
             report.append(f"- manual rename matched nothing: {rn['from']}")
         for r in hit:  # a garbled title fixed by hand: new id and name, no alias kept
@@ -110,6 +111,51 @@ def consolidate(records: list[dict], precedence: dict, report: list[str],
         primary["aliases"] = aliases
         out.append(primary)
     return out
+
+
+def consolidate_loresheets(records: list[dict], precedence: dict, years: dict,
+                           report: list[str]) -> list[dict]:
+    """Loresheets printed in more than one book share one id. The primary is the book with the
+    lowest precedence (corebook 10, PG 20, rules supplements 40, lore 50, adventures 60), then the
+    earlier year, then the lower page: Tier-1 books keep their entries and a supplement reprint
+    goes to also_in. Level names, restrictions and the structured restriction fields of every
+    reprint are compared with the primary and each difference is reported (the primary wins)."""
+    def order(r):
+        return (precedence.get(r.get("book"), 99), years.get(r.get("book")) or 9999, r.get("page") or 0)
+
+    def where(r):
+        return f"{r.get('book')} p.{r.get('page')}"
+
+    groups: dict = {}
+    for r in records:
+        groups.setdefault(r["id"], []).append(r)
+    out = []
+    for rid in sorted(groups):
+        grp = sorted(groups[rid], key=order)
+        primary = copy.deepcopy(grp[0])
+        also, aliases = [], list(primary.get("aliases", []))
+        plev = {lv["dots"]: lv.get("name") for lv in primary.get("levels", [])}
+        for other in grp[1:]:
+            also.append({"book": other["book"], "page": other["page"]})
+            if other.get("name") != primary.get("name") and other.get("name") not in aliases:
+                aliases.append(other["name"])
+            for lv in other.get("levels", []):
+                a, b = plev.get(lv["dots"]), lv.get("name")
+                if a is not None and b is not None and _norm_name(a) != _norm_name(b):
+                    report.append(f"- {rid}: level {lv['dots']} name differs: {where(primary)} {a!r}, "
+                                  f"{where(other)} {b!r} (kept {primary['book']})")
+            for f in ("clans_only", "clans_excluded", "disciplines_only", "thin_blood_only"):
+                if other.get("source") != "online" and other.get(f) != primary.get(f):
+                    report.append(f"- {rid}: {f} differs: {where(primary)} {primary.get(f)!r}, "
+                                  f"{where(other)} {other.get(f)!r} (kept {primary['book']})")
+        primary["also_in"] = sorted(also, key=lambda x: (precedence.get(x["book"], 99), x["book"], x["page"]))
+        primary["aliases"] = aliases
+        out.append(primary)
+    return out
+
+
+def _norm_name(s: str) -> str:
+    return re.sub(r"[^a-z0-9]", "", s.replace("’", "'").lower())
 
 
 def _norm_prereq(s):
@@ -177,6 +223,8 @@ def desc_targets(files: dict):
                         yield f"{e['id']}:{part}", e[part]
             if name in LEVEL_DESC_CATALOGS:
                 for lv in e.get("levels", []):
+                    if lv.get("name") is None:
+                        continue  # an online-only sheet whose level names are unknown: nothing to describe
                     yield f"{e['id']}:{lv['dots']}", lv
 
 

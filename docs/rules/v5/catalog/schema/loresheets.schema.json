@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "shadowrealms/v5/catalog/loresheets.schema.json",
   "title": "V5 Loresheets",
-  "description": "One entry per sheet: restriction as printed under the title, structured clans_only / disciplines_only / thin_blood_only, and the five level names (dots 1-5, names only).",
+  "description": "One entry per sheet: restriction as printed under the title, structured clans_only / clans_excluded / disciplines_only / thin_blood_only, and the five level names (dots 1-5, names only). A level may carry its own printed restriction (restriction + clans_only). A level name is null only on an entry whose facts come from an online source that does not give it (source online).",
   "type": "object",
   "required": [
     "catalog",
@@ -176,14 +176,36 @@
                   "maximum": 6
                 },
                 "name": {
-                  "type": "string",
+                  "type": [
+                    "string",
+                    "null"
+                  ],
                   "minLength": 1,
                   "maxLength": 60
                 },
                 "desc": {
                   "$ref": "#/$defs/desc"
+                },
+                "restriction": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 80
+                },
+                "clans_only": {
+                  "type": "array",
+                  "minItems": 1,
+                  "items": {
+                    "$ref": "#/$defs/clan_id"
+                  }
                 }
               }
+            }
+          },
+          "clans_excluded": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "$ref": "#/$defs/clan_id"
             }
           }
         }

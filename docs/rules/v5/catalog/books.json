@@ -30,12 +30,66 @@
       "dot_glyph": "●"
     },
     {
+      "book_id": "v5-camarilla",
+      "title": "Camarilla",
+      "precedence": 40,
+      "tier": 2,
+      "extractable": true,
+      "page_offset": 1,
+      "dot_glyph": null
+    },
+    {
       "book_id": "v5-cults-of-the-blood-gods",
       "title": "Cults of the Blood Gods",
       "precedence": 40,
       "tier": 2,
       "extractable": true,
       "page_offset": 3,
+      "dot_glyph": "•"
+    },
+    {
+      "book_id": "v5-children-of-the-blood",
+      "title": "Children of the Blood",
+      "precedence": 40,
+      "tier": 2,
+      "extractable": true,
+      "page_offset": 1,
+      "dot_glyph": "•"
+    },
+    {
+      "book_id": "v5-forbidden-religions",
+      "title": "Forbidden Religions",
+      "precedence": 40,
+      "tier": 2,
+      "extractable": true,
+      "page_offset": 1,
+      "dot_glyph": "•"
+    },
+    {
+      "book_id": "v5-blood-sigils",
+      "title": "Blood Sigils",
+      "precedence": 40,
+      "tier": 2,
+      "extractable": true,
+      "page_offset": 2,
+      "dot_glyph": "•"
+    },
+    {
+      "book_id": "v5-gehenna-war",
+      "title": "The Gehenna War",
+      "precedence": 40,
+      "tier": 2,
+      "extractable": true,
+      "page_offset": 2,
+      "dot_glyph": null
+    },
+    {
+      "book_id": "v5-courts-of-the-damned",
+      "title": "Courts of the Damned",
+      "precedence": 40,
+      "tier": 2,
+      "extractable": true,
+      "page_offset": 2,
       "dot_glyph": "•"
     },
     {
@@ -48,6 +102,78 @@
       "dot_glyph": "•"
     },
     {
+      "book_id": "v5-succubus-club",
+      "title": "Live from the Succubus Club",
+      "precedence": 40,
+      "tier": 2,
+      "extractable": true,
+      "page_offset": 2,
+      "dot_glyph": "•"
+    },
+    {
+      "book_id": "v5-tattered-facade",
+      "title": "Tattered Facade",
+      "precedence": 40,
+      "tier": 2,
+      "extractable": true,
+      "page_offset": 2,
+      "dot_glyph": "•"
+    },
+    {
+      "book_id": "v5-chicago-by-night",
+      "title": "Chicago by Night",
+      "precedence": 50,
+      "tier": 2,
+      "extractable": true,
+      "page_offset": 1,
+      "dot_glyph": "•"
+    },
+    {
+      "book_id": "v5-chicago-folios",
+      "title": "The Chicago Folios",
+      "precedence": 50,
+      "tier": 2,
+      "extractable": true,
+      "page_offset": 1,
+      "dot_glyph": "•"
+    },
+    {
+      "book_id": "v5-nod-apocrypha",
+      "title": "The Book of Nod Apocrypha",
+      "precedence": 50,
+      "tier": 2,
+      "extractable": true,
+      "page_offset": 2,
+      "dot_glyph": "•"
+    },
+    {
+      "book_id": "v5-la-by-night-loresheets",
+      "title": "L.A. by Night Loresheets",
+      "precedence": 50,
+      "tier": 2,
+      "extractable": true,
+      "page_offset": 0,
+      "dot_glyph": null
+    },
+    {
+      "book_id": "v5-choice-of-games-loresheets",
+      "title": "Choice of Games Loresheets",
+      "precedence": 50,
+      "tier": 2,
+      "extractable": true,
+      "page_offset": 0,
+      "dot_glyph": null
+    },
+    {
+      "book_id": "v5-fall-of-london",
+      "title": "The Fall of London",
+      "precedence": 60,
+      "tier": 2,
+      "extractable": true,
+      "page_offset": 2,
+      "dot_glyph": null
+    },
+    {
       "book_id": "v5-let-the-streets-run-red",
       "title": "Let the Streets Run Red",
       "precedence": 60,
@@ -55,6 +181,24 @@
       "extractable": true,
       "page_offset": 1,
       "dot_glyph": "•"
+    },
+    {
+      "book_id": "v5-trails-of-ash-and-bone",
+      "title": "Trails of Ash and Bone",
+      "precedence": 60,
+      "tier": 2,
+      "extractable": true,
+      "page_offset": 1,
+      "dot_glyph": "•"
+    },
+    {
+      "book_id": "v5-anarch",
+      "title": "Anarch",
+      "precedence": 40,
+      "tier": 2,
+      "extractable": false,
+      "page_offset": 0,
+      "dot_glyph": null
     }
   ]
 }
