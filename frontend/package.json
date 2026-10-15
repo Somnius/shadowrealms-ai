@@ -1,6 +1,6 @@
 {
   "name": "shadowrealms-ai-frontend",
-  "version": "0.12.0",
+  "version": "0.13.0",
   "description": "ShadowRealms AI - React Frontend",
   "private": true,
   "dependencies": {

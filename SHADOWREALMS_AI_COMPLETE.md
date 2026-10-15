@@ -295,6 +295,7 @@ This philosophy ensures:
 - [Performance & Scalability](#performance--scalability)
 
 ### **📊 Current Status & Versions**
+- [Version 0.13.0 - Saved for later](#version-0130---saved-for-later)
 - [Version 0.12.0 - Merits and guides](#version-0120---merits-and-guides)
 - [Version 0.11.0 - By the book](#version-0110---by-the-book)
 - [Version 0.10.0 - New foundations](#version-0100---new-foundations)
@@ -1325,6 +1326,17 @@ The project now includes comprehensive `.gitignore` rules covering:
 - **Campaign Continuity**: Persistent AI memory across multiple sessions
 - **Multi-Language**: Global accessibility with translation pipelines
 - **Real-time Collaboration**: Live AI-assisted gaming experiences
+
+## Version 0.13.0 - Saved for later
+
+### What changed from 0.12.0
+
+- **Saved points**: Advantage dots a player leaves unspent at creation (up to the chronicle's cap) and the unused free specialty are kept and spent later, from the character sheet. The chronicle's Storyteller approves, rejects or reverses each spend in an **Approvals** card; in a chronicle set to an AI Storyteller, spends that follow the rules are applied at once by a fixed rule check (not the language model) and logged, and anything else waits for a person. The server counts the saved balance itself.
+- The Storyteller's creation rules card gains the Storyteller mode (human or AI), the cap on saved dots and the saved specialty switch.
+
+**See also:** [docs/CHANGELOG.md](docs/CHANGELOG.md) (`[0.13.0]`), [docs/AI_SYSTEMS.md](docs/AI_SYSTEMS.md).
+
+---
 
 ## Version 0.12.0 - Merits and guides
 

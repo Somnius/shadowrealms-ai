@@ -1,7 +1,7 @@
 # Feature Documentation
 
 **Last Updated**: 2026-10-16  
-**Version**: 0.12.0
+**Version**: 0.13.0
 
 Feature notes for ShadowRealms AI that don't have their own document. The full list of changes per release is in [CHANGELOG.md](CHANGELOG.md); the plans are in [ROADMAP_v0.9.md](ROADMAP_v0.9.md) and [ROADMAP_v0.10.md](ROADMAP_v0.10.md).
 
@@ -9,6 +9,7 @@ Feature notes for ShadowRealms AI that don't have their own document. The full l
 
 ## Table of Contents
 
+1. [What's new in v0.13.0](#whats-new-in-v0130)
 1. [What's new in v0.12.0](#whats-new-in-v0120)
 1. [What's new in v0.11.0](#whats-new-in-v0110)
 1. [What's new in v0.9.2 to v0.10.0](#whats-new-in-v092-to-v0100)
@@ -22,6 +23,10 @@ Feature notes for ShadowRealms AI that don't have their own document. The full l
 8. [Invite Code System](#invite-code-system)
 
 ---
+
+## What's new in v0.13.0
+
+- **Saved points and approvals.** Unspent Advantage dots and the free specialty are kept for later; the Storyteller approves spends (or a rule check does, in a chronicle with an AI Storyteller), with a log and a reverse. See [CHARACTER_SHEET_BLOCKS.md](CHARACTER_SHEET_BLOCKS.md) and [AI_SYSTEMS.md](AI_SYSTEMS.md).
 
 ## What's new in v0.12.0
 
