@@ -1,0 +1,120 @@
+/**
+ * Shared V5 creation test vectors (docs/rules/v5/tests/creation-cases.json, copied here as
+ * __fixtures__/creation-cases.json): the client validator must agree with the codes the server
+ * validator (backend/services/v5_chargen.py, backend/tests/unit/test_v5_chargen.py) reports.
+ *
+ * Regenerate after changing __fixtures__/creationCaseDefs.js or buildV5Payload:
+ *   WRITE_CREATION_CASES=1 ./scripts/run-frontend-tests.sh src/characterSheet/v5/creationCases
+ * then `python3 scripts/v5_creation_cases.py sync` (copies the fixture to docs/).
+ */
+import fs from 'fs';
+import path from 'path';
+import fixture from './__fixtures__/creation-cases.json';
+import { CASE_DEFS, buildCases, formatCasesFile, storedCase } from './__fixtures__/creationCaseDefs';
+import { applyV5Catalog } from './rulesData';
+import { validateV5Sheet } from './validation';
+import { normalizeCreationSettings } from './creationSettings';
+
+/** Client messages (validation.js) -> the server's problem codes. */
+const CODES = [
+  [/^Character name is required\.$/, 'name_missing'],
+  [/^Choose a clan\.$/, 'clan_missing'],
+  [/^Choose an age\.$/, 'age_missing'],
+  [/^.+s are generation \d+–\d+\.$/, 'age_generation'],
+  [/^Thin-bloods are 14th–16th generation\.$/, 'thin_blood_generation'],
+  [/^14th–16th generation vampires are thin-bloods\.$/, 'generation_thin_blood'],
+  [/^Attributes start between 1 and 4 at creation\.$/, 'attr_range'],
+  [/^Attributes must be one at 4, three at 3, four at 2 and one at 1\.$/, 'attr_spread'],
+  [/^Choose a skill distribution\.$/, 'skill_dist'],
+  [/^.+: no skill above \d+ at creation\.$/, 'skill_dist'],
+  [/^.+ needs exactly .+\.$/, 'skill_dist'],
+  [/^You have \d+ free specialties/, 'specialty_count'],
+  [/^Each specialty needs a skill\.$/, 'specialty_skill'],
+  [/^Name the .+ specialty\.$/, 'specialty_name'],
+  [/^.+ needs at least one dot for a specialty\.$/, 'specialty_skill'],
+  [/^.+ comes with a free specialty — name it\.$/, 'specialty_missing'],
+  [/^.+ already has the .+ specialty\.$/, 'specialty_duplicate'],
+  [/^Thin-bloods start with no Disciplines\.$/, 'disc_thin_blood'],
+  [/^Pick two (clan )?Disciplines: one at 2 dots and one at 1 dot\.$/, 'disc_pick'],
+  [/^Pick two different Disciplines\.$/, 'disc_pick'],
+  [/^One Discipline at 2 dots and one at 1 dot\.$/, 'disc_pick'],
+  [/^.+ is not a .+ clan Discipline\.$/, 'disc_clan'],
+  [/^.+: .+ is taken twice\.$/, 'power_duplicate'],
+  [/^.+ is not a .+ power\.$/, 'power_unknown'],
+  [/^.+ is a level \d+ power; .+ is at \d+\.$/, 'power_level'],
+  [/^.+ also needs .+ \d+\.$/, 'power_amalgam'],
+  [/^.+ needs .+ first\.$/, 'power_prereq'],
+  [/^Choose a predator type\.$/, 'predator_missing'],
+  [/^.+ cannot take the .+ predator type\.$/, 'predator_forbidden'],
+  [/^Pick the predator type specialty\.$/, 'predator_specialty'],
+  [/^Pick the predator type Discipline\.$/, 'predator_discipline'],
+  [/^.+: (choose one of|share \d+ dots between|choose the dots for) /, 'predator_grant'],
+  [/^.+ is for ancillae only\.$/, 'predator_ancilla'],
+  [/^.+ needs Blood Potency \d+ or less\.$/, 'predator_bp'],
+  [/^Advantages: at most \d+ dots/, 'adv_over'],
+  [/^Take at least \d+ dots of Flaws/, 'flaw_under'],
+  [/^Each Advantage or Flaw is 1–5 dots\.$/, 'adv_dots_range'],
+  [/^Thin-bloods take \d+–\d+ thin-blood Merits/, 'thin_blood_merits'],
+  [/^Take as many thin-blood Flaws as thin-blood Merits/, 'thin_blood_merits'],
+  [/^This age has no starting experience to spend\.$/, 'xp_none'],
+  [/^.+ can't go above \d+ dots\.$/, 'xp_max_dots'],
+  [/^Names are at most \d+ characters\.$/, 'name_length'],
+  [/^Name each ritual bought with XP\.$/, 'xp_log'],
+  [/^Rituals are level 1 to 5\.$/, 'xp_log'],
+  [/^A level \d+ ritual needs Blood Sorcery \d+/, 'ritual_blood_sorcery'],
+  [/^.+ is a level \d+ ritual\.$/, 'ritual_level'],
+  [/^One XP purchase is not something this step can buy\.$/, 'xp_log'],
+  [/^Starting experience overspent/, 'xp_over'],
+  [/^At most \d+ rituals/, 'ritual_count'],
+  [/^The Storyteller doesn't allow the .+ predator type in this chronicle\.$/, 'predator_not_allowed'],
+  [/^The Storyteller doesn't allow .+ characters in this chronicle\.$/, 'age_not_allowed'],
+  [/^The Storyteller doesn't allow .+ in this chronicle\.$/, 'clan_not_allowed'],
+  [/^This chronicle allows at most \d+ dots of Flaws of your own/, 'flaw_over'],
+  [/^The Storyteller doesn't offer the Humanity 8 fledgling start/, 'fledgling_not_allowed'],
+  [/^Write \d+–\d+ Convictions, each with a Touchstone\.$/, 'conviction_count'],
+  [/^Each Conviction needs a Touchstone \(and vice versa\)\.$/, 'conviction_pairs'],
+];
+
+const codeOf = (msg) => CODES.find(([re]) => re.test(msg))?.[1] || `unmapped: ${msg}`;
+
+const clientCodes = (c) =>
+  [...new Set(Object.values(validateV5Sheet(c.sheet, undefined, normalizeCreationSettings(c.settings))).map(codeOf))].sort();
+
+beforeAll(() => applyV5Catalog(fixture.catalog));
+afterAll(() => applyV5Catalog(null));
+
+const FILE = path.join(__dirname, '__fixtures__', 'creation-cases.json');
+// Built on import, with the fixture's catalog (the forge's rules registry is module state).
+applyV5Catalog(fixture.catalog);
+const CASES = buildCases(CASE_DEFS);
+applyV5Catalog(null);
+
+test('the fixture is current (cases built from the definitions with buildV5Payload)', () => {
+  const text = formatCasesFile({ ...fixture, cases: CASES.map(storedCase) });
+  if (process.env.WRITE_CREATION_CASES === '1') {
+    fs.writeFileSync(FILE, text);
+    return;
+  }
+  expect(fixture.cases).toEqual(CASES.map(storedCase));
+  expect(fs.readFileSync(FILE, 'utf8')).toBe(text);
+});
+
+test('there are enough cases, valid and invalid, with unique names', () => {
+  expect(CASES.length).toBeGreaterThanOrEqual(40);
+  expect(CASES.filter((c) => !c.expect.length).length).toBeGreaterThanOrEqual(10);
+  expect(new Set(CASES.map((c) => c.name)).size).toBe(CASES.length);
+});
+
+describe.each(CASES.filter((c) => c.client).map((c) => [c.name, c]))('client agrees: %s', (_name, c) => {
+  test('same verdict and codes', () => {
+    const got = clientCodes(c);
+    if (!c.expect.length) {
+      expect(got).toEqual([]);
+      return;
+    }
+    // The client keeps one message per section, so it may report fewer codes, never others.
+    expect(got.length).toBeGreaterThan(0);
+    got.forEach((code) => expect(c.expect).toContain(code));
+    if (c.expect.length === 1) expect(got).toEqual(c.expect);
+  });
+});

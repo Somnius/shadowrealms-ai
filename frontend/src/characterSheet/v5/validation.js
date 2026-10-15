@@ -695,6 +695,9 @@ export function xpLedger(sheet, allDisciplines = disciplineNames()) {
       else nameOk(trait);
       if (level < 1 || level > V5_XP_MAX_DOTS) errors.push('Rituals are level 1 to 5.');
       else if (level > bs) errors.push(`A level ${level} ritual needs Blood Sorcery ${level} (you have ${bs}).`);
+      // A catalog ritual costs its printed level (the server re-prices it the same way).
+      const known = ritualsOf('ritual').find((r) => r.name === trait);
+      if (known && known.level !== level) errors.push(`${trait} is a level ${known.level} ritual.`);
       add({ kind: 'ritual', trait, what: `Ritual: ${trait}`, from: 0, to: level, cost: level * V5_XP_COSTS.ritual });
     } else {
       errors.push('One XP purchase is not something this step can buy.');

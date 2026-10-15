@@ -199,3 +199,25 @@ describe('Advantages from the catalog (Forge v2 part C)', () => {
     expect(document.getElementById('v5-predator-rows')).toHaveTextContent('Prey Exclusion (healthy mortals) ●');
   });
 });
+
+test('a catalog ritual bought with XP keeps its own level', () => {
+  applyV5Catalog({
+    ...fixture,
+    disciplines: [...fixture.disciplines, { id: 'discipline:blood-sorcery', name: 'Blood Sorcery', powers: [] }],
+  });
+  try {
+    renderForge();
+    pick(document.getElementById('v5-field-clan'), 'Caitiff');
+    pick(screen.getByLabelText('Discipline at 2 dots'), 'Blood Sorcery');
+    pick(screen.getByLabelText('What to buy'), 'ritual');
+    const level = screen.getByLabelText('Ritual level');
+    expect(level).not.toBeDisabled();
+    pick(screen.getByLabelText('Ritual name'), 'Blood Walk');
+    expect(level).toBeDisabled();
+    expect(level).toHaveValue('1');
+    fireEvent.click(screen.getByRole('button', { name: /^Buy/ }));
+    expect(screen.getByRole('list', { name: 'Bought with XP' })).toHaveTextContent('Ritual: Blood Walk, Level 1');
+  } finally {
+    applyV5Catalog(fixture);
+  }
+});

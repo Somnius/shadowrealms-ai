@@ -3,8 +3,12 @@
  * assert them). The wizards show them through translateSheetError(), which recognises each message
  * shape and returns it in the active language. Unknown messages pass through unchanged.
  * Trait, clan and Discipline names inside the messages stay English (game terms).
+ *
+ * The server's V5 creation check (backend/services/v5_chargen.py) answers with problem codes
+ * ({code, params}); translateProblem() / serverProblemErrors() put those in the active language.
  */
 import { t } from '../i18n';
+import { V5_AGE_BRACKETS, V5_ATTRIBUTES, V5_SECTION_IDS, V5_SKILL_DISTRIBUTIONS, V5_SKILL_LABELS } from './v5/constants';
 
 const atList = (s) => s.replace(/ at (\d)/g, (m, r) => t('wizard:validation.atRating', ' at {{r}}', { r }));
 
@@ -91,11 +95,124 @@ const PATTERNS = [
   [/^Name each ritual bought with XP\.$/, () => t('wizard:validation.v5XpRitualName', 'Name each ritual bought with XP.')],
   [/^Rituals are level 1 to 5\.$/, () => t('wizard:validation.v5XpRitualLevel', 'Rituals are level 1 to 5.')],
   [/^A level (\d+) ritual needs Blood Sorcery \d+ \(you have (\d+)\)\.$/, (m) => t('wizard:validation.v5XpRitualBs', 'A level {{level}} ritual needs Blood Sorcery {{level}} (you have {{bs}}).', { level: m[1], bs: m[2] })],
+  [/^(.+) is a level (\d+) ritual\.$/, (m) => t('wizard:validation.v5XpRitualCatalogLevel', '{{name}} is a level {{level}} ritual.', { name: m[1], level: m[2] })],
   [/^One XP purchase is not something this step can buy\.$/, () => t('wizard:validation.v5XpUnknown', 'One XP purchase is not something this step can buy.')],
   [/^Starting experience overspent: (\d+) of (\d+) XP\.$/, (m) => t('wizard:validation.v5XpOver', 'Starting experience overspent: {{spent}} of {{total}} XP.', { spent: m[1], total: m[2] })],
   [/^At most (\d+) rituals \(you have (\d+)\)\.$/, (m) => t('wizard:validation.v5RitualsMax', 'At most {{max}} rituals (you have {{n}}).', { max: m[1], n: m[2] })],
   [/^(.+) already has the (.+) specialty\.$/, (m) => t('wizard:validation.v5SpecialtyDuplicate', '{{skill}} already has the {{name}} specialty.', { skill: m[1], name: m[2] })],
 ];
+
+// ---------- V5 creation problems from the server ({code, params}) ----------
+
+const ATTRIBUTE_LABELS = Object.fromEntries([...V5_ATTRIBUTES.physical, ...V5_ATTRIBUTES.social, ...V5_ATTRIBUTES.mental]);
+const DERIVED_LABELS = { humanity: 'Humanity', blood_potency: 'Blood Potency', health: 'Health', willpower: 'Willpower', hunger: 'Hunger' };
+const skillLabel = (k) => V5_SKILL_LABELS[k] || k || '';
+const traitLabel = (k) => V5_SKILL_LABELS[k] || ATTRIBUTE_LABELS[k] || DERIVED_LABELS[k] || k || '';
+const ageLabel = (a) => V5_AGE_BRACKETS[a]?.label || a || '';
+
+/** One entry per code of backend/services/v5_chargen.py PROBLEM_CODES (a pytest checks it). */
+const PROBLEMS = {
+  clan_missing: () => t('wizard:problem.clan_missing', 'Choose a clan.'),
+  age_missing: () => t('wizard:problem.age_missing', 'Choose an age.'),
+  age_generation: (p) => t('wizard:problem.age_generation', '{{age}}: generation {{min}}–{{max}} (this sheet has {{generation}}).', { ...p, age: ageLabel(p.age) }),
+  thin_blood_generation: () => t('wizard:problem.thin_blood_generation', 'Thin-bloods are 14th–16th generation.'),
+  generation_thin_blood: () => t('wizard:problem.generation_thin_blood', '14th–16th generation vampires are thin-bloods.'),
+  attr_range: () => t('wizard:problem.attr_range', 'Attributes start between 1 and 4 at creation.'),
+  attr_spread: () => t('wizard:problem.attr_spread', 'Attributes must be one at 4, three at 3, four at 2 and one at 1.'),
+  skill_dist: (p) =>
+    V5_SKILL_DISTRIBUTIONS[p.distribution]
+      ? t('wizard:problem.skill_dist', "Skills don't match the {{distribution}} distribution.", { distribution: V5_SKILL_DISTRIBUTIONS[p.distribution].label })
+      : t('wizard:problem.skill_dist_missing', 'Choose a skill distribution.'),
+  specialty_count: (p) => t('wizard:problem.specialty_count', 'You have {{max}} free specialties (you named {{have}}).', p),
+  specialty_skill: (p) => t('wizard:problem.specialty_skill', '{{skill}} needs at least one dot for a specialty.', { skill: skillLabel(p.skill) }),
+  specialty_missing: (p) => t('wizard:problem.specialty_missing', '{{skill}} comes with a free specialty — name it.', { skill: skillLabel(p.skill) }),
+  specialty_duplicate: (p) => t('wizard:problem.specialty_duplicate', '{{skill}} already has the {{name}} specialty.', { skill: skillLabel(p.skill), name: p.name }),
+  disc_thin_blood: () => t('wizard:problem.disc_thin_blood', 'Thin-bloods start with no Disciplines.'),
+  disc_pick: () => t('wizard:problem.disc_pick', "Disciplines: two clan Disciplines, one at 2 dots and one at 1, plus the predator type's dot."),
+  disc_clan: (p) => t('wizard:problem.disc_clan', '{{name}} is not a {{clan}} clan Discipline.', p),
+  power_unknown: (p) => t('wizard:problem.power_unknown', '{{power}} is not a {{discipline}} power.', p),
+  power_level: (p) => t('wizard:problem.power_level', '{{power}} is a level {{level}} power; {{discipline}} is at {{rating}}.', p),
+  power_amalgam: (p) => t('wizard:problem.power_amalgam', '{{power}} also needs {{discipline}} {{level}}.', p),
+  power_prereq: (p) => t('wizard:problem.power_prereq', '{{power}} needs {{needs}} first.', p),
+  power_duplicate: (p) => t('wizard:problem.power_duplicate', '{{discipline}}: {{power}} is taken twice.', p),
+  power_count: (p) => t('wizard:problem.power_count', '{{discipline}}: {{have}} powers for {{max}} dots.', p),
+  predator_missing: () => t('wizard:problem.predator_missing', 'Choose a predator type.'),
+  predator_forbidden: (p) => t('wizard:problem.predator_forbidden', '{{clan}} cannot take the {{predator}} predator type.', p),
+  predator_specialty: () => t('wizard:problem.predator_specialty', 'Pick the predator type specialty.'),
+  predator_discipline: () => t('wizard:problem.predator_discipline', 'Pick the predator type Discipline.'),
+  predator_grant: () => t('wizard:problem.predator_grant', "The predator type's Advantages and Flaws don't match what the type gives."),
+  predator_bp: (p) => t('wizard:problem.predator_bp', '{{predator}} needs Blood Potency {{max}} or less (this sheet has {{bp}}).', p),
+  predator_ancilla: (p) => t('wizard:problem.predator_ancilla', '{{predator}} is for ancillae only.', p),
+  adv_over: (p) => t('wizard:problem.adv_over', 'Advantages: at most {{max}} dots (you have {{have}}).', p),
+  flaw_under: (p) => t('wizard:problem.flaw_under', 'Take at least {{min}} dots of Flaws (you have {{have}}).', p),
+  flaw_over: (p) => t('wizard:problem.flaw_over', 'This chronicle allows at most {{max}} dots of Flaws of your own (you have {{have}}).', p),
+  adv_dots_range: (p) => t('wizard:problem.adv_dots_range', '{{name}}: {{min}}–{{max}} dots (you have {{dots}}).', p),
+  adv_unknown: (p) => t('wizard:problem.adv_unknown', '{{name}} is not in the catalog.', p),
+  adv_restricted: (p) => t('wizard:problem.adv_restricted', '{{name}} is not open to {{clan}}.', p),
+  loresheet_restricted: (p) => t('wizard:problem.loresheet_restricted', 'The {{name}} loresheet is not open to {{clan}}.', p),
+  thin_blood_merits: (p) => t('wizard:problem.thin_blood_merits', 'Thin-bloods take {{min}}–{{max}} thin-blood Merits and as many thin-blood Flaws (you have {{merits}} and {{flaws}}).', p),
+  thin_blood_only: () => t('wizard:problem.thin_blood_only', 'Only thin-bloods take thin-blood Merits and Flaws.'),
+  conviction_count: (p) => t('wizard:problem.conviction_count', 'Write {{min}}–{{max}} Convictions, each with a Touchstone (you have {{have}}).', p),
+  conviction_pairs: () => t('wizard:problem.conviction_pairs', 'Each Conviction needs a Touchstone.'),
+  derived_value: (p) => t('wizard:problem.derived_value', '{{trait}} should be {{want}}, not {{have}}.', { ...p, trait: traitLabel(p.trait) }),
+  xp_none: () => t('wizard:problem.xp_none', 'This age has no starting experience to spend.'),
+  xp_total: (p) => t('wizard:problem.xp_total', 'Starting experience is {{want}} XP for this age, not {{have}}.', p),
+  xp_log: () => t('wizard:problem.xp_log', "The starting experience log doesn't match the sheet."),
+  xp_price: (p) => t('wizard:problem.xp_price', '{{trait}} costs {{want}} XP, not {{cost}}.', { ...p, trait: traitLabel(p.trait) }),
+  xp_over: (p) => t('wizard:problem.xp_over', 'Starting experience overspent: {{spent}} of {{total}} XP.', p),
+  xp_max_dots: (p) => t('wizard:problem.xp_max_dots', "{{trait}} can't go above {{max}} dots.", { ...p, trait: traitLabel(p.trait) }),
+  name_length: (p) => t('wizard:problem.name_length', 'Names are at most {{max}} characters.', p),
+  ritual_level: (p) => t('wizard:problem.ritual_level', '{{name}} is a level {{want}} ritual.', p),
+  ritual_blood_sorcery: (p) => t('wizard:problem.ritual_blood_sorcery', 'A level {{level}} ritual needs Blood Sorcery {{level}} (you have {{rating}}).', p),
+  ritual_start: () => t('wizard:problem.ritual_start', 'One free starting ritual, of level 1, with at least one dot of Blood Sorcery.'),
+  ceremony_start: () => t('wizard:problem.ceremony_start', 'One free starting ceremony, of level 1, whose prerequisite Oblivion power the sheet has.'),
+  ritual_count: (p) => t('wizard:problem.ritual_count', 'At most {{max}} rituals (you have {{have}}).', p),
+  clan_not_allowed: (p) => t('wizard:problem.clan_not_allowed', "The Storyteller doesn't allow {{clan}} in this chronicle.", p),
+  predator_not_allowed: (p) => t('wizard:problem.predator_not_allowed', "The Storyteller doesn't allow the {{predator}} predator type in this chronicle.", p),
+  age_not_allowed: (p) => t('wizard:problem.age_not_allowed', "The Storyteller doesn't allow {{age}} characters in this chronicle.", { age: ageLabel(p.age) }),
+  fledgling_not_allowed: () => t('wizard:problem.fledgling_not_allowed', "The Storyteller doesn't offer the Humanity 8 fledgling start in this chronicle."),
+};
+
+/** One server problem ({code, params}) in the active language; a string goes through translateSheetError. */
+export function translateProblem(problem) {
+  if (typeof problem === 'string') return translateSheetError(problem);
+  const code = problem?.code;
+  if (!code) return '';
+  const fn = PROBLEMS[code];
+  return fn ? fn(problem.params || {}) : t('wizard:problem.unknown', 'The sheet breaks a creation rule ({{code}}).', { code });
+}
+
+/** The forge section a problem code belongs to (for the error marks and the scroll). */
+export function problemSection(code) {
+  const S = V5_SECTION_IDS;
+  if (/^(clan_missing|clan_not_allowed)$/.test(code)) return S.clan;
+  if (/^(age_|thin_blood_generation|generation_thin_blood)/.test(code)) return S.age;
+  if (/^attr_/.test(code)) return S.attributes;
+  if (/^(skill_|specialty_)/.test(code)) return S.skills;
+  if (/^(disc_|power_|ritual_start|ceremony_start)/.test(code)) return S.disciplines;
+  if (/^predator_/.test(code)) return S.predator;
+  if (/^(adv_|flaw_|loresheet_|thin_blood_)/.test(code)) return S.advantages;
+  if (/^(conviction_|fledgling_|derived_)/.test(code)) return S.humanity;
+  if (/^(xp_|ritual_|name_length)/.test(code)) return S.experience;
+  return S.identity;
+}
+
+/**
+ * The problems of a 400 from POST /api/characters/: { messages: [translated], bySection:
+ * {sectionId: first message} }. String problems (older answers) are left to the caller.
+ */
+export function serverProblemErrors(problems) {
+  const list = (Array.isArray(problems) ? problems : []).filter((p) => p && typeof p === 'object' && p.code);
+  const bySection = {};
+  const messages = [];
+  list.forEach((p) => {
+    const msg = translateProblem(p);
+    const id = problemSection(p.code);
+    if (!bySection[id]) bySection[id] = msg;
+    if (!messages.includes(msg)) messages.push(msg);
+  });
+  return { messages, bySection };
+}
 
 export function translateSheetError(msg) {
   if (typeof msg !== 'string' || !msg) return msg;
