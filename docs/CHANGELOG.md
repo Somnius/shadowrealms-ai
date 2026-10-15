@@ -10,6 +10,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Character sheet PDF, V5: a **Reference** page after the two sheet pages (more pages when it runs over) with what the V5 catalog knows about the sheet: the clan with its bane and compulsion, the predator type, each Discipline power, and the rituals, ceremonies and formulae, as "Name — description (Book, p. N)". Descriptions follow the downloader's interface language (`users.ui_language`, English when unset or not written yet), names stay as in the books. Black and white, the sheet's fonts, Greek included; page text only. Names the catalog doesn't know are left out, and with no match at all (or a Classic sheet, or no catalog on the server) the PDF is the same two pages as before.
 
+### Security
+- Frontend dev dependencies: `source-map-js` 1.2.2 and `postcss-selector-parser` 7.1.6 (an npm override, since Tailwind 3 asks for 6.x; the built CSS is byte-identical). `sprintf-js` (through `argparse` in the test tooling) and `braces` have no fixed release; both are build/test-time only.
+
 ## [0.11.0] - 2026-10-15 - By the book
 
 ### Added
