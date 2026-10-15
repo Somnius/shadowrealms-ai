@@ -1,4 +1,4 @@
-import { act, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen } from '@testing-library/react';
 import CharacterCreationWizard from '../CharacterCreationWizard';
 import CharacterSheetModal from '../CharacterSheetModal';
 import { setLanguage } from '../../i18n';
@@ -25,6 +25,9 @@ test('classic and V5 forges render in Greek, game terms stay English', async () 
 
   render(<CharacterCreationWizard token="x" campaigns={v5} />);
   expect(screen.getByText('Σφυρηλάτηση φύλλου χαρακτήρα · V5')).toBeInTheDocument();
+  // V5 starts with the choice between the guide and the full forge
+  expect(screen.getByRole('button', { name: 'Με οδηγό' })).toBeInTheDocument();
+  fireEvent.click(screen.getByRole('button', { name: 'Πλήρης σφυρηλάτηση' }));
   expect(screen.getByLabelText('Όνομα χαρακτήρα')).toBeInTheDocument();
 });
 

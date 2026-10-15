@@ -8,7 +8,7 @@ import AbilityColumns from './characterCreation/AbilityColumns';
 import MeritFlawRows from './characterCreation/MeritFlawRows';
 import ResponsiveSheetBlock from './characterCreation/ResponsiveSheetBlock';
 import FreebieSummary from './characterCreation/FreebieSummary';
-import V5CharacterCreationWizard from './characterCreation/V5CharacterCreationWizard';
+import V5ForgeEntry from './characterCreation/V5ForgeEntry';
 import { editionLabel, editionOf, V5 } from '../rules/rulesEdition';
 import {
   ARCHETYPE_CUSTOM,
@@ -87,7 +87,7 @@ function buildCustomSkillsPayload(customAbilities) {
 
 /**
  * Single-page oWoD character forge: scrollable sheet, section nav, pool summaries, structured merits.
- * Classic (Revised) rules; a V5 chronicle renders the V5 forge instead.
+ * Classic (Revised) rules; a V5 chronicle renders the V5 forge instead (V5ForgeEntry: Guided or full forge).
  */
 export default function CharacterCreationWizard({
   token,
@@ -430,7 +430,7 @@ export default function CharacterCreationWizard({
 
   if (campaign && editionOf(campaign) === V5) {
     return (
-      <V5CharacterCreationWizard
+      <V5ForgeEntry
         token={token}
         campaigns={eligible}
         campaignId={campaignId}

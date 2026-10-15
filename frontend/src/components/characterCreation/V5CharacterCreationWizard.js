@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { GothicBox } from '../GothicDecorations';
 import { V5_SECTION_IDS } from '../../characterSheet/v5/constants';
 import { useV5Catalog } from '../../rules/v5Catalog';
@@ -43,7 +43,9 @@ const SECTION_ORDER = [
 
 /**
  * V5 character forge (docs/rules/V5.md §4). Pure rules live in characterSheet/v5/validation.js,
- * the state in v5/useV5ForgeState.js, one component per step in v5/.
+ * the state in v5/useV5ForgeState.js, one component per step in v5/. Reached through
+ * V5ForgeEntry.jsx (Guided or full forge): `initial` is the guide's prefill, `guided` its
+ * {clan, predator} for the banner, `autoFocus` puts the focus on the title when the forge opens.
  */
 export default function V5CharacterCreationWizard({
   token,
@@ -54,12 +56,19 @@ export default function V5CharacterCreationWizard({
   onCancel,
   showError,
   showSuccess,
+  initial,
+  guided,
+  autoFocus,
 }) {
   useV5Catalog(token);
   const settings = settingsForCampaign(campaigns, campaignId);
-  const f = useV5ForgeState(settings);
+  const f = useV5ForgeState(settings, initial);
   const [submitting, setSubmitting] = useState(false);
   const { sheet, derived, fieldErrors } = f;
+  const titleRef = useRef(null);
+  useEffect(() => {
+    if (autoFocus) titleRef.current?.focus();
+  }, [autoFocus]);
 
   const handleSubmit = async () => {
     const err = translateSheetErrors(validateV5Sheet(sheet, undefined, settings));
@@ -106,9 +115,20 @@ export default function V5CharacterCreationWizard({
       <div style={{ maxWidth: '1040px', margin: '0 auto', padding: '20px 16px 60px' }}>
         <GothicBox theme="vampire">
           <div style={{ padding: '8px 8px 0' }}>
-            <h2 style={{ fontFamily: 'var(--sr-font-display)', color: ACCENT, marginTop: 0, fontSize: '22px' }}>
+            <h2 ref={titleRef} tabIndex={-1} style={{ fontFamily: 'var(--sr-font-display)', color: ACCENT, marginTop: 0, fontSize: '22px', outline: 'none' }}>
               {t('wizard:v5.title', 'Character sheet forge · V5')}
             </h2>
+            {guided ? (
+              <div
+                role="note"
+                aria-label={t('wizard:guided.bannerLabel', 'Suggested by the guide')}
+                style={{ margin: '0 0 12px', padding: '10px 12px', borderLeft: '3px solid var(--sr-gold-400)', background: 'rgba(0,0,0,0.25)', color: 'var(--sr-bone-100)', fontSize: '13px' }}
+              >
+                {t('wizard:guided.banner', 'Suggested by the guide: {{suggestion}}. Clan, predator type, Attributes and Skills are filled in; change anything you like.', {
+                  suggestion: [guided.clan, guided.predator].filter(Boolean).join(' · '),
+                })}
+              </div>
+            ) : null}
             <p style={{ color: 'var(--sr-bone-500)', fontSize: '14px', lineHeight: 1.5 }}>
               {t('wizard:v5.introV2', 'Vampire: The Masquerade 5th Edition creation, in the corebook\'s order: concept, clan, a fixed attribute spread, a skill distribution, 2 + 1 Discipline dots, a predator type, 7 Advantage dots and 2 Flaw dots of your own, Convictions, then age. No freebie points in V5.')}
             </p>

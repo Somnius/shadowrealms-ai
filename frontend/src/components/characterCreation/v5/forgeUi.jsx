@@ -50,6 +50,24 @@ export const addButtonStyle = {
   cursor: 'pointer',
 };
 export const noteStyle = { color: 'var(--sr-bone-300)', fontSize: '13px', lineHeight: 1.5 };
+/** The forge's plain and main buttons (Cancel / Create character), also used by the guided mode. */
+export const buttonStyle = {
+  padding: '10px 18px',
+  background: 'var(--sr-night-800)',
+  color: 'var(--sr-bone-100)',
+  border: '1px solid var(--sr-night-600)',
+  borderRadius: '8px',
+  cursor: 'pointer',
+};
+export const primaryButtonStyle = {
+  ...buttonStyle,
+  padding: '10px 22px',
+  background: 'var(--sr-arcane-500)',
+  color: 'white',
+  border: 'none',
+  fontWeight: 'bold',
+  fontFamily: 'var(--sr-font-display)',
+};
 
 export function scrollToSection(id) {
   const el = typeof document !== 'undefined' ? document.getElementById(id) : null;
