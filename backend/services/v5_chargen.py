@@ -16,7 +16,9 @@ by buildV5Payload in frontend/src/characterSheet/v5/validation.js). The stored v
 - predator grant rows (kind 'predator') against the type's grants; own Advantages, own Flaws;
 - Convictions, age and generation, derived values (Health, Willpower, Humanity, BP, Hunger);
 - rituals and the Oblivion ceremony taken free at creation;
-- the chronicle's creation settings (allowed clans, predator types, ages, Flaw cap, Humanity 8).
+- the chronicle's creation settings (allowed clans, predator types, ages, Flaw cap, Humanity 8,
+  and allowed books: every catalog entry the sheet picks is in an allowed book or one it is also
+  printed in, creation_settings.book_allowed).
 
 Advantages and loresheets are checked against the catalog (advantages.json, loresheets.json)
 when it has them: dot ranges and clan restrictions. Without them only the totals are checked.
@@ -35,7 +37,7 @@ from collections import Counter
 from typing import Any, Dict, Iterable, List, Optional, Tuple
 
 from services.character_sheet_v5 import RITUALS_MAX, V5_ATTRIBUTES, V5_SKILLS
-from services.creation_settings import normalize_creation_settings
+from services.creation_settings import book_allowed, entry_books, normalize_creation_settings
 
 # ---------- rule constants (docs/rules/v5.json; test_v5_chargen.py checks they match) ----------
 
@@ -116,6 +118,7 @@ PROBLEM_CODES = (
     "xp_none", "xp_total", "xp_log", "xp_price", "xp_over", "xp_max_dots", "name_length",
     "ritual_level", "ritual_blood_sorcery", "ritual_start", "ceremony_start", "ritual_count",
     "clan_not_allowed", "predator_not_allowed", "age_not_allowed", "fledgling_not_allowed",
+    "book_not_allowed",
 )
 
 
@@ -209,6 +212,11 @@ def _sid(v: Any) -> str:
     return v if isinstance(v, str) else ""
 
 
+def _source(entry: dict) -> Dict[str, Any]:
+    """The book facts of a catalog entry (book, also_in), kept on the check's own entries."""
+    return {"book": entry.get("book"), "also_in": entry.get("also_in")}
+
+
 def _keys_of(entry: dict) -> set:
     """The normalised name and aliases of a catalog entry."""
     return {_norm(n) for n in [_str(entry.get("name")), *_strs(entry.get("aliases"))] if n}
@@ -278,6 +286,7 @@ class _Catalog:
                 # Caitiff: new x 6 for every Discipline, no positive Status (the clan's creation rules)
                 "xp_multiplier": _int(creation.get("discipline_xp_multiplier")),
                 "no_positive_status": creation.get("no_positive_status") is True,
+                **_source(c),
             }
             index(self.clans, [c.get("name"), c.get("id"), *_strs(c.get("aliases"))], entry)
 
@@ -293,6 +302,7 @@ class _Catalog:
                     "level": _int(pw.get("level")),
                     "amalgam": (disc(am.get("discipline")), _int(am.get("level"))) if am else None,
                     "prerequisite": prereq(pw.get("prerequisite")),
+                    **_source(pw),
                 })
             index(self.disciplines, [d.get("name"), *_strs(d.get("aliases"))],
                   {"id": _sid(d.get("id")), "name": _str(d.get("name")), "powers": powers})
@@ -320,6 +330,7 @@ class _Catalog:
                 "max_blood_potency": mbp if isinstance(mbp, int) and not isinstance(mbp, bool) else None,
                 "forbidden_clans": [clan(c) for c in _strs(pt.get("forbidden_clans"))],
                 "ancilla_only": pt.get("ancilla_only") is True,
+                **_source(pt),
             }
             index(self.predators, [pt.get("name"), pt.get("id"), *_strs(pt.get("aliases"))], entry)
 
@@ -328,6 +339,7 @@ class _Catalog:
             for r in _dicts(cat.get(kind)):
                 entry = {
                     "name": _str(r.get("name")), "level": _int(r.get("level")), "prerequisite": prereq(r.get("prerequisite")),
+                    **_source(r),
                 }
                 index(out, [r.get("name"), *_strs(r.get("aliases"))], entry)
             return out
@@ -401,6 +413,15 @@ class _Catalog:
             ]
             hits = mine or hits
         return hits[0] if hits else None
+
+    def thin_blood(self, name: Any, flaw: bool) -> Optional[dict]:
+        """The catalog thin-blood Merit (or Flaw) of this name or alias."""
+        want = _norm(name)
+        return next(
+            (a for a in self.advantages
+             if a.get("thin_blood") is True and (a.get("kind") == "flaw") == flaw and want in _keys_of(a)),
+            None,
+        ) if want else None
 
     def loresheet(self, row: dict) -> Optional[dict]:
         """The catalog loresheet a row names: by id, else (or when the id is unknown) by name."""
@@ -572,6 +593,7 @@ def validate_creation(payload: Any, catalog: Any, settings: Any = None) -> List[
     _check_experience(p, sh, cat, *specialties)
     _check_rituals(p, sh, cat)
     _check_settings(p, sh, s)
+    _check_books(p, sh, cat, s)
     _check_convictions(p, sh)
     _check_derived(p, sh, s)
     return p.items
@@ -796,7 +818,7 @@ def _check_advantages(p: _Problems, sh: _Sheet, cat: _Catalog, s: Dict[str, Any]
     cap = s.get("flaws_max_dots")
     if cap is not None and flaw_dots > cap:
         p.add("flaw_over", max=cap, have=flaw_dots)
-    _check_rows(p, cat, sh.clan, own_adv, own_flaws, sh.level)
+    _check_rows(p, cat, sh.clan, own_adv, own_flaws, sh.level, s)
 
     tb_merits = _names(sh.meta.get("thin_blood_merits"))
     tb_flaws = _names(sh.meta.get("thin_blood_flaws"))
@@ -858,6 +880,36 @@ def _check_settings(p: _Problems, sh: _Sheet, s: Dict[str, Any]) -> None:
         p.add("predator_not_allowed", predator=sh.pred_name)
     if sh.age and s.get("allowed_ages") and sh.age not in s["allowed_ages"]:
         p.add("age_not_allowed", age=sh.age)
+
+
+def _book_problem(p: _Problems, s: Dict[str, Any], name: str, entry: Optional[dict], kind: str) -> None:
+    """book_not_allowed when a catalog entry the sheet picked is in none of the chronicle's books."""
+    if entry is not None and not book_allowed(s, entry):
+        p.add("book_not_allowed", name=name, book=entry_books(entry)[0], kind=kind)
+
+
+def _check_books(p: _Problems, sh: _Sheet, cat: _Catalog, s: Dict[str, Any]) -> None:
+    """The chronicle's allowed books (creation_settings.allowed_books): the clan, the predator type,
+    each power, ritual and ceremony, and the thin-blood Merits and Flaws are in an allowed book or
+    one they are also printed in. Own Advantage, Flaw and loresheet rows: _check_rows. What the clan
+    or the predator type gives (Discipline dot, grants, the clan's Flaws) comes with it, and a
+    Discipline itself is core rules, so those aren't checked."""
+    if not s.get("allowed_books"):
+        return
+    _book_problem(p, s, sh.clan_name, sh.clan, "clan")
+    _book_problem(p, s, sh.pred_name, sh.pred, "predator")
+    for name, _level, raw in sh.discs:
+        entry = cat.discipline(name)
+        for pw_name in (_power_name(v) for v in raw):
+            pw = next((x for x in entry["powers"] if _norm(pw_name) in x["keys"]), None) if entry and pw_name else None
+            _book_problem(p, s, pw["name"] if pw else pw_name, pw, "power")
+    for r in sh.rituals:
+        kind = "ceremony" if r.get("kind") == "ceremony" else "ritual"
+        known = (cat.ceremonies if kind == "ceremony" else cat.rituals).get(_norm(r.get("name")))
+        _book_problem(p, s, known["name"] if known else "", known, kind)
+    for key, flaw in (("thin_blood_merits", False), ("thin_blood_flaws", True)):
+        for name in _names(sh.meta.get(key)):
+            _book_problem(p, s, name, cat.thin_blood(name, flaw), "thin_blood")
 
 
 def _check_convictions(p: _Problems, sh: _Sheet) -> None:
@@ -976,11 +1028,13 @@ def _dots_range(entry: dict) -> Optional[Tuple[int, int, Optional[List[int]]]]:
 
 
 def _check_rows(p: _Problems, cat: _Catalog, clan: Optional[dict], own_adv: List[dict],
-                own_flaws: List[dict], final_level: Dict[str, int]) -> None:
+                own_flaws: List[dict], final_level: Dict[str, int], settings: Optional[Dict[str, Any]] = None) -> None:
     """Each own Advantage/Flaw row: a custom row needs the Storyteller (custom_row); a loresheet
     row costs its levels; any other row keeps to its catalog rating when advantages.json knows it
     (Allies 1-6, Mask 1 or 2), else 1-5. With the catalogs installed also the clan restrictions,
-    and a row whose id and name both don't resolve is refused; Caitiff list no Status."""
+    and a row whose id and name both don't resolve is refused; Caitiff list no Status. With
+    `settings` (normalised) a catalog entry outside the chronicle's allowed books is refused
+    (book_not_allowed), except the clan's own Flaws (source 'clan'), which come with the clan."""
     clan_keys = {_norm(clan["name"]), _norm(clan["id"])} if clan else set()
 
     def in_clans(ids: Iterable[Any]) -> bool:
@@ -1004,6 +1058,8 @@ def _check_rows(p: _Problems, cat: _Catalog, clan: Optional[dict], own_adv: List
                 entry = cat.advantage(row, flaw, clan)
             if rid and ls is None and entry is None:
                 p.add("adv_unknown", name=name)
+        if settings is not None and row.get("source") != "clan":
+            _book_problem(p, settings, name, ls if ls is not None else entry, "loresheet" if ls is not None else "advantage")
         if row.get("kind") == "loresheet":
             _check_loresheet_levels(p, row, ls)
         else:
@@ -1042,17 +1098,19 @@ def _check_rows(p: _Problems, cat: _Catalog, clan: Optional[dict], own_adv: List
             p.add("caitiff_status", clan=clan["name"])
 
 
-def check_advantage_rows(meta: Any, rows: Any, catalog: Any) -> List[Dict[str, Any]]:
+def check_advantage_rows(meta: Any, rows: Any, catalog: Any, settings: Any = None) -> List[Dict[str, Any]]:
     """
     validate_creation's per-row check (catalog rating, Allies 1-6 and Mask 1 or 2 included,
-    loresheet levels and restrictions, clan restrictions, custom rows) for Advantage rows of the
-    sheet whose wod_meta is `meta` (its clan and Disciplines). services/saved_points.py checks the
-    rows a saved-point spend makes with it, so both use one code path.
+    loresheet levels and restrictions, clan restrictions, custom rows, and with the chronicle's
+    creation `settings` its allowed books) for Advantage rows of the sheet whose wod_meta is `meta`
+    (its clan and Disciplines). services/saved_points.py checks the rows a saved-point spend makes
+    with it, so both use one code path.
     """
     p = _Problems()
     cat = _Catalog(catalog)
     sh = _Sheet({"wod_meta": meta if isinstance(meta, dict) else {}}, cat)
-    _check_rows(p, cat, sh.clan, _named_rows(rows), [], sh.level)
+    s = normalize_creation_settings(settings) if settings is not None else None
+    _check_rows(p, cat, sh.clan, _named_rows(rows), [], sh.level, s)
     return p.items
 
 

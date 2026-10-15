@@ -5,6 +5,7 @@ import { apiFetch, errorText, getCurrentToken } from '../app/http';
 import { V5_SKILL_KEYS, V5_SKILL_LABELS } from '../characterSheet/v5/constants';
 import { advantageEntries, findLoresheet, loresheetEntries } from '../characterSheet/v5/rulesData';
 import { advantageOptions } from '../characterSheet/v5/validation';
+import { bookAllowed } from '../characterSheet/v5/creationSettings';
 import { useV5Catalog } from '../rules/v5Catalog';
 import {
   ADVANTAGE_KINDS,
@@ -87,8 +88,11 @@ function payloadItem(it, own) {
   return it.kind === 'loresheet' ? lore({ name }) : { name, kind: it.kind, dots: Number(it.dots) };
 }
 
-/** The catalog picker's choices: the player's own rows, then Backgrounds, Merits and loresheets open to the sheet. */
-function CatalogPicker({ id, label, value, onChange, wm, own }) {
+/**
+ * The catalog picker's choices: the player's own rows, then Backgrounds, Merits and loresheets open
+ * to the sheet, from the chronicle's books.
+ */
+function CatalogPicker({ id, label, value, onChange, wm, own, settings }) {
   const ownLabel = (r) =>
     r.kind === 'loresheet'
       ? t('sheet:spend.ownLore', '{{name}} (levels {{levels}})', { name: r.name, levels: (r.levels || []).join(', ') || '–' })
@@ -114,9 +118,9 @@ function CatalogPicker({ id, label, value, onChange, wm, own }) {
           ))}
         </optgroup>
       ) : null}
-      {group('Backgrounds', advantageOptions(wm.clan, 'background'), 'adv')}
-      {group('Merits', advantageOptions(wm.clan, 'merit'), 'adv')}
-      {group('Loresheets', loresheetEntries().filter((l) => loresheetOpen(l, wm)), 'lore')}
+      {group('Backgrounds', advantageOptions(wm.clan, 'background', settings), 'adv')}
+      {group('Merits', advantageOptions(wm.clan, 'merit', settings), 'adv')}
+      {group('Loresheets', loresheetEntries().filter((l) => loresheetOpen(l, wm) && bookAllowed(settings, l)), 'lore')}
     </Select>
   );
 }
@@ -228,6 +232,7 @@ function SpendForm({ character, info, onSent, onCancel }) {
                     onChange={(e) => setItem(i, { pick: e.target.value, level: '', note: '' })}
                     wm={wm}
                     own={own}
+                    settings={info.settings}
                   />
                 ) : (
                   <>

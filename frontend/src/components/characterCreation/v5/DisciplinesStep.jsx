@@ -1,16 +1,23 @@
 import ResponsiveSheetBlock from '../ResponsiveSheetBlock';
 import { CAITIFF, THIN_BLOOD, V5_NAME_MAX, V5_SECTION_IDS } from '../../../characterSheet/v5/constants';
-import { startingCeremonyOptions, startingRitualAllowed } from '../../../characterSheet/v5/validation';
+import { inBooks, startingCeremonyOptions, startingRitualAllowed } from '../../../characterSheet/v5/validation';
 import { powersOf, ritualsOf } from '../../../characterSheet/v5/rulesData';
 import { t } from '../../../i18n';
 import { Term } from '../../../i18n/glossary';
 import PredatorPreview from './PredatorPreview';
 import { ACCENT, CatalogNote, InlineError, SourceDots, inputStyle, labelStyle, useForge } from './forgeUi';
 
-/** Step 5 (core p. 136): two clan Disciplines (2 + 1), a power per dot, and the predator preview. */
+/**
+ * Step 5 (core p. 136): two clan Disciplines (2 + 1), a power per dot, and the predator preview.
+ * Powers, rituals and ceremonies come from the chronicle's books; one already chosen stays listed
+ * (the check then says why it doesn't fit).
+ */
 export default function DisciplinesStep() {
   const f = useForge();
   const { clan, discRows, setDisc } = f;
+  const fits = inBooks(f.settings);
+  const rituals = ritualsOf('ritual', 1).filter((r) => fits(r) || r.name === f.startingRitual);
+  const ceremonies = startingCeremonyOptions(f.sheet).filter((r) => fits(r) || r.name === f.startingCeremony);
   return (
     <ResponsiveSheetBlock
       sectionId={V5_SECTION_IDS.disciplines}
@@ -86,7 +93,7 @@ export default function DisciplinesStep() {
                 }
                 const taken = row.powers.filter((x, j) => j !== p && x);
                 const chosen = catalog.find((x) => x.name === pw);
-                const offered = catalog.filter((x) => x.level <= row.level);
+                const offered = catalog.filter((x) => x.level <= row.level && fits(x));
                 return (
                   <div key={p} style={{ flex: '1 1 240px', minWidth: 0 }}>
                     <select
@@ -121,13 +128,13 @@ export default function DisciplinesStep() {
             <>
               <select id="v5-field-starting-ritual" value={f.startingRitual} onChange={(e) => f.setStartingRitual(e.target.value)} style={inputStyle}>
                 <option value="">{t('wizard:v5.startingRitualNone', 'None (optional)')}</option>
-                {ritualsOf('ritual', 1).map((r) => (
+                {rituals.map((r) => (
                   <option key={r.id || r.name} value={r.name}>
                     {r.name}
                   </option>
                 ))}
               </select>
-              <CatalogNote entry={ritualsOf('ritual', 1).find((r) => r.name === f.startingRitual)} />
+              <CatalogNote entry={rituals.find((r) => r.name === f.startingRitual)} />
             </>
           ) : (
             <input
@@ -141,20 +148,20 @@ export default function DisciplinesStep() {
           )}
         </div>
       ) : null}
-      {startingCeremonyOptions(f.sheet).length ? (
+      {ceremonies.length ? (
         <div style={{ marginTop: '10px', maxWidth: '520px' }}>
           <label htmlFor="v5-field-starting-ceremony" style={labelStyle}>
             {t('wizard:v5.startingCeremony', 'Starting Oblivion ceremony (Level 1, needs its prerequisite power)')}
           </label>
           <select id="v5-field-starting-ceremony" value={f.startingCeremony} onChange={(e) => f.setStartingCeremony(e.target.value)} style={inputStyle}>
             <option value="">{t('wizard:v5.startingRitualNone', 'None (optional)')}</option>
-            {startingCeremonyOptions(f.sheet).map((r) => (
+            {ceremonies.map((r) => (
               <option key={r.id || r.name} value={r.name}>
                 {r.name}
               </option>
             ))}
           </select>
-          <CatalogNote entry={startingCeremonyOptions(f.sheet).find((r) => r.name === f.startingCeremony)} />
+          <CatalogNote entry={ceremonies.find((r) => r.name === f.startingCeremony)} />
         </div>
       ) : null}
       <PredatorPreview />

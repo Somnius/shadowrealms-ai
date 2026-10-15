@@ -400,6 +400,25 @@ const farmerAncilla = (over = {}) =>
     ...over,
   });
 
+/** A Tzimisce on the Brujah's corebook picks; the clan and Risk-Taker are Players Guide entries the Companion reprints. */
+const tzimisceCompanion = (over = {}) =>
+  brujah0({
+    name: 'Mirela',
+    concept: 'Night-market butcher',
+    clan: 'Tzimisce',
+    disciplines: [
+      { name: 'Animalism', level: 2, powers: ['Bond Famulus', 'Feral Whispers'] },
+      { name: 'Dominate', level: 1, powers: ['Compel'] },
+    ],
+    flaws: [
+      { name: 'Risk-Taker', dots: 1 },
+      { name: 'Addiction', dots: 1 },
+    ],
+    ...over,
+  });
+
+const COREBOOK = { allowed_books: ['v5-corebook'] };
+
 const meta = (payload) => payload.wod_meta;
 
 // ---------- the cases ----------
@@ -473,6 +492,13 @@ export const CASE_DEFS = [
     name: 'valid: inside the chronicle settings',
     settings: { allowed_clans: ['Brujah', 'Toreador'], allowed_predators: ['Alleycat'], allowed_ages: ['neonate'], flaws_max_dots: 4 },
     sheet: () => brujah(),
+    expect: [],
+  },
+  { name: 'valid: allowed books: only the corebook, every pick from it', settings: COREBOOK, sheet: () => brujah(), expect: [] },
+  {
+    name: 'valid: allowed books: a Players Guide clan and Flaw the Companion reprints (also_in)',
+    settings: { allowed_books: ['v5-corebook', 'v5-companion'] },
+    sheet: () => tzimisceCompanion(),
     expect: [],
   },
 
@@ -727,6 +753,63 @@ export const CASE_DEFS = [
     settings: { fledgling_humanity_8: false },
     sheet: () => toreador(),
     expect: ['fledgling_not_allowed'],
+  },
+  {
+    name: 'books: a Players Guide clan and Flaw with only the corebook (no Companion)',
+    settings: COREBOOK,
+    sheet: () => tzimisceCompanion(),
+    expect: ['book_not_allowed'],
+  },
+  {
+    name: 'books: a Players Guide clan, predator type, powers and ceremony with only the corebook',
+    settings: COREBOOK,
+    sheet: () => hecata(),
+    expect: ['book_not_allowed'],
+  },
+  {
+    name: 'books: a Players Guide power with only the corebook',
+    settings: COREBOOK,
+    sheet: () =>
+      brujah0({
+        disciplines: [
+          { name: 'Potence', level: 2, powers: ['Lethal Body', 'Relentless Grasp'] },
+          { name: 'Presence', level: 1, powers: ['Awe'] },
+        ],
+      }),
+    expect: ['book_not_allowed'],
+  },
+  {
+    name: 'books: a Players Guide ritual bought with XP with only the corebook',
+    settings: COREBOOK,
+    sheet: () => tremere(),
+    expect: ['book_not_allowed'],
+  },
+  {
+    name: 'books: a Players Guide Merit with only the corebook',
+    settings: COREBOOK,
+    sheet: () =>
+      brujah0({
+        advantages: [
+          { name: 'Resources', dots: 3, kind: 'background' },
+          { name: 'Haven', dots: 2, kind: 'background' },
+          { name: 'Allies (dock workers)', dots: 1, kind: 'background' },
+          { name: 'Check the Trunk', dots: 1, kind: 'merit' },
+        ],
+      }),
+    expect: ['book_not_allowed'],
+  },
+  {
+    name: 'books: a Players Guide thin-blood Merit with only the corebook',
+    settings: COREBOOK,
+    sheet: () =>
+      thinBlood({
+        flaws: [
+          { name: 'Prey Exclusion (animals)', dots: 1 },
+          { name: 'Addiction', dots: 1 },
+        ],
+        thinBloodMerits: [{ name: 'Day Drinker' }, { name: 'Low Appetite' }],
+      }),
+    expect: ['book_not_allowed'],
   },
   {
     name: 'several problems at once',

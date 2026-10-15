@@ -232,6 +232,19 @@ def test_chronicle_settings_are_overridable_by_the_storyteller(api):
     assert creation["problems"] == [{"code": "clan_not_allowed", "params": {"clan": "Brujah"}}]
 
 
+def test_allowed_books_are_checked_with_the_catalog(api):
+    api.sql("""UPDATE campaigns SET creation_settings = '{"allowed_books": ["v5-corebook"]}' WHERE id = 10""")
+    tzimisce = "valid: allowed books: a Players Guide clan and Flaw the Companion reprints (also_in)"
+    r = api.call("POST", "/api/characters/", 3, body(tzimisce))
+    assert r.status_code == 400
+    out = r.get_json()
+    assert out["error_code"] == "creation_invalid"
+    assert {p["params"]["name"] for p in out["problems"] if p["code"] == "book_not_allowed"} == {"Tzimisce", "Risk-Taker"}
+    # the Companion reprints both
+    api.sql("""UPDATE campaigns SET creation_settings = '{"allowed_books": ["v5-corebook", "v5-companion"]}' WHERE id = 10""")
+    assert api.call("POST", "/api/characters/", 3, body(tzimisce)).status_code == 201
+
+
 def test_without_a_catalog_the_sheet_goes_in_unchecked(api):
     api.catalog["value"] = None
     r = api.call("POST", "/api/characters/", 3, body(OVER))

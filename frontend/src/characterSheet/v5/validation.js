@@ -62,6 +62,7 @@ import {
 } from './constants';
 import {
   advantageEntries,
+  bookTitle,
   disciplineNames,
   findAdvantage,
   findLoresheet,
@@ -70,7 +71,7 @@ import {
   powersOf,
   ritualsOf,
 } from './rulesData';
-import { CREATION_AGES } from './creationSettings';
+import { CREATION_AGES, bookAllowed, entryBooks } from './creationSettings';
 
 const int = (v) => {
   const n = parseInt(v, 10);
@@ -806,18 +807,20 @@ export function advantageAllowed(entry, clan) {
 }
 
 /**
- * Catalog entries a section offers ('background' | 'merit' | 'flaw') to this clan. Thin-blood
- * Merits/Flaws have their own lists; the Loresheets Background is the Loresheets section.
+ * Catalog entries a section offers ('background' | 'merit' | 'flaw') to this clan, from the
+ * chronicle's books when `settings` are given. Thin-blood Merits/Flaws have their own lists; the
+ * Loresheets Background is the Loresheets section.
  */
-export function advantageOptions(clan, kind) {
+export function advantageOptions(clan, kind, settings = null) {
   return advantageEntries().filter(
-    (a) => a.kind === kind && !a.thin_blood && a.group !== 'Loresheets' && advantageAllowed(a, clan)
+    (a) =>
+      a.kind === kind && !a.thin_blood && a.group !== 'Loresheets' && advantageAllowed(a, clan) && bookAllowed(settings, a)
   );
 }
 
-/** Thin-blood Merits ('merit') or Flaws ('flaw') from the catalog. */
-export function thinBloodOptions(kind) {
-  return advantageEntries().filter((a) => a.thin_blood && a.kind === kind);
+/** Thin-blood Merits ('merit') or Flaws ('flaw') from the catalog (from the chronicle's books when `settings` are given). */
+export function thinBloodOptions(kind, settings = null) {
+  return advantageEntries().filter((a) => a.thin_blood && a.kind === kind && bookAllowed(settings, a));
 }
 
 /** May the sheet take this loresheet (clan, thin-blood or Discipline restriction)? */
@@ -833,8 +836,9 @@ export function loresheetAllowed(ls, sheet) {
   return true;
 }
 
-export function loresheetOptions(sheet) {
-  return loresheetEntries().filter((l) => loresheetAllowed(l, sheet));
+/** Loresheets open to the sheet (from the chronicle's books when `settings` are given). */
+export function loresheetOptions(sheet, settings = null) {
+  return loresheetEntries().filter((l) => loresheetAllowed(l, sheet) && bookAllowed(settings, l));
 }
 
 /** "Haven ••" or "more than one dot: Haven ••": another Background at that rating. */
@@ -940,10 +944,72 @@ export function ageAllowed(settings, age) {
   return allowedName(settings?.allowed_ages, age);
 }
 
+/**
+ * Is this clan / predator type / power or ritual entry in one of the chronicle's books (its own or
+ * one it is also printed in)? Yes without settings, with every book allowed, or for a name the
+ * rules don't know (the v5.json fallback has no books).
+ */
+export function clanInBooks(settings, clan) {
+  return bookAllowed(settings, clanInfo(clan));
+}
+export function predatorInBooks(settings, name) {
+  return bookAllowed(settings, predatorInfo(name));
+}
+export const inBooks = (settings) => (entry) => bookAllowed(settings, entry);
+
 /** The age the forge starts a character at: neonate where allowed, else the first allowed age. */
 export function defaultCreationAge(settings) {
   if (ageAllowed(settings, 'neonate')) return 'neonate';
   return CREATION_AGES.find((a) => ageAllowed(settings, a)) || 'neonate';
+}
+
+const bookError = (settings, name, entry) =>
+  entry && !bookAllowed(settings, entry)
+    ? `${name || entry.name} comes from a book this chronicle doesn't use (${bookTitle(entryBooks(entry)[0])}).`
+    : null;
+
+/**
+ * Catalog entries the sheet picked from books the chronicle doesn't use (allowed_books), first per
+ * section: { sectionId: message }. The clan, the predator type, each power, the starting ritual
+ * and ceremony, XP rituals, own Advantages, Flaws and loresheets, thin-blood Merits and Flaws. What
+ * the clan or the predator type gives (Discipline dot, grants, the clan's Flaws) comes with it, and
+ * Disciplines themselves are core rules (as backend/services/v5_chargen.py _check_books).
+ */
+export function bookErrors(sheet, settings) {
+  const s = sheet || {};
+  const err = {};
+  if (!settings?.allowed_books?.length) return err;
+  const S = V5_SECTION_IDS;
+  const put = (id, msg) => {
+    if (msg && !err[id]) err[id] = msg;
+  };
+  put(S.clan, bookError(settings, s.clan, clanInfo(s.clan)));
+  put(S.predator, bookError(settings, s.predatorType, predatorInfo(s.predatorType)));
+  disciplineRows(s).forEach((r) => {
+    const list = powersOf(r.name);
+    r.powers.forEach((name) => {
+      const n = String(name || '').trim();
+      put(S.disciplines, bookError(settings, n, n ? list.find((x) => x.name === n || (x.aliases || []).includes(n)) : null));
+    });
+  });
+  finalRituals(s).forEach((r) => {
+    const kind = r.kind === 'ceremony' ? 'ceremony' : 'ritual';
+    const known = getV5Rules().rituals.find((x) => x.kind === kind && x.name === r.name);
+    put(r.source === 'xp' ? S.experience : S.disciplines, bookError(settings, r.name, known));
+  });
+  named(s.advantages)
+    .filter((r) => !r.custom)
+    .forEach((r) => put(S.advantages, bookError(settings, r.name, r.kind === 'loresheet' ? findLoresheet(r) : findAdvantage(r, r.kind))));
+  named(s.flaws)
+    .filter((r) => !r.custom)
+    .forEach((r) => put(S.advantages, bookError(settings, r.name, findAdvantage(r, 'flaw'))));
+  if (s.clan === THIN_BLOOD) {
+    [...namedList(s.thinBloodMerits).map((r) => [r, 'merit']), ...namedList(s.thinBloodFlaws).map((r) => [r, 'flaw'])].forEach(([r, kind]) => {
+      const e = findAdvantage(r, kind, 'thin_blood');
+      put(S.advantages, bookError(settings, r.name, e?.thin_blood ? e : null));
+    });
+  }
+  return err;
 }
 
 /** What the sheet breaks in the chronicle's creation settings: { sectionId: message }. */
@@ -968,6 +1034,9 @@ export function settingsErrors(sheet, settings) {
   if (s.fledglingHumanity && settings.fledgling_humanity_8 === false) {
     err[V5_SECTION_IDS.humanity] = "The Storyteller doesn't offer the Humanity 8 fledgling start in this chronicle.";
   }
+  Object.entries(bookErrors(s, settings)).forEach(([id, msg]) => {
+    if (!err[id]) err[id] = msg;
+  });
   return err;
 }
 

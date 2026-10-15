@@ -442,10 +442,17 @@ def test_malformed_catalog_entries_never_raise():
         ],
         "loresheets": [{"id": None, "name": "Theo Bell", "clans_only": "x", "levels": "x", "disciplines_only": 3}],
     }
+    # book facts of every shape too (allowed books on)
+    bad["clans"][1].update(book=3, also_in="v5-companion")
+    bad["predator_types"][0].update(book=["v5-corebook"], also_in=[None, 3, {"book": []}])
+    bad["advantages"][1].update(book="v5-players-guide", also_in={"book": "v5-corebook"})
+    books = {"allowed_books": ["v5-corebook"]}
     for name in [c["name"] for c in DOC["cases"]]:
         validate_creation(case(name)["payload"], bad, None)  # no exception
+        validate_creation(case(name)["payload"], bad, books)
     for junk in (None, [], "x", 3, {"clans": "x"}, {"advantages": [None, "x", 3]}):
         validate_creation(case("valid: Brujah with no XP spent")["payload"], junk, None)
+        validate_creation(case("valid: Brujah with no XP spent")["payload"], junk, books)
 
 
 def _lore(dots, levels, **kw):
@@ -489,3 +496,74 @@ def test_caitiff_suspect_counts_and_status_is_refused():
     assert codes(validate_creation(c["payload"], _with_adv_catalog(), None)) == ["caitiff_status"]
     # other clans may start with Status
     assert _brujah_with([{"name": "Status", "dots": 2, "kind": "background"}]) == []
+
+
+# ---------- the chronicle's allowed books (creation_settings.allowed_books) ----------
+
+def test_book_problems_name_the_entry_its_book_and_kind():
+    c = case("books: a Players Guide clan and Flaw with only the corebook (no Companion)")
+    got = validate_creation(c["payload"], CATALOG, c["settings"])
+    assert got == [
+        {"code": "book_not_allowed", "params": {"name": "Risk-Taker", "book": "v5-players-guide", "kind": "advantage"}},
+        {"code": "book_not_allowed", "params": {"name": "Tzimisce", "book": "v5-players-guide", "kind": "clan"}},
+    ]
+    # the Companion reprints both (also_in): the sheet passes with it, as with the Players Guide
+    for books in (["v5-corebook", "v5-companion"], ["v5-corebook", "v5-players-guide"]):
+        assert validate_creation(c["payload"], CATALOG, {"allowed_books": books}) == []
+    # null allows every book; settings as stored (JSON text) work too
+    assert validate_creation(c["payload"], CATALOG, None) == []
+    assert codes(validate_creation(c["payload"], CATALOG, '{"allowed_books": ["v5-corebook"]}')) == ["book_not_allowed"]
+
+
+def test_what_the_clan_or_predator_type_gives_comes_with_it():
+    # A Players Guide-only chronicle: Grim Reaper's Prey Exclusion (corebook) and the Oblivion
+    # dot come with the type and Fortitude is core rules; the corebook powers the sheet picked don't.
+    c = case("valid: Hecata Grim Reaper with Allies and the Summon Spirit ceremony")
+    got = validate_creation(c["payload"], CATALOG, {"allowed_books": ["v5-players-guide"]})
+    assert got == [
+        {"code": "book_not_allowed", "params": {"name": "Resilience", "book": "v5-corebook", "kind": "power"}},
+        {"code": "book_not_allowed", "params": {"name": "Sense the Unseen", "book": "v5-corebook", "kind": "power"}},
+    ]
+    # The clan's own Flaws (source 'clan': Caitiff Suspect) come with the clan; Flaws the player took don't.
+    c = case("valid: Caitiff Osiris, Performance 0 becomes 1, split grants, Caitiff XP")
+    flaws = c["payload"]["wod_meta"]["flaws"]
+    suspect = next(f for f in flaws if f["name"] == "Suspect")
+    pg = {"allowed_books": ["v5-players-guide"]}
+
+    def flagged():
+        return {p["params"]["name"] for p in validate_creation(c["payload"], CATALOG, pg) if p["code"] == "book_not_allowed"}
+
+    assert {"Suspect", "Addiction", "Caitiff", "Osiris"} <= flagged()
+    suspect["source"] = "clan"
+    assert "Suspect" not in flagged() and "Addiction" in flagged()
+
+
+def test_loresheets_and_rows_without_a_book():
+    cat = copy.deepcopy(CATALOG)
+    cat["loresheets"] = [{
+        "id": "loresheet:test-sheet", "name": "Test Sheet", "book": "v5-players-guide",
+        "also_in": [{"book": "v5-companion", "page": 1}], "clans_only": None, "thin_blood_only": False,
+        "levels": [{"dots": n, "name": f"Level {n}"} for n in range(1, 6)],
+    }]
+    c = case("valid: Brujah with no XP spent")
+    meta = c["payload"]["wod_meta"]
+    meta["advantages"] = [
+        {"name": "Resources", "dots": 3, "kind": "background"},
+        {"name": "Haven", "dots": 2, "kind": "background"},
+        {"name": "Allies (dock workers)", "dots": 1, "kind": "background"},
+        {"id": "loresheet:test-sheet", "name": "Test Sheet", "dots": 1, "kind": "loresheet", "levels": [1]},
+    ] + [a for a in meta["advantages"] if a["kind"] == "predator"]
+    assert validate_creation(c["payload"], cat, {"allowed_books": ["v5-corebook"]}) == [
+        {"code": "book_not_allowed", "params": {"name": "Test Sheet", "book": "v5-players-guide", "kind": "loresheet"}},
+    ]
+    assert validate_creation(c["payload"], cat, {"allowed_books": ["v5-corebook", "v5-companion"]}) == []
+    # a catalog without books (or a custom row) has nothing to check
+    bare = copy.deepcopy(cat)
+    for kind in ("clans", "predator_types", "advantages", "loresheets"):
+        for e in bare[kind]:
+            e.pop("book", None)
+            e.pop("also_in", None)
+    for d in bare["disciplines"]:
+        for pw in d["powers"]:
+            pw.pop("book", None)
+    assert validate_creation(c["payload"], bare, {"allowed_books": ["some-other-book"]}) == []

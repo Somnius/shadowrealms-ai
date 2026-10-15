@@ -3,16 +3,17 @@
  * unspent at creation (wod_meta.saved). validateSpend is the live preview of the server's rule
  * check (backend/services/saved_points.py validate_spend, same problem codes). The server's check
  * is the one that counts: it runs the rows through the creation check's own row rules
- * (v5_chargen.check_advantage_rows), and checks prerequisites and books, which this preview leaves
- * to it. A spend that doesn't pass is a house rule: only a human Storyteller can approve it.
+ * (v5_chargen.check_advantage_rows, the chronicle's allowed books included), and checks
+ * prerequisites, which this preview leaves to it. A spend that doesn't pass is a house rule: only a
+ * human Storyteller can approve it.
  *
  * Items: { id?, name, kind: 'merit'|'background', dots, note? } adds dots to the player's own row
  * of that name (a raise) or makes a new row; { id?, name, kind: 'loresheet', levels: [n] } takes
  * loresheet levels (each costs its rating) on the player's row of that loresheet or a new one.
  */
 import { CAITIFF, THIN_BLOOD, V5_SKILLS, V5_SKILL_CATEGORIES, V5_SKILL_LABELS } from './constants';
-import { normalizeCreationSettings } from './creationSettings';
-import { advantageEntries, findAdvantage, findLoresheet, loresheetEntries } from './rulesData';
+import { bookAllowed, entryBooks, normalizeCreationSettings } from './creationSettings';
+import { advantageEntries, bookTitle, findAdvantage, findLoresheet, loresheetEntries } from './rulesData';
 import { advantageAllowed, advantageDotChoices } from './validation';
 import { translateProblem } from '../i18nErrors';
 import { t } from '../../i18n';
@@ -75,7 +76,10 @@ export function loresheetOpen(ls, meta) {
 }
 
 /** The catalog side of the preview, when the catalog is loaded (the server checks more). */
-function catalogProblems(add, meta, items, changes) {
+function catalogProblems(add, meta, items, changes, settings) {
+  const book = (ch, e, kind) => {
+    if (!bookAllowed(settings, e)) add('book_not_allowed', { name: ch.name, book: entryBooks(e)[0], kind });
+  };
   const special = meta?.clan === THIN_BLOOD ? 'thin_blood' : meta?.clan === CAITIFF ? 'caitiff' : null;
   items.forEach((it, i) => {
     const ch = changes[i];
@@ -89,6 +93,7 @@ function catalogProblems(add, meta, items, changes) {
       const levels = ch.row.levels || [];
       if (new Set(levels).size !== levels.length) add('loresheet_levels', { name: ch.name, dots: ch.to, levels });
       if (!loresheetOpen(ls, meta)) add('loresheet_restricted', { name: ch.name, clan: meta?.clan });
+      book(ch, ls, 'loresheet');
       return;
     }
     if (!advantageEntries().length) return;
@@ -102,6 +107,7 @@ function catalogProblems(add, meta, items, changes) {
       add('adv_dots_range', { name: ch.name, dots: ch.to, min: choices[0], max: choices[choices.length - 1] });
     }
     if (!advantageAllowed(e, meta?.clan)) add('adv_restricted', { name: ch.name, clan: meta?.clan });
+    book(ch, e, 'advantage');
   });
 }
 
@@ -133,7 +139,7 @@ export function validateSpend(meta, payload, settings, skills) {
       if (isLore(items[i]) || (catalog && findAdvantage(items[i], items[i].kind))) return;
       if (ch.to < 1 || ch.to > SPEND_DOTS_MAX) add('adv_dots_range', { name: ch.name, dots: ch.to, min: 1, max: SPEND_DOTS_MAX });
     });
-    catalogProblems(add, meta, items, changes);
+    catalogProblems(add, meta, items, changes, s);
   } else if (payload?.kind === 'saved_specialty') {
     if (!s.saved_points.allow_specialty) add('specialty_not_allowed');
     if (have.specialty < 1) add('no_saved_specialty');
@@ -161,7 +167,7 @@ export function spendProblemText(p) {
     case 'adv_requires':
       return t('sheet:spend.problem.requires', '{{name}} needs {{requires}}: the Storyteller checks that.', v);
     case 'book_not_allowed':
-      return t('sheet:spend.problem.book', "{{name}} comes from a book this chronicle doesn't use ({{book}}).", v);
+      return t('sheet:spend.problem.book', "{{name}} comes from a book this chronicle doesn't use ({{book}}).", { ...v, book: bookTitle(v.book) });
     case 'catalog_error':
       return t('sheet:spend.problem.catalogError', 'The rules catalog could not be read, so the Storyteller decides.');
     case 'no_saved_specialty':

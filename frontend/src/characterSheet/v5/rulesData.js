@@ -22,7 +22,9 @@
  *               thin_blood_only, levels: [{ dots, name, desc }], aliases, desc, book, page }
  * Clans also carry caitiff / thin_blood and `creation` ({ flaws: [{ id, name, dots }],
  * no_positive_status }, the Caitiff rules); without the catalog advantages and loresheets are empty
- * and the forge falls back to free text.
+ * and the forge falls back to free text. Every catalog entry also carries `also_in`: [book_id], the
+ * other books it is printed in (a chronicle's allowed books: creationSettings.bookAllowed).
+ * books     { book_id, title, tier, precedence } (books.json; empty without the catalog)
  */
 import V5_RULES from '../../rules/v5.json';
 
@@ -100,6 +102,9 @@ function fromRulesJson() {
 // ---------- from the served catalog ----------
 
 const pickDesc = (e) => (e && e.desc && (e.desc.en || e.desc.el) ? e.desc : null);
+/** also_in ([{book, page}]) as book ids. */
+const alsoIn = (e) =>
+  (Array.isArray(e?.also_in) ? e.also_in : []).map((x) => (x && typeof x === 'object' ? x.book : x)).filter((b) => typeof b === 'string' && b);
 
 function fromCatalog(cat) {
   const clanName = Object.fromEntries((cat.clans || []).map((c) => [c.id, c.name]));
@@ -154,6 +159,7 @@ function fromCatalog(cat) {
     prerequisite: prereq(r.prerequisite),
     desc: pickDesc(r),
     book: r.book,
+    also_in: alsoIn(r),
     page: r.page,
   });
   return {
@@ -168,6 +174,7 @@ function fromCatalog(cat) {
       compulsion_desc: pickDesc(c.compulsion),
       desc: pickDesc(c),
       book: c.book,
+      also_in: alsoIn(c),
       page: c.page,
       caitiff: Boolean(c.caitiff),
       thin_blood: Boolean(c.thin_blood),
@@ -194,6 +201,7 @@ function fromCatalog(cat) {
         rouse_cost: p.rouse_cost ?? null,
         desc: pickDesc(p),
         book: p.book,
+        also_in: alsoIn(p),
         page: p.page,
         aliases: p.aliases || [],
       })),
@@ -216,6 +224,7 @@ function fromCatalog(cat) {
       ancilla_only: Boolean(p.ancilla_only),
       desc: pickDesc(p),
       book: p.book,
+      also_in: alsoIn(p),
       page: p.page,
     })),
     rituals: [...(cat.rituals || []).map(ritualOf('ritual')), ...(cat.ceremonies || []).map(ritualOf('ceremony'))],
@@ -239,6 +248,7 @@ function fromCatalog(cat) {
       aliases: a.aliases || [],
       desc: pickDesc(a),
       book: a.book,
+      also_in: alsoIn(a),
       page: a.page,
     })),
     loresheets: (cat.loresheets || []).map((l) => ({
@@ -254,6 +264,7 @@ function fromCatalog(cat) {
       aliases: l.aliases || [],
       desc: pickDesc(l),
       book: l.book,
+      also_in: alsoIn(l),
       page: l.page,
     })),
     books: cat.books || [],
@@ -335,6 +346,28 @@ export function findLoresheet(row) {
   if (byId) return byId;
   const want = bareName(row && typeof row === 'object' ? row.name : row);
   return want ? list.find((l) => named(l, want)) || null : null;
+}
+
+/**
+ * The catalog's books (books.json), the core ones (tier 1) first, then by precedence and title;
+ * empty without the catalog.
+ */
+export function bookEntries() {
+  const num = (v, d) => (Number.isFinite(v) ? v : d);
+  return (current.books || [])
+    .filter((b) => b && typeof b.book_id === 'string' && b.book_id)
+    .slice()
+    .sort(
+      (a, b) =>
+        num(a.tier, 99) - num(b.tier, 99) ||
+        num(a.precedence, 999) - num(b.precedence, 999) ||
+        String(a.title || a.book_id).localeCompare(String(b.title || b.book_id))
+    );
+}
+
+/** A book's title (books.json), else its id. */
+export function bookTitle(bookId) {
+  return current.books.find((b) => b.book_id === bookId)?.title || bookId || '';
 }
 
 /** A description in the UI language, English as fallback. */

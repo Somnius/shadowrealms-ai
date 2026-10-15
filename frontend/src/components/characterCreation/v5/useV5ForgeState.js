@@ -12,6 +12,7 @@ import {
   attributeSpreadStatus,
   bloodSorceryLevel,
   clanAllowed,
+  clanInBooks,
   clanInfo,
   creationDisciplineOptions,
   defaultCreationAge,
@@ -107,8 +108,8 @@ const emptyDisciplines = () => [
  */
 export default function useV5ForgeState(settings, initialValues) {
   const initial = initialValues || {};
-  const firstClan =
-    initial.clan || (clanAllowed(settings, 'Brujah') ? 'Brujah' : clanNames().find((c) => clanAllowed(settings, c)) || 'Brujah');
+  const offered = (c) => clanAllowed(settings, c) && clanInBooks(settings, c);
+  const firstClan = initial.clan || (offered('Brujah') ? 'Brujah' : clanNames().find(offered) || 'Brujah');
   // Thin-bloods are always childer of the 14th generation or later (the same as changeClan).
   const firstAge = firstClan === THIN_BLOOD ? 'childer' : initial.age || defaultCreationAge(settings);
 

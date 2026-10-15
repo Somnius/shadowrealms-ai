@@ -63,6 +63,7 @@
     "v5SettingsClan": "Ο Storyteller δεν επιτρέπει {{clan}} σε αυτό το χρονικό.",
     "v5SettingsFlawCap": "Αυτό το χρονικό επιτρέπει έως {{max}} τελείες σε δικά σου Flaws (έχεις {{n}}).",
     "v5SettingsFledgling": "Ο Storyteller δεν δίνει σε αυτό το χρονικό την επιλογή να ξεκινά ο fledgling με Humanity 8.",
+    "v5SettingsBook": "Το {{name}} είναι από βιβλίο που δεν χρησιμοποιεί αυτό το χρονικό ({{book}}).",
     "v5PowerTwice": "{{disc}}: το {{name}} το έχεις πάρει δύο φορές.",
     "v5PowerUnknown": "Το {{name}} δεν είναι δύναμη του {{disc}}.",
     "v5PowerLevel": "Το {{name}} είναι δύναμη επιπέδου {{level}}· το {{disc}} είναι στο {{rating}}.",
@@ -446,6 +447,7 @@
     "predator_not_allowed": "Ο Storyteller δεν επιτρέπει τον predator type {{predator}} σε αυτό το χρονικό.",
     "age_not_allowed": "Ο Storyteller δεν επιτρέπει χαρακτήρες {{age}} σε αυτό το χρονικό.",
     "fledgling_not_allowed": "Ο Storyteller δεν δίνει σε αυτό το χρονικό την επιλογή να ξεκινά ο fledgling με Humanity 8.",
+    "book_not_allowed": "Το {{name}} είναι από βιβλίο που δεν χρησιμοποιεί αυτό το χρονικό ({{book}}).",
     "unknown": "Το φύλλο παραβαίνει έναν κανόνα δημιουργίας ({{code}}).",
     "refused": "Ο server δεν δέχτηκε το φύλλο:"
   }

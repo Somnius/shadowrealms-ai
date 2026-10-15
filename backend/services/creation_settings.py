@@ -5,7 +5,7 @@ campaigns.creation_settings. Pure: no Flask, no DB.
 Shape (every key optional when sent; the normaliser fills defaults):
 {
   "v": 1,
-  "allowed_books": null | [book_id, ...],      # null = every catalog book (used from Forge v2 part B)
+  "allowed_books": null | [book_id, ...],      # null = every catalog book, also ones added later (book_allowed)
   "allowed_clans": null | ["Brujah", ...],     # English names, as stored in wod_meta.clan
   "allowed_predators": null | ["Alleycat", ...],
   "allowed_ages": null | ["childer", "neonate", "ancilla"],
@@ -170,10 +170,42 @@ def validate_creation_settings(value: Any) -> Dict[str, Any]:
     return out
 
 
+def entry_books(entry: Any) -> List[str]:
+    """
+    The books a catalog entry is printed in: its own `book` first, then the ones of `also_in`
+    ([{book, page}], or book ids). Empty for an entry without a book (the v5.json fallback).
+    """
+    if not isinstance(entry, dict):
+        return []
+    also = entry.get("also_in") if isinstance(entry.get("also_in"), list) else []
+    out: List[str] = []
+    for ref in [entry.get("book"), *also]:
+        book = ref.get("book") if isinstance(ref, dict) else ref
+        if isinstance(book, str) and book.strip() and book.strip() not in out:
+            out.append(book.strip())
+    return out
+
+
+def book_allowed(settings: Any, entry: Any) -> bool:
+    """
+    May a chronicle use this catalog entry (clan, power, ritual, ceremony, formula, predator type,
+    Merit, Background, Flaw, loresheet)? Yes when its allowed_books is null (every book, also the
+    ones the catalog adds later), when the entry names no book, or when its own book or one it is
+    also printed in (also_in) is allowed. `settings`: normalised (normalize_creation_settings).
+    The creation check (v5_chargen) and the saved-points spend check both decide with this.
+    """
+    allowed = settings.get("allowed_books") if isinstance(settings, dict) else None
+    if not allowed:
+        return True
+    books = entry_books(entry)
+    return not books or any(b in allowed for b in books)
+
+
 def creation_problems(settings: Any, wod_meta: Any) -> List[str]:
     """
-    What a new V5 sheet breaks in its chronicle's creation settings (clan, predator type, age).
-    Empty list = allowed. Names are compared case-insensitively.
+    What a new V5 sheet breaks in its chronicle's creation settings (clan, predator type, age, Flaw
+    cap). Empty list = allowed. Names are compared case-insensitively. Allowed books need the
+    catalog: v5_chargen.validate_creation checks them (book_not_allowed).
     """
     s = normalize_creation_settings(settings)
     meta = wod_meta if isinstance(wod_meta, dict) else {}

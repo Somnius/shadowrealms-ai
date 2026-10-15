@@ -9,7 +9,7 @@ import {
   V5_XP_COSTS,
   V5_XP_MAX_DOTS,
 } from '../../../characterSheet/v5/constants';
-import { finalAttributes, finalRituals, finalSkills, xpDisciplineOptions, xpPreview } from '../../../characterSheet/v5/validation';
+import { finalAttributes, finalRituals, finalSkills, inBooks, xpDisciplineOptions, xpPreview } from '../../../characterSheet/v5/validation';
 import { translateSheetError } from '../../../characterSheet/i18nErrors';
 import { disciplineNames, ritualsOf } from '../../../characterSheet/v5/rulesData';
 import { t } from '../../../i18n';
@@ -50,6 +50,8 @@ export default function ExperienceStep() {
   const xpAttrs = finalAttributes(sheet);
   const takenRituals = finalRituals(sheet).map((r) => r.name);
   const catalogRitual = draft.kind === 'ritual' ? ritualsOf('ritual', 5).find((r) => r.name === draft.trait) : null;
+  // Rituals from the chronicle's books only.
+  const xpRituals = ritualsOf('ritual', bsLevel).filter(inBooks(f.settings));
   const xpSkills = finalSkills(sheet).skills;
   // A first dot in Academics/Craft/Performance/Science brings a free specialty: ask for its name.
   const draftNeedsFreeSpecialty =
@@ -149,18 +151,18 @@ export default function ExperienceStep() {
         ) : null}
         {draft.kind === 'ritual' ? (
           <>
-            {ritualsOf('ritual', bsLevel).length ? (
+            {ritualsOf('ritual', 5).length ? (
               <select
                 aria-label={t('wizard:v5.xpRitualName', 'Ritual name')}
                 value={draft.trait}
                 onChange={(e) => {
-                  const r = ritualsOf('ritual', bsLevel).find((x) => x.name === e.target.value);
+                  const r = xpRituals.find((x) => x.name === e.target.value);
                   setXpDraft({ ...draft, trait: e.target.value, level: r ? r.level : draft.level });
                 }}
                 style={{ ...inputStyle, flex: '2 1 200px', width: 'auto', padding: '8px' }}
               >
                 <option value="">{t('wizard:v5.choose', 'Choose…')}</option>
-                {ritualsOf('ritual', bsLevel).map((r) => (
+                {xpRituals.map((r) => (
                   <option key={r.id || r.name} value={r.name} disabled={takenRituals.includes(r.name)}>
                     {t('wizard:v5.powerOption', '{{name}} (level {{level}})', { name: r.name, level: r.level })}
                   </option>

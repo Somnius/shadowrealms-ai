@@ -325,6 +325,7 @@ def test_character_list_for_owner_storyteller_and_staff(api):
         assert len(body["requests"]) == 1
         assert body["saved"] == {"advantage_dots": 2, "specialty": 1}
         assert body["settings"]["st_mode"] == "human"
+        assert body["settings"]["allowed_books"] is None  # the picker offers every book
         assert body["can_spend"] is (uid == 3)
         assert body["can_review"] is (uid in (1, 2))
     assert api.call("GET", "/api/characters/100/spend-requests", 4).status_code == 403

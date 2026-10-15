@@ -20,7 +20,8 @@ Spend payloads (parse_spend):
 
 The rows a spend makes are checked with validate_creation's own per-row check
 (services/v5_chargen.check_advantage_rows: the catalog rating with Allies 1-6, loresheet levels and
-restrictions, clan restrictions, custom rows), so creation and spends follow one code path.
+restrictions, clan restrictions, custom rows, the chronicle's allowed books), so creation and spends
+follow one code path.
 
 Problem codes (validate_spend, {code, params}):
   saved_short {need, have}          more Advantage dots than are saved
@@ -28,12 +29,12 @@ Problem codes (validate_spend, {code, params}):
   from v5_chargen.check_advantage_rows (same codes and params as at creation):
     adv_dots_range {name, dots, min, max}, adv_unknown {name}, adv_restricted {name, clan},
     loresheet_levels {name, dots, levels}, loresheet_restricted {name, clan}, custom_row {name},
-    caitiff_status {clan}
+    caitiff_status {clan}, book_not_allowed {name, book, kind}: from a book the chronicle doesn't
+    allow (creation_settings.book_allowed; kind 'advantage' or 'loresheet')
   adv_unknown {name}                also a name the installed catalog doesn't know (a spend has no
                                     custom rows: anything the catalog lacks needs a person)
   adv_repeat {name}                 a new row of something taken once (or max_instances times) already
   adv_requires {name, requires}     a prerequisite in the catalog the check can't verify
-  book_not_allowed {name, book}     from a book the chronicle doesn't allow
   no_saved_specialty {}             no specialty saved
   specialty_not_allowed {}          the chronicle doesn't let players save a specialty
   skill_no_dot {skill}              the skill has no dot
@@ -351,16 +352,9 @@ def clamp_saved(wod_meta: Any, skills: Any, settings: Any) -> Dict[str, int]:
 
 # ---------- the rule check ----------
 
-def _entry_books(entry: dict) -> List[str]:
-    books = [entry.get("book")]
-    for ref in entry.get("also_in") or []:
-        books.append(ref.get("book") if isinstance(ref, dict) else ref)
-    return [b for b in books if isinstance(b, str) and b]
-
-
-def _spend_only(add, meta: dict, items, changes, item_entries, row_entries, settings, catalog) -> None:
+def _spend_only(add, meta: dict, items, changes, item_entries, row_entries, catalog) -> None:
     """What a spend adds to the creation row check: a name the catalog lacks (a spend has no custom
-    rows), taken too often, a prerequisite to verify, a book the chronicle leaves out."""
+    rows), taken too often, a prerequisite to verify."""
     for item, change, entry in zip(items, changes, item_entries):
         name = item["name"]
         installed = bool(catalog.get("loresheets" if item["kind"] == "loresheet" else "advantages"))
@@ -383,10 +377,6 @@ def _spend_only(add, meta: dict, items, changes, item_entries, row_entries, sett
             # "ancilla or older" is known from the sheet; anything else a person checks.
             if not (req.strip().lower() == "ancilla or older" and meta.get("age") == "ancilla"):
                 add("adv_requires", name=name, requires=req.strip())
-        allowed = settings["allowed_books"]
-        books = _entry_books(entry)
-        if allowed and books and not any(b in allowed for b in books):
-            add("book_not_allowed", name=name, book=books[0])
 
 
 def validate_spend(
@@ -427,12 +417,12 @@ def validate_spend(
         if before + total > cap:
             add("over_cap", cap=cap, total=before + total)
         new_rows, changes, touched = _apply_items(rows, items)
-        # The rows as they would be, through the creation check's own per-row rules.
-        for p in check_advantage_rows(meta, [new_rows[i] for i in touched], catalog):
+        # The rows as they would be, through the creation check's own per-row rules (books included).
+        for p in check_advantage_rows(meta, [new_rows[i] for i in touched], catalog, s):
             add(p["code"], **p["params"])
         item_entries = advantage_entries(meta, items, catalog)
         row_entries = advantage_entries(meta, [r for r in rows if isinstance(r, dict) and r.get("kind") != "loresheet"], catalog)
-        _spend_only(add, meta, items, changes, item_entries, row_entries, s, catalog)
+        _spend_only(add, meta, items, changes, item_entries, row_entries, catalog)
     else:
         if not s["saved_points"]["allow_specialty"]:
             add("specialty_not_allowed")

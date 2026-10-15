@@ -1,0 +1,76 @@
+/**
+ * The Storyteller's "Allowed books" checklist in the creation rules (Forge v2): the catalog's
+ * books, core ones first, all ticked = null (every book, also ones added later), at least one.
+ */
+import { render, screen, within } from '@testing-library/react';
+import setupUser from '../../../design/testing/setupUser';
+import { DesignProvider } from '../../../design';
+import CreationRulesPanel from '../CreationRulesPanel';
+import fixture from '../../../rules/__fixtures__/v5-catalog.json';
+import { applyV5Catalog } from '../../../characterSheet/v5/rulesData';
+
+const BOOKS = [
+  { book_id: 'v5-cults-of-the-blood-gods', title: 'Cults of the Blood Gods', precedence: 40, tier: 2 },
+  { book_id: 'v5-companion', title: 'Companion', precedence: 30, tier: 1 },
+  { book_id: 'v5-corebook', title: 'Corebook', precedence: 10, tier: 1 },
+  { book_id: 'v5-players-guide', title: 'Players Guide', precedence: 20, tier: 1 },
+];
+
+beforeAll(() => applyV5Catalog({ ...fixture, books: BOOKS }));
+afterAll(() => applyV5Catalog(null));
+
+const renderPanel = (creation_settings, onSave) =>
+  render(
+    <DesignProvider>
+      <CreationRulesPanel campaign={{ id: 10, creation_settings }} saving={false} onSave={onSave} />
+    </DesignProvider>
+  );
+const bookList = () => screen.getByRole('group', { name: 'Allowed books' });
+const save = (user) => user.click(screen.getByRole('button', { name: 'Save creation rules' }));
+
+test('the books, core ones first with their tier; all ticked is stored as null', async () => {
+  const user = setupUser();
+  const onSave = jest.fn();
+  renderPanel({}, onSave);
+  const boxes = within(bookList()).getAllByRole('checkbox');
+  expect(boxes.map((b) => document.querySelector(`label[for="${b.id}"]`).textContent)).toEqual([
+    'Corebook · Tier 1',
+    'Players Guide · Tier 1',
+    'Companion · Tier 1',
+    'Cults of the Blood Gods · Tier 2',
+  ]);
+  boxes.forEach((b) => expect(b).toBeChecked());
+  expect(bookList()).toHaveAccessibleDescription(/from the ticked books only/);
+  await save(user);
+  expect(onSave).toHaveBeenLastCalledWith(expect.objectContaining({ allowed_books: null }));
+  await user.click(boxes[3]);
+  await save(user);
+  expect(onSave).toHaveBeenLastCalledWith(
+    expect.objectContaining({ allowed_books: ['v5-corebook', 'v5-players-guide', 'v5-companion'] })
+  );
+});
+
+test('at least one book stays ticked; ticking them all again is null', async () => {
+  const user = setupUser();
+  const onSave = jest.fn();
+  renderPanel({ allowed_books: ['v5-corebook'] }, onSave);
+  const box = (name) => within(bookList()).getByRole('checkbox', { name: new RegExp(`^${name} ·`) });
+  expect(box('Corebook')).toBeChecked();
+  expect(box('Players Guide')).not.toBeChecked();
+  await user.click(box('Corebook')); // the last one
+  expect(box('Corebook')).toBeChecked();
+  for (const name of ['Players Guide', 'Companion', 'Cults of the Blood Gods']) await user.click(box(name));
+  await save(user);
+  expect(onSave).toHaveBeenLastCalledWith(expect.objectContaining({ allowed_books: null }));
+});
+
+test('a stored book the catalog no longer lists is kept', async () => {
+  const user = setupUser();
+  const onSave = jest.fn();
+  renderPanel({ allowed_books: ['v5-corebook', 'v5-removed-book'] }, onSave);
+  await user.click(within(bookList()).getByRole('checkbox', { name: /^Companion ·/ }));
+  await save(user);
+  expect(onSave).toHaveBeenLastCalledWith(
+    expect.objectContaining({ allowed_books: ['v5-corebook', 'v5-companion', 'v5-removed-book'] })
+  );
+});

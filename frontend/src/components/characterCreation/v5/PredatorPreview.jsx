@@ -29,7 +29,7 @@ export default function PredatorPreview() {
         style={{ ...inputStyle, maxWidth: '420px', padding: '8px', marginBottom: pred ? '10px' : 0 }}
       >
         <option value="">{t('wizard:v5.choose', 'Choose…')}</option>
-        <PredatorOptions clan={clan} settings={f.settings} />
+        <PredatorOptions clan={clan} settings={f.settings} current={f.predatorType} />
       </select>
       {pred ? (
         <ul style={{ ...noteStyle, margin: 0, paddingLeft: '18px' }}>

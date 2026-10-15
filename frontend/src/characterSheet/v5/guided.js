@@ -21,7 +21,15 @@ import {
   startingGeneration,
 } from './constants';
 import { getV5Rules } from './rulesData';
-import { ageAllowed, clanAllowed, defaultCreationAge, deriveV5, predatorAllowed } from './validation';
+import {
+  ageAllowed,
+  clanAllowed,
+  clanInBooks,
+  defaultCreationAge,
+  deriveV5,
+  predatorAllowed,
+  predatorInBooks,
+} from './validation';
 
 /** The answer "none of these" (option ids are lowercase words, so it can't clash with one). */
 export const NONE_OF_THESE = '__none__';
@@ -99,11 +107,16 @@ export function scoreAnswers(set, answers) {
   return out;
 }
 
-/** Clans this chronicle allows. Thin-bloods are always childer, so they also need that age. */
+/**
+ * Clans this chronicle allows, from its books. Thin-bloods are always childer, so they also need
+ * that age.
+ */
 export function eligibleClans(settings) {
   return getV5Rules()
     .clans.map((c) => c.name)
-    .filter((c) => clanAllowed(settings, c) && (c !== THIN_BLOOD || ageAllowed(settings, 'childer')));
+    .filter(
+      (c) => clanAllowed(settings, c) && clanInBooks(settings, c) && (c !== THIN_BLOOD || ageAllowed(settings, 'childer'))
+    );
 }
 
 /** The age the forge starts this clan and predator type at (as useV5ForgeState does). */
@@ -115,11 +128,11 @@ export function startingAge(settings, clan, predator) {
 
 /**
  * Can a character of this clan take this predator type (a rulesData predator) in this chronicle?
- * Not when the Storyteller left it out, the clan is forbidden, it is for ancillae and the chronicle
- * has none (thin-bloods never are), or its Blood Potency cap is below the starting one.
+ * Not when the Storyteller left it out (or its book), the clan is forbidden, it is for ancillae and
+ * the chronicle has none (thin-bloods never are), or its Blood Potency cap is below the starting one.
  */
 export function predatorFits(settings, clan, p) {
-  if (!p || !predatorAllowed(settings, p.name)) return false;
+  if (!p || !predatorAllowed(settings, p.name) || !predatorInBooks(settings, p.name)) return false;
   if ((p.forbidden_clans || []).includes(clan)) return false;
   if (p.ancilla_only && (clan === THIN_BLOOD || !ageAllowed(settings, 'ancilla'))) return false;
   if (p.max_blood_potency != null) {

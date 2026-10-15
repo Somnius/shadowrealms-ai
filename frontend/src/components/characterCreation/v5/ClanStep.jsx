@@ -1,7 +1,7 @@
 import ResponsiveSheetBlock from '../ResponsiveSheetBlock';
 import { THIN_BLOOD, V5_SECTION_IDS } from '../../../characterSheet/v5/constants';
 import { clanNames, descIn } from '../../../characterSheet/v5/rulesData';
-import { ageAllowed, clanAllowed } from '../../../characterSheet/v5/validation';
+import { ageAllowed, clanAllowed, clanInBooks } from '../../../characterSheet/v5/validation';
 import { getLanguage, t } from '../../../i18n';
 import { Term } from '../../../i18n/glossary';
 import { ACCENT, CatalogNote, InlineError, TextField, gridStyle, inputStyle, labelStyle, noteStyle, useForge } from './forgeUi';
@@ -22,9 +22,11 @@ export default function ClanStep() {
         <div>
           <label htmlFor="v5-field-clan" style={labelStyle}><Term id="clan" /></label>
           <select id="v5-field-clan" value={f.clan} onChange={(e) => f.changeClan(e.target.value)} style={inputStyle}>
-            {clanNames().map((c) => {
+            {/* Clans from books the chronicle doesn't use aren't offered; one already chosen stays, marked. */}
+            {clanNames().filter((c) => c === f.clan || clanInBooks(f.settings, c)).map((c) => {
               // Thin-bloods are always childer (14th–16th generation), so they need that age allowed.
-              const ok = clanAllowed(f.settings, c) && (c !== THIN_BLOOD || ageAllowed(f.settings, 'childer'));
+              const ok =
+                clanAllowed(f.settings, c) && clanInBooks(f.settings, c) && (c !== THIN_BLOOD || ageAllowed(f.settings, 'childer'));
               return (
                 <option key={c} value={c} disabled={!ok}>
                   {c}

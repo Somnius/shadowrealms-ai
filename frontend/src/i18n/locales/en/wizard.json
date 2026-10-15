@@ -63,6 +63,7 @@
     "v5SettingsClan": "The Storyteller doesn't allow {{clan}} in this chronicle.",
     "v5SettingsFlawCap": "This chronicle allows at most {{max}} dots of Flaws of your own (you have {{n}}).",
     "v5SettingsFledgling": "The Storyteller doesn't offer the Humanity 8 fledgling start in this chronicle.",
+    "v5SettingsBook": "{{name}} comes from a book this chronicle doesn't use ({{book}}).",
     "v5PowerTwice": "{{disc}}: {{name}} is taken twice.",
     "v5PowerUnknown": "{{name}} is not a {{disc}} power.",
     "v5PowerLevel": "{{name}} is a level {{level}} power; {{disc}} is at {{rating}}.",
@@ -446,6 +447,7 @@
     "predator_not_allowed": "The Storyteller doesn't allow the {{predator}} predator type in this chronicle.",
     "age_not_allowed": "The Storyteller doesn't allow {{age}} characters in this chronicle.",
     "fledgling_not_allowed": "The Storyteller doesn't offer the Humanity 8 fledgling start in this chronicle.",
+    "book_not_allowed": "{{name}} comes from a book this chronicle doesn't use ({{book}}).",
     "unknown": "The sheet breaks a creation rule ({{code}}).",
     "refused": "The server refused the sheet:"
   }

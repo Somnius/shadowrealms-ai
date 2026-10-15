@@ -36,6 +36,35 @@ export function normalizeCreationSettings(value) {
   };
 }
 
+/**
+ * The books a catalog entry is printed in: its own `book` first, then `also_in` ([{book, page}] or
+ * book ids). Empty for an entry without a book (the v5.json fallback). Same as entry_books in
+ * backend/services/creation_settings.py.
+ */
+export function entryBooks(entry) {
+  if (!entry || typeof entry !== 'object') return [];
+  const refs = [entry.book, ...(Array.isArray(entry.also_in) ? entry.also_in : [])];
+  const out = [];
+  refs.forEach((ref) => {
+    const b = ref && typeof ref === 'object' ? ref.book : ref;
+    if (typeof b === 'string' && b.trim() && !out.includes(b.trim())) out.push(b.trim());
+  });
+  return out;
+}
+
+/**
+ * May the chronicle use this catalog entry (clan, power, ritual, ceremony, predator type, Merit,
+ * Background, Flaw, loresheet)? Yes when allowed_books is null (every book, also ones the catalog
+ * adds later), when the entry names no book (or there is no entry), or when its own book or one it
+ * is also printed in is allowed. Same as book_allowed in backend/services/creation_settings.py.
+ */
+export function bookAllowed(settings, entry) {
+  const allowed = settings?.allowed_books;
+  if (!Array.isArray(allowed) || !allowed.length) return true;
+  const books = entryBooks(entry);
+  return !books.length || books.some((b) => allowed.includes(b));
+}
+
 /** The settings of the chronicle with this id in a campaigns list (defaults when absent). */
 export function settingsForCampaign(campaigns, campaignId) {
   const c = (campaigns || []).find((x) => String(x.id) === String(campaignId));

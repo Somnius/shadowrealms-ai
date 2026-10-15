@@ -9,6 +9,7 @@
  */
 import { t } from '../i18n';
 import { V5_AGE_BRACKETS, V5_ATTRIBUTES, V5_SECTION_IDS, V5_SKILL_DISTRIBUTIONS, V5_SKILL_LABELS } from './v5/constants';
+import { bookTitle } from './v5/rulesData';
 
 const atList = (s) => s.replace(/ at (\d)/g, (m, r) => t('wizard:validation.atRating', ' at {{r}}', { r }));
 
@@ -53,6 +54,7 @@ const PATTERNS = [
   [/^The Storyteller doesn't allow (.+) in this chronicle\.$/, (m) => t('wizard:validation.v5SettingsClan', "The Storyteller doesn't allow {{clan}} in this chronicle.", { clan: m[1] })],
   [/^This chronicle allows at most (\d+) dots of Flaws of your own \(you have (\d+)\)\.$/, (m) => t('wizard:validation.v5SettingsFlawCap', 'This chronicle allows at most {{max}} dots of Flaws of your own (you have {{n}}).', { max: m[1], n: m[2] })],
   [/^The Storyteller doesn't offer the Humanity 8 fledgling start in this chronicle\.$/, () => t('wizard:validation.v5SettingsFledgling', "The Storyteller doesn't offer the Humanity 8 fledgling start in this chronicle.")],
+  [/^(.+) comes from a book this chronicle doesn't use \((.+)\)\.$/, (m) => t('wizard:validation.v5SettingsBook', "{{name}} comes from a book this chronicle doesn't use ({{book}}).", { name: m[1], book: m[2] })],
   [/^Character name is required\.$/, () => t('wizard:error.name', 'Character name is required.')],
   [/^Choose a clan\.$/, () => t('wizard:validation.v5Clan', 'Choose a clan.')],
   [/^Choose an age\.$/, () => t('wizard:validation.v5Age', 'Choose an age.')],
@@ -174,6 +176,7 @@ const PROBLEMS = {
   predator_not_allowed: (p) => t('wizard:problem.predator_not_allowed', "The Storyteller doesn't allow the {{predator}} predator type in this chronicle.", p),
   age_not_allowed: (p) => t('wizard:problem.age_not_allowed', "The Storyteller doesn't allow {{age}} characters in this chronicle.", { age: ageLabel(p.age) }),
   fledgling_not_allowed: () => t('wizard:problem.fledgling_not_allowed', "The Storyteller doesn't offer the Humanity 8 fledgling start in this chronicle."),
+  book_not_allowed: (p) => t('wizard:problem.book_not_allowed', "{{name}} comes from a book this chronicle doesn't use ({{book}}).", { name: p.name, book: bookTitle(p.book) }),
 };
 
 /** One server problem ({code, params}) in the active language; a string goes through translateSheetError. */
@@ -185,9 +188,22 @@ export function translateProblem(problem) {
   return fn ? fn(problem.params || {}) : t('wizard:problem.unknown', 'The sheet breaks a creation rule ({{code}}).', { code });
 }
 
-/** The forge section a problem code belongs to (for the error marks and the scroll). */
-export function problemSection(code) {
+// book_not_allowed: the section of the entry's kind (params.kind, backend/services/v5_chargen.py).
+const BOOK_SECTIONS = {
+  clan: 'clan',
+  predator: 'predator',
+  power: 'disciplines',
+  ritual: 'disciplines',
+  ceremony: 'disciplines',
+  advantage: 'advantages',
+  loresheet: 'advantages',
+  thin_blood: 'advantages',
+};
+
+/** The forge section a problem code (and for book_not_allowed its params) belongs to (for the error marks and the scroll). */
+export function problemSection(code, params) {
   const S = V5_SECTION_IDS;
+  if (code === 'book_not_allowed') return S[BOOK_SECTIONS[params?.kind] || 'identity'];
   if (/^(clan_missing|clan_not_allowed)$/.test(code)) return S.clan;
   if (/^(age_|thin_blood_generation|generation_thin_blood)/.test(code)) return S.age;
   if (/^attr_/.test(code)) return S.attributes;
@@ -226,7 +242,7 @@ export function serverProblemErrors(problems) {
       id = V5_SECTION_IDS[hit ? hit[1] : 'identity'];
     } else if (p && typeof p === 'object' && p.code) {
       msg = translateProblem(p);
-      id = problemSection(p.code);
+      id = problemSection(p.code, p.params);
     } else {
       return;
     }

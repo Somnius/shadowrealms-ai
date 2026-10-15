@@ -27,7 +27,7 @@ export default function PredatorStep() {
         style={{ ...inputStyle, maxWidth: '420px', marginBottom: '12px' }}
       >
         <option value="">{clan === THIN_BLOOD ? t('wizard:v5.predatorNone', 'None (optional for thin-bloods)') : t('wizard:v5.choose', 'Choose…')}</option>
-        <PredatorOptions clan={clan} settings={f.settings} />
+        <PredatorOptions clan={clan} settings={f.settings} current={f.predatorType} />
       </select>
       {pred ? (
         <div style={{ color: 'var(--sr-bone-300)', fontSize: '13px', display: 'grid', gap: '10px' }}>

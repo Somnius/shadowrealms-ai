@@ -1,16 +1,19 @@
 import { useId, useState } from 'react';
 import { Button, Checkbox, Input, Panel, Select, Textarea } from '../../design';
 import { V5_AGE_BRACKETS } from '../../characterSheet/v5/constants';
-import { clanNames, predatorNames } from '../../characterSheet/v5/rulesData';
+import { bookEntries, clanNames, predatorNames } from '../../characterSheet/v5/rulesData';
 import { useV5Catalog } from '../../rules/v5Catalog';
 import { CREATION_AGES, normalizeCreationSettings } from '../../characterSheet/v5/creationSettings';
 import { t } from '../../i18n';
 
 /**
  * One "allowed" list: every box ticked is stored as null (everything allowed, including what
- * later catalogs add); at least one box must stay ticked.
+ * later catalogs add); at least one box must stay ticked. `noteOf`: a short note after a label
+ * (in the UI language); `hint`: a line under the boxes.
  */
-function AllowedList({ legend, names, labelOf = (n) => n, value, onChange }) {
+function AllowedList({ legend, names, labelOf = (n) => n, noteOf = null, hint = null, value, onChange }) {
+  const hintId = useId();
+  if (!names.length) return null;
   const ticked = value || names;
   // Stored names this list doesn't show (e.g. added through the API) are kept as they are.
   const unknown = (value || []).filter((n) => !names.includes(n));
@@ -20,25 +23,36 @@ function AllowedList({ legend, names, labelOf = (n) => n, value, onChange }) {
     onChange(names.every((n) => next.includes(n)) && !unknown.length ? null : [...names.filter((n) => next.includes(n)), ...unknown]);
   };
   return (
-    <fieldset className="sr-creation-rules__list">
+    <fieldset className="sr-creation-rules__list" aria-describedby={hint ? hintId : undefined}>
       <legend>{legend}</legend>
       <div className="sr-creation-rules__grid">
         {names.map((n) => (
           <Checkbox
             key={n}
-            label={<span lang="en">{labelOf(n)}</span>}
+            label={
+              <>
+                <span lang="en">{labelOf(n)}</span>
+                {noteOf && noteOf(n) ? <span className="sr-muted sr-small"> · {noteOf(n)}</span> : null}
+              </>
+            }
             checked={ticked.includes(n)}
             onChange={(e) => toggle(n, e.target.checked)}
           />
         ))}
       </div>
+      {hint ? (
+        <p id={hintId} className="sr-muted sr-small">
+          {hint}
+        </p>
+      ) : null}
     </fieldset>
   );
 }
 
 /**
- * The Storyteller's creation rules for a V5 chronicle (campaigns.creation_settings): which clans,
- * predator types and ages the forge offers, a cap on Flaws, the Humanity 8 fledgling option, house
+ * The Storyteller's creation rules for a V5 chronicle (campaigns.creation_settings): which books
+ * the forge takes its catalog entries from (allowed_books, core books first), which clans,
+ * predator types and ages it offers, a cap on Flaws, the Humanity 8 fledgling option, house
  * rules shown at the top of the forge, how many points a player may save for later and who
  * approves spending them (st_mode: a human Storyteller, or the AI Storyteller's rule check).
  * `suggestAi`: the Storyteller plays a character here, so the AI mode is suggested.
@@ -52,6 +66,8 @@ export default function CreationRulesPanel({ campaign, saving, onSave, suggestAi
   const modeHintId = useId();
   const suggestId = useId();
   const showSuggest = suggestAi && s.st_mode === 'human';
+  const books = bookEntries();
+  const bookOf = Object.fromEntries(books.map((b) => [b.book_id, b]));
   const submit = (e) => {
     e.preventDefault();
     const n = parseInt(flawsText, 10);
@@ -71,6 +87,15 @@ export default function CreationRulesPanel({ campaign, saving, onSave, suggestAi
         <p className="sr-muted sr-small">
           {t('chronicle:creation.intro', 'What the V5 forge offers new characters in this chronicle. Characters already made are not changed.')}
         </p>
+        <AllowedList
+          legend={t('chronicle:creation.books', 'Allowed books')}
+          names={books.map((b) => b.book_id)}
+          labelOf={(id) => bookOf[id]?.title || id}
+          noteOf={(id) => (Number.isFinite(bookOf[id]?.tier) ? t('chronicle:creation.bookTier', 'Tier {{tier}}', { tier: bookOf[id].tier }) : '')}
+          hint={t('chronicle:creation.booksHint', 'The forge offers clans, predator types, powers, rituals, ceremonies, Advantages and loresheets from the ticked books only; one printed in several books needs one of them. With every book ticked, books added to the catalog later count too.')}
+          value={s.allowed_books}
+          onChange={(v) => set({ allowed_books: v })}
+        />
         <AllowedList
           legend={t('chronicle:creation.clans', 'Allowed clans')}
           names={clanNames()}

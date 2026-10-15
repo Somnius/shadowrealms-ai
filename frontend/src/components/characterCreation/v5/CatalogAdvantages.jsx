@@ -3,6 +3,7 @@
  * in the books, filtered for the clan), a dots picker bounded by the printed rating, a note and the
  * description; loresheets with their five levels; thin-blood Merits and Flaws; the clan's own Flaws
  * (Caitiff). A "Custom" row keeps anything the catalog lacks possible, for the Storyteller to approve.
+ * Only entries from the chronicle's books are offered; one already chosen stays (the check says why).
  */
 import { THIN_BLOOD, V5_THIN_BLOOD_MERITS } from '../../../characterSheet/v5/constants';
 import {
@@ -10,7 +11,7 @@ import {
   advantageOptions,
   clanFlaws,
   clanInfo,
-  loresheetAllowed,
+  loresheetOptions,
   resolvePredatorGrants,
   thinBloodOptions,
 } from '../../../characterSheet/v5/validation';
@@ -63,14 +64,14 @@ function GroupedOptions({ entries, takenIds, current }) {
 }
 
 /** One Background, Merit or Flaw row. `fixedIds`: the clan's and the predator type's entries. */
-function AdvRow({ row, index, rows, setRows, clan, fixedIds }) {
+function AdvRow({ row, index, rows, setRows, clan, settings, fixedIds }) {
   const label = t('wizard:v5.advRowLabel', '{{kind}} {{n}}', { kind: KIND_LABEL[row.kind](), n: index + 1 });
   const set = (patch) => setRows((prev) => prev.map((r) => (r.key === row.key ? { ...r, ...patch } : r)));
-  const options = advantageOptions(clan, row.kind);
+  const options = advantageOptions(clan, row.kind, settings);
   // By id, or by name when the catalog doesn't know the id (then it shows as a custom row).
   const entry = row.id && row.id !== 'custom' ? findAdvantage({ id: row.id, name: row.name }, row.kind) : null;
   const custom = row.id === 'custom' || Boolean(row.id && !entry && String(row.name || '').trim());
-  // Not offered any more (the clan changed): kept visible so its error makes sense.
+  // Not offered any more (the clan changed, or its book isn't the chronicle's): kept visible so its error makes sense.
   const stray = entry && !options.some((o) => o.id === entry.id) ? entry : null;
   // A non-repeatable entry once; a repeatable one up to its max_instances. The rows the clan and
   // the predator type give count too (a Bagger isn't offered Iron Gullet again).
@@ -197,7 +198,7 @@ function AdvSection({ kind, title, children }) {
       <div style={headingStyle}>{title}</div>
       {children}
       {rows.map((r, i) => (
-        <AdvRow key={r.key} row={r} index={i} rows={rows} setRows={f.setAdvRows} clan={f.clan} fixedIds={fixedIds} />
+        <AdvRow key={r.key} row={r} index={i} rows={rows} setRows={f.setAdvRows} clan={f.clan} settings={f.settings} fixedIds={fixedIds} />
       ))}
       <button type="button" onClick={() => f.setAdvRows((prev) => [...prev, newAdvRow(kind)])} style={addButtonStyle}>
         {t('wizard:v5.advAdd', '+ Add {{kind}}', { kind: KIND_LABEL[kind]() })}
@@ -212,7 +213,7 @@ function LoreRow({ row, index }) {
   const label = t('wizard:v5.advRowLabel', '{{kind}} {{n}}', { kind: KIND_LABEL.loresheet(), n: index + 1 });
   const set = (patch) => f.setLoreRows((prev) => prev.map((r) => (r.key === row.key ? { ...r, ...patch } : r)));
   const sheet = row.id ? findLoresheet({ id: row.id, name: row.name }) : null;
-  const offered = loresheetEntries().filter((l) => loresheetAllowed(l, f.sheet));
+  const offered = loresheetOptions(f.sheet, f.settings);
   const takenElsewhere = f.loreRows.filter((r) => r.key !== row.key).map((r) => r.id);
   const total = row.levels.reduce((s, n) => s + n, 0);
   return (
@@ -282,7 +283,7 @@ function ThinSelects({ kind }) {
   const rows = kind === 'merit' ? f.thinBloodMerits : f.thinBloodFlaws;
   const setRows = kind === 'merit' ? f.setThinBloodMerits : f.setThinBloodFlaws;
   const word = KIND_LABEL[kind]();
-  const options = thinBloodOptions(kind);
+  const options = thinBloodOptions(kind, f.settings);
   const [, hi] = V5_THIN_BLOOD_MERITS;
   const count = rows.filter((r) => String(r.name || '').trim()).length;
   // entries already picked on either side (an excluded pair is greyed out, core p. 183)

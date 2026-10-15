@@ -366,6 +366,32 @@ def test_what_a_spend_adds_to_the_creation_rules():
     assert codes(check(meta(), {"name": "City Secrets", "dots": 1}, settings=books)) == ["book_not_allowed"]
 
 
+def test_books_are_the_creation_checks_own():
+    """A spend's rows go through check_advantage_rows with the chronicle's settings: the same book
+    rule (creation_settings.book_allowed) as at creation, also_in included."""
+    books = {"allowed_books": ["v5-corebook"]}
+    out = check(meta(), {"name": "City Secrets", "dots": 1}, settings=books)
+    assert out["problems"] == [
+        {"code": "book_not_allowed", "params": {"name": "City Secrets", "book": "v5-players-guide", "kind": "advantage"}},
+    ]
+    assert out["house_rule"] is True
+    assert codes(check(meta(), {"name": "City Secrets", "dots": 1}, settings={"allowed_books": ["v5-players-guide"]})) == []
+    # also printed in an allowed book
+    m = meta()
+    secrets = next(a for a in CATALOG["advantages"] if a["id"] == "merit:city-secrets")
+    secrets["also_in"] = [{"book": "v5-corebook", "page": 1}]
+    try:
+        assert codes(check(m, {"name": "City Secrets", "dots": 1}, settings=books)) == []
+    finally:
+        del secrets["also_in"]
+    # raising an own row of a book the chronicle no longer allows
+    m["advantages"].append({"name": "City Secrets (Athens)", "dots": 1, "kind": "merit"})
+    assert set(codes(check(m, {"name": "City Secrets (Athens)", "dots": 1}, settings=books))) == {"adv_dots_range", "book_not_allowed"}
+    lore = {"name": "The Bahari", "kind": "loresheet", "levels": [1]}
+    assert codes(check(meta(), lore, settings={"allowed_books": ["v5-players-guide"]})) == ["book_not_allowed"]
+    assert codes(check(meta(), lore, settings=books)) == []
+
+
 def test_loresheet_levels_and_restrictions():
     lore = lambda name, *levels: {"name": name, "kind": "loresheet", "levels": list(levels)}  # noqa: E731
     assert codes(check(meta(), lore("The Bahari", 2))) == []

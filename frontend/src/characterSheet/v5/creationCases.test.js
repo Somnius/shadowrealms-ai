@@ -71,6 +71,7 @@ const CODES = [
   [/^The Storyteller doesn't allow .+ in this chronicle\.$/, 'clan_not_allowed'],
   [/^This chronicle allows at most \d+ dots of Flaws of your own/, 'flaw_over'],
   [/^The Storyteller doesn't offer the Humanity 8 fledgling start/, 'fledgling_not_allowed'],
+  [/^.+ comes from a book this chronicle doesn't use \(.+\)\.$/, 'book_not_allowed'],
   [/^Write \d+–\d+ Convictions, each with a Touchstone\.$/, 'conviction_count'],
   [/^Each Conviction needs a Touchstone \(and vice versa\)\.$/, 'conviction_pairs'],
   // Catalog Advantage rows (forge v2 C advantages step); the client says "can't take" for all three.

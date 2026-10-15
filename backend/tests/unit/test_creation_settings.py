@@ -6,7 +6,9 @@ import pytest
 
 from services.creation_settings import (
     DEFAULTS,
+    book_allowed,
     creation_problems,
+    entry_books,
     normalize_creation_settings,
     validate_creation_settings,
 )
@@ -137,3 +139,37 @@ def test_age_problem_reads_as_words():
     assert problems == ["The Storyteller doesn't allow childe / fledgling characters in this chronicle."]
     # an unknown age stored by an old sheet doesn't crash
     assert creation_problems({"allowed_ages": ["neonate"]}, {"age": "elder"})
+
+
+# ---------- allowed books (Forge v2) ----------
+
+def test_entry_books_own_book_first_then_also_in():
+    entry = {"book": "v5-players-guide", "also_in": [{"book": "v5-companion", "page": 6}, "v5-cults", {"page": 3}, None, "v5-companion"]}
+    assert entry_books(entry) == ["v5-players-guide", "v5-companion", "v5-cults"]
+    for bad in (None, "x", [], {}, {"book": 3, "also_in": "v5-companion"}, {"book": " "}):
+        assert entry_books(bad) == []
+
+
+def test_book_allowed_by_its_own_book_or_one_it_is_also_printed_in():
+    ravnos = {"name": "Ravnos", "book": "v5-players-guide", "also_in": [{"book": "v5-companion", "page": 6}]}
+
+    def books(lst):
+        return normalize_creation_settings({"allowed_books": lst})
+
+    assert book_allowed(normalize_creation_settings(None), ravnos)  # null: every book
+    assert book_allowed(books(["v5-players-guide"]), ravnos)
+    assert book_allowed(books(["v5-corebook", "v5-companion"]), ravnos)  # through also_in
+    assert not book_allowed(books(["v5-corebook"]), ravnos)
+    # an entry without a book (the v5.json fallback) or no entry: nothing to check
+    assert book_allowed(books(["v5-corebook"]), {"name": "Brujah"})
+    assert book_allowed(books(["v5-corebook"]), None)
+    # any book id, also a supplement the catalog adds later
+    assert book_allowed(books(["v5-in-memoriam"]), {"book": "v5-in-memoriam"})
+
+
+def test_allowed_books_are_stored_as_sent():
+    out = validate_creation_settings({"allowed_books": ["v5-corebook", "v5-companion"]})
+    assert out["allowed_books"] == ["v5-corebook", "v5-companion"]
+    assert validate_creation_settings({"allowed_books": None})["allowed_books"] is None
+    with pytest.raises(RequestValidationError):
+        validate_creation_settings({"allowed_books": []})  # at least one (null allows all)

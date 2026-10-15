@@ -35,26 +35,32 @@ ABOUT = (
     "snapshot below. Generated (scripts/v5_creation_cases.py); do not edit by hand."
 )
 
-# The facts the validators read, per catalog (descriptions and pipeline fields left out).
+# The facts the validators read, per catalog (descriptions and pipeline fields left out). also_in:
+# the other books an entry is printed in (a chronicle's allowed books, creation_settings.book_allowed).
 KEEP = {
-    "clans": ("id", "name", "aliases", "book", "page", "disciplines", "caitiff", "thin_blood", "creation",
+    "clans": ("id", "name", "aliases", "book", "also_in", "page", "disciplines", "caitiff", "thin_blood", "creation",
               "bane", "compulsion"),
     "disciplines": ("id", "name", "aliases", "book", "page", "powers"),
-    "predator_types": ("id", "name", "aliases", "book", "page", "specialty_choice", "discipline_choice",
+    "predator_types": ("id", "name", "aliases", "book", "also_in", "page", "specialty_choice", "discipline_choice",
                        "humanity", "blood_potency", "max_blood_potency", "forbidden_clans", "advantages",
                        "flaws", "ancilla_only"),
-    "rituals": ("id", "name", "aliases", "book", "page", "level", "discipline", "prerequisite"),
-    "ceremonies": ("id", "name", "aliases", "book", "page", "level", "discipline", "prerequisite"),
+    "rituals": ("id", "name", "aliases", "book", "also_in", "page", "level", "discipline", "prerequisite"),
+    "ceremonies": ("id", "name", "aliases", "book", "also_in", "page", "level", "discipline", "prerequisite"),
     # forge v2 C: only when the catalog has them (advantages.json, loresheets.json)
-    "advantages": ("id", "name", "aliases", "kind", "group", "dots", "book", "page", "thin_blood", "caitiff",
+    "advantages": ("id", "name", "aliases", "kind", "group", "dots", "book", "also_in", "page", "thin_blood", "caitiff",
                    "ghoul_only", "coterie", "clans_only", "cannot_buy_for", "repeatable", "max_instances",
                    "requires", "levels"),
-    "loresheets": ("id", "name", "aliases", "book", "page", "restriction", "clans_only", "disciplines_only",
+    "loresheets": ("id", "name", "aliases", "book", "also_in", "page", "restriction", "clans_only", "disciplines_only",
                    "thin_blood_only", "levels"),
 }
 OPTIONAL = ("advantages", "loresheets")
-POWER_KEEP = ("id", "name", "aliases", "book", "page", "level", "amalgam", "prerequisite")
+POWER_KEEP = ("id", "name", "aliases", "book", "also_in", "page", "level", "amalgam", "prerequisite")
 NAMED_KEEP = ("name",)  # clan bane / compulsion: the name only
+
+
+def _facts(entry: Dict[str, Any], keep) -> Dict[str, Any]:
+    """The kept keys of an entry; an empty also_in is left out (most entries are in one book)."""
+    return {k: entry[k] for k in keep if k in entry and not (k == "also_in" and not entry[k])}
 
 
 def snapshot(catalog: Dict[str, Any]) -> Dict[str, Any]:
@@ -62,9 +68,9 @@ def snapshot(catalog: Dict[str, Any]) -> Dict[str, Any]:
     for kind, keep in KEEP.items():
         rows = []
         for e in catalog.get(kind) or []:
-            row = {k: e[k] for k in keep if k in e}
+            row = _facts(e, keep)
             if kind == "disciplines":
-                row["powers"] = [{k: p[k] for k in POWER_KEEP if k in p} for p in e.get("powers") or []]
+                row["powers"] = [_facts(p, POWER_KEEP) for p in e.get("powers") or []]
             for k in ("bane", "compulsion"):
                 if isinstance(row.get(k), dict):
                     row[k] = {n: row[k][n] for n in NAMED_KEEP if n in row[k]}

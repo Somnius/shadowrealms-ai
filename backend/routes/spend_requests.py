@@ -309,7 +309,11 @@ def list_character_spend_requests(character_id):
         return jsonify({
             "requests": rows,
             "saved": saved_balance(_json(ch.get("wod_meta"), {})),
-            "settings": {"st_mode": settings["st_mode"], "saved_points": settings["saved_points"]},
+            "settings": {
+                "st_mode": settings["st_mode"],
+                "saved_points": settings["saved_points"],
+                "allowed_books": settings["allowed_books"],
+            },
             "can_spend": is_v5 and campaign_id is not None and str(ch["user_id"]) == str(user_id),
             "can_review": campaign_id is not None and is_campaign_storyteller_or_staff(cursor, user_id, campaign_id),
         }), 200

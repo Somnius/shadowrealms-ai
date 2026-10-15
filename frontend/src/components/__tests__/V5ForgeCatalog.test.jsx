@@ -221,3 +221,48 @@ test('a catalog ritual bought with XP keeps its own level', () => {
     applyV5Catalog(fixture);
   }
 });
+
+describe("the chronicle's allowed books (Forge v2)", () => {
+  const COREBOOK = { allowed_books: ['v5-corebook'] };
+  const forge = (creation_settings) => (
+    <V5CharacterCreationWizard
+      token="x"
+      campaigns={[{ ...campaigns[0], creation_settings }]}
+      campaignId="2"
+      onCampaignChange={() => {}}
+    />
+  );
+
+  test('only entries from the allowed books are offered', () => {
+    const { rerender } = render(forge(null));
+    pick(document.getElementById('v5-field-clan'), 'Ventrue');
+    fireEvent.click(screen.getByRole('button', { name: '+ Add Merit' }));
+    expect(within(screen.getByLabelText('Merit 1')).getByRole('option', { name: /City Secrets/ })).toBeInTheDocument();
+    rerender(forge(COREBOOK));
+    expect(within(screen.getByLabelText('Merit 1')).queryByRole('option', { name: /City Secrets/ })).toBeNull();
+    expect(within(document.getElementById('v5-field-clan')).queryByRole('option', { name: /Hecata/ })).toBeNull();
+    const pred = document.getElementById('v5-field-predator');
+    expect(within(pred).queryByRole('option', { name: /Grim Reaper|Montero/ })).toBeNull();
+    expect(within(pred).getByRole('option', { name: 'Osiris' })).toBeInTheDocument();
+    pick(screen.getByLabelText('Discipline at 2 dots'), 'Dominate');
+    const p1 = screen.getByLabelText('Dominate power 1');
+    expect(within(p1).queryByRole('option', { name: /Implant Suggestion/ })).toBeNull();
+    expect(within(p1).getByRole('option', { name: 'Cloud Memory (level 1)' })).toBeInTheDocument();
+  });
+
+  test('a chosen entry from a book left out stays, marked, and the check says why', () => {
+    // jsdom has no scrollIntoView (the forge scrolls to the first section with an error)
+    Element.prototype.scrollIntoView = jest.fn();
+    const { rerender } = render(forge(null));
+    pick(document.getElementById('v5-field-clan'), 'Hecata');
+    pick(document.getElementById('v5-field-predator'), 'Grim Reaper');
+    rerender(forge(COREBOOK));
+    expect(document.getElementById('v5-field-clan')).toHaveValue('Hecata');
+    expect(screen.getByRole('option', { name: 'Hecata (not in this chronicle)' })).toBeDisabled();
+    expect(document.getElementById('v5-field-predator')).toHaveValue('Grim Reaper');
+    expect(screen.getAllByRole('option', { name: 'Grim Reaper (not in this chronicle)' })[0]).toBeDisabled();
+    fireEvent.click(screen.getByRole('button', { name: 'Create character' }));
+    expect(screen.getByText("Hecata comes from a book this chronicle doesn't use (Players Guide).")).toBeInTheDocument();
+    delete Element.prototype.scrollIntoView;
+  });
+});
