@@ -229,7 +229,9 @@ class _Catalog:
             for pw in _dicts(d.get("powers")):
                 if _sid(pw.get("id")) and _str(pw.get("name")):
                     power_names[pw["id"]] = _str(pw.get("name"))
-        clan_names = {c["id"]: _str(c.get("name")) for c in _dicts(cat.get("clans")) if _sid(c.get("id")) and _str(c.get("name"))}
+        clan_names = {
+            c["id"]: _str(c.get("name")) for c in _dicts(cat.get("clans")) if _sid(c.get("id")) and _str(c.get("name"))
+        }
 
         def disc(ref: Any) -> str:
             return self.disc_names.get(_sid(ref)) or _name_from_id(_sid(ref))
@@ -324,7 +326,9 @@ class _Catalog:
         def rituals(kind: str) -> Dict[str, dict]:
             out: Dict[str, dict] = {}
             for r in _dicts(cat.get(kind)):
-                entry = {"name": _str(r.get("name")), "level": _int(r.get("level")), "prerequisite": prereq(r.get("prerequisite"))}
+                entry = {
+                    "name": _str(r.get("name")), "level": _int(r.get("level")), "prerequisite": prereq(r.get("prerequisite")),
+                }
                 index(out, [r.get("name"), *_strs(r.get("aliases"))], entry)
             return out
 
@@ -382,22 +386,28 @@ class _Catalog:
         return self.predators.get(_norm(name)) if _norm(name) else None
 
     def advantage(self, row: dict, flaw: bool, clan: Optional[dict]) -> Optional[dict]:
-        """The catalog Merit/Background (or Flaw) a sheet row names: by id, else by name/alias."""
+        """The catalog Merit/Background (or Flaw) a sheet row names: by id, else (or when the id is
+        unknown: renamed, another book) by name/alias, as the forge's findAdvantage does."""
         rid = _sid(row.get("id"))
-        if rid:
-            return self.adv_by_id.get(rid)
+        if rid in self.adv_by_id:
+            return self.adv_by_id[rid]
         want = {_norm(n) for n in _name_variants(row.get("name"))}
         hits = [a for a in self.advantages if (a.get("kind") == "flaw") == flaw and want & _keys_of(a)]
         if len(hits) > 1 and clan:
             # Caitiff and thin-blood entries share names with others ("Clan Curse"): prefer the clan's.
-            mine = [a for a in hits if (a.get("caitiff") is True) == clan["caitiff"] and (a.get("thin_blood") is True) == clan["thin_blood"]]
+            mine = [
+                a for a in hits
+                if (a.get("caitiff") is True) == clan["caitiff"] and (a.get("thin_blood") is True) == clan["thin_blood"]
+            ]
             hits = mine or hits
         return hits[0] if hits else None
 
     def loresheet(self, row: dict) -> Optional[dict]:
+        """The catalog loresheet a row names: by id, else (or when the id is unknown) by name."""
         rid = _sid(row.get("id"))
-        if rid:
-            return next((ls for ls in self.loresheets if ls.get("id") == rid), None)
+        hit = next((ls for ls in self.loresheets if rid and ls.get("id") == rid), None)
+        if hit is not None:
+            return hit
         want = {_norm(n) for n in _name_variants(row.get("name"))}
         return next((ls for ls in self.loresheets if want & _keys_of(ls)), None)
 
@@ -557,7 +567,7 @@ def validate_creation(payload: Any, catalog: Any, settings: Any = None) -> List[
     specialties = _check_skills(p, sh)
     _check_disciplines(p, sh, cat)
     _check_powers(p, sh, cat)
-    _check_predator(p, sh)
+    _check_predator(p, sh, cat)
     _check_advantages(p, sh, cat, s)
     _check_experience(p, sh, cat, *specialties)
     _check_rituals(p, sh, cat)
@@ -742,7 +752,7 @@ def _check_powers(p: _Problems, sh: _Sheet, cat: _Catalog) -> None:
                 p.add("power_prereq", power=pw["name"], needs=" or ".join(missing))
 
 
-def _check_predator(p: _Problems, sh: _Sheet) -> None:
+def _check_predator(p: _Problems, sh: _Sheet, cat: _Catalog) -> None:
     """The predator type: chosen (thin-bloods may skip it), allowed for the clan and the age, under
     its Blood Potency cap, and its rows (kind 'predator') match its grants."""
     pred = sh.pred
@@ -761,7 +771,7 @@ def _check_predator(p: _Problems, sh: _Sheet) -> None:
     bp = sh.blood_potency()
     if pred["max_blood_potency"] is not None and bp > pred["max_blood_potency"]:
         p.add("predator_bp", predator=sh.pred_name, max=pred["max_blood_potency"], bp=bp)
-    if not (_grants_ok(pred["advantages"], pred_adv) and _grants_ok(pred["flaws"], pred_flaws)):
+    if not (_grants_ok(pred["advantages"], pred_adv, cat.adv_by_id) and _grants_ok(pred["flaws"], pred_flaws, cat.adv_by_id)):
         p.add("predator_grant", predator=sh.pred_name)
 
 
@@ -886,12 +896,14 @@ def _check_derived(p: _Problems, sh: _Sheet, s: Dict[str, Any]) -> None:
             p.add("derived_value", trait=trait, have=_int(have), want=want_v)
 
 
-def _grants_ok(grants: List[dict], rows: List[dict]) -> bool:
+def _grants_ok(grants: List[dict], rows: List[dict], known_ids: Iterable[str] = ()) -> bool:
     """The predator rows match the type's grants exactly once: 'all' needs every option, 'one_of'
     one of them, 'split' its total across its options. Names: the forge's label ("Contacts
     (criminal)"), anything naming the option ("Looks: Beautiful", from the v5.json fallback), and
     for a group option ("any Mythic Flaw") any catalog entry of that group ("Folkloric Bane"). A
-    row with an id (the advantages step stores it) must carry the option's id and still name it."""
+    row with an id (the advantages step stores it) must carry the option's id, or the picked
+    entry's for a group, and still name it; an id the catalog doesn't know counts by the name."""
+    known = set(known_ids)
     pool = [((_norm(r.get("name")), _sid(r.get("id"))), _int(r.get("dots"))) for r in rows]
 
     def names_it(name: str, opt: dict) -> bool:
@@ -901,8 +913,10 @@ def _grants_ok(grants: List[dict], rows: List[dict]) -> bool:
 
     def matches(row: Tuple[str, str], opt: dict, strict: bool) -> bool:
         name, rid = row
-        if rid:  # a row with an id is that option (a group: one of its entries) and still names it
-            return (rid == opt["id"] or rid in opt["member_ids"]) and (name in opt["labels"] or names_it(name, opt))
+        if rid and (rid == opt["id"] or rid in opt["member_ids"]):
+            return name in opt["labels"] or names_it(name, opt)
+        if rid and rid in known:  # another catalog entry
+            return False
         return name in opt["labels"] if strict else names_it(name, opt)
 
     def dots_ok(opt: dict, dots: int) -> bool:
@@ -964,7 +978,7 @@ def _check_rows(p: _Problems, cat: _Catalog, clan: Optional[dict], own_adv: List
     """Each own Advantage/Flaw row: a custom row needs the Storyteller (custom_row); a loresheet
     row costs its levels; any other row keeps to its catalog rating when advantages.json knows it
     (Allies 1-6, Mask 1 or 2), else 1-5. With the catalogs installed also the clan restrictions,
-    and an id that doesn't resolve is refused; Caitiff list no Status."""
+    and a row whose id and name both don't resolve is refused; Caitiff list no Status."""
     clan_keys = {_norm(clan["name"]), _norm(clan["id"])} if clan else set()
 
     def in_clans(ids: Iterable[Any]) -> bool:

@@ -284,10 +284,14 @@ def test_loresheets_count_and_follow_their_restriction():
 def test_unknown_ids_only_when_their_catalog_is_installed():
     c = case("valid: Brujah with no XP spent")
     meta = c["payload"]["wod_meta"]
-    meta["advantages"][0]["id"] = "background:no-such-thing"
+    row = meta["advantages"][0]
+    row.update(id="background:no-such-thing", name="Mystery Background")
     assert validate_creation(c["payload"], CORE, None) == []  # no advantages.json: not checked
     assert codes(validate_creation(c["payload"], _with_adv_catalog(), None)) == ["adv_unknown"]
-    meta["advantages"][0]["id"] = "background:resources"
+    # an unknown id falls back to the name, as the forge does (a renamed entry)
+    row["name"] = "Resources"
+    assert validate_creation(c["payload"], _with_adv_catalog(), None) == []
+    row["id"] = "background:resources"
     assert validate_creation(c["payload"], _with_adv_catalog(), None) == []
 
 
