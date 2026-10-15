@@ -10,9 +10,10 @@
  *               advantages: [grant], flaws: [grant], humanity, blood_potency, max_blood_potency,
  *               forbidden_clans: [name], ancilla_only, desc, book, page }
  *   grant     { pick: 'all' | 'one_of' | 'split', options: [{ name, dots: n | null, note, kind }], dots_total }
- *   power     { id, name, level, amalgam: { discipline, level } | null, prerequisite: [name] | null,
+ *   power     { id, name, level, amalgam: { discipline, level } | null,
+ *               prerequisite: [[name]] | null (every group needed, any name of a group will do),
  *               dice_pool, rouse_cost, desc, book, page }
- *   ritual    { id, name, level, kind: 'ritual' | 'ceremony', prerequisite: name | null, desc, book, page }
+ *   ritual    { id, name, level, kind: 'ritual' | 'ceremony', prerequisite: [[name]] | null, desc, book, page }
  */
 import V5_RULES from '../../rules/v5.json';
 
@@ -26,8 +27,8 @@ const titleOf = (slug) =>
 
 /** "background:iron-gullet" → "Iron Gullet"; the kind before the colon. */
 function nameFromId(id) {
-  const [kind, slug] = String(id || '').split(':');
-  return { kind: kind || 'merit', name: titleOf(slug || kind) };
+  const parts = String(id || '').split(':');
+  return { kind: parts[0] || 'merit', name: titleOf(parts[parts.length - 1]) };
 }
 
 // ---------- from src/rules/v5.json (the fallback) ----------
@@ -102,11 +103,20 @@ function fromCatalog(cat) {
       return { id: o.id, name, dots: o.dots ?? null, note: o.note || '', kind: kind || fallbackKind };
     }),
   });
+  const pname = (x) => {
+    const id = typeof x === 'string' ? x : x?.power_id;
+    return powerName[id] || nameFromId(id).name;
+  };
+  // {power_id} | {any_of: [...]} | {all_of: [{power_id} | {any_of}]} → [[name]]: all groups, any name in a group.
+  const group = (p) => (p.power_id ? [pname(p)] : Array.isArray(p.any_of) ? p.any_of.map(pname) : null);
   const prereq = (p) => {
     if (!p) return null;
-    if (p.power_id) return [powerName[p.power_id] || nameFromId(p.power_id).name];
-    if (Array.isArray(p.any_of)) return p.any_of.map((x) => powerName[x.power_id || x] || nameFromId(x.power_id || x).name);
-    return null;
+    if (Array.isArray(p.all_of)) {
+      const groups = p.all_of.map(group).filter(Boolean);
+      return groups.length ? groups : null;
+    }
+    const g = group(p);
+    return g ? [g] : null;
   };
   const ritualOf = (kind) => (r) => ({
     id: r.id,
@@ -114,7 +124,7 @@ function fromCatalog(cat) {
     level: r.level,
     kind,
     discipline: discName[r.discipline] || null,
-    prerequisite: prereq(r.prerequisite)?.[0] || null,
+    prerequisite: prereq(r.prerequisite),
     desc: pickDesc(r),
     book: r.book,
     page: r.page,

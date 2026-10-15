@@ -466,7 +466,7 @@ export function oblivionLevel(sheet) {
 export function startingCeremonyOptions(sheet) {
   if (oblivionLevel(sheet) < 1) return [];
   const powers = disciplineRows(sheet).find((r) => r.name === OBLIVION)?.powers || [];
-  return ritualsOf('ceremony', 1).filter((c) => !c.prerequisite || powers.includes(c.prerequisite));
+  return ritualsOf('ceremony', 1).filter((c) => (c.prerequisite || []).every((g) => g.some((pre) => powers.includes(pre))));
 }
 
 // ---------- Discipline powers (catalog) ----------
@@ -493,9 +493,8 @@ export function validateV5Powers(sheet) {
       if (pw.amalgam && (level[pw.amalgam.discipline] || 0) < pw.amalgam.level) {
         return `${name} also needs ${pw.amalgam.discipline} ${pw.amalgam.level}.`;
       }
-      if (pw.prerequisite && !pw.prerequisite.some((pre) => chosen.includes(pre))) {
-        return `${name} needs ${pw.prerequisite.join(' or ')} first.`;
-      }
+      const missing = (pw.prerequisite || []).find((g) => !g.some((pre) => chosen.includes(pre)));
+      if (missing) return `${name} needs ${missing.join(' or ')} first.`;
     }
   }
   return null;
