@@ -18,7 +18,9 @@ from services.character_sheet_v5 import sanity_check_v5, stamp_v5_meta
 from services.creation_settings import creation_problems
 from services.language import normalize_language
 from services.log_safety import safe_log_value
-from services.playing_character import can_view_character_sheet
+from services.playing_character import can_view_character_sheet, is_campaign_storyteller_or_staff
+from services.v5_catalog import load_catalog
+from services.v5_chargen import validate_creation
 
 from database import (
     get_db,
@@ -34,6 +36,34 @@ from database import (
 
 # Stored as TEXT (URLs or data URLs); cap size to protect the DB.
 MAX_PORTRAIT_URL_LEN = 524288
+
+# wod_meta.creation: how a V5 sheet passed the creation rules. Set by the server only (create and
+# POST /<id>/creation-override); {validated, at, rules} or {validated: false, override: {by,
+# reason, at}, problems: [{code, params}]}.
+CREATION_RULES_VERSION = 'v2'
+CREATION_OVERRIDE_REASON_MAX = 500
+
+
+def _utc_stamp():
+    return datetime.utcnow().replace(microsecond=0).isoformat() + 'Z'
+
+
+def _override_reason(raw):
+    """The reason of a creation override body ({reason}), or None when it is missing or too long."""
+    reason = raw.get('reason') if isinstance(raw, dict) else None
+    reason = reason.strip() if isinstance(reason, str) else ''
+    return reason if 0 < len(reason) <= CREATION_OVERRIDE_REASON_MAX else None
+
+
+def _creation_check(attributes, skills, wod_meta, settings):
+    """validate_creation() on a V5 sheet: (problems, catalog_found)."""
+    catalog = load_catalog()
+    if catalog is None:
+        logger.warning("V5 catalog not found: the creation rules were not checked")
+        return [], False
+    meta = {k: v for k, v in (wod_meta or {}).items() if k != 'creation'}
+    payload = {'attributes': attributes, 'skills': skills, 'wod_meta': meta}
+    return validate_creation(payload, catalog, settings), True
 
 try:
     import sqlite3
@@ -349,12 +379,59 @@ def create_character():
                     'error': 'Invalid V5 sheet: ' + '; '.join(problems[:10]),
                     'problems': problems,
                 }), 400
+            # A Storyteller (or staff) may create a sheet outside the rules with a reason.
+            override = data.get('creation_override')
+            override_reason = None
+            if override is not None:
+                override_reason = _override_reason(override)
+                if override_reason is None:
+                    return jsonify({
+                        'error': f'creation_override needs a reason (1-{CREATION_OVERRIDE_REASON_MAX} characters).',
+                        'error_code': 'creation_override_reason',
+                    }), 400
+                if not is_campaign_storyteller_or_staff(cursor, current_user_id, campaign_id):
+                    return jsonify({
+                        'error': (
+                            "Only this chronicle's Storyteller or staff can approve a sheet "
+                            'outside the creation rules.'
+                        ),
+                        'error_code': 'creation_override_forbidden',
+                    }), 403
             not_allowed = creation_problems(campaign.get('creation_settings'), wm_dict)
-            if not_allowed:
+            if not_allowed and override_reason is None:
                 return jsonify({
                     'error': ' '.join(not_allowed),
                     'problems': not_allowed,
                 }), 400
+            # The creation budget, recomputed from the stored sheet (services/v5_chargen.py).
+            found, checked = _creation_check(
+                data.get('attributes'), data.get('skills'), wm_dict, campaign.get('creation_settings')
+            )
+            stamp = _utc_stamp()
+            if found and override_reason is None:
+                return jsonify({
+                    'error': (
+                        'This sheet breaks the V5 creation rules: '
+                        + ', '.join(dict.fromkeys(p['code'] for p in found)) + '.'
+                    ),
+                    'error_code': 'creation_invalid',
+                    'problems': found,
+                }), 400
+            if override_reason is not None and (found or not_allowed or not checked):
+                wm_dict['creation'] = {
+                    'validated': False,
+                    'at': stamp,
+                    'rules': CREATION_RULES_VERSION,
+                    'override': {'by': current_user_id, 'reason': override_reason, 'at': stamp},
+                    'problems': found,
+                }
+            elif checked:
+                wm_dict['creation'] = {'validated': True, 'at': stamp, 'rules': CREATION_RULES_VERSION}
+            else:
+                wm_dict['creation'] = {
+                    'validated': False, 'at': stamp, 'rules': CREATION_RULES_VERSION,
+                    'reason': 'catalog_missing',
+                }
             wod_meta = json.dumps(wm_dict)
 
         portrait_url = data.get('portrait_url')
@@ -824,6 +901,12 @@ def update_character(character_id):
             new_meta = None
             if 'wod_meta' in data and current_user['role'] in ('admin', 'helper'):
                 new_meta = stamp_v5_meta(data['wod_meta'] or {})
+                # wod_meta.creation is the server's record (create / creation-override): keep it.
+                new_meta.pop('creation', None)
+                stored = _wod_meta_parse(character.get('wod_meta'))
+                stored_creation = stored.get('creation') if isinstance(stored, dict) else None
+                if stored_creation is not None:
+                    new_meta['creation'] = stored_creation
                 # replace the already-queued wod_meta value with the stamped one
                 idx = updates.index("wod_meta = %s")
                 params[idx] = json.dumps(new_meta)
@@ -1060,4 +1143,106 @@ def assign_character_to_chronicle(character_id):
         return jsonify({'error': 'Failed to bring the character into the chronicle'}), 500
     finally:
         if 'db' in locals():
+            db.close()
+
+
+@bp.route('/<int:character_id>/creation-override', methods=['POST'])
+@jwt_required()
+def creation_override(character_id):
+    """
+    Approve an existing V5 sheet outside the creation rules (an imported sheet, a house rule):
+    {reason}. The Storyteller of the character's chronicle or staff may do it; a site admin
+    when the character has no chronicle. Stores wod_meta.creation = {validated: false,
+    override: {by, reason, at}, problems} with what the creation check finds now.
+    """
+    try:
+        current_user_id = int(get_jwt_identity())
+    except (TypeError, ValueError):
+        return jsonify({'error': 'Invalid session'}), 401
+    reason = _override_reason(request.get_json(silent=True) or {})
+    if reason is None:
+        return jsonify({
+            'error': f'A reason is required (1-{CREATION_OVERRIDE_REASON_MAX} characters).',
+            'error_code': 'creation_override_reason',
+        }), 400
+    db = None
+    try:
+        db = get_db()
+        cursor = db.cursor()
+        _ensure_character_schema(cursor)
+        db.commit()
+
+        cursor.execute("SELECT role FROM users WHERE id = %s", (current_user_id,))
+        actor = cursor.fetchone()
+        if not actor:
+            return jsonify({'error': 'User not found'}), 404
+        cursor.execute("SELECT * FROM characters WHERE id = %s FOR UPDATE", (character_id,))
+        character = cursor.fetchone()
+        if not character:
+            db.rollback()
+            return jsonify({'error': 'Character not found'}), 404
+        campaign_id = character.get('campaign_id')
+        if campaign_id is None:
+            allowed = actor.get('role') == 'admin'
+        else:
+            allowed = is_campaign_storyteller_or_staff(cursor, current_user_id, campaign_id)
+        if not allowed:
+            db.rollback()
+            return jsonify({
+                'error': (
+                    "Only the character's Storyteller or staff can approve it "
+                    '(a site admin when it has no chronicle).'
+                ),
+                'error_code': 'creation_override_forbidden',
+            }), 403
+        if edition_of(character) != V5:
+            db.rollback()
+            return jsonify({
+                'error': 'Only V5 sheets have creation rules to override.',
+                'error_code': 'not_v5',
+            }), 400
+
+        settings = None
+        if campaign_id is not None:
+            cursor.execute("SELECT creation_settings FROM campaigns WHERE id = %s", (campaign_id,))
+            settings = (cursor.fetchone() or {}).get('creation_settings')
+        meta = _wod_meta_parse(character.get('wod_meta'))
+        meta = meta if isinstance(meta, dict) else {}
+
+        def _json(col):
+            try:
+                v = json.loads(character.get(col) or '{}')
+            except (TypeError, ValueError):
+                return {}
+            return v if isinstance(v, dict) else {}
+
+        found, _checked = _creation_check(_json('attributes'), _json('skills'), meta, settings)
+        stamp = _utc_stamp()
+        meta['creation'] = {
+            'validated': False,
+            'at': stamp,
+            'rules': CREATION_RULES_VERSION,
+            'override': {'by': current_user_id, 'reason': reason, 'at': stamp},
+            'problems': found,
+        }
+        cursor.execute(
+            "UPDATE characters SET wod_meta = %s, updated_at = %s WHERE id = %s",
+            (json.dumps(meta), datetime.utcnow(), character_id),
+        )
+        db.commit()
+        logger.info(
+            "Creation override on character %s by user %s",
+            safe_log_value(character_id),
+            safe_log_value(current_user_id),
+        )
+        return jsonify({
+            'message': 'Creation override recorded',
+            'character_id': character_id,
+            'creation': meta['creation'],
+        }), 200
+    except Exception as e:
+        logger.error(f"Error recording a creation override on {safe_log_value(character_id)}: {safe_log_value(e)}")
+        return jsonify({'error': 'Failed to record the creation override'}), 500
+    finally:
+        if db is not None:
             db.close()

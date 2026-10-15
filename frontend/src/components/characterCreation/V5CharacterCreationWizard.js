@@ -4,7 +4,7 @@ import { THIN_BLOOD, V5_SECTION_IDS } from '../../characterSheet/v5/constants';
 import { useV5Catalog } from '../../rules/v5Catalog';
 import { buildV5Payload, validateV5Sheet } from '../../characterSheet/v5/validation';
 import { settingsForCampaign } from '../../characterSheet/v5/creationSettings';
-import { translateSheetErrors } from '../../characterSheet/i18nErrors';
+import { serverProblemErrors, translateSheetErrors } from '../../characterSheet/i18nErrors';
 import { t } from '../../i18n';
 import { Term } from '../../i18n/glossary';
 import { authFetch } from '../../app/http';
@@ -121,6 +121,15 @@ export default function V5CharacterCreationWizard({
       });
       const body = await res.json().catch(() => ({}));
       if (!res.ok) {
+        // The server's creation check answers with problem codes (backend/services/v5_chargen.py).
+        const server = serverProblemErrors(body.problems);
+        if (server.messages.length) {
+          f.setFieldErrors(server.bySection);
+          showError?.(`${t('wizard:problem.refused', 'The server refused the sheet:')} ${server.messages.join(' ')}`);
+          const first = SECTION_ORDER.find(([id]) => server.bySection[id]);
+          if (first) scrollToSection(first[0]);
+          return;
+        }
         showError?.(body.error || t('wizard:error.createFailed', 'Could not create character.'));
         return;
       }
