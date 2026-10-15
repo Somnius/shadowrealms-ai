@@ -5,6 +5,10 @@
     {
       "id": "ritual:blood-walk",
       "name": "Blood Walk",
+      "desc": {
+        "en": "Study a silver cup of a vampire's Blood for an hour to learn their name, generation and sire; a critical win also reveals any Blood Bonds they hold or suffer.",
+        "el": "Μελετάς για μία ώρα ένα ασημένιο κύπελλο με αίμα ενός βαμπίρ και μαθαίνεις όνομα, Generation και sire· critical win φανερώνει και τα Blood Bonds που έχει ή υφίσταται."
+      },
       "level": 1,
       "book": "v5-corebook",
       "page": 276,
@@ -18,6 +22,10 @@
     {
       "id": "ritual:clinging-of-the-insect",
       "name": "Clinging of the Insect",
+      "desc": {
+        "en": "Drink your Blood mixed with a crushed spider to climb walls and ceilings with all four limbs at half speed for a scene (a whole night on a critical win). Works only on yourself.",
+        "el": "Πίνεις το αίμα σου ανακατεμένο με λιωμένη αράχνη και σκαρφαλώνεις σε τοίχους και ταβάνια με χέρια και πόδια, με μισή ταχύτητα, για μία σκηνή (όλη νύχτα σε critical win). Μόνο για σένα."
+      },
       "level": 1,
       "book": "v5-corebook",
       "page": 276,
@@ -31,6 +39,10 @@
     {
       "id": "ritual:craft-bloodstone",
       "name": "Craft Bloodstone",
+      "desc": {
+        "en": "Over three nights soak a pebble or magnet in blood to make a tracker: you always know its direction and distance for a week or until it is destroyed. You can keep as many stones as your Resolve.",
+        "el": "Σε τρεις νύχτες ποτίζεις ένα βότσαλο ή μαγνήτη με αίμα και γίνεται ιχνηλάτης: ξέρεις πάντα κατεύθυνση και απόσταση για μία εβδομάδα ή ώσπου να καταστραφεί. Κρατάς τόσες πέτρες όσο το Resolve σου."
+      },
       "level": 1,
       "book": "v5-corebook",
       "page": 276,
@@ -44,6 +56,10 @@
     {
       "id": "ritual:douse-the-fear",
       "name": "Douse the Fear",
+      "desc": {
+        "en": "Burn a holy object before the ritual to gain +2 dice on rolls to resist terror frenzy for a night; on a critical win you need no terror frenzy rolls at all that night.",
+        "el": "Καις ένα ιερό αντικείμενο και για μία νύχτα έχεις +2 ζάρια σε ρίψεις αντίστασης σε terror frenzy· σε critical win δεν ρίχνεις καθόλου για terror frenzy εκείνη τη νύχτα."
+      },
       "level": 1,
       "book": "v5-players-guide",
       "page": 99,
@@ -57,6 +73,10 @@
     {
       "id": "ritual:seal-the-brand",
       "name": "Seal the Brand",
+      "desc": {
+        "en": "Pour molten silver over a tattoo, brand or other body modification (1 Superficial damage) so it no longer fades with day-sleep and becomes a permanent part of the vampire's body.",
+        "el": "Χύνεις λιωμένο ασήμι πάνω σε τατουάζ, σημάδι ή άλλη τροποποίηση του σώματος (1 Superficial ζημιά) ώστε να μη σβήνει με τον ύπνο της μέρας και να γίνει μόνιμη στο σώμα του βαμπίρ."
+      },
       "level": 1,
       "book": "v5-players-guide",
       "page": 99,
@@ -70,6 +90,10 @@
     {
       "id": "ritual:wake-with-evenings-freshness",
       "name": "Wake with Evening's Freshness",
+      "desc": {
+        "en": "Draw a circle of rooster ash and Blood around your sleeping place; if danger comes by day, roll the ritual then and on a win you wake fully alert, ignoring daytime penalties for the scene (until dawn on a critical).",
+        "el": "Σχεδιάζεις κύκλο από στάχτη κόκορα και αίμα γύρω από το σημείο ύπνου· αν έρθει κίνδυνος τη μέρα, ρίχνεις τότε και με νίκη ξυπνάς πλήρως σε εγρήγορση, αγνοώντας τις ποινές της μέρας για τη σκηνή (ως την αυγή σε critical)."
+      },
       "level": 1,
       "book": "v5-corebook",
       "page": 276,
@@ -83,6 +107,10 @@
     {
       "id": "ritual:ward-against-ghouls",
       "name": "Ward against Ghouls",
+      "desc": {
+        "en": "A standard Ward traced in your Blood on one object about a meter across: the first ghoul to touch it takes 1 Aggravated damage (3 on a critical) and must spend Willpower to try again. No extra ingredients.",
+        "el": "Κανονικό Ward χαραγμένο με το αίμα σου σε ένα αντικείμενο ως ένα μέτρο: ο πρώτος ghoul που το αγγίζει παίρνει 1 Aggravated ζημιά (3 σε critical) και πρέπει να ξοδέψει Willpower για να ξαναδοκιμάσει. Χωρίς άλλα υλικά."
+      },
       "level": 1,
       "book": "v5-corebook",
       "page": 277,
@@ -96,6 +124,10 @@
     {
       "id": "ritual:as-fog-on-water",
       "name": "As Fog on Water",
+      "desc": {
+        "en": "Submerge a piece of ship's wood in the water you want to cross while bleeding into it; you can then walk on that water's surface for the rest of the night.",
+        "el": "Βυθίζεις ένα κομμάτι ξύλο από πλοίο στο νερό που θέλεις να περάσεις ενώ στάζεις αίμα· μετά περπατάς στην επιφάνειά του για το υπόλοιπο της νύχτας."
+      },
       "level": 2,
       "book": "v5-players-guide",
       "page": 100,
@@ -109,6 +141,10 @@
     {
       "id": "ritual:calix-secretus",
       "name": "Calix Secretus",
+      "desc": {
+        "en": "Soak a hand-sized object in your Blood for an hour so it stores Blood for later; every two Rouse Checks stored can slake 1 Hunger when a command word releases it.",
+        "el": "Ποτίζεις για μία ώρα ένα αντικείμενο που χωρά στη χούφτα με το αίμα σου ώστε να το αποθηκεύει· κάθε δύο Rouse Checks που αποθηκεύεις σβήνουν 1 Hunger όταν το απελευθερώσεις με τη λέξη εντολής."
+      },
       "level": 2,
       "book": "v5-players-guide",
       "page": 100,
@@ -122,6 +158,10 @@
     {
       "id": "ritual:communicate-with-kindred-sire",
       "name": "Communicate with Kindred Sire",
+      "desc": {
+        "en": "Submerge an object of your sire in a silver bowl of water and bleed into it; a win after 15 minutes gives ten minutes of silent two-way mental talk with your sire (at once on a critical win).",
+        "el": "Βυθίζεις ένα αντικείμενο του sire σου σε ασημένιο μπολ με νερό και στάζεις αίμα· νίκη μετά από 15 λεπτά δίνει δέκα λεπτά σιωπηλής αμφίδρομης νοητικής επικοινωνίας μαζί του (αμέσως σε critical win)."
+      },
       "level": 2,
       "book": "v5-corebook",
       "page": 277,
@@ -135,6 +175,10 @@
     {
       "id": "ritual:eyes-of-babel",
       "name": "Eyes of Babel",
+      "desc": {
+        "en": "Swallow a victim's fresh eye and tongue to read and speak every language they know, at their skill level, for a week (a month on a critical win). Likely a Stain.",
+        "el": "Καταπίνεις το φρέσκο μάτι και τη γλώσσα ενός θύματος και διαβάζεις και μιλάς κάθε γλώσσα που ξέρει, στο επίπεδό του, για μία εβδομάδα (έναν μήνα σε critical win). Μάλλον Stain."
+      },
       "level": 2,
       "book": "v5-corebook",
       "page": 277,
@@ -148,6 +192,10 @@
     {
       "id": "ritual:illuminate-the-trail-of-prey",
       "name": "Illuminate the Trail of Prey",
+      "desc": {
+        "en": "Burn a Blood-soaked satin ribbon to see where a person you know by face went in the last 24 hours as a glowing trail; follow it with Intelligence + Survival. Lasts a night, two on a critical win.",
+        "el": "Καις μια σατέν κορδέλα ποτισμένη με αίμα και βλέπεις ως φωτεινό ίχνος πού πήγε τις τελευταίες 24 ώρες κάποιος που ξέρεις φυσιογνωμικά· το ακολουθείς με Intelligence + Survival. Κρατά μία νύχτα, δύο σε critical win."
+      },
       "level": 2,
       "book": "v5-corebook",
       "page": 277,
@@ -161,6 +209,10 @@
     {
       "id": "ritual:soporific-touch",
       "name": "Soporific Touch",
+      "desc": {
+        "en": "Turn a dose of your vitae into a touch narcotic: the ritual roll vs the victim's Stamina + Resolve sets a dice penalty equal to your margin on their Composure and Resolve resistance pools for the scene.",
+        "el": "Κάνεις μια δόση αίματος ναρκωτικό αφής: η ρίψη του ritual εναντίον Stamina + Resolve του θύματος ορίζει ποινή ζαριών ίση με το margin σου στα pool αντίστασης με Composure και Resolve για τη σκηνή."
+      },
       "level": 2,
       "book": "v5-players-guide",
       "page": 100,
@@ -174,6 +226,10 @@
     {
       "id": "ritual:truth-of-blood",
       "name": "Truth of Blood",
+      "desc": {
+        "en": "Mix your Blood with a pint of the subject's; for each statement they make, roll Resolve + Blood Sorcery vs Composure + Occult to learn if it is true as far as they know. The first lost contest ends it.",
+        "el": "Ανακατεύεις το αίμα σου με αίμα του υποκειμένου· για κάθε δήλωσή του ρίχνεις Resolve + Blood Sorcery εναντίον Composure + Occult και μαθαίνεις αν είναι αλήθεια όσο ξέρει. Η πρώτη χαμένη ρίψη το τερματίζει."
+      },
       "level": 2,
       "book": "v5-corebook",
       "page": 277,
@@ -187,6 +243,10 @@
     {
       "id": "ritual:ward-against-spirits",
       "name": "Ward against Spirits",
+      "desc": {
+        "en": "A standard Ward with salt in the Blood; the first wraith, ghost or spirit that tries to handle or pass through the object takes 1 Aggravated damage (3 on a critical).",
+        "el": "Κανονικό Ward με αλάτι στο αίμα· το πρώτο wraith, φάντασμα ή πνεύμα που πάει να πιάσει ή να περάσει μέσα από το αντικείμενο παίρνει 1 Aggravated ζημιά (3 σε critical)."
+      },
       "level": 2,
       "book": "v5-corebook",
       "page": 278,
@@ -200,6 +260,10 @@
     {
       "id": "ritual:warding-circle-against-ghouls",
       "name": "Warding Circle against Ghouls",
+      "desc": {
+        "en": "A Warding circle drawn with a human bone dipped in Blood, up to a three-meter radius, that ghouls cannot cross: a losing trespasser takes 3 Superficial damage. 3 Rouse Checks and a night; lasts till dawn or a year.",
+        "el": "Warding circle χαραγμένος με ανθρώπινο κόκαλο βουτηγμένο σε αίμα, ακτίνας ως τρία μέτρα, που οι ghouls δεν περνούν: όποιος χάσει τη ρίψη παίρνει 3 Superficial ζημιά. 3 Rouse Checks και μία νύχτα· κρατά ως την αυγή ή έναν χρόνο."
+      },
       "level": 2,
       "book": "v5-corebook",
       "page": 278,
@@ -213,6 +277,10 @@
     {
       "id": "ritual:dagons-call",
       "name": "Dagon's Call",
+      "desc": {
+        "en": "After your Blood touched the victim within the past week, roll Resolve + Blood Sorcery vs Stamina + Resolve from afar: each point of margin is 1 damage, Aggravated to mortals, Superficial to vampires. Up to two repeats, 1 Rouse Check each.",
+        "el": "Αφού το αίμα σου άγγιξε το θύμα μέσα στην εβδομάδα, ρίχνεις από μακριά Resolve + Blood Sorcery εναντίον Stamina + Resolve: κάθε πόντος margin είναι 1 ζημιά, Aggravated σε θνητούς, Superficial σε βαμπίρ. Ως δύο επαναλήψεις με 1 Rouse Check."
+      },
       "level": 3,
       "book": "v5-corebook",
       "page": 278,
@@ -226,6 +294,10 @@
     {
       "id": "ritual:deflection-of-wooden-doom",
       "name": "Deflection of Wooden Doom",
+      "desc": {
+        "en": "Meditate an hour in a circle of Blood and wood shavings, then keep a splinter under your tongue: the first real staking attempt that night triggers the ritual roll, and on a win the stake shatters on your skin.",
+        "el": "Διαλογίζεσαι μία ώρα σε κύκλο από αίμα και ροκανίδια και κρατάς μια σκλήθρα κάτω από τη γλώσσα: η πρώτη πραγματική απόπειρα παλουκώματος τη νύχτα ρίχνει το ritual, και με νίκη το παλούκι θρυμματίζεται στο δέρμα σου."
+      },
       "level": 3,
       "book": "v5-corebook",
       "page": 278,
@@ -239,6 +311,10 @@
     {
       "id": "ritual:essence-of-air",
       "name": "Essence of Air",
+      "desc": {
+        "en": "Brew belladonna in your Blood into a potion good for one night; drinking it lets you (only you) fly at running speed for a scene, or at walking speed while carrying one person. A critical win makes two doses.",
+        "el": "Βράζεις belladonna στο αίμα σου και φτιάχνεις φίλτρο μιας νύχτας· πίνοντάς το πετάς (μόνο εσύ) με ταχύτητα τρεξίματος για μία σκηνή, ή περπατήματος αν κουβαλάς ένα άτομο. Critical win δίνει δύο δόσεις."
+      },
       "level": 3,
       "book": "v5-corebook",
       "page": 278,
@@ -252,6 +328,10 @@
     {
       "id": "ritual:fire-in-the-blood",
       "name": "Fire in the Blood",
+      "desc": {
+        "en": "Burn a sample of the target's blood over a flame: ritual roll vs Resolve + Occult (or Fortitude), each point of margin is 1 Superficial damage and the pain gives −2 to Physical pools for the scene. Once per night per victim.",
+        "el": "Καις δείγμα αίματος του στόχου πάνω από φλόγα: ritual εναντίον Resolve + Occult (ή Fortitude), κάθε πόντος margin είναι 1 Superficial ζημιά και ο πόνος δίνει −2 σε Physical pool για τη σκηνή. Μία φορά τη νύχτα ανά θύμα."
+      },
       "level": 3,
       "book": "v5-players-guide",
       "page": 100,
@@ -265,6 +345,10 @@
     {
       "id": "ritual:firewalker",
       "name": "Firewalker",
+      "desc": {
+        "en": "Cut off one of your fingertips and burn it with your Blood in a golden vessel; on a win fire damage to you is halved for the rest of the night. You can protect others too, each costing one of your fingertips.",
+        "el": "Κόβεις ένα ακροδάχτυλό σου και το καις με το αίμα σου σε χρυσό σκεύος· με νίκη η ζημιά από φωτιά σε σένα υποδιπλασιάζεται για την υπόλοιπη νύχτα. Προστατεύεις και άλλους, με ένα δικό σου ακροδάχτυλο ο καθένας."
+      },
       "level": 3,
       "book": "v5-corebook",
       "page": 279,
@@ -278,6 +362,10 @@
     {
       "id": "ritual:one-with-the-blade",
       "name": "One with the Blade",
+      "desc": {
+        "en": "Submerge a melee weapon in your vitae until sunrise to dedicate it: it never rusts or dulls, and anointing it with your Blood (1 Rouse Check) gives +2 dice for a scene. Only one weapon at a time.",
+        "el": "Βυθίζεις ένα όπλο σώμα με σώμα στο αίμα σου ως την ανατολή και το αφιερώνεις: δεν σκουριάζει ούτε στομώνει, και χρίζοντάς το με αίμα (1 Rouse Check) παίρνεις +2 ζάρια για μία σκηνή. Μόνο ένα όπλο τη φορά."
+      },
       "level": 3,
       "book": "v5-players-guide",
       "page": 101,
@@ -291,6 +379,10 @@
     {
       "id": "ritual:ward-against-lupines",
       "name": "Ward against Lupines",
+      "desc": {
+        "en": "A standard Ward with silver dust in the Blood; the first werewolf in any form that touches the object takes 1 Aggravated damage (3 on a critical).",
+        "el": "Κανονικό Ward με ασημόσκονη στο αίμα· ο πρώτος λυκάνθρωπος σε οποιαδήποτε μορφή που αγγίζει το αντικείμενο παίρνει 1 Aggravated ζημιά (3 σε critical)."
+      },
       "level": 3,
       "book": "v5-corebook",
       "page": 279,
@@ -304,6 +396,10 @@
     {
       "id": "ritual:warding-circle-against-spirits",
       "name": "Warding Circle against Spirits",
+      "desc": {
+        "en": "A Warding circle drawn with an iron knife dipped in salt and Blood that spirits, wraiths and ghosts cannot cross: a losing trespasser takes 3 Superficial damage. 3 Rouse Checks and a night to cast.",
+        "el": "Warding circle χαραγμένος με σιδερένιο μαχαίρι βουτηγμένο σε αλάτι και αίμα, που πνεύματα, wraiths και φαντάσματα δεν περνούν: όποιος χάσει τη ρίψη παίρνει 3 Superficial ζημιά. 3 Rouse Checks και μία νύχτα."
+      },
       "level": 3,
       "book": "v5-corebook",
       "page": 279,
@@ -317,6 +413,10 @@
     {
       "id": "ritual:defense-of-the-sacred-haven",
       "name": "Defense of the Sacred Haven",
+      "desc": {
+        "en": "Inscribe sigils around an area up to six meters in radius; roll at sunrise, and on a win a mystical darkness blocks all sunlight there for the whole day. It fails if you step out of the area.",
+        "el": "Χαράζεις σύμβολα γύρω από χώρο ακτίνας ως έξι μέτρα· ρίχνεις στην ανατολή, και με νίκη ένα μυστικιστικό σκοτάδι κόβει κάθε ηλιακό φως εκεί για όλη τη μέρα. Χαλάει αν βγεις από τον χώρο."
+      },
       "level": 4,
       "book": "v5-corebook",
       "page": 279,
@@ -330,6 +430,10 @@
     {
       "id": "ritual:eyes-of-the-nighthawk",
       "name": "Eyes of the Nighthawk",
+      "desc": {
+        "en": "Feed your Blood to a carnivorous bird and enter a trance to steer its flight and see through its eyes, using non-physical Disciplines through it. Take its eyes at the end or you go blind for three nights.",
+        "el": "Ταΐζεις αίμα σε σαρκοφάγο πουλί και μπαίνεις σε έκσταση για να κατευθύνεις την πτήση του και να βλέπεις με τα μάτια του, χρησιμοποιώντας μη σωματικά Disciplines μέσω του. Στο τέλος παίρνεις τα μάτια του, αλλιώς τυφλώνεσαι για τρεις νύχτες."
+      },
       "level": 4,
       "book": "v5-corebook",
       "page": 279,
@@ -343,6 +447,10 @@
     {
       "id": "ritual:feast-of-ashes",
       "name": "Feast of Ashes",
+      "desc": {
+        "en": "Burn a parchment with the target's name and write the sigils in ash and Blood; ritual roll vs their Resolve + Willpower, and on a win they cannot keep blood down for one night. Only ashes slake them, to Hunger 3 at best.",
+        "el": "Καις περγαμηνή με το όνομα του στόχου και γράφεις τα σύμβολα με στάχτη και αίμα· ritual εναντίον Resolve + Willpower του, και με νίκη δεν μπορεί να κρατήσει αίμα για μία νύχτα. Μόνο στάχτες τον χορταίνουν, το πολύ ως Hunger 3."
+      },
       "level": 4,
       "book": "v5-players-guide",
       "page": 101,
@@ -356,6 +464,10 @@
     {
       "id": "ritual:guided-memory",
       "name": "Guided Memory",
+      "desc": {
+        "en": "Drink a willing Kindred's vitae mixed with burnt flowers and relive their past with them as guide; the Memoriam can temporarily grant a Discipline power or Merit of up to three dots, until the end of the session.",
+        "el": "Πίνεις αίμα πρόθυμου Kindred ανακατεμένο με καμένα λουλούδια και ξαναζείς το παρελθόν του με οδηγό τον ίδιο· το Memoriam μπορεί να δώσει προσωρινά δύναμη Discipline ή Merit ως τρεις τελείες, ως το τέλος της συνεδρίας."
+      },
       "level": 4,
       "book": "v5-players-guide",
       "page": 101,
@@ -369,6 +481,10 @@
     {
       "id": "ritual:incorporeal-passage",
       "name": "Incorporeal Passage",
+      "desc": {
+        "en": "Bleed on a mirror and break it; while you hold a shard you are ghostly for a scene: immune to all but fire, sunlight and spirit-harming magic, passing through objects in straight lines, unable to touch anything or Rouse the Blood.",
+        "el": "Στάζεις αίμα σε καθρέφτη και τον σπας· όσο κρατάς ένα θραύσμα είσαι άυλος για μία σκηνή: άτρωτος σε όλα εκτός από φωτιά, ήλιο και μαγεία κατά πνευμάτων, περνάς αντικείμενα σε ευθεία, δεν αγγίζεις τίποτα ούτε κάνεις Rouse Check."
+      },
       "level": 4,
       "book": "v5-corebook",
       "page": 280,
@@ -382,6 +498,10 @@
     {
       "id": "ritual:invisible-chains-of-binding",
       "name": "Invisible Chains of Binding",
+      "desc": {
+        "en": "Inscribe a chain link in your Blood and throw it at a target's feet; ritual roll vs Strength + Resolve, and they are rooted to the spot one hour per point of margin, with −4 dice to defend, brawl or melee.",
+        "el": "Χαράζεις έναν κρίκο αλυσίδας με αίμα και τον πετάς στα πόδια του στόχου· ritual εναντίον Strength + Resolve, και μένει καρφωμένος εκεί μία ώρα ανά πόντο margin, με −4 ζάρια σε άμυνα, brawl και melee."
+      },
       "level": 4,
       "book": "v5-players-guide",
       "page": 102,
@@ -395,6 +515,10 @@
     {
       "id": "ritual:ward-against-cainites",
       "name": "Ward against Cainites",
+      "desc": {
+        "en": "A standard Ward made with warm ash from a burning fire (risking terror frenzy); the first vampire other than the caster who touches the object takes 1 Aggravated damage (3 on a critical).",
+        "el": "Κανονικό Ward με ζεστή στάχτη από αναμμένη φωτιά (με κίνδυνο terror frenzy)· το πρώτο βαμπίρ εκτός του caster που αγγίζει το αντικείμενο παίρνει 1 Aggravated ζημιά (3 σε critical)."
+      },
       "level": 4,
       "book": "v5-corebook",
       "page": 280,
@@ -408,6 +532,10 @@
     {
       "id": "ritual:warding-circle-against-lupines",
       "name": "Warding Circle against Lupines",
+      "desc": {
+        "en": "A Warding circle drawn with a silver knife dipped in wolfsbane and Blood that werewolves cannot cross: a losing trespasser takes 3 Superficial damage. 3 Rouse Checks and a night to cast.",
+        "el": "Warding circle χαραγμένος με ασημένιο μαχαίρι βουτηγμένο σε ακόνιτο και αίμα, που οι λυκάνθρωποι δεν περνούν: όποιος χάσει τη ρίψη παίρνει 3 Superficial ζημιά. 3 Rouse Checks και μία νύχτα."
+      },
       "level": 4,
       "book": "v5-corebook",
       "page": 280,
@@ -421,6 +549,10 @@
     {
       "id": "ritual:antebrachia-ignium",
       "name": "Antebrachia Ignium",
+      "desc": {
+        "en": "Coat your arms in vitae and set it alight: flaming arms for the scene that frighten nearby vampires (terror frenzy test, Difficulty 2) and deal 2 Aggravated damage by touch with Dexterity + Brawl. At Hunger 4+ test for hunger frenzy first.",
+        "el": "Καλύπτεις τα χέρια σου με αίμα και το ανάβεις: φλεγόμενα χέρια για τη σκηνή που τρομάζουν τα κοντινά βαμπίρ (terror frenzy, Difficulty 2) και κάνουν 2 Aggravated ζημιά με άγγιγμα, Dexterity + Brawl. Με Hunger 4+ ρίχνεις πρώτα για frenzy."
+      },
       "level": 5,
       "book": "v5-players-guide",
       "page": 102,
@@ -434,6 +566,10 @@
     {
       "id": "ritual:dominion",
       "name": "Dominion",
+      "desc": {
+        "en": "Set iron seals over every doorway of a building over three hours; on a win nobody but you can use Animalism, Auspex, Dominate or Presence inside. Lasts until a seal is destroyed; costs 1 to 5 Rouse Checks by size.",
+        "el": "Βάζεις σιδερένιες σφραγίδες πάνω από κάθε πόρτα ενός κτιρίου σε τρεις ώρες· με νίκη κανείς εκτός από σένα δεν χρησιμοποιεί Animalism, Auspex, Dominate ή Presence μέσα. Κρατά ώσπου να σπάσει μια σφραγίδα· 1 ως 5 Rouse Checks κατά το μέγεθος."
+      },
       "level": 5,
       "book": "v5-players-guide",
       "page": 103,
@@ -447,6 +583,10 @@
     {
       "id": "ritual:escape-to-true-sanctuary",
       "name": "Escape to True Sanctuary",
+      "desc": {
+        "en": "Burn and consecrate two circles over three nights (12 Rouse Checks in all); step into the departure circle, win the ritual roll and you appear in the other, any distance away, with one person or a human-sized load.",
+        "el": "Καις και καθαγιάζεις δύο κύκλους σε τρεις νύχτες (12 Rouse Checks συνολικά)· μπαίνεις στον κύκλο αναχώρησης, κερδίζεις τη ρίψη και εμφανίζεσαι στον άλλο, σε οποιαδήποτε απόσταση, με ένα άτομο ή φορτίο ανθρώπινης μάζας."
+      },
       "level": 5,
       "book": "v5-corebook",
       "page": 280,
@@ -460,6 +600,10 @@
     {
       "id": "ritual:heart-of-stone",
       "name": "Heart of Stone",
+      "desc": {
+        "en": "Let a Blood-soaked candle burn down on your chest for a night (1 Aggravated damage, terror frenzy test): your heart turns to stone, stakes break on it, but you lose 3 dice on Remorse and most Social rolls and cannot use Presence.",
+        "el": "Αφήνεις κερί με αίμα να καεί στο στήθος σου μια νύχτα (1 Aggravated ζημιά, terror frenzy): η καρδιά σου γίνεται πέτρα και τα παλούκια σπάνε πάνω της, αλλά έχεις −3 ζάρια σε Remorse και τις περισσότερες Social ρίψεις και χάνεις το Presence."
+      },
       "level": 5,
       "book": "v5-corebook",
       "page": 281,
@@ -473,6 +617,10 @@
     {
       "id": "ritual:shaft-of-belated-dissolution",
       "name": "Shaft of Belated Dissolution",
+      "desc": {
+        "en": "A rune-carved rowan stake soaked in 2 Rouse Checks of your Blood: +3 dice to stake a vampire. A hit with margin 5+ turns them to dust; a lesser hit leaves a splinter creeping toward the heart until it is removed.",
+        "el": "Παλούκι από σορβιά με ρούνους, ποτισμένο με 2 Rouse Checks αίμα: +3 ζάρια για να παλουκώσεις βαμπίρ. Χτύπημα με margin 5+ το κάνει σκόνη· μικρότερο αφήνει σκλήθρα που σέρνεται προς την καρδιά ώσπου να αφαιρεθεί."
+      },
       "level": 5,
       "book": "v5-corebook",
       "page": 281,
@@ -486,6 +634,10 @@
     {
       "id": "ritual:warding-circle-against-cainites",
       "name": "Warding Circle against Cainites",
+      "desc": {
+        "en": "A Warding circle drawn with a rowan wand dipped in warm ash and Blood that vampires cannot cross: a losing trespasser takes 3 Superficial damage. 3 Rouse Checks and a night to cast.",
+        "el": "Warding circle χαραγμένος με ραβδί σορβιάς βουτηγμένο σε ζεστή στάχτη και αίμα, που τα βαμπίρ δεν περνούν: όποιος χάσει τη ρίψη παίρνει 3 Superficial ζημιά. 3 Rouse Checks και μία νύχτα."
+      },
       "level": 5,
       "book": "v5-corebook",
       "page": 282,
