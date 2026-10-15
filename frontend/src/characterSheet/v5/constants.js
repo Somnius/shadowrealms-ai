@@ -105,6 +105,12 @@ export const V5_AGE_BRACKETS = {
   },
 };
 
+/** The generation a new character of this age starts at: 13 where the age allows it, else its last one. */
+export function startingGeneration(age) {
+  const gens = (V5_AGE_BRACKETS[age] || V5_AGE_BRACKETS.neonate).generations;
+  return gens.includes(13) ? 13 : gens[gens.length - 1];
+}
+
 /** Generation → {min_bp, max_bp, starting_bp?, thin_blood?} from the v5.json table. */
 export function generationBloodPotency(generation) {
   const g = parseInt(generation, 10);

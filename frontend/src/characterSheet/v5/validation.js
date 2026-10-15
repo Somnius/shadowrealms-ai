@@ -57,6 +57,7 @@ import {
   generationBloodPotency,
 } from './constants';
 import { disciplineNames, getV5Rules, powersOf, ritualsOf } from './rulesData';
+import { CREATION_AGES } from './creationSettings';
 
 const int = (v) => {
   const n = parseInt(v, 10);
@@ -694,6 +695,12 @@ export function predatorAllowed(settings, name) {
 }
 export function ageAllowed(settings, age) {
   return allowedName(settings?.allowed_ages, age);
+}
+
+/** The age the forge starts a character at: neonate where allowed, else the first allowed age. */
+export function defaultCreationAge(settings) {
+  if (ageAllowed(settings, 'neonate')) return 'neonate';
+  return CREATION_AGES.find((a) => ageAllowed(settings, a)) || 'neonate';
 }
 
 /** What the sheet breaks in the chronicle's creation settings: { sectionId: message }. */

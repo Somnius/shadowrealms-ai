@@ -6,14 +6,15 @@ import {
   V5_BACKGROUNDS,
   V5_DISCIPLINE_DOTS,
   V5_SKILL_DISTRIBUTIONS,
+  startingGeneration,
 } from '../../../characterSheet/v5/constants';
 import {
-  ageAllowed,
   attributeSpreadStatus,
   bloodSorceryLevel,
   clanAllowed,
   clanInfo,
   creationDisciplineOptions,
+  defaultCreationAge,
   deriveV5,
   disciplineRows,
   emptyV5Attributes,
@@ -26,7 +27,6 @@ import {
   startingXp,
   xpLedger,
 } from '../../../characterSheet/v5/validation';
-import { CREATION_AGES } from '../../../characterSheet/v5/creationSettings';
 import { clanNames, disciplineNames } from '../../../characterSheet/v5/rulesData';
 
 const isBackgroundName = (name) =>
@@ -37,26 +37,18 @@ const emptyDisciplines = () => [
   { name: '', level: V5_DISCIPLINE_DOTS[1], powers: [] },
 ];
 
-/** Generation to start an age at: 13 where the age allows it, else its last (lowest) one. */
-const generationFor = (age) => {
-  const gens = V5_AGE_BRACKETS[age].generations;
-  return gens.includes(13) ? 13 : gens[gens.length - 1];
-};
-
 /**
  * All state of the V5 forge, the sheet built from it (see characterSheet/v5/validation.js for its
  * shape) and the values derived from it. `settings` are the chronicle's creation settings
  * (normalised, see characterSheet/v5/creationSettings.js); `initial` overrides starting values
  * (the guided mode prefills through it).
  */
-export default function useV5ForgeState(settings, initial = {}) {
+export default function useV5ForgeState(settings, initialValues) {
+  const initial = initialValues || {};
   const firstClan =
     initial.clan || (clanAllowed(settings, 'Brujah') ? 'Brujah' : clanNames().find((c) => clanAllowed(settings, c)) || 'Brujah');
   // Thin-bloods are always childer of the 14th generation or later (the same as changeClan).
-  const firstAge =
-    firstClan === THIN_BLOOD
-      ? 'childer'
-      : initial.age || (ageAllowed(settings, 'neonate') ? 'neonate' : CREATION_AGES.find((a) => ageAllowed(settings, a)) || 'neonate');
+  const firstAge = firstClan === THIN_BLOOD ? 'childer' : initial.age || defaultCreationAge(settings);
 
   const [name, setName] = useState(initial.name || '');
   const [concept, setConcept] = useState(initial.concept || '');
@@ -65,7 +57,7 @@ export default function useV5ForgeState(settings, initial = {}) {
   const [desire, setDesire] = useState('');
   const [clan, setClan] = useState(firstClan);
   const [age, setAge] = useState(firstAge);
-  const [generation, setGeneration] = useState(() => (firstClan === THIN_BLOOD ? 14 : generationFor(firstAge)));
+  const [generation, setGeneration] = useState(() => (firstClan === THIN_BLOOD ? 14 : startingGeneration(firstAge)));
   const [attributes, setAttributes] = useState(() => initial.attributes || emptyV5Attributes());
   const [skillDistribution, setSkillDistribution] = useState(initial.skillDistribution || 'balanced');
   const [skills, setSkills] = useState(() => initial.skills || emptyV5Skills());
@@ -152,7 +144,7 @@ export default function useV5ForgeState(settings, initial = {}) {
   const changeAge = (next) => {
     setAge(next);
     if (!V5_AGE_BRACKETS[next].xp) setXpPurchases([]);
-    if (!V5_AGE_BRACKETS[next].generations.includes(Number(generation))) setGeneration(generationFor(next));
+    if (!V5_AGE_BRACKETS[next].generations.includes(Number(generation))) setGeneration(startingGeneration(next));
   };
 
   const changeClan = (next) => {
