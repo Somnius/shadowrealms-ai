@@ -7,7 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.11.0] - 2026-10-15 - By the book
+
 ### Added
+- **V5 rules catalog** (`docs/rules/v5/catalog/`): every clan (the corebook's seven, the seven from the Players Guide incl. Hecata, plus Caitiff and thin-bloods), Discipline and power by level (Oblivion too), Blood Sorcery ritual, Oblivion ceremony, thin-blood alchemy formula and the 18 predator types, with book and page, built by a deterministic script from the official books (`scripts/v5_catalog/`, facts only, no book text) and a short description of each in our own words in English and Greek. Served by `GET /api/rules/v5/catalog`.
+- V5 forge: all 16 clans; powers, the starting ritual and (with Oblivion) the starting ceremony are picked from lists with their description and page; amalgams and prerequisite powers are checked; each predator type offers its real choices (one of two advantages, dots shared between two backgrounds, a rating the book doesn't print). The forge still works on `docs/rules/v5.json` if the catalog can't load.
+- The read-only V5 sheet opens the description of a power or ritual when you click it, and marks Oblivion ceremonies.
 - Chronicle **Character creation rules** (V5 chronicles, Storyteller or admin, chronicle settings page): which clans, predator types and ages the forge offers, an optional cap on the Flaw dots a player takes, whether just-Embraced fledglings may start at Humanity 8, and house rules shown at the top of the forge. Stored in `campaigns.creation_settings` (`backend/services/creation_settings.py`), sent with the chronicle list and details, set with `PUT /api/campaigns/<id>` `{creation_settings}`. The server refuses a new V5 character that breaks them.
 - V5 forge: the predator type's Discipline dot is shown (gold, "+1 from <type>") with a power input for every final dot, and a predator Discipline outside the two picks gets its own row.
 - V5 forge: one optional Level 1 ritual at creation when the final Blood Sorcery is 1+ (`wod_meta.rituals`, shown on the read-only sheet and in the Storyteller prompt).

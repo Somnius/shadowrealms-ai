@@ -1,7 +1,7 @@
 # Feature Documentation
 
-**Last Updated**: 2026-10-04  
-**Version**: 0.10.0
+**Last Updated**: 2026-10-15  
+**Version**: 0.11.0
 
 Feature notes for ShadowRealms AI that don't have their own document. The full list of changes per release is in [CHANGELOG.md](CHANGELOG.md); the plans are in [ROADMAP_v0.9.md](ROADMAP_v0.9.md) and [ROADMAP_v0.10.md](ROADMAP_v0.10.md).
 
@@ -9,6 +9,7 @@ Feature notes for ShadowRealms AI that don't have their own document. The full l
 
 ## Table of Contents
 
+1. [What's new in v0.11.0](#whats-new-in-v0110)
 1. [What's new in v0.9.2 to v0.10.0](#whats-new-in-v092-to-v0100)
 1. [What's new in v0.9.0](#whats-new-in-v090)
 2. [Admin user management, play suspension, discover/join](#admin-user-management-play-suspension-discoverjoin)
@@ -20,6 +21,11 @@ Feature notes for ShadowRealms AI that don't have their own document. The full l
 8. [Invite Code System](#invite-code-system)
 
 ---
+
+## What's new in v0.11.0
+
+- **Forge v2 (first half).** The V5 forge in the corebook's order, with a predator type preview and the predator's Flaws counted as extra. All 16 clans, powers, rituals and ceremonies picked from lists with a short description and the book page, in English or Greek. Storytellers set creation rules per chronicle. See [CHARACTER_SHEET_BLOCKS.md](CHARACTER_SHEET_BLOCKS.md) and [rules/V5.md](rules/V5.md).
+- **Since 0.10.0:** `/ai explain`, the character sheet PDF, V5 room dice switches, characters without a chronicle, Classic degrees, rule books in the Storyteller's search (see the [changelog](CHANGELOG.md)).
 
 ## What's new in v0.9.2 to v0.10.0
 

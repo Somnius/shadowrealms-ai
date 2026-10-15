@@ -295,6 +295,7 @@ This philosophy ensures:
 - [Performance & Scalability](#performance--scalability)
 
 ### **📊 Current Status & Versions**
+- [Version 0.11.0 - By the book](#version-0110---by-the-book)
 - [Version 0.10.0 - New foundations](#version-0100---new-foundations)
 - [Version 0.9.0 - Into the Night](#version-090---into-the-night)
 - [Version 0.8.0 - Player account and character management milestone](#version-080---player-account-and-character-management-milestone)
@@ -1323,6 +1324,18 @@ The project now includes comprehensive `.gitignore` rules covering:
 - **Campaign Continuity**: Persistent AI memory across multiple sessions
 - **Multi-Language**: Global accessibility with translation pipelines
 - **Real-time Collaboration**: Live AI-assisted gaming experiences
+
+## Version 0.11.0 - By the book
+
+### What changed from 0.10.0
+
+- **Forge v2, first half**: the V5 forge follows the corebook's order, previews the predator type in the Disciplines step, and counts the predator type's Flaws as extra (2 of the player's own, p. 136). Storytellers set creation rules per chronicle: allowed clans, predator types and ages, a Flaw cap, the Humanity 8 fledgling start, house rules. The server refuses characters that break them.
+- **A rules catalog from the books**: 16 clans, every Discipline power by level with Oblivion, rituals, ceremonies, formulae and 18 predator types, with book and page and our own short descriptions in English and Greek. The forge picks from lists and checks amalgams and prerequisites.
+- **At the table** (since 0.10.0): `/ai explain` for any roll, replies passed to the Storyteller, the fillable character sheet PDF, V5 room dice switches, characters without a chronicle, Classic degrees fixed, rule books imported into the Storyteller's search.
+
+**See also:** [docs/CHANGELOG.md](docs/CHANGELOG.md) (`[0.11.0]`), [docs/rules/V5.md](docs/rules/V5.md).
+
+---
 
 ## Version 0.10.0 - New foundations
 
