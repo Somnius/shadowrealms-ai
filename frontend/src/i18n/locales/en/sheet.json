@@ -40,24 +40,14 @@
     "problem": {
       "savedShort": "Needs {{need}} saved Advantage dots; {{have}} are saved.",
       "overCap": "This chronicle saves at most {{cap}} Advantage dots (this spend uses {{total}}).",
-      "dotsRange": "{{name}} would have {{to}} dots; an Advantage has 1–5.",
-      "unknown": "{{name}} is not in the Advantages list.",
-      "flaw": "{{name}} is a Flaw, not an Advantage.",
-      "advRange": "{{name}} takes {{min}}–{{max}} dots, not {{to}}.",
       "book": "{{name}} comes from a book this chronicle doesn't use ({{book}}).",
-      "clanOnly": "{{name}} is only for {{clans}}.",
       "noSpecialty": "No specialty is saved.",
       "specialtyOff": "This chronicle doesn't let players save a specialty.",
       "skillNoDot": "{{skill}} needs at least one dot for a specialty.",
       "duplicate": "{{skill}} already has the {{name}} specialty.",
-      "advAllowed": "{{name}} takes {{allowed}} dots, not {{to}}.",
-      "thinBloodOnly": "{{name}} is for thin-bloods only.",
-      "caitiffOnly": "{{name}} is for Caitiff only.",
-      "ghoulOnly": "{{name}} is for ghouls only.",
-      "coterie": "{{name}} belongs to a coterie, not to one character.",
-      "cannotBuy": "{{clan}} characters cannot take {{name}}.",
       "requires": "{{name}} needs {{requires}}: the Storyteller checks that.",
-      "notRepeatable": "The sheet already has {{name}}, and it can be taken only once."
+      "repeat": "The sheet already has {{name}} as often as it can be taken.",
+      "catalogError": "The rules catalog could not be read, so the Storyteller decides."
     },
     "status": {
       "approved": "Approved",
@@ -92,7 +82,16 @@
     "reason": "Storyteller: {{reason}}",
     "applied": "Done: the AI Storyteller approved it (rule check). Your Storyteller can still reverse it.",
     "sent": "Sent to your Storyteller.",
-    "reverseReason": "Reversed by the Storyteller: {{reason}}"
+    "reverseReason": "Reversed by the Storyteller: {{reason}}",
+    "loreLevels_one": "{{name}} level {{levels}}",
+    "loreLevels_other": "{{name}} levels {{levels}}",
+    "ownLore": "{{name}} (levels {{levels}})",
+    "pick": "Choose…",
+    "groupYours": "Yours (raise)",
+    "level": "Level",
+    "pickLevel": "Level…",
+    "advHelpCatalog": "Raise an Advantage you have, or take a new one from the list. A loresheet level costs as many dots as its rating.",
+    "note": "Note (optional)"
   },
   "saved": {
     "dots_one": "{{count}} Advantage dot",

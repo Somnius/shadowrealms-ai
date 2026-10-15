@@ -776,16 +776,18 @@ def _check_predator(p: _Problems, sh: _Sheet, cat: _Catalog) -> None:
 
 
 def _check_advantages(p: _Problems, sh: _Sheet, cat: _Catalog, s: Dict[str, Any]) -> None:
-    """Own Advantages: at most 7 dots (+2 ancilla); own Flaws: at least 2 (+2 ancilla) and at most
-    the chronicle's cap; each row in its catalog range, or 1-5 when the catalog doesn't know it.
-    The predator type's rows are extra (core p. 136). Thin-bloods: 1-3 thin-blood Merits and as
-    many thin-blood Flaws."""
+    """Own Advantages: at most 7 dots (+2 ancilla), the dots saved for later (wod_meta.saved,
+    Forge v2 part D) included, so a sheet can't claim more saved dots than it left unspent; own
+    Flaws: at least 2 (+2 ancilla) and at most the chronicle's cap; each row in its catalog range,
+    or 1-5 when the catalog doesn't know it. The predator type's rows are extra (core p. 136).
+    Thin-bloods: 1-3 thin-blood Merits and as many thin-blood Flaws."""
     bonus = AGE_BRACKETS["ancilla"] if sh.age == "ancilla" else {}
     adv_max = ADVANTAGE_DOTS + bonus.get("advantage_dots_bonus", 0)
     flaw_min = FLAWS_MIN_DOTS + bonus.get("flaw_dots_bonus", 0)
     own_adv = [r for r in sh.advantages if r.get("kind") != "predator"]
     own_flaws = [r for r in sh.flaws if r.get("kind") != "predator"]
-    adv_dots = sum(_int(r.get("dots")) for r in own_adv)
+    saved = sh.meta.get("saved") if isinstance(sh.meta.get("saved"), dict) else {}
+    adv_dots = sum(_int(r.get("dots")) for r in own_adv) + max(0, _int(saved.get("advantage_dots")))
     flaw_dots = sum(_int(r.get("dots")) for r in own_flaws)
     if adv_dots > adv_max:
         p.add("adv_over", max=adv_max, have=adv_dots)
@@ -1027,6 +1029,8 @@ def _check_rows(p: _Problems, cat: _Catalog, clan: Optional[dict], own_adv: List
             or (entry.get("caitiff") is True and not clan["caitiff"])
             or (entry.get("thin_blood") is True and not clan["thin_blood"])
             or entry.get("ghoul_only") is True
+            # a coterie's Background, not one character's (the forge never offers them either)
+            or entry.get("coterie") is True
         ):
             p.add("adv_restricted", name=name, clan=clan["name"])
         # Caitiff start without positive Status (core p. 107): only a Status row they list.
@@ -1036,6 +1040,34 @@ def _check_rows(p: _Problems, cat: _Catalog, clan: Optional[dict], own_adv: List
         )
         if (clan["caitiff"] or clan["no_positive_status"]) and is_status and dots > 0:
             p.add("caitiff_status", clan=clan["name"])
+
+
+def check_advantage_rows(meta: Any, rows: Any, catalog: Any) -> List[Dict[str, Any]]:
+    """
+    validate_creation's per-row check (catalog rating, Allies 1-6 and Mask 1 or 2 included,
+    loresheet levels and restrictions, clan restrictions, custom rows) for Advantage rows of the
+    sheet whose wod_meta is `meta` (its clan and Disciplines). services/saved_points.py checks the
+    rows a saved-point spend makes with it, so both use one code path.
+    """
+    p = _Problems()
+    cat = _Catalog(catalog)
+    sh = _Sheet({"wod_meta": meta if isinstance(meta, dict) else {}}, cat)
+    _check_rows(p, cat, sh.clan, _named_rows(rows), [], sh.level)
+    return p.items
+
+
+def advantage_entries(meta: Any, rows: Any, catalog: Any) -> List[Optional[dict]]:
+    """The catalog entry (advantages.json / loresheets.json) each named Advantage row is, found
+    the way validate_creation finds it (id, else name or alias; the clan's own first), or None."""
+    cat = _Catalog(catalog)
+    sh = _Sheet({"wod_meta": meta if isinstance(meta, dict) else {}}, cat)
+    out: List[Optional[dict]] = []
+    for row in _named_rows(rows):
+        if row.get("kind") == "loresheet" or _sid(row.get("id")).startswith("loresheet:"):
+            out.append(cat.loresheet(row))
+        else:
+            out.append(cat.advantage(row, False, sh.clan))
+    return out
 
 
 def _check_loresheet_levels(p: _Problems, row: dict, ls: Optional[dict]) -> None:

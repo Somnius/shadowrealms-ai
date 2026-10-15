@@ -6,6 +6,8 @@ import { render, screen, waitFor, within } from '@testing-library/react';
 import setupUser from '../../design/testing/setupUser';
 import { DesignProvider, ToastProvider } from '../../design';
 import CharacterSheetModal from '../CharacterSheetModal';
+import fixture from '../../characterSheet/v5/__fixtures__/creation-cases.json';
+import { applyV5Catalog } from '../../characterSheet/v5/rulesData';
 import V5CharacterCreationWizard from '../characterCreation/V5CharacterCreationWizard';
 
 const mockApiFetch = jest.fn();
@@ -106,6 +108,40 @@ test('the owner spends with a live rule check; an AI-approved spend reloads the 
   const post = mockApiFetch.mock.calls.find(([, , opts]) => opts && opts.method === 'POST');
   expect(post[2].body).toEqual({ kind: 'saved_advantage', items: [{ name: 'Resources', kind: 'background', dots: 1 }] });
   expect(await screen.findByText(/Done: the AI Storyteller approved it/)).toBeInTheDocument();
+});
+
+test('with the catalog the form offers your rows, Backgrounds, Merits and loresheet levels', async () => {
+  applyV5Catalog(fixture.catalog);
+  try {
+    const user = setupUser();
+    openSheet({ ...eleni, wod_meta: { ...eleni.wod_meta, clan: 'Toreador' } });
+    await user.click(await screen.findByRole('button', { name: 'Spend…' }));
+    const form = screen.getByRole('group', { name: 'Spend saved points' });
+    await user.selectOptions(within(form).getByLabelText('Advantage 1'), 'own:0'); // Resources (3)
+    await user.selectOptions(within(form).getByLabelText('Dots'), '3');
+    expect(within(form).getByText('Resources: 1–5 dots (you have 6).')).toBeInTheDocument();
+    // a new Background with a note instead
+    await user.selectOptions(within(form).getByLabelText('Advantage 1'), 'adv:background:allies');
+    await user.type(within(form).getByLabelText('Note (optional)'), 'police');
+    await user.selectOptions(within(form).getByLabelText('Dots'), '1');
+    await user.click(within(form).getByRole('button', { name: 'Another Advantage' }));
+    await user.selectOptions(within(form).getByLabelText('Advantage 2'), 'lore:loresheet:the-bahari');
+    expect(within(form).getByText('Fill in the spend to see the rule check.')).toBeInTheDocument();
+    await user.selectOptions(within(form).getByLabelText('Level'), '1');
+    expect(within(form).getByText(/Follows the rules\./)).toBeInTheDocument();
+    await user.click(within(form).getByRole('button', { name: 'Spend' }));
+    await waitFor(() => expect(mockApiFetch.mock.calls.some(([, , o]) => o && o.method === 'POST')).toBe(true));
+    const post = mockApiFetch.mock.calls.find(([, , opts]) => opts && opts.method === 'POST');
+    expect(post[2].body).toEqual({
+      kind: 'saved_advantage',
+      items: [
+        { id: 'background:allies', name: 'Allies (police)', kind: 'background', dots: 1, note: 'police' },
+        { id: 'loresheet:the-bahari', name: 'The Bahari', kind: 'loresheet', levels: [1] },
+      ],
+    });
+  } finally {
+    applyV5Catalog(null);
+  }
 });
 
 test('a specialty spend checks the skill', async () => {

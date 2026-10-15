@@ -19,7 +19,6 @@ column that doesn't hold a JSON object is refused (500) instead of being overwri
 
 import json
 import logging
-import os
 from datetime import datetime, timezone
 
 from flask import Blueprint, jsonify, request
@@ -35,6 +34,7 @@ from services.log_safety import safe_log_value
 from services.playing_character import can_view_character_sheet, is_campaign_storyteller_or_staff
 from services.request_validation import RequestValidationError
 from services.rules_edition import V5, edition_of
+from services.v5_catalog import load_catalog
 from services.saved_points import (
     STATUSES,
     TOUCHED,
@@ -142,37 +142,26 @@ def _settings(cursor, campaign_id):
 
 def _spend_catalog():
     """
-    {advantages?, loresheets?}: the catalogs the spend check uses, only those whose file is
-    installed (docs/rules/v5/catalog/<name>.json). A file that is there but can't be read gives an
-    empty list, so every Advantage fails the check (fail closed: a human decides).
+    (catalog, ok): the V5 catalog for the rule check (load_catalog(): clans, Disciplines and, when
+    installed, advantages.json / loresheets.json). ok is False when it can't be read.
     """
-    from services.v5_catalog import catalog_dir, load_catalog
-
-    path = catalog_dir()
-    if not path:
-        return {}
-    out = {}
     try:
-        clans = (load_catalog() or {}).get("clans")
-        if isinstance(clans, list):
-            out["clans"] = clans  # clan names and aliases for clans_only / cannot_buy_for
-    except (OSError, ValueError) as e:
-        logger.error("spend check: cannot read clans: %s", safe_log_value(e))
-    for key in ("advantages", "loresheets"):
-        f = os.path.join(path, f"{key}.json")
-        if not os.path.isfile(f):
-            continue
-        try:
-            loaded = (load_catalog() or {}).get(key)
-            if not isinstance(loaded, list) or not loaded:
-                with open(f, "rb") as fh:
-                    doc = json.loads(fh.read())
-                loaded = doc.get("entries") if isinstance(doc, dict) else doc
-            out[key] = [e for e in loaded or [] if isinstance(e, dict)]
-        except (OSError, ValueError) as e:
-            logger.error("spend check: cannot read %s: %s", key, safe_log_value(e))
-            out[key] = []
-    return out
+        cat = load_catalog()
+    except Exception as e:  # a broken catalog file
+        logger.error("spend check: the V5 catalog could not be read: %s", safe_log_value(e))
+        return {}, False
+    return (cat if isinstance(cat, dict) else {}), True
+
+
+def _rule_check(state, payload, settings):
+    """validate_spend on the sheet; without a readable catalog an Advantage spend is a house rule
+    (fail closed: a person decides)."""
+    catalog, ok = _spend_catalog()
+    check = validate_spend(state["wod_meta"], payload, catalog, settings, state["skills"])
+    if not ok and payload["kind"] == "saved_advantage":
+        check["problems"].append({"code": "catalog_error", "params": {}})
+        check["ok"], check["house_rule"] = False, True
+    return check
 
 
 def _write_sheet(cursor, character_id, state, kind):
@@ -249,7 +238,7 @@ def create_spend_request(character_id):
         except SheetDataError as e:
             db.rollback()
             return _damaged(e, character_id)
-        check = validate_spend(state["wod_meta"], payload, _spend_catalog(), settings, state["skills"])
+        check = _rule_check(state, payload, settings)
         now = _now()
         applied = settings["st_mode"] == "ai" and check["ok"]
         if applied:
@@ -428,9 +417,7 @@ def resolve_spend_request(campaign_id, request_id):
                 return _damaged(e, req["character_id"])
             if action == "approve":
                 # The check again on today's sheet (another spend may have used the balance).
-                check = validate_spend(
-                    state["wod_meta"], payload, _spend_catalog(), _settings(cursor, campaign_id), state["skills"]
-                )
+                check = _rule_check(state, payload, _settings(cursor, campaign_id))
                 if not check["ok"] and data.get("confirm_house_rule") is not True:
                     cursor.execute(
                         "UPDATE character_spend_requests SET rule_check = %s WHERE id = %s AND status = 'pending'",

@@ -118,9 +118,10 @@ def api(monkeypatch):
     )
     raw.commit()
     catalog = {}
+    readable = {"ok": True}
     monkeypatch.setattr(spend_requests, "get_db", lambda: Conn(raw))
     monkeypatch.setattr(spend_requests, "_ensure", lambda cursor: None)
-    monkeypatch.setattr(spend_requests, "_spend_catalog", lambda: catalog)
+    monkeypatch.setattr(spend_requests, "_spend_catalog", lambda: (catalog, readable["ok"]))
 
     app = Flask(__name__)
     app.config.update(JWT_SECRET_KEY="unit-test-secret-key-of-enough-length", TESTING=True)
@@ -142,7 +143,7 @@ def api(monkeypatch):
         (row,) = sql("SELECT wod_meta, skills, merits_flaws FROM characters WHERE id = ?", (cid,))
         return {k: json.loads(v) for k, v in zip(("wod_meta", "skills", "merits_flaws"), row)}
 
-    return types.SimpleNamespace(call=call, sql=sql, sheet=sheet, catalog=catalog)
+    return types.SimpleNamespace(call=call, sql=sql, sheet=sheet, catalog=catalog, readable=readable)
 
 
 RESOURCES = {"kind": "saved_advantage", "items": [{"name": "Resources", "dots": 1, "kind": "background"}]}
@@ -194,8 +195,18 @@ def test_ai_mode_checks_the_catalog_when_there_is_one(api):
     api.catalog["advantages"] = [{"id": "background:resources", "name": "Resources", "kind": "background", "dots": {"min": 1, "max": 5}}]
     made_up = spend(api, 101, {"kind": "saved_advantage", "items": [{"name": "Made Up", "dots": 1}]}).get_json()
     assert made_up["applied"] is False
-    assert made_up["request"]["rule_check"]["problems"] == [{"code": "unknown_advantage", "params": {"name": "Made Up"}}]
+    assert made_up["request"]["rule_check"]["problems"] == [{"code": "adv_unknown", "params": {"name": "Made Up"}}]
     assert spend(api, 101).get_json()["applied"] is True
+
+
+def test_an_unreadable_catalog_makes_every_advantage_spend_a_house_rule(api):
+    api.readable["ok"] = False
+    req = spend(api, 101).get_json()
+    assert req["applied"] is False
+    assert req["request"]["rule_check"]["problems"] == [{"code": "catalog_error", "params": {}}]
+    # the specialty doesn't need the catalog
+    body = {"kind": "saved_specialty", "skill": "persuasion", "name": "Bargaining"}
+    assert spend(api, 101, body).get_json()["applied"] is True
 
 
 def test_ai_mode_specialty(api):

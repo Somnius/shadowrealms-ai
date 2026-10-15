@@ -3,9 +3,13 @@ import { Badge, Button, Input, Select } from '../design';
 import ResponsiveSheetBlock from './characterCreation/ResponsiveSheetBlock';
 import { apiFetch, errorText, getCurrentToken } from '../app/http';
 import { V5_SKILL_KEYS, V5_SKILL_LABELS } from '../characterSheet/v5/constants';
+import { advantageEntries, findLoresheet, loresheetEntries } from '../characterSheet/v5/rulesData';
+import { advantageOptions } from '../characterSheet/v5/validation';
+import { useV5Catalog } from '../rules/v5Catalog';
 import {
   ADVANTAGE_KINDS,
   SPEND_DOTS_MAX,
+  loresheetOpen,
   ownAdvantages,
   savedBalance,
   spendApproverText,
@@ -20,7 +24,8 @@ import { t } from '../i18n';
 const ACCENT = 'var(--sr-blood-500)';
 const ITEMS_MAX = 10;
 const obj = (v) => (v && typeof v === 'object' ? v : {});
-const emptyItem = () => ({ name: '', kind: 'background', dots: 1 });
+const emptyItem = () => ({ pick: '', name: '', kind: 'background', dots: 1, note: '', level: '' });
+const LEVELS = [1, 2, 3, 4, 5];
 
 /** The live rule check of a spend, as the player fills it in. */
 function SpendCheck({ check, ai }) {
@@ -49,8 +54,76 @@ function SpendCheck({ check, ai }) {
   );
 }
 
+/** "Allies (police)": a catalog name with the player's note, as the forge stores it. */
+const withNote = (name, note) => (String(note || '').trim() ? `${name} (${String(note).trim()})` : name);
+
+/**
+ * One item as the server takes it ({id?, name, kind, dots} or a loresheet's {id?, name, kind,
+ * levels}), or null while it is incomplete. With the catalog the item is a pick: one of the
+ * player's own rows ("own:<i>"), a catalog Background or Merit ("adv:<id>") or a loresheet
+ * ("lore:<id>"); without it, free text.
+ */
+function payloadItem(it, own) {
+  const lore = (base) => (Number(it.level) ? { ...base, kind: 'loresheet', levels: [Number(it.level)] } : null);
+  if (it.pick) {
+    const [type, ref] = [it.pick.slice(0, it.pick.indexOf(':')), it.pick.slice(it.pick.indexOf(':') + 1)];
+    if (type === 'own') {
+      const r = own[Number(ref)];
+      if (!r) return null;
+      const base = { ...(r.id ? { id: r.id } : {}), name: r.name };
+      return r.kind === 'loresheet' ? lore(base) : { ...base, kind: r.kind, dots: Number(it.dots) };
+    }
+    if (type === 'lore') {
+      const ls = loresheetEntries().find((l) => l.id === ref);
+      return ls ? lore({ id: ls.id, name: ls.name }) : null;
+    }
+    const e = advantageEntries().find((a) => a.id === ref);
+    if (!e) return null;
+    const note = String(it.note || '').trim();
+    return { id: e.id, name: withNote(e.name, note), kind: e.kind, dots: Number(it.dots), ...(note ? { note } : {}) };
+  }
+  const name = String(it.name || '').trim();
+  if (!name) return null;
+  return it.kind === 'loresheet' ? lore({ name }) : { name, kind: it.kind, dots: Number(it.dots) };
+}
+
+/** The catalog picker's choices: the player's own rows, then Backgrounds, Merits and loresheets open to the sheet. */
+function CatalogPicker({ id, label, value, onChange, wm, own }) {
+  const ownLabel = (r) =>
+    r.kind === 'loresheet'
+      ? t('sheet:spend.ownLore', '{{name}} (levels {{levels}})', { name: r.name, levels: (r.levels || []).join(', ') || '–' })
+      : `${r.name} (${r.dots})`;
+  const group = (title, entries, prefix) =>
+    entries.length ? (
+      <optgroup label={title}>
+        {entries.map((e) => (
+          <option key={e.id} value={`${prefix}:${e.id}`}>
+            {e.name}
+          </option>
+        ))}
+      </optgroup>
+    ) : null;
+  return (
+    <Select id={id} label={label} value={value} placeholder={t('sheet:spend.pick', 'Choose…')} onChange={onChange} fieldClassName="sr-spend__grow" lang="en">
+      {own.length ? (
+        <optgroup label={t('sheet:spend.groupYours', 'Yours (raise)')}>
+          {own.map((r, i) => (
+            <option key={i} value={`own:${i}`}>
+              {ownLabel(r)}
+            </option>
+          ))}
+        </optgroup>
+      ) : null}
+      {group('Backgrounds', advantageOptions(wm.clan, 'background'), 'adv')}
+      {group('Merits', advantageOptions(wm.clan, 'merit'), 'adv')}
+      {group('Loresheets', loresheetEntries().filter((l) => loresheetOpen(l, wm)), 'lore')}
+    </Select>
+  );
+}
+
 /** Spend saved Advantage dots or the saved specialty (owner only). */
 function SpendForm({ character, info, onSent, onCancel }) {
+  useV5Catalog();
   const wm = obj(character.wod_meta);
   const saved = info.saved;
   const ai = info.settings?.st_mode === 'ai';
@@ -61,13 +134,13 @@ function SpendForm({ character, info, onSent, onCancel }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const skills = obj(character.skills);
+  const catalog = advantageEntries().length > 0;
+  const own = ownAdvantages(wm);
 
-  const named = items.filter((it) => it.name.trim());
+  const built = items.map((it) => payloadItem(it, own));
   const payload =
-    kind === 'saved_advantage'
-      ? { kind, items: named.map((it) => ({ name: it.name.trim(), kind: it.kind, dots: Number(it.dots) })) }
-      : { kind, skill, name: specName.trim() };
-  const complete = kind === 'saved_advantage' ? named.length > 0 && named.length === items.length : Boolean(skill && payload.name);
+    kind === 'saved_advantage' ? { kind, items: built.filter(Boolean) } : { kind, skill, name: specName.trim() };
+  const complete = kind === 'saved_advantage' ? built.every(Boolean) && built.length > 0 : Boolean(skill && payload.name);
   const check = complete ? validateSpend(wm, payload, info.settings, skills) : null;
   const setItem = (i, patch) => setItems((prev) => prev.map((x, j) => (j === i ? { ...x, ...patch } : x)));
   const listId = `sr-spend-adv-${character.id}`;
@@ -86,6 +159,39 @@ function SpendForm({ character, info, onSent, onCancel }) {
     onSent(r.data);
   };
 
+  /** What the item's pick is: a loresheet (takes a level) or not, and the levels a row already has. */
+  const picked = (it) => {
+    if (!it.pick) return { lore: it.kind === 'loresheet', taken: [], entry: null };
+    const [type, ref] = [it.pick.slice(0, it.pick.indexOf(':')), it.pick.slice(it.pick.indexOf(':') + 1)];
+    if (type === 'own') {
+      const r = own[Number(ref)] || {};
+      return { lore: r.kind === 'loresheet', taken: r.levels || [], entry: r.kind === 'loresheet' ? findLoresheet(r) : null, own: true };
+    }
+    if (type === 'lore') return { lore: true, taken: [], entry: loresheetEntries().find((l) => l.id === ref) || null };
+    return { lore: false, taken: [], entry: null, isNew: true };
+  };
+
+  const dotsSelect = (it, i) => (
+    <Select
+      label={t('sheet:spend.advDots', 'Dots')}
+      value={String(it.dots)}
+      onChange={(e) => setItem(i, { dots: Number(e.target.value) })}
+      options={Array.from({ length: SPEND_DOTS_MAX }, (_, d) => ({ value: String(d + 1), label: `+${d + 1}` }))}
+    />
+  );
+  const levelSelect = (it, i, p) => (
+    <Select
+      label={t('sheet:spend.level', 'Level')}
+      value={String(it.level)}
+      placeholder={t('sheet:spend.pickLevel', 'Level…')}
+      onChange={(e) => setItem(i, { level: e.target.value })}
+      options={LEVELS.map((n) => {
+        const lv = (p.entry?.levels || []).find((l) => l.dots === n);
+        return { value: String(n), label: lv ? `${'●'.repeat(n)} ${lv.name}` : '●'.repeat(n), disabled: p.taken.includes(n) };
+      })}
+    />
+  );
+
   return (
     <form className="sr-spend" role="group" aria-label={t('sheet:spend.title', 'Spend saved points')} onSubmit={submit}>
       <Select
@@ -99,49 +205,71 @@ function SpendForm({ character, info, onSent, onCancel }) {
       />
       {kind === 'saved_advantage' ? (
         <>
-          <datalist id={listId}>
-            {ownAdvantages(wm).map((r, i) => (
-              <option key={i} value={r.name} />
-            ))}
-          </datalist>
+          {catalog ? null : (
+            <datalist id={listId}>
+              {own.map((r, i) => (
+                <option key={i} value={r.name} />
+              ))}
+            </datalist>
+          )}
           <p className="sr-muted sr-small">
-            {t('sheet:spend.advHelp', 'A name you already have raises that Advantage; a new name adds one. Write the name as in the book.')}
+            {catalog
+              ? t('sheet:spend.advHelpCatalog', 'Raise an Advantage you have, or take a new one from the list. A loresheet level costs as many dots as its rating.')
+              : t('sheet:spend.advHelp', 'A name you already have raises that Advantage; a new name adds one. Write the name as in the book.')}
           </p>
-          {items.map((it, i) => (
-            <div key={i} className="sr-spend__row">
-              <Input
-                label={t('sheet:spend.advName', 'Advantage {{n}}', { n: i + 1 })}
-                value={it.name}
-                list={listId}
-                lang="en"
-                autoComplete="off"
-                onChange={(e) => setItem(i, { name: e.target.value })}
-                fieldClassName="sr-spend__grow"
-              />
-              <Select
-                label={t('sheet:spend.advKind', 'Kind')}
-                value={it.kind}
-                onChange={(e) => setItem(i, { kind: e.target.value })}
-                options={ADVANTAGE_KINDS.map((k) => ({ value: k, label: k === 'merit' ? 'Merit' : k === 'background' ? 'Background' : 'Loresheet' }))}
-              />
-              <Select
-                label={t('sheet:spend.advDots', 'Dots')}
-                value={String(it.dots)}
-                onChange={(e) => setItem(i, { dots: Number(e.target.value) })}
-                options={Array.from({ length: SPEND_DOTS_MAX }, (_, d) => ({ value: String(d + 1), label: `+${d + 1}` }))}
-              />
-              {items.length > 1 ? (
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  onClick={() => setItems((prev) => prev.filter((_, j) => j !== i))}
-                  aria-label={t('sheet:spend.removeItem', 'Remove Advantage {{n}}', { n: i + 1 })}
-                >
-                  ×
-                </Button>
-              ) : null}
-            </div>
-          ))}
+          {items.map((it, i) => {
+            const p = picked(it);
+            return (
+              <div key={i} className="sr-spend__row">
+                {catalog ? (
+                  <CatalogPicker
+                    label={t('sheet:spend.advName', 'Advantage {{n}}', { n: i + 1 })}
+                    value={it.pick}
+                    onChange={(e) => setItem(i, { pick: e.target.value, level: '', note: '' })}
+                    wm={wm}
+                    own={own}
+                  />
+                ) : (
+                  <>
+                    <Input
+                      label={t('sheet:spend.advName', 'Advantage {{n}}', { n: i + 1 })}
+                      value={it.name}
+                      list={listId}
+                      lang="en"
+                      autoComplete="off"
+                      onChange={(e) => setItem(i, { name: e.target.value })}
+                      fieldClassName="sr-spend__grow"
+                    />
+                    <Select
+                      label={t('sheet:spend.advKind', 'Kind')}
+                      value={it.kind}
+                      onChange={(e) => setItem(i, { kind: e.target.value, level: '' })}
+                      options={ADVANTAGE_KINDS.map((k) => ({ value: k, label: k === 'merit' ? 'Merit' : k === 'background' ? 'Background' : 'Loresheet' }))}
+                    />
+                  </>
+                )}
+                {p.isNew ? (
+                  <Input
+                    label={t('sheet:spend.note', 'Note (optional)')}
+                    value={it.note}
+                    autoComplete="off"
+                    onChange={(e) => setItem(i, { note: e.target.value })}
+                  />
+                ) : null}
+                {p.lore ? levelSelect(it, i, p) : dotsSelect(it, i)}
+                {items.length > 1 ? (
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => setItems((prev) => prev.filter((_, j) => j !== i))}
+                    aria-label={t('sheet:spend.removeItem', 'Remove Advantage {{n}}', { n: i + 1 })}
+                  >
+                    ×
+                  </Button>
+                ) : null}
+              </div>
+            );
+          })}
           {items.length < ITEMS_MAX ? (
             <div>
               <Button size="sm" variant="ghost" icon="plus" onClick={() => setItems((prev) => [...prev, emptyItem()])}>

@@ -40,24 +40,14 @@
     "problem": {
       "savedShort": "Χρειάζεται {{need}} αποθηκευμένες τελείες Advantages· έχεις {{have}}.",
       "overCap": "Αυτό το χρονικό κρατά το πολύ {{cap}} τελείες Advantages (αυτό το ξόδεμα θέλει {{total}}).",
-      "dotsRange": "Το {{name}} θα είχε {{to}} τελείες· ένα Advantage έχει 1–5.",
-      "unknown": "Το {{name}} δεν είναι στη λίστα των Advantages.",
-      "flaw": "Το {{name}} είναι Flaw, όχι Advantage.",
-      "advRange": "Το {{name}} παίρνει {{min}}–{{max}} τελείες, όχι {{to}}.",
       "book": "Το {{name}} είναι από βιβλίο που δεν χρησιμοποιεί αυτό το χρονικό ({{book}}).",
-      "clanOnly": "Το {{name}} είναι μόνο για {{clans}}.",
       "noSpecialty": "Δεν υπάρχει αποθηκευμένη specialty.",
       "specialtyOff": "Αυτό το χρονικό δεν αφήνει τους παίκτες να κρατούν specialty για αργότερα.",
       "skillNoDot": "Το {{skill}} χρειάζεται τουλάχιστον μία τελεία για specialty.",
       "duplicate": "Το {{skill}} έχει ήδη τη specialty {{name}}.",
-      "advAllowed": "Το {{name}} παίρνει {{allowed}} τελείες, όχι {{to}}.",
-      "thinBloodOnly": "Το {{name}} είναι μόνο για thin-bloods.",
-      "caitiffOnly": "Το {{name}} είναι μόνο για Caitiff.",
-      "ghoulOnly": "Το {{name}} είναι μόνο για ghouls.",
-      "coterie": "Το {{name}} ανήκει σε coterie, όχι σε έναν χαρακτήρα.",
-      "cannotBuy": "Οι χαρακτήρες {{clan}} δεν μπορούν να πάρουν το {{name}}.",
       "requires": "Το {{name}} θέλει {{requires}}: αυτό το ελέγχει ο Storyteller.",
-      "notRepeatable": "Το φύλλο έχει ήδη το {{name}}, και παίρνεται μόνο μία φορά."
+      "repeat": "Το φύλλο έχει ήδη το {{name}} όσες φορές παίρνεται.",
+      "catalogError": "Ο κατάλογος κανόνων δεν διαβάστηκε, οπότε αποφασίζει ο Storyteller."
     },
     "status": {
       "approved": "Εγκρίθηκε",
@@ -92,7 +82,16 @@
     "reason": "Storyteller: {{reason}}",
     "applied": "Έγινε: το ενέκρινε ο AI Storyteller (έλεγχος κανόνων). Ο Storyteller σου μπορεί ακόμα να το αναιρέσει.",
     "sent": "Στάλθηκε στον Storyteller σου.",
-    "reverseReason": "Ο Storyteller το αναίρεσε: {{reason}}"
+    "reverseReason": "Ο Storyteller το αναίρεσε: {{reason}}",
+    "loreLevels_one": "{{name}} επίπεδο {{levels}}",
+    "loreLevels_other": "{{name}} επίπεδα {{levels}}",
+    "ownLore": "{{name}} (επίπεδα {{levels}})",
+    "pick": "Διάλεξε…",
+    "groupYours": "Δικά σου (ανέβασμα)",
+    "level": "Επίπεδο",
+    "pickLevel": "Επίπεδο…",
+    "advHelpCatalog": "Ανέβασε ένα Advantage που έχεις ή πάρε ένα νέο από τη λίστα. Ένα επίπεδο loresheet κοστίζει τόσες τελείες όσο το επίπεδό του.",
+    "note": "Σημείωση (προαιρετικό)"
   },
   "saved": {
     "dots_one": "{{count}} τελεία Advantage",

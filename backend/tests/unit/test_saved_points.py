@@ -64,6 +64,9 @@ def codes(check):
         {"kind": "saved_advantage", "items": [{"name": "  ", "dots": 1}]},
         {"kind": "saved_advantage", "items": [{"name": "Resources", "dots": 1, "kind": "flaw"}]},
         {"kind": "saved_advantage", "items": [{"name": "x", "dots": 1}] * 11},
+        {"kind": "saved_advantage", "items": [{"name": "The Bahari", "kind": "loresheet", "dots": 2}]},
+        {"kind": "saved_advantage", "items": [{"name": "The Bahari", "kind": "loresheet", "levels": [2, 2]}]},
+        {"kind": "saved_advantage", "items": [{"name": "The Bahari", "kind": "loresheet", "levels": [6]}]},
         {"kind": "saved_specialty", "skill": "alertness", "name": "Ambush"},
         {"kind": "saved_specialty", "skill": "occult", "name": ""},
         {"kind": "saved_specialty", "skill": "occult", "name": "x" * 121},
@@ -81,6 +84,8 @@ def test_parse_normalises():
         "items": [{"name": "Resources", "dots": 1, "kind": "background", "id": "background:resources", "note": "cash"}],
     }
     assert adv({"name": "Iron Gullet", "dots": 3})["items"][0]["kind"] == "merit"
+    lore = adv({"name": "The Bahari", "kind": "loresheet", "levels": [3, 1], "dots": 99})["items"][0]
+    assert lore == {"name": "The Bahari", "kind": "loresheet", "levels": [1, 3], "dots": 4}
     assert parse_spend({"kind": "saved_specialty", "skill": "occult", "name": " Byzantine  rites "}) == {
         "kind": "saved_specialty", "skill": "occult", "name": "Byzantine rites",
     }
@@ -111,55 +116,6 @@ def test_the_chronicle_cap_counts():
     assert codes(check) == ["over_cap"]
     assert check["problems"][0]["params"] == {"cap": 1, "total": 2}
 
-
-def test_a_raise_past_five_dots_is_out_of_range():
-    check = validate_spend(meta(), adv({"name": "allies", "dots": 2}), None, {}, skills())
-    assert check["problems"] == [{"code": "dots_range", "params": {"name": "Allies", "to": 6}}]
-
-
-def test_two_items_on_one_row_add_up():
-    check = validate_spend(meta(saved={"advantage_dots": 5}), adv({"name": "Allies", "dots": 1}, {"name": "Allies", "dots": 1}), None, {}, skills())
-    assert codes(check) == ["dots_range"]
-
-
-def test_catalog_checks_only_when_the_catalog_exists():
-    cat = {
-        "advantages": [
-            {"id": "background:resources", "name": "Resources", "kind": "background", "dots": {"min": 1, "max": 5}, "book": "v5-corebook"},
-            {"id": "merit:iron-gullet", "name": "Iron Gullet", "kind": "merit", "dots": {"min": 3, "max": 3}, "book": "v5-corebook"},
-            {"id": "flaw:prey-exclusion", "name": "Prey Exclusion", "kind": "flaw", "fixed": 1, "book": "v5-corebook"},
-            {"id": "merit:bloodhound", "name": "Bloodhound", "kind": "merit", "dots": 1, "book": "v5-companion",
-             "also_in": [{"book": "v5-players-guide", "page": 1}], "aliases": ["Blood Hound"]},
-            {"id": "merit:nos-only", "name": "Tunnel Rat", "kind": "merit", "dots": 1, "book": "v5-corebook", "clans_only": ["Nosferatu"]},
-        ]
-    }
-    ok = validate_spend(meta(), adv({"name": "resources", "dots": 1, "kind": "background"}), cat, {}, skills())
-    assert ok["ok"], ok
-    by_id = validate_spend(meta(), adv({"id": "merit:bloodhound", "name": "Nose", "dots": 1}), cat, {}, skills())
-    assert by_id["ok"], by_id
-    assert validate_spend(meta(), adv({"name": "Blood  hound", "dots": 1}), cat, {}, skills())["ok"]
-    assert codes(validate_spend(meta(), adv({"name": "Made Up", "dots": 1}), cat, {}, skills())) == ["unknown_advantage"]
-    assert codes(validate_spend(meta(), adv({"name": "Prey Exclusion", "dots": 1}), cat, {}, skills())) == ["not_an_advantage"]
-    rng = validate_spend(meta(), adv({"name": "Iron Gullet", "dots": 2}), cat, {}, skills())
-    assert rng["problems"] == [{"code": "adv_dots_range", "params": {"name": "Iron Gullet", "to": 2, "min": 3, "max": 3}}]
-    books = {"allowed_books": ["v5-corebook"]}
-    assert codes(validate_spend(meta(), adv({"name": "Bloodhound", "dots": 1}), cat, books, skills())) == ["book_not_allowed"]
-    # listed in an allowed book too (also_in): fine
-    assert validate_spend(meta(), adv({"name": "Bloodhound", "dots": 1}), cat, {"allowed_books": ["v5-players-guide"]}, skills())["ok"]
-    assert codes(validate_spend(meta(), adv({"name": "Tunnel Rat", "dots": 1}), cat, {}, skills())) == ["clan_only"]
-    assert validate_spend(meta(clan="Nosferatu"), adv({"name": "Tunnel Rat", "dots": 1}), cat, {}, skills())["ok"]
-    # no catalog: names are not checked
-    assert validate_spend(meta(), adv({"name": "Made Up", "dots": 1}), {}, {}, skills())["ok"]
-    assert validate_spend(meta(), adv({"name": "Made Up", "dots": 1}), None, {}, skills())["ok"]
-
-
-def test_loresheets_resolve_in_their_own_catalog():
-    cat = {"advantages": [], "loresheets": [{"id": "loresheet:carthage", "name": "Carthage", "book": "v5-corebook"}]}
-    assert validate_spend(meta(), adv({"name": "Carthage", "dots": 1, "kind": "loresheet"}), cat, {}, skills())["ok"]
-    assert codes(validate_spend(meta(), adv({"name": "Carthage", "dots": 1, "kind": "merit"}), cat, {}, skills())) == ["unknown_advantage"]
-
-
-# ---------- rule check: the specialty ----------
 
 def spec(skill, name):
     return parse_spend({"kind": "saved_specialty", "skill": skill, "name": name})
@@ -300,80 +256,142 @@ def test_the_cap_counts_every_spend_from_saved_points():
     assert check["problems"] == [{"code": "over_cap", "params": {"cap": 2, "total": 3}}]
 
 
-C_CATALOG = {
+
+
+# ---------- the rows a spend makes go through the creation check's row rules ----------
+
+CATALOG = {
     "clans": [
-        {"id": "clan:banu-haqim", "name": "Banu Haqim", "aliases": ["Assamites"]},
-        {"id": "clan:thin-blood", "name": "Thin-blood", "aliases": []},
-        {"id": "clan:caitiff", "name": "Caitiff", "aliases": []},
-        {"id": "clan:ventrue", "name": "Ventrue", "aliases": []},
+        {"id": "clan:banu-haqim", "name": "Banu Haqim", "aliases": ["Assamites"], "disciplines": []},
+        {"id": "clan:thin-blood", "name": "Thin-blood", "thin_blood": True, "disciplines": []},
+        {"id": "clan:caitiff", "name": "Caitiff", "caitiff": True, "disciplines": [], "creation": {"no_positive_status": True}},
+        {"id": "clan:ventrue", "name": "Ventrue", "disciplines": []},
+        {"id": "clan:toreador", "name": "Toreador", "disciplines": []},
+        {"id": "clan:hecata", "name": "Hecata", "disciplines": []},
     ],
+    "disciplines": [{"id": "discipline:oblivion", "name": "Oblivion", "powers": []}],
     "advantages": [
-        {"id": "background:allies", "name": "Allies", "kind": "background", "dots": {"min": 1, "max": 6}, "repeatable": True},
-        {"id": "background:mask", "name": "Mask", "kind": "background", "dots": {"allowed": [1, 2]}, "repeatable": True},
-        {"id": "background:haven", "name": "Haven", "kind": "background", "dots": {"min": 1, "max": None}, "repeatable": True},
-        {"id": "merit:day-drinker", "name": "Day Drinker", "kind": "merit", "dots": None, "thin_blood": True},
-        {"id": "merit:favor", "name": "Favor", "kind": "merit", "dots": {"min": 1, "max": 1}, "caitiff": True},
+        {"id": "background:allies", "name": "Allies", "kind": "background", "group": "Allies", "dots": {"min": 1, "max": 6}, "repeatable": True, "book": "v5-corebook"},
+        {"id": "background:mask", "name": "Mask", "kind": "background", "group": "Mask", "dots": {"allowed": [1, 2]}, "repeatable": True, "book": "v5-corebook"},
+        {"id": "background:resources", "name": "Resources", "kind": "background", "group": "Resources", "dots": {"min": 1, "max": 5}, "repeatable": False, "book": "v5-corebook"},
+        {"id": "background:status", "name": "Status", "kind": "background", "group": "Status", "dots": {"min": 1, "max": 5}, "repeatable": True, "book": "v5-corebook"},
+        {"id": "merit:day-drinker", "name": "Day Drinker", "kind": "merit", "group": "Thin-blood", "dots": None, "thin_blood": True},
         {"id": "merit:ghoul-empathy", "name": "Ghoul Empathy", "kind": "merit", "dots": {"min": 2, "max": 2}, "ghoul_only": True},
         {"id": "background:domain", "name": "Domain", "kind": "background", "dots": None, "coterie": True},
-        {"id": "merit:feeding", "name": "Iron Gullet", "kind": "merit", "dots": {"min": 3, "max": 3},
-         "cannot_buy_for": [{"clan": "clan:ventrue", "when": "always"}, {"clan": "clan:thin-blood", "when": "creation"}]},
-        {"id": "merit:cell", "name": "Cell", "kind": "merit", "dots": {"min": 1, "max": 5}, "requires": "Haven \u2022\u2022"},
+        {"id": "merit:iron-gullet", "name": "Iron Gullet", "kind": "merit", "dots": {"min": 3, "max": 3},
+         "cannot_buy_for": [{"clan": "clan:ventrue", "when": "always"}], "book": "v5-corebook"},
+        {"id": "merit:cell", "name": "Cell", "kind": "merit", "dots": {"min": 1, "max": 5}, "requires": "Haven \u2022\u2022", "book": "v5-corebook"},
+        {"id": "flaw:archaic", "name": "Archaic", "kind": "flaw", "dots": {"min": 2, "max": 2}, "requires": "ancilla or older"},
+        {"id": "merit:old-ways", "name": "Old Ways", "kind": "merit", "dots": {"min": 1, "max": 1}, "requires": "ancilla or older", "book": "v5-corebook"},
         {"id": "merit:bond-resistance", "name": "Bond Resistance", "kind": "merit", "dots": {"min": 1, "max": 3},
-         "repeatable": False, "aliases": ["Blood Bond Resistance"]},
-        {"id": "merit:assassin", "name": "Clan Trick", "kind": "merit", "dots": {"min": 1, "max": 1}, "clans_only": ["clan:banu-haqim"]},
+         "repeatable": False, "aliases": ["Blood Bond Resistance"], "book": "v5-corebook"},
+        {"id": "merit:city-secrets", "name": "City Secrets", "kind": "merit", "dots": {"min": 1, "max": 1}, "repeatable": True, "max_instances": 2, "book": "v5-players-guide"},
+        {"id": "merit:clan-trick", "name": "Clan Trick", "kind": "merit", "dots": {"min": 1, "max": 1}, "clans_only": ["clan:banu-haqim"], "book": "v5-corebook"},
     ],
     "loresheets": [
-        {"id": "loresheet:cainite-heresy", "name": "The Cainite Heresy", "clans_only": None, "restriction": None,
-         "disciplines_only": None, "thin_blood_only": False},
-        {"id": "loresheet:hecata", "name": "Golconda Seekers", "clans_only": ["clan:hecata"], "restriction": "Hecata characters only",
-         "disciplines_only": None, "thin_blood_only": False},
-        {"id": "loresheet:oblivion", "name": "Shadow Walkers", "clans_only": None, "restriction": "Oblivion users",
-         "disciplines_only": ["Oblivion"], "thin_blood_only": False},
+        {"id": "loresheet:the-bahari", "name": "The Bahari", "clans_only": None, "disciplines_only": None, "thin_blood_only": False,
+         "levels": [{"dots": n, "name": f"L{n}"} for n in range(1, 6)], "book": "v5-corebook"},
+        {"id": "loresheet:golconda", "name": "Golconda Seekers", "clans_only": ["clan:hecata"], "disciplines_only": None,
+         "thin_blood_only": False, "levels": [{"dots": n, "name": f"L{n}"} for n in range(1, 6)], "book": "v5-corebook"},
+        {"id": "loresheet:shadow", "name": "Shadow Walkers", "clans_only": None, "disciplines_only": ["discipline:oblivion"],
+         "thin_blood_only": False, "levels": [{"dots": n, "name": f"L{n}"} for n in range(1, 6)], "book": "v5-corebook"},
     ],
 }
 
 
-def flags(m, *items):
-    return codes(validate_spend(m, adv(*items), C_CATALOG, {}, skills()))
+def rich(**over):
+    m = meta(saved={"advantage_dots": 5}, **over)
+    m["advantages"][2] = {"id": "background:allies", "name": "Allies (police)", "dots": 5, "kind": "background", "note": "police"}
+    return m
 
 
-def test_catalog_ranges_and_flags_are_house_rules():
-    rich = meta(saved={"advantage_dots": 5})
-    rich["advantages"][2] = {"name": "Allies", "dots": 5, "kind": "background"}
-    assert flags(rich, {"name": "Allies", "dots": 1}) == []  # Allies goes to 6
-    assert flags(rich, {"name": "Allies", "dots": 2}) == ["adv_dots_range"]
-    assert flags(rich, {"name": "Mask", "dots": 2}) == []
-    assert flags(rich, {"name": "Mask", "dots": 3}) == ["adv_dots_allowed"]
-    assert flags(rich, {"name": "Haven", "dots": 5}) == []  # no max in the catalog: up to 5
-    assert flags(rich, {"name": "Day Drinker", "dots": 1}) == ["thin_blood_only"]
-    assert flags(meta(clan="Thin-blood"), {"name": "Day Drinker", "dots": 1}) == []
-    assert flags(rich, {"name": "Favor", "dots": 1}) == ["caitiff_only"]
-    assert flags(meta(clan="Caitiff"), {"name": "Favor", "dots": 1}) == []
-    assert flags(rich, {"name": "Ghoul Empathy", "dots": 2}) == ["ghoul_only"]
-    assert flags(rich, {"name": "Domain", "dots": 1}) == ["coterie_advantage"]
-    ventrue = validate_spend(meta(clan="Ventrue", saved={"advantage_dots": 3}), adv({"name": "Iron Gullet", "dots": 3}), C_CATALOG, {}, skills())
-    assert ventrue["problems"] == [{"code": "cannot_buy", "params": {"name": "Iron Gullet", "clan": "Ventrue"}}]
-    # "when: creation" doesn't apply to a spend after creation
-    assert flags(meta(clan="Thin-blood", saved={"advantage_dots": 3}), {"name": "Iron Gullet", "dots": 3}) == []
-    cell = validate_spend(rich, adv({"name": "Cell", "dots": 1}), C_CATALOG, {}, skills())
-    assert cell["problems"] == [{"code": "requires", "params": {"name": "Cell", "requires": "Haven \u2022\u2022"}}]
-    # clans_only holds catalog ids; the sheet holds the clan name (or an alias)
-    assert flags(meta(clan="Banu Haqim"), {"name": "Clan Trick", "dots": 1}) == []
-    assert flags(meta(clan="Assamites"), {"name": "Clan Trick", "dots": 1}) == []
-    assert flags(rich, {"name": "Clan Trick", "dots": 1}) == ["clan_only"]
+def check(m, *items, settings=None):
+    return validate_spend(m, adv(*items), CATALOG, settings or {}, skills())
 
 
-def test_not_repeatable_when_already_on_the_sheet_under_another_name():
+def test_without_the_catalog_rows_keep_to_1_to_5():
+    assert check_codes(meta(), None, {"name": "allies", "dots": 2}) == ["adv_dots_range"]
+    out = validate_spend(meta(), adv({"name": "Allies", "dots": 2}), None, {}, skills())
+    assert out["problems"] == [{"code": "adv_dots_range", "params": {"name": "Allies", "dots": 6, "min": 1, "max": 5}}]
+    # two items on one row add up
+    m5 = meta(saved={"advantage_dots": 5})
+    assert check_codes(m5, None, {"name": "Allies", "dots": 1}, {"name": "Allies", "dots": 1}) == ["adv_dots_range"]
+    # no catalog: names are not checked
+    assert validate_spend(meta(), adv({"name": "Made Up", "dots": 1}), {}, {}, skills())["ok"]
+
+
+def check_codes(m, catalog, *items):
+    return codes(validate_spend(m, adv(*items), catalog, {}, skills()))
+
+
+def test_catalog_ratings_as_at_creation():
+    assert codes(check(rich(), {"name": "Allies (police)", "dots": 1})) == []  # Allies goes to 6
+    out = check(rich(), {"name": "Allies (police)", "dots": 2})
+    assert out["problems"] == [{"code": "adv_dots_range", "params": {"name": "Allies (police)", "dots": 7, "min": 1, "max": 6}}]
+    assert codes(check(rich(), {"id": "background:mask", "name": "Mask", "dots": 2})) == []
+    assert codes(check(rich(), {"id": "background:mask", "name": "Mask", "dots": 3})) == ["adv_dots_range"]
+    # a second, separate Allies row (another note) is a new row of a repeatable Background
+    assert codes(check(rich(), {"id": "background:allies", "name": "Allies (mob)", "dots": 2, "note": "mob"})) == []
+
+
+def test_catalog_restrictions_as_at_creation():
+    assert codes(check(rich(), {"name": "Day Drinker", "dots": 1})) == ["adv_restricted"]
+    assert codes(check(meta(clan="Thin-blood"), {"name": "Day Drinker", "dots": 1})) == []
+    assert codes(check(rich(), {"name": "Ghoul Empathy", "dots": 2})) == ["adv_restricted"]
+    assert codes(check(rich(), {"name": "Domain", "dots": 1})) == ["adv_restricted"]  # a coterie's
+    ventrue = check(meta(clan="Ventrue", saved={"advantage_dots": 3}), {"name": "Iron Gullet", "dots": 3})
+    assert ventrue["problems"] == [{"code": "adv_restricted", "params": {"name": "Iron Gullet", "clan": "Ventrue"}}]
+    assert codes(check(meta(clan="Banu Haqim"), {"name": "Clan Trick", "dots": 1})) == []
+    assert codes(check(meta(clan="Assamites"), {"name": "Clan Trick", "dots": 1})) == []
+    assert codes(check(rich(), {"name": "Clan Trick", "dots": 1})) == ["adv_restricted"]
+    assert codes(check(meta(clan="Caitiff"), {"name": "Status", "dots": 1})) == ["caitiff_status"]
+
+
+def test_what_a_spend_adds_to_the_creation_rules():
+    assert check(rich(), {"name": "Made Up", "dots": 1})["problems"] == [{"code": "adv_unknown", "params": {"name": "Made Up"}}]
+    assert codes(check(rich(), {"name": "Archaic", "dots": 2})) == ["adv_unknown"]  # a Flaw, not an Advantage
+    cell = check(rich(), {"name": "Cell", "dots": 1})
+    assert cell["problems"] == [{"code": "adv_requires", "params": {"name": "Cell", "requires": "Haven \u2022\u2022"}}]
+    assert codes(check(rich(), {"name": "Old Ways", "dots": 1})) == ["adv_requires"]
+    assert codes(check(rich(age="ancilla"), {"name": "Old Ways", "dots": 1})) == []
+    # once only: already on the sheet under an alias (here a predator grant)
     m = meta()
     m["advantages"].append({"name": "Blood Bond Resistance", "dots": 1, "kind": "predator"})
-    assert flags(m, {"name": "Bond Resistance", "dots": 1}) == ["not_repeatable"]
-    assert flags(meta(), {"name": "Bond Resistance", "dots": 1}) == []
+    assert codes(check(m, {"name": "Bond Resistance", "dots": 1})) == ["adv_repeat"]
+    assert codes(check(meta(), {"name": "Bond Resistance", "dots": 1})) == []
+    two = meta()
+    two["advantages"] += [{"name": "City Secrets (Athens)", "dots": 1, "kind": "merit"}, {"name": "City Secrets (Rome)", "dots": 1, "kind": "merit"}]
+    assert codes(check(two, {"name": "City Secrets (Paris)", "dots": 1})) == ["adv_repeat"]
+    books = {"allowed_books": ["v5-corebook"]}
+    assert codes(check(meta(), {"name": "City Secrets", "dots": 1}, settings=books)) == ["book_not_allowed"]
 
 
-def test_loresheet_restrictions():
-    lore = lambda name: {"name": name, "dots": 1, "kind": "loresheet"}  # noqa: E731
-    assert flags(meta(), lore("The Cainite Heresy")) == []
-    assert flags(meta(), lore("Golconda Seekers")) == ["clan_only"]
-    assert flags(meta(clan="Hecata"), lore("Golconda Seekers")) == []
-    sw = validate_spend(meta(), adv(lore("Shadow Walkers")), C_CATALOG, {}, skills())
-    assert sw["problems"] == [{"code": "requires", "params": {"name": "Shadow Walkers", "requires": "Oblivion users"}}]
+def test_loresheet_levels_and_restrictions():
+    lore = lambda name, *levels: {"name": name, "kind": "loresheet", "levels": list(levels)}  # noqa: E731
+    assert codes(check(meta(), lore("The Bahari", 2))) == []
+    m = meta()
+    m["advantages"].append({"id": "loresheet:the-bahari", "name": "The Bahari", "dots": 1, "kind": "loresheet", "levels": [1]})
+    assert codes(check(m, lore("The Bahari", 1))) == ["loresheet_levels"]  # each level once
+    out = check(m, lore("The Bahari", 2))
+    assert out["ok"], out
+    new, _, after = apply_spend({"wod_meta": m}, adv(lore("The Bahari", 2)))
+    assert new["wod_meta"]["advantages"][-1] == {
+        "id": "loresheet:the-bahari", "name": "The Bahari", "dots": 3, "kind": "loresheet", "levels": [1, 2], "saved_dots": 2,
+    }
+    assert after["changes"] == [{"name": "The Bahari", "kind": "loresheet", "from": 1, "to": 3, "levels": [2]}]
+    assert codes(check(meta(), lore("Golconda Seekers", 1))) == ["loresheet_restricted"]
+    assert codes(check(meta(clan="Hecata"), lore("Golconda Seekers", 1))) == []
+    assert codes(check(meta(), lore("Shadow Walkers", 1))) == ["loresheet_restricted"]
+    oblivion = meta(disciplines=[{"name": "Oblivion", "level": 1, "powers": []}])
+    assert codes(check(oblivion, lore("Shadow Walkers", 1))) == []
+    assert codes(check(meta(), lore("No Such Sheet", 1))) == ["adv_unknown"]
+
+
+def test_the_real_catalog_when_installed():
+    from services.v5_catalog import load_catalog
+
+    cat = load_catalog() or {}
+    if not cat.get("advantages"):
+        pytest.skip("no advantages.json")
+    out = validate_spend(rich(), adv({"id": "background:allies", "name": "Allies (police)", "dots": 1}), cat, {}, skills())
+    assert out["ok"], out

@@ -10,28 +10,30 @@ validate_spend() is applied at once and logged with approver 'ai'; the human cre
 reverse it. A spend that doesn't pass is a house rule: flagged, never approved automatically.
 
 Spend payloads (parse_spend):
-  {"kind": "saved_advantage", "items": [{"id": "background:resources" | None, "name": "Resources",
-                                          "dots": 1, "kind": "merit|background|loresheet", "note": ""}]}
-      dots are added: to a row of the player's own with the same id or name (a raise), else a new row.
+  {"kind": "saved_advantage", "items": [
+      {"id": "background:allies", "name": "Allies (police)", "dots": 1, "kind": "background", "note": "police"},
+      {"id": "loresheet:the-bahari", "name": "The Bahari", "kind": "loresheet", "levels": [2]}]}
+      A Merit or Background item adds its dots to the player's own row with the same name (a raise),
+      else it is a new row. A loresheet item takes levels (each costs its rating, core p. 190) on
+      the player's row of that loresheet, or a new one; its dots are the sum of the levels.
   {"kind": "saved_specialty", "skill": "occult", "name": "Byzantine ritual manuscripts"}
+
+The rows a spend makes are checked with validate_creation's own per-row check
+(services/v5_chargen.check_advantage_rows: the catalog rating with Allies 1-6, loresheet levels and
+restrictions, clan restrictions, custom rows), so creation and spends follow one code path.
 
 Problem codes (validate_spend, {code, params}):
   saved_short {need, have}          more Advantage dots than are saved
   over_cap {cap, total}             all spends from saved points together go past the chronicle's cap
-  dots_range {name, to}             a row would end outside 1-5 dots (no catalog range for it)
-  unknown_advantage {name}          not in the advantages catalog (only when that catalog exists)
-  not_an_advantage {name}           the catalog lists it as a Flaw
-  adv_dots_range {name, to, min, max}  outside the catalog's dot range for it (Allies goes to 6)
-  adv_dots_allowed {name, to, allowed} not one of the catalog's dot values for it
+  from v5_chargen.check_advantage_rows (same codes and params as at creation):
+    adv_dots_range {name, dots, min, max}, adv_unknown {name}, adv_restricted {name, clan},
+    loresheet_levels {name, dots, levels}, loresheet_restricted {name, clan}, custom_row {name},
+    caitiff_status {clan}
+  adv_unknown {name}                also a name the installed catalog doesn't know (a spend has no
+                                    custom rows: anything the catalog lacks needs a person)
+  adv_repeat {name}                 a new row of something taken once (or max_instances times) already
+  adv_requires {name, requires}     a prerequisite in the catalog the check can't verify
   book_not_allowed {name, book}     from a book the chronicle doesn't allow
-  clan_only {name, clans}           for other clans only
-  thin_blood_only {name}            for thin-bloods only
-  caitiff_only {name}               for Caitiff only
-  ghoul_only {name}                 for ghouls only
-  coterie_advantage {name}          a coterie's, not one character's
-  cannot_buy {name, clan}           the catalog says this clan can't take it
-  requires {name, requires}         a prerequisite the check can't verify (a person decides)
-  not_repeatable {name}             already on the sheet (under another name or as a predator grant)
   no_saved_specialty {}             no specialty saved
   specialty_not_allowed {}          the chronicle doesn't let players save a specialty
   skill_no_dot {skill}              the skill has no dot
@@ -47,6 +49,13 @@ from typing import Any, Dict, List, Optional, Tuple
 from services.character_sheet_v5 import V5_SKILLS
 from services.creation_settings import normalize_creation_settings
 from services.request_validation import RequestValidationError
+from services.v5_chargen import (
+    ADVANTAGE_DOTS,
+    AGE_BRACKETS,
+    FREE_SPECIALTY_SKILLS,
+    advantage_entries,
+    check_advantage_rows,
+)
 
 SPEND_KINDS = ("saved_advantage", "saved_specialty")
 ADVANTAGE_KINDS = ("merit", "background", "loresheet")
@@ -86,6 +95,40 @@ def _text(value: Any, label: str, max_len: int, required: bool = True) -> str:
     return " ".join(value.split())
 
 
+def _item(it: Any) -> Dict[str, Any]:
+    if not isinstance(it, dict):
+        raise RequestValidationError("Each item must be an object.")
+    k = it.get("kind", "merit")
+    if k not in ADVANTAGE_KINDS:
+        raise RequestValidationError("An item's kind is merit, background or loresheet.")
+    row: Dict[str, Any] = {"name": _text(it.get("name"), "An item's name", NAME_MAX), "kind": k}
+    if k == "loresheet":
+        levels = it.get("levels")
+        if (
+            not isinstance(levels, list)
+            or not 1 <= len(levels) <= DOTS_MAX
+            or not all(_is_int(x) and 1 <= x <= DOTS_MAX for x in levels)
+            or len(set(levels)) != len(levels)
+        ):
+            raise RequestValidationError("A loresheet item takes levels: different numbers 1-5.")
+        row["levels"] = sorted(levels)
+        row["dots"] = sum(levels)
+    else:
+        dots = it.get("dots")
+        if not (_is_int(dots) and 1 <= dots <= DOTS_MAX):
+            raise RequestValidationError(f"Each item spends 1-{DOTS_MAX} dots.")
+        row["dots"] = dots
+    cid = it.get("id")
+    if cid is not None:
+        cid = _text(cid, "An item's id", NAME_MAX)
+        if cid:
+            row["id"] = cid
+    note = _text(it.get("note"), "An item's note", NOTE_MAX, required=False)
+    if note:
+        row["note"] = note
+    return row
+
+
 def parse_spend(body: Any) -> Dict[str, Any]:
     """A client's spend request -> the normalised payload. Bad shapes raise RequestValidationError."""
     if not isinstance(body, dict):
@@ -95,27 +138,7 @@ def parse_spend(body: Any) -> Dict[str, Any]:
         items = body.get("items")
         if not isinstance(items, list) or not 1 <= len(items) <= ITEMS_MAX:
             raise RequestValidationError(f"items must be a list of 1-{ITEMS_MAX} Advantages.")
-        out = []
-        for it in items:
-            if not isinstance(it, dict):
-                raise RequestValidationError("Each item must be an object.")
-            dots = it.get("dots")
-            if not (_is_int(dots) and 1 <= dots <= DOTS_MAX):
-                raise RequestValidationError(f"Each item spends 1-{DOTS_MAX} dots.")
-            k = it.get("kind", "merit")
-            if k not in ADVANTAGE_KINDS:
-                raise RequestValidationError("An item's kind is merit, background or loresheet.")
-            row = {"name": _text(it.get("name"), "An item's name", NAME_MAX), "dots": dots, "kind": k}
-            cid = it.get("id")
-            if cid is not None:
-                cid = _text(cid, "An item's id", NAME_MAX)
-                if cid:
-                    row["id"] = cid
-            note = _text(it.get("note"), "An item's note", NOTE_MAX, required=False)
-            if note:
-                row["note"] = note
-            out.append(row)
-        return {"kind": kind, "items": out}
+        return {"kind": kind, "items": [_item(it) for it in items]}
     if kind == "saved_specialty":
         skill = body.get("skill")
         if skill not in _SKILL_GROUP:
@@ -142,18 +165,52 @@ def _state(state: Any) -> Dict[str, Dict[str, Any]]:
 
 
 def _own_row(rows: List[Any], item: Dict[str, Any]) -> Optional[int]:
-    """Index of the player's own Advantage row (not a predator grant) that the item raises."""
-    def own(r):
-        return isinstance(r, dict) and r.get("kind") != "predator"
-
-    if item.get("id"):
-        for i, r in enumerate(rows):
-            if own(r) and r.get("id") == item["id"]:
-                return i
+    """
+    Index of the player's own row (not a predator grant) an item adds to: the same name (with its
+    note, "Allies (police)"), a loresheet only to a loresheet row and the rest only to the rest.
+    """
+    lore = item["kind"] == "loresheet"
     for i, r in enumerate(rows):
-        if own(r) and _key(r.get("name")) == _key(item["name"]):
+        if (
+            isinstance(r, dict)
+            and r.get("kind") != "predator"
+            and (r.get("kind") == "loresheet") == lore
+            and _key(r.get("name")) == _key(item["name"])
+        ):
             return i
     return None
+
+
+def _apply_items(rows: List[Any], items: List[Dict[str, Any]]) -> Tuple[List[Any], List[Dict[str, Any]], List[int]]:
+    """(rows, changes, touched row indexes) after adding the items to a copy of the rows."""
+    rows = [dict(r) if isinstance(r, dict) else r for r in rows]
+    changes: List[Dict[str, Any]] = []
+    touched: List[int] = []
+    for item in items:
+        i = _own_row(rows, item)
+        if i is None:
+            row = {"name": item["name"], "dots": 0, "kind": item["kind"]}
+            for k in ("id", "note"):
+                if item.get(k):
+                    row[k] = item[k]
+            if item["kind"] == "loresheet":
+                row["levels"] = []
+            rows.append(row)
+            i = len(rows) - 1
+        row = rows[i]
+        frm = row["dots"] if _is_int(row.get("dots")) else 0
+        row["dots"] = frm + item["dots"]
+        change = {"name": row.get("name") or item["name"], "kind": row.get("kind") or item["kind"], "from": frm, "to": row["dots"]}
+        if item["kind"] == "loresheet":
+            had = [x for x in row.get("levels") or [] if _is_int(x)]
+            row["levels"] = sorted(had + item["levels"])
+            change["levels"] = list(item["levels"])
+        # How many of the row's dots came from saved points (the cap counts them).
+        row["saved_dots"] = (row["saved_dots"] if _is_int(row.get("saved_dots")) else 0) + item["dots"]
+        changes.append(change)
+        if i not in touched:
+            touched.append(i)
+    return rows, changes, touched
 
 
 def _mirror(entries: List[Any], change: Dict[str, Any]) -> None:
@@ -183,8 +240,8 @@ def snapshot(state: Any, kind: str) -> Dict[str, Dict[str, Any]]:
 def apply_spend(state: Any, payload: Dict[str, Any]) -> Tuple[Dict[str, Any], Dict[str, Any], Dict[str, Any]]:
     """
     Apply a spend to the sheet: (new_state, before, after). before/after hold only the touched
-    keys; after also has "changes" ([{name, kind, from, to}] or [{skill, name}]). The saved balance
-    never goes below 0 (an approved house rule may spend more than was saved).
+    keys; after also has "changes" ([{name, kind, from, to, levels?}] or [{skill, name}]). The
+    saved balance never goes below 0 (an approved house rule may spend more than was saved).
     """
     kind = payload["kind"]
     s = _state(state)
@@ -192,27 +249,9 @@ def apply_spend(state: Any, payload: Dict[str, Any]) -> Tuple[Dict[str, Any], Di
     meta = s["wod_meta"]
     have = saved_balance(meta)
     saved = dict(meta.get("saved")) if isinstance(meta.get("saved"), dict) else {}
-    changes: List[Dict[str, Any]] = []
     if kind == "saved_advantage":
-        rows = list(meta["advantages"]) if isinstance(meta.get("advantages"), list) else []
-        for item in payload["items"]:
-            i = _own_row(rows, item)
-            if i is None:
-                row = {"name": item["name"], "dots": 0, "kind": item["kind"]}
-                if item.get("id"):
-                    row["id"] = item["id"]
-                if item.get("note"):
-                    row["note"] = item["note"]
-                rows.append(row)
-                i = len(rows) - 1
-            row = dict(rows[i])
-            frm = row["dots"] if _is_int(row.get("dots")) else 0
-            row["dots"] = frm + item["dots"]
-            # How many of the row's dots came from saved points (reverse and later checks).
-            row["saved_dots"] = (row["saved_dots"] if _is_int(row.get("saved_dots")) else 0) + item["dots"]
-            rows[i] = row
-            changes.append({"name": row.get("name") or item["name"], "kind": row.get("kind") or item["kind"], "from": frm, "to": row["dots"]})
-        meta["advantages"] = rows
+        rows = meta["advantages"] if isinstance(meta.get("advantages"), list) else []
+        meta["advantages"], changes, _ = _apply_items(rows, payload["items"])
         saved["advantage_dots"] = max(0, have["advantage_dots"] - sum(it["dots"] for it in payload["items"]))
         entries = s["merits_flaws"].get("entries")
         entries = list(entries) if isinstance(entries, list) else []
@@ -225,7 +264,7 @@ def apply_spend(state: Any, payload: Dict[str, Any]) -> Tuple[Dict[str, Any], Di
         specs.append({"skill": payload["skill"], "name": payload["name"], "source": "saved"})
         s["skills"]["specialties"] = specs
         saved["specialty"] = max(0, have["specialty"] - 1)
-        changes.append({"skill": payload["skill"], "name": payload["name"]})
+        changes = [{"skill": payload["skill"], "name": payload["name"]}]
     saved.setdefault("advantage_dots", have["advantage_dots"])
     saved.setdefault("specialty", have["specialty"])
     meta["saved"] = saved
@@ -265,11 +304,6 @@ def _skills_dots(skills: Any, skill: str) -> int:
 
 # ---------- saved points at creation (the server's own count) ----------
 
-ADVANTAGE_DOTS = 7  # docs/rules/v5.json creation.advantages_dots
-ANCILLA_ADVANTAGE_BONUS = 2  # creation.age_brackets.ancilla.advantage_dots_bonus
-FREE_SPECIALTY_SKILLS = ("academics", "craft", "performance", "science")  # free_specialties
-
-
 def saved_at_creation(wod_meta: Any, skills: Any, settings: Any) -> Dict[str, int]:
     """
     What a new V5 sheet may keep for later, counted from the sheet itself (the same rule as the
@@ -281,7 +315,7 @@ def saved_at_creation(wod_meta: Any, skills: Any, settings: Any) -> Dict[str, in
     """
     s = normalize_creation_settings(settings)
     meta = wod_meta if isinstance(wod_meta, dict) else {}
-    budget = ADVANTAGE_DOTS + (ANCILLA_ADVANTAGE_BONUS if meta.get("age") == "ancilla" else 0)
+    budget = ADVANTAGE_DOTS + (AGE_BRACKETS["ancilla"].get("advantage_dots_bonus", 0) if meta.get("age") == "ancilla" else 0)
     rows = meta.get("advantages") if isinstance(meta.get("advantages"), list) else []
     spent = sum(r["dots"] for r in rows if isinstance(r, dict) and r.get("kind") != "predator" and _is_int(r.get("dots")))
     dots = min(s["saved_points"]["advantage_dots_cap"], max(0, budget - spent))
@@ -300,7 +334,7 @@ def clamp_saved(wod_meta: Any, skills: Any, settings: Any) -> Dict[str, int]:
     wod_meta.saved for a new sheet: the server's count, or the forge's value when that is lower.
     The server sees the final skills (after the predator type's dot), the forge the creation ones,
     so the forge's number is never higher for an honest sheet; a forged balance can't go above
-    what the sheet leaves unspent.
+    what the sheet leaves unspent (and validate_creation refuses one that claims more: adv_over).
     """
     mine = saved_at_creation(wod_meta, skills, settings)
     sent = wod_meta.get("saved") if isinstance(wod_meta, dict) else None
@@ -308,71 +342,7 @@ def clamp_saved(wod_meta: Any, skills: Any, settings: Any) -> Dict[str, int]:
     return {k: min(v, sent[k]) if _is_int(sent.get(k)) and sent[k] >= 0 else v for k, v in mine.items()}
 
 
-# ---------- the catalog side of the rule check ----------
-
-def _slug(text: Any) -> str:
-    """'clan:banu-haqim' and 'Banu Haqim' both -> 'banuhaqim'."""
-    t = str(text or "").strip().lower()
-    if t.startswith("clan:"):
-        t = t[5:]
-    return "".join(ch for ch in t if ch.isalnum())
-
-
-def _names(e: dict) -> List[str]:
-    return [n for n in (e.get("id"), e.get("name"), *(e.get("aliases") or [])) if isinstance(n, str)]
-
-
-def _find(pool: List[Any], wants: List[str]) -> Optional[dict]:
-    for want in wants:
-        if not want:
-            continue
-        for e in pool:
-            if isinstance(e, dict) and any(_key(n) == want for n in _names(e)):
-                return e
-    return None
-
-
-def _catalog_entry(catalog: Dict[str, Any], item: Dict[str, Any]) -> Tuple[bool, Optional[dict]]:
-    """(checked, entry): checked is False when no advantages/loresheets catalog is installed."""
-    pools = []
-    if item["kind"] == "loresheet" and isinstance(catalog.get("loresheets"), list):
-        pools.append(catalog["loresheets"])
-    if isinstance(catalog.get("advantages"), list):
-        pools.append(catalog["advantages"])
-    if not pools:
-        return False, None
-    wants = [_key(item.get("id")), _key(item["name"])]
-    for pool in pools:
-        e = _find(pool, wants)
-        if e is not None:
-            return True, e
-    return True, None
-
-
-def _clan_slug(catalog: Dict[str, Any], clan: Any) -> str:
-    """The character's clan as a slug of its catalog id (aliases resolved when clans are loaded)."""
-    clans = catalog.get("clans") if isinstance(catalog.get("clans"), list) else []
-    e = _find(clans, [_key(clan)])
-    return _slug(e.get("id") if e else clan)
-
-
-def _dot_spec(entry: dict) -> Optional[Tuple[str, Any]]:
-    """('allowed', [n, ...]) or ('range', (lo, hi)) from the catalog; None when it gives none."""
-    if _is_int(entry.get("fixed")):
-        return "range", (entry["fixed"], entry["fixed"])
-    dots = entry.get("dots")
-    if _is_int(dots):
-        return "range", (dots, dots)
-    if isinstance(dots, dict):
-        allowed = [d for d in dots.get("allowed") or [] if _is_int(d)]
-        if allowed:
-            return "allowed", allowed
-        lo = dots.get("min") if _is_int(dots.get("min")) else 1
-        hi = dots.get("max") if _is_int(dots.get("max")) else DOTS_MAX
-        if _is_int(dots.get("min")) or _is_int(dots.get("max")):
-            return "range", (lo, hi)
-    return None
-
+# ---------- the rule check ----------
 
 def _entry_books(entry: dict) -> List[str]:
     books = [entry.get("book")]
@@ -381,64 +351,30 @@ def _entry_books(entry: dict) -> List[str]:
     return [b for b in books if isinstance(b, str) and b]
 
 
-def _entry_requires(entry: dict) -> str:
-    """A prerequisite the check can't verify (text), or ''."""
-    req = entry.get("requires")
-    if isinstance(req, str) and req.strip():
-        return req.strip()
-    # Loresheets: a restriction other than a clan list (Disciplines, bloodlines, ...).
-    if entry.get("disciplines_only"):
-        return str(entry.get("restriction") or ", ".join(map(str, entry["disciplines_only"])))
-    if isinstance(entry.get("restriction"), str) and entry["restriction"].strip() and not entry.get("clans_only"):
-        return entry["restriction"].strip()
-    return ""
-
-
-def _catalog_problems(add, catalog, meta, settings, item, change, entry) -> None:
-    """What the catalog says about one item (entry found)."""
-    name = item["name"]
-    if entry.get("kind") == "flaw":
-        add("not_an_advantage", name=name)
-    spec = _dot_spec(entry)
-    to = change["to"]
-    if spec and spec[0] == "allowed":
-        if to not in spec[1]:
-            add("adv_dots_allowed", name=name, to=to, allowed=spec[1])
-    elif spec:
-        lo, hi = spec[1]
-        if not lo <= to <= hi:
-            add("adv_dots_range", name=name, to=to, min=lo, max=hi)
-    elif not 1 <= to <= DOTS_MAX:
-        add("dots_range", name=name, to=to)
-    allowed = settings["allowed_books"]
-    books = _entry_books(entry)
-    if allowed and books and not any(b in allowed for b in books):
-        add("book_not_allowed", name=name, book=books[0])
-    clan = _clan_slug(catalog, meta.get("clan"))
-    clans = [c for c in entry.get("clans_only") or [] if isinstance(c, str)]
-    if clans and clan not in {_slug(c) for c in clans}:
-        add("clan_only", name=name, clans=clans)
-    if (entry.get("thin_blood") or entry.get("thin_blood_only")) and clan != "thinblood":
-        add("thin_blood_only", name=name)
-    if entry.get("caitiff") and clan != "caitiff":
-        add("caitiff_only", name=name)
-    if entry.get("ghoul_only"):
-        add("ghoul_only", name=name)
-    if entry.get("coterie"):
-        add("coterie_advantage", name=name)
-    for rule in entry.get("cannot_buy_for") or []:
-        if isinstance(rule, dict) and rule.get("when") != "creation" and _slug(rule.get("clan")) == clan and clan:
-            add("cannot_buy", name=name, clan=meta.get("clan"))
-            break
-    req = _entry_requires(entry)
-    if req:
-        add("requires", name=name, requires=req)
-    if entry.get("repeatable") is False and change["from"] == 0:
-        # Already on the sheet under another name (an alias, or a predator grant)?
-        rows = meta.get("advantages") if isinstance(meta.get("advantages"), list) else []
-        wants = {_key(n) for n in _names(entry)}
-        if any(isinstance(r, dict) and ({_key(r.get("id")), _key(r.get("name"))} & wants) for r in rows):
-            add("not_repeatable", name=name)
+def _spend_only(add, meta: dict, items, changes, item_entries, row_entries, settings, catalog) -> None:
+    """What a spend adds to the creation row check: a name the catalog lacks (a spend has no custom
+    rows), taken too often, a prerequisite to verify, a book the chronicle leaves out."""
+    for item, change, entry in zip(items, changes, item_entries):
+        name = item["name"]
+        installed = bool(catalog.get("loresheets" if item["kind"] == "loresheet" else "advantages"))
+        if entry is None:
+            if installed:
+                add("adv_unknown", name=name)
+            continue
+        if item["kind"] != "loresheet" and change["from"] == 0:
+            n = sum(1 for e in row_entries if e is not None and e.get("id") == entry.get("id"))
+            limit = entry.get("max_instances") if _is_int(entry.get("max_instances")) else None
+            if (entry.get("repeatable") is False and n >= 1) or (limit is not None and n >= limit):
+                add("adv_repeat", name=name)
+        req = entry.get("requires")
+        if isinstance(req, str) and req.strip():
+            # "ancilla or older" is known from the sheet; anything else a person checks.
+            if not (req.strip().lower() == "ancilla or older" and meta.get("age") == "ancilla"):
+                add("adv_requires", name=name, requires=req.strip())
+        allowed = settings["allowed_books"]
+        books = _entry_books(entry)
+        if allowed and books and not any(b in allowed for b in books):
+            add("book_not_allowed", name=name, book=books[0])
 
 
 def validate_spend(
@@ -450,21 +386,26 @@ def validate_spend(
 ) -> Dict[str, Any]:
     """
     The deterministic rule check of a spend against the sheet (wod_meta + skills), the chronicle's
-    creation settings and, when installed, the advantages/loresheets catalog (and the clans
-    catalog, for clan names). {ok, problems: [{code, params}], house_rule}: house_rule = not ok
-    (a human must decide).
+    creation settings and the V5 catalog (load_catalog(): clans, Disciplines, and when installed
+    advantages.json / loresheets.json). {ok, problems: [{code, params}], house_rule}: house_rule =
+    not ok (a human must decide).
     """
     s = normalize_creation_settings(settings)
     meta = meta if isinstance(meta, dict) else {}
-    catalog = catalog or {}
+    catalog = catalog if isinstance(catalog, dict) else {}
     have = saved_balance(meta)
     problems: List[Dict[str, Any]] = []
+    seen: set = set()
 
     def add(code: str, **params: Any) -> None:
-        problems.append({"code": code, "params": params})
+        key = (code, _canon(params))
+        if key not in seen:
+            seen.add(key)
+            problems.append({"code": code, "params": params})
 
     if payload["kind"] == "saved_advantage":
-        total = sum(it["dots"] for it in payload["items"])
+        items = payload["items"]
+        total = sum(it["dots"] for it in items)
         if total > have["advantage_dots"]:
             add("saved_short", need=total, have=have["advantage_dots"])
         # The cap is on everything spent from saved points, earlier approved spends included.
@@ -473,16 +414,13 @@ def validate_spend(
         cap = s["saved_points"]["advantage_dots_cap"]
         if before + total > cap:
             add("over_cap", cap=cap, total=before + total)
-        _, _, after = apply_spend({"wod_meta": meta}, payload)
-        for item, ch in zip(payload["items"], after["changes"]):
-            checked, entry = _catalog_entry(catalog, item)
-            if checked and entry is None:
-                add("unknown_advantage", name=item["name"])
-            if entry is None:
-                if not 1 <= ch["to"] <= DOTS_MAX:
-                    add("dots_range", name=ch["name"], to=ch["to"])
-                continue
-            _catalog_problems(add, catalog, meta, s, item, ch, entry)
+        new_rows, changes, touched = _apply_items(rows, items)
+        # The rows as they would be, through the creation check's own per-row rules.
+        for p in check_advantage_rows(meta, [new_rows[i] for i in touched], catalog):
+            add(p["code"], **p["params"])
+        item_entries = advantage_entries(meta, items, catalog)
+        row_entries = advantage_entries(meta, [r for r in rows if isinstance(r, dict) and r.get("kind") != "loresheet"], catalog)
+        _spend_only(add, meta, items, changes, item_entries, row_entries, s, catalog)
     else:
         if not s["saved_points"]["allow_specialty"]:
             add("specialty_not_allowed")

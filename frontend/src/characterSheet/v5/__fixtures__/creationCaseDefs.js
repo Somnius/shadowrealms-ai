@@ -630,6 +630,28 @@ export const CASE_DEFS = [
   },
   { name: 'flaws: a Siren with only the type’s Enemy', sheet: () => toreador({ flaws: [] }), expect: ['flaw_under'] },
   { name: 'advantages: a 6-dot row', sheet: () => brujah0({ advantages: [{ name: 'Resources', dots: 6, kind: 'background' }] }), expect: ['adv_dots_range'] },
+  // Saved points (forge v2 D): the unspent dots and the unused free specialty go to wod_meta.saved,
+  // which counts toward the 7 dots, so a payload can't claim more than it left unspent.
+  {
+    name: 'valid: 2 Advantage dots and the free specialty saved for later',
+    sheet: () =>
+      brujah0({
+        advantages: [
+          { name: 'Resources', dots: 3, kind: 'background' },
+          { name: 'Haven', dots: 2, kind: 'background' },
+        ],
+        specialties: [],
+      }),
+    expect: [],
+  },
+  {
+    name: 'saved: more Advantage dots saved than were left unspent',
+    sheet: () => brujah0(),
+    tamper: (p) => {
+      meta(p).saved.advantage_dots = 3;
+    },
+    expect: ['adv_over'],
+  },
   {
     name: 'thin-blood: two Merits, one Flaw',
     sheet: () => thinBlood({ thinBloodFlaws: [{ name: 'Baby Teeth' }] }),
