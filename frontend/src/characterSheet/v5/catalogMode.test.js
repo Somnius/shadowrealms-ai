@@ -55,7 +55,23 @@ describe('registry', () => {
   it('powers keep amalgam and prerequisite by name', () => {
     const d = powersOf('Dominate');
     expect(d.find((p) => p.name === 'Implant Suggestion').amalgam).toEqual({ discipline: 'Presence', level: 1 });
-    expect(d.find((p) => p.name === 'Submerged Directive').prerequisite).toEqual(['Mesmerize']);
+    expect(d.find((p) => p.name === 'Submerged Directive').prerequisite).toEqual([['Mesmerize']]);
+  });
+
+  it('reads an all_of prerequisite as groups', () => {
+    applyV5Catalog({
+      ...fixture,
+      disciplines: [
+        ...fixture.disciplines,
+        { id: 'discipline:animalism', name: 'Animalism', powers: [
+          { id: 'power:animalism:animal-messenger', name: 'Animal Messenger', level: 2 },
+          { id: 'power:animalism:messengers-command', name: "Messenger's Command", level: 3,
+            prerequisite: { all_of: [{ power_id: 'power:animalism:animal-messenger' }, { any_of: ['power:dominate:compel', 'power:dominate:mesmerize'] }] } },
+        ] },
+      ],
+    });
+    expect(powersOf('Animalism')[1].prerequisite).toEqual([['Animal Messenger'], ['Compel', 'Mesmerize']]);
+    applyV5Catalog(fixture);
   });
 });
 
