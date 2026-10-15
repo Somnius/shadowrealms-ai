@@ -1,0 +1,658 @@
+{
+  "version": 1,
+  "author": "Placeholder set written for the first version of the guided mode; Mario's questions replace it",
+  "thresholds": {"min_score_share": 0.3, "min_lead": 2},
+  "questions": [
+    {
+      "id": "confrontation",
+      "axis": "violence or talk",
+      "text": {
+        "en": "A drunk blocks the door of the club you need to get into. He wants a fight. What do you do?",
+        "el": "Ένας μεθυσμένος σού κλείνει την πόρτα του κλαμπ όπου πρέπει να μπεις. Ψάχνει για καβγά. Τι κάνεις;"
+      },
+      "options": [
+        {
+          "id": "hit_first",
+          "text": {"en": "Hit him first, and hard.",
+                   "el": "Ρίχνεις την πρώτη μπουνιά, και δυνατή."},
+          "weights": {
+            "clan": {"Brujah": 3, "Gangrel": 1},
+            "predator": {"Alleycat": 2},
+            "attributes": {"physical": 2, "strength": 1},
+            "skills": {"brawl": 2, "intimidation": 1},
+            "distribution": {"specialist": 1}
+          }
+        },
+        {
+          "id": "charm",
+          "text": {"en": "Smile, crack a joke and talk him down. Nobody needs to bleed.",
+                   "el": "Χαμογελάς, πετάς ένα αστείο και τον ηρεμείς. Δεν χρειάζεται να ματώσει κανείς."},
+          "weights": {
+            "clan": {"Toreador": 3, "Salubri": 1},
+            "predator": {"Siren": 1, "Consensualist": 1},
+            "attributes": {"social": 2, "charisma": 1},
+            "skills": {"persuasion": 2, "insight": 1}
+          }
+        },
+        {
+          "id": "command",
+          "text": {"en": "Look him in the eye and tell him to move. He moves.",
+                   "el": "Τον κοιτάς στα μάτια και του λες να κάνει στην άκρη. Κάνει."},
+          "weights": {
+            "clan": {"Ventrue": 3, "Lasombra": 1},
+            "predator": {"Extortionist": 1},
+            "attributes": {"social": 2, "composure": 1},
+            "skills": {"intimidation": 2, "leadership": 1}
+          }
+        },
+        {
+          "id": "trick",
+          "text": {"en": "Trick him: a bet, a dare, a little sleight of hand, and he is gone.",
+                   "el": "Τον ξεγελάς: ένα στοίχημα, μια πρόκληση, λίγη ταχυδακτυλουργία, και έφυγε."},
+          "weights": {
+            "clan": {"Ravnos": 3, "Ministry": 1},
+            "predator": {"Scene Queen": 1},
+            "attributes": {"social": 1, "manipulation": 1},
+            "skills": {"subterfuge": 2, "performance": 1}
+          }
+        },
+        {
+          "id": "sneak",
+          "text": {"en": "Slip in through the back while he is busy shouting.",
+                   "el": "Γλιστράς μέσα από την πίσω πόρτα όσο εκείνος φωνάζει."},
+          "weights": {
+            "clan": {"Nosferatu": 3, "Banu Haqim": 1},
+            "predator": {"Sandman": 1},
+            "attributes": {"physical": 1, "dexterity": 1},
+            "skills": {"stealth": 2, "larceny": 1}
+          }
+        },
+        {
+          "id": "study",
+          "text": {"en": "Watch him. Something about him is wrong, and you want to know what.",
+                   "el": "Τον παρατηρείς. Κάτι δεν πάει καλά μαζί του και θέλεις να μάθεις τι."},
+          "weights": {
+            "clan": {"Malkavian": 3, "Tremere": 1},
+            "predator": {"Pursuer": 1},
+            "attributes": {"mental": 2, "wits": 1},
+            "skills": {"awareness": 2, "insight": 1}
+          }
+        }
+      ]
+    },
+    {
+      "id": "night_job",
+      "axis": "night job",
+      "text": {
+        "en": "The rent still has to be paid. How do you spend your nights?",
+        "el": "Το νοίκι πρέπει να πληρωθεί. Πώς περνάς τις νύχτες σου;"
+      },
+      "options": [
+        {
+          "id": "stage",
+          "text": {"en": "On a stage or behind the DJ booth: music, clubs, crowds.",
+                   "el": "Πάνω σε μια σκηνή ή πίσω από την κονσόλα του DJ: μουσική, κλαμπ, κόσμος."},
+          "weights": {
+            "clan": {"Toreador": 3, "Ravnos": 1},
+            "predator": {"Scene Queen": 2, "Siren": 1},
+            "attributes": {"social": 1, "charisma": 1},
+            "skills": {"performance": 2, "etiquette": 1}
+          }
+        },
+        {
+          "id": "night_shift",
+          "text": {"en": "Night shifts at a hospital or a care home.",
+                   "el": "Νυχτερινές βάρδιες σε νοσοκομείο ή σε γηροκομείο."},
+          "weights": {
+            "clan": {"Salubri": 3, "Hecata": 1, "Thin-blood": 1},
+            "predator": {"Grim Reaper": 2, "Bagger": 1},
+            "attributes": {"mental": 1},
+            "skills": {"medicine": 2, "insight": 1}
+          }
+        },
+        {
+          "id": "road",
+          "text": {"en": "I drive: cabs, deliveries, long-haul trucks, wherever the road goes.",
+                   "el": "Οδηγώ: ταξί, διανομές, φορτηγά μεγάλων αποστάσεων, όπου με βγάλει ο δρόμος."},
+          "weights": {
+            "clan": {"Ravnos": 3, "Gangrel": 1},
+            "predator": {"Roadside Killer": 3},
+            "attributes": {"physical": 1},
+            "skills": {"drive": 2, "streetwise": 1, "survival": 1},
+            "distribution": {"jack": 1}
+          }
+        },
+        {
+          "id": "late_radio",
+          "text": {"en": "Late-night radio: I take calls from the lonely, the sleepless and the strange.",
+                   "el": "Νυχτερινή εκπομπή στο ραδιόφωνο: παίρνω τηλέφωνα από μοναχικούς, άυπνους και παράξενους ανθρώπους."},
+          "weights": {
+            "clan": {"Malkavian": 3, "Nosferatu": 1},
+            "predator": {"Osiris": 1},
+            "attributes": {"social": 1, "wits": 1},
+            "skills": {"insight": 2, "performance": 1}
+          }
+        },
+        {
+          "id": "black_market",
+          "text": {"en": "Something off the books: I sell what people shouldn't buy.",
+                   "el": "Κάτι εκτός νόμου: πουλάω ό,τι δεν θα έπρεπε να αγοράζει ο κόσμος."},
+          "weights": {
+            "clan": {"Ministry": 3, "Nosferatu": 1, "Caitiff": 1},
+            "predator": {"Bagger": 2},
+            "attributes": {"mental": 1, "wits": 1},
+            "skills": {"larceny": 2, "streetwise": 2}
+          }
+        },
+        {
+          "id": "hunter",
+          "text": {"en": "I find people for money: debts, bail jumpers, the odd quiet job.",
+                   "el": "Βρίσκω ανθρώπους για λεφτά: χρέη, φυγόδικους, και καμιά ήσυχη δουλειά πού και πού."},
+          "weights": {
+            "clan": {"Banu Haqim": 3, "Gangrel": 1},
+            "predator": {"Pursuer": 2},
+            "attributes": {"physical": 1, "wits": 1},
+            "skills": {"investigation": 2, "stealth": 1, "firearms": 1}
+          }
+        }
+      ]
+    },
+    {
+      "id": "feeding",
+      "axis": "how you feed",
+      "text": {
+        "en": "The hunger is rising and you must feed tonight. Where do you go?",
+        "el": "Η πείνα μεγαλώνει και πρέπει να τραφείς απόψε. Πού πας;"
+      },
+      "options": [
+        {
+          "id": "street",
+          "text": {"en": "Into the dark streets, to take whoever comes along.",
+                   "el": "Στους σκοτεινούς δρόμους, να αρπάξεις όποιον βρεθεί μπροστά σου."},
+          "weights": {
+            "clan": {"Brujah": 3, "Caitiff": 1},
+            "predator": {"Alleycat": 3},
+            "attributes": {"physical": 1},
+            "skills": {"brawl": 1, "streetwise": 1}
+          }
+        },
+        {
+          "id": "willing",
+          "text": {"en": "To someone who wants it: a lover, a fan, a friend who knows what I am.",
+                   "el": "Σε κάποιον που το θέλει: έναν εραστή, έναν θαυμαστή, έναν φίλο που ξέρει τι είμαι."},
+          "weights": {
+            "clan": {"Salubri": 3, "Thin-blood": 1},
+            "predator": {"Consensualist": 3},
+            "attributes": {"social": 1},
+            "skills": {"persuasion": 1, "insight": 1}
+          }
+        },
+        {
+          "id": "party",
+          "text": {"en": "To the party. Everyone there wants to get close to me.",
+                   "el": "Στο πάρτι. Όλοι εκεί θέλουν να βρεθούν κοντά μου."},
+          "weights": {
+            "clan": {"Toreador": 3, "Ministry": 1},
+            "predator": {"Siren": 3, "Scene Queen": 1},
+            "attributes": {"social": 1, "charisma": 1},
+            "skills": {"persuasion": 1, "subterfuge": 1}
+          }
+        },
+        {
+          "id": "bag",
+          "text": {"en": "To a blood bag I bought, stole or traded for. Hunting is for animals.",
+                   "el": "Σε μια σακούλα αίμα που αγόρασα, έκλεψα ή αντάλλαξα. Το κυνήγι είναι για τα ζώα."},
+          "weights": {
+            "clan": {"Tremere": 3, "Thin-blood": 1},
+            "predator": {"Bagger": 3},
+            "attributes": {"mental": 1},
+            "skills": {"larceny": 1, "streetwise": 1}
+          }
+        },
+        {
+          "id": "animals",
+          "text": {"en": "Out of town, to the woods and the farms. Animals will do.",
+                   "el": "Έξω από την πόλη, στα δάση και στις φάρμες. Τα ζώα αρκούν."},
+          "weights": {
+            "clan": {"Gangrel": 3, "Thin-blood": 1},
+            "predator": {"Farmer": 3},
+            "attributes": {"physical": 1},
+            "skills": {"animal_ken": 2, "survival": 1}
+          }
+        },
+        {
+          "id": "kindred",
+          "text": {"en": "To another vampire. Their blood is stronger.",
+                   "el": "Σε ένα άλλο βαμπίρ. Το αίμα του είναι πιο δυνατό."},
+          "weights": {
+            "clan": {"Banu Haqim": 3, "Lasombra": 1},
+            "predator": {"Blood Leech": 3},
+            "attributes": {"physical": 1},
+            "skills": {"stealth": 1, "brawl": 1}
+          }
+        },
+        {
+          "id": "dying",
+          "text": {"en": "To the dying: hospices, care homes, the night ward of a hospital.",
+                   "el": "Στους ετοιμοθάνατους: ξενώνες ανακουφιστικής φροντίδας, γηροκομεία, τη νυχτερινή πτέρυγα ενός νοσοκομείου."},
+          "weights": {
+            "clan": {"Hecata": 3, "Salubri": 1},
+            "predator": {"Grim Reaper": 3, "Graverobber": 1},
+            "attributes": {"mental": 1},
+            "skills": {"medicine": 1, "awareness": 1}
+          }
+        },
+        {
+          "id": "sleepers",
+          "text": {"en": "Into a stranger's bedroom while they sleep. They never wake up to see me.",
+                   "el": "Στο υπνοδωμάτιο ενός αγνώστου ενώ κοιμάται. Δεν ξυπνάει ποτέ για να με δει."},
+          "weights": {
+            "clan": {"Nosferatu": 3, "Malkavian": 1},
+            "predator": {"Sandman": 3},
+            "attributes": {"physical": 1, "dexterity": 1},
+            "skills": {"stealth": 2, "larceny": 1}
+          }
+        }
+      ]
+    },
+    {
+      "id": "fear",
+      "axis": "what you fear",
+      "text": {
+        "en": "What scares you most about what you have become?",
+        "el": "Τι σε τρομάζει περισσότερο σε αυτό που έγινες;"
+      },
+      "options": [
+        {
+          "id": "losing_control",
+          "text": {"en": "The monster inside. One night it will take over and I will hurt someone I love.",
+                   "el": "Το τέρας μέσα μου. Κάποια νύχτα θα πάρει τον έλεγχο και θα πληγώσω κάποιον που αγαπώ."},
+          "weights": {
+            "clan": {"Gangrel": 3, "Brujah": 1},
+            "predator": {"Farmer": 1, "Consensualist": 1},
+            "attributes": {"resolve": 1, "composure": 1}
+          }
+        },
+        {
+          "id": "losing_mine",
+          "text": {"en": "Losing what is mine: my home, my people, my piece of this city.",
+                   "el": "Να χάσω ό,τι είναι δικό μου: το σπίτι μου, τους ανθρώπους μου, το κομμάτι μου σε αυτή την πόλη."},
+          "weights": {
+            "clan": {"Tzimisce": 3, "Ventrue": 1},
+            "predator": {"Montero": 1, "Trapdoor": 1},
+            "attributes": {"resolve": 1},
+            "skills": {"leadership": 1, "streetwise": 1}
+          }
+        },
+        {
+          "id": "forgotten",
+          "text": {"en": "Being forgotten: dying a second time with nothing left of me.",
+                   "el": "Να με ξεχάσουν: να πεθάνω δεύτερη φορά χωρίς να μείνει τίποτα από μένα."},
+          "weights": {
+            "clan": {"Toreador": 3, "Ministry": 1},
+            "predator": {"Osiris": 1, "Scene Queen": 1},
+            "attributes": {"social": 1},
+            "skills": {"performance": 1, "craft": 1}
+          }
+        },
+        {
+          "id": "elders",
+          "text": {"en": "The others of my kind. They are older and stronger, and they own this city.",
+                   "el": "Οι άλλοι του είδους μου. Είναι πιο παλιοί και πιο δυνατοί, και η πόλη είναι δική τους."},
+          "weights": {
+            "clan": {"Thin-blood": 3, "Caitiff": 1},
+            "predator": {"Bagger": 1},
+            "attributes": {"mental": 1, "wits": 1},
+            "skills": {"awareness": 1, "streetwise": 1},
+            "distribution": {"jack": 1}
+          }
+        },
+        {
+          "id": "nothing",
+          "text": {"en": "Nothing much. Fear is a tool, and I know how to use it.",
+                   "el": "Τίποτα ιδιαίτερο. Ο φόβος είναι εργαλείο, και ξέρω να τον χρησιμοποιώ."},
+          "weights": {
+            "clan": {"Lasombra": 3, "Tzimisce": 1},
+            "predator": {"Extortionist": 1, "Montero": 1},
+            "attributes": {"social": 1, "composure": 1},
+            "skills": {"intimidation": 2}
+          }
+        },
+        {
+          "id": "voices",
+          "text": {"en": "The voices. Some nights I can't tell which of them are real.",
+                   "el": "Οι φωνές. Κάποιες νύχτες δεν ξέρω ποιες από αυτές είναι αληθινές."},
+          "weights": {
+            "clan": {"Malkavian": 3},
+            "predator": {"Pursuer": 1},
+            "attributes": {"mental": 1},
+            "skills": {"occult": 1, "awareness": 1}
+          }
+        },
+        {
+          "id": "the_dead",
+          "text": {"en": "The dead. Ever since that night, I can feel them watching me.",
+                   "el": "Οι νεκροί. Από εκείνη τη νύχτα, νιώθω να με παρακολουθούν."},
+          "weights": {
+            "clan": {"Hecata": 3, "Malkavian": 1},
+            "predator": {"Graverobber": 2, "Grim Reaper": 1},
+            "attributes": {"mental": 1, "resolve": 1},
+            "skills": {"occult": 2, "awareness": 1}
+          }
+        }
+      ]
+    },
+    {
+      "id": "mortal_ties",
+      "axis": "mortal ties",
+      "text": {
+        "en": "Your family and old friends still call you. What do you do about them?",
+        "el": "Η οικογένεια και οι παλιοί σου φίλοι ακόμα σου τηλεφωνούν. Τι κάνεις μαζί τους;"
+      },
+      "options": [
+        {
+          "id": "feed_on_them",
+          "text": {"en": "I stay in their lives and quietly feed on them. They never need to know.",
+                   "el": "Μένω στη ζωή τους και τρέφομαι από αυτούς, αθόρυβα. Δεν χρειάζεται να μάθουν ποτέ."},
+          "weights": {
+            "clan": {"Thin-blood": 3, "Caitiff": 1},
+            "predator": {"Cleaver": 3},
+            "attributes": {"social": 1, "manipulation": 1},
+            "skills": {"subterfuge": 2, "persuasion": 1}
+          }
+        },
+        {
+          "id": "protect",
+          "text": {"en": "I watch over them from a distance. That's all I can still do for them.",
+                   "el": "Τους προσέχω από μακριά. Μόνο αυτό μπορώ πια να κάνω γι' αυτούς."},
+          "weights": {
+            "clan": {"Salubri": 3, "Banu Haqim": 1},
+            "predator": {"Farmer": 1},
+            "attributes": {"resolve": 1},
+            "skills": {"awareness": 1, "stealth": 1}
+          }
+        },
+        {
+          "id": "cut_ties",
+          "text": {"en": "I cut every tie. That life is over.",
+                   "el": "Κόβω κάθε δεσμό. Εκείνη η ζωή τελείωσε."},
+          "weights": {
+            "clan": {"Ravnos": 3, "Gangrel": 1},
+            "predator": {"Roadside Killer": 1, "Blood Leech": 1},
+            "attributes": {"composure": 1},
+            "skills": {"survival": 1}
+          }
+        },
+        {
+          "id": "use_them",
+          "text": {"en": "I keep them close and useful: a lawyer, a cop, a cousin with a garage.",
+                   "el": "Τους κρατάω κοντά και χρήσιμους: έναν δικηγόρο, έναν μπάτσο, έναν ξάδερφο με συνεργείο."},
+          "weights": {
+            "clan": {"Ventrue": 3, "Tremere": 1},
+            "predator": {"Montero": 1},
+            "attributes": {"social": 1, "manipulation": 1},
+            "skills": {"politics": 1, "leadership": 1, "persuasion": 1}
+          }
+        },
+        {
+          "id": "new_family",
+          "text": {"en": "I build a new family: people who would do anything for me.",
+                   "el": "Φτιάχνω μια καινούργια οικογένεια: ανθρώπους που θα έκαναν τα πάντα για μένα."},
+          "weights": {
+            "clan": {"Ministry": 3},
+            "predator": {"Osiris": 2, "Montero": 1},
+            "attributes": {"social": 2, "charisma": 1},
+            "skills": {"leadership": 2, "persuasion": 1}
+          }
+        },
+        {
+          "id": "mine",
+          "text": {"en": "They are mine. Nobody takes them from me, not even death.",
+                   "el": "Είναι δικοί μου. Κανείς δεν μου τους παίρνει, ούτε καν ο θάνατος."},
+          "weights": {
+            "clan": {"Tzimisce": 3, "Hecata": 1},
+            "predator": {"Cleaver": 1},
+            "attributes": {"resolve": 1},
+            "skills": {"intimidation": 1, "insight": 1}
+          }
+        }
+      ]
+    },
+    {
+      "id": "secrets",
+      "axis": "secrets",
+      "text": {
+        "en": "You overhear a secret that could ruin someone powerful. What do you do with it?",
+        "el": "Ακούς τυχαία ένα μυστικό που μπορεί να καταστρέψει κάποιον ισχυρό. Τι το κάνεις;"
+      },
+      "options": [
+        {
+          "id": "file",
+          "text": {"en": "File it away. Information is the only currency that never loses its value.",
+                   "el": "Το φυλάω. Η πληροφορία είναι το μόνο νόμισμα που δεν χάνει ποτέ την αξία του."},
+          "weights": {
+            "clan": {"Nosferatu": 3, "Malkavian": 1},
+            "attributes": {"mental": 1, "intelligence": 1},
+            "skills": {"investigation": 2, "technology": 1}
+          }
+        },
+        {
+          "id": "leverage",
+          "text": {"en": "Use it, carefully, so they owe me.",
+                   "el": "Το χρησιμοποιώ, προσεκτικά, ώστε να μου χρωστάνε."},
+          "weights": {
+            "clan": {"Lasombra": 3, "Ventrue": 1},
+            "predator": {"Extortionist": 2},
+            "attributes": {"social": 1, "manipulation": 1},
+            "skills": {"subterfuge": 1, "politics": 1, "intimidation": 1}
+          }
+        },
+        {
+          "id": "judge",
+          "text": {"en": "Take it to someone who will judge them. Some crimes must be answered.",
+                   "el": "Το πηγαίνω σε κάποιον που θα αποδώσει δικαιοσύνη. Κάποια εγκλήματα πρέπει να πληρώνονται."},
+          "weights": {
+            "clan": {"Banu Haqim": 3, "Salubri": 1},
+            "predator": {"Pursuer": 1},
+            "attributes": {"mental": 1, "resolve": 1},
+            "skills": {"investigation": 1, "politics": 1}
+          }
+        },
+        {
+          "id": "dig",
+          "text": {"en": "Dig deeper. A secret like that hides a bigger one, maybe something not of this world.",
+                   "el": "Σκάβω πιο βαθιά. Ένα τέτοιο μυστικό κρύβει κάτι μεγαλύτερο, ίσως κάτι που δεν είναι από αυτόν τον κόσμο."},
+          "weights": {
+            "clan": {"Tremere": 3, "Hecata": 1},
+            "attributes": {"mental": 2},
+            "skills": {"occult": 2, "investigation": 1},
+            "distribution": {"specialist": 1}
+          }
+        },
+        {
+          "id": "leak",
+          "text": {"en": "Leak it. Everyone deserves to see what they really are.",
+                   "el": "Το διαρρέω. Όλοι αξίζουν να δουν τι είναι στ' αλήθεια."},
+          "weights": {
+            "clan": {"Brujah": 3, "Caitiff": 1},
+            "attributes": {"social": 1},
+            "skills": {"technology": 1, "streetwise": 1, "persuasion": 1}
+          }
+        },
+        {
+          "id": "walk_away",
+          "text": {"en": "Forget it. Other people's games are none of my business.",
+                   "el": "Το ξεχνάω. Τα παιχνίδια των άλλων δεν με αφορούν."},
+          "weights": {
+            "clan": {"Caitiff": 3, "Gangrel": 1},
+            "predator": {"Roadside Killer": 1},
+            "skills": {"survival": 1, "streetwise": 1},
+            "distribution": {"jack": 1}
+          }
+        }
+      ]
+    },
+    {
+      "id": "ambition",
+      "axis": "ambition",
+      "text": {
+        "en": "Picture yourself a hundred years from now. Where are you?",
+        "el": "Φαντάσου τον εαυτό σου σε εκατό χρόνια. Πού βρίσκεσαι;"
+      },
+      "options": [
+        {
+          "id": "throne",
+          "text": {"en": "On a throne, with a court at my feet.",
+                   "el": "Σε έναν θρόνο, με μια αυλή στα πόδια μου."},
+          "weights": {
+            "clan": {"Ventrue": 3, "Lasombra": 1},
+            "predator": {"Tithe Collector": 2},
+            "attributes": {"social": 1, "composure": 1},
+            "skills": {"politics": 2, "etiquette": 1, "leadership": 1}
+          }
+        },
+        {
+          "id": "shadow",
+          "text": {"en": "In the shadows, pulling every string. Nobody even knows my name.",
+                   "el": "Στις σκιές, να κινώ όλα τα νήματα. Κανείς δεν ξέρει καν το όνομά μου."},
+          "weights": {
+            "clan": {"Lasombra": 3, "Nosferatu": 1},
+            "predator": {"Montero": 1, "Extortionist": 1},
+            "attributes": {"social": 1, "manipulation": 1},
+            "skills": {"politics": 1, "subterfuge": 1, "stealth": 1}
+          }
+        },
+        {
+          "id": "free",
+          "text": {"en": "Still free. No Prince, no sire, no master.",
+                   "el": "Ακόμα χωρίς αφέντη: ούτε Prince, ούτε sire, ούτε κανένας άλλος."},
+          "weights": {
+            "clan": {"Brujah": 3, "Caitiff": 1},
+            "predator": {"Alleycat": 1, "Roadside Killer": 1},
+            "attributes": {"physical": 1},
+            "skills": {"athletics": 1, "streetwise": 1}
+          }
+        },
+        {
+          "id": "worshipped",
+          "text": {"en": "Worshipped: a name people whisper, followers who would die for me.",
+                   "el": "Να με λατρεύουν: ένα όνομα που το λένε ψιθυριστά, πιστοί που θα πέθαιναν για μένα."},
+          "weights": {
+            "clan": {"Ministry": 3, "Toreador": 1},
+            "predator": {"Osiris": 3, "Scene Queen": 1},
+            "attributes": {"social": 2, "charisma": 1},
+            "skills": {"performance": 1, "persuasion": 1, "leadership": 1}
+          }
+        },
+        {
+          "id": "knowledge",
+          "text": {"en": "Knowing more than anyone, living or dead.",
+                   "el": "Να ξέρω περισσότερα από οποιονδήποτε, ζωντανό ή νεκρό."},
+          "weights": {
+            "clan": {"Tremere": 3, "Hecata": 2},
+            "predator": {"Graverobber": 1},
+            "attributes": {"mental": 2, "intelligence": 1},
+            "skills": {"academics": 1, "occult": 1, "science": 1},
+            "distribution": {"specialist": 1}
+          }
+        },
+        {
+          "id": "human",
+          "text": {"en": "Human again, or as close to it as I can get.",
+                   "el": "Ξανά άνθρωπος, ή όσο πιο κοντά γίνεται."},
+          "weights": {
+            "clan": {"Thin-blood": 3, "Salubri": 1},
+            "predator": {"Consensualist": 1, "Farmer": 1},
+            "attributes": {"mental": 1},
+            "skills": {"science": 1, "medicine": 1}
+          }
+        },
+        {
+          "id": "domain",
+          "text": {"en": "Ruling my own land, with my own people around me.",
+                   "el": "Να ορίζω τη δική μου γη, με τους δικούς μου ανθρώπους γύρω μου."},
+          "weights": {
+            "clan": {"Tzimisce": 3, "Gangrel": 1},
+            "predator": {"Montero": 2, "Trapdoor": 2},
+            "attributes": {"resolve": 1},
+            "skills": {"leadership": 1, "animal_ken": 1, "survival": 1}
+          }
+        }
+      ]
+    },
+    {
+      "id": "body_mind",
+      "axis": "body or mind",
+      "text": {
+        "en": "When everything goes wrong, what do you trust most?",
+        "el": "Όταν όλα στραβώνουν, τι εμπιστεύεσαι περισσότερο;"
+      },
+      "options": [
+        {
+          "id": "body",
+          "text": {"en": "My body: speed, strength, and the will to stay on my feet.",
+                   "el": "Το σώμα μου: ταχύτητα, δύναμη και την αντοχή να μη λυγίζω."},
+          "weights": {
+            "clan": {"Brujah": 1, "Gangrel": 1},
+            "attributes": {"physical": 3, "stamina": 1},
+            "skills": {"athletics": 1, "brawl": 1, "melee": 1},
+            "distribution": {"specialist": 1}
+          }
+        },
+        {
+          "id": "tools",
+          "text": {"en": "My hands and my tools: a lockpick, a gun, a car engine.",
+                   "el": "Τα χέρια μου και τα εργαλεία μου: ένα αντικλείδι, ένα όπλο, μια μηχανή αυτοκινήτου."},
+          "weights": {
+            "clan": {"Nosferatu": 1, "Caitiff": 1},
+            "predator": {"Trapdoor": 1},
+            "attributes": {"physical": 2, "dexterity": 1},
+            "skills": {"firearms": 1, "larceny": 1, "craft": 1, "drive": 1},
+            "distribution": {"jack": 1}
+          }
+        },
+        {
+          "id": "voice",
+          "text": {"en": "My voice: people listen when I talk.",
+                   "el": "Τη φωνή μου: όταν μιλάω, με ακούνε."},
+          "weights": {
+            "clan": {"Ventrue": 1, "Toreador": 1},
+            "attributes": {"social": 3, "charisma": 1},
+            "skills": {"persuasion": 1, "leadership": 1, "etiquette": 1}
+          }
+        },
+        {
+          "id": "mind",
+          "text": {"en": "My mind: I think three moves ahead.",
+                   "el": "Το μυαλό μου: σκέφτομαι τρεις κινήσεις μπροστά."},
+          "weights": {
+            "clan": {"Tremere": 1, "Malkavian": 1},
+            "attributes": {"mental": 3, "intelligence": 1},
+            "skills": {"investigation": 1, "academics": 1, "technology": 1},
+            "distribution": {"specialist": 1}
+          }
+        },
+        {
+          "id": "instinct",
+          "text": {"en": "My instincts: I notice things before anyone else does.",
+                   "el": "Το ένστικτό μου: προσέχω πράγματα πριν από οποιονδήποτε άλλον."},
+          "weights": {
+            "clan": {"Gangrel": 2, "Ravnos": 1},
+            "attributes": {"mental": 1, "wits": 2},
+            "skills": {"awareness": 2, "survival": 1}
+          }
+        },
+        {
+          "id": "adapt",
+          "text": {"en": "A little of everything. I adapt.",
+                   "el": "Λίγο απ' όλα. Προσαρμόζομαι."},
+          "weights": {
+            "clan": {"Caitiff": 3, "Thin-blood": 1},
+            "skills": {"athletics": 1, "streetwise": 1, "awareness": 1},
+            "distribution": {"jack": 3}
+          }
+        }
+      ]
+    }
+  ]
+}
