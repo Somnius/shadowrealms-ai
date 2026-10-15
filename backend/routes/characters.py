@@ -960,6 +960,22 @@ def assign_character_to_chronicle(character_id):
                 'error': 'This character uses different rules than that chronicle.',
                 'error_code': 'rules_edition_mismatch',
             }), 400
+        # The chronicle's creation rules apply to a sheet brought in too. Staff and the
+        # chronicle's own Storyteller may bring in a sheet that breaks them (their call).
+        if (
+            edition_of(campaign) == V5
+            and actor['role'] not in ('admin', 'helper')
+            and str(campaign.get('created_by')) != str(current_user_id)
+        ):
+            not_allowed = creation_problems(
+                campaign.get('creation_settings'), _wod_meta_parse(character.get('wod_meta'))
+            )
+            if not_allowed:
+                return jsonify({
+                    'error': ' '.join(not_allowed),
+                    'error_code': 'creation_rules',
+                    'problems': not_allowed,
+                }), 400
 
         cursor.execute(
             "SELECT id FROM characters WHERE name = %s AND campaign_id = %s",

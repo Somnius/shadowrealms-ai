@@ -12,10 +12,12 @@ const PREDATOR_NAMES = V5_PREDATOR_TYPES.map((p) => p.name);
  */
 function AllowedList({ legend, names, labelOf = (n) => n, value, onChange }) {
   const ticked = value || names;
+  // Stored names this list doesn't show (e.g. added through the API) are kept as they are.
+  const unknown = (value || []).filter((n) => !names.includes(n));
   const toggle = (name, on) => {
     const next = on ? [...ticked, name] : ticked.filter((n) => n !== name);
-    if (!next.length) return;
-    onChange(names.every((n) => next.includes(n)) ? null : names.filter((n) => next.includes(n)));
+    if (!next.some((n) => names.includes(n))) return;
+    onChange(names.every((n) => next.includes(n)) && !unknown.length ? null : [...names.filter((n) => next.includes(n)), ...unknown]);
   };
   return (
     <fieldset className="sr-creation-rules__list">
@@ -42,9 +44,11 @@ function AllowedList({ legend, names, labelOf = (n) => n, value, onChange }) {
 export default function CreationRulesPanel({ campaign, saving, onSave }) {
   const [s, setS] = useState(() => normalizeCreationSettings(campaign.creation_settings));
   const set = (patch) => setS((prev) => ({ ...prev, ...patch }));
+  const [flawsText, setFlawsText] = useState(() => (s.flaws_max_dots == null ? '' : String(s.flaws_max_dots)));
   const submit = (e) => {
     e.preventDefault();
-    onSave(s);
+    const n = parseInt(flawsText, 10);
+    onSave({ ...s, flaws_max_dots: Number.isFinite(n) ? Math.max(2, Math.min(20, n)) : null });
   };
   return (
     <Panel title={t('chronicle:creation.title', 'Character creation rules')} icon="scroll">
@@ -76,13 +80,13 @@ export default function CreationRulesPanel({ campaign, saving, onSave }) {
           min={2}
           max={20}
           label={t('chronicle:creation.flawsMax', 'Most Flaw dots a player may take (empty = no limit)')}
-          value={s.flaws_max_dots ?? ''}
-          onChange={(e) => {
-            const n = parseInt(e.target.value, 10);
-            set({ flaws_max_dots: Number.isFinite(n) ? Math.max(2, Math.min(20, n)) : null });
-          }}
+          value={flawsText}
+          onChange={(e) => setFlawsText(e.target.value)}
           fieldClassName="sr-field--short"
         />
+        <p className="sr-muted sr-small">
+          {t('chronicle:creation.flawsHint', 'Ancillae take 4 Flaw dots, so a limit under 4 needs ancillae left out.')}
+        </p>
         <Checkbox
           label={t('chronicle:creation.fledgling', 'Offer just-Embraced fledglings the Humanity 8 start')}
           checked={s.fledgling_humanity_8}

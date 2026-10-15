@@ -250,3 +250,21 @@ def test_unassigned_character_cannot_be_the_global_active_character():
     text = src.read_text()
     assert "character_has_no_chronicle" in text
     ast.parse(text)
+
+
+def test_assign_follows_the_chronicle_creation_rules(api):
+    api.sql("ALTER TABLE campaigns ADD COLUMN creation_settings TEXT NOT NULL DEFAULT '{}'")
+    api.sql("""UPDATE characters SET wod_meta = '{"edition": "v5", "clan": "Hecata"}' WHERE id = 100""")
+    api.sql("""UPDATE campaigns SET creation_settings = '{"allowed_clans": ["Ventrue"]}' WHERE id = 10""")
+    r = api.call("POST", "/api/characters/100/assign", 3, {"campaign_id": 10})
+    assert r.status_code == 400 and r.get_json()["error_code"] == "creation_rules"
+    # staff may bring it in anyway (the Storyteller's or staff's call)
+    assert api.call("POST", "/api/characters/100/assign", 1, {"campaign_id": 10}).status_code == 200
+
+
+def test_assign_by_the_chronicles_own_storyteller_skips_the_rules(api):
+    api.sql("ALTER TABLE campaigns ADD COLUMN creation_settings TEXT NOT NULL DEFAULT '{}'")
+    api.sql("""UPDATE characters SET user_id = 2, wod_meta = '{"edition": "v5", "clan": "Hecata"}' WHERE id = 100""")
+    api.sql("""UPDATE campaigns SET creation_settings = '{"allowed_clans": ["Ventrue"]}' WHERE id = 10""")
+    api.sql("DELETE FROM characters WHERE id = 101")  # their own locked PC elsewhere is another rule
+    assert api.call("POST", "/api/characters/100/assign", 2, {"campaign_id": 10}).status_code == 200

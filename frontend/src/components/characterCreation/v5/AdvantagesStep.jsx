@@ -1,6 +1,7 @@
 import ResponsiveSheetBlock from '../ResponsiveSheetBlock';
 import MeritFlawRows from '../MeritFlawRows';
 import { THIN_BLOOD, V5_AGE_BRACKETS, V5_SECTION_IDS, V5_THIN_BLOOD_MERITS } from '../../../characterSheet/v5/constants';
+import { ageAllowed } from '../../../characterSheet/v5/validation';
 import { t } from '../../../i18n';
 import { ACCENT, InlineError, addButtonStyle, inputStyle, labelStyle, smallButtonStyle, useForge } from './forgeUi';
 
@@ -61,7 +62,7 @@ export default function AdvantagesStep() {
         {t('wizard:v5.advantagesCount', 'Advantages {{adv}}/{{advMax}} · Flaws {{flaws}} (min {{flawMin}})', { adv: advDots, advMax: derived.advantage_dots, flaws: flawDots, flawMin: derived.flaw_min_dots })}
         {cap != null ? ` · ${t('wizard:v5.flawCap', 'max {{n}} in this chronicle', { n: cap })}` : ''}
       </p>
-      {f.age !== 'ancilla' && f.clan !== THIN_BLOOD ? (
+      {f.age !== 'ancilla' && f.clan !== THIN_BLOOD && ageAllowed(settings, 'ancilla') ? (
         <p style={{ color: 'var(--sr-bone-300)', fontSize: '12px', margin: '0 0 10px' }}>
           {t('wizard:v5.ancillaBudgetHint', 'An ancilla (chosen in the Age step) gets {{adv}} more Advantage dots and takes {{flaws}} more Flaw dots.', { adv: ancilla.advantage_dots_bonus, flaws: ancilla.flaw_dots_bonus })}
         </p>

@@ -758,6 +758,8 @@ export function buildV5Payload(sheet) {
     chronicle_tenets: String(s.chronicle_tenets || '').trim(),
     advantages,
     flaws,
+    // Which forge rules built the sheet (Forge v2: predator flaws extra, chronicle creation rules).
+    forge: { version: 2, settings_v: 1 },
   };
   const rituals = finalRituals(s);
   if (rituals.length) wodMeta.rituals = rituals;

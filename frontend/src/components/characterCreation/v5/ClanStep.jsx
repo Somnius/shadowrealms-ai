@@ -1,6 +1,6 @@
 import ResponsiveSheetBlock from '../ResponsiveSheetBlock';
-import { V5_CLAN_NAMES, V5_SECTION_IDS } from '../../../characterSheet/v5/constants';
-import { clanAllowed } from '../../../characterSheet/v5/validation';
+import { THIN_BLOOD, V5_CLAN_NAMES, V5_SECTION_IDS } from '../../../characterSheet/v5/constants';
+import { ageAllowed, clanAllowed } from '../../../characterSheet/v5/validation';
 import { t } from '../../../i18n';
 import { Term } from '../../../i18n/glossary';
 import { ACCENT, InlineError, TextField, gridStyle, inputStyle, labelStyle, noteStyle, useForge } from './forgeUi';
@@ -22,7 +22,8 @@ export default function ClanStep() {
           <label htmlFor="v5-field-clan" style={labelStyle}><Term id="clan" /></label>
           <select id="v5-field-clan" value={f.clan} onChange={(e) => f.changeClan(e.target.value)} style={inputStyle}>
             {V5_CLAN_NAMES.map((c) => {
-              const ok = clanAllowed(f.settings, c);
+              // Thin-bloods are always childer (14th–16th generation), so they need that age allowed.
+              const ok = clanAllowed(f.settings, c) && (c !== THIN_BLOOD || ageAllowed(f.settings, 'childer'));
               return (
                 <option key={c} value={c} disabled={!ok}>
                   {c}

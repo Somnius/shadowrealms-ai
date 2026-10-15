@@ -120,3 +120,20 @@ def test_flaw_cap_counts_own_flaws_only():
     assert creation_problems(settings, meta) == []
     meta["flaws"].append({"name": "Shunned", "dots": 1, "kind": "flaw"})
     assert len(creation_problems(settings, meta)) == 1
+
+
+def test_flaw_cap_under_4_needs_ancillae_left_out():
+    with pytest.raises(RequestValidationError):
+        validate_creation_settings({"flaws_max_dots": 3})
+    with pytest.raises(RequestValidationError):
+        validate_creation_settings({"flaws_max_dots": 2, "allowed_ages": ["neonate", "ancilla"]})
+    out = validate_creation_settings({"flaws_max_dots": 3, "allowed_ages": ["childer", "neonate"]})
+    assert out["flaws_max_dots"] == 3
+    assert validate_creation_settings({"flaws_max_dots": 4})["flaws_max_dots"] == 4
+
+
+def test_age_problem_reads_as_words():
+    problems = creation_problems({"allowed_ages": ["neonate"]}, {"age": "childer"})
+    assert problems == ["The Storyteller doesn't allow childe / fledgling characters in this chronicle."]
+    # an unknown age stored by an old sheet doesn't crash
+    assert creation_problems({"allowed_ages": ["neonate"]}, {"age": "elder"})

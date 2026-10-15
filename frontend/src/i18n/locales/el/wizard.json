@@ -268,12 +268,12 @@
     "clanSubV2": "Το clan σου ορίζει τα Disciplines, το bane και το compulsion σου.",
     "convictionsTitle": "Convictions και Touchstones",
     "predatorPreview": "Προεπισκόπηση predator type",
-    "predatorPreviewPick": "Δες έναν predator type (τον επιλέγεις στο επόμενο βήμα)",
     "previewDiscipline": "Μία τελεία Discipline: {{list}}",
     "previewNone": "καμία για αυτό το clan",
     "previewSpecialty": "Μία specialty: {{list}}",
     "previewAdvantages": "Advantages: {{list}}",
     "previewFlaws": "Flaws: {{list}} (έξτρα, πάνω από τα δικά σου {{min}})",
-    "predatorFlawsExtra": "Αυτά τα Flaws είναι έξτρα: παίρνεις ακόμα {{min}} τελείες δικών σου Flaws στα Advantages."
+    "predatorFlawsExtra": "Αυτά τα Flaws είναι έξτρα: παίρνεις ακόμα {{min}} τελείες δικών σου Flaws στα Advantages.",
+    "predatorPreviewPickV2": "Δες έναν predator type (τον ορίζει και για το επόμενο βήμα)"
   }
 }

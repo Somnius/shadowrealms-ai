@@ -33,6 +33,9 @@ LIST_MAX = 100
 HOUSE_RULES_MAX = 2000
 FLAWS_MAX_RANGE = (2, 20)
 SAVED_CAP_RANGE = (0, 20)
+# Own Flaw dots an ancilla takes: 2 + 2 (docs/rules/v5.json creation.age_brackets.ancilla).
+ANCILLA_FLAWS_MIN = 4
+AGE_LABELS = {"childer": "childe / fledgling", "neonate": "neonate", "ancilla": "ancilla"}
 
 DEFAULTS: Dict[str, Any] = {
     "v": 1,
@@ -153,7 +156,18 @@ def validate_creation_settings(value: Any) -> Dict[str, Any]:
     v = value.get("v", 1)
     if v != 1:
         raise RequestValidationError("creation_settings.v must be 1.")
-    return normalize_creation_settings(value)
+    out = normalize_creation_settings(value)
+    # Ancillae take 2 more Flaw dots (4 in all, docs/rules/v5.json age_brackets), so a lower cap would shut them out.
+    if (
+        out["flaws_max_dots"] is not None
+        and out["flaws_max_dots"] < ANCILLA_FLAWS_MIN
+        and (out["allowed_ages"] is None or "ancilla" in out["allowed_ages"])
+    ):
+        raise RequestValidationError(
+            f"Ancillae take {ANCILLA_FLAWS_MIN} Flaw dots: set flaws_max_dots to at least "
+            f"{ANCILLA_FLAWS_MIN} or leave ancillae out of allowed_ages."
+        )
+    return out
 
 
 def creation_problems(settings: Any, wod_meta: Any) -> List[str]:
@@ -179,7 +193,7 @@ def creation_problems(settings: Any, wod_meta: Any) -> List[str]:
         problems.append(f"The Storyteller doesn't allow the {pred} predator type in this chronicle.")
     age = meta.get("age")
     if s["allowed_ages"] and isinstance(age, str) and age and age not in s["allowed_ages"]:
-        problems.append(f"The Storyteller doesn't allow {age} characters in this chronicle.")
+        problems.append(f"The Storyteller doesn't allow {AGE_LABELS.get(age, age)} characters in this chronicle.")
     cap = s["flaws_max_dots"]
     if cap is not None:
         own = sum(

@@ -50,21 +50,23 @@ The wizard stores **final** ratings. Dots beyond the creation budgets count as f
 
 ## V5: Vampire only
 
-Code: `frontend/src/components/characterCreation/V5CharacterCreationWizard.js`, rules in `frontend/src/characterSheet/v5/validation.js` (`buildV5Payload`). Section ids: `V5_SECTION_IDS` in `characterSheet/v5/constants.js`.
+Code: `frontend/src/components/characterCreation/V5CharacterCreationWizard.js` (the shell) with one component per step in `components/characterCreation/v5/` and the state in `v5/useV5ForgeState.js`; rules in `frontend/src/characterSheet/v5/validation.js` (`buildV5Payload`). Section ids: `V5_SECTION_IDS` in `characterSheet/v5/constants.js`. The blocks follow the corebook's creation order (p. 136):
 
 | Block | Contents | Primary storage |
 |-------|----------|-----------------|
-| `identity` | Chronicle, name, concept, sire, ambition, desire, age bracket, generation | `name`, `campaign_id`, `wod_meta` |
-| `clan` | Clan (incl. Caitiff and Thin-blood) | `wod_meta.clan` |
+| `identity` | Chronicle, name, concept, ambition, desire | `name`, `campaign_id`, `wod_meta` |
+| `clan` | Clan (incl. Caitiff and Thin-blood) and sire | `wod_meta.clan`, `wod_meta.sire` |
 | `attributes` | 9 Attributes, spread 4 / 3 / 3 / 3 / 2 / 2 / 2 / 2 / 1 | `attributes` JSON |
 | `skills` | Skill distribution (Jack of all trades, Balanced, Specialist) and specialties | `skills` JSON (`physical` / `social` / `mental`, `specialties`, `distribution`) |
-| `disciplines` | Two clan Disciplines at 2 and 1 dots, one power per dot | `wod_meta.disciplines` |
-| `rituals` | With Blood Sorcery 1+: one Level 1 ritual chosen at creation (optional) | `wod_meta.rituals` (`[{name, level, source}]`, at most 12 (`V5_RITUALS_MAX` / `RITUALS_MAX`, enough for an ancilla's free ritual + 11 bought), `level` required 1-5, `source` is `'creation'` for the free one or `'xp'` when bought with starting experience) |
-| `predator` | Predator type and its specialty, Discipline dot, advantages and flaws | `wod_meta.predator_type` (+ entries in advantages and flaws) |
-| `advantages` | 7 dots of Merits and Backgrounds, at least 2 dots of Flaws (Thin-blood: their own merits and flaws) | `wod_meta.advantages`, `wod_meta.flaws`, mirrored into `merits_flaws.entries` |
+| `disciplines` | Two clan Disciplines at 2 and 1 dots, one power per dot; with Blood Sorcery 1+ one Level 1 ritual (optional); a preview of a predator type | `wod_meta.disciplines`, `wod_meta.rituals` (`[{name, level, source}]`, at most 12 (`V5_RITUALS_MAX` / `RITUALS_MAX`, enough for an ancilla's free ritual + 11 bought), `level` required 1-5, `source` is `'creation'` for the free one or `'xp'` when bought with starting experience) |
+| `predator` | Predator type and its specialty, Discipline dot, advantages and flaws (the flaws are extra) | `wod_meta.predator_type` (+ entries in advantages and flaws with `kind: 'predator'`) |
+| `advantages` | 7 dots of Merits and Backgrounds, at least 2 dots of Flaws of the player's own (Thin-blood: their own merits and flaws) | `wod_meta.advantages`, `wod_meta.flaws`, mirrored into `merits_flaws.entries` |
+| `humanity` | Convictions and Touchstones, chronicle tenets; Humanity 7 (8 with the fledgling option, if the chronicle offers it) | `wod_meta.touchstones`, `wod_meta.humanity` |
+| `age` | Age bracket and generation, Blood Potency | `wod_meta.age`, `wod_meta.generation`, `wod_meta.blood_potency` |
 | `experience` | Neonates (15 XP) and ancillae (35 XP), optional: buy Attribute, Skill and Discipline dots one at a time, new specialties and rituals (level up to Blood Sorcery); unspent XP allowed, no overspending | XP dots folded into `attributes`, `skills` (XP specialties have `source: 'xp'`), `wod_meta.disciplines` and `wod_meta.rituals` (`source: 'xp'`); the ledger in `wod_meta.experience` (below) |
-| `humanity` | Convictions and Touchstones, chronicle tenets; Humanity 7 (8 with the fledgling option) | `wod_meta.touchstones`, `wod_meta.humanity` |
 | `story` | Background text | `background` |
+
+The chronicle's creation rules (`campaigns.creation_settings`, set by the Storyteller) limit the clans, predator types and ages offered, can cap the Flaws, turn off the Humanity 8 option and add house rules shown at the top. The sheet records the forge that made it: `wod_meta.forge = { version: 2, settings_v: 1 }`.
 
 Derived values are stored in `wod_meta` too: `edition: "v5"`, `hunger`, `blood_potency`, `health` and `willpower` (each `{ max, superficial, aggravated }`), `stains`.
 
