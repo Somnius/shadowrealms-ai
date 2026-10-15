@@ -16,6 +16,7 @@ from .parsers import predators as pred_parser
 EXTRACTED = books.BUILD_DIR / "extracted"
 REPORT = books.BUILD_DIR / "report.md"
 MANUAL_DIR = books.CATALOG_DIR / "manual"
+DESC_DIR = books.CATALOG_DIR / "descriptions"
 KIND_FILE = {"ritual": "rituals", "ceremony": "ceremonies", "formula": "formulae"}
 CATALOG_FILES = ("books", "clans", "disciplines", "rituals", "ceremonies", "formulae", "predator_types")
 
@@ -272,11 +273,22 @@ def build(out_dir: Path | None = None) -> list[str]:
                               prec, report))
     files["clans"] = build_clans(_load(EXTRACTED / "clans.pdf.json"), prec, report)
     files["predator_types"] = build_predators(_load(EXTRACTED / "predator_types.pdf.json"), prec, report)
+    merge.attach_descriptions(files, load_descriptions(), report)
     for name, data in files.items():
         _dump(out_dir / f"{name}.json", data)
     report += ["", "## Counts", ""] + counts(files)
     report += ["", "## Needs review (facts left null rather than guessed)", ""] + needs_review(files)
     return report
+
+
+def load_descriptions() -> dict:
+    """docs/rules/v5/catalog/descriptions/<catalog>.json -> {catalog: {key: {en, el}}}."""
+    out = {}
+    for name in merge.DESC_CATALOGS:
+        p = DESC_DIR / f"{name}.json"
+        if p.exists():
+            out[name] = _load(p)
+    return out
 
 
 def needs_review(files: dict) -> list[str]:

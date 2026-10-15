@@ -138,3 +138,61 @@ def amalgam_ref(am: dict | None) -> dict | None:
     if not am:
         return None
     return {"discipline": c.discipline_id(am["discipline"]), "level": am["level"]}
+
+
+# --------------------------------------------------------------------------- descriptions
+
+DESC_CATALOGS = ("clans", "disciplines", "rituals", "ceremonies", "formulae", "predator_types")
+# clans carry three descriptions: the clan, its Bane and its Compulsion
+CLAN_DESC_PARTS = ("bane", "compulsion")
+
+
+def desc_targets(files: dict):
+    """Yield (key, holder) for every place a description can go: entries, powers, and a clan's
+    bane / compulsion objects under '<clan id>:bane' / '<clan id>:compulsion'."""
+    for name in DESC_CATALOGS:
+        if name not in files:
+            continue
+        for e in files[name]["entries"]:
+            yield e["id"], e
+            for p in e.get("powers", []):
+                yield p["id"], p
+            if name == "clans":
+                for part in CLAN_DESC_PARTS:
+                    if e.get(part):
+                        yield f"{e['id']}:{part}", e[part]
+
+
+def _with_desc(holder: dict, desc: dict) -> None:
+    """Put desc right after name (or first) so the committed JSON stays readable; in place."""
+    items = [(k, v) for k, v in holder.items() if k != "desc"]
+    holder.clear()
+    placed = False
+    for k, v in items:
+        holder[k] = v
+        if k == "name":
+            holder["desc"] = {"en": desc["en"], "el": desc["el"]}
+            placed = True
+    if not placed:
+        holder["desc"] = {"en": desc["en"], "el": desc["el"]}
+
+
+def attach_descriptions(files: dict, descriptions: dict, report: list[str]) -> None:
+    """descriptions = {catalog name: {key: {en, el}}} (docs/rules/v5/catalog/descriptions/<name>.json).
+    Attaches each one to its target in place; keys that match nothing are reported and left out
+    (never guessed onto another entry). Targets without a description are listed in the report
+    so the gate can refuse them."""
+    targets = dict(desc_targets(files))
+    for name, descs in descriptions.items():
+        for key, d in descs.items():
+            if key not in targets:
+                report.append(f"- descriptions/{name}.json: {key} is not in the catalog")
+                continue
+            if not isinstance(d, dict) or not d.get("en") or not d.get("el"):
+                report.append(f"- descriptions/{name}.json: {key} needs both en and el")
+                continue
+            _with_desc(targets[key], d)
+    missing = [k for k, h in targets.items() if "desc" not in h]
+    if missing:
+        report.append(f"- {len(missing)} catalog entries have no description: "
+                      + ", ".join(missing[:12]) + (" …" if len(missing) > 12 else ""))

@@ -124,6 +124,12 @@ def test_power_levels_and_split_grants(data):
                 assert grant.get("dots_total"), p["id"]
 
 
+def test_descriptions_complete(data):
+    """Every entry, power, clan Bane and Compulsion has desc.en + desc.el (<= 240 chars) and
+    descriptions/*.json has no orphan keys."""
+    assert checks.description_problems(CATALOG, data) == []
+
+
 def test_no_book_text_fields():
     """The committed files carry facts only: no snippets or cost/system text, short strings."""
     forbidden = {"snippet", "cost_text", "dice_pool_text", "prerequisite_text", "bullets", "pool_text"}

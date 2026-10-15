@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "shadowrealms/v5/catalog/clans.schema.json",
   "title": "V5 clans",
-  "description": "13 clans + Caitiff + Thin-blood. Facts only: in-clan Disciplines (ids), where the Bane and Compulsion are printed, Bane name (PG clan sheet), PG bane variants. bane is null when the clan has no bane (Caitiff, Thin-blood); creation holds clan-specific creation rules.",
+  "description": "13 clans + Caitiff + Thin-blood. Facts only: in-clan Disciplines (ids), where the Bane and Compulsion are printed, Bane name (PG clan sheet), PG bane variants. bane is null when the clan has no bane (Caitiff, Thin-blood); creation holds clan-specific creation rules. desc on the entry, its bane and its compulsion (descriptions/clans.json: '<id>', '<id>:bane', '<id>:compulsion').",
   "type": "object",
   "required": [
     "catalog",
@@ -158,6 +158,9 @@
                   },
                   "name_ref": {
                     "$ref": "#/$defs/ref"
+                  },
+                  "desc": {
+                    "$ref": "#/$defs/desc"
                   }
                 }
               }
@@ -186,6 +189,9 @@
                   },
                   "page": {
                     "$ref": "#/$defs/page"
+                  },
+                  "desc": {
+                    "$ref": "#/$defs/desc"
                   }
                 }
               }
