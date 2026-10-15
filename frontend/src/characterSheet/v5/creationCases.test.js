@@ -48,7 +48,7 @@ const CODES = [
   [/^.+ cannot take the .+ predator type\.$/, 'predator_forbidden'],
   [/^Pick the predator type specialty\.$/, 'predator_specialty'],
   [/^Pick the predator type Discipline\.$/, 'predator_discipline'],
-  [/^.+: (choose one of|share \d+ dots between|choose the dots for) /, 'predator_grant'],
+  [/^.+: (choose one of|share \d+ dots between|choose the dots for|choose which) /, 'predator_grant'],
   [/^.+ is for ancillae only\.$/, 'predator_ancilla'],
   [/^.+ needs Blood Potency \d+ or less\.$/, 'predator_bp'],
   [/^Advantages: at most \d+ dots/, 'adv_over'],

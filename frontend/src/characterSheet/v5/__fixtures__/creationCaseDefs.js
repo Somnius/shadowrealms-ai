@@ -193,7 +193,8 @@ const caitiff = (over = {}) => ({
   predatorType: 'Osiris',
   predatorSpecialty: 1,
   predatorDiscipline: 'Presence',
-  predatorChoices: { a0: { 0: 2, 1: 1 }, f0: { 0: 1, 1: 1 } },
+  // the Mythic share is "any Mythic Flaw": the forge asks which (Folkloric Bane, 1 dot)
+  predatorChoices: { a0: { 0: 2, 1: 1 }, f0: { 0: 1, 1: 1 }, 'f0:1:pick': 'flaw:folkloric-bane' },
   extraPowers: {},
   advantages: [
     { name: 'Resources', dots: 2, kind: 'background' },
@@ -604,7 +605,7 @@ export const CASE_DEFS = [
   { name: 'predator: Grim Reaper without its Allies or Influence choice', sheet: () => hecata({ predatorChoices: {} }), expect: ['predator_grant'] },
   {
     name: 'predator: Osiris shares 2 of its 3 Fame/Herd dots',
-    sheet: () => caitiff({ predatorChoices: { a0: { 0: 1, 1: 1 }, f0: { 0: 1, 1: 1 } } }),
+    sheet: () => caitiff({ predatorChoices: { a0: { 0: 1, 1: 1 }, f0: { 0: 1, 1: 1 }, 'f0:1:pick': 'flaw:folkloric-bane' } }),
     expect: ['predator_grant'],
   },
   { name: 'predator: Farmer ancilla is over Blood Potency 2', sheet: () => farmerAncilla(), expect: ['predator_bp'] },
