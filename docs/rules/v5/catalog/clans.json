@@ -94,14 +94,27 @@
       "source": "pdf",
       "disciplines": [],
       "disciplines_page": 107,
-      "bane": {
-        "name": null,
-        "page": 107
-      },
+      "bane": null,
       "compulsion": null,
       "bane_variants": [],
       "caitiff": true,
-      "thin_blood": false
+      "thin_blood": false,
+      "creation": {
+        "flaws": [
+          {
+            "id": "flaw:suspect",
+            "dots": 1
+          }
+        ],
+        "no_positive_status": true,
+        "discipline_xp_multiplier": 6,
+        "book": "v5-corebook",
+        "page": 107
+      },
+      "manual_fields": [
+        "bane",
+        "creation"
+      ]
     },
     {
       "id": "clan:gangrel",

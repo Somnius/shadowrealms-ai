@@ -203,8 +203,10 @@ def build_clans(extracted: dict, prec: dict, report: list[str]) -> dict:
             "caitiff": name == "Caitiff",
             "thin_blood": name == "Thin-blood",
         }
+        if r.get("creation"):
+            e["creation"] = r["creation"]
         if r.get("manual_fields"):
-            rename = {"bane_name": "bane.name", "bane_name_ref": "bane.name_ref"}
+            rename = {"bane_name": "bane.name", "bane_name_ref": "bane.name_ref", "bane_page": "bane"}
             e["manual_fields"] = sorted(rename.get(k, k) for k in r["manual_fields"])
         if e["bane"]["page"] is None and e["bane"]["name"] is None:
             e["bane"] = None
@@ -293,7 +295,7 @@ def needs_review(files: dict) -> list[str]:
             out.append(f"- {e['id']}: no predator pool printed")
     for e in files["clans"]["entries"]:
         if e["bane"] is None:
-            out.append(f"- {e['id']}: no Bane heading in its block (bane null)")
+            out.append(f"- {e['id']}: no clan bane (bane null)")
         if e["compulsion"] is None:
             out.append(f"- {e['id']}: no Compulsion printed (compulsion null)")
     return out

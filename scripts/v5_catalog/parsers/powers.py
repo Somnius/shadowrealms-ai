@@ -175,9 +175,9 @@ def parse(lines: list[Line]) -> tuple[list[dict], list[str]]:
                     prev = cur["prerequisite_text"]
                     cur["prerequisite_text"] = prev[:-1] + t if prev.endswith("-") else f"{prev} {t}"
                 elif field == "cost":
-                    cur["cost_text"] = f"{cur['cost_text']} {t}".strip()
+                    cur["cost_text"] = c.join_wrapped(cur["cost_text"], t)
                 elif field == "dice_pool":
-                    cur["dice_pool_text"] = f"{cur['dice_pool_text']} {t}".strip()
+                    cur["dice_pool_text"] = c.join_wrapped(cur["dice_pool_text"], t)
                 if len(cur["snippet"]) < 200:
                     cur["snippet"] = f"{cur['snippet']} {t}".strip()[:200]
                 if field in ("head", "amalgam", "prerequisite"):

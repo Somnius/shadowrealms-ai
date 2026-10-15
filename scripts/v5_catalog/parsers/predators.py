@@ -31,10 +31,7 @@ def _is_bullet(text: str) -> bool:
 
 
 def _join(prev: str, nxt: str) -> str:
-    """Join a wrapped line, undoing end-of-line hyphenation ('Lock-' + 'picking')."""
-    if prev.endswith("-") and nxt[:1].islower():
-        return prev[:-1] + nxt
-    return f"{prev} {nxt}".strip()
+    return c.join_wrapped(prev, nxt)
 
 
 def parse(lines: list[Line]) -> tuple[list[dict], list[str]]:

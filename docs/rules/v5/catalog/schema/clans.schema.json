@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "shadowrealms/v5/catalog/clans.schema.json",
   "title": "V5 clans",
-  "description": "13 clans + Caitiff + Thin-blood. Facts only: in-clan Disciplines (ids), where the Bane and Compulsion are printed, Bane name (PG clan sheet), PG bane variants.",
+  "description": "13 clans + Caitiff + Thin-blood. Facts only: in-clan Disciplines (ids), where the Bane and Compulsion are printed, Bane name (PG clan sheet), PG bane variants. bane is null when the clan has no bane (Caitiff, Thin-blood); creation holds clan-specific creation rules.",
   "type": "object",
   "required": [
     "catalog",
@@ -223,6 +223,53 @@
           },
           "thin_blood": {
             "type": "boolean"
+          },
+          "creation": {
+            "type": "object",
+            "required": [
+              "book",
+              "page"
+            ],
+            "additionalProperties": false,
+            "description": "Clan-specific creation rules (Caitiff, core pr 107).",
+            "properties": {
+              "flaws": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "required": [
+                    "id",
+                    "dots"
+                  ],
+                  "additionalProperties": false,
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "pattern": "^flaw:[a-z0-9-]+$"
+                    },
+                    "dots": {
+                      "type": "integer",
+                      "minimum": 1,
+                      "maximum": 5
+                    }
+                  }
+                }
+              },
+              "no_positive_status": {
+                "type": "boolean"
+              },
+              "discipline_xp_multiplier": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 10
+              },
+              "book": {
+                "$ref": "#/$defs/book"
+              },
+              "page": {
+                "$ref": "#/$defs/page"
+              }
+            }
           }
         }
       }

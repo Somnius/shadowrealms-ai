@@ -18,10 +18,20 @@ _DOTS = "•●"  # • and ●
 
 def norm_space(s: str) -> str:
     s = s.replace(" ", " ")
-    s = re.sub(r"(?i)\s*[’']\s*s\b", "'s", s)  # "cat ’ s grace" -> "cat's grace"
+    # "cat ’ s grace" -> "cat's grace", "GORGON’S" -> "GORGON'S" (case kept: titles are all one case)
+    s = re.sub(r"\s*[’']\s*([sS])\b", r"'\1", s)
     s = s.replace("’", "'").replace("‘", "'")
     s = re.sub(r"\s+", " ", s).strip()
     return re.sub(r"\s+-$", "-", s)
+
+
+def join_wrapped(prev: str | None, nxt: str) -> str:
+    """Join a wrapped line, undoing end-of-line hyphenation ('Animal-' + 'ism')."""
+    prev = (prev or "").rstrip()
+    nxt = nxt.strip()
+    if prev.endswith("-") and nxt[:1].islower():
+        return prev[:-1] + nxt
+    return f"{prev} {nxt}".strip()
 
 
 def strip_bullet(s: str) -> str:
@@ -135,12 +145,18 @@ _POOL_RE = re.compile(
 
 
 def dice_pool(text: str | None) -> str | None:
-    """Keep a pool only when it is a plain list of trait names ('Wits + Auspex vs Resolve')."""
+    """Keep a pool only when it is a plain list of trait names ('Wits + Auspex vs Resolve').
+
+    A trailing parenthetical note ('(if resisted)') is dropped; several pools separated by
+    commas are kept as printed ('Manipulation + Animalism, Charisma + Animalism').
+    """
     if not text:
         return None
     t = norm_space(text).rstrip(".").strip()
+    t = re.sub(r"\s*\([^()]*\)\.?$", "", t).strip()
     t = re.sub(r"\s*\+\s*", " + ", t)
     t = re.sub(r"\bvs\.?\s", "vs ", t)
-    if len(t) > 90 or not _POOL_RE.match(t) or "+" not in t:
+    parts = [x.strip() for x in t.split(",")]
+    if len(t) > 90 or not all(_POOL_RE.match(x) and "+" in x for x in parts):
         return None
-    return t
+    return ", ".join(parts)
