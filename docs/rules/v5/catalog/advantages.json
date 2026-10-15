@@ -1,0 +1,4607 @@
+{
+  "catalog": "advantages",
+  "version": 1,
+  "entries": [
+    {
+      "id": "background:allies",
+      "name": "Allies",
+      "kind": "background",
+      "group": "Allies",
+      "dots": {
+        "min": 1,
+        "max": 6
+      },
+      "book": "v5-corebook",
+      "page": 184,
+      "also_in": [
+        {
+          "book": "v5-players-guide",
+          "page": 109
+        }
+      ],
+      "aliases": [],
+      "source": "pdf",
+      "master_list_page": 232,
+      "thin_blood": false,
+      "caitiff": false,
+      "ghoul_only": false,
+      "coterie": false,
+      "clans_only": null,
+      "cannot_buy_for": [],
+      "repeatable": true,
+      "requires": null,
+      "levels": []
+    },
+    {
+      "id": "background:bloodline",
+      "name": "Bloodline",
+      "kind": "background",
+      "group": "Bloodline",
+      "dots": {
+        "min": 1,
+        "max": 5
+      },
+      "book": "v5-players-guide",
+      "page": 114,
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf",
+      "master_list_page": 232,
+      "thin_blood": false,
+      "caitiff": false,
+      "ghoul_only": false,
+      "coterie": false,
+      "clans_only": null,
+      "cannot_buy_for": [],
+      "repeatable": true,
+      "requires": null,
+      "levels": [],
+      "manual_fields": [
+        "page"
+      ]
+    },
+    {
+      "id": "background:contacts",
+      "name": "Contacts",
+      "kind": "background",
+      "group": "Contacts",
+      "dots": {
+        "min": 1,
+        "max": 3
+      },
+      "book": "v5-corebook",
+      "page": 186,
+      "also_in": [
+        {
+          "book": "v5-players-guide",
+          "page": 110
+        }
+      ],
+      "aliases": [
+        "Contact"
+      ],
+      "source": "pdf",
+      "master_list_page": 232,
+      "thin_blood": false,
+      "caitiff": false,
+      "ghoul_only": false,
+      "coterie": false,
+      "clans_only": null,
+      "cannot_buy_for": [],
+      "repeatable": true,
+      "requires": null,
+      "levels": [],
+      "manual_fields": [
+        "aliases"
+      ]
+    },
+    {
+      "id": "background:domain",
+      "name": "Domain",
+      "kind": "background",
+      "group": "Domain",
+      "dots": null,
+      "book": "v5-corebook",
+      "page": 195,
+      "also_in": [
+        {
+          "book": "v5-players-guide",
+          "page": 173
+        }
+      ],
+      "aliases": [],
+      "source": "manual",
+      "master_list_page": null,
+      "thin_blood": false,
+      "caitiff": false,
+      "ghoul_only": false,
+      "coterie": true,
+      "clans_only": null,
+      "cannot_buy_for": [],
+      "repeatable": false,
+      "requires": null,
+      "levels": [],
+      "parts": [
+        "Chasse",
+        "Lien",
+        "Portillon"
+      ]
+    },
+    {
+      "id": "background:fame",
+      "name": "Fame",
+      "kind": "background",
+      "group": "Fame",
+      "dots": {
+        "min": 1,
+        "max": 5
+      },
+      "book": "v5-corebook",
+      "page": 187,
+      "also_in": [
+        {
+          "book": "v5-players-guide",
+          "page": 110
+        }
+      ],
+      "aliases": [],
+      "source": "pdf",
+      "master_list_page": 232,
+      "thin_blood": false,
+      "caitiff": false,
+      "ghoul_only": false,
+      "coterie": false,
+      "clans_only": null,
+      "cannot_buy_for": [],
+      "repeatable": true,
+      "requires": null,
+      "levels": []
+    },
+    {
+      "id": "background:haven",
+      "name": "Haven",
+      "kind": "background",
+      "group": "Haven",
+      "dots": {
+        "min": 1,
+        "max": null
+      },
+      "book": "v5-corebook",
+      "page": 188,
+      "also_in": [
+        {
+          "book": "v5-players-guide",
+          "page": 111
+        }
+      ],
+      "aliases": [],
+      "source": "pdf",
+      "master_list_page": 232,
+      "thin_blood": false,
+      "caitiff": false,
+      "ghoul_only": false,
+      "coterie": false,
+      "clans_only": null,
+      "cannot_buy_for": [],
+      "repeatable": true,
+      "requires": null,
+      "levels": []
+    },
+    {
+      "id": "background:herd",
+      "name": "Herd",
+      "kind": "background",
+      "group": "Herd",
+      "dots": {
+        "min": 1,
+        "max": 5
+      },
+      "book": "v5-corebook",
+      "page": 189,
+      "also_in": [
+        {
+          "book": "v5-players-guide",
+          "page": 113
+        }
+      ],
+      "aliases": [],
+      "source": "pdf",
+      "master_list_page": 232,
+      "thin_blood": false,
+      "caitiff": false,
+      "ghoul_only": false,
+      "coterie": false,
+      "clans_only": null,
+      "cannot_buy_for": [],
+      "repeatable": true,
+      "requires": null,
+      "levels": []
+    },
+    {
+      "id": "background:influence",
+      "name": "Influence",
+      "kind": "background",
+      "group": "Influence",
+      "dots": {
+        "min": 1,
+        "max": 5
+      },
+      "book": "v5-corebook",
+      "page": 187,
+      "also_in": [
+        {
+          "book": "v5-players-guide",
+          "page": 113
+        }
+      ],
+      "aliases": [],
+      "source": "pdf",
+      "master_list_page": 232,
+      "thin_blood": false,
+      "caitiff": false,
+      "ghoul_only": false,
+      "coterie": false,
+      "clans_only": null,
+      "cannot_buy_for": [],
+      "repeatable": true,
+      "requires": null,
+      "levels": [
+        {
+          "dots": 1,
+          "name": "Well-connected"
+        },
+        {
+          "dots": 2,
+          "name": "Influential"
+        },
+        {
+          "dots": 3,
+          "name": "Entrenched"
+        },
+        {
+          "dots": 4,
+          "name": "Powerful"
+        },
+        {
+          "dots": 5,
+          "name": "Dominant"
+        }
+      ]
+    },
+    {
+      "id": "background:loresheets",
+      "name": "Loresheets",
+      "kind": "background",
+      "group": "Loresheets",
+      "dots": {
+        "min": 1,
+        "max": 5
+      },
+      "book": "v5-corebook",
+      "page": 190,
+      "also_in": [
+        {
+          "book": "v5-players-guide",
+          "page": 114
+        }
+      ],
+      "aliases": [],
+      "source": "pdf",
+      "master_list_page": 232,
+      "thin_blood": false,
+      "caitiff": false,
+      "ghoul_only": false,
+      "coterie": false,
+      "clans_only": null,
+      "cannot_buy_for": [],
+      "repeatable": true,
+      "requires": null,
+      "levels": []
+    },
+    {
+      "id": "background:mask",
+      "name": "Mask",
+      "kind": "background",
+      "group": "Mask",
+      "dots": {
+        "allowed": [
+          1,
+          2
+        ]
+      },
+      "book": "v5-corebook",
+      "page": 190,
+      "also_in": [
+        {
+          "book": "v5-players-guide",
+          "page": 114
+        }
+      ],
+      "aliases": [],
+      "source": "pdf",
+      "master_list_page": 232,
+      "thin_blood": false,
+      "caitiff": false,
+      "ghoul_only": false,
+      "coterie": false,
+      "clans_only": null,
+      "cannot_buy_for": [],
+      "repeatable": true,
+      "requires": null,
+      "levels": []
+    },
+    {
+      "id": "background:mawla",
+      "name": "Mawla",
+      "kind": "background",
+      "group": "Mawla",
+      "dots": {
+        "min": 1,
+        "max": 5
+      },
+      "book": "v5-corebook",
+      "page": 192,
+      "also_in": [
+        {
+          "book": "v5-players-guide",
+          "page": 115
+        }
+      ],
+      "aliases": [],
+      "source": "pdf",
+      "master_list_page": 232,
+      "thin_blood": false,
+      "caitiff": false,
+      "ghoul_only": false,
+      "coterie": false,
+      "clans_only": null,
+      "cannot_buy_for": [
+        {
+          "clan": "clan:thin-blood",
+          "when": "creation",
+          "book": "v5-corebook",
+          "page": 149
+        }
+      ],
+      "repeatable": true,
+      "requires": null,
+      "levels": [],
+      "manual_fields": [
+        "cannot_buy_for"
+      ]
+    },
+    {
+      "id": "background:minor-boon",
+      "name": "Minor Boon",
+      "kind": "background",
+      "group": "Minor Boon",
+      "dots": {
+        "min": 1,
+        "max": 3
+      },
+      "book": "v5-corebook",
+      "page": 193,
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf",
+      "master_list_page": 232,
+      "thin_blood": false,
+      "caitiff": false,
+      "ghoul_only": false,
+      "coterie": false,
+      "clans_only": null,
+      "cannot_buy_for": [],
+      "repeatable": true,
+      "requires": null,
+      "levels": []
+    },
+    {
+      "id": "background:resources",
+      "name": "Resources",
+      "kind": "background",
+      "group": "Resources",
+      "dots": {
+        "min": 1,
+        "max": 5
+      },
+      "book": "v5-corebook",
+      "page": 193,
+      "also_in": [
+        {
+          "book": "v5-players-guide",
+          "page": 116
+        }
+      ],
+      "aliases": [],
+      "source": "pdf",
+      "master_list_page": 232,
+      "thin_blood": false,
+      "caitiff": false,
+      "ghoul_only": false,
+      "coterie": false,
+      "clans_only": null,
+      "cannot_buy_for": [],
+      "repeatable": true,
+      "requires": null,
+      "levels": [
+        {
+          "dots": 1,
+          "name": "Portfolio Proletariat"
+        },
+        {
+          "dots": 2,
+          "name": "Middle Class"
+        },
+        {
+          "dots": 3,
+          "name": "Rich"
+        },
+        {
+          "dots": 4,
+          "name": "Wealthy"
+        },
+        {
+          "dots": 5,
+          "name": "Ultra Rich"
+        }
+      ]
+    },
+    {
+      "id": "background:retainers",
+      "name": "Retainers",
+      "kind": "background",
+      "group": "Retainers",
+      "dots": {
+        "min": 1,
+        "max": 3
+      },
+      "book": "v5-corebook",
+      "page": 194,
+      "also_in": [
+        {
+          "book": "v5-players-guide",
+          "page": 116
+        }
+      ],
+      "aliases": [],
+      "source": "pdf",
+      "master_list_page": 232,
+      "thin_blood": false,
+      "caitiff": false,
+      "ghoul_only": false,
+      "coterie": false,
+      "clans_only": null,
+      "cannot_buy_for": [
+        {
+          "clan": "clan:thin-blood",
+          "when": "creation",
+          "book": "v5-corebook",
+          "page": 149
+        }
+      ],
+      "repeatable": true,
+      "requires": null,
+      "levels": [],
+      "manual_fields": [
+        "cannot_buy_for"
+      ]
+    },
+    {
+      "id": "background:status",
+      "name": "Status",
+      "kind": "background",
+      "group": "Status",
+      "dots": {
+        "min": 1,
+        "max": 5
+      },
+      "book": "v5-corebook",
+      "page": 194,
+      "also_in": [
+        {
+          "book": "v5-players-guide",
+          "page": 117
+        }
+      ],
+      "aliases": [],
+      "source": "pdf",
+      "master_list_page": 232,
+      "thin_blood": false,
+      "caitiff": false,
+      "ghoul_only": false,
+      "coterie": false,
+      "clans_only": null,
+      "cannot_buy_for": [
+        {
+          "clan": "clan:thin-blood",
+          "when": "creation",
+          "book": "v5-corebook",
+          "page": 149
+        }
+      ],
+      "repeatable": true,
+      "requires": null,
+      "levels": [
+        {
+          "dots": 1,
+          "name": "Known"
+        },
+        {
+          "dots": 2,
+          "name": "Respected"
+        },
+        {
+          "dots": 3,
+          "name": "Influential"
+        },
+        {
+          "dots": 4,
+          "name": "Powerful"
+        },
+        {
+          "dots": 5,
+          "name": "Luminary"
+        }
+      ],
+      "manual_fields": [
+        "cannot_buy_for"
+      ]
+    },
+    {
+      "id": "merit:bond-resistance",
+      "name": "Bond Resistance",
+      "kind": "merit",
+      "group": "Bonding",
+      "dots": {
+        "min": 1,
+        "max": 3
+      },
+      "book": "v5-corebook",
+      "page": 181,
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf",
+      "master_list_page": 232,
+      "thin_blood": false,
+      "caitiff": false,
+      "ghoul_only": false,
+      "coterie": false,
+      "clans_only": null,
+      "cannot_buy_for": [
+        {
+          "clan": "clan:thin-blood",
+          "when": "creation",
+          "book": "v5-corebook",
+          "page": 149
+        }
+      ],
+      "repeatable": false,
+      "requires": null,
+      "levels": [],
+      "manual_fields": [
+        "cannot_buy_for"
+      ]
+    },
+    {
+      "id": "merit:short-bond",
+      "name": "Short Bond",
+      "kind": "merit",
+      "group": "Bonding",
+      "dots": {
+        "min": 2,
+        "max": 2
+      },
+      "book": "v5-corebook",
+      "page": 181,
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf",
+      "master_list_page": 233,
+      "thin_blood": false,
+      "caitiff": false,
+      "ghoul_only": false,
+      "coterie": false,
+      "clans_only": null,
+      "cannot_buy_for": [
+        {
+          "clan": "clan:thin-blood",
+          "when": "creation",
+          "book": "v5-corebook",
+          "page": 149
+        }
+      ],
+      "repeatable": false,
+      "requires": null,
+      "levels": [],
+      "manual_fields": [
+        "cannot_buy_for"
+      ]
+    },
+    {
+      "id": "merit:unbondable",
+      "name": "Unbondable",
+      "kind": "merit",
+      "group": "Bonding",
+      "dots": {
+        "min": 5,
+        "max": 5
+      },
+      "book": "v5-corebook",
+      "page": 181,
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf",
+      "master_list_page": 233,
+      "thin_blood": false,
+      "caitiff": false,
+      "ghoul_only": false,
+      "coterie": false,
+      "clans_only": null,
+      "cannot_buy_for": [
+        {
+          "clan": "clan:thin-blood",
+          "when": "creation",
+          "book": "v5-corebook",
+          "page": 149
+        }
+      ],
+      "repeatable": false,
+      "requires": null,
+      "levels": [],
+      "manual_fields": [
+        "cannot_buy_for"
+      ]
+    },
+    {
+      "id": "merit:caitiff-favored-blood",
+      "name": "Favored Blood",
+      "kind": "merit",
+      "group": "Caitiff",
+      "dots": {
+        "min": 4,
+        "max": 4
+      },
+      "book": "v5-players-guide",
+      "page": 126,
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf",
+      "master_list_page": 234,
+      "thin_blood": false,
+      "caitiff": true,
+      "ghoul_only": false,
+      "coterie": false,
+      "clans_only": null,
+      "cannot_buy_for": [],
+      "repeatable": false,
+      "requires": null,
+      "levels": []
+    },
+    {
+      "id": "merit:caitiff-mark-of-caine",
+      "name": "Mark of Caine",
+      "kind": "merit",
+      "group": "Caitiff",
+      "dots": {
+        "min": 2,
+        "max": 2
+      },
+      "book": "v5-players-guide",
+      "page": 126,
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf",
+      "master_list_page": 234,
+      "thin_blood": false,
+      "caitiff": true,
+      "ghoul_only": false,
+      "coterie": false,
+      "clans_only": null,
+      "cannot_buy_for": [],
+      "repeatable": false,
+      "requires": null,
+      "levels": []
+    },
+    {
+      "id": "merit:caitiff-mockingbird",
+      "name": "Mockingbird",
+      "kind": "merit",
+      "group": "Caitiff",
+      "dots": {
+        "min": 3,
+        "max": 3
+      },
+      "book": "v5-players-guide",
+      "page": 126,
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf",
+      "master_list_page": 234,
+      "thin_blood": false,
+      "caitiff": true,
+      "ghoul_only": false,
+      "coterie": false,
+      "clans_only": null,
+      "cannot_buy_for": [],
+      "repeatable": false,
+      "requires": null,
+      "levels": []
+    },
+    {
+      "id": "merit:caitiff-sun-scarred",
+      "name": "Sun-Scarred",
+      "kind": "merit",
+      "group": "Caitiff",
+      "dots": {
+        "min": 5,
+        "max": 5
+      },
+      "book": "v5-players-guide",
+      "page": 126,
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf",
+      "master_list_page": 234,
+      "thin_blood": false,
+      "caitiff": true,
+      "ghoul_only": false,
+      "coterie": false,
+      "clans_only": null,
+      "cannot_buy_for": [],
+      "repeatable": false,
+      "requires": null,
+      "levels": []
+    },
+    {
+      "id": "merit:caitiff-uncle-fangs",
+      "name": "Uncle Fangs",
+      "kind": "merit",
+      "group": "Caitiff",
+      "dots": {
+        "min": 3,
+        "max": 3
+      },
+      "book": "v5-players-guide",
+      "page": 126,
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf",
+      "master_list_page": 234,
+      "thin_blood": false,
+      "caitiff": true,
+      "ghoul_only": false,
+      "coterie": false,
+      "clans_only": null,
+      "cannot_buy_for": [],
+      "repeatable": false,
+      "requires": null,
+      "levels": []
+    },
+    {
+      "id": "merit:coterie-all-access",
+      "name": "All Access",
+      "kind": "merit",
+      "group": "Clan Coterie",
+      "dots": {
+        "min": 1,
+        "max": 1
+      },
+      "book": "v5-players-guide",
+      "page": 187,
+      "also_in": [
+        {
+          "book": "v5-companion",
+          "page": 38
+        }
+      ],
+      "aliases": [],
+      "source": "pdf",
+      "master_list_page": 238,
+      "thin_blood": false,
+      "caitiff": false,
+      "ghoul_only": false,
+      "coterie": true,
+      "clans_only": [
+        "clan:toreador"
+      ],
+      "cannot_buy_for": [],
+      "repeatable": false,
+      "requires": null,
+      "levels": []
+    },
+    {
+      "id": "merit:coterie-ars-moriendi",
+      "name": "Ars Moriendi",
+      "kind": "merit",
+      "group": "Clan Coterie",
+      "dots": {
+        "min": 2,
+        "max": 2
+      },
+      "book": "v5-players-guide",
+      "page": 182,
+      "also_in": [
+        {
+          "book": "v5-companion",
+          "page": 33
+        }
+      ],
+      "aliases": [],
+      "source": "pdf",
+      "master_list_page": 238,
+      "thin_blood": false,
+      "caitiff": false,
+      "ghoul_only": false,
+      "coterie": true,
+      "clans_only": [
+        "clan:hecata"
+      ],
+      "cannot_buy_for": [],
+      "repeatable": false,
+      "requires": null,
+      "levels": []
+    },
+    {
+      "id": "merit:coterie-at-any-cost",
+      "name": "At Any Cost",
+      "kind": "merit",
+      "group": "Clan Coterie",
+      "dots": {
+        "min": 2,
+        "max": 2
+      },
+      "book": "v5-players-guide",
+      "page": 182,
+      "also_in": [
+        {
+          "book": "v5-companion",
+          "page": 34
+        }
+      ],
+      "aliases": [],
+      "source": "pdf",
+      "master_list_page": 238,
+      "thin_blood": false,
+      "caitiff": false,
+      "ghoul_only": false,
+      "coterie": true,
+      "clans_only": [
+        "clan:lasombra"
+      ],
+      "cannot_buy_for": [],
+      "repeatable": false,
+      "requires": null,
+      "levels": []
+    },
+    {
+      "id": "merit:coterie-boot-and-rally",
+      "name": "Boot and Rally",
+      "kind": "merit",
+      "group": "Clan Coterie",
+      "dots": {
+        "min": 1,
+        "max": 1
+      },
+      "book": "v5-players-guide",
+      "page": 180,
+      "also_in": [
+        {
+          "book": "v5-companion",
+          "page": 32
+        }
+      ],
+      "aliases": [],
+      "source": "pdf",
+      "master_list_page": 238,
+      "thin_blood": false,
+      "caitiff": false,
+      "ghoul_only": false,
+      "coterie": true,
+      "clans_only": [
+        "clan:brujah"
+      ],
+      "cannot_buy_for": [],
+      "repeatable": false,
+      "requires": null,
+      "levels": []
+    },
+    {
+      "id": "merit:coterie-call-to-purpose",
+      "name": "Call to Purpose",
+      "kind": "merit",
+      "group": "Clan Coterie",
+      "dots": {
+        "min": 2,
+        "max": 2
+      },
+      "book": "v5-players-guide",
+      "page": 179,
+      "also_in": [
+        {
+          "book": "v5-companion",
+          "page": 31
+        }
+      ],
+      "aliases": [],
+      "source": "pdf",
+      "master_list_page": 238,
+      "thin_blood": false,
+      "caitiff": false,
+      "ghoul_only": false,
+      "coterie": true,
+      "clans_only": [
+        "clan:banu-haqim"
+      ],
+      "cannot_buy_for": [],
+      "repeatable": false,
+      "requires": null,
+      "levels": []
+    },
+    {
+      "id": "merit:coterie-contextual-contact",
+      "name": "Contextual Contact",
+      "kind": "merit",
+      "group": "Clan Coterie",
+      "dots": {
+        "min": 2,
+        "max": 2
+      },
+      "book": "v5-players-guide",
+      "page": 185,
+      "also_in": [
+        {
+          "book": "v5-companion",
+          "page": 37
+        }
+      ],
+      "aliases": [],
+      "source": "pdf",
+      "master_list_page": 238,
+      "thin_blood": false,
+      "caitiff": false,
+      "ghoul_only": false,
+      "coterie": true,
+      "clans_only": [
+        "clan:nosferatu"
+      ],
+      "cannot_buy_for": [],
+      "repeatable": false,
+      "requires": null,
+      "levels": []
+    },
+    {
+      "id": "merit:coterie-cryptolect",
+      "name": "Cryptolect",
+      "kind": "merit",
+      "group": "Clan Coterie",
+      "dots": {
+        "min": 3,
+        "max": 3
+      },
+      "book": "v5-players-guide",
+      "page": 185,
+      "also_in": [
+        {
+          "book": "v5-companion",
+          "page": 38
+        }
+      ],
+      "aliases": [],
+      "source": "pdf",
+      "master_list_page": 238,
+      "thin_blood": false,
+      "caitiff": false,
+      "ghoul_only": false,
+      "coterie": true,
+      "clans_only": [
+        "clan:ravnos"
+      ],
+      "cannot_buy_for": [],
+      "repeatable": false,
+      "requires": null,
+      "levels": []
+    },
+    {
+      "id": "merit:coterie-discerning",
+      "name": "Discerning",
+      "kind": "merit",
+      "group": "Clan Coterie",
+      "dots": {
+        "min": 1,
+        "max": 1
+      },
+      "book": "v5-players-guide",
+      "page": 184,
+      "also_in": [
+        {
+          "book": "v5-companion",
+          "page": 36
+        }
+      ],
+      "aliases": [],
+      "source": "pdf",
+      "master_list_page": 238,
+      "thin_blood": false,
+      "caitiff": false,
+      "ghoul_only": false,
+      "coterie": true,
+      "clans_only": [
+        "clan:ministry"
+      ],
+      "cannot_buy_for": [],
+      "repeatable": false,
+      "requires": null,
+      "levels": []
+    },
+    {
+      "id": "merit:coterie-everything-is-connected",
+      "name": "Everything Is Connected",
+      "kind": "merit",
+      "group": "Clan Coterie",
+      "dots": {
+        "min": 3,
+        "max": 3
+      },
+      "book": "v5-players-guide",
+      "page": 183,
+      "also_in": [
+        {
+          "book": "v5-companion",
+          "page": 35
+        }
+      ],
+      "aliases": [],
+      "source": "pdf",
+      "master_list_page": 238,
+      "thin_blood": false,
+      "caitiff": false,
+      "ghoul_only": false,
+      "coterie": true,
+      "clans_only": [
+        "clan:malkavian"
+      ],
+      "cannot_buy_for": [],
+      "repeatable": false,
+      "requires": null,
+      "levels": []
+    },
+    {
+      "id": "merit:coterie-kindred-legacies",
+      "name": "Kindred Legacies",
+      "kind": "merit",
+      "group": "Clan Coterie",
+      "dots": {
+        "min": 2,
+        "max": 2
+      },
+      "book": "v5-players-guide",
+      "page": 189,
+      "also_in": [
+        {
+          "book": "v5-companion",
+          "page": 40
+        }
+      ],
+      "aliases": [],
+      "source": "pdf",
+      "master_list_page": 238,
+      "thin_blood": false,
+      "caitiff": false,
+      "ghoul_only": false,
+      "coterie": true,
+      "clans_only": [
+        "clan:ventrue"
+      ],
+      "cannot_buy_for": [],
+      "repeatable": false,
+      "requires": null,
+      "levels": []
+    },
+    {
+      "id": "merit:coterie-mortal-heart",
+      "name": "Mortal Heart",
+      "kind": "merit",
+      "group": "Clan Coterie",
+      "dots": {
+        "min": 2,
+        "max": 2
+      },
+      "book": "v5-players-guide",
+      "page": 191,
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf",
+      "master_list_page": 238,
+      "thin_blood": false,
+      "caitiff": false,
+      "ghoul_only": false,
+      "coterie": true,
+      "clans_only": [
+        "clan:thin-blood"
+      ],
+      "cannot_buy_for": [],
+      "repeatable": false,
+      "requires": null,
+      "levels": []
+    },
+    {
+      "id": "merit:coterie-multi-level-lorekeeping",
+      "name": "Multi-Level Lorekeeping",
+      "kind": "merit",
+      "group": "Clan Coterie",
+      "dots": {
+        "min": 2,
+        "max": 2
+      },
+      "book": "v5-players-guide",
+      "page": 188,
+      "also_in": [
+        {
+          "book": "v5-companion",
+          "page": 39
+        }
+      ],
+      "aliases": [],
+      "source": "pdf",
+      "master_list_page": 238,
+      "thin_blood": false,
+      "caitiff": false,
+      "ghoul_only": false,
+      "coterie": true,
+      "clans_only": [
+        "clan:tremere"
+      ],
+      "cannot_buy_for": [],
+      "repeatable": false,
+      "requires": null,
+      "levels": []
+    },
+    {
+      "id": "merit:coterie-old-world-hospitality",
+      "name": "Old-World Hospitality",
+      "kind": "merit",
+      "group": "Clan Coterie",
+      "dots": {
+        "min": 2,
+        "max": 2
+      },
+      "book": "v5-players-guide",
+      "page": 189,
+      "also_in": [
+        {
+          "book": "v5-companion",
+          "page": 40
+        }
+      ],
+      "aliases": [],
+      "source": "pdf",
+      "master_list_page": 238,
+      "thin_blood": false,
+      "caitiff": false,
+      "ghoul_only": false,
+      "coterie": true,
+      "clans_only": [
+        "clan:tzimisce"
+      ],
+      "cannot_buy_for": [],
+      "repeatable": false,
+      "requires": null,
+      "levels": []
+    },
+    {
+      "id": "merit:coterie-pack-tactics",
+      "name": "Pack Tactics",
+      "kind": "merit",
+      "group": "Clan Coterie",
+      "dots": {
+        "min": 3,
+        "max": 3
+      },
+      "book": "v5-players-guide",
+      "page": 181,
+      "also_in": [
+        {
+          "book": "v5-companion",
+          "page": 32
+        }
+      ],
+      "aliases": [],
+      "source": "pdf",
+      "master_list_page": 238,
+      "thin_blood": false,
+      "caitiff": false,
+      "ghoul_only": false,
+      "coterie": true,
+      "clans_only": [
+        "clan:gangrel"
+      ],
+      "cannot_buy_for": [],
+      "repeatable": false,
+      "requires": null,
+      "levels": []
+    },
+    {
+      "id": "merit:coterie-restraint",
+      "name": "Restraint",
+      "kind": "merit",
+      "group": "Clan Coterie",
+      "dots": {
+        "min": 3,
+        "max": 3
+      },
+      "book": "v5-players-guide",
+      "page": 186,
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf",
+      "master_list_page": 238,
+      "thin_blood": false,
+      "caitiff": false,
+      "ghoul_only": false,
+      "coterie": true,
+      "clans_only": [
+        "clan:salubri"
+      ],
+      "cannot_buy_for": [],
+      "repeatable": false,
+      "requires": null,
+      "levels": []
+    },
+    {
+      "id": "merit:coterie-versatile-vitae",
+      "name": "Versatile Vitae",
+      "kind": "merit",
+      "group": "Clan Coterie",
+      "dots": {
+        "min": 2,
+        "max": 2
+      },
+      "book": "v5-players-guide",
+      "page": 190,
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf",
+      "master_list_page": 238,
+      "thin_blood": false,
+      "caitiff": false,
+      "ghoul_only": false,
+      "coterie": true,
+      "clans_only": [
+        "clan:caitiff"
+      ],
+      "cannot_buy_for": [],
+      "repeatable": false,
+      "requires": null,
+      "levels": []
+    },
+    {
+      "id": "merit:coterie-bolt-holes",
+      "name": "Bolt Holes",
+      "kind": "merit",
+      "group": "Coterie",
+      "dots": {
+        "min": 1,
+        "max": 3
+      },
+      "book": "v5-players-guide",
+      "page": 171,
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf",
+      "master_list_page": 238,
+      "thin_blood": false,
+      "caitiff": false,
+      "ghoul_only": false,
+      "coterie": true,
+      "clans_only": null,
+      "cannot_buy_for": [],
+      "repeatable": false,
+      "requires": null,
+      "levels": []
+    },
+    {
+      "id": "merit:coterie-on-tap",
+      "name": "On Tap",
+      "kind": "merit",
+      "group": "Coterie",
+      "dots": {
+        "min": 1,
+        "max": 3
+      },
+      "book": "v5-players-guide",
+      "page": 171,
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf",
+      "master_list_page": 238,
+      "thin_blood": false,
+      "caitiff": false,
+      "ghoul_only": false,
+      "coterie": true,
+      "clans_only": null,
+      "cannot_buy_for": [],
+      "repeatable": false,
+      "requires": null,
+      "levels": []
+    },
+    {
+      "id": "merit:coterie-privileged",
+      "name": "Privileged",
+      "kind": "merit",
+      "group": "Coterie",
+      "dots": {
+        "min": 3,
+        "max": 3
+      },
+      "book": "v5-players-guide",
+      "page": 171,
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf",
+      "master_list_page": 238,
+      "thin_blood": false,
+      "caitiff": false,
+      "ghoul_only": false,
+      "coterie": true,
+      "clans_only": null,
+      "cannot_buy_for": [],
+      "repeatable": false,
+      "requires": null,
+      "levels": []
+    },
+    {
+      "id": "merit:coterie-transportation",
+      "name": "Transportation",
+      "kind": "merit",
+      "group": "Coterie",
+      "dots": {
+        "min": 2,
+        "max": 2
+      },
+      "book": "v5-players-guide",
+      "page": 171,
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf",
+      "master_list_page": 238,
+      "thin_blood": false,
+      "caitiff": false,
+      "ghoul_only": false,
+      "coterie": true,
+      "clans_only": null,
+      "cannot_buy_for": [],
+      "repeatable": false,
+      "requires": null,
+      "levels": []
+    },
+    {
+      "id": "merit:bloodhound",
+      "name": "Bloodhound",
+      "kind": "merit",
+      "group": "Feeding",
+      "dots": {
+        "min": 1,
+        "max": 1
+      },
+      "book": "v5-corebook",
+      "page": 182,
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf",
+      "master_list_page": 232,
+      "thin_blood": false,
+      "caitiff": false,
+      "ghoul_only": false,
+      "coterie": false,
+      "clans_only": null,
+      "cannot_buy_for": [],
+      "repeatable": false,
+      "requires": null,
+      "levels": []
+    },
+    {
+      "id": "merit:iron-gullet",
+      "name": "Iron Gullet",
+      "kind": "merit",
+      "group": "Feeding",
+      "dots": {
+        "min": 3,
+        "max": 3
+      },
+      "book": "v5-corebook",
+      "page": 182,
+      "also_in": [],
+      "aliases": [
+        "Iron Gullet (Feeding Merit)"
+      ],
+      "source": "pdf",
+      "master_list_page": 233,
+      "thin_blood": false,
+      "caitiff": false,
+      "ghoul_only": false,
+      "coterie": false,
+      "clans_only": null,
+      "cannot_buy_for": [
+        {
+          "clan": "clan:ventrue",
+          "when": "always",
+          "book": "v5-corebook",
+          "page": 182
+        }
+      ],
+      "repeatable": false,
+      "requires": null,
+      "levels": [],
+      "manual_fields": [
+        "aliases",
+        "cannot_buy_for"
+      ]
+    },
+    {
+      "id": "merit:vessel-recognition",
+      "name": "Vessel Recognition",
+      "kind": "merit",
+      "group": "Feeding",
+      "dots": {
+        "min": 1,
+        "max": 1
+      },
+      "book": "v5-players-guide",
+      "page": 119,
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf",
+      "master_list_page": 233,
+      "thin_blood": false,
+      "caitiff": false,
+      "ghoul_only": false,
+      "coterie": false,
+      "clans_only": null,
+      "cannot_buy_for": [],
+      "repeatable": false,
+      "requires": null,
+      "levels": []
+    },
+    {
+      "id": "merit:ghoul-blood-empathy",
+      "name": "Blood Empathy",
+      "kind": "merit",
+      "group": "Ghoul",
+      "dots": {
+        "min": 2,
+        "max": 2
+      },
+      "book": "v5-players-guide",
+      "page": 141,
+      "also_in": [
+        {
+          "book": "v5-companion",
+          "page": 59
+        }
+      ],
+      "aliases": [],
+      "source": "pdf",
+      "master_list_page": 234,
+      "thin_blood": false,
+      "caitiff": false,
+      "ghoul_only": true,
+      "coterie": false,
+      "clans_only": null,
+      "cannot_buy_for": [],
+      "repeatable": false,
+      "requires": null,
+      "levels": []
+    },
+    {
+      "id": "merit:ghoul-unseemly-aura",
+      "name": "Unseemly Aura",
+      "kind": "merit",
+      "group": "Ghoul",
+      "dots": {
+        "min": 2,
+        "max": 2
+      },
+      "book": "v5-players-guide",
+      "page": 141,
+      "also_in": [
+        {
+          "book": "v5-companion",
+          "page": 60
+        }
+      ],
+      "aliases": [],
+      "source": "pdf",
+      "master_list_page": 234,
+      "thin_blood": false,
+      "caitiff": false,
+      "ghoul_only": true,
+      "coterie": false,
+      "clans_only": null,
+      "cannot_buy_for": [],
+      "repeatable": false,
+      "requires": null,
+      "levels": []
+    },
+    {
+      "id": "merit:business-establishment",
+      "name": "Business Establishment",
+      "kind": "merit",
+      "group": "Haven",
+      "dots": {
+        "allowed": [
+          2,
+          3
+        ]
+      },
+      "book": "v5-players-guide",
+      "page": 111,
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf",
+      "master_list_page": 233,
+      "thin_blood": false,
+      "caitiff": false,
+      "ghoul_only": false,
+      "coterie": false,
+      "clans_only": null,
+      "cannot_buy_for": [],
+      "repeatable": false,
+      "requires": null,
+      "levels": []
+    },
+    {
+      "id": "merit:cell",
+      "name": "Cell",
+      "kind": "merit",
+      "group": "Haven",
+      "dots": {
+        "min": 1,
+        "max": 5
+      },
+      "book": "v5-corebook",
+      "page": 189,
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf",
+      "master_list_page": 233,
+      "thin_blood": false,
+      "caitiff": false,
+      "ghoul_only": false,
+      "coterie": false,
+      "clans_only": null,
+      "cannot_buy_for": [],
+      "repeatable": false,
+      "requires": "Haven ••",
+      "levels": [],
+      "manual_fields": [
+        "requires"
+      ]
+    },
+    {
+      "id": "merit:furcus",
+      "name": "Furcus",
+      "kind": "merit",
+      "group": "Haven",
+      "dots": {
+        "min": 1,
+        "max": 3
+      },
+      "book": "v5-players-guide",
+      "page": 112,
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf",
+      "master_list_page": 233,
+      "thin_blood": false,
+      "caitiff": false,
+      "ghoul_only": false,
+      "coterie": false,
+      "clans_only": null,
+      "cannot_buy_for": [],
+      "repeatable": false,
+      "requires": null,
+      "levels": []
+    },
+    {
+      "id": "merit:hidden-armory",
+      "name": "Hidden Armory",
+      "kind": "merit",
+      "group": "Haven",
+      "dots": {
+        "min": 1,
+        "max": null
+      },
+      "book": "v5-corebook",
+      "page": 189,
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf",
+      "master_list_page": 233,
+      "thin_blood": false,
+      "caitiff": false,
+      "ghoul_only": false,
+      "coterie": false,
+      "clans_only": null,
+      "cannot_buy_for": [],
+      "repeatable": false,
+      "requires": null,
+      "levels": []
+    },
+    {
+      "id": "merit:laboratory",
+      "name": "Laboratory",
+      "kind": "merit",
+      "group": "Haven",
+      "dots": {
+        "min": 1,
+        "max": null
+      },
+      "book": "v5-corebook",
+      "page": 189,
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf",
+      "master_list_page": 233,
+      "thin_blood": false,
+      "caitiff": false,
+      "ghoul_only": false,
+      "coterie": false,
+      "clans_only": null,
+      "cannot_buy_for": [],
+      "repeatable": false,
+      "requires": "Haven ••",
+      "levels": [],
+      "manual_fields": [
+        "requires"
+      ]
+    },
+    {
+      "id": "merit:library",
+      "name": "Library",
+      "kind": "merit",
+      "group": "Haven",
+      "dots": {
+        "min": 1,
+        "max": null
+      },
+      "book": "v5-corebook",
+      "page": 189,
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf",
+      "master_list_page": 233,
+      "thin_blood": false,
+      "caitiff": false,
+      "ghoul_only": false,
+      "coterie": false,
+      "clans_only": null,
+      "cannot_buy_for": [],
+      "repeatable": false,
+      "requires": "more than one dot: Haven ••",
+      "levels": [],
+      "manual_fields": [
+        "requires"
+      ]
+    },
+    {
+      "id": "merit:location",
+      "name": "Location",
+      "kind": "merit",
+      "group": "Haven",
+      "dots": {
+        "min": 1,
+        "max": 1
+      },
+      "book": "v5-corebook",
+      "page": 189,
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf",
+      "master_list_page": 233,
+      "thin_blood": false,
+      "caitiff": false,
+      "ghoul_only": false,
+      "coterie": false,
+      "clans_only": null,
+      "cannot_buy_for": [],
+      "repeatable": false,
+      "requires": null,
+      "levels": []
+    },
+    {
+      "id": "merit:luxury",
+      "name": "Luxury",
+      "kind": "merit",
+      "group": "Haven",
+      "dots": {
+        "min": 1,
+        "max": 1
+      },
+      "book": "v5-corebook",
+      "page": 189,
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf",
+      "master_list_page": 233,
+      "thin_blood": false,
+      "caitiff": false,
+      "ghoul_only": false,
+      "coterie": false,
+      "clans_only": null,
+      "cannot_buy_for": [],
+      "repeatable": false,
+      "requires": null,
+      "levels": []
+    },
+    {
+      "id": "merit:machine-shop",
+      "name": "Machine Shop",
+      "kind": "merit",
+      "group": "Haven",
+      "dots": {
+        "min": 1,
+        "max": null
+      },
+      "book": "v5-players-guide",
+      "page": 112,
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf",
+      "master_list_page": 233,
+      "thin_blood": false,
+      "caitiff": false,
+      "ghoul_only": false,
+      "coterie": false,
+      "clans_only": null,
+      "cannot_buy_for": [],
+      "repeatable": false,
+      "requires": null,
+      "levels": []
+    },
+    {
+      "id": "merit:postern",
+      "name": "Postern",
+      "kind": "merit",
+      "group": "Haven",
+      "dots": {
+        "min": 1,
+        "max": null
+      },
+      "book": "v5-corebook",
+      "page": 189,
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf",
+      "master_list_page": 233,
+      "thin_blood": false,
+      "caitiff": false,
+      "ghoul_only": false,
+      "coterie": false,
+      "clans_only": null,
+      "cannot_buy_for": [],
+      "repeatable": false,
+      "requires": null,
+      "levels": []
+    },
+    {
+      "id": "merit:security-system",
+      "name": "Security System",
+      "kind": "merit",
+      "group": "Haven",
+      "dots": {
+        "min": 1,
+        "max": null
+      },
+      "book": "v5-corebook",
+      "page": 189,
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf",
+      "master_list_page": 234,
+      "thin_blood": false,
+      "caitiff": false,
+      "ghoul_only": false,
+      "coterie": false,
+      "clans_only": null,
+      "cannot_buy_for": [],
+      "repeatable": false,
+      "requires": null,
+      "levels": []
+    },
+    {
+      "id": "merit:surgery",
+      "name": "Surgery",
+      "kind": "merit",
+      "group": "Haven",
+      "dots": {
+        "min": 1,
+        "max": 1
+      },
+      "book": "v5-corebook",
+      "page": 189,
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf",
+      "master_list_page": 234,
+      "thin_blood": false,
+      "caitiff": false,
+      "ghoul_only": false,
+      "coterie": false,
+      "clans_only": null,
+      "cannot_buy_for": [],
+      "repeatable": false,
+      "requires": "Haven ••",
+      "levels": [],
+      "manual_fields": [
+        "requires"
+      ]
+    },
+    {
+      "id": "merit:warding",
+      "name": "Warding",
+      "kind": "merit",
+      "group": "Haven",
+      "dots": {
+        "min": 1,
+        "max": null
+      },
+      "book": "v5-corebook",
+      "page": 189,
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf",
+      "master_list_page": 234,
+      "thin_blood": false,
+      "caitiff": false,
+      "ghoul_only": false,
+      "coterie": false,
+      "clans_only": null,
+      "cannot_buy_for": [],
+      "repeatable": false,
+      "requires": null,
+      "levels": []
+    },
+    {
+      "id": "merit:watchmen",
+      "name": "Watchmen",
+      "kind": "merit",
+      "group": "Haven",
+      "dots": {
+        "min": 1,
+        "max": null
+      },
+      "book": "v5-corebook",
+      "page": 189,
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf",
+      "master_list_page": 234,
+      "thin_blood": false,
+      "caitiff": false,
+      "ghoul_only": false,
+      "coterie": false,
+      "clans_only": null,
+      "cannot_buy_for": [],
+      "repeatable": false,
+      "requires": null,
+      "levels": []
+    },
+    {
+      "id": "merit:linguistics",
+      "name": "Linguistics",
+      "kind": "merit",
+      "group": "Linguistics",
+      "dots": {
+        "min": 1,
+        "max": null
+      },
+      "book": "v5-corebook",
+      "page": 179,
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf",
+      "master_list_page": 233,
+      "thin_blood": false,
+      "caitiff": false,
+      "ghoul_only": false,
+      "coterie": false,
+      "clans_only": null,
+      "cannot_buy_for": [],
+      "repeatable": false,
+      "requires": null,
+      "levels": []
+    },
+    {
+      "id": "merit:beautiful",
+      "name": "Beautiful",
+      "kind": "merit",
+      "group": "Looks",
+      "dots": {
+        "min": 2,
+        "max": 2
+      },
+      "book": "v5-corebook",
+      "page": 179,
+      "also_in": [],
+      "aliases": [
+        "Looks: Beautiful"
+      ],
+      "source": "pdf",
+      "master_list_page": 232,
+      "thin_blood": false,
+      "caitiff": false,
+      "ghoul_only": false,
+      "coterie": false,
+      "clans_only": null,
+      "cannot_buy_for": [],
+      "repeatable": false,
+      "requires": null,
+      "levels": [],
+      "manual_fields": [
+        "aliases"
+      ]
+    },
+    {
+      "id": "merit:famous-face",
+      "name": "Famous Face",
+      "kind": "merit",
+      "group": "Looks",
+      "dots": {
+        "min": 1,
+        "max": 1
+      },
+      "book": "v5-players-guide",
+      "page": 118,
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf",
+      "master_list_page": 233,
+      "thin_blood": false,
+      "caitiff": false,
+      "ghoul_only": false,
+      "coterie": false,
+      "clans_only": null,
+      "cannot_buy_for": [],
+      "repeatable": false,
+      "requires": null,
+      "levels": []
+    },
+    {
+      "id": "merit:ingenue",
+      "name": "Ingénue",
+      "kind": "merit",
+      "group": "Looks",
+      "dots": {
+        "min": 1,
+        "max": 1
+      },
+      "book": "v5-players-guide",
+      "page": 118,
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf",
+      "master_list_page": 233,
+      "thin_blood": false,
+      "caitiff": false,
+      "ghoul_only": false,
+      "coterie": false,
+      "clans_only": null,
+      "cannot_buy_for": [],
+      "repeatable": false,
+      "requires": null,
+      "levels": []
+    },
+    {
+      "id": "merit:remarkable-feature",
+      "name": "Remarkable Feature",
+      "kind": "merit",
+      "group": "Looks",
+      "dots": {
+        "min": 1,
+        "max": 1
+      },
+      "book": "v5-players-guide",
+      "page": 118,
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf",
+      "master_list_page": 233,
+      "thin_blood": false,
+      "caitiff": false,
+      "ghoul_only": false,
+      "coterie": false,
+      "clans_only": null,
+      "cannot_buy_for": [],
+      "repeatable": false,
+      "requires": null,
+      "levels": []
+    },
+    {
+      "id": "merit:stunning",
+      "name": "Stunning",
+      "kind": "merit",
+      "group": "Looks",
+      "dots": {
+        "min": 4,
+        "max": 4
+      },
+      "book": "v5-corebook",
+      "page": 179,
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf",
+      "master_list_page": 233,
+      "thin_blood": false,
+      "caitiff": false,
+      "ghoul_only": false,
+      "coterie": false,
+      "clans_only": null,
+      "cannot_buy_for": [],
+      "repeatable": false,
+      "requires": null,
+      "levels": []
+    },
+    {
+      "id": "merit:cobbler",
+      "name": "Cobbler",
+      "kind": "merit",
+      "group": "Mask",
+      "dots": {
+        "min": 1,
+        "max": null
+      },
+      "book": "v5-corebook",
+      "page": 192,
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf",
+      "master_list_page": 232,
+      "thin_blood": false,
+      "caitiff": false,
+      "ghoul_only": false,
+      "coterie": false,
+      "clans_only": null,
+      "cannot_buy_for": [],
+      "repeatable": false,
+      "requires": "Mask ••",
+      "levels": [],
+      "manual_fields": [
+        "requires"
+      ]
+    },
+    {
+      "id": "merit:zeroed",
+      "name": "Zeroed",
+      "kind": "merit",
+      "group": "Mask",
+      "dots": {
+        "min": 1,
+        "max": 1
+      },
+      "book": "v5-corebook",
+      "page": 192,
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf",
+      "master_list_page": 233,
+      "thin_blood": false,
+      "caitiff": false,
+      "ghoul_only": false,
+      "coterie": false,
+      "clans_only": null,
+      "cannot_buy_for": [],
+      "repeatable": false,
+      "requires": "Mask ••",
+      "levels": [],
+      "manual_fields": [
+        "requires"
+      ]
+    },
+    {
+      "id": "merit:eat-food",
+      "name": "Eat Food",
+      "kind": "merit",
+      "group": "Mythic",
+      "dots": {
+        "min": 2,
+        "max": 2
+      },
+      "book": "v5-corebook",
+      "page": 182,
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf",
+      "master_list_page": 232,
+      "thin_blood": false,
+      "caitiff": false,
+      "ghoul_only": false,
+      "coterie": false,
+      "clans_only": null,
+      "cannot_buy_for": [],
+      "repeatable": false,
+      "requires": null,
+      "levels": []
+    },
+    {
+      "id": "merit:luck-of-the-devil",
+      "name": "Luck of the Devil",
+      "kind": "merit",
+      "group": "Mythic",
+      "dots": {
+        "min": 4,
+        "max": 4
+      },
+      "book": "v5-players-guide",
+      "page": 119,
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf",
+      "master_list_page": 233,
+      "thin_blood": false,
+      "caitiff": false,
+      "ghoul_only": false,
+      "coterie": false,
+      "clans_only": null,
+      "cannot_buy_for": [],
+      "repeatable": false,
+      "requires": null,
+      "levels": []
+    },
+    {
+      "id": "merit:nuit-mode",
+      "name": "Nuit Mode",
+      "kind": "merit",
+      "group": "Mythic",
+      "dots": {
+        "min": 2,
+        "max": 2
+      },
+      "book": "v5-players-guide",
+      "page": 119,
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf",
+      "master_list_page": 233,
+      "thin_blood": false,
+      "caitiff": false,
+      "ghoul_only": false,
+      "coterie": false,
+      "clans_only": null,
+      "cannot_buy_for": [],
+      "repeatable": false,
+      "requires": "Blood Potency 1 or lower",
+      "levels": [],
+      "manual_fields": [
+        "requires"
+      ]
+    },
+    {
+      "id": "merit:check-the-trunk",
+      "name": "Check the Trunk",
+      "kind": "merit",
+      "group": "Other",
+      "dots": {
+        "min": 1,
+        "max": 1
+      },
+      "book": "v5-players-guide",
+      "page": 119,
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf",
+      "master_list_page": 232,
+      "thin_blood": false,
+      "caitiff": false,
+      "ghoul_only": false,
+      "coterie": false,
+      "clans_only": null,
+      "cannot_buy_for": [],
+      "repeatable": false,
+      "requires": null,
+      "levels": []
+    },
+    {
+      "id": "merit:side-hustler",
+      "name": "Side Hustler",
+      "kind": "merit",
+      "group": "Other",
+      "dots": {
+        "min": 2,
+        "max": 2
+      },
+      "book": "v5-players-guide",
+      "page": 119,
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf",
+      "master_list_page": 233,
+      "thin_blood": false,
+      "caitiff": false,
+      "ghoul_only": false,
+      "coterie": false,
+      "clans_only": null,
+      "cannot_buy_for": [],
+      "repeatable": false,
+      "requires": null,
+      "levels": []
+    },
+    {
+      "id": "merit:tempered-will",
+      "name": "Tempered Will",
+      "kind": "merit",
+      "group": "Other",
+      "dots": {
+        "min": 3,
+        "max": 3
+      },
+      "book": "v5-players-guide",
+      "page": 120,
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf",
+      "master_list_page": 233,
+      "thin_blood": false,
+      "caitiff": false,
+      "ghoul_only": false,
+      "coterie": false,
+      "clans_only": null,
+      "cannot_buy_for": [],
+      "repeatable": false,
+      "requires": "no Dominate or Presence dots",
+      "levels": [],
+      "manual_fields": [
+        "requires"
+      ]
+    },
+    {
+      "id": "merit:untouchable",
+      "name": "Untouchable",
+      "kind": "merit",
+      "group": "Other",
+      "dots": {
+        "min": 5,
+        "max": 5
+      },
+      "book": "v5-players-guide",
+      "page": 120,
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf",
+      "master_list_page": 233,
+      "thin_blood": false,
+      "caitiff": false,
+      "ghoul_only": false,
+      "coterie": false,
+      "clans_only": null,
+      "cannot_buy_for": [],
+      "repeatable": false,
+      "requires": null,
+      "levels": []
+    },
+    {
+      "id": "merit:city-secrets",
+      "name": "City Secrets",
+      "kind": "merit",
+      "group": "Status",
+      "dots": {
+        "min": 1,
+        "max": 1
+      },
+      "book": "v5-players-guide",
+      "page": 118,
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf",
+      "master_list_page": 232,
+      "thin_blood": false,
+      "caitiff": false,
+      "ghoul_only": false,
+      "coterie": false,
+      "clans_only": null,
+      "cannot_buy_for": [],
+      "repeatable": true,
+      "requires": null,
+      "levels": [],
+      "max_instances": 3,
+      "manual_fields": [
+        "max_instances",
+        "repeatable"
+      ]
+    },
+    {
+      "id": "merit:high-functioning-addict",
+      "name": "High-Functioning Addict",
+      "kind": "merit",
+      "group": "Substance Use",
+      "dots": {
+        "min": 1,
+        "max": 1
+      },
+      "book": "v5-corebook",
+      "page": 180,
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf",
+      "master_list_page": 233,
+      "thin_blood": false,
+      "caitiff": false,
+      "ghoul_only": false,
+      "coterie": false,
+      "clans_only": null,
+      "cannot_buy_for": [],
+      "repeatable": false,
+      "requires": null,
+      "levels": []
+    },
+    {
+      "id": "merit:thin-blood-abhorrent-blood",
+      "name": "Abhorrent Blood",
+      "kind": "merit",
+      "group": "Thin-blood",
+      "dots": null,
+      "book": "v5-players-guide",
+      "page": 135,
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf",
+      "master_list_page": 234,
+      "thin_blood": true,
+      "caitiff": false,
+      "ghoul_only": false,
+      "coterie": false,
+      "clans_only": null,
+      "cannot_buy_for": [],
+      "repeatable": false,
+      "requires": null,
+      "levels": []
+    },
+    {
+      "id": "merit:thin-blood-anarch-comrades",
+      "name": "Anarch Comrades",
+      "kind": "merit",
+      "group": "Thin-blood",
+      "dots": null,
+      "book": "v5-corebook",
+      "page": 183,
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf",
+      "master_list_page": 234,
+      "thin_blood": true,
+      "caitiff": false,
+      "ghoul_only": false,
+      "coterie": false,
+      "clans_only": null,
+      "cannot_buy_for": [],
+      "repeatable": false,
+      "requires": null,
+      "levels": []
+    },
+    {
+      "id": "merit:thin-blood-camarilla-contact",
+      "name": "Camarilla Contact",
+      "kind": "merit",
+      "group": "Thin-blood",
+      "dots": null,
+      "book": "v5-corebook",
+      "page": 183,
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf",
+      "master_list_page": 234,
+      "thin_blood": true,
+      "caitiff": false,
+      "ghoul_only": false,
+      "coterie": false,
+      "clans_only": null,
+      "cannot_buy_for": [],
+      "repeatable": false,
+      "requires": null,
+      "levels": []
+    },
+    {
+      "id": "merit:thin-blood-catenating-blood",
+      "name": "Catenating Blood",
+      "kind": "merit",
+      "group": "Thin-blood",
+      "dots": null,
+      "book": "v5-corebook",
+      "page": 183,
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf",
+      "master_list_page": 234,
+      "thin_blood": true,
+      "caitiff": false,
+      "ghoul_only": false,
+      "coterie": false,
+      "clans_only": null,
+      "cannot_buy_for": [],
+      "repeatable": false,
+      "requires": null,
+      "levels": []
+    },
+    {
+      "id": "merit:thin-blood-day-drinker",
+      "name": "Day Drinker",
+      "kind": "merit",
+      "group": "Thin-blood",
+      "dots": null,
+      "book": "v5-corebook",
+      "page": 183,
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf",
+      "master_list_page": 234,
+      "thin_blood": true,
+      "caitiff": false,
+      "ghoul_only": false,
+      "coterie": false,
+      "clans_only": null,
+      "cannot_buy_for": [],
+      "repeatable": false,
+      "requires": null,
+      "levels": []
+    },
+    {
+      "id": "merit:thin-blood-discipline-affinity",
+      "name": "Discipline Affinity",
+      "kind": "merit",
+      "group": "Thin-blood",
+      "dots": null,
+      "book": "v5-corebook",
+      "page": 184,
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf",
+      "master_list_page": 234,
+      "thin_blood": true,
+      "caitiff": false,
+      "ghoul_only": false,
+      "coterie": false,
+      "clans_only": null,
+      "cannot_buy_for": [],
+      "repeatable": false,
+      "requires": null,
+      "levels": []
+    },
+    {
+      "id": "merit:thin-blood-faith-proof",
+      "name": "Faith-Proof",
+      "kind": "merit",
+      "group": "Thin-blood",
+      "dots": null,
+      "book": "v5-players-guide",
+      "page": 136,
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf",
+      "master_list_page": 234,
+      "thin_blood": true,
+      "caitiff": false,
+      "ghoul_only": false,
+      "coterie": false,
+      "clans_only": null,
+      "cannot_buy_for": [],
+      "repeatable": false,
+      "requires": null,
+      "levels": []
+    },
+    {
+      "id": "merit:thin-blood-lifelike",
+      "name": "Lifelike",
+      "kind": "merit",
+      "group": "Thin-blood",
+      "dots": null,
+      "book": "v5-corebook",
+      "page": 184,
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf",
+      "master_list_page": 234,
+      "thin_blood": true,
+      "caitiff": false,
+      "ghoul_only": false,
+      "coterie": false,
+      "clans_only": null,
+      "cannot_buy_for": [],
+      "repeatable": false,
+      "requires": null,
+      "levels": []
+    },
+    {
+      "id": "merit:thin-blood-low-appetite",
+      "name": "Low Appetite",
+      "kind": "merit",
+      "group": "Thin-blood",
+      "dots": null,
+      "book": "v5-players-guide",
+      "page": 136,
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf",
+      "master_list_page": 234,
+      "thin_blood": true,
+      "caitiff": false,
+      "ghoul_only": false,
+      "coterie": false,
+      "clans_only": null,
+      "cannot_buy_for": [],
+      "repeatable": false,
+      "requires": null,
+      "levels": []
+    },
+    {
+      "id": "merit:thin-blood-lucid-dreamer",
+      "name": "Lucid Dreamer",
+      "kind": "merit",
+      "group": "Thin-blood",
+      "dots": null,
+      "book": "v5-players-guide",
+      "page": 136,
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf",
+      "master_list_page": 234,
+      "thin_blood": true,
+      "caitiff": false,
+      "ghoul_only": false,
+      "coterie": false,
+      "clans_only": null,
+      "cannot_buy_for": [],
+      "repeatable": false,
+      "requires": null,
+      "levels": []
+    },
+    {
+      "id": "merit:thin-blood-mortalitys-mien",
+      "name": "Mortality's Mien",
+      "kind": "merit",
+      "group": "Thin-blood",
+      "dots": null,
+      "book": "v5-players-guide",
+      "page": 136,
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf",
+      "master_list_page": 234,
+      "thin_blood": true,
+      "caitiff": false,
+      "ghoul_only": false,
+      "coterie": false,
+      "clans_only": null,
+      "cannot_buy_for": [],
+      "repeatable": false,
+      "requires": null,
+      "levels": []
+    },
+    {
+      "id": "merit:thin-blood-swift-feeder",
+      "name": "Swift Feeder",
+      "kind": "merit",
+      "group": "Thin-blood",
+      "dots": null,
+      "book": "v5-players-guide",
+      "page": 136,
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf",
+      "master_list_page": 234,
+      "thin_blood": true,
+      "caitiff": false,
+      "ghoul_only": false,
+      "coterie": false,
+      "clans_only": null,
+      "cannot_buy_for": [],
+      "repeatable": false,
+      "requires": null,
+      "levels": []
+    },
+    {
+      "id": "merit:thin-blood-thin-blood-alchemist",
+      "name": "Thin-Blood Alchemist",
+      "kind": "merit",
+      "group": "Thin-blood",
+      "dots": null,
+      "book": "v5-corebook",
+      "page": 184,
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf",
+      "master_list_page": 234,
+      "thin_blood": true,
+      "caitiff": false,
+      "ghoul_only": false,
+      "coterie": false,
+      "clans_only": null,
+      "cannot_buy_for": [],
+      "repeatable": false,
+      "requires": null,
+      "levels": []
+    },
+    {
+      "id": "merit:thin-blood-vampiric-resilience",
+      "name": "Vampiric Resilience",
+      "kind": "merit",
+      "group": "Thin-blood",
+      "dots": null,
+      "book": "v5-corebook",
+      "page": 184,
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf",
+      "master_list_page": 235,
+      "thin_blood": true,
+      "caitiff": false,
+      "ghoul_only": false,
+      "coterie": false,
+      "clans_only": null,
+      "cannot_buy_for": [],
+      "repeatable": false,
+      "requires": null,
+      "levels": []
+    },
+    {
+      "id": "flaw:enemies",
+      "name": "Enemies",
+      "kind": "flaw",
+      "group": "Allies",
+      "dots": {
+        "min": 1,
+        "max": 4
+      },
+      "book": "v5-corebook",
+      "page": 184,
+      "also_in": [
+        {
+          "book": "v5-players-guide",
+          "page": 110
+        }
+      ],
+      "aliases": [
+        "Enemy"
+      ],
+      "source": "pdf",
+      "master_list_page": 235,
+      "thin_blood": false,
+      "caitiff": false,
+      "ghoul_only": false,
+      "coterie": false,
+      "clans_only": null,
+      "cannot_buy_for": [],
+      "repeatable": false,
+      "requires": null,
+      "levels": [],
+      "manual_fields": [
+        "aliases"
+      ]
+    },
+    {
+      "id": "flaw:archaic",
+      "name": "Archaic",
+      "kind": "flaw",
+      "group": "Archaic",
+      "dots": {
+        "min": 2,
+        "max": 2
+      },
+      "book": "v5-corebook",
+      "page": 180,
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf",
+      "master_list_page": 235,
+      "thin_blood": false,
+      "caitiff": false,
+      "ghoul_only": false,
+      "coterie": false,
+      "clans_only": null,
+      "cannot_buy_for": [],
+      "repeatable": false,
+      "requires": "ancilla or older",
+      "levels": [],
+      "manual_fields": [
+        "requires"
+      ]
+    },
+    {
+      "id": "flaw:living-in-the-past",
+      "name": "Living in the Past",
+      "kind": "flaw",
+      "group": "Archaic",
+      "dots": {
+        "min": 1,
+        "max": 1
+      },
+      "book": "v5-corebook",
+      "page": 180,
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf",
+      "master_list_page": 235,
+      "thin_blood": false,
+      "caitiff": false,
+      "ghoul_only": false,
+      "coterie": false,
+      "clans_only": null,
+      "cannot_buy_for": [],
+      "repeatable": false,
+      "requires": "ancilla or older",
+      "levels": [],
+      "manual_fields": [
+        "requires"
+      ]
+    },
+    {
+      "id": "flaw:bond-junkie",
+      "name": "Bond Junkie",
+      "kind": "flaw",
+      "group": "Bonding",
+      "dots": {
+        "min": 1,
+        "max": 1
+      },
+      "book": "v5-corebook",
+      "page": 181,
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf",
+      "master_list_page": 235,
+      "thin_blood": false,
+      "caitiff": false,
+      "ghoul_only": false,
+      "coterie": false,
+      "clans_only": null,
+      "cannot_buy_for": [],
+      "repeatable": false,
+      "requires": null,
+      "levels": []
+    },
+    {
+      "id": "flaw:bondslave",
+      "name": "Bondslave",
+      "kind": "flaw",
+      "group": "Bonding",
+      "dots": {
+        "min": 2,
+        "max": 2
+      },
+      "book": "v5-corebook",
+      "page": 180,
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf",
+      "master_list_page": 235,
+      "thin_blood": false,
+      "caitiff": false,
+      "ghoul_only": false,
+      "coterie": false,
+      "clans_only": null,
+      "cannot_buy_for": [],
+      "repeatable": false,
+      "requires": null,
+      "levels": []
+    },
+    {
+      "id": "flaw:long-bond",
+      "name": "Long Bond",
+      "kind": "flaw",
+      "group": "Bonding",
+      "dots": {
+        "min": 1,
+        "max": 1
+      },
+      "book": "v5-corebook",
+      "page": 181,
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf",
+      "master_list_page": 235,
+      "thin_blood": false,
+      "caitiff": false,
+      "ghoul_only": false,
+      "coterie": false,
+      "clans_only": null,
+      "cannot_buy_for": [],
+      "repeatable": false,
+      "requires": null,
+      "levels": []
+    },
+    {
+      "id": "flaw:caitiff-befouling-vitae",
+      "name": "Befouling Vitae",
+      "kind": "flaw",
+      "group": "Caitiff",
+      "dots": {
+        "min": 2,
+        "max": 2
+      },
+      "book": "v5-players-guide",
+      "page": 127,
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf",
+      "master_list_page": 236,
+      "thin_blood": false,
+      "caitiff": true,
+      "ghoul_only": false,
+      "coterie": false,
+      "clans_only": null,
+      "cannot_buy_for": [],
+      "repeatable": false,
+      "requires": null,
+      "levels": []
+    },
+    {
+      "id": "flaw:caitiff-clan-curse",
+      "name": "Clan Curse",
+      "kind": "flaw",
+      "group": "Caitiff",
+      "dots": {
+        "min": 2,
+        "max": 2
+      },
+      "book": "v5-players-guide",
+      "page": 127,
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf",
+      "master_list_page": 236,
+      "thin_blood": false,
+      "caitiff": true,
+      "ghoul_only": false,
+      "coterie": false,
+      "clans_only": null,
+      "cannot_buy_for": [],
+      "repeatable": false,
+      "requires": null,
+      "levels": []
+    },
+    {
+      "id": "flaw:caitiff-debt-peon",
+      "name": "Debt Peon",
+      "kind": "flaw",
+      "group": "Caitiff",
+      "dots": {
+        "min": 2,
+        "max": 2
+      },
+      "book": "v5-players-guide",
+      "page": 127,
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf",
+      "master_list_page": 237,
+      "thin_blood": false,
+      "caitiff": true,
+      "ghoul_only": false,
+      "coterie": false,
+      "clans_only": null,
+      "cannot_buy_for": [],
+      "repeatable": false,
+      "requires": null,
+      "levels": []
+    },
+    {
+      "id": "flaw:caitiff-liquidator",
+      "name": "Liquidator",
+      "kind": "flaw",
+      "group": "Caitiff",
+      "dots": {
+        "min": 1,
+        "max": 1
+      },
+      "book": "v5-players-guide",
+      "page": 127,
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf",
+      "master_list_page": 237,
+      "thin_blood": false,
+      "caitiff": true,
+      "ghoul_only": false,
+      "coterie": false,
+      "clans_only": null,
+      "cannot_buy_for": [],
+      "repeatable": false,
+      "requires": null,
+      "levels": []
+    },
+    {
+      "id": "flaw:caitiff-muddled-blood",
+      "name": "Muddled Blood",
+      "kind": "flaw",
+      "group": "Caitiff",
+      "dots": {
+        "min": 1,
+        "max": 1
+      },
+      "book": "v5-players-guide",
+      "page": 127,
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf",
+      "master_list_page": 237,
+      "thin_blood": false,
+      "caitiff": true,
+      "ghoul_only": false,
+      "coterie": false,
+      "clans_only": null,
+      "cannot_buy_for": [],
+      "repeatable": false,
+      "requires": null,
+      "levels": []
+    },
+    {
+      "id": "flaw:caitiff-walking-omen",
+      "name": "Walking Omen",
+      "kind": "flaw",
+      "group": "Caitiff",
+      "dots": {
+        "min": 2,
+        "max": 2
+      },
+      "book": "v5-players-guide",
+      "page": 127,
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf",
+      "master_list_page": 237,
+      "thin_blood": false,
+      "caitiff": true,
+      "ghoul_only": false,
+      "coterie": false,
+      "clans_only": null,
+      "cannot_buy_for": [],
+      "repeatable": false,
+      "requires": null,
+      "levels": []
+    },
+    {
+      "id": "flaw:caitiff-word-scarred",
+      "name": "Word-Scarred",
+      "kind": "flaw",
+      "group": "Caitiff",
+      "dots": {
+        "min": 1,
+        "max": 1
+      },
+      "book": "v5-players-guide",
+      "page": 127,
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf",
+      "master_list_page": 237,
+      "thin_blood": false,
+      "caitiff": true,
+      "ghoul_only": false,
+      "coterie": false,
+      "clans_only": null,
+      "cannot_buy_for": [],
+      "repeatable": false,
+      "requires": null,
+      "levels": []
+    },
+    {
+      "id": "flaw:coterie-bullies",
+      "name": "Bullies",
+      "kind": "flaw",
+      "group": "Coterie",
+      "dots": {
+        "min": 1,
+        "max": 1
+      },
+      "book": "v5-players-guide",
+      "page": 172,
+      "also_in": [],
+      "aliases": [],
+      "source": "manual",
+      "master_list_page": null,
+      "thin_blood": false,
+      "caitiff": false,
+      "ghoul_only": false,
+      "coterie": true,
+      "clans_only": null,
+      "cannot_buy_for": [],
+      "repeatable": false,
+      "requires": null,
+      "levels": []
+    },
+    {
+      "id": "flaw:coterie-cursed",
+      "name": "Cursed",
+      "kind": "flaw",
+      "group": "Coterie",
+      "dots": null,
+      "book": "v5-players-guide",
+      "page": 172,
+      "also_in": [],
+      "aliases": [],
+      "source": "manual",
+      "master_list_page": null,
+      "thin_blood": false,
+      "caitiff": false,
+      "ghoul_only": false,
+      "coterie": true,
+      "clans_only": null,
+      "cannot_buy_for": [],
+      "repeatable": false,
+      "requires": null,
+      "levels": []
+    },
+    {
+      "id": "flaw:coterie-custodians",
+      "name": "Custodians",
+      "kind": "flaw",
+      "group": "Coterie",
+      "dots": {
+        "min": 2,
+        "max": 2
+      },
+      "book": "v5-players-guide",
+      "page": 172,
+      "also_in": [],
+      "aliases": [],
+      "source": "manual",
+      "master_list_page": null,
+      "thin_blood": false,
+      "caitiff": false,
+      "ghoul_only": false,
+      "coterie": true,
+      "clans_only": null,
+      "cannot_buy_for": [],
+      "repeatable": false,
+      "requires": null,
+      "levels": []
+    },
+    {
+      "id": "flaw:coterie-targeted",
+      "name": "Targeted",
+      "kind": "flaw",
+      "group": "Coterie",
+      "dots": {
+        "min": 1,
+        "max": 1
+      },
+      "book": "v5-players-guide",
+      "page": 173,
+      "also_in": [],
+      "aliases": [],
+      "source": "manual",
+      "master_list_page": null,
+      "thin_blood": false,
+      "caitiff": false,
+      "ghoul_only": false,
+      "coterie": true,
+      "clans_only": null,
+      "cannot_buy_for": [],
+      "repeatable": false,
+      "requires": null,
+      "levels": []
+    },
+    {
+      "id": "flaw:coterie-territorial",
+      "name": "Territorial",
+      "kind": "flaw",
+      "group": "Coterie",
+      "dots": {
+        "min": 1,
+        "max": 1
+      },
+      "book": "v5-players-guide",
+      "page": 173,
+      "also_in": [],
+      "aliases": [],
+      "source": "manual",
+      "master_list_page": null,
+      "thin_blood": false,
+      "caitiff": false,
+      "ghoul_only": false,
+      "coterie": true,
+      "clans_only": null,
+      "cannot_buy_for": [],
+      "repeatable": false,
+      "requires": null,
+      "levels": []
+    },
+    {
+      "id": "flaw:coterie-under-siege",
+      "name": "Under Siege",
+      "kind": "flaw",
+      "group": "Coterie",
+      "dots": {
+        "min": 2,
+        "max": 2
+      },
+      "book": "v5-players-guide",
+      "page": 173,
+      "also_in": [],
+      "aliases": [],
+      "source": "manual",
+      "master_list_page": null,
+      "thin_blood": false,
+      "caitiff": false,
+      "ghoul_only": false,
+      "coterie": true,
+      "clans_only": null,
+      "cannot_buy_for": [],
+      "repeatable": false,
+      "requires": null,
+      "levels": []
+    },
+    {
+      "id": "flaw:dark-secret",
+      "name": "Dark Secret",
+      "kind": "flaw",
+      "group": "Fame",
+      "dots": {
+        "min": 1,
+        "max": 4
+      },
+      "book": "v5-corebook",
+      "page": 187,
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf",
+      "master_list_page": 235,
+      "thin_blood": false,
+      "caitiff": false,
+      "ghoul_only": false,
+      "coterie": false,
+      "clans_only": null,
+      "cannot_buy_for": [],
+      "repeatable": false,
+      "requires": null,
+      "levels": []
+    },
+    {
+      "id": "flaw:infamy",
+      "name": "Infamy",
+      "kind": "flaw",
+      "group": "Fame",
+      "dots": {
+        "min": 1,
+        "max": 5
+      },
+      "book": "v5-corebook",
+      "page": 187,
+      "also_in": [
+        {
+          "book": "v5-players-guide",
+          "page": 110
+        }
+      ],
+      "aliases": [],
+      "source": "pdf",
+      "master_list_page": 235,
+      "thin_blood": false,
+      "caitiff": false,
+      "ghoul_only": false,
+      "coterie": false,
+      "clans_only": null,
+      "cannot_buy_for": [],
+      "repeatable": false,
+      "requires": null,
+      "levels": []
+    },
+    {
+      "id": "flaw:farmer",
+      "name": "Farmer",
+      "kind": "flaw",
+      "group": "Feeding",
+      "dots": {
+        "min": 2,
+        "max": 2
+      },
+      "book": "v5-corebook",
+      "page": 181,
+      "also_in": [],
+      "aliases": [
+        "Vegan"
+      ],
+      "source": "pdf",
+      "master_list_page": 236,
+      "thin_blood": false,
+      "caitiff": false,
+      "ghoul_only": false,
+      "coterie": false,
+      "clans_only": null,
+      "cannot_buy_for": [
+        {
+          "clan": "clan:ventrue",
+          "when": "always",
+          "book": "v5-corebook",
+          "page": 181
+        }
+      ],
+      "repeatable": false,
+      "requires": null,
+      "levels": [],
+      "manual_fields": [
+        "book",
+        "cannot_buy_for",
+        "group",
+        "name",
+        "page"
+      ]
+    },
+    {
+      "id": "flaw:methuselahs-thirst",
+      "name": "Methuselah's Thirst",
+      "kind": "flaw",
+      "group": "Feeding",
+      "dots": {
+        "min": 1,
+        "max": 1
+      },
+      "book": "v5-corebook",
+      "page": 181,
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf",
+      "master_list_page": 235,
+      "thin_blood": false,
+      "caitiff": false,
+      "ghoul_only": false,
+      "coterie": false,
+      "clans_only": null,
+      "cannot_buy_for": [],
+      "repeatable": false,
+      "requires": null,
+      "levels": []
+    },
+    {
+      "id": "flaw:organovore",
+      "name": "Organovore",
+      "kind": "flaw",
+      "group": "Feeding",
+      "dots": {
+        "min": 2,
+        "max": 2
+      },
+      "book": "v5-corebook",
+      "page": 181,
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf",
+      "master_list_page": 235,
+      "thin_blood": false,
+      "caitiff": false,
+      "ghoul_only": false,
+      "coterie": false,
+      "clans_only": null,
+      "cannot_buy_for": [],
+      "repeatable": false,
+      "requires": null,
+      "levels": []
+    },
+    {
+      "id": "flaw:prey-exclusion",
+      "name": "Prey Exclusion",
+      "kind": "flaw",
+      "group": "Feeding",
+      "dots": {
+        "min": 1,
+        "max": 1
+      },
+      "book": "v5-corebook",
+      "page": 181,
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf",
+      "master_list_page": 236,
+      "thin_blood": false,
+      "caitiff": false,
+      "ghoul_only": false,
+      "coterie": false,
+      "clans_only": null,
+      "cannot_buy_for": [],
+      "repeatable": false,
+      "requires": null,
+      "levels": []
+    },
+    {
+      "id": "flaw:vein-tapper",
+      "name": "Vein Tapper",
+      "kind": "flaw",
+      "group": "Feeding",
+      "dots": {
+        "min": 1,
+        "max": 1
+      },
+      "book": "v5-players-guide",
+      "page": 120,
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf",
+      "master_list_page": 236,
+      "thin_blood": false,
+      "caitiff": false,
+      "ghoul_only": false,
+      "coterie": false,
+      "clans_only": null,
+      "cannot_buy_for": [],
+      "repeatable": false,
+      "requires": null,
+      "levels": []
+    },
+    {
+      "id": "flaw:ghoul-baneful-blood",
+      "name": "Baneful Blood",
+      "kind": "flaw",
+      "group": "Ghoul",
+      "dots": {
+        "min": 1,
+        "max": 2
+      },
+      "book": "v5-players-guide",
+      "page": 141,
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf",
+      "master_list_page": 237,
+      "thin_blood": false,
+      "caitiff": false,
+      "ghoul_only": true,
+      "coterie": false,
+      "clans_only": null,
+      "cannot_buy_for": [],
+      "repeatable": false,
+      "requires": null,
+      "levels": []
+    },
+    {
+      "id": "flaw:ghoul-crones-curse",
+      "name": "Crone's Curse",
+      "kind": "flaw",
+      "group": "Ghoul",
+      "dots": {
+        "min": 2,
+        "max": 2
+      },
+      "book": "v5-players-guide",
+      "page": 141,
+      "also_in": [
+        {
+          "book": "v5-companion",
+          "page": 60
+        }
+      ],
+      "aliases": [],
+      "source": "pdf",
+      "master_list_page": 237,
+      "thin_blood": false,
+      "caitiff": false,
+      "ghoul_only": true,
+      "coterie": false,
+      "clans_only": null,
+      "cannot_buy_for": [],
+      "repeatable": false,
+      "requires": null,
+      "levels": []
+    },
+    {
+      "id": "flaw:ghoul-distressing-fangs",
+      "name": "Distressing Fangs",
+      "kind": "flaw",
+      "group": "Ghoul",
+      "dots": {
+        "min": 1,
+        "max": 1
+      },
+      "book": "v5-players-guide",
+      "page": 141,
+      "also_in": [
+        {
+          "book": "v5-companion",
+          "page": 60
+        }
+      ],
+      "aliases": [],
+      "source": "pdf",
+      "master_list_page": 237,
+      "thin_blood": false,
+      "caitiff": false,
+      "ghoul_only": true,
+      "coterie": false,
+      "clans_only": null,
+      "cannot_buy_for": [],
+      "repeatable": false,
+      "requires": null,
+      "levels": []
+    },
+    {
+      "id": "flaw:compromised",
+      "name": "Compromised",
+      "kind": "flaw",
+      "group": "Haven",
+      "dots": {
+        "min": 2,
+        "max": 2
+      },
+      "book": "v5-corebook",
+      "page": 188,
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf",
+      "master_list_page": 236,
+      "thin_blood": false,
+      "caitiff": false,
+      "ghoul_only": false,
+      "coterie": false,
+      "clans_only": null,
+      "cannot_buy_for": [],
+      "repeatable": false,
+      "requires": null,
+      "levels": []
+    },
+    {
+      "id": "flaw:creepy",
+      "name": "Creepy",
+      "kind": "flaw",
+      "group": "Haven",
+      "dots": {
+        "min": 1,
+        "max": 1
+      },
+      "book": "v5-corebook",
+      "page": 188,
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf",
+      "master_list_page": 236,
+      "thin_blood": false,
+      "caitiff": false,
+      "ghoul_only": false,
+      "coterie": false,
+      "clans_only": null,
+      "cannot_buy_for": [],
+      "repeatable": false,
+      "requires": null,
+      "levels": []
+    },
+    {
+      "id": "flaw:haunted",
+      "name": "Haunted",
+      "kind": "flaw",
+      "group": "Haven",
+      "dots": {
+        "min": 1,
+        "max": null
+      },
+      "book": "v5-corebook",
+      "page": 188,
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf",
+      "master_list_page": 236,
+      "thin_blood": false,
+      "caitiff": false,
+      "ghoul_only": false,
+      "coterie": false,
+      "clans_only": null,
+      "cannot_buy_for": [],
+      "repeatable": false,
+      "requires": null,
+      "levels": []
+    },
+    {
+      "id": "flaw:no-haven",
+      "name": "No Haven",
+      "kind": "flaw",
+      "group": "Haven",
+      "dots": {
+        "min": 1,
+        "max": 1
+      },
+      "book": "v5-corebook",
+      "page": 188,
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf",
+      "master_list_page": 235,
+      "thin_blood": false,
+      "caitiff": false,
+      "ghoul_only": false,
+      "coterie": false,
+      "clans_only": null,
+      "cannot_buy_for": [],
+      "repeatable": false,
+      "requires": null,
+      "levels": []
+    },
+    {
+      "id": "flaw:shared",
+      "name": "Shared",
+      "kind": "flaw",
+      "group": "Haven",
+      "dots": {
+        "allowed": [
+          1,
+          2
+        ]
+      },
+      "book": "v5-players-guide",
+      "page": 113,
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf",
+      "master_list_page": 236,
+      "thin_blood": false,
+      "caitiff": false,
+      "ghoul_only": false,
+      "coterie": false,
+      "clans_only": null,
+      "cannot_buy_for": [],
+      "repeatable": false,
+      "requires": null,
+      "levels": []
+    },
+    {
+      "id": "flaw:obvious-predator",
+      "name": "Obvious Predator",
+      "kind": "flaw",
+      "group": "Herd",
+      "dots": {
+        "min": 2,
+        "max": 2
+      },
+      "book": "v5-corebook",
+      "page": 189,
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf",
+      "master_list_page": 235,
+      "thin_blood": false,
+      "caitiff": false,
+      "ghoul_only": false,
+      "coterie": false,
+      "clans_only": null,
+      "cannot_buy_for": [],
+      "repeatable": false,
+      "requires": null,
+      "levels": []
+    },
+    {
+      "id": "flaw:despised",
+      "name": "Despised",
+      "kind": "flaw",
+      "group": "Influence",
+      "dots": {
+        "min": 2,
+        "max": 2
+      },
+      "book": "v5-corebook",
+      "page": 187,
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf",
+      "master_list_page": 235,
+      "thin_blood": false,
+      "caitiff": false,
+      "ghoul_only": false,
+      "coterie": false,
+      "clans_only": null,
+      "cannot_buy_for": [],
+      "repeatable": false,
+      "requires": null,
+      "levels": []
+    },
+    {
+      "id": "flaw:disliked",
+      "name": "Disliked",
+      "kind": "flaw",
+      "group": "Influence",
+      "dots": {
+        "min": 1,
+        "max": 1
+      },
+      "book": "v5-corebook",
+      "page": 187,
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf",
+      "master_list_page": 235,
+      "thin_blood": false,
+      "caitiff": false,
+      "ghoul_only": false,
+      "coterie": false,
+      "clans_only": null,
+      "cannot_buy_for": [],
+      "repeatable": false,
+      "requires": null,
+      "levels": []
+    },
+    {
+      "id": "flaw:illiterate",
+      "name": "Illiterate",
+      "kind": "flaw",
+      "group": "Linguistics",
+      "dots": {
+        "min": 2,
+        "max": 2
+      },
+      "book": "v5-corebook",
+      "page": 179,
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf",
+      "master_list_page": 235,
+      "thin_blood": false,
+      "caitiff": false,
+      "ghoul_only": false,
+      "coterie": false,
+      "clans_only": null,
+      "cannot_buy_for": [],
+      "repeatable": false,
+      "requires": null,
+      "levels": []
+    },
+    {
+      "id": "flaw:repulsive",
+      "name": "Repulsive",
+      "kind": "flaw",
+      "group": "Looks",
+      "dots": {
+        "min": 2,
+        "max": 2
+      },
+      "book": "v5-corebook",
+      "page": 179,
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf",
+      "master_list_page": 236,
+      "thin_blood": false,
+      "caitiff": false,
+      "ghoul_only": false,
+      "coterie": false,
+      "clans_only": null,
+      "cannot_buy_for": [],
+      "repeatable": false,
+      "requires": null,
+      "levels": []
+    },
+    {
+      "id": "flaw:stench",
+      "name": "Stench",
+      "kind": "flaw",
+      "group": "Looks",
+      "dots": {
+        "min": 1,
+        "max": 1
+      },
+      "book": "v5-players-guide",
+      "page": 120,
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf",
+      "master_list_page": 236,
+      "thin_blood": false,
+      "caitiff": false,
+      "ghoul_only": false,
+      "coterie": false,
+      "clans_only": null,
+      "cannot_buy_for": [],
+      "repeatable": false,
+      "requires": null,
+      "levels": []
+    },
+    {
+      "id": "flaw:transparent",
+      "name": "Transparent",
+      "kind": "flaw",
+      "group": "Looks",
+      "dots": {
+        "min": 1,
+        "max": 1
+      },
+      "book": "v5-players-guide",
+      "page": 120,
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf",
+      "master_list_page": 236,
+      "thin_blood": false,
+      "caitiff": false,
+      "ghoul_only": false,
+      "coterie": false,
+      "clans_only": null,
+      "cannot_buy_for": [],
+      "repeatable": false,
+      "requires": null,
+      "levels": []
+    },
+    {
+      "id": "flaw:ugly",
+      "name": "Ugly",
+      "kind": "flaw",
+      "group": "Looks",
+      "dots": {
+        "min": 1,
+        "max": 1
+      },
+      "book": "v5-corebook",
+      "page": 179,
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf",
+      "master_list_page": 236,
+      "thin_blood": false,
+      "caitiff": false,
+      "ghoul_only": false,
+      "coterie": false,
+      "clans_only": null,
+      "cannot_buy_for": [],
+      "repeatable": false,
+      "requires": null,
+      "levels": []
+    },
+    {
+      "id": "flaw:known-blankbody",
+      "name": "Known Blankbody",
+      "kind": "flaw",
+      "group": "Mask",
+      "dots": {
+        "min": 2,
+        "max": 2
+      },
+      "book": "v5-corebook",
+      "page": 190,
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf",
+      "master_list_page": 235,
+      "thin_blood": false,
+      "caitiff": false,
+      "ghoul_only": false,
+      "coterie": false,
+      "clans_only": null,
+      "cannot_buy_for": [],
+      "repeatable": false,
+      "requires": null,
+      "levels": []
+    },
+    {
+      "id": "flaw:known-corpse",
+      "name": "Known Corpse",
+      "kind": "flaw",
+      "group": "Mask",
+      "dots": {
+        "min": 1,
+        "max": 1
+      },
+      "book": "v5-corebook",
+      "page": 190,
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf",
+      "master_list_page": 235,
+      "thin_blood": false,
+      "caitiff": false,
+      "ghoul_only": false,
+      "coterie": false,
+      "clans_only": null,
+      "cannot_buy_for": [],
+      "repeatable": false,
+      "requires": null,
+      "levels": []
+    },
+    {
+      "id": "flaw:adversary",
+      "name": "Adversary",
+      "kind": "flaw",
+      "group": "Mawla",
+      "dots": {
+        "min": 1,
+        "max": 3
+      },
+      "book": "v5-corebook",
+      "page": 193,
+      "also_in": [
+        {
+          "book": "v5-players-guide",
+          "page": 115
+        }
+      ],
+      "aliases": [],
+      "source": "pdf",
+      "master_list_page": 235,
+      "thin_blood": false,
+      "caitiff": false,
+      "ghoul_only": false,
+      "coterie": false,
+      "clans_only": null,
+      "cannot_buy_for": [],
+      "repeatable": false,
+      "requires": null,
+      "levels": []
+    },
+    {
+      "id": "flaw:folkloric-bane",
+      "name": "Folkloric Bane",
+      "kind": "flaw",
+      "group": "Mythic",
+      "dots": {
+        "min": 1,
+        "max": 1
+      },
+      "book": "v5-corebook",
+      "page": 182,
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf",
+      "master_list_page": 235,
+      "thin_blood": false,
+      "caitiff": false,
+      "ghoul_only": false,
+      "coterie": false,
+      "clans_only": null,
+      "cannot_buy_for": [],
+      "repeatable": false,
+      "requires": null,
+      "levels": []
+    },
+    {
+      "id": "flaw:folkloric-block",
+      "name": "Folkloric Block",
+      "kind": "flaw",
+      "group": "Mythic",
+      "dots": {
+        "min": 1,
+        "max": 1
+      },
+      "book": "v5-corebook",
+      "page": 182,
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf",
+      "master_list_page": 235,
+      "thin_blood": false,
+      "caitiff": false,
+      "ghoul_only": false,
+      "coterie": false,
+      "clans_only": null,
+      "cannot_buy_for": [],
+      "repeatable": true,
+      "requires": null,
+      "levels": [],
+      "manual_fields": [
+        "group",
+        "repeatable"
+      ]
+    },
+    {
+      "id": "flaw:stake-bait",
+      "name": "Stake Bait",
+      "kind": "flaw",
+      "group": "Mythic",
+      "dots": {
+        "min": 2,
+        "max": 2
+      },
+      "book": "v5-corebook",
+      "page": 182,
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf",
+      "master_list_page": 236,
+      "thin_blood": false,
+      "caitiff": false,
+      "ghoul_only": false,
+      "coterie": false,
+      "clans_only": null,
+      "cannot_buy_for": [],
+      "repeatable": false,
+      "requires": null,
+      "levels": []
+    },
+    {
+      "id": "flaw:starving-decay",
+      "name": "Starving Decay",
+      "kind": "flaw",
+      "group": "Mythic",
+      "dots": {
+        "min": 2,
+        "max": 2
+      },
+      "book": "v5-players-guide",
+      "page": 120,
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf",
+      "master_list_page": 236,
+      "thin_blood": false,
+      "caitiff": false,
+      "ghoul_only": false,
+      "coterie": false,
+      "clans_only": null,
+      "cannot_buy_for": [],
+      "repeatable": false,
+      "requires": null,
+      "levels": []
+    },
+    {
+      "id": "flaw:stigmata",
+      "name": "Stigmata",
+      "kind": "flaw",
+      "group": "Mythic",
+      "dots": {
+        "min": 1,
+        "max": 1
+      },
+      "book": "v5-corebook",
+      "page": 182,
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf",
+      "master_list_page": 236,
+      "thin_blood": false,
+      "caitiff": false,
+      "ghoul_only": false,
+      "coterie": false,
+      "clans_only": null,
+      "cannot_buy_for": [],
+      "repeatable": false,
+      "requires": null,
+      "levels": []
+    },
+    {
+      "id": "flaw:twice-cursed",
+      "name": "Twice-Cursed",
+      "kind": "flaw",
+      "group": "Mythic",
+      "dots": {
+        "min": 2,
+        "max": 2
+      },
+      "book": "v5-players-guide",
+      "page": 121,
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf",
+      "master_list_page": 236,
+      "thin_blood": false,
+      "caitiff": false,
+      "ghoul_only": false,
+      "coterie": false,
+      "clans_only": null,
+      "cannot_buy_for": [],
+      "repeatable": false,
+      "requires": null,
+      "levels": []
+    },
+    {
+      "id": "flaw:knowledge-hungry",
+      "name": "Knowledge Hungry",
+      "kind": "flaw",
+      "group": "Other",
+      "dots": {
+        "min": 1,
+        "max": 1
+      },
+      "book": "v5-players-guide",
+      "page": 121,
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf",
+      "master_list_page": 235,
+      "thin_blood": false,
+      "caitiff": false,
+      "ghoul_only": false,
+      "coterie": false,
+      "clans_only": null,
+      "cannot_buy_for": [],
+      "repeatable": false,
+      "requires": null,
+      "levels": []
+    },
+    {
+      "id": "flaw:prestation-debts",
+      "name": "Prestation Debts",
+      "kind": "flaw",
+      "group": "Other",
+      "dots": {
+        "min": 1,
+        "max": 1
+      },
+      "book": "v5-players-guide",
+      "page": 121,
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf",
+      "master_list_page": 236,
+      "thin_blood": false,
+      "caitiff": false,
+      "ghoul_only": false,
+      "coterie": false,
+      "clans_only": null,
+      "cannot_buy_for": [],
+      "repeatable": false,
+      "requires": null,
+      "levels": []
+    },
+    {
+      "id": "flaw:risk-taker",
+      "name": "Risk-Taker",
+      "kind": "flaw",
+      "group": "Other",
+      "dots": {
+        "min": 1,
+        "max": 1
+      },
+      "book": "v5-players-guide",
+      "page": 121,
+      "also_in": [
+        {
+          "book": "v5-companion",
+          "page": 60
+        }
+      ],
+      "aliases": [
+        "Living on the Edge"
+      ],
+      "source": "pdf",
+      "master_list_page": 236,
+      "thin_blood": false,
+      "caitiff": false,
+      "ghoul_only": false,
+      "coterie": false,
+      "clans_only": null,
+      "cannot_buy_for": [],
+      "repeatable": false,
+      "requires": null,
+      "levels": [],
+      "manual_fields": [
+        "aliases",
+        "also_in"
+      ]
+    },
+    {
+      "id": "flaw:weak-willed",
+      "name": "Weak-Willed",
+      "kind": "flaw",
+      "group": "Other",
+      "dots": {
+        "min": 2,
+        "max": 2
+      },
+      "book": "v5-players-guide",
+      "page": 121,
+      "also_in": [
+        {
+          "book": "v5-companion",
+          "page": 60
+        }
+      ],
+      "aliases": [],
+      "source": "pdf",
+      "master_list_page": 236,
+      "thin_blood": false,
+      "caitiff": false,
+      "ghoul_only": false,
+      "coterie": false,
+      "clans_only": null,
+      "cannot_buy_for": [],
+      "repeatable": false,
+      "requires": null,
+      "levels": []
+    },
+    {
+      "id": "flaw:destitute",
+      "name": "Destitute",
+      "kind": "flaw",
+      "group": "Resources",
+      "dots": {
+        "min": 1,
+        "max": 1
+      },
+      "book": "v5-corebook",
+      "page": 193,
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf",
+      "master_list_page": 235,
+      "thin_blood": false,
+      "caitiff": false,
+      "ghoul_only": false,
+      "coterie": false,
+      "clans_only": null,
+      "cannot_buy_for": [],
+      "repeatable": false,
+      "requires": null,
+      "levels": []
+    },
+    {
+      "id": "flaw:stalkers",
+      "name": "Stalkers",
+      "kind": "flaw",
+      "group": "Retainers",
+      "dots": {
+        "min": 1,
+        "max": 1
+      },
+      "book": "v5-corebook",
+      "page": 194,
+      "also_in": [
+        {
+          "book": "v5-players-guide",
+          "page": 117
+        }
+      ],
+      "aliases": [],
+      "source": "pdf",
+      "master_list_page": 236,
+      "thin_blood": false,
+      "caitiff": false,
+      "ghoul_only": false,
+      "coterie": false,
+      "clans_only": null,
+      "cannot_buy_for": [],
+      "repeatable": false,
+      "requires": null,
+      "levels": []
+    },
+    {
+      "id": "flaw:shunned",
+      "name": "Shunned",
+      "kind": "flaw",
+      "group": "Status",
+      "dots": {
+        "min": 2,
+        "max": 2
+      },
+      "book": "v5-corebook",
+      "page": 194,
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf",
+      "master_list_page": 236,
+      "thin_blood": false,
+      "caitiff": false,
+      "ghoul_only": false,
+      "coterie": false,
+      "clans_only": null,
+      "cannot_buy_for": [],
+      "repeatable": false,
+      "requires": null,
+      "levels": []
+    },
+    {
+      "id": "flaw:suspect",
+      "name": "Suspect",
+      "kind": "flaw",
+      "group": "Status",
+      "dots": {
+        "min": 1,
+        "max": 1
+      },
+      "book": "v5-corebook",
+      "page": 194,
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf",
+      "master_list_page": 236,
+      "thin_blood": false,
+      "caitiff": false,
+      "ghoul_only": false,
+      "coterie": false,
+      "clans_only": null,
+      "cannot_buy_for": [],
+      "repeatable": false,
+      "requires": null,
+      "levels": []
+    },
+    {
+      "id": "flaw:addiction",
+      "name": "Addiction",
+      "kind": "flaw",
+      "group": "Substance Use",
+      "dots": {
+        "min": 1,
+        "max": 1
+      },
+      "book": "v5-corebook",
+      "page": 180,
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf",
+      "master_list_page": 235,
+      "thin_blood": false,
+      "caitiff": false,
+      "ghoul_only": false,
+      "coterie": false,
+      "clans_only": null,
+      "cannot_buy_for": [],
+      "repeatable": false,
+      "requires": null,
+      "levels": []
+    },
+    {
+      "id": "flaw:hopeless-addiction",
+      "name": "Hopeless Addiction",
+      "kind": "flaw",
+      "group": "Substance Use",
+      "dots": {
+        "min": 2,
+        "max": 2
+      },
+      "book": "v5-corebook",
+      "page": 179,
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf",
+      "master_list_page": 235,
+      "thin_blood": false,
+      "caitiff": false,
+      "ghoul_only": false,
+      "coterie": false,
+      "clans_only": null,
+      "cannot_buy_for": [],
+      "repeatable": false,
+      "requires": null,
+      "levels": []
+    },
+    {
+      "id": "flaw:thin-blood-baby-teeth",
+      "name": "Baby Teeth",
+      "kind": "flaw",
+      "group": "Thin-blood",
+      "dots": null,
+      "book": "v5-corebook",
+      "page": 182,
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf",
+      "master_list_page": 237,
+      "thin_blood": true,
+      "caitiff": false,
+      "ghoul_only": false,
+      "coterie": false,
+      "clans_only": null,
+      "cannot_buy_for": [],
+      "repeatable": false,
+      "requires": null,
+      "levels": []
+    },
+    {
+      "id": "flaw:thin-blood-bestial-temper",
+      "name": "Bestial Temper",
+      "kind": "flaw",
+      "group": "Thin-blood",
+      "dots": null,
+      "book": "v5-corebook",
+      "page": 182,
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf",
+      "master_list_page": 234,
+      "thin_blood": true,
+      "caitiff": false,
+      "ghoul_only": false,
+      "coterie": false,
+      "clans_only": null,
+      "cannot_buy_for": [],
+      "repeatable": false,
+      "requires": null,
+      "levels": [],
+      "manual_fields": [
+        "kind",
+        "name"
+      ]
+    },
+    {
+      "id": "flaw:thin-blood-branded-by-the-camarilla",
+      "name": "Branded by the Camarilla",
+      "kind": "flaw",
+      "group": "Thin-blood",
+      "dots": null,
+      "book": "v5-corebook",
+      "page": 182,
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf",
+      "master_list_page": 237,
+      "thin_blood": true,
+      "caitiff": false,
+      "ghoul_only": false,
+      "coterie": false,
+      "clans_only": null,
+      "cannot_buy_for": [],
+      "repeatable": false,
+      "requires": null,
+      "levels": []
+    },
+    {
+      "id": "flaw:thin-blood-clan-curse",
+      "name": "Clan Curse",
+      "kind": "flaw",
+      "group": "Thin-blood",
+      "dots": null,
+      "book": "v5-corebook",
+      "page": 183,
+      "also_in": [
+        {
+          "book": "v5-players-guide",
+          "page": 127
+        }
+      ],
+      "aliases": [],
+      "source": "pdf",
+      "master_list_page": 237,
+      "thin_blood": true,
+      "caitiff": false,
+      "ghoul_only": false,
+      "coterie": false,
+      "clans_only": null,
+      "cannot_buy_for": [],
+      "repeatable": false,
+      "requires": null,
+      "levels": []
+    },
+    {
+      "id": "flaw:thin-blood-dead-flesh",
+      "name": "Dead Flesh",
+      "kind": "flaw",
+      "group": "Thin-blood",
+      "dots": null,
+      "book": "v5-corebook",
+      "page": 183,
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf",
+      "master_list_page": 237,
+      "thin_blood": true,
+      "caitiff": false,
+      "ghoul_only": false,
+      "coterie": false,
+      "clans_only": null,
+      "cannot_buy_for": [],
+      "repeatable": false,
+      "requires": null,
+      "levels": []
+    },
+    {
+      "id": "flaw:thin-blood-heliophobia",
+      "name": "Heliophobia",
+      "kind": "flaw",
+      "group": "Thin-blood",
+      "dots": null,
+      "book": "v5-players-guide",
+      "page": 135,
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf",
+      "master_list_page": 237,
+      "thin_blood": true,
+      "caitiff": false,
+      "ghoul_only": false,
+      "coterie": false,
+      "clans_only": null,
+      "cannot_buy_for": [],
+      "repeatable": false,
+      "requires": null,
+      "levels": []
+    },
+    {
+      "id": "flaw:thin-blood-mortal-frailty",
+      "name": "Mortal Frailty",
+      "kind": "flaw",
+      "group": "Thin-blood",
+      "dots": null,
+      "book": "v5-corebook",
+      "page": 183,
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf",
+      "master_list_page": 237,
+      "thin_blood": true,
+      "caitiff": false,
+      "ghoul_only": false,
+      "coterie": false,
+      "clans_only": null,
+      "cannot_buy_for": [],
+      "repeatable": false,
+      "requires": null,
+      "levels": []
+    },
+    {
+      "id": "flaw:thin-blood-night-terrors",
+      "name": "Night Terrors",
+      "kind": "flaw",
+      "group": "Thin-blood",
+      "dots": null,
+      "book": "v5-players-guide",
+      "page": 135,
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf",
+      "master_list_page": 237,
+      "thin_blood": true,
+      "caitiff": false,
+      "ghoul_only": false,
+      "coterie": false,
+      "clans_only": null,
+      "cannot_buy_for": [],
+      "repeatable": false,
+      "requires": null,
+      "levels": []
+    },
+    {
+      "id": "flaw:thin-blood-plague-bearer",
+      "name": "Plague Bearer",
+      "kind": "flaw",
+      "group": "Thin-blood",
+      "dots": null,
+      "book": "v5-players-guide",
+      "page": 135,
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf",
+      "master_list_page": 237,
+      "thin_blood": true,
+      "caitiff": false,
+      "ghoul_only": false,
+      "coterie": false,
+      "clans_only": null,
+      "cannot_buy_for": [],
+      "repeatable": false,
+      "requires": null,
+      "levels": []
+    },
+    {
+      "id": "flaw:thin-blood-shunned-by-the-anarchs",
+      "name": "Shunned by the Anarchs",
+      "kind": "flaw",
+      "group": "Thin-blood",
+      "dots": null,
+      "book": "v5-corebook",
+      "page": 183,
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf",
+      "master_list_page": 237,
+      "thin_blood": true,
+      "caitiff": false,
+      "ghoul_only": false,
+      "coterie": false,
+      "clans_only": null,
+      "cannot_buy_for": [],
+      "repeatable": false,
+      "requires": null,
+      "levels": []
+    },
+    {
+      "id": "flaw:thin-blood-sloppy-drinker",
+      "name": "Sloppy Drinker",
+      "kind": "flaw",
+      "group": "Thin-blood",
+      "dots": null,
+      "book": "v5-players-guide",
+      "page": 135,
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf",
+      "master_list_page": 237,
+      "thin_blood": true,
+      "caitiff": false,
+      "ghoul_only": false,
+      "coterie": false,
+      "clans_only": null,
+      "cannot_buy_for": [],
+      "repeatable": false,
+      "requires": null,
+      "levels": []
+    },
+    {
+      "id": "flaw:thin-blood-sun-faded",
+      "name": "Sun-Faded",
+      "kind": "flaw",
+      "group": "Thin-blood",
+      "dots": null,
+      "book": "v5-players-guide",
+      "page": 135,
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf",
+      "master_list_page": 237,
+      "thin_blood": true,
+      "caitiff": false,
+      "ghoul_only": false,
+      "coterie": false,
+      "clans_only": null,
+      "cannot_buy_for": [],
+      "repeatable": false,
+      "requires": null,
+      "levels": []
+    },
+    {
+      "id": "flaw:thin-blood-supernatural-tell",
+      "name": "Supernatural Tell",
+      "kind": "flaw",
+      "group": "Thin-blood",
+      "dots": null,
+      "book": "v5-players-guide",
+      "page": 135,
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf",
+      "master_list_page": 237,
+      "thin_blood": true,
+      "caitiff": false,
+      "ghoul_only": false,
+      "coterie": false,
+      "clans_only": null,
+      "cannot_buy_for": [],
+      "repeatable": false,
+      "requires": null,
+      "levels": []
+    },
+    {
+      "id": "flaw:thin-blood-twilight-presence",
+      "name": "Twilight Presence",
+      "kind": "flaw",
+      "group": "Thin-blood",
+      "dots": null,
+      "book": "v5-players-guide",
+      "page": 135,
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf",
+      "master_list_page": 237,
+      "thin_blood": true,
+      "caitiff": false,
+      "ghoul_only": false,
+      "coterie": false,
+      "clans_only": null,
+      "cannot_buy_for": [],
+      "repeatable": false,
+      "requires": null,
+      "levels": []
+    },
+    {
+      "id": "flaw:thin-blood-unending-hunger",
+      "name": "Unending Hunger",
+      "kind": "flaw",
+      "group": "Thin-blood",
+      "dots": null,
+      "book": "v5-players-guide",
+      "page": 135,
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf",
+      "master_list_page": 237,
+      "thin_blood": true,
+      "caitiff": false,
+      "ghoul_only": false,
+      "coterie": false,
+      "clans_only": null,
+      "cannot_buy_for": [],
+      "repeatable": false,
+      "requires": null,
+      "levels": []
+    },
+    {
+      "id": "flaw:thin-blood-vitae-dependency",
+      "name": "Vitae Dependency",
+      "kind": "flaw",
+      "group": "Thin-blood",
+      "dots": null,
+      "book": "v5-corebook",
+      "page": 183,
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf",
+      "master_list_page": 237,
+      "thin_blood": true,
+      "caitiff": false,
+      "ghoul_only": false,
+      "coterie": false,
+      "clans_only": null,
+      "cannot_buy_for": [],
+      "repeatable": false,
+      "requires": null,
+      "levels": []
+    }
+  ]
+}

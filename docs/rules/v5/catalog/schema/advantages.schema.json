@@ -1,0 +1,448 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "shadowrealms/v5/catalog/advantages.schema.json",
+  "title": "V5 Merits, Backgrounds and Flaws",
+  "description": "dots: {min,max} as printed (max null = open-ended, '•+'), {allowed:[...]} for 'X or Y', null when no rating (thin-blood Merits/Flaws pair one for one) or not printed. levels: names printed per rating (no text). master_list_page: the PG Advantages Master List page that lists the entry. cannot_buy_for: clans that may not take it, at creation or always. requires: short wording of a printed prerequisite. Ids of Caitiff, thin-blood, ghoul and coterie entries carry that group (flaw:caitiff-clan-curse vs flaw:thin-blood-clan-curse).",
+  "type": "object",
+  "required": [
+    "catalog",
+    "version",
+    "entries"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "catalog": {
+      "const": "advantages"
+    },
+    "version": {
+      "const": 1
+    },
+    "entries": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "kind",
+          "group",
+          "dots",
+          "book",
+          "page",
+          "also_in",
+          "aliases",
+          "source",
+          "thin_blood",
+          "caitiff",
+          "ghoul_only",
+          "coterie",
+          "clans_only",
+          "cannot_buy_for",
+          "repeatable",
+          "requires",
+          "levels"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "book": {
+            "$ref": "#/$defs/book"
+          },
+          "page": {
+            "$ref": "#/$defs/page"
+          },
+          "also_in": {
+            "type": "array",
+            "items": {
+              "$ref": "#/$defs/ref"
+            },
+            "uniqueItems": true
+          },
+          "aliases": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 60
+            },
+            "uniqueItems": true
+          },
+          "source": {
+            "enum": [
+              "pdf",
+              "online",
+              "manual"
+            ]
+          },
+          "manual_fields": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "uniqueItems": true
+          },
+          "source_urls": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "url",
+                "site"
+              ],
+              "additionalProperties": false,
+              "properties": {
+                "url": {
+                  "type": "string"
+                },
+                "site": {
+                  "type": "string"
+                },
+                "revision": {
+                  "type": [
+                    "integer",
+                    "null"
+                  ]
+                },
+                "fetched": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                }
+              }
+            }
+          },
+          "crosscheck": {
+            "type": "string",
+            "pattern": "^(agree|pdf_only|online_only|resolved:.+)$"
+          },
+          "desc": {
+            "$ref": "#/$defs/desc"
+          },
+          "id": {
+            "type": "string",
+            "pattern": "^(background|merit|flaw):[a-z0-9-]+$"
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 60
+          },
+          "kind": {
+            "enum": [
+              "background",
+              "merit",
+              "flaw"
+            ]
+          },
+          "group": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 40
+          },
+          "dots": {
+            "anyOf": [
+              {
+                "type": "null"
+              },
+              {
+                "type": "object",
+                "required": [
+                  "min",
+                  "max"
+                ],
+                "additionalProperties": false,
+                "properties": {
+                  "min": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 6
+                  },
+                  "max": {
+                    "type": [
+                      "integer",
+                      "null"
+                    ],
+                    "minimum": 1,
+                    "maximum": 6
+                  }
+                }
+              },
+              {
+                "type": "object",
+                "required": [
+                  "allowed"
+                ],
+                "additionalProperties": false,
+                "properties": {
+                  "allowed": {
+                    "type": "array",
+                    "minItems": 2,
+                    "items": {
+                      "type": "integer",
+                      "minimum": 1,
+                      "maximum": 6
+                    }
+                  }
+                }
+              }
+            ]
+          },
+          "levels": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "dots",
+                "name"
+              ],
+              "additionalProperties": false,
+              "properties": {
+                "dots": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 6
+                },
+                "name": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 60
+                },
+                "desc": {
+                  "$ref": "#/$defs/desc"
+                }
+              }
+            }
+          },
+          "master_list_page": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "thin_blood": {
+            "type": "boolean"
+          },
+          "caitiff": {
+            "type": "boolean"
+          },
+          "ghoul_only": {
+            "type": "boolean"
+          },
+          "coterie": {
+            "type": "boolean"
+          },
+          "clans_only": {
+            "anyOf": [
+              {
+                "type": "null"
+              },
+              {
+                "type": "array",
+                "minItems": 1,
+                "items": {
+                  "$ref": "#/$defs/clan_id"
+                }
+              }
+            ]
+          },
+          "cannot_buy_for": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "clan",
+                "when",
+                "book",
+                "page"
+              ],
+              "additionalProperties": false,
+              "properties": {
+                "clan": {
+                  "$ref": "#/$defs/clan_id"
+                },
+                "when": {
+                  "enum": [
+                    "creation",
+                    "always"
+                  ]
+                },
+                "book": {
+                  "$ref": "#/$defs/book"
+                },
+                "page": {
+                  "$ref": "#/$defs/page"
+                }
+              }
+            }
+          },
+          "repeatable": {
+            "type": "boolean"
+          },
+          "max_instances": {
+            "type": "integer",
+            "minimum": 2,
+            "maximum": 10
+          },
+          "requires": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 60
+          },
+          "parts": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "book": {
+      "type": "string",
+      "pattern": "^v5-[a-z0-9-]+$"
+    },
+    "page": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 999
+    },
+    "ref": {
+      "type": "object",
+      "required": [
+        "book",
+        "page"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "book": {
+          "type": "string",
+          "pattern": "^v5-[a-z0-9-]+$"
+        },
+        "page": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 999
+        }
+      }
+    },
+    "desc": {
+      "type": "object",
+      "required": [
+        "en",
+        "el"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "en": {
+          "type": "string",
+          "maxLength": 240
+        },
+        "el": {
+          "type": "string",
+          "maxLength": 240
+        }
+      }
+    },
+    "level": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 5
+    },
+    "prerequisite": {
+      "anyOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": "object",
+          "required": [
+            "power_id"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "power_id": {
+              "$ref": "#/$defs/power_id"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": [
+            "any_of"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "any_of": {
+              "type": "array",
+              "minItems": 2,
+              "items": {
+                "$ref": "#/$defs/power_id"
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": [
+            "all_of"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "all_of": {
+              "type": "array",
+              "minItems": 2,
+              "items": {
+                "anyOf": [
+                  {
+                    "type": "object",
+                    "required": [
+                      "power_id"
+                    ],
+                    "additionalProperties": false,
+                    "properties": {
+                      "power_id": {
+                        "$ref": "#/$defs/power_id"
+                      }
+                    }
+                  },
+                  {
+                    "type": "object",
+                    "required": [
+                      "any_of"
+                    ],
+                    "additionalProperties": false,
+                    "properties": {
+                      "any_of": {
+                        "type": "array",
+                        "minItems": 2,
+                        "items": {
+                          "$ref": "#/$defs/power_id"
+                        }
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        }
+      ]
+    },
+    "power_id": {
+      "type": "string",
+      "pattern": "^power:[a-z0-9-]+:[a-z0-9-]+$"
+    },
+    "discipline_id": {
+      "type": "string",
+      "pattern": "^discipline:[a-z0-9-]+$"
+    },
+    "clan_id": {
+      "type": "string",
+      "pattern": "^clan:[a-z0-9-]+$"
+    }
+  }
+}

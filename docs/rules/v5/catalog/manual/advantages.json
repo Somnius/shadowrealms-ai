@@ -1,0 +1,469 @@
+{
+  "catalog": "advantages",
+  "notes": "Hand-checked facts the master list / chapter parse cannot give. Requirements are our short wording of the printed condition.",
+  "merge": [
+    {
+      "from": "flaw:vegan",
+      "into": "flaw:farmer",
+      "why": "PG master list pr 236 still lists the Feeding Flaw as 'Vegan (••)'; the corebook chapter pr 181 prints 'Flaw: (••) Farmer' (Errata 2.0 rename). Chapter name kept, Vegan kept as alias."
+    }
+  ],
+  "patch": [
+    {
+      "id": "flaw:farmer",
+      "set": {
+        "name": "Farmer",
+        "group": "Feeding",
+        "book": "v5-corebook",
+        "page": 181,
+        "cannot_buy_for": [
+          {
+            "clan": "clan:ventrue",
+            "when": "always",
+            "book": "v5-corebook",
+            "page": 181
+          }
+        ]
+      },
+      "why": "core pr 181 chapter entry; 'Ventrue may not take this Flaw'"
+    },
+    {
+      "id": "merit:iron-gullet",
+      "set": {
+        "cannot_buy_for": [
+          {
+            "clan": "clan:ventrue",
+            "when": "always",
+            "book": "v5-corebook",
+            "page": 182
+          }
+        ],
+        "aliases": [
+          "Iron Gullet (Feeding Merit)"
+        ]
+      },
+      "why": "core pr 182: 'Ventrue may not take this Merit'"
+    },
+    {
+      "id": "merit:city-secrets",
+      "set": {
+        "repeatable": true,
+        "max_instances": 3
+      },
+      "why": "PG pr 118: can be taken at most three times (the chapter text calls it a Background; the master list pr 232 lists it under Merits; master list kept, see report)"
+    },
+    {
+      "id": "flaw:folkloric-block",
+      "set": {
+        "repeatable": true
+      },
+      "why": "core pr 182: each folkloric block taken is a separate one-dot Flaw"
+    },
+    {
+      "id": "merit:cobbler",
+      "set": {
+        "requires": "Mask ••"
+      },
+      "why": "master list pr 232 / core pr 192: needs Mask ••"
+    },
+    {
+      "id": "merit:zeroed",
+      "set": {
+        "requires": "Mask ••"
+      },
+      "why": "master list pr 233 / core pr 192: needs Mask ••"
+    },
+    {
+      "id": "merit:cell",
+      "set": {
+        "requires": "Haven ••"
+      },
+      "why": "master list pr 233: minimum Haven ••"
+    },
+    {
+      "id": "merit:laboratory",
+      "set": {
+        "requires": "Haven ••"
+      },
+      "why": "master list pr 233: minimum Haven ••"
+    },
+    {
+      "id": "merit:surgery",
+      "set": {
+        "requires": "Haven ••"
+      },
+      "why": "master list pr 234: minimum Haven ••"
+    },
+    {
+      "id": "merit:library",
+      "set": {
+        "requires": "more than one dot: Haven ••"
+      },
+      "why": "core pr 189: a small haven allows only one dot"
+    },
+    {
+      "id": "merit:tempered-will",
+      "set": {
+        "requires": "no Dominate or Presence dots"
+      },
+      "why": "PG pr 120: only without dots in Dominate or Presence"
+    },
+    {
+      "id": "merit:nuit-mode",
+      "set": {
+        "requires": "Blood Potency 1 or lower"
+      },
+      "why": "PG pr 119: Blood Potency 1 or lower"
+    },
+    {
+      "id": "flaw:archaic",
+      "set": {
+        "requires": "ancilla or older"
+      },
+      "why": "core pr 180: only ancillae or older"
+    },
+    {
+      "id": "flaw:living-in-the-past",
+      "set": {
+        "requires": "ancilla or older"
+      },
+      "why": "core pr 180: only ancillae or older"
+    },
+    {
+      "id": "flaw:enemies",
+      "set": {
+        "aliases": [
+          "Enemy"
+        ]
+      },
+      "why": "predator types print it as the Enemy Flaw"
+    },
+    {
+      "id": "merit:beautiful",
+      "set": {
+        "aliases": [
+          "Looks: Beautiful"
+        ]
+      },
+      "why": "old sheets / v5.json predator grants"
+    },
+    {
+      "id": "background:contacts",
+      "set": {
+        "aliases": [
+          "Contact"
+        ]
+      },
+      "why": "predator grant text"
+    },
+    {
+      "id": "background:mawla",
+      "set": {
+        "cannot_buy_for": [
+          {
+            "clan": "clan:thin-blood",
+            "when": "creation",
+            "book": "v5-corebook",
+            "page": 149
+          }
+        ]
+      },
+      "why": "core pr 149: no thin-blood can buy Bonding, Mawla, Retainers or Status during character creation"
+    },
+    {
+      "id": "background:retainers",
+      "set": {
+        "cannot_buy_for": [
+          {
+            "clan": "clan:thin-blood",
+            "when": "creation",
+            "book": "v5-corebook",
+            "page": 149
+          }
+        ]
+      },
+      "why": "core pr 149: no thin-blood can buy Bonding, Mawla, Retainers or Status during character creation"
+    },
+    {
+      "id": "background:status",
+      "set": {
+        "cannot_buy_for": [
+          {
+            "clan": "clan:thin-blood",
+            "when": "creation",
+            "book": "v5-corebook",
+            "page": 149
+          }
+        ]
+      },
+      "why": "core pr 149: no thin-blood can buy Bonding, Mawla, Retainers or Status during character creation"
+    },
+    {
+      "id": "merit:bond-resistance",
+      "set": {
+        "cannot_buy_for": [
+          {
+            "clan": "clan:thin-blood",
+            "when": "creation",
+            "book": "v5-corebook",
+            "page": 149
+          }
+        ]
+      },
+      "why": "core pr 149: no thin-blood can buy Bonding, Mawla, Retainers or Status during character creation"
+    },
+    {
+      "id": "merit:short-bond",
+      "set": {
+        "cannot_buy_for": [
+          {
+            "clan": "clan:thin-blood",
+            "when": "creation",
+            "book": "v5-corebook",
+            "page": 149
+          }
+        ]
+      },
+      "why": "core pr 149: no thin-blood can buy Bonding, Mawla, Retainers or Status during character creation"
+    },
+    {
+      "id": "merit:unbondable",
+      "set": {
+        "cannot_buy_for": [
+          {
+            "clan": "clan:thin-blood",
+            "when": "creation",
+            "book": "v5-corebook",
+            "page": 149
+          }
+        ]
+      },
+      "why": "core pr 149: no thin-blood can buy Bonding, Mawla, Retainers or Status during character creation"
+    },
+    {
+      "id": "background:bloodline",
+      "set": {
+        "page": 114
+      },
+      "why": "the Bloodline Background is printed under Loresheets on PG pr 114; the master list pr 232 cites p. 112"
+    },
+    {
+      "id": "flaw:risk-taker",
+      "set": {
+        "aliases": [
+          "Living on the Edge"
+        ],
+        "also_in": [
+          {
+            "book": "v5-companion",
+            "page": 60
+          }
+        ]
+      },
+      "why": "Companion pr 60 prints the same Psychological Flaw as 'Living on the Edge' (same rules); PG pr 121 renames it Risk-Taker. The Companion prints it with two dot glyphs, PG (•); PG kept (see report)"
+    },
+    {
+      "id": "flaw:folkloric-block",
+      "set": {
+        "group": "Mythic"
+      },
+      "why": "core pr 182: printed under 'mythic merits and flaws' (checked on the rendered page; the text layer puts it before that heading)"
+    },
+    {
+      "id": "flaw:thin-blood-bestial-temper",
+      "set": {
+        "kind": "flaw"
+      },
+      "why": "see rename"
+    }
+  ],
+  "add": [
+    {
+      "id": "background:domain",
+      "name": "Domain",
+      "kind": "background",
+      "group": "Domain",
+      "dots": null,
+      "book": "v5-corebook",
+      "page": 195,
+      "also_in": [
+        {
+          "book": "v5-players-guide",
+          "page": 173
+        }
+      ],
+      "aliases": [],
+      "source": "manual",
+      "master_list_page": null,
+      "thin_blood": false,
+      "caitiff": false,
+      "ghoul_only": false,
+      "coterie": true,
+      "clans_only": null,
+      "cannot_buy_for": [],
+      "repeatable": false,
+      "requires": null,
+      "levels": [],
+      "parts": [
+        "Chasse",
+        "Lien",
+        "Portillon"
+      ]
+    },
+    {
+      "id": "flaw:coterie-bullies",
+      "name": "Bullies",
+      "kind": "flaw",
+      "group": "Coterie",
+      "dots": {
+        "min": 1,
+        "max": 1
+      },
+      "book": "v5-players-guide",
+      "page": 172,
+      "also_in": [],
+      "aliases": [],
+      "source": "manual",
+      "master_list_page": null,
+      "thin_blood": false,
+      "caitiff": false,
+      "ghoul_only": false,
+      "coterie": true,
+      "clans_only": null,
+      "cannot_buy_for": [],
+      "repeatable": false,
+      "requires": null,
+      "levels": []
+    },
+    {
+      "id": "flaw:coterie-cursed",
+      "name": "Cursed",
+      "kind": "flaw",
+      "group": "Coterie",
+      "dots": null,
+      "book": "v5-players-guide",
+      "page": 172,
+      "also_in": [],
+      "aliases": [],
+      "source": "manual",
+      "master_list_page": null,
+      "thin_blood": false,
+      "caitiff": false,
+      "ghoul_only": false,
+      "coterie": true,
+      "clans_only": null,
+      "cannot_buy_for": [],
+      "repeatable": false,
+      "requires": null,
+      "levels": []
+    },
+    {
+      "id": "flaw:coterie-custodians",
+      "name": "Custodians",
+      "kind": "flaw",
+      "group": "Coterie",
+      "dots": {
+        "min": 2,
+        "max": 2
+      },
+      "book": "v5-players-guide",
+      "page": 172,
+      "also_in": [],
+      "aliases": [],
+      "source": "manual",
+      "master_list_page": null,
+      "thin_blood": false,
+      "caitiff": false,
+      "ghoul_only": false,
+      "coterie": true,
+      "clans_only": null,
+      "cannot_buy_for": [],
+      "repeatable": false,
+      "requires": null,
+      "levels": []
+    },
+    {
+      "id": "flaw:coterie-targeted",
+      "name": "Targeted",
+      "kind": "flaw",
+      "group": "Coterie",
+      "dots": {
+        "min": 1,
+        "max": 1
+      },
+      "book": "v5-players-guide",
+      "page": 173,
+      "also_in": [],
+      "aliases": [],
+      "source": "manual",
+      "master_list_page": null,
+      "thin_blood": false,
+      "caitiff": false,
+      "ghoul_only": false,
+      "coterie": true,
+      "clans_only": null,
+      "cannot_buy_for": [],
+      "repeatable": false,
+      "requires": null,
+      "levels": []
+    },
+    {
+      "id": "flaw:coterie-territorial",
+      "name": "Territorial",
+      "kind": "flaw",
+      "group": "Coterie",
+      "dots": {
+        "min": 1,
+        "max": 1
+      },
+      "book": "v5-players-guide",
+      "page": 173,
+      "also_in": [],
+      "aliases": [],
+      "source": "manual",
+      "master_list_page": null,
+      "thin_blood": false,
+      "caitiff": false,
+      "ghoul_only": false,
+      "coterie": true,
+      "clans_only": null,
+      "cannot_buy_for": [],
+      "repeatable": false,
+      "requires": null,
+      "levels": []
+    },
+    {
+      "id": "flaw:coterie-under-siege",
+      "name": "Under Siege",
+      "kind": "flaw",
+      "group": "Coterie",
+      "dots": {
+        "min": 2,
+        "max": 2
+      },
+      "book": "v5-players-guide",
+      "page": 173,
+      "also_in": [],
+      "aliases": [],
+      "source": "manual",
+      "master_list_page": null,
+      "thin_blood": false,
+      "caitiff": false,
+      "ghoul_only": false,
+      "coterie": true,
+      "clans_only": null,
+      "cannot_buy_for": [],
+      "repeatable": false,
+      "requires": null,
+      "levels": []
+    }
+  ],
+  "rename": [
+    {
+      "from": "merit:thin-blood-bestial-temper",
+      "into": "flaw:thin-blood-bestial-temper",
+      "name": "Bestial Temper",
+      "why": "the PG master list pr 234 lists Bestial Temper under Thin-Blood Merits; the corebook prints it under 'thin-blood flaws' (pr 182, checked on the rendered page). Chapter kept."
+    }
+  ]
+}

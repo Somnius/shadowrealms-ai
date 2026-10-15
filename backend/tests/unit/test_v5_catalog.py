@@ -72,6 +72,10 @@ def test_counts(data):
     assert len(_entries(data, "clans")) == 16
     assert len(_entries(data, "disciplines")) == 12
     assert len(_entries(data, "predator_types")) == 18
+    assert len(_entries(data, "advantages")) == 170
+    assert len(_entries(data, "loresheets")) == 32
+    lore_books = [e["book"] for e in _entries(data, "loresheets")]
+    assert (lore_books.count("v5-corebook"), lore_books.count("v5-players-guide")) == (25, 7)
     names = {d["name"] for d in _entries(data, "disciplines")}
     assert {"Oblivion", "Thin-Blood Alchemy"} <= names
     for name in ("rituals", "ceremonies", "formulae"):
@@ -139,3 +143,44 @@ def test_no_book_text_fields():
             elif isinstance(o, str):
                 assert len(o) <= 400, f"{f.name}: {where} is {len(o)} chars"
         walk(json.loads(f.read_text(encoding="utf-8")), "$")
+
+
+def test_every_predator_grant_resolves_to_an_advantage(data):
+    adv = {e["id"]: e for e in _entries(data, "advantages")}
+    groups = {(e["kind"], e["group"].lower()) for e in adv.values()}
+    for p in _entries(data, "predator_types"):
+        for kind, grants in (("advantage", p["advantages"]), ("flaw", p["flaws"])):
+            for g in grants:
+                for opt in g["options"]:
+                    if opt.get("group"):
+                        k, _, name = opt["id"].partition(":")
+                        assert (k, name) in groups, (p["id"], opt["id"])
+                        continue
+                    assert opt["id"] in adv, (p["id"], opt["id"])
+                    assert (adv[opt["id"]]["kind"] == "flaw") == (kind == "flaw"), (p["id"], opt["id"])
+
+
+def test_advantages_facts(data):
+    adv = {e["id"]: e for e in _entries(data, "advantages")}
+    ids = list(adv)
+    assert len(ids) == len(set(ids))
+    assert adv["merit:iron-gullet"]["dots"] == {"min": 3, "max": 3}
+    assert "Iron Gullet (Feeding Merit)" in adv["merit:iron-gullet"]["aliases"]
+    assert adv["merit:iron-gullet"]["cannot_buy_for"][0]["clan"] == "clan:ventrue"
+    assert adv["flaw:farmer"]["aliases"] == ["Vegan"]
+    assert adv["background:allies"]["repeatable"] and adv["background:allies"]["dots"] == {"min": 1, "max": 6}
+    assert [lv["name"] for lv in adv["background:resources"]["levels"]][-1] == "Ultra Rich"
+    tb = [e for e in adv.values() if e["thin_blood"]]
+    assert all(e["dots"] is None for e in tb)
+    assert sum(e["kind"] == "merit" for e in tb) == 14 and sum(e["kind"] == "flaw" for e in tb) == 16
+    assert adv["flaw:caitiff-clan-curse"]["caitiff"] and adv["flaw:thin-blood-clan-curse"]["thin_blood"]
+    assert adv["merit:coterie-call-to-purpose"]["clans_only"] == ["clan:banu-haqim"]
+
+
+def test_loresheet_levels(data):
+    for e in _entries(data, "loresheets"):
+        assert [lv["dots"] for lv in e["levels"]] == [1, 2, 3, 4, 5], e["id"]
+        assert all(lv["name"] for lv in e["levels"]), e["id"]
+    lore = {e["id"]: e for e in _entries(data, "loresheets")}
+    assert lore["loresheet:descendant-of-hardestadt"]["clans_only"] == ["clan:ventrue"]
+    assert lore["loresheet:theo-bell"]["levels"][4]["name"] == "Sect Neutrality"

@@ -1,0 +1,1175 @@
+{
+  "catalog": "loresheets",
+  "version": 1,
+  "entries": [
+    {
+      "id": "loresheet:the-bahari",
+      "name": "The Bahari",
+      "book": "v5-corebook",
+      "page": 382,
+      "restriction": null,
+      "clans_only": null,
+      "disciplines_only": null,
+      "thin_blood_only": false,
+      "levels": [
+        {
+          "dots": 1,
+          "name": "Dangerous Reputation"
+        },
+        {
+          "dots": 2,
+          "name": "Ritual Scarification"
+        },
+        {
+          "dots": 3,
+          "name": "Sacrifice the Children"
+        },
+        {
+          "dots": 4,
+          "name": "The Womb's Blood"
+        },
+        {
+          "dots": 5,
+          "name": "First-Cursed"
+        }
+      ],
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf"
+    },
+    {
+      "id": "loresheet:theo-bell",
+      "name": "Theo Bell",
+      "book": "v5-corebook",
+      "page": 383,
+      "restriction": null,
+      "clans_only": null,
+      "disciplines_only": null,
+      "thin_blood_only": false,
+      "levels": [
+        {
+          "dots": 1,
+          "name": "Rebel Cell"
+        },
+        {
+          "dots": 2,
+          "name": "True Anarch"
+        },
+        {
+          "dots": 3,
+          "name": "Contact Information"
+        },
+        {
+          "dots": 4,
+          "name": "Bell's Circle"
+        },
+        {
+          "dots": 5,
+          "name": "Sect Neutrality"
+        }
+      ],
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf"
+    },
+    {
+      "id": "loresheet:cainite-heresy",
+      "name": "Cainite Heresy",
+      "book": "v5-corebook",
+      "page": 384,
+      "restriction": null,
+      "clans_only": null,
+      "disciplines_only": null,
+      "thin_blood_only": false,
+      "levels": [
+        {
+          "dots": 1,
+          "name": "Let He Who Hath Understanding"
+        },
+        {
+          "dots": 2,
+          "name": "Hand of the Heresy"
+        },
+        {
+          "dots": 3,
+          "name": "Counter-Inquisition"
+        },
+        {
+          "dots": 4,
+          "name": "Red Celebrant"
+        },
+        {
+          "dots": 5,
+          "name": "The One Named in Prophecy"
+        }
+      ],
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf"
+    },
+    {
+      "id": "loresheet:carna",
+      "name": "Carna",
+      "book": "v5-corebook",
+      "page": 385,
+      "restriction": null,
+      "clans_only": null,
+      "disciplines_only": null,
+      "thin_blood_only": false,
+      "levels": [
+        {
+          "dots": 1,
+          "name": "Embrace the Vision"
+        },
+        {
+          "dots": 2,
+          "name": "The Rebel Trail"
+        },
+        {
+          "dots": 3,
+          "name": "Unorthodox Rituals"
+        },
+        {
+          "dots": 4,
+          "name": "Reimagined Bond"
+        },
+        {
+          "dots": 5,
+          "name": "Book of the Grave-War"
+        }
+      ],
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf"
+    },
+    {
+      "id": "loresheet:the-circulatory-system",
+      "name": "The Circulatory System",
+      "book": "v5-corebook",
+      "page": 386,
+      "restriction": null,
+      "clans_only": null,
+      "disciplines_only": null,
+      "thin_blood_only": false,
+      "levels": [
+        {
+          "dots": 1,
+          "name": "Tap into the System"
+        },
+        {
+          "dots": 2,
+          "name": "Little Black Book"
+        },
+        {
+          "dots": 3,
+          "name": "Farm Upstate"
+        },
+        {
+          "dots": 4,
+          "name": "Secure Transit"
+        },
+        {
+          "dots": 5,
+          "name": "Blood Sommelier"
+        }
+      ],
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf",
+      "manual_fields": [
+        "levels"
+      ]
+    },
+    {
+      "id": "loresheet:convention-of-thorns",
+      "name": "Convention of Thorns",
+      "book": "v5-corebook",
+      "page": 387,
+      "restriction": null,
+      "clans_only": null,
+      "disciplines_only": null,
+      "thin_blood_only": false,
+      "levels": [
+        {
+          "dots": 1,
+          "name": "Thorns Historian"
+        },
+        {
+          "dots": 2,
+          "name": "Tradition Master"
+        },
+        {
+          "dots": 3,
+          "name": "Convention Secrets"
+        },
+        {
+          "dots": 4,
+          "name": "Prospective Justicar"
+        },
+        {
+          "dots": 5,
+          "name": "New Traditions"
+        }
+      ],
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf"
+    },
+    {
+      "id": "loresheet:the-first-inquisition",
+      "name": "The First Inquisition",
+      "book": "v5-corebook",
+      "page": 388,
+      "restriction": null,
+      "clans_only": null,
+      "disciplines_only": null,
+      "thin_blood_only": false,
+      "levels": [
+        {
+          "dots": 1,
+          "name": "Mistakes of the Past"
+        },
+        {
+          "dots": 2,
+          "name": "Names of the Guilty"
+        },
+        {
+          "dots": 3,
+          "name": "The Sect of St. James"
+        },
+        {
+          "dots": 4,
+          "name": "The Second Act"
+        },
+        {
+          "dots": 5,
+          "name": "Black Spot"
+        }
+      ],
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf"
+    },
+    {
+      "id": "loresheet:golconda",
+      "name": "Golconda",
+      "book": "v5-corebook",
+      "page": 389,
+      "restriction": null,
+      "clans_only": null,
+      "disciplines_only": null,
+      "thin_blood_only": false,
+      "levels": [
+        {
+          "dots": 1,
+          "name": "Seeds of Golconda"
+        },
+        {
+          "dots": 2,
+          "name": "The One True Way"
+        },
+        {
+          "dots": 3,
+          "name": "Saulot's Disciple"
+        },
+        {
+          "dots": 4,
+          "name": "Satisfy the Hunger"
+        },
+        {
+          "dots": 5,
+          "name": "Greet the Sun"
+        }
+      ],
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf",
+      "manual_fields": [
+        "levels"
+      ]
+    },
+    {
+      "id": "loresheet:descendant-of-hardestadt",
+      "name": "Descendant of Hardestadt",
+      "book": "v5-corebook",
+      "page": 390,
+      "restriction": "ventrue characters only",
+      "clans_only": [
+        "clan:ventrue"
+      ],
+      "disciplines_only": null,
+      "thin_blood_only": false,
+      "levels": [
+        {
+          "dots": 1,
+          "name": "Voice of Hardestadt"
+        },
+        {
+          "dots": 2,
+          "name": "Supreme Leader"
+        },
+        {
+          "dots": 3,
+          "name": "Ventrue Pillar"
+        },
+        {
+          "dots": 4,
+          "name": "Line to the Founders"
+        },
+        {
+          "dots": 5,
+          "name": "Hardestadt's Heir"
+        }
+      ],
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf"
+    },
+    {
+      "id": "loresheet:descendant-of-helena",
+      "name": "Descendant of Helena",
+      "book": "v5-corebook",
+      "page": 391,
+      "restriction": "toreador characters only",
+      "clans_only": [
+        "clan:toreador"
+      ],
+      "disciplines_only": null,
+      "thin_blood_only": false,
+      "levels": [
+        {
+          "dots": 1,
+          "name": "Skin-Deep"
+        },
+        {
+          "dots": 2,
+          "name": "Real Talent"
+        },
+        {
+          "dots": 3,
+          "name": "Embrace the Stereotype"
+        },
+        {
+          "dots": 4,
+          "name": "Divine Purity"
+        },
+        {
+          "dots": 5,
+          "name": "Succubus Club Franchise"
+        }
+      ],
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf"
+    },
+    {
+      "id": "loresheet:sect-war-veteran",
+      "name": "Sect War Veteran",
+      "book": "v5-corebook",
+      "page": 392,
+      "restriction": null,
+      "clans_only": null,
+      "disciplines_only": null,
+      "thin_blood_only": false,
+      "levels": [
+        {
+          "dots": 1,
+          "name": "Survivor"
+        },
+        {
+          "dots": 2,
+          "name": "Active Participant"
+        },
+        {
+          "dots": 3,
+          "name": "Trophy Kill"
+        },
+        {
+          "dots": 4,
+          "name": "No Vampire's Land"
+        },
+        {
+          "dots": 5,
+          "name": "Sect Agitator"
+        }
+      ],
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf"
+    },
+    {
+      "id": "loresheet:the-trinity",
+      "name": "The Trinity",
+      "book": "v5-corebook",
+      "page": 393,
+      "restriction": null,
+      "clans_only": null,
+      "disciplines_only": null,
+      "thin_blood_only": false,
+      "levels": [
+        {
+          "dots": 1,
+          "name": "Constantinople"
+        },
+        {
+          "dots": 2,
+          "name": "Antonius' Architecture"
+        },
+        {
+          "dots": 3,
+          "name": "The Dream"
+        },
+        {
+          "dots": 4,
+          "name": "The Dracon"
+        },
+        {
+          "dots": 5,
+          "name": "The New Trinity"
+        }
+      ],
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf"
+    },
+    {
+      "id": "loresheet:jeanette-therese-voerman",
+      "name": "Jeanette / Therese Voerman",
+      "book": "v5-corebook",
+      "page": 394,
+      "restriction": null,
+      "clans_only": null,
+      "disciplines_only": null,
+      "thin_blood_only": false,
+      "levels": [
+        {
+          "dots": 1,
+          "name": "Asylum Membership"
+        },
+        {
+          "dots": 2,
+          "name": "Performing Monkey"
+        },
+        {
+          "dots": 3,
+          "name": "Jeanette's Favorite"
+        },
+        {
+          "dots": 4,
+          "name": "Therese's Favorite"
+        },
+        {
+          "dots": 5,
+          "name": "Asylum Operator"
+        }
+      ],
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf"
+    },
+    {
+      "id": "loresheet:the-week-of-nightmares",
+      "name": "The Week of Nightmares",
+      "book": "v5-corebook",
+      "page": 395,
+      "restriction": null,
+      "clans_only": null,
+      "disciplines_only": null,
+      "thin_blood_only": false,
+      "levels": [
+        {
+          "dots": 1,
+          "name": "Oral History"
+        },
+        {
+          "dots": 2,
+          "name": "Ravnos Remains"
+        },
+        {
+          "dots": 3,
+          "name": "I Was There"
+        },
+        {
+          "dots": 4,
+          "name": "The Red Star"
+        },
+        {
+          "dots": 5,
+          "name": "Blood of Zapathasura"
+        }
+      ],
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf"
+    },
+    {
+      "id": "loresheet:rudi",
+      "name": "Rudi",
+      "book": "v5-corebook",
+      "page": 396,
+      "restriction": null,
+      "clans_only": null,
+      "disciplines_only": null,
+      "thin_blood_only": false,
+      "levels": [
+        {
+          "dots": 1,
+          "name": "Newfound Rights"
+        },
+        {
+          "dots": 2,
+          "name": "Them and Theirs"
+        },
+        {
+          "dots": 3,
+          "name": "Gangrel Advocate"
+        },
+        {
+          "dots": 4,
+          "name": "The Bear Pack"
+        },
+        {
+          "dots": 5,
+          "name": "Rudi's Army"
+        }
+      ],
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf"
+    },
+    {
+      "id": "loresheet:descendant-of-tyler",
+      "name": "Descendant of Tyler",
+      "book": "v5-corebook",
+      "page": 397,
+      "restriction": "brujah characters only",
+      "clans_only": [
+        "clan:brujah"
+      ],
+      "disciplines_only": null,
+      "thin_blood_only": false,
+      "levels": [
+        {
+          "dots": 1,
+          "name": "Instigator"
+        },
+        {
+          "dots": 2,
+          "name": "Champion of the Cause"
+        },
+        {
+          "dots": 3,
+          "name": "Tyler's Mercy"
+        },
+        {
+          "dots": 4,
+          "name": "The Furores"
+        },
+        {
+          "dots": 5,
+          "name": "Permanent Revolution"
+        }
+      ],
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf"
+    },
+    {
+      "id": "loresheet:descendant-of-zelios",
+      "name": "Descendant of Zelios",
+      "book": "v5-corebook",
+      "page": 398,
+      "restriction": "nosferatu characters only",
+      "clans_only": [
+        "clan:nosferatu"
+      ],
+      "disciplines_only": null,
+      "thin_blood_only": false,
+      "levels": [
+        {
+          "dots": 1,
+          "name": "Sanctuary"
+        },
+        {
+          "dots": 2,
+          "name": "Saboteur"
+        },
+        {
+          "dots": 3,
+          "name": "On Commission"
+        },
+        {
+          "dots": 4,
+          "name": "The Labyrinth"
+        },
+        {
+          "dots": 5,
+          "name": "Sense the Ley Lines"
+        }
+      ],
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf"
+    },
+    {
+      "id": "loresheet:descendant-of-vasantasena",
+      "name": "Descendant of Vasantasena",
+      "book": "v5-corebook",
+      "page": 399,
+      "restriction": "malkavian characters only",
+      "clans_only": [
+        "clan:malkavian"
+      ],
+      "disciplines_only": null,
+      "thin_blood_only": false,
+      "levels": [
+        {
+          "dots": 1,
+          "name": "Agent of Chaos"
+        },
+        {
+          "dots": 2,
+          "name": "Hear My Words"
+        },
+        {
+          "dots": 3,
+          "name": "Scent the Bond"
+        },
+        {
+          "dots": 4,
+          "name": "Destroy the Bond"
+        },
+        {
+          "dots": 5,
+          "name": "Sabbat Becomes Camarilla"
+        }
+      ],
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf",
+      "manual_fields": [
+        "levels"
+      ]
+    },
+    {
+      "id": "loresheet:high-clan",
+      "name": "High Clan",
+      "book": "v5-corebook",
+      "page": 400,
+      "restriction": null,
+      "clans_only": null,
+      "disciplines_only": null,
+      "thin_blood_only": false,
+      "levels": [
+        {
+          "dots": 1,
+          "name": "Peacock"
+        },
+        {
+          "dots": 2,
+          "name": "Sway the Low"
+        },
+        {
+          "dots": 3,
+          "name": "Elevate the Low"
+        },
+        {
+          "dots": 4,
+          "name": "Embraced to Rule"
+        },
+        {
+          "dots": 5,
+          "name": "Blessed, not Cursed"
+        }
+      ],
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf"
+    },
+    {
+      "id": "loresheet:low-clan",
+      "name": "Low Clan",
+      "book": "v5-corebook",
+      "page": 401,
+      "restriction": null,
+      "clans_only": null,
+      "disciplines_only": null,
+      "thin_blood_only": false,
+      "levels": [
+        {
+          "dots": 1,
+          "name": "Thick Hide"
+        },
+        {
+          "dots": 2,
+          "name": "Cursed with Pride"
+        },
+        {
+          "dots": 3,
+          "name": "Uncanny Kinship"
+        },
+        {
+          "dots": 4,
+          "name": "Trade Among Equals"
+        },
+        {
+          "dots": 5,
+          "name": "Criticality Incident"
+        }
+      ],
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf"
+    },
+    {
+      "id": "loresheet:ambrus-maropis",
+      "name": "Ambrus Maropis",
+      "book": "v5-corebook",
+      "page": 402,
+      "restriction": null,
+      "clans_only": null,
+      "disciplines_only": null,
+      "thin_blood_only": false,
+      "levels": [
+        {
+          "dots": 1,
+          "name": "True Believer"
+        },
+        {
+          "dots": 2,
+          "name": "Clandestine Information"
+        },
+        {
+          "dots": 3,
+          "name": "Taught by the Best"
+        },
+        {
+          "dots": 4,
+          "name": "Back Door Panopticon"
+        },
+        {
+          "dots": 5,
+          "name": "On Another Grid Entirely"
+        }
+      ],
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf"
+    },
+    {
+      "id": "loresheet:carmelita-neillson",
+      "name": "Carmelita Neillson",
+      "book": "v5-corebook",
+      "page": 403,
+      "restriction": null,
+      "clans_only": null,
+      "disciplines_only": null,
+      "thin_blood_only": false,
+      "levels": [
+        {
+          "dots": 1,
+          "name": "The Art of Story"
+        },
+        {
+          "dots": 2,
+          "name": "The Art of Will"
+        },
+        {
+          "dots": 3,
+          "name": "Neillson Library"
+        },
+        {
+          "dots": 4,
+          "name": "Interview With the Methuselah"
+        },
+        {
+          "dots": 5,
+          "name": "Ancestor's Tomb"
+        }
+      ],
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf"
+    },
+    {
+      "id": "loresheet:fiorenza-savona",
+      "name": "Fiorenza Savona",
+      "book": "v5-corebook",
+      "page": 404,
+      "restriction": null,
+      "clans_only": null,
+      "disciplines_only": null,
+      "thin_blood_only": false,
+      "levels": [
+        {
+          "dots": 1,
+          "name": "On Fiorenza's List"
+        },
+        {
+          "dots": 2,
+          "name": "Breakfast with Fiorenza"
+        },
+        {
+          "dots": 3,
+          "name": "Friendly Benefits"
+        },
+        {
+          "dots": 4,
+          "name": "The Directorate"
+        },
+        {
+          "dots": 5,
+          "name": "Government Motion"
+        }
+      ],
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf"
+    },
+    {
+      "id": "loresheet:descendant-of-karl-schrekt",
+      "name": "Descendant of Karl Schrekt",
+      "book": "v5-corebook",
+      "page": 405,
+      "restriction": "tremere characters only",
+      "clans_only": [
+        "clan:tremere"
+      ],
+      "disciplines_only": null,
+      "thin_blood_only": false,
+      "levels": [
+        {
+          "dots": 1,
+          "name": "Remember the House"
+        },
+        {
+          "dots": 2,
+          "name": "Hardliner"
+        },
+        {
+          "dots": 3,
+          "name": "Ritual Preparedness"
+        },
+        {
+          "dots": 4,
+          "name": "Archon's Bane"
+        },
+        {
+          "dots": 5,
+          "name": "Know the World"
+        }
+      ],
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf"
+    },
+    {
+      "id": "loresheet:descendant-of-xaviar",
+      "name": "Descendant of Xaviar",
+      "book": "v5-corebook",
+      "page": 406,
+      "restriction": "gangrel characters only",
+      "clans_only": [
+        "clan:gangrel"
+      ],
+      "disciplines_only": null,
+      "thin_blood_only": false,
+      "levels": [
+        {
+          "dots": 1,
+          "name": "Martyred Ancestor"
+        },
+        {
+          "dots": 2,
+          "name": "Where the Bodies Are Buried"
+        },
+        {
+          "dots": 3,
+          "name": "Loyal Hound"
+        },
+        {
+          "dots": 4,
+          "name": "Monstrous Bat"
+        },
+        {
+          "dots": 5,
+          "name": "Experienced the Antediluvian"
+        }
+      ],
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf",
+      "manual_fields": [
+        "levels"
+      ]
+    },
+    {
+      "id": "loresheet:bankers-of-dunsirn",
+      "name": "Bankers of Dunsirn",
+      "book": "v5-players-guide",
+      "page": 223,
+      "restriction": "Bloodline; Hecata characters only",
+      "clans_only": [
+        "clan:hecata"
+      ],
+      "disciplines_only": null,
+      "thin_blood_only": false,
+      "levels": [
+        {
+          "dots": 1,
+          "name": "Money Obfuscates"
+        },
+        {
+          "dots": 2,
+          "name": "Money Talks"
+        },
+        {
+          "dots": 3,
+          "name": "Money Enhances"
+        },
+        {
+          "dots": 4,
+          "name": "Money Multiplies"
+        },
+        {
+          "dots": 5,
+          "name": "Money Dictates"
+        }
+      ],
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf"
+    },
+    {
+      "id": "loresheet:children-of-tenochtitlan",
+      "name": "Children of Tenochtitlan",
+      "book": "v5-players-guide",
+      "page": 224,
+      "restriction": "Bloodline; Hecata characters only",
+      "clans_only": [
+        "clan:hecata"
+      ],
+      "disciplines_only": null,
+      "thin_blood_only": false,
+      "levels": [
+        {
+          "dots": 1,
+          "name": "Hiding from the Wolf"
+        },
+        {
+          "dots": 2,
+          "name": "Ghostly Instincts"
+        },
+        {
+          "dots": 3,
+          "name": "Forward Thinking"
+        },
+        {
+          "dots": 4,
+          "name": "Necromantic Prodigy"
+        },
+        {
+          "dots": 5,
+          "name": "Next in Line"
+        }
+      ],
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf",
+      "manual_fields": [
+        "name"
+      ]
+    },
+    {
+      "id": "loresheet:flesh-eaters",
+      "name": "Flesh-Eaters",
+      "book": "v5-players-guide",
+      "page": 225,
+      "restriction": "Bloodline; Hecata Characters Only",
+      "clans_only": [
+        "clan:hecata"
+      ],
+      "disciplines_only": null,
+      "thin_blood_only": false,
+      "levels": [
+        {
+          "dots": 1,
+          "name": "Viscus"
+        },
+        {
+          "dots": 2,
+          "name": "Unseen Spirit"
+        },
+        {
+          "dots": 3,
+          "name": "The Perfect Murder"
+        },
+        {
+          "dots": 4,
+          "name": "Send a Murderer"
+        },
+        {
+          "dots": 5,
+          "name": "Monstrous Bite"
+        }
+      ],
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf",
+      "manual_fields": [
+        "name"
+      ]
+    },
+    {
+      "id": "loresheet:harbingers-of-ashur",
+      "name": "Harbingers of Ashur",
+      "book": "v5-players-guide",
+      "page": 226,
+      "restriction": "Bloodline; Hecata Characters Only",
+      "clans_only": [
+        "clan:hecata"
+      ],
+      "disciplines_only": null,
+      "thin_blood_only": false,
+      "levels": [
+        {
+          "dots": 1,
+          "name": "The Ashen Mask"
+        },
+        {
+          "dots": 2,
+          "name": "The Gold Mask"
+        },
+        {
+          "dots": 3,
+          "name": "The White Mask"
+        },
+        {
+          "dots": 4,
+          "name": "The Obsidian Mask"
+        },
+        {
+          "dots": 5,
+          "name": "The Lazarene Mask"
+        }
+      ],
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf"
+    },
+    {
+      "id": "loresheet:la-famiglia-giovanni",
+      "name": "La Famiglia Giovanni",
+      "book": "v5-players-guide",
+      "page": 227,
+      "restriction": "Bloodline; Hecata Characters Only",
+      "clans_only": [
+        "clan:hecata"
+      ],
+      "disciplines_only": null,
+      "thin_blood_only": false,
+      "levels": [
+        {
+          "dots": 1,
+          "name": "A Cousin's Ear"
+        },
+        {
+          "dots": 2,
+          "name": "Faded Glamor"
+        },
+        {
+          "dots": 3,
+          "name": "Petty Cash"
+        },
+        {
+          "dots": 4,
+          "name": "Spectre Servant"
+        },
+        {
+          "dots": 5,
+          "name": "Aspiring Anziano"
+        }
+      ],
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf"
+    },
+    {
+      "id": "loresheet:the-gorgons",
+      "name": "The Gorgons",
+      "book": "v5-players-guide",
+      "page": 228,
+      "restriction": "Bloodline; Hecata Characters Only",
+      "clans_only": [
+        "clan:hecata"
+      ],
+      "disciplines_only": null,
+      "thin_blood_only": false,
+      "levels": [
+        {
+          "dots": 1,
+          "name": "The Serpent's Kiss"
+        },
+        {
+          "dots": 2,
+          "name": "Protection"
+        },
+        {
+          "dots": 3,
+          "name": "Four Humours"
+        },
+        {
+          "dots": 4,
+          "name": "Controlling the Beast"
+        },
+        {
+          "dots": 5,
+          "name": "Medusa's Gaze"
+        }
+      ],
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf"
+    },
+    {
+      "id": "loresheet:nasyon-san-an",
+      "name": "Nasyon San An",
+      "book": "v5-players-guide",
+      "page": 229,
+      "restriction": "Bloodline; Hecata Characters Only",
+      "clans_only": [
+        "clan:hecata"
+      ],
+      "disciplines_only": null,
+      "thin_blood_only": false,
+      "levels": [
+        {
+          "dots": 1,
+          "name": "CSI Shit"
+        },
+        {
+          "dots": 2,
+          "name": "Pound of Flesh"
+        },
+        {
+          "dots": 3,
+          "name": "Treat Yourself"
+        },
+        {
+          "dots": 4,
+          "name": "My Setite Friend"
+        },
+        {
+          "dots": 5,
+          "name": "The Silk Hat"
+        }
+      ],
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf",
+      "manual_fields": [
+        "name"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,138 @@
+{
+  "catalog": "loresheets",
+  "notes": "Level ratings the geometry parse could not place, read from the rendered corebook pages (pdftoppm). PG titles whose text layer lost the word spaces are renamed.",
+  "patch": [
+    {
+      "id": "loresheet:the-circulatory-system",
+      "set": {
+        "levels": [
+          {
+            "dots": 1,
+            "name": "Tap into the System"
+          },
+          {
+            "dots": 2,
+            "name": "Little Black Book"
+          },
+          {
+            "dots": 3,
+            "name": "Farm Upstate"
+          },
+          {
+            "dots": 4,
+            "name": "Secure Transit"
+          },
+          {
+            "dots": 5,
+            "name": "Blood Sommelier"
+          }
+        ]
+      },
+      "why": "core pr 386 rendered: ••••• Blood Sommelier"
+    },
+    {
+      "id": "loresheet:golconda",
+      "set": {
+        "levels": [
+          {
+            "dots": 1,
+            "name": "Seeds of Golconda"
+          },
+          {
+            "dots": 2,
+            "name": "The One True Way"
+          },
+          {
+            "dots": 3,
+            "name": "Saulot's Disciple"
+          },
+          {
+            "dots": 4,
+            "name": "Satisfy the Hunger"
+          },
+          {
+            "dots": 5,
+            "name": "Greet the Sun"
+          }
+        ]
+      },
+      "why": "core pr 389 rendered: •• The One True Way"
+    },
+    {
+      "id": "loresheet:descendant-of-vasantasena",
+      "set": {
+        "levels": [
+          {
+            "dots": 1,
+            "name": "Agent of Chaos"
+          },
+          {
+            "dots": 2,
+            "name": "Hear My Words"
+          },
+          {
+            "dots": 3,
+            "name": "Scent the Bond"
+          },
+          {
+            "dots": 4,
+            "name": "Destroy the Bond"
+          },
+          {
+            "dots": 5,
+            "name": "Sabbat Becomes Camarilla"
+          }
+        ]
+      },
+      "why": "core pr 399 rendered: •• Hear My Words"
+    },
+    {
+      "id": "loresheet:descendant-of-xaviar",
+      "set": {
+        "levels": [
+          {
+            "dots": 1,
+            "name": "Martyred Ancestor"
+          },
+          {
+            "dots": 2,
+            "name": "Where the Bodies Are Buried"
+          },
+          {
+            "dots": 3,
+            "name": "Loyal Hound"
+          },
+          {
+            "dots": 4,
+            "name": "Monstrous Bat"
+          },
+          {
+            "dots": 5,
+            "name": "Experienced the Antediluvian"
+          }
+        ]
+      },
+      "why": "core pr 406 rendered: •••• Monstrous Bat"
+    }
+  ],
+  "rename": [
+    {
+      "from": "loresheet:childrenoftenochtitlan",
+      "into": "loresheet:children-of-tenochtitlan",
+      "name": "Children of Tenochtitlan",
+      "why": "PG pr 224 title set without word spaces in the text layer"
+    },
+    {
+      "from": "loresheet:f-lesh-e-aters",
+      "into": "loresheet:flesh-eaters",
+      "name": "Flesh-Eaters",
+      "why": "PG pr 225 letter-spaced title"
+    },
+    {
+      "from": "loresheet:nasyon-san-an",
+      "into": "loresheet:nasyon-san-an",
+      "name": "Nasyon San An",
+      "why": "PG pr 229 title case"
+    }
+  ]
+}

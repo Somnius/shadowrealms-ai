@@ -27,8 +27,9 @@ def strip_local(rec: dict) -> dict:
 
 
 def apply_manual(records: list[dict], manual: dict, report: list[str]) -> list[dict]:
-    """manual = {"exclude": [{id, why}], "merge": [{from, into, why}], "patch": [{id, set, why}],
-    "add": [records]}. Returns a new list."""
+    """manual = {"exclude": [{id, why}], "merge": [{from, into, why}],
+    "rename": [{from, into, name, why}], "patch": [{id, set, why}], "add": [records]}.
+    Returns a new list."""
     recs = [copy.deepcopy(r) for r in records]
     for ex in manual.get("exclude", []):
         before = len(recs)
@@ -47,6 +48,15 @@ def apply_manual(records: list[dict], manual: dict, report: list[str]) -> list[d
                 r["merged_from"] = mg["from"]
         if not hit:
             report.append(f"- manual merge matched nothing: {mg['from']}")
+    for rn in manual.get("rename", []):
+        hit = [r for r in recs if r["id"] == rn["from"]]
+        if not hit:
+            report.append(f"- manual rename matched nothing: {rn['from']}")
+        for r in hit:  # a garbled title fixed by hand: new id and name, no alias kept
+            r["id"], r["name"] = rn["into"], rn["name"]
+            mf = r.setdefault("manual_fields", [])
+            if "name" not in mf:
+                mf.append("name")
     for p in manual.get("patch", []):
         hit = False
         for r in recs:
