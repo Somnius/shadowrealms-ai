@@ -1,0 +1,34 @@
+{
+  "version": 1,
+  "notes": "Online sources the catalog build may use, from the Forge v2 research (2026-10-15). No wiki or project text ever enters the repo: facts are re-stated, descriptions are our own, and the overlap gate checks every catalog string against the cached online text too.",
+  "sites": [
+    {
+      "site": "paradoxwikis",
+      "name": "VTM Wiki (Paradox Wikis, community-written)",
+      "api": "https://vtm.paradoxwikis.com/api.php",
+      "base_url": "https://vtm.paradoxwikis.com",
+      "licence": "CC BY-SA 3.0 for the text; facts (names, dots, levels, restrictions, book and page) are not the licensed expression",
+      "use": "facts",
+      "link_ok": true,
+      "fetch": true,
+      "rate_limit_seconds": 15
+    },
+    {
+      "site": "capetownvtm",
+      "name": "Cape Town by Night wiki",
+      "base_url": "https://wiki.capetownvtm.com",
+      "licence": "none stated; the pages reproduce book text",
+      "use": "crosscheck-only (offline copies, never fetched by this pipeline)",
+      "link_ok": false,
+      "fetch": false
+    },
+    {
+      "site": "progeny",
+      "name": "Progeny character creator (open-source project)",
+      "licence": "AGPL",
+      "use": "crosscheck-only: compare, never copy",
+      "link_ok": false,
+      "fetch": false
+    }
+  ]
+}

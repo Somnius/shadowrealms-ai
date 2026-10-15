@@ -1,0 +1,459 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "shadowrealms/v5/catalog/disciplines.schema.json",
+  "title": "V5 Disciplines and their powers",
+  "description": "12 Disciplines incl. Oblivion and Thin-Blood Alchemy. rouse_cost: printed base Rouse Checks (0 = free); null when the page gives alternatives or no plain count; rouse_cost_conditional: the cost line adds conditions. dice_pool only when it is a plain list of traits.",
+  "type": "object",
+  "required": [
+    "catalog",
+    "version",
+    "entries"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "catalog": {
+      "const": "disciplines"
+    },
+    "version": {
+      "const": 1
+    },
+    "entries": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "book",
+          "page",
+          "source",
+          "powers"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "book": {
+            "$ref": "#/$defs/book"
+          },
+          "page": {
+            "$ref": "#/$defs/page"
+          },
+          "also_in": {
+            "type": "array",
+            "items": {
+              "$ref": "#/$defs/ref"
+            },
+            "uniqueItems": true
+          },
+          "aliases": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 60
+            },
+            "uniqueItems": true
+          },
+          "source": {
+            "enum": [
+              "pdf",
+              "online",
+              "manual"
+            ]
+          },
+          "manual_fields": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "uniqueItems": true
+          },
+          "source_urls": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "url",
+                "site"
+              ],
+              "additionalProperties": false,
+              "properties": {
+                "url": {
+                  "type": "string"
+                },
+                "site": {
+                  "type": "string"
+                },
+                "revision": {
+                  "type": [
+                    "integer",
+                    "null"
+                  ]
+                },
+                "fetched": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                }
+              }
+            }
+          },
+          "crosscheck": {
+            "type": "string",
+            "pattern": "^(agree|pdf_only|online_only|resolved:.+)$"
+          },
+          "desc": {
+            "$ref": "#/$defs/desc"
+          },
+          "id": {
+            "$ref": "#/$defs/discipline_id"
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1
+          },
+          "powers": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "id",
+                "name",
+                "book",
+                "page",
+                "source",
+                "level",
+                "also_in",
+                "aliases",
+                "prerequisite",
+                "amalgam",
+                "rouse_cost",
+                "rouse_cost_conditional",
+                "dice_pool"
+              ],
+              "additionalProperties": false,
+              "properties": {
+                "book": {
+                  "$ref": "#/$defs/book"
+                },
+                "page": {
+                  "$ref": "#/$defs/page"
+                },
+                "also_in": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/$defs/ref"
+                  },
+                  "uniqueItems": true
+                },
+                "aliases": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 60
+                  },
+                  "uniqueItems": true
+                },
+                "source": {
+                  "enum": [
+                    "pdf",
+                    "online",
+                    "manual"
+                  ]
+                },
+                "manual_fields": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  },
+                  "uniqueItems": true
+                },
+                "source_urls": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "required": [
+                      "url",
+                      "site"
+                    ],
+                    "additionalProperties": false,
+                    "properties": {
+                      "url": {
+                        "type": "string"
+                      },
+                      "site": {
+                        "type": "string"
+                      },
+                      "revision": {
+                        "type": [
+                          "integer",
+                          "null"
+                        ]
+                      },
+                      "fetched": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      }
+                    }
+                  }
+                },
+                "crosscheck": {
+                  "type": "string",
+                  "pattern": "^(agree|pdf_only|online_only|resolved:.+)$"
+                },
+                "desc": {
+                  "$ref": "#/$defs/desc"
+                },
+                "id": {
+                  "$ref": "#/$defs/power_id"
+                },
+                "name": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 60
+                },
+                "level": {
+                  "$ref": "#/$defs/level"
+                },
+                "prerequisite": {
+                  "$ref": "#/$defs/prerequisite"
+                },
+                "amalgam": {
+                  "anyOf": [
+                    {
+                      "type": "null"
+                    },
+                    {
+                      "type": "object",
+                      "required": [
+                        "discipline",
+                        "level"
+                      ],
+                      "additionalProperties": false,
+                      "properties": {
+                        "discipline": {
+                          "$ref": "#/$defs/discipline_id"
+                        },
+                        "level": {
+                          "$ref": "#/$defs/level"
+                        }
+                      }
+                    }
+                  ]
+                },
+                "rouse_cost": {
+                  "type": [
+                    "integer",
+                    "null"
+                  ],
+                  "minimum": 0,
+                  "maximum": 5
+                },
+                "rouse_cost_conditional": {
+                  "type": "boolean"
+                },
+                "dice_pool": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "maxLength": 90
+                }
+              }
+            }
+          },
+          "rituals": {
+            "const": "rituals"
+          },
+          "ceremonies": {
+            "const": "ceremonies"
+          },
+          "formulae": {
+            "const": "formulae"
+          },
+          "creation_pick": {
+            "type": "object",
+            "required": [
+              "catalog",
+              "level",
+              "requires",
+              "book",
+              "page"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "catalog": {
+                "enum": [
+                  "rituals",
+                  "ceremonies",
+                  "formulae"
+                ]
+              },
+              "level": {
+                "$ref": "#/$defs/level"
+              },
+              "requires": {
+                "type": "string",
+                "maxLength": 80
+              },
+              "book": {
+                "$ref": "#/$defs/book"
+              },
+              "page": {
+                "$ref": "#/$defs/page"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "book": {
+      "type": "string",
+      "pattern": "^v5-[a-z0-9-]+$"
+    },
+    "page": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 999
+    },
+    "ref": {
+      "type": "object",
+      "required": [
+        "book",
+        "page"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "book": {
+          "type": "string",
+          "pattern": "^v5-[a-z0-9-]+$"
+        },
+        "page": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 999
+        }
+      }
+    },
+    "desc": {
+      "type": "object",
+      "required": [
+        "en",
+        "el"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "en": {
+          "type": "string",
+          "maxLength": 240
+        },
+        "el": {
+          "type": "string",
+          "maxLength": 240
+        }
+      }
+    },
+    "level": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 5
+    },
+    "prerequisite": {
+      "anyOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": "object",
+          "required": [
+            "power_id"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "power_id": {
+              "$ref": "#/$defs/power_id"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": [
+            "any_of"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "any_of": {
+              "type": "array",
+              "minItems": 2,
+              "items": {
+                "$ref": "#/$defs/power_id"
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": [
+            "all_of"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "all_of": {
+              "type": "array",
+              "minItems": 2,
+              "items": {
+                "anyOf": [
+                  {
+                    "type": "object",
+                    "required": [
+                      "power_id"
+                    ],
+                    "additionalProperties": false,
+                    "properties": {
+                      "power_id": {
+                        "$ref": "#/$defs/power_id"
+                      }
+                    }
+                  },
+                  {
+                    "type": "object",
+                    "required": [
+                      "any_of"
+                    ],
+                    "additionalProperties": false,
+                    "properties": {
+                      "any_of": {
+                        "type": "array",
+                        "minItems": 2,
+                        "items": {
+                          "$ref": "#/$defs/power_id"
+                        }
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        }
+      ]
+    },
+    "power_id": {
+      "type": "string",
+      "pattern": "^power:[a-z0-9-]+:[a-z0-9-]+$"
+    },
+    "discipline_id": {
+      "type": "string",
+      "pattern": "^discipline:[a-z0-9-]+$"
+    },
+    "clan_id": {
+      "type": "string",
+      "pattern": "^clan:[a-z0-9-]+$"
+    }
+  }
+}

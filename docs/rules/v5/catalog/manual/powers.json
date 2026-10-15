@@ -1,0 +1,11 @@
+{
+  "catalog": "powers",
+  "notes": "Patches to the parsed Discipline powers, rituals, ceremonies and formulae.",
+  "merge": [
+    {
+      "from": "power:auspex:obeah",
+      "into": "power:auspex:panacea",
+      "why": "Companion pr 24 prints the Auspex 2 power as 'Obeah' (Amalgam Fortitude 1); the Players Guide pr 70 reprints the same power as 'Panacea' (same level, amalgam, cost and pool) and its Unburdening the Bestial Soul names Panacea as the prerequisite. Kept as one entry with the alias."
+    }
+  ]
+}

@@ -1,0 +1,1228 @@
+{
+  "catalog": "predator_types",
+  "version": 1,
+  "entries": [
+    {
+      "id": "predator:alleycat",
+      "name": "Alleycat",
+      "book": "v5-corebook",
+      "page": 175,
+      "also_in": [],
+      "aliases": [],
+      "source": "manual",
+      "pool": "Strength + Brawl; Wits + Streetwise when feeding on criminals",
+      "pool_ref": {
+        "book": "v5-corebook",
+        "page": 307
+      },
+      "specialty_choice": [
+        {
+          "skill": "Intimidation",
+          "name": "Stickups"
+        },
+        {
+          "skill": "Brawl",
+          "name": "Grappling"
+        }
+      ],
+      "discipline_choice": [
+        {
+          "discipline": "discipline:celerity",
+          "clans_only": null
+        },
+        {
+          "discipline": "discipline:potence",
+          "clans_only": null
+        }
+      ],
+      "humanity": -1,
+      "blood_potency": 0,
+      "max_blood_potency": null,
+      "forbidden_clans": [],
+      "advantages": [
+        {
+          "pick": "all",
+          "options": [
+            {
+              "id": "background:contacts",
+              "dots": 3,
+              "note": "criminal"
+            }
+          ]
+        }
+      ],
+      "flaws": [],
+      "ancilla_only": false,
+      "extra": {}
+    },
+    {
+      "id": "predator:bagger",
+      "name": "Bagger",
+      "book": "v5-corebook",
+      "page": 176,
+      "also_in": [],
+      "aliases": [],
+      "source": "manual",
+      "pool": "Intelligence + Streetwise",
+      "pool_ref": {
+        "book": "v5-corebook",
+        "page": 307
+      },
+      "specialty_choice": [
+        {
+          "skill": "Larceny",
+          "name": "Lockpicking"
+        },
+        {
+          "skill": "Streetwise",
+          "name": "Black Market"
+        }
+      ],
+      "discipline_choice": [
+        {
+          "discipline": "discipline:blood-sorcery",
+          "clans_only": [
+            "clan:tremere",
+            "clan:banu-haqim"
+          ],
+          "note": "Banu Haqim per Players Guide predator Discipline notes",
+          "ref": {
+            "book": "v5-players-guide",
+            "page": 107
+          }
+        },
+        {
+          "discipline": "discipline:oblivion",
+          "clans_only": [
+            "clan:hecata"
+          ],
+          "note": "Hecata may take Oblivion instead of Blood Sorcery",
+          "ref": {
+            "book": "v5-cults-of-the-blood-gods",
+            "page": 150
+          }
+        },
+        {
+          "discipline": "discipline:obfuscate",
+          "clans_only": null
+        }
+      ],
+      "humanity": 0,
+      "blood_potency": 0,
+      "max_blood_potency": null,
+      "forbidden_clans": [
+        "clan:ventrue"
+      ],
+      "advantages": [
+        {
+          "pick": "all",
+          "options": [
+            {
+              "id": "merit:iron-gullet",
+              "dots": 3
+            }
+          ]
+        }
+      ],
+      "flaws": [
+        {
+          "pick": "all",
+          "options": [
+            {
+              "id": "flaw:enemy",
+              "dots": 2
+            }
+          ]
+        }
+      ],
+      "ancilla_only": false,
+      "extra": {}
+    },
+    {
+      "id": "predator:blood-leech",
+      "name": "Blood Leech",
+      "book": "v5-corebook",
+      "page": 176,
+      "also_in": [],
+      "aliases": [],
+      "source": "manual",
+      "pool": null,
+      "pool_ref": {
+        "book": "v5-corebook",
+        "page": 307
+      },
+      "specialty_choice": [
+        {
+          "skill": "Brawl",
+          "name": "Kindred"
+        },
+        {
+          "skill": "Stealth",
+          "name": "against Kindred"
+        }
+      ],
+      "discipline_choice": [
+        {
+          "discipline": "discipline:celerity",
+          "clans_only": null
+        },
+        {
+          "discipline": "discipline:protean",
+          "clans_only": null
+        }
+      ],
+      "humanity": -1,
+      "blood_potency": 1,
+      "max_blood_potency": null,
+      "forbidden_clans": [],
+      "advantages": [],
+      "flaws": [
+        {
+          "pick": "one_of",
+          "options": [
+            {
+              "id": "flaw:dark-secret",
+              "dots": 2,
+              "note": "Diablerist"
+            },
+            {
+              "id": "flaw:shunned",
+              "dots": 2
+            }
+          ]
+        },
+        {
+          "pick": "all",
+          "options": [
+            {
+              "id": "flaw:prey-exclusion",
+              "dots": 2,
+              "note": "mortals"
+            }
+          ]
+        }
+      ],
+      "ancilla_only": false,
+      "extra": {}
+    },
+    {
+      "id": "predator:cleaver",
+      "name": "Cleaver",
+      "book": "v5-corebook",
+      "page": 176,
+      "also_in": [],
+      "aliases": [],
+      "source": "manual",
+      "pool": "Manipulation + Subterfuge",
+      "pool_ref": {
+        "book": "v5-corebook",
+        "page": 307
+      },
+      "specialty_choice": [
+        {
+          "skill": "Persuasion",
+          "name": "Gaslighting"
+        },
+        {
+          "skill": "Subterfuge",
+          "name": "Coverups"
+        }
+      ],
+      "discipline_choice": [
+        {
+          "discipline": "discipline:dominate",
+          "clans_only": null
+        },
+        {
+          "discipline": "discipline:animalism",
+          "clans_only": null
+        }
+      ],
+      "humanity": 0,
+      "blood_potency": 0,
+      "max_blood_potency": null,
+      "forbidden_clans": [],
+      "advantages": [
+        {
+          "pick": "all",
+          "options": [
+            {
+              "id": "background:herd",
+              "dots": 2
+            }
+          ]
+        }
+      ],
+      "flaws": [
+        {
+          "pick": "all",
+          "options": [
+            {
+              "id": "flaw:dark-secret",
+              "dots": 1,
+              "note": "Cleaver"
+            }
+          ]
+        }
+      ],
+      "ancilla_only": false,
+      "extra": {}
+    },
+    {
+      "id": "predator:consensualist",
+      "name": "Consensualist",
+      "book": "v5-corebook",
+      "page": 177,
+      "also_in": [],
+      "aliases": [],
+      "source": "manual",
+      "pool": "Manipulation + Persuasion",
+      "pool_ref": {
+        "book": "v5-corebook",
+        "page": 307
+      },
+      "specialty_choice": [
+        {
+          "skill": "Medicine",
+          "name": "Phlebotomy"
+        },
+        {
+          "skill": "Persuasion",
+          "name": "Victims"
+        }
+      ],
+      "discipline_choice": [
+        {
+          "discipline": "discipline:auspex",
+          "clans_only": null
+        },
+        {
+          "discipline": "discipline:fortitude",
+          "clans_only": null
+        }
+      ],
+      "humanity": 1,
+      "blood_potency": 0,
+      "max_blood_potency": null,
+      "forbidden_clans": [],
+      "advantages": [],
+      "flaws": [
+        {
+          "pick": "all",
+          "options": [
+            {
+              "id": "flaw:dark-secret",
+              "dots": 1,
+              "note": "Masquerade Breacher"
+            }
+          ]
+        },
+        {
+          "pick": "all",
+          "options": [
+            {
+              "id": "flaw:prey-exclusion",
+              "dots": 1,
+              "note": "non-consenting"
+            }
+          ]
+        }
+      ],
+      "ancilla_only": false,
+      "extra": {}
+    },
+    {
+      "id": "predator:extortionist",
+      "name": "Extortionist",
+      "book": "v5-players-guide",
+      "page": 107,
+      "also_in": [
+        {
+          "book": "v5-cults-of-the-blood-gods",
+          "page": 150
+        }
+      ],
+      "aliases": [],
+      "source": "manual",
+      "pool": "Strength or Manipulation + Intimidation",
+      "pool_ref": {
+        "book": "v5-players-guide",
+        "page": 107
+      },
+      "specialty_choice": [
+        {
+          "skill": "Intimidation",
+          "name": "Coercion"
+        },
+        {
+          "skill": "Larceny",
+          "name": "Security"
+        }
+      ],
+      "discipline_choice": [
+        {
+          "discipline": "discipline:dominate",
+          "clans_only": null
+        },
+        {
+          "discipline": "discipline:potence",
+          "clans_only": null
+        }
+      ],
+      "humanity": 0,
+      "blood_potency": 0,
+      "max_blood_potency": null,
+      "forbidden_clans": [],
+      "advantages": [
+        {
+          "pick": "split",
+          "options": [
+            {
+              "id": "background:contacts",
+              "dots": null
+            },
+            {
+              "id": "background:resources",
+              "dots": null
+            }
+          ],
+          "dots_total": 3
+        }
+      ],
+      "flaws": [
+        {
+          "pick": "all",
+          "options": [
+            {
+              "id": "flaw:enemy",
+              "dots": 2,
+              "note": "the police or an escaped victim"
+            }
+          ]
+        }
+      ],
+      "ancilla_only": false,
+      "extra": {}
+    },
+    {
+      "id": "predator:farmer",
+      "name": "Farmer",
+      "book": "v5-corebook",
+      "page": 177,
+      "also_in": [],
+      "aliases": [],
+      "source": "manual",
+      "pool": "Composure + Animal Ken",
+      "pool_ref": {
+        "book": "v5-corebook",
+        "page": 307
+      },
+      "specialty_choice": [
+        {
+          "skill": "Animal Ken",
+          "name": "Specific Animal"
+        },
+        {
+          "skill": "Survival",
+          "name": "Hunting"
+        }
+      ],
+      "discipline_choice": [
+        {
+          "discipline": "discipline:animalism",
+          "clans_only": null
+        },
+        {
+          "discipline": "discipline:protean",
+          "clans_only": null
+        }
+      ],
+      "humanity": 1,
+      "blood_potency": 0,
+      "max_blood_potency": 2,
+      "forbidden_clans": [
+        "clan:ventrue"
+      ],
+      "advantages": [],
+      "flaws": [
+        {
+          "pick": "all",
+          "options": [
+            {
+              "id": "flaw:farmer",
+              "dots": 2,
+              "note": "Feeding Flaw"
+            }
+          ]
+        }
+      ],
+      "ancilla_only": false,
+      "extra": {
+        "errata": "this printing (pr 177) lists the flaw as '(••) Vegan' under a misplaced 'Folkloric banes' line; the Feeding Flaw is printed as '(••) Farmer' on pr 181 (Errata 2.0 rename)",
+        "errata_ref": {
+          "book": "v5-corebook",
+          "page": 181
+        }
+      }
+    },
+    {
+      "id": "predator:graverobber",
+      "name": "Graverobber",
+      "book": "v5-players-guide",
+      "page": 108,
+      "also_in": [
+        {
+          "book": "v5-cults-of-the-blood-gods",
+          "page": 150
+        }
+      ],
+      "aliases": [],
+      "source": "manual",
+      "pool": "Resolve + Medicine (corpses) or Manipulation + Insight (mourners)",
+      "pool_ref": {
+        "book": "v5-players-guide",
+        "page": 108
+      },
+      "specialty_choice": [
+        {
+          "skill": "Occult",
+          "name": "Grave Rituals"
+        },
+        {
+          "skill": "Medicine",
+          "name": "Cadavers"
+        }
+      ],
+      "discipline_choice": [
+        {
+          "discipline": "discipline:fortitude",
+          "clans_only": null
+        },
+        {
+          "discipline": "discipline:oblivion",
+          "clans_only": null
+        }
+      ],
+      "humanity": 0,
+      "blood_potency": 0,
+      "max_blood_potency": null,
+      "forbidden_clans": [],
+      "advantages": [
+        {
+          "pick": "all",
+          "options": [
+            {
+              "id": "merit:iron-gullet",
+              "dots": 3
+            }
+          ]
+        },
+        {
+          "pick": "all",
+          "options": [
+            {
+              "id": "background:haven",
+              "dots": 1
+            }
+          ]
+        }
+      ],
+      "flaws": [
+        {
+          "pick": "all",
+          "options": [
+            {
+              "id": "flaw:obvious-predator",
+              "dots": 2,
+              "note": "Herd Flaw"
+            }
+          ]
+        }
+      ],
+      "ancilla_only": false,
+      "extra": {
+        "feeding": "can feed on corpses: at most 3 Hunger slaked, treated like bagged blood (PG pr 108)"
+      }
+    },
+    {
+      "id": "predator:grim-reaper",
+      "name": "Grim Reaper",
+      "book": "v5-players-guide",
+      "page": 108,
+      "also_in": [],
+      "aliases": [],
+      "source": "manual",
+      "pool": "Intelligence + Awareness or Medicine",
+      "pool_ref": {
+        "book": "v5-players-guide",
+        "page": 108
+      },
+      "specialty_choice": [
+        {
+          "skill": "Awareness",
+          "name": "Death"
+        },
+        {
+          "skill": "Larceny",
+          "name": "Forgery"
+        }
+      ],
+      "discipline_choice": [
+        {
+          "discipline": "discipline:auspex",
+          "clans_only": null
+        },
+        {
+          "discipline": "discipline:oblivion",
+          "clans_only": null
+        }
+      ],
+      "humanity": 1,
+      "blood_potency": 0,
+      "max_blood_potency": null,
+      "forbidden_clans": [],
+      "advantages": [
+        {
+          "pick": "one_of",
+          "options": [
+            {
+              "id": "background:allies",
+              "dots": 1,
+              "note": "medical community"
+            },
+            {
+              "id": "background:influence",
+              "dots": 1,
+              "note": "medical community"
+            }
+          ]
+        }
+      ],
+      "flaws": [
+        {
+          "pick": "all",
+          "options": [
+            {
+              "id": "flaw:prey-exclusion",
+              "dots": 1,
+              "note": "healthy mortals"
+            }
+          ]
+        }
+      ],
+      "ancilla_only": false,
+      "extra": {}
+    },
+    {
+      "id": "predator:montero",
+      "name": "Montero",
+      "book": "v5-players-guide",
+      "page": 108,
+      "also_in": [],
+      "aliases": [],
+      "source": "manual",
+      "pool": "Intelligence + Stealth or Resolve + Stealth",
+      "pool_ref": {
+        "book": "v5-players-guide",
+        "page": 108
+      },
+      "specialty_choice": [
+        {
+          "skill": "Leadership",
+          "name": "Hunting Pack"
+        },
+        {
+          "skill": "Stealth",
+          "name": "Stakeout"
+        }
+      ],
+      "discipline_choice": [
+        {
+          "discipline": "discipline:dominate",
+          "clans_only": null
+        },
+        {
+          "discipline": "discipline:obfuscate",
+          "clans_only": null
+        }
+      ],
+      "humanity": -1,
+      "blood_potency": 0,
+      "max_blood_potency": null,
+      "forbidden_clans": [],
+      "advantages": [
+        {
+          "pick": "all",
+          "options": [
+            {
+              "id": "background:retainers",
+              "dots": 2
+            }
+          ]
+        }
+      ],
+      "flaws": [],
+      "ancilla_only": false,
+      "extra": {}
+    },
+    {
+      "id": "predator:osiris",
+      "name": "Osiris",
+      "book": "v5-corebook",
+      "page": 177,
+      "also_in": [],
+      "aliases": [],
+      "source": "manual",
+      "pool": "Manipulation + Subterfuge or Intimidation + Fame",
+      "pool_ref": {
+        "book": "v5-corebook",
+        "page": 307
+      },
+      "specialty_choice": [
+        {
+          "skill": "Occult",
+          "name": "specific tradition"
+        },
+        {
+          "skill": "Performance",
+          "name": "specific entertainment field"
+        }
+      ],
+      "discipline_choice": [
+        {
+          "discipline": "discipline:blood-sorcery",
+          "clans_only": [
+            "clan:tremere",
+            "clan:banu-haqim"
+          ],
+          "note": "Banu Haqim per Players Guide predator Discipline notes",
+          "ref": {
+            "book": "v5-players-guide",
+            "page": 107
+          }
+        },
+        {
+          "discipline": "discipline:presence",
+          "clans_only": null
+        }
+      ],
+      "humanity": 0,
+      "blood_potency": 0,
+      "max_blood_potency": null,
+      "forbidden_clans": [],
+      "advantages": [
+        {
+          "pick": "split",
+          "options": [
+            {
+              "id": "background:fame",
+              "dots": null
+            },
+            {
+              "id": "background:herd",
+              "dots": null
+            }
+          ],
+          "dots_total": 3
+        }
+      ],
+      "flaws": [
+        {
+          "pick": "split",
+          "options": [
+            {
+              "id": "flaw:enemy",
+              "dots": null
+            },
+            {
+              "id": "flaw:mythic",
+              "dots": null,
+              "note": "any Mythic Flaw",
+              "group": true
+            }
+          ],
+          "dots_total": 2
+        }
+      ],
+      "ancilla_only": false,
+      "extra": {}
+    },
+    {
+      "id": "predator:pursuer",
+      "name": "Pursuer",
+      "book": "v5-players-guide",
+      "page": 108,
+      "also_in": [],
+      "aliases": [],
+      "source": "manual",
+      "pool": "Intelligence + Investigation or Stamina + Stealth",
+      "pool_ref": {
+        "book": "v5-players-guide",
+        "page": 109
+      },
+      "specialty_choice": [
+        {
+          "skill": "Investigation",
+          "name": "Profiling"
+        },
+        {
+          "skill": "Stealth",
+          "name": "Shadowing"
+        }
+      ],
+      "discipline_choice": [
+        {
+          "discipline": "discipline:animalism",
+          "clans_only": null
+        },
+        {
+          "discipline": "discipline:auspex",
+          "clans_only": null
+        }
+      ],
+      "humanity": -1,
+      "blood_potency": 0,
+      "max_blood_potency": null,
+      "forbidden_clans": [],
+      "advantages": [
+        {
+          "pick": "all",
+          "options": [
+            {
+              "id": "merit:bloodhound",
+              "dots": 1
+            }
+          ]
+        },
+        {
+          "pick": "all",
+          "options": [
+            {
+              "id": "background:contacts",
+              "dots": 1,
+              "note": "habitués of your hunting ground"
+            }
+          ]
+        }
+      ],
+      "flaws": [],
+      "ancilla_only": false,
+      "extra": {}
+    },
+    {
+      "id": "predator:roadside-killer",
+      "name": "Roadside Killer",
+      "book": "v5-let-the-streets-run-red",
+      "page": 76,
+      "also_in": [],
+      "aliases": [],
+      "source": "manual",
+      "pool": "Dexterity or Charisma + Drive",
+      "pool_ref": {
+        "book": "v5-let-the-streets-run-red",
+        "page": 76
+      },
+      "specialty_choice": [
+        {
+          "skill": "Survival",
+          "name": "the road"
+        },
+        {
+          "skill": "Investigation",
+          "name": "vampire cant"
+        }
+      ],
+      "discipline_choice": [
+        {
+          "discipline": "discipline:fortitude",
+          "clans_only": null
+        },
+        {
+          "discipline": "discipline:protean",
+          "clans_only": null
+        }
+      ],
+      "humanity": 0,
+      "blood_potency": 0,
+      "max_blood_potency": null,
+      "forbidden_clans": [],
+      "advantages": [
+        {
+          "pick": "all",
+          "options": [
+            {
+              "id": "background:herd",
+              "dots": 2,
+              "note": "migrating Herd"
+            }
+          ]
+        }
+      ],
+      "flaws": [
+        {
+          "pick": "all",
+          "options": [
+            {
+              "id": "flaw:prey-exclusion",
+              "dots": null,
+              "note": "locals"
+            }
+          ]
+        }
+      ],
+      "ancilla_only": false,
+      "extra": {
+        "note": "migrating Herd rules for small towns: LTSRR pr 75-76",
+        "dots_unresolved": "the page does not print the Prey Exclusion rating"
+      }
+    },
+    {
+      "id": "predator:sandman",
+      "name": "Sandman",
+      "book": "v5-corebook",
+      "page": 177,
+      "also_in": [],
+      "aliases": [],
+      "source": "manual",
+      "pool": "Dexterity + Stealth",
+      "pool_ref": {
+        "book": "v5-corebook",
+        "page": 308
+      },
+      "specialty_choice": [
+        {
+          "skill": "Medicine",
+          "name": "Anesthetics"
+        },
+        {
+          "skill": "Stealth",
+          "name": "Break-in"
+        }
+      ],
+      "discipline_choice": [
+        {
+          "discipline": "discipline:auspex",
+          "clans_only": null
+        },
+        {
+          "discipline": "discipline:obfuscate",
+          "clans_only": null
+        }
+      ],
+      "humanity": 0,
+      "blood_potency": 0,
+      "max_blood_potency": null,
+      "forbidden_clans": [],
+      "advantages": [
+        {
+          "pick": "all",
+          "options": [
+            {
+              "id": "background:resources",
+              "dots": 1
+            }
+          ]
+        }
+      ],
+      "flaws": [],
+      "ancilla_only": false,
+      "extra": {}
+    },
+    {
+      "id": "predator:scene-queen",
+      "name": "Scene Queen",
+      "book": "v5-corebook",
+      "page": 178,
+      "also_in": [],
+      "aliases": [],
+      "source": "manual",
+      "pool": "Manipulation + Persuasion",
+      "pool_ref": {
+        "book": "v5-corebook",
+        "page": 308
+      },
+      "specialty_choice": [
+        {
+          "skill": "Etiquette",
+          "name": "specific scene"
+        },
+        {
+          "skill": "Leadership",
+          "name": "specific scene"
+        },
+        {
+          "skill": "Streetwise",
+          "name": "specific scene"
+        }
+      ],
+      "discipline_choice": [
+        {
+          "discipline": "discipline:dominate",
+          "clans_only": null
+        },
+        {
+          "discipline": "discipline:potence",
+          "clans_only": null
+        }
+      ],
+      "humanity": 0,
+      "blood_potency": 0,
+      "max_blood_potency": null,
+      "forbidden_clans": [],
+      "advantages": [
+        {
+          "pick": "all",
+          "options": [
+            {
+              "id": "background:fame",
+              "dots": 1
+            }
+          ]
+        },
+        {
+          "pick": "all",
+          "options": [
+            {
+              "id": "background:contacts",
+              "dots": 1
+            }
+          ]
+        }
+      ],
+      "flaws": [
+        {
+          "pick": "one_of",
+          "options": [
+            {
+              "id": "flaw:disliked",
+              "dots": 1,
+              "note": "Influence Flaw: outside your subculture"
+            },
+            {
+              "id": "flaw:prey-exclusion",
+              "dots": 1,
+              "note": "a different subculture"
+            }
+          ]
+        }
+      ],
+      "ancilla_only": false,
+      "extra": {}
+    },
+    {
+      "id": "predator:siren",
+      "name": "Siren",
+      "book": "v5-corebook",
+      "page": 178,
+      "also_in": [],
+      "aliases": [],
+      "source": "manual",
+      "pool": "Charisma + Subterfuge",
+      "pool_ref": {
+        "book": "v5-corebook",
+        "page": 308
+      },
+      "specialty_choice": [
+        {
+          "skill": "Persuasion",
+          "name": "Seduction"
+        },
+        {
+          "skill": "Subterfuge",
+          "name": "Seduction"
+        }
+      ],
+      "discipline_choice": [
+        {
+          "discipline": "discipline:fortitude",
+          "clans_only": null
+        },
+        {
+          "discipline": "discipline:presence",
+          "clans_only": null
+        }
+      ],
+      "humanity": 0,
+      "blood_potency": 0,
+      "max_blood_potency": null,
+      "forbidden_clans": [],
+      "advantages": [
+        {
+          "pick": "all",
+          "options": [
+            {
+              "id": "merit:beautiful",
+              "dots": 2,
+              "note": "Looks Merit"
+            }
+          ]
+        }
+      ],
+      "flaws": [
+        {
+          "pick": "all",
+          "options": [
+            {
+              "id": "flaw:enemy",
+              "dots": 1,
+              "note": "a spurned lover or jealous partner"
+            }
+          ]
+        }
+      ],
+      "ancilla_only": false,
+      "extra": {}
+    },
+    {
+      "id": "predator:tithe-collector",
+      "name": "Tithe Collector",
+      "book": "v5-in-memoriam",
+      "page": 17,
+      "also_in": [],
+      "aliases": [],
+      "source": "manual",
+      "pool": null,
+      "pool_ref": null,
+      "specialty_choice": [
+        {
+          "skill": "Intimidation",
+          "name": "Kindred"
+        },
+        {
+          "skill": "Leadership",
+          "name": "Kindred"
+        }
+      ],
+      "discipline_choice": [
+        {
+          "discipline": "discipline:dominate",
+          "clans_only": null
+        },
+        {
+          "discipline": "discipline:presence",
+          "clans_only": null
+        }
+      ],
+      "humanity": 0,
+      "blood_potency": 0,
+      "max_blood_potency": null,
+      "forbidden_clans": [],
+      "advantages": [
+        {
+          "pick": "one_of",
+          "options": [
+            {
+              "id": "background:domain",
+              "dots": 3
+            },
+            {
+              "id": "background:status",
+              "dots": 3
+            }
+          ]
+        }
+      ],
+      "flaws": [
+        {
+          "pick": "all",
+          "options": [
+            {
+              "id": "flaw:adversary",
+              "dots": 2
+            }
+          ]
+        }
+      ],
+      "ancilla_only": true,
+      "extra": {
+        "note": "ancilla option: In Memoriam lets an ancilla pick any Predator Type or this one"
+      }
+    },
+    {
+      "id": "predator:trapdoor",
+      "name": "Trapdoor",
+      "book": "v5-players-guide",
+      "page": 109,
+      "also_in": [],
+      "aliases": [],
+      "source": "manual",
+      "pool": "Charisma + Stealth or Dexterity + Stealth",
+      "pool_ref": {
+        "book": "v5-players-guide",
+        "page": 109
+      },
+      "specialty_choice": [
+        {
+          "skill": "Persuasion",
+          "name": "Marketing"
+        },
+        {
+          "skill": "Stealth",
+          "name": "Ambushes or Traps"
+        }
+      ],
+      "discipline_choice": [
+        {
+          "discipline": "discipline:protean",
+          "clans_only": null
+        },
+        {
+          "discipline": "discipline:obfuscate",
+          "clans_only": null
+        }
+      ],
+      "humanity": 0,
+      "blood_potency": 0,
+      "max_blood_potency": null,
+      "forbidden_clans": [],
+      "advantages": [
+        {
+          "pick": "all",
+          "options": [
+            {
+              "id": "background:haven",
+              "dots": 1
+            }
+          ]
+        },
+        {
+          "pick": "one_of",
+          "options": [
+            {
+              "id": "background:retainers",
+              "dots": 1
+            },
+            {
+              "id": "background:herd",
+              "dots": 1
+            },
+            {
+              "id": "background:haven",
+              "dots": 1,
+              "note": "a second Haven dot"
+            }
+          ]
+        }
+      ],
+      "flaws": [
+        {
+          "pick": "one_of",
+          "options": [
+            {
+              "id": "flaw:creepy",
+              "dots": 1,
+              "note": "Haven Flaw"
+            },
+            {
+              "id": "flaw:haunted",
+              "dots": 1,
+              "note": "Haven Flaw"
+            }
+          ]
+        }
+      ],
+      "ancilla_only": false,
+      "extra": {}
+    }
+  ]
+}

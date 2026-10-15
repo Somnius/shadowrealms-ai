@@ -1,0 +1,60 @@
+{
+  "catalog": "books",
+  "version": 1,
+  "entries": [
+    {
+      "book_id": "v5-corebook",
+      "title": "Vampire: The Masquerade Corebook (2019)",
+      "precedence": 10,
+      "tier": 1,
+      "extractable": true,
+      "page_offset": 2,
+      "dot_glyph": "•"
+    },
+    {
+      "book_id": "v5-players-guide",
+      "title": "Players Guide (v2)",
+      "precedence": 20,
+      "tier": 1,
+      "extractable": true,
+      "page_offset": 2,
+      "dot_glyph": "•"
+    },
+    {
+      "book_id": "v5-companion",
+      "title": "Vampire: The Masquerade Companion",
+      "precedence": 30,
+      "tier": 1,
+      "extractable": true,
+      "page_offset": 0,
+      "dot_glyph": "●"
+    },
+    {
+      "book_id": "v5-cults-of-the-blood-gods",
+      "title": "Cults of the Blood Gods",
+      "precedence": 40,
+      "tier": 2,
+      "extractable": true,
+      "page_offset": 3,
+      "dot_glyph": "•"
+    },
+    {
+      "book_id": "v5-in-memoriam",
+      "title": "In Memoriam",
+      "precedence": 40,
+      "tier": 2,
+      "extractable": true,
+      "page_offset": 2,
+      "dot_glyph": "•"
+    },
+    {
+      "book_id": "v5-let-the-streets-run-red",
+      "title": "Let the Streets Run Red",
+      "precedence": 60,
+      "tier": 2,
+      "extractable": true,
+      "page_offset": 1,
+      "dot_glyph": "•"
+    }
+  ]
+}
