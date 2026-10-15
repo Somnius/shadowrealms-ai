@@ -10,6 +10,7 @@ import { errorText } from '../../app/http';
 import { canUseStaffVoice, gameSystemTitle, isStoryteller, lineGlyph, lineOf } from '../../app/hooks';
 import { editionLabel } from '../../rules/rulesEdition';
 import LocationManager from './LocationManager';
+import CreationRulesPanel from './CreationRulesPanel';
 import { t } from '../../i18n';
 import { Term } from '../../i18n/glossary';
 import './chronicle.css';
@@ -414,6 +415,15 @@ export default function ChronicleSettingsPage() {
                 </div>
               </form>
             </Panel>
+          ) : null}
+
+          {canManage && campaign.rules_edition === 'v5' ? (
+            <CreationRulesPanel
+              key={`creation-${campaign.id}-${JSON.stringify(campaign.creation_settings || {})}`}
+              campaign={campaign}
+              saving={saving}
+              onSave={(creation_settings) => update({ creation_settings }, t('chronicle:creation.saved', 'Creation rules saved.'))}
+            />
           ) : null}
 
           {staff ? <LocationManager api={api} campaign={campaign} canEditAccess={canManage} toast={toast} onChanged={load} /> : null}

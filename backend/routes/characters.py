@@ -15,11 +15,13 @@ import json
 from datetime import datetime
 from services.rules_edition import V5, edition_of
 from services.character_sheet_v5 import sanity_check_v5, stamp_v5_meta
+from services.creation_settings import creation_problems
 from services.log_safety import safe_log_value
 from services.playing_character import can_view_character_sheet
 
 from database import (
     get_db,
+    ensure_campaigns_creation_settings_column,
     ensure_character_portrait_url_column,
     ensure_characters_is_active_column,
     ensure_characters_wod_sheet_columns,
@@ -71,6 +73,7 @@ def _ensure_character_schema(cursor):
     ensure_characters_play_suspension_columns(cursor)
     ensure_character_downtime_requests_table(cursor)
     ensure_users_allow_multi_campaign_play_column(cursor)
+    ensure_campaigns_creation_settings_column(cursor)
 
 
 def _wod_meta_parse(raw):
@@ -344,6 +347,12 @@ def create_character():
                 return jsonify({
                     'error': 'Invalid V5 sheet: ' + '; '.join(problems[:10]),
                     'problems': problems,
+                }), 400
+            not_allowed = creation_problems(campaign.get('creation_settings'), wm_dict)
+            if not_allowed:
+                return jsonify({
+                    'error': ' '.join(not_allowed),
+                    'problems': not_allowed,
                 }), 400
             wod_meta = json.dumps(wm_dict)
 

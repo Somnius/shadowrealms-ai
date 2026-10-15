@@ -23,6 +23,12 @@ const PATTERNS = [
   [/^Sphere (.+) must be 0–5\.$/, (m) => t('wizard:validation.sphereRange', 'Sphere {{key}} must be 0–5.', { key: m[1] })],
   [/^Allocate exactly 6 sphere dots at creation \(currently (\d+)\)\.$/, (m) => t('wizard:validation.spheresTotal', 'Allocate exactly 6 sphere dots at creation (currently {{current}}).', { current: m[1] })],
   // V5 whole-sheet checks (validateV5Sheet)
+  // V5 chronicle creation settings (settingsErrors)
+  [/^The Storyteller doesn't allow the (.+) predator type in this chronicle\.$/, (m) => t('wizard:validation.v5SettingsPredator', "The Storyteller doesn't allow the {{type}} predator type in this chronicle.", { type: m[1] })],
+  [/^The Storyteller doesn't allow (.+) characters in this chronicle\.$/, (m) => t('wizard:validation.v5SettingsAge', "The Storyteller doesn't allow {{age}} characters in this chronicle.", { age: m[1] })],
+  [/^The Storyteller doesn't allow (.+) in this chronicle\.$/, (m) => t('wizard:validation.v5SettingsClan', "The Storyteller doesn't allow {{clan}} in this chronicle.", { clan: m[1] })],
+  [/^This chronicle allows at most (\d+) dots of Flaws of your own \(you have (\d+)\)\.$/, (m) => t('wizard:validation.v5SettingsFlawCap', 'This chronicle allows at most {{max}} dots of Flaws of your own (you have {{n}}).', { max: m[1], n: m[2] })],
+  [/^The Storyteller doesn't offer the Humanity 8 fledgling start in this chronicle\.$/, () => t('wizard:validation.v5SettingsFledgling', "The Storyteller doesn't offer the Humanity 8 fledgling start in this chronicle.")],
   [/^Character name is required\.$/, () => t('wizard:error.name', 'Character name is required.')],
   [/^Choose a clan\.$/, () => t('wizard:validation.v5Clan', 'Choose a clan.')],
   [/^Choose an age\.$/, () => t('wizard:validation.v5Age', 'Choose an age.')],

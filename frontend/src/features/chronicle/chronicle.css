@@ -48,3 +48,6 @@
 .sr-app .sr-loc__desc { margin: var(--sr-space-2) 0 0; }
 .sr-app .sr-loc__access { display: flex; flex-direction: column; gap: var(--sr-space-2); align-items: flex-start; margin-top: var(--sr-space-3); padding-top: var(--sr-space-3); border-top: 1px solid var(--sr-border); }
 .sr-app .sr-legacy { font-family: var(--sr-font-body); }
+.sr-app .sr-creation-rules__list { border: 1px solid var(--sr-border); border-radius: var(--sr-radius-md, 8px); padding: var(--sr-space-2) var(--sr-space-3); margin: 0; min-width: 0; }
+.sr-app .sr-creation-rules__list legend { padding: 0 var(--sr-space-1); color: var(--sr-text-muted, var(--sr-bone-300)); font-size: 13px; }
+.sr-app .sr-creation-rules__grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: var(--sr-space-1) var(--sr-space-3); }

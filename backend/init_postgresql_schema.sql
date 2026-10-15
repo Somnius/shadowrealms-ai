@@ -73,7 +73,8 @@ CREATE TABLE IF NOT EXISTS campaigns (
     accepting_players     BOOLEAN NOT NULL DEFAULT FALSE,
     admin_inactive_reason TEXT,
     admin_inactive_at     TIMESTAMP,
-    rules_edition         TEXT NOT NULL DEFAULT 'classic'               -- 'classic' (oWoD Revised) | 'v5'
+    rules_edition         TEXT NOT NULL DEFAULT 'classic',              -- 'classic' (oWoD Revised) | 'v5'
+    creation_settings     TEXT NOT NULL DEFAULT '{}'                    -- V5 creation rules JSON (services/creation_settings.py)
 );
 
 CREATE INDEX IF NOT EXISTS idx_campaigns_created_by ON campaigns(created_by);

@@ -10,10 +10,13 @@ import logging
 from datetime import datetime
 from flask import Blueprint, request, jsonify, current_app
 from flask_jwt_extended import jwt_required, get_jwt_identity
-from services.rules_edition import edition_of, normalize_rules_edition, validate_rules_edition
+from services.rules_edition import V5, edition_of, normalize_rules_edition, validate_rules_edition
+from services.creation_settings import normalize_creation_settings, validate_creation_settings
+from services.request_validation import RequestValidationError
 from services.rag_service import create_rag_service
 from services.embedding_service import create_embedding_service
 from database import (
+    ensure_campaigns_creation_settings_column,
     get_db,
     ensure_users_player_profile_columns,
     ensure_character_portrait_url_column,
@@ -238,6 +241,7 @@ def get_campaigns():
         cursor = conn.cursor()
         ensure_users_player_profile_columns(cursor)
         ensure_campaigns_listing_columns(cursor)
+        ensure_campaigns_creation_settings_column(cursor)
         ensure_campaign_players_active_character_id_column(cursor)
         ensure_character_portrait_url_column(cursor)
         ensure_characters_is_active_column(cursor)
@@ -258,6 +262,7 @@ def get_campaigns():
                 """
                 SELECT c.id, c.name, c.description, c.game_system, c.created_at, c.status,
                        c.max_players, c.listing_visibility, c.accepting_players, c.rules_edition,
+                       c.creation_settings,
                        cp.active_character_id AS my_playing_character_id,
                        ch_my.name AS my_playing_character_name,
                        ch_my.portrait_url AS my_playing_character_portrait_url
@@ -280,6 +285,7 @@ def get_campaigns():
             cursor.execute("""
                 SELECT c.id, c.name, c.description, c.game_system, c.created_at, c.status,
                        c.max_players, c.listing_visibility, c.accepting_players, c.rules_edition,
+                       c.creation_settings,
                        cp.active_character_id AS my_playing_character_id,
                        ch_my.name AS my_playing_character_name,
                        ch_my.portrait_url AS my_playing_character_portrait_url
@@ -311,6 +317,7 @@ def get_campaigns():
                 'listing_visibility': row.get('listing_visibility') or 'private',
                 'accepting_players': acc,
                 'rules_edition': edition_of(row),
+                'creation_settings': normalize_creation_settings(row.get('creation_settings')),
                 'my_playing_character_id': row.get('my_playing_character_id'),
                 'my_playing_character_name': row.get('my_playing_character_name'),
                 'my_playing_character_portrait_url': row.get(
@@ -567,6 +574,7 @@ def get_or_update_campaign(campaign_id):
         ensure_users_player_profile_columns(cursor)
         ensure_characters_play_suspension_columns(cursor)
         ensure_campaigns_listing_columns(cursor)
+        ensure_campaigns_creation_settings_column(cursor)
         conn.commit()
 
         cursor.execute("SELECT role FROM users WHERE id = %s", (user_id,))
@@ -577,14 +585,16 @@ def get_or_update_campaign(campaign_id):
         if is_site_admin:
             cursor.execute("""
                 SELECT id, name, description, game_system, created_by, created_at, status,
-                       max_players, listing_visibility, accepting_players, rules_edition
+                       max_players, listing_visibility, accepting_players, rules_edition,
+                       creation_settings
                 FROM campaigns
                 WHERE id = %s
             """, (campaign_id,))
         else:
             cursor.execute("""
                 SELECT id, name, description, game_system, created_by, created_at, status,
-                       max_players, listing_visibility, accepting_players, rules_edition
+                       max_players, listing_visibility, accepting_players, rules_edition,
+                       creation_settings
                 FROM campaigns
                 WHERE id = %s AND (created_by = %s OR id IN (
                     SELECT campaign_id FROM campaign_players WHERE user_id = %s
@@ -615,6 +625,7 @@ def get_or_update_campaign(campaign_id):
             'listing_visibility': row.get('listing_visibility') or 'private',
             'accepting_players': acc,
             'rules_edition': edition_of(row),
+            'creation_settings': normalize_creation_settings(row.get('creation_settings')),
         }
 
         cursor.execute(
@@ -812,6 +823,7 @@ def update_campaign(campaign_id):
         cursor = conn.cursor()
         ensure_campaigns_listing_columns(cursor)
         ensure_campaigns_staff_pause_columns(cursor)
+        ensure_campaigns_creation_settings_column(cursor)
         conn.commit()
         
         # Check if user is admin or campaign creator
@@ -896,6 +908,16 @@ def update_campaign(campaign_id):
                 updates.append('admin_inactive_at = %s')
                 params.append(datetime.utcnow())
         
+        if 'creation_settings' in data:
+            if edition_of(row) != V5:
+                return jsonify({'error': 'creation_settings are for V5 chronicles'}), 400
+            try:
+                settings = validate_creation_settings(data['creation_settings'])
+            except RequestValidationError as e:
+                return jsonify({'error': e.public_message}), 400
+            updates.append('creation_settings = %s')
+            params.append(json.dumps(settings))
+
         if updates:
             params.append(campaign_id)
             query = f"UPDATE campaigns SET {', '.join(updates)} WHERE id = %s"

@@ -184,3 +184,71 @@ describe('starting experience step: review fixes', () => {
     expect(list).not.toHaveTextContent('Finance');
   });
 });
+
+describe('Forge v2 part A: book order, predator preview, chronicle settings', () => {
+  const renderWith = (creation_settings) =>
+    render(
+      <V5CharacterCreationWizard
+        token="x"
+        campaigns={[{ ...campaigns[0], creation_settings }]}
+        campaignId="2"
+        onCampaignChange={() => {}}
+      />
+    );
+
+  test('sections follow the corebook order (p. 136)', () => {
+    renderForge();
+    const ids = [...document.querySelectorAll('[id^="v5-section-"]')].map((el) => el.id);
+    expect(ids).toEqual([
+      'v5-section-identity',
+      'v5-section-clan',
+      'v5-section-attributes',
+      'v5-section-skills',
+      'v5-section-disciplines',
+      'v5-section-predator',
+      'v5-section-advantages',
+      'v5-section-humanity',
+      'v5-section-age',
+      'v5-section-experience',
+      'v5-section-story',
+    ]);
+  });
+
+  test('the Disciplines step previews the predator type, flaws marked extra', () => {
+    renderForge();
+    pick(document.getElementById('v5-field-clan'), 'Tremere');
+    pick(document.getElementById('v5-field-predator-preview'), 'Bagger');
+    const preview = screen.getByRole('region', { name: 'Predator type preview' });
+    expect(preview).toHaveTextContent('One Discipline dot: Blood Sorcery');
+    expect(preview).toHaveTextContent(/extra, on top of your own 2/);
+    // the same choice shows up in the Predator step
+    expect(document.getElementById('v5-field-predator')).toHaveValue('Bagger');
+  });
+
+  test('a Siren with no own Flaws is short of the 2 dots', () => {
+    renderForge();
+    pick(document.getElementById('v5-field-predator'), 'Siren');
+    expect(document.getElementById('v5-advantages-count')).toHaveTextContent('Flaws 0 (min 2)');
+  });
+
+  test('clans, predator types and ages the Storyteller left out are disabled', () => {
+    renderWith({ allowed_clans: ['Ventrue', 'Toreador'], allowed_predators: ['Siren'], allowed_ages: ['neonate'] });
+    expect(document.getElementById('v5-field-clan')).toHaveValue('Toreador'); // the first allowed clan
+    expect(screen.getByRole('option', { name: 'Brujah (not in this chronicle)' })).toBeDisabled();
+    expect(screen.getByRole('option', { name: 'Ventrue' })).not.toBeDisabled();
+    const alleycat = screen.getAllByRole('option', { name: 'Alleycat (not in this chronicle)' });
+    alleycat.forEach((o) => expect(o).toBeDisabled());
+    expect(screen.getByRole('option', { name: /Ancilla .*not in this chronicle/ })).toBeDisabled();
+  });
+
+  test("the Storyteller's house rules show at the top", () => {
+    renderWith({ house_rules: 'No Malkavians in Elysium.' });
+    expect(screen.getByRole('note', { name: 'House rules from your Storyteller' })).toHaveTextContent('No Malkavians in Elysium.');
+  });
+
+  test('no Humanity 8 option where the Storyteller turned it off', () => {
+    renderWith({ fledgling_humanity_8: false });
+    pick(document.getElementById('v5-field-age'), 'childer');
+    expect(document.getElementById('v5-field-fledgling-humanity')).toBeNull();
+  });
+});

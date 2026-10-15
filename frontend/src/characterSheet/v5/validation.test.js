@@ -31,7 +31,9 @@ import {
   validateV5Skills,
   validateV5Specialties,
   validateThinBloodMeritsFlaws,
+  settingsErrors,
 } from './validation';
+import { normalizeCreationSettings } from './creationSettings';
 
 const goodAttrs = () => ({
   strength: 4,
@@ -246,9 +248,13 @@ describe('V5 whole sheet', () => {
     const err = validateV5Sheet(s, V5_DISCIPLINES);
     expect(Object.values(err).join(' ')).toMatch(/at most 7/);
   });
-  it('counts predator flaws toward the minimum', () => {
+  it("doesn't count predator flaws toward the minimum (core p. 136: they are extra)", () => {
     const s = { ...goodSheet(), predatorType: 'Bagger', predatorDiscipline: 'Obfuscate', flaws: [] };
-    expect(validateV5Sheet(s, V5_DISCIPLINES)).toEqual({});
+    expect(validateV5Sheet(s, V5_DISCIPLINES)[V5_SECTION_IDS.advantages]).toBe(
+      'Take at least 2 dots of Flaws (you have 0).'
+    );
+    const own = { ...s, flaws: [{ name: 'Dark Secret', dots: 2 }] };
+    expect(validateV5Sheet(own, V5_DISCIPLINES)).toEqual({});
   });
   it('forbids Ventrue farmers', () => {
     const s = {
@@ -636,5 +642,47 @@ describe('V5 starting experience: review fixes', () => {
     // not for a second dot, nor for other skills
     expect(validateV5Experience(buy({}, [{ kind: 'skill', trait: 'finance' }]))).toBeNull();
     expect(xpPreview(named, { kind: 'skill', trait: 'academics' })).toEqual({ cost: 6, error: null });
+  });
+});
+
+describe('chronicle creation settings', () => {
+  const settings = (over) => ({ ...normalizeCreationSettings({}), ...over });
+
+  it('no settings or defaults: no errors', () => {
+    expect(settingsErrors(goodSheet(), null)).toEqual({});
+    expect(settingsErrors(goodSheet(), settings({}))).toEqual({});
+    expect(validateV5Sheet(goodSheet(), V5_DISCIPLINES, settings({}))).toEqual({});
+  });
+
+  it('refuses a clan, predator type or age the Storyteller left out', () => {
+    const s = goodSheet();
+    const err = settingsErrors(s, settings({ allowed_clans: ['Ventrue'], allowed_predators: ['Siren'], allowed_ages: ['ancilla'] }));
+    expect(err[V5_SECTION_IDS.clan]).toBe(`The Storyteller doesn't allow ${s.clan} in this chronicle.`);
+    expect(err[V5_SECTION_IDS.predator]).toBe(`The Storyteller doesn't allow the ${s.predatorType} predator type in this chronicle.`);
+    expect(err[V5_SECTION_IDS.age]).toMatch(/^The Storyteller doesn't allow .+ characters in this chronicle\.$/);
+  });
+
+  it('names compare case-insensitively', () => {
+    const s = goodSheet();
+    expect(settingsErrors(s, settings({ allowed_clans: [s.clan.toUpperCase()] }))).toEqual({});
+  });
+
+  it('caps own Flaws only', () => {
+    const s = { ...goodSheet(), predatorType: 'Bagger', predatorDiscipline: 'Obfuscate', flaws: [{ name: 'Dark Secret', dots: 2 }] };
+    expect(settingsErrors(s, settings({ flaws_max_dots: 2 }))).toEqual({});
+    const more = { ...s, flaws: [...s.flaws, { name: 'Enemy', dots: 1 }] };
+    expect(settingsErrors(more, settings({ flaws_max_dots: 2 }))[V5_SECTION_IDS.advantages]).toBe(
+      'This chronicle allows at most 2 dots of Flaws of your own (you have 3).'
+    );
+  });
+
+  it('fledgling Humanity 8 only where offered', () => {
+    const s = { ...goodSheet(), fledglingHumanity: true };
+    expect(settingsErrors(s, settings({ fledgling_humanity_8: false }))[V5_SECTION_IDS.humanity]).toMatch(/Humanity 8/);
+  });
+
+  it('age errors go to the age section', () => {
+    const s = { ...goodSheet(), age: 'neonate', generation: 11 };
+    expect(validateV5Sheet(s, V5_DISCIPLINES)[V5_SECTION_IDS.age]).toBe('Neonates are generation 12–13.');
   });
 });
