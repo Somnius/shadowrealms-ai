@@ -17,7 +17,7 @@ if str(REPO) not in sys.path:
 v5c = pytest.importorskip("scripts.v5_catalog", reason="scripts/ not on disk (backend container)")
 
 from scripts.v5_catalog import checks, crosscheck, merge, schema_lite  # noqa: E402
-from scripts.v5_catalog.parsers import clans, common, powers, predators  # noqa: E402
+from scripts.v5_catalog.parsers import advantages, clans, common, loresheets, powers, predators  # noqa: E402
 from scripts.v5_catalog.sources import mediawiki, pdf  # noqa: E402
 from scripts.v5_catalog.sources.base import Line  # noqa: E402
 
@@ -254,10 +254,15 @@ def test_attach_descriptions_targets_entries_powers_and_clan_parts():
         "disciplines": {"entries": [{"id": "discipline:d", "name": "D", "powers": [
             {"id": "power:d:p", "name": "P", "level": 1}]}]},
         "rituals": {"entries": []},
+        "advantages": {"entries": [{"id": "merit:m", "name": "M", "levels": [{"dots": 1, "name": "L1"}]}]},
+        "loresheets": {"entries": [{"id": "loresheet:l", "name": "L", "levels": [
+            {"dots": 1, "name": "One"}, {"dots": 2, "name": "Two"}]}]},
     }
     d = {"en": "Does a thing.", "el": "Κάνει κάτι."}
     descs = {"clans": {"clan:x": d, "clan:x:bane": d, "clan:x:compulsion": d, "clan:zzz": d},
-             "disciplines": {"discipline:d": d, "power:d:p": {"en": "only en"}}}
+             "disciplines": {"discipline:d": d, "power:d:p": {"en": "only en"}},
+             "advantages": {"merit:m": d, "merit:m:1": d},
+             "loresheets": {"loresheet:l": d, "loresheet:l:1": d}}
     report = []
     merge.attach_descriptions(files, descs, report)
     x = files["clans"]["entries"][0]
@@ -268,6 +273,14 @@ def test_attach_descriptions_targets_entries_powers_and_clan_parts():
     assert any("clan:zzz is not in the catalog" in r for r in report)
     assert any("power:d:p needs both en and el" in r for r in report)
     assert any("have no description" in r and "clan:y" in r for r in report)
+    # loresheet levels are targets ('<id>:<dots>'); advantage levels are not
+    lore = files["loresheets"]["entries"][0]
+    assert lore["desc"] == d and lore["levels"][0]["desc"] == d
+    assert list(lore["levels"][0]) == ["dots", "name", "desc"]
+    assert "desc" not in lore["levels"][1]
+    assert any("have no description" in r and "loresheet:l:2" in r for r in report)
+    assert any("merit:m:1 is not in the catalog" in r for r in report)
+    assert "desc" not in files["advantages"]["entries"][0]["levels"][0]
 
 
 def test_description_problems(tmp_path):
@@ -327,9 +340,23 @@ def test_reference_problems_on_tiny_catalog():
                                         "discipline_choice": [{"discipline": "discipline:d", "clans_only": ["clan:x"]}],
                                         "forbidden_clans": [], "advantages": [
                                             {"pick": "all", "options": [{"id": "weird:thing", "dots": 1}]}],
-                                        "flaws": []}]},
+                                        "flaws": [{"pick": "one_of", "options": [
+                                            {"id": "flaw:enemies", "dots": 1},
+                                            {"id": "flaw:mythic", "dots": None, "group": True},
+                                            {"id": "flaw:psychological", "dots": None, "group": True}]}]}]},
+        "advantages": {"entries": [
+            {"id": "flaw:enemies", "kind": "flaw", "group": "Allies", "book": "v5-a", "page": 1,
+             "clans_only": None, "cannot_buy_for": []},
+            {"id": "flaw:stake-bait", "kind": "flaw", "group": "Mythic", "book": "v5-a", "page": 1,
+             "clans_only": ["clan:nope"], "cannot_buy_for": []}]},
+        "loresheets": {"entries": [{"id": "loresheet:l", "book": "v5-a", "page": 1, "clans_only": None,
+                                    "levels": [{"dots": d, "name": "x"} for d in (1, 2, 3, 5)]}]},
     }
     probs = checks.reference_problems(data)
+    assert not any("flaw:enemies" in p or "flaw:mythic" in p for p in probs)
+    assert any("flaw:psychological" in p for p in probs)
+    assert any("clan:nope" in p for p in probs)
+    assert any("loresheet:l" in p and "1-5" in p for p in probs)
     assert any("discipline:nope" in p for p in probs)
     assert any("'v5-b'" in p for p in probs)
     assert any("power:d:missing" in p for p in probs)
@@ -409,3 +436,80 @@ def test_wikitext_helpers():
     assert table[2][0] == "Silver Step"
     secs = mediawiki.sections(FAKE_WIKITEXT)
     assert list(secs) == ["Night Owl", "Other"]
+
+
+# --------------------------------------------------------------------------- advantages and loresheets
+
+@pytest.mark.parametrize("spec,expected", [
+    ("• TO •••", {"min": 1, "max": 3}), ("•+", {"min": 1, "max": None}), ("•• OR •••", {"allowed": [2, 3]}),
+    ("(••)", {"min": 2, "max": 2}), ("(• TO ••••)", {"min": 1, "max": 4}), (None, None), ("", None),
+])
+def test_parse_dots(spec, expected):
+    assert advantages.parse_dots(spec) == expected
+
+
+def _master_fixture():
+    return [
+        L("Backgrounds", 28.6), L("GLIMMER • TO •••", 13.9), L("Invented summary; V:tM, p. 50."),
+        L("Merits", 28.6), L("MOON EYES ••", 13.9), L("Invented summary; p. 12."),
+        L("Thin-Blood Merits", 19.6), L("NIGHT SIGHT", 13.9), L("Invented summary."),
+        L("Flaws", 28.6), L("SILVER ITCH (•)", 13.9), L("Invented; see Invented Book, p. 99; V:tM, p. 51."),
+        L("Clan Coterie Merits", 19.6), L("BRUJAH: LOUD VOICE •••", 13.9), L("Invented; p. 70."),
+    ]
+
+
+def test_parse_master_list():
+    recs, report = advantages.parse_master(_master_fixture())
+    by = {r["name"]: r for r in recs}
+    assert report == []
+    assert by["Glimmer"]["kind"] == "background" and by["Glimmer"]["ref"] == ("v5-corebook", 50)
+    assert by["Moon Eyes"]["dots"] == {"min": 2, "max": 2} and by["Moon Eyes"]["ref"] == ("v5-players-guide", 12)
+    assert by["Night Sight"]["thin_blood"] and by["Night Sight"]["dots"] is None
+    assert by["Silver Itch"]["ref"] == ("v5-corebook", 51)  # the last page cited is the entry's own
+    assert by["Loud Voice"]["clans_only"] == ["clan:brujah"] and by["Loud Voice"]["coterie"]
+    assert advantages.entry_id("merit", "Loud Voice", "Clan Coterie") == "merit:coterie-loud-voice"
+    assert advantages.entry_id("flaw", "Silver Itch", None) == "flaw:silver-itch"
+
+
+def test_chapter_scan_and_match():
+    master, report = advantages.parse_master(_master_fixture())
+    chapter = [
+        L("Merits", 31.4, page=12, book="v5-players-guide"),
+        L("looks", 10.8, page=12, book="v5-players-guide"),
+        L("MOON EYES •••", 14.6, page=12, book="v5-players-guide"),
+        L("Backgrounds", 31.4, page=50, book="v5-corebook"),
+        L("Herd", 17.1, page=50, book="v5-corebook"),
+        L("Flaw: (•) Silver Itch. Invented text.", 12.2, page=51, book="v5-corebook"),
+    ]
+    hits = advantages.scan_chapter(chapter)
+    advantages.match(master, hits, report, {"v5-corebook": 10, "v5-players-guide": 20})
+    by = {r["name"]: r for r in master}
+    assert by["Moon Eyes"]["chapter_group"] == "Looks"
+    assert by["Silver Itch"]["chapter_group"] == "Herd"  # a Flaw printed inside a Background block
+    assert any("Moon Eyes" in r and "'•••'" in r for r in report)  # the two printings disagree
+
+
+def test_background_levels():
+    lines = [L("Glimmer", 17.1), L("Invented intro."), L("•"), L("Faint: invented."), L("•• Bright: invented."),
+             L("•••"), L("Blinding: invented."), L("Next", 17.1)]
+    assert advantages.background_levels(lines, "Glimmer") == [
+        {"dots": 1, "name": "Faint"}, {"dots": 2, "name": "Bright"}, {"dots": 3, "name": "Blinding"}]
+
+
+def test_loresheet_dots_from_glyphs_and_geometry():
+    def LX(text, x, h=13.9):
+        return Line(text=text, book="v5-test", page=7, height=h, x=x)
+    body = [LX("invented body text", 70.0, 13.4) for _ in range(5)] + \
+        [LX("invented body text", 230.0, 13.4) for _ in range(5)]
+    page = [LX("the moon court", 100.0, 39.0), LX("(Toreador characters only)", 100.0, 12.1)] + body + [
+        LX("First Light: invented", 78.0), LX("Second", 86.0), LX("Light: invented", 70.0),
+        LX("Third Light: invented", 254.0), LX("Fourth Light: x", 262.0), LX("Fifth Light: y", 270.0)]
+    rec, report = loresheets.parse_page(page, {13.9})
+    assert report == []
+    assert [lv["name"] for lv in rec["levels"]] == ["First Light", "Second Light", "Third Light",
+                                                   "Fourth Light", "Fifth Light"]
+    assert rec["clans_only"] == ["clan:toreador"] and rec["id"] == "loresheet:the-moon-court"
+    glyphs = [LX("the sun court", 100.0, 39.0)] + body + [
+        LX(f"{'•' * n} Ray {n}: invented", 70.0) for n in (1, 2, 3, 4)]
+    rec, report = loresheets.parse_page(glyphs)
+    assert [lv["dots"] for lv in rec["levels"]] == [1, 2, 3, 4] and report

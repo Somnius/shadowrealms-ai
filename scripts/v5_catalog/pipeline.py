@@ -8,7 +8,9 @@ from collections import Counter
 from pathlib import Path
 
 from . import books, checks, crosscheck, merge
+from .parsers import advantages as adv_parser
 from .parsers import clans as clan_parser
+from .parsers import loresheets as lore_parser
 from .parsers import common as c
 from .parsers import powers as power_parser
 from .parsers import predators as pred_parser
@@ -18,7 +20,17 @@ REPORT = books.BUILD_DIR / "report.md"
 MANUAL_DIR = books.CATALOG_DIR / "manual"
 DESC_DIR = books.CATALOG_DIR / "descriptions"
 KIND_FILE = {"ritual": "rituals", "ceremony": "ceremonies", "formula": "formulae"}
-CATALOG_FILES = ("books", "clans", "disciplines", "rituals", "ceremonies", "formulae", "predator_types")
+CATALOG_FILES = ("books", "clans", "disciplines", "rituals", "ceremonies", "formulae", "predator_types",
+                 "advantages", "loresheets")
+# chapter pages scanned for Advantage entries (the coterie-type write-ups, corebook pr 197-199 and
+# PG pr 156-168, only suggest Advantages for a coterie and are left out of the scan)
+ADVANTAGE_CHAPTERS = {
+    "v5-corebook": [(179, 196)],
+    "v5-players-guide": [(109, 122), (126, 128), (135, 136), (139, 151), (169, 191)],
+    "v5-companion": [(30, 60)],
+}
+MASTER_LIST = ("v5-players-guide", 232, 238)
+LORESHEET_LEVEL_HEIGHTS = {"v5-corebook": {13.9, 13.4}}
 
 
 def _dump(path: Path, data) -> None:
@@ -70,6 +82,10 @@ def extract() -> list[str]:
         if p["name"] in pools:
             p["core_pool_text"] = pools[p["name"]]["pool_text"]
             p["core_pool_page"] = pools[p["name"]]["page"]
+    adv, lore, rep = extract_advantages(manifest)
+    report += ["### Advantages and loresheets"] + rep
+    _dump(EXTRACTED / "advantages.pdf.json", adv)
+    _dump(EXTRACTED / "loresheets.pdf.json", lore)
     _dump(EXTRACTED / "powers.pdf.json", powers)
     _dump(EXTRACTED / "sections.pdf.json", sections)
     _dump(EXTRACTED / "clans.pdf.json", {"clans": clan_recs, "bane_variants": bane_variants})
@@ -78,6 +94,42 @@ def extract() -> list[str]:
     report.append(f"Extracted: {len(powers)} power-like records, {len(clan_recs)} clan blocks, "
                   f"{len(preds)} predator types, {sum(len(v) for v in bane_variants.values())} bane variants.")
     return report
+
+
+def extract_advantages(manifest: dict) -> tuple[dict, list[dict], list[str]]:
+    from .sources.pdf import PdfBook
+
+    report: list[str] = []
+    pdfs = {bid: PdfBook(bid, manifest=manifest) for bid in books.BY_ID}
+    precedence = _precedence(manifest)
+    master, rep = adv_parser.parse_master(pdfs[MASTER_LIST[0]].lines(MASTER_LIST[1], MASTER_LIST[2]))
+    report += rep
+    lines = []
+    for bid, spans in ADVANTAGE_CHAPTERS.items():
+        for a, z in spans:
+            lines += pdfs[bid].lines(a, z)
+    hits = adv_parser.scan_chapter(lines)
+    adv_parser.match(master, hits, report, precedence)
+    core = pdfs["v5-corebook"]
+    levels = {}
+    for e in master:
+        if e["kind"] == "background":
+            lv = adv_parser.background_levels(core.lines(184, 194), e["name"])
+            if lv:
+                levels[e["name"]] = {"levels": lv, "book": "v5-corebook"}
+    only = [{k: h[k] for k in ("name", "dots_text", "tag", "book", "page", "group")}
+            for h in adv_parser.chapter_only(master, hits)]
+    lore, rep = [], []
+    for b in books.TIER1:
+        for a, z in b.ranges.get("loresheets", []):
+            recs, r = lore_parser.parse([pdfs[b.book_id].lines(p, p) for p in range(a, z + 1)],
+                                        LORESHEET_LEVEL_HEIGHTS.get(b.book_id))
+            lore += recs
+            rep += r
+    report += rep
+    report.append(f"Advantages: {len(master)} master-list entries, {len(only)} chapter-only lines; "
+                  f"{len(lore)} loresheets.")
+    return {"master": master, "chapter_only": only, "levels": levels}, lore, report
 
 
 # --------------------------------------------------------------------------- build
@@ -260,12 +312,75 @@ def compare_predator(e: dict, ex: dict, report: list[str]) -> None:
                       f"{ex['book']} p.{ex['page']}")
 
 
+def build_advantages(extracted: dict, prec: dict, report: list[str]) -> dict:
+    man = _manual("advantages")
+    recs = []
+    for e in extracted["master"]:
+        group = e["group"] or (e["name"] if e["kind"] == "background" else e.get("chapter_group"))
+        book, page = e["ref"] if e.get("ref") else (None, None)
+        rec = {
+            "id": adv_parser.entry_id(e["kind"], e["name"], e["group"]), "name": e["name"],
+            "kind": e["kind"], "group": group, "dots": e["dots"], "book": book, "page": page,
+            "also_in": e.get("also_in", []), "aliases": [], "source": "pdf",
+            "master_list_page": e["master_page"],
+            "thin_blood": bool(e.get("thin_blood")), "caitiff": bool(e.get("caitiff")),
+            "ghoul_only": bool(e.get("ghoul_only")), "coterie": bool(e.get("coterie")),
+            "clans_only": e.get("clans_only"), "cannot_buy_for": [],
+            "repeatable": False, "requires": None, "levels": [],
+        }
+        if e["kind"] == "background":
+            rec["repeatable"] = True  # core pr 184: the same Background can be taken several times
+            lv = extracted.get("levels", {}).get(e["name"])
+            if lv:
+                rec["levels"] = lv["levels"]
+        recs.append(rec)
+    recs = merge.apply_manual(recs, man, report)
+    for r in recs:
+        if r["group"] is None:
+            report.append(f"- {r['id']}: no group found in the chapter text")
+    ids = [r["id"] for r in recs]
+    for d in sorted({i for i in ids if ids.count(i) > 1}):
+        report.append(f"- duplicate advantage id {d}")
+    for r in recs:
+        r.setdefault("aliases", [])
+        r.setdefault("also_in", [])
+        r.pop("merged_from", None)
+        if r.get("manual_fields"):
+            r["manual_fields"] = sorted(r["manual_fields"])
+    order = {"background": 0, "merit": 1, "flaw": 2}
+    recs.sort(key=lambda r: (order[r["kind"]], r["group"] or "", r["name"]))
+    for oid in man.get("expect_chapter_only", []):
+        if not any(r["id"] == oid for r in recs):
+            report.append(f"- manual expects {oid} but it is missing")
+    return {"catalog": "advantages", "version": 1, "entries": recs}
+
+
+def build_loresheets(extracted: list[dict], prec: dict, report: list[str]) -> dict:
+    recs = merge.apply_manual(extracted, _manual("loresheets"), report)
+    out = []
+    for r in recs:
+        e = {k: r.get(k) for k in ("id", "name", "book", "page", "restriction", "clans_only",
+                                   "disciplines_only", "thin_blood_only", "levels")}
+        e["thin_blood_only"] = bool(e["thin_blood_only"])
+        e["also_in"] = r.get("also_in", [])
+        e["aliases"] = r.get("aliases", [])
+        e["source"] = r.get("source", "pdf")
+        if r.get("manual_fields"):
+            e["manual_fields"] = sorted(r["manual_fields"])
+        if [lv["dots"] for lv in e["levels"]] != [1, 2, 3, 4, 5]:
+            report.append(f"- {e['id']}: levels are not 1-5 after the manual records")
+        out.append(e)
+    out.sort(key=lambda e: (prec.get(e["book"], 99), e["page"]))
+    return {"catalog": "loresheets", "version": 1, "entries": out}
+
+
 def build(out_dir: Path | None = None) -> list[str]:
     out_dir = out_dir or books.CATALOG_DIR
     manifest = books.load_manifest()
     prec = _precedence(manifest)
     report = ["", "## Build"]
-    for f in ("powers.pdf.json", "sections.pdf.json", "clans.pdf.json", "predator_types.pdf.json"):
+    for f in ("powers.pdf.json", "sections.pdf.json", "clans.pdf.json", "predator_types.pdf.json",
+              "advantages.pdf.json", "loresheets.pdf.json"):
         if not (EXTRACTED / f).exists():
             raise SystemExit(f"missing {EXTRACTED / f}: run `python -m scripts.v5_catalog extract` first")
     files = {"books": build_books(manifest)}
@@ -273,6 +388,8 @@ def build(out_dir: Path | None = None) -> list[str]:
                               prec, report))
     files["clans"] = build_clans(_load(EXTRACTED / "clans.pdf.json"), prec, report)
     files["predator_types"] = build_predators(_load(EXTRACTED / "predator_types.pdf.json"), prec, report)
+    files["advantages"] = build_advantages(_load(EXTRACTED / "advantages.pdf.json"), prec, report)
+    files["loresheets"] = build_loresheets(_load(EXTRACTED / "loresheets.pdf.json"), prec, report)
     merge.attach_descriptions(files, load_descriptions(), report)
     for name, data in files.items():
         _dump(out_dir / f"{name}.json", data)
@@ -305,6 +422,9 @@ def needs_review(files: dict) -> list[str]:
                         out.append(f"- {e['id']}: {kind} option {o['id']} has no printed rating")
         if e["pool"] is None:
             out.append(f"- {e['id']}: no predator pool printed")
+    for e in files["advantages"]["entries"]:
+        if e["dots"] is None and not e["thin_blood"]:
+            out.append(f"- {e['id']}: no dot rating printed (dots null)")
     for e in files["clans"]["entries"]:
         if e["bane"] is None:
             out.append(f"- {e['id']}: no clan bane (bane null)")
@@ -322,6 +442,12 @@ def counts(files: dict) -> list[str]:
     for name in ("rituals", "ceremonies", "formulae"):
         per = Counter(e["level"] for e in files[name]["entries"])
         lines.append(f"  - {name} by level: " + ", ".join(f"L{lv} {per[lv]}" for lv in range(1, 6)))
+    adv = files["advantages"]["entries"]
+    lines.append("  - advantages by kind: " + ", ".join(f"{k} {n}" for k, n in sorted(Counter(e["kind"] for e in adv).items())))
+    flags = ("thin_blood", "caitiff", "ghoul_only", "coterie")
+    lines.append("  - advantages flagged: " + ", ".join(f"{f} {sum(1 for e in adv if e[f])}" for f in flags))
+    per = Counter(e["book"] for e in files["loresheets"]["entries"])
+    lines.append("  - loresheets by book: " + ", ".join(f"{b} {n}" for b, n in sorted(per.items())))
     return lines
 
 

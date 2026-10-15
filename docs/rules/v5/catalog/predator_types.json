@@ -137,7 +137,7 @@
           "pick": "all",
           "options": [
             {
-              "id": "flaw:enemy",
+              "id": "flaw:enemies",
               "dots": 2
             }
           ]
@@ -418,7 +418,7 @@
           "pick": "all",
           "options": [
             {
-              "id": "flaw:enemy",
+              "id": "flaw:enemies",
               "dots": 2,
               "note": "the police or an escaped victim"
             }
@@ -775,7 +775,7 @@
           "pick": "split",
           "options": [
             {
-              "id": "flaw:enemy",
+              "id": "flaw:enemies",
               "dots": null
             },
             {
@@ -1127,7 +1127,7 @@
           "pick": "all",
           "options": [
             {
-              "id": "flaw:enemy",
+              "id": "flaw:enemies",
               "dots": 1,
               "note": "a spurned lover or jealous partner"
             }

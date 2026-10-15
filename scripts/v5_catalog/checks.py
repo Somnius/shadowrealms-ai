@@ -15,12 +15,13 @@ from pathlib import Path
 
 from . import schema_lite
 
-CATALOGS = ("books", "clans", "disciplines", "rituals", "ceremonies", "formulae", "predator_types")
+CATALOGS = ("books", "clans", "disciplines", "rituals", "ceremonies", "formulae", "predator_types",
+            "advantages", "loresheets")
 SHINGLE = 8
 MAX_DESC = 240
 _ID_PREFIX = {"clans": "clan:", "disciplines": "discipline:", "rituals": "ritual:",
-              "ceremonies": "ceremony:", "formulae": "formula:", "predator_types": "predator:"}
-# advantage ids are referenced by predator grants before Part C builds advantages.json
+              "ceremonies": "ceremony:", "formulae": "formula:", "predator_types": "predator:",
+              "loresheets": "loresheet:"}
 ADVANTAGE_PREFIXES = ("background:", "merit:", "flaw:")
 
 
@@ -80,10 +81,12 @@ def _book_refs(e: dict):
 def reference_problems(data: dict) -> list[str]:
     out = []
     books = {b["book_id"] for b in data["books"]["entries"]}
-    ids = set(all_ids(data))
     clan_ids = {e["id"] for e in data["clans"]["entries"]}
     disc_ids = {e["id"] for e in data["disciplines"]["entries"]}
     power_ids = {p["id"] for d in data["disciplines"]["entries"] for p in d["powers"]}
+    adv_ids = {e["id"] for e in data["advantages"]["entries"]}
+    adv_groups = {(e["kind"], re.sub(r"[^a-z0-9]+", "-", e["group"].lower()).strip("-"))
+                  for e in data["advantages"]["entries"]}
 
     def check_book(where, e):
         for b, _p in _book_refs(e):
@@ -132,18 +135,55 @@ def reference_problems(data: dict) -> list[str]:
         for cl in e.get("forbidden_clans", []):
             if cl not in clan_ids:
                 out.append(f"- {e['id']}: forbidden clan {cl} does not exist")
-        for grant in e.get("advantages", []) + e.get("flaws", []):
-            for opt in grant["options"]:
-                oid = opt["id"]
-                if not (oid in ids or oid.startswith(ADVANTAGE_PREFIXES)):
-                    out.append(f"- {e['id']}: grant option {oid} is neither a catalog id nor an "
-                               f"advantage id ({', '.join(ADVANTAGE_PREFIXES)})")
+        for kind, grants in (("merit/background", e.get("advantages", [])), ("flaw", e.get("flaws", []))):
+            for grant in grants:
+                for opt in grant["options"]:
+                    out += _grant_problems(e["id"], opt, kind, adv_ids, adv_groups)
+    for e in data["advantages"]["entries"]:
+        check_book(e["id"], e)
+        if not e["id"].startswith(e["kind"] + ":"):
+            out.append(f"- {e['id']}: id prefix does not match kind {e['kind']}")
+        for cl in (e.get("clans_only") or []) + [x["clan"] for x in e.get("cannot_buy_for", [])]:
+            if cl not in clan_ids:
+                out.append(f"- {e['id']}: clan {cl} does not exist")
+    for e in data["loresheets"]["entries"]:
+        check_book(e["id"], e)
+        if [lv["dots"] for lv in e["levels"]] != [1, 2, 3, 4, 5]:
+            out.append(f"- {e['id']}: levels must be dots 1-5 once each")
+        for cl in e.get("clans_only") or []:
+            if cl not in clan_ids:
+                out.append(f"- {e['id']}: clan {cl} does not exist")
+        for d in e.get("disciplines_only") or []:
+            if d not in disc_ids:
+                out.append(f"- {e['id']}: Discipline {d} does not exist")
+    for e in data["clans"]["entries"]:
+        for fl in (e.get("creation") or {}).get("flaws", []):
+            if fl["id"] not in adv_ids:
+                out.append(f"- {e['id']}: creation flaw {fl['id']} is not in advantages.json")
     return out
 
 
+def _grant_problems(owner: str, opt: dict, kind: str, adv_ids: set, adv_groups: set) -> list[str]:
+    """A predator grant option must name an advantages.json entry, or (group: true) a group."""
+    oid = opt["id"]
+    if opt.get("group"):
+        k, _, g = oid.partition(":")
+        if (k, g) not in adv_groups:
+            return [f"- {owner}: grant group {oid} matches no {k} group in advantages.json"]
+        return []
+    if oid not in adv_ids:
+        return [f"- {owner}: grant option {oid} is not in advantages.json"]
+    if kind == "flaw" and not oid.startswith("flaw:"):
+        return [f"- {owner}: {oid} is granted as a Flaw but is not one"]
+    if kind != "flaw" and oid.startswith("flaw:"):
+        return [f"- {owner}: {oid} is granted as an Advantage but is a Flaw"]
+    return []
+
+
 def description_problems(catalog_dir: Path, data: dict) -> list[str]:
-    """Every entry, power, clan Bane and clan Compulsion carries desc.en and desc.el (non-empty,
-    <= 240 chars), and every key in descriptions/*.json names something in the catalog."""
+    """Every entry, power, clan Bane, clan Compulsion and loresheet level carries desc.en and
+    desc.el (non-empty, <= 240 chars), and every key in descriptions/*.json names something in
+    the catalog."""
     from . import merge
 
     out = []

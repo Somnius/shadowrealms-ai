@@ -27,8 +27,9 @@ def strip_local(rec: dict) -> dict:
 
 
 def apply_manual(records: list[dict], manual: dict, report: list[str]) -> list[dict]:
-    """manual = {"exclude": [{id, why}], "merge": [{from, into, why}], "patch": [{id, set, why}],
-    "add": [records]}. Returns a new list."""
+    """manual = {"exclude": [{id, why}], "merge": [{from, into, why}],
+    "rename": [{from, into, name, why}], "patch": [{id, set, why}], "add": [records]}.
+    Returns a new list."""
     recs = [copy.deepcopy(r) for r in records]
     for ex in manual.get("exclude", []):
         before = len(recs)
@@ -47,6 +48,15 @@ def apply_manual(records: list[dict], manual: dict, report: list[str]) -> list[d
                 r["merged_from"] = mg["from"]
         if not hit:
             report.append(f"- manual merge matched nothing: {mg['from']}")
+    for rn in manual.get("rename", []):
+        hit = [r for r in recs if r["id"] == rn["from"]]
+        if not hit:
+            report.append(f"- manual rename matched nothing: {rn['from']}")
+        for r in hit:  # a garbled title fixed by hand: new id and name, no alias kept
+            r["id"], r["name"] = rn["into"], rn["name"]
+            mf = r.setdefault("manual_fields", [])
+            if "name" not in mf:
+                mf.append("name")
     for p in manual.get("patch", []):
         hit = False
         for r in recs:
@@ -142,14 +152,18 @@ def amalgam_ref(am: dict | None) -> dict | None:
 
 # --------------------------------------------------------------------------- descriptions
 
-DESC_CATALOGS = ("clans", "disciplines", "rituals", "ceremonies", "formulae", "predator_types")
+DESC_CATALOGS = ("clans", "disciplines", "rituals", "ceremonies", "formulae", "predator_types",
+                 "advantages", "loresheets")
 # clans carry three descriptions: the clan, its Bane and its Compulsion
 CLAN_DESC_PARTS = ("bane", "compulsion")
+# loresheets carry one more per level, under '<loresheet id>:<dots>' (1-5)
+LEVEL_DESC_CATALOGS = ("loresheets",)
 
 
 def desc_targets(files: dict):
-    """Yield (key, holder) for every place a description can go: entries, powers, and a clan's
-    bane / compulsion objects under '<clan id>:bane' / '<clan id>:compulsion'."""
+    """Yield (key, holder) for every place a description can go: entries, powers, a clan's
+    bane / compulsion objects under '<clan id>:bane' / '<clan id>:compulsion', and a
+    loresheet's levels under '<loresheet id>:<dots>'."""
     for name in DESC_CATALOGS:
         if name not in files:
             continue
@@ -161,6 +175,9 @@ def desc_targets(files: dict):
                 for part in CLAN_DESC_PARTS:
                     if e.get(part):
                         yield f"{e['id']}:{part}", e[part]
+            if name in LEVEL_DESC_CATALOGS:
+                for lv in e.get("levels", []):
+                    yield f"{e['id']}:{lv['dots']}", lv
 
 
 def _with_desc(holder: dict, desc: dict) -> None:
