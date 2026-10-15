@@ -1,21 +1,26 @@
 #!/usr/bin/env python3
 """ShadowRealms AI trailer: edit + render (one ffmpeg run per language).
 
-Reads tools/trailer/timeline.json (encoded from CUES.md), the clips and their shots.json,
-the cards (built by cards.mjs, run automatically and cached) and the score, and renders
-  data/trailer/out/trailer_{lang}_1080p60.mp4   (final)   or  trailer_{lang}_draft_{res}.mp4 (draft)
-  data/trailer/out/poster*_{lang}[...].png      poster frames (times in timeline.json "posters")
-  data/trailer/out/contact_{lang}[...].png      contact sheet, one frame per second, 10 x 12
-then checks the result: 120.0 s, 7200 frames, audio length, A/V start.
+Reads a timeline (tools/trailer/timeline.json = v1, 120 s; timeline_v2.json = v2, 150 s; encoded
+from CUES.md / CUES_v2.md), the clips and their shots.json, the cards (built by cards.mjs, run
+automatically and cached) and the score, all under the timeline's "data_dir", and renders
+  <data_dir>/out/trailer_{lang}_1080p60.mp4   (final)   or  trailer_{lang}_draft_{res}.mp4 (draft)
+  <data_dir>/out/poster*_{lang}[...].png      poster frames (times in the timeline's "posters")
+  <data_dir>/out/contact_{lang}[...].png      contact sheet, one frame per second, 10 wide
+then checks the result: the timeline's length and frame count, audio length, A/V start.
+When the timeline names a "music_preset", its duration, data_dir and flash times are checked
+against tools/trailer/music/cues.py so the edit cannot drift from the score.
 
 Usage:
   python3 tools/trailer/edit.py --lang en --draft            # NVENC, 960x540, fast; for iteration
   python3 tools/trailer/edit.py --lang en --draft --res 1080 # NVENC at full size
   python3 tools/trailer/edit.py --lang both --final          # x264 crf 18 preset slow, 1080p60
+  python3 tools/trailer/edit.py --timeline tools/trailer/timeline_v2.json --lang both --draft --fill-missing
 Options:
-  --placeholder     use data/trailer/placeholder/{clips,music} instead of the real inputs
+  --timeline PATH   the timeline to cut (default tools/trailer/timeline.json)
+  --placeholder     use <data_dir>/placeholder/{clips,music} instead of the real inputs
   --fill-missing    per shot: use the placeholder clip when the real one is missing (and say so)
-  --no-cards        don't run cards.mjs first (use what is in data/trailer/cards/)
+  --no-cards        don't run cards.mjs first (use what is in <data_dir>/cards/)
   --print-graph     print the ffmpeg command and filter graph, don't render
 
 Machine limits (CLAUDE.md): runs under nice -n 10, encoder -threads 12, decoders 2 threads each,
@@ -33,13 +38,9 @@ from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 ROOT = HERE.parents[1]
-DATA = ROOT / "data/trailer"
-FONT = DATA / "fonts/EBGaramond.ttf"
 NICE = ["nice", "-n", "10"]
-TL = json.loads((HERE / "timeline.json").read_text())
-FPS = TL["fps"]
-TOTAL = float(TL["duration"])
-NFRAMES = round(TOTAL * FPS)
+TL_PATH = HERE / "timeline.json"
+TL = DATA = FONT = FPS = TOTAL = NFRAMES = None  # set by load_timeline()
 
 
 def log(*a):
@@ -48,6 +49,26 @@ def log(*a):
 
 def warn(*a):
     print("[edit] WARNING:", *a, file=sys.stderr, flush=True)
+
+
+def load_timeline(path):
+    """The timeline and everything derived from it; checked against its music preset (cues.py)."""
+    global TL_PATH, TL, DATA, FONT, FPS, TOTAL, NFRAMES
+    TL_PATH = Path(path).resolve()
+    TL = json.loads(TL_PATH.read_text())
+    DATA = ROOT / TL.get("data_dir", "data/trailer")
+    FONT = DATA / "fonts/EBGaramond.ttf"
+    FPS = TL["fps"]
+    TOTAL = float(TL["duration"])
+    NFRAMES = round(TOTAL * FPS)
+    if TL.get("music_preset"):
+        sys.path.insert(0, str(HERE / "music"))
+        from cues import check_timeline
+        problems = check_timeline(str(TL_PATH))
+        if problems:
+            sys.exit("[edit] timeline disagrees with music preset %r:\n  " % TL["music_preset"] + "\n  ".join(problems))
+        log(f"{TL_PATH.relative_to(ROOT)}: {TOTAL} s, {NFRAMES} frames, data {DATA.relative_to(ROOT)}, "
+            f"consistent with music preset {TL['music_preset']}")
 
 
 def fr(t):
@@ -417,11 +438,13 @@ def main():
     mode.add_argument("--draft", action="store_true", help="NVENC, fast (default)")
     mode.add_argument("--final", action="store_true", help="x264 crf 18 preset slow, 1080p")
     ap.add_argument("--res", type=int, choices=[540, 720, 1080], help="draft height (default 540; final is always 1080)")
+    ap.add_argument("--timeline", default=str(TL_PATH), help="timeline JSON (default tools/trailer/timeline.json)")
     ap.add_argument("--placeholder", action="store_true")
     ap.add_argument("--fill-missing", action="store_true")
     ap.add_argument("--no-cards", action="store_true")
     ap.add_argument("--print-graph", action="store_true")
     args = ap.parse_args()
+    load_timeline(args.timeline)
     final = args.final
     H = 1080 if final else (args.res or 540)
     W = H * 16 // 9
@@ -442,7 +465,7 @@ def main():
                 sys.exit(f"missing {music} (use --placeholder or --fill-missing)")
         recorded = (clips_dir / "sigil_clean.mp4").exists()
         if not args.no_cards:
-            cmd = ["node", str(HERE / "cards.mjs"), "--lang", lang] + (["--recorded"] if recorded else [])
+            cmd = ["node", str(HERE / "cards.mjs"), "--timeline", str(TL_PATH), "--lang", lang] + (["--recorded"] if recorded else [])
             subprocess.run(cmd, check=True)
         planner = Planner(lang, clips_dir, ph / "clips" / lang, args.fill_missing or args.placeholder)
         segs = planner.plan()
@@ -498,7 +521,7 @@ def main():
         sheet = outdir / f"contact_{lang}{tag}.png"
         subprocess.run([*NICE, "ffmpeg", "-hide_banner", "-loglevel", "error", "-y", "-i", str(out), "-vf",
                         f"select='eq(mod(n\\,{FPS})\\,{FPS // 2})',scale=384:216,drawtext=fontfile={FONT}:text='%{{eif\\:t\\:d}}s':"
-                        "fontsize=22:fontcolor=white:box=1:boxcolor=black@0.6:x=6:y=6,tile=10x12:padding=4:color=black",
+                        f"fontsize=22:fontcolor=white:box=1:boxcolor=black@0.6:x=6:y=6,tile=10x{math.ceil(TOTAL / 10)}:padding=4:color=black",
                         "-frames:v", "1", str(sheet)], check=True)
         log(f"  contact sheet {sheet.relative_to(ROOT)}")
         review(out, outdir, lang, tag, segs)
@@ -517,7 +540,7 @@ def frames_sheet(src, frames, cols, width, dst):
 
 def review(out, outdir, lang, tag, segs):
     """Stills for review: just after every cut (once the transition is over), and the frames
-    either side of each hit (68.0 / 73.0)."""
+    either side of each hit (every "flashes" time of the timeline)."""
     cuts = [fr(sg.start + sg.t_in / 2) + 2 for sg in segs[1:]]
     before = [fr(sg.start - sg.t_in / 2) - 3 for sg in segs[1:]]
     frames_sheet(out, sorted(set(cuts + before)), 6, 480, outdir / f"review_cuts_{lang}{tag}.png")

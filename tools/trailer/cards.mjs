@@ -9,10 +9,12 @@
 //     (clips/{lang}/sigil_clean.mp4): no sigil of ours, the app's wordmark is the title
 //   data/trailer/cards/{lang}/outro.mov       8 s alpha animation (sigil, Enter the night, lines)
 //   data/trailer/cards/{lang}/{title,outro}.png  stills of the finished cards, for review
-// Text comes from tools/trailer/timeline.json. Greek never uses Cinzel (CUES.md font rule).
+// Text comes from the timeline (tools/trailer/timeline.json = v1, timeline_v2.json = v2); the
+// outputs go under the timeline's "data_dir". Greek never uses Cinzel (CUES.md font rule).
 // Outputs are cached by a hash of their HTML; --force re-renders.
 //
-// Usage: node tools/trailer/cards.mjs [--lang en,el] [--only captions,intro,outro] [--force] [--recorded]
+// Usage: node tools/trailer/cards.mjs [--timeline tools/trailer/timeline_v2.json] [--lang en,el]
+//                                    [--only captions,intro,outro] [--force] [--recorded]
 
 import { spawn } from 'node:child_process';
 import { createHash } from 'node:crypto';
@@ -23,16 +25,16 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, '../..');
-const DATA = path.join(ROOT, 'data/trailer');
-const FONTS = path.join(DATA, 'fonts');
-const TL = JSON.parse(fs.readFileSync(path.join(HERE, 'timeline.json'), 'utf8'));
-const W = TL.width, H = TL.height, FPS = TL.fps;
 
 const args = process.argv.slice(2);
 const opt = (name, dflt) => {
   const i = args.indexOf(`--${name}`);
   return i >= 0 && args[i + 1] && !args[i + 1].startsWith('--') ? args[i + 1] : dflt;
 };
+const TL = JSON.parse(fs.readFileSync(path.resolve(opt('timeline', path.join(HERE, 'timeline.json'))), 'utf8'));
+const DATA = path.join(ROOT, TL.data_dir || 'data/trailer');
+const FONTS = path.join(DATA, 'fonts');
+const W = TL.width, H = TL.height, FPS = TL.fps;
 const LANGS = opt('lang', 'en,el').split(',');
 const ONLY = opt('only', 'captions,intro,outro').split(',');
 const FORCE = args.includes('--force');
@@ -220,7 +222,7 @@ window.render = (t) => {
   window.__t = t;
   if (svg) {
   sigilAt(svg, t, 0.05, 1.5);
-  const flare = Math.exp(-Math.pow((t - 1.0) / .4, 2));          // the last bell at 113.0
+  const flare = Math.exp(-Math.pow((t - 1.0) / .4, 2));          // the last bell, 1.0 s into the outro
   const g = 6 + 3 * Math.sin(t * 1.6) + 16 * flare;
   svg.style.filter = 'drop-shadow(0 0 ' + (g * .35).toFixed(2) + 'px rgba(255,107,129,.85)) drop-shadow(0 0 ' + g.toFixed(2) + 'px rgba(233,69,96,.55))';
   }

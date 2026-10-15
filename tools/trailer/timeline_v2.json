@@ -1,0 +1,231 @@
+{
+  "_doc": "Edit timeline of trailer v2, encoded from tools/trailer/CUES_v2.md (the binding contract; the music cue times live in music/cues.py preset 'v2' and edit.py checks this file against it). Times in seconds on the 150.0 s timeline. Read by cards.mjs (text) and edit.py (everything): python3 tools/trailer/edit.py --timeline tools/trailer/timeline_v2.json ... A shot is one or more pieces; each piece shows a clip with a source time pinned to a timeline time ('align': a shots.json key + offset, or 'src' per language), at 'speed', optionally 'crop' [x, y, w] (static zoom, 16:9). 'until' ends a piece (the last one ends with the shot). '_marks' lists the shots.json keys the recorder must produce for that clip.",
+  "duration": 150.0,
+  "fps": 60,
+  "width": 1920,
+  "height": 1080,
+  "data_dir": "data/trailer-v2",
+  "music_preset": "v2",
+
+  "reuse": {
+    "_doc": "v1 clips reused as they are (tools/trailer/reuse_v1.py copies them, marks carried over): new name -> v1 name",
+    "from": "data/trailer",
+    "clips": { "sigil_clean": "sigil_clean", "shot02": "shot02", "shot03": "shot03", "shot11": "shot07", "shot12": "shot08" }
+  },
+
+  "shots": [
+    { "id": "01", "start": 0.0, "end": 8.0, "kind": "intro", "scene": "Intro: the login page's own sigil draws (sigil_clean.mp4), zoomed; app wordmark is the title",
+      "pieces": [
+        { "clip": "sigil_clean", "align": { "src": 0.0, "at": 1.0 }, "crop": [396, 33, 1128], "fade_in": 1.2 }
+      ] },
+    { "id": "02", "start": 8.0, "end": 15.0, "scene": "Login: nyx types, signs in, the hall opens",
+      "transition_in": { "type": "fade", "frames": 30 },
+      "pieces": [ { "clip": "shot02", "align": { "key": "hall_at", "at": 11.5 } } ] },
+    { "id": "03", "start": 15.0, "end": 27.0, "scene": "New chronicle: Classic 19.2, V5 22.3, create click on the 24.5 chord",
+      "transition_in": { "type": "fadeblack", "frames": 12 },
+      "pieces": [ { "clip": "shot03", "align": { "key": "create_click_at", "at": 24.5 } } ] },
+    { "id": "04", "start": 27.0, "end": 35.0, "scene": "Creation rules (Forge v2 A): nyx on the V5 chronicle's Settings, the 'Creation rules' card: allowed clans (Hecata ticked, ring), starting age -> neonate, one house-rule line typed",
+      "_marks": "shot04: rules_card_at (the card is on screen), hecata_tick_at, age_at (the age select opens), house_rule_at (typing starts)",
+      "transition_in": { "type": "fade", "frames": 10 },
+      "pieces": [
+        { "until": 31.0, "clip": "shot04", "align": { "key": "rules_card_at", "offset": -0.6, "at": 27.0 } },
+        { "until": 33.0, "clip": "shot04", "align": { "key": "age_at", "offset": -0.4, "at": 31.0 },
+          "transition": { "type": "fade", "frames": 8 } },
+        { "clip": "shot04", "align": { "key": "house_rule_at", "offset": -0.3, "at": 33.0 }, "speed": 1.5,
+          "transition": { "type": "fade", "frames": 8 } }
+      ] },
+    { "id": "05", "start": 35.0, "end": 47.0, "scene": "Guided mode (Forge v2 E): kalliroi, New character -> Guided; question 1 real speed, questions 2-7 at 2.5x, last question real speed, the suggestion panel (Hecata - Grim Reaper) on the 44.6 bell, held, Open the forge",
+      "_marks": "shot05: guided_click_at, q1_at, q2_at, q_last_at, suggestion_at (the panel is on screen), open_forge_at",
+      "transition_in": { "type": "fadeblack", "frames": 12 },
+      "pieces": [
+        { "until": 38.6, "clip": "shot05", "align": { "key": "guided_click_at", "offset": -0.8, "at": 35.0 } },
+        { "until": 41.4, "clip": "shot05", "align": { "key": "q2_at", "offset": 0.0, "at": 38.6 }, "speed": 2.5,
+          "transition": { "type": "fade", "frames": 8 } },
+        { "until": 44.6, "clip": "shot05", "align": { "key": "q_last_at", "offset": -0.2, "at": 41.4 },
+          "transition": { "type": "fade", "frames": 8 } },
+        { "clip": "shot05", "align": { "key": "suggestion_at", "offset": 0.0, "at": 44.6 },
+          "transition": { "type": "fade", "frames": 8 } }
+      ] },
+    { "id": "06", "start": 47.0, "end": 61.0, "scene": "Forge v2 (A + B) in book order with the guide's prefill banner: Hecata clan card 2.4 s real speed (the motif restates at 49.4), attributes + skills at 2.5x, Disciplines step real speed (Oblivion power with its description, the predator preview, the Level 1 ceremony), advantages + convictions at 2.4x, create, the finished sheet with Hunger and Willpower",
+      "_marks": "shot06: clan_at, attributes_at, skills_at, disciplines_at, predator_preview_at, ceremony_at, advantages_at, convictions_at, create_click_at, created_at, sheet_open_at",
+      "transition_in": { "type": "fade", "frames": 10 },
+      "pieces": [
+        { "until": 49.4, "clip": "shot06", "align": { "key": "clan_at", "offset": -0.3, "at": 47.0 } },
+        { "until": 52.2, "clip": "shot06", "align": { "key": "attributes_at", "offset": 0.0, "at": 49.4 }, "speed": 2.5,
+          "transition": { "type": "fade", "frames": 8 } },
+        { "until": 56.6, "clip": "shot06", "align": { "key": "disciplines_at", "offset": -0.2, "at": 52.2 },
+          "transition": { "type": "fade", "frames": 8 } },
+        { "until": 58.6, "clip": "shot06", "align": { "key": "advantages_at", "offset": 0.0, "at": 56.6 }, "speed": 2.4,
+          "transition": { "type": "fade", "frames": 8 } },
+        { "clip": "shot06", "align": { "key": "create_click_at", "offset": -0.6, "at": 58.6 },
+          "transition": { "type": "fade", "frames": 8 } }
+      ] },
+    { "id": "07", "start": 61.0, "end": 77.0, "scene": "Play (Ladadika): Ianthe types at 1.5x, sends on 64.3, 'the Storyteller is weaving' 1.6 s kept, the reply with the roll chip 'Dexterity + Stealth - 4 Hunger' readable ~4.7 s, switch to Stavros, Reply with quote",
+      "_marks": "shot07 (v1 shot05 script + chip retry): typing_start_at, send_at, reply_at, switch_to_stavros_at, reply_click_at, quote_sent_at; ai_wait_cut_s, roll_chip_present",
+      "transition_in": { "type": "fadeblack", "frames": 12 },
+      "pieces": [
+        { "until": 64.0, "clip": "shot07", "align": { "key": "send_at", "offset": -4.8, "at": 61.0 }, "speed": 1.5 },
+        { "until": 70.6, "clip": "shot07", "align": { "key": "send_at", "offset": -0.3, "at": 64.0 },
+          "transition": { "type": "fade", "frames": 8 } },
+        { "until": 74.2, "clip": "shot07", "align": { "key": "switch_to_stavros_at", "offset": -0.1, "at": 70.6 }, "speed": 1.42,
+          "transition": { "type": "fade", "frames": 8 } },
+        { "clip": "shot07", "align": { "key": "quote_sent_at", "offset": -0.45, "at": 74.2 },
+          "transition": { "type": "fade", "frames": 8 } }
+      ] },
+    { "id": "08", "start": 77.0, "end": 85.5, "scene": "Dice, V5: the chip opens the dice dialog, roll, the dice tumble; BESTIAL FAILURE settles on the 85.0 hit (blood flash). In the final edit the hit frame is pinned by a frame-checked 'src' per language, as v1 did",
+      "_marks": "shot08_v5 (rollTake, outcomes ['Bestial failure'], up to 60 takes): dialog_at, roll_click_at, result_at (.sr-diceov.is-settled), then explain_at (the Roll explained card is in the room; the recorder cuts the wait so explain_at ~= result_at + 3.0)",
+      "transition_in": { "type": "fade", "frames": 10 },
+      "pieces": [ { "clip": "shot08_v5", "align": { "key": "result_at", "offset": 0.0, "at": 85.0 } } ] },
+    { "id": "09", "start": 85.5, "end": 96.0, "scene": "/ai explain, same recording: the result holds through the silence, hover -> Reply -> '/ai explain' typed (EL: '/ai εξήγησε') -> the 'Roll explained' card appears on the 88.0 organ note; from 92.0 a static crop on the Result lines ('Result: Bestial failure ... the Beast acts', page numbers)",
+      "_marks": "shot08_v5: explain_at; the crop box is set on the real recording (the recorder scrolls the room to the Result line)",
+      "transition_in": { "type": "fade", "frames": 2 },
+      "pieces": [
+        { "until": 88.0, "clip": "shot08_v5", "align": { "key": "result_at", "offset": 0.0, "at": 85.0 } },
+        { "until": 92.0, "clip": "shot08_v5", "align": { "key": "explain_at", "offset": -0.1, "at": 88.0 },
+          "transition": { "type": "fade", "frames": 8 } },
+        { "clip": "shot08_v5", "align": { "key": "explain_at", "offset": 3.9, "at": 92.0 }, "crop": [320, 180, 1280],
+          "transition": { "type": "fade", "frames": 10 } }
+      ] },
+    { "id": "10", "start": 96.0, "end": 102.0, "scene": "Classic botch (Pantanassa Crypt, Brother Anselm, Courage 3 dice diff 8): the dice tumble, BOTCH settles on the 99.0 hit (flash). Final edit: frame-checked 'src' per language",
+      "_marks": "shot10_classic (v1 shot06 classic script): dialog_at, roll_click_at, result_at",
+      "transition_in": { "type": "fadeblack", "frames": 8 },
+      "pieces": [ { "clip": "shot10_classic", "align": { "key": "result_at", "offset": 0.0, "at": 99.0 } } ] },
+    { "id": "11", "start": 102.0, "end": 112.0, "scene": "Two languages (v1 shot07 reused: the Greek exchange in the Rotunda in the EN render, the English one in the EL render), last 10.2 s of the take",
+      "transition_in": { "type": "fade", "frames": 14 },
+      "pieces": [ { "clip": "shot11", "align": { "key": "duration", "offset": -0.02, "at": 112.1 } } ] },
+    { "id": "12", "start": 112.0, "end": 121.6, "scene": "Laya + admin (v1 shot08 reused, 2.4 s shorter): the warning readable, Logins & lockouts, AI roles (the models glimpse dropped)",
+      "transition_in": { "type": "fadeblack", "frames": 12 },
+      "pieces": [
+        { "until": 117.4, "clip": "shot12", "align": { "key": "laya_warning_at", "offset": 0.0, "at": 114.3 } },
+        { "until": 119.7, "clip": "shot12", "align": { "key": "security_at", "offset": -0.2, "at": 117.4 },
+          "transition": { "type": "fade", "frames": 8 } },
+        { "clip": "shot12", "align": { "key": "ai_roles_at", "offset": -0.1, "at": 119.7 },
+          "transition": { "type": "fade", "frames": 8 } }
+      ] },
+    { "id": "13", "start": 121.6, "end": 127.6, "scene": "PDF export: kalliroi's play panel, 'Export PDF' clicked (ring); on the 123.4 bell the real exported sheet (pdftoppm 150 dpi -> zoompan clip): slow push-in on page 1, then page 3 'Reference' (powers with book and page); the riser runs under the white page, the cut to the showcase lands on the 127.6 kick",
+      "_marks": "shot13: export_click_at. shot13_pdf (made from the exported PDF, no recording): page1_at = 0.0, page3_at",
+      "transition_in": { "type": "fade", "frames": 10 },
+      "pieces": [
+        { "until": 123.4, "clip": "shot13", "align": { "key": "export_click_at", "offset": -1.0, "at": 121.6 } },
+        { "until": 125.6, "clip": "shot13_pdf", "align": { "key": "page1_at", "offset": 0.0, "at": 123.4 },
+          "transition": { "type": "fadeblack", "frames": 6 } },
+        { "clip": "shot13_pdf", "align": { "key": "page3_at", "offset": 0.0, "at": 125.6 },
+          "transition": { "type": "fade", "frames": 8 } }
+      ] },
+    { "id": "14", "start": 127.6, "end": 142.0, "scene": "The look (showcase, re-recorded, Full first): hard cut to the hero on the 127.6 kick, the atmosphere switch to Full lands on 128.000 with the theme downbeat (fog + candle + blood bloom, bone flash), glyphs, clan sigils with the Hecata hover, Subtle, Off, the Editions section glimpse",
+      "_marks": "shot14 (v1 shot09 script, order changed: the Full switch is the first action, >= 0.6 s after capture starts): atmosphere_full_at, glyphs_at, clans_at, hecata_hover_at, atmosphere_subtle_at, atmosphere_off_at, editions_at",
+      "transition_in": { "type": "fade", "frames": 2 },
+      "pieces": [
+        { "until": 131.2, "clip": "shot14", "align": { "key": "atmosphere_full_at", "offset": 0.0, "at": 128.0 } },
+        { "until": 133.8, "clip": "shot14", "align": { "key": "glyphs_at", "offset": -0.4, "at": 131.2 },
+          "transition": { "type": "fade", "frames": 10 } },
+        { "until": 136.8, "clip": "shot14", "align": { "key": "clans_at", "offset": -0.2, "at": 133.8 },
+          "transition": { "type": "fade", "frames": 10 } },
+        { "until": 138.6, "clip": "shot14", "align": { "key": "atmosphere_subtle_at", "offset": -0.3, "at": 136.8 },
+          "transition": { "type": "fade", "frames": 10 } },
+        { "until": 140.2, "clip": "shot14", "align": { "key": "atmosphere_off_at", "offset": -0.3, "at": 138.6 },
+          "transition": { "type": "fade", "frames": 10 } },
+        { "clip": "shot14", "align": { "key": "editions_at", "offset": -0.3, "at": 140.2 },
+          "transition": { "type": "fade", "frames": 10 } }
+      ] },
+    { "id": "15", "start": 142.0, "end": 150.0, "kind": "outro", "scene": "Outro: login page sigil + wordmark (sigil_clean), Enter the night, lines; last bell 143.0",
+      "transition_in": { "type": "fadeblack", "frames": 30 },
+      "pieces": [ { "clip": "sigil_clean", "align": { "src": 5.0, "at": 141.75 }, "crop": [125, 0, 1670] } ] }
+  ],
+
+  "captions": [
+    { "id": "02", "in": 9.0,   "out": 14.6,
+      "en": "Your chronicles. Your Storyteller. Your machine.",
+      "el": "Τα χρονικά σου. Ο Αφηγητής σου. Στο δικό σου μηχάνημα." },
+    { "id": "03", "in": 15.6,  "out": 23.6,
+      "en": "Classic or V5. Chosen per chronicle.",
+      "el": "Classic ή V5. Ξεχωριστά για κάθε χρονικό." },
+    { "id": "04", "in": 27.8,  "out": 34.4,
+      "en": "The Storyteller sets the rules of creation.",
+      "el": "Ο Αφηγητής ορίζει τους κανόνες της δημιουργίας." },
+    { "id": "05", "in": 35.8,  "out": 46.4,
+      "en": "Answer a few questions. The forge suggests a clan.",
+      "el": "Απάντησε σε λίγες ερωτήσεις· η σφυρηλάτηση προτείνει clan." },
+    { "id": "06", "in": 47.8,  "out": 60.4,
+      "en": "Sixteen clans. Every power, with its page in the book.",
+      "el": "Δεκαέξι clans. Κάθε δύναμη με τη σελίδα της στο βιβλίο." },
+    { "id": "07", "in": 61.8,  "out": 76.2, "pos": "top",
+      "en": "An AI Storyteller that remembers, and calls for the right roll.",
+      "el": "Ένας Αφηγητής AI που θυμάται και ζητά τη σωστή ζαριά." },
+    { "id": "09a", "in": 85.8, "out": 89.4, "accent": true, "pos": "top",
+      "en": "Hunger. Messy criticals. Bestial failures.",
+      "el": "Hunger. Messy criticals. Bestial failures." },
+    { "id": "09b", "in": 90.0, "out": 95.5, "pos": "top",
+      "en": "Ask why. The Storyteller counts the dice, page by page.",
+      "el": "Ρώτα γιατί. Ο Αφηγητής μετρά τα ζάρια, σελίδα τη σελίδα." },
+    { "id": "10", "in": 99.6,  "out": 101.8, "accent": true, "pos": "top",
+      "en": "Botches.",
+      "el": "Botches." },
+    { "id": "11", "in": 102.8, "out": 111.4, "pos": "top",
+      "en": "Speaks English and Greek.",
+      "el": "Μιλά Ελληνικά και Αγγλικά." },
+    { "id": "12", "in": 116.0, "out": 121.0,
+      "en": "Moderated by Laya, a classifier trained for this table.",
+      "el": "Με επίβλεψη από το Laya, έναν ταξινομητή εκπαιδευμένο γι’ αυτό το τραπέζι." },
+    { "id": "13", "in": 122.4, "out": 127.4,
+      "en": "Export the sheet. Fillable, black and white, Greek included.",
+      "el": "Εξαγωγή του φύλλου. Συμπληρώσιμο, ασπρόμαυρο, και στα Ελληνικά." },
+    { "id": "14", "in": 128.8, "out": 141.0,
+      "en": "Gothic down to the last glyph.",
+      "el": "Γοτθικό ως την τελευταία λεπτομέρεια." }
+  ],
+  "caption_fade": 0.5,
+
+  "intro": {
+    "title": "ShadowRealms AI",
+    "subtitle": { "en": "An AI Storyteller for World of Darkness",
+                  "el": "Ένας Αφηγητής AI για τον World of Darkness" },
+    "_times": "local seconds in the 8 s intro. Own-sigil card (no recording): sigil draws (heartbeat at 2.0), title on the bell at 6.0. Recorded card: subtitle only, under the app's wordmark.",
+    "sigil_draw": [0.8, 4.6],
+    "title_in": 5.6,
+    "subtitle_in": 6.0,
+    "recorded_subtitle_top": 578
+  },
+  "outro": {
+    "headline": { "en": "Enter the night.", "el": "Πέρνα στη νύχτα." },
+    "line":     { "en": "Run it on your own server, under your own domain.",
+                  "el": "Στήσ’ το στον δικό σου server, στο δικό σου domain." },
+    "tags": "Self-hosted · Open source · MIT",
+    "url": "github.com/Somnius/shadowrealms-ai",
+    "_times": "local seconds in the 8 s outro (starts at 142.0; last bell at 143.0 = local 1.0, the sigil flares on it)",
+    "headline_in": 0.9,
+    "line_in": 2.2,
+    "tags_in": 3.3,
+    "url_in": 3.9,
+    "recorded_top": 470,
+    "fade_to_black": [149.0, 150.0]
+  },
+
+  "flashes": [
+    { "at": 85.0,  "color": "0x8b0000", "opacity": 0.55, "attack": 0.04, "release": 0.55 },
+    { "at": 99.0,  "color": "0x8b0000", "opacity": 0.35, "attack": 0.04, "release": 0.45 },
+    { "at": 128.0, "color": "0xf5f2ea", "opacity": 0.18, "attack": 0.04, "release": 0.8 }
+  ],
+
+  "fog": [
+    { "start": 0.0,   "end": 8.2,   "opacity": 0.4, "fade_in": 2.0, "fade_out": 0.4 },
+    { "start": 141.8, "end": 150.0, "opacity": 0.4, "fade_in": 0.6, "fade_out": 1.0 }
+  ],
+
+  "audio": { "fade_in": 0.5, "fade_out": 0.5 },
+
+  "grade": {
+    "_note": "kept light on purpose: the app's navy #0f0f1e must stay navy (measured 10,10,24 vs 12,13,26 ungraded)",
+    "curves": "all='0/0 0.06/0.05 0.5/0.5 0.8/0.81 1/1'",
+    "colorbalance": "rs=-0.005:bs=0.01:rh=0.012",
+    "saturation": 1.0,
+    "vignette": "PI/8",
+    "grain": 7
+  },
+
+  "posters": [
+    { "name": "poster",       "at": 87.2 },
+    { "name": "poster_sigil", "at": 7.6 }
+  ],
+  "preview": { "start": 81.5, "end": 88.5, "width": 960, "fps": 20 }
+}
