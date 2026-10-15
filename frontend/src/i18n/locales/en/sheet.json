@@ -27,11 +27,73 @@
     "xpSpecialty": "{{name}} – XP",
     "ceremony": "Ceremony",
     "fromClan": "(clan)",
-    "customRow": "(custom)"
+    "customRow": "(custom)",
+    "savedSpecialty": "{{name}} – saved points",
+    "savedDots": "+{{n}} from saved points"
   },
   "pdf": {
     "export": "Export PDF",
     "failed": "Could not export the PDF.",
     "hint": "Fillable sheet for black-and-white printing"
+  },
+  "spend": {
+    "problem": {
+      "savedShort": "Needs {{need}} saved Advantage dots; {{have}} are saved.",
+      "overCap": "This chronicle saves at most {{cap}} Advantage dots (this spend uses {{total}}).",
+      "dotsRange": "{{name}} would have {{to}} dots; an Advantage has 1–5.",
+      "unknown": "{{name}} is not in the Advantages list.",
+      "flaw": "{{name}} is a Flaw, not an Advantage.",
+      "advRange": "{{name}} takes {{min}}–{{max}} dots, not {{to}}.",
+      "book": "{{name}} comes from a book this chronicle doesn't use ({{book}}).",
+      "clanOnly": "{{name}} is only for {{clans}}.",
+      "noSpecialty": "No specialty is saved.",
+      "specialtyOff": "This chronicle doesn't let players save a specialty.",
+      "skillNoDot": "{{skill}} needs at least one dot for a specialty.",
+      "duplicate": "{{skill}} already has the {{name}} specialty."
+    },
+    "status": {
+      "approved": "Approved",
+      "rejected": "Rejected",
+      "reversed": "Reversed",
+      "pending": "Waiting for the Storyteller"
+    },
+    "byAi": "by the AI Storyteller (rule check)",
+    "byUser": "by {{name}}",
+    "fillIn": "Fill in the spend to see the rule check.",
+    "ok": "Follows the rules.",
+    "okAi": "The AI Storyteller applies it at once; your Storyteller can reverse it.",
+    "okHuman": "Your Storyteller approves it.",
+    "houseRule": "House rule: only your Storyteller can approve this.",
+    "failed": "Could not send the spend.",
+    "title": "Spend saved points",
+    "what": "What to spend",
+    "kindAdvantage": "Advantage dots (Merits, Backgrounds, Loresheets)",
+    "kindSpecialty": "The saved specialty",
+    "advHelp": "A name you already have raises that Advantage; a new name adds one. Write the name as in the book.",
+    "advName": "Advantage {{n}}",
+    "advKind": "Kind",
+    "advDots": "Dots",
+    "removeItem": "Remove Advantage {{n}}",
+    "addItem": "Another Advantage",
+    "skill": "Skill",
+    "pickSkill": "Choose a skill",
+    "specialty": "Specialty",
+    "submitAi": "Spend",
+    "submit": "Ask the Storyteller",
+    "houseRuleBadge": "House rule",
+    "reason": "Storyteller: {{reason}}",
+    "applied": "Done: the AI Storyteller approved it (rule check). Your Storyteller can still reverse it.",
+    "sent": "Sent to your Storyteller."
+  },
+  "saved": {
+    "dots_one": "{{count}} Advantage dot",
+    "dots_other": "{{count}} Advantage dots",
+    "specialty_one": "{{count}} specialty",
+    "specialty_other": "{{count}} specialties",
+    "title": "Saved points",
+    "none": "Nothing saved.",
+    "help": "Points left unspent at creation. Spend them later; the Storyteller approves.",
+    "spend": "Spend…",
+    "requests": "Spends"
   }
 }

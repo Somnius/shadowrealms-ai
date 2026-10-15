@@ -51,3 +51,8 @@
 .sr-app .sr-creation-rules__list { border: 1px solid var(--sr-border); border-radius: var(--sr-radius-md, 8px); padding: var(--sr-space-2) var(--sr-space-3); margin: 0; min-width: 0; }
 .sr-app .sr-creation-rules__list legend { padding: 0 var(--sr-space-1); color: var(--sr-text-muted, var(--sr-bone-300)); font-size: 13px; }
 .sr-app .sr-creation-rules__grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: var(--sr-space-1) var(--sr-space-3); }
+.sr-app .sr-creation-rules__fields { display: flex; flex-direction: column; gap: var(--sr-space-3); }
+.sr-app .sr-approvals { list-style: none; margin: var(--sr-space-3) 0 0; padding: 0; display: flex; flex-direction: column; gap: var(--sr-space-3); }
+.sr-app .sr-approvals__item { display: flex; flex-direction: column; gap: var(--sr-space-2); padding: var(--sr-space-3); border: 1px solid var(--sr-border); border-radius: var(--sr-radius-md); background: var(--sr-surface-sunken); }
+.sr-app .sr-approvals__item p { margin: 0; }
+.sr-app .sr-approvals__problems { margin: 0; padding-left: 1.2rem; color: var(--sr-warn-400); }

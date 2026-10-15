@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Button, Checkbox, Input, Panel, Textarea } from '../../design';
+import { Button, Checkbox, Input, Panel, Select, Textarea } from '../../design';
 import { V5_AGE_BRACKETS } from '../../characterSheet/v5/constants';
 import { clanNames, predatorNames } from '../../characterSheet/v5/rulesData';
 import { useV5Catalog } from '../../rules/v5Catalog';
@@ -38,18 +38,29 @@ function AllowedList({ legend, names, labelOf = (n) => n, value, onChange }) {
 
 /**
  * The Storyteller's creation rules for a V5 chronicle (campaigns.creation_settings): which clans,
- * predator types and ages the forge offers, a cap on Flaws, the Humanity 8 fledgling option and
- * house rules shown at the top of the forge.
+ * predator types and ages the forge offers, a cap on Flaws, the Humanity 8 fledgling option, house
+ * rules shown at the top of the forge, how many points a player may save for later and who
+ * approves spending them (st_mode: a human Storyteller, or the AI Storyteller's rule check).
+ * `suggestAi`: the Storyteller plays a character here, so the AI mode is suggested.
  */
-export default function CreationRulesPanel({ campaign, saving, onSave }) {
+export default function CreationRulesPanel({ campaign, saving, onSave, suggestAi = false }) {
   useV5Catalog();
   const [s, setS] = useState(() => normalizeCreationSettings(campaign.creation_settings));
   const set = (patch) => setS((prev) => ({ ...prev, ...patch }));
   const [flawsText, setFlawsText] = useState(() => (s.flaws_max_dots == null ? '' : String(s.flaws_max_dots)));
+  const [capText, setCapText] = useState(() => String(s.saved_points.advantage_dots_cap));
   const submit = (e) => {
     e.preventDefault();
     const n = parseInt(flawsText, 10);
-    onSave({ ...s, flaws_max_dots: Number.isFinite(n) ? Math.max(2, Math.min(20, n)) : null });
+    const cap = parseInt(capText, 10);
+    onSave({
+      ...s,
+      flaws_max_dots: Number.isFinite(n) ? Math.max(2, Math.min(20, n)) : null,
+      saved_points: {
+        ...s.saved_points,
+        advantage_dots_cap: Number.isFinite(cap) ? Math.max(0, Math.min(20, cap)) : s.saved_points.advantage_dots_cap,
+      },
+    });
   };
   return (
     <Panel title={t('chronicle:creation.title', 'Character creation rules')} icon="scroll">
@@ -93,6 +104,42 @@ export default function CreationRulesPanel({ campaign, saving, onSave }) {
           checked={s.fledgling_humanity_8}
           onChange={(e) => set({ fledgling_humanity_8: e.target.checked })}
         />
+        <fieldset className="sr-creation-rules__list sr-creation-rules__fields">
+          <legend>{t('chronicle:creation.savedTitle', 'Saved points and approvals')}</legend>
+          <Input
+            type="number"
+            min={0}
+            max={20}
+            label={t('chronicle:creation.savedCap', 'Advantage dots a player may leave unspent and save for later (0–20)')}
+            value={capText}
+            onChange={(e) => setCapText(e.target.value)}
+            fieldClassName="sr-field--short"
+          />
+          <Checkbox
+            label={t('chronicle:creation.savedSpecialty', 'Players may save the free specialty of their choice')}
+            checked={s.saved_points.allow_specialty}
+            onChange={(e) => set({ saved_points: { ...s.saved_points, allow_specialty: e.target.checked } })}
+          />
+          <Select
+            label={t('chronicle:creation.stMode', 'Who approves spending saved points')}
+            value={s.st_mode}
+            onChange={(e) => set({ st_mode: e.target.value })}
+            options={[
+              { value: 'human', label: t('chronicle:creation.stModeHuman', 'A human Storyteller (you or staff)') },
+              { value: 'ai', label: t('chronicle:creation.stModeAi', 'The AI Storyteller (rule check)') },
+            ]}
+          />
+          <p className="sr-muted sr-small">
+            {s.st_mode === 'ai'
+              ? t('chronicle:creation.stModeAiHint', 'Spends that follow the rules are approved at once by a fixed rule check (not the language model) and logged under Approvals, where you can reverse any of them. House rules always wait for you.')
+              : t('chronicle:creation.stModeHumanHint', 'Every spend waits for you under Approvals.')}
+          </p>
+          {suggestAi && s.st_mode === 'human' ? (
+            <p className="sr-warnbox">
+              {t('chronicle:creation.stModeSuggest', 'You play a character in this chronicle yourself. With the AI Storyteller, the rule check approves your own spends instead of you.')}
+            </p>
+          ) : null}
+        </fieldset>
         <Textarea
           label={t('chronicle:creation.houseRules', 'House rules (shown at the top of the forge)')}
           value={s.house_rules}

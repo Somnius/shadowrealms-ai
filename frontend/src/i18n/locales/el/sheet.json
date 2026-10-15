@@ -27,11 +27,73 @@
     "xpSpecialty": "{{name}} – XP",
     "ceremony": "Τελετή",
     "fromClan": "(από το clan)",
-    "customRow": "(εκτός καταλόγου)"
+    "customRow": "(εκτός καταλόγου)",
+    "savedSpecialty": "{{name}} – αποθηκευμένοι πόντοι",
+    "savedDots": "+{{n}} από αποθηκευμένους πόντους"
   },
   "pdf": {
     "export": "Εξαγωγή PDF",
     "failed": "Δεν ήταν δυνατή η εξαγωγή του PDF.",
     "hint": "Συμπληρώσιμο φύλλο για ασπρόμαυρη εκτύπωση"
+  },
+  "spend": {
+    "problem": {
+      "savedShort": "Χρειάζεται {{need}} αποθηκευμένες τελείες Advantages· έχεις {{have}}.",
+      "overCap": "Αυτό το χρονικό κρατά το πολύ {{cap}} τελείες Advantages (αυτό το ξόδεμα θέλει {{total}}).",
+      "dotsRange": "Το {{name}} θα είχε {{to}} τελείες· ένα Advantage έχει 1–5.",
+      "unknown": "Το {{name}} δεν είναι στη λίστα των Advantages.",
+      "flaw": "Το {{name}} είναι Flaw, όχι Advantage.",
+      "advRange": "Το {{name}} παίρνει {{min}}–{{max}} τελείες, όχι {{to}}.",
+      "book": "Το {{name}} είναι από βιβλίο που δεν χρησιμοποιεί αυτό το χρονικό ({{book}}).",
+      "clanOnly": "Το {{name}} είναι μόνο για {{clans}}.",
+      "noSpecialty": "Δεν υπάρχει αποθηκευμένη specialty.",
+      "specialtyOff": "Αυτό το χρονικό δεν αφήνει τους παίκτες να κρατούν specialty για αργότερα.",
+      "skillNoDot": "Το {{skill}} χρειάζεται τουλάχιστον μία τελεία για specialty.",
+      "duplicate": "Το {{skill}} έχει ήδη τη specialty {{name}}."
+    },
+    "status": {
+      "approved": "Εγκρίθηκε",
+      "rejected": "Απορρίφθηκε",
+      "reversed": "Αναιρέθηκε",
+      "pending": "Περιμένει τον Storyteller"
+    },
+    "byAi": "από τον AI Storyteller (έλεγχος κανόνων)",
+    "byUser": "από {{name}}",
+    "fillIn": "Συμπλήρωσε το ξόδεμα για να δεις τον έλεγχο κανόνων.",
+    "ok": "Τηρεί τους κανόνες.",
+    "okAi": "Ο AI Storyteller το περνά αμέσως· ο Storyteller σου μπορεί να το αναιρέσει.",
+    "okHuman": "Το εγκρίνει ο Storyteller σου.",
+    "houseRule": "Κανόνας του τραπεζιού: μόνο ο Storyteller σου μπορεί να το εγκρίνει.",
+    "failed": "Δεν ήταν δυνατή η αποστολή του ξοδέματος.",
+    "title": "Ξόδεμα αποθηκευμένων πόντων",
+    "what": "Τι ξοδεύεις",
+    "kindAdvantage": "Τελείες Advantages (Merits, Backgrounds, Loresheets)",
+    "kindSpecialty": "Την αποθηκευμένη specialty",
+    "advHelp": "Ένα όνομα που ήδη έχεις ανεβάζει εκείνο το Advantage· ένα νέο όνομα προσθέτει καινούργιο. Γράψε το όνομα όπως στο βιβλίο.",
+    "advName": "Advantage {{n}}",
+    "advKind": "Είδος",
+    "advDots": "Τελείες",
+    "removeItem": "Αφαίρεση Advantage {{n}}",
+    "addItem": "Άλλο ένα Advantage",
+    "skill": "Skill",
+    "pickSkill": "Διάλεξε skill",
+    "specialty": "Specialty",
+    "submitAi": "Ξόδεψε",
+    "submit": "Ζήτα από τον Storyteller",
+    "houseRuleBadge": "Κανόνας του τραπεζιού",
+    "reason": "Storyteller: {{reason}}",
+    "applied": "Έγινε: το ενέκρινε ο AI Storyteller (έλεγχος κανόνων). Ο Storyteller σου μπορεί ακόμα να το αναιρέσει.",
+    "sent": "Στάλθηκε στον Storyteller σου."
+  },
+  "saved": {
+    "dots_one": "{{count}} τελεία Advantage",
+    "dots_other": "{{count}} τελείες Advantages",
+    "specialty_one": "{{count}} specialty",
+    "specialty_other": "{{count}} specialties",
+    "title": "Αποθηκευμένοι πόντοι",
+    "none": "Τίποτα αποθηκευμένο.",
+    "help": "Πόντοι που έμειναν αξόδευτοι στη δημιουργία. Ξόδεψέ τους αργότερα· εγκρίνει ο Storyteller.",
+    "spend": "Ξόδεψε…",
+    "requests": "Ξοδέματα"
   }
 }

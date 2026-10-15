@@ -26,3 +26,14 @@
 }
 .sr-app .sr-gbox :is(input[type='checkbox'], input[type='radio']) { accent-color: var(--sr-accent); }
 .sr-app .sr-gbox ::placeholder { color: var(--sr-text-muted); opacity: 1; }
+
+/* Saved points (SavedPointsBlock): spend form and the character's spends. */
+.sr-app .sr-spend { display: flex; flex-direction: column; gap: var(--sr-space-3); margin-top: var(--sr-space-3); }
+.sr-app .sr-spend__row { display: flex; flex-wrap: wrap; gap: var(--sr-space-2); align-items: flex-end; }
+.sr-app .sr-spend__grow { flex: 1 1 200px; min-width: 0; }
+.sr-app .sr-spend__actions { display: flex; flex-wrap: wrap; gap: var(--sr-space-2); justify-content: flex-end; }
+.sr-app .sr-spend__list { list-style: none; margin: 0; padding: 0; }
+.sr-app .sr-spend__list > li { margin-bottom: var(--sr-space-2); }
+.sr-app .sr-spend__ok { color: var(--sr-ok-400); }
+.sr-app .sr-spend__warn { color: var(--sr-warn-400); }
+.sr-app .sr-spend__err { color: var(--sr-blood-300); }

@@ -137,6 +137,36 @@
     "fledgling": "Offer just-Embraced fledglings the Humanity 8 start",
     "houseRules": "House rules (shown at the top of the forge)",
     "save": "Save creation rules",
-    "flawsHint": "Ancillae take 4 Flaw dots, so a limit under 4 needs ancillae left out."
+    "flawsHint": "Ancillae take 4 Flaw dots, so a limit under 4 needs ancillae left out.",
+    "savedTitle": "Saved points and approvals",
+    "savedCap": "Advantage dots a player may leave unspent and save for later (0–20)",
+    "savedSpecialty": "Players may save the free specialty of their choice",
+    "stMode": "Who approves spending saved points",
+    "stModeHuman": "A human Storyteller (you or staff)",
+    "stModeAi": "The AI Storyteller (rule check)",
+    "stModeAiHint": "Spends that follow the rules are approved at once by a fixed rule check (not the language model) and logged under Approvals, where you can reverse any of them. House rules always wait for you.",
+    "stModeHumanHint": "Every spend waits for you under Approvals.",
+    "stModeSuggest": "You play a character in this chronicle yourself. With the AI Storyteller, the rule check approves your own spends instead of you."
+  },
+  "approvals": {
+    "approve": "Approve",
+    "reject": "Reject",
+    "reverse": "Reverse",
+    "houseRule": "House rule",
+    "reasonShown": "Reason: {{reason}}",
+    "reasonApprove": "Why allow this house rule? (optional)",
+    "reason": "Reason for the player (optional)",
+    "failed": "Could not update the spend.",
+    "approved": "Approved and added to the sheet.",
+    "rejected": "Rejected.",
+    "reversed": "Reversed: the sheet is as it was before.",
+    "title": "Approvals",
+    "introAi": "AI Storyteller mode: spends of saved points that follow the rules are approved at once by the rule check and listed here; you can reverse them. House rules wait for you.",
+    "intro": "Players spend the points they saved at creation here; nothing changes on a sheet until you approve.",
+    "show": "Show",
+    "showPending": "Waiting for you",
+    "showAll": "All spends",
+    "nonePending": "Nothing waiting.",
+    "none": "No spends yet."
   }
 }

@@ -20,6 +20,7 @@ import {
   finalRituals,
   finalSkills,
   predatorDisciplineOptions,
+  savedAtCreation,
   startingRitualAllowed,
   startingXp,
   validateV5Attributes,
@@ -684,5 +685,40 @@ describe('chronicle creation settings', () => {
   it('age errors go to the age section', () => {
     const s = { ...goodSheet(), age: 'neonate', generation: 11 };
     expect(validateV5Sheet(s, V5_DISCIPLINES)[V5_SECTION_IDS.age]).toBe('Neonates are generation 12–13.');
+  });
+});
+
+describe('saved points at creation (Forge v2 part D)', () => {
+  const settings = (saved_points) => normalizeCreationSettings({ saved_points });
+
+  it('keeps the unspent Advantage dots and the unused free specialty', () => {
+    // goodSheet spends 5 of 7 dots and uses its one free specialty
+    expect(buildV5Payload(goodSheet()).wod_meta.saved).toEqual({ advantage_dots: 2, specialty: 0 });
+    const noSpecialty = { ...goodSheet(), specialties: [] };
+    expect(buildV5Payload(noSpecialty, settings()).wod_meta.saved).toEqual({ advantage_dots: 2, specialty: 1 });
+  });
+
+  it("follows the chronicle's cap and specialty switch", () => {
+    const s = { ...goodSheet(), specialties: [] };
+    expect(buildV5Payload(s, settings({ advantage_dots_cap: 1, allow_specialty: false })).wod_meta.saved).toEqual({
+      advantage_dots: 1,
+      specialty: 0,
+    });
+    expect(savedAtCreation(s, settings({ advantage_dots_cap: 0, allow_specialty: true }))).toEqual({
+      advantage_dots: 0,
+      specialty: 1,
+      unspentDots: 2,
+      unusedSpecialty: true,
+    });
+  });
+
+  it('counts the ancilla bonus and every rated Academics/Craft/Performance/Science', () => {
+    const anc = { ...goodSheet(), age: 'ancilla', generation: 11 };
+    expect(savedAtCreation(anc).advantage_dots).toBe(4);
+    const academic = { ...goodSheet(), skills: { ...goodSheet().skills, academics: 1 } };
+    // two free specialties now (Academics + one of choice), one used
+    expect(savedAtCreation(academic).specialty).toBe(1);
+    const spent = { ...goodSheet(), advantages: [{ name: 'Resources', dots: 5, kind: 'background' }, { name: 'Haven', dots: 2, kind: 'background' }] };
+    expect(savedAtCreation(spent)).toMatchObject({ advantage_dots: 0, unspentDots: 0 });
   });
 });

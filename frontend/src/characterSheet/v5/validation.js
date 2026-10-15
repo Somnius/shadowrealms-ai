@@ -905,6 +905,25 @@ export function validateV5AdvantageRows(sheet) {
   return exclusionError(withEntry.filter(([, e]) => e && e.excludes).map(([, e]) => e));
 }
 
+/**
+ * What the sheet leaves unspent and keeps for later (Forge v2 part D, wod_meta.saved): Advantage
+ * dots up to the chronicle's cap, and the free specialty of your choice when it is unused and the
+ * chronicle saves it. unspentDots / unusedSpecialty: before the chronicle's limits.
+ */
+export function savedAtCreation(sheet, settings) {
+  const s = sheet || {};
+  const sp = { advantage_dots_cap: V5_ADVANTAGE_DOTS, allow_specialty: true, ...(settings?.saved_points || {}) };
+  const unspentDots = Math.max(0, deriveV5(s).advantage_dots - sumDots(named(s.advantages)));
+  const used = (s.specialties || []).filter((x) => x && (x.skill || String(x.name || '').trim())).length;
+  const unusedSpecialty = freeSpecialtyCount(s.skills) > used;
+  return {
+    advantage_dots: Math.min(unspentDots, Math.max(0, int(sp.advantage_dots_cap))),
+    specialty: sp.allow_specialty && unusedSpecialty ? 1 : 0,
+    unspentDots,
+    unusedSpecialty,
+  };
+}
+
 // ---------- Chronicle creation settings (set by the Storyteller) ----------
 
 const allowedName = (list, value) =>
@@ -1048,8 +1067,8 @@ export function validateV5Sheet(sheet, allDisciplines = disciplineNames(), setti
   return err;
 }
 
-/** Body pieces for POST /api/characters/ (V5 storage shape). */
-export function buildV5Payload(sheet) {
+/** Body pieces for POST /api/characters/ (V5 storage shape). `settings`: the chronicle's creation settings. */
+export function buildV5Payload(sheet, settings) {
   const s = sheet || {};
   const d = deriveV5(s);
   const { skills, specialties } = finalSkills(s);
@@ -1108,6 +1127,10 @@ export function buildV5Payload(sheet) {
     // Which forge rules built the sheet (Forge v2: predator flaws extra, chronicle creation rules).
     forge: { version: 2, settings_v: 1 },
   };
+  // Unspent Advantage dots and the unused free specialty, kept to spend later with the
+  // Storyteller's approval (Forge v2 part D).
+  const saved = savedAtCreation(s, settings);
+  wodMeta.saved = { advantage_dots: saved.advantage_dots, specialty: saved.specialty };
   const rituals = finalRituals(s);
   if (rituals.length) wodMeta.rituals = rituals;
   const experience = experienceMeta(s);

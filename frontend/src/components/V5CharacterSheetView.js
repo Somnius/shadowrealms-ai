@@ -148,6 +148,7 @@ function AdvantageRow({ a, special }) {
             {a.kind === 'predator' ? ` ${t('sheet:v5.fromPredator', '(predator type)')}` : ''}
             {a.source === 'clan' ? ` ${t('sheet:v5.fromClan', '(clan)')}` : ''}
             {a.custom ? ` ${t('sheet:v5.customRow', '(custom)')}` : ''}
+            {!a.flaw && n(a.saved_dots) ? ` · ${t('sheet:v5.savedDots', '+{{n}} from saved points', { n: n(a.saved_dots) })}` : ''}
           </span>
         </span>
         {a.thinBlood ? null : <StaticDots value={a.dots} accent={a.flaw ? 'var(--sr-danger-400)' : ACCENT} />}
@@ -211,7 +212,13 @@ export default function V5CharacterSheetView({ character }) {
       {rows.map(([k, label]) => {
         const sp = specialties
           .filter((s) => s && s.skill === k)
-          .map((s) => (s.source === 'xp' ? t('sheet:v5.xpSpecialty', '{{name}} – XP', { name: s.name }) : s.name));
+          .map((s) =>
+            s.source === 'xp'
+              ? t('sheet:v5.xpSpecialty', '{{name}} – XP', { name: s.name })
+              : s.source === 'saved'
+                ? t('sheet:v5.savedSpecialty', '{{name}} – saved points', { name: s.name })
+                : s.name
+          );
         return (
           <div
             key={k}

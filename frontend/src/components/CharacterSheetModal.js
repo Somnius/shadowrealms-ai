@@ -3,6 +3,7 @@ import './sheet.css';
 import DotTrack from './characterCreation/DotTrack';
 import ResponsiveSheetBlock from './characterCreation/ResponsiveSheetBlock';
 import V5CharacterSheetView from './V5CharacterSheetView';
+import SavedPointsBlock from './SavedPointsBlock';
 import SheetPdfButton from './SheetPdfButton';
 import { editionLabel, editionOf, V5 } from '../rules/rulesEdition';
 import {
@@ -29,8 +30,9 @@ function attrPoolLabel(attrs, keys) {
 
 /**
  * Read-only oWoD-style sheet (dots + sections) for viewing a sealed character — similar layout to the forge.
+ * V5 sheets add the saved points block; `onChanged` reloads the sheet after a spend was applied.
  */
-export default function CharacterSheetModal({ character, gameSystem, onClose }) {
+export default function CharacterSheetModal({ character, gameSystem, onClose, onChanged }) {
   if (!character) return null;
 
   const gs = String(gameSystem || character.system_type || '').toLowerCase();
@@ -144,7 +146,10 @@ export default function CharacterSheetModal({ character, gameSystem, onClose }) 
     >
           <div className="sr-sheet__body" data-line={theme}>
             {isV5Sheet ? (
-              <V5CharacterSheetView character={character} />
+              <>
+                <V5CharacterSheetView character={character} />
+                <SavedPointsBlock character={character} onChanged={onChanged} />
+              </>
             ) : (
             <>
             <p style={{ color: 'var(--sr-bone-500)', fontSize: '13px', marginTop: 0, lineHeight: 1.5 }}>

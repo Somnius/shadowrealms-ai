@@ -66,6 +66,20 @@ function PredatorRows() {
   );
 }
 
+/** Unspent Advantage dots are saved to spend later, up to the chronicle's cap (Forge v2 part D). */
+function SavedDotsNote({ saved, cap }) {
+  if (!saved.unspentDots) return null;
+  const lost = saved.unspentDots - saved.advantage_dots;
+  return (
+    <p id="v5-advantages-saved" style={{ color: 'var(--sr-bone-300)', fontSize: '12px', margin: '0 0 10px' }}>
+      {saved.advantage_dots
+        ? t('wizard:v5.savedDots', { one: '{{count}} dot will be saved for later: spend it from your sheet, the Storyteller approves.', other: '{{count}} dots will be saved for later: spend them from your sheet, the Storyteller approves.' }, { count: saved.advantage_dots })
+        : null}
+      {lost > 0 ? ` ${t('wizard:v5.savedDotsLost', { one: 'This chronicle saves at most {{cap}}, so {{count}} unspent dot is lost.', other: 'This chronicle saves at most {{cap}}, so {{count}} unspent dots are lost.' }, { count: lost, cap })}` : ''}
+    </p>
+  );
+}
+
 /** Step 7 (core p. 136): 7 dots of Advantages and 2 dots of Flaws of your own. */
 export default function AdvantagesStep() {
   const f = useForge();
@@ -89,6 +103,7 @@ export default function AdvantagesStep() {
         {t('wizard:v5.advantagesCount', 'Advantages {{adv}}/{{advMax}} · Flaws {{flaws}} (min {{flawMin}})', { adv: advDots, advMax: derived.advantage_dots, flaws: flawDots, flawMin: derived.flaw_min_dots })}
         {cap != null ? ` · ${t('wizard:v5.flawCap', 'max {{n}} in this chronicle', { n: cap })}` : ''}
       </p>
+      <SavedDotsNote saved={f.saved} cap={settings.saved_points.advantage_dots_cap} />
       {f.age !== 'ancilla' && f.clan !== THIN_BLOOD && ageAllowed(settings, 'ancilla') ? (
         <p style={{ color: 'var(--sr-bone-300)', fontSize: '12px', margin: '0 0 10px' }}>
           {t('wizard:v5.ancillaBudgetHint', 'An ancilla (chosen in the Age step) gets {{adv}} more Advantage dots and takes {{flaws}} more Flaw dots.', { adv: ancilla.advantage_dots_bonus, flaws: ancilla.flaw_dots_bonus })}

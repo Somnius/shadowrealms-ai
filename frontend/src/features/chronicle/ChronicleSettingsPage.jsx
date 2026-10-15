@@ -11,6 +11,7 @@ import { canUseStaffVoice, gameSystemTitle, isStoryteller, lineGlyph, lineOf } f
 import { editionLabel } from '../../rules/rulesEdition';
 import LocationManager from './LocationManager';
 import CreationRulesPanel from './CreationRulesPanel';
+import SpendApprovalsPanel from './SpendApprovalsPanel';
 import { t } from '../../i18n';
 import { Term } from '../../i18n/glossary';
 import './chronicle.css';
@@ -422,7 +423,19 @@ export default function ChronicleSettingsPage() {
               key={`creation-${campaign.id}-${JSON.stringify(campaign.creation_settings || {})}`}
               campaign={campaign}
               saving={saving}
+              suggestAi={isST && !!myCharacter}
               onSave={(creation_settings) => update({ creation_settings }, t('chronicle:creation.saved', 'Creation rules saved.'))}
+            />
+          ) : null}
+
+          {staff && campaign.rules_edition === 'v5' ? (
+            <SpendApprovalsPanel
+              key={`approvals-${campaign.id}-${(campaign.creation_settings && campaign.creation_settings.st_mode) || 'human'}`}
+              api={api}
+              campaignId={campaign.id}
+              user={user}
+              toast={toast}
+              initialStMode={(campaign.creation_settings && campaign.creation_settings.st_mode) || 'human'}
             />
           ) : null}
 

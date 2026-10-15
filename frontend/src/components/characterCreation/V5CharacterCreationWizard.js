@@ -103,7 +103,7 @@ export default function V5CharacterCreationWizard({
       scrollToSection(first[0]);
       return;
     }
-    const payload = buildV5Payload(sheet);
+    const payload = buildV5Payload(sheet, settings);
     if (f.meritNotes.trim()) payload.merits_flaws.notes = f.meritNotes.trim();
     setSubmitting(true);
     try {

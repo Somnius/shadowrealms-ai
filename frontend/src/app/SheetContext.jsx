@@ -30,7 +30,12 @@ export function SheetProvider({ children }) {
     <SheetContext.Provider value={value}>
       {children}
       {sheet ? (
-        <CharacterSheetModal character={sheet.character} gameSystem={sheet.gameSystem} onClose={() => setSheet(null)} />
+        <CharacterSheetModal
+          character={sheet.character}
+          gameSystem={sheet.gameSystem}
+          onClose={() => setSheet(null)}
+          onChanged={() => openSheet(sheet.character.id, sheet.gameSystem)}
+        />
       ) : null}
     </SheetContext.Provider>
   );

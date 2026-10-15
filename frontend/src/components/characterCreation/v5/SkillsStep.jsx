@@ -105,6 +105,13 @@ export default function SkillsStep() {
             {t('wizard:v5.addSpecialty', '+ Add specialty')}
           </button>
         ) : null}
+        {f.saved.unusedSpecialty ? (
+          <p id="v5-specialty-saved" style={{ color: 'var(--sr-bone-300)', fontSize: '12px', margin: '8px 0 0' }}>
+            {f.saved.specialty
+              ? t('wizard:v5.savedSpecialty', 'The free specialty of your choice is unused: it will be saved for later (spend it from your sheet, the Storyteller approves).')
+              : t('wizard:v5.savedSpecialtyOff', "The free specialty of your choice is unused, and this chronicle doesn't save it for later.")}
+          </p>
+        ) : null}
       </div>
     </ResponsiveSheetBlock>
   );

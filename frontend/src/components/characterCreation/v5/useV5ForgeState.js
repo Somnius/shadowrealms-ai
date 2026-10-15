@@ -22,6 +22,7 @@ import {
   ownFlawDots,
   predatorDisciplineOptions,
   predatorInfo,
+  savedAtCreation,
   skillSpreadStatus,
   startingCeremonyOptions,
   startingXp,
@@ -271,6 +272,7 @@ export default function useV5ForgeState(settings, initialValues) {
     skillStatus: skillSpreadStatus(skills, skillDistribution),
     advDots: advantages.reduce((s, a) => s + a.dots, 0),
     flawDots: ownFlawDots(sheet),
+    saved: savedAtCreation(sheet, settings),
     // values and setters
     name, setName, concept, setConcept, sire, setSire, ambition, setAmbition, desire, setDesire,
     clan, changeClan, age, changeAge, generation, setGeneration,
