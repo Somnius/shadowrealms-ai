@@ -254,10 +254,15 @@ def test_attach_descriptions_targets_entries_powers_and_clan_parts():
         "disciplines": {"entries": [{"id": "discipline:d", "name": "D", "powers": [
             {"id": "power:d:p", "name": "P", "level": 1}]}]},
         "rituals": {"entries": []},
+        "advantages": {"entries": [{"id": "merit:m", "name": "M", "levels": [{"dots": 1, "name": "L1"}]}]},
+        "loresheets": {"entries": [{"id": "loresheet:l", "name": "L", "levels": [
+            {"dots": 1, "name": "One"}, {"dots": 2, "name": "Two"}]}]},
     }
     d = {"en": "Does a thing.", "el": "Κάνει κάτι."}
     descs = {"clans": {"clan:x": d, "clan:x:bane": d, "clan:x:compulsion": d, "clan:zzz": d},
-             "disciplines": {"discipline:d": d, "power:d:p": {"en": "only en"}}}
+             "disciplines": {"discipline:d": d, "power:d:p": {"en": "only en"}},
+             "advantages": {"merit:m": d, "merit:m:1": d},
+             "loresheets": {"loresheet:l": d, "loresheet:l:1": d}}
     report = []
     merge.attach_descriptions(files, descs, report)
     x = files["clans"]["entries"][0]
@@ -268,6 +273,14 @@ def test_attach_descriptions_targets_entries_powers_and_clan_parts():
     assert any("clan:zzz is not in the catalog" in r for r in report)
     assert any("power:d:p needs both en and el" in r for r in report)
     assert any("have no description" in r and "clan:y" in r for r in report)
+    # loresheet levels are targets ('<id>:<dots>'); advantage levels are not
+    lore = files["loresheets"]["entries"][0]
+    assert lore["desc"] == d and lore["levels"][0]["desc"] == d
+    assert list(lore["levels"][0]) == ["dots", "name", "desc"]
+    assert "desc" not in lore["levels"][1]
+    assert any("have no description" in r and "loresheet:l:2" in r for r in report)
+    assert any("merit:m:1 is not in the catalog" in r for r in report)
+    assert "desc" not in files["advantages"]["entries"][0]["levels"][0]
 
 
 def test_description_problems(tmp_path):

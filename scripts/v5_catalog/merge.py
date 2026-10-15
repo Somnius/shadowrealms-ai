@@ -152,14 +152,18 @@ def amalgam_ref(am: dict | None) -> dict | None:
 
 # --------------------------------------------------------------------------- descriptions
 
-DESC_CATALOGS = ("clans", "disciplines", "rituals", "ceremonies", "formulae", "predator_types")
+DESC_CATALOGS = ("clans", "disciplines", "rituals", "ceremonies", "formulae", "predator_types",
+                 "advantages", "loresheets")
 # clans carry three descriptions: the clan, its Bane and its Compulsion
 CLAN_DESC_PARTS = ("bane", "compulsion")
+# loresheets carry one more per level, under '<loresheet id>:<dots>' (1-5)
+LEVEL_DESC_CATALOGS = ("loresheets",)
 
 
 def desc_targets(files: dict):
-    """Yield (key, holder) for every place a description can go: entries, powers, and a clan's
-    bane / compulsion objects under '<clan id>:bane' / '<clan id>:compulsion'."""
+    """Yield (key, holder) for every place a description can go: entries, powers, a clan's
+    bane / compulsion objects under '<clan id>:bane' / '<clan id>:compulsion', and a
+    loresheet's levels under '<loresheet id>:<dots>'."""
     for name in DESC_CATALOGS:
         if name not in files:
             continue
@@ -171,6 +175,9 @@ def desc_targets(files: dict):
                 for part in CLAN_DESC_PARTS:
                     if e.get(part):
                         yield f"{e['id']}:{part}", e[part]
+            if name in LEVEL_DESC_CATALOGS:
+                for lv in e.get("levels", []):
+                    yield f"{e['id']}:{lv['dots']}", lv
 
 
 def _with_desc(holder: dict, desc: dict) -> None:

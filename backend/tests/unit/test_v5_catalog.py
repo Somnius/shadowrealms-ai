@@ -129,9 +129,29 @@ def test_power_levels_and_split_grants(data):
 
 
 def test_descriptions_complete(data):
-    """Every entry, power, clan Bane and Compulsion has desc.en + desc.el (<= 240 chars) and
-    descriptions/*.json has no orphan keys."""
+    """Every entry, power, clan Bane, Compulsion and loresheet level has desc.en + desc.el
+    (<= 240 chars) and descriptions/*.json has no orphan keys."""
     assert checks.description_problems(CATALOG, data) == []
+
+
+def _has_desc(holder: dict) -> bool:
+    d = holder.get("desc")
+    return isinstance(d, dict) and bool(d.get("en", "").strip()) and bool(d.get("el", "").strip())
+
+
+def test_advantage_descriptions(data):
+    """All 170 Merits, Backgrounds and Flaws carry EN + EL."""
+    adv = _entries(data, "advantages")
+    assert len(adv) == 170
+    assert [e["id"] for e in adv if not _has_desc(e)] == []
+
+
+def test_loresheet_descriptions(data):
+    """All 32 loresheets and each of their 5 levels carry EN + EL."""
+    lore = _entries(data, "loresheets")
+    assert len(lore) == 32
+    assert [e["id"] for e in lore if not _has_desc(e)] == []
+    assert [f"{e['id']}:{lv['dots']}" for e in lore for lv in e["levels"] if not _has_desc(lv)] == []
 
 
 def test_no_book_text_fields():

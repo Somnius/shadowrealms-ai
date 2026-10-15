@@ -181,8 +181,9 @@ def _grant_problems(owner: str, opt: dict, kind: str, adv_ids: set, adv_groups: 
 
 
 def description_problems(catalog_dir: Path, data: dict) -> list[str]:
-    """Every entry, power, clan Bane and clan Compulsion carries desc.en and desc.el (non-empty,
-    <= 240 chars), and every key in descriptions/*.json names something in the catalog."""
+    """Every entry, power, clan Bane, clan Compulsion and loresheet level carries desc.en and
+    desc.el (non-empty, <= 240 chars), and every key in descriptions/*.json names something in
+    the catalog."""
     from . import merge
 
     out = []
