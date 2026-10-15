@@ -360,6 +360,31 @@ CREATE TABLE IF NOT EXISTS character_downtime_requests (
 CREATE INDEX IF NOT EXISTS idx_downtime_user ON character_downtime_requests(user_id, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_downtime_status ON character_downtime_requests(status);
 
+-- Saved-point spends (Forge v2 part D, routes/spend_requests.py, services/saved_points.py).
+-- Same definition as database.ensure_character_spend_requests_table
+CREATE TABLE IF NOT EXISTS character_spend_requests (
+    id           BIGSERIAL PRIMARY KEY,
+    character_id INTEGER NOT NULL REFERENCES characters(id) ON DELETE CASCADE,
+    campaign_id  INTEGER NOT NULL REFERENCES campaigns(id) ON DELETE CASCADE,
+    user_id      INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    kind         TEXT NOT NULL,                     -- 'saved_advantage' | 'saved_specialty'
+    payload      TEXT NOT NULL,                     -- JSON: the spend as asked
+    rule_check   TEXT NOT NULL,                     -- JSON {ok, problems:[{code, params}], house_rule}
+    status       TEXT NOT NULL DEFAULT 'pending',   -- pending | approved | rejected | reversed
+    approver     TEXT,                              -- 'ai' (the rule check, AI mode) | 'user'
+    resolved_by  INTEGER REFERENCES users(id) ON DELETE SET NULL,
+    resolved_at  TIMESTAMP,
+    reason       TEXT,
+    before_state TEXT,                              -- JSON: the touched sheet keys before the apply
+    after_state  TEXT,                              -- JSON: the same keys after it, plus changes
+    reversed_by  INTEGER REFERENCES users(id) ON DELETE SET NULL,
+    reversed_at  TIMESTAMP,
+    created_at   TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_spend_campaign_status ON character_spend_requests(campaign_id, status);
+CREATE INDEX IF NOT EXISTS idx_spend_character ON character_spend_requests(character_id, created_at DESC);
+
 CREATE TABLE IF NOT EXISTS location_deletion_log (
     id                   SERIAL PRIMARY KEY,
     location_id          INTEGER NOT NULL,                       -- no FK: kept as history

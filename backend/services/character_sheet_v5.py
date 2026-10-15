@@ -7,7 +7,8 @@ Storage is the same TEXT JSON columns as classic sheets:
 - skills: {physical{...}, social{...}, mental{...}, specialties[{skill,name}], distribution} (0-5)
 - wod_meta: {edition:'v5', hunger 0-5, humanity 0-10, stains 0-10, blood_potency 0-10,
   generation, health{max,superficial,aggravated}, willpower{...}, disciplines[{name,level,powers}],
-  rituals[{name,level,source}], experience{total,spent,unspent,log[{kind,trait,what,from,to,cost}]}, ...}
+  rituals[{name,level,source}], experience{total,spent,unspent,log[{kind,trait,what,from,to,cost}]},
+  saved{advantage_dots 0-20, specialty 0-1}, ...}
 
 Missing keys are fine (sheets are filled in over time); present values must be in range.
 """
@@ -206,6 +207,14 @@ def sanity_check_v5(
                             errors.append(f"wod_meta.rituals[{i}].level is required")
                         _check_range(errors, f"wod_meta.rituals[{i}].level", r.get("level"), 1, 5)
             _check_experience(errors, wod_meta.get("experience"))
+            saved = wod_meta.get("saved")
+            if saved is not None:
+                # Points left unspent at creation (Forge v2 part D, services/saved_points.py).
+                if not isinstance(saved, dict):
+                    errors.append("wod_meta.saved must be an object")
+                else:
+                    _check_range(errors, "wod_meta.saved.advantage_dots", saved.get("advantage_dots"), 0, 20)
+                    _check_range(errors, "wod_meta.saved.specialty", saved.get("specialty"), 0, 1)
             ed = wod_meta.get("edition")
             if ed is not None and ed != "v5":
                 errors.append("wod_meta.edition must be 'v5' for a V5 character")

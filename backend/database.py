@@ -776,6 +776,50 @@ def ensure_character_downtime_requests_table(cursor):
 
 
 @once_per_process
+def ensure_character_spend_requests_table(cursor):
+    """
+    Saved-point spends (Forge v2 part D, routes/spend_requests.py): a player spends Advantage dots
+    or the free specialty saved at creation; the Storyteller (or, in AI mode, the rule check)
+    approves. Same definition in init_postgresql_schema.sql.
+    """
+    if os.getenv("DATABASE_TYPE", "sqlite").lower() == "postgresql":
+        pk = "id           BIGSERIAL PRIMARY KEY"
+    else:
+        pk = "id           INTEGER PRIMARY KEY AUTOINCREMENT"
+    cursor.execute(
+        f"""
+        CREATE TABLE IF NOT EXISTS character_spend_requests (
+            {pk},
+            character_id INTEGER NOT NULL REFERENCES characters(id) ON DELETE CASCADE,
+            campaign_id  INTEGER NOT NULL REFERENCES campaigns(id) ON DELETE CASCADE,
+            user_id      INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+            kind         TEXT NOT NULL,
+            payload      TEXT NOT NULL,
+            rule_check   TEXT NOT NULL,
+            status       TEXT NOT NULL DEFAULT 'pending',
+            approver     TEXT,
+            resolved_by  INTEGER REFERENCES users(id) ON DELETE SET NULL,
+            resolved_at  TIMESTAMP,
+            reason       TEXT,
+            before_state TEXT,
+            after_state  TEXT,
+            reversed_by  INTEGER REFERENCES users(id) ON DELETE SET NULL,
+            reversed_at  TIMESTAMP,
+            created_at   TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+        )
+        """
+    )
+    cursor.execute(
+        "CREATE INDEX IF NOT EXISTS idx_spend_campaign_status "
+        "ON character_spend_requests(campaign_id, status)"
+    )
+    cursor.execute(
+        "CREATE INDEX IF NOT EXISTS idx_spend_character "
+        "ON character_spend_requests(character_id, created_at DESC)"
+    )
+
+
+@once_per_process
 def ensure_location_reads_table(cursor):
     """Unread tracking per character and room (also in init_postgresql_schema.sql)."""
     cursor.execute("""
@@ -1162,6 +1206,7 @@ def migrate_db():
                 ensure_rules_edition_columns(cursor)
                 ensure_campaigns_creation_settings_column(cursor)
                 ensure_character_downtime_requests_table(cursor)
+                ensure_character_spend_requests_table(cursor)
                 ensure_characters_is_npc_column(cursor)
                 ensure_campaigns_staff_pause_columns(cursor)
                 ensure_location_reads_table(cursor)
@@ -1533,6 +1578,7 @@ def migrate_db():
         ensure_rules_edition_columns(cursor)
         ensure_campaigns_creation_settings_column(cursor)
         ensure_character_downtime_requests_table(cursor)
+        ensure_character_spend_requests_table(cursor)
         ensure_messages_ai_message_kind_column(cursor)
         ensure_messages_speaker_mode_column(cursor)
         ensure_messages_reply_to_column(cursor)

@@ -70,6 +70,7 @@ def create_app(config_class=Config):
     app.register_blueprint(users.bp, url_prefix='/api/users')
     app.register_blueprint(campaigns.campaigns_bp)
     app.register_blueprint(characters.bp, url_prefix='/api/characters')
+    from routes.spend_requests import spend_requests_bp; app.register_blueprint(spend_requests_bp, url_prefix='/api')  # Forge v2 D: saved points
     app.register_blueprint(ai.bp, url_prefix='/api/ai')
     app.register_blueprint(rule_books.bp, url_prefix='/api/rule-books')
     app.register_blueprint(rules.bp, url_prefix='/api/rules')  # Forge v2: V5 catalog
