@@ -66,6 +66,8 @@ Code: `frontend/src/components/characterCreation/V5CharacterCreationWizard.js` (
 | `experience` | Neonates (15 XP) and ancillae (35 XP), optional: buy Attribute, Skill and Discipline dots one at a time, new specialties and rituals (level up to Blood Sorcery); unspent XP allowed, no overspending | XP dots folded into `attributes`, `skills` (XP specialties have `source: 'xp'`), `wod_meta.disciplines` and `wod_meta.rituals` (`source: 'xp'`); the ledger in `wod_meta.experience` (below) |
 | `story` | Background text | `background` |
 
+Guided mode (`components/characterCreation/V5ForgeEntry.jsx` and `v5/GuidedWizard.jsx`, scoring in `characterSheet/v5/guided.js`): before the blocks, the player can answer the scenario questions in `docs/rules/v5/guided/questions.json` (format in its README). The suggestion prefills `clan`, the predator type, `attributes` and `skills` (distribution and ratings) through `useV5ForgeState`'s `initial`, and sets the age to ancilla for an ancilla-only predator type. Nothing new is stored: the sheet is the same as one made in the full forge.
+
 The chronicle's creation rules (`campaigns.creation_settings`, set by the Storyteller) limit the clans, predator types and ages offered, can cap the Flaws, turn off the Humanity 8 option and add house rules shown at the top. The sheet records the forge that made it: `wod_meta.forge = { version: 2, settings_v: 1 }`.
 
 Derived values are stored in `wod_meta` too: `edition: "v5"`, `hunger`, `blood_potency`, `health` and `willpower` (each `{ max, superficial, aggravated }`), `stains`.
