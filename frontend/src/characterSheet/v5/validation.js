@@ -479,6 +479,8 @@ export function startingCeremonyOptions(sheet) {
 export function validateV5Powers(sheet) {
   const rows = disciplineRows(sheet).filter((r) => r.name);
   const level = Object.fromEntries(rows.map((r) => [r.name, r.level]));
+  // A prerequisite may sit in another Discipline (Messenger's Command: Animal Messenger + Compel or Mesmerize).
+  const allChosen = rows.flatMap((r) => r.powers.map((x) => String(x || '').trim()).filter(Boolean));
   for (const r of rows) {
     const list = powersOf(r.name);
     if (!list.length) continue;
@@ -493,7 +495,7 @@ export function validateV5Powers(sheet) {
       if (pw.amalgam && (level[pw.amalgam.discipline] || 0) < pw.amalgam.level) {
         return `${name} also needs ${pw.amalgam.discipline} ${pw.amalgam.level}.`;
       }
-      const missing = (pw.prerequisite || []).find((g) => !g.some((pre) => chosen.includes(pre)));
+      const missing = (pw.prerequisite || []).find((g) => !g.some((pre) => allChosen.includes(pre)));
       if (missing) return `${name} needs ${missing.join(' or ')} first.`;
     }
   }

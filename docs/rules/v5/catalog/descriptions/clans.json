@@ -45,7 +45,7 @@
   },
   "clan:hecata:bane": {
     "en": "Their bite brings agony, not bliss: drinking directly is always a harmful drink, unrestrained victims struggle, and even willing mortals need Stamina + Resolve at Difficulty 2 + Bane Severity to hold still.",
-    "el": "Το δάγκωμά τους φέρνει πόνο, όχι ηδονή: το απευθείας πιόμα είναι πάντα harmful, τα θύματα παλεύουν, και ακόμα και οι πρόθυμοι θνητοί χρειάζονται Stamina + Resolve με Difficulty 2 + Bane Severity για να μείνουν ακίνητοι."
+    "el": "Το δάγκωμά τους φέρνει πόνο, όχι ηδονή: όταν πίνουν απευθείας από θύμα είναι πάντα harmful drink, τα θύματα παλεύουν, και ακόμα και οι πρόθυμοι θνητοί χρειάζονται Stamina + Resolve με Difficulty 2 + Bane Severity για να μείνουν ακίνητοι."
   },
   "clan:hecata:compulsion": {
     "en": "Driven to push something across the line between life and death, in either direction, even an idea or a conversation: 2-dice penalty on anything else until they end or revive something.",
@@ -145,7 +145,7 @@
   },
   "clan:tremere:bane": {
     "en": "Their vitae cannot Blood Bond other vampires, though they can still be Bound; binding mortals and ghouls takes Bane Severity extra drinks.",
-    "el": "Το αίμα τους δεν μπορεί να δέσει με Blood Bond άλλα βαμπίρ, αν και οι ίδιοι μπορούν να δεθούν· το δέσιμο θνητών και ghouls θέλει επιπλέον πιόματα ίσα με το Bane Severity."
+    "el": "Το αίμα τους δεν μπορεί να δέσει με Blood Bond άλλα βαμπίρ, αν και οι ίδιοι μπορούν να δεθούν· το δέσιμο θνητών και ghouls θέλει τόσες επιπλέον γουλιές όσο το Bane Severity."
   },
   "clan:tremere:compulsion": {
     "en": "2-dice penalty on all pools until a critical win on a Skill roll or the end of the scene; repeating an action drops the penalty to 1 die, a second repeat removes it.",

@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { createEmptyMeritRow } from '../../../characterSheet/meritsFlaws';
 import {
   THIN_BLOOD,
@@ -22,6 +22,7 @@ import {
   predatorDisciplineOptions,
   predatorInfo,
   skillSpreadStatus,
+  startingCeremonyOptions,
   startingXp,
   xpLedger,
 } from '../../../characterSheet/v5/validation';
@@ -140,6 +141,12 @@ export default function useV5ForgeState(settings, initial = {}) {
   };
 
   const attrStatus = useMemo(() => attributeSpreadStatus(attributes), [attributes]);
+
+  // A starting ceremony goes when its prerequisite Oblivion power (or Oblivion) does.
+  const ceremonyNames = startingCeremonyOptions(sheet).map((c) => c.name).join('|');
+  useEffect(() => {
+    if (startingCeremony && !ceremonyNames.split('|').includes(startingCeremony)) setStartingCeremony('');
+  }, [startingCeremony, ceremonyNames]);
   const dist = V5_SKILL_DISTRIBUTIONS[skillDistribution];
 
   const changeAge = (next) => {

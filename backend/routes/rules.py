@@ -23,6 +23,7 @@ def v5_catalog():
         resp = jsonify()
         resp.status_code = 304
         resp.set_etag(etag)
+        resp.headers["Cache-Control"] = "private, no-cache"
         return resp
     resp = jsonify({"etag": etag, **data})
     if etag:

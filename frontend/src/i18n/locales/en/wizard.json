@@ -61,7 +61,16 @@
     "v5SettingsAge": "The Storyteller doesn't allow {{age}} characters in this chronicle.",
     "v5SettingsClan": "The Storyteller doesn't allow {{clan}} in this chronicle.",
     "v5SettingsFlawCap": "This chronicle allows at most {{max}} dots of Flaws of your own (you have {{n}}).",
-    "v5SettingsFledgling": "The Storyteller doesn't offer the Humanity 8 fledgling start in this chronicle."
+    "v5SettingsFledgling": "The Storyteller doesn't offer the Humanity 8 fledgling start in this chronicle.",
+    "v5PowerTwice": "{{disc}}: {{name}} is taken twice.",
+    "v5PowerUnknown": "{{name}} is not a {{disc}} power.",
+    "v5PowerLevel": "{{name}} is a level {{level}} power; {{disc}} is at {{rating}}.",
+    "v5PowerAmalgam": "{{name}} also needs {{disc}} {{level}}.",
+    "v5PowerPrereq": "{{name}} needs {{pre}} first.",
+    "v5GrantOneOf": "{{type}}: choose one of {{list}}.",
+    "v5GrantSplit": "{{type}}: share {{n}} dots between {{list}} (you have {{have}}).",
+    "v5GrantDots": "{{type}}: choose the dots for {{name}} (ask your Storyteller; the book prints none).",
+    "v5AncillaOnly": "{{type}} is for ancillae only."
   },
   "error": {
     "name": "Character name is required.",

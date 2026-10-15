@@ -15,7 +15,7 @@ REPO = Path(__file__).resolve().parents[3]
 
 
 def _catalog_dir() -> Path | None:
-    for cand in (os.environ.get("V5_RULES_DIR"), "/app/project_docs/rules/v5/catalog",
+    for cand in (os.environ.get("V5_CATALOG_DIR"), "/app/project_docs/rules/v5/catalog",
                  REPO / "docs" / "rules" / "v5" / "catalog"):
         if cand and (Path(cand) / "clans.json").exists():
             return Path(cand)
