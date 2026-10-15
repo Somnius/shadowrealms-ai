@@ -288,3 +288,27 @@ def test_predator_grant_ids_resolve_through_the_advantages_catalog():
     assert validate_creation(c["payload"], cat, None) == []
     row["dots"] = 2
     assert codes(validate_creation(c["payload"], cat, None)) == ["predator_grant"]
+
+
+def test_advantages_json_on_disk_reaches_the_check(tmp_path, monkeypatch):
+    """advantages.json / loresheets.json are read by the loader when they exist (Part C)."""
+    from services import v5_catalog
+
+    for name, entries in CATALOG.items():
+        (tmp_path / f"{name}.json").write_text(json.dumps({"catalog": name, "version": 1, "entries": entries}))
+    monkeypatch.setenv("V5_CATALOG_DIR", str(tmp_path))
+    v5_catalog._cache.update(key=None, data=None, etag=None)
+    try:
+        c = case("valid: Brujah with no XP spent")
+        assert c["payload"]["wod_meta"]["advantages"][1] == {"name": "Haven", "dots": 2, "kind": "background"}
+        loaded = v5_catalog.load_catalog()
+        assert loaded["advantages"] == [] and loaded["loresheets"] == []
+        assert validate_creation(c["payload"], loaded, None) == []
+        (tmp_path / "advantages.json").write_text(json.dumps({"catalog": "advantages", "version": 1, "entries": [
+            {"id": "background:haven", "name": "Haven", "kind": "background", "dots": {"min": 3, "max": 3}},
+        ]}))
+        loaded = v5_catalog.load_catalog()
+        assert [a["id"] for a in loaded["advantages"]] == ["background:haven"]
+        assert codes(validate_creation(c["payload"], loaded, None)) == ["adv_dots_range"]
+    finally:
+        v5_catalog._cache.update(key=None, data=None, etag=None)
