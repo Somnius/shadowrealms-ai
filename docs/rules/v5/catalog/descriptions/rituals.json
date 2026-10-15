@@ -150,5 +150,289 @@
   "ritual:warding-circle-against-cainites": {
     "en": "A Warding circle drawn with a rowan wand dipped in warm ash and Blood that vampires cannot cross: a losing trespasser takes 3 Superficial damage. 3 Rouse Checks and a night to cast.",
     "el": "Warding circle χαραγμένος με ραβδί σορβιάς βουτηγμένο σε ζεστή στάχτη και αίμα, που τα βαμπίρ δεν περνούν: όποιος χάσει τη ρίψη παίρνει 3 Superficial ζημιά. 3 Rouse Checks και μία νύχτα."
+  },
+  "ritual:astromancy": {
+    "en": "Reading the stars and a sample of the target's body, learn their Attributes and Skills rated 4 or more and their Ambition; a critical win adds their Desire and a Conviction. Knowing their birth or Embrace date adds 1 die.",
+    "el": "Με τα αστέρια και δείγμα από το σώμα του στόχου μαθαίνεις τα Attributes και Skills του με 4 ή περισσότερες τελείες και το Ambition του· σε critical win και το Desire και ένα Conviction. Η ημερομηνία γέννησης ή Embrace δίνει +1 ζάρι."
+  },
+  "ritual:bind-the-accusing-tongue": {
+    "en": "The target cannot say, write or otherwise pass on anything harmful about you, true or not, unless they win Composure + Resolve at Difficulty your Blood Sorcery + 2 (+3 on a critical win). Ends when they win or the cord unwinds.",
+    "el": "Ο στόχος δεν μπορεί να πει, να γράψει ή να μεταδώσει τίποτα βλαβερό για σένα, αληθινό ή όχι, εκτός αν κερδίσει Composure + Resolve με Difficulty το Blood Sorcery σου + 2 (+3 σε critical win). Λήγει όταν κερδίσει ή λυθεί το κορδόνι."
+  },
+  "ritual:craftmaster": {
+    "en": "Drinking a skilled subject's blood, copy their Academics, Craft, Performance or Science dots and Specialty until sunrise (a week on a critical win), replacing your own. A total failure deals you 2 Aggravated Health damage.",
+    "el": "Πίνοντας το αίμα ικανού ατόμου αντιγράφεις τις τελείες και το Specialty του σε Academics, Craft, Performance ή Science ως την ανατολή (μία εβδομάδα σε critical win), αντί για τα δικά σου. Σε total failure: 2 Aggravated ζημιά Health."
+  },
+  "ritual:depths-of-nightmare": {
+    "en": "A wax effigy curses the target with nightmares for as many days as you roll successes; each waking costs them 1 Superficial Willpower damage (Aggravated on a critical win), which only magic can heal until the curse ends.",
+    "el": "Ένα κέρινο ομοίωμα καταριέται τον στόχο με εφιάλτες για τόσες μέρες όσες οι επιτυχίες σου· κάθε ξύπνημα του κοστίζει 1 Superficial ζημιά Willpower (Aggravated σε critical win), που ως το τέλος της κατάρας θεραπεύεται μόνο με μαγεία."
+  },
+  "ritual:elemental-grasp": {
+    "en": "Your bonded element hinders a target you perceive: 1 Superficial Health damage per success, and they need a fitting roll at Difficulty 1 + your successes to press on. Lasts while you only command it.",
+    "el": "Το στοιχείο σου εμποδίζει έναν στόχο που αντιλαμβάνεσαι: 1 Superficial ζημιά Health ανά επιτυχία, και χρειάζεται κατάλληλη ρίψη με Difficulty 1 + τις επιτυχίες σου για να προχωρήσει. Κρατά όσο κάνεις μόνο αυτό."
+  },
+  "ritual:le-sang-de-lamour": {
+    "en": "Two lovers who truly desire each other swap vials of blood; while both wear them, either can roll Resolve + Awareness to sense roughly where the other is, more successes adding sensations (sights and sounds on a critical win).",
+    "el": "Δύο εραστές που ποθούν ο ένας τον άλλον ανταλλάσσουν φιαλίδια αίματος· όσο τα φορούν, ο καθένας ρίχνει Resolve + Awareness και νιώθει περίπου πού είναι ο άλλος, με περισσότερες επιτυχίες να δίνουν αισθήσεις (εικόνες, ήχους σε critical win)."
+  },
+  "ritual:silentia-mortis": {
+    "en": "Makes a paw talisman that, when its holder activates it with a Rouse Check, mutes all sound within 6 meters of them (12 on a critical win) for up to 1 hour, then crumbles away. It must touch the holder's skin.",
+    "el": "Φτιάχνει φυλαχτό από πατούσα· όταν ο κάτοχος το ενεργοποιήσει με Rouse Check, σβήνει κάθε ήχο σε ακτίνα 6 μέτρων γύρω του (12 σε critical win) για έως 1 ώρα και μετά χάνεται. Πρέπει να ακουμπά το δέρμα του."
+  },
+  "ritual:tiamat-glistens": {
+    "en": "Attunes a place of power to you for as many nights as you roll successes, so your rituals there get its bonus (plus 1 automatic success on a critical win). Only one sorcerer holds a site; a rival's casting takes it.",
+    "el": "Συντονίζει έναν τόπο δύναμης μαζί σου για τόσες νύχτες όσες οι επιτυχίες σου, ώστε οι τελετουργίες σου εκεί να παίρνουν το μπόνους του (και 1 αυτόματη επιτυχία σε critical win). Μόνο ένας τον κρατά· αν τον τελέσει αντίπαλος, τον χάνεις."
+  },
+  "ritual:viscera-garden": {
+    "en": "Turns a buried corpse to smoke and feeds a garden whose plants vampires can eat (no Hunger slaked); mortals who eat them resist influence Disciplines worse. The plants need a Rouse Check of Blood each month.",
+    "el": "Κάνει ένα θαμμένο πτώμα καπνό και θρέφει έναν κήπο με φυτά που τα βαμπίρ μπορούν να φάνε (χωρίς να πέφτει το Hunger)· οι θνητοί που τα τρώνε αντιστέκονται χειρότερα στα Disciplines επιρροής. Θέλουν ένα Rouse Check αίματος τον μήνα."
+  },
+  "ritual:blood-sigil": {
+    "en": "Tattoos a hidden message (text or picture) into another vampire's skin, permanent on a win. Reading it takes 15 minutes and Resolve + Occult at Difficulty 5 (4 by touch) or Sense the Unseen; the caster can erase it for 1 Willpower.",
+    "el": "Χαράζει κρυφό μήνυμα (κείμενο ή εικόνα) ως τατουάζ στο δέρμα άλλου βαμπίρ, μόνιμα αν πετύχει. Διαβάζεται σε 15 λεπτά με Resolve + Occult και Difficulty 5 (4 με άγγιγμα) ή με Sense the Unseen· ο δημιουργός του το σβήνει με 1 Willpower."
+  },
+  "ritual:elemental-shelter": {
+    "en": "Sink into your bonded element as with Earth Meld, safe from physical attacks, sunlight and fire; Wits + Awareness at Difficulty equal to your margin spots you (invisible on a critical win). If the element is lost, you fall into torpor.",
+    "el": "Βυθίζεσαι στο στοιχείο σου όπως με Earth Meld, προστατευμένος από σωματικές επιθέσεις, ήλιο και φωτιά· σε εντοπίζουν με Wits + Awareness και Difficulty ίσο με το margin σου (αόρατος σε critical win). Αν χαθεί το στοιχείο, πέφτεις σε torpor."
+  },
+  "ritual:nepenthe": {
+    "en": "The subject drinks a draught made with their own tears to clear 1 Stain before their Remorse roll (2 on a critical win). Used more than two sessions in a row, it starts making Stains permanent.",
+    "el": "Ο στόχος πίνει ένα ρόφημα με τα δικά του δάκρυα και σβήνει 1 Stain πριν τη ρίψη Remorse (2 σε critical win). Αν χρησιμοποιηθεί πάνω από δύο sessions στη σειρά, αρχίζει να κάνει Stains μόνιμα."
+  },
+  "ritual:seeing-with-the-skys-eyes": {
+    "en": "After a half-hour trance over the target's image, ask the Storyteller one question per success about their location and surroundings. A critical win adds 3 questions, which may also cover their Ambition, Desire, Convictions and Humanity.",
+    "el": "Μετά από μισή ώρα έκστασης πάνω από την εικόνα του στόχου, κάνεις στον Storyteller μία ερώτηση ανά επιτυχία για το πού βρίσκεται και τι τον περιβάλλει. Σε critical win 3 ακόμη ερωτήσεις, και για Ambition, Desire, Convictions και Humanity."
+  },
+  "ritual:seeking-tiamat": {
+    "en": "Drive a stake of witch hazel or magnetized iron into your arm (1 Aggravated damage) and walk: the arm points to the nearest furcus. A critical win finds the nearest vein of the Earth and points to 2 furcae on it.",
+    "el": "Μπήγεις στο χέρι σου ξύλο αμαμελίδας ή μαγνητισμένο σίδερο (1 Aggravated ζημιά) και περπατάς: το χέρι δείχνει το κοντινότερο furcus. Σε critical win βρίσκει την κοντινότερη φλέβα της Γης και δείχνει 2 furcae πάνω της."
+  },
+  "ritual:soul-of-the-hemonculus": {
+    "en": "In a month, grows a small, sun-proof copy of your mortal self that must obey you: your Attributes and mortal Skills at 1 dot less (min 1), half your Health, 1 Willpower. Difficulty is 3 or your Stamina, if higher.",
+    "el": "Σε έναν μήνα γεννιέται μικρό αντίγραφο του θνητού εαυτού σου, άτρωτο στον ήλιο, που σε υπακούει: τα Attributes και θνητά Skills σου με 1 τελεία λιγότερη (ελάχ. 1), μισό Health, 1 Willpower. Difficulty 3 ή το Stamina σου, αν είναι υψηλότερο."
+  },
+  "ritual:stone-of-the-true-form": {
+    "en": "Throw the prepared stone (Dexterity + Athletics); if it hits an illusion, a being made by a Discipline or ritual, or a shapeshifter, win the Ritual roll vs Resolve + Occult to undo it for a round. It breaks once it works.",
+    "el": "Ρίχνεις την έτοιμη πέτρα (Dexterity + Athletics)· αν βρει ψευδαίσθηση, ον φτιαγμένο με Discipline ή τελετουργία ή μεταμορφωμένο ον, με νίκη στο Ritual roll εναντίον Resolve + Occult το αναιρείς για έναν γύρο. Σπάει όταν πετύχει."
+  },
+  "ritual:trespass": {
+    "en": "For a scene in one building, mortals take you for part of it, and for 1 Willpower you can flow through any gap blood could pass (free, with the layout known, on a critical win). Supernatural beings still see you, and you can be hurt.",
+    "el": "Για μία σκηνή σε ένα κτίριο οι θνητοί σε περνούν για κομμάτι του, και με 1 Willpower κυλάς από κάθε χαραμάδα που θα περνούσε αίμα (δωρεάν και με γνώση της κάτοψης σε critical win). Τα υπερφυσικά όντα σε βλέπουν και μπορείς να πληγωθείς."
+  },
+  "ritual:viral-haruspex": {
+    "en": "Plague oracles only. While hosting the common cold (feed on a carrier within 24 hours), draw on the senses and memories of every mortal with a cold within 20 km to find a person or fact; more successes, clearer results.",
+    "el": "Μόνο για plague oracles. Όσο φέρεις κρυολόγημα (τράφηκες από φορέα μέσα σε 24 ώρες), αντλείς από τις αισθήσεις και τις μνήμες κάθε κρυολογημένου θνητού σε 20 χλμ. για ένα πρόσωπο ή γεγονός· περισσότερες επιτυχίες, καθαρότερη εικόνα."
+  },
+  "ritual:compel-the-inanimate": {
+    "en": "Mark an object with a glyph of your Blood and give it one simple order, which it carries out once the Blood dries (about 5 minutes); a critical win adds a second order before dawn. You must be in the same place when it acts.",
+    "el": "Σημαδεύεις ένα αντικείμενο με σύμβολο από το αίμα σου και του δίνεις μία απλή εντολή, που την εκτελεί μόλις στεγνώσει το αίμα (περίπου 5 λεπτά)· σε critical win και δεύτερη ως την αυγή. Πρέπει να βρίσκεσαι στον ίδιο χώρο όταν δρα."
+  },
+  "ritual:egregore-consultation": {
+    "en": "Plague oracles only, while hosting the flu. Pick a Skill: your next 3 rolls with it gain 1 + margin dice, 1 or 2 more the more common it is among the sick within 20 km. A critical win adds a Specialty (or 1 more die).",
+    "el": "Μόνο για plague oracles που φέρουν γρίπη. Διαλέγεις ένα Skill: οι επόμενες 3 ρίψεις σου με αυτό παίρνουν 1 + margin ζάρια, και 1 ή 2 ακόμη όσο πιο κοινό είναι στους αρρώστους σε 20 χλμ. Σε critical win και ένα Specialty (ή 1 ζάρι ακόμη)."
+  },
+  "ritual:lands-sustenance": {
+    "en": "Over five nights, mark part of a place of power so that injuries there turn bloodier and feed you: once per session, automatically pass as many Rouse Checks as your margin. Lasts until the story ends.",
+    "el": "Σε πέντε νύχτες σημαδεύεις μέρος ενός τόπου δύναμης ώστε οι τραυματισμοί εκεί να γίνονται πιο αιματηροί και να σε θρέφουν: μία φορά ανά session περνάς αυτόματα τόσα Rouse Checks όσο το margin σου. Κρατά ως το τέλος του story."
+  },
+  "ritual:riding-the-earths-veins": {
+    "en": "Touching the prepared furcus with your token of entry, become a bloody mist and reform 20 minutes later at a furcus the Storyteller picks (near your Haven or a Tiamat Glistens site on a critical win). One-way.",
+    "el": "Αγγίζοντας το έτοιμο furcus με το σύμβολο εισόδου σου, γίνεσαι ματωμένη ομίχλη και ξαναπαίρνεις μορφή σε 20 λεπτά σε furcus που διαλέγει ο Storyteller (κοντά στο Haven σου ή σε τόπο του Tiamat Glistens σε critical win). Χωρίς επιστροφή."
+  },
+  "ritual:elemental-attack": {
+    "en": "Your bonded element strikes a target you perceive for 1 Aggravated Health damage per success, again each round until they win an escape contest vs your Resolve + Blood Sorcery. Only fire deals Aggravated to vampires.",
+    "el": "Το στοιχείο σου χτυπά έναν στόχο που αντιλαμβάνεσαι για 1 Aggravated ζημιά Health ανά επιτυχία, ξανά κάθε γύρο ώσπου να κερδίσει contest διαφυγής εναντίον του Resolve + Blood Sorcery σου. Σε βαμπίρ μόνο η φωτιά κάνει Aggravated."
+  },
+  "ritual:fisher-king": {
+    "en": "Bonds you to a region about the size of your domain until the story ends: once per session roll Wits + Streetwise (urban) or Wits + Survival (rural) and get one true answer about the land per success.",
+    "el": "Σε δένει με μια περιοχή περίπου όσο το domain της coterie σου ως το τέλος του story: μία φορά ανά session ρίχνεις Wits + Streetwise (πόλη) ή Wits + Survival (ύπαιθρος) και παίρνεις μία αληθινή απάντηση για τον τόπο ανά επιτυχία."
+  },
+  "ritual:blood-missive": {
+    "en": "Store about a minute of speech in a Rouse Check of your Blood, which a messenger drinks. Whoever drinks from the messenger hears it if they are the chosen recipient; others need Wits + Occult. Keeps 1 month plus 1 per point of margin.",
+    "el": "Αποθηκεύεις περίπου ένα λεπτό ομιλίας σε ένα Rouse Check από το αίμα σου, που το πίνει ένας αγγελιοφόρος. Όποιος πιει από τον αγγελιοφόρο το ακούει αν είναι ο παραλήπτης· οι άλλοι θέλουν Wits + Occult. Κρατά 1 μήνα συν 1 ανά πόντο margin."
+  },
+  "ritual:sanguine-tidings": {
+    "en": "Write in human blood on a mirror in a dark room; the message shows on a reflective surface you have seen whenever a chosen kind of person passes it, once per success, and fades after each reading.",
+    "el": "Γράφεις με ανθρώπινο αίμα σε καθρέφτη σε σκοτεινό δωμάτιο· το μήνυμα εμφανίζεται σε μια ανακλαστική επιφάνεια που έχεις δει όταν περνά από μπροστά ένα είδος ανθρώπου που όρισες, μία φορά ανά επιτυχία, και σβήνει μόλις διαβαστεί."
+  },
+  "ritual:grim-chrysalis": {
+    "en": "Swallow hair and a moth, then spin a hard cocoon that blocks sunlight and takes 30 damage to break. Inside you mend all Superficial or 2 Aggravated damage in a night with no Rouse Checks, and can use Vicissitude without a roll.",
+    "el": "Καταπίνεις τρίχες και έναν σκόρο και πλέκεις σκληρό κουκούλι που κόβει τον ήλιο και θέλει 30 ζημιά για να σπάσει. Μέσα του γιατρεύεις σε μία νύχτα όλη τη Superficial ή 2 Aggravated χωρίς Rouse Check και κάνεις Vicissitude χωρίς ρίψη."
+  },
+  "ritual:seek-the-gathered-vitae": {
+    "en": "Sense any group of Kindred within one block whose total Blood Potency reaches 13, out to 3 miles (5 km) plus 1 mile per point of margin, and know where it lies for the next hour. Ghouls count as 1/4, thin-bloods as 1/2.",
+    "el": "Νιώθεις κάθε ομάδα Kindred μέσα σε ένα τετράγωνο με συνολικό Blood Potency 13 και πάνω, ως 5 χλμ. συν 1,5 χλμ. ανά πόντο margin, και ξέρεις πού βρίσκεται για την επόμενη ώρα. Οι ghouls μετρούν 1/4, οι thin-blood 1/2."
+  },
+  "ritual:the-balm-of-bathory": {
+    "en": "A balm of your vitae and a young mortal's blood grants the Stunning Merit for a week. Each brew needs twice the blood; from the second on, it deals 1 Superficial a night after that week until you rebrew or quit 1 month per batch.",
+    "el": "Βάλσαμο από το vitae σου και αίμα νέου θνητού σού δίνει το Merit Stunning για μία εβδομάδα. Κάθε παρτίδα θέλει διπλάσιο αίμα· από τη δεύτερη, μετά την εβδομάδα 1 Superficial τη νύχτα ως να ξαναφτιάξεις ή να το κόψεις 1 μήνα ανά παρτίδα."
+  },
+  "ritual:beelzebeatit": {
+    "en": "Sprinkle vinegar or alcohol to drive animals, vermin and other lesser creatures out of the surrounding area for a scene or a night, whichever ends first. Creatures under someone's control can still be sent back in.",
+    "el": "Ραντίζεις ξίδι ή αλκοόλ και διώχνεις ζώα, έντομα και άλλα κατώτερα πλάσματα από τη γύρω περιοχή για μία σκηνή ή νύχτα, ό,τι λήξει πρώτο. Πλάσματα υπό τον έλεγχο κάποιου μπορούν να σταλούν πίσω."
+  },
+  "ritual:blood-to-water": {
+    "en": "Pour pure water through Blood-smeared fingers to turn all exposed blood in a room-sized area, your own included, into water with no trace left. Larger spaces need repeat castings.",
+    "el": "Χύνεις καθαρό νερό από τα ματωμένα σου δάχτυλα και όλο το εκτεθειμένο αίμα σε χώρο μεγέθους σαλονιού, και το δικό σου, γίνεται νερό χωρίς ίχνη. Μεγαλύτεροι χώροι θέλουν επαναλήψεις."
+  },
+  "ritual:preservation": {
+    "en": "Inscribe sigils with a pen to shield an item from age, rot, pests, fading and minor accidents; deliberate damage still works. 1 Rouse Check covers a chair-sized item, a second doubles the size.",
+    "el": "Χαράζεις σύμβολα με πένα και προστατεύεις ένα αντικείμενο από τον χρόνο, τη μούχλα, τα έντομα, το ξεθώριασμα και μικροατυχήματα· η σκόπιμη ζημιά ισχύει. 1 Rouse Check για αντικείμενο μεγέθους καρέκλας, δεύτερο διπλασιάζει."
+  },
+  "ritual:revealing-the-crimson-trail": {
+    "en": "Prick your eye with a needle, then look through its eye to see all spilled blood, dried or fresh, for the scene. Very old or tiny traces may need Resolve + Awareness or Investigation.",
+    "el": "Τρυπάς το μάτι σου με βελόνα και, κοιτώντας από την τρύπα της, βλέπεις κάθε χυμένο αίμα, ξερό ή φρέσκο, για τη σκηνή. Πολύ παλιά ή ελάχιστα ίχνη ίσως θέλουν Resolve + Awareness ή Investigation."
+  },
+  "ritual:rite-of-introduction": {
+    "en": "Boil a Rouse Check of your Blood in an iron pot to send your face, name and a one-sentence message to whoever holds a Foundation of the Chantry in the same city. You may hold back parts but not falsify them.",
+    "el": "Βράζεις ένα Rouse Check αίματός σου σε σιδερένιο καζάνι και στέλνεις πρόσωπο, όνομα και μήνυμα μίας πρότασης σε όποιον κατέχει Foundation of the Chantry στην πόλη. Μπορείς να παραλείψεις στοιχεία, όχι να τα αλλοιώσεις."
+  },
+  "ritual:communal-vigor": {
+    "en": "Woven into a Vaulderie, raises every packmate's Blood Potency to the officiating Priest's for one night, and the Priest gains 3 dice on Dominate or Presence tests against the pack.",
+    "el": "Μαζί με Vaulderie, ανεβάζει το Blood Potency κάθε μέλους του pack στο επίπεδο του Priest που τελεί για μία νύχτα, και ο Priest παίρνει +3 ζάρια σε τεστ Dominate ή Presence ενάντια στο pack."
+  },
+  "ritual:galvanic-ruination": {
+    "en": "Grind a Blood-smeared copper coin underfoot to wreck all wiring in a large warehouse or 3-story building, batteries and backup generators included; +1 Difficulty per extra building. Causes a fire unless a critical win.",
+    "el": "Πατάς ένα ματωμένο χάλκινο νόμισμα και χαλάει κάθε καλωδίωση σε μεγάλη αποθήκη ή τριώροφο κτίριο, μαζί με μπαταρίες και γεννήτριες· +1 Difficulty ανά επιπλέον κτίριο. Εκτός από critical win, ξεσπά φωτιά."
+  },
+  "ritual:innocences-veil": {
+    "en": "Fast to Hunger 5, then drain a mortal completely: signs of your past diablerie vanish, even from A Taste for Blood, Scry the Soul and similar powers, until you next slake Hunger. May merit Stains.",
+    "el": "Φτάνεις σε Hunger 5 και στραγγίζεις εντελώς έναν θνητό: τα σημάδια παλιάς σου diablerie χάνονται, ακόμα και για δυνάμεις όπως A Taste for Blood ή Scry the Soul, ώσπου να τραφείς ξανά. Ίσως φέρει Stains."
+  },
+  "ritual:atrocitys-release": {
+    "en": "Poultices pressed into a diablerist's cuts undo their latest diablerie, reversing Blood Potency, Disciplines and personality but not Humanity. The victim stays gone; a total failure lets the victim take over.",
+    "el": "Καταπλάσματα σε βαθιές τομές ενός diablerist αναιρούν την τελευταία του diablerie: Blood Potency, Disciplines και προσωπικότητα επανέρχονται, όχι το Humanity. Το θύμα δεν επιστρέφει· σε total failure το θύμα τον κυριεύει."
+  },
+  "ritual:foundation-of-the-chantry": {
+    "en": "Bind an amethyst set in a skull to a place of power; while undisturbed, you or a designee can receive Rite of Introduction messages cast in the city by touching it, and send one back.",
+    "el": "Δένεις έναν αμέθυστο μέσα σε κρανίο σε τόπο δύναμης· όσο μένει αδιατάρακτο, εσύ ή όποιος ορίσεις λαμβάνετε με άγγιγμα τα μηνύματα Rite of Introduction της πόλης και στέλνετε απάντηση."
+  },
+  "ritual:reawakened-vigor": {
+    "en": "Seal at least 5 Rouse Checks of your Blood in a buried vessel to make an orb; drinking it restores 1 Blood Potency lost to torpor, +1 per margin success. Other vampires who drink it risk Aggravated damage.",
+    "el": "Σφραγίζεις τουλάχιστον 5 Rouse Check αίματός σου σε θαμμένο δοχείο και φτιάχνεις σφαίρα· πίνοντάς την ανακτάς 1 Blood Potency χαμένο σε torpor, +1 ανά επιτυχία περιθωρίου. Άλλα βαμπίρ που την πίνουν κινδυνεύουν με Aggravated ζημιά."
+  },
+  "ritual:simulacrum-gate": {
+    "en": "Build an exact replica of a distant site, scatter one mortal sacrifice per traveler there and finish with a vampire sacrifice: the gate sends that many vampires there and lets as many return. Mortals cannot use it.",
+    "el": "Χτίζεις ακριβές αντίγραφο μακρινού τόπου, θυσιάζεις έναν θνητό ανά ταξιδιώτη και στο τέλος ένα βαμπίρ: η πύλη στέλνει τόσα βαμπίρ εκεί και αφήνει ίσο αριθμό να γυρίσει. Οι θνητοί δεν μπορούν να τη χρησιμοποιήσουν."
+  },
+  "ritual:blood-apocrypha": {
+    "en": "Whisper about a minute of speech into a Rouse Check's worth of blood with mercury, then a messenger drinks it. Whoever next drinks from the messenger hears it if they are a chosen recipient; others need Wits + Occult (Difficulty 3).",
+    "el": "Ψιθυρίζεις περίπου ένα λεπτό λόγου σε αίμα αξίας ενός Rouse Check με υδράργυρο και ένας αγγελιαφόρος το πίνει. Ο πρώτος που θα πιει από αυτόν ακούει το μήνυμα αν είναι παραλήπτης· οι άλλοι θέλουν Wits + Occult (Difficulty 3)."
+  },
+  "ritual:bloody-message": {
+    "en": "Write a message in human blood on a mirror under UV light; it shows on another reflective surface you remember when a chosen kind of person passes, once per success, clearing after each reading.",
+    "el": "Γράφεις μήνυμα με ανθρώπινο αίμα σε καθρέφτη κάτω από υπεριώδες φως· εμφανίζεται σε άλλη γυαλιστερή επιφάνεια που θυμάσαι όταν περνά το είδος ανθρώπου που όρισες, μία φορά ανά επιτυχία, και σβήνει μόλις διαβαστεί."
+  },
+  "ritual:coax-the-garden": {
+    "en": "Scatter human blood and poppy seeds to wake plants in a 5 m circle for a scene: -2 dice to Physical pools there, and anyone staying past a turn must pass Dexterity + Athletics (Difficulty 3) or be held, taking 2 Superficial per turn.",
+    "el": "Ρίχνεις ανθρώπινο αίμα και σπόρους παπαρούνας και τα φυτά σε κύκλο 5 μέτρων ζωντανεύουν για μία σκηνή: -2 ζάρια στα Physical pools· όποιος μείνει πέρα από έναν γύρο θέλει Dexterity + Athletics (3) ή πιάνεται, με 2 Superficial ανά γύρο."
+  },
+  "ritual:dampen-the-fear": {
+    "en": "Expose a holy object such as a crucifix or Qur'an to fire to gain +2 dice on rolls to resist Rötschreck for the scene; on a critical win you make no terror frenzy rolls at all.",
+    "el": "Εκθέτεις στη φωτιά ένα ιερό αντικείμενο, όπως σταυρό ή Κοράνι, και παίρνεις +2 ζάρια στις ρίψεις κατά του Rötschreck για τη σκηνή· με critical win δεν κάνεις καμία ρίψη terror frenzy."
+  },
+  "ritual:enrich-the-blood": {
+    "en": "A human's blood grows so rich that a sip slakes 2 Hunger instead of 1; it fades after a week. Humans only. It harms the donor's health, usually costs the caster 1 Stain, and a second casting kills.",
+    "el": "Το αίμα ενός ανθρώπου γίνεται τόσο πλούσιο που μια γουλιά ρίχνει το Hunger κατά 2 αντί για 1· ξεθωριάζει σε μία εβδομάδα. Μόνο σε ανθρώπους. Βλάπτει την υγεία του δότη, συνήθως δίνει 1 Stain και δεύτερη χρήση τον σκοτώνει."
+  },
+  "ritual:herd-ward": {
+    "en": "Ward one mortal (level 1), or a door to shelter all inside for a night (level 3). A vampire feeding on them takes 1 Aggravated damage (3 on a critical win) and needs Stamina + Resolve at Difficulty 4 (7) to keep drinking.",
+    "el": "Προστατεύεις έναν θνητό (επίπεδο 1) ή μια πόρτα και όσους μένουν μέσα για μία νύχτα (επίπεδο 3). Όποιο βαμπίρ τραφεί από αυτούς παθαίνει 1 Aggravated ζημιά (3 σε critical win) και θέλει Stamina + Resolve εναντίον 4 (7) για να συνεχίσει."
+  },
+  "ritual:letter-ward": {
+    "en": "Seal a letter written in pigeon blood with wax mixed with dog blood. Anyone but the named recipient who opens it takes 1 Aggravated damage (3 on a critical win) as the letter burns up.",
+    "el": "Σφραγίζεις γράμμα γραμμένο με αίμα περιστεριού με κερί ανακατεμένο με αίμα σκύλου. Όποιος το ανοίξει εκτός από τον παραλήπτη παθαίνει 1 Aggravated ζημιά (3 σε critical win) και το γράμμα καίγεται."
+  },
+  "ritual:shared-memory": {
+    "en": "Others each drink a Rouse Check's worth of vitae from a vampire in Memoriam, mixed with nightshade, and join it as observers who can advise but not change events. It may create Blood Bonds.",
+    "el": "Άλλοι πίνουν ο καθένας αίμα αξίας ενός Rouse Check από βαμπίρ σε Memoriam, ανακατεμένο με μπελαντόνα, και μπαίνουν σε αυτό ως παρατηρητές που συμβουλεύουν αλλά δεν αλλάζουν τα γεγονότα. Μπορεί να δημιουργήσει Blood Bond."
+  },
+  "ritual:unseen-underground": {
+    "en": "Become invisible and silent for an hour while still moving and handling objects, as long as you stay underground. Surfacing or a hostile act ends it; Sense the Unseen can find you. Self only.",
+    "el": "Γίνεσαι αόρατος και αθόρυβος για μία ώρα, ενώ κινείσαι και πιάνεις αντικείμενα, όσο μένεις κάτω από τη γη. Λήγει αν βγεις στην επιφάνεια ή κάνεις εχθρική ενέργεια· το Sense the Unseen σε αποκαλύπτει. Μόνο για σένα."
+  },
+  "ritual:calling-the-auras-remnants": {
+    "en": "Within 10 feet of a dead human or destroyed vampire, talk with an echo of the deceased for a scene (a night on a critical win). It is not their spirit and knows only what they knew up to death.",
+    "el": "Σε απόσταση 10 ποδιών από νεκρό άνθρωπο ή κατεστραμμένο βαμπίρ, μιλάς με μια αντανάκλαση του νεκρού για μία σκηνή (όλη νύχτα σε critical win). Δεν είναι το πνεύμα του και ξέρει μόνο ό,τι ήξερε ως τον θάνατο."
+  },
+  "ritual:enhance-dyscrasia": {
+    "en": "For 3 nights, anyone who slakes at least 1 Hunger from the target gains the effects of their Dyscrasia without using it up. Needs a taste of their blood and an object tied to that Resonance.",
+    "el": "Για 3 νύχτες, όποιος τραφεί από τον στόχο και ρίξει το Hunger του κατά 1 τουλάχιστον παίρνει τα οφέλη της Dyscrasia του χωρίς να την εξαντλεί. Θέλει μια γεύση από το αίμα του κι ένα αντικείμενο δεμένο με τη Resonance."
+  },
+  "ritual:ishtars-touch": {
+    "en": "Mix hashish or another narcotic with your blood on your fingers; whoever touches it this scene is rolled against with Stamina + Resolve and, for the scene, loses dice equal to the margin on resist pools using Composure or Resolve.",
+    "el": "Ανακατεύεις χασίς ή άλλο ναρκωτικό με το αίμα σου στα δάχτυλα· όποιος το αγγίξει πριν τελειώσει η σκηνή αντιστέκεται με Stamina + Resolve και, για τη σκηνή, χάνει ζάρια ίσα με το margin στα pools αντίστασης με Composure ή Resolve."
+  },
+  "ritual:stolen-memory": {
+    "en": "With your vitae on a black mirror or in water and an item of your sire's, enter a Memoriam of their memories without their consent; reaching further up the line adds 2 Difficulty per step. Write it down quickly or it fades.",
+    "el": "Με το αίμα σου σε μαύρο καθρέφτη ή σε νερό κι ένα αντικείμενο του sire σου, μπαίνεις σε Memoriam με τις αναμνήσεις του χωρίς τη συγκατάθεσή του· παλαιότεροι πρόγονοι δίνουν +2 Difficulty ανά γενιά. Αν δεν τα γράψεις γρήγορα, ξεθωριάζουν."
+  },
+  "ritual:the-shroud-of-silence": {
+    "en": "A cloth passed through a gold ring, smeared with vitae from an Obfuscate user and tied to a door, stops all sound leaving the room beyond for a scene. Pulling the cloth away ends it.",
+    "el": "Ένα ύφασμα περασμένο από χρυσό δαχτυλίδι, αλειμμένο με αίμα βαμπίρ που έχει Obfuscate και δεμένο σε πόρτα, κρατά κάθε ήχο μέσα στο δωμάτιο για μία σκηνή. Αν βγει το ύφασμα, λήγει."
+  },
+  "ritual:bladed-hands": {
+    "en": "Grip a razor blade in each palm until they sink in: your hands become light piercing Brawl weapons at +2 damage (+3 on a critical win), with +1 Difficulty to handle delicate things. Two Rouse Checks; one evening.",
+    "el": "Σφίγγεις ένα ξυράφι σε κάθε παλάμη ώσπου να χαθούν μέσα σου: τα χέρια σου γίνονται ελαφριά διατρητικά όπλα Brawl με +2 ζημιά (+3 σε critical win) και +1 Difficulty για να πιάνεις λεπτά αντικείμενα. Δύο Rouse Checks· μία νύχτα."
+  },
+  "ritual:bloodless-feast": {
+    "en": "Chanting over an unconscious human for 3 hours kills them and fills a crystal chalice with clear liquid that works as their fresh blood for an hour. Drinkers may reach Hunger 0 but are open to diablerie until next sunset.",
+    "el": "Ψέλνεις 3 ώρες πάνω από αναίσθητο άνθρωπο, που πεθαίνει, ενώ ένα κρυστάλλινο ποτήρι γεμίζει διάφανο υγρό που λειτουργεί ως φρέσκο αίμα του για μία ώρα. Όποιος το πιει φτάνει σε Hunger 0 αλλά εκτίθεται σε diablerie ως την επόμενη δύση."
+  },
+  "ritual:eyes-of-the-past": {
+    "en": "Spill a drop of your blood per year back (3+ drops cost a Rouse Check) to watch what happened where you stand at a chosen moment up to 5 years ago. Clarity depends on successes; the memory fades after the scene.",
+    "el": "Χύνεις μία σταγόνα αίμα για κάθε χρόνο πίσω (3+ σταγόνες θέλουν Rouse Check) και βλέπεις τι έγινε εκεί που στέκεσαι μια στιγμή έως 5 χρόνια πριν. Η ευκρίνεια εξαρτάται από τις επιτυχίες· η ανάμνηση σβήνει μετά τη σκηνή."
+  },
+  "ritual:gentle-mind": {
+    "en": "Share a glass of vitae with another and whisper to them: they get +4 dice to resist frenzy for a scene (an evening on a critical win). Cannot target yourself.",
+    "el": "Μοιράζεσαι ένα ποτήρι αίμα με κάποιον και του ψιθυρίζεις: παίρνει +4 ζάρια για να αντισταθεί στο frenzy για μία σκηνή (όλη νύχτα σε critical win). Όχι στον εαυτό σου."
+  },
+  "ritual:haunted-house": {
+    "en": "Mark a haven with Obfuscate vitae over 3 hours (3 Rouse Checks): for 10 years it seems haunted, passersby avoid it and mortals must win Composure + Resolve vs your successes or spend Willpower to get in.",
+    "el": "Σημαδεύεις ένα haven με αίμα βαμπίρ με Obfuscate σε 3 ώρες (3 Rouse Checks): για 10 χρόνια μοιάζει στοιχειωμένο, οι περαστικοί το αποφεύγουν και οι θνητοί μπαίνουν μόνο με Composure + Resolve εναντίον των επιτυχιών σου ή με Willpower."
+  },
+  "ritual:illusion-of-peaceful-death": {
+    "en": "Brushing a corpse with a white feather hides its obvious wounds so it looks like a natural death; rolls to find the cause get +3 Difficulty (+5 on a critical win). The body must keep at least half its blood.",
+    "el": "Περνάς ένα λευκό φτερό πάνω από πτώμα και κρύβεις τα εμφανή τραύματα, ώστε να μοιάζει με φυσικό θάνατο· οι ρίψεις για την αιτία παίρνουν +3 Difficulty (+5 σε critical win). Το σώμα πρέπει να έχει τουλάχιστον το μισό αίμα του."
+  },
+  "ritual:illusion-of-perfection": {
+    "en": "Wear a white mask and drink Obfuscate vitae with chameleon skin to look like a bland person in their mid-20s whose face shifts for each viewer. Sense the Unseen pierces it with Wits + Auspex vs your successes. One scene.",
+    "el": "Φοράς λευκή μάσκα, πίνεις αίμα βαμπίρ με Obfuscate και δέρμα χαμαιλέοντα και μοιάζεις με αδιάφορο εικοσιπεντάρη, με πρόσωπο που αλλάζει για κάθε θεατή. Το Sense the Unseen το διαπερνά με Wits + Auspex εναντίον των επιτυχιών σου. Μία σκηνή."
+  },
+  "ritual:sanguine-watcher": {
+    "en": "Stir vitae and alcohol in a silver bowl for 20 minutes to form a rat of blood that goes where you say, lets you see through its eyes and can steal small items you name precisely. Serves until sunrise.",
+    "el": "Ανακατεύεις αίμα και αλκοόλ σε ασημένιο μπολ για 20 λεπτά και πλάθεις αρουραίο από αίμα που πάει όπου του πεις, σου δείχνει ό,τι βλέπει και κλέβει μικρά αντικείμενα αν τα ορίσεις με ακρίβεια. Υπηρετεί ως την ανατολή."
+  },
+  "ritual:sleep-of-judas": {
+    "en": "A paste of boiled Judas tree blood and opium. Roll when it drugs the target, who opposes with dice equal to undamaged Health; a critical win incapacitates a vampire at once and kills a mortal or ghoul. Lasts hours equal to the margin.",
+    "el": "Πάστα από αίμα του δέντρου του Ιούδα και όπιο. Ρίχνεις όταν ναρκωθεί ο στόχος, που αντιστέκεται με ζάρια ίσα με την άθικτη Health του· critical win αχρηστεύει αμέσως βαμπίρ και σκοτώνει θνητό ή ghoul. Διαρκεί ώρες ίσες με το margin."
+  },
+  "ritual:the-unseen-change": {
+    "en": "Pour vitae and wolf blood around an area (3 Rouse Checks): Lupines crossing it turn into plain wolves unless they win a Willpower contest. Lasts until dawn, or a year and a day if cast at +2 Difficulty.",
+    "el": "Χύνεις αίμα βαμπίρ και λύκου γύρω από μια περιοχή (3 Rouse Checks): οι Lupines που τη διασχίζουν γίνονται κοινοί λύκοι, εκτός αν κερδίσουν αντιπαράθεση Willpower. Ως την αυγή, ή έναν χρόνο και μία μέρα με +2 Difficulty."
+  },
+  "ritual:innocence-of-the-childs-heart": {
+    "en": "Infuse a mortal child's toy with your vitae and carry it: your aura looks mortal and diablerie streaks are hidden. Scry the Soul needs Intelligence + Auspex vs your Intelligence + Blood Sorcery + 4. One night, or a story at +2 Difficulty.",
+    "el": "Εμποτίζεις με το αίμα σου ένα παιδικό παιχνίδι και το κρατάς: η αύρα σου μοιάζει θνητή, χωρίς ίχνη diablerie. Το Scry the Soul θέλει Intelligence + Auspex εναντίον Intelligence + Blood Sorcery + 4. Μία νύχτα ή ένα story με +2 Difficulty."
+  },
+  "ritual:protean-curse": {
+    "en": "The target drinks rabid vampire bat blood mixed with your vitae and turns into a bat as with Metamorphosis for an evening; Stamina + Occult resists, and a total failure leaves a half-bat monster. Not on yourself.",
+    "el": "Ο στόχος πίνει αίμα λυσσασμένης νυχτερίδας με το αίμα σου και γίνεται νυχτερίδα όπως με το Metamorphosis για μία νύχτα· αντιστέκεται με Stamina + Occult, και total failure τον αφήνει μισό νυχτερίδα. Όχι στον εαυτό σου."
+  },
+  "ritual:rending-the-sweet-earth": {
+    "en": "Smear vitae where someone sank with Earth Meld and whip the ground: a 10 by 10 foot chasm opens to their resting place, waking them unless they are in torpor (a critical win does not wake them).",
+    "el": "Αλείφεις με αίμα το σημείο όπου κάποιος βυθίστηκε με Earth Meld και μαστιγώνεις το έδαφος: ανοίγει χάσμα 10 επί 10 πόδια ως την κρυψώνα του και τον ξυπνά, εκτός αν είναι σε torpor (με critical win δεν ξυπνά)."
+  },
+  "ritual:web-of-hunger": {
+    "en": "Prick the tongues of 6 accomplices from your organisation of over 50 people to resist the Beckoning for another month. Level 2 if cast with Mithras' dagger, otherwise level 4.",
+    "el": "Τρυπάς τη γλώσσα 6 συνεργών από την οργάνωσή σου, που πρέπει να έχει πάνω από 50 μέλη, και αντέχεις το κάλεσμα του Beckoning για έναν ακόμα μήνα. Επίπεδο 2 με το μαχαίρι του Mithras, αλλιώς επίπεδο 4."
+  },
+  "ritual:creatio-ignis": {
+    "en": "Coat your arms in vitae (3 Rouse Checks if your own); later that night set it alight to burn harmlessly on your arms. Nearby vampires test terror frenzy and your touch deals 2 Aggravated damage. Ends at will or with the scene.",
+    "el": "Βουτάς τα χέρια σου σε αίμα βαμπίρ (3 Rouse Checks αν είναι δικό σου)· αργότερα τη νύχτα το ανάβεις και καίγεται στα χέρια σου χωρίς να σε βλάπτει. Τα κοντινά βαμπίρ ρίχνουν για terror frenzy και το άγγιγμά σου κάνει 2 Aggravated ζημιά."
+  },
+  "ritual:edens-bounty": {
+    "en": "Lay a corpse at a tree's foot with a fresh apple in its mouth and a rotten one in yours: blood of mortals up to 1 mile away slakes your Hunger to 1 (0 on a critical win). Those mortals lose 1 die on Physical rolls and take 1 Aggravated.",
+    "el": "Αφήνεις πτώμα στη ρίζα δέντρου με φρέσκο μήλο στο στόμα του και σάπιο στο δικό σου: αίμα θνητών έως 1 μίλι μακριά ρίχνει το Hunger σου στο 1 (0 σε critical win). Οι θνητοί αυτοί χάνουν 1 ζάρι στις ρίψεις Physical και παθαίνουν 1 Aggravated."
   }
 }

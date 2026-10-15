@@ -34,5 +34,85 @@
   "ceremony:lazarene-blessing": {
     "en": "Sacrifice a mortal, swap in a mammal heart and cover the eyes with powdered silver so a present wraith can inhabit the fresh corpse indefinitely, with the body's Physical traits and the wraith's mind.",
     "el": "Θυσιάζεις θνητό, βάζεις στη θέση της καρδιάς του καρδιά θηλαστικού και σκεπάζεις τα μάτια με ασημόσκονη ώστε ένα παρόν wraith να κατοικήσει επ' αόριστον το φρέσκο πτώμα, με τα Physical του σώματος και τον νου του wraith."
+  },
+  "ceremony:maw-of-ahriman": {
+    "en": "Turn your mouth (or another orifice) into a void until sunrise: things put in it are destroyed, you cannot speak, and bites add 1 Aggravated Willpower damage, but blood is lost so no Hunger is slaked. Ending it early costs 1 Superficial.",
+    "el": "Κάνεις το στόμα σου (ή άλλο άνοιγμα) κενό ως την ανατολή: ό,τι μπαίνει καταστρέφεται, δεν μιλάς και τα δαγκώματα προσθέτουν 1 Aggravated ζημιά Willpower, αλλά το αίμα χάνεται και δεν μειώνεις Hunger. Η πρόωρη λήξη κοστίζει 1 Superficial."
+  },
+  "ceremony:craft-flesh-golem": {
+    "en": "Stitch at least 3 corpses into a golem where the Veil is thin, with a preparation roll and then the Ceremony; its Strength equals the combined margin. It obeys you until the word carved in its mouth is destroyed.",
+    "el": "Ράβεις τουλάχιστον 3 πτώματα σε ένα golem σε σημείο όπου το Πέπλο είναι λεπτό, με ρίψη προετοιμασίας και μετά την Ceremony· το Strength του ισούται με το συνολικό margin. Σε υπακούει ώσπου να καταστραφεί η λέξη χαραγμένη στο στόμα του."
+  },
+  "ceremony:create-corpse-suit": {
+    "en": "Sew a half-aware garment of human skin that, if you convinced it to be loyal, prickles to warn you of danger, curses, wards and hostile monsters. Wearing it gives a Folkloric Bane and Block. Only fire, Blood Sorcery or Oblivion destroy it.",
+    "el": "Ράβεις μισοσυνειδητό ρούχο από ανθρώπινο δέρμα που, αν το έπεισες να σου είναι πιστό, σε τσιμπά για κίνδυνο, κατάρες, wards και εχθρικά τέρατα. Φορεμένο δίνει Folkloric Bane και Block. Το καταστρέφει μόνο φωτιά, Blood Sorcery ή Oblivion."
+  },
+  "ceremony:bind-to-mortal-form": {
+    "en": "Brand a mortal with an Oblivion-marked chain: +1 decade of life per success on Resolve + Oblivion (Difficulty 5), though they still age. A loss, or no grave offering within 3 nights, makes them age twice as fast. Repeats +1 Difficulty.",
+    "el": "Σημαδεύεις θνητό με αλυσίδα του Oblivion: +1 δεκαετία ζωής ανά επιτυχία σε Resolve + Oblivion (Difficulty 5), αλλά γερνά κανονικά. Αν χάσεις ή δεν πας προσφορά στον τάφο σε 3 νύχτες, γερνά διπλάσια γρήγορα. Κάθε επανάληψη +1 Difficulty."
+  },
+  "ceremony:gift-of-true-life": {
+    "en": "Bind two mortals wrist to wrist and move 10 years of life from one to the other every 5 minutes (1:1 if they are close, else 3 years per 10). The receiver ages at half speed. Stopping it takes Resolve + Oblivion at Difficulty 6.",
+    "el": "Δένεις δύο θνητούς καρπό με καρπό και μεταφέρεις 10 χρόνια ζωής από τον έναν στον άλλον κάθε 5 λεπτά (1:1 αν είναι δεμένοι, αλλιώς 3 χρόνια ανά 10). Ο αποδέκτης γερνά με μισή ταχύτητα. Για να σταματήσει: Resolve + Oblivion σε Difficulty 6."
+  },
+  "ceremony:blinding-the-alloy-eye": {
+    "en": "Bind a death-spirit to aluminum mesh; when you later pin it on, cameras scramble your image (but record all else) for a scene or until removed. Roll only on activation, ideally in secret.",
+    "el": "Δένεις ένα πνεύμα νεκρού σε αλουμινένιο πλέγμα· όταν αργότερα το φορέσεις, οι κάμερες χαλούν την εικόνα σου (όχι τα υπόλοιπα) για μία σκηνή ή ώσπου να το βγάλεις. Η ρίψη γίνεται στην ενεργοποίηση, ιδανικά κρυφά."
+  },
+  "ceremony:harrowhaunt": {
+    "en": "Bind the souls of mortals tortured to death to a site up to a 2-story building. Mortals inside test Composure + Resolve each turn or flee; vampires test for fear frenzy each scene there.",
+    "el": "Δένεις σε έναν χώρο, έως διώροφο κτίριο, τις ψυχές θνητών που βασανίστηκαν ως θανάτου. Οι θνητοί μέσα τεστάρουν Composure + Resolve κάθε γύρο ή φεύγουν· τα βαμπίρ τεστάρουν για frenzy φόβου κάθε σκηνή εκεί."
+  },
+  "ceremony:misfortunes-hand": {
+    "en": "Pour blood-laced molten lead over a token tied to a target's Background and bury it: it drops 1 dot (2 if the margin reaches its rating) for a week after a few nights; on a critical, at once and for a month.",
+    "el": "Χύνεις λιωμένο μόλυβδο με αίμα πάνω σε αντικείμενο δεμένο με ένα Background του στόχου και το θάβεις: χάνει 1 τελεία (2 αν το περιθώριο φτάσει τη βαθμολογία του) για μία εβδομάδα, ή αμέσως και για έναν μήνα σε critical."
+  },
+  "ceremony:the-shallow-slumber": {
+    "en": "Sigils on a vampire, even before torpor, lower their Blood Potency by 1 per margin success for torpor length and early waking, and raise Humanity as much for torpor length. A total failure lengthens torpor.",
+    "el": "Σύμβολα πάνω σε βαμπίρ, ακόμα και πριν το torpor, μειώνουν το Blood Potency του κατά 1 ανά επιτυχία περιθωρίου για τη διάρκεια torpor και το πρόωρο ξύπνημα, και ανεβάζουν ανάλογα το Humanity για τη διάρκεια. Total failure την αυξάνει."
+  },
+  "ceremony:befoul-vessel": {
+    "en": "Touch a mortal with your saliva: any vampire who feeds on them gains Hunger equal to what they would have slaked, risking frenzy. The mortal shows nothing and dies in their sleep the following night.",
+    "el": "Αγγίζεις θνητό με το σάλιο σου: όποιο βαμπίρ τραφεί από αυτόν αποκτά τόσο Hunger όσο θα μείωνε, με κίνδυνο frenzy. Ο θνητός δεν δείχνει τίποτα και πεθαίνει στον ύπνο του την επόμενη νύχτα."
+  },
+  "ceremony:the-knowing-stone": {
+    "en": "Write a dead person's true name in your vitae on a stone from a church or other holy site; if they exist as a ghost, you get a vision of where they are for the rest of the scene. Resolve + Oblivion (Difficulty 2).",
+    "el": "Γράφεις με το αίμα σου το αληθινό όνομα ενός νεκρού σε πέτρα από εκκλησία ή άλλο ιερό τόπο· αν υπάρχει ως φάντασμα, βλέπεις σε όραμα πού βρίσκεται ως το τέλος της σκηνής. Resolve + Oblivion (Difficulty 2)."
+  },
+  "ceremony:travelers-call": {
+    "en": "Holding your black book, call another Shalimite by name: they see flashing visions of where you are and may ignore them at -2 dice to concentration rolls for the scene. Difficulty 3; a critical win adds a one-word message.",
+    "el": "Με το μαύρο σου βιβλίο στο χέρι, καλείς άλλον Shalimite με το όνομά του: βλέπει οράματα του πού βρίσκεσαι και, αν τα αγνοήσει, έχει -2 ζάρια σε ρίψεις συγκέντρωσης για τη σκηνή. Difficulty 3· critical win στέλνει και μία λέξη."
+  },
+  "ceremony:ashen-relic": {
+    "en": "Quickly treat a destroyed vampire's decaying remains with salt and embalming herbs to keep a small part such as a fang or finger bone (a skull or femur with a margin of 3). It lasts until destroyed or sunlit.",
+    "el": "Αλείφεις γρήγορα τα λείψανα κατεστραμμένου βαμπίρ με αλάτι και βότανα ταρίχευσης και διατηρείς ένα μικρό κομμάτι, όπως δόντι ή κόκαλο δαχτύλου (κρανίο ή μηρό με margin 3). Μένει ώσπου να καταστραφεί ή να το δει ο ήλιος."
+  },
+  "ceremony:fortezza-sindonica": {
+    "en": "A steel chain ward that lasts a year and a day (3 Rouse Checks). When a wraith crosses it you roll against its Willpower: on a win it takes 3 Superficial damage, briefly turns visible and loses 2 dice while inside.",
+    "el": "Φύλαγμα με ατσάλινη αλυσίδα για έναν χρόνο και μία μέρα (3 Rouse Checks). Όταν φάντασμα τη διασχίζει, ρίχνεις εναντίον του Willpower του: με νίκη παθαίνει 3 Superficial ζημιά, γίνεται για λίγο ορατό και χάνει 2 ζάρια όσο μένει μέσα."
+  },
+  "ceremony:knit-the-veil": {
+    "en": "Light a rune-carved candle inside a bone-dust boundary up to a football field in size: the Shroud there becomes Impenetrable while it burns, up to your Oblivion in nights. -1 die per wraith present.",
+    "el": "Ανάβεις ένα κερί χαραγμένο με ρούνους μέσα σε όριο από σκόνη οστών, έως ένα γήπεδο ποδοσφαίρου: όσο καίει, το Shroud εκεί γίνεται Impenetrable, για τόσες νύχτες όσο το Oblivion σου. -1 ζάρι για κάθε φάντασμα εκεί."
+  },
+  "ceremony:name-of-the-father": {
+    "en": "With eye contact, chant in ancient Greek and crush charcoal, rolling vs Resolve + Composure. On a win, while near the victim you can paralyse them with despair, cut off from all senses but touch, for turns equal to the margin.",
+    "el": "Με οπτική επαφή ψέλνεις σε αρχαία ελληνικά και θρυμματίζεις κάρβουνα, ρίχνοντας εναντίον Resolve + Composure. Με νίκη, κοντά στο θύμα μπορείς να το παραλύσεις με απόγνωση, χωρίς καμία αίσθηση πέρα από την αφή, για γύρους ίσους με το margin."
+  },
+  "ceremony:wisdom-of-the-dead": {
+    "en": "Holding a dead person's head or skull, gain +2 dice until dawn on the Skill they knew best, plus one more Skill per margin, if theirs was higher. At dawn roll a die per boosted roll; any failure turns the skull to ash.",
+    "el": "Κρατώντας το κεφάλι ή το κρανίο ενός νεκρού, παίρνεις +2 ζάρια ως την αυγή στο Skill που ήξερε καλύτερα, και σε ένα ακόμα ανά margin, αν το είχε υψηλότερο. Την αυγή ρίχνεις ένα ζάρι ανά ενισχυμένη ρίψη· με αποτυχία το κρανίο γίνεται στάχτη."
+  },
+  "ceremony:death-rattle": {
+    "en": "Bind a nearby wraith's fetter to a target's belonging to make them live through the wraith's death, resisted by Composure + Resolve. Margin sets how vivid; a violent death deals the margin as Superficial Willpower damage (else 1).",
+    "el": "Ενώνεις το fetter κοντινού φαντάσματος με αντικείμενο του στόχου και τον κάνεις να ζήσει τον θάνατό του (αντίσταση Composure + Resolve). Το margin ορίζει την ένταση· βίαιος θάνατος δίνει ζημιά Willpower ίση με το margin (αλλιώς 1)."
+  },
+  "ceremony:ex-nihilo": {
+    "en": "Where Split the Shroud has made the Shroud absent this chapter, you and up to your successes in companions, masked, with your vitae on your feet and a coin in each hand, cross bodily into the Shadowlands. 3 Rouse Checks and 1 Willpower.",
+    "el": "Όπου το Split the Shroud έχει εξαφανίσει το Shroud σε αυτό το chapter, εσύ και σύντροφοι έως τις επιτυχίες σου, με μάσκες, αίμα σου στα πόδια και νόμισμα σε κάθε χέρι, περνάτε σωματικά στα Shadowlands. 3 Rouse Checks και 1 Willpower."
+  },
+  "ceremony:pit-of-contemplation": {
+    "en": "Paint a door in an unlit room with the blood of an innocent you murdered and splash ink on it: a hole draws those who fail Dexterity + Athletics (Difficulty 4) into a void. Mortals die; only you can free the rest.",
+    "el": "Ζωγραφίζεις πόρτα σε σκοτεινό δωμάτιο με το αίμα ενός αθώου που σκότωσες και ρίχνεις μελάνι: μια τρύπα ρουφά σε ένα κενό όσους αποτύχουν σε Dexterity + Athletics (Difficulty 4). Οι θνητοί πεθαίνουν· μόνο εσύ ελευθερώνεις τους υπόλοιπους."
   }
 }

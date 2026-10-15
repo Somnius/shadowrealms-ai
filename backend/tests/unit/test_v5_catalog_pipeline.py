@@ -648,3 +648,55 @@ def test_loresheets_vs_wiki():
     assert any("moon-court: wiki restriction 'Tremere only'" in x for x in out)
     assert any("'Sun Court'" in x and "not in the catalog" in x for x in out)
     assert any("star-court" in x and "not on the wiki" in x for x in out)
+
+
+# --------------------------------------------------------------------------- supplement powers (part F2)
+
+def _sup(text, h=12.0, page=40):
+    return L(text, h=h, page=page)
+
+
+def test_supplement_powers_parser_layouts():
+    lines = [
+        _sup("Invented chapter text runs on here.") for _ in range(6)
+    ] + [
+        _sup("New Moon", 38.6), _sup("Rituals", 38.6),          # two-line section heading
+        _sup("THE SCENE", 252.0),                                  # big art caption: skipped, not a section end
+        _sup("Level 1 Rituals", 19.3),
+        _sup("S ilver T ide", 19.6),                               # small caps set as 'S ilver T ide'
+        _sup("I ngredients : invented things"),                    # label with spaced capital and colon
+        _sup("S ystem : invented effect"),
+        _sup("Animalism", 19.5),                                   # a smaller Discipline heading
+        _sup("Level 2 Power", 22.3),                               # 'Level N Power'
+        _sup("Moon’sCall", 17.0),                                  # glued possessive
+        _sup("Prerequisite: Feral Whispers (Players"),
+        _sup("Guide, p. 9) or Sense the"),
+        _sup("Beast"),
+        _sup("Cost: One Rouse Check"),
+        _sup("Pool: Charisma + Animalism"),
+        _sup("System: invented"),
+    ]
+    recs, report = powers.parse(lines, supplement=True)
+    assert [(r["kind"], r["discipline"], r["level"], r["name"]) for r in recs] == [
+        ("ritual", "Blood Sorcery", 1, "Silver Tide"), ("power", "Animalism", 2, "Moon's Call")]
+    call = recs[1]
+    assert call["prerequisite_text"] == "Feral Whispers (Players Guide, p. 9) or Sense the Beast"
+    assert (call["rouse_cost"], call["rouse_cost_conditional"], call["dice_pool"]) == (1, False, "Charisma + Animalism")
+    # Tier-1 mode is unchanged: the small heading and 'Level 2 Power' are not read there
+    assert powers.parse(lines)[0] == []
+
+
+def test_supplement_start_section_and_prerequisite_references():
+    lines = [_sup("Level 3", 28.6), _sup("Concoct Fog", 20.0), _sup("Ingredients: invented"),
+             _sup("System: invented")]
+    recs, _ = powers.parse(lines, supplement=True, start=("formula", "Thin-Blood Alchemy"))
+    assert [(r["id"], r["level"]) for r in recs] == [("formula:concoct-fog", 3)]
+    report = []
+    ids = {"aura of decay": "power:oblivion:aura-of-decay", "necrotic plague": "power:oblivion:necrotic-plague",
+           "where the shroud thins": "power:oblivion:where-the-veil-thins"}
+    assert merge.resolve_prerequisite("Aura of Decay (Players Guide, p. 88) or Necrotic Plague (Players Guide, p. 89)",
+                                      ids, report, "x") == {"any_of": ["power:oblivion:aura-of-decay",
+                                                                        "power:oblivion:necrotic-plague"]}
+    assert merge.resolve_prerequisite("Where the Shroud Th ins", ids, report, "x") == {
+        "power_id": "power:oblivion:where-the-veil-thins"}
+    assert report == []

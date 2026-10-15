@@ -12,7 +12,12 @@
       "level": 1,
       "book": "v5-players-guide",
       "page": 92,
-      "also_in": [],
+      "also_in": [
+        {
+          "book": "v5-cults-of-the-blood-gods",
+          "page": 209
+        }
+      ],
       "aliases": [],
       "source": "pdf",
       "prerequisite": {
@@ -30,11 +35,76 @@
       "level": 1,
       "book": "v5-players-guide",
       "page": 92,
-      "also_in": [],
+      "also_in": [
+        {
+          "book": "v5-cults-of-the-blood-gods",
+          "page": 208
+        }
+      ],
       "aliases": [],
       "source": "pdf",
       "prerequisite": {
         "power_id": "power:oblivion:ashes-to-ashes"
+      },
+      "discipline": "discipline:oblivion"
+    },
+    {
+      "id": "ceremony:the-knowing-stone",
+      "name": "The Knowing Stone",
+      "desc": {
+        "en": "Write a dead person's true name in your vitae on a stone from a church or other holy site; if they exist as a ghost, you get a vision of where they are for the rest of the scene. Resolve + Oblivion (Difficulty 2).",
+        "el": "Γράφεις με το αίμα σου το αληθινό όνομα ενός νεκρού σε πέτρα από εκκλησία ή άλλο ιερό τόπο· αν υπάρχει ως φάντασμα, βλέπεις σε όραμα πού βρίσκεται ως το τέλος της σκηνής. Resolve + Oblivion (Difficulty 2)."
+      },
+      "level": 1,
+      "book": "v5-fall-of-london",
+      "page": 264,
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf",
+      "prerequisite": {
+        "any_of": [
+          "power:oblivion:ashes-to-ashes",
+          "power:oblivion:the-binding-fetter"
+        ]
+      },
+      "discipline": "discipline:oblivion"
+    },
+    {
+      "id": "ceremony:travelers-call",
+      "name": "Traveler's Call",
+      "desc": {
+        "en": "Holding your black book, call another Shalimite by name: they see flashing visions of where you are and may ignore them at -2 dice to concentration rolls for the scene. Difficulty 3; a critical win adds a one-word message.",
+        "el": "Με το μαύρο σου βιβλίο στο χέρι, καλείς άλλον Shalimite με το όνομά του: βλέπει οράματα του πού βρίσκεσαι και, αν τα αγνοήσει, έχει -2 ζάρια σε ρίψεις συγκέντρωσης για τη σκηνή. Difficulty 3· critical win στέλνει και μία λέξη."
+      },
+      "level": 1,
+      "book": "v5-cults-of-the-blood-gods",
+      "page": 93,
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf",
+      "prerequisite": {
+        "power_id": "power:oblivion:oblivions-sight"
+      },
+      "discipline": "discipline:oblivion"
+    },
+    {
+      "id": "ceremony:ashen-relic",
+      "name": "Ashen Relic",
+      "desc": {
+        "en": "Quickly treat a destroyed vampire's decaying remains with salt and embalming herbs to keep a small part such as a fang or finger bone (a skull or femur with a margin of 3). It lasts until destroyed or sunlit.",
+        "el": "Αλείφεις γρήγορα τα λείψανα κατεστραμμένου βαμπίρ με αλάτι και βότανα ταρίχευσης και διατηρείς ένα μικρό κομμάτι, όπως δόντι ή κόκαλο δαχτύλου (κρανίο ή μηρό με margin 3). Μένει ώσπου να καταστραφεί ή να το δει ο ήλιος."
+      },
+      "level": 2,
+      "book": "v5-nod-apocrypha",
+      "page": 35,
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf",
+      "prerequisite": {
+        "any_of": [
+          "power:oblivion:ashes-to-ashes",
+          "power:oblivion:oblivions-sight"
+        ]
       },
       "discipline": "discipline:oblivion"
     },
@@ -48,11 +118,34 @@
       "level": 2,
       "book": "v5-players-guide",
       "page": 93,
-      "also_in": [],
+      "also_in": [
+        {
+          "book": "v5-cults-of-the-blood-gods",
+          "page": 209
+        }
+      ],
       "aliases": [],
       "source": "pdf",
       "prerequisite": {
         "power_id": "power:oblivion:where-the-veil-thins"
+      },
+      "discipline": "discipline:oblivion"
+    },
+    {
+      "id": "ceremony:blinding-the-alloy-eye",
+      "name": "Blinding the Alloy Eye",
+      "desc": {
+        "en": "Bind a death-spirit to aluminum mesh; when you later pin it on, cameras scramble your image (but record all else) for a scene or until removed. Roll only on activation, ideally in secret.",
+        "el": "Δένεις ένα πνεύμα νεκρού σε αλουμινένιο πλέγμα· όταν αργότερα το φορέσεις, οι κάμερες χαλούν την εικόνα σου (όχι τα υπόλοιπα) για μία σκηνή ή ώσπου να το βγάλεις. Η ρίψη γίνεται στην ενεργοποίηση, ιδανικά κρυφά."
+      },
+      "level": 2,
+      "book": "v5-sabbat",
+      "page": 52,
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf",
+      "prerequisite": {
+        "power_id": "power:oblivion:shadow-cast"
       },
       "discipline": "discipline:oblivion"
     },
@@ -66,11 +159,110 @@
       "level": 2,
       "book": "v5-players-guide",
       "page": 94,
+      "also_in": [
+        {
+          "book": "v5-cults-of-the-blood-gods",
+          "page": 210
+        }
+      ],
+      "aliases": [],
+      "source": "pdf",
+      "prerequisite": {
+        "power_id": "power:oblivion:where-the-veil-thins"
+      },
+      "discipline": "discipline:oblivion"
+    },
+    {
+      "id": "ceremony:maw-of-ahriman",
+      "name": "Maw of Ahriman",
+      "desc": {
+        "en": "Turn your mouth (or another orifice) into a void until sunrise: things put in it are destroyed, you cannot speak, and bites add 1 Aggravated Willpower damage, but blood is lost so no Hunger is slaked. Ending it early costs 1 Superficial.",
+        "el": "Κάνεις το στόμα σου (ή άλλο άνοιγμα) κενό ως την ανατολή: ό,τι μπαίνει καταστρέφεται, δεν μιλάς και τα δαγκώματα προσθέτουν 1 Aggravated ζημιά Willpower, αλλά το αίμα χάνεται και δεν μειώνεις Hunger. Η πρόωρη λήξη κοστίζει 1 Superficial."
+      },
+      "level": 2,
+      "book": "v5-blood-stained-love",
+      "page": 152,
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf",
+      "prerequisite": null,
+      "discipline": "discipline:oblivion"
+    },
+    {
+      "id": "ceremony:craft-flesh-golem",
+      "name": "Craft Flesh Golem",
+      "desc": {
+        "en": "Stitch at least 3 corpses into a golem where the Veil is thin, with a preparation roll and then the Ceremony; its Strength equals the combined margin. It obeys you until the word carved in its mouth is destroyed.",
+        "el": "Ράβεις τουλάχιστον 3 πτώματα σε ένα golem σε σημείο όπου το Πέπλο είναι λεπτό, με ρίψη προετοιμασίας και μετά την Ceremony· το Strength του ισούται με το συνολικό margin. Σε υπακούει ώσπου να καταστραφεί η λέξη χαραγμένη στο στόμα του."
+      },
+      "level": 3,
+      "book": "v5-tattered-facade",
+      "page": 101,
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf",
+      "prerequisite": {
+        "any_of": [
+          "power:oblivion:aura-of-decay",
+          "power:oblivion:necrotic-plague"
+        ]
+      },
+      "discipline": "discipline:oblivion"
+    },
+    {
+      "id": "ceremony:create-corpse-suit",
+      "name": "Create Corpse Suit",
+      "desc": {
+        "en": "Sew a half-aware garment of human skin that, if you convinced it to be loyal, prickles to warn you of danger, curses, wards and hostile monsters. Wearing it gives a Folkloric Bane and Block. Only fire, Blood Sorcery or Oblivion destroy it.",
+        "el": "Ράβεις μισοσυνειδητό ρούχο από ανθρώπινο δέρμα που, αν το έπεισες να σου είναι πιστό, σε τσιμπά για κίνδυνο, κατάρες, wards και εχθρικά τέρατα. Φορεμένο δίνει Folkloric Bane και Block. Το καταστρέφει μόνο φωτιά, Blood Sorcery ή Oblivion."
+      },
+      "level": 3,
+      "book": "v5-tattered-facade",
+      "page": 101,
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf",
+      "prerequisite": {
+        "any_of": [
+          "power:oblivion:shadow-perspective",
+          "power:oblivion:touch-of-oblivion"
+        ]
+      },
+      "discipline": "discipline:oblivion"
+    },
+    {
+      "id": "ceremony:fortezza-sindonica",
+      "name": "Fortezza Sindonica",
+      "desc": {
+        "en": "A steel chain ward that lasts a year and a day (3 Rouse Checks). When a wraith crosses it you roll against its Willpower: on a win it takes 3 Superficial damage, briefly turns visible and loses 2 dice while inside.",
+        "el": "Φύλαγμα με ατσάλινη αλυσίδα για έναν χρόνο και μία μέρα (3 Rouse Checks). Όταν φάντασμα τη διασχίζει, ρίχνεις εναντίον του Willpower του: με νίκη παθαίνει 3 Superficial ζημιά, γίνεται για λίγο ορατό και χάνει 2 ζάρια όσο μένει μέσα."
+      },
+      "level": 3,
+      "book": "v5-trails-of-ash-and-bone",
+      "page": 173,
       "also_in": [],
       "aliases": [],
       "source": "pdf",
       "prerequisite": {
         "power_id": "power:oblivion:where-the-veil-thins"
+      },
+      "discipline": "discipline:oblivion"
+    },
+    {
+      "id": "ceremony:harrowhaunt",
+      "name": "Harrowhaunt",
+      "desc": {
+        "en": "Bind the souls of mortals tortured to death to a site up to a 2-story building. Mortals inside test Composure + Resolve each turn or flee; vampires test for fear frenzy each scene there.",
+        "el": "Δένεις σε έναν χώρο, έως διώροφο κτίριο, τις ψυχές θνητών που βασανίστηκαν ως θανάτου. Οι θνητοί μέσα τεστάρουν Composure + Resolve κάθε γύρο ή φεύγουν· τα βαμπίρ τεστάρουν για frenzy φόβου κάθε σκηνή εκεί."
+      },
+      "level": 3,
+      "book": "v5-sabbat",
+      "page": 52,
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf",
+      "prerequisite": {
+        "power_id": "power:oblivion:aura-of-decay"
       },
       "discipline": "discipline:oblivion"
     },
@@ -84,11 +276,73 @@
       "level": 3,
       "book": "v5-players-guide",
       "page": 94,
-      "also_in": [],
+      "also_in": [
+        {
+          "book": "v5-cults-of-the-blood-gods",
+          "page": 211
+        }
+      ],
       "aliases": [],
       "source": "pdf",
       "prerequisite": {
         "power_id": "power:oblivion:aura-of-decay"
+      },
+      "discipline": "discipline:oblivion"
+    },
+    {
+      "id": "ceremony:knit-the-veil",
+      "name": "Knit the Veil",
+      "desc": {
+        "en": "Light a rune-carved candle inside a bone-dust boundary up to a football field in size: the Shroud there becomes Impenetrable while it burns, up to your Oblivion in nights. -1 die per wraith present.",
+        "el": "Ανάβεις ένα κερί χαραγμένο με ρούνους μέσα σε όριο από σκόνη οστών, έως ένα γήπεδο ποδοσφαίρου: όσο καίει, το Shroud εκεί γίνεται Impenetrable, για τόσες νύχτες όσο το Oblivion σου. -1 ζάρι για κάθε φάντασμα εκεί."
+      },
+      "level": 3,
+      "book": "v5-trails-of-ash-and-bone",
+      "page": 174,
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf",
+      "prerequisite": {
+        "power_id": "power:oblivion:where-the-veil-thins"
+      },
+      "discipline": "discipline:oblivion"
+    },
+    {
+      "id": "ceremony:misfortunes-hand",
+      "name": "Misfortune's Hand",
+      "desc": {
+        "en": "Pour blood-laced molten lead over a token tied to a target's Background and bury it: it drops 1 dot (2 if the margin reaches its rating) for a week after a few nights; on a critical, at once and for a month.",
+        "el": "Χύνεις λιωμένο μόλυβδο με αίμα πάνω σε αντικείμενο δεμένο με ένα Background του στόχου και το θάβεις: χάνει 1 τελεία (2 αν το περιθώριο φτάσει τη βαθμολογία του) για μία εβδομάδα, ή αμέσως και για έναν μήνα σε critical."
+      },
+      "level": 3,
+      "book": "v5-courts-of-the-damned",
+      "page": 217,
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf",
+      "prerequisite": {
+        "any_of": [
+          "power:oblivion:shadow-servant",
+          "power:oblivion:touch-of-oblivion"
+        ]
+      },
+      "discipline": "discipline:oblivion"
+    },
+    {
+      "id": "ceremony:name-of-the-father",
+      "name": "Name of the Father",
+      "desc": {
+        "en": "With eye contact, chant in ancient Greek and crush charcoal, rolling vs Resolve + Composure. On a win, while near the victim you can paralyse them with despair, cut off from all senses but touch, for turns equal to the margin.",
+        "el": "Με οπτική επαφή ψέλνεις σε αρχαία ελληνικά και θρυμματίζεις κάρβουνα, ρίχνοντας εναντίον Resolve + Composure. Με νίκη, κοντά στο θύμα μπορείς να το παραλύσεις με απόγνωση, χωρίς καμία αίσθηση πέρα από την αφή, για γύρους ίσους με το margin."
+      },
+      "level": 3,
+      "book": "v5-cults-of-the-blood-gods",
+      "page": 94,
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf",
+      "prerequisite": {
+        "power_id": "power:oblivion:shadow-perspective"
       },
       "discipline": "discipline:oblivion"
     },
@@ -102,12 +356,75 @@
       "level": 3,
       "book": "v5-players-guide",
       "page": 95,
-      "also_in": [],
+      "also_in": [
+        {
+          "book": "v5-cults-of-the-blood-gods",
+          "page": 212
+        }
+      ],
       "aliases": [],
       "source": "pdf",
       "prerequisite": {
         "power_id": "power:oblivion:aura-of-decay"
       },
+      "discipline": "discipline:oblivion"
+    },
+    {
+      "id": "ceremony:the-shallow-slumber",
+      "name": "The Shallow Slumber",
+      "desc": {
+        "en": "Sigils on a vampire, even before torpor, lower their Blood Potency by 1 per margin success for torpor length and early waking, and raise Humanity as much for torpor length. A total failure lengthens torpor.",
+        "el": "Σύμβολα πάνω σε βαμπίρ, ακόμα και πριν το torpor, μειώνουν το Blood Potency του κατά 1 ανά επιτυχία περιθωρίου για τη διάρκεια torpor και το πρόωρο ξύπνημα, και ανεβάζουν ανάλογα το Humanity για τη διάρκεια. Total failure την αυξάνει."
+      },
+      "level": 3,
+      "book": "v5-gehenna-war",
+      "page": 50,
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf",
+      "prerequisite": {
+        "any_of": [
+          "power:oblivion:passion-feast",
+          "power:oblivion:touch-of-oblivion"
+        ]
+      },
+      "discipline": "discipline:oblivion"
+    },
+    {
+      "id": "ceremony:wisdom-of-the-dead",
+      "name": "Wisdom of the Dead",
+      "desc": {
+        "en": "Holding a dead person's head or skull, gain +2 dice until dawn on the Skill they knew best, plus one more Skill per margin, if theirs was higher. At dawn roll a die per boosted roll; any failure turns the skull to ash.",
+        "el": "Κρατώντας το κεφάλι ή το κρανίο ενός νεκρού, παίρνεις +2 ζάρια ως την αυγή στο Skill που ήξερε καλύτερα, και σε ένα ακόμα ανά margin, αν το είχε υψηλότερο. Την αυγή ρίχνεις ένα ζάρι ανά ενισχυμένη ρίψη· με αποτυχία το κρανίο γίνεται στάχτη."
+      },
+      "level": 3,
+      "book": "v5-nod-apocrypha",
+      "page": 35,
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf",
+      "prerequisite": {
+        "any_of": [
+          "power:oblivion:oblivions-sight",
+          "power:oblivion:where-the-veil-thins"
+        ]
+      },
+      "discipline": "discipline:oblivion"
+    },
+    {
+      "id": "ceremony:befoul-vessel",
+      "name": "Befoul Vessel",
+      "desc": {
+        "en": "Touch a mortal with your saliva: any vampire who feeds on them gains Hunger equal to what they would have slaked, risking frenzy. The mortal shows nothing and dies in their sleep the following night.",
+        "el": "Αγγίζεις θνητό με το σάλιο σου: όποιο βαμπίρ τραφεί από αυτόν αποκτά τόσο Hunger όσο θα μείωνε, με κίνδυνο frenzy. Ο θνητός δεν δείχνει τίποτα και πεθαίνει στον ύπνο του την επόμενη νύχτα."
+      },
+      "level": 4,
+      "book": "v5-sabbat",
+      "page": 52,
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf",
+      "prerequisite": null,
       "discipline": "discipline:oblivion"
     },
     {
@@ -120,11 +437,55 @@
       "level": 4,
       "book": "v5-players-guide",
       "page": 96,
-      "also_in": [],
+      "also_in": [
+        {
+          "book": "v5-cults-of-the-blood-gods",
+          "page": 212
+        }
+      ],
       "aliases": [],
       "source": "pdf",
       "prerequisite": {
         "power_id": "power:oblivion:necrotic-plague"
+      },
+      "discipline": "discipline:oblivion"
+    },
+    {
+      "id": "ceremony:bind-to-mortal-form",
+      "name": "Bind to Mortal Form",
+      "desc": {
+        "en": "Brand a mortal with an Oblivion-marked chain: +1 decade of life per success on Resolve + Oblivion (Difficulty 5), though they still age. A loss, or no grave offering within 3 nights, makes them age twice as fast. Repeats +1 Difficulty.",
+        "el": "Σημαδεύεις θνητό με αλυσίδα του Oblivion: +1 δεκαετία ζωής ανά επιτυχία σε Resolve + Oblivion (Difficulty 5), αλλά γερνά κανονικά. Αν χάσεις ή δεν πας προσφορά στον τάφο σε 3 νύχτες, γερνά διπλάσια γρήγορα. Κάθε επανάληψη +1 Difficulty."
+      },
+      "level": 4,
+      "book": "v5-tattered-facade",
+      "page": 102,
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf",
+      "prerequisite": {
+        "any_of": [
+          "power:oblivion:necrotic-plague",
+          "power:oblivion:skuld-fulfilled"
+        ]
+      },
+      "discipline": "discipline:oblivion"
+    },
+    {
+      "id": "ceremony:death-rattle",
+      "name": "Death Rattle",
+      "desc": {
+        "en": "Bind a nearby wraith's fetter to a target's belonging to make them live through the wraith's death, resisted by Composure + Resolve. Margin sets how vivid; a violent death deals the margin as Superficial Willpower damage (else 1).",
+        "el": "Ενώνεις το fetter κοντινού φαντάσματος με αντικείμενο του στόχου και τον κάνεις να ζήσει τον θάνατό του (αντίσταση Composure + Resolve). Το margin ορίζει την ένταση· βίαιος θάνατος δίνει ζημιά Willpower ίση με το margin (αλλιώς 1)."
+      },
+      "level": 4,
+      "book": "v5-trails-of-ash-and-bone",
+      "page": 174,
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf",
+      "prerequisite": {
+        "power_id": "power:oblivion:fatal-prediction"
       },
       "discipline": "discipline:oblivion"
     },
@@ -138,11 +499,57 @@
       "level": 4,
       "book": "v5-players-guide",
       "page": 96,
+      "also_in": [
+        {
+          "book": "v5-cults-of-the-blood-gods",
+          "page": 213
+        }
+      ],
+      "aliases": [
+        "Split the Shroud"
+      ],
+      "source": "pdf",
+      "prerequisite": {
+        "power_id": "power:oblivion:necrotic-plague"
+      },
+      "discipline": "discipline:oblivion"
+    },
+    {
+      "id": "ceremony:ex-nihilo",
+      "name": "Ex Nihilo",
+      "desc": {
+        "en": "Where Split the Shroud has made the Shroud absent this chapter, you and up to your successes in companions, masked, with your vitae on your feet and a coin in each hand, cross bodily into the Shadowlands. 3 Rouse Checks and 1 Willpower.",
+        "el": "Όπου το Split the Shroud έχει εξαφανίσει το Shroud σε αυτό το chapter, εσύ και σύντροφοι έως τις επιτυχίες σου, με μάσκες, αίμα σου στα πόδια και νόμισμα σε κάθε χέρι, περνάτε σωματικά στα Shadowlands. 3 Rouse Checks και 1 Willpower."
+      },
+      "level": 5,
+      "book": "v5-cults-of-the-blood-gods",
+      "page": 213,
       "also_in": [],
       "aliases": [],
       "source": "pdf",
       "prerequisite": {
-        "power_id": "power:oblivion:necrotic-plague"
+        "power_id": "power:oblivion:withering-spirit"
+      },
+      "discipline": "discipline:oblivion"
+    },
+    {
+      "id": "ceremony:gift-of-true-life",
+      "name": "Gift of True Life",
+      "desc": {
+        "en": "Bind two mortals wrist to wrist and move 10 years of life from one to the other every 5 minutes (1:1 if they are close, else 3 years per 10). The receiver ages at half speed. Stopping it takes Resolve + Oblivion at Difficulty 6.",
+        "el": "Δένεις δύο θνητούς καρπό με καρπό και μεταφέρεις 10 χρόνια ζωής από τον έναν στον άλλον κάθε 5 λεπτά (1:1 αν είναι δεμένοι, αλλιώς 3 χρόνια ανά 10). Ο αποδέκτης γερνά με μισή ταχύτητα. Για να σταματήσει: Resolve + Oblivion σε Difficulty 6."
+      },
+      "level": 5,
+      "book": "v5-tattered-facade",
+      "page": 102,
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf",
+      "prerequisite": {
+        "any_of": [
+          "power:oblivion:necrotic-plague",
+          "power:oblivion:passion-feast"
+        ]
       },
       "discipline": "discipline:oblivion"
     },
@@ -156,11 +563,34 @@
       "level": 5,
       "book": "v5-players-guide",
       "page": 97,
-      "also_in": [],
+      "also_in": [
+        {
+          "book": "v5-cults-of-the-blood-gods",
+          "page": 214
+        }
+      ],
       "aliases": [],
       "source": "pdf",
       "prerequisite": {
         "power_id": "power:oblivion:skuld-fulfilled"
+      },
+      "discipline": "discipline:oblivion"
+    },
+    {
+      "id": "ceremony:pit-of-contemplation",
+      "name": "Pit of Contemplation",
+      "desc": {
+        "en": "Paint a door in an unlit room with the blood of an innocent you murdered and splash ink on it: a hole draws those who fail Dexterity + Athletics (Difficulty 4) into a void. Mortals die; only you can free the rest.",
+        "el": "Ζωγραφίζεις πόρτα σε σκοτεινό δωμάτιο με το αίμα ενός αθώου που σκότωσες και ρίχνεις μελάνι: μια τρύπα ρουφά σε ένα κενό όσους αποτύχουν σε Dexterity + Athletics (Difficulty 4). Οι θνητοί πεθαίνουν· μόνο εσύ ελευθερώνεις τους υπόλοιπους."
+      },
+      "level": 5,
+      "book": "v5-cults-of-the-blood-gods",
+      "page": 94,
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf",
+      "prerequisite": {
+        "power_id": "power:oblivion:tenebrous-avatar"
       },
       "discipline": "discipline:oblivion"
     }

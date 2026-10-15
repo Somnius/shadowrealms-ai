@@ -77,8 +77,9 @@ def test_counts(data):
     assert len(_entries(data, "clans")) == 16
     assert len(_entries(data, "disciplines")) == 12
     assert len(_entries(data, "predator_types")) == 18
-    assert len(_entries(data, "advantages")) == 170
+    assert len(_entries(data, "advantages")) == 279
     assert len(_entries(data, "loresheets")) == 157
+    assert [len(_entries(data, n)) for n in ("rituals", "ceremonies", "formulae")] == [109, 29, 48]
     lore_books = [e["book"] for e in _entries(data, "loresheets")]
     assert (lore_books.count("v5-corebook"), lore_books.count("v5-players-guide")) == (25, 7)
     assert {b: lore_books.count(b) for b in sorted(set(lore_books)) if b not in ("v5-corebook", "v5-players-guide")} == {
@@ -123,7 +124,9 @@ def test_players_guide_powers_with_apostrophes(data):
     assert (favor["book"], favor["page"], favor["also_in"]) == (
         "v5-players-guide", 74, [{"book": "v5-companion", "page": 25}])
     assert powers["power:animalism:quell-the-beast"]["dice_pool"] == "Charisma + Animalism vs Stamina + Resolve"
-    assert sum(len(d["powers"]) for d in _entries(data, "disciplines")) == 145
+    assert sum(len(d["powers"]) for d in _entries(data, "disciplines")) == 210
+    assert sum(1 for d in _entries(data, "disciplines") for p in d["powers"]
+               if p["book"] in ("v5-corebook", "v5-players-guide", "v5-companion")) == 145
 
 
 def test_power_levels_and_split_grants(data):
@@ -152,9 +155,9 @@ def _has_desc(holder: dict) -> bool:
 
 
 def test_advantage_descriptions(data):
-    """All 170 Merits, Backgrounds and Flaws carry EN + EL."""
+    """All 279 Merits, Backgrounds and Flaws carry EN + EL."""
     adv = _entries(data, "advantages")
-    assert len(adv) == 170
+    assert len(adv) == 279
     assert [e["id"] for e in adv if not _has_desc(e)] == []
 
 
@@ -275,3 +278,58 @@ def test_anarch_loresheets_are_online_facts_only(data):
         assert all(lv["name"] is None for lv in e["levels"]), e["id"]
     hesha = next(e for e in anarch if e["name"] == "Hesha Ruhadze")
     assert [lv.get("clans_only") for lv in hesha["levels"]] == [None, None, None, ["clan:ministry"], ["clan:ministry"]]
+
+
+def test_supplement_powers_rituals_ceremonies_formulae(data):
+    powers = {p["id"]: p for d in _entries(data, "disciplines") for p in d["powers"]}
+    rituals = {e["id"]: e for e in _entries(data, "rituals")}
+    ceremonies = {e["id"]: e for e in _entries(data, "ceremonies")}
+    formulae = {e["id"]: e for e in _entries(data, "formulae")}
+    # Tier-1 keeps a power the supplements reprint; a PG rename keeps the old name as an alias
+    veil = powers["power:oblivion:where-the-veil-thins"]
+    assert veil["book"] == "v5-players-guide" and "Where the Shroud Thins" in veil["aliases"]
+    assert {"book": "v5-cults-of-the-blood-gods", "page": 205} in veil["also_in"]
+    assert "Fatal Precognition" in powers["power:oblivion:fatal-prediction"]["aliases"]
+    assert "Split the Shroud" in ceremonies["ceremony:split-the-veil"]["aliases"]
+    # a Cults-only power stays a Cults entry
+    assert powers["power:oblivion:withering-spirit"]["book"] == "v5-cults-of-the-blood-gods"
+    # Blood Sigils: the Koldunic Sorcery power (Tzimisce) and the rituals that need it
+    kold = powers["power:blood-sorcery:koldunic-sorcery"]
+    assert (kold["level"], kold["clans_only"], kold["source"]) == (1, ["clan:tzimisce"], "manual")
+    koldunic = sorted(e["id"] for e in rituals.values() if e["koldunic"])
+    assert koldunic == ["ritual:elemental-attack", "ritual:elemental-grasp", "ritual:elemental-shelter"]
+    assert rituals["ritual:elemental-grasp"]["prerequisite"] == {"power_id": "power:blood-sorcery:koldunic-sorcery"}
+    # a formula that needs another formula (Cults' Ashfinders)
+    assert formulae["formula:chemically-induced-flashback"]["prerequisite"] == {"formula_id": "formula:concoct-ashe"}
+    # prerequisites printed with book references and line breaks resolve
+    assert ceremonies["ceremony:craft-flesh-golem"]["prerequisite"] == {
+        "any_of": ["power:oblivion:aura-of-decay", "power:oblivion:necrotic-plague"]}
+    assert ceremonies["ceremony:travelers-call"]["prerequisite"] == {"power_id": "power:oblivion:oblivions-sight"}
+    # a prerequisite that names no power printed anywhere is left out, not guessed (Sabbat: Necrotic Touch)
+    assert ceremonies["ceremony:befoul-vessel"]["prerequisite"] is None
+    # Let the Streets Run Red prints the level under the title (Herd Ward: level 1 or 3, kept at 1)
+    assert (rituals["ritual:sleep-of-judas"]["level"], rituals["ritual:herd-ward"]["level"]) == (3, 1)
+    assert rituals["ritual:le-sang-de-lamour"]["name"] == "Le Sang de l'Amour"
+    assert {e["book"] for e in list(rituals.values()) + list(ceremonies.values()) + list(formulae.values())} >= {
+        "v5-blood-sigils", "v5-sabbat", "v5-gehenna-war", "v5-tattered-facade", "v5-chicago-folios"}
+
+
+def test_supplement_advantages(data):
+    adv = {e["id"]: e for e in _entries(data, "advantages")}
+    new = [e for e in adv.values() if e["book"] not in ("v5-corebook", "v5-players-guide", "v5-companion")]
+    assert len(new) == 109 and all(e["source"] == "manual" for e in new)
+    # Succubus Club's Influencer (Fame) and the Ashfinders' Influencer are two Merits
+    assert (adv["merit:influencer"]["book"], adv["merit:influencer"]["requires"]) == ("v5-succubus-club", "Fame ••+")
+    assert adv["merit:influencer-ashfinders"]["name"] == "Influencer"
+    # Gehenna War prints no dot glyphs: ratings read from the rendered pages
+    assert adv["merit:bonds-of-fealty"]["dots"] == {"min": 3, "max": 3}
+    assert adv["merit:sins-of-the-fathers"]["dots"] == {"allowed": [2, 3]}
+    assert adv["merit:up-all-night"]["dots"] == {"allowed": [2, 4]}
+    assert adv["merit:up-all-night"]["cannot_buy_for"][0]["clan"] == "clan:nosferatu"
+    assert adv["flaw:groveling-worm"]["excludes"] == ["merit:penitence"]
+    assert adv["merit:object-of-power"]["requires"] == "ancilla or older"
+    assert adv["merit:memories-of-the-fallen"]["clans_only"] == ["clan:thin-blood"]
+    assert not adv["merit:memories-of-the-fallen"]["thin_blood"]
+    ingrained = [e for e in new if e["group"] == "Discipline"]
+    assert len(ingrained) == 11 and all(e["kind"] == "flaw" and e["dots"] is None for e in ingrained)
+    assert all(e["coterie"] for e in new if e["group"] in ("Domain", "Influence (Church)"))

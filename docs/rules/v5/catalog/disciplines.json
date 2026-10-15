@@ -95,6 +95,47 @@
           "dice_pool": "Manipulation + Animalism, Charisma + Animalism"
         },
         {
+          "id": "power:animalism:leash-the-beast",
+          "name": "Leash the Beast",
+          "desc": {
+            "en": "Rouse once to turn a 10 on a normal die into a 9, or twice to turn a 1 on a Hunger die into a 2. It can also make a failed normal die (1-5) on a roll to resist frenzy a 6. Rousing past Hunger 5 sets off a hunger frenzy.",
+            "el": "Με 1 Rouse Check κάνεις 9 ένα 10 κανονικού ζαριού, με 2 κάνεις 2 ένα 1 σε ζάρι Hunger. Κάνει επίσης 6 ένα αποτυχημένο κανονικό ζάρι (1-5) σε ρίψη αντίστασης σε frenzy. Αν ξεπεράσεις το Hunger 5, πέφτεις αμέσως σε hunger frenzy."
+          },
+          "level": 2,
+          "book": "v5-succubus-club",
+          "page": 27,
+          "also_in": [],
+          "aliases": [],
+          "source": "pdf",
+          "prerequisite": null,
+          "amalgam": {
+            "discipline": "discipline:fortitude",
+            "level": 1
+          },
+          "rouse_cost": null,
+          "rouse_cost_conditional": false,
+          "dice_pool": null
+        },
+        {
+          "id": "power:animalism:tracing-the-blood",
+          "name": "Tracing the Blood",
+          "desc": {
+            "en": "For a scene, sense vampires within your senses Rousing the Blood and roughly where they are (Difficulty 3). Margin 1 shows whether a Discipline was used and which, margin 2+ the exact power; a critical win reveals who.",
+            "el": "Για μία σκηνή νιώθεις όταν βαμπίρ κοντά σου κάνουν Rouse και περίπου πού βρίσκονται (Difficulty 3). Με περιθώριο 1 μαθαίνεις αν ήταν Discipline και ποια, με 2+ την ακριβή δύναμη· σε critical win και ποιος ήταν."
+          },
+          "level": 2,
+          "book": "v5-courts-of-the-damned",
+          "page": 214,
+          "also_in": [],
+          "aliases": [],
+          "source": "pdf",
+          "prerequisite": null,
+          "amalgam": null,
+          "rouse_cost": 1,
+          "rouse_cost_conditional": false,
+          "dice_pool": "Resolve + Animalism"
+        },
+        {
           "id": "power:animalism:animal-succulence",
           "name": "Animal Succulence",
           "desc": {
@@ -112,6 +153,50 @@
           "rouse_cost": 0,
           "rouse_cost_conditional": false,
           "dice_pool": null
+        },
+        {
+          "id": "power:animalism:augury",
+          "name": "Augury",
+          "desc": {
+            "en": "Feed a swarm, flock or school food laced with your Blood so it forms an image answering one question about anyone or anything in the city. Each use adds +1 Difficulty to your Animalism on living things this session.",
+            "el": "Δίνεις σε σμήνος εντόμων ή πουλιών ή σε κοπάδι ψαριών τροφή με το αίμα σου και σχηματίζει εικόνα που απαντά σε μία ερώτηση για κάποιον ή κάτι στην πόλη. Κάθε χρήση δίνει +1 Difficulty στο Animalism σου σε ζωντανά πλάσματα για το session."
+          },
+          "level": 3,
+          "book": "v5-tattered-facade",
+          "page": 89,
+          "also_in": [],
+          "aliases": [],
+          "source": "pdf",
+          "prerequisite": null,
+          "amalgam": {
+            "discipline": "discipline:auspex",
+            "level": 1
+          },
+          "rouse_cost": 1,
+          "rouse_cost_conditional": false,
+          "dice_pool": "Manipulation + Animalism"
+        },
+        {
+          "id": "power:animalism:awaken-the-parasite",
+          "name": "Awaken the Parasite",
+          "desc": {
+            "en": "Parasite eggs hatch in a nearby victim: -1 die to Social and Mental pools, -2 to all pools at margin 1, and at margin 2+ a mortal dies while others take -2 dice, 2 unhalved Superficial and go mute. Vs Humanity (mortals Stamina + Wits).",
+            "el": "Αυγά παρασίτων εκκολάπτονται σε κοντινό θύμα: -1 ζάρι σε Social και Mental pools, -2 σε όλα με margin 1· με margin 2+ ο θνητός πεθαίνει, οι άλλοι -2 ζάρια, 2 Superficial χωρίς μείωση και βουβαμάρα. Κατά Humanity (θνητοί Stamina + Wits)."
+          },
+          "level": 3,
+          "book": "v5-tattered-facade",
+          "page": 90,
+          "also_in": [],
+          "aliases": [],
+          "source": "pdf",
+          "prerequisite": null,
+          "manual_fields": [
+            "name"
+          ],
+          "amalgam": null,
+          "rouse_cost": 1,
+          "rouse_cost_conditional": false,
+          "dice_pool": "Resolve + Animalism"
         },
         {
           "id": "power:animalism:messengers-command",
@@ -184,6 +269,25 @@
           "rouse_cost": 1,
           "rouse_cost_conditional": false,
           "dice_pool": "Charisma + Animalism vs Stamina + Resolve"
+        },
+        {
+          "id": "power:animalism:scent-of-prey",
+          "name": "Scent of Prey",
+          "desc": {
+            "en": "Sniff out and track one mortal per success who has seen a Masquerade breach, nearest first, for a scene (a night on a critical win). Useless on mortals used to vampires, such as ghouls or hunters.",
+            "el": "Μυρίζεις και ακολουθείς έναν θνητό ανά επιτυχία που είδε παραβίαση της Masquerade, πρώτα τον πιο κοντινό, για μία σκηνή (μία νύχτα σε critical win). Δεν πιάνει θνητούς συνηθισμένους στα βαμπίρ, όπως ghoul ή κυνηγούς."
+          },
+          "level": 3,
+          "book": "v5-sabbat",
+          "page": 47,
+          "also_in": [],
+          "aliases": [],
+          "source": "pdf",
+          "prerequisite": null,
+          "amalgam": null,
+          "rouse_cost": 1,
+          "rouse_cost_conditional": false,
+          "dice_pool": "Resolve + Animalism"
         },
         {
           "id": "power:animalism:unliving-hive",
@@ -301,6 +405,27 @@
           "rouse_cost": 1,
           "rouse_cost_conditional": false,
           "dice_pool": "Wits + Animalism vs Composure + Resolve"
+        },
+        {
+          "id": "power:animalism:spirit-walk",
+          "name": "Spirit Walk",
+          "desc": {
+            "en": "Subsume the Spirit always lasts indefinitely, as on a critical, and you can use it again from inside an animal to hop from beast to beast without returning to your body. Subsume the Spirit's own cost still applies.",
+            "el": "Το Subsume the Spirit διαρκεί πάντα επ' αόριστον, σαν σε critical, και μπορείς να το ξαναχρησιμοποιήσεις μέσα από ζώο, περνώντας από θηρίο σε θηρίο χωρίς να γυρίσεις στο σώμα σου. Το κόστος του Subsume the Spirit μένει."
+          },
+          "level": 5,
+          "book": "v5-gehenna-war",
+          "page": 46,
+          "also_in": [],
+          "aliases": [],
+          "source": "pdf",
+          "prerequisite": {
+            "power_id": "power:animalism:subsume-the-spirit"
+          },
+          "amalgam": null,
+          "rouse_cost": 0,
+          "rouse_cost_conditional": true,
+          "dice_pool": null
         }
       ]
     },
@@ -421,6 +546,28 @@
           "dice_pool": "Intelligence + Auspex vs Composure + Subterfuge"
         },
         {
+          "id": "power:auspex:unerring-pursuit",
+          "name": "Unerring Pursuit",
+          "desc": {
+            "en": "After meeting the target's eyes, for 1 night plus 1 per margin success, spend a turn to see where they last saw their own reflection. Obfuscate does not block it; they may glimpse you behind them (Wits + Awareness, Difficulty 4).",
+            "el": "Αφού κοιτάξεις τον στόχο στα μάτια, για 1 νύχτα συν 1 ανά επιτυχία περιθωρίου, με έναν γύρο βλέπεις πού είδε τελευταία την αντανάκλασή του. Το Obfuscate δεν προστατεύει· ίσως σε δει πίσω του (Wits + Awareness, Difficulty 4)."
+          },
+          "level": 2,
+          "book": "v5-sabbat",
+          "page": 46,
+          "also_in": [],
+          "aliases": [],
+          "source": "pdf",
+          "prerequisite": null,
+          "amalgam": {
+            "discipline": "discipline:dominate",
+            "level": 1
+          },
+          "rouse_cost": 1,
+          "rouse_cost_conditional": false,
+          "dice_pool": "Resolve + Auspex"
+        },
+        {
           "id": "power:auspex:fatal-flaw",
           "name": "Fatal Flaw",
           "desc": {
@@ -441,6 +588,66 @@
           "rouse_cost": 1,
           "rouse_cost_conditional": false,
           "dice_pool": "Intelligence + Auspex vs Composure or Stamina + Subterfuge"
+        },
+        {
+          "id": "power:auspex:haruspex",
+          "name": "Haruspex",
+          "desc": {
+            "en": "Desecrate a mortal who died this scene to read their final insight: on a win, once before dawn you may reroll a whole dice pool and keep the better result (3 pools on a critical). Difficulty 3, bonus dice if you did the killing.",
+            "el": "Βεβηλώνεις θνητό που πέθανε σε αυτή τη σκηνή και διαβάζεις την τελευταία του διορατικότητα: μία φορά ως την αυγή ξαναρίχνεις ολόκληρο pool και κρατάς το καλύτερο (3 pools σε critical). Difficulty 3, επιπλέον ζάρια αν τον σκότωσες εσύ."
+          },
+          "level": 3,
+          "book": "v5-tattered-facade",
+          "page": 91,
+          "also_in": [],
+          "aliases": [],
+          "source": "pdf",
+          "prerequisite": null,
+          "amalgam": {
+            "discipline": "discipline:oblivion",
+            "level": 1
+          },
+          "rouse_cost": 1,
+          "rouse_cost_conditional": false,
+          "dice_pool": "Resolve + Auspex"
+        },
+        {
+          "id": "power:auspex:read-the-room",
+          "name": "Read the Room",
+          "desc": {
+            "en": "Silently pose a question to a crowd and learn its rough overall answer, like a vague poll. Difficulty 5 for 12 people, 1 lower per extra 12 (minimum 2); a critical win tracks how opinion shifts for the scene.",
+            "el": "Θέτεις νοερά μια ερώτηση σε ένα πλήθος και μαθαίνεις τη γενική του διάθεση, σαν αόριστη δημοσκόπηση. Difficulty 5 για 12 άτομα, 1 λιγότερο ανά επιπλέον 12 (ελάχιστο 2)· σε critical win βλέπεις τις αλλαγές για τη σκηνή."
+          },
+          "level": 3,
+          "book": "v5-courts-of-the-damned",
+          "page": 214,
+          "also_in": [],
+          "aliases": [],
+          "source": "pdf",
+          "prerequisite": null,
+          "amalgam": null,
+          "rouse_cost": 1,
+          "rouse_cost_conditional": false,
+          "dice_pool": "Intelligence + Auspex"
+        },
+        {
+          "id": "power:auspex:reveal-the-invisible-leash",
+          "name": "Reveal the Invisible Leash",
+          "desc": {
+            "en": "While touching the target, learn who in the room they see as their most immediate superior, if anyone. Every 2 points of margin name one more, moving outward from the nearest to the most distant.",
+            "el": "Όσο αγγίζεις τον στόχο, μαθαίνεις ποιον στο δωμάτιο θεωρεί άμεσο ανώτερό του, αν υπάρχει. Κάθε 2 πόντοι περιθωρίου δείχνουν έναν ακόμα, από τον πιο άμεσο προς τον πιο μακρινό."
+          },
+          "level": 3,
+          "book": "v5-courts-of-the-damned",
+          "page": 214,
+          "also_in": [],
+          "aliases": [],
+          "source": "pdf",
+          "prerequisite": null,
+          "amalgam": null,
+          "rouse_cost": 1,
+          "rouse_cost_conditional": false,
+          "dice_pool": "Intelligence + Auspex vs Composure + Resolve"
         },
         {
           "id": "power:auspex:scry-the-soul",
@@ -479,6 +686,47 @@
           "rouse_cost": 1,
           "rouse_cost_conditional": false,
           "dice_pool": "Resolve + Auspex"
+        },
+        {
+          "id": "power:auspex:vermin-vision",
+          "name": "Vermin Vision",
+          "desc": {
+            "en": "See and hear through a group of small creatures such as rats, mice or cockroaches, jumping from one animal to another as you like. Lasts one scene.",
+            "el": "Βλέπεις και ακούς μέσα από μια ομάδα μικρών ζώων, όπως αρουραίους, ποντίκια ή κατσαρίδες, περνώντας από το ένα ζώο στο άλλο όπως θέλεις. Διαρκεί μία σκηνή."
+          },
+          "level": 3,
+          "book": "v5-fall-of-london",
+          "page": 30,
+          "also_in": [],
+          "aliases": [],
+          "source": "pdf",
+          "prerequisite": null,
+          "amalgam": {
+            "discipline": "discipline:animalism",
+            "level": 2
+          },
+          "rouse_cost": 1,
+          "rouse_cost_conditional": false,
+          "dice_pool": "Resolve + Animalism"
+        },
+        {
+          "id": "power:auspex:heart-laid-bare",
+          "name": "Heart Laid Bare",
+          "desc": {
+            "en": "After a few minutes of talk, learn what a target most fears or desires: a vague notion at margin 1-2, something specific at 3-5, a full picture with its history at 6+. Unaware mortals do not resist.",
+            "el": "Μετά από λίγα λεπτά κουβέντας μαθαίνεις τι φοβάται ή τι επιθυμεί περισσότερο ο στόχος: γενική ιδέα με margin 1-2, κάτι συγκεκριμένο με 3-5, πλήρη εικόνα με το ιστορικό της με 6+. Ανυποψίαστοι θνητοί δεν αντιστέκονται."
+          },
+          "level": 4,
+          "book": "v5-tattered-facade",
+          "page": 91,
+          "also_in": [],
+          "aliases": [],
+          "source": "pdf",
+          "prerequisite": null,
+          "amalgam": null,
+          "rouse_cost": 1,
+          "rouse_cost_conditional": false,
+          "dice_pool": "Intelligence + Auspex vs Composure + Subterfuge"
         },
         {
           "id": "power:auspex:spirits-touch",
@@ -640,6 +888,71 @@
           "dice_pool": null
         },
         {
+          "id": "power:blood-sorcery:koldunic-sorcery",
+          "name": "Koldunic Sorcery",
+          "desc": {
+            "en": "Taken with the first Blood Sorcery dot; bonds you to one element (take it again per extra element). For a scene, sense through it: each Aggravated Health damage you take, up to your Blood Sorcery, widens the range from 15 m to 8 km.",
+            "el": "Παίρνεται με την πρώτη τελεία Blood Sorcery· σε δένει με ένα στοιχείο (ξανά για κάθε άλλο). Για μία σκηνή νιώθεις μέσω αυτού· κάθε Aggravated ζημιά Health που δέχεσαι, ως το Blood Sorcery σου, απλώνει την εμβέλεια από 15 μ. ως 8 χλμ."
+          },
+          "level": 1,
+          "book": "v5-blood-sigils",
+          "page": 61,
+          "also_in": [],
+          "aliases": [],
+          "source": "manual",
+          "prerequisite": null,
+          "clans_only": [
+            "clan:tzimisce"
+          ],
+          "amalgam": null,
+          "rouse_cost": 1,
+          "rouse_cost_conditional": false,
+          "dice_pool": null
+        },
+        {
+          "id": "power:blood-sorcery:shape-the-sanguine-sacrament",
+          "name": "Shape the Sanguine Sacrament",
+          "desc": {
+            "en": "Make spilled blood or vitae flow into a chosen shape, sign or image for the scene, Difficulty 2 for a simple word up to 6 for a complex sigil; a critical lets you reshape it at will. Free, or 1 Rouse Check with your own Blood.",
+            "el": "Κάνεις χυμένο αίμα ή vitae να πάρει σχήμα, σύμβολο ή εικόνα της επιλογής σου για τη σκηνή, από Difficulty 2 για απλή λέξη ως 6 για σύνθετο σιγίλ· σε critical το αλλάζεις κατά βούληση. Δωρεάν, ή 1 Rouse Check με το δικό σου αίμα."
+          },
+          "level": 1,
+          "book": "v5-tattered-facade",
+          "page": 92,
+          "also_in": [
+            {
+              "book": "v5-nod-apocrypha",
+              "page": 33
+            }
+          ],
+          "aliases": [],
+          "source": "pdf",
+          "prerequisite": null,
+          "amalgam": null,
+          "rouse_cost": 0,
+          "rouse_cost_conditional": true,
+          "dice_pool": "Manipulation + Blood Sorcery"
+        },
+        {
+          "id": "power:blood-sorcery:bloods-curse",
+          "name": "Blood's Curse",
+          "desc": {
+            "en": "Thicken a vampire's or ghoul's Blood until dawn: +2 Blood Potency (+4 on a critical win) for Bane severity and feeding penalty only. A ghoul, Caitiff or thin-blood gains a clan Bane set by the Storyteller.",
+            "el": "Πυκνώνεις το αίμα βαμπίρ ή ghoul ως την αυγή: +2 Blood Potency (+4 σε critical win) μόνο για την ένταση του Bane και την ποινή όταν τρέφεται. Ghoul, Caitiff ή thin-blood αποκτά Bane clan που ορίζει ο Storyteller."
+          },
+          "level": 2,
+          "book": "v5-gehenna-war",
+          "page": 48,
+          "also_in": [],
+          "aliases": [],
+          "source": "pdf",
+          "prerequisite": null,
+          "amalgam": null,
+          "rouse_cost": 1,
+          "rouse_cost_conditional": false,
+          "dice_pool": "Intelligence + Blood Sorcery vs Stamina + Occult or Fortitude"
+        },
+        {
           "id": "power:blood-sorcery:extinguish-vitae",
           "name": "Extinguish Vitae",
           "desc": {
@@ -668,12 +981,36 @@
           "level": 2,
           "book": "v5-players-guide",
           "page": 98,
-          "also_in": [],
+          "also_in": [
+            {
+              "book": "v5-nod-apocrypha",
+              "page": 34
+            }
+          ],
           "aliases": [],
           "source": "pdf",
           "prerequisite": null,
           "amalgam": null,
           "rouse_cost": 1,
+          "rouse_cost_conditional": false,
+          "dice_pool": null
+        },
+        {
+          "id": "power:blood-sorcery:vinculum-magnum",
+          "name": "Vinculum Magnum",
+          "desc": {
+            "en": "You can hold more Kindred in a Blood Bond: your limit rises by your Blood Sorcery rating. No benefit if you cannot bond vampires at all, as with the Tremere Bane or as a thin-blood.",
+            "el": "Προσθέτεις τη βαθμολογία σου στο Blood Sorcery στον αριθμό των Kindred που μπορείς να δέσεις με Blood Bond. Δεν ωφελεί αν δεν μπορείς να δέσεις βαμπίρ, όπως με το Bane των Tremere ή ως thin-blood."
+          },
+          "level": 2,
+          "book": "v5-courts-of-the-damned",
+          "page": 214,
+          "also_in": [],
+          "aliases": [],
+          "source": "pdf",
+          "prerequisite": null,
+          "amalgam": null,
+          "rouse_cost": 0,
           "rouse_cost_conditional": false,
           "dice_pool": null
         },
@@ -697,6 +1034,25 @@
           "dice_pool": "Resolve + Blood Sorcery"
         },
         {
+          "id": "power:blood-sorcery:ripples-of-the-heart",
+          "name": "Ripples of the Heart",
+          "desc": {
+            "en": "Taint your own Blood or that of someone you feed on with a Compulsion of your choice that strikes the next Kindred to drink it, for up to a month. Or lower its Resonance one step, or raise fleeting to intense.",
+            "el": "Μολύνεις το αίμα σου ή εκείνου από τον οποίο τρέφεσαι με ένα Compulsion της επιλογής σου, που πλήττει τον επόμενο Kindred που θα το πιει, για έως έναν μήνα. Ή ρίχνεις το Resonance του κατά ένα βήμα, ή ανεβάζεις fleeting σε intense."
+          },
+          "level": 3,
+          "book": "v5-blood-stained-love",
+          "page": 153,
+          "also_in": [],
+          "aliases": [],
+          "source": "pdf",
+          "prerequisite": null,
+          "amalgam": null,
+          "rouse_cost": 1,
+          "rouse_cost_conditional": false,
+          "dice_pool": null
+        },
+        {
           "id": "power:blood-sorcery:scorpions-touch",
           "name": "Scorpion's Touch",
           "desc": {
@@ -716,6 +1072,25 @@
           "dice_pool": "Strength + Blood Sorcery vs Stamina + Occult or Fortitude"
         },
         {
+          "id": "power:blood-sorcery:transitive-bond",
+          "name": "Transitive Bond",
+          "desc": {
+            "en": "Each use lets 3 Rouse Checks' worth of your Blood, stored or given to a ghoul, keep its bonding power: whoever drinks it, or from that ghoul, is bound to you, unaware of it until they first see you.",
+            "el": "Κάθε χρήση κάνει 3 Rouse Check αίματός σου, αποθηκευμένο ή δοσμένο σε ghoul, να κρατά τη δύναμη δεσίματος: όποιος το πιει, ή πιει από εκείνο το ghoul, δένεται σε σένα με Blood Bond χωρίς να το ξέρει ώσπου να σε δει."
+          },
+          "level": 3,
+          "book": "v5-sabbat",
+          "page": 49,
+          "also_in": [],
+          "aliases": [],
+          "source": "pdf",
+          "prerequisite": null,
+          "amalgam": null,
+          "rouse_cost": 1,
+          "rouse_cost_conditional": false,
+          "dice_pool": null
+        },
+        {
           "id": "power:blood-sorcery:blood-aegis",
           "name": "Blood Aegis",
           "desc": {
@@ -733,6 +1108,46 @@
           "rouse_cost": 1,
           "rouse_cost_conditional": true,
           "dice_pool": null
+        },
+        {
+          "id": "power:blood-sorcery:fulminating-vitae",
+          "name": "Fulminating Vitae",
+          "desc": {
+            "en": "Seal your Blood in a vial that stays armed until dawn; broken, it bursts across about 20 feet, dealing Aggravated damage to Kindred equal to the margin vs Wits + Athletics (Superficial to mortals). Anyone hit counts as having tasted it.",
+            "el": "Σφραγίζεις το αίμα σου σε φιαλίδιο, οπλισμένο ως την αυγή· αν σπάσει, εκρήγνυται σε περίπου 20 πόδια με Aggravated ζημιά σε Kindred ίση με το margin εναντίον Wits + Athletics (Superficial σε θνητούς). Όποιος χτυπηθεί, το έχει γευτεί."
+          },
+          "level": 4,
+          "book": "v5-tattered-facade",
+          "page": 92,
+          "also_in": [],
+          "aliases": [],
+          "source": "pdf",
+          "prerequisite": null,
+          "amalgam": null,
+          "rouse_cost": 2,
+          "rouse_cost_conditional": false,
+          "dice_pool": "Stamina + Blood Sorcery"
+        },
+        {
+          "id": "power:blood-sorcery:marionette",
+          "name": "Marionette",
+          "desc": {
+            "en": "Puppet the blood of a living body, a corpse or a spill, one turn per point of margin, acting with Manipulation + Blood Sorcery. The living resist with Stamina + Occult (or Fortitude) and can break free a turn for 1 Aggravated. Not vampires.",
+            "el": "Κινείς σαν μαριονέτα το αίμα ζωντανού, πτώματος ή λίμνης αίματος, έναν γύρο ανά πόντο margin, με Manipulation + Blood Sorcery. Οι ζωντανοί αντιστέκονται με Stamina + Occult (ή Fortitude), ξεφεύγουν έναν γύρο με 1 Aggravated. Όχι βαμπίρ."
+          },
+          "level": 4,
+          "book": "v5-tattered-facade",
+          "page": 93,
+          "also_in": [],
+          "aliases": [],
+          "source": "pdf",
+          "prerequisite": {
+            "power_id": "power:blood-sorcery:shape-the-sanguine-sacrament"
+          },
+          "amalgam": null,
+          "rouse_cost": 1,
+          "rouse_cost_conditional": false,
+          "dice_pool": "Manipulation + Blood Sorcery"
         },
         {
           "id": "power:blood-sorcery:theft-of-vitae",
@@ -790,6 +1205,25 @@
           "rouse_cost": 1,
           "rouse_cost_conditional": true,
           "dice_pool": "Resolve + Blood Sorcery vs Composure + Occult or Fortitude"
+        },
+        {
+          "id": "power:blood-sorcery:reclamation-of-vitae",
+          "name": "Reclamation of Vitae",
+          "desc": {
+            "en": "Concentrate for a turn to call your Blood back from any of your ghouls, at any distance: you slake 2 Hunger per ghoul and each takes 5 Aggravated damage. No Rouse Check; costs Stains for a non-Sabbat user.",
+            "el": "Συγκεντρώνεσαι έναν γύρο και ανακαλείς το αίμα σου από όποια ghoul σου διαλέξεις, σε όποια απόσταση: μειώνεις 2 Hunger ανά ghoul και το καθένα παθαίνει 5 Aggravated ζημιά. Χωρίς Rouse Check· φέρνει Stains εκτός Sabbat."
+          },
+          "level": 5,
+          "book": "v5-sabbat",
+          "page": 50,
+          "also_in": [],
+          "aliases": [],
+          "source": "pdf",
+          "prerequisite": null,
+          "amalgam": null,
+          "rouse_cost": null,
+          "rouse_cost_conditional": false,
+          "dice_pool": null
         }
       ],
       "rituals": "rituals",
@@ -822,6 +1256,25 @@
           "level": 1,
           "book": "v5-corebook",
           "page": 252,
+          "also_in": [],
+          "aliases": [],
+          "source": "pdf",
+          "prerequisite": null,
+          "amalgam": null,
+          "rouse_cost": 0,
+          "rouse_cost_conditional": false,
+          "dice_pool": null
+        },
+        {
+          "id": "power:celerity:fluent-swiftness",
+          "name": "Fluent Swiftness",
+          "desc": {
+            "en": "When you Blood Surge a Dexterity or Celerity test, you may reroll the Rouse Check.",
+            "el": "Όταν κάνεις Blood Surge σε τεστ Dexterity ή Celerity, μπορείς να ξαναρίξεις το Rouse Check."
+          },
+          "level": 1,
+          "book": "v5-gehenna-war",
+          "page": 46,
           "also_in": [],
           "aliases": [],
           "source": "pdf",
@@ -879,6 +1332,25 @@
           "level": 2,
           "book": "v5-players-guide",
           "page": 72,
+          "also_in": [],
+          "aliases": [],
+          "source": "pdf",
+          "prerequisite": null,
+          "amalgam": null,
+          "rouse_cost": 1,
+          "rouse_cost_conditional": false,
+          "dice_pool": null
+        },
+        {
+          "id": "power:celerity:a-thousand-cuts",
+          "name": "A Thousand Cuts",
+          "desc": {
+            "en": "Add your Celerity rating to one Brawl or Melee attack with claws or a blade. A mortal takes Superficial damage but is left Impaired; the spray forces hunger frenzy tests at Hunger 3+. Kindred are barely hurt but left a Masquerade breach.",
+            "el": "Προσθέτεις το Celerity σου σε μία επίθεση Brawl ή Melee με νύχια ή λεπίδα. Ο θνητός παίρνει Superficial αλλά μένει Impaired, και το πιτσίλισμα φέρνει ρίψεις hunger frenzy σε Hunger 3+. Σε Kindred δεν βλάπτει πολύ, αλλά σπάει τη Masquerade."
+          },
+          "level": 3,
+          "book": "v5-tattered-facade",
+          "page": 96,
           "also_in": [],
           "aliases": [],
           "source": "pdf",
@@ -980,6 +1452,27 @@
           "aliases": [],
           "source": "pdf",
           "prerequisite": null,
+          "amalgam": null,
+          "rouse_cost": 1,
+          "rouse_cost_conditional": false,
+          "dice_pool": null
+        },
+        {
+          "id": "power:celerity:faster-than-light",
+          "name": "Faster Than Light",
+          "desc": {
+            "en": "With 1 extra Rouse Check, a Blink carries you through patches of sunlight or fire without harm. Stopping inside them or stumbling there hurts as usual, and frenzy checks and other side effects still apply.",
+            "el": "Με 1 επιπλέον Rouse Check, ένα Blink σε περνά μέσα από λωρίδες ηλιακού φωτός ή φωτιάς χωρίς ζημιά. Αν σταματήσεις μέσα τους ή σκοντάψεις εκεί, παθαίνεις ζημιά κανονικά, και οι ρίψεις frenzy και οι άλλες συνέπειες ισχύουν."
+          },
+          "level": 4,
+          "book": "v5-succubus-club",
+          "page": 27,
+          "also_in": [],
+          "aliases": [],
+          "source": "pdf",
+          "prerequisite": {
+            "power_id": "power:celerity:blink"
+          },
           "amalgam": null,
           "rouse_cost": 1,
           "rouse_cost_conditional": false,
@@ -1130,7 +1623,12 @@
           "level": 1,
           "book": "v5-players-guide",
           "page": 73,
-          "also_in": [],
+          "also_in": [
+            {
+              "book": "v5-cults-of-the-blood-gods",
+              "page": 104
+            }
+          ],
           "aliases": [],
           "source": "pdf",
           "prerequisite": null,
@@ -1208,6 +1706,46 @@
           "dice_pool": "Manipulation + Dominate vs Intelligence + Resolve"
         },
         {
+          "id": "power:dominate:the-stolen-voice",
+          "name": "The Stolen Voice",
+          "desc": {
+            "en": "With eye contact, strip a victim of every way to communicate for a scene: their voice is silent, their writing unreadable, their signs garbled, even blows on a wall are mute. Mortals get no roll; others resist with Resolve + Performance.",
+            "el": "Με οπτική επαφή στερείς από το θύμα κάθε τρόπο επικοινωνίας για μία σκηνή: η φωνή του δεν ακούγεται, ό,τι γράφει δεν διαβάζεται, οι χειρονομίες του μπερδεύονται. Οι θνητοί δεν ρίχνουν· οι άλλοι αντιστέκονται με Resolve + Performance."
+          },
+          "level": 2,
+          "book": "v5-tattered-facade",
+          "page": 96,
+          "also_in": [],
+          "aliases": [],
+          "source": "pdf",
+          "prerequisite": null,
+          "amalgam": null,
+          "rouse_cost": 1,
+          "rouse_cost_conditional": false,
+          "dice_pool": "Composure + Dominate vs Resolve + Performance"
+        },
+        {
+          "id": "power:dominate:chain-of-command",
+          "name": "Chain of Command",
+          "desc": {
+            "en": "Right after a Mesmerize order, Rouse again: the target handles more complex tasks and recruits help, adding your Dominate rating to Social tests to win others over for that goal. Those helpers are not compelled.",
+            "el": "Αμέσως μετά από εντολή Mesmerize κάνεις ακόμα ένα Rouse Check: ο στόχος χειρίζεται πιο σύνθετες εργασίες και βρίσκει βοηθούς, προσθέτοντας το Dominate σου σε Social τεστ γι' αυτόν τον σκοπό. Οι βοηθοί δεν εξαναγκάζονται."
+          },
+          "level": 3,
+          "book": "v5-courts-of-the-damned",
+          "page": 215,
+          "also_in": [],
+          "aliases": [],
+          "source": "pdf",
+          "prerequisite": {
+            "power_id": "power:dominate:mesmerize"
+          },
+          "amalgam": null,
+          "rouse_cost": 1,
+          "rouse_cost_conditional": false,
+          "dice_pool": null
+        },
+        {
           "id": "power:dominate:submerged-directive",
           "name": "Submerged Directive",
           "desc": {
@@ -1255,7 +1793,12 @@
           "level": 4,
           "book": "v5-players-guide",
           "page": 74,
-          "also_in": [],
+          "also_in": [
+            {
+              "book": "v5-cults-of-the-blood-gods",
+              "page": 104
+            }
+          ],
           "aliases": [],
           "source": "pdf",
           "prerequisite": {
@@ -1311,6 +1854,49 @@
           "dice_pool": null
         },
         {
+          "id": "power:dominate:tabula-rasa",
+          "name": "Tabula Rasa",
+          "desc": {
+            "en": "Over a scene of uninterrupted extended contest needing 10 successes, erase a restrained victim's memories, identity, Convictions, Touchstones and Ambition for good; Attributes, Skills and Disciplines stay. Merits Stains.",
+            "el": "Σε μία σκηνή αδιάκοπης εκτεταμένης αναμέτρησης με 10 επιτυχίες, σβήνεις μόνιμα μνήμες, ταυτότητα, Convictions, Touchstones και Ambition ενός ακινητοποιημένου θύματος· Attributes, Skills και Disciplines μένουν. Φέρνει Stains."
+          },
+          "level": 4,
+          "book": "v5-sabbat",
+          "page": 47,
+          "also_in": [],
+          "aliases": [],
+          "source": "pdf",
+          "prerequisite": null,
+          "amalgam": null,
+          "rouse_cost": 2,
+          "rouse_cost_conditional": false,
+          "dice_pool": "Resolve + Dominate vs Composure + Resolve"
+        },
+        {
+          "id": "power:dominate:lethes-call",
+          "name": "Lethe's Call",
+          "desc": {
+            "en": "Wipe up to a week of a target's memories per margin success; unprepared mortals cannot resist. With a spoken command, erase only one person or event from that span instead. Lasts indefinitely.",
+            "el": "Σβήνεις έως μία εβδομάδα μνήμης του στόχου ανά επιτυχία περιθωρίου· οι απροετοίμαστοι θνητοί δεν αντιστέκονται. Με προφορική εντολή σβήνεις αντί γι' αυτό μόνο ένα πρόσωπο ή γεγονός της περιόδου. Διαρκεί επ' αόριστον."
+          },
+          "level": 5,
+          "book": "v5-gehenna-war",
+          "page": 46,
+          "also_in": [],
+          "aliases": [],
+          "source": "pdf",
+          "prerequisite": {
+            "any_of": [
+              "power:dominate:cloud-memory",
+              "power:dominate:the-forgetful-mind"
+            ]
+          },
+          "amalgam": null,
+          "rouse_cost": 1,
+          "rouse_cost_conditional": false,
+          "dice_pool": "Manipulation + Dominate vs Intelligence + Resolve"
+        },
+        {
           "id": "power:dominate:mass-manipulation",
           "name": "Mass Manipulation",
           "desc": {
@@ -1361,6 +1947,25 @@
       "page": 258,
       "source": "pdf",
       "powers": [
+        {
+          "id": "power:fortitude:fluent-endurance",
+          "name": "Fluent Endurance",
+          "desc": {
+            "en": "When you Blood Surge a Stamina or Fortitude test, you may reroll the Rouse Check.",
+            "el": "Όταν κάνεις Blood Surge σε τεστ Stamina ή Fortitude, μπορείς να ξαναρίξεις το Rouse Check."
+          },
+          "level": 1,
+          "book": "v5-gehenna-war",
+          "page": 46,
+          "also_in": [],
+          "aliases": [],
+          "source": "pdf",
+          "prerequisite": null,
+          "amalgam": null,
+          "rouse_cost": 0,
+          "rouse_cost_conditional": false,
+          "dice_pool": null
+        },
         {
           "id": "power:fortitude:resilience",
           "name": "Resilience",
@@ -1463,6 +2068,27 @@
           "dice_pool": null
         },
         {
+          "id": "power:fortitude:self-assurance",
+          "name": "Self-Assurance",
+          "desc": {
+            "en": "In social combat, soak Superficial Willpower damage up to your Fortitude rating without touching your Willpower. You may burn what is left to cancel one Aggravated social attack, but then it cannot be renewed that scene.",
+            "el": "Σε κοινωνική σύγκρουση απορροφάς Superficial ζημιά Willpower έως το Fortitude σου χωρίς να αγγίζεται το Willpower σου. Μπορείς να ξοδέψεις ό,τι απομένει για να ακυρώσεις μία Aggravated κοινωνική επίθεση, αλλά τότε δεν ανανεώνεται στη σκηνή."
+          },
+          "level": 2,
+          "book": "v5-succubus-club",
+          "page": 27,
+          "also_in": [],
+          "aliases": [],
+          "source": "pdf",
+          "prerequisite": {
+            "power_id": "power:fortitude:unswayable-mind"
+          },
+          "amalgam": null,
+          "rouse_cost": 1,
+          "rouse_cost_conditional": false,
+          "dice_pool": null
+        },
+        {
           "id": "power:fortitude:toughness",
           "name": "Toughness",
           "desc": {
@@ -1478,6 +2104,25 @@
           "prerequisite": null,
           "amalgam": null,
           "rouse_cost": 1,
+          "rouse_cost_conditional": false,
+          "dice_pool": null
+        },
+        {
+          "id": "power:fortitude:calloused-soul",
+          "name": "Calloused Soul",
+          "desc": {
+            "en": "Commit a planned atrocity with at least 3 mortal deaths, taking 3 Stains (a Conviction can lessen one). For the rest of the night you gain no further Stains, and diablerie costs at most 1 Humanity.",
+            "el": "Διαπράττεις μελετημένη θηριωδία με τουλάχιστον 3 νεκρούς θνητούς και παίρνεις 3 Stains (ένα Conviction μετριάζει το ένα). Για την υπόλοιπη νύχτα δεν παίρνεις άλλα Stains και η diablerie σού κοστίζει το πολύ 1 Humanity."
+          },
+          "level": 3,
+          "book": "v5-tattered-facade",
+          "page": 97,
+          "also_in": [],
+          "aliases": [],
+          "source": "pdf",
+          "prerequisite": null,
+          "amalgam": null,
+          "rouse_cost": null,
           "rouse_cost_conditional": false,
           "dice_pool": null
         },
@@ -1516,6 +2161,25 @@
           "prerequisite": null,
           "amalgam": null,
           "rouse_cost": 0,
+          "rouse_cost_conditional": false,
+          "dice_pool": null
+        },
+        {
+          "id": "power:fortitude:seal-the-beasts-maw",
+          "name": "Seal the Beast's Maw",
+          "desc": {
+            "en": "Ignore the effects of Hunger for the rest of the scene, but every dice pool loses half your Hunger (rounded up), 1 more die if Hunger rises; a pool cut to 0 means a roll to resist fury frenzy.",
+            "el": "Αγνοείς τις συνέπειες του Hunger για την υπόλοιπη σκηνή, αλλά κάθε pool χάνει ζάρια ίσα με το μισό Hunger (προς τα πάνω), 1 ακόμα αν ανέβει το Hunger· αν ένα pool πέσει στο 0, ρίχνεις κατά του fury frenzy."
+          },
+          "level": 3,
+          "book": "v5-forbidden-religions",
+          "page": 44,
+          "also_in": [],
+          "aliases": [],
+          "source": "pdf",
+          "prerequisite": null,
+          "amalgam": null,
+          "rouse_cost": 2,
           "rouse_cost_conditional": false,
           "dice_pool": null
         },
@@ -1604,6 +2268,25 @@
           "dice_pool": null
         },
         {
+          "id": "power:fortitude:meat-shields",
+          "name": "Meat Shields",
+          "desc": {
+            "en": "Near weak, sick or wounded mortals, gain Fortitude dots equal to half their number (rounded down, up to 5) for pools and effects, not new powers. Lasts a scene or until you leave them; mortals who tasted vitae do not count.",
+            "el": "Κοντά σε αδύναμους, άρρωστους ή τραυματισμένους θνητούς κερδίζεις τελείες Fortitude ίσες με τους μισούς (προς τα κάτω, ως 5) για pools και επιδράσεις, όχι νέες δυνάμεις. Μία σκηνή ή ώσπου να φύγεις· όσοι ήπιαν vitae δεν μετρούν."
+          },
+          "level": 5,
+          "book": "v5-tattered-facade",
+          "page": 98,
+          "also_in": [],
+          "aliases": [],
+          "source": "pdf",
+          "prerequisite": null,
+          "amalgam": null,
+          "rouse_cost": 1,
+          "rouse_cost_conditional": false,
+          "dice_pool": null
+        },
+        {
           "id": "power:fortitude:prowess-from-pain",
           "name": "Prowess from Pain",
           "desc": {
@@ -1655,6 +2338,44 @@
           "dice_pool": null
         },
         {
+          "id": "power:obfuscate:ensconce",
+          "name": "Ensconce",
+          "desc": {
+            "en": "For a scene, hide as many small hand-held objects on you as your Obfuscate rating: mortals overlook them, even in a search. Supernatural senses such as Sense the Unseen may spot them; nothing in plain view.",
+            "el": "Για μία σκηνή κρύβεις πάνω σου τόσα μικρά αντικείμενα χεριού όσο το Obfuscate σου: οι θνητοί τα αγνοούν, ακόμα και σε έρευνα. Υπερφυσικές αισθήσεις όπως το Sense the Unseen ίσως τα δουν· όχι αντικείμενα σε κοινή θέα."
+          },
+          "level": 1,
+          "book": "v5-gehenna-war",
+          "page": 46,
+          "also_in": [],
+          "aliases": [],
+          "source": "pdf",
+          "prerequisite": null,
+          "amalgam": null,
+          "rouse_cost": 0,
+          "rouse_cost_conditional": false,
+          "dice_pool": null
+        },
+        {
+          "id": "power:obfuscate:mask-of-ages",
+          "name": "Mask of Ages",
+          "desc": {
+            "en": "Look older or younger than your apparent age (no younger than late teens) until sunrise. Add Obfuscate to pass as someone of that age, your past self included, or to dodge people hunting you by photo or description.",
+            "el": "Δείχνεις μεγαλύτερος ή νεότερος (ως την ύστερη εφηβεία) ως την ανατολή. Προσθέτεις Obfuscate για να περάσεις για κάποιον αυτής της ηλικίας, ακόμη και τον παλιό σου εαυτό, ή να ξεφύγεις από όσους σε ψάχνουν με φωτογραφία ή περιγραφή."
+          },
+          "level": 1,
+          "book": "v5-succubus-club",
+          "page": 28,
+          "also_in": [],
+          "aliases": [],
+          "source": "pdf",
+          "prerequisite": null,
+          "amalgam": null,
+          "rouse_cost": 1,
+          "rouse_cost_conditional": false,
+          "dice_pool": null
+        },
+        {
           "id": "power:obfuscate:silence-of-death",
           "name": "Silence of Death",
           "desc": {
@@ -1670,6 +2391,27 @@
           "prerequisite": null,
           "amalgam": null,
           "rouse_cost": 0,
+          "rouse_cost_conditional": false,
+          "dice_pool": null
+        },
+        {
+          "id": "power:obfuscate:cache",
+          "name": "Cache",
+          "desc": {
+            "en": "Ensconce works on objects you merely touch and keeps them hidden after you let go, for a scene. One more Rouse Check keeps them hidden until dawn.",
+            "el": "Το Ensconce πιάνει αντικείμενα που απλώς αγγίζεις και τα κρατά κρυμμένα αφού τα αφήσεις, για μία σκηνή. Με ακόμα ένα Rouse Check μένουν κρυμμένα ως την αυγή."
+          },
+          "level": 2,
+          "book": "v5-gehenna-war",
+          "page": 47,
+          "also_in": [],
+          "aliases": [],
+          "source": "pdf",
+          "prerequisite": {
+            "power_id": "power:obfuscate:ensconce"
+          },
+          "amalgam": null,
+          "rouse_cost": 1,
           "rouse_cost_conditional": false,
           "dice_pool": null
         },
@@ -1701,6 +2443,50 @@
           "dice_pool": "Manipulation + Obfuscate vs Composure + Wits"
         },
         {
+          "id": "power:obfuscate:doubletalk",
+          "name": "Doubletalk",
+          "desc": {
+            "en": "Slip a hidden message of up to one sentence into your words that only one chosen listener hears. Others catch it only if their Wits + Auspex beats your Composure + Obfuscate.",
+            "el": "Κρύβεις στα λόγια σου ένα μήνυμα έως μίας πρότασης που ακούει μόνο ένας ακροατής της επιλογής σου. Οι άλλοι το πιάνουν μόνο αν το Wits + Auspex τους νικήσει το Composure + Obfuscate σου."
+          },
+          "level": 2,
+          "book": "v5-blood-stained-love",
+          "page": 152,
+          "also_in": [],
+          "aliases": [],
+          "source": "pdf",
+          "prerequisite": null,
+          "amalgam": {
+            "discipline": "discipline:auspex",
+            "level": 1
+          },
+          "rouse_cost": 1,
+          "rouse_cost_conditional": false,
+          "dice_pool": null
+        },
+        {
+          "id": "power:obfuscate:ghosts-passing",
+          "name": "Ghost's Passing",
+          "desc": {
+            "en": "Animals under your influence that you pick leave no tracks or traces that mundane means can find, though Sense the Unseen can still spot them. Lasts one session.",
+            "el": "Τα ζώα υπό την επιρροή σου που διαλέγεις δεν αφήνουν ίχνη που να βρίσκονται με συνηθισμένα μέσα, αν και το Sense the Unseen μπορεί ακόμα να τα εντοπίσει. Διαρκεί ένα session."
+          },
+          "level": 2,
+          "book": "v5-forbidden-religions",
+          "page": 18,
+          "also_in": [],
+          "aliases": [],
+          "source": "pdf",
+          "prerequisite": null,
+          "amalgam": {
+            "discipline": "discipline:animalism",
+            "level": 1
+          },
+          "rouse_cost": 1,
+          "rouse_cost_conditional": false,
+          "dice_pool": null
+        },
+        {
           "id": "power:obfuscate:unseen-passage",
           "name": "Unseen Passage",
           "desc": {
@@ -1718,6 +2504,28 @@
           "rouse_cost": 1,
           "rouse_cost_conditional": false,
           "dice_pool": null
+        },
+        {
+          "id": "power:obfuscate:ventriloquism",
+          "name": "Ventriloquism",
+          "desc": {
+            "en": "Throw your voice to anyone in line of sight so that only they hear you, even at a distance. An unwilling target resists with Resolve + Composure. Lasts one scene.",
+            "el": "Στέλνεις τη φωνή σου σε όποιον βλέπεις, ώστε να σε ακούει μόνο αυτός, ακόμα και από απόσταση. Ένας απρόθυμος στόχος αντιστέκεται με Resolve + Composure. Διαρκεί μία σκηνή."
+          },
+          "level": 2,
+          "book": "v5-fall-of-london",
+          "page": 31,
+          "also_in": [],
+          "aliases": [],
+          "source": "pdf",
+          "prerequisite": null,
+          "amalgam": {
+            "discipline": "discipline:auspex",
+            "level": 2
+          },
+          "rouse_cost": 1,
+          "rouse_cost_conditional": false,
+          "dice_pool": "Wits + Obfuscate"
         },
         {
           "id": "power:obfuscate:fata-morgana",
@@ -1766,6 +2574,52 @@
           "dice_pool": null
         },
         {
+          "id": "power:obfuscate:guise-of-the-departed",
+          "name": "Guise of the Departed",
+          "desc": {
+            "en": "Touch a mortal dead under a week to take on their looks and manner until dawn (hidden roll, Difficulty 3). People close to the dead must still be beaten with Manipulation + Performance vs Wits + Insight; Sense the Unseen sees through it.",
+            "el": "Αγγίζεις θνητό νεκρό κάτω από μία εβδομάδα και παίρνεις όψη και τρόπους του ως την αυγή (κρυφή ρίψη, Difficulty 3). Τους δικούς του τους νικάς με Manipulation + Performance εναντίον Wits + Insight· το Sense the Unseen το διαπερνά."
+          },
+          "level": 3,
+          "book": "v5-tattered-facade",
+          "page": 98,
+          "also_in": [],
+          "aliases": [],
+          "source": "pdf",
+          "prerequisite": null,
+          "amalgam": {
+            "discipline": "discipline:oblivion",
+            "level": 1
+          },
+          "rouse_cost": 1,
+          "rouse_cost_conditional": false,
+          "dice_pool": "Wits + Obfuscate"
+        },
+        {
+          "id": "power:obfuscate:mask-of-isolation",
+          "name": "Mask of Isolation",
+          "desc": {
+            "en": "Meet the victim's eyes and win: they unknowingly wear Mask of a Thousand Faces and nobody recognizes them, for 1 night plus 1 per margin success. Ends if they learn of it; can be reapplied. Merits Stains.",
+            "el": "Με οπτική επαφή και νίκη, το θύμα φέρει άθελά του Mask of a Thousand Faces και κανείς δεν το αναγνωρίζει, για 1 νύχτα συν 1 ανά επιτυχία περιθωρίου. Λήγει αν το μάθει· ξαναεφαρμόζεται. Φέρνει Stains."
+          },
+          "level": 3,
+          "book": "v5-sabbat",
+          "page": 48,
+          "also_in": [],
+          "aliases": [],
+          "source": "pdf",
+          "prerequisite": {
+            "power_id": "power:obfuscate:mask-of-a-thousand-faces"
+          },
+          "amalgam": {
+            "discipline": "discipline:dominate",
+            "level": 1
+          },
+          "rouse_cost": 1,
+          "rouse_cost_conditional": false,
+          "dice_pool": "Manipulation + Obfuscate vs Charisma + Insight"
+        },
+        {
           "id": "power:obfuscate:mask-of-a-thousand-faces",
           "name": "Mask of a Thousand Faces",
           "desc": {
@@ -1794,7 +2648,12 @@
           "level": 3,
           "book": "v5-players-guide",
           "page": 77,
-          "also_in": [],
+          "also_in": [
+            {
+              "book": "v5-cults-of-the-blood-gods",
+              "page": 85
+            }
+          ],
           "aliases": [],
           "source": "pdf",
           "prerequisite": null,
@@ -1851,10 +2710,32 @@
           "dice_pool": "Intelligence + Obfuscate"
         },
         {
+          "id": "power:obfuscate:seclusion",
+          "name": "Seclusion",
+          "desc": {
+            "en": "Catch a victim's eye and win the contest: for scenes or nights set by the margin they cannot see or hear any person. Anyone who harms them is briefly noticed, and you roll again each time; if they resist, it ends.",
+            "el": "Πιάνεις το βλέμμα του θύματος και κερδίζεις τη ρίψη: για σκηνές ή νύχτες ανάλογα με το margin δεν βλέπει ούτε ακούει κανέναν. Όποιος το βλάψει γίνεται για λίγο αντιληπτός και ξαναρίχνεις κάθε φορά· αν αντισταθεί, η δύναμη λήγει."
+          },
+          "level": 4,
+          "book": "v5-tattered-facade",
+          "page": 99,
+          "also_in": [],
+          "aliases": [],
+          "source": "pdf",
+          "prerequisite": null,
+          "amalgam": {
+            "discipline": "discipline:dominate",
+            "level": 1
+          },
+          "rouse_cost": 1,
+          "rouse_cost_conditional": false,
+          "dice_pool": "Manipulation + Obfuscate vs Resolve + Awareness"
+        },
+        {
           "id": "power:obfuscate:vanish",
           "name": "Vanish",
           "desc": {
-            "en": "Activate Cloak of Shadows or Unseen Passage while being watched. Against a mortal, win Wits + Obfuscate vs Wits + Awareness to cloud their memory of you. Once per scene; costs as the power used.",
+            "en": "Use Cloak of Shadows or Unseen Passage even while someone is watching you. Against a mortal, win Wits + Obfuscate vs Wits + Awareness to cloud their memory of you. Once per scene; costs as the power used.",
             "el": "Ενεργοποίησε Cloak of Shadows ή Unseen Passage ενώ σε βλέπουν. Σε θνητό, νίκη σε Wits + Obfuscate εναντίον Wits + Awareness θολώνει τη μνήμη του για σένα. Μία φορά ανά σκηνή· κόστος όσο η δύναμη."
           },
           "level": 4,
@@ -1934,7 +2815,16 @@
           "level": 1,
           "book": "v5-players-guide",
           "page": 85,
-          "also_in": [],
+          "also_in": [
+            {
+              "book": "v5-cults-of-the-blood-gods",
+              "page": 204
+            },
+            {
+              "book": "v5-fall-of-london",
+              "page": 264
+            }
+          ],
           "aliases": [],
           "source": "pdf",
           "prerequisite": null,
@@ -1953,7 +2843,12 @@
           "level": 1,
           "book": "v5-players-guide",
           "page": 85,
-          "also_in": [],
+          "also_in": [
+            {
+              "book": "v5-chicago-by-night",
+              "page": 293
+            }
+          ],
           "aliases": [],
           "source": "pdf",
           "prerequisite": null,
@@ -1972,7 +2867,16 @@
           "level": 1,
           "book": "v5-players-guide",
           "page": 85,
-          "also_in": [],
+          "also_in": [
+            {
+              "book": "v5-chicago-by-night",
+              "page": 293
+            },
+            {
+              "book": "v5-fall-of-london",
+              "page": 264
+            }
+          ],
           "aliases": [],
           "source": "pdf",
           "prerequisite": null,
@@ -1991,7 +2895,12 @@
           "level": 1,
           "book": "v5-players-guide",
           "page": 85,
-          "also_in": [],
+          "also_in": [
+            {
+              "book": "v5-cults-of-the-blood-gods",
+              "page": 204
+            }
+          ],
           "aliases": [],
           "source": "pdf",
           "prerequisite": null,
@@ -2010,7 +2919,12 @@
           "level": 2,
           "book": "v5-players-guide",
           "page": 86,
-          "also_in": [],
+          "also_in": [
+            {
+              "book": "v5-chicago-by-night",
+              "page": 294
+            }
+          ],
           "aliases": [],
           "source": "pdf",
           "prerequisite": null,
@@ -2032,8 +2946,15 @@
           "level": 2,
           "book": "v5-players-guide",
           "page": 87,
-          "also_in": [],
-          "aliases": [],
+          "also_in": [
+            {
+              "book": "v5-cults-of-the-blood-gods",
+              "page": 204
+            }
+          ],
+          "aliases": [
+            "Fatal Precognition"
+          ],
           "source": "pdf",
           "prerequisite": null,
           "amalgam": {
@@ -2054,7 +2975,12 @@
           "level": 2,
           "book": "v5-players-guide",
           "page": 87,
-          "also_in": [],
+          "also_in": [
+            {
+              "book": "v5-chicago-by-night",
+              "page": 293
+            }
+          ],
           "aliases": [],
           "source": "pdf",
           "prerequisite": null,
@@ -2073,8 +2999,15 @@
           "level": 2,
           "book": "v5-players-guide",
           "page": 87,
-          "also_in": [],
-          "aliases": [],
+          "also_in": [
+            {
+              "book": "v5-cults-of-the-blood-gods",
+              "page": 205
+            }
+          ],
+          "aliases": [
+            "Where the Shroud Thins"
+          ],
           "source": "pdf",
           "prerequisite": null,
           "amalgam": null,
@@ -2092,7 +3025,12 @@
           "level": 3,
           "book": "v5-players-guide",
           "page": 88,
-          "also_in": [],
+          "also_in": [
+            {
+              "book": "v5-cults-of-the-blood-gods",
+              "page": 205
+            }
+          ],
           "aliases": [],
           "source": "pdf",
           "prerequisite": null,
@@ -2111,7 +3049,12 @@
           "level": 3,
           "book": "v5-players-guide",
           "page": 88,
-          "also_in": [],
+          "also_in": [
+            {
+              "book": "v5-cults-of-the-blood-gods",
+              "page": 206
+            }
+          ],
           "aliases": [],
           "source": "pdf",
           "prerequisite": null,
@@ -2133,7 +3076,12 @@
           "level": 3,
           "book": "v5-players-guide",
           "page": 89,
-          "also_in": [],
+          "also_in": [
+            {
+              "book": "v5-chicago-by-night",
+              "page": 294
+            }
+          ],
           "aliases": [],
           "source": "pdf",
           "prerequisite": null,
@@ -2174,7 +3122,12 @@
           "level": 3,
           "book": "v5-players-guide",
           "page": 89,
-          "also_in": [],
+          "also_in": [
+            {
+              "book": "v5-chicago-by-night",
+              "page": 294
+            }
+          ],
           "aliases": [],
           "source": "pdf",
           "prerequisite": null,
@@ -2193,7 +3146,12 @@
           "level": 4,
           "book": "v5-players-guide",
           "page": 89,
-          "also_in": [],
+          "also_in": [
+            {
+              "book": "v5-cults-of-the-blood-gods",
+              "page": 206
+            }
+          ],
           "aliases": [],
           "source": "pdf",
           "prerequisite": null,
@@ -2201,6 +3159,30 @@
           "rouse_cost": 1,
           "rouse_cost_conditional": false,
           "dice_pool": "Intelligence + Oblivion vs Stamina + Stamina or Fortitude"
+        },
+        {
+          "id": "power:oblivion:profane-the-sanctified",
+          "name": "Profane the Sanctified",
+          "desc": {
+            "en": "On a win vs a True Faith holder's Willpower, render a holy symbol inert, or cancel their True Faith for a turn and cost them an action. Repeat each turn without more Rouse Checks until you lose. A Stain if you hold a religious Conviction.",
+            "el": "Αν νικήσεις το Willpower κάποιου με True Faith, αχρηστεύεις ένα ιερό σύμβολο ή ακυρώνεις το True Faith του για έναν γύρο και χάνει μία ενέργεια. Ξαναρίχνεις κάθε γύρο χωρίς Rouse Check ως να χάσεις. Stain αν έχεις θρησκευτικό Conviction."
+          },
+          "level": 4,
+          "book": "v5-tattered-facade",
+          "page": 100,
+          "also_in": [],
+          "aliases": [],
+          "source": "pdf",
+          "prerequisite": {
+            "any_of": [
+              "power:oblivion:aura-of-decay",
+              "power:oblivion:touch-of-oblivion"
+            ]
+          },
+          "amalgam": null,
+          "rouse_cost": 1,
+          "rouse_cost_conditional": false,
+          "dice_pool": "Resolve + Oblivion vs Willpower"
         },
         {
           "id": "power:oblivion:stygian-shroud",
@@ -2212,7 +3194,12 @@
           "level": 4,
           "book": "v5-players-guide",
           "page": 90,
-          "also_in": [],
+          "also_in": [
+            {
+              "book": "v5-chicago-by-night",
+              "page": 295
+            }
+          ],
           "aliases": [],
           "source": "pdf",
           "prerequisite": null,
@@ -2220,6 +3207,28 @@
           "rouse_cost": 1,
           "rouse_cost_conditional": false,
           "dice_pool": null
+        },
+        {
+          "id": "power:oblivion:umbrous-clutch",
+          "name": "Umbrous Clutch",
+          "desc": {
+            "en": "With clear sight of a victim and their shadow, make them fall into it and drop out of your own shadow. Mortals are left terrified; a vampire tests for fury or fear frenzy at Difficulty 4. Also costs a Stain.",
+            "el": "Βλέποντας καθαρά το θύμα και τη σκιά του, το ρίχνεις μέσα της και βγαίνει πέφτοντας από τη δική σου σκιά. Ο θνητός μένει τρομοκρατημένος· βαμπίρ τεστάρει για frenzy οργής ή φόβου, Difficulty 4. Κοστίζει και ένα Stain."
+          },
+          "level": 4,
+          "book": "v5-sabbat",
+          "page": 49,
+          "also_in": [],
+          "aliases": [],
+          "source": "pdf",
+          "prerequisite": null,
+          "manual_fields": [
+            "rouse_cost_conditional"
+          ],
+          "amalgam": null,
+          "rouse_cost": 1,
+          "rouse_cost_conditional": false,
+          "dice_pool": "Wits + Oblivion vs Dexterity + Wits"
         },
         {
           "id": "power:oblivion:shadow-step",
@@ -2231,7 +3240,12 @@
           "level": 5,
           "book": "v5-players-guide",
           "page": 90,
-          "also_in": [],
+          "also_in": [
+            {
+              "book": "v5-chicago-by-night",
+              "page": 295
+            }
+          ],
           "aliases": [],
           "source": "pdf",
           "prerequisite": null,
@@ -2250,7 +3264,12 @@
           "level": 5,
           "book": "v5-players-guide",
           "page": 91,
-          "also_in": [],
+          "also_in": [
+            {
+              "book": "v5-cults-of-the-blood-gods",
+              "page": 207
+            }
+          ],
           "aliases": [],
           "source": "pdf",
           "prerequisite": null,
@@ -2269,7 +3288,12 @@
           "level": 5,
           "book": "v5-players-guide",
           "page": 91,
-          "also_in": [],
+          "also_in": [
+            {
+              "book": "v5-chicago-by-night",
+              "page": 295
+            }
+          ],
           "aliases": [],
           "source": "pdf",
           "prerequisite": null,
@@ -2277,6 +3301,44 @@
           "rouse_cost": 2,
           "rouse_cost_conditional": false,
           "dice_pool": null
+        },
+        {
+          "id": "power:oblivion:the-darkness-within",
+          "name": "The Darkness Within",
+          "desc": {
+            "en": "Tear a hateful double out of a visible victim, dealing 1 Aggravated. It has their Physical Attributes and Skills, 6 Health and half their physical powers, and only seeks to destroy its host, for a scene or until one of them falls.",
+            "el": "Ξεριζώνεις από ορατό θύμα ένα μισητό είδωλό του, με 1 Aggravated. Έχει τα Physical Attributes και τα Skills του, 6 Health και μισές τις σωματικές δυνάμεις του, και θέλει μόνο να καταστρέψει τον ξενιστή, για μία σκηνή ή ώσπου να πέσει ένας."
+          },
+          "level": 5,
+          "book": "v5-tattered-facade",
+          "page": 100,
+          "also_in": [],
+          "aliases": [],
+          "source": "pdf",
+          "prerequisite": null,
+          "amalgam": null,
+          "rouse_cost": 2,
+          "rouse_cost_conditional": false,
+          "dice_pool": "Manipulation + Oblivion vs Composure + Resolve"
+        },
+        {
+          "id": "power:oblivion:withering-spirit",
+          "name": "Withering Spirit",
+          "desc": {
+            "en": "Coat your hands in vitae and touch the victim: each point of margin deals 2 Aggravated Willpower damage. A victim Impaired this way leaves no wraith after death, which may cost Stains.",
+            "el": "Καλύπτεις τα χέρια σου με αίμα και αγγίζεις το θύμα: κάθε βαθμός margin προκαλεί 2 Aggravated ζημιά στο Willpower. Όποιος γίνει Impaired έτσι δεν αφήνει φάντασμα όταν πεθάνει, κάτι που μπορεί να δώσει Stains."
+          },
+          "level": 5,
+          "book": "v5-cults-of-the-blood-gods",
+          "page": 208,
+          "also_in": [],
+          "aliases": [],
+          "source": "pdf",
+          "prerequisite": null,
+          "amalgam": null,
+          "rouse_cost": 2,
+          "rouse_cost_conditional": true,
+          "dice_pool": "Resolve + Oblivion vs Resolve + Occult or Fortitude"
         }
       ],
       "ceremonies": "ceremonies",
@@ -2300,10 +3362,29 @@
       "source": "pdf",
       "powers": [
         {
+          "id": "power:potence:fluent-strength",
+          "name": "Fluent Strength",
+          "desc": {
+            "en": "When you Blood Surge a Strength or Potence test, you may reroll the Rouse Check.",
+            "el": "Όταν κάνεις Blood Surge σε τεστ Strength ή Potence, μπορείς να ξαναρίξεις το Rouse Check."
+          },
+          "level": 1,
+          "book": "v5-gehenna-war",
+          "page": 47,
+          "also_in": [],
+          "aliases": [],
+          "source": "pdf",
+          "prerequisite": null,
+          "amalgam": null,
+          "rouse_cost": 0,
+          "rouse_cost_conditional": false,
+          "dice_pool": null
+        },
+        {
           "id": "power:potence:lethal-body",
           "name": "Lethal Body",
           "desc": {
-            "en": "Unarmed attacks can deal Aggravated damage to mortals and ignore one level of armor per Potence dot. Free, always on.",
+            "en": "Unarmed attacks can deal Aggravated damage to mortals, and each Potence dot cancels one level of armor. Free, always on.",
             "el": "Οι άοπλες επιθέσεις μπορούν να κάνουν Aggravated ζημιά σε θνητούς και αγνοούν ένα επίπεδο πανοπλίας ανά τελεία Potence. Δωρεάν, πάντα ενεργό."
           },
           "level": 1,
@@ -2385,6 +3466,25 @@
           "level": 3,
           "book": "v5-corebook",
           "page": 264,
+          "also_in": [],
+          "aliases": [],
+          "source": "pdf",
+          "prerequisite": null,
+          "amalgam": null,
+          "rouse_cost": 0,
+          "rouse_cost_conditional": false,
+          "dice_pool": null
+        },
+        {
+          "id": "power:potence:exuberance",
+          "name": "Exuberance",
+          "desc": {
+            "en": "Passive: whenever you use Potence, count your rating as 2 higher, even past 5. Any critical or failure on such a roll tears your body for 1 Aggravated damage.",
+            "el": "Παθητική: όποτε χρησιμοποιείς Potence, το μετράς 2 τελείες υψηλότερο, ακόμη και πάνω από 5. Κάθε critical ή αποτυχία σε τέτοια ρίψη σού σκίζει το σώμα για 1 Aggravated ζημιά."
+          },
+          "level": 3,
+          "book": "v5-tattered-facade",
+          "page": 103,
           "also_in": [],
           "aliases": [],
           "source": "pdf",
@@ -2665,6 +3765,47 @@
           "dice_pool": null
         },
         {
+          "id": "power:presence:predators-lure",
+          "name": "Predator's Lure",
+          "desc": {
+            "en": "Draw one target toward you for a scene or until they are within 3 meters; mortals are affected automatically. They approach politely and safely, and the power fails in any violent situation.",
+            "el": "Τραβάς έναν στόχο προς το μέρος σου για μία σκηνή ή ώσπου να φτάσει σε 3 μέτρα· οι θνητοί επηρεάζονται αυτόματα. Πλησιάζει ευγενικά και με ασφάλεια, και η δύναμη δεν πιάνει σε καμία βίαιη σύγκρουση."
+          },
+          "level": 2,
+          "book": "v5-courts-of-the-damned",
+          "page": 215,
+          "also_in": [],
+          "aliases": [],
+          "source": "pdf",
+          "prerequisite": null,
+          "amalgam": null,
+          "rouse_cost": 1,
+          "rouse_cost_conditional": false,
+          "dice_pool": "Charisma + Leadership vs Composure + Resolve"
+        },
+        {
+          "id": "power:presence:clear-the-field",
+          "name": "Clear the Field",
+          "desc": {
+            "en": "Everyone near you calmly steps back to leave a space the size of a large room, except up to your Composure in people you choose. Difficulty 3 vs mortals and ghouls; vampires resist with Wits + Composure.",
+            "el": "Όλοι γύρω σου απομακρύνονται ήρεμα και αφήνουν κενό όσο ένα μεγάλο δωμάτιο, εκτός από όσους διαλέξεις, έως το Composure σου. Difficulty 3 για θνητούς και ghouls· τα βαμπίρ αντιστέκονται με Wits + Composure."
+          },
+          "level": 3,
+          "book": "v5-fall-of-london",
+          "page": 31,
+          "also_in": [],
+          "aliases": [],
+          "source": "pdf",
+          "prerequisite": null,
+          "amalgam": {
+            "discipline": "discipline:dominate",
+            "level": 3
+          },
+          "rouse_cost": 1,
+          "rouse_cost_conditional": false,
+          "dice_pool": "Composure + Presence"
+        },
+        {
           "id": "power:presence:dread-gaze",
           "name": "Dread Gaze",
           "desc": {
@@ -2703,6 +3844,49 @@
           "dice_pool": "Charisma + Presence vs Composure + Wits"
         },
         {
+          "id": "power:presence:invigorating-display",
+          "name": "Invigorating Display",
+          "desc": {
+            "en": "Spend a scene performing for at least 10 mortals and roll Composure + Presence at Difficulty 3 to draw in their Resonance, usually intense, maybe a Dyscrasia on a critical. The crowd is left drained. Once per scene.",
+            "el": "Περνάς μία σκηνή διασκεδάζοντας τουλάχιστον 10 θνητούς και ρίχνεις Composure + Presence σε Difficulty 3 για να ρουφήξεις το Resonance τους, συνήθως intense, ίσως Dyscrasia σε critical. Το κοινό μένει στραγγισμένο. Μία φορά ανά σκηνή."
+          },
+          "level": 3,
+          "book": "v5-succubus-club",
+          "page": 28,
+          "also_in": [],
+          "aliases": [],
+          "source": "pdf",
+          "prerequisite": {
+            "power_id": "power:presence:awe"
+          },
+          "amalgam": null,
+          "rouse_cost": 1,
+          "rouse_cost_conditional": false,
+          "dice_pool": "Composure + Presence"
+        },
+        {
+          "id": "power:presence:passion-leech",
+          "name": "Passion Leech",
+          "desc": {
+            "en": "Spend a scene near a mortal to feed on their passion: gain the benefits of Humanity 10 until sunset (Stains and Remorse still use your own). The mortal's blood loses all Resonance for 3 nights. Once per night.",
+            "el": "Περνάς μία σκηνή κοντά σε θνητό και ρουφάς το πάθος του: έχεις τα οφέλη του Humanity 10 ως την ανατολή (τα Stains και το Remorse μετρούν με το δικό σου). Το αίμα του θνητού χάνει κάθε Resonance για 3 νύχτες. Μία φορά ανά νύχτα."
+          },
+          "level": 3,
+          "book": "v5-tattered-facade",
+          "page": 104,
+          "also_in": [],
+          "aliases": [],
+          "source": "pdf",
+          "prerequisite": null,
+          "amalgam": {
+            "discipline": "discipline:auspex",
+            "level": 2
+          },
+          "rouse_cost": 1,
+          "rouse_cost_conditional": false,
+          "dice_pool": "Composure + Auspex"
+        },
+        {
           "id": "power:presence:thrown-voice",
           "name": "Thrown Voice",
           "desc": {
@@ -2723,6 +3907,50 @@
           "rouse_cost": 1,
           "rouse_cost_conditional": false,
           "dice_pool": null
+        },
+        {
+          "id": "power:presence:true-loves-face",
+          "name": "True Love's Face",
+          "desc": {
+            "en": "Only the victim sees you as a mortal they feel strongly about; you must know that person's looks and the feeling. On a win, add Presence to rolls to sway a mortal's Resonance or a vampire's emotions. One scene.",
+            "el": "Μόνο το θύμα σε βλέπει ως θνητό για τον οποίο νιώθει έντονα· πρέπει να ξέρεις την όψη του και το συναίσθημα. Με νίκη προσθέτεις το Presence σε ρίψεις για να αλλάξεις τη Resonance θνητού ή τη διάθεση βαμπίρ. Μία σκηνή."
+          },
+          "level": 3,
+          "book": "v5-cults-of-the-blood-gods",
+          "page": 85,
+          "also_in": [],
+          "aliases": [],
+          "source": "pdf",
+          "prerequisite": null,
+          "amalgam": {
+            "discipline": "discipline:obfuscate",
+            "level": 3
+          },
+          "rouse_cost": 1,
+          "rouse_cost_conditional": false,
+          "dice_pool": "Manipulation + Presence vs Composure + Wits"
+        },
+        {
+          "id": "power:presence:inflame-desire",
+          "name": "Inflame Desire",
+          "desc": {
+            "en": "With a touch, turn what a victim wants most this scene into the Need Compulsion: -2 dice to anything else until it is met. If that desire is on the table in a deal, you gain +4 dice to negotiate.",
+            "el": "Με ένα άγγιγμα, ό,τι θέλει περισσότερο το θύμα σε αυτή τη σκηνή γίνεται Compulsion Need: -2 ζάρια σε οτιδήποτε άλλο ώσπου να ικανοποιηθεί. Αν αυτή η επιθυμία παίζεται σε μια συμφωνία, παίρνεις +4 ζάρια στη διαπραγμάτευση."
+          },
+          "level": 4,
+          "book": "v5-tattered-facade",
+          "page": 104,
+          "also_in": [],
+          "aliases": [],
+          "source": "pdf",
+          "prerequisite": null,
+          "amalgam": {
+            "discipline": "discipline:obfuscate",
+            "level": 1
+          },
+          "rouse_cost": 1,
+          "rouse_cost_conditional": false,
+          "dice_pool": "Manipulation + Presence vs Composure + Resolve"
         },
         {
           "id": "power:presence:irresistible-voice",
@@ -2783,6 +4011,25 @@
           "rouse_cost": 1,
           "rouse_cost_conditional": false,
           "dice_pool": "Manipulation + Presence vs Composure + Intelligence"
+        },
+        {
+          "id": "power:presence:wingman",
+          "name": "Wingman",
+          "desc": {
+            "en": "As a full action, with 1 Rouse Check on top of the power's own cost, lend one of your Presence powers to a willing vampire at your rating. You cannot use that power yourself meanwhile. Lasts as long as the power does.",
+            "el": "Ως πλήρη ενέργεια, με 1 Rouse Check πάνω από το κόστος της δύναμης, δανείζεις μία από τις δυνάμεις Presence σου σε πρόθυμο βαμπίρ με το δικό σου επίπεδο. Στο μεταξύ δεν τη χρησιμοποιείς ο ίδιος. Διαρκεί όσο και η δύναμη."
+          },
+          "level": 4,
+          "book": "v5-blood-stained-love",
+          "page": 152,
+          "also_in": [],
+          "aliases": [],
+          "source": "pdf",
+          "prerequisite": null,
+          "amalgam": null,
+          "rouse_cost": 1,
+          "rouse_cost_conditional": true,
+          "dice_pool": null
         },
         {
           "id": "power:presence:majesty",
@@ -2855,6 +4102,25 @@
           "dice_pool": null
         },
         {
+          "id": "power:protean:squirm",
+          "name": "Squirm",
+          "desc": {
+            "en": "Add Protean to rolls to squeeze through gaps, slip a grapple or escape restraints; you fit wherever your head does. With about 5 minutes and a Rouse Check, pass through a 5 cm gap, taking 1 Aggravated if pulled out early.",
+            "el": "Προσθέτεις Protean σε ρίψεις για να στριμωχτείς από στενά, να ξεφύγεις από λαβή ή δεσμά· χωράς όπου χωρά το κεφάλι σου. Με περίπου 5 λεπτά και ένα Rouse Check περνάς από άνοιγμα 5 εκατοστών, με 1 Aggravated αν σε τραβήξουν πριν τελειώσεις."
+          },
+          "level": 1,
+          "book": "v5-tattered-facade",
+          "page": 105,
+          "also_in": [],
+          "aliases": [],
+          "source": "pdf",
+          "prerequisite": null,
+          "amalgam": null,
+          "rouse_cost": null,
+          "rouse_cost_conditional": false,
+          "dice_pool": null
+        },
+        {
           "id": "power:protean:weight-of-the-feather",
           "name": "Weight of the Feather",
           "desc": {
@@ -2888,6 +4154,47 @@
           "source": "pdf",
           "prerequisite": null,
           "amalgam": null,
+          "rouse_cost": 1,
+          "rouse_cost_conditional": false,
+          "dice_pool": null
+        },
+        {
+          "id": "power:protean:serpents-kiss",
+          "name": "Serpent's Kiss",
+          "desc": {
+            "en": "For a scene your fangs push your own vitae into whoever you bite or kiss, who counts as having drunk your Blood for Blood Bonds, ghouling and the like. Harmful Blood effects and powers like Scorpion's Touch pass on too.",
+            "el": "Για μία σκηνή οι κυνόδοντές σου περνούν δικό σου vitae σε όποιον δαγκώνεις ή φιλάς, που μετρά σαν να ήπιε το αίμα σου για Blood Bond, για να γίνει ghoul κ.λπ. Περνούν και βλαβερές ιδιότητες του αίματος και δυνάμεις όπως το Scorpion's Touch."
+          },
+          "level": 2,
+          "book": "v5-blood-stained-love",
+          "page": 153,
+          "also_in": [],
+          "aliases": [],
+          "source": "pdf",
+          "prerequisite": null,
+          "amalgam": null,
+          "rouse_cost": 1,
+          "rouse_cost_conditional": false,
+          "dice_pool": null
+        },
+        {
+          "id": "power:protean:the-false-sip",
+          "name": "The False Sip",
+          "desc": {
+            "en": "Right after drinking, keep the blood out of your system: it slakes no Hunger and bonds or poisons nothing, though you taste it. Vomit it up within the scene or it gets in; another Rouse Check buys one more scene.",
+            "el": "Μόλις πιεις, κρατάς το αίμα έξω από τον οργανισμό σου: δεν μειώνει το Hunger, δεν δένει ούτε δηλητηριάζει, αν και το γεύεσαι. Το ξερνάς μέσα στη σκηνή αλλιώς περνά μέσα σου· ένα ακόμη Rouse Check δίνει άλλη μία σκηνή."
+          },
+          "level": 2,
+          "book": "v5-blood-stained-love",
+          "page": 153,
+          "also_in": [],
+          "aliases": [],
+          "source": "pdf",
+          "prerequisite": null,
+          "amalgam": {
+            "discipline": "discipline:fortitude",
+            "level": 1
+          },
           "rouse_cost": 1,
           "rouse_cost_conditional": false,
           "dice_pool": null
@@ -2968,6 +4275,28 @@
           "dice_pool": "Resolve + Protean vs Stamina + Resolve"
         },
         {
+          "id": "power:protean:masque-of-death",
+          "name": "Masque of Death",
+          "desc": {
+            "en": "Take on the look of a corpse, fresh to skeletal, aware but unable to move or speak. Only Aggravated harm counts, and only once you revert. Lasts until you end it or sunset, or you may sink into torpor and stay so until you wake.",
+            "el": "Παίρνεις την όψη πτώματος, από φρέσκου ως σκελετού, έχεις επίγνωση αλλά δεν κινείσαι ούτε μιλάς. Μετρά μόνο η Aggravated βλάβη και μόνο όταν επανέλθεις. Ως να το τερματίσεις ή ως τη δύση, ή πέφτεις σε torpor και μένεις έτσι ως να ξυπνήσεις."
+          },
+          "level": 3,
+          "book": "v5-succubus-club",
+          "page": 28,
+          "also_in": [],
+          "aliases": [],
+          "source": "pdf",
+          "prerequisite": null,
+          "amalgam": {
+            "discipline": "discipline:oblivion",
+            "level": 2
+          },
+          "rouse_cost": 1,
+          "rouse_cost_conditional": false,
+          "dice_pool": null
+        },
+        {
           "id": "power:protean:shapechange",
           "name": "Shapechange",
           "desc": {
@@ -2985,6 +4314,28 @@
           "rouse_cost": 1,
           "rouse_cost_conditional": false,
           "dice_pool": null
+        },
+        {
+          "id": "power:protean:visceral-absorption",
+          "name": "Visceral Absorption",
+          "desc": {
+            "en": "Absorb the blood of fresh corpses within 5 meters, one body per success and one turn each, leaving no remains. Slake 1 Hunger per body, at most your Blood Sorcery rating, never below 1. Very overt; not vampire remains.",
+            "el": "Απορροφάς το αίμα φρέσκων πτωμάτων σε 5 μέτρα, ένα σώμα ανά επιτυχία και έναν γύρο το καθένα, χωρίς υπολείμματα. −1 Hunger ανά σώμα, έως το Blood Sorcery σου, όχι κάτω από 1. Πολύ εμφανές· όχι σε πτώματα βαμπίρ."
+          },
+          "level": 3,
+          "book": "v5-sabbat",
+          "page": 49,
+          "also_in": [],
+          "aliases": [],
+          "source": "pdf",
+          "prerequisite": null,
+          "amalgam": {
+            "discipline": "discipline:blood-sorcery",
+            "level": 2
+          },
+          "rouse_cost": 1,
+          "rouse_cost_conditional": false,
+          "dice_pool": "Strength + Protean"
         },
         {
           "id": "power:protean:horrid-form",
@@ -3037,6 +4388,70 @@
           "dice_pool": null
         },
         {
+          "id": "power:protean:bloodform",
+          "name": "Bloodform",
+          "desc": {
+            "en": "Turn all or part of yourself into living Blood for a scene: immune to most weapons and stakes but not sun or fire, able to seep through cracks and flow up walls. Each limb's worth lost adds 1 Hunger when you reform.",
+            "el": "Γίνεσαι, ολόκληρος ή εν μέρει, ζωντανό αίμα για μία σκηνή: άτρωτος στα περισσότερα όπλα και στους πασσάλους, όχι σε ήλιο ή φωτιά, περνάς από ρωγμές και κυλάς πάνω σε τοίχους. Κάθε χαμένο μέλος δίνει +1 Hunger."
+          },
+          "level": 5,
+          "book": "v5-gehenna-war",
+          "page": 47,
+          "also_in": [],
+          "aliases": [],
+          "source": "pdf",
+          "prerequisite": null,
+          "amalgam": {
+            "discipline": "discipline:blood-sorcery",
+            "level": 2
+          },
+          "rouse_cost": 1,
+          "rouse_cost_conditional": false,
+          "dice_pool": null
+        },
+        {
+          "id": "power:protean:face-of-the-victim",
+          "name": "Face of the Victim",
+          "desc": {
+            "en": "In the scene you slake Hunger, take the body and voice of the one you last fed from, but none of their clothes, items or memories. Fooling those who knew them well takes Manipulation + Performance vs Wits + Insight. Until Hunger 5.",
+            "el": "Στη σκηνή που μειώνεις το Hunger σου, παίρνεις σώμα και φωνή εκείνου από τον οποίο τράφηκες τελευταία, χωρίς ρούχα, αντικείμενα ή γνώσεις του. Όσοι τον ήξεραν καλά: Manipulation + Performance εναντίον Wits + Insight. Ως το Hunger 5."
+          },
+          "level": 5,
+          "book": "v5-succubus-club",
+          "page": 28,
+          "also_in": [],
+          "aliases": [],
+          "source": "pdf",
+          "prerequisite": {
+            "power_id": "power:protean:vicissitude"
+          },
+          "amalgam": null,
+          "rouse_cost": 1,
+          "rouse_cost_conditional": false,
+          "dice_pool": null
+        },
+        {
+          "id": "power:protean:master-of-forms",
+          "name": "Master of Forms",
+          "desc": {
+            "en": "Shapechange and Metamorphosis are no longer tied to one animal: take any form within their limits, a different one each time. Each kind of beast you use is always the same recognizable individual.",
+            "el": "Τα Shapechange και Metamorphosis δεν περιορίζονται σε ένα ζώο: παίρνεις όποια μορφή επιτρέπουν, διαφορετική κάθε φορά. Κάθε είδος ζώου που χρησιμοποιείς είναι πάντα το ίδιο, αναγνωρίσιμο άτομο."
+          },
+          "level": 5,
+          "book": "v5-gehenna-war",
+          "page": 48,
+          "also_in": [],
+          "aliases": [],
+          "source": "pdf",
+          "prerequisite": {
+            "power_id": "power:protean:shapechange"
+          },
+          "amalgam": null,
+          "rouse_cost": 0,
+          "rouse_cost_conditional": false,
+          "dice_pool": null
+        },
+        {
           "id": "power:protean:mist-form",
           "name": "Mist Form",
           "desc": {
@@ -3081,6 +4496,49 @@
             "level": 2
           },
           "rouse_cost": 2,
+          "rouse_cost_conditional": false,
+          "dice_pool": null
+        },
+        {
+          "id": "power:protean:swarm",
+          "name": "Swarm",
+          "desc": {
+            "en": "Over a turn, dissolve into a swarm of small vermin for a scene, beyond normal weapons but not fire, sun or area attacks. Each turn it engulfs Blood Potency targets: -2 dice and 1 damage (Aggravated to mortals). No Disciplines.",
+            "el": "Μέσα σε έναν γύρο διαλύεσαι σε σμήνος από μικρά ζωύφια για μία σκηνή, άτρωτο στα συνηθισμένα όπλα αλλά όχι σε φωτιά, ήλιο ή επιθέσεις περιοχής. Κάθε γύρο καλύπτει στόχους όσο το Blood Potency: -2 ζάρια και 1 ζημιά (Aggravated σε θνητούς)."
+          },
+          "level": 5,
+          "book": "v5-tattered-facade",
+          "page": 106,
+          "also_in": [],
+          "aliases": [],
+          "source": "pdf",
+          "prerequisite": {
+            "power_id": "power:protean:shapechange"
+          },
+          "amalgam": null,
+          "rouse_cost": 2,
+          "rouse_cost_conditional": false,
+          "dice_pool": null
+        },
+        {
+          "id": "power:protean:the-heart-of-darkness",
+          "name": "The Heart of Darkness",
+          "desc": {
+            "en": "Pull out your heart (2 Aggravated damage) and keep it elsewhere: your body can't be staked, you gain +2 dice against frenzy and -2 on Remorse rolls. Destroying the heart by fire or sun kills you. Refitting it costs 2 Rouse Checks.",
+            "el": "Βγάζεις την καρδιά σου (2 Aggravated ζημιά) και τη φυλάς αλλού: το σώμα σου δεν καρφώνεται, παίρνεις +2 ζάρια κατά του frenzy και -2 στις ρίψεις Remorse. Αν η καρδιά καεί ή τη δει ο ήλιος, πεθαίνεις. Η επανατοποθέτηση θέλει 2 Rouse Checks."
+          },
+          "level": 5,
+          "book": "v5-cults-of-the-blood-gods",
+          "page": 85,
+          "also_in": [],
+          "aliases": [],
+          "source": "pdf",
+          "prerequisite": null,
+          "amalgam": {
+            "discipline": "discipline:fortitude",
+            "level": 2
+          },
+          "rouse_cost": null,
           "rouse_cost_conditional": false,
           "dice_pool": null
         },

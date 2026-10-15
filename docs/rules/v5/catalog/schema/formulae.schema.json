@@ -281,6 +281,19 @@
               }
             }
           }
+        },
+        {
+          "type": "object",
+          "required": [
+            "formula_id"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "formula_id": {
+              "type": "string",
+              "pattern": "^formula:[a-z0-9-]+$"
+            }
+          }
         }
       ]
     },

@@ -75,6 +75,15 @@ def extract() -> list[str]:
             recs, rep = pred_parser.parse(pb.lines(a, z))
             preds += recs
             report += rep
+    for b in books.TIER2:
+        if not b.extractable or "disciplines" not in b.ranges:
+            continue
+        pb = PdfBook(b.book_id, manifest=manifest)
+        for span in b.ranges["disciplines"]:
+            start = tuple(span[2:4]) if len(span) > 2 else None
+            recs, rep = power_parser.parse(pb.lines(span[0], span[1]), supplement=True, start=start)
+            powers += recs
+            report += [f"### {b.book_id} p.{span[0]}-{span[1]}: {len(recs)} powers/rituals/ceremonies/formulae"] + rep
     for r in clan_recs:
         if r["name"] in compulsions and not r["compulsion"]:
             r["compulsion"], r["compulsion_page"] = compulsions[r["name"]]
@@ -86,6 +95,7 @@ def extract() -> list[str]:
     report += ["### Advantages and loresheets"] + rep
     lore_t2, rep = extract_loresheets_tier2(manifest)
     report += ["### Tier-2 loresheets (supplements)"] + rep
+    report += ["### Manual records vs pages"] + verify_manual_records(manifest)
     _dump(EXTRACTED / "advantages.pdf.json", adv)
     _dump(EXTRACTED / "loresheets.pdf.json", lore)
     _dump(EXTRACTED / "loresheets.tier2.pdf.json", lore_t2)
@@ -133,6 +143,28 @@ def extract_advantages(manifest: dict) -> tuple[dict, list[dict], list[str]]:
     report.append(f"Advantages: {len(master)} master-list entries, {len(only)} chapter-only lines; "
                   f"{len(lore)} loresheets.")
     return {"master": master, "chapter_only": only, "levels": levels}, lore, report
+
+
+def verify_manual_records(manifest: dict) -> list[str]:
+    """Every manual record added for a supplement (manual/<catalog>.json "add") must name something
+    printed on its page (or the next one, for an entry that runs over): its name, spaces and
+    punctuation ignored, is looked for in the cached page text. Report only."""
+    from .sources.pdf import PdfBook
+
+    out, n = [], 0
+    pdfs: dict = {}
+    for cat in ("powers", "advantages", "loresheets"):
+        for rec in _manual(cat).get("add", []):
+            b = books.BY_ID.get(rec.get("book"))
+            if b is None or b.tier != 2 or not b.extractable:
+                continue
+            pb = pdfs.setdefault(b.book_id, PdfBook(b.book_id, manifest=manifest))
+            text = " ".join(ln.text for ln in pb.lines(rec["page"], rec["page"] + 1))
+            n += 1
+            if lore_parser.despace(rec["name"]) not in lore_parser.despace(text):
+                out.append(f"- manual/{cat}.json {rec['id']}: {rec['name']!r} not found on {b.book_id} "
+                           f"p.{rec['page']}-{rec['page'] + 1}")
+    return [f"Manual supplement records checked against their pages: {n}; {len(out)} not found."] + out
 
 
 def extract_loresheets_tier2(manifest: dict) -> tuple[list[dict], list[str]]:
@@ -189,11 +221,15 @@ def build_powers(extracted: list[dict], sections: list[dict], prec: dict, report
             name_to_id[r["name"].lower()] = r["id"]
             for al in r.get("aliases", []):
                 name_to_id.setdefault(al.lower(), r["id"])
+    formula_ids = {r["name"].lower(): r["id"] for r in recs if r["kind"] == "formula"}
     out = {"disciplines": [], "ritual": [], "ceremony": [], "formula": []}
     for r in recs:
         pre = r.get("prerequisite")
-        if pre is None and r.get("prerequisite_text"):
-            pre = merge.resolve_prerequisite(r["prerequisite_text"], name_to_id, report, r["id"])
+        text = r.get("prerequisite_text")
+        if pre is None and text and r["kind"] == "formula" and c.norm_space(text).lower() in formula_ids:
+            pre = {"formula_id": formula_ids[c.norm_space(text).lower()]}  # Ashfinder formulae build on one another
+        elif pre is None and text:
+            pre = merge.resolve_prerequisite(text, name_to_id, report, r["id"])
         entry = {
             "id": r["id"], "name": r["name"], "level": r["level"],
             "book": r["book"], "page": r["page"], "also_in": r.get("also_in", []),
@@ -202,6 +238,8 @@ def build_powers(extracted: list[dict], sections: list[dict], prec: dict, report
         }
         if r.get("manual_fields"):
             entry["manual_fields"] = sorted(r["manual_fields"])
+        if r.get("clans_only"):
+            entry["clans_only"] = r["clans_only"]
         if r["kind"] == "power":
             entry["amalgam"] = merge.amalgam_ref(r.get("amalgam"))
         if r["kind"] in ("power", "formula"):
@@ -213,7 +251,8 @@ def build_powers(extracted: list[dict], sections: list[dict], prec: dict, report
             out["disciplines"].append(entry)
         else:
             if r["kind"] == "ritual":
-                entry["koldunic"] = bool(r.get("koldunic", False))
+                # Blood Sigils pr 61: a Koldunic ritual needs the Koldunic Sorcery power
+                entry["koldunic"] = bool(r.get("koldunic", False)) or "power:blood-sorcery:koldunic-sorcery" in json.dumps(pre)
             entry["discipline"] = c.discipline_id(r["discipline"])
             out[r["kind"]].append(entry)
     # discipline records
@@ -370,6 +409,7 @@ def build_advantages(extracted: dict, prec: dict, report: list[str]) -> dict:
         r.setdefault("aliases", [])
         r.setdefault("also_in", [])
         r.pop("merged_from", None)
+        r.pop("why", None)  # a manual record's note on where its facts were read
         if r.get("manual_fields"):
             r["manual_fields"] = sorted(r["manual_fields"])
     order = {"background": 0, "merit": 1, "flaw": 2}
@@ -550,6 +590,31 @@ def crosscheck_loresheets() -> list[str]:
             "(the catalog keeps what the PDF prints).", ""] + out
 
 
+def crosscheck_powers() -> list[str]:
+    """Supplement powers, rituals, ceremonies and formulae vs the cached VTM Wiki pages."""
+    from .sources.mediawiki import MediaWikiSource  # noqa: F401  (cache layout only)
+
+    online = books.BUILD_DIR.parent / "online" / "paradoxwikis"
+    pages = {}
+    for kind, titles in crosscheck.WIKI_POWER_PAGES.items():
+        for t in titles:
+            f = online / f"{c.slug(t)}.json"
+            if f.exists():
+                pages.setdefault(kind, []).append(_load(f)["text"])
+    if not pages:
+        return ["", "## Cross-check: supplement powers vs VTM Wiki", "", "no cached wiki pages"]
+    cat = {n: _load(books.CATALOG_DIR / f"{n}.json")["entries"] for n in ("disciplines", "rituals", "ceremonies", "formulae")}
+    tier2 = {b.book_id for b in books.TIER2}
+    entries = {"power": [p for d in cat["disciplines"] for p in d["powers"] if p["book"] in tier2],
+               "ritual": [e for e in cat["rituals"] if e["book"] in tier2],
+               "ceremony": [e for e in cat["ceremonies"] if e["book"] in tier2],
+               "formula": [e for e in cat["formulae"] if e["book"] in tier2]}
+    out = crosscheck.powers_vs_wiki(entries, pages)
+    return ["", "## Cross-check: supplement powers vs VTM Wiki", "",
+            f"{sum(len(v) for v in entries.values())} supplement entries; {len(out)} disagreements "
+            "(the catalog keeps what the PDF prints).", ""] + out
+
+
 # --------------------------------------------------------------------------- commands
 
 def run(cmd: str, args: list[str]) -> int:
@@ -557,6 +622,7 @@ def run(cmd: str, args: list[str]) -> int:
         rep = extract()
         rep += build()
         rep += crosscheck_loresheets()
+        rep += crosscheck_powers()
         rep += ["", "## Checks", ""] + checks.run_all(books.CATALOG_DIR, page_cache=True)
         REPORT.write_text("\n".join(rep) + "\n", encoding="utf-8")
         print(f"wrote {REPORT}")

@@ -1113,7 +1113,12 @@
       "name": "Roadside Killer",
       "book": "v5-let-the-streets-run-red",
       "page": 76,
-      "also_in": [],
+      "also_in": [
+        {
+          "book": "v5-succubus-club",
+          "page": 26
+        }
+      ],
       "aliases": [],
       "source": "manual",
       "pool": "Dexterity or Charisma + Drive",

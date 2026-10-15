@@ -129,3 +129,55 @@ def loresheets_vs_wiki(entries: list[dict], rows: list[dict], slug) -> list[str]
         if e["id"] not in seen:
             out.append(f"- {e['id']} ({e['book']} p.{e['page']}): not on the wiki's list")
     return out
+
+
+# --------------------------------------------------------------------------- powers vs the VTM Wiki
+
+WIKI_POWER_PAGES = {
+    "power": ["Animalism", "Auspex", "Celerity", "Dominate", "Fortitude", "Obfuscate", "Oblivion", "Potence",
+              "Presence", "Protean", "Blood Sorcery"],
+    "ritual": ["Blood Sorcery Rituals"], "ceremony": ["Oblivion Ceremonies"], "formula": ["Thin-blood Alchemy"],
+}
+
+
+def wiki_level_rows(wikitext: str) -> list[dict]:
+    """'=== Level N ===' sections -> [{name, level, source}] (one per table row; the 'Other
+    Amalgams' and other sections are skipped)."""
+    import re as _re
+
+    out = []
+    parts = _re.split(r"^===?\s*Level\s+([1-5])[^=\n]*===?\s*$", wikitext, flags=_re.M)
+    for i in range(1, len(parts), 2):
+        level, body = int(parts[i]), parts[i + 1]
+        body = _re.split(r"^==[^=]", body, flags=_re.M)[0]
+        for row in _re.split(r"^\|-.*$", body, flags=_re.M)[1:]:
+            m = _re.search(r"^\|\s*'''(.+?)'''", row, _re.M)
+            if m:
+                src = row.strip().splitlines()[-1] if row.strip() else ""
+                out.append({"name": _re.sub(r"<[^>]+>|\[\[|\]\]", "", m.group(1)).strip(), "level": level,
+                            "source": src})
+    return out
+
+
+def powers_vs_wiki(entries: dict, pages: dict) -> list[str]:
+    """entries = {kind: [catalog entries with name/level/book/page/aliases]} (supplement ones only);
+    pages = {kind: [wikitext, ...]}. Lists level disagreements and supplement entries the wiki
+    does not have. For review only."""
+    import re as _re
+
+    def norm(s):
+        return _re.sub(r"[^a-z0-9]", "", (s or "").lower().replace("’", "'"))
+
+    out = []
+    for kind, ents in entries.items():
+        rows = [r for t in pages.get(kind, []) for r in wiki_level_rows(t)]
+        by = {}
+        for r in rows:
+            by.setdefault(norm(r["name"]), []).append(r)
+        for e in ents:
+            hits = [r for n in [e["name"]] + e.get("aliases", []) for r in by.get(norm(n), [])]
+            if not hits:
+                out.append(f"- {e['id']} ({e['book']} p.{e['page']}): not on the wiki's {kind} pages")
+            elif e["level"] not in {r["level"] for r in hits}:
+                out.append(f"- {e['id']}: level {e['level']} here, wiki has {sorted({r['level'] for r in hits})}")
+    return out

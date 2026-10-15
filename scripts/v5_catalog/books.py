@@ -28,7 +28,8 @@ class Book:
     dot_glyph: str
     tier: int = 1
     extractable: bool = True
-    # catalog name -> list of (first printed page, last printed page)
+    # catalog name -> list of (first printed page, last printed page); a Tier-2 "disciplines"
+    # span may add (kind, discipline) when it opens in the middle of a section
     ranges: dict = field(default_factory=dict)
     # printed pages whose footers the `pages` command prints to prove the offset
     footer_samples: tuple = ()
@@ -88,31 +89,31 @@ TIER1: tuple[Book, ...] = (
 # rendered page (manual records). Offsets from the inventory, re-checked with `pages <book_id>`.
 TIER2: tuple[Book, ...] = (
     Book(book_id="v5-camarilla", offset=1, dot_glyph=None, tier=2,
-         ranges={"loresheets": [(184, 190)]}, footer_samples=(50, 184)),
+         ranges={"disciplines": [(167, 168)], "loresheets": [(184, 190)]}, footer_samples=(50, 184)),
     Book(book_id="v5-cults-of-the-blood-gods", offset=3, dot_glyph="\u2022", tier=2,
-         ranges={"loresheets": [(220, 231)]}, footer_samples=(68, 220)),
+         ranges={"disciplines": [(44, 46, "formula", "Thin-Blood Alchemy"), (55, 56), (67, 67), (85, 86), (93, 94), (104, 104), (203, 214)], "loresheets": [(220, 231)]}, footer_samples=(68, 220)),
     Book(book_id="v5-children-of-the-blood", offset=1, dot_glyph="\u2022", tier=2,
          ranges={"loresheets": [(101, 108)]}, footer_samples=(27, 101)),
     Book(book_id="v5-forbidden-religions", offset=1, dot_glyph="\u2022", tier=2,
-         ranges={"loresheets": [(88, 93)]}, footer_samples=(23, 88)),
+         ranges={"disciplines": [(18, 18), (23, 23), (44, 44), (66, 67), (76, 77)], "loresheets": [(88, 93)]}, footer_samples=(23, 88)),
     Book(book_id="v5-blood-sigils", offset=2, dot_glyph="\u2022", tier=2,
-         ranges={"loresheets": [(177, 180)]}, footer_samples=(92, 177)),
+         ranges={"disciplines": [(59, 80)], "loresheets": [(177, 180)]}, footer_samples=(92, 177)),
     Book(book_id="v5-gehenna-war", offset=2, dot_glyph=None, tier=2,
-         ranges={"loresheets": [(157, 159)]}, footer_samples=(39, 157)),
+         ranges={"disciplines": [(46, 51)], "loresheets": [(157, 159)]}, footer_samples=(39, 157)),
     Book(book_id="v5-courts-of-the-damned", offset=2, dot_glyph="\u2022", tier=2,
-         ranges={"loresheets": [(218, 222)]}, footer_samples=(55, 218)),
+         ranges={"disciplines": [(214, 217)], "loresheets": [(218, 222)]}, footer_samples=(55, 218)),
     Book(book_id="v5-in-memoriam", offset=2, dot_glyph="\u2022", tier=2,
-         ranges={"loresheets": [(149, 154)]}, footer_samples=(39, 149)),
+         ranges={"disciplines": [(145, 146)], "loresheets": [(149, 154)]}, footer_samples=(39, 149)),
     Book(book_id="v5-succubus-club", offset=2, dot_glyph="\u2022", tier=2,
-         ranges={"loresheets": [(158, 166)]}, footer_samples=(41, 158)),
+         ranges={"disciplines": [(27, 29)], "loresheets": [(158, 166)]}, footer_samples=(41, 158)),
     Book(book_id="v5-tattered-facade", offset=2, dot_glyph="\u2022", tier=2,
-         ranges={"loresheets": [(171, 174)]}, footer_samples=(88, 171)),
+         ranges={"disciplines": [(89, 108)], "loresheets": [(171, 174)]}, footer_samples=(88, 171)),
     Book(book_id="v5-chicago-by-night", offset=1, dot_glyph="\u2022", tier=2,
-         ranges={"loresheets": [(262, 287)]}, footer_samples=(89, 262)),
+         ranges={"disciplines": [(292, 295)], "loresheets": [(262, 287)]}, footer_samples=(89, 262)),
     Book(book_id="v5-chicago-folios", offset=1, dot_glyph="\u2022", tier=2,
-         ranges={"loresheets": [(158, 169)]}, footer_samples=(44, 158)),
+         ranges={"disciplines": [(170, 175)], "loresheets": [(158, 169)]}, footer_samples=(44, 158)),
     Book(book_id="v5-nod-apocrypha", offset=2, dot_glyph="\u2022", tier=2,
-         ranges={"loresheets": [(37, 40)]}, footer_samples=(28, 37)),
+         ranges={"disciplines": [(32, 35)], "loresheets": [(37, 40)]}, footer_samples=(28, 37)),
     # one-sheet-per-page handouts: printed page = PDF page (LA by Night prints 1-10; the Choice
     # of Games file prints no page numbers, so its "page" is the PDF page)
     Book(book_id="v5-la-by-night-loresheets", offset=0, dot_glyph=None, tier=2,
@@ -122,11 +123,13 @@ TIER2: tuple[Book, ...] = (
     # adventures: the PDF of Let the Streets Run Red holds the book twice; pdf 1-252 is the
     # updated text (it fills the second copy's "XX" page references), so offset +1 reads it
     Book(book_id="v5-fall-of-london", offset=2, dot_glyph=None, tier=2,
-         ranges={"loresheets": [(233, 238)]}, footer_samples=(65, 233)),
+         ranges={"disciplines": [(29, 31), (264, 264)], "loresheets": [(233, 238)]}, footer_samples=(65, 233)),
     Book(book_id="v5-let-the-streets-run-red", offset=1, dot_glyph="\u2022", tier=2,
          ranges={"loresheets": [(224, 233)]}, footer_samples=(76, 224)),
     Book(book_id="v5-trails-of-ash-and-bone", offset=1, dot_glyph="\u2022", tier=2,
-         ranges={"loresheets": [(170, 172)]}, footer_samples=(49, 170)),
+         ranges={"disciplines": [(172, 174)], "loresheets": [(170, 172)]}, footer_samples=(49, 170)),
+    Book(book_id="v5-sabbat", offset=1, dot_glyph=None, tier=2, ranges={"disciplines": [(45, 53)]}, footer_samples=(33, 46)),
+    Book(book_id="v5-blood-stained-love", offset=2, dot_glyph=None, tier=2, ranges={"disciplines": [(151, 154)]}, footer_samples=(38, 151)),
     # the Anarch PDF on disk is a Russian translation: nothing is extracted from it; its
     # entries are facts from the online source (source "online"), see manual/loresheets.json
     Book(book_id="v5-anarch", offset=0, dot_glyph=None, tier=2, extractable=False),

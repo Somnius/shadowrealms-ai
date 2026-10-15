@@ -678,5 +678,441 @@
   "flaw:thin-blood-vitae-dependency": {
     "en": "Unless you slake one Hunger on vampire Blood each week you lose all Disciplines (Alchemy included) until you do so again.",
     "el": "Αν δεν κατεβάζεις ένα Hunger με αίμα βαμπίρ κάθε εβδομάδα χάνεις όλα τα Disciplines (και την Alchemy) μέχρι να το ξανακάνεις."
+  },
+  "flaw:condemnation": {
+    "en": "Influence (Church) option: an offense against your superiors makes you or your coterie outcasts. Only a grand show of devotion restores standing; failing again risks replacement, expulsion or excommunication.",
+    "el": "Επιλογή Influence (Church): μια προσβολή προς τους ανωτέρους σας κάνει εσένα ή την coterie παρίες. Μόνο μια μεγάλη επίδειξη αφοσίωσης σας αποκαθιστά· νέα αποτυχία φέρνει κίνδυνο αντικατάστασης, αποπομπής ή αφορισμού."
+  },
+  "flaw:out-of-favor": {
+    "en": "Influence (Church) option: you have let your superiors down. Any request for resources or favors from the cult hierarchy takes a two-dice penalty.",
+    "el": "Επιλογή Influence (Church): απογοήτευσες τους ανωτέρους σου. Κάθε αίτημα για πόρους ή χάρες από την ιεραρχία της λατρείας έχει ποινή δύο ζαριών."
+  },
+  "merit:apocryphal-texts": {
+    "en": "You own unofficial writings by a founder or leading figure of your church, which make you a sought-after authority. Gain two dice on Intelligence rolls that draw on them.",
+    "el": "Έχεις ανεπίσημα κείμενα ενός ιδρυτή ή επιφανούς προσώπου της εκκλησίας σου, που σε κάνουν περιζήτητο ειδήμονα. Παίρνεις δύο ζάρια στις ρίψεις Intelligence που βασίζονται σε αυτά."
+  },
+  "flaw:apocryphal-texts": {
+    "en": "Taken as a Flaw: your cult's leaders see the unofficial writings you hold as dangerous. In social combat rolls about them, the Willpower damage modifier goes up by 1.",
+    "el": "Ως Flaw: οι ηγέτες της λατρείας σου θεωρούν επικίνδυνα τα ανεπίσημα κείμενα που έχεις. Σε ρίψεις κοινωνικής σύγκρουσης γύρω από αυτά, ο τροποποιητής ζημιάς Willpower ανεβαίνει κατά 1."
+  },
+  "merit:inspired-artist": {
+    "en": "Art you make that carries your cult's symbols or message entrances those who see it, much like the Presence power Awe; they resist with Composure + Intelligence at Difficulty 3.",
+    "el": "Η τέχνη σου που φέρει τα σύμβολα ή το μήνυμα της λατρείας σου μαγεύει όσους τη βλέπουν, όπως η δύναμη Awe της Presence· αντιστέκονται με Composure + Intelligence σε Difficulty 3."
+  },
+  "merit:travelling-preacher": {
+    "en": "You carry your cult's word from town to town and know the safe roads, resting spots and blind spots in surveillance. On those routes, rolls to evade the Second Inquisition or hunters are 1 Difficulty lower.",
+    "el": "Μεταφέρεις το μήνυμα της λατρείας σου από πόλη σε πόλη και ξέρεις ασφαλείς δρόμους, κρυψώνες και τυφλά σημεία. Σε αυτές τις διαδρομές, οι ρίψεις για να ξεφύγεις από τη Second Inquisition ή κυνηγούς έχουν Difficulty 1 μικρότερο."
+  },
+  "flaw:excommunicated": {
+    "en": "Your cult threw you out and cut off its support. At two dots, lose two dice on all rolls about the cult or its members; at five, cultists work to ruin you, up to a Blood Hunt if you enter their turf.",
+    "el": "Η λατρεία σε έδιωξε και σου έκοψε κάθε στήριξη. Με δύο τελείες χάνεις δύο ζάρια σε όλες τις ρίψεις που αφορούν τη λατρεία ή τα μέλη της· με πέντε, σε κυνηγούν ενεργά, ως και με Blood Hunt αν μπεις στην περιοχή τους."
+  },
+  "flaw:faithless": {
+    "en": "You don't believe the cult's doctrine and have to fake it constantly. Lose two dice on Resolve rolls tied to acting for the cult, and you can't exceed level 2 in its powers, Rituals or Loresheets.",
+    "el": "Δεν πιστεύεις στα δόγματα της λατρείας και πρέπει να προσποιείσαι συνεχώς. Χάνεις δύο ζάρια σε ρίψεις Resolve όταν δρας για τη λατρεία και δεν ξεπερνάς το επίπεδο 2 στις δυνάμεις, τα Rituals ή τα Loresheets της."
+  },
+  "merit:memories-of-the-fallen": {
+    "en": "Thin-bloods only: under Ashe you relive, vividly, the lives of the Kindred whose deaths produced it. On Blood Alchemy rolls involving Ashe, 9s count as 10s.",
+    "el": "Μόνο για thin-blood: η Ashe σού φέρνει έντονες μνήμες των Kindred που πέθαναν για να φτιαχτεί. Στις ρίψεις Blood Alchemy που αφορούν την Ashe, τα 9 μετρούν ως 10."
+  },
+  "flaw:ashe-addiction": {
+    "en": "On top of the usual Ashe Addiction rules from Cults of the Blood Gods, a failed Blood Alchemy roll costs you two dice on every action for the rest of the chapter.",
+    "el": "Πέρα από τους κανόνες Ashe Addiction του Cults of the Blood Gods, μια αποτυχημένη ρίψη Blood Alchemy σού αφαιρεί δύο ζάρια από κάθε ενέργεια για το υπόλοιπο chapter."
+  },
+  "merit:gardener": {
+    "en": "You run your own Bahari Garden, a selective Herd and Influence whose followers let you feed in return for teaching. Dots set its size, from up to 5 mortals to 50+ mortals and over a dozen Kindred. Lost if the cult turns on you.",
+    "el": "Διευθύνεις δικό σου Κήπο των Bahari, επιλεκτική μορφή Herd και Influence: οι πιστοί σε αφήνουν να τραφείς με αντάλλαγμα διδασκαλία. Οι τελείες ορίζουν το μέγεθος, από 5 θνητούς ως 50+ και δώδεκα+ Kindred. Χάνεται με τη δυσμένεια."
+  },
+  "merit:dark-mothers-song": {
+    "en": "Your words stir a listener's pain and grief toward insight and a thirst for justice. Gain three dice on Manipulation rolls to win someone over to the worship of Lilith.",
+    "el": "Τα λόγια σου ξυπνούν τον πόνο και το πένθος του ακροατή, στρέφοντάς τον σε επίγνωση και δίψα για δικαιοσύνη. Παίρνεις τρία ζάρια σε ρίψεις Manipulation για να προσηλυτίσεις κάποιον στη λατρεία της Lilith."
+  },
+  "merit:fire-resistant": {
+    "en": "Repeated firewalking sacraments have hardened you to flame. You may convert Aggravated Health damage to Superficial, up to your Blood Potency in boxes.",
+    "el": "Οι επανειλημμένες τελετές πυροβασίας σε έχουν σκληρύνει απέναντι στη φωτιά. Μπορείς να μετατρέψεις Aggravated ζημιά Health σε Superficial, έως τόσα κουτάκια όσο το Blood Potency σου."
+  },
+  "flaw:schism": {
+    "en": "Lasombra only: a great-grandsire of yours helped purge the Church of Caine centuries ago, so the Crimson Curia distrusts you. Lose two dice on Social rolls with fellow cult members.",
+    "el": "Μόνο για Lasombra: ένας προπρόγονος του αίματός σου πήρε μέρος στην εκκαθάριση της Church of Caine πριν από αιώνες και η Crimson Curia σε υποψιάζεται. Χάνεις δύο ζάρια σε Social ρίψεις με άλλα μέλη της λατρείας."
+  },
+  "merit:fixer": {
+    "en": "You get clients illicit goods and keep their secrets. Once per story, lean on a former client for something you need, as a favor or under threat of exposure; each client can be used this way only once.",
+    "el": "Προμηθεύεις στους πελάτες σου αθέμιτα αγαθά και κρατάς τα μυστικά τους. Μία φορά ανά story πιέζεις έναν παλιό πελάτη για κάτι που χρειάζεσαι, ως χάρη ή με απειλή αποκάλυψης· κάθε πελάτης αξιοποιείται έτσι μόνο μία φορά."
+  },
+  "merit:go-to-ground": {
+    "en": "You're always ready to vanish, with escape routes planned and a go bag packed. Add two dice to rolls to shake off pursuit.",
+    "el": "Είσαι πάντα έτοιμος να εξαφανιστείς, με σχεδιασμένες διαδρομές διαφυγής και έτοιμη τσάντα. Προσθέτεις δύο ζάρια σε ρίψεις για να ξεφύγεις από καταδίωξη."
+  },
+  "merit:vigilant": {
+    "en": "Once per chapter, when an SPC or device is watching you or setting an ambush, the Storyteller has you roll Wits + Awareness. Success spots the watcher; failure still leaves you sensing you're observed.",
+    "el": "Μία φορά ανά chapter, όταν ένας SPC ή μια συσκευή σε παρακολουθεί ή σου στήνει ενέδρα, ο Storyteller σού ζητά ρίψη Wits + Awareness. Με επιτυχία εντοπίζεις τον παρατηρητή· με αποτυχία απλώς νιώθεις ότι σε παρακολουθούν."
+  },
+  "flaw:false-alarms": {
+    "en": "Your sense of danger never switches off and often misfires. Every failed Awareness roll is a total failure, and the Storyteller may point out up to three people or devices you think are watching you, any of them harmless.",
+    "el": "Η αίσθηση κινδύνου σου δεν σβήνει ποτέ και συχνά σε ξεγελά. Κάθε αποτυχημένη ρίψη Awareness είναι ολική αποτυχία και ο Storyteller μπορεί να δείξει έως τρία άτομα ή συσκευές που νομίζεις ότι σε παρακολουθούν, ίσως όλα αθώα."
+  },
+  "merit:gematria": {
+    "en": "You know the gematria cipher the Cult of Shalim uses for its messages, and can encode or decode texts with it.",
+    "el": "Γνωρίζεις τον κώδικα gematria που χρησιμοποιεί η Cult of Shalim στα μηνύματά της και μπορείς να κρυπτογραφείς ή να αποκρυπτογραφείς κείμενα με αυτόν."
+  },
+  "merit:insidious-whispers": {
+    "en": "When you make a Social roll to erode a character's Conviction that you have guessed or come close to, each 10 counts as a critical success on its own, without needing a pair.",
+    "el": "Όταν κάνεις Social ρίψη για να διαβρώσεις ένα Conviction ενός χαρακτήρα που έχεις μαντέψει ή πλησιάσει, κάθε 10 μετρά από μόνο του ως κρίσιμη επιτυχία, χωρίς να χρειάζεται ζευγάρι."
+  },
+  "flaw:empty": {
+    "en": "You have cut away every joy, bond and ambition, and the hollowness unsettles outsiders, who try to get away from you. Subtract two dice from Social rolls.",
+    "el": "Έχεις αποκόψει κάθε χαρά, δεσμό και φιλοδοξία, και αυτό το κενό αναστατώνει τους αμύητους, που προσπαθούν να σε αποφύγουν. Αφαιρείς δύο ζάρια από τις Social ρίψεις."
+  },
+  "merit:bargainer": {
+    "en": "As a follower of Mithras, god of traders, you see both the worth and the catches of any deal. Rolls to judge a transaction are 1 Difficulty lower.",
+    "el": "Ως πιστός του Μίθρα, θεού των εμπόρων, βλέπεις την αξία και τις παγίδες κάθε συμφωνίας. Οι ρίψεις για να αξιολογήσεις μια συναλλαγή έχουν Difficulty 1 μικρότερο."
+  },
+  "merit:bull-slayer": {
+    "en": "You never give up on a target. In each step of an extended test you may reroll up to two failures, or just one if the test's matching Stamina, Composure or Resolve is 1.",
+    "el": "Δεν παρατάς ποτέ έναν στόχο. Σε κάθε σκέλος μιας εκτεταμένης δοκιμασίας μπορείς να ξαναρίξεις έως δύο αποτυχίες, ή μόνο μία αν το αντίστοιχο Stamina, Composure ή Resolve είναι 1."
+  },
+  "flaw:failed-initiate": {
+    "en": "You stumbled on one or more of the Seven Steps, so your Pater set a Mawla over you who watches your every move, interferes at will and demands proof of your worth at bad moments.",
+    "el": "Σκόνταψες σε ένα ή περισσότερα από τα Seven Steps, κι έτσι ο Pater σού όρισε έναν Mawla που παρακολουθεί κάθε σου κίνηση, παρεμβαίνει όποτε θέλει και ζητά αποδείξεις την πιο άβολη στιγμή."
+  },
+  "merit:archangels-grace": {
+    "en": "Training in fellow Nephilim's studios and dojos makes you lithe. In strenuous physical activity like combat, running away or dance, you may use Performance in place of Athletics or the other way round.",
+    "el": "Η εκπαίδευση σε στούντιο και dojo άλλων Nephilim σε κάνει ευκίνητο. Σε έντονη σωματική προσπάθεια, όπως μάχη, φυγή ή χορό, μπορείς να χρησιμοποιήσεις Performance αντί για Athletics ή το αντίστροφο."
+  },
+  "flaw:yearning": {
+    "en": "You still long to serve your lost master. Acting against the goals they set you costs two Willpower (one per roll in extended actions); with no Willpower left, your next action must serve their aims.",
+    "el": "Λαχταράς ακόμη να υπηρετείς τον χαμένο σου μέντορα. Για να δράσεις ενάντια στους στόχους του ξοδεύεις δύο Willpower (ένα ανά ρίψη σε εκτεταμένες ενέργειες)· χωρίς Willpower, η επόμενη ενέργειά σου πρέπει να τους υπηρετεί."
+  },
+  "merit:holy-ground": {
+    "en": "Your haven stands on a site sacred to your cult, and its members see you as its keeper. Once per story, summon a small band of them to help defend it.",
+    "el": "Το Haven σου βρίσκεται σε τόπο ιερό για τη λατρεία σου και τα μέλη της σε βλέπουν ως φύλακά του. Μία φορά ανά story καλείς μια μικρή ομάδα τους να βοηθήσει στην άμυνά του."
+  },
+  "merit:shrine": {
+    "en": "A shrine in your haven lets you hold rites there. One dot: tabletop, solo Level 1 rituals. Two: a room, rituals up to Level 3, one or two guests. Three: up to Level 4, ten guests, +1 die against intrusion with Security System.",
+    "el": "Ένας βωμός στο Haven σου επιτρέπει τελετουργίες. Μία τελεία: επιτραπέζιος, ατομικές τελετές Level 1. Δύο: δωμάτιο, έως Level 3, ένας ή δύο πιστοί. Τρεις: έως Level 4, δέκα πιστοί, +1 ζάρι κατά εισβολής με Security System."
+  },
+  "merit:built-in-flock": {
+    "en": "Coterie Domain merit (Chasse): the cult runs a front, such as a self-help center or retreat, that draws in mortals. Once per week, coterie members may go there to feed.",
+    "el": "Merit για το Domain της coterie (Chasse): η λατρεία διατηρεί μια βιτρίνα, π.χ. κέντρο αυτοβελτίωσης ή θέρετρο, που προσελκύει θνητούς. Μία φορά την εβδομάδα, τα μέλη της coterie μπορούν να τραφούν εκεί."
+  },
+  "merit:mithraeum": {
+    "en": "Coterie Domain merit (Chasse): your domain overlaps a Mithraeum, and the coterie enforces the cult's protection racket in return for its resources. Hunting rolls in your domain are 1 Difficulty lower.",
+    "el": "Merit για το Domain της coterie (Chasse): το Domain σας επικαλύπτει ένα Mithraeum και η coterie επιβάλλει την προστασία-εκβιασμό της λατρείας με αντάλλαγμα τους πόρους της. Οι ρίψεις κυνηγιού στο Domain σας έχουν Difficulty 1 μικρότερο."
+  },
+  "flaw:disputed-domain": {
+    "en": "Coterie Domain flaw (Chasse): your cult's turf overlaps a rival group's. On meeting its members, roll at once to resist fury frenzy, one die fewer each later meeting; a new story resets the pool.",
+    "el": "Flaw για το Domain της coterie (Chasse): η περιοχή της λατρείας σας επικαλύπτεται με αντίπαλης ομάδας. Όταν συναντάς μέλη της, ρίχνεις αμέσως για να αντισταθείς σε fury frenzy, με ένα ζάρι λιγότερο κάθε φορά· νέο story επαναφέρει το pool."
+  },
+  "merit:community-outreach": {
+    "en": "Coterie Domain merit (Lien): the cult's charity work has won the locals over, and they link you or your coterie to it. Gain one extra die when working with mortals in your domain.",
+    "el": "Merit για το Domain της coterie (Lien): η φιλανθρωπική δράση της λατρείας έχει κερδίσει τους κατοίκους, που σας συνδέουν μαζί της. Παίρνεις ένα επιπλέον ζάρι όταν συνεργάζεσαι με θνητούς στο Domain σας."
+  },
+  "flaw:visibility": {
+    "en": "Coterie Domain flaw: someone is sure the cult is trouble and keeps its spaces watched, from a lone conspiracy poster to news crews. Hunting rolls in the Domain are 2 Difficulty higher.",
+    "el": "Flaw για το Domain της coterie: κάποιος είναι βέβαιος ότι η λατρεία είναι πρόβλημα και παρακολουθεί τους χώρους της, από έναν μοναχικό συνωμοσιολόγο ως τηλεοπτικά συνεργεία. Οι ρίψεις κυνηγιού στο Domain έχουν Difficulty 2 μεγαλύτερο."
+  },
+  "merit:networked": {
+    "en": "Coterie Domain merit (Portillon): you share the cult's security, like camera feeds and patrols that know you. Once per story, the coterie can use it to guard its domain, for example pulling footage of an intruder.",
+    "el": "Merit για το Domain της coterie (Portillon): μοιράζεστε την ασφάλεια της λατρείας, όπως κάμερες και περιπολίες που σας γνωρίζουν. Μία φορά ανά story η coterie τη χρησιμοποιεί για να προστατέψει το Domain της, π.χ. βίντεο εισβολέα."
+  },
+  "flaw:shared-vulnerabilities": {
+    "en": "Coterie Domain flaw: the cult's lax security gives your foes a way in. Enemies who exploit it add two dice to attempts to break into the coterie's domain.",
+    "el": "Flaw για το Domain της coterie: η χαλαρή ασφάλεια της λατρείας ανοίγει δρόμο στους εχθρούς σας. Όσοι την εκμεταλλεύονται προσθέτουν δύο ζάρια στις απόπειρες εισβολής στο Domain της coterie."
+  },
+  "background:devout-following": {
+    "en": "Influence (Church) option: you can rally the congregation for a goal in line with the cult's teachings, such as mortals staging a public protest or Kindred hunting down a heretic.",
+    "el": "Επιλογή Influence (Church): μπορείς να ξεσηκώσεις το ποίμνιο για σκοπό σύμφωνο με τη διδασκαλία της λατρείας, π.χ. θνητούς σε δημόσια διαμαρτυρία ή Kindred που κυνηγούν έναν αιρετικό."
+  },
+  "background:charitable-offerings": {
+    "en": "Influence (Church) option: a wealthy flock's donations keep the diocese self-funded. You get a Haven of the same rating as a meeting place, and once per story each coterie member counts one extra dot of Resources.",
+    "el": "Επιλογή Influence (Church): οι δωρεές ενός πλούσιου ποιμνίου κρατούν την επισκοπή αυτάρκη. Παίρνετε Haven ίδιας βαθμίδας ως τόπο συνάντησης και μία φορά ανά story κάθε μέλος της coterie μετρά μία επιπλέον τελεία Resources."
+  },
+  "background:extremist-cell": {
+    "en": "Influence (Church) option: a cell of skilled humans or neonates works as saboteurs for the diocese (see Cults of the Blood Gods). The coterie must fund it and answer for whatever it authorizes the cell to do.",
+    "el": "Επιλογή Influence (Church): ένας πυρήνας ικανών ανθρώπων ή neonates δρα ως σαμποτέρ για την επισκοπή (βλ. Cults of the Blood Gods). Η coterie τον χρηματοδοτεί και λογοδοτεί για ό,τι του εγκρίνει να κάνει."
+  },
+  "background:well-integrated": {
+    "en": "Influence (Church) option: a cult figure shields you fully from mortal authorities or partly from the local Camarilla. Once per story, call in a reprieve or similar pardon; overusing it draws notice.",
+    "el": "Επιλογή Influence (Church): ένα πρόσωπο της λατρείας σάς καλύπτει πλήρως απέναντι στις θνητές αρχές ή εν μέρει απέναντι στην τοπική Camarilla. Μία φορά ανά story ζητάς αναστολή ή παρόμοια χάρη· η κατάχρηση τραβά προσοχή."
+  },
+  "background:the-next-in-line": {
+    "en": "Influence (Church) option: you are tipped to rise to the synod council or the cult's leadership. Gain two dice on diplomacy rolls within the cult, but you also take the Flaw Adversary (one dot).",
+    "el": "Επιλογή Influence (Church): προορίζεσαι για το συμβούλιο της συνόδου ή την ηγεσία της λατρείας. Παίρνεις δύο ζάρια σε ρίψεις διπλωματίας μέσα στη λατρεία, αλλά αποκτάς και το Flaw Adversary με μία τελεία."
+  },
+  "merit:influencer-ashfinders": {
+    "en": "Hundreds of thousands follow you online. Once per story, have them do a simple, nonviolent thing for you. If you leak Kindred secrets online, you gain Adversary and Enemies at two dots each.",
+    "el": "Εκατοντάδες χιλιάδες σε ακολουθούν στο διαδίκτυο. Μία φορά ανά story τους βάζεις να κάνουν κάτι απλό και μη βίαιο για σένα. Αν διαρρεύσεις μυστικά των Kindred στο διαδίκτυο, παίρνεις Adversary και Enemies με δύο τελείες το καθένα."
+  },
+  "merit:influencer": {
+    "en": "Needs Fame 2+: Once per story, with Storyteller approval, you act as if you had Influence equal to your Fame minus 1, aimed at one fan or a field tied to your celebrity.",
+    "el": "Απαιτεί Fame 2+: Μία φορά ανά story, με έγκριση του Storyteller, λειτουργείς σαν να έχεις Influence ίση με το Fame σου μείον 1, προς έναν θαυμαστή ή έναν τομέα που σχετίζεται με τη φήμη σου."
+  },
+  "merit:enduring-fame": {
+    "en": "Needs Fame 3+: Fame dots you lose during a story come back in full when the next story begins, with no effort on your part.",
+    "el": "Απαιτεί Fame 3+: Όσες τελείες Fame χάνεις μέσα σε ένα story επιστρέφουν όλες στην αρχή του επόμενου story, χωρίς καμία προσπάθεια."
+  },
+  "merit:drive-thru": {
+    "en": "Once per session you can finish a hunt safely within a few minutes by accepting +1 Difficulty on it.",
+    "el": "Μία φορά ανά session ολοκληρώνεις με ασφάλεια ένα κυνήγι μέσα σε λίγα λεπτά, δεχόμενος +1 Difficulty σε αυτό."
+  },
+  "flaw:resonance-sensitivity": {
+    "en": "Choose one Resonance other than Animal or Void. Feeding on it at Intense or stronger gives you a Storyteller-made Compulsion to resolve by story's end, or it bursts out messily. Can be taken again for another Resonance.",
+    "el": "Διαλέγεις ένα Resonance εκτός από Animal και Void. Αν τραφείς από αυτό σε Intense ή ισχυρότερο, ο Storyteller σου δίνει Compulsion που λύνεται ως το τέλος του story, αλλιώς ξεσπά βίαια. Παίρνεται ξανά για άλλο Resonance."
+  },
+  "flaw:resonance-mimic": {
+    "en": "After you feed on a mortal at Fleeting Temperament or more, their memories distract you next scene: -2 dice on a test the Storyteller picks. A feeding kill lets their persona seize you for a scene once your Willpower is Incapacitated.",
+    "el": "Όταν τραφείς από θνητό με Fleeting Temperament ή πάνω, οι μνήμες του σε αποσπούν στην επόμενη σκηνή: -2 ζάρια σε μία ρίψη του Storyteller. Αν τον σκοτώσεις τρεφόμενος, μπορεί να σε ελέγξει μία σκηνή όταν η Willpower σου γίνει Incapacitated."
+  },
+  "flaw:sloppy-feeder": {
+    "en": "Your feeding leaves a recognizable trail of attacks. If the authorities catch you feeding, they can tie you to a string of assaults and likely killings, and your whereabouts leak to Second Inquisition assets.",
+    "el": "Ο τρόπος που τρέφεσαι αφήνει αναγνωρίσιμο μοτίβο επιθέσεων. Αν οι αρχές σε πιάσουν να τρέφεσαι, σε συνδέουν με σειρά επιθέσεων και πιθανώς φόνων, και η θέση σου διαρρέει στη Second Inquisition."
+  },
+  "merit:mobile": {
+    "en": "Your haven is a vehicle: at 1 dot a truck, van or car with sunproof room for daysleep, at 2 an RV, coach or bus (the book also describes a 3-dot train, jet or ship). Coterie dots can pay for it.",
+    "el": "Το Haven σου είναι όχημα: με 1 τελεία αυτοκίνητο, βαν ή φορτηγό με χώρο ύπνου προστατευμένο από τον ήλιο, με 2 τροχόσπιτο ή λεωφορείο (το βιβλίο αναφέρει και τρένο, τζετ ή πλοίο 3 τελειών). Πληρώνεται και με τελείες coterie."
+  },
+  "merit:armored": {
+    "en": "Needs Mobile: Your vehicle haven is reinforced and keeps working until it has taken 10 damage, and only Critical Hits get through to harm the people inside.",
+    "el": "Απαιτεί Mobile: Το όχημα-Haven σου είναι θωρακισμένο και λειτουργεί κανονικά μέχρι να δεχτεί 10 ζημιά, ενώ μόνο τα Critical Hits περνούν και πλήττουν τους επιβάτες."
+  },
+  "merit:smugglers-stash": {
+    "en": "Needs Mobile: A hidden compartment in your vehicle haven survives even a thorough search; 1 dot fits one person, 2 dots the whole coterie. Searching for it is at +2 Difficulty.",
+    "el": "Απαιτεί Mobile: Μια κρυψώνα στο όχημα-Haven σου αντέχει ακόμη και σε ενδελεχή έρευνα· με 1 τελεία χωράει ένα άτομο, με 2 όλη η coterie. Η αναζήτησή της γίνεται με +2 Difficulty."
+  },
+  "merit:spare-plates": {
+    "en": "Needs Mobile: You carry spare plates, stickers and other markings you can swap in about a turn, so your vehicle haven slips past all but the most intrusive searches.",
+    "el": "Απαιτεί Mobile: Έχεις εφεδρικές πινακίδες, αυτοκόλλητα και άλλα αναγνωριστικά που αλλάζεις μέσα σε περίπου έναν γύρο, ώστε το όχημα-Haven σου να ξεφεύγει από κάθε έρευνα εκτός από τις πιο επίμονες."
+  },
+  "flaw:on-the-rails": {
+    "en": "Needs Mobile: You do not fully steer your haven, as with a ship or train. You can hurry or delay a departure or add an unplanned stop, but the route is mostly fixed and set with the Storyteller.",
+    "el": "Απαιτεί Mobile: Δεν ελέγχεις πλήρως την πορεία του Haven σου, όπως σε πλοίο ή τρένο. Μπορείς να επισπεύσεις ή να καθυστερήσεις μια αναχώρηση ή να κάνεις έκτακτη στάση, αλλά οι προορισμοί ορίζονται με τον Storyteller."
+  },
+  "flaw:temperamental": {
+    "en": "Needs Mobile: Your vehicle is unreliable; any failed Drive test stalls it until a successful repair test. The Flaw moves to any new vehicle unless you buy it off with experience.",
+    "el": "Απαιτεί Mobile: Το όχημά σου είναι αναξιόπιστο· κάθε αποτυχημένη ρίψη Drive το ακινητοποιεί μέχρι μια επιτυχημένη ρίψη επισκευής. Το Flaw σε ακολουθεί και σε νέο όχημα, εκτός αν το εξαγοράσεις με experience."
+  },
+  "merit:scene-kid": {
+    "en": "You perfectly embody the look of one subculture. Gain +1 die on suitable Social pools when dealing with members of that subculture.",
+    "el": "Ενσαρκώνεις τέλεια το στιλ μιας υποκουλτούρας. Παίρνεις +1 ζάρι στα σχετικά Social pools όταν έχεις να κάνεις με μέλη της."
+  },
+  "merit:ley-line-leech": {
+    "en": "Traveling the old lines of power charges your Blood: after several hours of travel to another city or place, you skip the Rouse Check for waking the next night.",
+    "el": "Ταξιδεύοντας στις αρχαίες γραμμές δύναμης φορτίζεις το αίμα σου: μετά από αρκετές ώρες ταξιδιού προς άλλη πόλη ή τόπο, δεν κάνεις Rouse Check για να ξυπνήσεις την επόμενη νύχτα."
+  },
+  "merit:persistent-blush": {
+    "en": "One activation of the Blush of Life lasts a full week, so you can pass as living among mortals for nights on end.",
+    "el": "Μία ενεργοποίηση του Blush of Life διαρκεί μία ολόκληρη εβδομάδα, οπότε περνάς για ζωντανός ανάμεσα σε θνητούς για πολλές νύχτες."
+  },
+  "flaw:land-locked": {
+    "en": "You cannot leave the land: travel by air or sea drives your Beast wild. Boarding a boat or plane needs a Fear Frenzy test at Difficulty 3.",
+    "el": "Δεν μπορείς να αφήσεις τη στεριά: κάθε ταξίδι στον αέρα ή στη θάλασσα εξαγριώνει το Κτήνος. Για να ανέβεις σε πλοίο ή αεροπλάνο χρειάζεσαι ρίψη Fear Frenzy με Difficulty 3."
+  },
+  "flaw:resistant-blush": {
+    "en": "The Blush of Life comes hard to you. When you make the Rouse Check to activate it, roll twice and keep the worse result.",
+    "el": "Το Blush of Life σου βγαίνει δύσκολα. Όταν κάνεις το Rouse Check για να το ενεργοποιήσεις, ρίχνεις δύο φορές και κρατάς το χειρότερο αποτέλεσμα."
+  },
+  "flaw:corpse-flesh": {
+    "en": "Your body is wholly dead and you cannot use the Blush of Life at all.",
+    "el": "Το σώμα σου είναι οριστικά νεκρό και δεν μπορείς να χρησιμοποιήσεις καθόλου το Blush of Life."
+  },
+  "flaw:mortal-pretender": {
+    "en": "You cling to a mortal life so hard it unsettles other Kindred. Take -2 dice on Social tests with vampires devoted to the Masquerade, such as Archons, Justicars, Sheriffs, Hounds and Vehme coteries.",
+    "el": "Επιμένεις τόσο σε μια θνητή ζωή που ανησυχεί τους άλλους Kindred. Έχεις -2 ζάρια σε Social ρίψεις με βαμπίρ αφοσιωμένα στη Masquerade, όπως Archons, Justicars, Sheriffs, Hounds και coteries της Vehme."
+  },
+  "merit:bonds-of-fealty": {
+    "en": "Needs Dominate: Your Dominate needs no eye contact on anyone Blood Bound to you. You must still get the order to them, but you need not be there in person.",
+    "el": "Απαιτεί Dominate: Το Dominate σου δεν χρειάζεται οπτική επαφή με όποιον είναι δεμένος μαζί σου με Blood Bond. Πρέπει ακόμη να του μεταφέρεις την εντολή, αλλά όχι αυτοπροσώπως."
+  },
+  "merit:enduring-bond": {
+    "en": "Your Blood Bonds fade more slowly: full and partial bonds weaken only every second month instead of monthly.",
+    "el": "Τα Blood Bond σου ξεθωριάζουν πιο αργά: πλήρη και μερικά δεσίματα εξασθενούν μόνο κάθε δεύτερο μήνα αντί για κάθε μήνα."
+  },
+  "merit:consanguineous-sense": {
+    "en": "You instinctively know your direct bloodline up close: a Resolve + Awareness test at Difficulty 3 reveals whether a Kindred within about 3 meters shares it, but not how many Generations apart you are.",
+    "el": "Αναγνωρίζεις ενστικτωδώς την άμεση γενεαλογική σου γραμμή από κοντά: ρίψη Resolve + Awareness με Difficulty 3 δείχνει αν ένας Kindred σε περίπου 3 μέτρα τη μοιράζεται, όχι όμως πόσες Generation σας χωρίζουν."
+  },
+  "merit:consanguineous-influence": {
+    "en": "Mental Disciplines used on a member of your clan or a direct ancestor or descendant gain +1 die, or +2 dice if they are at most two Generations from you. Caitiff and Duskborn do not count as a clan here.",
+    "el": "Τα νοητικά Disciplines σου σε μέλος του clan σου ή σε άμεσο πρόγονο ή απόγονο παίρνουν +1 ζάρι, ή +2 ζάρια αν απέχει έως δύο Generation από σένα. Caitiff και Duskborn δεν μετρούν ως clan εδώ."
+  },
+  "merit:sins-of-the-fathers": {
+    "en": "At 2 dots, diablerie on a direct ancestor or descendant leaves no telltale signs, even to A Taste for Blood and Scry the Soul. At 3 dots this covers any member of your clan; Caitiff and Duskborn cannot take 3 dots.",
+    "el": "Με 2 τελείες, η diablerie σε άμεσο πρόγονο ή απόγονο δεν αφήνει ίχνη, ούτε για το A Taste for Blood ή το Scry the Soul. Με 3 τελείες ισχύει για κάθε μέλος του clan σου· οι Caitiff και Duskborn δεν παίρνουν τις 3 τελείες."
+  },
+  "flaw:unblinking-visage": {
+    "en": "Your body no longer blinks, breathes or reacts by reflex. For the Blush of Life and other imitations of life, such as sex or eating, count your Humanity as 2 lower (minimum 0).",
+    "el": "Το σώμα σου δεν ανοιγοκλείνει πια τα μάτια, δεν αναπνέει και δεν αντιδρά αντανακλαστικά. Για το Blush of Life και άλλες μιμήσεις ζωής, όπως σεξ ή φαγητό, η Humanity σου μετρά 2 χαμηλότερα (ελάχιστο 0)."
+  },
+  "flaw:secret-master": {
+    "en": "Needs Mawla 1+: Once per story your Mawla demands a secret task worth a minor boon. Fail and next story it grows to a major boon; leave that undone and swap this Flaw for 2+ dots of other Flaws.",
+    "el": "Απαιτεί Mawla 1+: Μία φορά ανά story ο Mawla σου ζητά μια μυστική υπηρεσία αξίας minor boon. Αν αποτύχεις, στο επόμενο story γίνεται major boon· αν μείνει ανεκπλήρωτη, το Flaw αντικαθίσταται από 2+ τελείες άλλων Flaws."
+  },
+  "flaw:blatant-diablerist": {
+    "en": "At character creation, needs a past diablerie: Any power or Merit that uncovers diablerie, like A Taste for Blood and Scry the Soul, always reveals yours, even on a test that would otherwise fail.",
+    "el": "Στη δημιουργία χαρακτήρα απαιτεί προηγούμενη diablerie: Κάθε δύναμη ή Merit που αποκαλύπτει diablerie, όπως το A Taste for Blood και το Scry the Soul, αποκαλύπτει πάντα τη δική σου, ακόμη κι αν η ρίψη θα αποτύγχανε."
+  },
+  "flaw:inherited-bane": {
+    "en": "You carry a second clan's Bane on top of your own. Tremere may take it to gain the Salubri Bane without having committed diablerie.",
+    "el": "Φέρεις το Bane ενός δεύτερου clan επιπλέον του δικού σου. Οι Tremere μπορούν να το πάρουν για να αποκτήσουν το Bane των Salubri χωρίς να έχουν διαπράξει diablerie."
+  },
+  "merit:up-all-night": {
+    "en": "For the Blush of Life, eating, drinking and sex, count your Humanity 1 higher (max 10), or 2 higher at 4 dots. Nosferatu cannot take it, Hecata only at 2 dots; it does not stack with similar effects.",
+    "el": "Για το Blush of Life, το φαγητό, το ποτό και το σεξ, η Humanity σου μετρά 1 υψηλότερα (έως 10), ή 2 με 4 τελείες. Δεν επιτρέπεται σε Nosferatu, οι Hecata το παίρνουν μόνο με 2 τελείες· δεν αθροίζεται με παρόμοια."
+  },
+  "merit:soothed-beast": {
+    "en": "Choose one of the Storyteller's characters as your obsession. Once per session in their presence you may disregard a single Messy Critical or Bestial Failure. If they die you take 3 Stains, and may pick a new obsession next session.",
+    "el": "Διαλέγεις έναν χαρακτήρα του Storyteller ως εμμονή σου. Μία φορά ανά session, παρουσία του, αγνοείς ένα Bestial Failure ή Messy Critical. Αν πεθάνει, παίρνεις 3 Stains και διαλέγεις νέα εμμονή στο επόμενο session."
+  },
+  "merit:false-love": {
+    "en": "Choose one of the Storyteller's characters as your obsession. Near them, count your Humanity 1 higher (max 10) for the Blush of Life, eating, drinking and sex. If they die you take 3 Stains; pick anew next session. Does not stack.",
+    "el": "Διαλέγεις έναν χαρακτήρα του Storyteller ως εμμονή σου. Κοντά του η Humanity σου μετρά 1 υψηλότερα (έως 10) για Blush of Life, φαγητό, ποτό και σεξ. Αν πεθάνει, παίρνεις 3 Stains· νέα εμμονή στο επόμενο session. Δεν αθροίζεται."
+  },
+  "flaw:two-masters": {
+    "en": "You can be Blood Bound to two different Kindred at once, which gets messy if you drink vampire Blood for fun. The Storyteller should refuse it where Blood Bonds will rarely matter.",
+    "el": "Μπορείς να είσαι δεμένος με Blood Bond σε δύο διαφορετικούς Kindred ταυτόχρονα, κάτι που φέρνει μπελάδες αν πίνεις αίμα βαμπίρ για διασκέδαση. Ο Storyteller δεν το επιτρέπει αν τα Blood Bond δεν θα παίζουν ρόλο."
+  },
+  "flaw:shameful-childe": {
+    "en": "Needs ancilla or older: You Embraced a childe and abandoned them to fend alone. They are out there now and will sooner or later return to confront you.",
+    "el": "Απαιτεί ancilla ή μεγαλύτερο: Έκανες Embrace σε έναν childe και τον εγκατέλειψες στην τύχη του. Κυκλοφορεί κάπου εκεί έξω και αργά ή γρήγορα θα επιστρέψει να σε αντιμετωπίσει."
+  },
+  "flaw:touchstone-embraced-by-your-enemies": {
+    "en": "Needs ancilla or older: A former Touchstone was Embraced and now sides with your enemies. This Adversary is a lone neonate with allies, and facing what they became can cost you Stains.",
+    "el": "Απαιτεί ancilla ή μεγαλύτερο: Ένα πρώην Touchstone σου δέχτηκε το Embrace και τώρα είναι με τους εχθρούς σου. Ο Adversary είναι ένας neonate με συμμάχους, και η αντιπαράθεση μαζί του μπορεί να σου φέρει Stains."
+  },
+  "merit:custodian-of-history": {
+    "en": "Needs ancilla or older: An elder entrusted you with their account of one key era or figure of Kindred lore, such as the First Cities or the Anarch Revolt. Gain +1 die on Skill tests about that subject.",
+    "el": "Απαιτεί ancilla ή μεγαλύτερο: Ένας elder σου εμπιστεύτηκε τη δική του εκδοχή για μια σημαντική εποχή ή μορφή της ιστορίας των Kindred, π.χ. τις Πρώτες Πόλεις ή την Anarch Revolt. Παίρνεις +1 ζάρι σε σχετικές ρίψεις Skill."
+  },
+  "flaw:grief-phobia": {
+    "en": "Needs ancilla or older: Losing a Touchstone left you with a lasting phobia of something tied to them. Take -1 die on every test made near that stimulus. Take it once per Touchstone you have lost.",
+    "el": "Απαιτεί ancilla ή μεγαλύτερο: Η απώλεια ενός Touchstone σού άφησε μόνιμη φοβία για κάτι που σου το θυμίζει. Έχεις -1 ζάρι σε κάθε ρίψη κοντά σε αυτό το ερέθισμα. Παίρνεται μία φορά για κάθε χαμένο Touchstone."
+  },
+  "flaw:old-tricks": {
+    "en": "Needs ancilla or older: You never adapted to modern times, so every Specialty you have must be an Archaic one.",
+    "el": "Απαιτεί ancilla ή μεγαλύτερο: Δεν προσαρμόστηκες ποτέ στη σύγχρονη εποχή, οπότε κάθε Specialty σου πρέπει να είναι Archaic."
+  },
+  "flaw:banned-from": {
+    "en": "Needs ancilla or older: The Kindred ruling one city still bar you from it: a small city at 1 dot, mid-sized at 2, a major one at 3. Entering anyway brings trouble, and the city should matter in the chronicle.",
+    "el": "Απαιτεί ancilla ή μεγαλύτερο: Οι Kindred που κυβερνούν μια πόλη σού απαγορεύουν ακόμη την είσοδο: μικρή πόλη με 1 τελεία, μεσαία με 2, μεγάλη με 3. Αν μπεις παρ' όλα αυτά, έρχονται μπελάδες· η πόλη πρέπει να έχει ρόλο στο chronicle."
+  },
+  "flaw:outdated-preference": {
+    "en": "Needs ancilla or older: Like the Ventrue Bane, you only feed on one kind of mortal, but yours has nearly vanished. Either capture and force mortals to fit it, or always spend 1 Willpower to feed.",
+    "el": "Απαιτεί ancilla ή μεγαλύτερο: Όπως με το Bane των Ventrue, τρέφεσαι μόνο από ένα είδος θνητού, που όμως έχει σχεδόν εκλείψει. Ή αιχμαλωτίζεις θνητούς και τους αναγκάζεις να ταιριάξουν, ή ξοδεύεις πάντα 1 Willpower για να τραφείς."
+  },
+  "merit:object-of-power": {
+    "en": "Needs ancilla or older: You own a rare item of power. 1 dot: lucky dice, reroll one non-Hunger die once per story. 2: a grimoire, +1 die on Level 1 Ritual tests. 3: an amulet, a free Premonition of harm once per session.",
+    "el": "Απαιτεί ancilla ή μεγαλύτερο: Έχεις σπάνιο αντικείμενο δύναμης. 1: τυχερά ζάρια, ξαναρίχνεις ένα ζάρι εκτός Hunger μία φορά ανά story. 2: grimoire, +1 ζάρι σε ρίψεις Ritual επιπέδου 1. 3: φυλαχτό, δωρεάν Premonition κινδύνου ανά session."
+  },
+  "flaw:cursed-object": {
+    "en": "Needs ancilla or older: An item you own is out to kill you. Once per session, when the Storyteller chooses, you must reroll a successful test and risk failing it.",
+    "el": "Απαιτεί ancilla ή μεγαλύτερο: Κάτι που σου ανήκει θέλει τον θάνατό σου. Μία φορά ανά session, όποτε το ορίσει ο Storyteller, ξαναρίχνεις μια επιτυχημένη ρίψη με κίνδυνο να αποτύχει."
+  },
+  "merit:moral-dissident": {
+    "en": "Autark only: Gain two extra Convictions and Touchstones, reflecting stubborn independence. You may only take it if you also pay for it with fitting Flaws, such as enemies, rumors or curses.",
+    "el": "Μόνο για autark: Παίρνεις δύο επιπλέον Convictions και Touchstones, για την πεισματική ανεξαρτησία σου. Μπορείς να το πάρεις μόνο αν το πληρώσεις με κατάλληλα Flaws, όπως εχθρούς, φήμες ή κατάρες."
+  },
+  "merit:protean-sorcerer": {
+    "en": "Gangrel, Ministry or Tzimisce only: Blood Sorcery counts as a Clan Discipline for learning and teaching it, and takes Protean's place among your Clan Disciplines. An optional chronicle rule.",
+    "el": "Μόνο για Gangrel, Ministry ή Tzimisce: Μαθαίνεις και διδάσκεις Blood Sorcery σαν Clan Discipline, και παίρνει τη θέση του Protean στα Clan Disciplines σου. Προαιρετικός κανόνας chronicle."
+  },
+  "merit:oblivions-corruption": {
+    "en": "Ministry only: Oblivion counts as a Clan Discipline for learning and teaching it, replacing Protean among your Clan Disciplines. Cannot be combined with Protean Sorcerer. An optional chronicle rule.",
+    "el": "Μόνο για Ministry: Μαθαίνεις και διδάσκεις Oblivion σαν Clan Discipline, στη θέση του Protean στα Clan Disciplines σου. Δεν συνδυάζεται με το Protean Sorcerer. Προαιρετικός κανόνας chronicle."
+  },
+  "merit:semblance-of-the-methuselah": {
+    "en": "You resemble a methuselah of your clan's line. Per dot: +1 die to impress or cow those who know that ancient, possible extra clan or cult Status at formal gatherings, and +1 die on social rolls with the ancient itself.",
+    "el": "Μοιάζεις με ένα methuselah της γραμμής του clan σου. Ανά τελεία: +1 ζάρι για να εντυπωσιάσεις ή να φοβίσεις όσους τον γνωρίζουν, πιθανό επιπλέον Status σε επίσημες συγκεντρώσεις, και +1 ζάρι στις κοινωνικές ρίψεις με τον ίδιο."
+  },
+  "merit:penitence": {
+    "en": "Per dot, once per session you can spend a scene mortifying your flesh: take 1 Superficial Health damage and at once heal 1 Superficial Willpower damage.",
+    "el": "Ανά τελεία, μία φορά ανά session μπορείς να περάσεις μια σκηνή αυτομαστιγώνοντας το σώμα σου: δέχεσαι 1 Superficial ζημιά Health και θεραπεύεις αμέσως 1 Superficial ζημιά Willpower."
+  },
+  "flaw:horrible-scars-of-penitence": {
+    "en": "Your body bears unmistakable marks of extreme self-mortification, even if you stop. Works as the Repulsive Flaw, but only among vampires and mortals outside your cult.",
+    "el": "Το σώμα σου φέρει ολοφάνερα σημάδια ακραίας αυτοτιμωρίας, ακόμη κι αν σταματήσεις. Λειτουργεί όπως το Flaw Repulsive, αλλά μόνο ανάμεσα σε βαμπίρ και θνητούς εκτός της λατρείας σου."
+  },
+  "flaw:groveling-worm": {
+    "en": "Each session you must scourge yourself once, taking 2 Superficial Health damage, or take 1 Aggravated Willpower damage when the next session begins. Not allowed with the Penitence Merit.",
+    "el": "Κάθε session πρέπει να αυτομαστιγωθείς μία φορά, δεχόμενος 2 Superficial ζημιά Health, αλλιώς δέχεσαι 1 Aggravated ζημιά Willpower στην αρχή του επόμενου session. Δεν συνδυάζεται με το Merit Penitence."
+  },
+  "merit:unholy-will": {
+    "en": "Shields you from True Faith. At 2 dots: +1 die to resist or contest a believer on matters of faith, and 1 less damage from True Faith sources. At 4 dots: +2 dice and 2 less damage instead (they do not add up).",
+    "el": "Σε προστατεύει από την True Faith. Με 2 τελείες: +1 ζάρι για να αντισταθείς ή να αντιπαρατεθείς σε πιστό σε θέματα πίστης, και 1 λιγότερη ζημιά από πηγές True Faith. Με 4: +2 ζάρια και 2 λιγότερη ζημιά (δεν αθροίζονται)."
+  },
+  "flaw:beacon-of-profanity": {
+    "en": "Any mortal with True Faith, at any rating, can sense your presence, not only those rated 3 or higher.",
+    "el": "Κάθε θνητός με True Faith, σε οποιοδήποτε επίπεδο, νιώθει την παρουσία σου, όχι μόνο όσοι έχουν 3 ή περισσότερο."
+  },
+  "merit:zealotry": {
+    "en": "Per dot, once per session, when a roll for an action in line with one of your Convictions gets a normal win, you may make it a messy critical: critical benefits plus the mess, but no extra successes.",
+    "el": "Ανά τελεία, μία φορά ανά session, όταν μια ρίψη για πράξη σύμφωνη με μια Conviction σου πετύχει κανονικά, μπορείς να την κάνεις messy critical: παίρνεις τα οφέλη και τις συνέπειες, χωρίς επιπλέον επιτυχίες."
+  },
+  "flaw:crisis-of-faith": {
+    "en": "Each bestial failure also costs you 1 Superficial Willpower damage, on top of the roll's other results.",
+    "el": "Κάθε bestial failure σού κοστίζει επιπλέον 1 Superficial ζημιά Willpower, πέρα από τις άλλες συνέπειες της ρίψης."
+  },
+  "flaw:disease-vector": {
+    "en": "Feeding from a sick mortal always infects you with their illness, and you then pass it to the next vessel you feed from.",
+    "el": "Όταν τρέφεσαι από άρρωστο θνητό, κολλάς πάντα την ασθένειά του και τη μεταδίδεις στο επόμενο θύμα από το οποίο θα τραφείς."
+  },
+  "flaw:plaguebringer": {
+    "en": "Your blood carries a disease you can never purge. At 1 dot it is mild with visible signs; at 2 it can turn serious and may show no signs. Susceptible mortals you bite catch it; penalties are situational.",
+    "el": "Το αίμα σου κουβαλά μια ασθένεια που δεν φεύγει ποτέ. Με 1 τελεία είναι ήπια με ορατά συμπτώματα· με 2 μπορεί να γίνει σοβαρή και να μη φαίνεται. Οι ευάλωτοι θνητοί που δαγκώνεις κολλάνε· οι ποινές κρίνονται κατά περίσταση."
+  },
+  "merit:cold-dead-hunger": {
+    "en": "Your Beast stays sluggish when you hunger, giving +2 dice whenever you try to hold off Hunger frenzy.",
+    "el": "Το Κτήνος σου μένει νωθρό όταν πεινάς: +2 ζάρια όποτε προσπαθείς να αντισταθείς σε frenzy από Hunger."
+  },
+  "merit:pack-diablerie": {
+    "en": "In group diablerie you take the victim's soul unless you decline or a partner also has this Merit. If you help another succeed, gain 5 experience to spend at once on Blood Potency or the victim's Disciplines.",
+    "el": "Σε ομαδική diablerie εσύ παίρνεις την ψυχή του θύματος, εκτός αν παραιτηθείς ή αν κι άλλος συμμετέχων έχει αυτό το Merit. Αν βοηθήσεις άλλον να πετύχει, κερδίζεις 5 experience για άμεση χρήση σε Blood Potency ή Disciplines του θύματος."
+  },
+  "merit:mystic-of-the-void": {
+    "en": "Pick one Oblivion power you lack, of a level up to your Oblivion rating; it counts as known for Ceremony prerequisites and can be swapped once you learn it. Hecata and Lasombra may take 2 dots for three powers.",
+    "el": "Διάλεξε μία δύναμη Oblivion που δεν έχεις, επιπέδου έως τις τελείες σου σε Oblivion· μετρά ως γνωστή για προϋποθέσεις Ceremonies και αλλάζει όταν τη μάθεις. Hecata και Lasombra μπορούν να πάρουν 2 τελείες για τρεις δυνάμεις."
+  },
+  "flaw:ingrained-untamed": {
+    "en": "Needs Animalism 3+ and Storyteller approval: lets you buy three levels' worth of extra Animalism powers. Downside: failing to Ride the Wave in frenzy gives 2 Stains, and Convictions cannot offset them.",
+    "el": "Θέλει Animalism 3+ και έγκριση του Storyteller: σου επιτρέπει να αγοράσεις επιπλέον δυνάμεις Animalism αξίας τριών επιπέδων. Τίμημα: αν αποτύχεις να κάνεις Ride the Wave σε frenzy παίρνεις 2 Stains, χωρίς μείωση από Convictions."
+  },
+  "flaw:ingrained-daymares": {
+    "en": "Needs Auspex 3+ and Storyteller approval: lets you buy three levels' worth of extra Auspex powers. Downside: your day-sleep is haunted by visions, so you make two Rouse Checks on waking instead of one.",
+    "el": "Θέλει Auspex 3+ και έγκριση του Storyteller: σου επιτρέπει να αγοράσεις επιπλέον δυνάμεις Auspex αξίας τριών επιπέδων. Τίμημα: ο ημερήσιος ύπνος σου στοιχειώνεται από οράματα, οπότε ξυπνώντας κάνεις δύο Rouse Checks αντί για ένα."
+  },
+  "flaw:ingrained-sanguinary-animism": {
+    "en": "Needs Blood Sorcery 3+ and Storyteller approval: lets you buy three levels' worth of extra Blood Sorcery powers. Downside: in any scene after you feed, the victim's echoes cost you 2 dice on all Social and Mental pools.",
+    "el": "Θέλει Blood Sorcery 3+ και έγκριση του Storyteller: επιτρέπει αγορά επιπλέον δυνάμεων Blood Sorcery αξίας τριών επιπέδων. Τίμημα: σε κάθε σκηνή αφού τραφείς, οι απόηχοι του θύματος σού κόβουν 2 ζάρια από όλα τα Social και Mental pools."
+  },
+  "flaw:ingrained-breakdown": {
+    "en": "Needs Celerity 3+ and Storyteller approval: lets you buy three levels' worth of extra Celerity powers. Downside: failing a Rouse Check to activate a Celerity power deals 1 Aggravated Health damage as your body ages.",
+    "el": "Θέλει Celerity 3+ και έγκριση του Storyteller: σου επιτρέπει να αγοράσεις επιπλέον δυνάμεις Celerity αξίας τριών επιπέδων. Τίμημα: αν αποτύχει το Rouse Check για δύναμη Celerity, δέχεσαι 1 Aggravated ζημιά Health και το σώμα σου γερνά."
+  },
+  "flaw:ingrained-blunt": {
+    "en": "Needs Dominate 3+ and Storyteller approval: lets you buy three levels' worth of extra Dominate powers. Downside: you can never spend Willpower to reroll a Social test.",
+    "el": "Θέλει Dominate 3+ και έγκριση του Storyteller: σου επιτρέπει να αγοράσεις επιπλέον δυνάμεις Dominate αξίας τριών επιπέδων. Τίμημα: δεν μπορείς ποτέ να ξοδέψεις Willpower για να ξαναρίξεις Social test."
+  },
+  "flaw:ingrained-scar-tissue": {
+    "en": "Needs Fortitude 3+ and Storyteller approval: lets you buy three levels' worth of extra Fortitude powers. Downside: healed wounds still look fresh until your next day-sleep, which can threaten the Masquerade.",
+    "el": "Θέλει Fortitude 3+ και έγκριση του Storyteller: σου επιτρέπει να αγοράσεις επιπλέον δυνάμεις Fortitude αξίας τριών επιπέδων. Τίμημα: οι γιατρεμένες πληγές φαίνονται ακόμη ως τον επόμενο ημερήσιο ύπνο, απειλώντας τη Masquerade."
+  },
+  "flaw:ingrained-faded": {
+    "en": "Needs Obfuscate 3+ and Storyteller approval: lets you buy three levels' worth of extra Obfuscate powers. Downside: you roll one die fewer on Remorse tests (still at least one die).",
+    "el": "Θέλει Obfuscate 3+ και έγκριση του Storyteller: σου επιτρέπει να αγοράσεις επιπλέον δυνάμεις Obfuscate αξίας τριών επιπέδων. Τίμημα: ρίχνεις ένα ζάρι λιγότερο στα Remorse tests (τουλάχιστον ένα ζάρι)."
+  },
+  "flaw:ingrained-monstrous": {
+    "en": "Needs Oblivion 3+ and Storyteller approval: extra Oblivion powers worth three levels. Downside: Humanity counts as 3 lower for Blush of Life, Social pools, looks and the like; below 1 you gain Repulsive. Day pools and Remorse unaffected.",
+    "el": "Θέλει Oblivion 3+ και έγκριση του Storyteller: επιπλέον δυνάμεις Oblivion αξίας τριών επιπέδων. Τίμημα: η Humanity μετρά 3 χαμηλότερα για Blush of Life, Social pools, εμφάνιση κ.λπ.· κάτω από 1 παίρνεις Repulsive. Όχι για ημέρα ή Remorse."
+  },
+  "flaw:ingrained-killer-instinct": {
+    "en": "Needs Potence 3+ and Storyteller approval: lets you buy three levels' worth of extra Potence powers. Downside: failing a Rouse Check to activate a Potence power forces an immediate Fury frenzy test, as if physically provoked.",
+    "el": "Θέλει Potence 3+ και έγκριση του Storyteller: επιτρέπει αγορά επιπλέον δυνάμεων Potence αξίας τριών επιπέδων. Τίμημα: αν αποτύχει το Rouse Check για δύναμη Potence, κάνεις αμέσως test για Fury frenzy σαν να σε προκάλεσαν σωματικά."
+  },
+  "flaw:ingrained-egomaniac": {
+    "en": "Needs Presence 3+ and Storyteller approval: lets you buy three levels' worth of extra Presence powers. Downside: when a Presence power yields a messy critical or fails to sway its target, test for Fury frenzy at Difficulty 2.",
+    "el": "Θέλει Presence 3+ και έγκριση του Storyteller: επιτρέπει αγορά επιπλέον δυνάμεων Presence αξίας τριών επιπέδων. Τίμημα: αν μια δύναμη Presence βγάλει messy critical ή δεν επηρεάσει τον στόχο, κάνεις test για Fury frenzy σε Difficulty 2."
+  },
+  "flaw:ingrained-stasis": {
+    "en": "Needs Protean 3+ and Storyteller approval: extra Protean powers worth three levels. Downside: fail a Rouse Check on a Protean power and part of the change stays, useless, after you revert; cut it off (1 Aggravated) or wait for day-sleep.",
+    "el": "Θέλει Protean 3+ και έγκριση του Storyteller: επιπλέον δυνάμεις Protean αξίας τριών επιπέδων. Τίμημα: αν αποτύχει Rouse Check σε δύναμη Protean, μέρος της αλλαγής μένει άχρηστο· το κόβεις (1 Aggravated) ή περιμένεις τον ημερήσιο ύπνο."
   }
 }

@@ -1,11 +1,157 @@
 {
   "catalog": "powers",
-  "notes": "Patches to the parsed Discipline powers, rituals, ceremonies and formulae.",
+  "notes": "Patches to the parsed Discipline powers, rituals, ceremonies and formulae. Supplements (part F2): reprints PG renamed are merged into the PG entry (the old name stays as an alias); titles the text layer garbles are renamed; entries the parser cannot read are added from the page.",
   "merge": [
     {
       "from": "power:auspex:obeah",
       "into": "power:auspex:panacea",
       "why": "Companion pr 24 prints the Auspex 2 power as 'Obeah' (Amalgam Fortitude 1); the Players Guide pr 70 reprints the same power as 'Panacea' (same level, amalgam, cost and pool) and its Unburdening the Bestial Soul names Panacea as the prerequisite. Kept as one entry with the alias."
+    },
+    {
+      "from": "power:oblivion:fatal-precognition",
+      "into": "power:oblivion:fatal-prediction",
+      "why": "Cults pr 204 prints the Oblivion 2 power (Amalgam Auspex 2) as Fatal Precognition; the Players Guide pr 87 reprints it as Fatal Prediction. One entry, the Cults name kept as an alias (Trails of Ash and Bone cites it by that name)."
+    },
+    {
+      "from": "power:oblivion:where-the-shroud-thins",
+      "into": "power:oblivion:where-the-veil-thins",
+      "why": "Cults pr 205 Where the Shroud Thins = Players Guide pr 87 Where the Veil Thins (the PG renamed the Shroud to the Veil)."
+    },
+    {
+      "from": "ceremony:split-the-shroud",
+      "into": "ceremony:split-the-veil",
+      "why": "Cults pr 213 Split the Shroud = Players Guide Split the Veil (same rename)."
+    }
+  ],
+  "rename": [
+    {
+      "from": "power:animalism:awaken-the-par-asite",
+      "into": "power:animalism:awaken-the-parasite",
+      "name": "Awaken the Parasite",
+      "book": "v5-tattered-facade",
+      "why": "Tattered Facade pr 90 small caps read as 'A waken the P ar asite'; the body text names it Awaken the Parasite"
+    },
+    {
+      "from": "formula:tlc",
+      "into": "formula:tlc",
+      "name": "TLC",
+      "book": "v5-blood-sigils",
+      "why": "Blood Sigils pr 77 prints TLC in capitals"
+    },
+    {
+      "from": "formula:vitae-msg",
+      "into": "formula:vitae-msg",
+      "name": "Vitae MSG",
+      "book": "v5-blood-sigils",
+      "why": "Blood Sigils pr 79 prints Vitae MSG"
+    },
+    {
+      "from": "formula:dabomb",
+      "into": "formula:dabomb",
+      "name": "DaBomb",
+      "book": "v5-tattered-facade",
+      "why": "Tattered Facade pr 108 prints DaBomb"
+    },
+    {
+      "from": "ritual:le-sang-de-lamour",
+      "into": "ritual:le-sang-de-lamour",
+      "name": "Le Sang de l'Amour",
+      "why": "Blood Sigils pr 63 and Blood-Stained Love pr 154 print Le Sang de l'Amour"
+    }
+  ],
+  "add": [
+    {
+      "id": "power:blood-sorcery:koldunic-sorcery",
+      "kind": "power",
+      "name": "Koldunic Sorcery",
+      "discipline": "Blood Sorcery",
+      "level": 1,
+      "book": "v5-blood-sigils",
+      "page": 61,
+      "amalgam": null,
+      "prerequisite_text": null,
+      "rouse_cost": 1,
+      "rouse_cost_conditional": false,
+      "dice_pool": null,
+      "clans_only": [
+        "clan:tzimisce"
+      ],
+      "source": "manual",
+      "why": "Blood Sigils pr 61, printed in a box the parser skips: a Level 1 Blood Sorcery power a Tzimisce takes with the first Blood Sorcery dot to become a koldun (taken again for each further element); cost one Rouse Check plus Aggravated damage. The Koldunic rituals (pr 62, 66, 71) need it."
+    },
+    {
+      "id": "ritual:letter-ward",
+      "kind": "ritual",
+      "name": "Letter Ward",
+      "discipline": "Blood Sorcery",
+      "level": 1,
+      "book": "v5-let-the-streets-run-red",
+      "page": 77,
+      "amalgam": null,
+      "prerequisite_text": null,
+      "rouse_cost": null,
+      "rouse_cost_conditional": false,
+      "dice_pool": null,
+      "source": "manual",
+      "why": "Let the Streets Run Red pr 77 (Appendix III, Blood Sorcery Rituals) prints the level under the title instead of a Level heading, which the parser does not read: LEVEL 1 RITUAL."
+    },
+    {
+      "id": "ritual:bloody-message",
+      "kind": "ritual",
+      "name": "Bloody Message",
+      "discipline": "Blood Sorcery",
+      "level": 1,
+      "book": "v5-let-the-streets-run-red",
+      "page": 77,
+      "amalgam": null,
+      "prerequisite_text": null,
+      "rouse_cost": null,
+      "rouse_cost_conditional": false,
+      "dice_pool": null,
+      "source": "manual",
+      "why": "Let the Streets Run Red pr 77 (Appendix III, Blood Sorcery Rituals) prints the level under the title instead of a Level heading, which the parser does not read: LEVEL 1 RITUAL."
+    },
+    {
+      "id": "ritual:herd-ward",
+      "kind": "ritual",
+      "name": "Herd Ward",
+      "discipline": "Blood Sorcery",
+      "level": 1,
+      "book": "v5-let-the-streets-run-red",
+      "page": 77,
+      "amalgam": null,
+      "prerequisite_text": null,
+      "rouse_cost": null,
+      "rouse_cost_conditional": false,
+      "dice_pool": null,
+      "source": "manual",
+      "why": "Let the Streets Run Red pr 77 (Appendix III, Blood Sorcery Rituals) prints the level under the title instead of a Level heading, which the parser does not read: LEVEL 1 OR 3 RITUAL (one mortal at level 1, a warded door at level 3); recorded at level 1, the level-3 use is in the description; listed for review."
+    },
+    {
+      "id": "ritual:sleep-of-judas",
+      "kind": "ritual",
+      "name": "Sleep of Judas",
+      "discipline": "Blood Sorcery",
+      "level": 3,
+      "book": "v5-let-the-streets-run-red",
+      "page": 77,
+      "amalgam": null,
+      "prerequisite_text": null,
+      "rouse_cost": null,
+      "rouse_cost_conditional": false,
+      "dice_pool": null,
+      "source": "manual",
+      "why": "Let the Streets Run Red pr 77 (Appendix III, Blood Sorcery Rituals) prints the level under the title instead of a Level heading, which the parser does not read: LEVEL 3 RITUAL."
+    }
+  ],
+  "patch": [
+    {
+      "id": "power:oblivion:umbrous-clutch",
+      "book": "v5-sabbat",
+      "set": {
+        "rouse_cost_conditional": false
+      },
+      "why": "Sabbat pr 49 prints the cost as one Rouse Check and one Stain: the extra cost is a Stain, not more Rouse Checks"
     }
   ]
 }

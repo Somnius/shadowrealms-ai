@@ -170,6 +170,8 @@ def resolve_prerequisite(text: str | None, name_to_id: dict, report: list[str], 
     if not text:
         return None
     t = c.norm_space(text).rstrip(".")
+    t = re.sub(r"\s*\([^()]*\)", "", t)  # "(Players Guide, p. 88)", "(see Chicago by Night)"
+    t = re.sub(r"\bTh (?=[a-z])", "Th", t)  # a split "Th" ligature: "Th ins"
     parts = [p.strip() for p in re.split(r",\s*|\s+and\s+", t) if p.strip()]
     clauses = []
     for p in parts:

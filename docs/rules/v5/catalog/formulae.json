@@ -3,6 +3,63 @@
   "version": 1,
   "entries": [
     {
+      "id": "formula:body-paint",
+      "name": "Body Paint",
+      "desc": {
+        "en": "Makes an ink that sets into a permanent tattoo the alchemist shapes on mortal or vampire skin; with 6+ successes, the wearer can reshape it after a week (Stamina + Resolve, Difficulty 5). Only flesh-colored Body Paint erases it.",
+        "el": "Φτιάχνει μελάνι που γίνεται μόνιμο τατουάζ, όπως το σχηματίσει ο αλχημιστής σε δέρμα θνητού ή βαμπίρ· με 6+ επιτυχίες ο φέρων το αλλάζει μετά από μία εβδομάδα (Stamina + Resolve, Difficulty 5). Το σβήνει μόνο Body Paint χρώματος δέρματος."
+      },
+      "level": 1,
+      "book": "v5-blood-sigils",
+      "page": 73,
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf",
+      "prerequisite": null,
+      "rouse_cost": 1,
+      "rouse_cost_conditional": false,
+      "dice_pool": null,
+      "discipline": "discipline:thin-blood-alchemy"
+    },
+    {
+      "id": "formula:checkout-time",
+      "name": "Checkout Time",
+      "desc": {
+        "en": "Write a span of dates on the subject's arm: during it they lie in deep torpor, corpse-like, with no aura, no nightly Rouse Checks and no harm from stray sunlight, and wake without a Rouse Check. Up to 9 nights.",
+        "el": "Γράφεις ένα διάστημα ημερομηνιών στο χέρι του στόχου: για όσο κρατά πέφτει σε βαθύ torpor σαν πτώμα, χωρίς aura, χωρίς νυχτερινά Rouse Checks και χωρίς βλάβη από τυχαία έκθεση στον ήλιο, και ξυπνά χωρίς Rouse Check. Έως 9 νύχτες."
+      },
+      "level": 1,
+      "book": "v5-blood-sigils",
+      "page": 74,
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf",
+      "prerequisite": null,
+      "rouse_cost": 1,
+      "rouse_cost_conditional": false,
+      "dice_pool": null,
+      "discipline": "discipline:thin-blood-alchemy"
+    },
+    {
+      "id": "formula:elevate",
+      "name": "Elevate",
+      "desc": {
+        "en": "A party drug for thin-bloods: whoever takes it feels a warm rush and gains +1 die on Dexterity rolls for a scene. It can carry ordinary street drugs; a badly made batch gives -1 instead.",
+        "el": "Ναρκωτικό για πάρτι των thin-bloods: όποιος το πάρει νιώθει ζεστή έξαψη και παίρνει +1 ζάρι στις ρίψεις Dexterity για μία σκηνή. Μπορεί να μεταφέρει κοινά ναρκωτικά· κακοφτιαγμένο δίνει -1."
+      },
+      "level": 1,
+      "book": "v5-blood-sigils",
+      "page": 74,
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf",
+      "prerequisite": null,
+      "rouse_cost": 1,
+      "rouse_cost_conditional": false,
+      "dice_pool": "Stamina + Alchemy",
+      "discipline": "discipline:thin-blood-alchemy"
+    },
+    {
       "id": "formula:far-reach",
       "name": "Far Reach",
       "desc": {
@@ -19,6 +76,25 @@
       "rouse_cost": 1,
       "rouse_cost_conditional": false,
       "dice_pool": "Resolve + Alchemy vs Strength + Athletics",
+      "discipline": "discipline:thin-blood-alchemy"
+    },
+    {
+      "id": "formula:food-stain",
+      "name": "Food Stain",
+      "desc": {
+        "en": "Marks whoever eats or touches it; the alchemist knows the next one to feed on them on sight, sound or smell (at once with Auspex 2), and their direction for about an hour after. Keeps until used.",
+        "el": "Σημαδεύει όποιον το φάει ή το αγγίξει· ο αλχημιστής αναγνωρίζει τον επόμενο που θα τραφεί από αυτόν μόλις τον δει, τον ακούσει ή τον μυρίσει (αμέσως με Auspex 2) και ξέρει την κατεύθυνσή του για περίπου μία ώρα."
+      },
+      "level": 1,
+      "book": "v5-blood-sigils",
+      "page": 74,
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf",
+      "prerequisite": null,
+      "rouse_cost": 1,
+      "rouse_cost_conditional": false,
+      "dice_pool": null,
       "discipline": "discipline:thin-blood-alchemy"
     },
     {
@@ -79,6 +155,101 @@
       "discipline": "discipline:thin-blood-alchemy"
     },
     {
+      "id": "formula:portable-shade",
+      "name": "Portable Shade",
+      "desc": {
+        "en": "Endure sunlight unharmed for 1 hour per success. At sunset test again at Difficulty equal to the hours spent in daylight: failure deals 1 Aggravated damage, total failure 2.",
+        "el": "Αντέχεις το φως του ήλιου χωρίς ζημιά για 1 ώρα ανά επιτυχία. Στη δύση ρίχνεις ξανά με Difficulty ίσο με τις ώρες που πέρασες στο φως: η αποτυχία δίνει 1 Aggravated ζημιά, το total failure 2."
+      },
+      "level": 1,
+      "book": "v5-sabbat",
+      "page": 53,
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf",
+      "prerequisite": null,
+      "rouse_cost": 1,
+      "rouse_cost_conditional": false,
+      "dice_pool": "Stamina + Alchemy",
+      "discipline": "discipline:thin-blood-alchemy"
+    },
+    {
+      "id": "formula:speak-from-the-heart",
+      "name": "Speak from the Heart",
+      "desc": {
+        "en": "Brews a soda carrying a message: grape holds up to 71 words, orange a sketched image, lemon-lime a brief feeling. The next vampire to drink the soda drinker's blood receives it, in about 60 seconds.",
+        "el": "Φτιάχνει αναψυκτικό που κουβαλά μήνυμα: το σταφύλι έως 71 λέξεις, το πορτοκάλι ένα σκίτσο, το λεμόνι-λάιμ ένα σύντομο συναίσθημα. Το λαμβάνει, σε περίπου 60 δευτερόλεπτα, το επόμενο βαμπίρ που θα πιει το αίμα όποιου το ήπιε."
+      },
+      "level": 1,
+      "book": "v5-blood-sigils",
+      "page": 75,
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf",
+      "prerequisite": null,
+      "rouse_cost": 1,
+      "rouse_cost_conditional": false,
+      "dice_pool": null,
+      "discipline": "discipline:thin-blood-alchemy"
+    },
+    {
+      "id": "formula:advanced-torpor",
+      "name": "Advanced Torpor",
+      "desc": {
+        "en": "Mixed into mortal blood, it sends the drinker into torpor of normal length in which every Rouse Check may be rerolled, Thin-Blood Flaws do not stop mending, and Hunger below 5 is kept on waking.",
+        "el": "Ανακατεμένο σε θνητό αίμα, ρίχνει όποιον το πιει σε torpor κανονικής διάρκειας όπου κάθε Rouse Check ξαναρίχνεται, τα Thin-Blood Flaws δεν εμποδίζουν την επούλωση και το Hunger κάτω από 5 κρατιέται στο ξύπνημα."
+      },
+      "level": 2,
+      "book": "v5-blood-sigils",
+      "page": 75,
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf",
+      "prerequisite": null,
+      "rouse_cost": 1,
+      "rouse_cost_conditional": false,
+      "dice_pool": null,
+      "discipline": "discipline:thin-blood-alchemy"
+    },
+    {
+      "id": "formula:blacklight-surprise",
+      "name": "Blacklight Surprise",
+      "desc": {
+        "en": "Smeared on a UV light, it makes the beam deal 1 Aggravated damage per turn to vampires it hits (1 more to those already hurt by UV) and provoke fear frenzy like sunlight. Lasts 1 hour plus 1 per success.",
+        "el": "Αλειμμένο σε πηγή UV, κάνει τη δέσμη να προκαλεί 1 Aggravated ζημιά ανά γύρο στα βαμπίρ που χτυπά (1 ακόμη σε όσους ήδη βλάπτει το UV) και fear frenzy όπως ο ήλιος. Κρατά 1 ώρα συν 1 ανά επιτυχία."
+      },
+      "level": 2,
+      "book": "v5-blood-sigils",
+      "page": 75,
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf",
+      "prerequisite": null,
+      "rouse_cost": 1,
+      "rouse_cost_conditional": false,
+      "dice_pool": null,
+      "discipline": "discipline:thin-blood-alchemy"
+    },
+    {
+      "id": "formula:blue-state",
+      "name": "Blue State",
+      "desc": {
+        "en": "Fed to or rubbed on the target, it leaves them unable to forgive: when a friend or ally next breaks one of their Convictions, they take 1 Stain, kept until at least a very awkward talk. Mortals just hold a grudge.",
+        "el": "Ο στόχος που το πίνει ή αλείφεται με αυτό δεν συγχωρεί: την επόμενη φορά που φίλος ή σύμμαχος παραβιάσει ένα Conviction του, παίρνει 1 Stain, που μένει ώσπου να γίνει τουλάχιστον μια πολύ άβολη κουβέντα. Οι θνητοί απλώς κρατούν κακία."
+      },
+      "level": 2,
+      "book": "v5-blood-sigils",
+      "page": 76,
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf",
+      "prerequisite": null,
+      "rouse_cost": 1,
+      "rouse_cost_conditional": false,
+      "dice_pool": null,
+      "discipline": "discipline:thin-blood-alchemy"
+    },
+    {
       "id": "formula:envelop",
       "name": "Envelop",
       "desc": {
@@ -117,6 +288,84 @@
       "discipline": "discipline:thin-blood-alchemy"
     },
     {
+      "id": "formula:whiff-its",
+      "name": "Whiff-Its",
+      "desc": {
+        "en": "Until dawn you can smell out the Kindred with the highest Blood Potency nearby. If several share it, Resolve + Awareness at Difficulty 3 tells them apart so you can follow one's trail.",
+        "el": "Ως την αυγή οσφραίνεσαι τον Kindred με το υψηλότερο Blood Potency γύρω σου. Αν το μοιράζονται πολλοί, Resolve + Awareness με Difficulty 3 τους ξεχωρίζει ώστε να ακολουθήσεις τα ίχνη ενός."
+      },
+      "level": 2,
+      "book": "v5-gehenna-war",
+      "page": 50,
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf",
+      "prerequisite": null,
+      "rouse_cost": 1,
+      "rouse_cost_conditional": false,
+      "dice_pool": null,
+      "discipline": "discipline:thin-blood-alchemy"
+    },
+    {
+      "id": "formula:bleed-out",
+      "name": "Bleed Out",
+      "desc": {
+        "en": "Given to a victim, it makes them bleed out over an hour, enough to drop a whole coterie of thin-bloods to Hunger 0 (true vampires cannot drink it). Everyone involved gains at least 1 Stain. Free to activate.",
+        "el": "Όταν το πιει ένα θύμα, αιμορραγεί ως θανάτου μέσα σε μία ώρα, αρκετά για να πέσει όλη μια coterie από thin-blood σε Hunger 0 (τα κανονικά βαμπίρ δεν το πίνουν). Όλοι οι συμμετέχοντες παίρνουν τουλάχιστον 1 Stain. Δωρεάν ενεργοποίηση."
+      },
+      "level": 3,
+      "book": "v5-tattered-facade",
+      "page": 107,
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf",
+      "prerequisite": null,
+      "rouse_cost": 0,
+      "rouse_cost_conditional": false,
+      "dice_pool": null,
+      "discipline": "discipline:thin-blood-alchemy"
+    },
+    {
+      "id": "formula:chemically-induced-flashback",
+      "name": "Chemically-Induced Flashback",
+      "desc": {
+        "en": "Melt a destroyed vampire's belonging into their Ashe; taking it calls for Willpower at Difficulty 1 + their Blood Potency, and a win drops you into a Memoriam of one of their memories (+1 die if meditating somewhere calm).",
+        "el": "Λιώνεις ένα αντικείμενο του κατεστραμμένου βαμπίρ μέσα στο Ashe του· όποιος το πάρει ρίχνει Willpower με Difficulty 1 + το Blood Potency εκείνου και, με νίκη, μπαίνει σε Memoriam με μια ανάμνησή του (+1 ζάρι αν διαλογίζεται σε ήρεμο μέρος)."
+      },
+      "level": 3,
+      "book": "v5-cults-of-the-blood-gods",
+      "page": 45,
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf",
+      "prerequisite": {
+        "formula_id": "formula:concoct-ashe"
+      },
+      "rouse_cost": 1,
+      "rouse_cost_conditional": true,
+      "dice_pool": null,
+      "discipline": "discipline:thin-blood-alchemy"
+    },
+    {
+      "id": "formula:concoct-ashe",
+      "name": "Concoct Ashe",
+      "desc": {
+        "en": "Heat a destroyed vampire's ashes with aluminium filings; each success makes 1 dose. A dose counts a thin-blood as Blood Potency 1 for Blood Surges and Rouse re-rolls for the chapter, but costs 1 Superficial Willpower and a Rouse Check.",
+        "el": "Ψήνεις στάχτη κατεστραμμένου βαμπίρ με ρινίσματα αλουμινίου· 1 δόση ανά επιτυχία. Η δόση δίνει στον thin-blood Blood Potency 1 για Blood Surge και επαναρίψεις Rouse ως το τέλος του chapter, με κόστος 1 Superficial Willpower και Rouse Check."
+      },
+      "level": 3,
+      "book": "v5-cults-of-the-blood-gods",
+      "page": 45,
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf",
+      "prerequisite": null,
+      "rouse_cost": null,
+      "rouse_cost_conditional": false,
+      "dice_pool": null,
+      "discipline": "discipline:thin-blood-alchemy"
+    },
+    {
       "id": "formula:defractionate",
       "name": "Defractionate",
       "desc": {
@@ -131,6 +380,63 @@
       "source": "pdf",
       "prerequisite": null,
       "rouse_cost": null,
+      "rouse_cost_conditional": false,
+      "dice_pool": null,
+      "discipline": "discipline:thin-blood-alchemy"
+    },
+    {
+      "id": "formula:diamond-skin",
+      "name": "Diamond Skin",
+      "desc": {
+        "en": "Turns as much Aggravated damage from cuts, stabs and blows into Superficial as you rolled successes, until used up (a scene on a critical win). No help against fire, sunlight, sorcery or acid.",
+        "el": "Μετατρέπει σε Superficial τόση Aggravated ζημιά από κοψίματα, τρυπήματα και χτυπήματα όσες οι επιτυχίες σου, ώσπου να εξαντληθεί (μία σκηνή σε critical win). Δεν βοηθά απέναντι σε φωτιά, ήλιο, μαγεία ή οξύ."
+      },
+      "level": 3,
+      "book": "v5-blood-sigils",
+      "page": 76,
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf",
+      "prerequisite": null,
+      "rouse_cost": 1,
+      "rouse_cost_conditional": false,
+      "dice_pool": null,
+      "discipline": "discipline:thin-blood-alchemy"
+    },
+    {
+      "id": "formula:fireskin",
+      "name": "Fireskin",
+      "desc": {
+        "en": "For a scene the drinker is covered in small flames that do not spread: fire cannot hurt them, their body blows add +1 fire damage (+2 when grappling), but cold damage to them is doubled.",
+        "el": "Για μία σκηνή όποιος το πιει καλύπτεται από μικρές φλόγες που δεν απλώνουν: η φωτιά δεν τον βλάπτει, τα χτυπήματα με το σώμα του προσθέτουν +1 ζημιά φωτιάς (+2 σε λαβή), αλλά η ζημιά από κρύο διπλασιάζεται."
+      },
+      "level": 3,
+      "book": "v5-blood-sigils",
+      "page": 76,
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf",
+      "prerequisite": null,
+      "rouse_cost": 1,
+      "rouse_cost_conditional": false,
+      "dice_pool": null,
+      "discipline": "discipline:thin-blood-alchemy"
+    },
+    {
+      "id": "formula:hospital-chains",
+      "name": "Hospital Chains",
+      "desc": {
+        "en": "Spat or splashed on an injured person, it stops them healing physical injury by any means, Blood or medicine, for 2 days per point of margin (2 days per success on a critical win). Rolled against their Stamina.",
+        "el": "Φτυμένο ή πιτσιλισμένο σε τραυματία, τον εμποδίζει να γιατρέψει σωματικό τραύμα με οποιοδήποτε μέσο, αίμα ή ιατρική, για 2 μέρες ανά πόντο margin (2 ανά επιτυχία σε critical win). Ρίχνεται εναντίον του Stamina του."
+      },
+      "level": 3,
+      "book": "v5-blood-sigils",
+      "page": 76,
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf",
+      "prerequisite": null,
+      "rouse_cost": 1,
       "rouse_cost_conditional": false,
       "dice_pool": null,
       "discipline": "discipline:thin-blood-alchemy"
@@ -152,6 +458,63 @@
       "rouse_cost": 1,
       "rouse_cost_conditional": false,
       "dice_pool": "Stamina + Alchemy vs Stamina + Resolve",
+      "discipline": "discipline:thin-blood-alchemy"
+    },
+    {
+      "id": "formula:martian-purity",
+      "name": "Martian Purity",
+      "desc": {
+        "en": "Purges a blood-borne infection from a mortal or Kindred: the illness burns out through the pores of the back over 2 rounds, dealing them 2 Aggravated damage. Supernatural infections are up to the Storyteller.",
+        "el": "Διώχνει μια μόλυνση του αίματος από θνητό ή Kindred: η ασθένεια βγαίνει φλεγόμενη από τους πόρους της πλάτης σε 2 γύρους και του κάνει 2 Aggravated ζημιά. Για υπερφυσικές μολύνσεις αποφασίζει ο Storyteller."
+      },
+      "level": 3,
+      "book": "v5-blood-sigils",
+      "page": 77,
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf",
+      "prerequisite": null,
+      "rouse_cost": 1,
+      "rouse_cost_conditional": false,
+      "dice_pool": null,
+      "discipline": "discipline:thin-blood-alchemy"
+    },
+    {
+      "id": "formula:mask-off",
+      "name": "Mask Off",
+      "desc": {
+        "en": "A paste for a bomb whose gas fills about 3 by 6 meters: true vampires with Blush of Life in it must win Stamina + Resolve vs the Distillation roll or lose it painfully in plain view and for the rest of the night.",
+        "el": "Πάστα για εκρηκτικό που γεμίζει με αέριο περίπου 3 επί 6 μέτρα: τα αληθινά βαμπίρ με Blush of Life εκεί πρέπει να κερδίσουν Stamina + Resolve εναντίον του Distillation, αλλιώς το χάνουν επώδυνα μπροστά σε όλους και για όλη τη νύχτα."
+      },
+      "level": 3,
+      "book": "v5-blood-sigils",
+      "page": 77,
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf",
+      "prerequisite": null,
+      "rouse_cost": 1,
+      "rouse_cost_conditional": false,
+      "dice_pool": null,
+      "discipline": "discipline:thin-blood-alchemy"
+    },
+    {
+      "id": "formula:on-demand-sunburn",
+      "name": "On-Demand Sunburn",
+      "desc": {
+        "en": "Store one charge of sunlight; on skin contact with a vampire, release it to deal them Aggravated damage equal to their Bane Severity, and 2 to yourself. Unused by the next sunset, it goes off and burns you for 2.",
+        "el": "Αποθηκεύεις ένα φορτίο ηλιακού φωτός· με επαφή δέρματος με βαμπίρ το απελευθερώνεις και του κάνεις Aggravated ζημιά ίση με το Bane Severity του, και 2 σε σένα. Αν δεν το χρησιμοποιήσεις ως τη δύση, σε καίει για 2."
+      },
+      "level": 3,
+      "book": "v5-sabbat",
+      "page": 53,
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf",
+      "prerequisite": null,
+      "rouse_cost": 1,
+      "rouse_cost_conditional": false,
+      "dice_pool": null,
       "discipline": "discipline:thin-blood-alchemy"
     },
     {
@@ -193,6 +556,47 @@
       "discipline": "discipline:thin-blood-alchemy"
     },
     {
+      "id": "formula:saraimu",
+      "name": "Saraimu",
+      "desc": {
+        "en": "Brew vitae from 3 vampires, you included, into a football-sized slime familiar that talks in fragments, spies and fetches for its masters, and bites with iron teeth. Must be made by Fixatio; falls apart in 1 to 3 weeks.",
+        "el": "Βράζεις vitae από 3 βαμπίρ, μαζί κι εσύ, σε γλοιώδες familiar στο μέγεθος μπάλας που μιλά σπαστά, κατασκοπεύει και φέρνει πράγματα στους αφέντες του και δαγκώνει με σιδερένια δόντια. Μόνο με Fixatio· διαλύεται σε 1 ως 3 εβδομάδες."
+      },
+      "level": 3,
+      "book": "v5-tattered-facade",
+      "page": 107,
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf",
+      "prerequisite": null,
+      "rouse_cost": 1,
+      "rouse_cost_conditional": false,
+      "dice_pool": "Resolve + Alchemy",
+      "discipline": "discipline:thin-blood-alchemy"
+    },
+    {
+      "id": "formula:tlc",
+      "name": "TLC",
+      "desc": {
+        "en": "A powder that lets a vampire feed on an animal as if it were human; each success enriches blood for 1 Hunger (large mammals hold 8 to 10). Killing a dosed animal cannot take Hunger to 0.",
+        "el": "Σκόνη που επιτρέπει σε βαμπίρ να τραφεί από ζώο σαν να ήταν άνθρωπος· κάθε επιτυχία εμπλουτίζει αίμα για 1 Hunger (τα μεγάλα θηλαστικά έχουν 8 έως 10). Σκοτώνοντας ζώο υπό TLC δεν πέφτεις σε Hunger 0."
+      },
+      "level": 3,
+      "book": "v5-blood-sigils",
+      "page": 77,
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf",
+      "prerequisite": null,
+      "manual_fields": [
+        "name"
+      ],
+      "rouse_cost": 1,
+      "rouse_cost_conditional": false,
+      "dice_pool": null,
+      "discipline": "discipline:thin-blood-alchemy"
+    },
+    {
       "id": "formula:tank",
       "name": "Tank",
       "desc": {
@@ -202,6 +606,25 @@
       "level": 3,
       "book": "v5-players-guide",
       "page": 105,
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf",
+      "prerequisite": null,
+      "rouse_cost": 1,
+      "rouse_cost_conditional": false,
+      "dice_pool": null,
+      "discipline": "discipline:thin-blood-alchemy"
+    },
+    {
+      "id": "formula:troll-the-pious",
+      "name": "Troll the Pious",
+      "desc": {
+        "en": "A paste for a floor, object or person that unsettles believers and religious workers who notice it: -1 die to Social, Mental and delicate Physical pools, -2 plus dreadful visions for True Faith (not on Faith pools).",
+        "el": "Πάστα για δάπεδο, αντικείμενο ή άνθρωπο που αναστατώνει πιστούς και θρησκευτικούς λειτουργούς: -1 ζάρι σε Social, Mental και λεπτές Physical ρίψεις, -2 και φρικτά οράματα για όσους έχουν True Faith (όχι σε pools με Faith)."
+      },
+      "level": 3,
+      "book": "v5-blood-sigils",
+      "page": 78,
       "also_in": [],
       "aliases": [],
       "source": "pdf",
@@ -228,6 +651,103 @@
       "rouse_cost": 1,
       "rouse_cost_conditional": false,
       "dice_pool": "Strength + Alchemy vs Strength + Athletics",
+      "discipline": "discipline:thin-blood-alchemy"
+    },
+    {
+      "id": "formula:copycat",
+      "name": "Copycat",
+      "desc": {
+        "en": "For 20 minutes your face and hair blur into a rough likeness of the donor whose blood went in; those who know the donor tell you apart with Intelligence + Awareness at Difficulty equal to the Distillation successes.",
+        "el": "Για 20 λεπτά το πρόσωπο και τα μαλλιά σου θολώνουν σε μια πρόχειρη ομοιότητα με τον δότη του αίματος· όσοι τον ξέρουν σε ξεχωρίζουν με Intelligence + Awareness και Difficulty ίσο με τις επιτυχίες του Distillation."
+      },
+      "level": 4,
+      "book": "v5-blood-sigils",
+      "page": 78,
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf",
+      "prerequisite": null,
+      "rouse_cost": 1,
+      "rouse_cost_conditional": false,
+      "dice_pool": null,
+      "discipline": "discipline:thin-blood-alchemy"
+    },
+    {
+      "id": "formula:discipline-channeling",
+      "name": "Discipline Channeling",
+      "desc": {
+        "en": "Ashe mixed with crushed indigo leaves; taking it needs Willpower at Difficulty equal to the dead vampire's highest Discipline, and a win grants one of their powers (two on a critical win) at their rating until the chapter ends.",
+        "el": "Ashe με θρυμματισμένα φύλλα λουλακιού· όποιος το πάρει ρίχνει Willpower με Difficulty ίση με την υψηλότερη Discipline του νεκρού βαμπίρ και, με νίκη, αποκτά μία δύναμή του (δύο σε critical win) με τη δική του τιμή ως το τέλος του chapter."
+      },
+      "level": 4,
+      "book": "v5-cults-of-the-blood-gods",
+      "page": 46,
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf",
+      "prerequisite": {
+        "formula_id": "formula:concoct-ashe"
+      },
+      "rouse_cost": null,
+      "rouse_cost_conditional": false,
+      "dice_pool": null,
+      "discipline": "discipline:thin-blood-alchemy"
+    },
+    {
+      "id": "formula:half-living-conductor",
+      "name": "Half-Living Conductor",
+      "desc": {
+        "en": "For a scene you are immune to physical damage from electricity and can fire it back as a Dexterity + Alchemy ranged attack: margin + 2 damage, Superficial to vampires and Aggravated to mortals (Aggravated to all at 6+ successes).",
+        "el": "Για μία σκηνή είσαι άτρωτος σε σωματική ζημιά από ηλεκτρισμό και τον στέλνεις πίσω ως επίθεση από απόσταση με Dexterity + Alchemy: margin + 2 ζημιά, Superficial σε βαμπίρ και Aggravated σε θνητούς (Aggravated σε όλους με 6+ επιτυχίες)."
+      },
+      "level": 4,
+      "book": "v5-blood-sigils",
+      "page": 79,
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf",
+      "prerequisite": null,
+      "rouse_cost": 1,
+      "rouse_cost_conditional": false,
+      "dice_pool": "Stamina + Alchemy",
+      "discipline": "discipline:thin-blood-alchemy"
+    },
+    {
+      "id": "formula:juice-box",
+      "name": "Juice Box",
+      "desc": {
+        "en": "Add methuselah vitae to another formula and let it rest 24 hours in a juice box, so any thin-blood or Kindred can use it. Cost, pools and duration follow the original formula.",
+        "el": "Προσθέτεις αίμα methuselah σε άλλη formula και την αφήνεις 24 ώρες σε κουτάκι χυμού, ώστε να τη χρησιμοποιήσει οποιοσδήποτε thin-blood ή Kindred. Κόστος, pools και διάρκεια ακολουθούν την αρχική formula."
+      },
+      "level": 4,
+      "book": "v5-gehenna-war",
+      "page": 51,
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf",
+      "prerequisite": null,
+      "rouse_cost": 1,
+      "rouse_cost_conditional": false,
+      "dice_pool": null,
+      "discipline": "discipline:thin-blood-alchemy"
+    },
+    {
+      "id": "formula:red-state",
+      "name": "Red State",
+      "desc": {
+        "en": "The next time someone close and trusted breaks the subject's Convictions or wrongs them, the memory never forms and can't be restored; even being told sounds false. Lasts until they drink a choleric Dyscrasia.",
+        "el": "Την επόμενη φορά που κάποιος κοντινός κι έμπιστος παραβιάσει τα Convictions του στόχου ή τον βλάψει, η ανάμνηση δεν σχηματίζεται και δεν επανέρχεται· ακόμη κι αν του το πουν, ακούγεται ψέμα. Κρατά ώσπου να πιει choleric Dyscrasia."
+      },
+      "level": 4,
+      "book": "v5-blood-sigils",
+      "page": 79,
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf",
+      "prerequisite": null,
+      "rouse_cost": 1,
+      "rouse_cost_conditional": false,
+      "dice_pool": null,
       "discipline": "discipline:thin-blood-alchemy"
     },
     {
@@ -269,6 +789,28 @@
       "discipline": "discipline:thin-blood-alchemy"
     },
     {
+      "id": "formula:vitae-msg",
+      "name": "Vitae MSG",
+      "desc": {
+        "en": "Rubbed on someone, it makes any vampire who sees or smells them crave to feed on them, resisted for 1 Willpower or 1 Hunger, again after 30 minutes near them. Ventrue spend 1 less Willpower to feed on them. Until dawn.",
+        "el": "Αλειμμένο σε κάποιον, κάνει κάθε βαμπίρ που τον βλέπει ή τον μυρίζει να θέλει να τραφεί από αυτόν· αντέχει με 1 Willpower ή 1 Hunger, ξανά μετά από 30 λεπτά κοντά του. Οι Ventrue ξοδεύουν 1 Willpower λιγότερο για να τραφούν. Ως την αυγή."
+      },
+      "level": 4,
+      "book": "v5-blood-sigils",
+      "page": 79,
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf",
+      "prerequisite": null,
+      "manual_fields": [
+        "name"
+      ],
+      "rouse_cost": 1,
+      "rouse_cost_conditional": false,
+      "dice_pool": null,
+      "discipline": "discipline:thin-blood-alchemy"
+    },
+    {
       "id": "formula:awaken-the-sleeper",
       "name": "Awaken the Sleeper",
       "desc": {
@@ -283,6 +825,47 @@
       "source": "pdf",
       "prerequisite": null,
       "rouse_cost": null,
+      "rouse_cost_conditional": false,
+      "dice_pool": null,
+      "discipline": "discipline:thin-blood-alchemy"
+    },
+    {
+      "id": "formula:beast-mode",
+      "name": "Beast Mode",
+      "desc": {
+        "en": "Using vitae of Blood Potency 4+, gain one level 5 Celerity, Fortitude or Potence power for a scene, with that Discipline at 5. Willpower test (Difficulty 2) or frenzy; the donor must have that Discipline at 5.",
+        "el": "Με αίμα Blood Potency 4+ παίρνεις για μία σκηνή μία δύναμη επιπέδου 5 από Celerity, Fortitude ή Potence, με τη Discipline στο 5. Τεστ Willpower (Difficulty 2) αλλιώς frenzy· ο δότης πρέπει να έχει τη Discipline στο 5."
+      },
+      "level": 5,
+      "book": "v5-gehenna-war",
+      "page": 51,
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf",
+      "prerequisite": null,
+      "rouse_cost": 1,
+      "rouse_cost_conditional": false,
+      "dice_pool": null,
+      "discipline": "discipline:thin-blood-alchemy"
+    },
+    {
+      "id": "formula:dabomb",
+      "name": "DaBomb",
+      "desc": {
+        "en": "A mortal who drinks it becomes a bomb for a week: at any time you make a Rouse Check and they explode, dealing Aggravated damage of twice their Stamina nearby (half further out). Vampires caught in it test for hunger frenzy.",
+        "el": "Ο θνητός που το πίνει γίνεται βόμβα για μία εβδομάδα: όποτε θέλεις κάνεις ένα Rouse Check και εκρήγνυται, με Aggravated ζημιά ίση με το διπλάσιο Stamina του κοντά (μισή πιο μακριά). Τα βαμπίρ που πιάνονται ρίχνουν για hunger frenzy."
+      },
+      "level": 5,
+      "book": "v5-tattered-facade",
+      "page": 108,
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf",
+      "prerequisite": null,
+      "manual_fields": [
+        "name"
+      ],
+      "rouse_cost": 1,
       "rouse_cost_conditional": false,
       "dice_pool": null,
       "discipline": "discipline:thin-blood-alchemy"
@@ -316,6 +899,25 @@
       "level": 5,
       "book": "v5-players-guide",
       "page": 106,
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf",
+      "prerequisite": null,
+      "rouse_cost": 1,
+      "rouse_cost_conditional": false,
+      "dice_pool": null,
+      "discipline": "discipline:thin-blood-alchemy"
+    },
+    {
+      "id": "formula:saturns-flux",
+      "name": "Saturn's Flux",
+      "desc": {
+        "en": "A pellet smoked from a steel pipe that breaks a Blood Bond: within 24 hours the smoker expels the Bond painfully, and Kindred take 1 Aggravated damage. Keeps indefinitely until used.",
+        "el": "Χάπι που καπνίζεται σε ατσάλινη πίπα και σπάει ένα Blood Bond: μέσα σε 24 ώρες ο καπνιστής αποβάλλει επώδυνα το Bond, και τα Kindred παίρνουν 1 Aggravated ζημιά. Δεν χαλάει ως τη χρήση."
+      },
+      "level": 5,
+      "book": "v5-blood-sigils",
+      "page": 80,
       "also_in": [],
       "aliases": [],
       "source": "pdf",

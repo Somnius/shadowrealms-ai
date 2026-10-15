@@ -37,8 +37,8 @@ def cmd_pages(args: list[str]) -> int:
         b = pb.book
         wanted = set()
         for spans in b.ranges.values():
-            for a, z in spans:
-                wanted.update(range(a, z + 1))
+            for span in spans:
+                wanted.update(range(span[0], span[1] + 1))
         wanted.update(b.footer_samples)
         for printed in sorted(wanted):
             pb.cache(b.pdf_page(printed))

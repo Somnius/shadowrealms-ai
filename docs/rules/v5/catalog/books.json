@@ -192,6 +192,24 @@
       "dot_glyph": "•"
     },
     {
+      "book_id": "v5-sabbat",
+      "title": "Sabbat: The Black Hand",
+      "precedence": 40,
+      "tier": 2,
+      "extractable": true,
+      "page_offset": 1,
+      "dot_glyph": null
+    },
+    {
+      "book_id": "v5-blood-stained-love",
+      "title": "Blood-Stained Love",
+      "precedence": 40,
+      "tier": 2,
+      "extractable": true,
+      "page_offset": 2,
+      "dot_glyph": null
+    },
+    {
       "book_id": "v5-anarch",
       "title": "Anarch",
       "precedence": 40,

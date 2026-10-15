@@ -93,12 +93,17 @@ def reference_problems(data: dict) -> list[str]:
             if b not in books:
                 out.append(f"- {where}: book {b!r} is not in books.json")
 
+    formula_ids = {e["id"] for e in data["formulae"]["entries"]}
+
     def check_prereq(where, pre):
         if pre is None:
             return
         for pid in re.findall(r'"(power:[^"]+)"', json.dumps(pre)):
             if pid not in power_ids:
                 out.append(f"- {where}: prerequisite {pid} does not exist")
+        for fid in re.findall(r'"(formula:[^"]+)"', json.dumps(pre)):
+            if fid not in formula_ids:
+                out.append(f"- {where}: prerequisite {fid} does not exist")
 
     for e in data["clans"]["entries"]:
         check_book(e["id"], e)
@@ -113,6 +118,9 @@ def reference_problems(data: dict) -> list[str]:
         check_book(d["id"], d)
         for p in d["powers"]:
             check_book(p["id"], p)
+            for cl in p.get("clans_only") or []:
+                if cl not in clan_ids:
+                    out.append(f"- {p['id']}: clan {cl} does not exist")
             if p.get("amalgam") and p["amalgam"]["discipline"] not in disc_ids:
                 out.append(f"- {p['id']}: amalgam Discipline {p['amalgam']['discipline']} does not exist")
             check_prereq(p["id"], p.get("prerequisite"))

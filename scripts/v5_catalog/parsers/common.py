@@ -81,8 +81,8 @@ def word_number(s: str) -> int | None:
 
 
 LABELS = (
-    "Amalgam", "Prerequisite Power", "Prerequisite", "Prerequisites", "Activation Cost", "Cost",
-    "Dice Pools", "Dice Pool", "System", "Duration", "Ingredients", "Process", "Type",
+    "Amalgam", "Prerequisite Power", "Prerequisite", "Prerequisites", "Pre-required Power", "Activation Cost",
+    "Cost", "Dice Pools", "Dice Pool", "Pool", "System", "Duration", "Ingredients", "Ingredient", "Process", "Type",
     "Masquerade threat", "Blood Resonance", "Opposing Pool",
 )
 _LABEL_RE = re.compile(r"^(" + "|".join(re.escape(x) for x in LABELS) + r")\s*:\s*(.*)$", re.I)
@@ -94,8 +94,9 @@ def label(s: str) -> tuple[str, str] | None:
     if not m:
         return None
     key = m.group(1).lower()
-    key = {"prerequisite power": "prerequisite", "prerequisites": "prerequisite",
-           "activation cost": "cost", "dice pools": "dice_pool", "dice pool": "dice_pool"}.get(key, key)
+    key = {"prerequisite power": "prerequisite", "prerequisites": "prerequisite", "pre-required power": "prerequisite",
+           "activation cost": "cost", "dice pools": "dice_pool", "dice pool": "dice_pool", "pool": "dice_pool",
+           "ingredient": "ingredients"}.get(key, key)
     return key.replace(" ", "_"), m.group(2).strip()
 
 

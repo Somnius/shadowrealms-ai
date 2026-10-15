@@ -261,6 +261,13 @@
                     "null"
                   ],
                   "maxLength": 90
+                },
+                "clans_only": {
+                  "type": "array",
+                  "minItems": 1,
+                  "items": {
+                    "$ref": "#/$defs/clan_id"
+                  }
                 }
               }
             }
