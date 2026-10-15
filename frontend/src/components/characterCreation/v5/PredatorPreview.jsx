@@ -1,9 +1,9 @@
 import { THIN_BLOOD } from '../../../characterSheet/v5/constants';
 import { t } from '../../../i18n';
 import PredatorOptions from './PredatorOptions';
+import { grantText } from './PredatorGrants';
+import { predatorSpecialtyLabels } from '../../../characterSheet/v5/validation';
 import { inputStyle, labelStyle, noteStyle, useForge } from './forgeUi';
-
-const dots = (n) => '●'.repeat(n);
 
 /**
  * Read-only look at what a predator type gives, shown in the Disciplines step so the player sees
@@ -40,18 +40,14 @@ export default function PredatorPreview() {
               })}
             </li>
           ) : null}
-          <li>{t('wizard:v5.previewSpecialty', 'One specialty: {{list}}', { list: pred.specialty_choice.join(', ') })}</li>
-          {(pred.advantages || []).length ? (
-            <li>
-              {t('wizard:v5.previewAdvantages', 'Advantages: {{list}}', {
-                list: pred.advantages.map((a) => `${a.name} ${dots(a.dots)}`).join(', '),
-              })}
-            </li>
+          <li>{t('wizard:v5.previewSpecialty', 'One specialty: {{list}}', { list: predatorSpecialtyLabels(pred).join(', ') })}</li>
+          {pred.advantages.length ? (
+            <li>{t('wizard:v5.previewAdvantages', 'Advantages: {{list}}', { list: pred.advantages.map(grantText).join('; ') })}</li>
           ) : null}
-          {(pred.flaws || []).length ? (
+          {pred.flaws.length ? (
             <li>
               {t('wizard:v5.previewFlaws', 'Flaws: {{list}} (extra, on top of your own {{min}})', {
-                list: pred.flaws.map((x) => `${x.name} ${dots(x.dots)}`).join(', '),
+                list: pred.flaws.map(grantText).join('; '),
                 min: f.derived.flaw_min_dots,
               })}
             </li>

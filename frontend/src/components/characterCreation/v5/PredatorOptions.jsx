@@ -1,10 +1,10 @@
-import { V5_PREDATOR_TYPES } from '../../../characterSheet/v5/constants';
+import { getV5Rules } from '../../../characterSheet/v5/rulesData';
 import { predatorAllowed } from '../../../characterSheet/v5/validation';
 import { t } from '../../../i18n';
 
 /** <option>s for every predator type; ones the clan or the chronicle rules out are disabled. */
 export default function PredatorOptions({ clan, settings }) {
-  return V5_PREDATOR_TYPES.map((p) => {
+  return getV5Rules().predators.map((p) => {
     const clanBlocked = (p.forbidden_clans || []).includes(clan);
     const chronicleBlocked = !predatorAllowed(settings, p.name);
     return (

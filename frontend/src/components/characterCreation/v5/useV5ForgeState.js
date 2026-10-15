@@ -4,8 +4,6 @@ import {
   THIN_BLOOD,
   V5_AGE_BRACKETS,
   V5_BACKGROUNDS,
-  V5_CLAN_NAMES,
-  V5_DISCIPLINES,
   V5_DISCIPLINE_DOTS,
   V5_SKILL_DISTRIBUTIONS,
 } from '../../../characterSheet/v5/constants';
@@ -28,6 +26,7 @@ import {
   xpLedger,
 } from '../../../characterSheet/v5/validation';
 import { CREATION_AGES } from '../../../characterSheet/v5/creationSettings';
+import { clanNames, disciplineNames } from '../../../characterSheet/v5/rulesData';
 
 const isBackgroundName = (name) =>
   V5_BACKGROUNDS.some((b) => String(name || '').toLowerCase().startsWith(b.toLowerCase()));
@@ -51,7 +50,7 @@ const generationFor = (age) => {
  */
 export default function useV5ForgeState(settings, initial = {}) {
   const firstClan =
-    initial.clan || (clanAllowed(settings, 'Brujah') ? 'Brujah' : V5_CLAN_NAMES.find((c) => clanAllowed(settings, c)) || 'Brujah');
+    initial.clan || (clanAllowed(settings, 'Brujah') ? 'Brujah' : clanNames().find((c) => clanAllowed(settings, c)) || 'Brujah');
   // Thin-bloods are always childer of the 14th generation or later (the same as changeClan).
   const firstAge =
     firstClan === THIN_BLOOD
@@ -74,10 +73,14 @@ export default function useV5ForgeState(settings, initial = {}) {
   const [predatorType, setPredatorTypeRaw] = useState(initial.predatorType || '');
   const [predatorSpecialty, setPredatorSpecialty] = useState(null);
   const [predatorDiscipline, setPredatorDiscipline] = useState('');
+  // The player's picks among the predator type's grants (see resolvePredatorGrants).
+  const [predatorChoices, setPredatorChoices] = useState({});
   // Powers for a predator Discipline that isn't one of the two picks: { [discipline]: [power] }.
   const [extraPowers, setExtraPowers] = useState({});
   // One optional Level 1 ritual with Blood Sorcery 1+ (V5.md §4 step 6).
   const [startingRitual, setStartingRitual] = useState('');
+  // One optional Level 1 Oblivion ceremony whose prerequisite power is taken (Players Guide p. 91).
+  const [startingCeremony, setStartingCeremony] = useState('');
   const [meritRows, setMeritRows] = useState(() => [createEmptyMeritRow()]);
   const [meritNotes, setMeritNotes] = useState('');
   const [convictions, setConvictions] = useState([{ conviction: '', touchstone: '' }]);
@@ -122,8 +125,10 @@ export default function useV5ForgeState(settings, initial = {}) {
     predatorType,
     predatorSpecialty,
     predatorDiscipline,
+    predatorChoices,
     extraPowers,
     startingRitual,
+    startingCeremony,
     advantages,
     flaws,
     convictions,
@@ -162,6 +167,7 @@ export default function useV5ForgeState(settings, initial = {}) {
     setPredatorTypeRaw(next);
     setPredatorSpecialty(null);
     setPredatorDiscipline('');
+    setPredatorChoices({});
     setExtraPowers({});
   };
 
@@ -172,12 +178,12 @@ export default function useV5ForgeState(settings, initial = {}) {
     settings,
     sheet,
     derived: deriveV5(sheet),
-    xp: xpLedger(sheet, V5_DISCIPLINES),
+    xp: xpLedger(sheet, disciplineNames()),
     xpTotal: startingXp(sheet),
     bsLevel: bloodSorceryLevel(sheet),
     clanRow: clanInfo(clan),
     pred: predatorInfo(predatorType),
-    discOptions: creationDisciplineOptions(clan, V5_DISCIPLINES),
+    discOptions: creationDisciplineOptions(clan, disciplineNames()),
     discRows: disciplineRows(sheet),
     predDiscOptions: predatorDisciplineOptions(predatorType, clan),
     dist,
@@ -192,8 +198,8 @@ export default function useV5ForgeState(settings, initial = {}) {
     attributes, setAttributes, skillDistribution, setSkillDistribution, skills, setSkills,
     specialties, setSpecialties, disciplines, setDisc,
     predatorType, setPredatorType, predatorSpecialty, setPredatorSpecialty,
-    predatorDiscipline, setPredatorDiscipline, extraPowers, setExtraPowers,
-    startingRitual, setStartingRitual, meritRows, setMeritRows, meritNotes, setMeritNotes,
+    predatorDiscipline, setPredatorDiscipline, predatorChoices, setPredatorChoices, extraPowers, setExtraPowers,
+    startingRitual, setStartingRitual, startingCeremony, setStartingCeremony, meritRows, setMeritRows, meritNotes, setMeritNotes,
     convictions, setConvictions, tenets, setTenets, background, setBackground,
     fledglingHumanity, setFledglingHumanity, thinBloodMerits, setThinBloodMerits,
     thinBloodFlaws, setThinBloodFlaws, xpPurchases, setXpPurchases, xpDraft, setXpDraft,

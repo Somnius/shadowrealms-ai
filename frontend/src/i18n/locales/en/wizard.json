@@ -274,6 +274,19 @@
     "previewAdvantages": "Advantages: {{list}}",
     "previewFlaws": "Flaws: {{list}} (extra, on top of your own {{min}})",
     "predatorFlawsExtra": "These Flaws are extra: you still take {{min}} dots of Flaws of your own in Advantages.",
-    "predatorPreviewPickV2": "Preview a predator type (this also sets it for the next step)"
+    "predatorPreviewPickV2": "Preview a predator type (this also sets it for the next step)",
+    "powerPick": "Power {{n}}…",
+    "powerOption": "{{name}} (level {{level}})",
+    "startingRitualNone": "None (optional)",
+    "startingCeremony": "Starting Oblivion ceremony (Level 1, needs its prerequisite power)",
+    "grantOr": "or",
+    "grantSplit": "{{n}} dots between {{list}}",
+    "grantAnd": "and",
+    "grantSplitDots": "{{name}} dots",
+    "grantDots": "{{name}} dots",
+    "grantNoRating": "the book prints no rating: ask your Storyteller",
+    "ancillaOnly": "Ancillae only (set the age in the Age step).",
+    "grantAdvantages": "Advantages it gives",
+    "grantFlaws": "Flaws it gives"
   }
 }

@@ -12,6 +12,8 @@
  *   disciplines: [{name, level, powers: []}] (creation 2 + 1, BEFORE the predator dot),
  *   predatorType, predatorSpecialty (index into the type's specialty_choice),
  *   startingRitual: string (one free Level 1 ritual with Blood Sorcery 1+),
+ *   startingCeremony: string (one free Level 1 Oblivion ceremony whose prerequisite power is taken),
+ *   predatorChoices: the player's picks among the predator type's grants (see resolvePredatorGrants),
  *   predatorDiscipline (name), extraPowers: {[discipline]: [power]} (powers for a predator/XP
  *   Discipline that isn't one of the two picks), advantages: [{name, dots, kind: 'merit'|'background'}],
  *   flaws: [{name, dots}], convictions: [{conviction, touchstone}],
@@ -25,20 +27,18 @@
  */
 import {
   BLOOD_SORCERY,
+  OBLIVION,
   CAITIFF,
   THIN_BLOOD,
   V5_AGE_BRACKETS,
   V5_ADVANTAGE_DOTS,
   V5_ATTRIBUTE_KEYS,
   V5_ATTRIBUTE_SPREAD,
-  V5_CLANS,
   V5_CONVICTIONS,
   V5_DISCIPLINE_DOTS,
-  V5_DISCIPLINES as V5_DISCIPLINES_ALL,
   V5_FLAWS_MIN_DOTS,
   V5_FLEDGLING_HUMANITY,
   V5_FREE_SPECIALTY_SKILLS,
-  V5_PREDATOR_TYPES,
   V5_SECTION_IDS,
   V5_SKILLS,
   V5_SKILL_CATEGORIES,
@@ -55,9 +55,8 @@ import {
   V5_XP_MAX_DOTS,
   V5_RITUALS_MAX,
   generationBloodPotency,
-  parsePredatorDiscipline,
-  parsePredatorSpecialty,
 } from './constants';
+import { disciplineNames, getV5Rules, powersOf, ritualsOf } from './rulesData';
 
 const int = (v) => {
   const n = parseInt(v, 10);
@@ -186,17 +185,17 @@ export function duplicateSpecialtyError(specialties) {
 // ---------- Clan & disciplines ----------
 
 export function clanInfo(clan) {
-  return V5_CLANS.find((c) => c.name === clan) || null;
+  return getV5Rules().clans.find((c) => c.name === clan) || null;
 }
 
 /** Disciplines a clan may take at creation ('any' for Caitiff, none for thin-bloods). */
-export function creationDisciplineOptions(clan, allDisciplines) {
+export function creationDisciplineOptions(clan, allDisciplines = disciplineNames()) {
   if (clan === THIN_BLOOD) return [];
   if (clan === CAITIFF) return allDisciplines.filter((d) => d !== 'Thin-Blood Alchemy');
   return clanInfo(clan)?.disciplines || [];
 }
 
-export function validateV5Disciplines(disciplines, clan, allDisciplines) {
+export function validateV5Disciplines(disciplines, clan, allDisciplines = disciplineNames()) {
   const list = (disciplines || []).filter((d) => d && d.name);
   if (clan === THIN_BLOOD) {
     return list.length ? 'Thin-bloods start with no Disciplines.' : null;
@@ -220,17 +219,66 @@ export function validateV5Disciplines(disciplines, clan, allDisciplines) {
 // ---------- Predator type ----------
 
 export function predatorInfo(name) {
-  return V5_PREDATOR_TYPES.find((p) => p.name === name) || null;
+  return getV5Rules().predators.find((p) => p.name === name) || null;
 }
 
 /** Discipline options of a predator type for this clan (drops "Tremere only" for others). */
 export function predatorDisciplineOptions(predatorType, clan) {
   const p = predatorInfo(predatorType);
   if (!p) return [];
-  return p.discipline_choice
-    .map(parsePredatorDiscipline)
-    .filter((d) => !d.clan || d.clan === clan)
-    .map((d) => d.name);
+  return p.disciplines.filter((d) => !d.clans || d.clans.includes(clan)).map((d) => d.name);
+}
+
+/** "Skill (Name)" labels of a predator type's specialty options. */
+export function predatorSpecialtyLabels(p) {
+  return (p?.specialties || []).map((s) => `${V5_SKILL_LABELS[s.skill] || s.skill} (${s.name})`);
+}
+
+/**
+ * The advantages and flaws a predator type grants, after the player's choices.
+ * sheet.predatorChoices: { 'a0': optionIndex } for "one of", { 'a1': { [optionIndex]: dots } } for
+ * a split of dots, and { 'f0:dots': n } where the book prints no rating for an option.
+ * Returns { advantages, flaws, problems }: rows {name, dots, kind: 'predator', note}.
+ */
+export function resolvePredatorGrants(sheet) {
+  const p = predatorInfo(sheet?.predatorType);
+  const out = { advantages: [], flaws: [], problems: [] };
+  if (!p) return out;
+  const choices = sheet?.predatorChoices || {};
+  const label = (o) => (o.note ? `${o.name} (${o.note})` : o.name);
+  const row = (o, dots) => ({ name: label(o), dots, kind: 'predator' });
+  const walk = (grants, prefix, list) =>
+    grants.forEach((g, gi) => {
+      const key = `${prefix}${gi}`;
+      const dotsOf = (o, oi) => {
+        if (o.dots != null) return o.dots;
+        const n = int(choices[`${key}:${oi}:dots`]);
+        if (n < 1 || n > 5) out.problems.push(`${p.name}: choose the dots for ${o.name} (ask your Storyteller; the book prints none).`);
+        return n;
+      };
+      if (g.pick === 'one_of') {
+        const oi = choices[key];
+        const o = g.options[oi];
+        if (!o) out.problems.push(`${p.name}: choose one of ${g.options.map((x) => x.name).join(' or ')}.`);
+        else list.push(row(o, dotsOf(o, oi)));
+      } else if (g.pick === 'split') {
+        const split = choices[key] || {};
+        let total = 0;
+        g.options.forEach((o, oi) => {
+          const n = int(split[oi]);
+          total += n;
+          if (n > 0) list.push(row(o, n));
+        });
+        if (total !== g.dots_total) {
+          out.problems.push(`${p.name}: share ${g.dots_total} dots between ${g.options.map((x) => x.name).join(' and ')} (you have ${total}).`);
+        }
+      } else {
+        g.options.forEach((o, oi) => list.push(row(o, dotsOf(o, oi))));
+      }
+    });
+  walk(p.advantages, 'a', out.advantages);
+  walk(p.flaws, 'f', out.flaws);
+  return out;
 }
 
 // ---------- Derived traits ----------
@@ -335,8 +383,8 @@ function creationSkills(sheet) {
     .map((s) => ({ skill: s.skill, name: String(s.name).trim() }));
   const p = predatorInfo(sheet?.predatorType);
   const idx = sheet?.predatorSpecialty;
-  if (p && idx != null && p.specialty_choice[idx] != null) {
-    const ps = parsePredatorSpecialty(p.specialty_choice[idx]);
+  if (p && idx != null && p.specialties[idx] != null) {
+    const ps = p.specialties[idx];
     if (skills[ps.skill] === 0) {
       skills[ps.skill] = 1;
     } else {
@@ -406,6 +454,53 @@ export function startingRitualAllowed(sheet) {
   return bloodSorceryLevel(sheet) >= 1;
 }
 
+/** Final Oblivion rating (picks + predator dot + XP dots). */
+export function oblivionLevel(sheet) {
+  return disciplineRows(sheet).find((r) => r.name === OBLIVION)?.level || 0;
+}
+
+/**
+ * Level 1 Oblivion ceremonies the sheet may take for free at creation: one whose prerequisite
+ * Oblivion power the character has (Players Guide p. 91). Empty without the catalog.
+ */
+export function startingCeremonyOptions(sheet) {
+  if (oblivionLevel(sheet) < 1) return [];
+  const powers = disciplineRows(sheet).find((r) => r.name === OBLIVION)?.powers || [];
+  return ritualsOf('ceremony', 1).filter((c) => !c.prerequisite || powers.includes(c.prerequisite));
+}
+
+// ---------- Discipline powers (catalog) ----------
+
+/**
+ * First problem with the chosen powers, or null: each must be a power of that Discipline at or
+ * below its final rating, its amalgam Discipline at the printed level, its prerequisite power
+ * taken, and no power twice. Disciplines the catalog has no powers for are free text (unchecked).
+ */
+export function validateV5Powers(sheet) {
+  const rows = disciplineRows(sheet).filter((r) => r.name);
+  const level = Object.fromEntries(rows.map((r) => [r.name, r.level]));
+  for (const r of rows) {
+    const list = powersOf(r.name);
+    if (!list.length) continue;
+    const chosen = r.powers.map((x) => String(x || '').trim()).filter(Boolean);
+    const seen = new Set();
+    for (const name of chosen) {
+      if (seen.has(name)) return `${r.name}: ${name} is taken twice.`;
+      seen.add(name);
+      const pw = list.find((x) => x.name === name || (x.aliases || []).includes(name));
+      if (!pw) return `${name} is not a ${r.name} power.`;
+      if (pw.level > r.level) return `${name} is a level ${pw.level} power; ${r.name} is at ${r.level}.`;
+      if (pw.amalgam && (level[pw.amalgam.discipline] || 0) < pw.amalgam.level) {
+        return `${name} also needs ${pw.amalgam.discipline} ${pw.amalgam.level}.`;
+      }
+      if (pw.prerequisite && !pw.prerequisite.some((pre) => chosen.includes(pre))) {
+        return `${name} needs ${pw.prerequisite.join(' or ')} first.`;
+      }
+    }
+  }
+  return null;
+}
+
 /**
  * Rituals for wod_meta.rituals: the free starting one (if allowed and named), then XP ones.
  * [{ name, level, source: 'creation'|'xp' }]
@@ -415,6 +510,10 @@ export function finalRituals(sheet) {
   const start = String(sheet?.startingRitual || '').trim();
   if (start && startingRitualAllowed(sheet)) {
     out.push({ name: start, level: V5_STARTING_RITUAL.level, source: 'creation' });
+  }
+  const ceremony = String(sheet?.startingCeremony || '').trim();
+  if (ceremony && startingCeremonyOptions(sheet).some((c) => c.name === ceremony)) {
+    out.push({ name: ceremony, level: 1, source: 'creation', kind: 'ceremony' });
   }
   (sheet?.xpPurchases || []).forEach((x) => {
     if (x?.kind === 'ritual' && String(x.trait || '').trim()) {
@@ -464,7 +563,7 @@ export function disciplineXpMultiplier(sheet, name) {
  * level; a skill's first dot in Academics/Craft/Performance/Science also has `specialty`).
  * `purchase` is the index in sheet.xpPurchases (the forge removes by it; not saved).
  */
-export function xpLedger(sheet, allDisciplines = V5_DISCIPLINES_ALL) {
+export function xpLedger(sheet, allDisciplines = disciplineNames()) {
   const s = sheet || {};
   const total = startingXp(s);
   const purchases = (s.xpPurchases || []).filter(Boolean);
@@ -571,12 +670,8 @@ const sumDots = (rows) => (rows || []).reduce((s, r) => s + int(r?.dots), 0);
 const named = (rows) => (rows || []).filter((r) => r && String(r.name || '').trim());
 
 export function predatorAdvantages(sheet) {
-  const p = predatorInfo(sheet?.predatorType);
-  if (!p) return { advantages: [], flaws: [] };
-  return {
-    advantages: (p.advantages || []).map((a) => ({ name: a.name, dots: a.dots, kind: 'predator' })),
-    flaws: (p.flaws || []).map((f) => ({ name: f.name, dots: f.dots, kind: 'predator' })),
-  };
+  const { advantages, flaws } = resolvePredatorGrants(sheet);
+  return { advantages, flaws };
 }
 
 /** The player's own Flaw dots (the predator type's flaws don't count toward the minimum). */
@@ -627,7 +722,7 @@ export function settingsErrors(sheet, settings) {
 
 // ---------- Whole sheet ----------
 
-export function validateV5Sheet(sheet, allDisciplines, settings) {
+export function validateV5Sheet(sheet, allDisciplines = disciplineNames(), settings) {
   const s = sheet || {};
   const err = {};
   const add = (id, msg) => {
@@ -652,6 +747,7 @@ export function validateV5Sheet(sheet, allDisciplines, settings) {
   add(V5_SECTION_IDS.skills, validateV5Specialties(s.specialties, s.skills));
   add(V5_SECTION_IDS.skills, duplicateSpecialtyError(creationSkills(s).specialties));
   add(V5_SECTION_IDS.disciplines, validateV5Disciplines(s.disciplines, s.clan, allDisciplines));
+  add(V5_SECTION_IDS.disciplines, validateV5Powers(s));
 
   // Predator type (thin-bloods may skip it)
   const p = predatorInfo(s.predatorType);
@@ -660,8 +756,12 @@ export function validateV5Sheet(sheet, allDisciplines, settings) {
     if ((p.forbidden_clans || []).includes(s.clan)) {
       add(V5_SECTION_IDS.predator, `${s.clan} cannot take the ${p.name} predator type.`);
     }
-    if (s.predatorSpecialty == null || p.specialty_choice[s.predatorSpecialty] == null) {
+    if (s.predatorSpecialty == null || p.specialties[s.predatorSpecialty] == null) {
       add(V5_SECTION_IDS.predator, 'Pick the predator type specialty.');
+    }
+    resolvePredatorGrants(s).problems.forEach((msg) => add(V5_SECTION_IDS.predator, msg));
+    if (p.ancilla_only && s.age !== 'ancilla') {
+      add(V5_SECTION_IDS.predator, `${p.name} is for ancillae only.`);
     }
     if (s.clan !== THIN_BLOOD) {
       const opts = predatorDisciplineOptions(s.predatorType, s.clan);

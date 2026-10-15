@@ -3,7 +3,9 @@ import { THIN_BLOOD, V5_SECTION_IDS } from '../../../characterSheet/v5/constants
 import { t } from '../../../i18n';
 import { Term } from '../../../i18n/glossary';
 import PredatorOptions from './PredatorOptions';
-import { ACCENT, InlineError, inputStyle, labelStyle, useForge } from './forgeUi';
+import PredatorGrants from './PredatorGrants';
+import { predatorSpecialtyLabels } from '../../../characterSheet/v5/validation';
+import { ACCENT, CatalogNote, InlineError, inputStyle, labelStyle, useForge } from './forgeUi';
 
 /** Step 6 (core p. 136): the predator type, its specialty, its Discipline dot and its extras. */
 export default function PredatorStep() {
@@ -29,10 +31,12 @@ export default function PredatorStep() {
       </select>
       {pred ? (
         <div style={{ color: 'var(--sr-bone-300)', fontSize: '13px', display: 'grid', gap: '10px' }}>
+          <CatalogNote entry={pred} style={{ fontSize: '13px', margin: 0 }} />
           <div style={{ color: 'var(--sr-bone-300)' }}>{t('wizard:v5.huntingPool', 'Hunting pool: {{pool}}', { pool: pred.pool })}</div>
+          {pred.ancilla_only ? <div style={{ color: 'var(--sr-gold-400)' }}>{t('wizard:v5.ancillaOnly', 'Ancillae only (set the age in the Age step).')}</div> : null}
           <div role="radiogroup" aria-labelledby="v5-predator-specialty-label">
             <span id="v5-predator-specialty-label" style={labelStyle}><Term id="specialty" /></span>
-            {pred.specialty_choice.map((sc, i) => (
+            {predatorSpecialtyLabels(pred).map((sc, i) => (
               <label key={sc} style={{ display: 'block', cursor: 'pointer' }}>
                 <input
                   type="radio"
@@ -62,13 +66,16 @@ export default function PredatorStep() {
               </select>
             </div>
           ) : null}
-          <div style={{ color: 'var(--sr-bone-300)' }}>
-            {(pred.advantages || []).map((a) => `${a.name} ${'●'.repeat(a.dots)}`).join(', ') || t('wizard:v5.noAdvantages', 'No advantages')}
-            {' · '}
-            {(pred.flaws || []).map((x) => `${x.name} ${'●'.repeat(x.dots)}`).join(', ') || t('wizard:v5.noFlaws', 'no flaws')}
-            {pred.humanity ? ` · Humanity ${pred.humanity > 0 ? '+' : ''}${pred.humanity}` : ''}
-            {pred.blood_potency ? ` · Blood Potency +${pred.blood_potency}` : ''}
-          </div>
+          <PredatorGrants grants={pred.advantages} prefix="a" title={t('wizard:v5.grantAdvantages', 'Advantages it gives')} />
+          <PredatorGrants grants={pred.flaws} prefix="f" title={t('wizard:v5.grantFlaws', 'Flaws it gives')} />
+          {!pred.advantages.length && !pred.flaws.length ? <div>{t('wizard:v5.noAdvantages', 'No advantages')}</div> : null}
+          {pred.humanity || pred.blood_potency ? (
+            <div style={{ color: 'var(--sr-bone-300)' }}>
+              {pred.humanity ? `Humanity ${pred.humanity > 0 ? '+' : ''}${pred.humanity}` : ''}
+              {pred.humanity && pred.blood_potency ? ' · ' : ''}
+              {pred.blood_potency ? `Blood Potency +${pred.blood_potency}` : ''}
+            </div>
+          ) : null}
           {(pred.flaws || []).length ? (
             <div style={{ color: 'var(--sr-gold-400)', fontSize: '12px' }}>
               {t('wizard:v5.predatorFlawsExtra', "These Flaws are extra: you still take {{min}} dots of Flaws of your own in Advantages.", { min: f.derived.flaw_min_dots })}

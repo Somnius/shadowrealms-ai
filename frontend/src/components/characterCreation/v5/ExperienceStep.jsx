@@ -1,7 +1,6 @@
 import ResponsiveSheetBlock from '../ResponsiveSheetBlock';
 import {
   V5_ATTRIBUTES,
-  V5_DISCIPLINES,
   V5_FREE_SPECIALTY_SKILLS,
   V5_NAME_MAX,
   V5_SECTION_IDS,
@@ -12,6 +11,7 @@ import {
 } from '../../../characterSheet/v5/constants';
 import { finalAttributes, finalSkills, xpDisciplineOptions, xpPreview } from '../../../characterSheet/v5/validation';
 import { translateSheetError } from '../../../characterSheet/i18nErrors';
+import { disciplineNames, ritualsOf } from '../../../characterSheet/v5/rulesData';
 import { t } from '../../../i18n';
 import { ACCENT, InlineError, inputStyle, rowStyle, useForge } from './forgeUi';
 
@@ -46,7 +46,7 @@ export default function ExperienceStep() {
           ? { kind: 'skill', trait: draft.trait, specialty: draft.specialty }
           : { kind: draft.kind, trait: draft.trait };
   const draftReady = draft.kind === 'specialty' ? Boolean(draft.skill && draft.trait.trim()) : Boolean(draft.trait.trim());
-  const draftPreview = draftReady ? xpPreview(sheet, draftPurchase, V5_DISCIPLINES) : null;
+  const draftPreview = draftReady ? xpPreview(sheet, draftPurchase, disciplineNames()) : null;
   const xpAttrs = finalAttributes(sheet);
   const xpSkills = finalSkills(sheet).skills;
   // A first dot in Academics/Craft/Performance/Science brings a free specialty: ask for its name.
@@ -102,7 +102,7 @@ export default function ExperienceStep() {
               ? ATTRIBUTE_PAIRS.map(([k, label]) => [k, label, xpAttrs[k]])
               : draft.kind === 'skill'
                 ? SKILL_PAIRS.map(([k, label]) => [k, label, xpSkills[k]])
-                : xpDisciplineOptions(sheet, V5_DISCIPLINES).map((d) => [d, d, discRows.find((r) => r.name === d)?.level || 0])
+                : xpDisciplineOptions(sheet, disciplineNames()).map((d) => [d, d, discRows.find((r) => r.name === d)?.level || 0])
             ).map(([k, label, now]) => (
               <option key={k} value={k} disabled={now >= V5_XP_MAX_DOTS}>
                 {label} ({now})
@@ -147,13 +147,32 @@ export default function ExperienceStep() {
         ) : null}
         {draft.kind === 'ritual' ? (
           <>
-            <input
-              aria-label={t('wizard:v5.xpRitualName', 'Ritual name')}
-              value={draft.trait}
-              maxLength={V5_NAME_MAX}
-              onChange={(e) => setXpDraft({ ...draft, trait: e.target.value })}
-              style={{ ...inputStyle, flex: '2 1 200px', width: 'auto', padding: '8px' }}
-            />
+            {ritualsOf('ritual', bsLevel).length ? (
+              <select
+                aria-label={t('wizard:v5.xpRitualName', 'Ritual name')}
+                value={draft.trait}
+                onChange={(e) => {
+                  const r = ritualsOf('ritual', bsLevel).find((x) => x.name === e.target.value);
+                  setXpDraft({ ...draft, trait: e.target.value, level: r ? r.level : draft.level });
+                }}
+                style={{ ...inputStyle, flex: '2 1 200px', width: 'auto', padding: '8px' }}
+              >
+                <option value="">{t('wizard:v5.choose', 'Choose…')}</option>
+                {ritualsOf('ritual', bsLevel).map((r) => (
+                  <option key={r.id || r.name} value={r.name}>
+                    {t('wizard:v5.powerOption', '{{name}} (level {{level}})', { name: r.name, level: r.level })}
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <input
+                aria-label={t('wizard:v5.xpRitualName', 'Ritual name')}
+                value={draft.trait}
+                maxLength={V5_NAME_MAX}
+                onChange={(e) => setXpDraft({ ...draft, trait: e.target.value })}
+                style={{ ...inputStyle, flex: '2 1 200px', width: 'auto', padding: '8px' }}
+              />
+            )}
             <select
               aria-label={t('wizard:v5.xpRitualLevel', 'Ritual level')}
               value={draft.level}

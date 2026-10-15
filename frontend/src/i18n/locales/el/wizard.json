@@ -274,6 +274,19 @@
     "previewAdvantages": "Advantages: {{list}}",
     "previewFlaws": "Flaws: {{list}} (έξτρα, πάνω από τα δικά σου {{min}})",
     "predatorFlawsExtra": "Αυτά τα Flaws είναι έξτρα: παίρνεις ακόμα {{min}} τελείες δικών σου Flaws στα Advantages.",
-    "predatorPreviewPickV2": "Δες έναν predator type (τον ορίζει και για το επόμενο βήμα)"
+    "predatorPreviewPickV2": "Δες έναν predator type (τον ορίζει και για το επόμενο βήμα)",
+    "powerPick": "Δύναμη {{n}}…",
+    "powerOption": "{{name}} (επίπεδο {{level}})",
+    "startingRitualNone": "Κανένα (προαιρετικό)",
+    "startingCeremony": "Αρχική τελετή Oblivion (επίπεδο 1, θέλει τη δύναμη που προαπαιτεί)",
+    "grantOr": "ή",
+    "grantSplit": "{{n}} τελείες μοιρασμένες σε {{list}}",
+    "grantAnd": "και",
+    "grantSplitDots": "Τελείες {{name}}",
+    "grantDots": "Τελείες {{name}}",
+    "grantNoRating": "το βιβλίο δεν γράφει τελείες: ρώτα τον Storyteller σου",
+    "ancillaOnly": "Μόνο για ancillae (η ηλικία ορίζεται στο βήμα της ηλικίας).",
+    "grantAdvantages": "Advantages που δίνει",
+    "grantFlaws": "Flaws που δίνει"
   }
 }

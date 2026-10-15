@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { GothicBox } from '../GothicDecorations';
-import { V5_DISCIPLINES, V5_SECTION_IDS } from '../../characterSheet/v5/constants';
+import { V5_SECTION_IDS } from '../../characterSheet/v5/constants';
+import { useV5Catalog } from '../../rules/v5Catalog';
 import { buildV5Payload, validateV5Sheet } from '../../characterSheet/v5/validation';
 import { settingsForCampaign } from '../../characterSheet/v5/creationSettings';
 import { translateSheetErrors } from '../../characterSheet/i18nErrors';
@@ -54,13 +55,14 @@ export default function V5CharacterCreationWizard({
   showError,
   showSuccess,
 }) {
+  useV5Catalog(token);
   const settings = settingsForCampaign(campaigns, campaignId);
   const f = useV5ForgeState(settings);
   const [submitting, setSubmitting] = useState(false);
   const { sheet, derived, fieldErrors } = f;
 
   const handleSubmit = async () => {
-    const err = translateSheetErrors(validateV5Sheet(sheet, V5_DISCIPLINES, settings));
+    const err = translateSheetErrors(validateV5Sheet(sheet, undefined, settings));
     if (!campaignId) err[V5_SECTION_IDS.identity] = t('wizard:error.chronicle', 'Choose a chronicle.');
     f.setFieldErrors(err);
     const first = SECTION_ORDER.find(([id]) => err[id]);

@@ -60,6 +60,7 @@ export const V5_FLEDGLING_HUMANITY = V5_RULES.humanity.start_fledgling_option; /
 export const V5_THIN_BLOOD_MERITS = V5_RULES.creation.thin_blood.merits; // [1, 3]
 export const V5_STARTING_HUNGER = 1;
 export const BLOOD_SORCERY = 'Blood Sorcery';
+export const OBLIVION = 'Oblivion';
 /** One optional Level 1 ritual at creation with Blood Sorcery 1+ (Blood Sorcery chapter). */
 export const V5_STARTING_RITUAL = V5_RULES.creation.starting_ritual; // { count: 1, level: 1 }
 /** Longest name the forge accepts for a ritual, power or XP specialty (backend caps the same). */
