@@ -458,6 +458,17 @@ export const CASE_DEFS = [
     expect: [],
   },
   {
+    name: 'valid: Allies at 6 dots, as the catalog prints it (a row named, without its id)',
+    sheet: () =>
+      brujah0({
+        advantages: [
+          { name: 'Allies (dock workers)', dots: 6, kind: 'background' },
+          { name: 'Haven', dots: 1, kind: 'background' },
+        ],
+      }),
+    expect: [],
+  },
+  {
     name: 'valid: inside the chronicle settings',
     settings: { allowed_clans: ['Brujah', 'Toreador'], allowed_predators: ['Alleycat'], allowed_ages: ['neonate'], flaws_max_dots: 4 },
     sheet: () => brujah(),

@@ -1020,11 +1020,14 @@ export function validateV5Sheet(sheet, allDisciplines = disciplineNames(), setti
     add(V5_SECTION_IDS.advantages, `Take at least ${d.flaw_min_dots} dots of Flaws (you have ${flawDots}).`);
   }
   add(V5_SECTION_IDS.advantages, validateV5AdvantageRows(s));
-  // Free-text rows (custom ones, or every row without the catalog): 1–5 dots. Catalog rows are
-  // held to their printed rating above; a loresheet's dots are the levels it takes.
-  const freeRows = [...named(s.advantages), ...named(s.flaws)].filter(
-    (r) => r.kind !== 'loresheet' && (r.custom || !r.id)
-  );
+  // Rows the catalog doesn't know (custom ones, or any row without the catalog): 1–5 dots. Rows it
+  // knows, by id or by name, are held to their printed rating above (Allies goes to 6), as on the
+  // server (backend/services/v5_chargen.py); a loresheet's dots are the levels it takes.
+  const unknownRow = (r, kind) => r.custom || !findAdvantage(r, kind);
+  const freeRows = [
+    ...named(s.advantages).filter((r) => r.kind !== 'loresheet' && unknownRow(r, r.kind)),
+    ...named(s.flaws).filter((r) => unknownRow(r, 'flaw')),
+  ];
   if (freeRows.some((r) => int(r.dots) < 1 || int(r.dots) > 5)) {
     add(V5_SECTION_IDS.advantages, 'Each Advantage or Flaw is 1–5 dots.');
   }
