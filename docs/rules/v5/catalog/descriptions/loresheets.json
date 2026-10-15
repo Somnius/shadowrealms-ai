@@ -16,7 +16,7 @@
     "el": "Αν κάνεις diablerie στο ίδιο σου το childe, πρόσθεσε τρία ζάρια στο pool Humanity + Blood Potency για να απορροφήσεις τα Disciplines του."
   },
   "loresheet:the-bahari:4": {
-    "en": "Once per story, after drinking blood from the uterus, gain two dots of Stamina or Resolve (and the Health or Willpower that goes with them) until dawn.",
+    "en": "Once per story, after you drink blood from a uterus, gain two dots of Stamina or Resolve (and the Health or Willpower that goes with them) until dawn.",
     "el": "Μία φορά ανά story, αφού πιεις αίμα από τη μήτρα, παίρνεις δύο τελείες Stamina ή Resolve (και το αντίστοιχο Health ή Willpower) μέχρι την αυγή."
   },
   "loresheet:the-bahari:5": {
@@ -324,7 +324,7 @@
     "el": "Τρεις τελείες Mawla σε επιζώντες Ravnos που φέρνουν νέα και προειδοποιήσεις και ίσως κάνουν μία μεγάλη ψευδαίσθηση ανά chronicle· η σχέση δεν αρέσει σε όλους."
   },
   "loresheet:the-week-of-nightmares:3": {
-    "en": "Status among Kindred historians, occultists, Ravnos and Gehenna cultists; once per story it earns you a minor boon from one of them or a curious courtier.",
+    "en": "Status with Kindred historians and occultists, the Ravnos and Gehenna cultists; once per story it earns you a minor boon from one of them or a curious courtier.",
     "el": "Status ανάμεσα σε ιστορικούς Kindred, αποκρυφιστές, Ravnos και λάτρεις της Gehenna· μία φορά ανά story σου φέρνει minor boon από κάποιον τους ή από περίεργο αυλικό."
   },
   "loresheet:the-week-of-nightmares:4": {
@@ -368,7 +368,7 @@
     "el": "Μία φορά ανά story, +2 ζάρια για να σπρώξεις ένα πλήθος θνητών στη βία."
   },
   "loresheet:descendant-of-tyler:2": {
-    "en": "Vampires planning a rebellion come to you; during one you add two dots to your Status with them.",
+    "en": "Vampires planning a rebellion come to you; while one is under way your Status with them rises by two dots.",
     "el": "Βαμπίρ που σχεδιάζουν εξέγερση έρχονται σε σένα· στη διάρκειά της προσθέτεις δύο τελείες στο Status σου μαζί τους."
   },
   "loresheet:descendant-of-tyler:3": {
@@ -476,7 +476,7 @@
     "el": "Διάλεξε ένα Discipline άλλου Low Clan· αγοράζεις τις τελείες του με experience σε κόστος in-clan."
   },
   "loresheet:low-clan:5": {
-    "en": "+1 die on Project pools against High Clans in your domain; once per chronicle sacrifice up to 10 of your Background dots to bring down as many High Clan Kindred in a coup.",
+    "en": "+1 die on Project pools aimed at the High Clans of your domain; once per chronicle sacrifice up to 10 of your Background dots to bring down as many High Clan Kindred in a coup.",
     "el": "+1 ζάρι στα pools για Projects κατά των High Clans στο domain σου· μία φορά ανά chronicle θυσιάζεις ως 10 τελείες Background για να ρίξεις ισάριθμους Kindred High Clan σε πραξικόπημα."
   },
   "loresheet:ambrus-maropis": {
@@ -708,7 +708,7 @@
     "el": "Μία φορά ανά session προσθέτεις μία αυτόματη επιτυχία σε social ρίψη κατά άλλου Hecata, ghoul ή retainer."
   },
   "loresheet:la-famiglia-giovanni:3": {
-    "en": "Four free dots to spread between Resources and Retainers, which family elders can pull back at any time, especially if you cross them.",
+    "en": "Four free dots to spread between Resources and Retainers, though family elders may take them back whenever they like, above all if you cross them.",
     "el": "Τέσσερις δωρεάν τελείες μοιρασμένες σε Resources και Retainers, που οι elders της οικογένειας μπορούν να πάρουν πίσω όποτε θέλουν, ειδικά αν τους προδώσεις."
   },
   "loresheet:la-famiglia-giovanni:4": {

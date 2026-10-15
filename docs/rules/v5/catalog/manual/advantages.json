@@ -168,7 +168,7 @@
           }
         ]
       },
-      "why": "core pr 149: no thin-blood can buy Bonding, Mawla, Retainers or Status during character creation"
+      "why": "core pr 149: thin-bloods may not take Bonding, Mawla, Retainers or Status at character creation"
     },
     {
       "id": "background:retainers",
@@ -182,7 +182,7 @@
           }
         ]
       },
-      "why": "core pr 149: no thin-blood can buy Bonding, Mawla, Retainers or Status during character creation"
+      "why": "core pr 149: thin-bloods may not take Bonding, Mawla, Retainers or Status at character creation"
     },
     {
       "id": "background:status",
@@ -196,7 +196,7 @@
           }
         ]
       },
-      "why": "core pr 149: no thin-blood can buy Bonding, Mawla, Retainers or Status during character creation"
+      "why": "core pr 149: thin-bloods may not take Bonding, Mawla, Retainers or Status at character creation"
     },
     {
       "id": "merit:bond-resistance",
@@ -210,7 +210,7 @@
           }
         ]
       },
-      "why": "core pr 149: no thin-blood can buy Bonding, Mawla, Retainers or Status during character creation"
+      "why": "core pr 149: thin-bloods may not take Bonding, Mawla, Retainers or Status at character creation"
     },
     {
       "id": "merit:short-bond",
@@ -224,7 +224,7 @@
           }
         ]
       },
-      "why": "core pr 149: no thin-blood can buy Bonding, Mawla, Retainers or Status during character creation"
+      "why": "core pr 149: thin-bloods may not take Bonding, Mawla, Retainers or Status at character creation"
     },
     {
       "id": "merit:unbondable",
@@ -238,7 +238,7 @@
           }
         ]
       },
-      "why": "core pr 149: no thin-blood can buy Bonding, Mawla, Retainers or Status during character creation"
+      "why": "core pr 149: thin-bloods may not take Bonding, Mawla, Retainers or Status at character creation"
     },
     {
       "id": "background:bloodline",

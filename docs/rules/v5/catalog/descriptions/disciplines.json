@@ -140,7 +140,7 @@
     "el": "Πυκνώνεις το αίμα σου: με νίκη το Blood Potency σου ανεβαίνει κατά 1 για τη σκηνή ή τη νύχτα, με critical win κατά 2, ακόμη και πάνω από το όριο της Generation σου. 1 Rouse Check· Resolve + Blood Sorcery με Difficulty 2 + Blood Potency."
   },
   "power:blood-sorcery:scorpions-touch": {
-    "en": "Your Blood becomes a paralysing poison: one Rouse Check per coated blade or spat mouthful. On a hit, the margin of Strength + Blood Sorcery vs Stamina + Occult or Fortitude is Aggravated damage to mortals, unhalved Superficial to vampires.",
+    "en": "Your Blood becomes a paralysing poison: one Rouse Check per coated blade or spat mouthful. On a hit, the margin of Strength + Blood Sorcery against Stamina + Occult or Fortitude is Aggravated to mortals, unhalved Superficial to vampires.",
     "el": "Το αίμα σου γίνεται παραλυτικό δηλητήριο: 1 Rouse Check ανά λεπίδα ή φτυσιά. Αν πετύχει, το περιθώριο στο Strength + Blood Sorcery εναντίον Stamina + Occult ή Fortitude είναι Aggravated ζημιά σε θνητούς, αδιαίρετη Superficial σε βαμπίρ."
   },
   "power:blood-sorcery:blood-aegis": {
@@ -152,11 +152,11 @@
     "el": "Ανοίγεις αρτηρία σε θνητό που βλέπεις και πίνεις το αίμα του από απόσταση με διπλάσια ταχύτητα (τριπλάσια με critical win)· η πληγή κλείνει μόνη της μετά. 1 Rouse Check· Wits + Blood Sorcery εναντίον Wits + Occult."
   },
   "power:blood-sorcery:baals-caress": {
-    "en": "A deadlier Scorpion's Touch, delivered the same way, but the margin is Aggravated damage to mortals and vampires alike. A mortal it wounds dies at once; a vampire who then loses a second contest enters torpor at next sleep.",
+    "en": "A deadlier Scorpion's Touch, delivered the same way, but the margin is Aggravated damage to mortals and to vampires. A mortal it wounds dies at once; a vampire who then loses a second contest enters torpor at next sleep.",
     "el": "Θανάσιμη εκδοχή του Scorpion's Touch, με την ίδια χρήση, αλλά το περιθώριο είναι Aggravated ζημιά σε θνητούς και βαμπίρ. Θνητός που τραυματίζεται πεθαίνει αμέσως· βαμπίρ που χάνει και δεύτερη ρίψη πέφτει σε torpor στον επόμενο ύπνο."
   },
   "power:blood-sorcery:cauldron-of-blood": {
-    "en": "Boil a victim's blood by touch: each point of margin on Resolve + Blood Sorcery vs Composure + Occult or Fortitude is one Aggravated damage. Any damage kills a mortal; vampires also gain 1 Hunger per point. One Rouse Check plus a Stain.",
+    "en": "Boil a victim's blood by touch: each point of margin on Resolve + Blood Sorcery against Composure + Occult or Fortitude is one Aggravated damage. Any damage kills a mortal; vampires also gain 1 Hunger per point. 1 Rouse Check and a Stain.",
     "el": "Βράζεις το αίμα θύματος με άγγιγμα: κάθε πόντος περιθωρίου στο Resolve + Blood Sorcery εναντίον Composure + Occult ή Fortitude είναι 1 Aggravated ζημιά. Θνητός με ζημιά πεθαίνει· βαμπίρ παίρνει και 1 Hunger ανά πόντο. 1 Rouse Check + Stain."
   },
   "discipline:celerity": {
@@ -524,7 +524,7 @@
     "el": "Πρόσθεσε το Presence σε ρίψεις Persuasion, Performance και άλλες με Charisma για μία σκηνή. Όσοι το αντιληφθούν αντιστέκονται με Composure + Intelligence εναντίον Manipulation + Presence. Δωρεάν."
   },
   "power:presence:daunt": {
-    "en": "Add Presence to Intimidation rolls for a scene; attacking you requires a Resolve + Composure roll at Difficulty 2. Cannot be combined with Awe. Free.",
+    "en": "Add Presence to Intimidation rolls for a scene; anyone attacking you must first pass Resolve + Composure at Difficulty 2. Cannot be combined with Awe. Free.",
     "el": "Πρόσθεσε το Presence σε ρίψεις Intimidation για μία σκηνή· για να σου επιτεθεί κάποιος χρειάζεται ρίψη Resolve + Composure, Difficulty 2. Δεν συνδυάζεται με Awe. Δωρεάν."
   },
   "power:presence:eyes-of-the-serpent": {
@@ -580,7 +580,7 @@
     "el": "Κόκκινα μάτια σε αφήνουν να βλέπεις σε απόλυτο σκοτάδι, ακόμη και υπερφυσικό, και δίνουν δύο έξτρα ζάρια σε Intimidation κατά θνητών. Δωρεάν, χωρίς ρίψη, όσο θέλεις."
   },
   "power:protean:weight-of-the-feather": {
-    "en": "Become nearly weightless: immune to damage from falls, collisions and being thrown, and you avoid pressure sensors. Free; as a sudden reaction it needs Wits + Survival at Difficulty 3.",
+    "en": "Become nearly weightless: falls, collisions and throws don't damage you, and pressure sensors miss you. Free; as a sudden reaction it needs Wits + Survival at Difficulty 3.",
     "el": "Γίνεσαι σχεδόν αβαρής: άτρωτος σε ζημιά από πτώσεις, συγκρούσεις και εκτοξεύσεις, και δεν ενεργοποιείς αισθητήρες πίεσης. Δωρεάν· ως ξαφνική αντίδραση θέλει Wits + Survival, Difficulty 3."
   },
   "power:protean:feral-weapons": {

@@ -147,7 +147,7 @@
       "id": "background:fame",
       "name": "Fame",
       "desc": {
-        "en": "You are a known name among mortals (or, for the same cost, among Kindred). Each dot lowers by 1 the Difficulty of Social tests against your fans and of many hunting tests, but makes you harder to overlook.",
+        "en": "You are a known name among mortals (or, for the same cost, among Kindred). Each dot cuts by 1 the Difficulty of Social tests aimed at your fans, and of many hunting tests, but makes you harder to overlook.",
         "el": "Είσαι γνωστό όνομα στους θνητούς (ή, με το ίδιο κόστος, στους Kindred). Κάθε τελεία ρίχνει κατά 1 το Difficulty στα Social τεστ απέναντι στους θαυμαστές σου και σε πολλά τεστ κυνηγιού, αλλά δύσκολα περνάς απαρατήρητος."
       },
       "kind": "background",
@@ -3718,7 +3718,7 @@
       "id": "flaw:organovore",
       "name": "Organovore",
       "desc": {
-        "en": "You slake Hunger only by eating human flesh and blood-rich organs; only the heart carries Resonance.",
+        "en": "Hunger can be slaked only with human flesh and blood-rich organs; only the heart carries Resonance.",
         "el": "Κατεβάζεις Hunger μόνο τρώγοντας ανθρώπινη σάρκα και όργανα γεμάτα αίμα· μόνο η καρδιά έχει Resonance."
       },
       "kind": "flaw",
@@ -4310,7 +4310,7 @@
       "id": "flaw:known-corpse",
       "name": "Known Corpse",
       "desc": {
-        "en": "People know you died recently and react with shock when you show up; database lookups on your identity say the same.",
+        "en": "People are aware you died recently and are shocked when you appear; looking you up in databases says the same.",
         "el": "Ο κόσμος ξέρει ότι πέθανες πρόσφατα και σοκάρεται όταν εμφανίζεσαι· το ίδιο δείχνουν και οι αναζητήσεις της ταυτότητάς σου σε βάσεις δεδομένων."
       },
       "kind": "flaw",

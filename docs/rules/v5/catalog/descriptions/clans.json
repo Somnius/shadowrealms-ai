@@ -148,7 +148,7 @@
     "el": "Το αίμα τους δεν μπορεί να δέσει με Blood Bond άλλα βαμπίρ, αν και οι ίδιοι μπορούν να δεθούν· το δέσιμο θνητών και ghouls θέλει τόσες επιπλέον γουλιές όσο το Bane Severity."
   },
   "clan:tremere:compulsion": {
-    "en": "2-dice penalty on all pools until a critical win on a Skill roll or the end of the scene; repeating an action drops the penalty to 1 die, a second repeat removes it.",
+    "en": "2-dice penalty on all pools until the scene ends or you roll a critical win with a Skill; repeating an action drops the penalty to 1 die, a second repeat removes it.",
     "el": "−2 ζάρια σε όλα τα pools μέχρι ένα critical win σε ρίψη Skill ή το τέλος της σκηνής· η επανάληψη μιας ενέργειας ρίχνει την ποινή στο 1 ζάρι, η δεύτερη επανάληψη την αφαιρεί."
   },
   "clan:tzimisce": {

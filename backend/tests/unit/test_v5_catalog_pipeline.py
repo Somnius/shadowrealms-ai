@@ -327,6 +327,26 @@ def test_overlap_gate():
     assert checks.overlap(["short text"], [book]) == []
 
 
+def test_overlap_gate_reads_columns_in_order_and_soft_hyphens(tmp_path):
+    """A run copied across a line break inside one column is caught: the -layout text puts the
+    two columns side by side on each line, the cached boxes give them column by column."""
+    pages = tmp_path / "v5-x" / "abc" / "pages"
+    pages.mkdir(parents=True)
+    left = ["the silver lantern burns only", "when the moon is full and bright", "over the old harbour", "on a cold night"]
+    right = ["a second column talks of", "something else entirely here", "with words of its own", "until the end"]
+    layout = "\n".join(f"{a:<40}{b}" for a, b in zip(left, right)) + "\n"
+    (pages / "0001.txt").write_text(layout, encoding="utf-8")
+    boxes = [{"t": t, "x": x, "y": 100 + 12 * i, "h": 12, "f": f}
+             for f, (x, col) in enumerate(((50, left), (300, right))) for i, t in enumerate(col)]
+    (pages / "0001.json").write_text(json.dumps(boxes), encoding="utf-8")
+    ours = ["the silver lantern burns only when the moon is full"]
+    assert checks.overlap(ours, [layout]) == []  # the layout text alone misses it
+    assert len(checks.overlap(ours, checks.page_cache_texts(tmp_path))) == 1
+    assert checks.words("a lan\u00ad\ntern") == ["a", "lantern"]
+    # printed facts (names, dice pools) are not prose: the gate skips them
+    assert checks.catalog_strings({"name": "x y", "dice_pool": "p", "desc": {"en": "z"}}) == ["z"]
+
+
 def test_reference_problems_on_tiny_catalog():
     data = {
         "books": {"entries": [{"book_id": "v5-a"}]},

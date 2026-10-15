@@ -222,8 +222,8 @@ def structural(catalog_dir: Path) -> list[str]:
 # --------------------------------------------------------------------------- overlap gate
 
 def words(text: str) -> list[str]:
-    text = re.sub(r"-\s*\n\s*", "", text)  # undo hyphenation at line ends
-    text = text.replace("’", "'").lower()
+    text = re.sub(r"[-\u00ad]\s*\n\s*", "", text)  # undo hyphenation at line ends (soft hyphens too)
+    text = text.replace("\u00ad", "").replace("’", "'").lower()
     return re.findall(r"[a-z0-9']+", text)
 
 
@@ -231,11 +231,16 @@ def shingles(tokens: list[str], n: int = SHINGLE) -> set:
     return {" ".join(tokens[i:i + n]) for i in range(len(tokens) - n + 1)}
 
 
+# printed facts the catalog must carry as printed (names, dice pools, restrictions): not prose
+FACT_KEYS = {"name", "aliases", "dice_pool", "pool", "restriction", "title"}
+
+
 def catalog_strings(obj) -> list[str]:
+    """Every prose string in a catalog file (descriptions, notes); FACT_KEYS values are skipped."""
     if isinstance(obj, str):
         return [obj]
     if isinstance(obj, dict):
-        return [s for v in obj.values() for s in catalog_strings(v)]
+        return [s for k, v in obj.items() if k not in FACT_KEYS for s in catalog_strings(v)]
     if isinstance(obj, list):
         return [s for v in obj for s in catalog_strings(v)]
     return []
@@ -255,9 +260,20 @@ def overlap(strings: list[str], source_texts: list[str], n: int = SHINGLE) -> li
 
 
 def page_cache_texts(build_dir: Path) -> list[str]:
+    """Every cached page twice: the -layout text, and the reading-order text from the cached
+    boxes (column by column). The layout text puts two columns on one physical line, so a run
+    copied across a line break inside a column is only contiguous in the reading-order text."""
+    from .sources.pdf import column_order
+
     texts = []
     for f in sorted(build_dir.glob("*/*/pages/*.txt")):
         texts.append(f.read_text(encoding="utf-8"))
+    for f in sorted(build_dir.glob("*/*/pages/*.json")):
+        try:
+            boxes = json.loads(f.read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            continue
+        texts.append("\n".join(b["t"] for b in column_order(boxes)))
     online = build_dir.parent / "online"
     for f in sorted(online.glob("**/*.json")) if online.exists() else []:
         try:

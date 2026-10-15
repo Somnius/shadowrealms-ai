@@ -74,7 +74,7 @@
       "id": "ritual:seal-the-brand",
       "name": "Seal the Brand",
       "desc": {
-        "en": "Pour molten silver over a tattoo, brand or other body modification (1 Superficial damage) so it no longer fades with day-sleep and becomes a permanent part of the vampire's body.",
+        "en": "Silver, melted and poured over a tattoo, brand or similar body modification (1 Superficial damage), keeps it from fading with day-sleep; it becomes a permanent part of the vampire's body.",
         "el": "Χύνεις λιωμένο ασήμι πάνω σε τατουάζ, σημάδι ή άλλη τροποποίηση του σώματος (1 Superficial ζημιά) ώστε να μη σβήνει με τον ύπνο της μέρας και να γίνει μόνιμη στο σώμα του βαμπίρ."
       },
       "level": 1,
@@ -397,7 +397,7 @@
       "id": "ritual:warding-circle-against-spirits",
       "name": "Warding Circle against Spirits",
       "desc": {
-        "en": "A Warding circle drawn with an iron knife dipped in salt and Blood that spirits, wraiths and ghosts cannot cross: a losing trespasser takes 3 Superficial damage. 3 Rouse Checks and a night to cast.",
+        "en": "A Warding circle, cut with an iron knife wet with salt and Blood, that spirits, wraiths and ghosts cannot cross: a losing trespasser takes 3 Superficial damage. 3 Rouse Checks and a night to cast.",
         "el": "Warding circle χαραγμένος με σιδερένιο μαχαίρι βουτηγμένο σε αλάτι και αίμα, που πνεύματα, wraiths και φαντάσματα δεν περνούν: όποιος χάσει τη ρίψη παίρνει 3 Superficial ζημιά. 3 Rouse Checks και μία νύχτα."
       },
       "level": 3,
@@ -533,7 +533,7 @@
       "id": "ritual:warding-circle-against-lupines",
       "name": "Warding Circle against Lupines",
       "desc": {
-        "en": "A Warding circle drawn with a silver knife dipped in wolfsbane and Blood that werewolves cannot cross: a losing trespasser takes 3 Superficial damage. 3 Rouse Checks and a night to cast.",
+        "en": "A Warding circle, cut with a silver knife wet with wolfsbane and Blood, that werewolves cannot cross: a losing trespasser takes 3 Superficial damage. 3 Rouse Checks and a night to cast.",
         "el": "Warding circle χαραγμένος με ασημένιο μαχαίρι βουτηγμένο σε ακόνιτο και αίμα, που οι λυκάνθρωποι δεν περνούν: όποιος χάσει τη ρίψη παίρνει 3 Superficial ζημιά. 3 Rouse Checks και μία νύχτα."
       },
       "level": 4,

@@ -16,7 +16,7 @@
     "el": "Ο κυνηγότοπος της coterie, που αγοράζεται από το coterie pool ως τρία Traits: Chasse (Difficulty κυνηγιού και μέγεθος), Lien (ζάρια στις επαφές με ντόπιους) και Portillon (ζάρια που χάνουν οι εισβολείς)."
   },
   "background:fame": {
-    "en": "You are a known name among mortals (or, for the same cost, among Kindred). Each dot lowers by 1 the Difficulty of Social tests against your fans and of many hunting tests, but makes you harder to overlook.",
+    "en": "You are a known name among mortals (or, for the same cost, among Kindred). Each dot cuts by 1 the Difficulty of Social tests aimed at your fans, and of many hunting tests, but makes you harder to overlook.",
     "el": "Είσαι γνωστό όνομα στους θνητούς (ή, με το ίδιο κόστος, στους Kindred). Κάθε τελεία ρίχνει κατά 1 το Difficulty στα Social τεστ απέναντι στους θαυμαστές σου και σε πολλά τεστ κυνηγιού, αλλά δύσκολα περνάς απαρατήρητος."
   },
   "background:haven": {
@@ -464,7 +464,7 @@
     "el": "Μόνο το αίμα υπερφυσικών πλασμάτων σε χορταίνει· αλλιώς το Hunger σου δεν πέφτει ποτέ κάτω από 1 (ή πιο ψηλά, ανάλογα με το Blood Potency)."
   },
   "flaw:organovore": {
-    "en": "You slake Hunger only by eating human flesh and blood-rich organs; only the heart carries Resonance.",
+    "en": "Hunger can be slaked only with human flesh and blood-rich organs; only the heart carries Resonance.",
     "el": "Κατεβάζεις Hunger μόνο τρώγοντας ανθρώπινη σάρκα και όργανα γεμάτα αίμα· μόνο η καρδιά έχει Resonance."
   },
   "flaw:prey-exclusion": {
@@ -544,7 +544,7 @@
     "el": "Τα βιομετρικά και τα ψευδώνυμά σου είναι σε βάσεις υπηρεσιών πληροφοριών, σημειωμένα ως πιθανού τρομοκράτη· κάθε inquisitor καταλαβαίνει από αυτά ότι είσαι βαμπίρ."
   },
   "flaw:known-corpse": {
-    "en": "People know you died recently and react with shock when you show up; database lookups on your identity say the same.",
+    "en": "People are aware you died recently and are shocked when you appear; looking you up in databases says the same.",
     "el": "Ο κόσμος ξέρει ότι πέθανες πρόσφατα και σοκάρεται όταν εμφανίζεσαι· το ίδιο δείχνουν και οι αναζητήσεις της ταυτότητάς σου σε βάσεις δεδομένων."
   },
   "flaw:adversary": {
