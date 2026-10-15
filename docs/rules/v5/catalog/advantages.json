@@ -5,6 +5,10 @@
     {
       "id": "background:allies",
       "name": "Allies",
+      "desc": {
+        "en": "Mortals who help you willingly: a person or a small group, rated on Effectiveness and Reliability (up to 6 points in one Ally). They usually turn up about once a story and expect favours back.",
+        "el": "Θνητοί που σε βοηθούν με τη θέλησή τους: ένα άτομο ή μικρή ομάδα, με βαθμούς σε Effectiveness και Reliability (ως 6 πόντοι σε έναν Ally). Εμφανίζονται περίπου μία φορά ανά story και περιμένουν ανταπόδοση."
+      },
       "kind": "background",
       "group": "Allies",
       "dots": {
@@ -35,6 +39,10 @@
     {
       "id": "background:bloodline",
       "name": "Bloodline",
+      "desc": {
+        "en": "A second Loresheet open only to members of your bloodline; its levels are bought like any Loresheet, and you may hold one Bloodline plus one ordinary Loresheet. Most Hecata have one.",
+        "el": "Δεύτερο Loresheet που ανοίγει μόνο στα μέλη της bloodline σου· τα επίπεδά του αγοράζονται όπως κάθε Loresheet, και μπορείς να έχεις ένα Bloodline και ένα κανονικό Loresheet. Οι περισσότεροι Hecata έχουν ένα."
+      },
       "kind": "background",
       "group": "Bloodline",
       "dots": {
@@ -63,6 +71,10 @@
     {
       "id": "background:contacts",
       "name": "Contacts",
+      "desc": {
+        "en": "People who feed you information and small favours in their field. Each dot is one Contact able to get something cheap (1), useful (2) or expensive and hard (3), roughly matching Resources 1, 2 or 4.",
+        "el": "Άνθρωποι που σου δίνουν πληροφορίες και μικρές χάρες στον τομέα τους. Κάθε τελεία είναι ένας Contact που βρίσκει κάτι φτηνό (1), χρήσιμο (2) ή ακριβό και δύσκολο (3), περίπου σαν Resources 1, 2 ή 4."
+      },
       "kind": "background",
       "group": "Contacts",
       "dots": {
@@ -98,6 +110,10 @@
     {
       "id": "background:domain",
       "name": "Domain",
+      "desc": {
+        "en": "The coterie's hunting ground, bought from the coterie pool as three Traits: Chasse (hunting Difficulty and size), Lien (dice for dealing with locals) and Portillon (dice taken from intruders).",
+        "el": "Ο κυνηγότοπος της coterie, που αγοράζεται από το coterie pool ως τρία Traits: Chasse (Difficulty κυνηγιού και μέγεθος), Lien (ζάρια στις επαφές με ντόπιους) και Portillon (ζάρια που χάνουν οι εισβολείς)."
+      },
       "kind": "background",
       "group": "Domain",
       "dots": null,
@@ -130,6 +146,10 @@
     {
       "id": "background:fame",
       "name": "Fame",
+      "desc": {
+        "en": "You are a known name among mortals (or, for the same cost, among Kindred). Each dot lowers by 1 the Difficulty of Social tests against your fans and of many hunting tests, but makes you harder to overlook.",
+        "el": "Είσαι γνωστό όνομα στους θνητούς (ή, με το ίδιο κόστος, στους Kindred). Κάθε τελεία ρίχνει κατά 1 το Difficulty στα Social τεστ απέναντι στους θαυμαστές σου και σε πολλά τεστ κυνηγιού, αλλά δύσκολα περνάς απαρατήρητος."
+      },
       "kind": "background",
       "group": "Fame",
       "dots": {
@@ -160,6 +180,10 @@
     {
       "id": "background:haven",
       "name": "Haven",
+      "desc": {
+        "en": "How big, secure and private your resting place is. Each base dot adds +1 Difficulty (or one die) against attempts to find, enter or watch it, and one die to notice danger while inside. Haven Merits and Flaws stack on top.",
+        "el": "Μέγεθος, ασφάλεια και ιδιωτικότητα του καταφυγίου σου. Κάθε βασική τελεία δίνει +1 Difficulty (ή ένα ζάρι) σε όποιον το ψάχνει, μπαίνει ή το παρακολουθεί, και ένα ζάρι για να νιώσεις κίνδυνο μέσα του. Haven Merits και Flaws προστίθενται."
+      },
       "kind": "background",
       "group": "Haven",
       "dots": {
@@ -190,6 +214,10 @@
     {
       "id": "background:herd",
       "name": "Herd",
+      "desc": {
+        "en": "Vessels you can feed from without a hunt: slake Hunger equal to your Herd rating each week with no roll. Higher dots mean more vessels and chosen Resonances; overfeeding thins the Herd.",
+        "el": "Θύματα από τα οποία τρέφεσαι χωρίς κυνήγι: κάθε εβδομάδα κατεβάζεις Hunger ίσο με το Herd σου χωρίς ρίψη. Περισσότερες τελείες σημαίνουν περισσότερα θύματα και επιλεγμένα Resonances· η υπερβολή λιγοστεύει το Herd."
+      },
       "kind": "background",
       "group": "Herd",
       "dots": {
@@ -220,6 +248,10 @@
     {
       "id": "background:influence",
       "name": "Influence",
+      "desc": {
+        "en": "Pull over one mortal group or region of the city, from Well-connected (1) to Dominant (5); it counts one dot less city-wide. The Storyteller may have you roll it in place of a Trait against officials.",
+        "el": "Επιρροή σε μια ομάδα θνητών ή περιοχή της πόλης, από Well-connected (1) ως Dominant (5)· σε όλη την πόλη μετρά μία τελεία λιγότερο. Ο Storyteller μπορεί να τη ζητήσει αντί για Trait σε ρίψεις απέναντι σε αξιωματούχους."
+      },
       "kind": "background",
       "group": "Influence",
       "dots": {
@@ -271,6 +303,10 @@
     {
       "id": "background:loresheets",
       "name": "Loresheets",
+      "desc": {
+        "en": "Buys levels from one Loresheet, tying a piece of Kindred lore to your character. Each level is bought on its own and does not include the lower ones; some sheets are limited to one clan.",
+        "el": "Αγοράζει επίπεδα από ένα Loresheet, δένοντας ένα κομμάτι της ιστορίας των Kindred με τον χαρακτήρα σου. Κάθε επίπεδο αγοράζεται χωριστά και δεν περιλαμβάνει τα χαμηλότερα· κάποια sheets είναι μόνο για ένα clan."
+      },
       "kind": "background",
       "group": "Loresheets",
       "dots": {
@@ -301,6 +337,10 @@
     {
       "id": "background:mask",
       "name": "Mask",
+      "desc": {
+        "en": "A fake identity that holds up to scrutiny: at 1 dot it passes a state-level background check, at 2 a national police check. With 2 dots you may add Zeroed or Cobbler for one dot each.",
+        "el": "Ψεύτικη ταυτότητα που αντέχει σε έλεγχο: με 1 τελεία περνά έλεγχο πολιτειακού επιπέδου, με 2 έλεγχο από εθνική αστυνομία. Με 2 τελείες μπορείς να πάρεις Zeroed ή Cobbler για μία τελεία το καθένα."
+      },
       "kind": "background",
       "group": "Mask",
       "dots": {
@@ -333,6 +373,10 @@
     {
       "id": "background:mawla",
       "name": "Mawla",
+      "desc": {
+        "en": "A Kindred (or group) who looks out for you with advice, information and the odd political favour, from a neonate (1) to a Prince or Baron (5). A group is one dot dearer than a lone vampire of that level.",
+        "el": "Ένας Kindred (ή ομάδα) που σε προσέχει με συμβουλές, πληροφορίες και καμιά πολιτική χάρη, από neonate (1) ως Prince ή Baron (5). Μια ομάδα κοστίζει μία τελεία παραπάνω από έναν μόνο βαμπίρ του ίδιου επιπέδου."
+      },
       "kind": "background",
       "group": "Mawla",
       "dots": {
@@ -373,6 +417,10 @@
     {
       "id": "background:minor-boon",
       "name": "Minor Boon",
+      "desc": {
+        "en": "A one-off favour another Kindred owes you, bought only at character creation. Costs half the dots (rounded up) of a Mawla of the same standing; a Major Boon costs one dot more.",
+        "el": "Μια χάρη που σου χρωστά άλλος Kindred, αγοράζεται μόνο στη δημιουργία χαρακτήρα. Κοστίζει τις μισές τελείες (στρογγυλοποίηση πάνω) ενός Mawla ίδιας θέσης· το Major Boon κοστίζει μία τελεία παραπάνω."
+      },
       "kind": "background",
       "group": "Minor Boon",
       "dots": {
@@ -398,6 +446,10 @@
     {
       "id": "background:resources",
       "name": "Resources",
+      "desc": {
+        "en": "Income and assets, not always liquid: Portfolio Proletariat (1), Middle Class (2), Rich (3), Wealthy (4), Ultra Rich (5). You must say where the money comes from; it can be lost in play.",
+        "el": "Εισόδημα και περιουσία, όχι πάντα ρευστή: Portfolio Proletariat (1), Middle Class (2), Rich (3), Wealthy (4), Ultra Rich (5). Πρέπει να πεις από πού έρχονται τα χρήματα· μπορούν να χαθούν στο παιχνίδι."
+      },
       "kind": "background",
       "group": "Resources",
       "dots": {
@@ -449,6 +501,10 @@
     {
       "id": "background:retainers",
       "name": "Retainers",
+      "desc": {
+        "en": "A loyal servant you control through pay, vitae or Disciplines: a Weak mortal (1), a ghoul or Average mortal (2), or a ghoul built as a Gifted mortal who can act on their own (3).",
+        "el": "Ένας πιστός υπηρέτης που ελέγχεις με μισθό, vitae ή Disciplines: Weak θνητός (1), ghoul ή Average θνητός (2), ή ghoul σαν Gifted θνητός που δρα και μόνος του (3)."
+      },
       "kind": "background",
       "group": "Retainers",
       "dots": {
@@ -489,6 +545,10 @@
     {
       "id": "background:status",
       "name": "Status",
+      "desc": {
+        "en": "Standing within one Kindred community (Camarilla or Anarch), from Known (1) to Luminary (5). It may be added to or replace a Social Trait; it drops one dot in another city and does not cross sects.",
+        "el": "Θέση σε μια κοινότητα Kindred (Camarilla ή Anarch), από Known (1) ως Luminary (5). Μπορεί να προστεθεί ή να αντικαταστήσει Social Trait· πέφτει μία τελεία σε άλλη πόλη και δεν μεταφέρεται μεταξύ sects."
+      },
       "kind": "background",
       "group": "Status",
       "dots": {
@@ -550,6 +610,10 @@
     {
       "id": "merit:bond-resistance",
       "name": "Bond Resistance",
+      "desc": {
+        "en": "Add one die per dot (max 3) to pools that resist a Blood Bond.",
+        "el": "Ένα ζάρι ανά τελεία (μέγιστο 3) στις ρίψεις αντίστασης σε Blood Bond."
+      },
       "kind": "merit",
       "group": "Bonding",
       "dots": {
@@ -585,6 +649,10 @@
     {
       "id": "merit:short-bond",
       "name": "Short Bond",
+      "desc": {
+        "en": "Blood Bonds on you weaken twice as fast: they drop one step at both the full and the new moon if not reinforced.",
+        "el": "Τα Blood Bonds πάνω σου εξασθενούν διπλά γρήγορα: πέφτουν ένα σκαλί και στην πανσέληνο και στη νέα σελήνη αν δεν ανανεωθούν."
+      },
       "kind": "merit",
       "group": "Bonding",
       "dots": {
@@ -620,6 +688,10 @@
     {
       "id": "merit:unbondable",
       "name": "Unbondable",
+      "desc": {
+        "en": "You can never be Blood Bound.",
+        "el": "Δεν μπορείς ποτέ να δεθείς με Blood Bond."
+      },
       "kind": "merit",
       "group": "Bonding",
       "dots": {
@@ -655,6 +727,10 @@
     {
       "id": "merit:caitiff-favored-blood",
       "name": "Favored Blood",
+      "desc": {
+        "en": "Caitiff only. You may buy dots in any Discipline without first tasting the Blood of a vampire who has it. Not with Muddled Blood.",
+        "el": "Μόνο για Caitiff. Αγοράζεις τελείες σε οποιοδήποτε Discipline χωρίς να έχεις πιει πρώτα αίμα βαμπίρ που το έχει. Όχι μαζί με Muddled Blood."
+      },
       "kind": "merit",
       "group": "Caitiff",
       "dots": {
@@ -680,6 +756,10 @@
     {
       "id": "merit:caitiff-mark-of-caine",
       "name": "Mark of Caine",
+      "desc": {
+        "en": "Caitiff only. +2 dice to intimidate vampires who believe in Caine. Anyone trying to diablerize you gets no Blood Potency on the roll, and every failure on it counts as a bestial failure.",
+        "el": "Μόνο για Caitiff. +2 ζάρια για να εκφοβίσεις βαμπίρ που πιστεύουν στον Caine. Όποιος επιχειρεί diablerie πάνω σου δεν προσθέτει Blood Potency στη ρίψη, και κάθε αποτυχία του είναι bestial failure."
+      },
       "kind": "merit",
       "group": "Caitiff",
       "dots": {
@@ -705,6 +785,10 @@
     {
       "id": "merit:caitiff-mockingbird",
       "name": "Mockingbird",
+      "desc": {
+        "en": "Caitiff only. After drinking one Hunger's worth from a vampire, for one night you may use one of their Discipline powers (no higher than your best Discipline), along with their Bane. One power per night.",
+        "el": "Μόνο για Caitiff. Αφού πιεις ένα Hunger από βαμπίρ, για μία νύχτα χρησιμοποιείς μία από τις δυνάμεις Discipline του (όχι ανώτερη από το καλύτερο Discipline σου), μαζί με το Bane του. Μία δύναμη τη νύχτα."
+      },
       "kind": "merit",
       "group": "Caitiff",
       "dots": {
@@ -730,6 +814,10 @@
     {
       "id": "merit:caitiff-sun-scarred",
       "name": "Sun-Scarred",
+      "desc": {
+        "en": "Caitiff only. In the first turn of sunlight in a scene you take no Health damage, 1 Aggravated Willpower damage and auto-resist Terror Frenzy; for the rest of the scene sunlight deals Superficial damage.",
+        "el": "Μόνο για Caitiff. Τον πρώτο γύρο στον ήλιο σε μια σκηνή δεν παίρνεις Health damage, παίρνεις 1 Aggravated Willpower damage και αντιστέκεσαι αυτόματα στο Terror Frenzy· την υπόλοιπη σκηνή ο ήλιος κάνει Superficial damage."
+      },
       "kind": "merit",
       "group": "Caitiff",
       "dots": {
@@ -755,6 +843,10 @@
     {
       "id": "merit:caitiff-uncle-fangs",
       "name": "Uncle Fangs",
+      "desc": {
+        "en": "Caitiff only. A local group of three to five thin-bloods treats you as a mentor; use them as an Ally group for street news and the odd alchemical brew. Not with Liquidator.",
+        "el": "Μόνο για Caitiff. Μια τοπική ομάδα τριών ως πέντε thin-bloods σε έχει για μέντορα· λειτουργούν ως Ally group για νέα του δρόμου και καμιά αλχημική συνταγή. Όχι μαζί με Liquidator."
+      },
       "kind": "merit",
       "group": "Caitiff",
       "dots": {
@@ -780,6 +872,10 @@
     {
       "id": "merit:coterie-all-access",
       "name": "All Access",
+      "desc": {
+        "en": "Toreador coterie Merit. Once per session the coterie gets past door staff or a guest list at a mortal venue; it does not beat security systems or wards.",
+        "el": "Coterie Merit Toreador. Μία φορά ανά session η coterie περνά πορτιέρηδες ή λίστα καλεσμένων σε χώρο θνητών· δεν περνά συστήματα ασφαλείας ή wards."
+      },
       "kind": "merit",
       "group": "Clan Coterie",
       "dots": {
@@ -812,6 +908,10 @@
     {
       "id": "merit:coterie-ars-moriendi",
       "name": "Ars Moriendi",
+      "desc": {
+        "en": "Hecata coterie Merit. Once per session the Hecata disguises or disposes of a body the coterie made, mortal or vampire, buying time but not shaking off a pursuer.",
+        "el": "Coterie Merit Hecata. Μία φορά ανά session ο Hecata μασκαρεύει ή εξαφανίζει ένα πτώμα που άφησε η coterie, θνητού ή βαμπίρ, κερδίζοντας χρόνο αλλά χωρίς να ξεφορτωθεί διώκτη."
+      },
       "kind": "merit",
       "group": "Clan Coterie",
       "dots": {
@@ -844,6 +944,10 @@
     {
       "id": "merit:coterie-at-any-cost",
       "name": "At Any Cost",
+      "desc": {
+        "en": "Lasombra coterie Merit. Once per session a coterie member adds two successes to a test, which then counts as a messy critical.",
+        "el": "Coterie Merit Lasombra. Μία φορά ανά session ένα μέλος της coterie προσθέτει δύο επιτυχίες σε ένα τεστ, που μετρά όμως ως messy critical."
+      },
       "kind": "merit",
       "group": "Clan Coterie",
       "dots": {
@@ -876,6 +980,10 @@
     {
       "id": "merit:coterie-boot-and-rally",
       "name": "Boot and Rally",
+      "desc": {
+        "en": "Brujah coterie Merit. Once per session a coterie member re-rolls every non-Hunger die of a Physical Skill test that just failed.",
+        "el": "Coterie Merit Brujah. Μία φορά ανά session ένα μέλος της coterie ξαναρίχνει όλα τα κανονικά ζάρια σε Physical Skill τεστ που μόλις απέτυχε."
+      },
       "kind": "merit",
       "group": "Clan Coterie",
       "dots": {
@@ -908,6 +1016,10 @@
     {
       "id": "merit:coterie-call-to-purpose",
       "name": "Call to Purpose",
+      "desc": {
+        "en": "Banu Haqim coterie Merit. Once per session a coterie-mate in sight gets the effect of a free Willpower point to use at once (reroll three dice, briefly master a frenzy). Not usable on yourself.",
+        "el": "Coterie Merit Banu Haqim. Μία φορά ανά session ένα μέλος της coterie που βλέπεις παίρνει το αποτέλεσμα ενός δωρεάν Willpower για άμεση χρήση (ξαναρίχνει τρία ζάρια, κρατά στιγμιαία ένα frenzy). Όχι για σένα."
+      },
       "kind": "merit",
       "group": "Clan Coterie",
       "dots": {
@@ -940,6 +1052,10 @@
     {
       "id": "merit:coterie-contextual-contact",
       "name": "Contextual Contact",
+      "desc": {
+        "en": "Nosferatu coterie Merit. Once per session a coterie member adds another member's highest Contacts rating to one test to dig up information; each Contact serves this way once per story.",
+        "el": "Coterie Merit Nosferatu. Μία φορά ανά session ένα μέλος προσθέτει το υψηλότερο Contacts άλλου μέλους σε ένα τεστ για ανεύρεση πληροφοριών· κάθε Contact το κάνει μία φορά ανά story."
+      },
       "kind": "merit",
       "group": "Clan Coterie",
       "dots": {
@@ -972,6 +1088,10 @@
     {
       "id": "merit:coterie-cryptolect",
       "name": "Cryptolect",
+      "desc": {
+        "en": "Ravnos coterie Merit. The coterie shares a private code of words and gestures nobody outside understands; it needs face-to-face contact and is lost if the Ravnos leaves.",
+        "el": "Coterie Merit Ravnos. Η coterie έχει δικό της κώδικα λέξεων και χειρονομιών που κανείς απέξω δεν καταλαβαίνει· θέλει επαφή πρόσωπο με πρόσωπο και χάνεται αν φύγει ο Ravnos."
+      },
       "kind": "merit",
       "group": "Clan Coterie",
       "dots": {
@@ -1004,6 +1124,10 @@
     {
       "id": "merit:coterie-discerning",
       "name": "Discerning",
+      "desc": {
+        "en": "Ministry coterie Merit. Once per session the Minister learns something superficial a Storyteller character wants, provided a coterie member spoke to them this session.",
+        "el": "Coterie Merit Ministry. Μία φορά ανά session ο Minister μαθαίνει κάτι επιφανειακό που θέλει ένας χαρακτήρας του Storyteller, αρκεί ένα μέλος της coterie να του μίλησε στο session."
+      },
       "kind": "merit",
       "group": "Clan Coterie",
       "dots": {
@@ -1036,6 +1160,10 @@
     {
       "id": "merit:coterie-everything-is-connected",
       "name": "Everything Is Connected",
+      "desc": {
+        "en": "Malkavian coterie Merit. Once per session a coterie member swaps one Skill pool for another they have on an information-gathering test; the Malkavian reads the result.",
+        "el": "Coterie Merit Malkavian. Μία φορά ανά session ένα μέλος της coterie αλλάζει ένα Skill pool με άλλο που έχει σε τεστ συλλογής πληροφοριών· ο Malkavian ερμηνεύει το αποτέλεσμα."
+      },
       "kind": "merit",
       "group": "Clan Coterie",
       "dots": {
@@ -1068,6 +1196,10 @@
     {
       "id": "merit:coterie-kindred-legacies",
       "name": "Kindred Legacies",
+      "desc": {
+        "en": "Ventrue coterie Merit. Once per session a coterie member asks the Storyteller for one piece of history about a vampire they have met.",
+        "el": "Coterie Merit Ventrue. Μία φορά ανά session ένα μέλος της coterie ζητά από τον Storyteller ένα στοιχείο από το παρελθόν ενός βαμπίρ που έχει συναντήσει."
+      },
       "kind": "merit",
       "group": "Clan Coterie",
       "dots": {
@@ -1100,6 +1232,10 @@
     {
       "id": "merit:coterie-mortal-heart",
       "name": "Mortal Heart",
+      "desc": {
+        "en": "Thin-blood coterie Merit. Once per session the coterie counts its Humanity as one higher for a scene.",
+        "el": "Coterie Merit thin-blood. Μία φορά ανά session η coterie μετρά το Humanity της μία τελεία ψηλότερα για μία σκηνή."
+      },
       "kind": "merit",
       "group": "Clan Coterie",
       "dots": {
@@ -1127,6 +1263,10 @@
     {
       "id": "merit:coterie-multi-level-lorekeeping",
       "name": "Multi-Level Lorekeeping",
+      "desc": {
+        "en": "Tremere coterie Merit. Once per session one coterie member borrows a Loresheet level another member owns for that session, within the Storyteller's limits.",
+        "el": "Coterie Merit Tremere. Μία φορά ανά session ένα μέλος της coterie δανείζεται για το session ένα επίπεδο Loresheet που έχει άλλο μέλος, με τους όρους του Storyteller."
+      },
       "kind": "merit",
       "group": "Clan Coterie",
       "dots": {
@@ -1159,6 +1299,10 @@
     {
       "id": "merit:coterie-old-world-hospitality",
       "name": "Old-World Hospitality",
+      "desc": {
+        "en": "Tzimisce coterie Merit. Coterie members who ended the last session in the Tzimisce's haven start the next with one extra level of Superficial Willpower damage healed.",
+        "el": "Coterie Merit Tzimisce. Τα μέλη που τελείωσαν το προηγούμενο session στο haven του Tzimisce ξεκινούν το επόμενο με ένα επιπλέον επίπεδο Superficial Willpower damage γιατρεμένο."
+      },
       "kind": "merit",
       "group": "Clan Coterie",
       "dots": {
@@ -1191,6 +1335,10 @@
     {
       "id": "merit:coterie-pack-tactics",
       "name": "Pack Tactics",
+      "desc": {
+        "en": "Gangrel coterie Merit. In combat, while a coterie-mate fights beside you, everyone attacking the same enemy adds one die to Brawl or Melee attacks (not cumulative).",
+        "el": "Coterie Merit Gangrel. Στη μάχη, όσο ένα μέλος της coterie πολεμά δίπλα σου, όποιος χτυπά τον ίδιο εχθρό παίρνει ένα ζάρι στις επιθέσεις Brawl ή Melee (δεν σωρεύεται)."
+      },
       "kind": "merit",
       "group": "Clan Coterie",
       "dots": {
@@ -1223,6 +1371,10 @@
     {
       "id": "merit:coterie-restraint",
       "name": "Restraint",
+      "desc": {
+        "en": "Salubri coterie Merit. Once per session the Salubri lets a coterie member present reroll all their Hunger dice in one test for free.",
+        "el": "Coterie Merit Salubri. Μία φορά ανά session ο Salubri αφήνει ένα παρόν μέλος της coterie να ξαναρίξει δωρεάν όλα τα Hunger dice σε ένα τεστ."
+      },
       "kind": "merit",
       "group": "Clan Coterie",
       "dots": {
@@ -1250,6 +1402,10 @@
     {
       "id": "merit:coterie-versatile-vitae",
       "name": "Versatile Vitae",
+      "desc": {
+        "en": "Caitiff coterie Merit. Once per session a coterie member may use for a scene a Discipline power they lack, if they meet its level and prerequisites.",
+        "el": "Coterie Merit Caitiff. Μία φορά ανά session ένα μέλος της coterie χρησιμοποιεί για μία σκηνή δύναμη Discipline που δεν έχει, αν καλύπτει επίπεδο και προϋποθέσεις."
+      },
       "kind": "merit",
       "group": "Clan Coterie",
       "dots": {
@@ -1277,6 +1433,10 @@
     {
       "id": "merit:coterie-bolt-holes",
       "name": "Bolt Holes",
+      "desc": {
+        "en": "Coterie Merit. Each dot gives the coterie one bonus die to escape detection or pursuit inside its domain.",
+        "el": "Coterie Merit. Κάθε τελεία δίνει στην coterie ένα ζάρι για να ξεφύγει από εντοπισμό ή καταδίωξη μέσα στο domain της."
+      },
       "kind": "merit",
       "group": "Coterie",
       "dots": {
@@ -1302,6 +1462,10 @@
     {
       "id": "merit:coterie-on-tap",
       "name": "On Tap",
+      "desc": {
+        "en": "Coterie Merit. Pick a Resonance; add dice equal to the rating to hunts in your domain for a victim with it.",
+        "el": "Coterie Merit. Διάλεξε ένα Resonance· πρόσθεσε ζάρια ίσα με τις τελείες στα κυνήγια μέσα στο domain σου για θύμα που το έχει."
+      },
       "kind": "merit",
       "group": "Coterie",
       "dots": {
@@ -1327,6 +1491,10 @@
     {
       "id": "merit:coterie-privileged",
       "name": "Privileged",
+      "desc": {
+        "en": "Coterie Merit. The coterie holds a special dispensation from its sect: it cannot be punished for one specific crime that would ruin other Kindred.",
+        "el": "Coterie Merit. Η coterie έχει ειδική άδεια από το sect της: δεν τιμωρείται για ένα συγκεκριμένο αδίκημα που θα κατέστρεφε άλλους Kindred."
+      },
       "kind": "merit",
       "group": "Coterie",
       "dots": {
@@ -1352,6 +1520,10 @@
     {
       "id": "merit:coterie-transportation",
       "name": "Transportation",
+      "desc": {
+        "en": "Coterie Merit. Luxury cars with drivers (Driving 6) on short notice, plus once per story a rare vehicle such as a helicopter for a night.",
+        "el": "Coterie Merit. Πολυτελή αυτοκίνητα με οδηγούς (Driving 6) σε σύντομο χρόνο, και μία φορά ανά story ένα σπάνιο όχημα, π.χ. ελικόπτερο, για μία νύχτα."
+      },
       "kind": "merit",
       "group": "Coterie",
       "dots": {
@@ -1377,6 +1549,10 @@
     {
       "id": "merit:bloodhound",
       "name": "Bloodhound",
+      "desc": {
+        "en": "Smell a mortal's Resonance without tasting their blood: Resolve + Awareness at Difficulty 3, harder with perfume or distance, easier up close.",
+        "el": "Μυρίζεις το Resonance ενός θνητού χωρίς να γευτείς το αίμα του: Resolve + Awareness με Difficulty 3, πιο δύσκολο με άρωμα ή απόσταση, πιο εύκολο από κοντά."
+      },
       "kind": "merit",
       "group": "Feeding",
       "dots": {
@@ -1402,6 +1578,10 @@
     {
       "id": "merit:iron-gullet",
       "name": "Iron Gullet",
+      "desc": {
+        "en": "You can feed on cold, rancid or fractionated blood; it slakes Hunger but carries no Resonance. Ventrue cannot take it.",
+        "el": "Τρέφεσαι από κρύο, μπαγιάτικο ή διαχωρισμένο αίμα· κατεβάζει Hunger αλλά δεν έχει Resonance. Δεν επιτρέπεται σε Ventrue."
+      },
       "kind": "merit",
       "group": "Feeding",
       "dots": {
@@ -1440,6 +1620,10 @@
     {
       "id": "merit:vessel-recognition",
       "name": "Vessel Recognition",
+      "desc": {
+        "en": "A win on Resolve + Awareness (Difficulty 2) tells you by smell whether a mortal was fed on recently; a critical win tells you if it happens regularly, i.e. someone's Herd.",
+        "el": "Επιτυχία σε Resolve + Awareness (Difficulty 2) σου λέει από τη μυρωδιά αν κάποιο βαμπίρ τράφηκε πρόσφατα από έναν θνητό· critical win φανερώνει αν γίνεται τακτικά, δηλαδή Herd κάποιου."
+      },
       "kind": "merit",
       "group": "Feeding",
       "dots": {
@@ -1465,6 +1649,10 @@
     {
       "id": "merit:ghoul-blood-empathy",
       "name": "Blood Empathy",
+      "desc": {
+        "en": "Ghouls only. You sense your domitor's mood and whether they are in danger within about a mile; no telepathy, no Blood Bond needed.",
+        "el": "Μόνο για ghouls. Νιώθεις τη διάθεση του domitor σου και αν κινδυνεύει, σε απόσταση ως ένα μίλι· χωρίς τηλεπάθεια, χωρίς να χρειάζεται Blood Bond."
+      },
       "kind": "merit",
       "group": "Ghoul",
       "dots": {
@@ -1495,6 +1683,10 @@
     {
       "id": "merit:ghoul-unseemly-aura",
       "name": "Unseemly Aura",
+      "desc": {
+        "en": "Ghouls only. Your aura reads as a vampire's, not a mortal's, to anyone who can see auras.",
+        "el": "Μόνο για ghouls. Η αύρα σου μοιάζει με βαμπίρ και όχι θνητού σε όποιον μπορεί να διαβάσει αύρες."
+      },
       "kind": "merit",
       "group": "Ghoul",
       "dots": {
@@ -1525,6 +1717,10 @@
     {
       "id": "merit:business-establishment",
       "name": "Business Establishment",
+      "desc": {
+        "en": "A business runs in your haven and pays steady income: its dots work like Resources and add two dice to tests tied to the trade, but privacy or security drops one dot. Gone if the haven goes.",
+        "el": "Μια επιχείρηση λειτουργεί στο haven σου και φέρνει σταθερό εισόδημα: οι τελείες της δουλεύουν σαν Resources και δίνουν δύο ζάρια σε τεστ της δουλειάς, αλλά ιδιωτικότητα ή ασφάλεια πέφτει μία τελεία. Χάνεται μαζί με το haven."
+      },
       "kind": "merit",
       "group": "Haven",
       "dots": {
@@ -1552,6 +1748,10 @@
     {
       "id": "merit:cell",
       "name": "Cell",
+      "desc": {
+        "en": "A locked place in your haven for two prisoners, escape Difficulty 5. Each extra dot doubles the capacity (max 32) or adds +1 to the Difficulty. Needs a haven of at least 2 dots.",
+        "el": "Κλειδωμένος χώρος στο haven σου για δύο κρατούμενους, Difficulty απόδρασης 5. Κάθε επιπλέον τελεία διπλασιάζει τη χωρητικότητα (μέγιστο 32) ή δίνει +1 Difficulty. Θέλει haven τουλάχιστον 2 τελειών."
+      },
       "kind": "merit",
       "group": "Haven",
       "dots": {
@@ -1580,6 +1780,10 @@
     {
       "id": "merit:furcus",
       "name": "Furcus",
+      "desc": {
+        "en": "Your haven sits on a knot of mystical power. Each dot adds one die to Blood Sorcery Ritual or Oblivion Ceremony pools (pick one) used there; bestial failures there can turn nasty.",
+        "el": "Το haven σου στέκει πάνω σε κόμπο μυστικής δύναμης. Κάθε τελεία δίνει ένα ζάρι στα pools για Rituals του Blood Sorcery ή Ceremonies του Oblivion (διάλεξε ένα) που γίνονται εκεί· τα bestial failures εκεί γίνονται άσχημα."
+      },
       "kind": "merit",
       "group": "Haven",
       "dots": {
@@ -1605,6 +1809,10 @@
     {
       "id": "merit:hidden-armory",
       "name": "Hidden Armory",
+      "desc": {
+        "en": "Each dot stocks your haven with a pistol and a long gun with ammunition, hidden as well as your resting place.",
+        "el": "Κάθε τελεία εφοδιάζει το haven σου με ένα πιστόλι και ένα μακρύ όπλο με πυρομαχικά, κρυμμένα όσο καλά και το ίδιο το καταφύγιο."
+      },
       "kind": "merit",
       "group": "Haven",
       "dots": {
@@ -1630,6 +1838,10 @@
     {
       "id": "merit:laboratory",
       "name": "Laboratory",
+      "desc": {
+        "en": "An equipped lab in your haven. Each dot gives one die on pools tied to a single Science or Technology specialty, or on thin-blood Alchemy by the Fixatio method. Not in small havens.",
+        "el": "Εξοπλισμένο εργαστήριο στο haven σου. Κάθε τελεία δίνει ένα ζάρι σε pools για μία specialty Science ή Technology, ή στην Alchemy των thin-bloods με τη μέθοδο Fixatio. Όχι σε μικρά havens."
+      },
       "kind": "merit",
       "group": "Haven",
       "dots": {
@@ -1658,6 +1870,10 @@
     {
       "id": "merit:library",
       "name": "Library",
+      "desc": {
+        "en": "A reference library in your haven. Each dot gives one die on research in a single Academics, Investigation or Occult specialty. A small haven allows only one dot.",
+        "el": "Βιβλιοθήκη αναφοράς στο haven σου. Κάθε τελεία δίνει ένα ζάρι σε pools έρευνας για μία specialty Academics, Investigation ή Occult. Μικρό haven επιτρέπει μόνο μία τελεία."
+      },
       "kind": "merit",
       "group": "Haven",
       "dots": {
@@ -1686,6 +1902,10 @@
     {
       "id": "merit:location",
       "name": "Location",
+      "desc": {
+        "en": "Your haven is in a prime spot. Add two dice (or +2 Difficulty for foes) to the bonuses from either Chasse or your base Haven rating, chosen when you take it.",
+        "el": "Το haven σου βρίσκεται σε προνομιακό σημείο. Πρόσθεσε δύο ζάρια (ή +2 Difficulty για τους αντιπάλους) στα bonus είτε του Chasse είτε της βασικής τιμής Haven, όπως διαλέξεις όταν το πάρεις."
+      },
       "kind": "merit",
       "group": "Haven",
       "dots": {
@@ -1711,6 +1931,10 @@
     {
       "id": "merit:luxury",
       "name": "Luxury",
+      "desc": {
+        "en": "Expensive furnishings give two bonus dice on Social tests with mortal guests in your haven. Without Resources 3 the décor was stolen.",
+        "el": "Ακριβή έπιπλα δίνουν δύο ζάρια bonus στα Social τεστ με θνητούς καλεσμένους στο haven σου. Χωρίς Resources 3 η διακόσμηση είναι κλεμμένη."
+      },
       "kind": "merit",
       "group": "Haven",
       "dots": {
@@ -1736,6 +1960,10 @@
     {
       "id": "merit:machine-shop",
       "name": "Machine Shop",
+      "desc": {
+        "en": "A workshop with tools and supplies in your haven. Each dot adds one die to Craft and other build, repair or dismantle tests; a small haven covers only one Craft specialty. At 3 dots it may include an incinerator.",
+        "el": "Συνεργείο με εργαλεία και υλικά στο haven σου. Κάθε τελεία δίνει ένα ζάρι σε Craft και σε άλλα τεστ κατασκευής, επισκευής ή αποσυναρμολόγησης· μικρό haven καλύπτει μία specialty Craft. Στις 3 τελείες ίσως έχει αποτεφρωτήρα."
+      },
       "kind": "merit",
       "group": "Haven",
       "dots": {
@@ -1761,6 +1989,10 @@
     {
       "id": "merit:postern",
       "name": "Postern",
+      "desc": {
+        "en": "A back way out of your haven. Each dot adds one die to slip or shake off surveillance around it.",
+        "el": "Κρυφή έξοδος από το haven σου. Κάθε τελεία δίνει ένα ζάρι για να αποφύγεις ή να ξεφύγεις από παρακολούθηση κοντά του."
+      },
       "kind": "merit",
       "group": "Haven",
       "dots": {
@@ -1786,6 +2018,10 @@
     {
       "id": "merit:security-system",
       "name": "Security System",
+      "desc": {
+        "en": "Each dot adds one die to pools to resist, or be alerted to, unauthorized entry into your haven.",
+        "el": "Κάθε τελεία δίνει ένα ζάρι στις ρίψεις για να εμποδίσεις ή να αντιληφθείς παράνομη είσοδο στο haven σου."
+      },
       "kind": "merit",
       "group": "Haven",
       "dots": {
@@ -1811,6 +2047,10 @@
     {
       "id": "merit:surgery",
       "name": "Surgery",
+      "desc": {
+        "en": "A room fitted as a field surgery. Add two dice to Medicine and similar pools for work done in your haven. Not in small havens.",
+        "el": "Δωμάτιο εξοπλισμένο σαν χειρουργείο εκστρατείας. Δύο ζάρια σε Medicine και παρόμοια pools για δουλειά μέσα στο haven σου. Όχι σε μικρά havens."
+      },
       "kind": "merit",
       "group": "Haven",
       "dots": {
@@ -1839,6 +2079,10 @@
     {
       "id": "merit:warding",
       "name": "Warding",
+      "desc": {
+        "en": "A magical ward on your haven. Each dot adds one die to resist supernatural scrying and blocks whatever entry the Storyteller allows; may require Occult 3 or Blood Sorcery.",
+        "el": "Μαγικό ward στο haven σου. Κάθε τελεία δίνει ένα ζάρι ενάντια σε υπερφυσική κατασκοπεία και εμποδίζει όποια είσοδο επιτρέπει ο Storyteller· ίσως απαιτεί Occult 3 ή Blood Sorcery."
+      },
       "kind": "merit",
       "group": "Haven",
       "dots": {
@@ -1864,6 +2108,10 @@
     {
       "id": "merit:watchmen",
       "name": "Watchmen",
+      "desc": {
+        "en": "Guards at your haven: each dot brings four Average guards led by a Gifted boss, private security or hired thugs.",
+        "el": "Φρουροί στο haven σου: κάθε τελεία δίνει τέσσερις Average φρουρούς και ένα Gifted αφεντικό, ιδιωτική ασφάλεια ή μπράβους."
+      },
       "kind": "merit",
       "group": "Haven",
       "dots": {
@@ -1889,6 +2137,10 @@
     {
       "id": "merit:linguistics",
       "name": "Linguistics",
+      "desc": {
+        "en": "Each dot lets you speak, read and write one more language fluently, beyond your birth tongue and the chronicle's main language.",
+        "el": "Κάθε τελεία σου δίνει μία ακόμη γλώσσα που μιλάς, διαβάζεις και γράφεις άνετα, πέρα από τη μητρική σου και την κύρια γλώσσα του chronicle."
+      },
       "kind": "merit",
       "group": "Linguistics",
       "dots": {
@@ -1914,6 +2166,10 @@
     {
       "id": "merit:beautiful",
       "name": "Beautiful",
+      "desc": {
+        "en": "Add one die to Social pools where your looks matter.",
+        "el": "Ένα ζάρι στα Social pools όπου μετρά η εμφάνισή σου."
+      },
       "kind": "merit",
       "group": "Looks",
       "dots": {
@@ -1944,6 +2200,10 @@
     {
       "id": "merit:famous-face",
       "name": "Famous Face",
+      "desc": {
+        "en": "You resemble a celebrity: +2 dice on Social tests where the resemblance helps, -2 dice when you try to go unnoticed in a crowd.",
+        "el": "Μοιάζεις με διάσημο: +2 ζάρια σε Social τεστ όπου η ομοιότητα βοηθά, −2 ζάρια όταν προσπαθείς να περάσεις απαρατήρητος στο πλήθος."
+      },
       "kind": "merit",
       "group": "Looks",
       "dots": {
@@ -1969,6 +2229,10 @@
     {
       "id": "merit:ingenue",
       "name": "Ingénue",
+      "desc": {
+        "en": "You look innocent: +2 dice on rolls to avoid suspicion or deflect blame, at the Storyteller's discretion.",
+        "el": "Δείχνεις αθώος: +2 ζάρια σε ρίψεις για να αποφύγεις υποψίες ή να απομακρύνεις την ευθύνη, κατά την κρίση του Storyteller."
+      },
       "kind": "merit",
       "group": "Looks",
       "dots": {
@@ -1994,6 +2258,10 @@
     {
       "id": "merit:remarkable-feature",
       "name": "Remarkable Feature",
+      "desc": {
+        "en": "A striking feature gives +2 dice on Social dealings with strangers, but -1 die to disguise yourself.",
+        "el": "Ένα εντυπωσιακό χαρακτηριστικό δίνει +2 ζάρια σε Social επαφές με αγνώστους, αλλά −1 ζάρι για να μεταμφιεστείς."
+      },
       "kind": "merit",
       "group": "Looks",
       "dots": {
@@ -2019,6 +2287,10 @@
     {
       "id": "merit:stunning",
       "name": "Stunning",
+      "desc": {
+        "en": "Add two dice to Social pools where your looks matter.",
+        "el": "Δύο ζάρια στα Social pools όπου μετρά η εμφάνισή σου."
+      },
       "kind": "merit",
       "group": "Looks",
       "dots": {
@@ -2044,6 +2316,10 @@
     {
       "id": "merit:cobbler",
       "name": "Cobbler",
+      "desc": {
+        "en": "You make or source Masks for others: making one takes three days per dot (with some online exposure), sourcing one day per dot at a price. Needs Mask 2.",
+        "el": "Φτιάχνεις ή προμηθεύεις Masks για άλλους: η κατασκευή θέλει τρεις μέρες ανά τελεία (με κάποια έκθεση online), η προμήθεια μία μέρα ανά τελεία με αντάλλαγμα. Θέλει Mask 2."
+      },
       "kind": "merit",
       "group": "Mask",
       "dots": {
@@ -2072,6 +2348,10 @@
     {
       "id": "merit:zeroed",
       "name": "Zeroed",
+      "desc": {
+        "en": "Your real records have been wiped; officially you do not exist. Needs Mask 2.",
+        "el": "Τα αληθινά σου αρχεία έχουν σβηστεί· επίσημα δεν υπάρχεις. Θέλει Mask 2."
+      },
       "kind": "merit",
       "group": "Mask",
       "dots": {
@@ -2100,6 +2380,10 @@
     {
       "id": "merit:eat-food",
       "name": "Eat Food",
+      "desc": {
+        "en": "You can eat and even enjoy food; it gives no nourishment and must be brought up before you sleep.",
+        "el": "Μπορείς να φας και να απολαύσεις φαγητό· δεν σε τρέφει και πρέπει να το βγάλεις πριν κοιμηθείς."
+      },
       "kind": "merit",
       "group": "Mythic",
       "dots": {
@@ -2125,6 +2409,10 @@
     {
       "id": "merit:luck-of-the-devil",
       "name": "Luck of the Devil",
+      "desc": {
+        "en": "Once per session, a misfortune aimed at you (an attack, an accusation, blame) lands on someone close to you instead: an ally, retainer, coterie-mate or Touchstone.",
+        "el": "Μία φορά ανά session, μια ατυχία που σε στοχεύει (επίθεση, κατηγορία, ευθύνη) πέφτει σε κάποιον δικό σου: ally, retainer, μέλος της coterie ή Touchstone."
+      },
       "kind": "merit",
       "group": "Mythic",
       "dots": {
@@ -2150,6 +2438,10 @@
     {
       "id": "merit:nuit-mode",
       "name": "Nuit Mode",
+      "desc": {
+        "en": "Your body does not reset to its death-state each night, so haircuts, tattoos and other changes stay if you want; you can still heal them as Aggravated damage. Only at Blood Potency 1 or lower.",
+        "el": "Το σώμα σου δεν επιστρέφει κάθε νύχτα στην κατάσταση θανάτου, οπότε κουρέματα, τατουάζ και άλλες αλλαγές μένουν αν θες· μπορείς να τις γιατρέψεις ως Aggravated damage. Μόνο με Blood Potency 1 ή λιγότερο."
+      },
       "kind": "merit",
       "group": "Mythic",
       "dots": {
@@ -2178,6 +2470,10 @@
     {
       "id": "merit:check-the-trunk",
       "name": "Check the Trunk",
+      "desc": {
+        "en": "A stash of tools and weapons worth up to Resources 2 is always within reach, and you get +2 dice on Preparedness pools within that band. Lose the stash and the Merit pauses.",
+        "el": "Μια κρυψώνα με εργαλεία και όπλα αξίας ως Resources 2 είναι πάντα κοντά σου, και παίρνεις +2 ζάρια σε Preparedness pools σε αυτό το εύρος. Αν χάσεις την κρυψώνα, το Merit παγώνει."
+      },
       "kind": "merit",
       "group": "Other",
       "dots": {
@@ -2203,6 +2499,10 @@
     {
       "id": "merit:side-hustler",
       "name": "Side Hustler",
+      "desc": {
+        "en": "Once per session you lay hands on an object, a fact or an entry ticket as if you had 2 dots of Resources, Contacts or Influence; objects usually go back.",
+        "el": "Μία φορά ανά session βρίσκεις ένα αντικείμενο, μια πληροφορία ή πρόσβαση σαν να είχες 2 τελείες Resources, Contacts ή Influence· τα αντικείμενα συνήθως επιστρέφονται."
+      },
       "kind": "merit",
       "group": "Other",
       "dots": {
@@ -2228,6 +2528,10 @@
     {
       "id": "merit:tempered-will",
       "name": "Tempered Will",
+      "desc": {
+        "en": "You always know when Dominate or Presence is used on you, and once per session add two dice to resist it. Only for those with no dots in either Discipline.",
+        "el": "Καταλαβαίνεις πάντα πότε χρησιμοποιούν Dominate ή Presence πάνω σου, και μία φορά ανά session παίρνεις δύο ζάρια για να αντισταθείς. Μόνο για όσους δεν έχουν τελείες σε κανένα από τα δύο."
+      },
       "kind": "merit",
       "group": "Other",
       "dots": {
@@ -2256,6 +2560,10 @@
     {
       "id": "merit:untouchable",
       "name": "Untouchable",
+      "desc": {
+        "en": "Once per story you dodge every official penalty for a crime that would otherwise get you destroyed or cast out of your sect; lesser crimes are often overlooked too.",
+        "el": "Μία φορά ανά story γλιτώνεις κάθε επίσημη τιμωρία για αδίκημα που αλλιώς θα σε οδηγούσε σε καταστροφή ή εξορία από το sect σου· και τα μικρότερα συχνά παραβλέπονται."
+      },
       "kind": "merit",
       "group": "Other",
       "dots": {
@@ -2281,6 +2589,10 @@
     {
       "id": "merit:city-secrets",
       "name": "City Secrets",
+      "desc": {
+        "en": "You hold a damning secret about the city's Kindred power structure; those it touches have reason to keep you happy. May add to Social, Research or Insight pools. Up to three times, a different secret each.",
+        "el": "Κατέχεις ένα επικίνδυνο μυστικό για την εξουσία των Kindred της πόλης· όσους αφορά έχουν λόγο να σε κρατούν ευχαριστημένο. Μπορεί να προσθέτει σε Social, Research ή Insight pools. Ως τρεις φορές, με άλλο μυστικό."
+      },
       "kind": "merit",
       "group": "Status",
       "dots": {
@@ -2311,6 +2623,10 @@
     {
       "id": "merit:high-functioning-addict",
       "name": "High-Functioning Addict",
+      "desc": {
+        "en": "Add one die to one category of pools (chosen with your substance) when your last vessel was on your drug.",
+        "el": "Ένα ζάρι σε μία κατηγορία pools (που ορίζεις μαζί με την ουσία) όταν το τελευταίο άτομο από το οποίο τράφηκες είχε πάρει το ναρκωτικό σου."
+      },
       "kind": "merit",
       "group": "Substance Use",
       "dots": {
@@ -2336,6 +2652,10 @@
     {
       "id": "merit:thin-blood-abhorrent-blood",
       "name": "Abhorrent Blood",
+      "desc": {
+        "en": "Other vampires cannot stomach your Blood: they stop after the first bite and must spend 2 Willpower per turn to keep drinking. Mortals and Thin-Blood Alchemy are unaffected.",
+        "el": "Τα άλλα βαμπίρ δεν αντέχουν το αίμα σου: σταματούν μετά το πρώτο δάγκωμα και πρέπει να ξοδεύουν 2 Willpower ανά γύρο για να συνεχίσουν να πίνουν. Θνητοί και Thin-Blood Alchemy δεν επηρεάζονται."
+      },
       "kind": "merit",
       "group": "Thin-blood",
       "dots": null,
@@ -2358,6 +2678,10 @@
     {
       "id": "merit:thin-blood-anarch-comrades",
       "name": "Anarch Comrades",
+      "desc": {
+        "en": "An Anarch coterie tolerates you as their pet; together they count as a one-dot Anarch Mawla while you toe the line.",
+        "el": "Μια coterie Anarchs σε ανέχεται σαν κατοικίδιο· μαζί μετρούν ως Anarch Mawla μίας τελείας όσο ακολουθείς τη γραμμή τους."
+      },
       "kind": "merit",
       "group": "Thin-blood",
       "dots": null,
@@ -2380,6 +2704,10 @@
     {
       "id": "merit:thin-blood-camarilla-contact",
       "name": "Camarilla Contact",
+      "desc": {
+        "en": "A Camarilla recruiter promises you a place in return for reports on you and your coterie; counts as a Camarilla Mawla of one dot who mistreats you.",
+        "el": "Ένας στρατολόγος της Camarilla σού υπόσχεται θέση με αντάλλαγμα αναφορές για σένα και την coterie σου· μετρά ως Camarilla Mawla μίας τελείας που σου φέρεται άσχημα."
+      },
       "kind": "merit",
       "group": "Thin-blood",
       "dots": null,
@@ -2402,6 +2730,10 @@
     {
       "id": "merit:thin-blood-catenating-blood",
       "name": "Catenating Blood",
+      "desc": {
+        "en": "Blood Bonds and the Embrace work for you as for a full vampire; any childe you make is a thin-blood.",
+        "el": "Δημιουργείς Blood Bonds και κάνεις Embrace σαν κανονικός βαμπίρ· κάθε childe σου θα είναι thin-blood."
+      },
       "kind": "merit",
       "group": "Thin-blood",
       "dots": null,
@@ -2424,6 +2756,10 @@
     {
       "id": "merit:thin-blood-day-drinker",
       "name": "Day Drinker",
+      "desc": {
+        "en": "Sunlight does not burn you: it halves your Health track (rounded up) and switches off your vampiric abilities, Disciplines included. If that drops you below your current damage, you are Impaired or in torpor until out of the sun.",
+        "el": "Ο ήλιος δεν σε καίει: κόβει στο μισό το Health σου (στρογγυλοποίηση πάνω) και σβήνει τις βαμπιρικές σου ικανότητες, μαζί με τα Disciplines. Αν έτσι πέσεις κάτω από το damage που ήδη έχεις, είσαι Impaired ή σε torpor όσο είσαι στον ήλιο."
+      },
       "kind": "merit",
       "group": "Thin-blood",
       "dots": null,
@@ -2446,6 +2782,10 @@
     {
       "id": "merit:thin-blood-discipline-affinity",
       "name": "Discipline Affinity",
+      "desc": {
+        "en": "Pick one Discipline at creation: you gain a dot in it and can buy more with experience at out-of-clan cost, keeping them like a full vampire. Resonance gives no extra dots in it.",
+        "el": "Διάλεξε ένα Discipline στη δημιουργία: παίρνεις μία τελεία και αγοράζεις κι άλλες με experience σε κόστος out-of-clan, κρατώντας τες σαν κανονικός βαμπίρ. Το Resonance δεν δίνει επιπλέον τελείες σε αυτό."
+      },
       "kind": "merit",
       "group": "Thin-blood",
       "dots": null,
@@ -2468,6 +2808,10 @@
     {
       "id": "merit:thin-blood-faith-proof",
       "name": "Faith-Proof",
+      "desc": {
+        "en": "True Faith has no effect on you.",
+        "el": "Το True Faith δεν σε επηρεάζει."
+      },
       "kind": "merit",
       "group": "Thin-blood",
       "dots": null,
@@ -2490,6 +2834,10 @@
     {
       "id": "merit:thin-blood-lifelike",
       "name": "Lifelike",
+      "desc": {
+        "en": "You have a heartbeat, can eat and have sex like a mortal; only the most advanced medical checks notice anything, as long as they happen at night.",
+        "el": "Έχεις καρδιακό παλμό, τρως και κάνεις σεξ σαν θνητός· μόνο οι πιο προχωρημένες ιατρικές εξετάσεις βρίσκουν κάτι, αρκεί να γίνονται νύχτα."
+      },
       "kind": "merit",
       "group": "Thin-blood",
       "dots": null,
@@ -2512,6 +2860,10 @@
     {
       "id": "merit:thin-blood-low-appetite",
       "name": "Low Appetite",
+      "desc": {
+        "en": "At Hunger 0 or 1, and on waking at dusk, roll two dice for the Rouse Check and keep the better.",
+        "el": "Σε Hunger 0 ή 1, και όταν ξυπνάς το σούρουπο, ρίχνεις δύο ζάρια στο Rouse Check και κρατάς το καλύτερο."
+      },
       "kind": "merit",
       "group": "Thin-blood",
       "dots": null,
@@ -2534,6 +2886,10 @@
     {
       "id": "merit:thin-blood-lucid-dreamer",
       "name": "Lucid Dreamer",
+      "desc": {
+        "en": "You dream by day and remember it. Once per session, while asleep, you may ask the Storyteller for a clue from last night or a hint about the story.",
+        "el": "Ονειρεύεσαι τη μέρα και το θυμάσαι. Μία φορά ανά session, όσο κοιμάσαι, ζητάς από τον Storyteller ένα στοιχείο από την προηγούμενη νύχτα ή μια νύξη για την ιστορία."
+      },
       "kind": "merit",
       "group": "Thin-blood",
       "dots": null,
@@ -2556,6 +2912,10 @@
     {
       "id": "merit:thin-blood-mortalitys-mien",
       "name": "Mortality's Mien",
+      "desc": {
+        "en": "Your aura reads as mortal to anyone who detects the supernatural, and you add two dice to other attempts to pass as mortal, such as makeup.",
+        "el": "Η αύρα σου μοιάζει θνητή σε όποιον ανιχνεύει το υπερφυσικό, και παίρνεις δύο ζάρια σε άλλες προσπάθειες να περάσεις για θνητός, όπως με μακιγιάζ."
+      },
       "kind": "merit",
       "group": "Thin-blood",
       "dots": null,
@@ -2578,6 +2938,10 @@
     {
       "id": "merit:thin-blood-swift-feeder",
       "name": "Swift Feeder",
+      "desc": {
+        "en": "Once per scene you slake one Hunger in a single turn, wound licked closed and all.",
+        "el": "Μία φορά ανά σκηνή κατεβάζεις ένα Hunger σε έναν μόνο γύρο, με την πληγή κλεισμένη και όλα."
+      },
       "kind": "merit",
       "group": "Thin-blood",
       "dots": null,
@@ -2600,6 +2964,10 @@
     {
       "id": "merit:thin-blood-thin-blood-alchemist",
       "name": "Thin-Blood Alchemist",
+      "desc": {
+        "en": "You start with one dot of Thin-Blood Alchemy and one formula, and may buy more of both with experience.",
+        "el": "Ξεκινάς με μία τελεία Thin-Blood Alchemy και μία formula, και αγοράζεις κι άλλα από τα δύο με experience."
+      },
       "kind": "merit",
       "group": "Thin-blood",
       "dots": null,
@@ -2622,6 +2990,10 @@
     {
       "id": "merit:thin-blood-vampiric-resilience",
       "name": "Vampiric Resilience",
+      "desc": {
+        "en": "You take damage like a full vampire: ordinary cuts and bullets count as Superficial.",
+        "el": "Παίρνεις damage σαν κανονικός βαμπίρ: συνηθισμένα κοψίματα και σφαίρες μετρούν ως Superficial."
+      },
       "kind": "merit",
       "group": "Thin-blood",
       "dots": null,
@@ -2644,6 +3016,10 @@
     {
       "id": "flaw:enemies",
       "name": "Enemies",
+      "desc": {
+        "en": "Mortals (or ghouls) out to harm you, rated two dots below what their Effectiveness would cost as Allies. The Storyteller brings them in when it suits, at least about once a story.",
+        "el": "Θνητοί (ή ghouls) που θέλουν το κακό σου, με δύο τελείες λιγότερες από την Effectiveness που θα είχαν ως Allies. Ο Storyteller τους βάζει όταν ταιριάζει, τουλάχιστον περίπου μία φορά ανά story."
+      },
       "kind": "flaw",
       "group": "Allies",
       "dots": {
@@ -2679,6 +3055,10 @@
     {
       "id": "flaw:archaic",
       "name": "Archaic",
+      "desc": {
+        "en": "Ancillae or older only. You cannot use computers or phones, Technology is permanently 0, and other pools with very modern tech may take -1 die.",
+        "el": "Μόνο για ancillae και παλαιότερους. Δεν χρησιμοποιείς υπολογιστές ή κινητά, το Technology είναι μόνιμα 0, και άλλα pools με πολύ σύγχρονη τεχνολογία ίσως πάρουν −1 ζάρι."
+      },
       "kind": "flaw",
       "group": "Archaic",
       "dots": {
@@ -2707,6 +3087,10 @@
     {
       "id": "flaw:living-in-the-past",
       "name": "Living in the Past",
+      "desc": {
+        "en": "Ancillae or older only. You hold one or more badly outdated Convictions; they keep your Humanity but cost -1 die on Social tests touching them, except with vampires your age or older.",
+        "el": "Μόνο για ancillae και παλαιότερους. Έχεις μία ή περισσότερες απαρχαιωμένες Convictions· κρατούν το Humanity σου αλλά δίνουν −1 ζάρι στα Social τεστ που τις αγγίζουν, εκτός με βαμπίρ της ηλικίας σου ή μεγαλύτερα."
+      },
       "kind": "flaw",
       "group": "Archaic",
       "dots": {
@@ -2735,6 +3119,10 @@
     {
       "id": "flaw:bond-junkie",
       "name": "Bond Junkie",
+      "desc": {
+        "en": "The Bond feels sweet to you: -1 die on pools to act against a Blood Bond.",
+        "el": "Το Bond σού είναι γλυκό: −1 ζάρι στις ρίψεις για να πας κόντρα σε Blood Bond."
+      },
       "kind": "flaw",
       "group": "Bonding",
       "dots": {
@@ -2760,6 +3148,10 @@
     {
       "id": "flaw:bondslave",
       "name": "Bondslave",
+      "desc": {
+        "en": "One drink of vitae binds you, not three. You start as your sire's thrall unless you and the Storyteller agree why that first Bond broke.",
+        "el": "Μία γουλιά vitae σε δένει, όχι τρεις. Ξεκινάς ως thrall του sire σου εκτός αν συμφωνήσεις με τον Storyteller γιατί έσπασε εκείνο το πρώτο Bond."
+      },
       "kind": "flaw",
       "group": "Bonding",
       "dots": {
@@ -2785,6 +3177,10 @@
     {
       "id": "flaw:long-bond",
       "name": "Long Bond",
+      "desc": {
+        "en": "Blood Bonds on you fade slowly: one step per three months without reinforcement.",
+        "el": "Τα Blood Bonds πάνω σου ξεθωριάζουν αργά: ένα σκαλί ανά τρεις μήνες χωρίς ανανέωση."
+      },
       "kind": "flaw",
       "group": "Bonding",
       "dots": {
@@ -2810,6 +3206,10 @@
     {
       "id": "flaw:caitiff-befouling-vitae",
       "name": "Befouling Vitae",
+      "desc": {
+        "en": "Caitiff only. Anyone you Embrace or drain to death rises within nights as a wight (sometimes a real monster), and the local ruler will come for you once they hear.",
+        "el": "Μόνο για Caitiff. Όποιον κάνεις Embrace ή στραγγίζεις μέχρι θανάτου επιστρέφει σε λίγες νύχτες ως wight (καμιά φορά αληθινό τέρας), και ο τοπικός άρχοντας θα σε κυνηγήσει μόλις το μάθει."
+      },
       "kind": "flaw",
       "group": "Caitiff",
       "dots": {
@@ -2835,6 +3235,10 @@
     {
       "id": "flaw:caitiff-clan-curse",
       "name": "Clan Curse",
+      "desc": {
+        "en": "Caitiff only. You suffer one clan's Bane, probably your sire's, at half its Severity (rounded down, minimum 1).",
+        "el": "Μόνο για Caitiff. Υποφέρεις το Bane ενός clan, μάλλον του sire σου, στη μισή Severity (στρογγυλοποίηση κάτω, ελάχιστο 1)."
+      },
       "kind": "flaw",
       "group": "Caitiff",
       "dots": {
@@ -2860,6 +3264,10 @@
     {
       "id": "flaw:caitiff-debt-peon",
       "name": "Debt Peon",
+      "desc": {
+        "en": "Caitiff only. You owe boons to a high-Status vampire who keeps inventing new ones: +2 dice for them in Social combat against you before other Kindred; refusing adds Shunned (2) or worse.",
+        "el": "Μόνο για Caitiff. Χρωστάς boons σε βαμπίρ υψηλού Status που συνεχώς βρίσκει καινούργια: +2 ζάρια για εκείνον σε Social combat εναντίον σου μπροστά σε άλλους Kindred· η άρνηση προσθέτει Shunned (2) ή χειρότερα."
+      },
       "kind": "flaw",
       "group": "Caitiff",
       "dots": {
@@ -2885,6 +3293,10 @@
     {
       "id": "flaw:caitiff-liquidator",
       "name": "Liquidator",
+      "desc": {
+        "en": "Caitiff only. Thin-bloods avoid you: -2 dice on all Social pools against them except Intimidation. Not with Uncle Fangs.",
+        "el": "Μόνο για Caitiff. Οι thin-bloods σε αποφεύγουν: −2 ζάρια σε όλα τα Social pools εναντίον τους εκτός από Intimidation. Όχι μαζί με Uncle Fangs."
+      },
       "kind": "flaw",
       "group": "Caitiff",
       "dots": {
@@ -2910,6 +3322,10 @@
     {
       "id": "flaw:caitiff-muddled-blood",
       "name": "Muddled Blood",
+      "desc": {
+        "en": "Caitiff only. To buy dots in a Discipline, even one you have, you must first drink the Blood of someone who has it. Not with Favored Blood.",
+        "el": "Μόνο για Caitiff. Για να αγοράσεις τελείες σε Discipline, ακόμη κι αν το έχεις, πρέπει πρώτα να πιεις αίμα κάποιου που το κατέχει. Όχι μαζί με Favored Blood."
+      },
       "kind": "flaw",
       "group": "Caitiff",
       "dots": {
@@ -2935,6 +3351,10 @@
     {
       "id": "flaw:caitiff-walking-omen",
       "name": "Walking Omen",
+      "desc": {
+        "en": "Caitiff only. Every scrying, premonition or fortune-telling in your domain keeps pointing at you as a source of disaster, drawing oracles and those who want to change that future.",
+        "el": "Μόνο για Caitiff. Κάθε scrying, προαίσθημα ή μαντεία στο domain σου σε δείχνει ως πηγή καταστροφής, τραβώντας μάντεις και όσους θέλουν να αλλάξουν αυτό το μέλλον."
+      },
       "kind": "flaw",
       "group": "Caitiff",
       "dots": {
@@ -2960,6 +3380,10 @@
     {
       "id": "flaw:caitiff-word-scarred",
       "name": "Word-Scarred",
+      "desc": {
+        "en": "Caitiff only. Ancient vampiric lore is written on your skin; the chronicle's main occult power keeps trying to seize, wipe or Bond you, and whoever reads the full text learns a terrible secret.",
+        "el": "Μόνο για Caitiff. Αρχαία βαμπιρική γνώση είναι γραμμένη στο δέρμα σου· η κύρια απόκρυφη δύναμη του chronicle προσπαθεί να σε πιάσει, να σε σβήσει ή να σε δέσει, και όποιος διαβάσει όλο το κείμενο μαθαίνει ένα φρικτό μυστικό."
+      },
       "kind": "flaw",
       "group": "Caitiff",
       "dots": {
@@ -2985,6 +3409,10 @@
     {
       "id": "flaw:coterie-bullies",
       "name": "Bullies",
+      "desc": {
+        "en": "Coterie Flaw. The coterie once enforced a tyrant's will: -1 die on Social pools (except Intimidation) with the city's other vampires, bar the old master's cronies.",
+        "el": "Coterie Flaw. Η coterie κάποτε επέβαλλε τη θέληση ενός τυράννου: −1 ζάρι στα Social pools (εκτός Intimidation) με τα άλλα βαμπίρ της πόλης, πλην των παλιών τσιρακιών του."
+      },
       "kind": "flaw",
       "group": "Coterie",
       "dots": {
@@ -3010,6 +3438,10 @@
     {
       "id": "flaw:coterie-cursed",
       "name": "Cursed",
+      "desc": {
+        "en": "Coterie Flaw. Outside its domain the whole coterie suffers a chosen Mythic Flaw (Stench counts too); Cursed is worth the same dots as that Flaw.",
+        "el": "Coterie Flaw. Έξω από το domain της όλη η coterie υποφέρει ένα επιλεγμένο Mythic Flaw (μετρά και το Stench)· το Cursed αξίζει όσες τελείες εκείνο το Flaw."
+      },
       "kind": "flaw",
       "group": "Coterie",
       "dots": null,
@@ -3032,6 +3464,10 @@
     {
       "id": "flaw:coterie-custodians",
       "name": "Custodians",
+      "desc": {
+        "en": "Coterie Flaw. The coterie carries a thankless duty in the city; shirking it costs one dot of sect Status (coterie first) until amends are made, and losing all Status adds Suspect.",
+        "el": "Coterie Flaw. Η coterie έχει ένα άχαρο καθήκον στην πόλη· αν το παραμελήσει χάνει μία τελεία Status στο sect (πρώτα της coterie) μέχρι να επανορθώσει, και αν χάσει όλο το Status γίνεται Suspect."
+      },
       "kind": "flaw",
       "group": "Coterie",
       "dots": {
@@ -3057,6 +3493,10 @@
     {
       "id": "flaw:coterie-targeted",
       "name": "Targeted",
+      "desc": {
+        "en": "Coterie Flaw. A hunter agency or similar threat knows Kindred use your domain; your Portillon is halved (round up) against them.",
+        "el": "Coterie Flaw. Μια υπηρεσία κυνηγών ή ανάλογη απειλή ξέρει ότι Kindred δρουν στο domain σας· το Portillon σας μετρά μισό (στρογγυλοποίηση πάνω) απέναντί τους."
+      },
       "kind": "flaw",
       "group": "Coterie",
       "dots": {
@@ -3082,6 +3522,10 @@
     {
       "id": "flaw:coterie-territorial",
       "name": "Territorial",
+      "desc": {
+        "en": "Coterie Flaw. Every week the coterie is away, all domain traits drop one dot (not below zero); members who stay can prevent it by hunting at -1 die (-2 if alone). Needs domain traits.",
+        "el": "Coterie Flaw. Κάθε εβδομάδα που λείπει η coterie, όλα τα domain traits πέφτουν μία τελεία (όχι κάτω από μηδέν)· όσοι μένουν το αποτρέπουν κυνηγώντας με −1 ζάρι (−2 αν είναι μόνος). Θέλει domain traits."
+      },
       "kind": "flaw",
       "group": "Coterie",
       "dots": {
@@ -3107,6 +3551,10 @@
     {
       "id": "flaw:coterie-under-siege",
       "name": "Under Siege",
+      "desc": {
+        "en": "Coterie Flaw. Rivals keep chipping at your domain: once per story the Storyteller drops one domain trait to 1 dot or denies one coterie Merit or Background.",
+        "el": "Coterie Flaw. Αντίπαλοι ροκανίζουν το domain σας: μία φορά ανά story ο Storyteller ρίχνει ένα domain trait στη 1 τελεία ή σας στερεί ένα coterie Merit ή Background."
+      },
       "kind": "flaw",
       "group": "Coterie",
       "dots": {
@@ -3132,6 +3580,10 @@
     {
       "id": "flaw:dark-secret",
       "name": "Dark Secret",
+      "desc": {
+        "en": "A milder, hidden Infamy: worth one dot less than the Infamy it would be if known, since only you and maybe one or two determined enemies know it.",
+        "el": "Ηπιότερο, κρυφό Infamy: αξίζει μία τελεία λιγότερο από το Infamy που θα ήταν αν μαθευόταν, αφού το ξέρεις μόνο εσύ και ίσως ένας δύο επίμονοι εχθροί."
+      },
       "kind": "flaw",
       "group": "Fame",
       "dots": {
@@ -3157,6 +3609,10 @@
     {
       "id": "flaw:infamy",
       "name": "Infamy",
+      "desc": {
+        "en": "You are known for something terrible: at least, the Difficulty of most reaction tests rises by the Flaw's dots; at worst the authorities try to kill or capture you on sight.",
+        "el": "Είσαι γνωστός για κάτι φρικτό: στην καλύτερη, το Difficulty στα περισσότερα τεστ αντίδρασης ανεβαίνει κατά τις τελείες του Flaw· στη χειρότερη, οι αρχές προσπαθούν να σε σκοτώσουν ή να σε πιάσουν μόλις σε δουν."
+      },
       "kind": "flaw",
       "group": "Fame",
       "dots": {
@@ -3187,6 +3643,10 @@
     {
       "id": "flaw:farmer",
       "name": "Farmer",
+      "desc": {
+        "en": "You feed only on animals; drinking human blood costs 2 Willpower. Ventrue cannot take it.",
+        "el": "Τρέφεσαι μόνο από ζώα· για να πιεις ανθρώπινο αίμα ξοδεύεις 2 Willpower. Δεν επιτρέπεται σε Ventrue."
+      },
       "kind": "flaw",
       "group": "Feeding",
       "dots": {
@@ -3228,6 +3688,10 @@
     {
       "id": "flaw:methuselahs-thirst",
       "name": "Methuselah's Thirst",
+      "desc": {
+        "en": "Only the blood of supernatural creatures slakes you fully; otherwise your Hunger never drops below 1 (or higher, by Blood Potency).",
+        "el": "Μόνο το αίμα υπερφυσικών πλασμάτων σε χορταίνει· αλλιώς το Hunger σου δεν πέφτει ποτέ κάτω από 1 (ή πιο ψηλά, ανάλογα με το Blood Potency)."
+      },
       "kind": "flaw",
       "group": "Feeding",
       "dots": {
@@ -3253,6 +3717,10 @@
     {
       "id": "flaw:organovore",
       "name": "Organovore",
+      "desc": {
+        "en": "You slake Hunger only by eating human flesh and blood-rich organs; only the heart carries Resonance.",
+        "el": "Κατεβάζεις Hunger μόνο τρώγοντας ανθρώπινη σάρκα και όργανα γεμάτα αίμα· μόνο η καρδιά έχει Resonance."
+      },
       "kind": "flaw",
       "group": "Feeding",
       "dots": {
@@ -3278,6 +3746,10 @@
     {
       "id": "flaw:prey-exclusion",
       "name": "Prey Exclusion",
+      "desc": {
+        "en": "You refuse one class of prey; feeding on them gives Stains as if you broke a chronicle Tenet, and watching others do so may too. Ventrue narrow their vessels further.",
+        "el": "Αρνείσαι μια κατηγορία θυμάτων· αν τραφείς από αυτά παίρνεις Stains σαν να παραβίασες Tenet του chronicle, και ίσως και αν δεις άλλους να το κάνουν. Οι Ventrue στενεύουν κι άλλο τα θύματά τους."
+      },
       "kind": "flaw",
       "group": "Feeding",
       "dots": {
@@ -3303,6 +3775,10 @@
     {
       "id": "flaw:vein-tapper",
       "name": "Vein Tapper",
+      "desc": {
+        "en": "You cannot feed from mortals while anyone watches, so you hunt the unaware, drugged or unconscious.",
+        "el": "Δεν μπορείς να τραφείς από θνητούς όσο σε βλέπει κανείς, οπότε κυνηγάς ανύποπτους, ναρκωμένους ή αναίσθητους."
+      },
       "kind": "flaw",
       "group": "Feeding",
       "dots": {
@@ -3328,6 +3804,10 @@
     {
       "id": "flaw:ghoul-baneful-blood",
       "name": "Baneful Blood",
+      "desc": {
+        "en": "Ghouls only. You suffer the clan Bane of your first domitor, one of seven clans (Lasombra, Malkavian, Ministry, Nosferatu, Ravnos, Salubri, Toreador), at one Severity level per dot, even if your domitor changes.",
+        "el": "Μόνο για ghouls. Υποφέρεις το Bane του clan του πρώτου σου domitor (Lasombra, Malkavian, Ministry, Nosferatu, Ravnos, Salubri ή Toreador) με Bane Severity ίση με τις τελείες, ακόμη κι αν αλλάξεις domitor."
+      },
       "kind": "flaw",
       "group": "Ghoul",
       "dots": {
@@ -3353,6 +3833,10 @@
     {
       "id": "flaw:ghoul-crones-curse",
       "name": "Crone's Curse",
+      "desc": {
+        "en": "Ghouls only. The Blood aged you a decade or more and you have one fewer Health box. Normally ends if you are Embraced.",
+        "el": "Μόνο για ghouls. Το αίμα σε γέρασε δέκα και πλέον χρόνια και έχεις ένα Health box λιγότερο. Κανονικά παύει αν γίνεις Embrace."
+      },
       "kind": "flaw",
       "group": "Ghoul",
       "dots": {
@@ -3383,6 +3867,10 @@
     {
       "id": "flaw:ghoul-distressing-fangs",
       "name": "Distressing Fangs",
+      "desc": {
+        "en": "Ghouls only. Stunted, odd fangs unsettle mortals: -1 die on Social pools with them.",
+        "el": "Μόνο για ghouls. Παράξενοι, μισοσχηματισμένοι κυνόδοντες ανησυχούν τους θνητούς: −1 ζάρι στα Social pools μαζί τους."
+      },
       "kind": "flaw",
       "group": "Ghoul",
       "dots": {
@@ -3413,6 +3901,10 @@
     {
       "id": "flaw:compromised",
       "name": "Compromised",
+      "desc": {
+        "en": "Your haven has been raided before and sits on a watchlist: intruders and spies add two dice to penetrate or surveil it.",
+        "el": "Στο haven σου έχει ξαναγίνει έφοδος και είναι σε λίστα παρακολούθησης: εισβολείς και κατάσκοποι παίρνουν δύο ζάρια για να μπουν ή να το παρακολουθήσουν."
+      },
       "kind": "flaw",
       "group": "Haven",
       "dots": {
@@ -3438,6 +3930,10 @@
     {
       "id": "flaw:creepy",
       "name": "Creepy",
+      "desc": {
+        "en": "Your haven looks like a killer's den: -2 dice on Social tests to put human guests at ease there, and neighbours may call the police.",
+        "el": "Το haven σου μοιάζει με φωλιά δολοφόνου: −2 ζάρια στα Social τεστ για να ηρεμήσεις ανθρώπους καλεσμένους εκεί, και οι γείτονες ίσως καλέσουν την αστυνομία."
+      },
       "kind": "flaw",
       "group": "Haven",
       "dots": {
@@ -3463,6 +3959,10 @@
     {
       "id": "flaw:haunted",
       "name": "Haunted",
+      "desc": {
+        "en": "Something supernatural lives in your haven beyond your control; someone who understands it could use it to get in, and affected pools there take at least -1 die per dot.",
+        "el": "Κάτι υπερφυσικό ζει στο haven σου χωρίς να το ελέγχεις· όποιος το καταλαβαίνει μπορεί να μπει μέσω αυτού, και τα επηρεαζόμενα pools εκεί παίρνουν τουλάχιστον −1 ζάρι ανά τελεία."
+      },
       "kind": "flaw",
       "group": "Haven",
       "dots": {
@@ -3488,6 +3988,10 @@
     {
       "id": "flaw:no-haven",
       "name": "No Haven",
+      "desc": {
+        "en": "You have no resting place and must find a new one each morning, with at least a basic test.",
+        "el": "Δεν έχεις καταφύγιο και πρέπει να βρίσκεις καινούργιο κάθε πρωί, με τουλάχιστον ένα βασικό τεστ."
+      },
       "kind": "flaw",
       "group": "Haven",
       "dots": {
@@ -3513,6 +4017,10 @@
     {
       "id": "flaw:shared",
       "name": "Shared",
+      "desc": {
+        "en": "Other Kindred have a say in your haven: at 1 dot housemates or a short-term safe house, at 2 a Kindred landlord who can enter at will and call on you for jobs.",
+        "el": "Άλλοι Kindred έχουν λόγο στο haven σου: με 1 τελεία συγκάτοικοι ή προσωρινό κρησφύγετο, με 2 ένας Kindred σπιτονοικοκύρης που μπαίνει όποτε θέλει και σου ζητά αγγαρείες."
+      },
       "kind": "flaw",
       "group": "Haven",
       "dots": {
@@ -3540,6 +4048,10 @@
     {
       "id": "flaw:obvious-predator",
       "name": "Obvious Predator",
+      "desc": {
+        "en": "Humans sense the predator in you: -2 dice on hunting pools except purely Physical stalking, -1 die on Social tests to put humans at ease, and you cannot keep a Herd.",
+        "el": "Οι άνθρωποι νιώθουν τον θηρευτή μέσα σου: −2 ζάρια στα pools κυνηγιού εκτός από καθαρά Physical παραμόνεμα, −1 ζάρι στα Social τεστ για να ηρεμήσεις ανθρώπους, και δεν μπορείς να έχεις Herd."
+      },
       "kind": "flaw",
       "group": "Herd",
       "dots": {
@@ -3565,6 +4077,10 @@
     {
       "id": "flaw:despised",
       "name": "Despised",
+      "desc": {
+        "en": "One group or region of the city works against you: -2 dice on pools to win a neutral party's political support or a favour, and your haters keep turning up in the story.",
+        "el": "Μια ομάδα ή περιοχή της πόλης δουλεύει εναντίον σου: −2 ζάρια στις ρίψεις για να κερδίσεις πολιτική στήριξη ή χάρη από ουδέτερο, και οι εχθροί σου ξεφυτρώνουν συνέχεια στην ιστορία."
+      },
       "kind": "flaw",
       "group": "Influence",
       "dots": {
@@ -3590,6 +4106,10 @@
     {
       "id": "flaw:disliked",
       "name": "Disliked",
+      "desc": {
+        "en": "-1 die on Social tests with every faction in town apart from your own Contacts, Allies and other openly loyal supporters.",
+        "el": "−1 ζάρι στα Social τεστ με κάθε ομάδα της πόλης εκτός από τους Contacts, τους Allies και άλλους δηλωμένα πιστούς σου."
+      },
       "kind": "flaw",
       "group": "Influence",
       "dots": {
@@ -3615,6 +4135,10 @@
     {
       "id": "flaw:illiterate",
       "name": "Illiterate",
+      "desc": {
+        "en": "You cannot read or write; Academics and Science are capped at 1 and may carry no modern-knowledge specialty.",
+        "el": "Δεν ξέρεις να διαβάζεις ή να γράφεις· Academics και Science δεν ξεπερνούν το 1 και δεν παίρνουν specialty σύγχρονης γνώσης."
+      },
       "kind": "flaw",
       "group": "Linguistics",
       "dots": {
@@ -3640,6 +4164,10 @@
     {
       "id": "flaw:repulsive",
       "name": "Repulsive",
+      "desc": {
+        "en": "-2 dice on Social pools where your looks matter.",
+        "el": "−2 ζάρια στα Social pools όπου μετρά η εμφάνισή σου."
+      },
       "kind": "flaw",
       "group": "Looks",
       "dots": {
@@ -3665,6 +4193,10 @@
     {
       "id": "flaw:stench",
       "name": "Stench",
+      "desc": {
+        "en": "Your breath and body smell of the grave: -1 die on seduction and similar Social pools, -2 dice on Stealth against anything with a nose unless you are upwind.",
+        "el": "Η ανάσα και το σώμα σου μυρίζουν τάφο: −1 ζάρι σε αποπλάνηση και παρόμοια Social pools, −2 ζάρια σε Stealth απέναντι σε ό,τι έχει μύτη, εκτός αν είσαι αντίθετα στον άνεμο."
+      },
       "kind": "flaw",
       "group": "Looks",
       "dots": {
@@ -3690,6 +4222,10 @@
     {
       "id": "flaw:transparent",
       "name": "Transparent",
+      "desc": {
+        "en": "You are a bad liar: -1 die on pools needing Subterfuge, and you can never buy dots in it.",
+        "el": "Είσαι κακός ψεύτης: −1 ζάρι στις ρίψεις που θέλουν Subterfuge, και δεν μπορείς ποτέ να αγοράσεις τελείες σε αυτό."
+      },
       "kind": "flaw",
       "group": "Looks",
       "dots": {
@@ -3715,6 +4251,10 @@
     {
       "id": "flaw:ugly",
       "name": "Ugly",
+      "desc": {
+        "en": "-1 die on Social pools where your looks matter.",
+        "el": "−1 ζάρι στα Social pools όπου μετρά η εμφάνισή σου."
+      },
       "kind": "flaw",
       "group": "Looks",
       "dots": {
@@ -3740,6 +4280,10 @@
     {
       "id": "flaw:known-blankbody",
       "name": "Known Blankbody",
+      "desc": {
+        "en": "Your biometrics and aliases sit in intelligence databases flagged as a possible terrorist; any inquisitor can read you as a vampire from them.",
+        "el": "Τα βιομετρικά και τα ψευδώνυμά σου είναι σε βάσεις υπηρεσιών πληροφοριών, σημειωμένα ως πιθανού τρομοκράτη· κάθε inquisitor καταλαβαίνει από αυτά ότι είσαι βαμπίρ."
+      },
       "kind": "flaw",
       "group": "Mask",
       "dots": {
@@ -3765,6 +4309,10 @@
     {
       "id": "flaw:known-corpse",
       "name": "Known Corpse",
+      "desc": {
+        "en": "People know you died recently and react with shock when you show up; database lookups on your identity say the same.",
+        "el": "Ο κόσμος ξέρει ότι πέθανες πρόσφατα και σοκάρεται όταν εμφανίζεσαι· το ίδιο δείχνουν και οι αναζητήσεις της ταυτότητάς σου σε βάσεις δεδομένων."
+      },
       "kind": "flaw",
       "group": "Mask",
       "dots": {
@@ -3790,6 +4338,10 @@
     {
       "id": "flaw:adversary",
       "name": "Adversary",
+      "desc": {
+        "en": "A Kindred who wishes you, your sire or your line ill, from an elder (1) to a Prince or powerful cabal (3). The Storyteller uses their own Traits, not the dots, when they act against you.",
+        "el": "Ένας Kindred που θέλει το κακό σου, του sire σου ή της γενιάς σου, από elder (1) ως Prince ή ισχυρή κλίκα (3). Ο Storyteller χρησιμοποιεί τα δικά τους Traits, όχι τις τελείες, όταν κινούνται εναντίον σου."
+      },
       "kind": "flaw",
       "group": "Mawla",
       "dots": {
@@ -3820,6 +4372,10 @@
     {
       "id": "flaw:folkloric-bane",
       "name": "Folkloric Bane",
+      "desc": {
+        "en": "One folkloric bane (ultraviolet light, silver, holy water) deals you Aggravated damage, as sunlight, a weapon or fire respectively.",
+        "el": "Ένα λαογραφικό bane (υπεριώδες φως, ασήμι, αγιασμός) σου κάνει Aggravated damage, αντίστοιχα σαν ήλιος, όπλο ή φωτιά."
+      },
       "kind": "flaw",
       "group": "Mythic",
       "dots": {
@@ -3845,6 +4401,10 @@
     {
       "id": "flaw:folkloric-block",
       "name": "Folkloric Block",
+      "desc": {
+        "en": "You must shrink from one folkloric block (a believer's holy symbol, running water, an uninvited threshold, garlic, wild roses…) or spend a Willpower point to push past it. Each block is a separate 1-dot Flaw.",
+        "el": "Πρέπει να υποχωρείς μπροστά σε ένα λαογραφικό εμπόδιο (ιερό σύμβολο πιστού, τρεχούμενο νερό, κατώφλι χωρίς πρόσκληση, σκόρδο, αγριοτριανταφυλλιές…) ή να ξοδέψεις Willpower για να περάσεις. Κάθε εμπόδιο είναι χωριστό Flaw 1 τελείας."
+      },
       "kind": "flaw",
       "group": "Mythic",
       "dots": {
@@ -3874,6 +4434,10 @@
     {
       "id": "flaw:stake-bait",
       "name": "Stake Bait",
+      "desc": {
+        "en": "A stake through the heart kills you outright instead of putting you in torpor.",
+        "el": "Παλούκι στην καρδιά σου φέρνει Final Death αντί για torpor."
+      },
       "kind": "flaw",
       "group": "Mythic",
       "dots": {
@@ -3899,6 +4463,10 @@
     {
       "id": "flaw:starving-decay",
       "name": "Starving Decay",
+      "desc": {
+        "en": "At Hunger 3 or more your body shrivels: -2 dice on physical tests and on Social dealings with mortals, and the Masquerade is at risk.",
+        "el": "Σε Hunger 3 ή παραπάνω το σώμα σου ζαρώνει: −2 ζάρια σε physical τεστ και σε Social επαφές με θνητούς, και η Masquerade κινδυνεύει."
+      },
       "kind": "flaw",
       "group": "Mythic",
       "dots": {
@@ -3924,6 +4492,10 @@
     {
       "id": "flaw:stigmata",
       "name": "Stigmata",
+      "desc": {
+        "en": "At Hunger 4 you bleed from open wounds on hands, feet and forehead, drawing attention, leaving traces and possibly penalizing pools.",
+        "el": "Σε Hunger 4 αιμορραγείς από ανοιχτές πληγές σε χέρια, πόδια και μέτωπο, τραβώντας βλέμματα, αφήνοντας ίχνη και ίσως με ποινές σε pools."
+      },
       "kind": "flaw",
       "group": "Mythic",
       "dots": {
@@ -3949,6 +4521,10 @@
     {
       "id": "flaw:twice-cursed",
       "name": "Twice-Cursed",
+      "desc": {
+        "en": "You carry your clan's variant Bane on top of the regular one; the Storyteller may veto it.",
+        "el": "Κουβαλάς και το variant Bane του clan σου πάνω στο κανονικό· ο Storyteller μπορεί να το απορρίψει."
+      },
       "kind": "flaw",
       "group": "Mythic",
       "dots": {
@@ -3974,6 +4550,10 @@
     {
       "id": "flaw:knowledge-hungry",
       "name": "Knowledge Hungry",
+      "desc": {
+        "en": "Pick a topic at creation; whenever you come across a way to learn more about it, roll Willpower at Difficulty 3 or get sucked in.",
+        "el": "Διάλεξε ένα θέμα στη δημιουργία· όποτε βρίσκεις τρόπο να μάθεις περισσότερα γι' αυτό, ρίξε Willpower με Difficulty 3 αλλιώς σε ρουφάει."
+      },
       "kind": "flaw",
       "group": "Other",
       "dots": {
@@ -3999,6 +4579,10 @@
     {
       "id": "flaw:prestation-debts",
       "name": "Prestation Debts",
+      "desc": {
+        "en": "You owe two minor boons to a more powerful Kindred, who may call them in anytime and gets +1 die in Social combat against you while holding them (and keeps it even after you pay).",
+        "el": "Χρωστάς δύο minor boons σε ισχυρότερο Kindred, που μπορεί να τα ζητήσει όποτε θέλει και έχει +1 ζάρι σε Social combat εναντίον σου όσο τα κρατά (και το κρατά ακόμη κι αφού πληρώσεις)."
+      },
       "kind": "flaw",
       "group": "Other",
       "dots": {
@@ -4024,6 +4608,10 @@
     {
       "id": "flaw:risk-taker",
       "name": "Risk-Taker",
+      "desc": {
+        "en": "Faced with a new risky temptation, you take -2 dice on everything until you give in or the scene ends. Nothing suicidal, but you misjudge consequences.",
+        "el": "Μπροστά σε καινούργιο ριψοκίνδυνο πειρασμό παίρνεις −2 ζάρια σε όλα μέχρι να ενδώσεις ή να τελειώσει η σκηνή. Τίποτα αυτοκτονικό, αλλά κρίνεις λάθος τις συνέπειες."
+      },
       "kind": "flaw",
       "group": "Other",
       "dots": {
@@ -4060,6 +4648,10 @@
     {
       "id": "flaw:weak-willed",
       "name": "Weak-Willed",
+      "desc": {
+        "en": "-1 die on Social pools against your leader or superior, and you may never use the active resistance rules against Dominate, Presence or similar sway, even when you notice it.",
+        "el": "−1 ζάρι στα Social pools απέναντι στον αρχηγό ή ανώτερό σου, και δεν μπορείς ποτέ να χρησιμοποιήσεις τους κανόνες ενεργής αντίστασης σε Dominate, Presence ή παρόμοια επιρροή, ακόμη κι αν την αντιληφθείς."
+      },
       "kind": "flaw",
       "group": "Other",
       "dots": {
@@ -4090,6 +4682,10 @@
     {
       "id": "flaw:destitute",
       "name": "Destitute",
+      "desc": {
+        "en": "No money and no home.",
+        "el": "Ούτε χρήματα ούτε σπίτι."
+      },
       "kind": "flaw",
       "group": "Resources",
       "dots": {
@@ -4115,6 +4711,10 @@
     {
       "id": "flaw:stalkers",
       "name": "Stalkers",
+      "desc": {
+        "en": "A former retainer stays obsessed with you and keeps coming back; get rid of one and another soon appears.",
+        "el": "Ένας πρώην retainer μένει κολλημένος μαζί σου και όλο επιστρέφει· ξεφορτώσου έναν και σύντομα εμφανίζεται άλλος."
+      },
       "kind": "flaw",
       "group": "Retainers",
       "dots": {
@@ -4145,6 +4745,10 @@
     {
       "id": "flaw:shunned",
       "name": "Shunned",
+      "desc": {
+        "en": "One sect loathes you for a past betrayal; its members actively work against you when they can.",
+        "el": "Ένα sect σε απεχθάνεται για παλιά προδοσία· τα μέλη του δουλεύουν ενεργά εναντίον σου όποτε μπορούν."
+      },
       "kind": "flaw",
       "group": "Status",
       "dots": {
@@ -4170,6 +4774,10 @@
     {
       "id": "flaw:suspect",
       "name": "Suspect",
+      "desc": {
+        "en": "You are in bad odour with one sect: -2 dice on all Social tests with the offended faction until you make amends. Caitiff start with it.",
+        "el": "Είσαι σε δυσμένεια σε ένα sect: −2 ζάρια σε όλα τα Social τεστ με την προσβεβλημένη παράταξη μέχρι να επανορθώσεις. Οι Caitiff ξεκινούν με αυτό."
+      },
       "kind": "flaw",
       "group": "Status",
       "dots": {
@@ -4195,6 +4803,10 @@
     {
       "id": "flaw:addiction",
       "name": "Addiction",
+      "desc": {
+        "en": "-1 die on every pool while your last vessel was not on your drug, unless the action gets you the drug at once.",
+        "el": "−1 ζάρι σε όλα τα pools όταν το τελευταίο άτομο από το οποίο τράφηκες δεν είχε πάρει το ναρκωτικό σου, εκτός από ενέργειες που σου το φέρνουν αμέσως."
+      },
       "kind": "flaw",
       "group": "Substance Use",
       "dots": {
@@ -4220,6 +4832,10 @@
     {
       "id": "flaw:hopeless-addiction",
       "name": "Hopeless Addiction",
+      "desc": {
+        "en": "-2 dice on every pool while your last vessel was not on your drug, unless the action gets you the drug at once.",
+        "el": "−2 ζάρια σε όλα τα pools όταν το τελευταίο άτομο από το οποίο τράφηκες δεν είχε πάρει το ναρκωτικό σου, εκτός από ενέργειες που σου το φέρνουν αμέσως."
+      },
       "kind": "flaw",
       "group": "Substance Use",
       "dots": {
@@ -4245,6 +4861,10 @@
     {
       "id": "flaw:thin-blood-baby-teeth",
       "name": "Baby Teeth",
+      "desc": {
+        "en": "No working fangs: you must cut your victims or draw their blood with a syringe.",
+        "el": "Χωρίς λειτουργικούς κυνόδοντες: πρέπει να κόβεις τα θύματά σου ή να τραβάς το αίμα τους με σύριγγα."
+      },
       "kind": "flaw",
       "group": "Thin-blood",
       "dots": null,
@@ -4267,6 +4887,10 @@
     {
       "id": "flaw:thin-blood-bestial-temper",
       "name": "Bestial Temper",
+      "desc": {
+        "en": "Your Beast is as strong as a full vampire's: you test for frenzy under the normal rules.",
+        "el": "Το Κτήνος σου είναι δυνατό όσο ενός κανονικού βαμπίρ: κάνεις τεστ για frenzy με τους κανονικούς κανόνες."
+      },
       "kind": "flaw",
       "group": "Thin-blood",
       "dots": null,
@@ -4293,6 +4917,10 @@
     {
       "id": "flaw:thin-blood-branded-by-the-camarilla",
       "name": "Branded by the Camarilla",
+      "desc": {
+        "en": "The Sheriff has branded you with an unhealing mark and the Camarilla watches for your next slip. You may take Camarilla Contact with it.",
+        "el": "Ο Sheriff σού έκαψε ένα σημάδι που δεν γιατρεύεται και η Camarilla περιμένει το επόμενο στραβοπάτημά σου. Μπορείς να πάρεις και Camarilla Contact."
+      },
       "kind": "flaw",
       "group": "Thin-blood",
       "dots": null,
@@ -4315,6 +4943,10 @@
     {
       "id": "flaw:thin-blood-clan-curse",
       "name": "Clan Curse",
+      "desc": {
+        "en": "You carry a chosen clan's Bane at Bane Severity 1 (Brujah or Gangrel only with Bestial Temper, Tremere only with Catenating Blood).",
+        "el": "Κουβαλάς το Bane ενός clan της επιλογής σου με Bane Severity 1 (Brujah ή Gangrel μόνο με Bestial Temper, Tremere μόνο με Catenating Blood)."
+      },
       "kind": "flaw",
       "group": "Thin-blood",
       "dots": null,
@@ -4342,6 +4974,10 @@
     {
       "id": "flaw:thin-blood-dead-flesh",
       "name": "Dead Flesh",
+      "desc": {
+        "en": "Your flesh rots slowly, greenish and faintly foul: any medical check marks you dead and you take -1 die on face-to-face Social tests with mortals. Not with Lifelike.",
+        "el": "Η σάρκα σου σαπίζει αργά, πρασινωπή και ελαφρά δύσοσμη: κάθε ιατρική εξέταση σε δείχνει νεκρό και παίρνεις −1 ζάρι στα Social τεστ πρόσωπο με πρόσωπο με θνητούς. Όχι μαζί με Lifelike."
+      },
       "kind": "flaw",
       "group": "Thin-blood",
       "dots": null,
@@ -4364,6 +5000,10 @@
     {
       "id": "flaw:thin-blood-heliophobia",
       "name": "Heliophobia",
+      "desc": {
+        "en": "You fear sunlight like a full vampire and can suffer Terror Frenzy from it.",
+        "el": "Φοβάσαι τον ήλιο σαν κανονικός βαμπίρ και μπορείς να πάθεις Terror Frenzy από αυτόν."
+      },
       "kind": "flaw",
       "group": "Thin-blood",
       "dots": null,
@@ -4386,6 +5026,10 @@
     {
       "id": "flaw:thin-blood-mortal-frailty",
       "name": "Mortal Frailty",
+      "desc": {
+        "en": "Rousing the Blood does not mend you; you heal like a mortal. Not with Vampiric Resilience.",
+        "el": "Το ξύπνημα του αίματος δεν σε γιατρεύει· θεραπεύεσαι σαν θνητός. Όχι μαζί με Vampiric Resilience."
+      },
       "kind": "flaw",
       "group": "Thin-blood",
       "dots": null,
@@ -4408,6 +5052,10 @@
     {
       "id": "flaw:thin-blood-night-terrors",
       "name": "Night Terrors",
+      "desc": {
+        "en": "Once per session your daytime nightmares surface at night: -1 die on everything you do until the scene ends.",
+        "el": "Μία φορά ανά session οι εφιάλτες της μέρας ξεσπούν τη νύχτα: −1 ζάρι σε όλες τις ενέργειες για την υπόλοιπη σκηνή."
+      },
       "kind": "flaw",
       "group": "Thin-blood",
       "dots": null,
@@ -4430,6 +5078,10 @@
     {
       "id": "flaw:thin-blood-plague-bearer",
       "name": "Plague Bearer",
+      "desc": {
+        "en": "You still catch mortal diseases: each time you feed, roll a die per Hunger slaked and any 1 means you are sick (and may infect those you feed on). Only slaking to Hunger 0 cures you.",
+        "el": "Κολλάς ακόμη θνητές αρρώστιες: κάθε φορά που τρέφεσαι ρίχνεις ένα ζάρι ανά Hunger που κατεβάζεις και κάθε 1 σημαίνει ότι αρρώστησες (και ίσως κολλήσεις τα θύματά σου). Μόνο το κατέβασμα σε Hunger 0 σε γιατρεύει."
+      },
       "kind": "flaw",
       "group": "Thin-blood",
       "dots": null,
@@ -4452,6 +5104,10 @@
     {
       "id": "flaw:thin-blood-shunned-by-the-anarchs",
       "name": "Shunned by the Anarchs",
+      "desc": {
+        "en": "The local Anarchs shun you and would sooner hand you to the Camarilla than listen. Not with Anarch Comrades.",
+        "el": "Οι ντόπιοι Anarchs σε απορρίπτουν και θα σε παρέδιδαν στην Camarilla πριν σε ακούσουν. Όχι μαζί με Anarch Comrades."
+      },
       "kind": "flaw",
       "group": "Thin-blood",
       "dots": null,
@@ -4474,6 +5130,10 @@
     {
       "id": "flaw:thin-blood-sloppy-drinker",
       "name": "Sloppy Drinker",
+      "desc": {
+        "en": "When feeding, roll Dexterity + Medicine at Difficulty equal to Hunger slaked to close the wound; fail and the mortal may bleed out with Masquerade-breaking neck wounds.",
+        "el": "Όταν τρέφεσαι, ρίχνεις Dexterity + Medicine με Difficulty ίσο με το Hunger που κατέβασες για να κλείσεις την πληγή· αν αποτύχεις, ο θνητός ίσως αιμορραγήσει μέχρι θανάτου με τραύματα στον λαιμό που απειλούν τη Masquerade."
+      },
       "kind": "flaw",
       "group": "Thin-blood",
       "dots": null,
@@ -4496,6 +5156,10 @@
     {
       "id": "flaw:thin-blood-sun-faded",
       "name": "Sun-Faded",
+      "desc": {
+        "en": "No Discipline powers (Alchemy included) in sunlight, and active ones end when you enter it; indoors by day they work at -2 dice.",
+        "el": "Καμία δύναμη Discipline (ούτε Alchemy) στον ήλιο, και οι ενεργές σβήνουν μόλις μπεις σε αυτόν· σε εσωτερικό χώρο τη μέρα δουλεύουν με −2 ζάρια."
+      },
       "kind": "flaw",
       "group": "Thin-blood",
       "dots": null,
@@ -4518,6 +5182,10 @@
     {
       "id": "flaw:thin-blood-supernatural-tell",
       "name": "Supernatural Tell",
+      "desc": {
+        "en": "Other supernatural beings sense you: -2 dice on Stealth and similar pools against them, vampires included.",
+        "el": "Τα άλλα υπερφυσικά όντα σε νιώθουν: −2 ζάρια σε Stealth και παρόμοια pools απέναντί τους, βαμπίρ συμπεριλαμβανομένων."
+      },
       "kind": "flaw",
       "group": "Thin-blood",
       "dots": null,
@@ -4540,6 +5208,10 @@
     {
       "id": "flaw:thin-blood-twilight-presence",
       "name": "Twilight Presence",
+      "desc": {
+        "en": "You make everyone uneasy: -1 die on Social pools with anyone except thin-bloods.",
+        "el": "Κάνεις όλους να νιώθουν άβολα: −1 ζάρι στα Social pools με οποιονδήποτε εκτός από thin-bloods."
+      },
       "kind": "flaw",
       "group": "Thin-blood",
       "dots": null,
@@ -4562,6 +5234,10 @@
     {
       "id": "flaw:thin-blood-unending-hunger",
       "name": "Unending Hunger",
+      "desc": {
+        "en": "Once per scene when you feed, you slake one Hunger less than other thin-bloods would.",
+        "el": "Μία φορά ανά σκηνή, όταν τρέφεσαι, κατεβάζεις ένα Hunger λιγότερο απ' ό,τι άλλοι thin-bloods."
+      },
       "kind": "flaw",
       "group": "Thin-blood",
       "dots": null,
@@ -4584,6 +5260,10 @@
     {
       "id": "flaw:thin-blood-vitae-dependency",
       "name": "Vitae Dependency",
+      "desc": {
+        "en": "Unless you slake one Hunger on vampire Blood each week you lose all Disciplines (Alchemy included) until you do so again.",
+        "el": "Αν δεν κατεβάζεις ένα Hunger με αίμα βαμπίρ κάθε εβδομάδα χάνεις όλα τα Disciplines (και την Alchemy) μέχρι να το ξανακάνεις."
+      },
       "kind": "flaw",
       "group": "Thin-blood",
       "dots": null,
