@@ -24,7 +24,8 @@
     "ritualFromXp": "bought with XP",
     "xpDots": "+{{n}} XP",
     "xpSummary": "{{spent}} of {{total}} spent at creation · {{left}} unspent",
-    "xpSpecialty": "{{name}} – XP"
+    "xpSpecialty": "{{name}} – XP",
+    "ceremony": "Ceremony"
   },
   "pdf": {
     "export": "Export PDF",

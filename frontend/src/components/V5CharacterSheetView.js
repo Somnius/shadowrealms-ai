@@ -2,7 +2,9 @@ import React from 'react';
 import DotTrack from './characterCreation/DotTrack';
 import ResponsiveSheetBlock from './characterCreation/ResponsiveSheetBlock';
 import { V5_ATTRIBUTES, V5_SKILLS, V5_SKILL_LABELS } from '../characterSheet/v5/constants';
-import { t } from '../i18n';
+import { getLanguage, t } from '../i18n';
+import { bookRef, descIn, getV5Rules, powersOf } from '../characterSheet/v5/rulesData';
+import { useV5Catalog } from '../rules/v5Catalog';
 import { Term } from '../i18n/glossary';
 
 const ACCENT = 'var(--sr-blood-500)';
@@ -100,10 +102,31 @@ const p = (label, value) =>
     </p>
   ) : null;
 
+/** A power or ritual name; with a catalog description it opens to show it (and the book page). */
+function CatalogItem({ name, entry }) {
+  const text = entry ? descIn(entry, getLanguage()) : '';
+  if (!text) return <span>{name}</span>;
+  const ref = bookRef(entry);
+  return (
+    <details className="sr-sheet-catalog-item" style={{ display: 'inline-block', verticalAlign: 'top', marginRight: '10px' }}>
+      <summary style={{ cursor: 'pointer' }}>{name}</summary>
+      <span style={{ display: 'block', maxWidth: '520px', color: 'var(--sr-bone-300)', fontSize: '12px', margin: '2px 0 6px' }}>
+        {text}
+        {ref ? <span style={{ color: 'var(--sr-bone-500)' }}> ({ref})</span> : null}
+      </span>
+    </details>
+  );
+}
+
+const findPower = (discipline, name) =>
+  powersOf(discipline).find((p) => p.name === name || (p.aliases || []).includes(name)) || null;
+const findRitual = (name) => getV5Rules().rituals.find((r) => r.name === name) || null;
+
 /**
  * Read-only V5 sheet body (rendered inside CharacterSheetModal).
  */
 export default function V5CharacterSheetView({ character }) {
+  useV5Catalog();
   const wm = obj(character?.wod_meta);
   const attrs = obj(character?.attributes);
   const sk = obj(character?.skills);
@@ -231,7 +254,18 @@ export default function V5CharacterSheetView({ character }) {
                 {xpNote('discipline', d.name)}
               </div>
               {Array.isArray(d.powers) && d.powers.length ? (
-                <div style={{ color: 'var(--sr-bone-300)', fontSize: '12px', marginTop: '2px' }}>{d.powers.join(' · ')}</div>
+                <div style={{ color: 'var(--sr-bone-300)', fontSize: '12px', marginTop: '2px' }}>
+                  {d.powers.map((pw, j) => {
+                    const name = typeof pw === 'string' ? pw : pw?.name;
+                    if (!name) return null;
+                    return (
+                      <React.Fragment key={j}>
+                        {j ? ' · ' : ''}
+                        <CatalogItem name={name} entry={findPower(d.name, name)} />
+                      </React.Fragment>
+                    );
+                  })}
+                </div>
               ) : null}
             </div>
           ))}
@@ -241,13 +275,16 @@ export default function V5CharacterSheetView({ character }) {
       {rituals.length ? (
         <ResponsiveSheetBlock sectionId="v5-view-rituals" title="Rituals" accent={ACCENT}>
           {rituals.map((r, i) => (
-            <p key={i} style={{ margin: '0 0 6px', color: 'var(--sr-bone-100)' }}>
-              <strong>{String(r.name)}</strong>{' '}
+            <div key={i} style={{ margin: '0 0 6px', color: 'var(--sr-bone-100)' }}>
+              <strong>
+                <CatalogItem name={String(r.name)} entry={findRitual(String(r.name))} />
+              </strong>{' '}
               <span style={{ color: 'var(--sr-bone-300)', fontSize: '12px' }}>
+                {r.kind === 'ceremony' ? `${t('sheet:v5.ceremony', 'Ceremony')} · ` : ''}
                 {t('sheet:v5.ritualLevel', 'Level {{n}}', { n: n(r.level) })}
                 {r.source === 'xp' ? ` · ${t('sheet:v5.ritualFromXp', 'bought with XP')}` : ''}
               </span>
-            </p>
+            </div>
           ))}
         </ResponsiveSheetBlock>
       ) : null}
