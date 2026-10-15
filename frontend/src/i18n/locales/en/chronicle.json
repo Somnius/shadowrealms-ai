@@ -167,6 +167,9 @@
     "showPending": "Waiting for you",
     "showAll": "All spends",
     "nonePending": "Nothing waiting.",
-    "none": "No spends yet."
+    "none": "No spends yet.",
+    "nowHouseRule": "The sheet changed since the player asked: this spend breaks the rules now.",
+    "reverseReasonShown": "Why reversed: {{reason}}",
+    "confirmNeeded": "This spend breaks the rules now: check the problems and confirm."
   }
 }

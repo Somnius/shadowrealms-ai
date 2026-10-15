@@ -196,6 +196,11 @@ function SpendRow({ req }) {
         {req.status !== 'pending' ? <span className="sr-muted sr-small">{spendApproverText(req)}</span> : null}
       </div>
       {req.reason ? <p className="sr-small sr-muted" style={{ margin: '2px 0 0' }}>{t('sheet:spend.reason', 'Storyteller: {{reason}}', { reason: req.reason })}</p> : null}
+      {req.reverse_reason ? (
+        <p className="sr-small sr-muted" style={{ margin: '2px 0 0' }}>
+          {t('sheet:spend.reverseReason', 'Reversed by the Storyteller: {{reason}}', { reason: req.reverse_reason })}
+        </p>
+      ) : null}
     </li>
   );
 }

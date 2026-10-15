@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useId, useState } from 'react';
 import { Button, Checkbox, Input, Panel, Select, Textarea } from '../../design';
 import { V5_AGE_BRACKETS } from '../../characterSheet/v5/constants';
 import { clanNames, predatorNames } from '../../characterSheet/v5/rulesData';
@@ -49,6 +49,9 @@ export default function CreationRulesPanel({ campaign, saving, onSave, suggestAi
   const set = (patch) => setS((prev) => ({ ...prev, ...patch }));
   const [flawsText, setFlawsText] = useState(() => (s.flaws_max_dots == null ? '' : String(s.flaws_max_dots)));
   const [capText, setCapText] = useState(() => String(s.saved_points.advantage_dots_cap));
+  const modeHintId = useId();
+  const suggestId = useId();
+  const showSuggest = suggestAi && s.st_mode === 'human';
   const submit = (e) => {
     e.preventDefault();
     const n = parseInt(flawsText, 10);
@@ -123,19 +126,20 @@ export default function CreationRulesPanel({ campaign, saving, onSave, suggestAi
           <Select
             label={t('chronicle:creation.stMode', 'Who approves spending saved points')}
             value={s.st_mode}
+            aria-describedby={showSuggest ? `${modeHintId} ${suggestId}` : modeHintId}
             onChange={(e) => set({ st_mode: e.target.value })}
             options={[
               { value: 'human', label: t('chronicle:creation.stModeHuman', 'A human Storyteller (you or staff)') },
               { value: 'ai', label: t('chronicle:creation.stModeAi', 'The AI Storyteller (rule check)') },
             ]}
           />
-          <p className="sr-muted sr-small">
+          <p id={modeHintId} className="sr-muted sr-small">
             {s.st_mode === 'ai'
               ? t('chronicle:creation.stModeAiHint', 'Spends that follow the rules are approved at once by a fixed rule check (not the language model) and logged under Approvals, where you can reverse any of them. House rules always wait for you.')
               : t('chronicle:creation.stModeHumanHint', 'Every spend waits for you under Approvals.')}
           </p>
-          {suggestAi && s.st_mode === 'human' ? (
-            <p className="sr-warnbox">
+          {showSuggest ? (
+            <p id={suggestId} className="sr-warnbox">
               {t('chronicle:creation.stModeSuggest', 'You play a character in this chronicle yourself. With the AI Storyteller, the rule check approves your own spends instead of you.')}
             </p>
           ) : null}

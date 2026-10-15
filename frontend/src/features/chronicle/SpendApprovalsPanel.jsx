@@ -17,14 +17,29 @@ const ACTION_LABEL = {
   reverse: () => t('chronicle:approvals.reverse', 'Reverse'),
 };
 
-/** One spend with its actions. A house-rule approval, a rejection and a reversal ask to confirm. */
+/**
+ * One spend with its actions. Approving a house rule, rejecting and reversing ask to confirm
+ * (with an optional reason). When the server finds that a spend breaks the rules as the sheet is
+ * now (409 now_house_rule), the confirm form opens with the new problems.
+ */
 function SpendItem({ req, user, busy, onDecide }) {
   const [confirm, setConfirm] = useState(null);
   const [reason, setReason] = useState('');
-  const house = Boolean(req.rule_check?.house_rule);
+  const [fresh, setFresh] = useState(null);
+  const check = fresh || req.rule_check || {};
+  const house = Boolean(check.house_rule);
+  const run = async (action, why, confirmHouse) => {
+    const res = await onDecide(req, action, why, confirmHouse);
+    if (res && res.houseRule) {
+      setFresh(res.houseRule);
+      setConfirm('approve');
+    } else if (res && res.ok) {
+      setConfirm(null);
+    }
+  };
   const start = (action) => {
     if (action === 'approve' && !house) {
-      onDecide(req, action, '');
+      run(action, '', false);
       return;
     }
     setConfirm(action);
@@ -47,20 +62,24 @@ function SpendItem({ req, user, busy, onDecide }) {
         <span lang="en">{spendSummary(req)}</span>
         {req.status !== 'pending' ? <span className="sr-muted sr-small">{spendApproverText(req)}</span> : null}
       </div>
+      {fresh ? <p className="sr-small sr-approvals__problems-intro">{t('chronicle:approvals.nowHouseRule', 'The sheet changed since the player asked: this spend breaks the rules now.')}</p> : null}
       {house ? (
         <ul className="sr-small sr-approvals__problems">
-          {(req.rule_check.problems || []).map((p, i) => (
+          {(check.problems || []).map((p, i) => (
             <li key={i}>{spendProblemText(p)}</li>
           ))}
         </ul>
       ) : null}
       {req.reason ? <p className="sr-small sr-muted">{t('chronicle:approvals.reasonShown', 'Reason: {{reason}}', { reason: req.reason })}</p> : null}
+      {req.reverse_reason ? (
+        <p className="sr-small sr-muted">{t('chronicle:approvals.reverseReasonShown', 'Why reversed: {{reason}}', { reason: req.reverse_reason })}</p>
+      ) : null}
       {confirm ? (
         <form
           className="sr-row sr-row--end"
           onSubmit={(e) => {
             e.preventDefault();
-            onDecide(req, confirm, reason);
+            run(confirm, reason, confirm === 'approve');
           }}
         >
           <Input
@@ -84,13 +103,13 @@ function SpendItem({ req, user, busy, onDecide }) {
               <Button size="sm" variant="primary" loading={busy} onClick={() => start('approve')}>
                 {ACTION_LABEL.approve()}
               </Button>
-              <Button size="sm" variant="secondary" onClick={() => start('reject')}>
+              <Button size="sm" variant="secondary" disabled={busy} onClick={() => start('reject')}>
                 {ACTION_LABEL.reject()}
               </Button>
             </>
           ) : null}
           {req.status === 'approved' ? (
-            <Button size="sm" variant="secondary" onClick={() => start('reverse')}>
+            <Button size="sm" variant="secondary" disabled={busy} onClick={() => start('reverse')}>
               {ACTION_LABEL.reverse()}
             </Button>
           ) : null}
@@ -110,7 +129,7 @@ export default function SpendApprovalsPanel({ api, campaignId, user, toast, init
   const [filter, setFilter] = useState(initialStMode === 'ai' ? 'all' : 'pending');
   const [rows, setRows] = useState(null);
   const [stMode, setStMode] = useState(initialStMode);
-  const [busy, setBusy] = useState(false);
+  const [busyId, setBusyId] = useState(null);
 
   const load = useCallback(async () => {
     const r = await api(`/campaigns/${campaignId}/spend-requests${filter === 'all' ? '' : `?status=${filter}`}`);
@@ -122,16 +141,22 @@ export default function SpendApprovalsPanel({ api, campaignId, user, toast, init
     load();
   }, [load]);
 
-  const decide = async (req, action, reason) => {
-    setBusy(true);
+  /** PATCH one spend. Resolves to { ok } or { houseRule: rule_check } (confirm needed). */
+  const decide = async (req, action, reason, confirmHouseRule) => {
+    setBusyId(req.id);
     const body = { action };
     if (String(reason || '').trim()) body.reason = reason.trim();
+    if (confirmHouseRule) body.confirm_house_rule = true;
     const r = await api(`/campaigns/${campaignId}/spend-requests/${req.id}`, { method: 'PATCH', body });
-    setBusy(false);
+    setBusyId(null);
     if (!r.ok) {
+      if (r.status === 409 && r.data && r.data.error_code === 'now_house_rule' && r.data.rule_check) {
+        toast({ tone: 'warn', title: t('chronicle:approvals.confirmNeeded', 'This spend breaks the rules now: check the problems and confirm.') });
+        return { houseRule: r.data.rule_check };
+      }
       toast({ tone: 'danger', title: errorText(r.data, t('chronicle:approvals.failed', 'Could not update the spend.')) });
       load();
-      return;
+      return { ok: false };
     }
     const done = {
       approve: () => t('chronicle:approvals.approved', 'Approved and added to the sheet.'),
@@ -140,6 +165,7 @@ export default function SpendApprovalsPanel({ api, campaignId, user, toast, init
     };
     toast({ tone: 'ok', title: done[action]() });
     load();
+    return { ok: true };
   };
 
   return (
@@ -164,7 +190,7 @@ export default function SpendApprovalsPanel({ api, campaignId, user, toast, init
       ) : (
         <ul className="sr-approvals">
           {rows.map((req) => (
-            <SpendItem key={req.id} req={req} user={user} busy={busy} onDecide={decide} />
+            <SpendItem key={req.id} req={req} user={user} busy={busyId === req.id} onDecide={decide} />
           ))}
         </ul>
       )}

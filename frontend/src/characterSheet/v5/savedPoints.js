@@ -2,7 +2,9 @@
  * Saved points (Forge v2 part D): spending the Advantage dots and the free specialty a player left
  * unspent at creation (wod_meta.saved). validateSpend is the live preview of the server's rule
  * check (backend/services/saved_points.py validate_spend, same problem codes); the server's check
- * is the one that counts, and it also checks the Advantages catalog when one is installed.
+ * is the one that counts, and it also checks the Advantages catalog when one is installed (dot
+ * ranges such as Allies 1–6, clan-only, thin-blood-only, prerequisites, ...), which this preview
+ * can't see.
  * A spend that doesn't pass is a house rule: only a human Storyteller can approve it.
  */
 import { V5_SKILLS, V5_SKILL_CATEGORIES, V5_SKILL_LABELS } from './constants';
@@ -58,8 +60,11 @@ export function validateSpend(meta, payload, settings, skills) {
     const items = payload.items || [];
     const total = items.reduce((n, it) => n + count(it.dots), 0);
     if (total > have.advantage_dots) add('saved_short', { need: total, have: have.advantage_dots });
+    // The cap is on everything spent from saved points, earlier approved spends included.
+    const rows = Array.isArray(meta?.advantages) ? meta.advantages : [];
+    const before = rows.reduce((n, r) => n + count(r?.saved_dots), 0);
     const cap = s.saved_points.advantage_dots_cap;
-    if (total > cap) add('over_cap', { cap, total });
+    if (before + total > cap) add('over_cap', { cap, total: before + total });
     spendChanges(meta, items).forEach((ch) => {
       if (ch.to < 1 || ch.to > SPEND_DOTS_MAX) add('dots_range', { name: ch.name, to: ch.to });
     });
@@ -93,6 +98,22 @@ export function spendProblemText(p) {
       return t('sheet:spend.problem.flaw', '{{name}} is a Flaw, not an Advantage.', v);
     case 'adv_dots_range':
       return t('sheet:spend.problem.advRange', '{{name}} takes {{min}}–{{max}} dots, not {{to}}.', v);
+    case 'adv_dots_allowed':
+      return t('sheet:spend.problem.advAllowed', '{{name}} takes {{allowed}} dots, not {{to}}.', { ...v, allowed: formatList((v.allowed || []).map(String), 'disjunction') });
+    case 'thin_blood_only':
+      return t('sheet:spend.problem.thinBloodOnly', '{{name}} is for thin-bloods only.', v);
+    case 'caitiff_only':
+      return t('sheet:spend.problem.caitiffOnly', '{{name}} is for Caitiff only.', v);
+    case 'ghoul_only':
+      return t('sheet:spend.problem.ghoulOnly', '{{name}} is for ghouls only.', v);
+    case 'coterie_advantage':
+      return t('sheet:spend.problem.coterie', '{{name}} belongs to a coterie, not to one character.', v);
+    case 'cannot_buy':
+      return t('sheet:spend.problem.cannotBuy', '{{clan}} characters cannot take {{name}}.', v);
+    case 'requires':
+      return t('sheet:spend.problem.requires', '{{name}} needs {{requires}}: the Storyteller checks that.', v);
+    case 'not_repeatable':
+      return t('sheet:spend.problem.notRepeatable', 'The sheet already has {{name}}, and it can be taken only once.', v);
     case 'book_not_allowed':
       return t('sheet:spend.problem.book', "{{name}} comes from a book this chronicle doesn't use ({{book}}).", v);
     case 'clan_only':

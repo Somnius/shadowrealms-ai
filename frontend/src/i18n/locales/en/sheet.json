@@ -49,7 +49,15 @@
       "noSpecialty": "No specialty is saved.",
       "specialtyOff": "This chronicle doesn't let players save a specialty.",
       "skillNoDot": "{{skill}} needs at least one dot for a specialty.",
-      "duplicate": "{{skill}} already has the {{name}} specialty."
+      "duplicate": "{{skill}} already has the {{name}} specialty.",
+      "advAllowed": "{{name}} takes {{allowed}} dots, not {{to}}.",
+      "thinBloodOnly": "{{name}} is for thin-bloods only.",
+      "caitiffOnly": "{{name}} is for Caitiff only.",
+      "ghoulOnly": "{{name}} is for ghouls only.",
+      "coterie": "{{name}} belongs to a coterie, not to one character.",
+      "cannotBuy": "{{clan}} characters cannot take {{name}}.",
+      "requires": "{{name}} needs {{requires}}: the Storyteller checks that.",
+      "notRepeatable": "The sheet already has {{name}}, and it can be taken only once."
     },
     "status": {
       "approved": "Approved",
@@ -83,7 +91,8 @@
     "houseRuleBadge": "House rule",
     "reason": "Storyteller: {{reason}}",
     "applied": "Done: the AI Storyteller approved it (rule check). Your Storyteller can still reverse it.",
-    "sent": "Sent to your Storyteller."
+    "sent": "Sent to your Storyteller.",
+    "reverseReason": "Reversed by the Storyteller: {{reason}}"
   },
   "saved": {
     "dots_one": "{{count}} Advantage dot",

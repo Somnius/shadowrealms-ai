@@ -805,6 +805,7 @@ def ensure_character_spend_requests_table(cursor):
             after_state  TEXT,
             reversed_by  INTEGER REFERENCES users(id) ON DELETE SET NULL,
             reversed_at  TIMESTAMP,
+            reverse_reason TEXT,
             created_at   TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
         )
         """

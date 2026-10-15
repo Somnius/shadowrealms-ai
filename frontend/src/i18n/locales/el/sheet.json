@@ -49,7 +49,15 @@
       "noSpecialty": "Δεν υπάρχει αποθηκευμένη specialty.",
       "specialtyOff": "Αυτό το χρονικό δεν αφήνει τους παίκτες να κρατούν specialty για αργότερα.",
       "skillNoDot": "Το {{skill}} χρειάζεται τουλάχιστον μία τελεία για specialty.",
-      "duplicate": "Το {{skill}} έχει ήδη τη specialty {{name}}."
+      "duplicate": "Το {{skill}} έχει ήδη τη specialty {{name}}.",
+      "advAllowed": "Το {{name}} παίρνει {{allowed}} τελείες, όχι {{to}}.",
+      "thinBloodOnly": "Το {{name}} είναι μόνο για thin-bloods.",
+      "caitiffOnly": "Το {{name}} είναι μόνο για Caitiff.",
+      "ghoulOnly": "Το {{name}} είναι μόνο για ghouls.",
+      "coterie": "Το {{name}} ανήκει σε coterie, όχι σε έναν χαρακτήρα.",
+      "cannotBuy": "Οι χαρακτήρες {{clan}} δεν μπορούν να πάρουν το {{name}}.",
+      "requires": "Το {{name}} θέλει {{requires}}: αυτό το ελέγχει ο Storyteller.",
+      "notRepeatable": "Το φύλλο έχει ήδη το {{name}}, και παίρνεται μόνο μία φορά."
     },
     "status": {
       "approved": "Εγκρίθηκε",
@@ -83,7 +91,8 @@
     "houseRuleBadge": "Κανόνας του τραπεζιού",
     "reason": "Storyteller: {{reason}}",
     "applied": "Έγινε: το ενέκρινε ο AI Storyteller (έλεγχος κανόνων). Ο Storyteller σου μπορεί ακόμα να το αναιρέσει.",
-    "sent": "Στάλθηκε στον Storyteller σου."
+    "sent": "Στάλθηκε στον Storyteller σου.",
+    "reverseReason": "Ο Storyteller το αναίρεσε: {{reason}}"
   },
   "saved": {
     "dots_one": "{{count}} τελεία Advantage",

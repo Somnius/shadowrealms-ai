@@ -374,11 +374,12 @@ CREATE TABLE IF NOT EXISTS character_spend_requests (
     approver     TEXT,                              -- 'ai' (the rule check, AI mode) | 'user'
     resolved_by  INTEGER REFERENCES users(id) ON DELETE SET NULL,
     resolved_at  TIMESTAMP,
-    reason       TEXT,
+    reason       TEXT,                              -- the approve / reject reason
     before_state TEXT,                              -- JSON: the touched sheet keys before the apply
     after_state  TEXT,                              -- JSON: the same keys after it, plus changes
     reversed_by  INTEGER REFERENCES users(id) ON DELETE SET NULL,
     reversed_at  TIMESTAMP,
+    reverse_reason TEXT,                            -- why it was reversed (reason = why approved/rejected)
     created_at   TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 

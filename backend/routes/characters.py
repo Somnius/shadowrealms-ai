@@ -17,6 +17,7 @@ from services.rules_edition import V5, edition_of
 from services.character_sheet_v5 import sanity_check_v5, stamp_v5_meta
 from services.creation_settings import creation_problems
 from services.language import normalize_language
+from services.saved_points import clamp_saved
 from services.log_safety import safe_log_value
 from services.playing_character import can_view_character_sheet, is_campaign_storyteller_or_staff
 from services.v5_catalog import load_catalog
@@ -451,6 +452,9 @@ def create_character():
                 wm_dict['creation'] = {
                     'validated': False, 'at': stamp, 'rules': CREATION_RULES_VERSION, 'reason': status,
                 }
+            # Saved points come from the server's own count of what the sheet leaves unspent
+            # (the forge's number only when it is lower), never from the client alone (part D).
+            wm_dict['saved'] = clamp_saved(wm_dict, data.get('skills'), campaign.get('creation_settings'))
             wod_meta = json.dumps(wm_dict)
 
         portrait_url = data.get('portrait_url')

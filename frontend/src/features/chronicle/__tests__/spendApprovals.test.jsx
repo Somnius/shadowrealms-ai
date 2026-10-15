@@ -80,7 +80,33 @@ test('a rule-following spend is approved in one click; a house rule asks first',
   await user.type(within(item('Volkan')).getByLabelText('Why allow this house rule? (optional)'), 'War veteran');
   await user.click(within(item('Volkan')).getByRole('button', { name: 'Approve' }));
   await waitFor(() =>
-    expect(api).toHaveBeenCalledWith('/campaigns/10/spend-requests/6', { method: 'PATCH', body: { action: 'approve', reason: 'War veteran' } })
+    expect(api).toHaveBeenCalledWith('/campaigns/10/spend-requests/6', {
+      method: 'PATCH',
+      body: { action: 'approve', reason: 'War veteran', confirm_house_rule: true },
+    })
+  );
+});
+
+test('a spend that broke the rules since it was asked opens the confirm form with the new problems', async () => {
+  const user = setupUser();
+  const fresh = { ok: false, house_rule: true, problems: [{ code: 'saved_short', params: { need: 1, have: 0 } }] };
+  api.mockImplementation(async (path, opts) => {
+    if (opts && opts.method === 'PATCH') {
+      if (opts.body.confirm_house_rule) return { ok: true, status: 200, data: { request: {} } };
+      return { ok: false, status: 409, data: { error_code: 'now_house_rule', rule_check: fresh } };
+    }
+    return { ok: true, status: 200, data: { requests: rows.filter((r) => r.status === 'pending'), st_mode: 'human' } };
+  });
+  renderPanel();
+  await screen.findByText('Volkan');
+  await user.click(within(item('Eleni')).getByRole('button', { name: 'Approve' }));
+  const eleni = item('Eleni');
+  expect(await within(eleni).findByText('Needs 1 saved Advantage dots; 0 are saved.')).toBeInTheDocument();
+  expect(within(eleni).getByText('House rule')).toBeInTheDocument();
+  expect(toast).toHaveBeenCalledWith({ tone: 'warn', title: 'This spend breaks the rules now: check the problems and confirm.' });
+  await user.click(within(eleni).getByRole('button', { name: 'Approve' }));
+  await waitFor(() =>
+    expect(api).toHaveBeenCalledWith('/campaigns/10/spend-requests/5', { method: 'PATCH', body: { action: 'approve', confirm_house_rule: true } })
   );
 });
 
@@ -113,7 +139,10 @@ test('the creation rules set who approves and how much may be saved', async () =
     </DesignProvider>
   );
   expect(screen.getByText(/You play a character in this chronicle yourself/)).toBeInTheDocument();
-  await user.selectOptions(screen.getByLabelText('Who approves spending saved points'), 'ai');
+  const mode = screen.getByLabelText('Who approves spending saved points');
+  expect(mode).toHaveAccessibleDescription(/Every spend waits for you under Approvals\..*You play a character/);
+  await user.selectOptions(mode, 'ai');
+  expect(mode).toHaveAccessibleDescription(/not the language model/);
   expect(screen.queryByText(/You play a character in this chronicle yourself/)).toBeNull();
   expect(screen.getByText(/not the language model/)).toBeInTheDocument();
   const cap = screen.getByLabelText('Advantage dots a player may leave unspent and save for later (0–20)');

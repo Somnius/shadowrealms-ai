@@ -8,11 +8,13 @@ whose creation_settings.st_mode is 'ai' a spend that passes the rule check
   POST  /api/characters/<id>/spend-requests            owner (a locked sheet is fine)
   GET   /api/characters/<id>/spend-requests            owner, the chronicle's Storyteller, staff
   GET   /api/campaigns/<cid>/spend-requests?status=    the chronicle's Storyteller, staff
-  PATCH /api/campaigns/<cid>/spend-requests/<rid>      {action: approve|reject|reverse, reason}
+  PATCH /api/campaigns/<cid>/spend-requests/<rid>      {action: approve|reject|reverse, reason,
+                                                        confirm_house_rule}
 
 Applying and reversing lock the character row (SELECT ... FOR UPDATE, as routes/dice.py does)
 and take the snapshots in the same transaction; the status change is guarded in its WHERE, so a
-retried approve can't apply twice.
+retried approve can't apply twice. Only the columns a spend touches are written back, and a sheet
+column that doesn't hold a JSON object is refused (500) instead of being overwritten.
 """
 
 import json
@@ -29,11 +31,13 @@ from database import (
     get_db,
 )
 from services.creation_settings import normalize_creation_settings
+from services.log_safety import safe_log_value
 from services.playing_character import can_view_character_sheet, is_campaign_storyteller_or_staff
 from services.request_validation import RequestValidationError
 from services.rules_edition import V5, edition_of
 from services.saved_points import (
     STATUSES,
+    TOUCHED,
     SheetChanged,
     apply_spend,
     parse_spend,
@@ -76,12 +80,26 @@ def _json(raw, default):
     return v if isinstance(v, type(default)) else default
 
 
+class SheetDataError(Exception):
+    """A sheet column that isn't empty but doesn't hold a JSON object."""
+
+
 def _state(ch):
-    return {
-        "wod_meta": _json(ch.get("wod_meta"), {}),
-        "skills": _json(ch.get("skills"), {}),
-        "merits_flaws": _json(ch.get("merits_flaws"), {}),
-    }
+    """The three sheet columns as dicts. Empty is {}; anything else that isn't an object raises."""
+    out = {}
+    for col in ("wod_meta", "skills", "merits_flaws"):
+        raw = ch.get(col)
+        if raw is None or (isinstance(raw, str) and not raw.strip()):
+            out[col] = {}
+            continue
+        try:
+            value = raw if isinstance(raw, dict) else json.loads(raw)
+        except (TypeError, ValueError):
+            value = None
+        if not isinstance(value, dict):
+            raise SheetDataError(col)
+        out[col] = value
+    return out
 
 
 def _request_dict(r):
@@ -101,6 +119,7 @@ def _request_dict(r):
         "resolved_by_name": r.get("resolved_by_name"),
         "resolved_at": r.get("resolved_at"),
         "reason": r.get("reason"),
+        "reverse_reason": r.get("reverse_reason"),
         "changes": _json(r.get("after_state"), {}).get("changes") or [],
         "reversed_by": r.get("reversed_by"),
         "reversed_by_name": r.get("reversed_by_name"),
@@ -133,6 +152,12 @@ def _spend_catalog():
     if not path:
         return {}
     out = {}
+    try:
+        clans = (load_catalog() or {}).get("clans")
+        if isinstance(clans, list):
+            out["clans"] = clans  # clan names and aliases for clans_only / cannot_buy_for
+    except (OSError, ValueError) as e:
+        logger.error("spend check: cannot read clans: %s", safe_log_value(e))
     for key in ("advantages", "loresheets"):
         f = os.path.join(path, f"{key}.json")
         if not os.path.isfile(f):
@@ -145,22 +170,28 @@ def _spend_catalog():
                 loaded = doc.get("entries") if isinstance(doc, dict) else doc
             out[key] = [e for e in loaded or [] if isinstance(e, dict)]
         except (OSError, ValueError) as e:
-            logger.error("spend check: cannot read %s: %s", key, e)
+            logger.error("spend check: cannot read %s: %s", key, safe_log_value(e))
             out[key] = []
     return out
 
 
-def _write_sheet(cursor, character_id, state):
+def _write_sheet(cursor, character_id, state, kind):
+    """Write back only the columns a spend of this kind touches."""
+    cols = sorted({col for col, _ in TOUCHED[kind]})
     cursor.execute(
-        "UPDATE characters SET wod_meta = %s, skills = %s, merits_flaws = %s, "
-        "updated_at = CURRENT_TIMESTAMP WHERE id = %s",
-        (
-            json.dumps(state["wod_meta"]),
-            json.dumps(state["skills"]),
-            json.dumps(state["merits_flaws"]),
-            character_id,
-        ),
+        "UPDATE characters SET " + ", ".join(f"{c} = %s" for c in cols)
+        + ", updated_at = CURRENT_TIMESTAMP WHERE id = %s",
+        tuple(json.dumps(state[c]) for c in cols) + (character_id,),
     )
+
+
+def _damaged(e, character_id):
+    logger.error("spend: character %s has a damaged %s column", safe_log_value(character_id), safe_log_value(e))
+    return _error("This character's sheet data is damaged; ask staff to fix it.", "sheet_data_damaged", 500)
+
+
+def _no_chronicle():
+    return jsonify({"error": "Chronicle not found or access denied"}), 404
 
 
 def _now():
@@ -213,13 +244,17 @@ def create_spend_request(character_id):
                 409,
             )
         settings = _settings(cursor, campaign_id)
-        state = _state(ch)
+        try:
+            state = _state(ch)
+        except SheetDataError as e:
+            db.rollback()
+            return _damaged(e, character_id)
         check = validate_spend(state["wod_meta"], payload, _spend_catalog(), settings, state["skills"])
         now = _now()
         applied = settings["st_mode"] == "ai" and check["ok"]
         if applied:
             new_state, before, after = apply_spend(state, payload)
-            _write_sheet(cursor, character_id, new_state)
+            _write_sheet(cursor, character_id, new_state, payload["kind"])
             cursor.execute(
                 """
                 INSERT INTO character_spend_requests (
@@ -250,7 +285,7 @@ def create_spend_request(character_id):
         return jsonify({"request": _fetch_request(cursor, rid), "applied": applied}), 201
     except Exception as e:
         db.rollback()
-        logger.error("create_spend_request: %s", e)
+        logger.error("create_spend_request: %s", safe_log_value(e))
         return jsonify({"error": "Could not submit the spend"}), 500
     finally:
         db.close()
@@ -288,7 +323,7 @@ def list_character_spend_requests(character_id):
             "can_review": campaign_id is not None and is_campaign_storyteller_or_staff(cursor, user_id, campaign_id),
         }), 200
     except Exception as e:
-        logger.error("list_character_spend_requests: %s", e)
+        logger.error("list_character_spend_requests: %s", safe_log_value(e))
         return jsonify({"error": "Could not list the spends"}), 500
     finally:
         db.close()
@@ -308,10 +343,8 @@ def list_campaign_spend_requests(campaign_id):
         _ensure(cursor)
         db.commit()
         cursor.execute("SELECT id FROM campaigns WHERE id = %s", (campaign_id,))
-        if not cursor.fetchone():
-            return jsonify({"error": "Chronicle not found"}), 404
-        if not is_campaign_storyteller_or_staff(cursor, user_id, campaign_id):
-            return jsonify({"error": "Only the Storyteller or staff can review spends."}), 403
+        if not cursor.fetchone() or not is_campaign_storyteller_or_staff(cursor, user_id, campaign_id):
+            return _no_chronicle()
         where, params = " WHERE r.campaign_id = %s", [campaign_id]
         if status != "all":
             where += " AND r.status = %s"
@@ -324,7 +357,7 @@ def list_campaign_spend_requests(campaign_id):
         rows = [_request_dict(r) for r in cursor.fetchall()]
         return jsonify({"requests": rows, "st_mode": _settings(cursor, campaign_id)["st_mode"]}), 200
     except Exception as e:
-        logger.error("list_campaign_spend_requests: %s", e)
+        logger.error("list_campaign_spend_requests: %s", safe_log_value(e))
         return jsonify({"error": "Could not list the spends"}), 500
     finally:
         db.close()
@@ -333,7 +366,11 @@ def list_campaign_spend_requests(campaign_id):
 @spend_requests_bp.route("/campaigns/<int:campaign_id>/spend-requests/<int:request_id>", methods=["PATCH"])
 @jwt_required()
 def resolve_spend_request(campaign_id, request_id):
-    """Approve (applies it, even a house rule), reject, or reverse an approved spend."""
+    """
+    Approve (applies it), reject, or reverse an approved spend. The rule check runs again on
+    today's sheet; when it fails, approve needs confirm_house_rule: true (else 409 now_house_rule
+    with the new check), so a spend that turned into a house rule is never approved unseen.
+    """
     user_id = int(get_jwt_identity())
     data = request.get_json(silent=True)
     data = data if isinstance(data, dict) else {}
@@ -350,11 +387,9 @@ def resolve_spend_request(campaign_id, request_id):
         _ensure(cursor)
         db.commit()
         cursor.execute("SELECT id FROM campaigns WHERE id = %s", (campaign_id,))
-        if not cursor.fetchone():
-            return jsonify({"error": "Chronicle not found"}), 404
-        if not is_campaign_storyteller_or_staff(cursor, user_id, campaign_id):
+        if not cursor.fetchone() or not is_campaign_storyteller_or_staff(cursor, user_id, campaign_id):
             db.rollback()
-            return jsonify({"error": "Only the Storyteller or staff can approve spends."}), 403
+            return _no_chronicle()
         cursor.execute(
             "SELECT * FROM character_spend_requests WHERE id = %s AND campaign_id = %s FOR UPDATE",
             (request_id, campaign_id),
@@ -386,14 +421,31 @@ def resolve_spend_request(campaign_id, request_id):
             if not ch:
                 db.rollback()
                 return jsonify({"error": "Character not found"}), 404
-            state = _state(ch)
+            try:
+                state = _state(ch)
+            except SheetDataError as e:
+                db.rollback()
+                return _damaged(e, req["character_id"])
             if action == "approve":
                 # The check again on today's sheet (another spend may have used the balance).
                 check = validate_spend(
                     state["wod_meta"], payload, _spend_catalog(), _settings(cursor, campaign_id), state["skills"]
                 )
+                if not check["ok"] and data.get("confirm_house_rule") is not True:
+                    cursor.execute(
+                        "UPDATE character_spend_requests SET rule_check = %s WHERE id = %s AND status = 'pending'",
+                        (json.dumps(check), request_id),
+                    )
+                    db.commit()
+                    return jsonify({
+                        "error": "This spend breaks the rules as the sheet is now (a house rule). "
+                                 "Approve it again to confirm.",
+                        "error_code": "now_house_rule",
+                        "rule_check": check,
+                        "request": _fetch_request(cursor, request_id),
+                    }), 409
                 new_state, before, after = apply_spend(state, payload)
-                _write_sheet(cursor, req["character_id"], new_state)
+                _write_sheet(cursor, req["character_id"], new_state, req["kind"])
                 cursor.execute(
                     "UPDATE character_spend_requests SET status = 'approved', approver = 'user', "
                     "resolved_by = %s, resolved_at = %s, reason = %s, rule_check = %s, "
@@ -413,21 +465,21 @@ def resolve_spend_request(campaign_id, request_id):
                         "sheet_changed",
                         409,
                     )
-                _write_sheet(cursor, req["character_id"], new_state)
+                _write_sheet(cursor, req["character_id"], new_state, req["kind"])
                 cursor.execute(
                     "UPDATE character_spend_requests SET status = 'reversed', reversed_by = %s, "
-                    "reversed_at = %s, reason = COALESCE(%s, reason) WHERE id = %s AND status = 'approved'",
+                    "reversed_at = %s, reverse_reason = %s WHERE id = %s AND status = 'approved'",
                     (user_id, now, reason, request_id),
                 )
         if cursor.rowcount != 1:
             db.rollback()
             return _error("This spend was already decided.", "not_pending", 409)
         db.commit()
-        logger.info("spend request %s: %s by user %s", request_id, action, user_id)
+        logger.info("spend request %s: %s by user %s", request_id, safe_log_value(action), user_id)
         return jsonify({"request": _fetch_request(cursor, request_id)}), 200
     except Exception as e:
         db.rollback()
-        logger.error("resolve_spend_request: %s", e)
+        logger.error("resolve_spend_request: %s", safe_log_value(e))
         return jsonify({"error": "Could not update the spend"}), 500
     finally:
         db.close()

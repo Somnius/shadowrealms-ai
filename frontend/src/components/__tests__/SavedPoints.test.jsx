@@ -39,6 +39,11 @@ const requests = [
     id: 1, kind: 'saved_specialty', status: 'approved', approver: 'ai', payload: { skill: 'persuasion', name: 'Bargaining' },
     changes: [{ skill: 'persuasion', name: 'Bargaining' }], rule_check: { ok: true, house_rule: false, problems: [] },
   },
+  {
+    id: 0, kind: 'saved_advantage', status: 'reversed', approver: 'user', resolved_by_name: 'st', reason: 'Earned it.',
+    reverse_reason: 'Too strong for now.', payload: { items: [{ name: 'Fame', dots: 1 }] }, changes: [{ name: 'Fame', from: 0, to: 1 }],
+    rule_check: { ok: true, house_rule: false, problems: [] },
+  },
 ];
 
 let info;
@@ -78,6 +83,9 @@ test('the sheet shows the saved points and the spends', async () => {
   expect(screen.getByText('House rule')).toBeInTheDocument();
   expect(screen.getByText('Persuasion: Bargaining')).toBeInTheDocument();
   expect(screen.getByText('by the AI Storyteller (rule check)')).toBeInTheDocument();
+  expect(screen.getByText('Fame 0 → 1')).toBeInTheDocument();
+  expect(screen.getByText('Storyteller: Earned it.')).toBeInTheDocument();
+  expect(screen.getByText('Reversed by the Storyteller: Too strong for now.')).toBeInTheDocument();
 });
 
 test('the owner spends with a live rule check; an AI-approved spend reloads the sheet', async () => {

@@ -26,7 +26,7 @@ CREATE TABLE character_spend_requests (
     kind TEXT NOT NULL, payload TEXT NOT NULL, rule_check TEXT NOT NULL,
     status TEXT NOT NULL DEFAULT 'pending', approver TEXT, resolved_by INTEGER, resolved_at TIMESTAMP,
     reason TEXT, before_state TEXT, after_state TEXT, reversed_by INTEGER, reversed_at TIMESTAMP,
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+    reverse_reason TEXT, created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 INSERT INTO users (id, username, role) VALUES
     (1, 'admin', 'admin'), (2, 'st', 'player'), (3, 'eleni', 'player'), (4, 'other', 'player'),
@@ -152,10 +152,12 @@ def spend(api, cid, body=RESOURCES, uid=3):
     return api.call("POST", f"/api/characters/{cid}/spend-requests", uid, body)
 
 
-def patch(api, campaign, rid, uid, action, reason=None):
+def patch(api, campaign, rid, uid, action, reason=None, confirm=False):
     body = {"action": action}
     if reason is not None:
         body["reason"] = reason
+    if confirm:
+        body["confirm_house_rule"] = True
     return api.call("PATCH", f"/api/campaigns/{campaign}/spend-requests/{rid}", uid, body)
 
 
@@ -218,10 +220,11 @@ def test_human_mode_waits_for_the_storyteller(api):
     assert req["status"] == "pending" and r.get_json()["applied"] is False
     assert req["rule_check"]["ok"] is True
     assert api.sheet(100)["wod_meta"] == META
-    # the player, another player and another chronicle's Storyteller can't decide
-    assert patch(api, 10, req["id"], 3, "approve").status_code == 403
-    assert patch(api, 10, req["id"], 4, "approve").status_code == 403
-    assert patch(api, 10, req["id"], 5, "approve").status_code == 403
+    # the player, another player and another chronicle's Storyteller can't decide (and get the
+    # same 404 as for a chronicle that doesn't exist)
+    for uid in (3, 4, 5):
+        r = patch(api, 10, req["id"], uid, "approve")
+        assert r.status_code == 404 and r.get_json()["error"] == "Chronicle not found or access denied"
     assert patch(api, 12, req["id"], 5, "approve").status_code == 404
     assert api.sheet(100)["wod_meta"] == META
     ok = patch(api, 10, req["id"], 2, "approve", "Fair, you earned it.")
@@ -246,7 +249,11 @@ def test_approve_twice_applies_once(api):
 def test_the_storyteller_may_approve_a_house_rule(api):
     body = {"kind": "saved_advantage", "items": [{"name": "Allies", "dots": 4, "kind": "background"}]}
     rid = spend(api, 100, body).get_json()["request"]["id"]
+    # a house rule needs the Storyteller to confirm it
     r = patch(api, 10, rid, 2, "approve", "House rule: the war gave her friends.")
+    assert r.status_code == 409 and r.get_json()["error_code"] == "now_house_rule"
+    assert api.sheet(100)["wod_meta"] == META
+    r = patch(api, 10, rid, 2, "approve", "House rule: the war gave her friends.", confirm=True)
     assert r.status_code == 200
     assert r.get_json()["request"]["rule_check"]["house_rule"] is True
     s = api.sheet(100)
@@ -272,11 +279,12 @@ def test_reverse_restores_the_touched_keys_only(api):
     s["wod_meta"]["hunger"] = 3  # a Rouse check after the spend
     api.sql("UPDATE characters SET wod_meta = ? WHERE id = 101", (json.dumps(s["wod_meta"]),))
     # the player can't reverse; the human creator of the AI-run chronicle and staff can
-    assert patch(api, 11, rid, 3, "reverse").status_code == 403
+    assert patch(api, 11, rid, 3, "reverse").status_code == 404
     r = patch(api, 11, rid, 2, "reverse", "Too strong for this story.")
     assert r.status_code == 200, r.get_json()
     req = r.get_json()["request"]
     assert req["status"] == "reversed" and req["reversed_by"] == 2 and req["reversed_by_name"] == "st"
+    assert req["reverse_reason"] == "Too strong for this story." and req["reason"] is None
     back = api.sheet(101)
     assert back["wod_meta"]["advantages"] == META["advantages"]
     assert back["wod_meta"]["saved"] == META["saved"]
@@ -324,8 +332,9 @@ def test_chronicle_list_for_its_storyteller_and_staff(api):
     pending = api.call("GET", "/api/campaigns/10/spend-requests?status=pending", 1).get_json()["requests"]
     assert [x["kind"] for x in pending] == ["saved_advantage"]
     assert api.call("GET", "/api/campaigns/10/spend-requests?status=odd", 2).status_code == 400
-    assert api.call("GET", "/api/campaigns/10/spend-requests", 3).status_code == 403
-    assert api.call("GET", "/api/campaigns/10/spend-requests", 5).status_code == 403
+    for uid in (3, 5):
+        r = api.call("GET", "/api/campaigns/10/spend-requests", uid)
+        assert r.status_code == 404 and r.get_json()["error"] == "Chronicle not found or access denied"
     assert api.call("GET", "/api/campaigns/99/spend-requests", 1).status_code == 404
 
 
@@ -355,3 +364,45 @@ def test_patch_checks(api):
     assert api.call("PATCH", f"/api/campaigns/10/spend-requests/{rid}", 2, {"action": "reject", "reason": "x" * 501}).status_code == 400
     assert patch(api, 10, 999, 2, "approve").status_code == 404
     assert patch(api, 99, rid, 1, "approve").status_code == 404
+
+
+def test_approve_runs_the_check_again_on_todays_sheet(api):
+    a = spend(api, 100, {"kind": "saved_advantage", "items": [{"name": "Contacts", "dots": 2}]}).get_json()["request"]
+    b = spend(api, 100, {"kind": "saved_advantage", "items": [{"name": "Haven", "dots": 2}]}).get_json()["request"]
+    assert a["rule_check"]["ok"] and b["rule_check"]["ok"]
+    assert patch(api, 10, a["id"], 2, "approve").status_code == 200
+    # the first one used the 2 saved dots: the second is a house rule now
+    r = patch(api, 10, b["id"], 2, "approve")
+    assert r.status_code == 409 and r.get_json()["error_code"] == "now_house_rule"
+    assert r.get_json()["rule_check"]["problems"] == [{"code": "saved_short", "params": {"need": 2, "have": 0}}]
+    assert r.get_json()["request"]["rule_check"]["house_rule"] is True  # stored for the list too
+    assert api.sheet(100)["wod_meta"]["saved"]["advantage_dots"] == 0
+    assert not any(row["name"] == "Haven" for row in api.sheet(100)["wod_meta"]["advantages"])
+    ok = patch(api, 10, b["id"], 2, "approve", "Fine, one more.", confirm=True)
+    assert ok.status_code == 200
+    assert {"name": "Haven", "dots": 2, "kind": "merit", "saved_dots": 2} in api.sheet(100)["wod_meta"]["advantages"]
+
+
+def test_reverse_keeps_the_approval_reason_apart(api):
+    rid = spend(api, 100).get_json()["request"]["id"]
+    patch(api, 10, rid, 2, "approve", "Earned it.")
+    req = patch(api, 10, rid, 2, "reverse").get_json()["request"]
+    assert req["status"] == "reversed" and req["reason"] == "Earned it." and req["reverse_reason"] is None
+
+
+def test_a_damaged_sheet_column_is_refused_not_overwritten(api):
+    api.sql("UPDATE characters SET merits_flaws = 'not json' WHERE id = 101")
+    r = spend(api, 101)
+    assert r.status_code == 500 and r.get_json()["error_code"] == "sheet_data_damaged"
+    assert api.sql("SELECT merits_flaws FROM characters WHERE id = 101") == [("not json",)]
+    assert api.sql("SELECT COUNT(*) FROM character_spend_requests") == [(0,)]
+    api.sql("UPDATE characters SET merits_flaws = '[1, 2]' WHERE id = 101")
+    assert spend(api, 101).status_code == 500
+
+
+def test_only_the_touched_columns_are_written(api):
+    odd = '{"social":{"persuasion":3},   "mental": {"occult": 1}, "specialties": []}'
+    api.sql("UPDATE characters SET skills = ? WHERE id = 101", (odd,))
+    assert spend(api, 101).get_json()["applied"] is True
+    # an Advantage spend writes wod_meta and merits_flaws only: skills keep their exact text
+    assert api.sql("SELECT skills FROM characters WHERE id = 101") == [(odd,)]

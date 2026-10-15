@@ -56,3 +56,4 @@
 .sr-app .sr-approvals__item { display: flex; flex-direction: column; gap: var(--sr-space-2); padding: var(--sr-space-3); border: 1px solid var(--sr-border); border-radius: var(--sr-radius-md); background: var(--sr-surface-sunken); }
 .sr-app .sr-approvals__item p { margin: 0; }
 .sr-app .sr-approvals__problems { margin: 0; padding-left: 1.2rem; color: var(--sr-warn-400); }
+.sr-app .sr-approvals__problems-intro { color: var(--sr-warn-400); }
