@@ -17,6 +17,7 @@ from . import schema_lite
 
 CATALOGS = ("books", "clans", "disciplines", "rituals", "ceremonies", "formulae", "predator_types")
 SHINGLE = 8
+MAX_DESC = 240
 _ID_PREFIX = {"clans": "clan:", "disciplines": "discipline:", "rituals": "ritual:",
               "ceremonies": "ceremony:", "formulae": "formula:", "predator_types": "predator:"}
 # advantage ids are referenced by predator grants before Part C builds advantages.json
@@ -140,9 +141,39 @@ def reference_problems(data: dict) -> list[str]:
     return out
 
 
+def description_problems(catalog_dir: Path, data: dict) -> list[str]:
+    """Every entry, power, clan Bane and clan Compulsion carries desc.en and desc.el (non-empty,
+    <= 240 chars), and every key in descriptions/*.json names something in the catalog."""
+    from . import merge
+
+    out = []
+    targets = dict(merge.desc_targets(data))
+    for key, holder in targets.items():
+        d = holder.get("desc")
+        if not isinstance(d, dict):
+            out.append(f"- {key}: no description (desc.en + desc.el)")
+            continue
+        for lang in ("en", "el"):
+            text = d.get(lang)
+            if not isinstance(text, str) or not text.strip():
+                out.append(f"- {key}: desc.{lang} missing")
+            elif len(text) > MAX_DESC:
+                out.append(f"- {key}: desc.{lang} is {len(text)} chars (max {MAX_DESC})")
+    ddir = catalog_dir / "descriptions"
+    for f in sorted(ddir.glob("*.json")) if ddir.exists() else []:
+        if f.stem not in merge.DESC_CATALOGS:
+            out.append(f"- descriptions/{f.name}: not a catalog name ({', '.join(merge.DESC_CATALOGS)})")
+            continue
+        for key in json.loads(f.read_text(encoding="utf-8")):
+            if key not in targets:
+                out.append(f"- descriptions/{f.name}: {key} is not in the catalog")
+    return out
+
+
 def structural(catalog_dir: Path) -> list[str]:
     data = load_catalog(catalog_dir)
-    return schema_problems(catalog_dir, data) + id_problems(data) + reference_problems(data)
+    return (schema_problems(catalog_dir, data) + id_problems(data) + reference_problems(data)
+            + description_problems(catalog_dir, data))
 
 
 # --------------------------------------------------------------------------- overlap gate
