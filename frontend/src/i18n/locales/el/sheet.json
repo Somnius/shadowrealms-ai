@@ -25,7 +25,9 @@
     "xpDots": "+{{n}} XP",
     "xpSummary": "{{spent}} από {{total}} ξοδεμένα στη δημιουργία · {{left}} αξόδευτα",
     "xpSpecialty": "{{name}} – XP",
-    "ceremony": "Τελετή"
+    "ceremony": "Τελετή",
+    "fromClan": "(από το clan)",
+    "customRow": "(εκτός καταλόγου)"
   },
   "pdf": {
     "export": "Εξαγωγή PDF",

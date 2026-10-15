@@ -3,7 +3,7 @@ import DotTrack from './characterCreation/DotTrack';
 import ResponsiveSheetBlock from './characterCreation/ResponsiveSheetBlock';
 import { V5_ATTRIBUTES, V5_SKILLS, V5_SKILL_LABELS } from '../characterSheet/v5/constants';
 import { getLanguage, t } from '../i18n';
-import { bookRef, descIn, getV5Rules, powersOf } from '../characterSheet/v5/rulesData';
+import { bookRef, descIn, findAdvantage, findLoresheet, getV5Rules, powersOf } from '../characterSheet/v5/rulesData';
 import { useV5Catalog } from '../rules/v5Catalog';
 import { Term } from '../i18n/glossary';
 
@@ -122,6 +122,50 @@ const findPower = (discipline, name) =>
   powersOf(discipline).find((p) => p.name === name || (p.aliases || []).includes(name)) || null;
 const findRitual = (name) => getV5Rules().rituals.find((r) => r.name === name) || null;
 
+/** Which clan-only entries a name may mean on this sheet ("Clan Curse" is a Caitiff and a thin-blood Flaw). */
+const specialOf = (clan) => (clan === 'Caitiff' ? 'caitiff' : clan === 'Thin-blood' ? 'thin_blood' : null);
+
+/** One Advantage, Flaw or loresheet row: the name opens its description; a loresheet lists its levels. */
+function AdvantageRow({ a, special }) {
+  const lore = a.kind === 'loresheet' ? findLoresheet(a) : null;
+  const entry = lore || (a.kind === 'loresheet' || a.custom ? null : findAdvantage(a, a.flaw ? 'flaw' : a.kind, special));
+  const levels = lore && Array.isArray(a.levels) ? lore.levels.filter((l) => a.levels.map(n).includes(l.dots)) : [];
+  const tag = a.thinBlood
+    ? `thin-blood ${a.flaw ? 'Flaw' : 'Merit'}`
+    : a.flaw
+      ? 'Flaw'
+      : a.kind === 'predator'
+        ? ''
+        : a.kind || '';
+  return (
+    <div style={{ marginBottom: '6px', color: a.flaw ? 'var(--sr-blood-300)' : 'var(--sr-bone-100)' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+        <span style={{ flex: 1 }}>
+          <CatalogItem name={String(a.name || '')} entry={entry} />
+          <span style={{ color: 'var(--sr-bone-300)', fontSize: '12px' }}>
+            {' '}
+            {tag}
+            {a.kind === 'predator' ? ` ${t('sheet:v5.fromPredator', '(predator type)')}` : ''}
+            {a.source === 'clan' ? ` ${t('sheet:v5.fromClan', '(clan)')}` : ''}
+            {a.custom ? ` ${t('sheet:v5.customRow', '(custom)')}` : ''}
+          </span>
+        </span>
+        {a.thinBlood ? null : <StaticDots value={a.dots} accent={a.flaw ? 'var(--sr-danger-400)' : ACCENT} />}
+      </div>
+      {levels.length ? (
+        <div style={{ color: 'var(--sr-bone-300)', fontSize: '12px', margin: '2px 0 0 12px' }}>
+          {levels.map((l, j) => (
+            <React.Fragment key={l.dots}>
+              {j ? ' · ' : ''}
+              <CatalogItem name={`${'●'.repeat(l.dots)} ${l.name}`} entry={l.desc ? { desc: l.desc } : null} />
+            </React.Fragment>
+          ))}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 /**
  * Read-only V5 sheet body (rendered inside CharacterSheetModal).
  */
@@ -133,8 +177,14 @@ export default function V5CharacterSheetView({ character }) {
   const specialties = Array.isArray(sk.specialties) ? sk.specialties : [];
   const disciplines = Array.isArray(wm.disciplines) ? wm.disciplines : [];
   const rituals = Array.isArray(wm.rituals) ? wm.rituals.filter((r) => r && r.name) : [];
-  const advantages = Array.isArray(wm.advantages) ? wm.advantages : [];
-  const flaws = Array.isArray(wm.flaws) ? wm.flaws : [];
+  const advantages = Array.isArray(wm.advantages) ? wm.advantages.filter((a) => a && typeof a === 'object') : [];
+  const flaws = Array.isArray(wm.flaws) ? wm.flaws.filter((a) => a && typeof a === 'object') : [];
+  const thinRows = (list, flaw) =>
+    (Array.isArray(list) ? list : [])
+      .map((x) => (typeof x === 'string' ? x : x?.name))
+      .filter((x) => x && String(x).trim())
+      .map((name) => ({ name, flaw, thinBlood: true }));
+  const thinBlood = [...thinRows(wm.thin_blood_merits, false), ...thinRows(wm.thin_blood_flaws, true)];
   const touchstones = Array.isArray(wm.touchstones) ? wm.touchstones : [];
   // Dots bought with starting experience, from wod_meta.experience.log: { 'skill:brawl': 1 }
   const experience = obj(wm.experience);
@@ -289,20 +339,10 @@ export default function V5CharacterSheetView({ character }) {
         </ResponsiveSheetBlock>
       ) : null}
 
-      {advantages.length || flaws.length ? (
+      {advantages.length || flaws.length || thinBlood.length ? (
         <ResponsiveSheetBlock sectionId="v5-view-advantages" title="Advantages & Flaws" accent={ACCENT}>
-          {[...advantages, ...flaws.map((f) => ({ ...f, flaw: true }))].map((a, i) => (
-            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '6px', color: a.flaw ? 'var(--sr-blood-300)' : 'var(--sr-bone-100)' }}>
-              <span style={{ flex: 1 }}>
-                {a.name}
-                <span style={{ color: 'var(--sr-bone-300)', fontSize: '12px' }}>
-                  {' '}
-                  {a.flaw ? 'Flaw' : a.kind || ''}
-                  {a.kind === 'predator' && a.flaw ? ` ${t('sheet:v5.fromPredator', '(predator type)')}` : ''}
-                </span>
-              </span>
-              <StaticDots value={a.dots} accent={a.flaw ? 'var(--sr-danger-400)' : ACCENT} />
-            </div>
+          {[...advantages, ...flaws.map((f) => ({ ...f, flaw: true })), ...thinBlood].map((a, i) => (
+            <AdvantageRow key={i} a={a} special={a.thinBlood ? 'thin_blood' : specialOf(wm.clan)} />
           ))}
         </ResponsiveSheetBlock>
       ) : null}

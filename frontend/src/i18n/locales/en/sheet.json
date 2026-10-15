@@ -25,7 +25,9 @@
     "xpDots": "+{{n}} XP",
     "xpSummary": "{{spent}} of {{total}} spent at creation · {{left}} unspent",
     "xpSpecialty": "{{name}} – XP",
-    "ceremony": "Ceremony"
+    "ceremony": "Ceremony",
+    "fromClan": "(clan)",
+    "customRow": "(custom)"
   },
   "pdf": {
     "export": "Export PDF",
