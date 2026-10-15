@@ -6,7 +6,7 @@
 
 ### Self-hosted AI Storyteller for World of Darkness chronicles
 
-[![Version](https://img.shields.io/badge/version-0.10.0-blue.svg)](docs/CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-0.11.0-blue.svg)](docs/CHANGELOG.md)
 [![CI](https://github.com/Somnius/shadowrealms-ai/actions/workflows/ci.yml/badge.svg)](https://github.com/Somnius/shadowrealms-ai/actions/workflows/ci.yml)
 [![CodeQL](https://github.com/Somnius/shadowrealms-ai/actions/workflows/codeql.yml/badge.svg)](https://github.com/Somnius/shadowrealms-ai/actions/workflows/codeql.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-yellow.svg)](LICENSE)
@@ -64,7 +64,7 @@ ShadowRealms AI is a web app for running World of Darkness chronicles with an AI
 
 ### Characters
 
-- A character forge per edition: Classic with the Revised budgets (7/5/3, 13/9/5, virtues, 15 freebies), V5 with attribute and skill spreads, Predator type, disciplines, advantages and flaws.
+- A character forge per edition: Classic with the Revised budgets (7/5/3, 13/9/5, virtues, 15 freebies), V5 in the corebook's order with all 16 clans, powers, rituals and predator types picked from a catalog built from the books (with short descriptions in English and Greek), and creation rules each Storyteller sets per chronicle.
 - Read-only sheets with trackers (Hunger, Willpower, Humanity), portraits, and one playing character per chronicle.
 - Sheets lock after creation; later changes go through downtime requests the Storyteller approves.
 
