@@ -1,8 +1,9 @@
 """
 The V5 rules catalog (docs/rules/v5/catalog/*.json, built by scripts/v5_catalog): clans,
 Disciplines and their powers, rituals, ceremonies, formulae and predator types, with book and
-page. Facts only; short descriptions in our own words come from descriptions/<catalog>.json
-({id: {en, el}}) and are laid over the entries here.
+page, plus Merits/Backgrounds/Flaws (advantages.json) and loresheets when those are installed
+(a missing file reads as an empty list). Facts only; short descriptions in our own words come
+from descriptions/<catalog>.json ({id: {en, el}}) and are laid over the entries here.
 
 Pure file reading (no Flask, no DB), cached by the files' modification times.
 """
@@ -15,7 +16,10 @@ import os
 import threading
 from typing import Any, Dict, List, Optional
 
-CATALOGS = ("books", "clans", "disciplines", "rituals", "ceremonies", "formulae", "predator_types")
+CATALOGS = (
+    "books", "clans", "disciplines", "rituals", "ceremonies", "formulae", "predator_types",
+    "advantages", "loresheets",
+)
 
 _HERE = os.path.dirname(os.path.abspath(__file__))
 _CANDIDATES = (
@@ -45,7 +49,8 @@ def _entries(doc: Any) -> List[dict]:
 
 
 def _overlay(entries: List[dict], descs: Dict[str, Any]) -> None:
-    """Put desc {en, el} on every entry (and Discipline power) that has one."""
+    """Put desc {en, el} on every entry (and Discipline power, and loresheet or Background level,
+    keyed "<id>:<dots>") that has one."""
     for e in entries:
         d = descs.get(e.get("id"))
         if isinstance(d, dict):
@@ -55,6 +60,11 @@ def _overlay(entries: List[dict], descs: Dict[str, Any]) -> None:
                 pd = descs.get(p.get("id"))
                 if isinstance(pd, dict):
                     p["desc"] = {k: v for k, v in pd.items() if isinstance(v, str)}
+        for lv in e.get("levels") or []:
+            if isinstance(lv, dict) and e.get("id"):
+                ld = descs.get(f"{e['id']}:{lv.get('dots')}")
+                if isinstance(ld, dict):
+                    lv["desc"] = {k: v for k, v in ld.items() if isinstance(v, str)}
 
 
 def _files(path: str) -> List[str]:
@@ -67,8 +77,8 @@ def _files(path: str) -> List[str]:
 
 def load_catalog() -> Optional[Dict[str, Any]]:
     """
-    {books, clans, disciplines, rituals, ceremonies, formulae, predator_types}: lists of entries,
-    descriptions laid over. None when no catalog is installed.
+    {books, clans, disciplines, rituals, ceremonies, formulae, predator_types, advantages,
+    loresheets}: lists of entries, descriptions laid over. None when no catalog is installed.
     """
     path = catalog_dir()
     if not path:

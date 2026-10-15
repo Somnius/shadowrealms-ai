@@ -1184,8 +1184,9 @@ def _render_v5(sc: SheetCanvas, ch: Dict[str, Any], chronicle: str, player: str,
 
 # ---------------------------------------------------------------------------------------------
 # V5 Reference page(s): catalog descriptions (services/v5_catalog.py) of the sheet's clan, predator
-# type, Discipline powers, rituals, ceremonies and formulae. Page text only, no fields. Names stay
-# English (as in the books); descriptions in the requester's language, English when missing.
+# type, Discipline powers, rituals, ceremonies and formulae, Merits, Backgrounds and Flaws, and
+# loresheets with the levels taken. Page text only, no fields. Names stay English (as in the
+# books); descriptions in the requester's language, English when missing.
 
 BOOK_SHORT = {"v5-corebook": "Corebook", "v5-players-guide": "Players Guide", "v5-companion": "Companion"}
 RITUAL_KINDS = (("ritual", "rituals", "Rituals"), ("ceremony", "ceremonies", "Ceremonies"),
@@ -1311,6 +1312,74 @@ def v5_reference(ch: Dict[str, Any], catalog: Optional[Dict[str, Any]], lang: st
         if found[kind]:
             out.append(("section", title))
             out += [("entry", e) for e in found[kind]]
+    return out + _reference_advantages(wm, catalog, clan, lang, books, seen)
+
+
+def _advantage_indexes(catalog: Dict[str, Any], prefer: str) -> Dict[bool, Dict[str, Dict[str, Any]]]:
+    """{is_flaw: index} of advantages.json; a name shared by several entries ("Clan Curse") finds
+    the `prefer` one ('caitiff' / 'thin_blood') first, then the plain one."""
+    entries = [a for a in _list(catalog.get("advantages")) if isinstance(a, dict)]
+
+    def rank(a: Dict[str, Any]) -> int:
+        if prefer and a.get(prefer):
+            return 0
+        return 2 if a.get("caitiff") or a.get("thin_blood") else 1
+
+    return {flaw: _index(sorted((a for a in entries if (a.get("kind") == "flaw") == flaw), key=rank))
+            for flaw in (False, True)}
+
+
+def _reference_advantages(wm: Dict[str, Any], catalog: Dict[str, Any], clan: Any, lang: str,
+                          books: Dict[str, str], seen: set) -> List[Tuple[str, Any]]:
+    """'Advantages' (Merits & Backgrounds, Flaws, thin-blood ones included) and 'Loresheets' (each
+    sheet, then the levels the sheet took, prefixed with its name)."""
+    clan = clan if isinstance(clan, dict) else {}
+    special = "caitiff" if clan.get("caitiff") else "thin_blood" if clan.get("thin_blood") else ""
+    adv_idx = _advantage_indexes(catalog, special)
+    thin_idx = _advantage_indexes(catalog, "thin_blood")
+    lore_idx = _index(catalog.get("loresheets"))
+    groups: Dict[bool, List[Dict[str, Any]]] = {False: [], True: []}
+    lore: List[Tuple[str, Any]] = []
+
+    def add(flaw: bool, e: Any, prefix: str = "") -> None:
+        if e is not None and id(e) not in seen:
+            seen.add(id(e))
+            groups[flaw].append(_ref_entry(e.get("name"), e, lang, books, prefix=prefix))
+
+    rows = [(a, False) for a in _list(wm.get("advantages"))] + [(a, True) for a in _list(wm.get("flaws"))]
+    for a, flaw in rows[:REF_ITEMS]:
+        if not isinstance(a, dict) or a.get("custom"):
+            continue
+        keys = (a.get("id"), a.get("name"))
+        is_lore = _s(a.get("kind")) == "loresheet" or _s(a.get("id")).startswith("loresheet:")
+        e = None if is_lore else _lookup(adv_idx[flaw], *keys)
+        if e is not None:
+            add(flaw, e)
+            continue
+        ls = None if flaw else _lookup(lore_idx, *keys)  # an imported sheet may not say "loresheet"
+        if ls is None or id(ls) in seen:
+            continue
+        seen.add(id(ls))
+        name = _s(ls.get("name"))
+        taken = {_n(x, 0, 10) for x in _list(a.get("levels"))}
+        lore.append(("entry", _ref_entry(name, ls, lang, books, level=sum(t for t in taken if t))))
+        for lv in _list(ls.get("levels")):
+            if isinstance(lv, dict) and _n(lv.get("dots"), 0, 10) in taken - {0}:
+                lore.append(("entry", _ref_entry(lv.get("name"), lv, lang, books, prefix=name, level=lv.get("dots"))))
+    for flaw, key in ((False, "thin_blood_merits"), (True, "thin_blood_flaws")):
+        for n in _list(wm.get(key))[:REF_ITEMS]:
+            add(flaw, _lookup(thin_idx[flaw], n.get("id") if isinstance(n, dict) else None,
+                              n.get("name") if isinstance(n, dict) else n), prefix="Thin-blood")
+
+    out: List[Tuple[str, Any]] = []
+    if groups[False] or groups[True]:
+        out.append(("section", "Advantages"))
+        for flaw, title in ((False, "Merits & Backgrounds"), (True, "Flaws")):
+            if groups[flaw]:
+                out.append(("group", title))
+                out += [("entry", e) for e in groups[flaw]]
+    if lore:
+        out += [("section", "Loresheets")] + lore
     return out
 
 

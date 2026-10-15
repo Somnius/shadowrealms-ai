@@ -636,15 +636,102 @@ def test_installed_catalog_text_has_glyphs():
             seen += 1
         assert not {c for c in e.get("name") or "" if ord(c) not in cover[CINZEL_BOLD]}, e.get("name")
 
-    for kind in ("clans", "predator_types", "rituals", "ceremonies", "formulae", "disciplines"):
+    for kind in ("clans", "predator_types", "rituals", "ceremonies", "formulae", "disciplines", "advantages",
+                 "loresheets"):
         for e in catalog[kind]:
             check(e)
-            for sub in [e.get("bane"), e.get("compulsion"), *(e.get("powers") or [])]:
+            for sub in [e.get("bane"), e.get("compulsion"), *(e.get("powers") or []), *(e.get("levels") or [])]:
                 if isinstance(sub, dict):
                     check(sub)
     for b in catalog["books"]:
         assert not {c for c in b["title"] + ", p. 0123456789()" if ord(c) not in cover[SERIF_ITALIC]}
     assert seen > 100
+
+
+# Merits, Backgrounds, Flaws and loresheets (services/v5_catalog.py shape); V5_CHAR's Haven and Enemy
+# are left out so the reference above stays as it is
+BAHARI_LEVELS = ("Dangerous Reputation", "Ritual Scarification", "Sacrifice the Children", "The Womb's Blood",
+                 "First-Cursed")
+ADV_CATALOG = {
+    **REF_CATALOG,
+    "clans": [{**c, "caitiff": c["id"] == "clan:caitiff"} for c in REF_CATALOG["clans"]]
+    + [{"id": "clan:thin-blood", "name": "Thin-blood", "thin_blood": True, "book": "v5-corebook", "page": 109,
+        "desc": _d("Weak blood.")}],
+    "advantages": [
+        {"id": "background:allies", "name": "Allies", "kind": "background", "book": "v5-corebook", "page": 184,
+         "desc": _d("Mortals who help you.", "Θνητοί που σε βοηθούν.")},
+        {"id": "merit:iron-gullet", "name": "Iron Gullet", "kind": "merit", "book": "v5-corebook", "page": 179,
+         "desc": _d("Drinks rancid blood.")},
+        {"id": "flaw:suspect", "name": "Suspect", "kind": "flaw", "book": "v5-corebook", "page": 194,
+         "desc": _d("Distrusted by the sect.")},
+        {"id": "flaw:prey-exclusion", "name": "Prey Exclusion", "kind": "flaw", "book": "v5-corebook", "page": 179,
+         "desc": _d("Won't feed on one group.")},
+        {"id": "flaw:caitiff-clan-curse", "name": "Clan Curse", "kind": "flaw", "caitiff": True,
+         "book": "v5-players-guide", "page": 105, "desc": _d("The Caitiff curse.")},
+        {"id": "flaw:thin-blood-clan-curse", "name": "Clan Curse", "kind": "flaw", "thin_blood": True,
+         "book": "v5-corebook", "page": 183, "desc": _d("The thin-blood curse.")},
+        {"id": "merit:thin-blood-day-drinker", "name": "Day Drinker", "kind": "merit", "thin_blood": True,
+         "book": "v5-corebook", "page": 182, "desc": _d("Walks in daylight.")},
+    ],
+    "loresheets": [{"id": "loresheet:the-bahari", "name": "The Bahari", "book": "v5-corebook", "page": 382,
+                    "desc": _d("Followers of Lilith.", "Οπαδοί της Lilith."),
+                    "levels": [{"dots": n, "name": nm, "desc": _d(f"Level {n} benefit.")}
+                               for n, nm in enumerate(BAHARI_LEVELS, 1)]}],
+}
+
+
+def _advantage_sheet():
+    ch = copy.deepcopy(V5_CHAR)
+    ch["wod_meta"].update(
+        clan="Thin-blood", predator_type="", disciplines=[], rituals=[],
+        advantages=[{"id": "background:allies", "name": "Allies (police)", "dots": 2, "kind": "background"},
+                    {"name": "Iron Gullet", "dots": 3, "kind": "merit"},
+                    {"name": "Allies", "dots": 1, "kind": "background"},  # listed once
+                    {"name": "Homebrew Patron", "dots": 1, "kind": "merit", "custom": True},
+                    {"id": "loresheet:the-bahari", "name": "The Bahari", "dots": 4, "kind": "loresheet",
+                     "levels": [3, 1]}],
+        flaws=[{"id": "flaw:suspect", "name": "Suspect", "dots": 1, "kind": "flaw", "source": "clan"},
+               {"name": "Prey Exclusion (locals)", "dots": 1, "kind": "predator"}],
+        thin_blood_merits=["Day Drinker"], thin_blood_flaws=["Clan Curse"])
+    return ch
+
+
+def test_reference_advantages_and_loresheets():
+    items = v5_reference(_advantage_sheet(), ADV_CATALOG, "el")
+    start = items.index(("section", "Advantages"))
+    names = [(k, o if k != "entry" else (o["prefix"], o["name"], o["level"])) for k, o in items[start:]]
+    assert names == [
+        ("section", "Advantages"), ("group", "Merits & Backgrounds"),
+        ("entry", ("", "Allies", 0)), ("entry", ("", "Iron Gullet", 0)), ("entry", ("Thin-blood", "Day Drinker", 0)),
+        ("group", "Flaws"),
+        ("entry", ("", "Suspect", 0)), ("entry", ("", "Prey Exclusion", 0)), ("entry", ("Thin-blood", "Clan Curse", 0)),
+        ("section", "Loresheets"),
+        ("entry", ("", "The Bahari", 4)), ("entry", ("The Bahari", "Dangerous Reputation", 1)),
+        ("entry", ("The Bahari", "Sacrifice the Children", 3)),
+    ]  # no Homebrew Patron (custom), no levels 2, 4, 5
+    by_name = {o["name"]: o for k, o in items if k == "entry"}
+    assert by_name["Allies"]["desc"] == "Θνητοί που σε βοηθούν." and by_name["Allies"]["ref"] == "Corebook, p. 184"
+    assert by_name["Clan Curse"]["desc"] == "The thin-blood curse."  # the thin-blood one, not the Caitiff one
+    assert by_name["The Bahari"]["ref"] == "Corebook, p. 382"
+    assert by_name["Sacrifice the Children"]["desc"] == "Level 3 benefit." and by_name["Sacrifice the Children"]["ref"] == ""
+
+
+def test_reference_advantages_of_older_and_caitiff_sheets():
+    ch = copy.deepcopy(V5_CHAR)
+    ch["wod_meta"].update(clan="Caitiff", predator_type="", disciplines=[], rituals=[],
+                          advantages=[{"name": "The Bahari", "dots": 3, "kind": "background"}],  # an imported sheet
+                          flaws=[{"name": "Clan Curse", "dots": 2, "kind": "flaw"}])
+    entries = _entries(v5_reference(ch, ADV_CATALOG))
+    assert [(e["name"], e["level"], e["desc"]) for e in entries[1:]] == [
+        ("Clan Curse", 0, "The Caitiff curse."), ("The Bahari", 0, "Followers of Lilith.")]  # no levels recorded
+
+
+def test_reference_page_lists_advantages():
+    ch = _advantage_sheet()
+    assert _pages(build_sheet_pdf(ch)) == 2
+    pdf = build_sheet_pdf(ch, catalog=ADV_CATALOG, lang="el")
+    assert _pages(pdf) == 3
+    assert set("Θνητοί που σε βοηθούν") - set(" ") <= _embedded_chars(pdf, "EBGaramond-Regular")
 
 
 def _many_powers(n_disc=6, n_powers=12):
