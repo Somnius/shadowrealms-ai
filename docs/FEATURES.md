@@ -1,7 +1,7 @@
 # Feature Documentation
 
-**Last Updated**: 2026-10-15  
-**Version**: 0.11.0
+**Last Updated**: 2026-10-16  
+**Version**: 0.12.0
 
 Feature notes for ShadowRealms AI that don't have their own document. The full list of changes per release is in [CHANGELOG.md](CHANGELOG.md); the plans are in [ROADMAP_v0.9.md](ROADMAP_v0.9.md) and [ROADMAP_v0.10.md](ROADMAP_v0.10.md).
 
@@ -9,6 +9,7 @@ Feature notes for ShadowRealms AI that don't have their own document. The full l
 
 ## Table of Contents
 
+1. [What's new in v0.12.0](#whats-new-in-v0120)
 1. [What's new in v0.11.0](#whats-new-in-v0110)
 1. [What's new in v0.9.2 to v0.10.0](#whats-new-in-v092-to-v0100)
 1. [What's new in v0.9.0](#whats-new-in-v090)
@@ -21,6 +22,13 @@ Feature notes for ShadowRealms AI that don't have their own document. The full l
 8. [Invite Code System](#invite-code-system)
 
 ---
+
+## What's new in v0.12.0
+
+- **Advantages, Flaws and loresheets from the catalog** in the V5 forge, with descriptions and book pages in English or Greek.
+- **Guided mode** for new players: a few questions suggest a clan and a predator type and fill in the sheet's Attributes and Skills. The questions are in `docs/rules/v5/guided/questions.json` (format: its README).
+- **Server-side creation check** with a Storyteller override (see [rules/V5.md](rules/V5.md) §4.1).
+- **Sheet PDF Reference page** (see "Character sheet PDF" below).
 
 ## What's new in v0.11.0
 

@@ -295,6 +295,7 @@ This philosophy ensures:
 - [Performance & Scalability](#performance--scalability)
 
 ### **📊 Current Status & Versions**
+- [Version 0.12.0 - Merits and guides](#version-0120---merits-and-guides)
 - [Version 0.11.0 - By the book](#version-0110---by-the-book)
 - [Version 0.10.0 - New foundations](#version-0100---new-foundations)
 - [Version 0.9.0 - Into the Night](#version-090---into-the-night)
@@ -1324,6 +1325,19 @@ The project now includes comprehensive `.gitignore` rules covering:
 - **Campaign Continuity**: Persistent AI memory across multiple sessions
 - **Multi-Language**: Global accessibility with translation pipelines
 - **Real-time Collaboration**: Live AI-assisted gaming experiences
+
+## Version 0.12.0 - Merits and guides
+
+### What changed from 0.11.0
+
+- **Advantages from the books**: Backgrounds, Merits, Flaws (thin-blood and Caitiff ones too) and loresheets are picked from the catalog in the V5 forge, with dot limits, requirements, clan rules and a short description in English and Greek. Each loresheet level is bought on its own.
+- **Guided mode**: scenario questions suggest a clan and a predator type and fill in Attributes and Skills; the full forge does the rest. The questions are a data file a Storyteller can rewrite.
+- **The server checks creation**: every new V5 character is recomputed on the server; a sheet that breaks the rules is refused with the reasons, unless the chronicle's Storyteller overrides it.
+- **Sheet PDF Reference page**: the clan, predator type, powers, rituals, advantages and loresheets of a V5 sheet with their descriptions and book pages.
+
+**See also:** [docs/CHANGELOG.md](docs/CHANGELOG.md) (`[0.12.0]`), [docs/rules/V5.md](docs/rules/V5.md).
+
+---
 
 ## Version 0.11.0 - By the book
 
