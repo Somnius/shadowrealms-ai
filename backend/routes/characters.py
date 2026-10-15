@@ -16,6 +16,7 @@ from datetime import datetime
 from services.rules_edition import V5, edition_of
 from services.character_sheet_v5 import sanity_check_v5, stamp_v5_meta
 from services.creation_settings import creation_problems
+from services.language import normalize_language
 from services.log_safety import safe_log_value
 from services.playing_character import can_view_character_sheet
 
@@ -635,6 +636,16 @@ def get_character(character_id):
         if 'db' in locals():
             db.close()
 
+def _requester_ui_language(cursor, user_id):
+    """users.ui_language of the requester ('en' / 'el'); 'en' when unset or unreadable."""
+    try:
+        cursor.execute("SELECT ui_language FROM users WHERE id = %s", (user_id,))
+        row = cursor.fetchone()
+        return normalize_language(row['ui_language'] if row else None) or 'en'
+    except Exception:  # noqa: BLE001 - a language hint never blocks the download
+        return 'en'
+
+
 @bp.route('/<int:character_id>/sheet.pdf', methods=['GET'])
 @jwt_required()
 def character_sheet_pdf(character_id):
@@ -664,6 +675,7 @@ def character_sheet_pdf(character_id):
         if not can_view_character_sheet(cursor, current_user_id, row):
             return jsonify({'error': 'Character not found'}), 404
         ch = _character_public_dict(row, owner_name=row['owner_name'], campaign_name=row['campaign_name'])
+        lang = _requester_ui_language(cursor, current_user_id) if ch['rules_edition'] == V5 else 'en'
     except Exception as e:
         logger.error(f"Error loading character {safe_log_value(character_id)} for PDF: {safe_log_value(e)}")
         return jsonify({'error': 'Failed to retrieve character'}), 500
@@ -673,9 +685,18 @@ def character_sheet_pdf(character_id):
 
     from services.character_sheet_pdf import build_sheet_pdf, safe_filename
 
+    catalog = None
+    if ch['rules_edition'] == V5:  # Reference page(s): catalog descriptions of what's on the sheet
+        try:
+            from services.v5_catalog import load_catalog
+
+            catalog = load_catalog()
+        except Exception as e:  # noqa: BLE001 - the sheet still prints, without the Reference page
+            logger.warning(f"V5 catalog unreadable, sheet PDF without Reference page: {safe_log_value(e)}")
+
     try:
         pdf = build_sheet_pdf(ch, paper=paper, chronicle_name=ch.get('campaign_name') or '',
-                              player_name=ch.get('owner_name') or '')
+                              player_name=ch.get('owner_name') or '', catalog=catalog, lang=lang)
     except Exception as e:
         logger.exception(f"Error building sheet PDF for character {safe_log_value(character_id)}: {safe_log_value(e)}")
         return jsonify({'error': 'Failed to build the PDF'}), 500

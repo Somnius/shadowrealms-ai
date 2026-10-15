@@ -5,6 +5,10 @@ Black ink on white only, so it prints clean on a mono laser printer: hairlines, 
 no grey fills. Every value is an AcroForm field pre-filled from the saved sheet: text fields for
 names and notes, one checkbox per dot or box so players can fill and clear them.
 
+V5 sheets given the rules catalog get Reference page(s) after the two sheet pages: the catalog's
+short descriptions of the clan (bane, compulsion), predator type, Discipline powers, rituals,
+ceremonies and formulae on the sheet, in the requester's language. Page text only, no fields.
+
 Fonts (backend/assets/fonts, SIL OFL 1.1, licence files next to them):
 - Cinzel for headings and labels. Caps only and no Greek, so it never shows user text.
 - EB Garamond for everything the player wrote, Greek included.
@@ -27,14 +31,17 @@ import os
 import re
 import threading
 from typing import Any, Dict, List, Optional, Sequence, Tuple
+from xml.sax.saxutils import escape as _xml_escape
 
 from reportlab.lib.pagesizes import A4, LETTER
+from reportlab.lib.styles import ParagraphStyle
 from reportlab.lib.utils import simpleSplit
 from reportlab.pdfbase import pdfdoc, pdfmetrics
 from reportlab.pdfbase._glyphlist import _glyphname2unicode
 from reportlab.pdfbase.acroform import PDFFromString
 from reportlab.pdfbase.ttfonts import TTFont, TTFontFile
 from reportlab.pdfgen import canvas as rl_canvas
+from reportlab.platypus import Paragraph
 
 FONT_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "assets", "fonts")
 
@@ -757,14 +764,17 @@ def _header(sc: SheetCanvas, line_title: str, line_sub: str, y: float) -> float:
     return y - 52
 
 
-def _small_header(sc: SheetCanvas, name: str, sub: str, y: float) -> float:
+SMALL_HEADER_H = 38.0
+
+
+def _small_header(sc: SheetCanvas, name: str, sub: str, y: float, right: str = "Character Sheet") -> float:
     draw_sigil(sc.c, sc.W / 2, y - 14, 28)
     room = sc.W / 2 - 24 - sc.x0  # up to the sigil
     sc.text(sc.x0, y - 14, _ellipsize(" ".join(name.split()), SERIF, 13, room), SERIF, 13)
     sc.text(sc.x0, y - 25, _ellipsize(" ".join(sub.split()), SERIF_ITALIC, 8.5, room), SERIF_ITALIC, 8.5)
-    sc.label(sc.x1, y - 14, "Character Sheet", size=9, bold=True, align="right")
+    sc.label(sc.x1, y - 14, right, size=9, bold=True, align="right")
     sc.text(sc.x1, y - 25, "ShadowRealms AI", SERIF_ITALIC, 8.5, "right")
-    return y - 38
+    return y - SMALL_HEADER_H
 
 
 def _identity(sc: SheetCanvas, cols: Sequence[Sequence[Tuple[str, str, Any]]], y: float, pitch=19.0) -> float:
@@ -991,7 +1001,7 @@ def _discipline_text(d: Dict[str, Any]) -> str:
     return _trait_text(d) + (": " + ", ".join(powers) if powers else "")
 
 
-def _render_v5(sc: SheetCanvas, ch: Dict[str, Any], chronicle: str, player: str) -> None:
+def _render_v5(sc: SheetCanvas, ch: Dict[str, Any], chronicle: str, player: str, pages: int = 2) -> None:
     wm = _obj(ch.get("wod_meta"))
     attrs = _obj(ch.get("attributes"))
     sk = _obj(ch.get("skills"))
@@ -1069,7 +1079,7 @@ def _render_v5(sc: SheetCanvas, ch: Dict[str, Any], chronicle: str, player: str)
             sc.diamond(x + pad + 2, py + 3.5, 1.1, fill=False)
             sc.field(f"disc{i + 1}.power{j + 1}", x + pad + 6, py, dw_ - 2 * pad - 6, min(11.5, lh - 1),
                      powers[j] if j < len(powers) else "", size=8.4, tooltip="Power")
-    sc.footer(f"{name} · {chronicle}" if chronicle else name, 1, 2)
+    sc.footer(f"{name} · {chronicle}" if chronicle else name, 1, pages)
     sc.page()
 
     # ---- page 2: advantages, trackers, convictions, rituals, XP, notes
@@ -1169,7 +1179,279 @@ def _render_v5(sc: SheetCanvas, ch: Dict[str, Any], chronicle: str, player: str)
                                   *overflow) if p)
     _notes_box(sc, "background", "Background", sc.x0, y, bw, h, _s(ch.get("background")), size=8.2)
     _notes_box(sc, "notes", "Notes", sc.x0 + bw + 14, y, sc.x1 - sc.x0 - bw - 14, h, notes, size=8.2)
-    sc.footer(f"{name} · {chronicle}" if chronicle else name, 2, 2)
+    sc.footer(f"{name} · {chronicle}" if chronicle else name, 2, pages)
+
+
+# ---------------------------------------------------------------------------------------------
+# V5 Reference page(s): catalog descriptions (services/v5_catalog.py) of the sheet's clan, predator
+# type, Discipline powers, rituals, ceremonies and formulae. Page text only, no fields. Names stay
+# English (as in the books); descriptions in the requester's language, English when missing.
+
+BOOK_SHORT = {"v5-corebook": "Corebook", "v5-players-guide": "Players Guide", "v5-companion": "Companion"}
+RITUAL_KINDS = (("ritual", "rituals", "Rituals"), ("ceremony", "ceremonies", "Ceremonies"),
+                ("formula", "formulae", "Formulae"))
+REF_ITEMS = OVERFLOW_ITEMS  # powers / rituals looked up per sheet
+REF_DESC_MAX = 2000
+REF_SIZE, REF_LEADING, REF_INDENT = 8.4, 10.2, 9.0
+REF_ENTRY_GAP, REF_SECTION_GAP, REF_GROUP_H = 3.0, 5.0, 13.0
+REF_KEY_MAX = 200  # longer sheet text is never a catalog name or id
+
+
+def _norm(s: Any) -> str:
+    """Lookup key, as v5_catalog.find compares: case and runs of spaces ignored."""
+    return " ".join(str(s).split()).lower()
+
+
+def _names(e: Dict[str, Any]) -> List[str]:
+    return [n for n in (e.get("id"), e.get("name"), *_list(e.get("aliases"))) if isinstance(n, str)]
+
+
+def _index(entries: Any) -> Dict[str, Dict[str, Any]]:
+    idx: Dict[str, Dict[str, Any]] = {}
+    for e in _list(entries):
+        if isinstance(e, dict):
+            for n in _names(e):
+                idx.setdefault(_norm(n), e)  # the first entry wins, as in find()
+    return idx
+
+
+def _lookup(idx: Dict[str, Any], *keys: Any) -> Any:
+    """First match for the keys (id, name), then for them without a trailing '(…)' such as a level."""
+    keys_ = [k for k in (_s(k) for k in keys) if 0 < len(k) <= REF_KEY_MAX]
+    bare = [k[:k.rindex("(")].rstrip() for k in keys_ if k.endswith(")") and "(" in k]
+    for k in keys_ + bare:
+        hit = idx.get(_norm(k))
+        if hit is not None:
+            return hit
+    return None
+
+
+def _book_ref(books: Dict[str, str], book: Any, page: Any) -> str:
+    """'Players Guide, p. 23' (short names as in the forge's bookRef)."""
+    b = _s(book)
+    label = BOOK_SHORT.get(b) or books.get(b) or b
+    p = _n(page, 0, 100000)
+    return f"{label}, p. {p}" if label and p else label
+
+
+def _ref_entry(name: Any, e: Dict[str, Any], lang: str, books: Dict[str, str], *, book: Any = None,
+               prefix: str = "", level: Any = None) -> Dict[str, Any]:
+    d = e.get("desc")
+    desc = _s(d.get(lang) or d.get("en")) if isinstance(d, dict) else ""
+    return {"name": _cap(_s(name), MAX_LINE), "prefix": prefix, "level": _n(level, 0, 10),
+            "desc": _cap(desc, REF_DESC_MAX), "ref": _book_ref(books, book or e.get("book"), e.get("page"))}
+
+
+def v5_reference(ch: Dict[str, Any], catalog: Optional[Dict[str, Any]], lang: str = "en") -> List[Tuple[str, Any]]:
+    """
+    What the Reference page lists, in order: ('section', title), ('group', Discipline name) and
+    ('entry', {name, prefix, level, desc, ref}). Only names with a catalog match (id, name or alias);
+    an empty list means no Reference page.
+    """
+    if not isinstance(catalog, dict):
+        return []
+    lang = _s(lang).lower()[:2] or "en"
+    wm = _obj(ch.get("wod_meta"))
+    books = {_s(b.get("book_id")): _s(b.get("title")) for b in _list(catalog.get("books")) if isinstance(b, dict)}
+    out: List[Tuple[str, Any]] = []
+
+    clan = _lookup(_index(catalog.get("clans")), wm.get("clan_id"), wm.get("clan"))
+    if clan:
+        out += [("section", "Clan"), ("entry", _ref_entry(clan.get("name"), clan, lang, books))]
+        for key, label in (("bane", "Bane"), ("compulsion", "Compulsion")):
+            part = clan.get(key)
+            if isinstance(part, dict) and _s(part.get("name")):
+                out.append(("entry", _ref_entry(part.get("name"), part, lang, books,
+                                                book=part.get("book") or clan.get("book"), prefix=label)))
+
+    pred = _lookup(_index(catalog.get("predator_types")), wm.get("predator_id"), wm.get("predator_type"))
+    if pred:
+        out += [("section", "Predator Type"), ("entry", _ref_entry(pred.get("name"), pred, lang, books))]
+
+    # powers: one index over every Discipline (power names are unique across them), grouped under the
+    # catalog Discipline in the order the sheet first names it
+    powers: Dict[str, Tuple[Dict[str, Any], Dict[str, Any]]] = {}
+    for d in _list(catalog.get("disciplines")):
+        if isinstance(d, dict):
+            for p in _list(d.get("powers")):
+                if isinstance(p, dict):
+                    for n in _names(p):
+                        powers.setdefault(_norm(n), (d, p))
+    groups: Dict[str, Tuple[str, List[Dict[str, Any]]]] = {}
+    seen = set()
+    wanted = [p for d in _list(wm.get("disciplines")) if isinstance(d, dict) for p in _list(d.get("powers"))]
+    for p in wanted[:REF_ITEMS]:
+        hit = _lookup(powers, *((p.get("id"), p.get("name")) if isinstance(p, dict) else (p,)))
+        if hit is None or id(hit[1]) in seen:
+            continue
+        disc, power = hit
+        seen.add(id(power))
+        groups.setdefault(_s(disc.get("id")) or _s(disc.get("name")), (_s(disc.get("name")), []))[1].append(
+            _ref_entry(power.get("name"), power, lang, books, level=power.get("level")))
+    if groups:
+        out.append(("section", "Discipline Powers"))
+        for title, entries in groups.values():
+            out.append(("group", title))
+            out += [("entry", e) for e in entries]
+
+    # rituals, ceremonies and formulae share wod_meta.rituals; a stated kind is searched first
+    idx = {kind: _index(catalog.get(cat)) for kind, cat, _ in RITUAL_KINDS}
+    found: Dict[str, List[Dict[str, Any]]] = {kind: [] for kind, _, _ in RITUAL_KINDS}
+    for r in _list(wm.get("rituals"))[:REF_ITEMS]:
+        keys = (r.get("id"), r.get("name")) if isinstance(r, dict) else (r,)
+        stated = _s(r.get("kind")).lower() if isinstance(r, dict) else ""
+        for kind in sorted(idx, key=lambda k: k != stated):
+            e = _lookup(idx[kind], *keys)
+            if e is not None:
+                if id(e) not in seen:
+                    seen.add(id(e))
+                    found[kind].append(_ref_entry(e.get("name"), e, lang, books, level=e.get("level")))
+                break
+    for kind, _, title in RITUAL_KINDS:
+        if found[kind]:
+            out.append(("section", title))
+            out += [("entry", e) for e in found[kind]]
+    return out
+
+
+_REF_STYLE = ParagraphStyle("sr-reference", fontName=SERIF, fontSize=REF_SIZE, leading=REF_LEADING,
+                            leftIndent=REF_INDENT, firstLineIndent=-REF_INDENT)
+
+
+def _ref_paragraph(e: Dict[str, Any]) -> Paragraph:
+    """'NAME •• — description (Book, p. N)': name in Cinzel, level as dots, the reference in italic."""
+    esc = _xml_escape
+    parts = []
+    if e["prefix"]:
+        parts.append(f'<font name="{SERIF_ITALIC}">{esc(e["prefix"])}:</font> ')
+    parts.append(f'<font name="{CINZEL_BOLD}" size="{REF_SIZE - 1:g}">{esc(e["name"])}</font>')
+    if e["level"]:
+        parts.append(" " + "•" * e["level"])
+    if e["desc"]:
+        parts.append(" — " + esc(e["desc"]))
+    if e["ref"]:
+        parts.append(f' <font name="{SERIF_ITALIC}">({esc(e["ref"])})</font>')
+    return Paragraph("".join(parts), _REF_STYLE)
+
+
+RefPage = List[Tuple[str, Any, float, float]]
+
+
+def _flow_reference(sc: SheetCanvas, queue: List[Tuple[str, Any, bool]], bottom: float, section: str = "",
+                    group: str = "", limit: int = 0) -> Optional[Tuple[List[RefPage], List[tuple]]]:
+    """
+    Flow (kind, obj, carried) items down two columns per page, from under the small header to
+    `bottom`: pages of (kind, obj, x, y_top), and per page what was left when it began
+    (items, section, group) so it can be flowed again. Headings keep two lines of text with them;
+    an entry that doesn't fit splits across columns; a section carried onto a new page repeats its
+    title. With a page `limit`, None when the items need more pages or overfill a column.
+    """
+    cols, cw = _columns(sc, 2, gap=22)
+    top = sc.top - SMALL_HEADER_H
+    queue = list(queue)
+    pages: List[RefPage] = []
+    starts: List[tuple] = []
+    at = {"col": 1, "y": bottom, "empty": True}
+
+    def next_frame() -> bool:
+        """Next column; True when it starts a new page."""
+        new_page = at["col"] == 1
+        if new_page:
+            pages.append([])
+        at.update(col=0 if new_page else 1, y=top, empty=True)
+        return new_page
+
+    def height(kind: str, obj: Any, empty: bool) -> float:
+        if kind == "section":
+            return 15 + (0 if empty else REF_SECTION_GAP)
+        if kind == "group":
+            return REF_GROUP_H + (0 if empty else 2)
+        return obj.wrap(cw, 10 ** 6)[1] + REF_ENTRY_GAP
+
+    next_frame()
+    i = 0
+    while i < len(queue):
+        kind, obj, cont = queue[i]
+        room = at["y"] - bottom
+        h = height(kind, obj, at["empty"])
+        need = h
+        if kind != "entry":  # keep a heading with what follows it
+            j = i + 1
+            if j < len(queue) and queue[j][0] == "group":
+                need += REF_GROUP_H + 2
+                j += 1
+            if j < len(queue) and queue[j][0] == "entry":
+                need += 2 * REF_LEADING
+        if need > room:
+            if kind == "entry" and room - REF_ENTRY_GAP >= 2 * REF_LEADING:
+                parts = obj.split(cw, room - REF_ENTRY_GAP)
+                if len(parts) == 2:
+                    queue[i:i + 1] = [("entry", parts[0], cont), ("entry", parts[1], True)]
+                    continue
+            if not at["empty"]:
+                if limit and at["col"] == 1 and len(pages) >= limit:
+                    return None
+                if next_frame() and kind != "section" and section:
+                    carry = [("section", f"{section} (cont.)", True)]
+                    if group and kind != "group":
+                        carry.append(("group", group, True))
+                    queue[i:i] = carry
+                continue
+            if limit and h > room:
+                return None
+            # otherwise an empty column takes it anyway: nothing would fit better
+        if not pages[-1]:
+            starts.append((queue[i:], section, group))
+        y = at["y"] - (0 if at["empty"] or kind == "entry" else (REF_SECTION_GAP if kind == "section" else 2))
+        pages[-1].append((kind, obj, cols[at["col"]], y))
+        at.update(y=at["y"] - h, empty=False)
+        if not cont:
+            if kind == "section":
+                section, group = obj, ""
+            elif kind == "group":
+                group = obj
+        i += 1
+    return pages, starts
+
+
+def _layout_reference(sc: SheetCanvas, items: List[Tuple[str, Any]]) -> List[RefPage]:
+    """Reference pages for v5_reference() items; the last page's two columns are balanced."""
+    if not items:
+        return []
+    queue = [(k, _ref_paragraph(o) if k == "entry" else o, False) for k, o in items]
+    pages, starts = _flow_reference(sc, queue, sc.bottom)
+    rest, section, group = starts[-1]
+    top = sc.top - SMALL_HEADER_H
+    lo, hi, last = 0.0, top - sc.bottom, pages[-1]
+    while hi - lo > 2:  # the shortest columns that still hold the last page
+        mid = (lo + hi) / 2
+        trial = _flow_reference(sc, rest, top - mid, section, group, limit=1)
+        if trial:
+            hi, last = mid, trial[0][0]
+        else:
+            lo = mid
+    return pages[:-1] + [last]
+
+
+def _render_reference(sc: SheetCanvas, ch: Dict[str, Any], chronicle: str, pages: List[RefPage], first: int,
+                      total: int) -> None:
+    name = _s(ch.get("name"))
+    sub = " · ".join(p for p in (_s(_obj(ch.get("wod_meta")).get("clan")), chronicle) if p)
+    _, cw = _columns(sc, 2, gap=22)
+    for k, placed in enumerate(pages):
+        sc.page()
+        sc.frame()
+        _small_header(sc, name, sub, sc.top, right="Reference")
+        for kind, obj, x, y in placed:
+            if kind == "section":
+                sc.section(obj, y, x0=x, x1=x + cw)
+            elif kind == "group":
+                sc.text(x, y - 9.5, obj, SERIF_ITALIC, 9.5)
+                sc.hline(x, x + cw, y - 12, w=0.3, dash=(0.6, 1.8))
+            else:  # wrapped again: the balancing trials may have wrapped it last (same width, same lines)
+                obj.drawOn(sc.c, x, y - obj.wrap(cw, 10 ** 6)[1])
+        sc._ink()
+        sc.footer(f"{name} · {chronicle}" if chronicle else name, first + k, total)
 
 
 # ---------------------------------------------------------------------------------------------
@@ -1475,8 +1757,12 @@ def _render_classic(sc: SheetCanvas, ch: Dict[str, Any], chronicle: str, player:
 
 
 def build_sheet_pdf(character: Dict[str, Any], *, paper: str = "a4", chronicle_name: str = "",
-                    player_name: str = "") -> bytes:
-    """Fillable two-page PDF for a character dict (as returned by GET /api/characters/<id>)."""
+                    player_name: str = "", catalog: Optional[Dict[str, Any]] = None, lang: str = "en") -> bytes:
+    """
+    Fillable two-page PDF for a character dict (as returned by GET /api/characters/<id>). A V5 sheet
+    given the rules catalog (v5_catalog.load_catalog()) gets Reference page(s) after those two when
+    anything on it matches, with descriptions in `lang` ('en' / 'el', English when missing).
+    """
     ch = dict(character or {})
     name = _s(ch.get("name")) or "Character"
     sc = SheetCanvas(paper if paper in PAPER else "a4", title=name, author=_s(player_name))
@@ -1485,7 +1771,10 @@ def build_sheet_pdf(character: Dict[str, Any], *, paper: str = "a4", chronicle_n
         edition = "v5" if _s(_obj(ch.get("wod_meta")).get("edition")).lower() == "v5" else "classic"
     chronicle = _s(chronicle_name or ch.get("campaign_name"))
     if edition == "v5":
-        _render_v5(sc, ch, chronicle, _s(player_name))
+        ref = _layout_reference(sc, v5_reference(ch, catalog, lang)) if catalog else []
+        _render_v5(sc, ch, chronicle, _s(player_name), pages=2 + len(ref))
+        if ref:
+            _render_reference(sc, ch, chronicle, ref, 3, 2 + len(ref))
     else:
         _render_classic(sc, ch, chronicle, _s(player_name))
     return sc.finish()

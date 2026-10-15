@@ -11,7 +11,19 @@ import pytest
 
 pytest.importorskip("reportlab")
 
-from services.character_sheet_pdf import FORM_CODES, build_sheet_pdf, safe_filename  # noqa: E402
+from services.character_sheet_pdf import (  # noqa: E402
+    CINZEL_BOLD,
+    FORM_CODES,
+    SERIF,
+    SERIF_ITALIC,
+    SheetCanvas,
+    _columns,
+    _layout_reference,
+    _ref_paragraph,
+    build_sheet_pdf,
+    safe_filename,
+    v5_reference,
+)
 
 GREEK_NAME = "Κωνσταντίνος Κατακουζηνός"
 
@@ -428,7 +440,7 @@ def test_form_font_covers_greek(v5_pdf):
 def test_black_and_white_only(v5_pdf, classic_pdf):
     ops = re.compile(rb"((?:-?\d*\.?\d+\s+){1,4})(rg|RG|k|K|g|G|sc|SC|scn|SCN)(?=\s)")
     seen = 0
-    for pdf in (v5_pdf, classic_pdf):
+    for pdf in (v5_pdf, classic_pdf, build_sheet_pdf(V5_CHAR, catalog=REF_CATALOG, lang="el")):
         for s in _content_streams(pdf):
             for m in ops.finditer(s):
                 seen += 1
@@ -452,6 +464,252 @@ def test_safe_filename():
     assert safe_filename("  ..  ") == "character"
 
 
+# --- the V5 Reference page ------------------------------------------------------------------
+
+def _d(en, el=None):
+    return {"en": en, "el": el} if el else {"en": en}
+
+
+# the shape of services/v5_catalog.load_catalog(); V5_CHAR matches most of it
+REF_CATALOG = {
+    "books": [{"book_id": "v5-corebook", "title": "Vampire: The Masquerade Corebook (2019)"},
+              {"book_id": "v5-cults-of-the-blood-gods", "title": "Cults of the Blood Gods"}],
+    "clans": [
+        {"id": "clan:tremere", "name": "Tremere", "book": "v5-corebook", "page": 75,
+         "desc": _d("Warlocks of a broken pyramid.", "Μάγοι μιας σπασμένης πυραμίδας."),
+         "bane": {"name": "Deficient Blood", "page": 76, "desc": _d("Their Blood Bonds are weak.")},
+         "compulsion": {"name": "Perfectionism", "book": "v5-corebook", "page": 77,
+                        "desc": _d("Nothing but perfection will do.", "Μόνο το τέλειο αρκεί.")}},
+        {"id": "clan:caitiff", "name": "Caitiff", "book": "v5-corebook", "page": 105, "desc": _d("Clanless."),
+         "bane": None, "compulsion": None},
+    ],
+    "predator_types": [{"id": "predator:bagger", "name": "Bagger", "book": "v5-corebook", "page": 176,
+                        "desc": _d("Feeds on bagged blood.", "Πίνει από σακούλες αίματος.")}],
+    "disciplines": [
+        {"id": "discipline:auspex", "name": "Auspex", "powers": [
+            {"id": "power:auspex:heightened-senses", "name": "Heightened Senses", "level": 1,
+             "book": "v5-corebook", "page": 249, "desc": _d("Sharper senses.", "Οξύτερες αισθήσεις.")}]},
+        {"id": "discipline:blood-sorcery", "name": "Blood Sorcery", "powers": [
+            {"id": "power:blood-sorcery:corrosive-vitae", "name": "Corrosive Vitae", "level": 1,
+             "book": "v5-corebook", "page": 272,
+             "desc": _d("Blood that eats through matter.", "Ψυχρό αίμα που ξεφτίζει την ύλη.")},
+            {"id": "power:blood-sorcery:a-taste-for-blood", "name": "A Taste for Blood", "level": 1,
+             "aliases": ["Taste for Blood"], "book": "v5-corebook", "page": 272, "desc": _d("Taste and know.")}]},
+    ],
+    "rituals": [{"id": "ritual:ward-against-ghouls", "name": "Ward against Ghouls", "level": 2,
+                 "book": "v5-cults-of-the-blood-gods", "page": 9, "desc": _d("Wards a place against ghouls.")}],
+    "ceremonies": [{"id": "ceremony:summon-spirit", "name": "Summon Spirit", "level": 1,
+                    "book": "v5-players-guide", "page": 92, "desc": _d("Calls a wraith.")}],
+    "formulae": [{"id": "formula:far-reach", "name": "Far Reach", "level": 1, "book": "v5-corebook",
+                  "page": 284, "desc": _d("Telekinesis.")}],
+}
+
+
+def _pages(pdf: bytes) -> int:
+    return len(re.findall(rb"/Type /Page\b", pdf))
+
+
+def _entries(items):
+    return [o for k, o in items if k == "entry"]
+
+
+def test_reference_lists_matches_only():
+    items = v5_reference(V5_CHAR, REF_CATALOG, "en")
+    assert [(k, o if k != "entry" else o["name"]) for k, o in items] == [
+        ("section", "Clan"), ("entry", "Tremere"), ("entry", "Deficient Blood"), ("entry", "Perfectionism"),
+        ("section", "Predator Type"), ("entry", "Bagger"),
+        ("section", "Discipline Powers"), ("group", "Blood Sorcery"), ("entry", "Corrosive Vitae"),
+        ("entry", "A Taste for Blood"), ("group", "Auspex"), ("entry", "Heightened Senses"),
+        ("section", "Rituals"), ("entry", "Ward against Ghouls"),
+    ]  # no Extinguish Vitae, Cloud Memory, Mesmerize or Θυρεός του Αίματος: not in the catalog
+    clan, bane, compulsion, _, corrosive = _entries(items)[:5]
+    assert clan == {"name": "Tremere", "prefix": "", "level": 0, "desc": "Warlocks of a broken pyramid.",
+                    "ref": "Corebook, p. 75"}
+    assert bane["prefix"] == "Bane" and bane["ref"] == "Corebook, p. 76"  # the clan's book
+    assert compulsion["prefix"] == "Compulsion" and compulsion["ref"] == "Corebook, p. 77"
+    assert corrosive["level"] == 1 and corrosive["ref"] == "Corebook, p. 272"
+    assert _entries(items)[-1]["ref"] == "Cults of the Blood Gods, p. 9"  # no short name: the title
+
+
+def test_reference_language_falls_back_to_english():
+    el = _entries(v5_reference(V5_CHAR, REF_CATALOG, "el"))
+    assert el[0]["desc"] == "Μάγοι μιας σπασμένης πυραμίδας."
+    assert el[1]["desc"] == "Their Blood Bonds are weak."  # no Greek text yet
+    assert el[0]["name"] == "Tremere"  # names stay as in the books
+    for lang in ("fr", "", None):
+        assert _entries(v5_reference(V5_CHAR, REF_CATALOG, lang))[0]["desc"] == "Warlocks of a broken pyramid."
+
+
+def test_reference_matches_ids_aliases_and_kinds():
+    ch = copy.deepcopy(V5_CHAR)
+    wm = ch["wod_meta"]
+    wm.update(clan="Unknown", clan_id="clan:tremere", predator_type=" bagger ")
+    wm["disciplines"] = [
+        {"name": "Auspex", "level": 2, "powers": [
+            {"id": "power:blood-sorcery:corrosive-vitae", "name": "Old name", "level": 1},  # by id
+            "taste  FOR blood",  # alias, case and spaces ignored
+            "Heightened Senses (1)",  # level written into the name
+            "Heightened Senses",  # listed once
+            "Homebrew Power", {"name": None}, 7, None]},
+        {"name": "Not a Discipline", "powers": "Heightened Senses"},
+    ]
+    wm["rituals"] = ["Far Reach", {"name": "Summon Spirit", "kind": "ceremony"}, {"name": "Ward against Ghouls"},
+                     {"name": "Nope", "kind": "ritual"}]
+    items = v5_reference(ch, REF_CATALOG, "en")
+    names = [o if k != "entry" else o["name"] for k, o in items]
+    assert names == ["Clan", "Tremere", "Deficient Blood", "Perfectionism", "Predator Type", "Bagger",
+                     "Discipline Powers", "Blood Sorcery", "Corrosive Vitae", "A Taste for Blood",
+                     "Auspex", "Heightened Senses",
+                     "Rituals", "Ward against Ghouls", "Ceremonies", "Summon Spirit", "Formulae", "Far Reach"]
+    caitiff = copy.deepcopy(V5_CHAR)
+    caitiff["wod_meta"].update(clan="caitiff", predator_type="", disciplines=[], rituals=[])
+    assert [o["name"] for o in _entries(v5_reference(caitiff, REF_CATALOG))] == ["Caitiff"]  # no bane
+
+
+def test_reference_page_after_the_sheet():
+    plain = build_sheet_pdf(V5_CHAR, player_name="lef")
+    pdf = build_sheet_pdf(V5_CHAR, player_name="lef", catalog=REF_CATALOG, lang="el")
+    assert _pages(plain) == 2 and _pages(pdf) == 3
+    assert _fields(pdf) == _fields(plain)  # page text only: no new fields
+    for x0, y0, x1, y1 in _rects(pdf):
+        assert 24 <= y0 < y1 <= 841.89 - 24
+
+
+@pytest.mark.parametrize("catalog", [None, {}, {"clans": [], "disciplines": "x", "rituals": [None, 3]},
+                                     {k: [] for k in REF_CATALOG}])
+def test_no_reference_page_without_matches(catalog):
+    pdf = build_sheet_pdf(V5_CHAR, catalog=catalog, lang="el")
+    assert _pages(pdf) == 2
+    nothing = copy.deepcopy(V5_CHAR)
+    nothing["wod_meta"].update(clan="Homebrew", predator_type="Homebrew", disciplines=[{"name": "X", "powers": ["Y"]}],
+                               rituals=["Z"])
+    assert _pages(build_sheet_pdf(nothing, catalog=REF_CATALOG)) == 2
+    assert v5_reference(nothing, REF_CATALOG) == []
+
+
+def test_classic_sheet_never_gets_a_reference_page():
+    ch = copy.deepcopy(CLASSIC_CHAR)
+    ch["wod_meta"]["clan"] = "Tremere"
+    assert _pages(build_sheet_pdf(ch, catalog=REF_CATALOG, lang="el")) == 2
+
+
+def _embedded_chars(pdf: bytes, font: str) -> set:
+    """Characters the subset ToUnicode maps of a font hold (what its page text can show)."""
+    out = set()
+    for _, body in _objects(pdf):
+        m = re.match(rb"(.*?)stream\r?\n(.*?)\r?\n?endstream", body, re.S)
+        if not m or b"/Length1" in m.group(1):
+            continue
+        data = _decode_stream(m.group(1), m.group(2))
+        if b"begincmap" in data and re.search(rb"/Registry \(\w+\+" + font.encode() + rb"\)", data):
+            out |= {chr(int(u, 16)) for u in re.findall(rb"<[0-9A-F]{2}> <([0-9A-F]{4})>", data)}
+    return out
+
+
+def test_reference_greek_is_embedded():
+    from reportlab.pdfbase import pdfmetrics
+
+    greek = set("Ψυχρό αίμα που ξεφτίζει την ύλη.") - set(" .")
+    en = _embedded_chars(build_sheet_pdf(V5_CHAR, catalog=REF_CATALOG, lang="en"), "EBGaramond-Regular")
+    el = _embedded_chars(build_sheet_pdf(V5_CHAR, catalog=REF_CATALOG, lang="el"), "EBGaramond-Regular")
+    assert greek <= el  # every letter of the Greek description is drawn with the page font
+    assert not {"Ψ", "ξ"} & en  # and those two come from the Reference page only
+    assert all(ord(c) in pdfmetrics.getFont(SERIF).face.charToGlyph for c in greek)  # which has the glyphs
+
+
+def test_installed_catalog_text_has_glyphs():
+    """Every character of every description, name and book reference the catalog can put on the page."""
+    from reportlab.pdfbase import pdfmetrics
+    from services.v5_catalog import load_catalog
+
+    catalog = load_catalog()
+    if not catalog:
+        pytest.skip("no V5 catalog installed")
+    build_sheet_pdf(V5_CHAR)  # registers the fonts
+    cover = {f: set(pdfmetrics.getFont(f).face.charToGlyph) for f in (SERIF, SERIF_ITALIC, CINZEL_BOLD)}
+    seen = 0
+
+    def check(e):
+        nonlocal seen
+        for text in (e.get("desc") or {}).values():
+            assert not {c for c in text if ord(c) not in cover[SERIF]}, (e.get("id"), text)
+            seen += 1
+        assert not {c for c in e.get("name") or "" if ord(c) not in cover[CINZEL_BOLD]}, e.get("name")
+
+    for kind in ("clans", "predator_types", "rituals", "ceremonies", "formulae", "disciplines"):
+        for e in catalog[kind]:
+            check(e)
+            for sub in [e.get("bane"), e.get("compulsion"), *(e.get("powers") or [])]:
+                if isinstance(sub, dict):
+                    check(sub)
+    for b in catalog["books"]:
+        assert not {c for c in b["title"] + ", p. 0123456789()" if ord(c) not in cover[SERIF_ITALIC]}
+    assert seen > 100
+
+
+def _many_powers(n_disc=6, n_powers=12):
+    catalog = copy.deepcopy(REF_CATALOG)
+    long_el = "Μακροσκελής περιγραφή δύναμης με αρκετές λέξεις για να γεμίσει τη στήλη. " * 3
+    catalog["disciplines"] = [
+        {"id": f"discipline:d{i}", "name": f"Discipline {i}", "powers": [
+            {"id": f"power:d{i}:p{j}", "name": f"Power {i}-{j}", "level": 1 + j % 5, "book": "v5-corebook",
+             "page": 200 + j, "desc": _d(f"Long description {i}-{j}. " * 12, long_el)} for j in range(n_powers)]}
+        for i in range(n_disc)]
+    ch = copy.deepcopy(V5_CHAR)
+    ch["wod_meta"]["disciplines"] = [{"name": f"Discipline {i}", "level": 5,
+                                      "powers": [f"Power {i}-{j}" for j in range(n_powers)]} for i in range(n_disc)]
+    return ch, catalog
+
+
+@pytest.mark.parametrize("paper,height", [("a4", 841.89), ("letter", 792.0)])
+def test_reference_overflows_onto_more_pages(paper, height):
+    ch, catalog = _many_powers()
+    sc = SheetCanvas(paper)
+    items = v5_reference(ch, catalog, "el")
+    pages = _layout_reference(sc, items)
+    assert len(pages) >= 2
+    pdf = build_sheet_pdf(ch, paper=paper, catalog=catalog, lang="el")
+    assert _pages(pdf) == 2 + len(pages)
+    top = sc.top - 38
+    xs, cw = _columns(sc, 2, gap=22)
+    for placed in pages:
+        for kind, obj, x, y in placed:
+            assert x in xs
+            low = y - (obj.height if kind == "entry" else 15)
+            assert sc.bottom - 0.01 <= low and y <= top + 0.01, (kind, y, low)
+    # a section carried onto the next page says so, with its Discipline
+    first = pages[1][:2]
+    assert first[0][:2] == ("section", "Discipline Powers (cont.)") and first[1][0] == "group"
+    # nothing lost or doubled: split parts add up to the whole entries, line for line
+    want = sum(_ref_paragraph(e).wrap(cw, 10 ** 6)[1] for e in _entries(items))
+    assert abs(sum(o.height for p in pages for k, o, _, _ in p if k == "entry") - want) < 0.01
+    # the last page uses both columns, about evenly
+    last = pages[-1]
+    cols = {}
+    for kind, obj, x, y in last:
+        cols[x] = min(cols.get(x, top), y - (obj.height if kind == "entry" else 15))
+    if len(last) > 4:
+        assert len(cols) == 2 and abs(min(cols.values()) - max(cols.values())) < 120
+
+
+@pytest.mark.parametrize("mangle", [_numbers, _text, _lists, _huge], ids=lambda f: f.__name__.strip("_"))
+def test_reference_never_raises(mangle):
+    import time
+
+    ch = mangle(V5_CHAR)
+    ch["wod_meta"]["disciplines"] = list(ch["wod_meta"].get("disciplines") or []) + [
+        {"name": "Auspex", "powers": ["Heightened Senses"] * 2000}]
+    bad = copy.deepcopy(REF_CATALOG)
+    bad["clans"][0].update(page="1e400", book=None, desc=["x"], aliases="Tremere")
+    bad["clans"][0]["bane"] = "Deficient Blood"
+    bad["disciplines"].append({"name": None, "powers": [None, {"name": 5}, {"name": "X", "desc": {"el": 3}}]})
+    bad["rituals"].append("Ward against Ghouls")
+    t = time.monotonic()
+    pdf = build_sheet_pdf(ch, catalog=bad, lang="el")
+    assert time.monotonic() - t < 3.0
+    assert pdf.startswith(b"%PDF-") and _pages(pdf) >= 2
+
+
 # --- the route -----------------------------------------------------------------------------
 
 @pytest.fixture
@@ -464,10 +722,10 @@ def api(monkeypatch):
         monkeypatch.setitem(sys.modules, "psycopg2.extras", pg.extras)
     from flask import Flask
     from flask_jwt_extended import JWTManager, create_access_token
-
     from routes import characters
 
     roles = {"1": "admin", "2": "player", "3": "player", "4": "player"}  # 2 owns, 3 runs the chronicle
+    langs = {"1": "EN", "2": "el", "3": None, "4": "el"}  # users.ui_language
     row = {
         "id": 9, "name": GREEK_NAME, "system_type": "vampire", "rules_edition": "v5",
         "attributes": "{}", "skills": "{}", "background": "", "merits_flaws": "{}",
@@ -482,6 +740,8 @@ def api(monkeypatch):
         def fetchone(self):
             if "FROM characters ch" in self.sql:
                 return dict(row) if self.args[0] == 9 else None
+            if "SELECT ui_language FROM users" in self.sql:
+                return {"ui_language": langs[str(self.args[0])]}
             if "FROM users" in self.sql:
                 return {"role": roles[str(self.args[0])]}
             if "FROM campaigns" in self.sql:
@@ -537,6 +797,36 @@ def test_route_letter_paper(api):
     assert b"/MediaBox [ 0 0 612 792 ]" in r.data
     r = api("/api/characters/9/sheet.pdf?paper=bogus", "2")
     assert b"/MediaBox [ 0 0 595.2756 841.8898 ]" in r.data
+
+
+@pytest.mark.parametrize("uid,lang", [("2", "el"), ("3", "en"), ("1", "en")])  # unset -> en, 'EN' -> en
+def test_route_reference_page_in_requester_language(api, monkeypatch, uid, lang):
+    import services.character_sheet_pdf as pdf_mod
+    from services import v5_catalog
+
+    calls = []
+    real = pdf_mod.build_sheet_pdf
+
+    def spy(ch, **kw):
+        calls.append(kw)
+        return real(ch, **kw)
+
+    monkeypatch.setattr(pdf_mod, "build_sheet_pdf", spy)
+    monkeypatch.setattr(v5_catalog, "load_catalog", lambda: REF_CATALOG)
+    r = api("/api/characters/9/sheet.pdf", uid)
+    assert r.status_code == 200
+    assert calls[-1]["lang"] == lang and calls[-1]["catalog"] is REF_CATALOG
+    assert _pages(r.data) == 3  # the Tremere clan, bane and compulsion
+
+
+@pytest.mark.parametrize("load", [lambda: None, lambda: (_ for _ in ()).throw(ValueError("bad catalog"))],
+                         ids=["none", "broken"])
+def test_route_without_catalog_keeps_two_pages(api, monkeypatch, load):
+    from services import v5_catalog
+
+    monkeypatch.setattr(v5_catalog, "load_catalog", load)
+    r = api("/api/characters/9/sheet.pdf", "2")
+    assert r.status_code == 200 and _pages(r.data) == 2
 
 
 @pytest.mark.parametrize("uid,status", [("2", 200), ("3", 200), ("1", 200), ("4", 403)])
