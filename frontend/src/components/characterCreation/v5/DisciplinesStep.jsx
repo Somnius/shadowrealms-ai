@@ -57,6 +57,8 @@ export default function DisciplinesStep() {
                   style={{ ...inputStyle, flex: '1 1 200px', width: 'auto', padding: '8px' }}
                 >
                   <option value="">{t('wizard:v5.discAtPick', { one: 'Discipline at {{count}} dot…', other: 'Discipline at {{count}} dots…' }, { count: row.base })}</option>
+                  {/* a pick the list no longer offers (its book left out) stays, so its error makes sense */}
+                  {row.name && !f.discOptions.includes(row.name) ? <option value={row.name}>{row.name}</option> : null}
                   {f.discOptions.map((o) => (
                     <option key={o} value={o}>
                       {o}

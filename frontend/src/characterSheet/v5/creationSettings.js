@@ -4,6 +4,8 @@
  * server normalises before sending, this only guards against a missing or old payload.
  */
 export const CREATION_AGES = ['childer', 'neonate', 'ancilla'];
+/** The corebook is always allowed (CORE_BOOK in creation_settings.py): the core rules every chronicle plays by. */
+export const CORE_BOOK = 'v5-corebook';
 
 export const DEFAULT_CREATION_SETTINGS = {
   v: 1,
@@ -19,12 +21,14 @@ export const DEFAULT_CREATION_SETTINGS = {
 };
 
 const list = (v) => (Array.isArray(v) && v.length ? v.filter((x) => typeof x === 'string' && x.trim()) : null);
+/** allowed_books with the corebook in it (an old row, or one stored through the API without it). */
+const withCore = (books) => (books && !books.includes(CORE_BOOK) ? [CORE_BOOK, ...books] : books);
 
 export function normalizeCreationSettings(value) {
   const v = value && typeof value === 'object' ? value : {};
   return {
     ...DEFAULT_CREATION_SETTINGS,
-    allowed_books: list(v.allowed_books),
+    allowed_books: withCore(list(v.allowed_books)),
     allowed_clans: list(v.allowed_clans),
     allowed_predators: list(v.allowed_predators),
     allowed_ages: list(v.allowed_ages),
@@ -56,13 +60,14 @@ export function entryBooks(entry) {
  * May the chronicle use this catalog entry (clan, power, ritual, ceremony, predator type, Merit,
  * Background, Flaw, loresheet)? Yes when allowed_books is null (every book, also ones the catalog
  * adds later), when the entry names no book (or there is no entry), or when its own book or one it
- * is also printed in is allowed. Same as book_allowed in backend/services/creation_settings.py.
+ * is also printed in is allowed; the corebook always is. Same as book_allowed in
+ * backend/services/creation_settings.py.
  */
 export function bookAllowed(settings, entry) {
   const allowed = settings?.allowed_books;
   if (!Array.isArray(allowed) || !allowed.length) return true;
   const books = entryBooks(entry);
-  return !books.length || books.some((b) => allowed.includes(b));
+  return !books.length || books.some((b) => b === CORE_BOOK || allowed.includes(b));
 }
 
 /** The settings of the chronicle with this id in a campaigns list (defaults when absent). */

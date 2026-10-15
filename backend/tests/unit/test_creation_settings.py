@@ -5,6 +5,7 @@ import json
 import pytest
 
 from services.creation_settings import (
+    CORE_BOOK,
     DEFAULTS,
     book_allowed,
     creation_problems,
@@ -165,6 +166,17 @@ def test_book_allowed_by_its_own_book_or_one_it_is_also_printed_in():
     assert book_allowed(books(["v5-corebook"]), None)
     # any book id, also a supplement the catalog adds later
     assert book_allowed(books(["v5-in-memoriam"]), {"book": "v5-in-memoriam"})
+    # the corebook always, even in settings that weren't normalised
+    assert book_allowed({"allowed_books": ["v5-players-guide"]}, {"book": CORE_BOOK})
+    assert book_allowed(books(["v5-players-guide"]), {"book": "v5-players-guide", "also_in": [{"book": CORE_BOOK}]})
+
+
+def test_the_corebook_is_always_in_a_list():
+    # an old row or one stored through the API without it is repaired; null stays every book
+    assert normalize_creation_settings({"allowed_books": ["v5-players-guide"]})["allowed_books"] == [CORE_BOOK, "v5-players-guide"]
+    assert normalize_creation_settings('{"allowed_books": ["v5-companion", "v5-corebook"]}')["allowed_books"] == ["v5-companion", CORE_BOOK]
+    assert normalize_creation_settings({"allowed_books": None})["allowed_books"] is None
+    assert validate_creation_settings({"allowed_books": ["v5-players-guide"]})["allowed_books"] == [CORE_BOOK, "v5-players-guide"]
 
 
 def test_allowed_books_are_stored_as_sent():
@@ -173,3 +185,17 @@ def test_allowed_books_are_stored_as_sent():
     assert validate_creation_settings({"allowed_books": None})["allowed_books"] is None
     with pytest.raises(RequestValidationError):
         validate_creation_settings({"allowed_books": []})  # at least one (null allows all)
+
+
+def test_allowed_books_name_the_installed_catalogs_books():
+    known = ["v5-corebook", "v5-players-guide", "v5-companion"]
+    out = validate_creation_settings({"allowed_books": ["v5-players-guide"]}, known_books=known)
+    assert out["allowed_books"] == ["v5-corebook", "v5-players-guide"]
+    with pytest.raises(RequestValidationError) as e:
+        validate_creation_settings({"allowed_books": ["v5-corebook", "v5-typo"]}, known_books=known)
+    assert "v5-typo is not a book of the installed catalog" in e.value.public_message
+    # no catalog installed (or one without books): any id is stored
+    for none in (None, []):
+        assert validate_creation_settings({"allowed_books": ["v5-typo"]}, known_books=none)["allowed_books"] == ["v5-corebook", "v5-typo"]
+    # stored rows stay lenient: an id the catalog lost is just never matched
+    assert normalize_creation_settings({"allowed_books": ["v5-typo"]})["allowed_books"] == ["v5-corebook", "v5-typo"]

@@ -192,6 +192,7 @@ export function translateProblem(problem) {
 const BOOK_SECTIONS = {
   clan: 'clan',
   predator: 'predator',
+  discipline: 'disciplines',
   power: 'disciplines',
   ritual: 'disciplines',
   ceremony: 'disciplines',

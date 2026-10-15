@@ -515,27 +515,63 @@ def test_book_problems_name_the_entry_its_book_and_kind():
     assert codes(validate_creation(c["payload"], CATALOG, '{"allowed_books": ["v5-corebook"]}')) == ["book_not_allowed"]
 
 
+def _moved(cat, ids, book="v5-test-book"):
+    """A copy of the catalog with these Advantages printed only in another book."""
+    cat = copy.deepcopy(cat)
+    for a in cat["advantages"]:
+        if a["id"] in ids:
+            a.update(book=book, also_in=[])
+    return cat
+
+
 def test_what_the_clan_or_predator_type_gives_comes_with_it():
-    # A Players Guide-only chronicle: Grim Reaper's Prey Exclusion (corebook) and the Oblivion
-    # dot come with the type and Fortitude is core rules; the corebook powers the sheet picked don't.
+    # Grim Reaper gives Prey Exclusion: from a book the chronicle leaves out it still comes with
+    # the type, while a Flaw the player took from that book (Enemy) doesn't.
+    cat = _moved(CATALOG, {"flaw:prey-exclusion", "flaw:enemies"})
     c = case("valid: Hecata Grim Reaper with Allies and the Summon Spirit ceremony")
-    got = validate_creation(c["payload"], CATALOG, {"allowed_books": ["v5-players-guide"]})
-    assert got == [
-        {"code": "book_not_allowed", "params": {"name": "Resilience", "book": "v5-corebook", "kind": "power"}},
-        {"code": "book_not_allowed", "params": {"name": "Sense the Unseen", "book": "v5-corebook", "kind": "power"}},
-    ]
+    got = validate_creation(c["payload"], cat, {"allowed_books": ["v5-players-guide"]})
+    assert got == [{"code": "book_not_allowed", "params": {"name": "Enemy", "book": "v5-test-book", "kind": "advantage"}}]
     # The clan's own Flaws (source 'clan': Caitiff Suspect) come with the clan; Flaws the player took don't.
+    cat = _moved(CATALOG, {"flaw:suspect"})
     c = case("valid: Caitiff Osiris, Performance 0 becomes 1, split grants, Caitiff XP")
-    flaws = c["payload"]["wod_meta"]["flaws"]
-    suspect = next(f for f in flaws if f["name"] == "Suspect")
-    pg = {"allowed_books": ["v5-players-guide"]}
-
-    def flagged():
-        return {p["params"]["name"] for p in validate_creation(c["payload"], CATALOG, pg) if p["code"] == "book_not_allowed"}
-
-    assert {"Suspect", "Addiction", "Caitiff", "Osiris"} <= flagged()
+    suspect = next(f for f in c["payload"]["wod_meta"]["flaws"] if f["name"] == "Suspect")
+    assert codes(validate_creation(c["payload"], cat, {"allowed_books": ["v5-corebook"]})) == ["book_not_allowed"]
     suspect["source"] = "clan"
-    assert "Suspect" not in flagged() and "Addiction" in flagged()
+    assert validate_creation(c["payload"], cat, {"allowed_books": ["v5-corebook"]}) == []
+
+
+def test_the_corebook_is_always_allowed():
+    # a Players Guide-only list still has the corebook: the Hecata's corebook picks pass
+    c = case("valid: Hecata Grim Reaper with Allies and the Summon Spirit ceremony")
+    assert validate_creation(c["payload"], CATALOG, {"allowed_books": ["v5-players-guide"]}) == []
+
+
+def test_disciplines_the_clan_or_predator_type_doesnt_give():
+    c = case("books: a Caitiff picks Oblivion (Players Guide) with only the corebook")
+    assert validate_creation(c["payload"], CATALOG, c["settings"]) == [
+        {"code": "book_not_allowed", "params": {"name": "Oblivion", "book": "v5-players-guide", "kind": "discipline"}},
+    ]
+    # Oblivion as an XP dot of a Brujah: not a clan Discipline, not Alleycat's dot
+    c = case("valid: Brujah Alleycat neonate with 13 XP spent")
+    meta = c["payload"]["wod_meta"]
+    meta["disciplines"].append({"name": "Oblivion", "level": 1, "powers": []})
+    meta["experience"]["log"].append({"kind": "discipline", "trait": "Oblivion", "from": 0, "to": 1, "cost": 7})
+    got = validate_creation(c["payload"], CATALOG, {"allowed_books": ["v5-corebook"]})
+    assert {"code": "book_not_allowed", "params": {"name": "Oblivion", "book": "v5-players-guide", "kind": "discipline"}} in got
+    # Disciplines printed only in a book the chronicle leaves out
+    cat = copy.deepcopy(CATALOG)
+    for d in cat["disciplines"]:
+        if d["name"] in ("Oblivion", "Auspex", "Presence", "Animalism"):
+            d.update(book="v5-test-book")
+    corebook = {"allowed_books": ["v5-corebook"]}
+    # the clan's own (Hecata: Oblivion, Auspex, Fortitude) come with the clan
+    hecata = case("valid: Hecata Grim Reaper with Allies and the Summon Spirit ceremony")
+    kinds = {p["params"]["kind"] for p in validate_creation(hecata["payload"], cat, corebook)}
+    assert "discipline" not in kinds
+    # a Caitiff has no clan list: Presence is Osiris's dot (comes with it), Animalism a pick (doesn't)
+    caitiff = case("valid: Caitiff Osiris, Performance 0 becomes 1, split grants, Caitiff XP")
+    got = [p for p in validate_creation(caitiff["payload"], cat, corebook) if p["params"].get("kind") == "discipline"]
+    assert got == [{"code": "book_not_allowed", "params": {"name": "Animalism", "book": "v5-test-book", "kind": "discipline"}}]
 
 
 def test_loresheets_and_rows_without_a_book():

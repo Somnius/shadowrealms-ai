@@ -40,7 +40,7 @@ ABOUT = (
 KEEP = {
     "clans": ("id", "name", "aliases", "book", "also_in", "page", "disciplines", "caitiff", "thin_blood", "creation",
               "bane", "compulsion"),
-    "disciplines": ("id", "name", "aliases", "book", "page", "powers"),
+    "disciplines": ("id", "name", "aliases", "book", "also_in", "page", "powers"),
     "predator_types": ("id", "name", "aliases", "book", "also_in", "page", "specialty_choice", "discipline_choice",
                        "humanity", "blood_potency", "max_blood_potency", "forbidden_clans", "advantages",
                        "flaws", "ancilla_only"),

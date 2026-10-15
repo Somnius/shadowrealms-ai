@@ -203,10 +203,15 @@ export function clanInfo(clan) {
   return getV5Rules().clans.find((c) => c.name === clan) || null;
 }
 
-/** Disciplines a clan may take at creation ('any' for Caitiff, none for thin-bloods). */
-export function creationDisciplineOptions(clan, allDisciplines = disciplineNames()) {
+/**
+ * Disciplines a clan may take at creation ('any' for Caitiff, none for thin-bloods). With the
+ * chronicle's `settings` (the forge's list) a Caitiff's from its books only (disciplineInBooks).
+ */
+export function creationDisciplineOptions(clan, allDisciplines = disciplineNames(), settings = null) {
   if (clan === THIN_BLOOD) return [];
-  if (clan === CAITIFF) return allDisciplines.filter((d) => d !== 'Thin-Blood Alchemy');
+  if (clan === CAITIFF) {
+    return allDisciplines.filter((d) => d !== 'Thin-Blood Alchemy' && disciplineInBooks(settings, { clan }, d));
+  }
   return clanInfo(clan)?.disciplines || [];
 }
 
@@ -607,9 +612,9 @@ const ATTRIBUTE_LABELS = Object.fromEntries([
 ]);
 
 /** Disciplines XP can buy: everything but Thin-Blood Alchemy (thin-bloods buy nothing here). */
-export function xpDisciplineOptions(sheet, allDisciplines) {
+export function xpDisciplineOptions(sheet, allDisciplines, settings = null) {
   if (sheet?.clan === THIN_BLOOD) return [];
-  return allDisciplines.filter((d) => d !== 'Thin-Blood Alchemy');
+  return allDisciplines.filter((d) => d !== 'Thin-Blood Alchemy' && disciplineInBooks(settings, sheet, d));
 }
 
 /** XP multiplier for a Discipline: Caitiff 6, clan 5, anything else 7. */
@@ -957,6 +962,17 @@ export function predatorInBooks(settings, name) {
 }
 export const inBooks = (settings) => (entry) => bookAllowed(settings, entry);
 
+/**
+ * May this sheet have this Discipline in the chronicle's books? A clan Discipline or one the
+ * predator type's dot may go to comes with the clan or type; any other (a Caitiff pick, an XP
+ * Discipline) needs its own book allowed (as backend/services/v5_chargen.py _check_books).
+ */
+export function disciplineInBooks(settings, sheet, name) {
+  if ((clanInfo(sheet?.clan)?.disciplines || []).includes(name)) return true;
+  if (predatorDisciplineOptions(sheet?.predatorType, sheet?.clan).includes(name)) return true;
+  return bookAllowed(settings, getV5Rules().disciplines.find((d) => d.name === name));
+}
+
 /** The age the forge starts a character at: neonate where allowed, else the first allowed age. */
 export function defaultCreationAge(settings) {
   if (ageAllowed(settings, 'neonate')) return 'neonate';
@@ -970,10 +986,11 @@ const bookError = (settings, name, entry) =>
 
 /**
  * Catalog entries the sheet picked from books the chronicle doesn't use (allowed_books), first per
- * section: { sectionId: message }. The clan, the predator type, each power, the starting ritual
- * and ceremony, XP rituals, own Advantages, Flaws and loresheets, thin-blood Merits and Flaws. What
- * the clan or the predator type gives (Discipline dot, grants, the clan's Flaws) comes with it, and
- * Disciplines themselves are core rules (as backend/services/v5_chargen.py _check_books).
+ * section: { sectionId: message }. The clan, the predator type, Disciplines the clan or the
+ * predator type doesn't give (disciplineInBooks), each power, the starting ritual and ceremony, XP
+ * rituals, own Advantages, Flaws and loresheets, thin-blood Merits and Flaws. What the clan or the
+ * predator type gives (its Disciplines, grants, the clan's Flaws) comes with it (as
+ * backend/services/v5_chargen.py _check_books).
  */
 export function bookErrors(sheet, settings) {
   const s = sheet || {};
@@ -986,6 +1003,9 @@ export function bookErrors(sheet, settings) {
   put(S.clan, bookError(settings, s.clan, clanInfo(s.clan)));
   put(S.predator, bookError(settings, s.predatorType, predatorInfo(s.predatorType)));
   disciplineRows(s).forEach((r) => {
+    if (r.level > 0 && !disciplineInBooks(settings, s, r.name)) {
+      put(S.disciplines, bookError(settings, r.name, getV5Rules().disciplines.find((d) => d.name === r.name)));
+    }
     const list = powersOf(r.name);
     r.powers.forEach((name) => {
       const n = String(name || '').trim();

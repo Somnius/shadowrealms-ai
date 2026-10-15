@@ -264,7 +264,8 @@ export default function useV5ForgeState(settings, initialValues) {
     bsLevel: bloodSorceryLevel(sheet),
     clanRow: clanInfo(clan),
     pred: predatorInfo(predatorType),
-    discOptions: creationDisciplineOptions(clan, disciplineNames()),
+    // the forge's list: a Caitiff's picks from the chronicle's books (the check uses every Discipline)
+    discOptions: creationDisciplineOptions(clan, disciplineNames(), settings),
     discRows: disciplineRows(sheet),
     predDiscOptions: predatorDisciplineOptions(predatorType, clan),
     dist,

@@ -133,6 +133,7 @@
     "books": "Allowed books",
     "booksHint": "The forge offers clans, predator types, powers, rituals, ceremonies, Advantages and loresheets from the ticked books only; one printed in several books needs one of them. With every book ticked, books added to the catalog later count too.",
     "bookTier": "Tier {{tier}}",
+    "bookCore": "always allowed (the core rules)",
     "clans": "Allowed clans",
     "predators": "Allowed predator types",
     "ages": "Allowed ages",

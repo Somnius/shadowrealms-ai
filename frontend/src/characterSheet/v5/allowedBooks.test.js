@@ -8,19 +8,21 @@
 import fixture from './__fixtures__/creation-cases.json';
 import { CASE_DEFS } from './__fixtures__/creationCaseDefs';
 import { V5_SECTION_IDS as S } from './constants';
-import { bookAllowed, entryBooks, normalizeCreationSettings } from './creationSettings';
+import { CORE_BOOK, bookAllowed, entryBooks, normalizeCreationSettings } from './creationSettings';
 import { eligibleClans, predatorFits } from './guided';
-import { applyV5Catalog, bookEntries, bookTitle, getV5Rules, powersOf, ritualsOf } from './rulesData';
+import { applyV5Catalog, bookEntries, bookTitle, disciplineNames, getV5Rules, powersOf, ritualsOf } from './rulesData';
 import { spendProblemText, validateSpend } from './savedPoints';
 import {
   advantageOptions,
   bookErrors,
   clanInBooks,
+  creationDisciplineOptions,
   inBooks,
   loresheetOptions,
   predatorInBooks,
   settingsErrors,
   thinBloodOptions,
+  xpDisciplineOptions,
 } from './validation';
 import { problemSection, serverProblemErrors, translateProblem, translateSheetError } from '../i18nErrors';
 
@@ -57,6 +59,15 @@ describe('the books of an entry', () => {
     // no book (the v5.json fallback) or no entry: nothing to check
     expect(bookAllowed(COREBOOK, { name: 'Brujah' })).toBe(true);
     expect(bookAllowed(COREBOOK, null)).toBe(true);
+    // the corebook always, even in settings that weren't normalised
+    expect(bookAllowed({ allowed_books: ['v5-players-guide'] }, { book: CORE_BOOK })).toBe(true);
+  });
+
+  test('a stored list always holds the corebook; null stays every book', () => {
+    expect(normalizeCreationSettings({ allowed_books: ['v5-players-guide'] }).allowed_books).toEqual([CORE_BOOK, 'v5-players-guide']);
+    expect(normalizeCreationSettings({ allowed_books: ['v5-companion', CORE_BOOK] }).allowed_books).toEqual(['v5-companion', CORE_BOOK]);
+    expect(normalizeCreationSettings({ allowed_books: null }).allowed_books).toBeNull();
+    expect(normalizeCreationSettings({}).allowed_books).toBeNull();
   });
 
   test('the books list: core books first, then by precedence; titles by id', () => {
@@ -78,6 +89,22 @@ describe("the forge offers the chronicle's books", () => {
     const reaper = getV5Rules().predators.find((p) => p.name === 'Grim Reaper');
     expect(predatorFits(COREBOOK, 'Brujah', reaper)).toBe(false);
     expect(predatorFits(normalizeCreationSettings({}), 'Brujah', reaper)).toBe(true);
+  });
+
+  test("Disciplines the clan or the predator type doesn't give: a Caitiff's picks, XP dots", () => {
+    expect(creationDisciplineOptions('Caitiff', disciplineNames())).toContain('Oblivion'); // the check's list
+    expect(creationDisciplineOptions('Caitiff', disciplineNames(), COREBOOK)).not.toContain('Oblivion');
+    expect(creationDisciplineOptions('Caitiff', disciplineNames(), books('v5-players-guide'))).toContain('Oblivion');
+    expect(creationDisciplineOptions('Hecata', disciplineNames(), COREBOOK)).toContain('Oblivion'); // the clan's own
+    const brujah = { clan: 'Brujah', predatorType: 'Alleycat' };
+    expect(xpDisciplineOptions(brujah, disciplineNames(), COREBOOK)).not.toContain('Oblivion');
+    expect(xpDisciplineOptions(brujah, disciplineNames())).toContain('Oblivion');
+    // Graverobber (reprinted in Cults) gives an Oblivion dot: it comes with the type
+    const cults = books('v5-cults-of-the-blood-gods');
+    expect(xpDisciplineOptions({ clan: 'Brujah', predatorType: 'Graverobber' }, disciplineNames(), cults)).toContain('Oblivion');
+    expect(bookErrors(sheetOf('books: a Caitiff picks Oblivion (Players Guide) with only the corebook'), COREBOOK)).toEqual({
+      [S.disciplines]: `Oblivion comes from a book this chronicle doesn't use (${PG}).`,
+    });
   });
 
   test('powers and rituals', () => {
@@ -136,11 +163,16 @@ describe('a chosen entry outside the books is an error', () => {
     expect(bookErrors(tz, COREBOOK)[S.advantages]).toBe(`Risk-Taker comes from a book this chronicle doesn't use (${PG}).`);
     const thin = sheetOf('books: a Players Guide thin-blood Merit with only the corebook');
     expect(bookErrors(thin, COREBOOK)[S.advantages]).toMatch(/^Low Appetite comes from a book/);
-    // Caitiff start with Suspect (core): in a Players Guide-only chronicle it still comes with the clan
-    const caitiff = sheetOf('valid: Caitiff Osiris, Performance 0 becomes 1, split grants, Caitiff XP');
-    const pgOnly = books('v5-players-guide');
-    expect(bookErrors({ ...caitiff, flaws: [] }, pgOnly)[S.advantages]).toBeUndefined();
-    expect(bookErrors({ ...caitiff, flaws: [{ name: 'Addiction', dots: 1 }] }, pgOnly)[S.advantages]).toMatch(/^Addiction comes/);
+    // Caitiff start with Suspect: printed only in a book left out, it still comes with the clan
+    const moved = getV5Rules().advantages.filter((a) => ['flaw:suspect', 'flaw:addiction'].includes(a.id));
+    moved.forEach((a) => Object.assign(a, { book: 'v5-test-book', also_in: [] }));
+    try {
+      const caitiff = sheetOf('valid: Caitiff Osiris, Performance 0 becomes 1, split grants, Caitiff XP');
+      expect(bookErrors({ ...caitiff, flaws: [] }, COREBOOK)[S.advantages]).toBeUndefined();
+      expect(bookErrors({ ...caitiff, flaws: [{ name: 'Addiction', dots: 1 }] }, COREBOOK)[S.advantages]).toMatch(/^Addiction comes/);
+    } finally {
+      moved.forEach((a) => Object.assign(a, { book: 'v5-corebook' }));
+    }
   });
 });
 
@@ -151,6 +183,7 @@ describe('messages', () => {
     expect(translateProblem(p)).toBe(text);
     expect(serverProblemErrors([p]).bySection).toEqual({ [S.clan]: text });
     expect(problemSection('book_not_allowed', { kind: 'power' })).toBe(S.disciplines);
+    expect(problemSection('book_not_allowed', { kind: 'discipline' })).toBe(S.disciplines);
     expect(problemSection('book_not_allowed', { kind: 'ceremony' })).toBe(S.disciplines);
     expect(problemSection('book_not_allowed', { kind: 'thin_blood' })).toBe(S.advantages);
     expect(problemSection('book_not_allowed', { kind: 'loresheet' })).toBe(S.advantages);
@@ -170,11 +203,9 @@ describe('messages', () => {
       { code: 'book_not_allowed', params: { name: 'Check the Trunk', book: 'v5-players-guide', kind: 'advantage' } },
     ]);
     expect(spendProblemText(out.problems[0])).toBe(`Check the Trunk comes from a book this chronicle doesn't use (${PG}).`);
-    // Allies is a corebook Background the Players Guide reprints
-    expect(validateSpend(meta, spend('Allies', 'background'), { allowed_books: ['v5-players-guide'] }).ok).toBe(true);
-    expect(validateSpend(meta, spend('Allies', 'background'), { allowed_books: ['v5-companion'] }).problems.map((p) => p.code)).toEqual([
-      'book_not_allowed',
-    ]);
+    expect(validateSpend(meta, spend('Check the Trunk'), { allowed_books: ['v5-players-guide'] }).ok).toBe(true);
+    // the corebook always: Allies in a Companion-only list
+    expect(validateSpend(meta, spend('Allies', 'background'), { allowed_books: ['v5-companion'] }).ok).toBe(true);
     expect(validateSpend(meta, spend('Check the Trunk'), null).ok).toBe(true);
   });
 });

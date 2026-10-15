@@ -305,7 +305,7 @@ class _Catalog:
                     **_source(pw),
                 })
             index(self.disciplines, [d.get("name"), *_strs(d.get("aliases"))],
-                  {"id": _sid(d.get("id")), "name": _str(d.get("name")), "powers": powers})
+                  {"id": _sid(d.get("id")), "name": _str(d.get("name")), "powers": powers, **_source(d)})
         self.discipline_list = [_str(d.get("name")) for d in _dicts(cat.get("disciplines")) if _str(d.get("name"))]
 
         self.advantages = _dicts(cat.get("advantages"))
@@ -890,16 +890,22 @@ def _book_problem(p: _Problems, s: Dict[str, Any], name: str, entry: Optional[di
 
 def _check_books(p: _Problems, sh: _Sheet, cat: _Catalog, s: Dict[str, Any]) -> None:
     """The chronicle's allowed books (creation_settings.allowed_books): the clan, the predator type,
-    each power, ritual and ceremony, and the thin-blood Merits and Flaws are in an allowed book or
-    one they are also printed in. Own Advantage, Flaw and loresheet rows: _check_rows. What the clan
-    or the predator type gives (Discipline dot, grants, the clan's Flaws) comes with it, and a
-    Discipline itself is core rules, so those aren't checked."""
+    each power, ritual and ceremony, the thin-blood Merits and Flaws, and a Discipline that is
+    neither a clan Discipline nor one the predator type's dot may go to (a Caitiff pick, an XP
+    Discipline) are in an allowed book or one they are also printed in. Own Advantage, Flaw and
+    loresheet rows: _check_rows. What the clan or the predator type gives (its Disciplines, grants,
+    the clan's Flaws) comes with it."""
     if not s.get("allowed_books"):
         return
     _book_problem(p, s, sh.clan_name, sh.clan, "clan")
     _book_problem(p, s, sh.pred_name, sh.pred, "predator")
+    given = {_norm(d) for d in (sh.clan or {}).get("disciplines") or []}
+    if sh.pred:
+        given |= {_norm(n) for n, clans in sh.pred["disciplines"] if not clans or sh.clan_name in clans}
     for name, _level, raw in sh.discs:
         entry = cat.discipline(name)
+        if _norm(name) not in given:
+            _book_problem(p, s, name, entry, "discipline")
         for pw_name in (_power_name(v) for v in raw):
             pw = next((x for x in entry["powers"] if _norm(pw_name) in x["keys"]), None) if entry and pw_name else None
             _book_problem(p, s, pw["name"] if pw else pw_name, pw, "power")

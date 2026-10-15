@@ -61,6 +61,20 @@ def test_advantages_and_loresheets_load_with_level_descriptions(cat_dir):
     assert "desc" not in data["advantages"][0]["levels"][0]
 
 
+def test_book_ids_for_the_allowed_books_check(cat_dir, monkeypatch):
+    assert v5_catalog.book_ids() is None  # a catalog without books.json: allowed_books unchecked
+    _write(cat_dir, "books", [{"book_id": "v5-corebook", "title": "Corebook"}, {"title": "no id"}, {"book_id": 3}])
+    assert v5_catalog.book_ids() == ["v5-corebook"]
+    monkeypatch.setattr(v5_catalog, "load_catalog", lambda: None)
+    assert v5_catalog.book_ids() is None
+
+    def broken():
+        raise ValueError("bad json")
+
+    monkeypatch.setattr(v5_catalog, "load_catalog", broken)
+    assert v5_catalog.book_ids() is None
+
+
 def test_etag_changes_with_the_files(cat_dir):
     v5_catalog.load_catalog()
     first = v5_catalog.catalog_etag()

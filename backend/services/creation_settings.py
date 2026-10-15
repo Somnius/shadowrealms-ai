@@ -5,7 +5,8 @@ campaigns.creation_settings. Pure: no Flask, no DB.
 Shape (every key optional when sent; the normaliser fills defaults):
 {
   "v": 1,
-  "allowed_books": null | [book_id, ...],      # null = every catalog book, also ones added later (book_allowed)
+  "allowed_books": null | [book_id, ...],      # null = every catalog book, also ones added later; a list
+                                               # always holds CORE_BOOK (book_allowed)
   "allowed_clans": null | ["Brujah", ...],     # English names, as stored in wod_meta.clan
   "allowed_predators": null | ["Alleycat", ...],
   "allowed_ages": null | ["childer", "neonate", "ancilla"],
@@ -21,11 +22,13 @@ from __future__ import annotations
 
 import copy
 import json
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Iterable, List, Optional
 
 from services.request_validation import RequestValidationError
 
 AGES = ("childer", "neonate", "ancilla")
+# The corebook is always allowed: the core rules every chronicle plays by.
+CORE_BOOK = "v5-corebook"
 ST_MODES = ("human", "ai")
 LIST_KEYS = ("allowed_books", "allowed_clans", "allowed_predators", "allowed_ages")
 NAME_MAX = 60
@@ -85,6 +88,9 @@ def normalize_creation_settings(value: Any) -> Dict[str, Any]:
         out[key] = _clean_list(value.get(key))
     if out["allowed_ages"]:
         out["allowed_ages"] = [a for a in out["allowed_ages"] if a in AGES] or None
+    if out["allowed_books"] and CORE_BOOK not in out["allowed_books"]:
+        # an old row or one stored through the API without it: the corebook is always allowed
+        out["allowed_books"] = [CORE_BOOK, *out["allowed_books"]]
     fm = value.get("flaws_max_dots")
     if _is_int(fm) and FLAWS_MAX_RANGE[0] <= fm <= FLAWS_MAX_RANGE[1]:
         out["flaws_max_dots"] = fm
@@ -105,11 +111,12 @@ def normalize_creation_settings(value: Any) -> Dict[str, Any]:
     return out
 
 
-def validate_creation_settings(value: Any) -> Dict[str, Any]:
+def validate_creation_settings(value: Any, known_books: Optional[Iterable[str]] = None) -> Dict[str, Any]:
     """
     Strict check of a client-sent setting (Storyteller API). Unknown keys, wrong types and values
     out of range are refused with a RequestValidationError; missing keys take their defaults.
-    Returns the normalised settings.
+    `known_books`: the installed catalog's book ids (books.json); when given, allowed_books may
+    only name those. Returns the normalised settings (allowed_books with the corebook in it).
     """
     if not isinstance(value, dict):
         raise RequestValidationError("creation_settings must be an object.")
@@ -130,6 +137,13 @@ def validate_creation_settings(value: Any) -> Dict[str, Any]:
     for age in value.get("allowed_ages") or []:
         if age not in AGES:
             raise RequestValidationError("allowed_ages entries are childer, neonate or ancilla.")
+    known = {b for b in known_books or () if isinstance(b, str)}
+    unknown = [b.strip() for b in value.get("allowed_books") or [] if known and b.strip() not in known]
+    if unknown:
+        raise RequestValidationError(
+            f"allowed_books: {unknown[0]} is not a book of the installed catalog "
+            f"(its books are {', '.join(sorted(known))})."
+        )
     fm = value.get("flaws_max_dots")
     if fm is not None and not (_is_int(fm) and FLAWS_MAX_RANGE[0] <= fm <= FLAWS_MAX_RANGE[1]):
         raise RequestValidationError(
@@ -191,14 +205,15 @@ def book_allowed(settings: Any, entry: Any) -> bool:
     May a chronicle use this catalog entry (clan, power, ritual, ceremony, formula, predator type,
     Merit, Background, Flaw, loresheet)? Yes when its allowed_books is null (every book, also the
     ones the catalog adds later), when the entry names no book, or when its own book or one it is
-    also printed in (also_in) is allowed. `settings`: normalised (normalize_creation_settings).
+    also printed in (also_in) is allowed; the corebook always is (CORE_BOOK). `settings`:
+    normalised (normalize_creation_settings).
     The creation check (v5_chargen) and the saved-points spend check both decide with this.
     """
     allowed = settings.get("allowed_books") if isinstance(settings, dict) else None
     if not allowed:
         return True
     books = entry_books(entry)
-    return not books or any(b in allowed for b in books)
+    return not books or any(b == CORE_BOOK or b in allowed for b in books)
 
 
 def creation_problems(settings: Any, wod_meta: Any) -> List[str]:

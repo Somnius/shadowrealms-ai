@@ -106,7 +106,7 @@ export default function ExperienceStep() {
               ? ATTRIBUTE_PAIRS.map(([k, label]) => [k, label, xpAttrs[k]])
               : draft.kind === 'skill'
                 ? SKILL_PAIRS.map(([k, label]) => [k, label, xpSkills[k]])
-                : xpDisciplineOptions(sheet, disciplineNames()).map((d) => [d, d, discRows.find((r) => r.name === d)?.level || 0])
+                : xpDisciplineOptions(sheet, disciplineNames(), f.settings).map((d) => [d, d, discRows.find((r) => r.name === d)?.level || 0])
             ).map(([k, label, now]) => (
               <option key={k} value={k} disabled={now >= V5_XP_MAX_DOTS}>
                 {label} ({now})

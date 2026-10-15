@@ -388,8 +388,16 @@ def test_books_are_the_creation_checks_own():
     m["advantages"].append({"name": "City Secrets (Athens)", "dots": 1, "kind": "merit"})
     assert set(codes(check(m, {"name": "City Secrets (Athens)", "dots": 1}, settings=books))) == {"adv_dots_range", "book_not_allowed"}
     lore = {"name": "The Bahari", "kind": "loresheet", "levels": [1]}
-    assert codes(check(meta(), lore, settings={"allowed_books": ["v5-players-guide"]})) == ["book_not_allowed"]
-    assert codes(check(meta(), lore, settings=books)) == []
+    assert codes(check(meta(), lore, settings={"allowed_books": ["v5-players-guide"]})) == []  # the corebook always
+    bahari = next(ls for ls in CATALOG["loresheets"] if ls["id"] == "loresheet:the-bahari")
+    bahari["book"] = "v5-companion"
+    try:
+        out = check(meta(), lore, settings=books)
+        assert out["problems"] == [
+            {"code": "book_not_allowed", "params": {"name": "The Bahari", "book": "v5-companion", "kind": "loresheet"}},
+        ]
+    finally:
+        bahari["book"] = "v5-corebook"
 
 
 def test_loresheet_levels_and_restrictions():

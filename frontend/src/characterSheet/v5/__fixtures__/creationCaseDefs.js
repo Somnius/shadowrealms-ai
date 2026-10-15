@@ -419,6 +419,16 @@ const tzimisceCompanion = (over = {}) =>
 
 const COREBOOK = { allowed_books: ['v5-corebook'] };
 
+/** The Caitiff with Oblivion (a Players Guide Discipline, no power taken) instead of Animalism. */
+const caitiffOblivion = () =>
+  caitiff({
+    disciplines: [
+      { name: 'Presence', level: 2, powers: ['Awe', 'Lingering Kiss', 'Entrancement'] },
+      { name: 'Oblivion', level: 1, powers: [] },
+    ],
+    xpPurchases: [{ kind: 'specialty', skill: 'persuasion', trait: 'Sermons' }],
+  });
+
 const meta = (payload) => payload.wod_meta;
 
 // ---------- the cases ----------
@@ -499,6 +509,12 @@ export const CASE_DEFS = [
     name: 'valid: allowed books: a Players Guide clan and Flaw the Companion reprints (also_in)',
     settings: { allowed_books: ['v5-corebook', 'v5-companion'] },
     sheet: () => tzimisceCompanion(),
+    expect: [],
+  },
+  {
+    name: 'valid: allowed books: a Caitiff picks Oblivion with the Players Guide allowed',
+    settings: { allowed_books: ['v5-corebook', 'v5-players-guide'] },
+    sheet: () => caitiffOblivion(),
     expect: [],
   },
 
@@ -764,6 +780,12 @@ export const CASE_DEFS = [
     name: 'books: a Players Guide clan, predator type, powers and ceremony with only the corebook',
     settings: COREBOOK,
     sheet: () => hecata(),
+    expect: ['book_not_allowed'],
+  },
+  {
+    name: 'books: a Caitiff picks Oblivion (Players Guide) with only the corebook',
+    settings: COREBOOK,
+    sheet: () => caitiffOblivion(),
     expect: ['book_not_allowed'],
   },
   {

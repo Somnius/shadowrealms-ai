@@ -12,6 +12,7 @@ from flask import Blueprint, request, jsonify, current_app
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from services.rules_edition import V5, edition_of, normalize_rules_edition, validate_rules_edition
 from services.creation_settings import normalize_creation_settings, validate_creation_settings
+from services.v5_catalog import book_ids
 from services.request_validation import RequestValidationError
 from services.rag_service import create_rag_service
 from services.embedding_service import create_embedding_service
@@ -912,7 +913,8 @@ def update_campaign(campaign_id):
             if edition_of(row) != V5:
                 return jsonify({'error': 'creation_settings are for V5 chronicles'}), 400
             try:
-                settings = validate_creation_settings(data['creation_settings'])
+                # allowed_books may only name the installed catalog's books (none installed: unchecked)
+                settings = validate_creation_settings(data['creation_settings'], known_books=book_ids())
             except RequestValidationError as e:
                 return jsonify({'error': e.public_message}), 400
             updates.append('creation_settings = %s')

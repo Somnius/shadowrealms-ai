@@ -191,6 +191,8 @@ function fromCatalog(cat) {
       id: d.id,
       name: d.name,
       desc: pickDesc(d),
+      book: d.book,
+      also_in: alsoIn(d),
       powers: (d.powers || []).map((p) => ({
         id: p.id,
         name: p.name,

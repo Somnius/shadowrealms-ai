@@ -3,21 +3,23 @@ import { Button, Checkbox, Input, Panel, Select, Textarea } from '../../design';
 import { V5_AGE_BRACKETS } from '../../characterSheet/v5/constants';
 import { bookEntries, clanNames, predatorNames } from '../../characterSheet/v5/rulesData';
 import { useV5Catalog } from '../../rules/v5Catalog';
-import { CREATION_AGES, normalizeCreationSettings } from '../../characterSheet/v5/creationSettings';
+import { CORE_BOOK, CREATION_AGES, normalizeCreationSettings } from '../../characterSheet/v5/creationSettings';
 import { t } from '../../i18n';
 
 /**
  * One "allowed" list: every box ticked is stored as null (everything allowed, including what
- * later catalogs add); at least one box must stay ticked. `noteOf`: a short note after a label
- * (in the UI language); `hint`: a line under the boxes.
+ * later catalogs add); at least one box must stay ticked. `locked`: names always allowed (ticked
+ * and disabled, kept in every list); `noteOf`: a short note after a label (in the UI language);
+ * `hint`: a line under the boxes.
  */
-function AllowedList({ legend, names, labelOf = (n) => n, noteOf = null, hint = null, value, onChange }) {
+function AllowedList({ legend, names, labelOf = (n) => n, noteOf = null, hint = null, locked = [], value, onChange }) {
   const hintId = useId();
   if (!names.length) return null;
-  const ticked = value || names;
+  const ticked = value ? [...locked.filter((n) => !value.includes(n)), ...value] : names;
   // Stored names this list doesn't show (e.g. added through the API) are kept as they are.
   const unknown = (value || []).filter((n) => !names.includes(n));
   const toggle = (name, on) => {
+    if (locked.includes(name)) return;
     const next = on ? [...ticked, name] : ticked.filter((n) => n !== name);
     if (!next.some((n) => names.includes(n))) return;
     onChange(names.every((n) => next.includes(n)) && !unknown.length ? null : [...names.filter((n) => next.includes(n)), ...unknown]);
@@ -36,6 +38,7 @@ function AllowedList({ legend, names, labelOf = (n) => n, noteOf = null, hint = 
               </>
             }
             checked={ticked.includes(n)}
+            disabled={locked.includes(n)}
             onChange={(e) => toggle(n, e.target.checked)}
           />
         ))}
@@ -68,12 +71,26 @@ export default function CreationRulesPanel({ campaign, saving, onSave, suggestAi
   const showSuggest = suggestAi && s.st_mode === 'human';
   const books = bookEntries();
   const bookOf = Object.fromEntries(books.map((b) => [b.book_id, b]));
+  // The server refuses book ids its catalog doesn't list: a stored one it dropped since goes; every book = null.
+  const cleanBooks = (list) => {
+    if (!list || !books.length) return list;
+    const known = list.filter((id) => bookOf[id]);
+    return books.every((b) => known.includes(b.book_id)) ? null : known;
+  };
+  const bookNote = (id) =>
+    [
+      Number.isFinite(bookOf[id]?.tier) ? t('chronicle:creation.bookTier', 'Tier {{tier}}', { tier: bookOf[id].tier }) : '',
+      id === CORE_BOOK ? t('chronicle:creation.bookCore', 'always allowed (the core rules)') : '',
+    ]
+      .filter(Boolean)
+      .join(' · ');
   const submit = (e) => {
     e.preventDefault();
     const n = parseInt(flawsText, 10);
     const cap = parseInt(capText, 10);
     onSave({
       ...s,
+      allowed_books: cleanBooks(s.allowed_books),
       flaws_max_dots: Number.isFinite(n) ? Math.max(2, Math.min(20, n)) : null,
       saved_points: {
         ...s.saved_points,
@@ -91,7 +108,8 @@ export default function CreationRulesPanel({ campaign, saving, onSave, suggestAi
           legend={t('chronicle:creation.books', 'Allowed books')}
           names={books.map((b) => b.book_id)}
           labelOf={(id) => bookOf[id]?.title || id}
-          noteOf={(id) => (Number.isFinite(bookOf[id]?.tier) ? t('chronicle:creation.bookTier', 'Tier {{tier}}', { tier: bookOf[id].tier }) : '')}
+          noteOf={bookNote}
+          locked={bookOf[CORE_BOOK] ? [CORE_BOOK] : []}
           hint={t('chronicle:creation.booksHint', 'The forge offers clans, predator types, powers, rituals, ceremonies, Advantages and loresheets from the ticked books only; one printed in several books needs one of them. With every book ticked, books added to the catalog later count too.')}
           value={s.allowed_books}
           onChange={(v) => set({ allowed_books: v })}

@@ -250,6 +250,22 @@ describe("the chronicle's allowed books (Forge v2)", () => {
     expect(within(p1).getByRole('option', { name: 'Cloud Memory (level 1)' })).toBeInTheDocument();
   });
 
+  test("a Caitiff is offered Disciplines from the chronicle's books; a pick from another stays", () => {
+    // the fixture's Disciplines have no book: give Oblivion the Players Guide's for this test
+    applyV5Catalog({ ...fixture, disciplines: fixture.disciplines.map((d) => (d.name === 'Oblivion' ? { ...d, book: 'v5-players-guide' } : d)) });
+    try {
+      const { rerender } = render(forge(null));
+      pick(document.getElementById('v5-field-clan'), 'Caitiff');
+      pick(screen.getByLabelText('Discipline at 1 dot'), 'Oblivion');
+      rerender(forge(COREBOOK));
+      expect(screen.getByLabelText('Discipline at 1 dot')).toHaveValue('Oblivion');
+      expect(within(screen.getByLabelText('Discipline at 2 dots')).queryByRole('option', { name: 'Oblivion' })).toBeNull();
+      expect(within(screen.getByLabelText('Discipline at 2 dots')).getByRole('option', { name: 'Auspex' })).toBeInTheDocument();
+    } finally {
+      applyV5Catalog(fixture);
+    }
+  });
+
   test('a chosen entry from a book left out stays, marked, and the check says why', () => {
     // jsdom has no scrollIntoView (the forge scrolls to the first section with an error)
     Element.prototype.scrollIntoView = jest.fn();

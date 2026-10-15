@@ -34,7 +34,7 @@ test('the books, core ones first with their tier; all ticked is stored as null',
   renderPanel({}, onSave);
   const boxes = within(bookList()).getAllByRole('checkbox');
   expect(boxes.map((b) => document.querySelector(`label[for="${b.id}"]`).textContent)).toEqual([
-    'Corebook · Tier 1',
+    'Corebook · Tier 1 · always allowed (the core rules)',
     'Players Guide · Tier 1',
     'Companion · Tier 1',
     'Cults of the Blood Gods · Tier 2',
@@ -50,27 +50,42 @@ test('the books, core ones first with their tier; all ticked is stored as null',
   );
 });
 
-test('at least one book stays ticked; ticking them all again is null', async () => {
+const box = (name) => within(bookList()).getByRole('checkbox', { name: new RegExp(`^${name} ·`) });
+
+test('the corebook is always allowed: unticking all but the Players Guide keeps it', async () => {
   const user = setupUser();
   const onSave = jest.fn();
-  renderPanel({ allowed_books: ['v5-corebook'] }, onSave);
-  const box = (name) => within(bookList()).getByRole('checkbox', { name: new RegExp(`^${name} ·`) });
+  renderPanel({}, onSave);
   expect(box('Corebook')).toBeChecked();
-  expect(box('Players Guide')).not.toBeChecked();
-  await user.click(box('Corebook')); // the last one
+  expect(box('Corebook')).toBeDisabled();
+  await user.click(box('Corebook'));
+  for (const name of ['Companion', 'Cults of the Blood Gods']) await user.click(box(name));
   expect(box('Corebook')).toBeChecked();
-  for (const name of ['Players Guide', 'Companion', 'Cults of the Blood Gods']) await user.click(box(name));
+  await save(user);
+  expect(onSave).toHaveBeenLastCalledWith(expect.objectContaining({ allowed_books: ['v5-corebook', 'v5-players-guide'] }));
+  // and the Players Guide alone leaves the corebook
+  await user.click(box('Players Guide'));
+  await save(user);
+  expect(onSave).toHaveBeenLastCalledWith(expect.objectContaining({ allowed_books: ['v5-corebook'] }));
+});
+
+test('a stored list without the corebook (an old row) gets it; ticking every book again is null', async () => {
+  const user = setupUser();
+  const onSave = jest.fn();
+  renderPanel({ allowed_books: ['v5-players-guide'] }, onSave);
+  expect(box('Corebook')).toBeChecked();
+  expect(box('Players Guide')).toBeChecked();
+  expect(box('Companion')).not.toBeChecked();
+  for (const name of ['Companion', 'Cults of the Blood Gods']) await user.click(box(name));
   await save(user);
   expect(onSave).toHaveBeenLastCalledWith(expect.objectContaining({ allowed_books: null }));
 });
 
-test('a stored book the catalog no longer lists is kept', async () => {
+test("a stored book the catalog no longer lists is dropped on save (the server refuses it)", async () => {
   const user = setupUser();
   const onSave = jest.fn();
   renderPanel({ allowed_books: ['v5-corebook', 'v5-removed-book'] }, onSave);
-  await user.click(within(bookList()).getByRole('checkbox', { name: /^Companion ·/ }));
+  await user.click(box('Companion'));
   await save(user);
-  expect(onSave).toHaveBeenLastCalledWith(
-    expect.objectContaining({ allowed_books: ['v5-corebook', 'v5-companion', 'v5-removed-book'] })
-  );
+  expect(onSave).toHaveBeenLastCalledWith(expect.objectContaining({ allowed_books: ['v5-corebook', 'v5-companion'] }));
 });

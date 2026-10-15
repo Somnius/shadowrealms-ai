@@ -122,6 +122,17 @@ def catalog_etag() -> Optional[str]:
     return _cache["etag"]
 
 
+def book_ids() -> Optional[List[str]]:
+    """The installed catalog's book ids (books.json), or None when there is no catalog, it has no
+    books or it can't be read (then a chronicle's allowed_books aren't checked against it)."""
+    try:
+        catalog = load_catalog()
+    except Exception:  # a broken catalog file: settings stay storable
+        return None
+    ids = [b["book_id"] for b in (catalog or {}).get("books") or [] if isinstance(b.get("book_id"), str) and b["book_id"]]
+    return ids or None
+
+
 def find(catalog: Dict[str, Any], kind: str, name_or_id: str) -> Optional[dict]:
     """An entry of one catalog by id, name or alias (case and spaces ignored)."""
     want = " ".join(str(name_or_id or "").split()).lower()
