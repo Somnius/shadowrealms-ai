@@ -1,0 +1,132 @@
+{
+  "catalog": "ceremonies",
+  "version": 1,
+  "entries": [
+    {
+      "id": "ceremony:summon-spirit",
+      "name": "Summon Spirit",
+      "level": 1,
+      "book": "v5-players-guide",
+      "page": 92,
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf",
+      "prerequisite": {
+        "power_id": "power:oblivion:the-binding-fetter"
+      },
+      "discipline": "discipline:oblivion"
+    },
+    {
+      "id": "ceremony:the-gift-of-false-life",
+      "name": "The Gift of False Life",
+      "level": 1,
+      "book": "v5-players-guide",
+      "page": 92,
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf",
+      "prerequisite": {
+        "power_id": "power:oblivion:ashes-to-ashes"
+      },
+      "discipline": "discipline:oblivion"
+    },
+    {
+      "id": "ceremony:awaken-the-homuncular-servant",
+      "name": "Awaken the Homuncular Servant",
+      "level": 2,
+      "book": "v5-players-guide",
+      "page": 93,
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf",
+      "prerequisite": {
+        "power_id": "power:oblivion:where-the-veil-thins"
+      },
+      "discipline": "discipline:oblivion"
+    },
+    {
+      "id": "ceremony:compel-spirit",
+      "name": "Compel Spirit",
+      "level": 2,
+      "book": "v5-players-guide",
+      "page": 94,
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf",
+      "prerequisite": {
+        "power_id": "power:oblivion:where-the-veil-thins"
+      },
+      "discipline": "discipline:oblivion"
+    },
+    {
+      "id": "ceremony:host-spirit",
+      "name": "Host Spirit",
+      "level": 3,
+      "book": "v5-players-guide",
+      "page": 94,
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf",
+      "prerequisite": {
+        "power_id": "power:oblivion:aura-of-decay"
+      },
+      "discipline": "discipline:oblivion"
+    },
+    {
+      "id": "ceremony:shambling-hordes",
+      "name": "Shambling Hordes",
+      "level": 3,
+      "book": "v5-players-guide",
+      "page": 95,
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf",
+      "prerequisite": {
+        "power_id": "power:oblivion:aura-of-decay"
+      },
+      "discipline": "discipline:oblivion"
+    },
+    {
+      "id": "ceremony:bind-the-spirit",
+      "name": "Bind the Spirit",
+      "level": 4,
+      "book": "v5-players-guide",
+      "page": 96,
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf",
+      "prerequisite": {
+        "power_id": "power:oblivion:necrotic-plague"
+      },
+      "discipline": "discipline:oblivion"
+    },
+    {
+      "id": "ceremony:split-the-veil",
+      "name": "Split the Veil",
+      "level": 4,
+      "book": "v5-players-guide",
+      "page": 96,
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf",
+      "prerequisite": {
+        "power_id": "power:oblivion:necrotic-plague"
+      },
+      "discipline": "discipline:oblivion"
+    },
+    {
+      "id": "ceremony:lazarene-blessing",
+      "name": "Lazarene Blessing",
+      "level": 5,
+      "book": "v5-players-guide",
+      "page": 97,
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf",
+      "prerequisite": {
+        "power_id": "power:oblivion:skuld-fulfilled"
+      },
+      "discipline": "discipline:oblivion"
+    }
+  ]
+}

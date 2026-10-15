@@ -1,0 +1,32 @@
+{
+  "catalog": "disciplines",
+  "notes": "Creation rules printed in the Discipline sections.",
+  "patch": [
+    {
+      "id": "discipline:blood-sorcery",
+      "set": {
+        "creation_pick": {
+          "catalog": "rituals",
+          "level": 1,
+          "requires": "one dot of Blood Sorcery",
+          "book": "v5-corebook",
+          "page": 272
+        }
+      },
+      "why": "core pr 272: one Level 1 ritual at creation with at least one dot of Blood Sorcery"
+    },
+    {
+      "id": "discipline:oblivion",
+      "set": {
+        "creation_pick": {
+          "catalog": "ceremonies",
+          "level": 1,
+          "requires": "the Ceremony's prerequisite Oblivion power",
+          "book": "v5-players-guide",
+          "page": 91
+        }
+      },
+      "why": "PG pr 91: one Level 1 Ceremony at creation if the character has an Oblivion power that is its prerequisite"
+    }
+  ]
+}

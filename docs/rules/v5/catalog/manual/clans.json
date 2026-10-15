@@ -1,0 +1,169 @@
+{
+  "catalog": "clans",
+  "notes": "Facts the clan blocks do not print in a parseable place. Compulsion spellings on the PG clan sheet ('Judgement', 'Effective Empathy') differ from the clan chapters ('Judgment' pr 18, 'Affective Empathy' pr 48); the clan chapter spelling is kept.",
+  "patch": [
+    {
+      "id": "clan:banu-haqim",
+      "set": {
+        "bane_name": "Blood Addiction",
+        "bane_name_ref": {
+          "book": "v5-players-guide",
+          "page": 12
+        }
+      },
+      "why": "Bane name from the Players Guide clan sheet pr 12; the text layer of that page is out of order, so it was read from the rendered page (pdftoppm) and matched by clan row"
+    },
+    {
+      "id": "clan:brujah",
+      "set": {
+        "bane_name": "Violent Temper",
+        "bane_name_ref": {
+          "book": "v5-players-guide",
+          "page": 12
+        }
+      },
+      "why": "Bane name from the Players Guide clan sheet pr 12; the text layer of that page is out of order, so it was read from the rendered page (pdftoppm) and matched by clan row"
+    },
+    {
+      "id": "clan:gangrel",
+      "set": {
+        "bane_name": "Bestial Features",
+        "bane_name_ref": {
+          "book": "v5-players-guide",
+          "page": 12
+        }
+      },
+      "why": "Bane name from the Players Guide clan sheet pr 12; the text layer of that page is out of order, so it was read from the rendered page (pdftoppm) and matched by clan row"
+    },
+    {
+      "id": "clan:hecata",
+      "set": {
+        "bane_name": "Painful Kiss",
+        "bane_name_ref": {
+          "book": "v5-players-guide",
+          "page": 12
+        }
+      },
+      "why": "Bane name from the Players Guide clan sheet pr 12; the text layer of that page is out of order, so it was read from the rendered page (pdftoppm) and matched by clan row"
+    },
+    {
+      "id": "clan:lasombra",
+      "set": {
+        "bane_name": "Distorted Image",
+        "bane_name_ref": {
+          "book": "v5-players-guide",
+          "page": 12
+        }
+      },
+      "why": "Bane name from the Players Guide clan sheet pr 12; the text layer of that page is out of order, so it was read from the rendered page (pdftoppm) and matched by clan row"
+    },
+    {
+      "id": "clan:malkavian",
+      "set": {
+        "bane_name": "Fractured Perspective",
+        "bane_name_ref": {
+          "book": "v5-players-guide",
+          "page": 12
+        }
+      },
+      "why": "Bane name from the Players Guide clan sheet pr 12; the text layer of that page is out of order, so it was read from the rendered page (pdftoppm) and matched by clan row"
+    },
+    {
+      "id": "clan:ministry",
+      "set": {
+        "bane_name": "Abhors the Light",
+        "bane_name_ref": {
+          "book": "v5-players-guide",
+          "page": 12
+        }
+      },
+      "why": "Bane name from the Players Guide clan sheet pr 12; the text layer of that page is out of order, so it was read from the rendered page (pdftoppm) and matched by clan row"
+    },
+    {
+      "id": "clan:nosferatu",
+      "set": {
+        "bane_name": "Repulsiveness",
+        "bane_name_ref": {
+          "book": "v5-players-guide",
+          "page": 12
+        }
+      },
+      "why": "Bane name from the Players Guide clan sheet pr 12; the text layer of that page is out of order, so it was read from the rendered page (pdftoppm) and matched by clan row"
+    },
+    {
+      "id": "clan:ravnos",
+      "set": {
+        "bane_name": "Doomed",
+        "bane_name_ref": {
+          "book": "v5-players-guide",
+          "page": 13
+        }
+      },
+      "why": "Bane name from the Players Guide clan sheet pr 13; the text layer of that page is out of order, so it was read from the rendered page (pdftoppm) and matched by clan row"
+    },
+    {
+      "id": "clan:salubri",
+      "set": {
+        "bane_name": "Hunted",
+        "bane_name_ref": {
+          "book": "v5-players-guide",
+          "page": 13
+        }
+      },
+      "why": "Bane name from the Players Guide clan sheet pr 13; the text layer of that page is out of order, so it was read from the rendered page (pdftoppm) and matched by clan row"
+    },
+    {
+      "id": "clan:toreador",
+      "set": {
+        "bane_name": "Aesthetic Fixation",
+        "bane_name_ref": {
+          "book": "v5-players-guide",
+          "page": 13
+        }
+      },
+      "why": "Bane name from the Players Guide clan sheet pr 13; the text layer of that page is out of order, so it was read from the rendered page (pdftoppm) and matched by clan row"
+    },
+    {
+      "id": "clan:tremere",
+      "set": {
+        "bane_name": "Deficient Blood",
+        "bane_name_ref": {
+          "book": "v5-players-guide",
+          "page": 13
+        }
+      },
+      "why": "Bane name from the Players Guide clan sheet pr 13; the text layer of that page is out of order, so it was read from the rendered page (pdftoppm) and matched by clan row"
+    },
+    {
+      "id": "clan:tzimisce",
+      "set": {
+        "bane_name": "Grounded",
+        "bane_name_ref": {
+          "book": "v5-players-guide",
+          "page": 13
+        }
+      },
+      "why": "Bane name from the Players Guide clan sheet pr 13; the text layer of that page is out of order, so it was read from the rendered page (pdftoppm) and matched by clan row"
+    },
+    {
+      "id": "clan:ventrue",
+      "set": {
+        "bane_name": "Rarefied Tastes",
+        "bane_name_ref": {
+          "book": "v5-players-guide",
+          "page": 13
+        }
+      },
+      "why": "Bane name from the Players Guide clan sheet pr 13; the text layer of that page is out of order, so it was read from the rendered page (pdftoppm) and matched by clan row"
+    },
+    {
+      "id": "clan:ministry",
+      "set": {
+        "aliases": [
+          "The Ministry"
+        ]
+      },
+      "why": "PG pr 12 clan sheet prints 'The Ministry'"
+    }
+  ]
+}

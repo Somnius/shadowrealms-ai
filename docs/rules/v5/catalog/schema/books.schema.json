@@ -1,0 +1,74 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "shadowrealms/v5/catalog/books.schema.json",
+  "title": "V5 catalog books",
+  "description": "Books the catalog cites. book_id, title and precedence must equal books/manifest.yaml (pytest checks it). page_offset: pdf page index = printed page + offset.",
+  "type": "object",
+  "required": [
+    "catalog",
+    "version",
+    "entries"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "catalog": {
+      "const": "books"
+    },
+    "version": {
+      "const": 1
+    },
+    "entries": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": [
+          "book_id",
+          "title",
+          "precedence",
+          "tier",
+          "extractable",
+          "page_offset",
+          "dot_glyph"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "book_id": {
+            "type": "string",
+            "pattern": "^v5-[a-z0-9-]+$"
+          },
+          "title": {
+            "type": "string",
+            "minLength": 1
+          },
+          "precedence": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "tier": {
+            "enum": [
+              1,
+              2,
+              3
+            ]
+          },
+          "extractable": {
+            "type": "boolean"
+          },
+          "page_offset": {
+            "type": "integer",
+            "minimum": -10,
+            "maximum": 20
+          },
+          "dot_glyph": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      }
+    }
+  },
+  "$defs": {}
+}

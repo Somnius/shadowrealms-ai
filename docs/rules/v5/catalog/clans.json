@@ -1,0 +1,633 @@
+{
+  "catalog": "clans",
+  "version": 1,
+  "entries": [
+    {
+      "id": "clan:banu-haqim",
+      "name": "Banu Haqim",
+      "book": "v5-players-guide",
+      "page": 17,
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf",
+      "disciplines": [
+        "discipline:blood-sorcery",
+        "discipline:celerity",
+        "discipline:obfuscate"
+      ],
+      "disciplines_page": 17,
+      "bane": {
+        "name": "Blood Addiction",
+        "page": 18,
+        "name_ref": {
+          "book": "v5-players-guide",
+          "page": 12
+        }
+      },
+      "compulsion": {
+        "name": "Judgment",
+        "page": 18,
+        "book": "v5-players-guide"
+      },
+      "bane_variants": [
+        {
+          "name": "Noxious Blood",
+          "book": "v5-players-guide",
+          "page": 56
+        }
+      ],
+      "caitiff": false,
+      "thin_blood": false,
+      "manual_fields": [
+        "bane.name",
+        "bane.name_ref"
+      ]
+    },
+    {
+      "id": "clan:brujah",
+      "name": "Brujah",
+      "book": "v5-corebook",
+      "page": 65,
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf",
+      "disciplines": [
+        "discipline:celerity",
+        "discipline:potence",
+        "discipline:presence"
+      ],
+      "disciplines_page": 67,
+      "bane": {
+        "name": "Violent Temper",
+        "page": 67,
+        "name_ref": {
+          "book": "v5-players-guide",
+          "page": 12
+        }
+      },
+      "compulsion": {
+        "name": "Rebellion",
+        "page": 210,
+        "book": "v5-corebook"
+      },
+      "bane_variants": [
+        {
+          "name": "Violence",
+          "book": "v5-players-guide",
+          "page": 56
+        }
+      ],
+      "caitiff": false,
+      "thin_blood": false,
+      "manual_fields": [
+        "bane.name",
+        "bane.name_ref"
+      ]
+    },
+    {
+      "id": "clan:caitiff",
+      "name": "Caitiff",
+      "book": "v5-corebook",
+      "page": 105,
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf",
+      "disciplines": [],
+      "disciplines_page": 107,
+      "bane": {
+        "name": null,
+        "page": 107
+      },
+      "compulsion": null,
+      "bane_variants": [],
+      "caitiff": true,
+      "thin_blood": false
+    },
+    {
+      "id": "clan:gangrel",
+      "name": "Gangrel",
+      "book": "v5-corebook",
+      "page": 69,
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf",
+      "disciplines": [
+        "discipline:animalism",
+        "discipline:fortitude",
+        "discipline:protean"
+      ],
+      "disciplines_page": 72,
+      "bane": {
+        "name": "Bestial Features",
+        "page": 73,
+        "name_ref": {
+          "book": "v5-players-guide",
+          "page": 12
+        }
+      },
+      "compulsion": {
+        "name": "Feral Impulses",
+        "page": 210,
+        "book": "v5-corebook"
+      },
+      "bane_variants": [
+        {
+          "name": "Survival Instincts",
+          "book": "v5-players-guide",
+          "page": 57
+        }
+      ],
+      "caitiff": false,
+      "thin_blood": false,
+      "manual_fields": [
+        "bane.name",
+        "bane.name_ref"
+      ]
+    },
+    {
+      "id": "clan:hecata",
+      "name": "Hecata",
+      "book": "v5-players-guide",
+      "page": 22,
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf",
+      "disciplines": [
+        "discipline:auspex",
+        "discipline:fortitude",
+        "discipline:oblivion"
+      ],
+      "disciplines_page": 23,
+      "bane": {
+        "name": "Painful Kiss",
+        "page": 23,
+        "name_ref": {
+          "book": "v5-players-guide",
+          "page": 12
+        }
+      },
+      "compulsion": {
+        "name": "Morbidity",
+        "page": 24,
+        "book": "v5-players-guide"
+      },
+      "bane_variants": [
+        {
+          "name": "Decay",
+          "book": "v5-players-guide",
+          "page": 57
+        }
+      ],
+      "caitiff": false,
+      "thin_blood": false,
+      "manual_fields": [
+        "bane.name",
+        "bane.name_ref"
+      ]
+    },
+    {
+      "id": "clan:lasombra",
+      "name": "Lasombra",
+      "book": "v5-players-guide",
+      "page": 29,
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf",
+      "disciplines": [
+        "discipline:dominate",
+        "discipline:oblivion",
+        "discipline:potence"
+      ],
+      "disciplines_page": 29,
+      "bane": {
+        "name": "Distorted Image",
+        "page": 29,
+        "name_ref": {
+          "book": "v5-players-guide",
+          "page": 12
+        }
+      },
+      "compulsion": {
+        "name": "Ruthlessness",
+        "page": 30,
+        "book": "v5-players-guide"
+      },
+      "bane_variants": [
+        {
+          "name": "Callousness",
+          "book": "v5-players-guide",
+          "page": 57
+        }
+      ],
+      "caitiff": false,
+      "thin_blood": false,
+      "manual_fields": [
+        "bane.name",
+        "bane.name_ref"
+      ]
+    },
+    {
+      "id": "clan:malkavian",
+      "name": "Malkavian",
+      "book": "v5-corebook",
+      "page": 75,
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf",
+      "disciplines": [
+        "discipline:auspex",
+        "discipline:dominate",
+        "discipline:obfuscate"
+      ],
+      "disciplines_page": 79,
+      "bane": {
+        "name": "Fractured Perspective",
+        "page": 79,
+        "name_ref": {
+          "book": "v5-players-guide",
+          "page": 12
+        }
+      },
+      "compulsion": {
+        "name": "Delusion",
+        "page": 210,
+        "book": "v5-corebook"
+      },
+      "bane_variants": [
+        {
+          "name": "Unnatural Manifestations",
+          "book": "v5-players-guide",
+          "page": 57
+        }
+      ],
+      "caitiff": false,
+      "thin_blood": false,
+      "manual_fields": [
+        "bane.name",
+        "bane.name_ref"
+      ]
+    },
+    {
+      "id": "clan:ministry",
+      "name": "Ministry",
+      "book": "v5-players-guide",
+      "page": 35,
+      "also_in": [],
+      "aliases": [
+        "The Ministry"
+      ],
+      "source": "pdf",
+      "disciplines": [
+        "discipline:obfuscate",
+        "discipline:presence",
+        "discipline:protean"
+      ],
+      "disciplines_page": 35,
+      "bane": {
+        "name": "Abhors the Light",
+        "page": 36,
+        "name_ref": {
+          "book": "v5-players-guide",
+          "page": 12
+        }
+      },
+      "compulsion": {
+        "name": "Transgression",
+        "page": 36,
+        "book": "v5-players-guide"
+      },
+      "bane_variants": [
+        {
+          "name": "Cold-Blooded",
+          "book": "v5-players-guide",
+          "page": 58
+        }
+      ],
+      "caitiff": false,
+      "thin_blood": false,
+      "manual_fields": [
+        "aliases",
+        "bane.name",
+        "bane.name_ref"
+      ]
+    },
+    {
+      "id": "clan:nosferatu",
+      "name": "Nosferatu",
+      "book": "v5-corebook",
+      "page": 81,
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf",
+      "disciplines": [
+        "discipline:animalism",
+        "discipline:obfuscate",
+        "discipline:potence"
+      ],
+      "disciplines_page": 84,
+      "bane": {
+        "name": "Repulsiveness",
+        "page": 85,
+        "name_ref": {
+          "book": "v5-players-guide",
+          "page": 12
+        }
+      },
+      "compulsion": {
+        "name": "Cryptophilia",
+        "page": 210,
+        "book": "v5-corebook"
+      },
+      "bane_variants": [
+        {
+          "name": "Infestation",
+          "book": "v5-players-guide",
+          "page": 58
+        }
+      ],
+      "caitiff": false,
+      "thin_blood": false,
+      "manual_fields": [
+        "bane.name",
+        "bane.name_ref"
+      ]
+    },
+    {
+      "id": "clan:ravnos",
+      "name": "Ravnos",
+      "book": "v5-players-guide",
+      "page": 41,
+      "also_in": [
+        {
+          "book": "v5-companion",
+          "page": 6
+        }
+      ],
+      "aliases": [],
+      "source": "pdf",
+      "disciplines": [
+        "discipline:animalism",
+        "discipline:obfuscate",
+        "discipline:presence"
+      ],
+      "disciplines_page": 41,
+      "bane": {
+        "name": "Doomed",
+        "page": 42,
+        "name_ref": {
+          "book": "v5-players-guide",
+          "page": 13
+        }
+      },
+      "compulsion": {
+        "name": "Tempting Fate",
+        "page": 42,
+        "book": "v5-players-guide"
+      },
+      "bane_variants": [
+        {
+          "name": "Unbirth Name",
+          "book": "v5-players-guide",
+          "page": 58
+        }
+      ],
+      "caitiff": false,
+      "thin_blood": false,
+      "manual_fields": [
+        "bane.name",
+        "bane.name_ref"
+      ]
+    },
+    {
+      "id": "clan:salubri",
+      "name": "Salubri",
+      "book": "v5-players-guide",
+      "page": 46,
+      "also_in": [
+        {
+          "book": "v5-companion",
+          "page": 12
+        }
+      ],
+      "aliases": [],
+      "source": "pdf",
+      "disciplines": [
+        "discipline:auspex",
+        "discipline:dominate",
+        "discipline:fortitude"
+      ],
+      "disciplines_page": 47,
+      "bane": {
+        "name": "Hunted",
+        "page": 47,
+        "name_ref": {
+          "book": "v5-players-guide",
+          "page": 13
+        }
+      },
+      "compulsion": {
+        "name": "Affective Empathy",
+        "page": 48,
+        "book": "v5-players-guide"
+      },
+      "bane_variants": [
+        {
+          "name": "Asceticism",
+          "book": "v5-players-guide",
+          "page": 58
+        }
+      ],
+      "caitiff": false,
+      "thin_blood": false,
+      "manual_fields": [
+        "bane.name",
+        "bane.name_ref"
+      ]
+    },
+    {
+      "id": "clan:thin-blood",
+      "name": "Thin-blood",
+      "book": "v5-corebook",
+      "page": 109,
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf",
+      "disciplines": [],
+      "disciplines_page": 113,
+      "bane": null,
+      "compulsion": null,
+      "bane_variants": [],
+      "caitiff": false,
+      "thin_blood": true
+    },
+    {
+      "id": "clan:toreador",
+      "name": "Toreador",
+      "book": "v5-corebook",
+      "page": 87,
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf",
+      "disciplines": [
+        "discipline:auspex",
+        "discipline:celerity",
+        "discipline:presence"
+      ],
+      "disciplines_page": 90,
+      "bane": {
+        "name": "Aesthetic Fixation",
+        "page": 91,
+        "name_ref": {
+          "book": "v5-players-guide",
+          "page": 13
+        }
+      },
+      "compulsion": {
+        "name": "Obsession",
+        "page": 210,
+        "book": "v5-corebook"
+      },
+      "bane_variants": [
+        {
+          "name": "Agonizing Empathy",
+          "book": "v5-players-guide",
+          "page": 59
+        }
+      ],
+      "caitiff": false,
+      "thin_blood": false,
+      "manual_fields": [
+        "bane.name",
+        "bane.name_ref"
+      ]
+    },
+    {
+      "id": "clan:tremere",
+      "name": "Tremere",
+      "book": "v5-corebook",
+      "page": 93,
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf",
+      "disciplines": [
+        "discipline:auspex",
+        "discipline:blood-sorcery",
+        "discipline:dominate"
+      ],
+      "disciplines_page": 97,
+      "bane": {
+        "name": "Deficient Blood",
+        "page": 97,
+        "name_ref": {
+          "book": "v5-players-guide",
+          "page": 13
+        }
+      },
+      "compulsion": {
+        "name": "Perfectionism",
+        "page": 210,
+        "book": "v5-corebook"
+      },
+      "bane_variants": [
+        {
+          "name": "Stolen Blood",
+          "book": "v5-players-guide",
+          "page": 59
+        }
+      ],
+      "caitiff": false,
+      "thin_blood": false,
+      "manual_fields": [
+        "bane.name",
+        "bane.name_ref"
+      ]
+    },
+    {
+      "id": "clan:tzimisce",
+      "name": "Tzimisce",
+      "book": "v5-players-guide",
+      "page": 52,
+      "also_in": [
+        {
+          "book": "v5-companion",
+          "page": 16
+        }
+      ],
+      "aliases": [],
+      "source": "pdf",
+      "disciplines": [
+        "discipline:animalism",
+        "discipline:dominate",
+        "discipline:protean"
+      ],
+      "disciplines_page": 53,
+      "bane": {
+        "name": "Grounded",
+        "page": 54,
+        "name_ref": {
+          "book": "v5-players-guide",
+          "page": 13
+        }
+      },
+      "compulsion": {
+        "name": "Covetousness",
+        "page": 54,
+        "book": "v5-players-guide"
+      },
+      "bane_variants": [
+        {
+          "name": "Cursed Courtesy",
+          "book": "v5-players-guide",
+          "page": 59
+        }
+      ],
+      "caitiff": false,
+      "thin_blood": false,
+      "manual_fields": [
+        "bane.name",
+        "bane.name_ref"
+      ]
+    },
+    {
+      "id": "clan:ventrue",
+      "name": "Ventrue",
+      "book": "v5-corebook",
+      "page": 99,
+      "also_in": [],
+      "aliases": [],
+      "source": "pdf",
+      "disciplines": [
+        "discipline:dominate",
+        "discipline:fortitude",
+        "discipline:presence"
+      ],
+      "disciplines_page": 102,
+      "bane": {
+        "name": "Rarefied Tastes",
+        "page": 102,
+        "name_ref": {
+          "book": "v5-players-guide",
+          "page": 13
+        }
+      },
+      "compulsion": {
+        "name": "Arrogance",
+        "page": 211,
+        "book": "v5-corebook"
+      },
+      "bane_variants": [
+        {
+          "name": "Hierarchy",
+          "book": "v5-players-guide",
+          "page": 59
+        }
+      ],
+      "caitiff": false,
+      "thin_blood": false,
+      "manual_fields": [
+        "bane.name",
+        "bane.name_ref"
+      ]
+    }
+  ]
+}

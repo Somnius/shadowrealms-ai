@@ -1,0 +1,512 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "shadowrealms/v5/catalog/predator_types.schema.json",
+  "title": "V5 predator types",
+  "description": "The 18 predator types with structured grants. pick: all = take every option; one_of = choose one option; split = divide dots_total between the options (their dots are null). An option id is background:/merit:/flaw:<slug> (Part C builds those catalogs); group: true marks a whole group (e.g. any Mythic Flaw). dots null on a fixed grant = the page prints no rating.",
+  "type": "object",
+  "required": [
+    "catalog",
+    "version",
+    "entries"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "catalog": {
+      "const": "predator_types"
+    },
+    "version": {
+      "const": 1
+    },
+    "entries": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "book",
+          "page",
+          "source",
+          "pool",
+          "specialty_choice",
+          "discipline_choice",
+          "humanity",
+          "blood_potency",
+          "max_blood_potency",
+          "forbidden_clans",
+          "advantages",
+          "flaws",
+          "ancilla_only",
+          "extra"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "book": {
+            "$ref": "#/$defs/book"
+          },
+          "page": {
+            "$ref": "#/$defs/page"
+          },
+          "also_in": {
+            "type": "array",
+            "items": {
+              "$ref": "#/$defs/ref"
+            },
+            "uniqueItems": true
+          },
+          "aliases": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 60
+            },
+            "uniqueItems": true
+          },
+          "source": {
+            "enum": [
+              "pdf",
+              "online",
+              "manual"
+            ]
+          },
+          "manual_fields": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "uniqueItems": true
+          },
+          "source_urls": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "url",
+                "site"
+              ],
+              "additionalProperties": false,
+              "properties": {
+                "url": {
+                  "type": "string"
+                },
+                "site": {
+                  "type": "string"
+                },
+                "revision": {
+                  "type": [
+                    "integer",
+                    "null"
+                  ]
+                },
+                "fetched": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                }
+              }
+            }
+          },
+          "crosscheck": {
+            "type": "string",
+            "pattern": "^(agree|pdf_only|online_only|resolved:.+)$"
+          },
+          "desc": {
+            "$ref": "#/$defs/desc"
+          },
+          "id": {
+            "type": "string",
+            "pattern": "^predator:[a-z0-9-]+$"
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1
+          },
+          "pool": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 120
+          },
+          "pool_ref": {
+            "anyOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/$defs/ref"
+              }
+            ]
+          },
+          "specialty_choice": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "object",
+              "required": [
+                "skill",
+                "name"
+              ],
+              "additionalProperties": false,
+              "properties": {
+                "skill": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "name": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              }
+            }
+          },
+          "discipline_choice": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "object",
+              "required": [
+                "discipline",
+                "clans_only"
+              ],
+              "additionalProperties": false,
+              "properties": {
+                "discipline": {
+                  "$ref": "#/$defs/discipline_id"
+                },
+                "clans_only": {
+                  "anyOf": [
+                    {
+                      "type": "null"
+                    },
+                    {
+                      "type": "array",
+                      "minItems": 1,
+                      "items": {
+                        "$ref": "#/$defs/clan_id"
+                      }
+                    }
+                  ]
+                },
+                "note": {
+                  "type": "string",
+                  "maxLength": 120
+                },
+                "ref": {
+                  "$ref": "#/$defs/ref"
+                }
+              }
+            }
+          },
+          "humanity": {
+            "enum": [
+              -1,
+              0,
+              1
+            ]
+          },
+          "blood_potency": {
+            "enum": [
+              0,
+              1
+            ]
+          },
+          "max_blood_potency": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "minimum": 0,
+            "maximum": 10
+          },
+          "forbidden_clans": {
+            "type": "array",
+            "items": {
+              "$ref": "#/$defs/clan_id"
+            }
+          },
+          "advantages": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "pick",
+                "options"
+              ],
+              "additionalProperties": false,
+              "properties": {
+                "pick": {
+                  "enum": [
+                    "all",
+                    "one_of",
+                    "split"
+                  ]
+                },
+                "options": {
+                  "type": "array",
+                  "minItems": 1,
+                  "items": {
+                    "type": "object",
+                    "required": [
+                      "id",
+                      "dots"
+                    ],
+                    "additionalProperties": false,
+                    "properties": {
+                      "id": {
+                        "type": "string",
+                        "pattern": "^(background|merit|flaw):[a-z0-9-]+$"
+                      },
+                      "dots": {
+                        "type": [
+                          "integer",
+                          "null"
+                        ],
+                        "minimum": 1,
+                        "maximum": 5
+                      },
+                      "note": {
+                        "type": "string",
+                        "maxLength": 80
+                      },
+                      "group": {
+                        "type": "boolean"
+                      }
+                    }
+                  }
+                },
+                "dots_total": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 10
+                }
+              }
+            }
+          },
+          "flaws": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "pick",
+                "options"
+              ],
+              "additionalProperties": false,
+              "properties": {
+                "pick": {
+                  "enum": [
+                    "all",
+                    "one_of",
+                    "split"
+                  ]
+                },
+                "options": {
+                  "type": "array",
+                  "minItems": 1,
+                  "items": {
+                    "type": "object",
+                    "required": [
+                      "id",
+                      "dots"
+                    ],
+                    "additionalProperties": false,
+                    "properties": {
+                      "id": {
+                        "type": "string",
+                        "pattern": "^(background|merit|flaw):[a-z0-9-]+$"
+                      },
+                      "dots": {
+                        "type": [
+                          "integer",
+                          "null"
+                        ],
+                        "minimum": 1,
+                        "maximum": 5
+                      },
+                      "note": {
+                        "type": "string",
+                        "maxLength": 80
+                      },
+                      "group": {
+                        "type": "boolean"
+                      }
+                    }
+                  }
+                },
+                "dots_total": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 10
+                }
+              }
+            }
+          },
+          "ancilla_only": {
+            "type": "boolean"
+          },
+          "extra": {
+            "type": "object",
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 240
+                },
+                {
+                  "$ref": "#/$defs/ref"
+                }
+              ]
+            }
+          }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "book": {
+      "type": "string",
+      "pattern": "^v5-[a-z0-9-]+$"
+    },
+    "page": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 999
+    },
+    "ref": {
+      "type": "object",
+      "required": [
+        "book",
+        "page"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "book": {
+          "type": "string",
+          "pattern": "^v5-[a-z0-9-]+$"
+        },
+        "page": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 999
+        }
+      }
+    },
+    "desc": {
+      "type": "object",
+      "required": [
+        "en",
+        "el"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "en": {
+          "type": "string",
+          "maxLength": 240
+        },
+        "el": {
+          "type": "string",
+          "maxLength": 240
+        }
+      }
+    },
+    "level": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 5
+    },
+    "prerequisite": {
+      "anyOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": "object",
+          "required": [
+            "power_id"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "power_id": {
+              "$ref": "#/$defs/power_id"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": [
+            "any_of"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "any_of": {
+              "type": "array",
+              "minItems": 2,
+              "items": {
+                "$ref": "#/$defs/power_id"
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": [
+            "all_of"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "all_of": {
+              "type": "array",
+              "minItems": 2,
+              "items": {
+                "anyOf": [
+                  {
+                    "type": "object",
+                    "required": [
+                      "power_id"
+                    ],
+                    "additionalProperties": false,
+                    "properties": {
+                      "power_id": {
+                        "$ref": "#/$defs/power_id"
+                      }
+                    }
+                  },
+                  {
+                    "type": "object",
+                    "required": [
+                      "any_of"
+                    ],
+                    "additionalProperties": false,
+                    "properties": {
+                      "any_of": {
+                        "type": "array",
+                        "minItems": 2,
+                        "items": {
+                          "$ref": "#/$defs/power_id"
+                        }
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        }
+      ]
+    },
+    "power_id": {
+      "type": "string",
+      "pattern": "^power:[a-z0-9-]+:[a-z0-9-]+$"
+    },
+    "discipline_id": {
+      "type": "string",
+      "pattern": "^discipline:[a-z0-9-]+$"
+    },
+    "clan_id": {
+      "type": "string",
+      "pattern": "^clan:[a-z0-9-]+$"
+    }
+  }
+}
