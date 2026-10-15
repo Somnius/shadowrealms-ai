@@ -150,6 +150,9 @@ const PROBLEMS = {
   adv_unknown: (p) => t('wizard:problem.adv_unknown', '{{name}} is not in the catalog.', p),
   adv_restricted: (p) => t('wizard:problem.adv_restricted', '{{name}} is not open to {{clan}}.', p),
   loresheet_restricted: (p) => t('wizard:problem.loresheet_restricted', 'The {{name}} loresheet is not open to {{clan}}.', p),
+  loresheet_levels: (p) => t('wizard:problem.loresheet_levels', 'The {{name}} loresheet: take each level once (1–5); its dots are their sum (you have {{dots}}).', p),
+  custom_row: (p) => t('wizard:problem.custom_row', '{{name}} is a custom row: only the Storyteller can approve it.', p),
+  caitiff_status: (p) => t('wizard:problem.caitiff_status', '{{clan}} can’t take Status at creation.', p),
   thin_blood_merits: (p) => t('wizard:problem.thin_blood_merits', 'Thin-bloods take {{min}}–{{max}} thin-blood Merits and as many thin-blood Flaws (you have {{merits}} and {{flaws}}).', p),
   thin_blood_only: () => t('wizard:problem.thin_blood_only', 'Only thin-bloods take thin-blood Merits and Flaws.'),
   conviction_count: (p) => t('wizard:problem.conviction_count', 'Write {{min}}–{{max}} Convictions, each with a Touchstone (you have {{have}}).', p),
@@ -191,23 +194,42 @@ export function problemSection(code) {
   if (/^(skill_|specialty_)/.test(code)) return S.skills;
   if (/^(disc_|power_|ritual_start|ceremony_start)/.test(code)) return S.disciplines;
   if (/^predator_/.test(code)) return S.predator;
-  if (/^(adv_|flaw_|loresheet_|thin_blood_)/.test(code)) return S.advantages;
+  if (/^(adv_|flaw_|loresheet_|thin_blood_|custom_row|caitiff_status)/.test(code)) return S.advantages;
   if (/^(conviction_|fledgling_|derived_)/.test(code)) return S.humanity;
   if (/^(xp_|ritual_|name_length)/.test(code)) return S.experience;
   return S.identity;
 }
 
+/** The forge section of a plain English problem (the chronicle's creation rules answer in those). */
+const STRING_SECTIONS = [
+  [/^The Storyteller doesn't allow the .+ predator type/, 'predator'],
+  [/^The Storyteller doesn't allow .+ characters/, 'age'],
+  [/^The Storyteller doesn't allow /, 'clan'],
+  [/^This chronicle allows at most \d+ dots of Flaws/, 'advantages'],
+  [/^The Storyteller doesn't offer the Humanity 8/, 'humanity'],
+];
+
 /**
  * The problems of a 400 from POST /api/characters/: { messages: [translated], bySection:
- * {sectionId: first message} }. String problems (older answers) are left to the caller.
+ * {sectionId: first message} }. Codes ({code, params}) and plain English messages (the chronicle's
+ * creation rules) both come out in the active language.
  */
 export function serverProblemErrors(problems) {
-  const list = (Array.isArray(problems) ? problems : []).filter((p) => p && typeof p === 'object' && p.code);
   const bySection = {};
   const messages = [];
-  list.forEach((p) => {
-    const msg = translateProblem(p);
-    const id = problemSection(p.code);
+  (Array.isArray(problems) ? problems : []).forEach((p) => {
+    let msg;
+    let id;
+    if (typeof p === 'string' && p.trim()) {
+      msg = translateSheetError(p);
+      const hit = STRING_SECTIONS.find(([re]) => re.test(p));
+      id = V5_SECTION_IDS[hit ? hit[1] : 'identity'];
+    } else if (p && typeof p === 'object' && p.code) {
+      msg = translateProblem(p);
+      id = problemSection(p.code);
+    } else {
+      return;
+    }
     if (!bySection[id]) bySection[id] = msg;
     if (!messages.includes(msg)) messages.push(msg);
   });

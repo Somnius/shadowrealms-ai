@@ -234,7 +234,11 @@ const thinBlood = (over = {}) => ({
     { name: 'Resources', dots: 1, kind: 'background' },
     { name: 'Contacts', dots: 2, kind: 'background' },
   ],
-  flaws: [{ name: 'Prey Exclusion (animals)', dots: 2 }],
+  // Prey Exclusion is printed at 1 dot (core p. 181), so a second 1-dot Flaw makes the 2.
+  flaws: [
+    { name: 'Prey Exclusion (animals)', dots: 1 },
+    { name: 'Risk-Taker', dots: 1 },
+  ],
   thinBloodMerits: [{ name: 'Day Drinker' }, { name: 'Lifelike' }],
   thinBloodFlaws: [{ name: 'Baby Teeth' }, { name: 'Dead Flesh' }],
   ...over,
@@ -317,6 +321,28 @@ const toreador = (over = {}) => ({
   ],
   flaws: [{ name: 'Dark Secret', dots: 2 }],
   fledglingHumanity: true,
+  ...over,
+});
+
+/**
+ * Tzimisce Pursuer (Auspex dot) with an XP dot of Animalism: Messenger's Command needs Animal
+ * Messenger and Compel or Mesmerize, a Dominate power (a prerequisite in another Discipline).
+ */
+const tzimisce = (over = {}) => ({
+  ...brujah0(),
+  name: 'Dragomir',
+  concept: 'Kennel master',
+  clan: 'Tzimisce',
+  disciplines: [
+    { name: 'Animalism', level: 2, powers: ['Bond Famulus', 'Animal Messenger', "Messenger's Command"] },
+    { name: 'Dominate', level: 1, powers: ['Compel'] },
+  ],
+  predatorType: 'Pursuer',
+  predatorSpecialty: 0,
+  predatorDiscipline: 'Auspex',
+  predatorChoices: {},
+  extraPowers: { Auspex: ['Heightened Senses'] },
+  xpPurchases: [{ kind: 'discipline', trait: 'Animalism' }],
   ...over,
 });
 
@@ -427,6 +453,11 @@ export const CASE_DEFS = [
   { name: 'valid: Toreador fledgling at Humanity 8', sheet: () => toreador(), expect: [] },
   { name: 'valid: Gangrel Roadside Killer picks the unprinted Prey Exclusion rating', sheet: () => gangrel(), expect: [] },
   {
+    name: "valid: Tzimisce Messenger's Command with Compel from Dominate (prerequisite in another Discipline)",
+    sheet: () => tzimisce(),
+    expect: [],
+  },
+  {
     name: 'valid: inside the chronicle settings',
     settings: { allowed_clans: ['Brujah', 'Toreador'], allowed_predators: ['Alleycat'], allowed_ages: ['neonate'], flaws_max_dots: 4 },
     sheet: () => brujah(),
@@ -510,6 +541,11 @@ export const CASE_DEFS = [
     expect: ['power_prereq'],
   },
   {
+    name: "powers: Messenger's Command without Compel or Mesmerize",
+    sheet: () => tzimisce({ disciplines: [tzimisce().disciplines[0], { name: 'Dominate', level: 1, powers: ['Cloud Memory'] }] }),
+    expect: ['power_prereq'],
+  },
+  {
     name: 'powers: the same power twice',
     sheet: () => brujah0({ disciplines: [{ name: 'Potence', level: 2, powers: ['Lethal Body', 'Lethal Body'] }, brujah0().disciplines[1]] }),
     expect: ['power_duplicate'],
@@ -542,7 +578,8 @@ export const CASE_DEFS = [
         ],
         extraPowers: { Obfuscate: ['Cloak of Shadows'] },
         advantages: [{ name: 'Resources', dots: 4, kind: 'background' }, { name: 'Haven', dots: 3, kind: 'background' }],
-        flaws: [{ name: 'Enemy', dots: 2 }],
+        // not Enemy: Bagger gives Enemies already, and it can be taken only once
+        flaws: [{ name: 'Dark Secret', dots: 2 }],
         xpPurchases: [],
       }),
     expect: ['predator_forbidden'],
@@ -794,6 +831,30 @@ export const CASE_DEFS = [
       meta(p).disciplines.find((d) => d.name === 'Potence').powers.push('Soaring Leap');
     },
     expect: ['power_count'],
+  },
+  {
+    name: 'server: a custom row needs the Storyteller',
+    sheet: () => brujah0(),
+    tamper: (p) => {
+      meta(p).advantages[1] = { name: 'Night Doctor', dots: 2, kind: 'merit', custom: true };
+    },
+    expect: ['custom_row'],
+  },
+  {
+    name: 'server: a loresheet row whose dots are not the sum of its levels',
+    sheet: () => brujah0(),
+    tamper: (p) => {
+      meta(p).advantages[1] = { name: 'Theo Bell', dots: 2, kind: 'loresheet', levels: [1, 2] };
+    },
+    expect: ['loresheet_levels'],
+  },
+  {
+    name: 'server: a Caitiff who lists Status',
+    sheet: () => caitiff(),
+    tamper: (p) => {
+      meta(p).advantages[0] = { name: 'Status', dots: 2, kind: 'background' };
+    },
+    expect: ['caitiff_status'],
   },
   {
     name: 'server: v5.json fallback names for the Siren grants are accepted',

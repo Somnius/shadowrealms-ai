@@ -117,17 +117,42 @@ test('the forge marks the sections the server refused, first message per section
     'Take at least 2 dots of Flaws (you have 0).',
     'Attributes must be one at 4, three at 3, four at 2 and one at 1.',
     'Ward against Ghouls is a level 1 ritual.',
+    'a plain string problem', // an unknown message passes through unchanged
   ]);
   expect(out.bySection).toEqual({
     'v5-section-advantages': 'Advantages: at most 7 dots (you have 8).',
     'v5-section-attributes': 'Attributes must be one at 4, three at 3, four at 2 and one at 1.',
     'v5-section-experience': 'Ward against Ghouls is a level 1 ritual.',
+    'v5-section-identity': 'a plain string problem',
   });
-  // the settings answer of older servers (plain strings) is left to body.error
-  expect(serverProblemErrors(["The Storyteller doesn't allow Brujah in this chronicle."]).messages).toEqual([]);
+  // the chronicle's creation rules answer in plain English: translated and marked too
+  expect(serverProblemErrors(["The Storyteller doesn't allow Brujah in this chronicle."])).toEqual({
+    messages: ["The Storyteller doesn't allow Brujah in this chronicle."],
+    bySection: { 'v5-section-clan': "The Storyteller doesn't allow Brujah in this chronicle." },
+  });
+  expect(serverProblemErrors(["The Storyteller doesn't allow the Siren predator type in this chronicle."]).bySection).toEqual({
+    'v5-section-predator': "The Storyteller doesn't allow the Siren predator type in this chronicle.",
+  });
   expect(problemSection('ritual_start')).toBe('v5-section-disciplines');
   expect(problemSection('thin_blood_generation')).toBe('v5-section-age');
   expect(problemSection('thin_blood_merits')).toBe('v5-section-advantages');
+});
+
+test('plain-string problems from the chronicle rules come out in Greek', async () => {
+  await act(() => setLanguage('el', { remember: false, save: false }));
+  const out = serverProblemErrors([
+    "The Storyteller doesn't allow Brujah in this chronicle.",
+    { code: 'custom_row', params: { name: 'Night Doctor' } },
+    { code: 'loresheet_levels', params: { name: 'Theo Bell', dots: 2, levels: [1, 2] } },
+    { code: 'caitiff_status', params: { clan: 'Caitiff' } },
+  ]);
+  expect(out.messages).toEqual([
+    'Ο Storyteller δεν επιτρέπει Brujah σε αυτό το χρονικό.',
+    'Το Night Doctor είναι δική σου γραμμή: μόνο ο Storyteller μπορεί να την εγκρίνει.',
+    'Loresheet Theo Bell: κάθε επίπεδο μία φορά (1–5)· οι τελείες του είναι το άθροισμά τους (έχεις 2).',
+    'Οι Caitiff δεν παίρνουν Status στη δημιουργία.',
+  ]);
+  expect(Object.keys(out.bySection)).toEqual(['v5-section-clan', 'v5-section-advantages']);
 });
 
 test('the XP ritual level message from the catalog is translated', async () => {

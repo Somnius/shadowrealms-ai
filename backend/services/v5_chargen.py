@@ -110,7 +110,8 @@ PROBLEM_CODES = (
     "predator_missing", "predator_forbidden", "predator_specialty", "predator_discipline",
     "predator_grant", "predator_bp", "predator_ancilla",
     "adv_over", "flaw_under", "flaw_over", "adv_dots_range", "adv_unknown", "adv_restricted",
-    "loresheet_restricted", "thin_blood_merits", "thin_blood_only",
+    "loresheet_restricted", "loresheet_levels", "custom_row", "caitiff_status",
+    "thin_blood_merits", "thin_blood_only",
     "conviction_count", "conviction_pairs", "derived_value",
     "xp_none", "xp_total", "xp_log", "xp_price", "xp_over", "xp_max_dots", "name_length",
     "ritual_level", "ritual_blood_sorcery", "ritual_start", "ceremony_start", "ritual_count",
@@ -194,134 +195,181 @@ class _Problems:
 
 # ---------- the catalog, indexed by name ----------
 
+def _list(v: Any) -> list:
+    return v if isinstance(v, list) else []
+
+
+def _strs(v: Any) -> List[str]:
+    """The non-empty strings of a list (ids, aliases, clan lists); anything else is dropped."""
+    return [x for x in _list(v) if isinstance(x, str) and x.strip()]
+
+
+def _sid(v: Any) -> str:
+    """An id as a string ('' for anything else), safe as a dict key."""
+    return v if isinstance(v, str) else ""
+
+
+def _keys_of(entry: dict) -> set:
+    """The normalised name and aliases of a catalog entry."""
+    return {_norm(n) for n in [_str(entry.get("name")), *_strs(entry.get("aliases"))] if n}
+
+
 class _Catalog:
-    """The parts of load_catalog() the check reads, by normalised name (aliases too)."""
+    """The parts of load_catalog() the check reads, by normalised name (aliases too). A malformed
+    entry (an id that isn't a string, aliases that aren't a list...) is skipped or read as empty,
+    never raised on."""
 
     def __init__(self, catalog: Optional[Dict[str, Any]]) -> None:
         cat = catalog if isinstance(catalog, dict) else {}
-        self.disc_names = {d.get("id"): d.get("name") for d in _dicts(cat.get("disciplines"))}
-        clan_names = {c.get("id"): c.get("name") for c in _dicts(cat.get("clans"))}
+        self.disc_names: Dict[str, str] = {}
         power_names: Dict[str, str] = {}
         for d in _dicts(cat.get("disciplines")):
-            for p in _dicts(d.get("powers")):
-                power_names[p.get("id")] = p.get("name")
+            if _sid(d.get("id")) and _str(d.get("name")):
+                self.disc_names[d["id"]] = _str(d.get("name"))
+            for pw in _dicts(d.get("powers")):
+                if _sid(pw.get("id")) and _str(pw.get("name")):
+                    power_names[pw["id"]] = _str(pw.get("name"))
+        clan_names = {c["id"]: _str(c.get("name")) for c in _dicts(cat.get("clans")) if _sid(c.get("id")) and _str(c.get("name"))}
 
         def disc(ref: Any) -> str:
-            return self.disc_names.get(ref) or _name_from_id(ref)
+            return self.disc_names.get(_sid(ref)) or _name_from_id(_sid(ref))
 
         def clan(ref: Any) -> str:
-            return clan_names.get(ref) or _name_from_id(ref)
+            return clan_names.get(_sid(ref)) or _name_from_id(_sid(ref))
 
         def pname(ref: Any) -> str:
-            rid = ref if isinstance(ref, str) else (ref or {}).get("power_id")
+            rid = _sid(ref if isinstance(ref, str) else ref.get("power_id") if isinstance(ref, dict) else None)
             return power_names.get(rid) or _name_from_id(rid)
 
-        def group(p: Any) -> Optional[List[str]]:
-            if not isinstance(p, dict):
+        def group(pr: Any) -> Optional[List[str]]:
+            if not isinstance(pr, dict):
                 return None
-            if p.get("power_id"):
-                return [pname(p)]
-            if isinstance(p.get("any_of"), list):
-                return [pname(x) for x in p["any_of"]]
+            if pr.get("power_id"):
+                return [pname(pr)]
+            if isinstance(pr.get("any_of"), list):
+                return [pname(x) for x in pr["any_of"]]
             return None
 
-        def prereq(p: Any) -> List[List[str]]:
+        def prereq(pr: Any) -> List[List[str]]:
             """{power_id} | {any_of} | {all_of: [...]} -> every group needed, any name of a group."""
-            if not isinstance(p, dict):
+            if not isinstance(pr, dict):
                 return []
-            if isinstance(p.get("all_of"), list):
-                return [g for g in (group(x) for x in p["all_of"]) if g]
-            g = group(p)
+            if isinstance(pr.get("all_of"), list):
+                return [g for g in (group(x) for x in pr["all_of"]) if g]
+            g = group(pr)
             return [g] if g else []
+
+        def index(target: Dict[str, dict], keys: Iterable[Any], entry: dict) -> None:
+            for n in keys:
+                if isinstance(n, str) and n.strip():
+                    target.setdefault(_norm(n), entry)
 
         self.clans: Dict[str, dict] = {}
         for c in _dicts(cat.get("clans")):
+            creation = c.get("creation") if isinstance(c.get("creation"), dict) else {}
             entry = {
-                "id": c.get("id"),
-                "name": c.get("name") or "",
-                "disciplines": [disc(d) for d in c.get("disciplines") or []],
-                "caitiff": bool(c.get("caitiff")) or c.get("name") == CAITIFF,
-                "thin_blood": bool(c.get("thin_blood")) or c.get("name") == THIN_BLOOD,
-                # Caitiff: new x 6 for every Discipline (the clan record's creation rules)
-                "xp_multiplier": _int((c.get("creation") or {}).get("discipline_xp_multiplier"))
-                if isinstance(c.get("creation"), dict) else 0,
+                "id": _sid(c.get("id")),
+                "name": _str(c.get("name")),
+                "disciplines": [disc(d) for d in _strs(c.get("disciplines"))],
+                "caitiff": c.get("caitiff") is True or c.get("name") == CAITIFF,
+                "thin_blood": c.get("thin_blood") is True or c.get("name") == THIN_BLOOD,
+                # Caitiff: new x 6 for every Discipline, no positive Status (the clan's creation rules)
+                "xp_multiplier": _int(creation.get("discipline_xp_multiplier")),
+                "no_positive_status": creation.get("no_positive_status") is True,
             }
-            for n in [c.get("name"), c.get("id"), *(c.get("aliases") or [])]:
-                if isinstance(n, str) and n:
-                    self.clans.setdefault(_norm(n), entry)
+            index(self.clans, [c.get("name"), c.get("id"), *_strs(c.get("aliases"))], entry)
 
         self.disciplines: Dict[str, dict] = {}
         for d in _dicts(cat.get("disciplines")):
             powers = []
-            for p in _dicts(d.get("powers")):
-                am = p.get("amalgam") if isinstance(p.get("amalgam"), dict) else None
+            for pw in _dicts(d.get("powers")):
+                am = pw.get("amalgam") if isinstance(pw.get("amalgam"), dict) else None
                 powers.append({
-                    "id": p.get("id"),
-                    "name": p.get("name") or "",
-                    "keys": {_norm(n) for n in [p.get("name"), *(p.get("aliases") or [])] if isinstance(n, str) and n},
-                    "level": _int(p.get("level")),
+                    "id": _sid(pw.get("id")) or _norm(pw.get("name")),
+                    "name": _str(pw.get("name")),
+                    "keys": _keys_of(pw),
+                    "level": _int(pw.get("level")),
                     "amalgam": (disc(am.get("discipline")), _int(am.get("level"))) if am else None,
-                    "prerequisite": prereq(p.get("prerequisite")),
+                    "prerequisite": prereq(pw.get("prerequisite")),
                 })
-            entry = {"id": d.get("id"), "name": d.get("name") or "", "powers": powers}
-            for n in [d.get("name"), *(d.get("aliases") or [])]:
-                if isinstance(n, str) and n:
-                    self.disciplines.setdefault(_norm(n), entry)
-        self.discipline_list = [d.get("name") for d in _dicts(cat.get("disciplines")) if d.get("name")]
+            index(self.disciplines, [d.get("name"), *_strs(d.get("aliases"))],
+                  {"id": _sid(d.get("id")), "name": _str(d.get("name")), "powers": powers})
+        self.discipline_list = [_str(d.get("name")) for d in _dicts(cat.get("disciplines")) if _str(d.get("name"))]
 
         self.advantages = _dicts(cat.get("advantages"))
         self.loresheets = _dicts(cat.get("loresheets"))
-        self.adv_by_id = {a.get("id"): a for a in self.advantages if a.get("id")}
+        self.adv_by_id = {a["id"]: a for a in self.advantages if _sid(a.get("id"))}
         self.clan_name = clan
 
         self.predators: Dict[str, dict] = {}
-        for p in _dicts(cat.get("predator_types")):
+        for pt in _dicts(cat.get("predator_types")):
+            mbp = pt.get("max_blood_potency")
             entry = {
-                "name": p.get("name") or "",
-                "specialties": [(_to_key(s.get("skill")), _str(s.get("name"))) for s in _dicts(p.get("specialty_choice"))],
+                "name": _str(pt.get("name")),
+                "specialties": [(_to_key(sp.get("skill")), _str(sp.get("name"))) for sp in _dicts(pt.get("specialty_choice"))],
                 "disciplines": [
-                    (disc(d.get("discipline")), [clan(c) for c in d["clans_only"]] if d.get("clans_only") else None)
-                    for d in _dicts(p.get("discipline_choice"))
+                    (disc(d.get("discipline")), [clan(c) for c in _strs(d.get("clans_only"))] or None)
+                    for d in _dicts(pt.get("discipline_choice"))
                 ],
-                "advantages": self._grants(p.get("advantages")),
-                "flaws": self._grants(p.get("flaws")),
-                "humanity": _int(p.get("humanity")),
-                "blood_potency": _int(p.get("blood_potency")),
-                "max_blood_potency": p.get("max_blood_potency") if isinstance(p.get("max_blood_potency"), int) else None,
-                "forbidden_clans": [clan(c) for c in p.get("forbidden_clans") or []],
-                "ancilla_only": bool(p.get("ancilla_only")),
+                "advantages": self._grants(pt.get("advantages")),
+                "flaws": self._grants(pt.get("flaws")),
+                "humanity": _int(pt.get("humanity")),
+                "blood_potency": _int(pt.get("blood_potency")),
+                "max_blood_potency": mbp if isinstance(mbp, int) and not isinstance(mbp, bool) else None,
+                "forbidden_clans": [clan(c) for c in _strs(pt.get("forbidden_clans"))],
+                "ancilla_only": pt.get("ancilla_only") is True,
             }
-            for n in [p.get("name"), p.get("id"), *(p.get("aliases") or [])]:
-                if isinstance(n, str) and n:
-                    self.predators.setdefault(_norm(n), entry)
+            index(self.predators, [pt.get("name"), pt.get("id"), *_strs(pt.get("aliases"))], entry)
 
         def rituals(kind: str) -> Dict[str, dict]:
             out: Dict[str, dict] = {}
             for r in _dicts(cat.get(kind)):
-                entry = {"name": r.get("name") or "", "level": _int(r.get("level")), "prerequisite": prereq(r.get("prerequisite"))}
-                for n in [r.get("name"), *(r.get("aliases") or [])]:
-                    if isinstance(n, str) and n:
-                        out.setdefault(_norm(n), entry)
+                entry = {"name": _str(r.get("name")), "level": _int(r.get("level")), "prerequisite": prereq(r.get("prerequisite"))}
+                index(out, [r.get("name"), *_strs(r.get("aliases"))], entry)
             return out
 
         self.rituals = rituals("rituals")
         self.ceremonies = rituals("ceremonies")
 
     def _grants(self, grants: Any) -> List[dict]:
+        """A predator type's grants: per option the names a row may carry, its label ("Contacts
+        (criminal)"), and for a group option ("group": true, e.g. flaw:mythic = any Mythic Flaw)
+        the names of every catalog entry of that kind and group."""
         out = []
         for g in _dicts(grants):
             opts = []
             for o in _dicts(g.get("options")):
-                oid = o.get("id") or ""
+                oid = _sid(o.get("id"))
                 names = {_norm(_name_from_id(oid))} if oid else {_norm(o.get("name"))}
                 adv = self.adv_by_id.get(oid)
                 if adv:
-                    names |= {_norm(n) for n in [adv.get("name"), *(adv.get("aliases") or [])] if isinstance(n, str) and n}
+                    names |= _keys_of(adv)
                 names.discard("")
+                members: set = set()
+                member_ids: set = set()
+                if o.get("group") is True and oid:
+                    kind, grp = oid.split(":")[0], _norm(_name_from_id(oid))
+                    for a in self.advantages:
+                        if a.get("kind") == kind and _norm(a.get("group")) == grp:
+                            members |= _keys_of(a)
+                            if _sid(a.get("id")):
+                                member_ids.add(a["id"])
                 note = _str(o.get("note"))
-                labels = {f"{n} ({_norm(note)})" if note else n for n in names}
-                opts.append({"names": names, "labels": labels, "dots": o.get("dots") if isinstance(o.get("dots"), int) else None})
-            out.append({"pick": g.get("pick") or "all", "dots_total": g.get("dots_total"), "options": opts})
+                dots = o.get("dots")
+                opts.append({
+                    "id": oid,
+                    "names": names,
+                    "labels": {f"{n} ({_norm(note)})" if note else n for n in names},
+                    "members": members,
+                    "member_ids": member_ids,
+                    "dots": dots if isinstance(dots, int) and not isinstance(dots, bool) else None,
+                })
+            total = g.get("dots_total")
+            out.append({
+                "pick": g.get("pick") if g.get("pick") in ("all", "one_of", "split") else "all",
+                "dots_total": total if isinstance(total, int) and not isinstance(total, bool) else None,
+                "options": opts,
+            })
         return out
 
     def clan(self, name: Any) -> Optional[dict]:
@@ -335,28 +383,23 @@ class _Catalog:
 
     def advantage(self, row: dict, flaw: bool, clan: Optional[dict]) -> Optional[dict]:
         """The catalog Merit/Background (or Flaw) a sheet row names: by id, else by name/alias."""
-        if row.get("id"):
-            return self.adv_by_id.get(row.get("id"))
+        rid = _sid(row.get("id"))
+        if rid:
+            return self.adv_by_id.get(rid)
         want = {_norm(n) for n in _name_variants(row.get("name"))}
-        hits = [
-            a for a in self.advantages
-            if (a.get("kind") == "flaw") == flaw
-            and want & {_norm(n) for n in [a.get("name"), *(a.get("aliases") or [])] if isinstance(n, str)}
-        ]
+        hits = [a for a in self.advantages if (a.get("kind") == "flaw") == flaw and want & _keys_of(a)]
         if len(hits) > 1 and clan:
             # Caitiff and thin-blood entries share names with others ("Clan Curse"): prefer the clan's.
-            mine = [a for a in hits if (bool(a.get("caitiff")) == clan["caitiff"]) and (bool(a.get("thin_blood")) == clan["thin_blood"])]
+            mine = [a for a in hits if (a.get("caitiff") is True) == clan["caitiff"] and (a.get("thin_blood") is True) == clan["thin_blood"]]
             hits = mine or hits
         return hits[0] if hits else None
 
     def loresheet(self, row: dict) -> Optional[dict]:
-        if row.get("id"):
-            return next((ls for ls in self.loresheets if ls.get("id") == row.get("id")), None)
+        rid = _sid(row.get("id"))
+        if rid:
+            return next((ls for ls in self.loresheets if ls.get("id") == rid), None)
         want = {_norm(n) for n in _name_variants(row.get("name"))}
-        for ls in self.loresheets:
-            if want & {_norm(n) for n in [ls.get("name"), *(ls.get("aliases") or [])] if isinstance(n, str)}:
-                return ls
-        return None
+        return next((ls for ls in self.loresheets if want & _keys_of(ls)), None)
 
 
 def _name_variants(name: Any) -> List[str]:
@@ -668,8 +711,10 @@ def _powers_taken(sh: _Sheet, cat: _Catalog, discipline: str) -> set:
 
 def _check_powers(p: _Problems, sh: _Sheet, cat: _Catalog) -> None:
     """validateV5Powers: each power of its Discipline, at most its rating, the amalgam Discipline
-    at the printed level, the prerequisite taken, none twice, one per dot. Disciplines the catalog
-    has no powers for are free text."""
+    at the printed level, the prerequisite taken, none twice in a Discipline, one per dot.
+    A prerequisite may sit in another Discipline (Messenger's Command: Animal Messenger, and
+    Compel or Mesmerize from Dominate). Disciplines the catalog has no powers for are free text."""
+    pool = set().union(*(_powers_taken(sh, cat, n) for n, _, _ in sh.discs))
     for name, level, raw in sh.discs:
         entry = cat.discipline(name)
         if not entry or not entry["powers"]:
@@ -677,7 +722,6 @@ def _check_powers(p: _Problems, sh: _Sheet, cat: _Catalog) -> None:
         chosen = [x for x in (_power_name(v) for v in raw) if x]
         if len(chosen) > level:
             p.add("power_count", discipline=name, have=len(chosen), max=level)
-        taken_names = _powers_taken(sh, cat, name)
         taken = set()
         for pw_name in chosen:
             pw = next((x for x in entry["powers"] if _norm(pw_name) in x["keys"]), None)
@@ -693,7 +737,7 @@ def _check_powers(p: _Problems, sh: _Sheet, cat: _Catalog) -> None:
                 p.add("power_level", discipline=name, power=pw["name"], level=pw["level"], rating=level)
             if pw["amalgam"] and sh.level.get(_norm(pw["amalgam"][0]), 0) < pw["amalgam"][1]:
                 p.add("power_amalgam", power=pw["name"], discipline=pw["amalgam"][0], level=pw["amalgam"][1])
-            missing = next((g for g in pw["prerequisite"] if not any(_norm(x) in taken_names for x in g)), None)
+            missing = next((g for g in pw["prerequisite"] if not any(_norm(x) in pool for x in g)), None)
             if missing:
                 p.add("power_prereq", power=pw["name"], needs=" or ".join(missing))
 
@@ -723,8 +767,9 @@ def _check_predator(p: _Problems, sh: _Sheet) -> None:
 
 def _check_advantages(p: _Problems, sh: _Sheet, cat: _Catalog, s: Dict[str, Any]) -> None:
     """Own Advantages: at most 7 dots (+2 ancilla); own Flaws: at least 2 (+2 ancilla) and at most
-    the chronicle's cap; each row 1-5 dots or its catalog range. The predator type's rows are
-    extra (core p. 136). Thin-bloods: 1-3 thin-blood Merits and as many thin-blood Flaws."""
+    the chronicle's cap; each row in its catalog range, or 1-5 when the catalog doesn't know it.
+    The predator type's rows are extra (core p. 136). Thin-bloods: 1-3 thin-blood Merits and as
+    many thin-blood Flaws."""
     bonus = AGE_BRACKETS["ancilla"] if sh.age == "ancilla" else {}
     adv_max = ADVANTAGE_DOTS + bonus.get("advantage_dots_bonus", 0)
     flaw_min = FLAWS_MIN_DOTS + bonus.get("flaw_dots_bonus", 0)
@@ -739,11 +784,7 @@ def _check_advantages(p: _Problems, sh: _Sheet, cat: _Catalog, s: Dict[str, Any]
     cap = s.get("flaws_max_dots")
     if cap is not None and flaw_dots > cap:
         p.add("flaw_over", max=cap, have=flaw_dots)
-    for r in own_adv + own_flaws:
-        dots = _int(r.get("dots"))
-        if dots < 1 or dots > 5:
-            p.add("adv_dots_range", name=_str(r.get("name")), dots=dots, min=1, max=5)
-    _check_catalog_rows(p, cat, sh.clan, own_adv, own_flaws, sh.level)
+    _check_rows(p, cat, sh.clan, own_adv, own_flaws, sh.level)
 
     tb_merits = _names(sh.meta.get("thin_blood_merits"))
     tb_flaws = _names(sh.meta.get("thin_blood_flaws"))
@@ -848,13 +889,21 @@ def _check_derived(p: _Problems, sh: _Sheet, s: Dict[str, Any]) -> None:
 def _grants_ok(grants: List[dict], rows: List[dict]) -> bool:
     """The predator rows match the type's grants exactly once: 'all' needs every option, 'one_of'
     one of them, 'split' its total across its options. Names: the forge's label ("Contacts
-    (criminal)"), or anything naming the option ("Looks: Beautiful", from the v5.json fallback)."""
-    pool = [(_norm(r.get("name")), _int(r.get("dots"))) for r in rows]
+    (criminal)"), anything naming the option ("Looks: Beautiful", from the v5.json fallback), and
+    for a group option ("any Mythic Flaw") any catalog entry of that group ("Folkloric Bane"). A
+    row with an id (the advantages step stores it) must carry the option's id and still name it."""
+    pool = [((_norm(r.get("name")), _sid(r.get("id"))), _int(r.get("dots"))) for r in rows]
 
-    def matches(name: str, opt: dict, strict: bool) -> bool:
-        if strict:
-            return name in opt["labels"]
-        return any(n and n in name for n in opt["names"])
+    def names_it(name: str, opt: dict) -> bool:
+        if any(n and n in name for n in opt["names"]):
+            return True
+        return bool(opt["members"]) and any(_norm(v) in opt["members"] for v in _name_variants(name))
+
+    def matches(row: Tuple[str, str], opt: dict, strict: bool) -> bool:
+        name, rid = row
+        if rid:  # a row with an id is that option (a group: one of its entries) and still names it
+            return (rid == opt["id"] or rid in opt["member_ids"]) and (name in opt["labels"] or names_it(name, opt))
+        return name in opt["labels"] if strict else names_it(name, opt)
 
     def dots_ok(opt: dict, dots: int) -> bool:
         return 1 <= dots <= 5 if opt["dots"] is None else dots == opt["dots"]
@@ -862,15 +911,15 @@ def _grants_ok(grants: List[dict], rows: List[dict]) -> bool:
     def take(opts: List[dict]) -> Optional[int]:
         for strict in (True, False):
             for o in opts:
-                for i, (name, dots) in enumerate(pool):
-                    if matches(name, o, strict) and dots_ok(o, dots):
+                for i, (row, dots) in enumerate(pool):
+                    if matches(row, o, strict) and dots_ok(o, dots):
                         return i
         return None
 
     order = {"all": 0, "one_of": 1, "split": 2}
     for g in sorted(grants, key=lambda g: order.get(g["pick"], 0)):
         if g["pick"] == "split":
-            idx = [i for i, (name, _d) in enumerate(pool) if any(matches(name, o, False) for o in g["options"])]
+            idx = [i for i, (row, _d) in enumerate(pool) if any(matches(row, o, False) for o in g["options"])]
             total = sum(pool[i][1] for i in idx)
             if any(pool[i][1] < 1 for i in idx) or (g["dots_total"] is not None and total != g["dots_total"]):
                 return False
@@ -890,72 +939,107 @@ def _grants_ok(grants: List[dict], rows: List[dict]) -> bool:
 
 
 def _dots_range(entry: dict) -> Optional[Tuple[int, int, Optional[List[int]]]]:
-    """(min, max, allowed) from a catalog entry's dots: {min, max|null}, {allowed: [...]}, n."""
+    """(min, max, allowed) from a catalog entry's dots: {min, max}, {allowed: [...]} or n; None when
+    it has no rating. An open maximum ('•+', max null) stays at 5, as for any trait at creation."""
+
+    def num(v: Any) -> Optional[int]:
+        return v if isinstance(v, int) and not isinstance(v, bool) else None
+
     d = entry.get("dots")
-    if isinstance(d, int) and not isinstance(d, bool):
+    if num(d) is not None:
         return (d, d, None)
     if isinstance(d, dict):
-        if isinstance(d.get("allowed"), list):
-            allowed = [x for x in d["allowed"] if isinstance(x, int)]
-            return (min(allowed), max(allowed), allowed) if allowed else None
-        lo = d.get("min") if isinstance(d.get("min"), int) else d.get("fixed")
-        if isinstance(lo, int):
-            hi = d.get("max") if isinstance(d.get("max"), int) else (lo if "fixed" in d else 5)
+        allowed = [x for x in _list(d.get("allowed")) if num(x) is not None]
+        if allowed:
+            return (min(allowed), max(allowed), allowed)
+        lo = num(d.get("min")) if num(d.get("min")) is not None else num(d.get("fixed"))
+        if lo is not None:
+            hi = num(d.get("max")) if num(d.get("max")) is not None else (lo if "fixed" in d else 5)
             return (lo, hi, None)
     return None
 
 
-def _check_catalog_rows(p: _Problems, cat: _Catalog, clan: Optional[dict], own_adv: List[dict],
-                        own_flaws: List[dict], final_level: Dict[str, int]) -> None:
-    """Own Advantage/Flaw rows against advantages.json / loresheets.json, when the catalog has them."""
-    if not (cat.advantages or cat.loresheets) or not clan:
-        return
-    clan_keys = {_norm(clan["name"]), _norm(clan["id"])}
+def _check_rows(p: _Problems, cat: _Catalog, clan: Optional[dict], own_adv: List[dict],
+                own_flaws: List[dict], final_level: Dict[str, int]) -> None:
+    """Each own Advantage/Flaw row: a custom row needs the Storyteller (custom_row); a loresheet
+    row costs its levels; any other row keeps to its catalog rating when advantages.json knows it
+    (Allies 1-6, Mask 1 or 2), else 1-5. With the catalogs installed also the clan restrictions,
+    and an id that doesn't resolve is refused; Caitiff list no Status."""
+    clan_keys = {_norm(clan["name"]), _norm(clan["id"])} if clan else set()
 
     def in_clans(ids: Iterable[Any]) -> bool:
         return any(_norm(c) in clan_keys or _norm(cat.clan_name(c)) in clan_keys for c in ids)
 
     for row, flaw in [(r, False) for r in own_adv] + [(r, True) for r in own_flaws]:
-        name = _str(row.get("name"))
-        dots = _int(row.get("dots"))
-        rid = _str(row.get("id"))
-        # An id is only checked when its catalog is installed (advantages.json / loresheets.json).
-        if rid and not (cat.loresheets if rid.startswith("loresheet:") else cat.advantages):
+        name, dots, rid = _str(row.get("name")), _int(row.get("dots")), _sid(row.get("id"))
+        if row.get("custom") is True:
+            # The forge's "Custom (Storyteller approval)" row: free text, so only an override takes it.
+            p.add("custom_row", name=name)
+            if dots < 1 or dots > 5:
+                p.add("adv_dots_range", name=name, dots=dots, min=1, max=5)
             continue
-        ls = None if flaw or row.get("kind") not in (None, "loresheet", "merit", "background") else cat.loresheet(row)
-        if ls is None and (row.get("kind") == "loresheet" or rid.startswith("loresheet:")) and rid:
-            p.add("adv_unknown", name=name)
-            continue
-        if ls is not None:
-            restricted = (
-                (ls.get("clans_only") and not in_clans(ls["clans_only"]))
-                or (ls.get("thin_blood_only") and not clan["thin_blood"])
-                or (ls.get("disciplines_only") and not any(
-                    final_level.get(_norm(cat.disc_names.get(d) or _name_from_id(d)), 0) > 0 for d in ls["disciplines_only"]))
-            )
-            if restricted:
-                p.add("loresheet_restricted", name=name, clan=clan["name"])
-            continue
-        entry = cat.advantage(row, flaw, clan)
-        if entry is None:
-            if row.get("id"):
+        loresheet_row = rid.startswith("loresheet:") or row.get("kind") == "loresheet"
+        ls = entry = None
+        # An id is only looked up when its catalog is installed (advantages.json / loresheets.json).
+        if not rid or (cat.loresheets if rid.startswith("loresheet:") else cat.advantages):
+            if not flaw and row.get("kind") in (None, "loresheet", "merit", "background"):
+                ls = cat.loresheet(row)
+            if ls is None and not loresheet_row:
+                entry = cat.advantage(row, flaw, clan)
+            if rid and ls is None and entry is None:
                 p.add("adv_unknown", name=name)
+        if row.get("kind") == "loresheet":
+            _check_loresheet_levels(p, row, ls)
+        else:
+            lo, hi, allowed = (_dots_range(entry) if entry else None) or (1, 5, None)
+            if dots < lo or dots > hi or (allowed and dots not in allowed):
+                p.add("adv_dots_range", name=name, dots=dots, min=lo, max=hi)
+        if not clan:
             continue
-        rng = _dots_range(entry)
-        if rng and (dots < rng[0] or dots > rng[1] or (rng[2] and dots not in rng[2])):
-            p.add("adv_dots_range", name=name, dots=dots, min=rng[0], max=rng[1])
-        blocked = any(
-            isinstance(c, dict) and (_norm(c.get("clan")) in clan_keys or _norm(cat.clan_name(c.get("clan"))) in clan_keys)
-            for c in entry.get("cannot_buy_for") or []
-        )
-        if (
-            blocked
-            or (entry.get("clans_only") and not in_clans(entry["clans_only"]))
-            or (entry.get("caitiff") and not clan["caitiff"])
-            or (entry.get("thin_blood") and not clan["thin_blood"])
-            or entry.get("ghoul_only")
+        if ls is not None and (
+            (_strs(ls.get("clans_only")) and not in_clans(_strs(ls.get("clans_only"))))
+            or (ls.get("thin_blood_only") is True and not clan["thin_blood"])
+            or (_strs(ls.get("disciplines_only")) and not any(
+                final_level.get(_norm(cat.disc_names.get(d) or _name_from_id(d)), 0) > 0
+                for d in _strs(ls.get("disciplines_only"))))
+        ):
+            p.add("loresheet_restricted", name=name, clan=clan["name"])
+        if entry is not None and (
+            any(
+                isinstance(c, dict) and (_norm(c.get("clan")) in clan_keys or _norm(cat.clan_name(c.get("clan"))) in clan_keys)
+                for c in _list(entry.get("cannot_buy_for"))
+            )
+            or (_strs(entry.get("clans_only")) and not in_clans(_strs(entry.get("clans_only"))))
+            or (entry.get("caitiff") is True and not clan["caitiff"])
+            or (entry.get("thin_blood") is True and not clan["thin_blood"])
+            or entry.get("ghoul_only") is True
         ):
             p.add("adv_restricted", name=name, clan=clan["name"])
+        # Caitiff start without positive Status (core p. 107): only a Status row they list.
+        is_status = (
+            (entry.get("kind") == "background" and _norm(entry.get("group")) == "status") if entry is not None
+            else not flaw and not loresheet_row and "status" in {_norm(v) for v in _name_variants(name)}
+        )
+        if (clan["caitiff"] or clan["no_positive_status"]) and is_status and dots > 0:
+            p.add("caitiff_status", clan=clan["name"])
+
+
+def _check_loresheet_levels(p: _Problems, row: dict, ls: Optional[dict]) -> None:
+    """A loresheet row ({kind: 'loresheet', dots, levels: [n, ...]}): each level is an Advantage of
+    its own, bought separately at its rating, and doesn't bring the lower ones (core p. 190), so
+    levels are 1-5 (the sheet's), each once, and the dots are their sum (2 + 4 = 6 is fine)."""
+    levels = row.get("levels")
+    ints = [x for x in _list(levels) if isinstance(x, int) and not isinstance(x, bool)]
+    valid = {lv.get("dots") for lv in _dicts(ls.get("levels"))} if ls else set()
+    valid = {x for x in valid if isinstance(x, int) and not isinstance(x, bool)} or set(range(1, 6))
+    if (
+        not ints
+        or len(ints) != len(_list(levels))
+        or len(set(ints)) != len(ints)
+        or any(x not in valid for x in ints)
+        or sum(ints) != _int(row.get("dots"))
+    ):
+        p.add("loresheet_levels", name=_str(row.get("name")), dots=_int(row.get("dots")), levels=ints)
 
 
 def _check_experience(p: _Problems, sh: _Sheet, cat: _Catalog, seen_specialties: List[Tuple[str, str]],

@@ -117,8 +117,11 @@ def api(monkeypatch):
     monkeypatch.setattr(characters, "get_db", lambda: Conn(raw))
     monkeypatch.setattr(characters, "_ensure_character_schema", lambda cursor: None)
     monkeypatch.setattr(characters, "ensure_campaign_players_active_character_id_column", lambda cursor: None)
+    # the catalog the route sees: the vectors' snapshot, None, or a loader (callable) to call
     catalog = {"value": copy.deepcopy(DOC["catalog"])}
-    monkeypatch.setattr(characters, "load_catalog", lambda: catalog["value"])
+    monkeypatch.setattr(
+        characters, "load_catalog", lambda: catalog["value"]() if callable(catalog["value"]) else catalog["value"]
+    )
 
     app = Flask(__name__)
     app.config.update(JWT_SECRET_KEY="unit-test-secret-key-of-enough-length", TESTING=True)
@@ -139,7 +142,7 @@ def api(monkeypatch):
     def meta(character_id):
         return json.loads(sql("SELECT wod_meta FROM characters WHERE id = ?", (character_id,))[0][0])
 
-    return types.SimpleNamespace(call=call, sql=sql, meta=meta, catalog=catalog)
+    return types.SimpleNamespace(call=call, sql=sql, meta=meta, catalog=catalog, characters=characters)
 
 
 def body(case_name, name="Ada", campaign_id=10, **extra):
@@ -235,6 +238,86 @@ def test_without_a_catalog_the_sheet_goes_in_unchecked(api):
     assert r.status_code == 201
     creation = api.meta(r.get_json()["character_id"])["creation"]
     assert creation == {"validated": False, "at": creation["at"], "rules": "v2", "reason": "catalog_missing"}
+
+
+def _disk_catalog(api, monkeypatch, tmp_path, files):
+    """Point the route at a real catalog directory with these files ({name: text})."""
+    from services import v5_catalog
+
+    for name, text in files.items():
+        (tmp_path / f"{name}.json").write_text(text)
+    monkeypatch.setenv("V5_CATALOG_DIR", str(tmp_path))
+    v5_catalog._cache.update(key=None, data=None, etag=None)
+    api.catalog["value"] = v5_catalog.load_catalog
+    return v5_catalog
+
+
+def _entries(name):
+    return json.dumps({"catalog": name, "version": 1, "entries": DOC["catalog"][name]})
+
+
+def test_a_broken_catalog_file_does_not_stop_creation(api, monkeypatch, tmp_path):
+    entries = _entries
+    v5_catalog = _disk_catalog(api, monkeypatch, tmp_path, {
+        "clans": '{"catalog": "clans", "entries": [',  # cut off mid-file
+        "disciplines": entries("disciplines"),
+        "predator_types": entries("predator_types"),
+    })
+    try:
+        r = api.call("POST", "/api/characters/", 3, body(OVER))
+        assert r.status_code == 201, r.get_json()
+        creation = api.meta(r.get_json()["character_id"])["creation"]
+        assert creation == {"validated": False, "at": creation["at"], "rules": "v2", "reason": "catalog_error"}
+    finally:
+        v5_catalog._cache.update(key=None, data=None, etag=None)
+
+
+def test_a_partial_catalog_counts_as_missing(api, monkeypatch, tmp_path):
+    v5_catalog = _disk_catalog(api, monkeypatch, tmp_path, {
+        "clans": _entries("clans"),
+    })
+    try:
+        r = api.call("POST", "/api/characters/", 3, body(OVER))
+        assert r.status_code == 201, r.get_json()
+        assert api.meta(r.get_json()["character_id"])["creation"]["reason"] == "catalog_missing"
+    finally:
+        v5_catalog._cache.update(key=None, data=None, etag=None)
+
+
+def test_a_crash_in_the_check_is_recorded_not_raised(api, monkeypatch):
+    def boom(*a, **k):
+        raise RuntimeError("bad entry")
+
+    monkeypatch.setattr(api.characters, "validate_creation", boom)
+    r = api.call("POST", "/api/characters/", 3, body(VALID))
+    assert r.status_code == 201, r.get_json()
+    assert api.meta(r.get_json()["character_id"])["creation"]["reason"] == "catalog_error"
+
+
+def test_an_override_without_a_catalog_says_why_it_was_not_checked(api):
+    api.catalog["value"] = None
+    r = api.call("POST", "/api/characters/", 2, body(OVER, creation_override={"reason": "house rule"}))
+    assert r.status_code == 201
+    creation = api.meta(r.get_json()["character_id"])["creation"]
+    assert creation["override"]["reason"] == "house rule" and creation["reason"] == "catalog_missing"
+    assert creation["problems"] == []
+    _insert(api, 105, 10)
+    out = api.call("POST", "/api/characters/105/creation-override", 2, {"reason": "imported"}).get_json()
+    assert out["creation"]["reason"] == "catalog_missing"
+
+
+def test_a_custom_row_needs_the_storytellers_override(api):
+    b = body(VALID)
+    own = next(a for a in b["wod_meta"]["advantages"] if a["kind"] != "predator")
+    own.update(name="Night Doctor", custom=True)
+    r = api.call("POST", "/api/characters/", 3, b)
+    assert r.status_code == 400
+    assert r.get_json()["problems"] == [{"code": "custom_row", "params": {"name": "Night Doctor"}}]
+    r = api.call("POST", "/api/characters/", 2, {**b, "creation_override": {"reason": "approved at the table"}})
+    assert r.status_code == 201
+    assert api.meta(r.get_json()["character_id"])["creation"]["problems"] == [
+        {"code": "custom_row", "params": {"name": "Night Doctor"}}
+    ]
 
 
 def test_bounds_errors_still_come_first(api):

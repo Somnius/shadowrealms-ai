@@ -73,12 +73,21 @@ const CODES = [
   [/^The Storyteller doesn't offer the Humanity 8 fledgling start/, 'fledgling_not_allowed'],
   [/^Write \d+–\d+ Convictions, each with a Touchstone\.$/, 'conviction_count'],
   [/^Each Conviction needs a Touchstone \(and vice versa\)\.$/, 'conviction_pairs'],
+  // Catalog Advantage rows (forge v2 C advantages step); the client says "can't take" for all three.
+  [/^.+ takes .+ dots \(you have \d+\)\.$/, 'adv_dots_range'],
+  [/^Pick at least one level of .+\.$/, 'loresheet_levels'],
+  [/^.+ can't take .+ at creation\.$/, ['adv_restricted', 'loresheet_restricted', 'caitiff_status']],
+  [/^.+ can be taken (only once|at most \d+ times)\.$/, 'adv_repeat'],
+  [/^.+ needs .+ at \d+ dots or more\.$/, 'adv_requires'],
 ];
 
-const codeOf = (msg) => CODES.find(([re]) => re.test(msg))?.[1] || `unmapped: ${msg}`;
+/** The server codes a client message stands for. */
+const codesOf = (msg) => {
+  const hit = CODES.find(([re]) => re.test(msg));
+  return hit ? [].concat(hit[1]) : [`unmapped: ${msg}`];
+};
 
-const clientCodes = (c) =>
-  [...new Set(Object.values(validateV5Sheet(c.sheet, undefined, normalizeCreationSettings(c.settings))).map(codeOf))].sort();
+const clientMessages = (c) => Object.values(validateV5Sheet(c.sheet, undefined, normalizeCreationSettings(c.settings)));
 
 beforeAll(() => applyV5Catalog(fixture.catalog));
 afterAll(() => applyV5Catalog(null));
@@ -107,14 +116,16 @@ test('there are enough cases, valid and invalid, with unique names', () => {
 
 describe.each(CASES.filter((c) => c.client).map((c) => [c.name, c]))('client agrees: %s', (_name, c) => {
   test('same verdict and codes', () => {
-    const got = clientCodes(c);
+    const messages = clientMessages(c);
     if (!c.expect.length) {
-      expect(got).toEqual([]);
+      expect(messages).toEqual([]);
       return;
     }
-    // The client keeps one message per section, so it may report fewer codes, never others.
-    expect(got.length).toBeGreaterThan(0);
-    got.forEach((code) => expect(c.expect).toContain(code));
-    if (c.expect.length === 1) expect(got).toEqual(c.expect);
+    // The client keeps one message per section, so it may report fewer problems, never others.
+    expect(messages.length).toBeGreaterThan(0);
+    messages.forEach((m) => {
+      const codes = codesOf(m);
+      expect([m, codes.find((code) => c.expect.includes(code)) || codes]).toEqual([m, expect.any(String)]);
+    });
   });
 });

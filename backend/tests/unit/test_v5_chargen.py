@@ -38,6 +38,8 @@ pytestmark = pytest.mark.skipif(CASES_FILE is None, reason="docs/rules/v5/tests 
 
 DOC = json.loads(Path(CASES_FILE).read_text("utf-8")) if CASES_FILE else {"catalog": {}, "cases": []}
 CATALOG = DOC["catalog"]
+# The snapshot without advantages.json / loresheets.json (it has them once the catalog does).
+CORE = {k: v for k, v in CATALOG.items() if k not in ("advantages", "loresheets")}
 
 
 def codes(problems):
@@ -192,7 +194,13 @@ ADV_CATALOG = {
     "advantages": [
         {"id": "background:resources", "name": "Resources", "kind": "background", "dots": {"min": 1, "max": 5}},
         {"id": "background:haven", "name": "Haven", "kind": "background", "dots": {"min": 1, "max": 3}},
-        {"id": "background:allies", "name": "Allies", "kind": "background", "dots": {"min": 1, "max": 5}},
+        {"id": "background:allies", "name": "Allies", "kind": "background", "dots": {"min": 1, "max": 6}},
+        {"id": "background:mask", "name": "Mask", "kind": "background", "dots": {"allowed": [1, 2]}},
+        {"id": "background:status", "name": "Status", "kind": "background", "group": "Status", "dots": {"min": 1, "max": 5}},
+        {"id": "flaw:folkloric-bane", "name": "Folkloric Bane", "kind": "flaw", "group": "Mythic", "dots": {"min": 1, "max": 1}},
+        {"id": "flaw:stake-bait", "name": "Stake Bait", "kind": "flaw", "group": "Mythic", "dots": {"min": 2, "max": 2}},
+        {"id": "flaw:shunned", "name": "Shunned", "kind": "flaw", "group": "Status", "dots": {"min": 2, "max": 2}},
+        {"id": "flaw:suspect", "name": "Suspect", "kind": "flaw", "group": "Status", "dots": {"min": 1, "max": 1}},
         {"id": "flaw:enemy", "name": "Enemy", "kind": "flaw", "dots": {"min": 1, "max": None}},
         {"id": "merit:iron-gullet", "name": "Iron Gullet", "kind": "merit", "dots": {"min": 3, "max": 3},
          "cannot_buy_for": [{"clan": "clan:ventrue", "when": "always", "book": "v5-corebook", "page": 1}]},
@@ -202,15 +210,19 @@ ADV_CATALOG = {
         {"id": "merit:thin-blood-day-drinker", "name": "Day Drinker", "kind": "merit", "dots": None, "thin_blood": True},
     ],
     "loresheets": [
-        {"id": "loresheet:theo-bell", "name": "Theo Bell", "clans_only": None, "thin_blood_only": False},
+        {"id": "loresheet:theo-bell", "name": "Theo Bell", "clans_only": None, "thin_blood_only": False,
+         "levels": [{"dots": n, "name": f"Level {n}"} for n in range(1, 6)]},
         {"id": "loresheet:the-trinity", "name": "The Trinity", "clans_only": ["clan:hecata"], "thin_blood_only": False},
     ],
 }
 
 
 def _with_adv_catalog():
+    """The snapshot with the test entries above in front of any real ones (same id: the test's)."""
     cat = copy.deepcopy(CATALOG)
-    cat.update(copy.deepcopy(ADV_CATALOG))
+    for kind, mine in ADV_CATALOG.items():
+        ids = {e["id"] for e in mine}
+        cat[kind] = copy.deepcopy(mine) + [e for e in cat.get(kind, []) if e.get("id") not in ids]
     return cat
 
 
@@ -259,8 +271,8 @@ def test_loresheets_count_and_follow_their_restriction():
     cat = _with_adv_catalog()
     c = case("valid: Brujah with no XP spent")
     meta = c["payload"]["wod_meta"]
-    meta["advantages"] = [{"name": "Theo Bell", "dots": 2, "kind": "merit"},
-                          {"name": "The Trinity", "dots": 1, "kind": "loresheet"},
+    meta["advantages"] = [{"name": "Theo Bell", "dots": 2, "kind": "merit"},  # an older free-text row
+                          {"name": "The Trinity", "dots": 1, "kind": "loresheet", "levels": [1]},
                           {"name": "Resources", "dots": 5, "kind": "background"}] + [
         a for a in meta["advantages"] if a["kind"] == "predator"]
     assert validate_creation(c["payload"], cat, None) == [
@@ -273,7 +285,7 @@ def test_unknown_ids_only_when_their_catalog_is_installed():
     c = case("valid: Brujah with no XP spent")
     meta = c["payload"]["wod_meta"]
     meta["advantages"][0]["id"] = "background:no-such-thing"
-    assert validate_creation(c["payload"], CATALOG, None) == []  # no advantages.json: not checked
+    assert validate_creation(c["payload"], CORE, None) == []  # no advantages.json: not checked
     assert codes(validate_creation(c["payload"], _with_adv_catalog(), None)) == ["adv_unknown"]
     meta["advantages"][0]["id"] = "background:resources"
     assert validate_creation(c["payload"], _with_adv_catalog(), None) == []
@@ -294,7 +306,7 @@ def test_advantages_json_on_disk_reaches_the_check(tmp_path, monkeypatch):
     """advantages.json / loresheets.json are read by the loader when they exist (Part C)."""
     from services import v5_catalog
 
-    for name, entries in CATALOG.items():
+    for name, entries in CORE.items():
         (tmp_path / f"{name}.json").write_text(json.dumps({"catalog": name, "version": 1, "entries": entries}))
     monkeypatch.setenv("V5_CATALOG_DIR", str(tmp_path))
     v5_catalog._cache.update(key=None, data=None, etag=None)
@@ -312,3 +324,164 @@ def test_advantages_json_on_disk_reaches_the_check(tmp_path, monkeypatch):
         assert codes(validate_creation(c["payload"], loaded, None)) == ["adv_dots_range"]
     finally:
         v5_catalog._cache.update(key=None, data=None, etag=None)
+
+
+# ---------- review fixes ----------
+
+TZIMISCE = "valid: Tzimisce Messenger's Command with Compel from Dominate (prerequisite in another Discipline)"
+
+
+def test_prerequisites_can_sit_in_another_discipline():
+    c = case(TZIMISCE)
+    meta = c["payload"]["wod_meta"]
+    animalism = next(d for d in meta["disciplines"] if d["name"] == "Animalism")
+    assert "Messenger's Command" in animalism["powers"]
+    assert validate_creation(c["payload"], CATALOG, None) == []
+    next(d for d in meta["disciplines"] if d["name"] == "Dominate")["powers"] = ["Cloud Memory"]
+    assert validate_creation(c["payload"], CATALOG, None) == [
+        {"code": "power_prereq", "params": {"power": "Messenger's Command", "needs": "Compel or Mesmerize"}}
+    ]
+    # duplicates stay per Discipline: the same name in two Disciplines is not "taken twice"
+    c = case(TZIMISCE)
+    next(d for d in c["payload"]["wod_meta"]["disciplines"] if d["name"] == "Animalism")["powers"][0] = "Bond Famulus"
+    assert validate_creation(c["payload"], CATALOG, None) == []
+
+
+def _brujah_with(own, cat=None, flaws=None):
+    c = case("valid: Brujah with no XP spent")
+    meta = c["payload"]["wod_meta"]
+    meta["advantages"] = own + [a for a in meta["advantages"] if a["kind"] == "predator"]
+    if flaws is not None:
+        meta["flaws"] = flaws + [f for f in meta["flaws"] if f["kind"] == "predator"]
+    return validate_creation(c["payload"], cat or _with_adv_catalog(), None)
+
+
+def test_known_rows_take_the_catalog_range_unknown_rows_1_to_5():
+    assert _brujah_with([{"name": "Allies (dock workers)", "dots": 6, "kind": "background"}]) == []
+    assert _brujah_with([{"name": "Allies", "dots": 7, "kind": "background"}]) == [
+        {"code": "adv_dots_range", "params": {"name": "Allies", "dots": 7, "min": 1, "max": 6}},
+    ]
+    assert _brujah_with([{"name": "Mystery Merit", "dots": 6, "kind": "merit"}]) == [
+        {"code": "adv_dots_range", "params": {"name": "Mystery Merit", "dots": 6, "min": 1, "max": 5}},
+    ]
+    assert _brujah_with([{"name": "Mask", "dots": 2, "kind": "background"}]) == []
+    assert _brujah_with([{"name": "Mask", "dots": 3, "kind": "background"}]) == [
+        {"code": "adv_dots_range", "params": {"name": "Mask", "dots": 3, "min": 1, "max": 2}},
+    ]
+    # without advantages.json every row is 1-5
+    assert codes(_brujah_with([{"name": "Allies", "dots": 6, "kind": "background"}], cat=CORE)) == ["adv_dots_range"]
+
+
+def test_a_group_option_takes_any_entry_of_its_group():
+    def osiris(mythic_name, dots=1, cat=None):
+        c = case("valid: Caitiff Osiris, Performance 0 becomes 1, split grants, Caitiff XP")
+        row = next(f for f in c["payload"]["wod_meta"]["flaws"] if f["kind"] == "predator" and "mythic" in f["name"].lower())
+        row.update(name=mythic_name, dots=dots)
+        return codes(validate_creation(c["payload"], cat or _with_adv_catalog(), None))
+
+    assert osiris("Mythic (any Mythic Flaw)") == []  # the forge's label
+    assert osiris("Folkloric Bane") == []  # a Mythic Flaw from the catalog
+    assert osiris("Mythic (Folkloric Bane)") == []
+    assert osiris("Shunned") == ["predator_grant"]  # a Status Flaw, not a Mythic one
+    assert osiris("Folkloric Bane", cat=CORE) == ["predator_grant"]  # no advantages.json: no group to look in
+
+
+def test_predator_rows_with_an_id_are_that_option_and_name_it():
+    c = case("valid: Brujah Alleycat neonate with 13 XP spent")
+    row = next(a for a in c["payload"]["wod_meta"]["advantages"] if a["kind"] == "predator")
+    row.update(id="background:contacts", name="Contacts (criminal)", note="criminal")
+    assert validate_creation(c["payload"], CATALOG, None) == []
+    row["name"] = "Resources"  # the id says Contacts: a row can't show another name
+    assert codes(validate_creation(c["payload"], CATALOG, None)) == ["predator_grant"]
+    row.update(id="background:resources", name="Contacts (criminal)")  # nor another option's id
+    assert codes(validate_creation(c["payload"], CATALOG, None)) == ["predator_grant"]
+
+
+def test_a_group_row_may_carry_the_id_of_the_entry_picked():
+    c = case("valid: Caitiff Osiris, Performance 0 becomes 1, split grants, Caitiff XP")
+    row = next(f for f in c["payload"]["wod_meta"]["flaws"] if f["kind"] == "predator" and "mythic" in f["name"].lower())
+    row.update(id="flaw:mythic")
+    assert validate_creation(c["payload"], _with_adv_catalog(), None) == []
+    row.update(id="flaw:folkloric-bane", name="Folkloric Bane")
+    assert validate_creation(c["payload"], _with_adv_catalog(), None) == []
+    row.update(id="flaw:shunned", name="Shunned")
+    assert codes(validate_creation(c["payload"], _with_adv_catalog(), None)) == ["predator_grant"]
+
+
+def test_malformed_catalog_entries_never_raise():
+    bad = {
+        "clans": [
+            {"id": ["x"], "name": 5, "disciplines": "abc", "aliases": {"a": 1}, "creation": "x"},
+            {"id": "clan:brujah", "name": "Brujah", "disciplines": ["discipline:potence", None, 3, ["x"]]},
+        ],
+        "disciplines": [
+            {"id": {}, "name": None, "powers": "x"},
+            {"id": "discipline:potence", "name": "Potence", "aliases": "Strength", "powers": [
+                {"id": ["p"], "name": "Lethal Body", "aliases": "x", "level": "2",
+                 "amalgam": {"discipline": ["d"], "level": "x"},
+                 "prerequisite": {"any_of": [None, 3, {"power_id": []}]}},
+                {"id": "power:potence:prowess", "name": "Prowess", "prerequisite": {"all_of": "x"}},
+            ]},
+        ],
+        "predator_types": [
+            {"id": 7, "name": "Alleycat", "specialty_choice": "x", "aliases": None,
+             "discipline_choice": [{"discipline": [], "clans_only": "clan:brujah"}, "x"],
+             "advantages": [{"pick": 3, "dots_total": True, "options": [{"id": [], "dots": True, "group": True}]}],
+             "flaws": "x", "forbidden_clans": {}, "max_blood_potency": True, "humanity": "x"},
+        ],
+        "rituals": [{"name": ["x"]}, None, {"name": "Blood Walk", "aliases": 3, "level": None}],
+        "ceremonies": "x",
+        "advantages": [
+            {"id": ["a"], "name": "Allies", "dots": {"allowed": ["x", True]}, "aliases": "Ally",
+             "cannot_buy_for": "clan:brujah", "clans_only": 5, "group": None},
+            {"id": "background:haven", "name": "Haven", "kind": "background", "dots": {"min": True, "max": "x"}},
+        ],
+        "loresheets": [{"id": None, "name": "Theo Bell", "clans_only": "x", "levels": "x", "disciplines_only": 3}],
+    }
+    for name in [c["name"] for c in DOC["cases"]]:
+        validate_creation(case(name)["payload"], bad, None)  # no exception
+    for junk in (None, [], "x", 3, {"clans": "x"}, {"advantages": [None, "x", 3]}):
+        validate_creation(case("valid: Brujah with no XP spent")["payload"], junk, None)
+
+
+def _lore(dots, levels, **kw):
+    return {"name": "Theo Bell", "dots": dots, "kind": "loresheet", "levels": levels, **kw}
+
+
+def test_loresheet_rows_cost_their_levels():
+    lore = _lore
+    assert _brujah_with([lore(6, [2, 4])]) == []  # 2 + 4: more than 5 dots, still one row
+    assert _brujah_with([lore(6, [2, 4], id="loresheet:theo-bell"), {"name": "Haven", "dots": 1, "kind": "background"}]) == []
+    assert _brujah_with([lore(8, [3, 5])]) == [{"code": "adv_over", "params": {"max": 7, "have": 8}}]
+    for dots, levels in ((5, [2, 4]), (4, [2, 2]), (6, [6]), (0, []), (3, None), (3, ["3"])):
+        assert codes(_brujah_with([lore(dots, levels)])) == ["loresheet_levels"], (dots, levels)
+    # no catalog: still levels 1-5 and the sum
+    assert _brujah_with([lore(6, [2, 4])], cat=CORE) == []
+    assert codes(_brujah_with([lore(7, [2, 4])], cat=CORE)) == ["loresheet_levels"]
+
+
+def test_custom_rows_need_the_storyteller():
+    assert _brujah_with([{"name": "Night Doctor", "dots": 2, "kind": "merit", "custom": True}]) == [
+        {"code": "custom_row", "params": {"name": "Night Doctor"}},
+    ]
+    got = _brujah_with([], flaws=[{"name": "Cursed Name", "dots": 6, "kind": "flaw", "custom": True}])
+    assert codes(got) == ["adv_dots_range", "custom_row"]
+    # without the advantages catalog too
+    assert codes(_brujah_with([{"name": "Night Doctor", "dots": 2, "kind": "merit", "custom": True}], cat=CORE)) == ["custom_row"]
+
+
+def test_caitiff_suspect_counts_and_status_is_refused():
+    c = case("valid: Caitiff Osiris, Performance 0 becomes 1, split grants, Caitiff XP")
+    meta = c["payload"]["wod_meta"]
+    # the forge adds the clan's Suspect (source 'clan') and counts it as the player's own Flaw
+    meta["flaws"] = [{"id": "flaw:suspect", "name": "Suspect", "dots": 1, "kind": "flaw", "source": "clan"},
+                     {"name": "Addiction", "dots": 1, "kind": "flaw"}] + [f for f in meta["flaws"] if f["kind"] == "predator"]
+    assert validate_creation(c["payload"], CORE, None) == []
+    assert validate_creation(c["payload"], _with_adv_catalog(), None) == []
+    meta["advantages"][0] = {"name": "Status", "dots": 1, "kind": "background"}
+    assert codes(validate_creation(c["payload"], CORE, None)) == ["caitiff_status"]
+    assert codes(validate_creation(c["payload"], _with_adv_catalog(), None)) == ["caitiff_status"]
+    meta["advantages"][0]["id"] = "background:status"
+    assert codes(validate_creation(c["payload"], _with_adv_catalog(), None)) == ["caitiff_status"]
+    # other clans may start with Status
+    assert _brujah_with([{"name": "Status", "dots": 2, "kind": "background"}]) == []

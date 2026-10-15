@@ -39,7 +39,8 @@ MAX_PORTRAIT_URL_LEN = 524288
 
 # wod_meta.creation: how a V5 sheet passed the creation rules. Set by the server only (create and
 # POST /<id>/creation-override); {validated, at, rules} or {validated: false, override: {by,
-# reason, at}, problems: [{code, params}]}.
+# reason, at}, problems: [{code, params}]}; `reason: 'catalog_missing' | 'catalog_error'` when the
+# rules couldn't be checked.
 CREATION_RULES_VERSION = 'v2'
 CREATION_OVERRIDE_REASON_MAX = 500
 
@@ -55,15 +56,31 @@ def _override_reason(raw):
     return reason if 0 < len(reason) <= CREATION_OVERRIDE_REASON_MAX else None
 
 
+# A catalog without these can't check a sheet: treated as not installed.
+_CATALOG_CORE = ('clans', 'disciplines', 'predator_types')
+
+
 def _creation_check(attributes, skills, wod_meta, settings):
-    """validate_creation() on a V5 sheet: (problems, catalog_found)."""
-    catalog = load_catalog()
-    if catalog is None:
-        logger.warning("V5 catalog not found: the creation rules were not checked")
-        return [], False
-    meta = {k: v for k, v in (wod_meta or {}).items() if k != 'creation'}
+    """
+    validate_creation() on a V5 sheet: (problems, status). status is 'ok', 'catalog_missing' (no
+    catalog, or one without clans, Disciplines or predator types) or 'catalog_error' (the catalog
+    or the check itself failed). The sheet isn't refused for those two: its record says why.
+    """
+    try:
+        catalog = load_catalog()
+    except Exception as e:  # e.g. a broken catalog file: creation goes on, unchecked
+        logger.error("V5 catalog could not be read: %s", safe_log_value(e))
+        return [], 'catalog_error'
+    if not isinstance(catalog, dict) or not all(catalog.get(k) for k in _CATALOG_CORE):
+        logger.warning("V5 catalog not installed or incomplete: the creation rules were not checked")
+        return [], 'catalog_missing'
+    meta = {k: v for k, v in (wod_meta if isinstance(wod_meta, dict) else {}).items() if k != 'creation'}
     payload = {'attributes': attributes, 'skills': skills, 'wod_meta': meta}
-    return validate_creation(payload, catalog, settings), True
+    try:
+        return validate_creation(payload, catalog, settings), 'ok'
+    except Exception as e:
+        logger.error("V5 creation check failed: %s", safe_log_value(e))
+        return [], 'catalog_error'
 
 try:
     import sqlite3
@@ -404,9 +421,10 @@ def create_character():
                     'problems': not_allowed,
                 }), 400
             # The creation budget, recomputed from the stored sheet (services/v5_chargen.py).
-            found, checked = _creation_check(
+            found, status = _creation_check(
                 data.get('attributes'), data.get('skills'), wm_dict, campaign.get('creation_settings')
             )
+            checked = status == 'ok'
             stamp = _utc_stamp()
             if found and override_reason is None:
                 return jsonify({
@@ -425,12 +443,13 @@ def create_character():
                     'override': {'by': current_user_id, 'reason': override_reason, 'at': stamp},
                     'problems': found,
                 }
+                if not checked:
+                    wm_dict['creation']['reason'] = status
             elif checked:
                 wm_dict['creation'] = {'validated': True, 'at': stamp, 'rules': CREATION_RULES_VERSION}
             else:
                 wm_dict['creation'] = {
-                    'validated': False, 'at': stamp, 'rules': CREATION_RULES_VERSION,
-                    'reason': 'catalog_missing',
+                    'validated': False, 'at': stamp, 'rules': CREATION_RULES_VERSION, 'reason': status,
                 }
             wod_meta = json.dumps(wm_dict)
 
@@ -1216,7 +1235,7 @@ def creation_override(character_id):
                 return {}
             return v if isinstance(v, dict) else {}
 
-        found, _checked = _creation_check(_json('attributes'), _json('skills'), meta, settings)
+        found, status = _creation_check(_json('attributes'), _json('skills'), meta, settings)
         stamp = _utc_stamp()
         meta['creation'] = {
             'validated': False,
@@ -1225,6 +1244,8 @@ def creation_override(character_id):
             'override': {'by': current_user_id, 'reason': reason, 'at': stamp},
             'problems': found,
         }
+        if status != 'ok':
+            meta['creation']['reason'] = status
         cursor.execute(
             "UPDATE characters SET wod_meta = %s, updated_at = %s WHERE id = %s",
             (json.dumps(meta), datetime.utcnow(), character_id),
