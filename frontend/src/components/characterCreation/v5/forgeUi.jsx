@@ -3,7 +3,8 @@
  * context that hands every step the forge state (see useV5ForgeState.js).
  */
 import { createContext, useContext } from 'react';
-import { t } from '../../../i18n';
+import { getLanguage, t } from '../../../i18n';
+import { bookRef, descIn } from '../../../characterSheet/v5/rulesData';
 
 export const ACCENT = 'var(--sr-blood-500)';
 
@@ -146,5 +147,20 @@ export function TextField({ id, label, value, onChange, placeholder }) {
       </label>
       <input id={id} value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder} style={inputStyle} />
     </div>
+  );
+}
+
+/** A catalog entry's short description in the UI language, with its book and page. */
+export function CatalogNote({ entry, style }) {
+  if (!entry) return null;
+  const text = descIn(entry, getLanguage());
+  const ref = bookRef(entry);
+  if (!text && !ref) return null;
+  return (
+    <p className="sr-catalog-note" style={{ color: 'var(--sr-bone-300)', fontSize: '12px', lineHeight: 1.45, margin: '4px 0 0', ...style }}>
+      {text}
+      {text && ref ? ' ' : ''}
+      {ref ? <span style={{ color: 'var(--sr-bone-500)', whiteSpace: 'nowrap' }}>({ref})</span> : null}
+    </p>
   );
 }

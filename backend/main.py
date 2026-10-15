@@ -72,6 +72,7 @@ def create_app(config_class=Config):
     app.register_blueprint(characters.bp, url_prefix='/api/characters')
     app.register_blueprint(ai.bp, url_prefix='/api/ai')
     app.register_blueprint(rule_books.bp, url_prefix='/api/rule-books')
+    from routes import rules; app.register_blueprint(rules.bp, url_prefix='/api/rules')  # Forge v2: V5 catalog
     app.register_blueprint(admin.bp)
     app.register_blueprint(locations.locations_bp, url_prefix='/api')
     app.register_blueprint(dice.dice_bp, url_prefix='/api')

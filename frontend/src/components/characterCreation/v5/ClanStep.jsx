@@ -1,9 +1,10 @@
 import ResponsiveSheetBlock from '../ResponsiveSheetBlock';
-import { THIN_BLOOD, V5_CLAN_NAMES, V5_SECTION_IDS } from '../../../characterSheet/v5/constants';
+import { THIN_BLOOD, V5_SECTION_IDS } from '../../../characterSheet/v5/constants';
+import { clanNames, descIn } from '../../../characterSheet/v5/rulesData';
 import { ageAllowed, clanAllowed } from '../../../characterSheet/v5/validation';
-import { t } from '../../../i18n';
+import { getLanguage, t } from '../../../i18n';
 import { Term } from '../../../i18n/glossary';
-import { ACCENT, InlineError, TextField, gridStyle, inputStyle, labelStyle, noteStyle, useForge } from './forgeUi';
+import { ACCENT, CatalogNote, InlineError, TextField, gridStyle, inputStyle, labelStyle, noteStyle, useForge } from './forgeUi';
 
 /** Step 2 (core p. 136): clan and sire. Age and generation come later, after the Convictions. */
 export default function ClanStep() {
@@ -21,7 +22,7 @@ export default function ClanStep() {
         <div>
           <label htmlFor="v5-field-clan" style={labelStyle}><Term id="clan" /></label>
           <select id="v5-field-clan" value={f.clan} onChange={(e) => f.changeClan(e.target.value)} style={inputStyle}>
-            {V5_CLAN_NAMES.map((c) => {
+            {clanNames().map((c) => {
               // Thin-bloods are always childer (14th–16th generation), so they need that age allowed.
               const ok = clanAllowed(f.settings, c) && (c !== THIN_BLOOD || ageAllowed(f.settings, 'childer'));
               return (
@@ -36,23 +37,26 @@ export default function ClanStep() {
         <TextField id="v5-field-sire" label="Sire" value={f.sire} onChange={f.setSire} placeholder={t('wizard:v5.optional', 'optional')} />
       </div>
       {clanRow ? (
-        <p style={{ ...noteStyle, marginTop: '12px' }}>
+        <div style={{ ...noteStyle, marginTop: '12px' }}>
+          <CatalogNote entry={clanRow} style={{ fontSize: '13px', margin: '0 0 6px' }} />
           {clanRow.disciplines.length ? (
-            <>
-              <strong style={{ color: 'var(--sr-arcane-300)' }}>Disciplines:</strong> {clanRow.disciplines.join(', ')}.{' '}
-            </>
+            <div>
+              <strong style={{ color: 'var(--sr-arcane-300)' }}>Disciplines:</strong> {clanRow.disciplines.join(', ')}.
+            </div>
           ) : null}
-          {clanRow.bane_summary ? (
-            <>
-              <strong style={{ color: 'var(--sr-arcane-300)' }}>Bane:</strong> {clanRow.bane_summary}.{' '}
-            </>
+          {clanRow.bane ? (
+            <div>
+              <strong style={{ color: 'var(--sr-arcane-300)' }}>Bane:</strong> {clanRow.bane}
+              {clanRow.bane_desc ? ` · ${descIn(clanRow.bane_desc, getLanguage())}` : ''}
+            </div>
           ) : null}
           {clanRow.compulsion ? (
-            <>
-              <strong style={{ color: 'var(--sr-arcane-300)' }}>Compulsion:</strong> {clanRow.compulsion}.
-            </>
+            <div>
+              <strong style={{ color: 'var(--sr-arcane-300)' }}>Compulsion:</strong> {clanRow.compulsion}
+              {clanRow.compulsion_desc ? ` · ${descIn(clanRow.compulsion_desc, getLanguage())}` : ''}
+            </div>
           ) : null}
-        </p>
+        </div>
       ) : null}
     </ResponsiveSheetBlock>
   );

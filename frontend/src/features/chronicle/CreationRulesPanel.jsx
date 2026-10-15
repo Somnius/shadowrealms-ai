@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import { Button, Checkbox, Input, Panel, Textarea } from '../../design';
-import { V5_AGE_BRACKETS, V5_CLAN_NAMES, V5_PREDATOR_TYPES } from '../../characterSheet/v5/constants';
+import { V5_AGE_BRACKETS } from '../../characterSheet/v5/constants';
+import { clanNames, predatorNames } from '../../characterSheet/v5/rulesData';
+import { useV5Catalog } from '../../rules/v5Catalog';
 import { CREATION_AGES, normalizeCreationSettings } from '../../characterSheet/v5/creationSettings';
 import { t } from '../../i18n';
-
-const PREDATOR_NAMES = V5_PREDATOR_TYPES.map((p) => p.name);
 
 /**
  * One "allowed" list: every box ticked is stored as null (everything allowed, including what
@@ -42,6 +42,7 @@ function AllowedList({ legend, names, labelOf = (n) => n, value, onChange }) {
  * house rules shown at the top of the forge.
  */
 export default function CreationRulesPanel({ campaign, saving, onSave }) {
+  useV5Catalog();
   const [s, setS] = useState(() => normalizeCreationSettings(campaign.creation_settings));
   const set = (patch) => setS((prev) => ({ ...prev, ...patch }));
   const [flawsText, setFlawsText] = useState(() => (s.flaws_max_dots == null ? '' : String(s.flaws_max_dots)));
@@ -58,13 +59,13 @@ export default function CreationRulesPanel({ campaign, saving, onSave }) {
         </p>
         <AllowedList
           legend={t('chronicle:creation.clans', 'Allowed clans')}
-          names={V5_CLAN_NAMES}
+          names={clanNames()}
           value={s.allowed_clans}
           onChange={(v) => set({ allowed_clans: v })}
         />
         <AllowedList
           legend={t('chronicle:creation.predators', 'Allowed predator types')}
-          names={PREDATOR_NAMES}
+          names={predatorNames()}
           value={s.allowed_predators}
           onChange={(v) => set({ allowed_predators: v })}
         />

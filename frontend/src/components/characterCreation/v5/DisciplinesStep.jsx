@@ -1,10 +1,11 @@
 import ResponsiveSheetBlock from '../ResponsiveSheetBlock';
 import { CAITIFF, THIN_BLOOD, V5_NAME_MAX, V5_SECTION_IDS } from '../../../characterSheet/v5/constants';
-import { startingRitualAllowed } from '../../../characterSheet/v5/validation';
+import { startingCeremonyOptions, startingRitualAllowed } from '../../../characterSheet/v5/validation';
+import { powersOf, ritualsOf } from '../../../characterSheet/v5/rulesData';
 import { t } from '../../../i18n';
 import { Term } from '../../../i18n/glossary';
 import PredatorPreview from './PredatorPreview';
-import { ACCENT, InlineError, SourceDots, inputStyle, labelStyle, useForge } from './forgeUi';
+import { ACCENT, CatalogNote, InlineError, SourceDots, inputStyle, labelStyle, useForge } from './forgeUi';
 
 /** Step 5 (core p. 136): two clan Disciplines (2 + 1), a power per dot, and the predator preview. */
 export default function DisciplinesStep() {
@@ -68,33 +69,93 @@ export default function DisciplinesStep() {
               </div>
             ) : null}
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '6px' }}>
-              {row.powers.map((pw, p) => (
-                <input
-                  key={p}
-                  value={pw}
-                  aria-label={t('wizard:v5.powerLabel', '{{disc}} power {{n}}', { disc: discLabel, n: p + 1 })}
-                  placeholder={t('wizard:v5.powerPlaceholder', 'Power {{n}} (optional)', { n: p + 1 })}
-                  onChange={(e) => setPower(p, e.target.value)}
-                  style={{ ...inputStyle, flex: '1 1 180px', width: 'auto', padding: '6px 8px', fontSize: '12px' }}
-                />
-              ))}
+              {row.powers.map((pw, p) => {
+                const label = t('wizard:v5.powerLabel', '{{disc}} power {{n}}', { disc: discLabel, n: p + 1 });
+                const catalog = powersOf(row.name);
+                if (!catalog.length) {
+                  return (
+                    <input
+                      key={p}
+                      value={pw}
+                      aria-label={label}
+                      placeholder={t('wizard:v5.powerPlaceholder', 'Power {{n}} (optional)', { n: p + 1 })}
+                      onChange={(e) => setPower(p, e.target.value)}
+                      style={{ ...inputStyle, flex: '1 1 180px', width: 'auto', padding: '6px 8px', fontSize: '12px' }}
+                    />
+                  );
+                }
+                const taken = row.powers.filter((x, j) => j !== p && x);
+                const chosen = catalog.find((x) => x.name === pw);
+                return (
+                  <div key={p} style={{ flex: '1 1 240px', minWidth: 0 }}>
+                    <select
+                      value={pw}
+                      aria-label={label}
+                      onChange={(e) => setPower(p, e.target.value)}
+                      style={{ ...inputStyle, padding: '6px 8px', fontSize: '12px' }}
+                    >
+                      <option value="">{t('wizard:v5.powerPick', 'Power {{n}}…', { n: p + 1 })}</option>
+                      {pw && !chosen ? <option value={pw}>{pw}</option> : null}
+                      {catalog
+                        .filter((x) => x.level <= row.level)
+                        .map((x) => (
+                          <option key={x.id || x.name} value={x.name} disabled={taken.includes(x.name)}>
+                            {t('wizard:v5.powerOption', '{{name}} (level {{level}})', { name: x.name, level: x.level })}
+                            {x.amalgam ? ` · ${x.amalgam.discipline} ${x.amalgam.level}` : ''}
+                          </option>
+                        ))}
+                    </select>
+                    <CatalogNote entry={chosen} />
+                  </div>
+                );
+              })}
             </div>
           </div>
         );
       })}
       {startingRitualAllowed(f.sheet) ? (
-        <div style={{ marginTop: '6px', maxWidth: '420px' }}>
+        <div style={{ marginTop: '6px', maxWidth: '520px' }}>
           <label htmlFor="v5-field-starting-ritual" style={labelStyle}>
             {t('wizard:v5.startingRitual', 'Starting ritual (Level 1)')}
           </label>
-          <input
-            id="v5-field-starting-ritual"
-            value={f.startingRitual}
-            maxLength={V5_NAME_MAX}
-            onChange={(e) => f.setStartingRitual(e.target.value)}
-            placeholder={t('wizard:v5.startingRitualPlaceholder', 'optional: one Level 1 Blood Sorcery ritual')}
-            style={inputStyle}
-          />
+          {ritualsOf('ritual', 1).length ? (
+            <>
+              <select id="v5-field-starting-ritual" value={f.startingRitual} onChange={(e) => f.setStartingRitual(e.target.value)} style={inputStyle}>
+                <option value="">{t('wizard:v5.startingRitualNone', 'None (optional)')}</option>
+                {ritualsOf('ritual', 1).map((r) => (
+                  <option key={r.id || r.name} value={r.name}>
+                    {r.name}
+                  </option>
+                ))}
+              </select>
+              <CatalogNote entry={ritualsOf('ritual', 1).find((r) => r.name === f.startingRitual)} />
+            </>
+          ) : (
+            <input
+              id="v5-field-starting-ritual"
+              value={f.startingRitual}
+              maxLength={V5_NAME_MAX}
+              onChange={(e) => f.setStartingRitual(e.target.value)}
+              placeholder={t('wizard:v5.startingRitualPlaceholder', 'optional: one Level 1 Blood Sorcery ritual')}
+              style={inputStyle}
+            />
+          )}
+        </div>
+      ) : null}
+      {startingCeremonyOptions(f.sheet).length ? (
+        <div style={{ marginTop: '10px', maxWidth: '520px' }}>
+          <label htmlFor="v5-field-starting-ceremony" style={labelStyle}>
+            {t('wizard:v5.startingCeremony', 'Starting Oblivion ceremony (Level 1, needs its prerequisite power)')}
+          </label>
+          <select id="v5-field-starting-ceremony" value={f.startingCeremony} onChange={(e) => f.setStartingCeremony(e.target.value)} style={inputStyle}>
+            <option value="">{t('wizard:v5.startingRitualNone', 'None (optional)')}</option>
+            {startingCeremonyOptions(f.sheet).map((r) => (
+              <option key={r.id || r.name} value={r.name}>
+                {r.name}
+              </option>
+            ))}
+          </select>
+          <CatalogNote entry={startingCeremonyOptions(f.sheet).find((r) => r.name === f.startingCeremony)} />
         </div>
       ) : null}
       <PredatorPreview />
