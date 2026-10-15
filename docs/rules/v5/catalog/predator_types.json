@@ -5,6 +5,10 @@
     {
       "id": "predator:alleycat",
       "name": "Alleycat",
+      "desc": {
+        "en": "Hunts by force: stalks, overpowers and drinks from whoever is at hand, then slips away. Loses 1 Humanity, gains 3 dots of criminal Contacts.",
+        "el": "Κυνηγά με τη βία: παραμονεύει, ακινητοποιεί και πίνει από όποιον βρεθεί μπροστά, και φεύγει. Χάνει 1 Humanity, παίρνει 3 τελείες Contacts στον υπόκοσμο."
+      },
       "book": "v5-corebook",
       "page": 175,
       "also_in": [],
@@ -58,6 +62,10 @@
     {
       "id": "predator:bagger",
       "name": "Bagger",
+      "desc": {
+        "en": "Buys, steals or otherwise gets cold blood from hospitals and the black market instead of hunting; Iron Gullet makes it drinkable. Comes with a 2-dot Enemy. Ventrue cannot take it.",
+        "el": "Αγοράζει, κλέβει ή βρίσκει αλλιώς κρύο αίμα από νοσοκομεία και μαύρη αγορά αντί να κυνηγά· με Iron Gullet το πίνει κανονικά. Έρχεται με Enemy 2 τελειών. Δεν επιτρέπεται σε Ventrue."
+      },
       "book": "v5-corebook",
       "page": 176,
       "also_in": [],
@@ -141,6 +149,10 @@
     {
       "id": "predator:blood-leech",
       "name": "Blood Leech",
+      "desc": {
+        "en": "Feeds on other vampires, by hunting, coercion or as payment. Starts at Blood Potency 1 and loses 1 Humanity; takes Dark Secret (Diablerist) or Shunned, plus Prey Exclusion (mortals).",
+        "el": "Τρέφεται από άλλα βαμπίρ, με κυνήγι, εκβιασμό ή ως πληρωμή. Ξεκινά με Blood Potency 1 και χάνει 1 Humanity· παίρνει Dark Secret (Diablerist) ή Shunned, και Prey Exclusion (θνητοί)."
+      },
       "book": "v5-corebook",
       "page": 176,
       "also_in": [],
@@ -208,6 +220,10 @@
     {
       "id": "predator:cleaver",
       "name": "Cleaver",
+      "desc": {
+        "en": "Feeds in secret from a mortal family or circle they still belong to. Gains a 2-dot Herd and a 1-dot Dark Secret, since the Camarilla forbids keeping a human family this way.",
+        "el": "Τρέφεται κρυφά από μια θνητή οικογένεια ή παρέα στην οποία ακόμα ανήκει. Παίρνει Herd 2 τελειών και Dark Secret 1 τελείας, αφού η Camarilla απαγορεύει τέτοια ανθρώπινη οικογένεια."
+      },
       "book": "v5-corebook",
       "page": 176,
       "also_in": [],
@@ -271,6 +287,10 @@
     {
       "id": "predator:consensualist",
       "name": "Consensualist",
+      "desc": {
+        "en": "Feeds only with the victim's consent, through blood drives, kink scenes or honesty. Gains 1 Humanity but is a Masquerade breacher (Dark Secret) and cannot feed on the unwilling (Prey Exclusion).",
+        "el": "Τρέφεται μόνο με τη συναίνεση του θύματος, μέσω αιμοδοσιών, kink ή ειλικρίνειας. Κερδίζει 1 Humanity αλλά παραβιάζει τη Masquerade (Dark Secret) και δεν τρέφεται από απρόθυμους (Prey Exclusion)."
+      },
       "book": "v5-corebook",
       "page": 177,
       "also_in": [],
@@ -334,6 +354,10 @@
     {
       "id": "predator:extortionist",
       "name": "Extortionist",
+      "desc": {
+        "en": "Takes blood as payment for protection or surveillance, whether the threat is real or invented. Spreads 3 dots over Contacts and Resources and has a 2-dot Enemy. Pool: Strength or Manipulation + Intimidation.",
+        "el": "Παίρνει αίμα ως πληρωμή για προστασία ή παρακολούθηση, είτε η απειλή είναι αληθινή είτε σκηνοθετημένη. Μοιράζει 3 τελείες σε Contacts και Resources και έχει Enemy 2 τελειών. Pool: Strength ή Manipulation + Intimidation."
+      },
       "book": "v5-players-guide",
       "page": 107,
       "also_in": [
@@ -407,6 +431,10 @@
     {
       "id": "predator:farmer",
       "name": "Farmer",
+      "desc": {
+        "en": "Feeds only on animals and has never killed a human. Gains 1 Humanity but takes the 2-dot Farmer Feeding Flaw. Not for Ventrue, nor at Blood Potency 3 or higher.",
+        "el": "Τρέφεται μόνο από ζώα και δεν έχει σκοτώσει ποτέ άνθρωπο. Κερδίζει 1 Humanity αλλά παίρνει το Feeding Flaw Farmer 2 τελειών. Όχι για Ventrue, ούτε με Blood Potency 3 ή πάνω."
+      },
       "book": "v5-corebook",
       "page": 177,
       "also_in": [],
@@ -468,6 +496,10 @@
     {
       "id": "predator:graverobber",
       "name": "Graverobber",
+      "desc": {
+        "en": "Feeds on fresh corpses, or on mourners and hospital patients. A corpse slakes at most 3 Hunger with the same limits as bagged blood. Iron Gullet and a Haven dot, but an Obvious Predator.",
+        "el": "Τρέφεται από φρέσκα πτώματα, ή από πενθούντες και ασθενείς. Ένα πτώμα κατεβάζει το πολύ 3 Hunger, με τους περιορισμούς του αίματος σε σακούλα. Iron Gullet και μια τελεία Haven, αλλά Obvious Predator."
+      },
       "book": "v5-players-guide",
       "page": 108,
       "also_in": [
@@ -547,6 +579,10 @@
     {
       "id": "predator:grim-reaper",
       "name": "Grim Reaper",
+      "desc": {
+        "en": "Feeds only on the dying, in hospices, care homes and shelters, so is always on the move. Gains 1 Humanity and a dot of medical Allies or Influence; cannot feed on the healthy (Prey Exclusion).",
+        "el": "Τρέφεται μόνο από ετοιμοθάνατους, σε hospice, γηροκομεία και άσυλα, γι’ αυτό μετακινείται διαρκώς. Κερδίζει 1 Humanity και μια τελεία Allies ή Influence στον ιατρικό χώρο· δεν τρέφεται από υγιείς (Prey Exclusion)."
+      },
       "book": "v5-players-guide",
       "page": 108,
       "also_in": [],
@@ -616,6 +652,10 @@
     {
       "id": "predator:montero",
       "name": "Montero",
+      "desc": {
+        "en": "Hunts like a Spanish huntsman: retainers act as beaters and drive the prey to the vampire. Gains 2 dots of Retainers, loses 1 Humanity. Pool: Intelligence + Stealth or Resolve + Stealth.",
+        "el": "Κυνηγά σαν Ισπανός κυνηγός: οι retainers κάνουν τους οδηγούς και σπρώχνουν το θήραμα προς το βαμπίρ. Παίρνει Retainers 2 τελειών, χάνει 1 Humanity. Pool: Intelligence + Stealth ή Resolve + Stealth."
+      },
       "book": "v5-players-guide",
       "page": 108,
       "also_in": [],
@@ -668,6 +708,10 @@
     {
       "id": "predator:osiris",
       "name": "Osiris",
+      "desc": {
+        "en": "A celebrity or cult leader who feeds on fans and worshippers. Spreads 3 dots over Fame and Herd and 2 dots over Enemy and Mythic Flaws, as followers attract trouble.",
+        "el": "Διασημότητα ή αρχηγός λατρείας που τρέφεται από θαυμαστές και πιστούς. Μοιράζει 3 τελείες σε Fame και Herd και 2 τελείες σε Enemy και Mythic Flaws, γιατί οι οπαδοί φέρνουν μπελάδες."
+      },
       "book": "v5-corebook",
       "page": 177,
       "also_in": [],
@@ -750,6 +794,10 @@
     {
       "id": "predator:pursuer",
       "name": "Pursuer",
+      "desc": {
+        "en": "Studies and stalks a victim nobody will miss, striking only when ready. Gains Bloodhound and a dot of Contacts in the hunting ground, loses 1 Humanity. Pool: Intelligence + Investigation or Stamina + Stealth.",
+        "el": "Μελετά και παρακολουθεί ένα θύμα που κανείς δεν θα αναζητήσει, και χτυπά όταν είναι έτοιμο. Παίρνει Bloodhound και μια τελεία Contacts στο κυνηγότοπο, χάνει 1 Humanity. Pool: Intelligence + Investigation ή Stamina + Stealth."
+      },
       "book": "v5-players-guide",
       "page": 108,
       "also_in": [],
@@ -812,6 +860,10 @@
     {
       "id": "predator:roadside-killer",
       "name": "Roadside Killer",
+      "desc": {
+        "en": "Lives on the road and feeds on drifters, hitchhikers and truckers who will not be missed. Gains 2 extra dots of migrating Herd and Prey Exclusion (locals). Pool: Dexterity or Charisma + Drive.",
+        "el": "Ζει στον δρόμο και τρέφεται από περιπλανώμενους, ωτοστόπ και φορτηγατζήδες που κανείς δεν θα αναζητήσει. Παίρνει 2 επιπλέον τελείες μετακινούμενου Herd και Prey Exclusion (ντόπιοι). Pool: Dexterity ή Charisma + Drive."
+      },
       "book": "v5-let-the-streets-run-red",
       "page": 76,
       "also_in": [],
@@ -879,6 +931,10 @@
     {
       "id": "predator:sandman",
       "name": "Sandman",
+      "desc": {
+        "en": "Feeds on sleeping victims who never learn the vampire exists, relying on stealth or Disciplines. Gains a dot of Resources. Pool: Dexterity + Stealth.",
+        "el": "Τρέφεται από κοιμισμένα θύματα που δεν μαθαίνουν ποτέ ότι το βαμπίρ υπάρχει, με stealth ή Disciplines. Παίρνει μια τελεία Resources. Pool: Dexterity + Stealth."
+      },
       "book": "v5-corebook",
       "page": 177,
       "also_in": [],
@@ -931,6 +987,10 @@
     {
       "id": "predator:scene-queen",
       "name": "Scene Queen",
+      "desc": {
+        "en": "Feeds inside one subculture that takes the vampire for one of its own. Gains a dot of Fame and of Contacts, and either Disliked outside the scene or Prey Exclusion of another subculture.",
+        "el": "Τρέφεται μέσα σε μια υποκουλτούρα που θεωρεί το βαμπίρ δικό της. Παίρνει μια τελεία Fame και μια Contacts, και είτε Disliked έξω από τη σκηνή είτε Prey Exclusion για άλλη υποκουλτούρα."
+      },
       "book": "v5-corebook",
       "page": 178,
       "also_in": [],
@@ -1012,6 +1072,10 @@
     {
       "id": "predator:siren",
       "name": "Siren",
+      "desc": {
+        "en": "Feeds during sex, real or feigned, hiding the bite behind seduction. Gains Beautiful (2 dots) and a 1-dot Enemy: a spurned lover or jealous partner. Pool: Charisma + Subterfuge.",
+        "el": "Τρέφεται κατά το σεξ, αληθινό ή προσποιητό, κρύβοντας το δάγκωμα πίσω από τη σαγήνη. Παίρνει Beautiful (2 τελείες) και Enemy 1 τελείας: παρατημένος εραστής ή ζηλιάρης σύντροφος. Pool: Charisma + Subterfuge."
+      },
       "book": "v5-corebook",
       "page": 178,
       "also_in": [],
@@ -1076,6 +1140,10 @@
     {
       "id": "predator:tithe-collector",
       "name": "Tithe Collector",
+      "desc": {
+        "en": "An ancilla option: other vampires pay tribute in carefully chosen vessels, delivered on request. Gains 3 dots of Domain or Status and a 2-dot Adversary.",
+        "el": "Επιλογή για ancillae: άλλα βαμπίρ πληρώνουν φόρο σε προσεκτικά διαλεγμένα θύματα, παραδομένα κατά παραγγελία. Παίρνει 3 τελείες Domain ή Status και Adversary 2 τελειών."
+      },
       "book": "v5-in-memoriam",
       "page": 17,
       "also_in": [],
@@ -1141,6 +1209,10 @@
     {
       "id": "predator:trapdoor",
       "name": "Trapdoor",
+      "desc": {
+        "en": "Lures prey into a lair of its own making, a dark ride, a bathhouse, a fight club. Gains a Haven dot plus a Retainers, Herd or second Haven dot, and a Creepy or Haunted Haven Flaw.",
+        "el": "Παρασύρει το θήραμα σε φωλιά δικής του κατασκευής: τρενάκι τρόμου, λουτρά, fight club. Παίρνει μια τελεία Haven συν μια Retainers, Herd ή δεύτερη Haven, και Haven Flaw Creepy ή Haunted."
+      },
       "book": "v5-players-guide",
       "page": 109,
       "also_in": [],

@@ -246,6 +246,54 @@ def test_resolve_prerequisite():
     assert report and "not found" in report[0]
 
 
+def test_attach_descriptions_targets_entries_powers_and_clan_parts():
+    files = {
+        "clans": {"entries": [{"id": "clan:x", "name": "X", "bane": {"name": "B", "page": 1},
+                               "compulsion": {"name": "C", "book": "b", "page": 2}},
+                              {"id": "clan:y", "name": "Y", "bane": None, "compulsion": None}]},
+        "disciplines": {"entries": [{"id": "discipline:d", "name": "D", "powers": [
+            {"id": "power:d:p", "name": "P", "level": 1}]}]},
+        "rituals": {"entries": []},
+    }
+    d = {"en": "Does a thing.", "el": "Κάνει κάτι."}
+    descs = {"clans": {"clan:x": d, "clan:x:bane": d, "clan:x:compulsion": d, "clan:zzz": d},
+             "disciplines": {"discipline:d": d, "power:d:p": {"en": "only en"}}}
+    report = []
+    merge.attach_descriptions(files, descs, report)
+    x = files["clans"]["entries"][0]
+    assert x["desc"] == d and x["bane"]["desc"] == d and x["compulsion"]["desc"] == d
+    assert list(x)[:3] == ["id", "name", "desc"]  # desc sits right after name
+    assert files["disciplines"]["entries"][0]["desc"] == d
+    assert "desc" not in files["disciplines"]["entries"][0]["powers"][0]
+    assert any("clan:zzz is not in the catalog" in r for r in report)
+    assert any("power:d:p needs both en and el" in r for r in report)
+    assert any("have no description" in r and "clan:y" in r for r in report)
+
+
+def test_description_problems(tmp_path):
+    d = {"en": "ok", "el": "εντάξει"}
+    data = {
+        "books": {"entries": []},
+        "clans": {"entries": [{"id": "clan:x", "name": "X", "desc": d,
+                               "bane": {"name": "B", "page": 1, "desc": {"en": "x" * 241, "el": "y"}},
+                               "compulsion": None}]},
+        "disciplines": {"entries": [{"id": "discipline:d", "name": "D", "desc": d, "powers": [
+            {"id": "power:d:p", "name": "P", "desc": {"en": "x", "el": " "}}]}]},
+        "rituals": {"entries": [{"id": "ritual:r", "name": "R"}]},
+        "ceremonies": {"entries": []}, "formulae": {"entries": []}, "predator_types": {"entries": []},
+    }
+    (tmp_path / "descriptions").mkdir()
+    (tmp_path / "descriptions" / "rituals.json").write_text('{"ritual:nope": {"en": "a", "el": "b"}}')
+    (tmp_path / "descriptions" / "bogus.json").write_text("{}")
+    probs = checks.description_problems(tmp_path, data)
+    assert any("clan:x:bane: desc.en is 241 chars" in p for p in probs)
+    assert any("power:d:p: desc.el missing" in p for p in probs)
+    assert any("ritual:r: no description" in p for p in probs)
+    assert any("ritual:nope is not in the catalog" in p for p in probs)
+    assert any("bogus.json: not a catalog name" in p for p in probs)
+    assert len(probs) == 5
+
+
 # --------------------------------------------------------------------------- checks
 
 def test_schema_lite():

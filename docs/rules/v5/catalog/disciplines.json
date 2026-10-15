@@ -5,6 +5,10 @@
     {
       "id": "discipline:animalism",
       "name": "Animalism",
+      "desc": {
+        "en": "Commune with, command and feed on animals, and reach the Beast inside mortals and vampires. Works only on vertebrates unless a power says otherwise.",
+        "el": "Επικοινωνία, έλεγχος και τροφή από ζώα, και επαφή με το Κτήνος μέσα σε θνητούς και βαμπίρ. Πιάνει μόνο σε σπονδυλωτά, εκτός αν μια δύναμη λέει αλλιώς."
+      },
       "book": "v5-corebook",
       "page": 244,
       "source": "pdf",
@@ -12,6 +16,10 @@
         {
           "id": "power:animalism:bond-famulus",
           "name": "Bond Famulus",
+          "desc": {
+            "en": "Blood Bond one animal as your famulus: a mental link lets it follow simple spoken orders and defend you. Three nights of feeding, one Rouse Check each; a starting character gets one for free.",
+            "el": "Δένεις με Blood Bond ένα ζώο ως famulus: με νοητικό δεσμό ακολουθεί απλές προφορικές εντολές και σε υπερασπίζεται. Τρεις νύχτες τάισμα, 1 Rouse Check η καθεμία· στη δημιουργία το παίρνεις δωρεάν."
+          },
           "level": 1,
           "book": "v5-corebook",
           "page": 245,
@@ -27,6 +35,10 @@
         {
           "id": "power:animalism:sense-the-beast",
           "name": "Sense the Beast",
+          "desc": {
+            "en": "Read how hostile someone is and whether a supernatural Beast hides in them. Free; Resolve + Animalism vs Composure + Subterfuge. A critical win adds creature type, Hunger and Resonance.",
+            "el": "Νιώθεις πόσο εχθρικός είναι κάποιος και αν κρύβει υπερφυσικό Κτήνος. Δωρεάν· Resolve + Animalism εναντίον Composure + Subterfuge. Με critical win μαθαίνεις και είδος, Hunger και Resonance."
+          },
           "level": 1,
           "book": "v5-corebook",
           "page": 245,
@@ -42,6 +54,10 @@
         {
           "id": "power:animalism:animal-messenger",
           "name": "Animal Messenger",
+          "desc": {
+            "en": "Your famulus carries a one-sentence message and delivers it in your voice when it meets the recipient's eyes. One Rouse Check per night; it may need a tracking roll to find them.",
+            "el": "Το famulus σου μεταφέρει ένα μήνυμα μίας πρότασης και το λέει με τη φωνή σου μόλις κοιτάξει τον παραλήπτη στα μάτια. 1 Rouse Check ανά νύχτα· ίσως χρειαστεί ρίψη για να τον εντοπίσει."
+          },
           "level": 2,
           "book": "v5-players-guide",
           "page": 69,
@@ -62,6 +78,10 @@
         {
           "id": "power:animalism:feral-whispers",
           "name": "Feral Whispers",
+          "desc": {
+            "en": "Talk with animals and call a chosen kind from the area for a scene. One Rouse Check per animal type, free with your famulus; Manipulation + Animalism to ask favours, Charisma + Animalism to call them.",
+            "el": "Συνομιλείς με ζώα και καλείς ένα είδος από την περιοχή για μία σκηνή. 1 Rouse Check ανά είδος ζώου, δωρεάν στο famulus· Manipulation + Animalism για χάρες, Charisma + Animalism για κάλεσμα."
+          },
           "level": 2,
           "book": "v5-corebook",
           "page": 245,
@@ -77,6 +97,10 @@
         {
           "id": "power:animalism:animal-succulence",
           "name": "Animal Succulence",
+          "desc": {
+            "en": "Animal blood slakes 1 more Hunger and you count your Blood Potency two lower for its penalties. Devouring your famulus slakes 4 Hunger and raises a related Attribute by 2 until you next feed. Free.",
+            "el": "Το αίμα ζώων σβήνει 1 Hunger παραπάνω και μετράς το Blood Potency σου δύο επίπεδα χαμηλότερα για τις ποινές του. Αν φας το famulus, σβήνεις 4 Hunger και ένα σχετικό Attribute ανεβαίνει κατά 2 ως το επόμενο τάισμα."
+          },
           "level": 3,
           "book": "v5-corebook",
           "page": 246,
@@ -92,6 +116,10 @@
         {
           "id": "power:animalism:messengers-command",
           "name": "Messenger's Command",
+          "desc": {
+            "en": "Your famulus carries a Compel or Mesmerize command along with its message, rolled when it meets the target's eyes; your Dominate counts as no higher than your Animalism for it. No extra cost; lasts as Animal Messenger does.",
+            "el": "Το famulus σου μεταφέρει μαζί με το μήνυμα μια εντολή Compel ή Mesmerize, που ρίχνεται μόλις κοιτάξει τον στόχο στα μάτια· το Dominate σου μετρά το πολύ όσο το Animalism σου. Χωρίς έξτρα κόστος· διαρκεί όσο το Animal Messenger."
+          },
           "level": 3,
           "book": "v5-players-guide",
           "page": 69,
@@ -122,6 +150,10 @@
         {
           "id": "power:animalism:plague-of-beasts",
           "name": "Plague of Beasts",
+          "desc": {
+            "en": "Mark someone in sight so every nearby animal harasses them for the night: a Skill penalty equal to your margin (not in fights) and the same bonus to anyone tracking them. One Rouse Check.",
+            "el": "Σημαδεύεις κάποιον σε οπτική επαφή και όλα τα ζώα γύρω τον παρενοχλούν όλη νύχτα: ποινή στα Skill pools ίση με το περιθώριο νίκης (όχι σε μάχη) και ίσο μπόνους σε όποιον τον καταδιώκει. 1 Rouse Check."
+          },
           "level": 3,
           "book": "v5-players-guide",
           "page": 69,
@@ -137,6 +169,10 @@
         {
           "id": "power:animalism:quell-the-beast",
           "name": "Quell the Beast",
+          "desc": {
+            "en": "Lock eyes to put a Beast to sleep. A mortal sinks into lethargy for the scene; a vampire cannot Blood Surge or score messy criticals for margin + 1 turns, and a critical win ends their frenzy. One Rouse Check.",
+            "el": "Με το βλέμμα κοιμίζεις το Κτήνος. Θνητός πέφτει σε λήθαργο για τη σκηνή· βαμπίρ δεν μπορεί να κάνει Blood Surge ούτε messy critical για περιθώριο + 1 γύρους, και critical win σταματά το frenzy του. 1 Rouse Check."
+          },
           "level": 3,
           "book": "v5-corebook",
           "page": 246,
@@ -152,6 +188,10 @@
         {
           "id": "power:animalism:unliving-hive",
           "name": "Unliving Hive",
+          "desc": {
+            "en": "Your Animalism powers also work on insect swarms, treated as one creature. A swarm can be your famulus and nest inside your body; it spies, distracts (−2 dice on a target) or intimidates. No extra cost.",
+            "el": "Οι δυνάμεις Animalism δουλεύουν και σε σμήνη εντόμων, που μετρούν ως ένα πλάσμα. Ένα σμήνος μπορεί να είναι famulus σου και να φωλιάζει στο σώμα σου· κατασκοπεύει, αποσπά (−2 ζάρια στον στόχο) ή τρομάζει. Χωρίς έξτρα κόστος."
+          },
           "level": 3,
           "book": "v5-corebook",
           "page": 246,
@@ -170,6 +210,10 @@
         {
           "id": "power:animalism:subsume-the-spirit",
           "name": "Subsume the Spirit",
+          "desc": {
+            "en": "Move your mind into an animal and act through its body and senses for a scene (indefinitely on a critical win) while your own body lies inert. One Rouse Check, free with your famulus; Manipulation + Animalism at Difficulty 4.",
+            "el": "Μεταφέρεις τον νου σου σε ένα ζώο και δρας μέσα από το σώμα και τις αισθήσεις του για μία σκηνή (επ' αόριστον με critical win), ενώ το σώμα σου μένει ακίνητο. 1 Rouse Check, δωρεάν στο famulus· Manipulation + Animalism με Difficulty 4."
+          },
           "level": 4,
           "book": "v5-corebook",
           "page": 247,
@@ -185,6 +229,10 @@
         {
           "id": "power:animalism:sway-the-flock",
           "name": "Sway the Flock",
+          "desc": {
+            "en": "Set the mood of all animals over a field-sized area for the night, from drowsy calm to blind aggression, scaling with your successes. One Rouse Check; more Checks widen the area up to a small town.",
+            "el": "Ορίζεις τη διάθεση όλων των ζώων σε έκταση ενός γηπέδου για μία νύχτα, από νύστα ως τυφλή επιθετικότητα, ανάλογα με τις επιτυχίες σου. 1 Rouse Check· περισσότερα Checks μεγαλώνουν την περιοχή ως μια μικρή πόλη."
+          },
           "level": 4,
           "book": "v5-players-guide",
           "page": 69,
@@ -200,6 +248,10 @@
         {
           "id": "power:animalism:animal-dominion",
           "name": "Animal Dominion",
+          "desc": {
+            "en": "Command every animal of one kind already present as if it were part of you, even to die for you, until the task is done or the scene ends. Two Rouse Checks; Charisma + Animalism against a Difficulty set by the order.",
+            "el": "Διατάζεις όλα τα ζώα ενός είδους που βρίσκονται ήδη εκεί σαν προέκταση του εαυτού σου, ακόμη και να πεθάνουν για σένα, μέχρι να εκτελεστεί η εντολή ή να τελειώσει η σκηνή. 2 Rouse Checks· Charisma + Animalism."
+          },
           "level": 5,
           "book": "v5-corebook",
           "page": 247,
@@ -215,6 +267,10 @@
         {
           "id": "power:animalism:coax-the-bestial-temper",
           "name": "Coax the Bestial Temper",
+          "desc": {
+            "en": "Hum to stir or soothe every other vampire's Beast within earshot: each point of margin raises or lowers their Difficulty to resist frenzy by one, for as long as you keep it up. One Rouse Check.",
+            "el": "Με ένα σιγανό μουρμουρητό ερεθίζεις ή ημερεύεις το Κτήνος κάθε άλλου βαμπίρ που σε ακούει: κάθε πόντος περιθωρίου ανεβάζει ή κατεβάζει κατά 1 το Difficulty για αντίσταση στο frenzy, όσο συνεχίζεις. 1 Rouse Check."
+          },
           "level": 5,
           "book": "v5-players-guide",
           "page": 70,
@@ -230,6 +286,10 @@
         {
           "id": "power:animalism:drawing-out-the-beast",
           "name": "Drawing Out the Beast",
+          "desc": {
+            "en": "When fury or terror frenzy hits, push it into someone nearby instead of resisting: Wits + Animalism vs their Composure + Resolve. On a win they frenzy, on a failure you do. Hunger frenzy cannot be passed on. One Rouse Check.",
+            "el": "Όταν σε πιάνει frenzy οργής ή τρόμου, το περνάς σε κάποιον κοντά σου αντί να αντισταθείς: Wits + Animalism εναντίον Composure + Resolve. Αν νικήσεις, το frenzy το παθαίνει αυτός, αλλιώς εσύ. Το hunger frenzy δεν μεταφέρεται. 1 Rouse Check."
+          },
           "level": 5,
           "book": "v5-corebook",
           "page": 247,
@@ -247,6 +307,10 @@
     {
       "id": "discipline:auspex",
       "name": "Auspex",
+      "desc": {
+        "en": "Supernatural perception: sharpened senses, auras, premonitions, reading and sharing minds. Mental, low Masquerade threat.",
+        "el": "Υπερφυσική αντίληψη: οξυμένες αισθήσεις, αύρες, προαισθήσεις, ανάγνωση και μοίρασμα του νου. Mental, χαμηλή απειλή για τη Masquerade."
+      },
       "book": "v5-corebook",
       "page": 248,
       "source": "pdf",
@@ -254,6 +318,10 @@
         {
           "id": "power:auspex:heightened-senses",
           "name": "Heightened Senses",
+          "desc": {
+            "en": "Add your Auspex rating to all perception rolls and see, hear and smell far beyond human limits. Free, active until you drop it; a sudden overload calls for a Wits + Resolve test or costs −3 dice to perception for the scene.",
+            "el": "Προσθέτεις το Auspex σου σε κάθε ρίψη αντίληψης και βλέπεις, ακούς και μυρίζεις πέρα από τα ανθρώπινα όρια. Δωρεάν, μένει ενεργό όσο θες· ξαφνική υπερφόρτωση ζητά ρίψη Wits + Resolve, αλλιώς −3 ζάρια αντίληψης για τη σκηνή."
+          },
           "level": 1,
           "book": "v5-corebook",
           "page": 249,
@@ -269,6 +337,10 @@
         {
           "id": "power:auspex:sense-the-unseen",
           "name": "Sense the Unseen",
+          "desc": {
+            "en": "Notice supernatural things hiding in plain sight, such as an Obfuscated vampire, a ghost or someone scrying on you. Free and passive: the Storyteller rolls Wits + Auspex for you; Resolve + Auspex when you search on purpose.",
+            "el": "Αντιλαμβάνεσαι υπερφυσικά πράγματα που κρύβονται μπροστά σου, όπως βαμπίρ με Obfuscate, φάντασμα ή κάποιον που σε κατασκοπεύει. Δωρεάν και παθητικό: ο Storyteller ρίχνει Wits + Auspex για σένα· Resolve + Auspex όταν ψάχνεις ενεργά."
+          },
           "level": 1,
           "book": "v5-corebook",
           "page": 249,
@@ -284,6 +356,10 @@
         {
           "id": "power:auspex:panacea",
           "name": "Panacea",
+          "desc": {
+            "en": "Calm another's mind: Composure + Auspex at Difficulty 2 heals them Superficial Willpower damage equal to the margin, or one Aggravated per three. One Rouse Check; once per subject per night, and each extra subject costs you Willpower.",
+            "el": "Γαληνεύεις τον νου άλλου: Composure + Auspex με Difficulty 2 γιατρεύει Superficial ζημιά Willpower ίση με το περιθώριο, ή 1 Aggravated ανά τρεις. 1 Rouse Check· μία φορά ανά στόχο τη νύχτα, κάθε έξτρα στόχος σού κοστίζει Willpower."
+          },
           "level": 2,
           "book": "v5-players-guide",
           "page": 70,
@@ -309,6 +385,10 @@
         {
           "id": "power:auspex:premonition",
           "name": "Premonition",
+          "desc": {
+            "en": "Flashes of insight: the Storyteller may hand you a free hint or warning about once per scene. You can also force a vision by focusing on a subject with one Rouse Check and a Resolve + Auspex roll.",
+            "el": "Αναλαμπές διαίσθησης: ο Storyteller μπορεί να σου δώσει δωρεάν μια υπόδειξη ή προειδοποίηση περίπου μία φορά ανά σκηνή. Μπορείς και να προκαλέσεις όραμα για κάτι συγκεκριμένο με 1 Rouse Check και ρίψη Resolve + Auspex."
+          },
           "level": 2,
           "book": "v5-corebook",
           "page": 249,
@@ -324,6 +404,10 @@
         {
           "id": "power:auspex:reveal-temperament",
           "name": "Reveal Temperament",
+          "desc": {
+            "en": "Smell a mortal's Resonance and any Dyscrasia, or the Resonance of a vampire's last victim. One Rouse Check; Intelligence + Auspex vs Composure + Subterfuge. A critical win adds +2 dice with that mortal, or a vampire's predator type.",
+            "el": "Μυρίζεις το Resonance και τυχόν Dyscrasia ενός θνητού, ή το Resonance του τελευταίου θύματος ενός βαμπίρ. 1 Rouse Check· Intelligence + Auspex εναντίον Composure + Subterfuge. Critical win: +2 ζάρια με τον θνητό ή το predator type."
+          },
           "level": 2,
           "book": "v5-players-guide",
           "page": 70,
@@ -339,6 +423,10 @@
         {
           "id": "power:auspex:fatal-flaw",
           "name": "Fatal Flaw",
+          "desc": {
+            "en": "Study a target for a turn to find their weakest mental or physical defence pool: a win reveals it and gives you +2 dice against it for the scene (+1 to anyone you tell). One Rouse Check.",
+            "el": "Παρατηρείς έναν στόχο για έναν γύρο και βρίσκεις το πιο αδύναμο νοητικό ή σωματικό αμυντικό pool του: με νίκη το μαθαίνεις και παίρνεις +2 ζάρια εναντίον του για τη σκηνή (+1 σε όποιον το πεις). 1 Rouse Check."
+          },
           "level": 3,
           "book": "v5-players-guide",
           "page": 71,
@@ -357,6 +445,10 @@
         {
           "id": "power:auspex:scry-the-soul",
           "name": "Scry the Soul",
+          "desc": {
+            "en": "Read a person's aura: on a win you get one true answer per point of margin about their mood, Resonance, supernatural nature, magical influence or recent diablerie. One Rouse Check; Intelligence + Auspex vs Composure + Subterfuge.",
+            "el": "Διαβάζεις την αύρα κάποιου: με νίκη παίρνεις μία αληθινή απάντηση ανά πόντο περιθωρίου για διάθεση, Resonance, υπερφυσική φύση, μαγική επιρροή ή πρόσφατη diablerie. 1 Rouse Check· Intelligence + Auspex εναντίον Composure + Subterfuge."
+          },
           "level": 3,
           "book": "v5-corebook",
           "page": 250,
@@ -372,6 +464,10 @@
         {
           "id": "power:auspex:share-the-senses",
           "name": "Share the Senses",
+          "desc": {
+            "en": "Ride the senses of a mortal or vampire for a scene, seeing and hearing what they do while keeping your own. Needs line of sight, or any distance if your Blood is in them. One Rouse Check; Resolve + Auspex at Difficulty 3.",
+            "el": "Για μία σκηνή βλέπεις και ακούς μέσα από τις αισθήσεις θνητού ή βαμπίρ, κρατώντας και τις δικές σου. Χρειάζεται οπτική επαφή, ή οποιαδήποτε απόσταση αν έχει το αίμα σου μέσα του. 1 Rouse Check· Resolve + Auspex με Difficulty 3."
+          },
           "level": 3,
           "book": "v5-corebook",
           "page": 250,
@@ -387,6 +483,10 @@
         {
           "id": "power:auspex:spirits-touch",
           "name": "Spirit's Touch",
+          "desc": {
+            "en": "Touch an object or spot to sense the emotions and circumstances of those who handled or visited it. One Rouse Check; Intelligence + Auspex against a Difficulty set by age and detail, each point of margin reaching one handler further back.",
+            "el": "Αγγίζεις αντικείμενο ή σημείο και νιώθεις τα συναισθήματα και τις συνθήκες όσων το χειρίστηκαν ή πέρασαν από εκεί. 1 Rouse Check· Intelligence + Auspex με Difficulty κατά την παλαιότητα, κάθε πόντος περιθωρίου φτάνει έναν χειριστή πιο πίσω."
+          },
           "level": 4,
           "book": "v5-corebook",
           "page": 250,
@@ -402,6 +502,10 @@
         {
           "id": "power:auspex:clairvoyance",
           "name": "Clairvoyance",
+          "desc": {
+            "en": "In a light trance, learn in minutes what is happening across roughly a city block: about one question answered per point of margin. One Rouse Check; Intelligence + Auspex, with your Haven rating added at your own haven.",
+            "el": "Σε ελαφριά έκσταση μαθαίνεις μέσα σε λίγα λεπτά τι συμβαίνει σε έκταση ενός οικοδομικού τετραγώνου: περίπου μία ερώτηση ανά πόντο περιθωρίου. 1 Rouse Check· Intelligence + Auspex, συν τις τελείες Haven στο δικό σου haven."
+          },
           "level": 5,
           "book": "v5-corebook",
           "page": 251,
@@ -417,6 +521,10 @@
         {
           "id": "power:auspex:possession",
           "name": "Possession",
+          "desc": {
+            "en": "Take over a mortal's body and act through it while your own lies in a trance, using your own Skills and Auspex, Presence and Dominate. Needs eye contact; two Rouse Checks; Resolve + Auspex vs Resolve + Intelligence. Lasts until ended.",
+            "el": "Καταλαμβάνεις το σώμα ενός θνητού και δρας μέσα από αυτό, ενώ το δικό σου μένει σε έκσταση· χρησιμοποιείς τα δικά σου Skills και Auspex, Presence, Dominate. Οπτική επαφή· 2 Rouse Checks· Resolve + Auspex εναντίον Resolve + Intelligence."
+          },
           "level": 5,
           "book": "v5-corebook",
           "page": 251,
@@ -435,6 +543,10 @@
         {
           "id": "power:auspex:telepathy",
           "name": "Telepathy",
+          "desc": {
+            "en": "Send your thoughts to anyone in sight without a roll, or read a mind: Resolve + Auspex vs Wits + Subterfuge, with eye contact. One Rouse Check per minute or so, plus one Willpower to read an unwilling vampire.",
+            "el": "Στέλνεις τις σκέψεις σου σε όποιον βλέπεις χωρίς ρίψη, ή διαβάζεις έναν νου: Resolve + Auspex εναντίον Wits + Subterfuge, με οπτική επαφή. 1 Rouse Check ανά λεπτό περίπου, συν 1 Willpower για να διαβάσεις βαμπίρ που αντιστέκεται."
+          },
           "level": 5,
           "book": "v5-corebook",
           "page": 252,
@@ -450,6 +562,10 @@
         {
           "id": "power:auspex:unburdening-the-bestial-soul",
           "name": "Unburdening the Bestial Soul",
+          "desc": {
+            "en": "After a scene alone with a vampire of lower Humanity, each point of margin removes one Stain from them or shields against a future one; a critical win can instead restore 1 Humanity, once ever. Two Rouse Checks and a Stain.",
+            "el": "Μετά από μια σκηνή κατ' ιδίαν με βαμπίρ χαμηλότερου Humanity, κάθε πόντος περιθωρίου αφαιρεί ένα Stain του ή τον προστατεύει από ένα μελλοντικό· critical win μπορεί αντ' αυτού να δώσει 1 Humanity, μία φορά μόνο. 2 Rouse Checks και 1 Stain."
+          },
           "level": 5,
           "book": "v5-players-guide",
           "page": 71,
@@ -477,6 +593,10 @@
     {
       "id": "discipline:blood-sorcery",
       "name": "Blood Sorcery",
+      "desc": {
+        "en": "Sorcery over vitae: a few direct powers that read, poison or boil blood, plus Rituals up to your rating. At creation the first dot brings one Level 1 Ritual.",
+        "el": "Μαγεία του αίματος: λίγες άμεσες δυνάμεις που διαβάζουν, δηλητηριάζουν ή βράζουν το αίμα, συν Rituals έως το επίπεδό σου. Στη δημιουργία η πρώτη τελεία φέρνει ένα Ritual επιπέδου 1."
+      },
       "book": "v5-corebook",
       "page": 271,
       "source": "pdf",
@@ -484,6 +604,10 @@
         {
           "id": "power:blood-sorcery:a-taste-for-blood",
           "name": "A Taste for Blood",
+          "desc": {
+            "en": "Taste a drop of blood to learn its Resonance, whether it came from a mortal, ghoul, vampire or something else, and a vampire's rough Blood Potency. Free; Resolve + Blood Sorcery at Difficulty 3. A critical win also shows past diablerie.",
+            "el": "Γεύεσαι μια σταγόνα αίμα και μαθαίνεις το Resonance του, αν είναι από θνητό, ghoul, βαμπίρ ή κάτι άλλο, και περίπου το Blood Potency ενός βαμπίρ. Δωρεάν· Resolve + Blood Sorcery με Difficulty 3. Critical win δείχνει και παλιά diablerie."
+          },
           "level": 1,
           "book": "v5-corebook",
           "page": 272,
@@ -499,6 +623,10 @@
         {
           "id": "power:blood-sorcery:corrosive-vitae",
           "name": "Corrosive Vitae",
+          "desc": {
+            "en": "Turn your spilled Blood into an acid that eats dead matter: each Rouse Check dissolves roughly 35 cm around the splash in about five minutes. Hardened steel is only pitted; it does not work on living or undead flesh.",
+            "el": "Το αίμα που χύνεις γίνεται οξύ που τρώει νεκρή ύλη: κάθε Rouse Check διαλύει περίπου 35 εκατοστά γύρω από την κηλίδα σε περίπου πέντε λεπτά. Το σκληρό ατσάλι απλώς σημαδεύεται· δεν πιάνει σε ζωντανή ή νεκροζώντανη σάρκα."
+          },
           "level": 1,
           "book": "v5-corebook",
           "page": 272,
@@ -514,6 +642,10 @@
         {
           "id": "power:blood-sorcery:extinguish-vitae",
           "name": "Extinguish Vitae",
+          "desc": {
+            "en": "Curdle the Blood of a vampire in sight: on a win their Hunger rises by one, by two on a critical win. One Rouse Check; Intelligence + Blood Sorcery vs Stamina + Composure.",
+            "el": "Πήζεις το αίμα ενός βαμπίρ σε οπτική επαφή: με νίκη το Hunger του ανεβαίνει κατά 1, με critical win κατά 2. 1 Rouse Check· Intelligence + Blood Sorcery εναντίον Stamina + Composure."
+          },
           "level": 2,
           "book": "v5-corebook",
           "page": 273,
@@ -529,6 +661,10 @@
         {
           "id": "power:blood-sorcery:scour-secrets",
           "name": "Scour Secrets",
+          "desc": {
+            "en": "Your Blood washes over documents to find the information you seek: a room takes minutes, a library hours. One Rouse Check; Intelligence + Blood Sorcery at Difficulty 2 to 5 or more. It leaves a stain and does not decode ciphers.",
+            "el": "Το αίμα σου απλώνεται πάνω σε έγγραφα και βρίσκει την πληροφορία που ζητάς: ένα δωμάτιο θέλει λεπτά, μια βιβλιοθήκη ώρες. 1 Rouse Check· Intelligence + Blood Sorcery με Difficulty 2 ως 5 ή παραπάνω. Αφήνει κηλίδα και δεν σπάει κώδικες."
+          },
           "level": 2,
           "book": "v5-players-guide",
           "page": 98,
@@ -544,6 +680,10 @@
         {
           "id": "power:blood-sorcery:blood-of-potency",
           "name": "Blood of Potency",
+          "desc": {
+            "en": "Thicken your Blood: a win raises your Blood Potency by one for the scene or night, a critical win by two, even past your Generation's limit. One Rouse Check; Resolve + Blood Sorcery at Difficulty 2 plus your current Blood Potency.",
+            "el": "Πυκνώνεις το αίμα σου: με νίκη το Blood Potency σου ανεβαίνει κατά 1 για τη σκηνή ή τη νύχτα, με critical win κατά 2, ακόμη και πάνω από το όριο της Generation σου. 1 Rouse Check· Resolve + Blood Sorcery με Difficulty 2 + Blood Potency."
+          },
           "level": 3,
           "book": "v5-corebook",
           "page": 273,
@@ -559,6 +699,10 @@
         {
           "id": "power:blood-sorcery:scorpions-touch",
           "name": "Scorpion's Touch",
+          "desc": {
+            "en": "Your Blood becomes a paralysing poison: one Rouse Check per coated blade or spat mouthful. On a hit, the margin of Strength + Blood Sorcery vs Stamina + Occult or Fortitude is Aggravated damage to mortals, unhalved Superficial to vampires.",
+            "el": "Το αίμα σου γίνεται παραλυτικό δηλητήριο: 1 Rouse Check ανά λεπίδα ή φτυσιά. Αν πετύχει, το περιθώριο στο Strength + Blood Sorcery εναντίον Stamina + Occult ή Fortitude είναι Aggravated ζημιά σε θνητούς, αδιαίρετη Superficial σε βαμπίρ."
+          },
           "level": 3,
           "book": "v5-corebook",
           "page": 273,
@@ -574,6 +718,10 @@
         {
           "id": "power:blood-sorcery:blood-aegis",
           "name": "Blood Aegis",
+          "desc": {
+            "en": "A floating sheet of your Blood catches incoming projectiles: each Rouse Check spent absorbs five points of damage from ranged attacks, automatically, for the scene or until it is used up.",
+            "el": "Ένα αιωρούμενο πέπλο από το αίμα σου πιάνει τα βλήματα: κάθε Rouse Check που ξοδεύεις απορροφά 5 πόντους ζημιάς από επιθέσεις εξ αποστάσεως, αυτόματα, για τη σκηνή ή μέχρι να εξαντληθεί."
+          },
           "level": 4,
           "book": "v5-players-guide",
           "page": 98,
@@ -589,6 +737,10 @@
         {
           "id": "power:blood-sorcery:theft-of-vitae",
           "name": "Theft of Vitae",
+          "desc": {
+            "en": "Open an artery in a mortal you can see and drink the stream from across the room at twice the usual speed (three times on a critical win); the wound seals itself afterwards. One Rouse Check; Wits + Blood Sorcery vs Wits + Occult.",
+            "el": "Ανοίγεις αρτηρία σε θνητό που βλέπεις και πίνεις το αίμα του από απόσταση με διπλάσια ταχύτητα (τριπλάσια με critical win)· η πληγή κλείνει μόνη της μετά. 1 Rouse Check· Wits + Blood Sorcery εναντίον Wits + Occult."
+          },
           "level": 4,
           "book": "v5-corebook",
           "page": 274,
@@ -604,6 +756,10 @@
         {
           "id": "power:blood-sorcery:baals-caress",
           "name": "Baal's Caress",
+          "desc": {
+            "en": "A deadlier Scorpion's Touch, delivered the same way, but the margin is Aggravated damage to mortals and vampires alike. A mortal it wounds dies at once; a vampire who then loses a second contest enters torpor at next sleep.",
+            "el": "Θανάσιμη εκδοχή του Scorpion's Touch, με την ίδια χρήση, αλλά το περιθώριο είναι Aggravated ζημιά σε θνητούς και βαμπίρ. Θνητός που τραυματίζεται πεθαίνει αμέσως· βαμπίρ που χάνει και δεύτερη ρίψη πέφτει σε torpor στον επόμενο ύπνο."
+          },
           "level": 5,
           "book": "v5-corebook",
           "page": 274,
@@ -619,6 +775,10 @@
         {
           "id": "power:blood-sorcery:cauldron-of-blood",
           "name": "Cauldron of Blood",
+          "desc": {
+            "en": "Boil a victim's blood by touch: each point of margin on Resolve + Blood Sorcery vs Composure + Occult or Fortitude is one Aggravated damage. Any damage kills a mortal; vampires also gain 1 Hunger per point. One Rouse Check plus a Stain.",
+            "el": "Βράζεις το αίμα θύματος με άγγιγμα: κάθε πόντος περιθωρίου στο Resolve + Blood Sorcery εναντίον Composure + Occult ή Fortitude είναι 1 Aggravated ζημιά. Θνητός με ζημιά πεθαίνει· βαμπίρ παίρνει και 1 Hunger ανά πόντο. 1 Rouse Check + Stain."
+          },
           "level": 5,
           "book": "v5-corebook",
           "page": 274,
@@ -644,6 +804,10 @@
     {
       "id": "discipline:celerity",
       "name": "Celerity",
+      "desc": {
+        "en": "Supernatural speed and reflexes: balance, dodging, bursts of movement and strikes too fast to defend against. Physical, medium-high Masquerade threat.",
+        "el": "Υπερφυσική ταχύτητα και αντανακλαστικά: ισορροπία, αποφυγή, εκρηκτικές κινήσεις και χτυπήματα που δεν προλαβαίνει κανείς. Physical, μεσαία-υψηλή απειλή για τη Masquerade."
+      },
       "book": "v5-corebook",
       "page": 252,
       "source": "pdf",
@@ -651,6 +815,10 @@
         {
           "id": "power:celerity:cats-grace",
           "name": "Cat's Grace",
+          "desc": {
+            "en": "You automatically pass any Dexterity or Athletics roll to keep your balance, running along ledges and wires with ease, as long as the support can bear your weight. Free, always on.",
+            "el": "Περνάς αυτόματα κάθε ρίψη Dexterity ή Athletics για ισορροπία και τρέχεις σε περβάζια και σύρματα με άνεση, αρκεί το στήριγμα να αντέχει το βάρος σου. Δωρεάν, πάντα ενεργό."
+          },
           "level": 1,
           "book": "v5-corebook",
           "page": 252,
@@ -666,6 +834,10 @@
         {
           "id": "power:celerity:rapid-reflexes",
           "name": "Rapid Reflexes",
+          "desc": {
+            "en": "No defence penalty for lacking cover against Firearms, and each turn you get a free minor action worth up to two dice, such as reloading or drawing a weapon. Free, always on.",
+            "el": "Καμία ποινή άμυνας επειδή δεν έχεις κάλυψη απέναντι σε Firearms, και κάθε γύρο κάνεις δωρεάν μια minor action αξίας έως δύο ζαριών, όπως γέμισμα ή τράβηγμα όπλου. Δωρεάν, πάντα ενεργό."
+          },
           "level": 1,
           "book": "v5-corebook",
           "page": 253,
@@ -681,6 +853,10 @@
         {
           "id": "power:celerity:fleetness",
           "name": "Fleetness",
+          "desc": {
+            "en": "For a scene, add your Celerity rating to non-combat Dexterity rolls and, once per turn, to a Dexterity + Athletics defence. One Rouse Check.",
+            "el": "Για μία σκηνή προσθέτεις το Celerity σου στις ρίψεις Dexterity εκτός μάχης και, μία φορά ανά γύρο, σε άμυνα με Dexterity + Athletics. 1 Rouse Check."
+          },
           "level": 2,
           "book": "v5-corebook",
           "page": 253,
@@ -696,6 +872,10 @@
         {
           "id": "power:celerity:rush-job",
           "name": "Rush Job",
+          "desc": {
+            "en": "For a scene, finish Skill tasks that would take whole turns in seconds and treat a full action as a minor one, so you can pick a lock and still shoot. Not for attacks, defences or any resisted task. One Rouse Check.",
+            "el": "Για μία σκηνή ολοκληρώνεις σε δευτερόλεπτα εργασίες Skill που θα έπαιρναν γύρους και μια πλήρης δράση μετρά ως minor action, π.χ. ανοίγεις κλειδαριά και πυροβολείς. Όχι για επιθέσεις, άμυνες ή αντίπαλες ρίψεις. 1 Rouse Check."
+          },
           "level": 2,
           "book": "v5-players-guide",
           "page": 72,
@@ -711,6 +891,10 @@
         {
           "id": "power:celerity:blink",
           "name": "Blink",
+          "desc": {
+            "en": "Dash in a straight line up to 50 metres and still act that turn, reaching a foe as if already engaged. One Rouse Check; a Dexterity + Athletics roll if the ground is hazardous.",
+            "el": "Ορμάς σε ευθεία γραμμή έως 50 μέτρα και προλαβαίνεις να δράσεις τον ίδιο γύρο, φτάνοντας έναν αντίπαλο σαν να ήσουν ήδη σε εμπλοκή. 1 Rouse Check· ρίψη Dexterity + Athletics αν το έδαφος είναι επικίνδυνο."
+          },
           "level": 3,
           "book": "v5-corebook",
           "page": 253,
@@ -726,6 +910,10 @@
         {
           "id": "power:celerity:traversal",
           "name": "Traversal",
+          "desc": {
+            "en": "Run up walls or across water for one turn: Dexterity + Athletics at Difficulty 3 to 6 by surface, each point of margin carrying you further. Roughly 60 metres of water or 30 storeys is the limit. One Rouse Check.",
+            "el": "Τρέχεις σε τοίχους ή πάνω στο νερό για έναν γύρο: Dexterity + Athletics με Difficulty 3 ως 6 ανάλογα με την επιφάνεια, κάθε πόντος περιθωρίου σε πάει πιο μακριά. Όριο περίπου 60 μέτρα νερού ή 30 όροφοι. 1 Rouse Check."
+          },
           "level": 3,
           "book": "v5-corebook",
           "page": 253,
@@ -741,6 +929,10 @@
         {
           "id": "power:celerity:weaving",
           "name": "Weaving",
+          "desc": {
+            "en": "For a scene, your Dexterity + Athletics defence against ranged attacks does not shrink with each extra attack, and you add your Celerity rating to it. One Rouse Check.",
+            "el": "Για μία σκηνή, η άμυνά σου με Dexterity + Athletics απέναντι σε επιθέσεις εξ αποστάσεως δεν μειώνεται με κάθε επιπλέον επίθεση και προσθέτεις σε αυτήν το Celerity σου. 1 Rouse Check."
+          },
           "level": 3,
           "book": "v5-players-guide",
           "page": 72,
@@ -758,6 +950,10 @@
         {
           "id": "power:celerity:blurred-momentum",
           "name": "Blurred Momentum",
+          "desc": {
+            "en": "While active, any attack that rolls fewer successes than your Celerity rating misses outright, even a surprise attack or one that allows no defence. One Rouse Check to start and one for each further turn.",
+            "el": "Όσο είναι ενεργό, κάθε επίθεση με λιγότερες επιτυχίες από το Celerity σου αστοχεί αυτόματα, ακόμη και αιφνιδιασμός ή επίθεση που δεν επιτρέπει άμυνα. 1 Rouse Check για να ξεκινήσει και 1 για κάθε επιπλέον γύρο."
+          },
           "level": 4,
           "book": "v5-players-guide",
           "page": 72,
@@ -773,6 +969,10 @@
         {
           "id": "power:celerity:draught-of-elegance",
           "name": "Draught of Elegance",
+          "desc": {
+            "en": "Whoever drinks a Rouse Check's worth of your Blood gains Celerity at half your rating, with its non-amalgam powers, for a night; a vampire keeps it until they next feed or hit Hunger 5. One Rouse Check.",
+            "el": "Όποιος πιει αίμα σου αξίας ενός Rouse Check αποκτά Celerity στο μισό του δικού σου, με τις μη-amalgam δυνάμεις του, για μία νύχτα· βαμπίρ το κρατά μέχρι να τραφεί ξανά ή να φτάσει Hunger 5. 1 Rouse Check."
+          },
           "level": 4,
           "book": "v5-corebook",
           "page": 254,
@@ -788,6 +988,10 @@
         {
           "id": "power:celerity:unerring-aim",
           "name": "Unerring Aim",
+          "desc": {
+            "en": "Before a ranged attack, time seems to stop: the target gets no roll to dodge and you attack at Difficulty 1. One Rouse Check; a foe with Celerity 5 can cancel it with a Rouse Check of their own.",
+            "el": "Πριν από επίθεση εξ αποστάσεως ο χρόνος μοιάζει να παγώνει: ο στόχος δεν ρίχνει για αποφυγή και επιτίθεσαι με Difficulty 1. 1 Rouse Check· αντίπαλος με Celerity 5 το ακυρώνει με δικό του Rouse Check."
+          },
           "level": 4,
           "book": "v5-corebook",
           "page": 254,
@@ -806,6 +1010,10 @@
         {
           "id": "power:celerity:unseen-strike",
           "name": "Unseen Strike",
+          "desc": {
+            "en": "Vanish and close on a target in one move for a surprise attack: unless they beat your Dexterity + Celerity with Wits + Awareness, they cannot defend and you strike at Difficulty 1. Two Rouse Checks; same movement limits as Blink.",
+            "el": "Εξαφανίζεσαι και πέφτεις πάνω σε έναν στόχο με μία κίνηση για αιφνιδιαστική επίθεση: αν δεν νικήσει το Dexterity + Celerity σου με Wits + Awareness, δεν αμύνεται και χτυπάς με Difficulty 1. 2 Rouse Checks· ίδια όρια κίνησης με το Blink."
+          },
           "level": 4,
           "book": "v5-players-guide",
           "page": 73,
@@ -826,6 +1034,10 @@
         {
           "id": "power:celerity:lightning-strike",
           "name": "Lightning Strike",
+          "desc": {
+            "en": "Before a Brawl or Melee attack: the opponent gets no roll to defend and you attack at Difficulty 1. One Rouse Check; a foe with Celerity 5 can cancel it with a Rouse Check of their own.",
+            "el": "Πριν από επίθεση Brawl ή Melee: ο αντίπαλος δεν ρίχνει για άμυνα και επιτίθεσαι με Difficulty 1. 1 Rouse Check· αντίπαλος με Celerity 5 το ακυρώνει με δικό του Rouse Check."
+          },
           "level": 5,
           "book": "v5-corebook",
           "page": 254,
@@ -841,6 +1053,10 @@
         {
           "id": "power:celerity:split-second",
           "name": "Split Second",
+          "desc": {
+            "en": "React before events finish unfolding: you may rewrite the Storyteller's narration within reason, slipping through a closing door or out of a sprung ambush. One Rouse Check for roughly one quick action.",
+            "el": "Αντιδράς πριν ολοκληρωθούν τα γεγονότα: αλλάζεις, μέσα σε λογικά όρια, την αφήγηση του Storyteller, π.χ. περνάς μια πόρτα που κλείνει ή ξεφεύγεις από ενέδρα που ήδη ξεκίνησε. 1 Rouse Check για περίπου μία γρήγορη δράση."
+          },
           "level": 5,
           "book": "v5-corebook",
           "page": 254,
@@ -858,6 +1074,10 @@
     {
       "id": "discipline:dominate",
       "name": "Dominate",
+      "desc": {
+        "en": "Mind control through eye contact and spoken commands: orders, altered memories and enslaved wills. Mental, low Masquerade threat, but it endangers Humanity.",
+        "el": "Έλεγχος του νου με οπτική επαφή και προφορικές εντολές: διαταγές, αλλαγμένες μνήμες, υποταγμένες θελήσεις. Mental, χαμηλή απειλή για τη Masquerade, αλλά απειλεί το Humanity."
+      },
       "book": "v5-corebook",
       "page": 254,
       "source": "pdf",
@@ -865,6 +1085,10 @@
         {
           "id": "power:dominate:cloud-memory",
           "name": "Cloud Memory",
+          "desc": {
+            "en": "With one word the victim forgets the last few minutes, enough to hide a feeding or a meeting. Free; no roll against an unprepared mortal, Charisma + Dominate vs Wits + Resolve against a resisting one or a vampire.",
+            "el": "Με μία λέξη το θύμα ξεχνά τα τελευταία λεπτά, αρκετά για να κρυφτεί ένα τάισμα ή μια συνάντηση. Δωρεάν· χωρίς ρίψη σε ανυποψίαστο θνητό, Charisma + Dominate εναντίον Wits + Resolve σε όποιον αντιστέκεται ή σε βαμπίρ."
+          },
           "level": 1,
           "book": "v5-corebook",
           "page": 256,
@@ -880,6 +1104,10 @@
         {
           "id": "power:dominate:compel",
           "name": "Compel",
+          "desc": {
+            "en": "Through eye contact, give a one-sentence order that must be done within a turn. Free; no roll against an unprepared mortal, Charisma + Dominate vs Intelligence + Resolve against resistance, a vampire or an order against their nature.",
+            "el": "Με οπτική επαφή δίνεις εντολή μίας πρότασης που εκτελείται μέσα σε έναν γύρο. Δωρεάν· χωρίς ρίψη σε ανυποψίαστο θνητό, Charisma + Dominate εναντίον Intelligence + Resolve σε αντίσταση, βαμπίρ ή εντολή ενάντια στη φύση του."
+          },
           "level": 1,
           "book": "v5-corebook",
           "page": 256,
@@ -895,6 +1123,10 @@
         {
           "id": "power:dominate:slavish-devotion",
           "name": "Slavish Devotion",
+          "desc": {
+            "en": "Anyone already under your Dominate is shielded from other Kindred: a third party's Dominate attempt on them loses dice equal to your Fortitude rating. No cost, always on.",
+            "el": "Όποιος βρίσκεται ήδη υπό το Dominate σου προστατεύεται από άλλους Kindred: απόπειρα Dominate τρίτου πάνω του χάνει ζάρια ίσα με το Fortitude σου. Χωρίς κόστος, πάντα ενεργό."
+          },
           "level": 1,
           "book": "v5-players-guide",
           "page": 73,
@@ -913,6 +1145,10 @@
         {
           "id": "power:dominate:dementation",
           "name": "Dementation",
+          "desc": {
+            "en": "In casual talk, attack a mind each turn: Manipulation + Dominate vs Composure + Intelligence deals Superficial Willpower damage. Impaired mortals break down; Impaired vampires get a Compulsion you pick. One Rouse Check per target per scene.",
+            "el": "Με κουβέντα χτυπάς έναν νου κάθε γύρο για τη σκηνή: Manipulation + Dominate vs Composure + Intelligence κάνει Superficial ζημιά Willpower. Impaired θνητός καταρρέει· Impaired βαμπίρ παίρνει Compulsion που διαλέγεις. 1 Rouse Check ανά θύμα."
+          },
           "level": 2,
           "book": "v5-corebook",
           "page": 256,
@@ -931,6 +1167,10 @@
         {
           "id": "power:dominate:domitors-favor",
           "name": "Domitor's Favor",
+          "desc": {
+            "en": "Tighten a Blood Bond for a month: your thrall's rolls to defy you lose three dice and cannot be boosted with Willpower, and a total failure stops the Bond from fading that month. One Rouse Check.",
+            "el": "Σφίγγεις ένα Blood Bond για έναν μήνα: οι ρίψεις του thrall σου για να σου εναντιωθεί χάνουν 3 ζάρια και δεν ενισχύονται με Willpower, και total failure σημαίνει ότι ο δεσμός δεν εξασθενεί εκείνο τον μήνα. 1 Rouse Check."
+          },
           "level": 2,
           "book": "v5-players-guide",
           "page": 74,
@@ -951,6 +1191,10 @@
         {
           "id": "power:dominate:mesmerize",
           "name": "Mesmerize",
+          "desc": {
+            "en": "Give complex instructions that are carried out at once and to the letter, with no conditions allowed. One Rouse Check; no roll on an unprepared mortal, Manipulation + Dominate vs Intelligence + Resolve otherwise. Until done or scene end.",
+            "el": "Δίνεις σύνθετες οδηγίες που εκτελούνται αμέσως και κατά γράμμα, χωρίς όρους. 1 Rouse Check· χωρίς ρίψη σε ανυποψίαστο θνητό, αλλιώς Manipulation + Dominate εναντίον Intelligence + Resolve. Διαρκεί μέχρι να εκτελεστεί ή να τελειώσει η σκηνή."
+          },
           "level": 2,
           "book": "v5-corebook",
           "page": 256,
@@ -966,6 +1210,10 @@
         {
           "id": "power:dominate:submerged-directive",
           "name": "Submerged Directive",
+          "desc": {
+            "en": "When you Mesmerize someone, bury the command so it only fires on a trigger you choose, such as a date, a person or a phrase. It never expires; one buried order per victim. No extra cost.",
+            "el": "Όταν χρησιμοποιείς Mesmerize, θάβεις την εντολή ώστε να ενεργοποιηθεί μόνο με έναυσμα που ορίζεις, π.χ. ημερομηνία, πρόσωπο ή φράση. Δεν λήγει ποτέ· μία θαμμένη εντολή ανά θύμα. Χωρίς έξτρα κόστος."
+          },
           "level": 3,
           "book": "v5-corebook",
           "page": 257,
@@ -981,6 +1229,10 @@
         {
           "id": "power:dominate:the-forgetful-mind",
           "name": "The Forgetful Mind",
+          "desc": {
+            "en": "Describe new memories and the victim takes them as real: each point of margin adds or removes one more, flawless on a critical win. You cannot read their true memories. One Rouse Check; Manipulation + Dominate vs Intelligence + Resolve.",
+            "el": "Περιγράφεις νέες μνήμες και το θύμα τις δέχεται ως δικές του: κάθε πόντος περιθωρίου προσθέτει ή σβήνει μία ακόμη, άψογα με critical win. Δεν διαβάζεις τις αληθινές μνήμες. 1 Rouse Check· Manipulation + Dominate vs Intelligence + Resolve."
+          },
           "level": 3,
           "book": "v5-corebook",
           "page": 257,
@@ -996,6 +1248,10 @@
         {
           "id": "power:dominate:ancestral-dominion",
           "name": "Ancestral Dominion",
+          "desc": {
+            "en": "Silently compel a vampire descended from your Blood to act for you, with no eye contact or words, though not to harm themselves. One Rouse Check; Manipulation + Dominate vs Resolve + Occult, plus one die for them per Generation between you.",
+            "el": "Υποχρεώνεις σιωπηλά βαμπίρ που κατάγεται από το αίμα σου να δράσει για σένα, χωρίς οπτική επαφή ή λόγια, αλλά όχι να βλάψει τον εαυτό του. 1 Rouse Check· Manipulation + Dominate vs Resolve + Occult, +1 ζάρι άμυνας ανά Generation μεταξύ σας."
+          },
           "level": 4,
           "book": "v5-players-guide",
           "page": 74,
@@ -1016,6 +1272,10 @@
         {
           "id": "power:dominate:implant-suggestion",
           "name": "Implant Suggestion",
+          "desc": {
+            "en": "Change what someone wants or believes for a scene, from craving a drink to distrusting their own faith. One Rouse Check; no roll on an unprepared mortal unless the change is radical, else Manipulation + Dominate vs Composure + Resolve.",
+            "el": "Αλλάζεις τι θέλει ή τι πιστεύει κάποιος για μία σκηνή, από ξαφνική λαχτάρα ως δυσπιστία στις αρχές του. 1 Rouse Check· χωρίς ρίψη σε ανυποψίαστο θνητό εκτός αν η αλλαγή είναι ριζική, αλλιώς Manipulation + Dominate vs Composure + Resolve."
+          },
           "level": 4,
           "book": "v5-players-guide",
           "page": 74,
@@ -1034,6 +1294,10 @@
         {
           "id": "power:dominate:rationalize",
           "name": "Rationalize",
+          "desc": {
+            "en": "Your victims believe everything they did under your Dominate was their own idea and defend it, however absurd. Only if pressed can they roll Wits + Awareness at Difficulty 5 to start doubting. No extra cost, always on.",
+            "el": "Τα θύματά σου πιστεύουν ότι ό,τι έκαναν υπό το Dominate σου ήταν δική τους απόφαση και το υπερασπίζονται, όσο παράλογο κι αν είναι. Μόνο αν πιεστούν ρίχνουν Wits + Awareness με Difficulty 5 για να αμφιβάλουν. Χωρίς έξτρα κόστος."
+          },
           "level": 4,
           "book": "v5-corebook",
           "page": 257,
@@ -1049,6 +1313,10 @@
         {
           "id": "power:dominate:mass-manipulation",
           "name": "Mass Manipulation",
+          "desc": {
+            "en": "Apply any other Dominate power to a whole group of mortals or vampires at once, as long as they all meet your eyes; roll once against the strongest of them. One Rouse Check on top of the power's own cost.",
+            "el": "Εφαρμόζεις οποιαδήποτε άλλη δύναμη Dominate σε ολόκληρη ομάδα θνητών ή βαμπίρ ταυτόχρονα, αρκεί όλοι να κοιτούν τα μάτια σου· ρίχνεις μία φορά εναντίον του ισχυρότερου. 1 Rouse Check επιπλέον του κόστους της δύναμης."
+          },
           "level": 5,
           "book": "v5-corebook",
           "page": 257,
@@ -1064,6 +1332,10 @@
         {
           "id": "power:dominate:terminal-decree",
           "name": "Terminal Decree",
+          "desc": {
+            "en": "Your commands can now lead straight to the victim's injury or death: instead of failing automatically they must be resisted with the usual rolls. No Rouse cost, but the Humanity cost can be severe. Always on.",
+            "el": "Οι εντολές σου μπορούν πλέον να οδηγήσουν σε τραυματισμό ή θάνατο του θύματος: αντί να αποτυγχάνουν αυτόματα, πρέπει να αποκρουστούν με τις συνηθισμένες ρίψεις. Χωρίς Rouse Check, αλλά το κόστος σε Humanity μπορεί να είναι βαρύ."
+          },
           "level": 5,
           "book": "v5-corebook",
           "page": 257,
@@ -1081,6 +1353,10 @@
     {
       "id": "discipline:fortitude",
       "name": "Fortitude",
+      "desc": {
+        "en": "Supernatural toughness: the vampire shrugs off physical harm and resists attempts to sway their mind.",
+        "el": "Υπερφυσική αντοχή: το βαμπίρ αντέχει σωματική ζημιά και αντιστέκεται σε προσπάθειες να επηρεαστεί το μυαλό του."
+      },
       "book": "v5-corebook",
       "page": 258,
       "source": "pdf",
@@ -1088,6 +1364,10 @@
         {
           "id": "power:fortitude:resilience",
           "name": "Resilience",
+          "desc": {
+            "en": "Add the Fortitude rating to the Health track. Free, always on.",
+            "el": "Πρόσθεσε τις τελείες Fortitude στη γραμμή Health. Δωρεάν, πάντα ενεργό."
+          },
           "level": 1,
           "book": "v5-corebook",
           "page": 258,
@@ -1103,6 +1383,10 @@
         {
           "id": "power:fortitude:unswayable-mind",
           "name": "Unswayable Mind",
+          "desc": {
+            "en": "Extra dice equal to Fortitude on rolls to resist coercion, intimidation, seduction and the like, including Dominate and Presence. Free, always on.",
+            "el": "Έξτρα ζάρια ίσα με το Fortitude σε ρίψεις αντίστασης σε εξαναγκασμό, εκφοβισμό, αποπλάνηση και παρόμοια, και ενάντια σε Dominate και Presence. Δωρεάν, πάντα ενεργό."
+          },
           "level": 1,
           "book": "v5-corebook",
           "page": 258,
@@ -1118,6 +1402,10 @@
         {
           "id": "power:fortitude:earths-perseverance",
           "name": "Earth's Perseverance",
+          "desc": {
+            "en": "Rooted to the spot: nothing can move the vampire unless they choose to move. It gives no protection against damage. 1 Rouse Check; lasts a scene or until the user lets it go.",
+            "el": "Ριζωμένο στο έδαφος: τίποτα δεν μετακινεί το βαμπίρ αν δεν το θελήσει το ίδιο. Δεν προστατεύει καθόλου από ζημιά. 1 Rouse Check· κρατά μία σκηνή ή μέχρι να το αφήσει ο χρήστης."
+          },
           "level": 2,
           "book": "v5-players-guide",
           "page": 74,
@@ -1133,6 +1421,10 @@
         {
           "id": "power:fortitude:enduring-beasts",
           "name": "Enduring Beasts",
+          "desc": {
+            "en": "Animals under the vampire's Animalism gain extra Health equal to the user's Fortitude for a scene. Free for the famulus; other animals need a Rouse Check and a Stamina + Animalism roll.",
+            "el": "Ζώα υπό το Animalism του βαμπίρ παίρνουν έξτρα Health ίσο με το Fortitude του για μία σκηνή. Δωρεάν για τον famulus· τα άλλα ζώα θέλουν 1 Rouse Check και ρίψη Stamina + Animalism."
+          },
           "level": 2,
           "book": "v5-corebook",
           "page": 258,
@@ -1151,6 +1443,10 @@
         {
           "id": "power:fortitude:invigorating-vitae",
           "name": "Invigorating Vitae",
+          "desc": {
+            "en": "The vampire's Blood heals the living faster: three Aggravated levels per Rouse Check of vitae instead of one. Ghouling and Blood Bond risks are unchanged. Passive.",
+            "el": "Το αίμα του βαμπίρ γιατρεύει τους ζωντανούς πιο γρήγορα: τρία επίπεδα Aggravated ανά Rouse Check αίματος αντί για ένα. Οι κίνδυνοι ghoul και Blood Bond δεν αλλάζουν. Παθητικό."
+          },
           "level": 2,
           "book": "v5-players-guide",
           "page": 75,
@@ -1169,6 +1465,10 @@
         {
           "id": "power:fortitude:toughness",
           "name": "Toughness",
+          "desc": {
+            "en": "For a scene, subtract the Fortitude rating from any Superficial damage taken, before halving; never below one. One Rouse Check.",
+            "el": "Για μία σκηνή, αφαίρεσε τις τελείες Fortitude από κάθε Superficial ζημιά που δέχεσαι, πριν τη διαίρεση στο μισό· ποτέ κάτω από ένα. 1 Rouse Check."
+          },
           "level": 2,
           "book": "v5-corebook",
           "page": 258,
@@ -1184,6 +1484,10 @@
         {
           "id": "power:fortitude:defy-bane",
           "name": "Defy Bane",
+          "desc": {
+            "en": "Convert Aggravated damage up to the Fortitude rating into Superficial for a scene; that damage cannot heal until the scene ends. One Rouse Check; can be triggered reflexively with Wits + Survival.",
+            "el": "Μετέτρεψε Aggravated ζημιά έως τις τελείες Fortitude σε Superficial για μία σκηνή· αυτή η ζημιά δεν γιατρεύεται πριν τελειώσει η σκηνή. 1 Rouse Check· αντανακλαστικά με ρίψη Wits + Survival."
+          },
           "level": 3,
           "book": "v5-corebook",
           "page": 259,
@@ -1199,6 +1503,10 @@
         {
           "id": "power:fortitude:fortify-the-inner-facade",
           "name": "Fortify the Inner Facade",
+          "desc": {
+            "en": "Powers that read the vampire's mind or aura face extra Difficulty equal to half their Fortitude (round up); where a resist roll is allowed, add Fortitude to the pool instead. Free, one scene.",
+            "el": "Δυνάμεις που διαβάζουν σκέψεις ή αύρα πάνω στο βαμπίρ έχουν έξτρα Difficulty ίση με το μισό Fortitude του (στρογγυλοποίηση πάνω)· όπου επιτρέπεται αντίσταση, προσθέτει το Fortitude στο pool. Δωρεάν, μία σκηνή."
+          },
           "level": 3,
           "book": "v5-corebook",
           "page": 259,
@@ -1214,6 +1522,10 @@
         {
           "id": "power:fortitude:valeren",
           "name": "Valeren",
+          "desc": {
+            "en": "Heal another vampire: roll Intelligence + Fortitude (Difficulty 2) and mend Superficial damage equal to the margin, or one Aggravated per three margin. One Rouse Check; once per subject per night.",
+            "el": "Γιατρεύεις άλλο βαμπίρ: ρίψη Intelligence + Fortitude (Difficulty 2), επούλωση Superficial ζημιάς ίσης με το margin ή ένα Aggravated ανά τρεις επιτυχίες margin. 1 Rouse Check· μία φορά ανά στόχο τη νύχτα."
+          },
           "level": 3,
           "book": "v5-players-guide",
           "page": 75,
@@ -1237,6 +1549,10 @@
         {
           "id": "power:fortitude:draught-of-endurance",
           "name": "Draught of Endurance",
+          "desc": {
+            "en": "Anyone who drinks a Rouse Check's worth of the user's Blood gains temporary Fortitude equal to half the donor's dots (round down), with its powers. One Rouse Check; lasts a night.",
+            "el": "Όποιος πιει αίμα του χρήστη αξίας ενός Rouse Check αποκτά προσωρινό Fortitude ίσο με το μισό των τελειών του δότη (στρογγυλοποίηση κάτω), μαζί με τις δυνάμεις του. 1 Rouse Check· κρατά μία νύχτα."
+          },
           "level": 4,
           "book": "v5-corebook",
           "page": 259,
@@ -1252,6 +1568,10 @@
         {
           "id": "power:fortitude:gorgons-scales",
           "name": "Gorgon's Scales",
+          "desc": {
+            "en": "The last Resonance fed on grants a defence for 1 Rouse Check: Choleric rots a stake out of the heart by scene's end, Melancholy or Sanguine makes 4 levels of fire or sun damage Superficial, Phlegmatic gives +4 dice against Auspex.",
+            "el": "Η τελευταία Resonance που ήπιε δίνει άμυνα για 1 Rouse Check: Choleric σαπίζει το παλούκι στην καρδιά ως το τέλος της σκηνής, Melancholy ή Sanguine κάνει 4 επίπεδα ζημιάς από φωτιά ή ήλιο Superficial, Phlegmatic +4 ζάρια κατά του Auspex."
+          },
           "level": 4,
           "book": "v5-players-guide",
           "page": 75,
@@ -1267,6 +1587,10 @@
         {
           "id": "power:fortitude:flesh-of-marble",
           "name": "Flesh of Marble",
+          "desc": {
+            "en": "For a scene, the first physical damage source each turn is ignored, fire included but not sunlight. A critical win on the attack bypasses it. Two Rouse Checks.",
+            "el": "Για μία σκηνή αγνοείς την πρώτη πηγή σωματικής ζημιάς κάθε γύρο, και φωτιά αλλά όχι ηλιακό φως. Ένα critical win στην επίθεση το παρακάμπτει. 2 Rouse Checks."
+          },
           "level": 5,
           "book": "v5-corebook",
           "page": 259,
@@ -1282,6 +1606,10 @@
         {
           "id": "power:fortitude:prowess-from-pain",
           "name": "Prowess from Pain",
+          "desc": {
+            "en": "For a scene, ignore dice penalties from Health damage and raise one Physical Attribute by one dot per level of damage on the Health track, up to Blood Surge + 6. One Rouse Check.",
+            "el": "Για μία σκηνή αγνοείς τις ποινές ζαριών από ζημιά Health και ανεβάζεις ένα Physical Attribute κατά μία τελεία για κάθε επίπεδο ζημιάς στη γραμμή Health, έως Blood Surge + 6. 1 Rouse Check."
+          },
           "level": 5,
           "book": "v5-corebook",
           "page": 260,
@@ -1299,6 +1627,10 @@
     {
       "id": "discipline:obfuscate",
       "name": "Obfuscate",
+      "desc": {
+        "en": "Low-level mesmerism that makes observers ignore the vampire: hiding in plain sight, moving unseen and wearing false faces.",
+        "el": "Ήπιος υπνωτισμός που κάνει τους παρατηρητές να αγνοούν το βαμπίρ: κρύψιμο σε κοινή θέα, αόρατη κίνηση και ψεύτικα πρόσωπα."
+      },
       "book": "v5-corebook",
       "page": 260,
       "source": "pdf",
@@ -1306,6 +1638,10 @@
         {
           "id": "power:obfuscate:cloak-of-shadows",
           "name": "Cloak of Shadows",
+          "desc": {
+            "en": "Stand still with some cover, make no sound, and only machines or supernatural senses can spot you. Free; ends when you move or are detected.",
+            "el": "Μείνε ακίνητος με λίγη κάλυψη και χωρίς θόρυβο, και μόνο μηχανές ή υπερφυσικές αισθήσεις σε εντοπίζουν. Δωρεάν· λήγει μόλις κινηθείς ή εντοπιστείς."
+          },
           "level": 1,
           "book": "v5-corebook",
           "page": 261,
@@ -1321,6 +1657,10 @@
         {
           "id": "power:obfuscate:silence-of-death",
           "name": "Silence of Death",
+          "desc": {
+            "en": "Silences every sound the vampire's own body and clothing make for a scene; noise beyond their personal space, and microphones, are unaffected. Free.",
+            "el": "Σβήνει για μία σκηνή κάθε ήχο από το σώμα και τα ρούχα του βαμπίρ· οι θόρυβοι έξω από τον προσωπικό του χώρο και τα μικρόφωνα δεν επηρεάζονται. Δωρεάν."
+          },
           "level": 1,
           "book": "v5-corebook",
           "page": 261,
@@ -1336,6 +1676,10 @@
         {
           "id": "power:obfuscate:chimerstry",
           "name": "Chimerstry",
+          "desc": {
+            "en": "A brief one-sense hallucination: those who perceive it lose two dice on their next action; failing Composure + Wits against your Manipulation + Obfuscate also costs them that action. One Rouse Check, one turn.",
+            "el": "Σύντομη παραίσθηση σε μία αίσθηση: όσοι την αντιληφθούν χάνουν δύο ζάρια στην επόμενη ενέργεια, και όσοι αποτύχουν σε Composure + Wits εναντίον Manipulation + Obfuscate χάνουν την ενέργεια. 1 Rouse Check, ένας γύρος."
+          },
           "level": 2,
           "book": "v5-players-guide",
           "page": 76,
@@ -1359,6 +1703,10 @@
         {
           "id": "power:obfuscate:unseen-passage",
           "name": "Unseen Passage",
+          "desc": {
+            "en": "Move while hidden for a scene, as long as you stay quieter than a whisper and carry no strong smell. Fails if activated under direct observation. One Rouse Check.",
+            "el": "Κινείσαι κρυμμένος για μία σκηνή, όσο μένεις πιο σιωπηλός από ψίθυρο και δεν μυρίζεις έντονα. Αποτυγχάνει αν ενεργοποιηθεί υπό άμεση παρατήρηση. 1 Rouse Check."
+          },
           "level": 2,
           "book": "v5-corebook",
           "page": 261,
@@ -1374,6 +1722,10 @@
         {
           "id": "power:obfuscate:fata-morgana",
           "name": "Fata Morgana",
+          "desc": {
+            "en": "Craft an elaborate multi-sense hallucination for everyone in sight. Roll Manipulation + Obfuscate at Difficulty 1 + senses used, higher for large illusions; it cannot cause damage or hide things. One Rouse Check, one scene.",
+            "el": "Περίπλοκη παραίσθηση πολλών αισθήσεων για όλους σε οπτική επαφή. Ρίψη Manipulation + Obfuscate, Difficulty 1 + αισθήσεις, πιο δύσκολο για μεγάλες ψευδαισθήσεις· δεν κάνει ζημιά ούτε κρύβει. 1 Rouse Check, μία σκηνή."
+          },
           "level": 3,
           "book": "v5-players-guide",
           "page": 77,
@@ -1397,6 +1749,10 @@
         {
           "id": "power:obfuscate:ghost-in-the-machine",
           "name": "Ghost in the Machine",
+          "desc": {
+            "en": "Obfuscate also works on live camera feeds; later recordings come out blurred (+3 Difficulty to identify you) and you get three extra dice against automated surveillance. No extra cost.",
+            "el": "Το Obfuscate δουλεύει και σε ζωντανή κάμερα· οι εγγραφές βγαίνουν θολές (+3 Difficulty για αναγνώριση) και παίρνεις τρία έξτρα ζάρια ενάντια σε αυτόματη επιτήρηση. Χωρίς έξτρα κόστος."
+          },
           "level": 3,
           "book": "v5-corebook",
           "page": 262,
@@ -1412,6 +1768,10 @@
         {
           "id": "power:obfuscate:mask-of-a-thousand-faces",
           "name": "Mask of a Thousand Faces",
+          "desc": {
+            "en": "Appear as a forgettable stranger of your own gender and build who seems to belong there; you can talk and interact. No roll. One Rouse Check, one scene.",
+            "el": "Μοιάζεις με αδιάφορο άγνωστο του ίδιου φύλου και σωματότυπου που δείχνει να ανήκει εκεί· μπορείς να μιλάς και να αλληλεπιδράς. Χωρίς ρίψη. 1 Rouse Check, μία σκηνή."
+          },
           "level": 3,
           "book": "v5-corebook",
           "page": 262,
@@ -1427,6 +1787,10 @@
         {
           "id": "power:obfuscate:mental-maze",
           "name": "Mental Maze",
+          "desc": {
+            "en": "Meet a victim's eyes and win Charisma + Obfuscate vs Wits + Resolve: they cannot find the way out of the building for a night. Two more Rouse Checks confine them to one room or an open area. One or three Rouse Checks.",
+            "el": "Με βλεμματική επαφή και νίκη σε Charisma + Obfuscate εναντίον Wits + Resolve, το θύμα δεν βρίσκει έξοδο από το κτίριο για μία νύχτα. Δύο έξτρα Rouse Checks το εγκλωβίζουν σε ένα δωμάτιο ή ανοιχτό χώρο. 1 ή 3 Rouse Checks."
+          },
           "level": 3,
           "book": "v5-players-guide",
           "page": 77,
@@ -1445,6 +1809,10 @@
         {
           "id": "power:obfuscate:mind-masque",
           "name": "Mind Masque",
+          "desc": {
+            "en": "Show a false persona to anyone reading your mind, aura or feelings. Roll Intelligence + Obfuscate (Difficulty 1–3+ by complexity); the margin adds to the reader's Difficulty, and a shallow read sees only the fake. 1 Rouse Check, one scene.",
+            "el": "Δείχνεις ψεύτικη προσωπικότητα σε όποιον διαβάζει μυαλό, αύρα ή αισθήματα. Ρίψη Intelligence + Obfuscate (Difficulty 1–3+ ανά πολυπλοκότητα)· το margin προστίθεται στη Difficulty του αναγνώστη. 1 Rouse Check, μία σκηνή."
+          },
           "level": 3,
           "book": "v5-players-guide",
           "page": 78,
@@ -1463,6 +1831,10 @@
         {
           "id": "power:obfuscate:conceal",
           "name": "Conceal",
+          "desc": {
+            "en": "Touch an inanimate object up to a two-storey house and roll Intelligence + Obfuscate (Difficulty 2–6 by size and place); people ignore it for a night, plus one night per point of margin. One Rouse Check.",
+            "el": "Άγγιξε ακίνητο αντικείμενο έως διώροφο σπίτι και ρίξε Intelligence + Obfuscate (Difficulty 2–6 ανά μέγεθος και θέση)· όλοι το αγνοούν για μία νύχτα, συν μία ανά πόντο margin. 1 Rouse Check."
+          },
           "level": 4,
           "book": "v5-corebook",
           "page": 262,
@@ -1481,6 +1853,10 @@
         {
           "id": "power:obfuscate:vanish",
           "name": "Vanish",
+          "desc": {
+            "en": "Activate Cloak of Shadows or Unseen Passage while being watched. Against a mortal, win Wits + Obfuscate vs Wits + Awareness to cloud their memory of you. Once per scene; costs as the power used.",
+            "el": "Ενεργοποίησε Cloak of Shadows ή Unseen Passage ενώ σε βλέπουν. Σε θνητό, νίκη σε Wits + Obfuscate εναντίον Wits + Awareness θολώνει τη μνήμη του για σένα. Μία φορά ανά σκηνή· κόστος όσο η δύναμη."
+          },
           "level": 4,
           "book": "v5-corebook",
           "page": 262,
@@ -1498,6 +1874,10 @@
         {
           "id": "power:obfuscate:cloak-the-gathering",
           "name": "Cloak the Gathering",
+          "desc": {
+            "en": "Extend any Obfuscate power you know to willing companions, up to your Wits in number, plus one per extra Rouse Check. If you are revealed, so is everyone. One Rouse Check on top of the power's cost.",
+            "el": "Επέκτεινε όποια δύναμη Obfuscate ξέρεις σε πρόθυμους συντρόφους, έως τόσους όσο το Wits σου, συν έναν ανά έξτρα Rouse Check. Αν αποκαλυφθείς, αποκαλύπτονται όλοι. 1 Rouse Check πέρα από το κόστος της δύναμης."
+          },
           "level": 5,
           "book": "v5-corebook",
           "page": 263,
@@ -1513,6 +1893,10 @@
         {
           "id": "power:obfuscate:impostors-guise",
           "name": "Impostor's Guise",
+          "desc": {
+            "en": "After studying a specific person for several minutes, wear their face and build. Hidden Wits + Obfuscate roll (Difficulty 4); mimicking voice and manner needs Manipulation + Performance. One Rouse Check, one scene.",
+            "el": "Αφού μελετήσεις ένα συγκεκριμένο άτομο για λίγα λεπτά, παίρνεις το πρόσωπο και τη σωματοδομή του. Κρυφή ρίψη Wits + Obfuscate (Difficulty 4)· φωνή και τρόποι θέλουν Manipulation + Performance. 1 Rouse Check, μία σκηνή."
+          },
           "level": 5,
           "book": "v5-corebook",
           "page": 263,
@@ -1532,6 +1916,10 @@
     {
       "id": "discipline:oblivion",
       "name": "Oblivion",
+      "desc": {
+        "en": "Shadow and death magic of the Lasombra and Hecata: shadow weapons, control over ghosts, decay and disease. It needs shadows to work, and a 1 or 10 on its Rouse Checks also gives a Stain.",
+        "el": "Η μαγεία της σκιάς και του θανάτου των Lasombra και Hecata: όπλα από σκιά, έλεγχος φαντασμάτων, σήψη και αρρώστια. Θέλει σκιές για να δουλέψει, και ένα 1 ή 10 στα Rouse Checks της δίνει και Stain."
+      },
       "book": "v5-players-guide",
       "page": 84,
       "source": "pdf",
@@ -1539,6 +1927,10 @@
         {
           "id": "power:oblivion:ashes-to-ashes",
           "name": "Ashes to Ashes",
+          "desc": {
+            "en": "Add your vitae to a corpse and it crumbles away over three turns; this does not work on vampires. An animated corpse resists with Stamina (+ Fortitude). 1 Rouse Check.",
+            "el": "Βάζεις το αίμα σου σε ένα πτώμα και διαλύεται μέσα σε τρεις γύρους· δεν πιάνει σε βαμπίρ. Ένα ζωντανεμένο πτώμα αντιστέκεται με Stamina (+ Fortitude). 1 Rouse Check."
+          },
           "level": 1,
           "book": "v5-players-guide",
           "page": 85,
@@ -1554,6 +1946,10 @@
         {
           "id": "power:oblivion:oblivions-sight",
           "name": "Oblivion's Sight",
+          "desc": {
+            "en": "Black eyes that ignore every low-light penalty, even supernatural ones, and show ghosts that are not hiding. Free; lasts a scene, with a 2-dice penalty on social rolls with mortals while active.",
+            "el": "Μαύρα μάτια που αγνοούν κάθε ποινή χαμηλού φωτισμού, ακόμα και υπερφυσική, και δείχνουν τα φαντάσματα που δεν κρύβονται. Δωρεάν· κρατά μία σκηνή, με −2 ζάρια στις κοινωνικές ρίψεις με θνητούς όσο είναι ενεργό."
+          },
           "level": 1,
           "book": "v5-players-guide",
           "page": 85,
@@ -1569,6 +1965,10 @@
         {
           "id": "power:oblivion:shadow-cloak",
           "name": "Shadow Cloak",
+          "desc": {
+            "en": "Shadows gather around you: +2 dice to Stealth rolls and to Intimidation against mortals. Free, always on.",
+            "el": "Οι σκιές μαζεύονται γύρω σου: +2 ζάρια σε ρίψεις Stealth και σε Intimidation εναντίον θνητών. Δωρεάν, μόνιμα ενεργό."
+          },
           "level": 1,
           "book": "v5-players-guide",
           "page": 85,
@@ -1584,6 +1984,10 @@
         {
           "id": "power:oblivion:the-binding-fetter",
           "name": "The Binding Fetter",
+          "desc": {
+            "en": "For a scene you can see and smell the auras of fetters, the objects, places or people that tie a ghost to the world. While it is on you take −2 to Dexterity and Wits rolls. Free.",
+            "el": "Για μία σκηνή βλέπεις και μυρίζεις τις αύρες των fetters, των αντικειμένων, τόπων ή ανθρώπων που δένουν ένα φάντασμα στον κόσμο. Όσο είναι ενεργό έχεις −2 σε ρίψεις Dexterity και Wits. Δωρεάν."
+          },
           "level": 1,
           "book": "v5-players-guide",
           "page": 85,
@@ -1599,6 +2003,10 @@
         {
           "id": "power:oblivion:arms-of-ahriman",
           "name": "Arms of Ahriman",
+          "desc": {
+            "en": "Shadow limbs reach out from dark spots in sight to bludgeon or grapple targets with Wits + Oblivion, adding half your Potence as damage. You can do nothing else while controlling them. 1 Rouse Check, one scene.",
+            "el": "Μέλη από σκιά ξεπηδούν από σκοτεινά σημεία που βλέπεις και χτυπούν ή αρπάζουν στόχους με Wits + Oblivion, προσθέτοντας μισό Potence ως ζημιά. Δεν κάνεις τίποτε άλλο όσο τα ελέγχεις. 1 Rouse Check, μία σκηνή."
+          },
           "level": 2,
           "book": "v5-players-guide",
           "page": 86,
@@ -1617,6 +2025,10 @@
         {
           "id": "power:oblivion:fatal-prediction",
           "name": "Fatal Prediction",
+          "desc": {
+            "en": "Curse a mortal: contest Resolve + Oblivion vs Wits + Occult, and each point of margin becomes 1 Aggravated damage from accidents or illness within 24 hours. You must not interfere with the victim. 1 Rouse Check.",
+            "el": "Καταριέσαι έναν θνητό: Resolve + Oblivion εναντίον Wits + Occult, και κάθε πόντος margin γίνεται 1 Aggravated ζημιά από ατυχήματα ή αρρώστια μέσα σε 24 ώρες. Δεν πρέπει να ανακατευτείς με το θύμα. 1 Rouse Check."
+          },
           "level": 2,
           "book": "v5-players-guide",
           "page": 87,
@@ -1635,6 +2047,10 @@
         {
           "id": "power:oblivion:shadow-cast",
           "name": "Shadow Cast",
+          "desc": {
+            "en": "You project your own shadow without any light, so other Oblivion powers work even where there are no shadows; it stretches to twice your Oblivion in meters. Social Willpower damage inside it is +1. 1 Rouse Check, one scene.",
+            "el": "Ρίχνεις δική σου σκιά χωρίς πηγή φωτός, ώστε άλλες δυνάμεις Oblivion να δουλεύουν και εκεί που δεν υπάρχουν σκιές· φτάνει ως δύο φορές το Oblivion σου σε μέτρα. Μέσα της η κοινωνική ζημιά Willpower είναι +1. 1 Rouse Check, μία σκηνή."
+          },
           "level": 2,
           "book": "v5-players-guide",
           "page": 87,
@@ -1650,6 +2066,10 @@
         {
           "id": "power:oblivion:where-the-veil-thins",
           "name": "Where the Veil Thins",
+          "desc": {
+            "en": "Roll Intelligence + Oblivion (Difficulty 3) to learn how thin the veil between the living and the dead is in the area; a thin veil lowers the Difficulty of Ceremonies. A total failure gives a false reading. 1 Rouse Check.",
+            "el": "Με Intelligence + Oblivion (Difficulty 3) μαθαίνεις πόσο λεπτό είναι το πέπλο προς τους νεκρούς στην περιοχή· λεπτό πέπλο κατεβάζει το Difficulty των Ceremonies. Σε total failure παίρνεις λάθος ένδειξη. 1 Rouse Check."
+          },
           "level": 2,
           "book": "v5-players-guide",
           "page": 87,
@@ -1665,6 +2085,10 @@
         {
           "id": "power:oblivion:aura-of-decay",
           "name": "Aura of Decay",
+          "desc": {
+            "en": "Win Stamina + Oblivion (Difficulty 3) and everything within five meters rots: plants die, food turns toxic, living beings take unhalved Superficial damage equal to your margin. Your rotting smell gives −2 to Social rolls. 1 Rouse Check.",
+            "el": "Με νίκη σε Stamina + Oblivion (Difficulty 3) ό,τι υπάρχει σε πέντε μέτρα σαπίζει: φυτά πεθαίνουν, φαγητά γίνονται τοξικά, ζωντανοί παίρνουν Superficial ζημιά ίση με το margin, χωρίς υποδιπλασιασμό. Η δυσωδία δίνει −2 σε Social ρίψεις."
+          },
           "level": 3,
           "book": "v5-players-guide",
           "page": 88,
@@ -1680,6 +2104,10 @@
         {
           "id": "power:oblivion:passion-feast",
           "name": "Passion Feast",
+          "desc": {
+            "en": "Feed on a wraith's passions instead of blood: within three meters, win Resolve + Oblivion vs its Resolve + Composure to deal it 1 Aggravated Willpower damage and lower your Hunger by 1. Free; may cost a Stain.",
+            "el": "Τρέφεσαι από τα πάθη ενός wraith αντί για αίμα: σε απόσταση τριών μέτρων, νίκη σε Resolve + Oblivion εναντίον Resolve + Composure του δίνει σε αυτό 1 Aggravated ζημιά Willpower και κατεβάζει το Hunger σου κατά 1. Δωρεάν· ίσως Stain."
+          },
           "level": 3,
           "book": "v5-players-guide",
           "page": 88,
@@ -1698,6 +2126,10 @@
         {
           "id": "power:oblivion:shadow-perspective",
           "name": "Shadow Perspective",
+          "desc": {
+            "en": "Send your sight and hearing into any shadow you can see, including your own cast shadow, and perceive from there as well as from your body. Only supernatural senses can detect it. 1 Rouse Check, up to a scene.",
+            "el": "Στέλνεις όραση και ακοή σε όποια σκιά βλέπεις, και στη δική σου, και αντιλαμβάνεσαι από εκεί όσο και από το σώμα σου. Μόνο υπερφυσικές αισθήσεις το εντοπίζουν. 1 Rouse Check, έως μία σκηνή."
+          },
           "level": 3,
           "book": "v5-players-guide",
           "page": 89,
@@ -1713,6 +2145,10 @@
         {
           "id": "power:oblivion:shadow-servant",
           "name": "Shadow Servant",
+          "desc": {
+            "en": "Detach part of your shadow as a mindless spy that obeys your thoughts, runs, climbs and slips through cracks, and reports what it saw and heard when it rejoins you. Bright light banishes it. 1 Rouse Check, one scene.",
+            "el": "Αποσπάς ένα κομμάτι της σκιάς σου ως άβουλο κατάσκοπο που υπακούει στη σκέψη σου, τρέχει, σκαρφαλώνει, περνά από χαραμάδες και σου μεταφέρει ό,τι είδε και άκουσε όταν ξαναενωθεί μαζί σου. Το έντονο φως το διώχνει. 1 Rouse Check, μία σκηνή."
+          },
           "level": 3,
           "book": "v5-players-guide",
           "page": 89,
@@ -1731,6 +2167,10 @@
         {
           "id": "power:oblivion:touch-of-oblivion",
           "name": "Touch of Oblivion",
+          "desc": {
+            "en": "Grip a victim (Strength + Brawl if they resist) and age the body part you hold: 2 Aggravated damage plus a crippling injury, such as a withered limb, blindness or muteness. 1 Rouse Check.",
+            "el": "Αρπάζεις το θύμα (Strength + Brawl αν αντιστέκεται) και γερνάς απότομα το σημείο που κρατάς: 2 Aggravated ζημιά και ακρωτηριαστικό τραύμα, όπως μαραμένο μέλος, τύφλωση ή βουβαμάρα. 1 Rouse Check."
+          },
           "level": 3,
           "book": "v5-players-guide",
           "page": 89,
@@ -1746,6 +2186,10 @@
         {
           "id": "power:oblivion:necrotic-plague",
           "name": "Necrotic Plague",
+          "desc": {
+            "en": "Infect a mortal by touch: the weak catch it at once, the healthy resist with Stamina (+ Fortitude) vs Intelligence + Oblivion. 1 Aggravated damage per scene for as many scenes as your Oblivion; only vitae heals it. 1 Rouse Check.",
+            "el": "Μολύνεις θνητό με άγγιγμα: οι αδύναμοι κολλάνε αμέσως, οι υγιείς αντιστέκονται με Stamina (+ Fortitude) εναντίον Intelligence + Oblivion. 1 Aggravated ζημιά ανά σκηνή για τόσες σκηνές όσο το Oblivion σου· γιατρεύεται μόνο με vitae."
+          },
           "level": 4,
           "book": "v5-players-guide",
           "page": 89,
@@ -1761,6 +2205,10 @@
         {
           "id": "power:oblivion:stygian-shroud",
           "name": "Stygian Shroud",
+          "desc": {
+            "en": "After a turn of concentration, darkness covers a circle with a radius of twice your Oblivion in meters, around you or a spot in sight. Everyone else inside takes −3 dice; mortals take 1 Superficial damage per turn. 1 Rouse Check, one scene.",
+            "el": "Μετά από έναν γύρο συγκέντρωσης, σκοτάδι σκεπάζει κύκλο ακτίνας δύο φορές το Oblivion σου σε μέτρα, γύρω σου ή σε σημείο που βλέπεις. Οι άλλοι μέσα έχουν −3 ζάρια· οι θνητοί παίρνουν 1 Superficial ζημιά τον γύρο. 1 Rouse Check, μία σκηνή."
+          },
           "level": 4,
           "book": "v5-players-guide",
           "page": 90,
@@ -1776,6 +2224,10 @@
         {
           "id": "power:oblivion:shadow-step",
           "name": "Shadow Step",
+          "desc": {
+            "en": "Step into a shadow big enough to cover you and come out of another shadow in sight one turn later. You can bring one person, grappled if unwilling; a Stain from the trip also hits your passenger. 1 Rouse Check.",
+            "el": "Μπαίνεις σε σκιά αρκετά μεγάλη να σε καλύψει και βγαίνεις από άλλη σκιά που βλέπεις έναν γύρο μετά. Μπορείς να πάρεις ένα άτομο, με grapple αν δεν θέλει· ένα Stain από το πέρασμα πιάνει και αυτό. 1 Rouse Check."
+          },
           "level": 5,
           "book": "v5-players-guide",
           "page": 90,
@@ -1791,6 +2243,10 @@
         {
           "id": "power:oblivion:skuld-fulfilled",
           "name": "Skuld Fulfilled",
+          "desc": {
+            "en": "Revive an old ailment in a mortal or ghoul you picture: win Stamina + Oblivion vs Stamina x2 (or + Fortitude) and a healed illness or injury returns at full force; a ghoul also loses its immunity to aging. 2 Rouse Checks.",
+            "el": "Ξαναφέρνεις παλιό πάθημα σε θνητό ή ghoul: νίκη σε Stamina + Oblivion εναντίον Stamina x2 (ή + Fortitude) και μια γιατρεμένη αρρώστια ή τραύμα γυρίζει βαριά· ο ghoul χάνει και την προστασία από τα γηρατειά. 2 Rouse Checks."
+          },
           "level": 5,
           "book": "v5-players-guide",
           "page": 91,
@@ -1806,6 +2262,10 @@
         {
           "id": "power:oblivion:tenebrous-avatar",
           "name": "Tenebrous Avatar",
+          "desc": {
+            "en": "After one turn you become a flat shadow that slides over surfaces and through tiny gaps, immune to everything but fire and sunlight. You can envelop a victim (−3 dice, mortals suffocate) and feed without biting. 2 Rouse Checks, one scene.",
+            "el": "Μετά από έναν γύρο γίνεσαι επίπεδη σκιά που γλιστρά σε επιφάνειες και από μικρά ανοίγματα, άτρωτη σε όλα εκτός από φωτιά και ήλιο. Τυλίγεις θύματα (−3 ζάρια, οι θνητοί πνίγονται) και τρέφεσαι χωρίς δάγκωμα. 2 Rouse Checks, μία σκηνή."
+          },
           "level": 5,
           "book": "v5-players-guide",
           "page": 91,
@@ -1831,6 +2291,10 @@
     {
       "id": "discipline:potence",
       "name": "Potence",
+      "desc": {
+        "en": "Blood-fuelled strength far beyond mortal limits, for crushing blows, impossible leaps and feats of raw force.",
+        "el": "Δύναμη από το αίμα πολύ πέρα από τα όρια των θνητών: συντριπτικά χτυπήματα, απίθανα άλματα και επιδείξεις ωμής ισχύος."
+      },
       "book": "v5-corebook",
       "page": 263,
       "source": "pdf",
@@ -1838,6 +2302,10 @@
         {
           "id": "power:potence:lethal-body",
           "name": "Lethal Body",
+          "desc": {
+            "en": "Unarmed attacks can deal Aggravated damage to mortals and ignore one level of armor per Potence dot. Free, always on.",
+            "el": "Οι άοπλες επιθέσεις μπορούν να κάνουν Aggravated ζημιά σε θνητούς και αγνοούν ένα επίπεδο πανοπλίας ανά τελεία Potence. Δωρεάν, πάντα ενεργό."
+          },
           "level": 1,
           "book": "v5-corebook",
           "page": 264,
@@ -1853,6 +2321,10 @@
         {
           "id": "power:potence:soaring-leap",
           "name": "Soaring Leap",
+          "desc": {
+            "en": "Jump without a run-up: three metres per Potence dot vertically, five horizontally. Free.",
+            "el": "Άλμα χωρίς φόρα: τρία μέτρα ανά τελεία Potence κάθετα, πέντε οριζόντια. Δωρεάν."
+          },
           "level": 1,
           "book": "v5-corebook",
           "page": 264,
@@ -1868,6 +2340,10 @@
         {
           "id": "power:potence:prowess",
           "name": "Prowess",
+          "desc": {
+            "en": "For a scene, add Potence to unarmed damage and to feats of Strength, and half of it (round up) to Melee damage. One Rouse Check.",
+            "el": "Για μία σκηνή, πρόσθεσε το Potence στην άοπλη ζημιά και στα κατορθώματα Strength, και το μισό (στρογγυλοποίηση πάνω) στη ζημιά Melee. 1 Rouse Check."
+          },
           "level": 2,
           "book": "v5-corebook",
           "page": 264,
@@ -1883,6 +2359,10 @@
         {
           "id": "power:potence:relentless-grasp",
           "name": "Relentless Grasp",
+          "desc": {
+            "en": "For a scene, add Potence as automatic successes to anything that involves holding on, including keeping a grapple (not the initial grapple roll). One Rouse Check.",
+            "el": "Για μία σκηνή, πρόσθεσε το Potence ως αυτόματες επιτυχίες σε ό,τι αφορά κράτημα, και στη διατήρηση λαβής (όχι στην αρχική ρίψη λαβής). 1 Rouse Check."
+          },
           "level": 2,
           "book": "v5-players-guide",
           "page": 79,
@@ -1898,6 +2378,10 @@
         {
           "id": "power:potence:brutal-feed",
           "name": "Brutal Feed",
+          "desc": {
+            "en": "Drain a human in about one turn: bite damage, then automatic feeding actions up to your Potence, each Hunger slaked dealing one Aggravated to the victim. Half as many actions against vampires, as Superficial. Free.",
+            "el": "Στραγγίζεις άνθρωπο σε περίπου έναν γύρο: ζημιά δαγκώματος και μετά αυτόματες ενέργειες τροφής έως το Potence σου, με ένα Aggravated στο θύμα ανά Hunger που σβήνεις. Σε βαμπίρ οι μισές ενέργειες, ως Superficial. Δωρεάν."
+          },
           "level": 3,
           "book": "v5-corebook",
           "page": 264,
@@ -1913,6 +2397,10 @@
         {
           "id": "power:potence:spark-of-rage",
           "name": "Spark of Rage",
+          "desc": {
+            "en": "For a scene, add Potence to attempts to incite a person or crowd to violence; or win Manipulation + Potence vs Composure + Intelligence to force another vampire into a fury frenzy test at Difficulty 3. One Rouse Check.",
+            "el": "Για μία σκηνή πρόσθεσε το Potence σε προσπάθειες να ξεσηκώσεις άτομο ή πλήθος σε βία· ή νίκησε σε Manipulation + Potence εναντίον Composure + Intelligence για να αναγκάσεις βαμπίρ σε τεστ fury frenzy, Difficulty 3. 1 Rouse Check."
+          },
           "level": 3,
           "book": "v5-corebook",
           "page": 265,
@@ -1931,6 +2419,10 @@
         {
           "id": "power:potence:uncanny-grip",
           "name": "Uncanny Grip",
+          "desc": {
+            "en": "Automatically succeed at climbing any non-metallic surface and hang from walls or ceilings for a scene; the grip leaves obvious marks. One Rouse Check.",
+            "el": "Αυτόματη επιτυχία στο σκαρφάλωμα σε κάθε μη μεταλλική επιφάνεια και κρέμασμα από τοίχους ή ταβάνια για μία σκηνή· η λαβή αφήνει εμφανή σημάδια. 1 Rouse Check."
+          },
           "level": 3,
           "book": "v5-corebook",
           "page": 265,
@@ -1946,6 +2438,10 @@
         {
           "id": "power:potence:wrecker",
           "name": "Wrecker",
+          "desc": {
+            "en": "When using Prowess to damage or destroy an inanimate object, count Potence twice. Free; lasts as long as Prowess.",
+            "el": "Όταν χρησιμοποιείς Prowess για να σπάσεις ή να καταστρέψεις άψυχο αντικείμενο, μετράς το Potence δύο φορές. Δωρεάν· διαρκεί όσο το Prowess."
+          },
           "level": 3,
           "book": "v5-players-guide",
           "page": 79,
@@ -1963,6 +2459,10 @@
         {
           "id": "power:potence:crash-down",
           "name": "Crash Down",
+          "desc": {
+            "en": "Land from Soaring Leap as an attack on everyone within three metres: Strength + Potence vs Dexterity + Athletics, Superficial damage equal to the margin; three or more levels knocks them down. One Rouse Check.",
+            "el": "Προσγειώνεσαι από Soaring Leap ως επίθεση σε όλους εντός τριών μέτρων: Strength + Potence εναντίον Dexterity + Athletics, Superficial ζημιά ίση με το margin· τρία ή περισσότερα επίπεδα τους ρίχνουν κάτω. 1 Rouse Check."
+          },
           "level": 4,
           "book": "v5-players-guide",
           "page": 79,
@@ -1980,6 +2480,10 @@
         {
           "id": "power:potence:draught-of-might",
           "name": "Draught of Might",
+          "desc": {
+            "en": "Anyone who drinks a Rouse Check's worth of the user's Blood gains temporary Potence equal to half the donor's dots (round down), with its powers. One Rouse Check; lasts a night.",
+            "el": "Όποιος πιει αίμα του χρήστη αξίας ενός Rouse Check αποκτά προσωρινό Potence ίσο με το μισό των τελειών του δότη (στρογγυλοποίηση κάτω), μαζί με τις δυνάμεις του. 1 Rouse Check· κρατά μία νύχτα."
+          },
           "level": 4,
           "book": "v5-corebook",
           "page": 265,
@@ -1995,6 +2499,10 @@
         {
           "id": "power:potence:earthshock",
           "name": "Earthshock",
+          "desc": {
+            "en": "Strike the ground: everyone within five metres rolls Dexterity + Athletics (Difficulty 3) or is knocked off balance or prone, losing their action. Heavy collateral damage; once per scene. Two Rouse Checks.",
+            "el": "Χτυπάς το έδαφος: όλοι εντός πέντε μέτρων ρίχνουν Dexterity + Athletics (Difficulty 3) αλλιώς χάνουν την ισορροπία ή πέφτουν και χάνουν την ενέργειά τους. Μεγάλες παράπλευρες ζημιές· μία φορά ανά σκηνή. 2 Rouse Checks."
+          },
           "level": 5,
           "book": "v5-corebook",
           "page": 265,
@@ -2010,6 +2518,10 @@
         {
           "id": "power:potence:fist-of-caine",
           "name": "Fist of Caine",
+          "desc": {
+            "en": "For a scene, Brawl attacks deal Aggravated damage to mortals and supernatural beings alike. One Rouse Check.",
+            "el": "Για μία σκηνή, οι επιθέσεις Brawl κάνουν Aggravated ζημιά σε θνητούς και υπερφυσικά όντα εξίσου. 1 Rouse Check."
+          },
           "level": 5,
           "book": "v5-corebook",
           "page": 266,
@@ -2025,6 +2537,10 @@
         {
           "id": "power:potence:subtle-hammer",
           "name": "Subtle Hammer",
+          "desc": {
+            "en": "Unarmed attacks and feats of strength become two-dice minor actions, one per turn and no other attack that turn; feats with restricted movement, such as breaking bonds, get four or more bonus dice. Free.",
+            "el": "Οι άοπλες επιθέσεις και τα κατορθώματα δύναμης γίνονται minor actions δύο ζαριών, μία ανά γύρο και χωρίς άλλη επίθεση· κατορθώματα με περιορισμένη κίνηση, όπως σπάσιμο δεσμών, παίρνουν τέσσερα ή περισσότερα έξτρα ζάρια. Δωρεάν."
+          },
           "level": 5,
           "book": "v5-players-guide",
           "page": 79,
@@ -2042,6 +2558,10 @@
     {
       "id": "discipline:presence",
       "name": "Presence",
+      "desc": {
+        "en": "Control over the emotions of others: attract, terrify or command anyone who can see or hear the vampire. It works on feelings, not thoughts, so victims stay aware.",
+        "el": "Έλεγχος των συναισθημάτων των άλλων: το βαμπίρ γοητεύει, τρομάζει ή επιβάλλεται σε όποιον το βλέπει ή το ακούει. Επηρεάζει αισθήματα, όχι σκέψεις, οπότε τα θύματα μένουν συνειδητά."
+      },
       "book": "v5-corebook",
       "page": 266,
       "source": "pdf",
@@ -2049,6 +2569,10 @@
         {
           "id": "power:presence:awe",
           "name": "Awe",
+          "desc": {
+            "en": "Add Presence to Persuasion, Performance and other Charisma-based rolls for a scene. Aware targets may resist with Composure + Intelligence vs Manipulation + Presence. Free.",
+            "el": "Πρόσθεσε το Presence σε ρίψεις Persuasion, Performance και άλλες με Charisma για μία σκηνή. Όσοι το αντιληφθούν αντιστέκονται με Composure + Intelligence εναντίον Manipulation + Presence. Δωρεάν."
+          },
           "level": 1,
           "book": "v5-corebook",
           "page": 267,
@@ -2064,6 +2588,10 @@
         {
           "id": "power:presence:daunt",
           "name": "Daunt",
+          "desc": {
+            "en": "Add Presence to Intimidation rolls for a scene; attacking you requires a Resolve + Composure roll at Difficulty 2. Cannot be combined with Awe. Free.",
+            "el": "Πρόσθεσε το Presence σε ρίψεις Intimidation για μία σκηνή· για να σου επιτεθεί κάποιος χρειάζεται ρίψη Resolve + Composure, Difficulty 2. Δεν συνδυάζεται με Awe. Δωρεάν."
+          },
           "level": 1,
           "book": "v5-corebook",
           "page": 267,
@@ -2079,6 +2607,10 @@
         {
           "id": "power:presence:eyes-of-the-serpent",
           "name": "Eyes of the Serpent",
+          "desc": {
+            "en": "Lock eyes with a mortal to hold them frozen as long as eye contact lasts; they can still speak. A vampire is held only if you win Charisma + Presence vs Wits + Composure, and can break free with Willpower. Free.",
+            "el": "Κλειδώνεις το βλέμμα θνητού και τον κρατάς παγωμένο όσο κρατά η βλεμματική επαφή· μπορεί να μιλά. Βαμπίρ παγώνει μόνο με νίκη σε Charisma + Presence εναντίον Wits + Composure και ξεφεύγει με Willpower. Δωρεάν."
+          },
           "level": 1,
           "book": "v5-players-guide",
           "page": 80,
@@ -2097,6 +2629,10 @@
         {
           "id": "power:presence:lingering-kiss",
           "name": "Lingering Kiss",
+          "desc": {
+            "en": "Your feeding becomes addictive: the victim gets a bonus of half your Presence (round up) to one pool category for Presence nights, then suffers it as a penalty until they get a new fix. Weekly Willpower test to shake it. Free.",
+            "el": "Το δάγκωμά σου εθίζει: το θύμα παίρνει μπόνους ίσο με το μισό Presence σου σε μία κατηγορία pool για τόσες νύχτες όσο το Presence, μετά την ίδια ποινή μέχρι να ξαναβρεί δόση. Εβδομαδιαίο τεστ Willpower για απαλλαγή. Δωρεάν."
+          },
           "level": 2,
           "book": "v5-corebook",
           "page": 267,
@@ -2112,6 +2648,10 @@
         {
           "id": "power:presence:melpominee",
           "name": "Melpominee",
+          "desc": {
+            "en": "Your voice alone carries Awe, Daunt, Dread Gaze, Entrancement and Majesty to anyone within earshot; it does not work through recordings or transmissions. Free.",
+            "el": "Χρησιμοποιείς Awe, Daunt, Dread Gaze, Entrancement και Majesty μόνο με τη φωνή σου, σε όποιον σε ακούει· όχι μέσω ηχογράφησης ή μετάδοσης. Δωρεάν."
+          },
           "level": 2,
           "book": "v5-players-guide",
           "page": 80,
@@ -2127,6 +2667,10 @@
         {
           "id": "power:presence:dread-gaze",
           "name": "Dread Gaze",
+          "desc": {
+            "en": "Bare your fangs at one target and roll Charisma + Presence vs Composure + Resolve: mortals back off, flee or freeze; vampires lose a turn unless they spend Willpower, and on a critical face a terror frenzy test. One Rouse Check, one turn.",
+            "el": "Δείχνεις τους κυνόδοντες σε έναν στόχο και ρίχνεις Charisma + Presence εναντίον Composure + Resolve: οι θνητοί υποχωρούν, φεύγουν ή παγώνουν· τα βαμπίρ χάνουν γύρο αν δεν ξοδέψουν Willpower, με critical τεστ terror frenzy. 1 Rouse Check."
+          },
           "level": 3,
           "book": "v5-corebook",
           "page": 267,
@@ -2142,6 +2686,10 @@
         {
           "id": "power:presence:entrancement",
           "name": "Entrancement",
+          "desc": {
+            "en": "Win Charisma + Presence vs Composure + Wits to infatuate one person for an hour plus one per point of margin; you add Presence to Social pools against them. Harmful requests break it. One Rouse Check.",
+            "el": "Νίκη σε Charisma + Presence εναντίον Composure + Wits γοητεύει ένα άτομο για μία ώρα συν μία ανά πόντο margin· προσθέτεις το Presence στα Social pool εναντίον του. Επιβλαβή αιτήματα το σπάνε. 1 Rouse Check."
+          },
           "level": 3,
           "book": "v5-corebook",
           "page": 268,
@@ -2157,6 +2705,10 @@
         {
           "id": "power:presence:thrown-voice",
           "name": "Thrown Voice",
+          "desc": {
+            "en": "Make your voice sound from any point within sight, as whisper or shout, for a scene; it can be left there to keep working with other voice powers. One Rouse Check.",
+            "el": "Η φωνή σου ακούγεται από όποιο σημείο βλέπεις, ψίθυρος ή κραυγή, για μία σκηνή· μπορεί να μείνει εκεί και να δουλεύει με άλλες φωνητικές δυνάμεις. 1 Rouse Check."
+          },
           "level": 3,
           "book": "v5-players-guide",
           "page": 80,
@@ -2175,6 +2727,10 @@
         {
           "id": "power:presence:irresistible-voice",
           "name": "Irresistible Voice",
+          "desc": {
+            "en": "Your voice alone is enough to use Dominate; no eye contact needed. Does not work through phones, screens or speakers. No extra cost, always on.",
+            "el": "Η φωνή σου αρκεί για να χρησιμοποιήσεις Dominate, χωρίς βλεμματική επαφή. Δεν δουλεύει μέσω τηλεφώνου, οθόνης ή ηχείου. Χωρίς έξτρα κόστος, πάντα ενεργό."
+          },
           "level": 4,
           "book": "v5-corebook",
           "page": 268,
@@ -2193,6 +2749,10 @@
         {
           "id": "power:presence:suffuse-the-edifice",
           "name": "Suffuse the Edifice",
+          "desc": {
+            "en": "Project Awe, Daunt or Majesty through a building you are in: anyone inside or looking at it reacts to the place as if facing you. No stated cost; lasts as the power used.",
+            "el": "Προβάλλεις Awe, Daunt ή Majesty μέσα από το κτίριο όπου βρίσκεσαι: όποιος είναι μέσα ή το κοιτά αντιδρά στον χώρο σαν να είχε μπροστά του εσένα. Χωρίς δηλωμένο κόστος· διαρκεί όσο η δύναμη."
+          },
           "level": 4,
           "book": "v5-players-guide",
           "page": 80,
@@ -2208,6 +2768,10 @@
         {
           "id": "power:presence:summon",
           "name": "Summon",
+          "desc": {
+            "en": "Call someone you have used Awe, Entrancement or Majesty on, or who tasted your Blood: five minutes of focus, then Manipulation + Presence vs Composure + Intelligence. They feel the pull for a night; a critical brings them. 1 Rouse Check.",
+            "el": "Καλείς κάποιον που έχεις επηρεάσει με Awe, Entrancement ή Majesty ή που γεύτηκε το αίμα σου: πέντε λεπτά συγκέντρωση και Manipulation + Presence εναντίον Composure + Intelligence. Νιώθει την έλξη για μία νύχτα· με critical έρχεται."
+          },
           "level": 4,
           "book": "v5-corebook",
           "page": 268,
@@ -2223,6 +2787,10 @@
         {
           "id": "power:presence:majesty",
           "name": "Majesty",
+          "desc": {
+            "en": "Everyone around you can only stare or submit for a scene; acting against you, beyond self-preservation, needs a win on Composure + Resolve vs Charisma + Presence, buying one turn plus one per margin. Two Rouse Checks.",
+            "el": "Όλοι γύρω σου μόνο κοιτούν ή υποτάσσονται για μία σκηνή· για να δράσει κανείς εναντίον σου, πέρα από αυτοσυντήρηση, χρειάζεται νίκη σε Composure + Resolve εναντίον Charisma + Presence, για έναν γύρο συν έναν ανά margin. 2 Rouse Checks."
+          },
           "level": 5,
           "book": "v5-corebook",
           "page": 268,
@@ -2238,6 +2806,10 @@
         {
           "id": "power:presence:star-magnetism",
           "name": "Star Magnetism",
+          "desc": {
+            "en": "Awe, Daunt and Entrancement work over live video and phone calls (not recordings); Entrancement needs the victim's name spoken. One extra Rouse Check.",
+            "el": "Awe, Daunt και Entrancement δουλεύουν σε ζωντανό βίντεο και τηλέφωνο (όχι σε ηχογραφήσεις)· το Entrancement θέλει να ειπωθεί το όνομα του θύματος. 1 επιπλέον Rouse Check."
+          },
           "level": 5,
           "book": "v5-corebook",
           "page": 269,
@@ -2255,6 +2827,10 @@
     {
       "id": "discipline:protean",
       "name": "Protean",
+      "desc": {
+        "en": "Shapeshifting: claws, animal forms, mist, and sinking into the earth. Small worn items change with the body; larger gear does not.",
+        "el": "Μεταμόρφωση: νύχια, ζωικές μορφές, ομίχλη και βύθιση στη γη. Τα μικρά φορετά αντικείμενα αλλάζουν μαζί με το σώμα, ο μεγαλύτερος εξοπλισμός όχι."
+      },
       "book": "v5-corebook",
       "page": 269,
       "source": "pdf",
@@ -2262,6 +2838,10 @@
         {
           "id": "power:protean:eyes-of-the-beast",
           "name": "Eyes of the Beast",
+          "desc": {
+            "en": "Red-gleaming eyes let you see in total darkness, even supernatural, and give two bonus dice to Intimidation against mortals. Free, no roll, for as long as you like.",
+            "el": "Κόκκινα μάτια σε αφήνουν να βλέπεις σε απόλυτο σκοτάδι, ακόμη και υπερφυσικό, και δίνουν δύο έξτρα ζάρια σε Intimidation κατά θνητών. Δωρεάν, χωρίς ρίψη, όσο θέλεις."
+          },
           "level": 1,
           "book": "v5-corebook",
           "page": 269,
@@ -2277,6 +2857,10 @@
         {
           "id": "power:protean:weight-of-the-feather",
           "name": "Weight of the Feather",
+          "desc": {
+            "en": "Become nearly weightless: immune to damage from falls, collisions and being thrown, and you avoid pressure sensors. Free; as a sudden reaction it needs Wits + Survival at Difficulty 3.",
+            "el": "Γίνεσαι σχεδόν αβαρής: άτρωτος σε ζημιά από πτώσεις, συγκρούσεις και εκτοξεύσεις, και δεν ενεργοποιείς αισθητήρες πίεσης. Δωρεάν· ως ξαφνική αντίδραση θέλει Wits + Survival, Difficulty 3."
+          },
           "level": 1,
           "book": "v5-corebook",
           "page": 269,
@@ -2292,6 +2876,10 @@
         {
           "id": "power:protean:feral-weapons",
           "name": "Feral Weapons",
+          "desc": {
+            "en": "Grow claws or fangs that count as a light piercing Brawl weapon with +2 damage for a scene; the Superficial damage they deal is not halved. One Rouse Check.",
+            "el": "Βγάζεις νύχια ή κυνόδοντες που μετρούν ως ελαφρύ διατρητικό όπλο Brawl με +2 ζημιά για μία σκηνή· η Superficial ζημιά τους δεν διαιρείται στο μισό. 1 Rouse Check."
+          },
           "level": 2,
           "book": "v5-corebook",
           "page": 270,
@@ -2307,6 +2895,10 @@
         {
           "id": "power:protean:vicissitude",
           "name": "Vicissitude",
+          "desc": {
+            "en": "Reshape your own body: each success on Resolve + Protean allows one change (redistribute Attribute dots, bone weapons, armor, new looks), up to your Protean rating; each change costs a Physical Attribute dot. One Rouse Check, permanent.",
+            "el": "Αναπλάθεις το σώμα σου: κάθε επιτυχία σε Resolve + Protean δίνει μία αλλαγή (ανακατανομή Attribute, οστέινα όπλα, πανοπλία, νέα εμφάνιση), έως το Protean σου· κάθε αλλαγή κοστίζει μία τελεία Physical Attribute. 1 Rouse Check, μόνιμο."
+          },
           "level": 2,
           "book": "v5-players-guide",
           "page": 81,
@@ -2330,6 +2922,10 @@
         {
           "id": "power:protean:earth-meld",
           "name": "Earth Meld",
+          "desc": {
+            "en": "Sink into natural ground (not concrete or asphalt) in one turn, leaving carried items on top, and rest there aware of your surroundings until the next night or until disturbed. One Rouse Check.",
+            "el": "Βυθίζεσαι σε φυσικό έδαφος (όχι μπετόν ή άσφαλτο) σε έναν γύρο, αφήνοντας τα αντικείμενά σου από πάνω, και μένεις εκεί με επίγνωση του περίγυρου ως την επόμενη νύχτα ή μέχρι να ενοχληθείς. 1 Rouse Check."
+          },
           "level": 3,
           "book": "v5-corebook",
           "page": 270,
@@ -2345,6 +2941,10 @@
         {
           "id": "power:protean:fleshcrafting",
           "name": "Fleshcrafting",
+          "desc": {
+            "en": "Apply Vicissitude changes to someone else, over a full scene; a willing subject follows the Vicissitude rules, an unwilling one resists with Stamina + Resolve and the margin counts as successes. One Rouse Check, permanent.",
+            "el": "Εφαρμόζεις αλλαγές Vicissitude σε άλλον, σε μία ολόκληρη σκηνή· πρόθυμος στόχος ακολουθεί τους κανόνες Vicissitude, απρόθυμος αντιστέκεται με Stamina + Resolve και το margin μετρά ως επιτυχίες. 1 Rouse Check, μόνιμο."
+          },
           "level": 3,
           "book": "v5-players-guide",
           "page": 82,
@@ -2370,6 +2970,10 @@
         {
           "id": "power:protean:shapechange",
           "name": "Shapechange",
+          "desc": {
+            "en": "Take the form of one animal of about your own mass, usually a wolf, gaining its Physical Attributes, senses and limits. One turn to change, no roll. One Rouse Check, one scene.",
+            "el": "Παίρνεις τη μορφή ενός ζώου περίπου της μάζας σου, συνήθως λύκου, με τα Physical Attributes, τις αισθήσεις και τους περιορισμούς του. Ένας γύρος αλλαγή, χωρίς ρίψη. 1 Rouse Check, μία σκηνή."
+          },
           "level": 3,
           "book": "v5-corebook",
           "page": 270,
@@ -2385,6 +2989,10 @@
         {
           "id": "power:protean:horrid-form",
           "name": "Horrid Form",
+          "desc": {
+            "en": "Become a monstrous war form for a scene: free Vicissitude changes equal to your Protean (redistribution, weapons, armor) with no Attribute loss, but every critical is messy, frenzy tests are +2 Difficulty and you cannot talk. 1 Rouse Check.",
+            "el": "Γίνεσαι τερατώδης μορφή για μία σκηνή: δωρεάν αλλαγές Vicissitude ίσες με το Protean σου (ανακατανομή, όπλα, πανοπλία) χωρίς απώλεια Attribute, αλλά κάθε critical είναι messy, τα τεστ frenzy +2 Difficulty, και δεν μιλάς. 1 Rouse Check."
+          },
           "level": 4,
           "book": "v5-players-guide",
           "page": 83,
@@ -2410,6 +3018,10 @@
         {
           "id": "power:protean:metamorphosis",
           "name": "Metamorphosis",
+          "desc": {
+            "en": "A second animal form that can differ in size, commonly a bat, rat, snake or large insect; works like Shapechange. One Rouse Check, one scene.",
+            "el": "Δεύτερη ζωική μορφή που μπορεί να έχει άλλο μέγεθος, συνήθως νυχτερίδα, αρουραίος, φίδι ή μεγάλο έντομο· λειτουργεί όπως το Shapechange. 1 Rouse Check, μία σκηνή."
+          },
           "level": 4,
           "book": "v5-corebook",
           "page": 271,
@@ -2427,6 +3039,10 @@
         {
           "id": "power:protean:mist-form",
           "name": "Mist Form",
+          "desc": {
+            "en": "Turn into a cloud of mist over three turns (faster with extra Rouse Checks): move at walking pace through cracks and pipes, harmed only by sunlight, fire and immaterial attacks; no speech or eye contact. 1–3 Rouse Checks, one scene.",
+            "el": "Γίνεσαι σύννεφο ομίχλης σε τρεις γύρους (γρηγορότερα με έξτρα Rouse Checks): κινείσαι με βήμα μέσα από ρωγμές και σωλήνες, σε βλάπτουν μόνο ήλιος, φωτιά και άυλες επιθέσεις· χωρίς ομιλία ή βλέμμα. 1–3 Rouse Checks, μία σκηνή."
+          },
           "level": 5,
           "book": "v5-corebook",
           "page": 271,
@@ -2442,6 +3058,10 @@
         {
           "id": "power:protean:one-with-the-land",
           "name": "One with the Land",
+          "desc": {
+            "en": "Like Earth Meld but into any surface, even walls or floorboards; while merged you can sense events within about a kilometre through nearby animals. Rising early needs Resolve + Protean at Difficulty 4. Two Rouse Checks.",
+            "el": "Όπως το Earth Meld αλλά σε οποιαδήποτε επιφάνεια, ακόμη και τοίχους ή σανίδες· όσο είσαι μέσα νιώθεις ό,τι γίνεται σε περίπου ένα χιλιόμετρο μέσω των γύρω ζώων. Για πρόωρη έξοδο Resolve + Protean, Difficulty 4. 2 Rouse Checks."
+          },
           "level": 5,
           "book": "v5-players-guide",
           "page": 83,
@@ -2467,6 +3087,10 @@
         {
           "id": "power:protean:the-unfettered-heart",
           "name": "The Unfettered Heart",
+          "desc": {
+            "en": "Your heart drifts inside the chest: non-combat staking is +3 Difficulty, in melee only a critical win reaches it, and even staked you may try Strength + Resolve (Difficulty 5) hourly after a Rouse Check to push the stake out. Free, passive.",
+            "el": "Η καρδιά σου μετακινείται στο στήθος: πασσάλωμα εκτός μάχης +3 Difficulty, στη μάχη τη βρίσκει μόνο critical win, και πασσαλωμένος δοκιμάζεις Strength + Resolve (Difficulty 5) κάθε ώρα μετά από Rouse Check για να βγάλεις τον πάσσαλο."
+          },
           "level": 5,
           "book": "v5-corebook",
           "page": 271,
@@ -2484,6 +3108,10 @@
     {
       "id": "discipline:thin-blood-alchemy",
       "name": "Thin-Blood Alchemy",
+      "desc": {
+        "en": "The thin-blood craft of distilling their own vitae with Resonant human blood into formulae that copy other Disciplines or do unique things. Distilling costs 1 Rouse Check; the dice pool depends on the chosen method.",
+        "el": "Η τέχνη των thin-bloods: αποστάζουν το αίμα τους με ανθρώπινο αίμα της σωστής Resonance σε formulae που μιμούνται άλλα Disciplines ή κάνουν κάτι δικό τους. Η απόσταξη κοστίζει 1 Rouse Check· το pool εξαρτάται από τη μέθοδο."
+      },
       "book": "v5-corebook",
       "page": 282,
       "source": "pdf",
