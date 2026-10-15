@@ -1,0 +1,38 @@
+{
+  "ceremony:summon-spirit": {
+    "en": "Pour your vitae over one of a wraith's fetters and call its name with its likeness; it travels to you and, if the veil allows, appears as a shadow on the wall until the end of the scene. It is not obliged to obey.",
+    "el": "Χύνεις αίμα πάνω σε ένα fetter ενός wraith και το καλείς με το όνομα και την εικόνα του· ταξιδεύει ως εσένα και, αν το πέπλο το επιτρέπει, εμφανίζεται ως σκιά στον τοίχο ως το τέλος της σκηνής. Δεν είναι υποχρεωμένο να υπακούσει."
+  },
+  "ceremony:the-gift-of-false-life": {
+    "en": "Anoint corpses with blood, phlegm and bile to raise mindless workers, up to your Oblivion rating (double on a critical), that carry out one simple order and stop when it is done or they are destroyed.",
+    "el": "Αλείφεις πτώματα με αίμα, φλέγμα και χολή και σηκώνεις άβουλους εργάτες, ως το Oblivion σου (διπλάσιους σε critical), που εκτελούν μία απλή εντολή και σταματούν όταν τελειώσει ή όταν καταστραφούν."
+  },
+  "ceremony:awaken-the-homuncular-servant": {
+    "en": "Sever a body part or kill a small animal with a fluid-coated blade and rub vitae into it: a loyal spy that sends you single images, active one night per success (forever on a critical) within 100 meters of you.",
+    "el": "Κόβεις ένα μέλος ή σκοτώνεις μικρό ζώο με λάμα αλειμμένη με σωματικά υγρά και τρίβεις αίμα πάνω του: πιστός κατάσκοπος που σου στέλνει μεμονωμένες εικόνες, ενεργός μία νύχτα ανά επιτυχία (για πάντα σε critical) ως 100 μέτρα από σένα."
+  },
+  "ceremony:compel-spirit": {
+    "en": "Threaten a nearby wraith's fetter and win the Ceremony roll vs its Resolve + Composure to command it: one moderate task per success, or a hard one per two. If the wraith wins you take the margin as Superficial damage.",
+    "el": "Απειλείς το fetter ενός κοντινού wraith και νικάς στη ρίψη της Ceremony εναντίον Resolve + Composure του για να το διατάζεις: μία μέτρια αποστολή ανά επιτυχία, ή δύσκολη ανά δύο. Αν νικήσει το wraith, παίρνεις το margin ως Superficial."
+  },
+  "ceremony:host-spirit": {
+    "en": "Offer a tribute, pull two of your teeth and bite a parasite to invite a wraith into your body for one scene per success: +2 dice on Physical rolls, +2 Health and its advice, but it may try to take the wheel.",
+    "el": "Προσφέρεις δώρο, βγάζεις δύο δόντια σου και δαγκώνεις ένα παράσιτο για να καλέσεις ένα wraith στο σώμα σου για μία σκηνή ανά επιτυχία: +2 ζάρια σε Physical, +2 Health και τις συμβουλές του, αλλά μπορεί να πάρει τον έλεγχο."
+  },
+  "ceremony:shambling-hordes": {
+    "en": "Kill a mortal over prepared corpses to raise aggressive dead, up to your Oblivion rating, that do not decay and attack anyone but you unless ordered otherwise. Test against hunger frenzy (Difficulty 2) first.",
+    "el": "Σκοτώνεις θνητό πάνω από προετοιμασμένα πτώματα και σηκώνεις επιθετικούς νεκρούς, ως το Oblivion σου, που δεν σαπίζουν και επιτίθενται σε όλους εκτός από σένα αν δεν διαταχθούν αλλιώς. Πρώτα ρίχνεις για hunger frenzy (Difficulty 2)."
+  },
+  "ceremony:bind-the-spirit": {
+    "en": "Sacrifice an innocent and ring a place or person with Blood and salt to chain a wraith you already compel there for good; its strongest mood gives everyone affected −2 dice to resist acting the same way.",
+    "el": "Θυσιάζεις έναν αθώο και περικλείεις τόπο ή άτομο με αίμα και αλάτι για να δέσεις εκεί μόνιμα ένα wraith που ήδη ελέγχεις· η έντονη διάθεσή του δίνει στους επηρεασμένους −2 ζάρια για να μην ενεργούν το ίδιο."
+  },
+  "ceremony:split-the-veil": {
+    "en": "Sacrifice a mortal against a silk sheet and cut it open: each success thins the local veil by one step. If it drops to absent, wraiths pour into the world for the rest of the night. Hunger frenzy test (Difficulty 2).",
+    "el": "Θυσιάζεις θνητό πάνω σε μεταξωτό σεντόνι και το σκίζεις: κάθε επιτυχία λεπταίνει το τοπικό πέπλο κατά ένα βήμα. Αν φτάσει στο απόν, wraiths ξεχύνονται στον κόσμο για την υπόλοιπη νύχτα. Ρίψη για hunger frenzy (Difficulty 2)."
+  },
+  "ceremony:lazarene-blessing": {
+    "en": "Sacrifice a mortal, swap in a mammal heart and cover the eyes with powdered silver so a present wraith can inhabit the fresh corpse indefinitely, with the body's Physical traits and the wraith's mind.",
+    "el": "Θυσιάζεις θνητό, βάζεις στη θέση της καρδιάς του καρδιά θηλαστικού και σκεπάζεις τα μάτια με ασημόσκονη ώστε ένα παρόν wraith να κατοικήσει επ' αόριστον το φρέσκο πτώμα, με τα Physical του σώματος και τον νου του wraith."
+  }
+}

@@ -1,0 +1,70 @@
+{
+  "formula:far-reach": {
+    "en": "Move, lift or push an object or person under 100 kg within 10 meters by thought; a resisting person is a contest of Resolve + Alchemy vs Strength + Athletics, thrown one meter per point of margin. 1 Rouse Check.",
+    "el": "Κινείς, σηκώνεις ή σπρώχνεις με τη σκέψη αντικείμενο ή άτομο κάτω από 100 κιλά σε 10 μέτρα· όποιος αντιστέκεται ρίχνει Resolve + Alchemy εναντίον Strength + Athletics και εκτοξεύεται ένα μέτρο ανά πόντο margin. 1 Rouse Check."
+  },
+  "formula:haze": {
+    "en": "A cloud of vapour follows you and hides your features: −2 dice to anyone trying to identify you or hit you with ranged attacks. Another Rouse Check extends it over up to five people. 1 Rouse Check, a scene.",
+    "el": "Ένα σύννεφο ατμού σε ακολουθεί και κρύβει τα χαρακτηριστικά σου: −2 ζάρια σε όποιον προσπαθεί να σε αναγνωρίσει ή να σε χτυπήσει από απόσταση. Με ακόμη ένα Rouse Check καλύπτει ως πέντε άτομα. 1 Rouse Check, μία σκηνή."
+  },
+  "formula:mercurian-tongue": {
+    "en": "Speak the native language of the mortal whose blood went into the formula until you next sleep; spending 1 Willpower and feeding from another mortal switches to their language. 1 Rouse Check.",
+    "el": "Μιλάς τη μητρική γλώσσα του θνητού που το αίμα του μπήκε στη formula ώσπου να κοιμηθείς· με 1 Willpower και τροφή από άλλον θνητό αλλάζεις στη δική του γλώσσα. 1 Rouse Check."
+  },
+  "formula:plug-in": {
+    "en": "Pass Resolve + Alchemy (Difficulty 2) to run electricity through your body and power small devices by touch: a light for a scene, a phone or laptop until half charge. 1 Rouse Check.",
+    "el": "Με Resolve + Alchemy (Difficulty 2) περνάς ρεύμα από το σώμα σου και τροφοδοτείς μικρές συσκευές με άγγιγμα: μια λάμπα για μία σκηνή, κινητό ή laptop ως τη μισή μπαταρία. 1 Rouse Check."
+  },
+  "formula:envelop": {
+    "en": "A mist clings to one target in sight: −3 dice to sight-based detection and ranged attacks. Win Wits + Alchemy vs Stamina + Survival to choke a mortal into inaction (unconscious on a critical). 1 Rouse Check, a scene.",
+    "el": "Ομίχλη τυλίγει έναν στόχο που βλέπεις: −3 ζάρια σε ρίψεις όρασης και επιθέσεις από απόσταση. Με νίκη σε Wits + Alchemy εναντίον Stamina + Survival ένας θνητός πνίγεται και δεν δρα (λιποθυμά σε critical). 1 Rouse Check, μία σκηνή."
+  },
+  "formula:friends-list": {
+    "en": "Roll Intelligence + Alchemy to see a silver thread linking a mortal to any vampire they are tied to, and follow it; close ties show on one success, distant ones need up to five. 1 Rouse Check, a scene.",
+    "el": "Με Intelligence + Alchemy βλέπεις ένα ασημένιο νήμα που δένει έναν θνητό με όποιο βαμπίρ σχετίζεται, και μπορείς να το ακολουθήσεις· στενοί δεσμοί θέλουν μία επιτυχία, μακρινοί ως πέντε. 1 Rouse Check, μία σκηνή."
+  },
+  "formula:defractionate": {
+    "en": "An elixir that restores fractionated bagged blood: each success on the distillation makes enough for one blood bag, which any vampire can then drink to slake 1 Hunger, no Iron Gullet needed.",
+    "el": "Ελιξίριο που αναζωογονεί κλασματοποιημένο αίμα από σακούλα: κάθε επιτυχία στην απόσταξη φτάνει για μία σακούλα, που κάθε βαμπίρ πίνει και σβήνει 1 Hunger, χωρίς Iron Gullet."
+  },
+  "formula:mandagloire": {
+    "en": "Your blood gives off a stench that fills a room (a house on a critical): mortals who fail Stamina + Resolve vs your Stamina + Alchemy lie paralysed for the scene; supernaturals get −2 dice on Physical rolls. 1 Rouse Check.",
+    "el": "Το αίμα σου βγάζει δυσωδία που γεμίζει ένα δωμάτιο (σπίτι σε critical): θνητοί που χάνουν Stamina + Resolve εναντίον Stamina + Alchemy μένουν παράλυτοι για τη σκηνή· υπερφυσικοί παίρνουν −2 ζάρια σε Physical. 1 Rouse Check."
+  },
+  "formula:profane-hieros-gamos": {
+    "en": "The drinker falls into a fever sleep until the next night and wakes reshaped to their ideal human form after Stamina + Resolve at Difficulty 8 minus distillation successes (plus Bane Severity for vampires). Usable on others; permanent.",
+    "el": "Όποιος το πιει πέφτει σε πυρετώδη ύπνο ως την επόμενη νύχτα και ξυπνά πλασμένος στην ιδανική ανθρώπινη μορφή του, με Stamina + Resolve σε Difficulty 8 μείον τις επιτυχίες απόσταξης (συν Bane Severity για βαμπίρ). Για άλλους επίσης· μόνιμο."
+  },
+  "formula:rumor": {
+    "en": "Make a statement and win Manipulation + Alchemy vs Wits + Awareness: the target agrees with it and believes it was their own idea, until someone convincingly contradicts it. Your margin adds to later persuasion rolls. 1 Rouse Check.",
+    "el": "Κάνεις μια δήλωση και νικάς σε Manipulation + Alchemy εναντίον Wits + Awareness: ο στόχος συμφωνεί και πιστεύει πως ήταν δική του ιδέα, ώσπου κάποιος να τον μεταπείσει. Το margin σου προστίθεται σε επόμενες ρίψεις πειθούς. 1 Rouse Check."
+  },
+  "formula:tank": {
+    "en": "The first time you take damage in the scene, reduce it by five before halving; then the formula is spent. 1 Rouse Check.",
+    "el": "Την πρώτη φορά που παίρνεις ζημιά στη σκηνή, τη μειώνεις κατά πέντε πριν τον υποδιπλασιασμό· μετά η formula ξοδεύεται. 1 Rouse Check."
+  },
+  "formula:airborne-momentum": {
+    "en": "Fly or hover at running speed for a scene, or at walking speed carrying one human-sized load; grabbing an unwilling passenger or being pulled down is Strength + Alchemy vs Strength + Athletics. 1 Rouse Check.",
+    "el": "Πετάς ή αιωρείσαι με ταχύτητα τρεξίματος για μία σκηνή, ή περπατήματος αν κουβαλάς φορτίο ανθρώπινου μεγέθους· άρπαγμα απρόθυμου επιβάτη ή τράβηγμα προς τα κάτω είναι Strength + Alchemy εναντίον Strength + Athletics. 1 Rouse Check."
+  },
+  "formula:short-circuit": {
+    "en": "Touch a device, or metal connected to it, to silently burn out its battery or fuses: a building's power from an outlet, a car from its body. 1 Rouse Check.",
+    "el": "Αγγίζεις μια συσκευή, ή μέταλλο συνδεδεμένο μαζί της, και της καις αθόρυβα μπαταρία ή ασφάλειες: ένα κτίριο από μια πρίζα, ένα αυτοκίνητο από το αμάξωμα. 1 Rouse Check."
+  },
+  "formula:toxic-personality": {
+    "en": "Caustic bile seeps from your skin for a scene: your touch corrodes materials and brawl attacks do +2 damage. A second Rouse Check lets you spit it with Strength or Dexterity + Alchemy for margin +3 Superficial damage, Aggravated to mortals.",
+    "el": "Καυστική χολή βγαίνει από το δέρμα σου για μία σκηνή: το άγγιγμά σου διαβρώνει υλικά και οι επιθέσεις brawl κάνουν +2 ζημιά. Με δεύτερο Rouse Check τη φτύνεις με Strength ή Dexterity + Alchemy: margin +3 Superficial, Aggravated σε θνητούς."
+  },
+  "formula:awaken-the-sleeper": {
+    "en": "An elixir mixed into human blood that wakes a vampire from torpor: it works on a sleeper of Blood Potency up to your distillation successes minus two.",
+    "el": "Ελιξίριο που ανακατεύεται σε ανθρώπινο αίμα και ξυπνά βαμπίρ από torpor: πιάνει σε κοιμώμενο με Blood Potency ως τις επιτυχίες της απόσταξης μείον δύο."
+  },
+  "formula:flowering-amaranth": {
+    "en": "Shared diablerie: you and up to two thin-bloods bind a true Kindred and roll Resolve + Alchemy vs their Willpower + Blood Potency; a win gives each 1 dot of one of their clan Disciplines, costs 1 Humanity and marks you as diablerists.",
+    "el": "Κοινή diablerie: εσύ και ως δύο thin-bloods δένετε έναν αληθινό Kindred και ρίχνεις Resolve + Alchemy εναντίον Willpower + Blood Potency του· με νίκη καθένας παίρνει 1 τελεία σε Discipline του clan του και χάνει 1 Humanity ως diablerist."
+  },
+  "formula:moment-of-clarity": {
+    "en": "Quiet the Beast for a scene: +4 dice on Mental and Discipline Skill pools and on Mental resistance against Dominate, Animalism, Presence, Auspex and their amalgams; immune to messy criticals and frenzy. 1 Rouse Check.",
+    "el": "Σωπαίνεις το Κτήνος για μία σκηνή: +4 ζάρια σε Mental και Discipline pool και σε Mental αντίσταση εναντίον Dominate, Animalism, Presence, Auspex και των amalgam τους· ανοσία σε messy critical και frenzy. 1 Rouse Check."
+  }
+}
