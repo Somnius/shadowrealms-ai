@@ -77,7 +77,9 @@
         "clan:tzimisce"
       ],
       "source": "manual",
-      "why": "Blood Sigils pr 61, printed in a box the parser skips: a Level 1 Blood Sorcery power a Tzimisce takes with the first Blood Sorcery dot to become a koldun (taken again for each further element); cost one Rouse Check plus Aggravated damage. The Koldunic rituals (pr 62, 66, 71) need it."
+      "why": "Blood Sigils pr 61, printed in a box the parser skips: a Level 1 Blood Sorcery power a Tzimisce takes with the first Blood Sorcery dot to become a koldun (taken again for each further element); cost one Rouse Check plus Aggravated damage. The Koldunic rituals (pr 62, 66, 71) need it. The page also says it is taken with the first Blood Sorcery dot (at_first_dot) and taken again for each further element (repeatable).",
+      "repeatable": true,
+      "at_first_dot": true
     },
     {
       "id": "ritual:letter-ward",

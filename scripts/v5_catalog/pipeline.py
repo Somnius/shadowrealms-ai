@@ -238,8 +238,9 @@ def build_powers(extracted: list[dict], sections: list[dict], prec: dict, report
         }
         if r.get("manual_fields"):
             entry["manual_fields"] = sorted(r["manual_fields"])
-        if r.get("clans_only"):
-            entry["clans_only"] = r["clans_only"]
+        for k in ("clans_only", "repeatable", "at_first_dot"):  # Koldunic Sorcery (Blood Sigils pr 61)
+            if r.get(k):
+                entry[k] = r[k]
         if r["kind"] == "power":
             entry["amalgam"] = merge.amalgam_ref(r.get("amalgam"))
         if r["kind"] in ("power", "formula"):

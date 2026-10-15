@@ -904,6 +904,8 @@
           "clans_only": [
             "clan:tzimisce"
           ],
+          "repeatable": true,
+          "at_first_dot": true,
           "amalgam": null,
           "rouse_cost": 1,
           "rouse_cost_conditional": false,
