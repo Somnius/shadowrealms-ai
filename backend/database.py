@@ -689,6 +689,28 @@ def ensure_rules_edition_columns(cursor):
 
 
 @once_per_process
+def ensure_campaigns_creation_settings_column(cursor):
+    """Per-chronicle V5 character creation settings as JSON text (services.creation_settings)."""
+    db_type = os.getenv("DATABASE_TYPE", "sqlite").lower()
+    if db_type == "postgresql":
+        cursor.execute(
+            "ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS creation_settings TEXT NOT NULL DEFAULT '{}'"
+        )
+        return
+    cursor.execute(
+        "SELECT name FROM sqlite_master WHERE type='table' AND name='campaigns'"
+    )
+    if not cursor.fetchone():
+        return
+    cursor.execute("PRAGMA table_info(campaigns)")
+    cols = [row["name"] for row in cursor.fetchall()]
+    if "creation_settings" not in cols:
+        cursor.execute(
+            "ALTER TABLE campaigns ADD COLUMN creation_settings TEXT NOT NULL DEFAULT '{}'"
+        )
+
+
+@once_per_process
 def ensure_campaigns_staff_pause_columns(cursor):
     """Optional note when staff sets campaigns.is_active false (discover/join gate)."""
     db_type = os.getenv("DATABASE_TYPE", "sqlite").lower()
@@ -1138,6 +1160,7 @@ def migrate_db():
                 ensure_campaign_players_active_character_id_column(cursor)
                 ensure_campaigns_listing_columns(cursor)
                 ensure_rules_edition_columns(cursor)
+                ensure_campaigns_creation_settings_column(cursor)
                 ensure_character_downtime_requests_table(cursor)
                 ensure_characters_is_npc_column(cursor)
                 ensure_campaigns_staff_pause_columns(cursor)
@@ -1508,6 +1531,7 @@ def migrate_db():
         ensure_campaign_players_active_character_id_column(cursor)
         ensure_campaigns_listing_columns(cursor)
         ensure_rules_edition_columns(cursor)
+        ensure_campaigns_creation_settings_column(cursor)
         ensure_character_downtime_requests_table(cursor)
         ensure_messages_ai_message_kind_column(cursor)
         ensure_messages_speaker_mode_column(cursor)

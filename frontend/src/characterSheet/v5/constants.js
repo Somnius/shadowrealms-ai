@@ -138,6 +138,7 @@ export const V5_SECTION_IDS = {
   predator: 'v5-section-predator',
   advantages: 'v5-section-advantages',
   humanity: 'v5-section-humanity',
+  age: 'v5-section-age',
   experience: 'v5-section-experience',
   story: 'v5-section-story',
 };

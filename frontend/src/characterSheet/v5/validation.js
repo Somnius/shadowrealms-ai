@@ -579,9 +579,55 @@ export function predatorAdvantages(sheet) {
   };
 }
 
+/** The player's own Flaw dots (the predator type's flaws don't count toward the minimum). */
+export function ownFlawDots(sheet) {
+  return sumDots(named(sheet?.flaws));
+}
+
+// ---------- Chronicle creation settings (set by the Storyteller) ----------
+
+const allowedName = (list, value) =>
+  !list || !value || list.some((x) => x.toLowerCase() === String(value).toLowerCase());
+
+/** Is this clan / predator type / age allowed by the chronicle's settings (null settings: all)? */
+export function clanAllowed(settings, clan) {
+  return allowedName(settings?.allowed_clans, clan);
+}
+export function predatorAllowed(settings, name) {
+  return allowedName(settings?.allowed_predators, name);
+}
+export function ageAllowed(settings, age) {
+  return allowedName(settings?.allowed_ages, age);
+}
+
+/** What the sheet breaks in the chronicle's creation settings: { sectionId: message }. */
+export function settingsErrors(sheet, settings) {
+  const s = sheet || {};
+  const err = {};
+  if (!settings) return err;
+  if (s.clan && !clanAllowed(settings, s.clan)) {
+    err[V5_SECTION_IDS.clan] = `The Storyteller doesn't allow ${s.clan} in this chronicle.`;
+  }
+  if (s.predatorType && !predatorAllowed(settings, s.predatorType)) {
+    err[V5_SECTION_IDS.predator] = `The Storyteller doesn't allow the ${s.predatorType} predator type in this chronicle.`;
+  }
+  if (s.age && !ageAllowed(settings, s.age)) {
+    err[V5_SECTION_IDS.age] = `The Storyteller doesn't allow ${V5_AGE_BRACKETS[s.age]?.label || s.age} characters in this chronicle.`;
+  }
+  const cap = settings.flaws_max_dots;
+  const own = ownFlawDots(s);
+  if (cap != null && own > cap) {
+    err[V5_SECTION_IDS.advantages] = `This chronicle allows at most ${cap} dots of Flaws of your own (you have ${own}).`;
+  }
+  if (s.fledglingHumanity && settings.fledgling_humanity_8 === false) {
+    err[V5_SECTION_IDS.humanity] = "The Storyteller doesn't offer the Humanity 8 fledgling start in this chronicle.";
+  }
+  return err;
+}
+
 // ---------- Whole sheet ----------
 
-export function validateV5Sheet(sheet, allDisciplines) {
+export function validateV5Sheet(sheet, allDisciplines, settings) {
   const s = sheet || {};
   const err = {};
   const add = (id, msg) => {
@@ -591,14 +637,14 @@ export function validateV5Sheet(sheet, allDisciplines) {
 
   if (!clanInfo(s.clan)) add(V5_SECTION_IDS.clan, 'Choose a clan.');
   const age = V5_AGE_BRACKETS[s.age];
-  if (!age) add(V5_SECTION_IDS.clan, 'Choose an age.');
+  if (!age) add(V5_SECTION_IDS.age, 'Choose an age.');
   else if (!age.generations.includes(int(s.generation))) {
-    add(V5_SECTION_IDS.clan, `${age.label}s are generation ${age.generations[0]}–${age.generations[age.generations.length - 1]}.`);
+    add(V5_SECTION_IDS.age, `${age.label}s are generation ${age.generations[0]}–${age.generations[age.generations.length - 1]}.`);
   }
   const thinGen = int(s.generation) >= 14;
-  if (s.clan === THIN_BLOOD && !thinGen) add(V5_SECTION_IDS.clan, 'Thin-bloods are 14th–16th generation.');
+  if (s.clan === THIN_BLOOD && !thinGen) add(V5_SECTION_IDS.age, 'Thin-bloods are 14th–16th generation.');
   if (s.clan && s.clan !== THIN_BLOOD && thinGen) {
-    add(V5_SECTION_IDS.clan, '14th–16th generation vampires are thin-bloods.');
+    add(V5_SECTION_IDS.age, '14th–16th generation vampires are thin-bloods.');
   }
 
   add(V5_SECTION_IDS.attributes, validateV5Attributes(s.attributes));
@@ -629,13 +675,15 @@ export function validateV5Sheet(sheet, allDisciplines) {
     }
   }
 
-  // Advantages & flaws (predator ones are extra; predator flaws count toward the minimum)
+  // Advantages & flaws. The predator type's advantages and flaws are extra: the 7 dots and the
+  // 2 Flaw dots are the player's own (core p. 136: "in addition to the ones gained from your
+  // Predator type").
   const d = deriveV5(s);
   const advDots = sumDots(named(s.advantages));
   if (advDots > d.advantage_dots) {
     add(V5_SECTION_IDS.advantages, `Advantages: at most ${d.advantage_dots} dots (you have ${advDots}).`);
   }
-  const flawDots = sumDots(named(s.flaws)) + sumDots(predatorAdvantages(s).flaws);
+  const flawDots = ownFlawDots(s);
   if (flawDots < d.flaw_min_dots) {
     add(V5_SECTION_IDS.advantages, `Take at least ${d.flaw_min_dots} dots of Flaws (you have ${flawDots}).`);
   }
@@ -644,6 +692,7 @@ export function validateV5Sheet(sheet, allDisciplines) {
   }
   add(V5_SECTION_IDS.advantages, validateThinBloodMeritsFlaws(s));
   add(V5_SECTION_IDS.experience, validateV5Experience(s, allDisciplines));
+  Object.entries(settingsErrors(s, settings)).forEach(([id, msg]) => add(id, msg));
 
   // Convictions & touchstones
   const conv = (s.convictions || []).filter(

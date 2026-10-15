@@ -125,5 +125,17 @@
     "v5": "V5 (5th Edition)",
     "v5Hint": "successes needed, Hunger dice, criticals",
     "locked": "The edition is locked once the chronicle is created."
+  },
+  "creation": {
+    "saved": "Creation rules saved.",
+    "title": "Character creation rules",
+    "intro": "What the V5 forge offers new characters in this chronicle. Characters already made are not changed.",
+    "clans": "Allowed clans",
+    "predators": "Allowed predator types",
+    "ages": "Allowed ages",
+    "flawsMax": "Most Flaw dots a player may take (empty = no limit)",
+    "fledgling": "Offer just-Embraced fledglings the Humanity 8 start",
+    "houseRules": "House rules (shown at the top of the forge)",
+    "save": "Save creation rules"
   }
 }

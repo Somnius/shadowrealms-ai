@@ -942,6 +942,7 @@
     },
     "advantages_dots": 7,
     "flaws_min_dots": 2,
+    "predator_flaws_extra": true,
     "flaws_max_dots": null,
     "convictions": [
       1,
