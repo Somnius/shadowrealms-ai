@@ -417,3 +417,17 @@ def test_only_the_touched_columns_are_written(api):
     assert spend(api, 101).get_json()["applied"] is True
     # an Advantage spend writes wod_meta and merits_flaws only: skills keep their exact text
     assert api.sql("SELECT skills FROM characters WHERE id = 101") == [(odd,)]
+
+
+def test_no_catalog_installed_fails_closed(monkeypatch):
+    if "psycopg2" not in sys.modules:
+        pg = types.ModuleType("psycopg2")
+        pg.extras = types.ModuleType("psycopg2.extras")
+        monkeypatch.setitem(sys.modules, "psycopg2", pg)
+        monkeypatch.setitem(sys.modules, "psycopg2.extras", pg.extras)
+    from routes import spend_requests
+
+    monkeypatch.setattr(spend_requests, "load_catalog", lambda: None)
+    assert spend_requests._spend_catalog() == ({}, False)
+    monkeypatch.setattr(spend_requests, "load_catalog", lambda: {"clans": []})
+    assert spend_requests._spend_catalog() == ({"clans": []}, True)

@@ -150,7 +150,9 @@ def _spend_catalog():
     except Exception as e:  # a broken catalog file
         logger.error("spend check: the V5 catalog could not be read: %s", safe_log_value(e))
         return {}, False
-    return (cat if isinstance(cat, dict) else {}), True
+    if not isinstance(cat, dict):  # no catalog installed: a person decides (fail closed)
+        return {}, False
+    return cat, True
 
 
 def _rule_check(state, payload, settings):

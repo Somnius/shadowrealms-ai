@@ -395,3 +395,17 @@ def test_the_real_catalog_when_installed():
         pytest.skip("no advantages.json")
     out = validate_spend(rich(), adv({"id": "background:allies", "name": "Allies (police)", "dots": 1}), cat, {}, skills())
     assert out["ok"], out
+
+
+def test_a_known_id_under_an_invented_name_is_unknown():
+    assert codes(check(meta(), {"id": "background:resources", "name": "Totally Different", "dots": 1})) == ["adv_unknown"]
+    # the entry's own name, or its name with a note, is fine
+    assert codes(check(meta(), {"id": "background:allies", "name": "Allies (dock workers)", "dots": 1, "note": "dock workers"})) == []
+    assert codes(check(meta(), {"id": "merit:bond-resistance", "name": "Blood Bond Resistance", "dots": 1})) == []
+
+
+def test_a_loresheet_row_is_matched_by_its_id_too():
+    m = meta()
+    m["advantages"].append({"id": "loresheet:the-bahari", "name": "The Bahari", "dots": 2, "kind": "loresheet", "levels": [2]})
+    item = {"id": "loresheet:the-bahari", "name": "Bahari Again", "kind": "loresheet", "levels": [2]}
+    assert "adv_unknown" in codes(check(m, item))

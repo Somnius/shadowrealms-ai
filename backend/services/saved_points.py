@@ -43,6 +43,7 @@ Problem codes (validate_spend, {code, params}):
 from __future__ import annotations
 
 import copy
+import re
 import json
 from typing import Any, Dict, List, Optional, Tuple
 
@@ -50,6 +51,8 @@ from services.character_sheet_v5 import V5_SKILLS
 from services.creation_settings import normalize_creation_settings
 from services.request_validation import RequestValidationError
 from services.v5_chargen import (
+    _keys_of,
+    _norm,
     ADVANTAGE_DOTS,
     AGE_BRACKETS,
     FREE_SPECIALTY_SKILLS,
@@ -175,7 +178,11 @@ def _own_row(rows: List[Any], item: Dict[str, Any]) -> Optional[int]:
             isinstance(r, dict)
             and r.get("kind") != "predator"
             and (r.get("kind") == "loresheet") == lore
-            and _key(r.get("name")) == _key(item["name"])
+            and (
+                _key(r.get("name")) == _key(item["name"])
+                # a loresheet is one row per sheet, matched by its id too
+                or (lore and item.get("id") and r.get("id") == item.get("id"))
+            )
         ):
             return i
     return None
@@ -360,6 +367,11 @@ def _spend_only(add, meta: dict, items, changes, item_entries, row_entries, sett
         if entry is None:
             if installed:
                 add("adv_unknown", name=name)
+            continue
+        # The name must be that entry's (its note may follow in brackets): a known id under an
+        # invented name is not the catalog entry.
+        if _norm(re.sub(r"\s*\([^()]*\)\s*$", "", name)) not in _keys_of(entry) and _norm(name) not in _keys_of(entry):
+            add("adv_unknown", name=name)
             continue
         if item["kind"] != "loresheet" and change["from"] == 0:
             n = sum(1 for e in row_entries if e is not None and e.get("id") == entry.get("id"))
