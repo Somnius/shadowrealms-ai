@@ -1,0 +1,54 @@
+{
+  "etag": "fixture",
+  "books": [{ "book_id": "v5-corebook", "title": "Corebook", "precedence": 10 }, { "book_id": "v5-players-guide", "title": "Players Guide", "precedence": 20 }],
+  "clans": [
+    { "id": "clan:hecata", "name": "Hecata", "book": "v5-players-guide", "page": 25, "disciplines": ["discipline:auspex", "discipline:fortitude", "discipline:oblivion"], "bane": { "name": "Painful Kiss", "page": 26 }, "compulsion": { "name": "Morbidity", "page": 26 }, "desc": { "en": "Test clan text.", "el": "Κείμενο δοκιμής." } },
+    { "id": "clan:ventrue", "name": "Ventrue", "book": "v5-corebook", "page": 101, "disciplines": ["discipline:dominate", "discipline:fortitude", "discipline:presence"], "bane": { "name": "Rarefied Tastes", "page": 102 }, "compulsion": { "name": "Arrogance", "page": 211 } },
+    { "id": "clan:caitiff", "name": "Caitiff", "book": "v5-corebook", "page": 107, "disciplines": [], "bane": null, "compulsion": null },
+    { "id": "clan:thin-blood", "name": "Thin-blood", "book": "v5-corebook", "page": 108, "disciplines": [], "bane": null, "compulsion": null }
+  ],
+  "disciplines": [
+    { "id": "discipline:auspex", "name": "Auspex", "powers": [
+      { "id": "power:auspex:heightened-senses", "name": "Heightened Senses", "level": 1, "book": "v5-corebook", "page": 249 },
+      { "id": "power:auspex:premonition", "name": "Premonition", "level": 2, "book": "v5-corebook", "page": 249 } ] },
+    { "id": "discipline:dominate", "name": "Dominate", "powers": [
+      { "id": "power:dominate:cloud-memory", "name": "Cloud Memory", "level": 1, "book": "v5-corebook", "page": 256, "desc": { "en": "Victim forgets the last moments.", "el": "Το θύμα ξεχνά τις τελευταίες στιγμές." } },
+      { "id": "power:dominate:mesmerize", "name": "Mesmerize", "level": 2, "book": "v5-corebook", "page": 256 },
+      { "id": "power:dominate:submerged-directive", "name": "Submerged Directive", "level": 3, "book": "v5-corebook", "page": 257, "prerequisite": { "power_id": "power:dominate:mesmerize" } },
+      { "id": "power:dominate:implant-suggestion", "name": "Implant Suggestion", "level": 1, "book": "v5-players-guide", "page": 73, "amalgam": { "discipline": "discipline:presence", "level": 1 } } ] },
+    { "id": "discipline:fortitude", "name": "Fortitude", "powers": [
+      { "id": "power:fortitude:resilience", "name": "Resilience", "level": 1, "book": "v5-corebook", "page": 258 } ] },
+    { "id": "discipline:oblivion", "name": "Oblivion", "powers": [
+      { "id": "power:oblivion:shadow-cloak", "name": "Shadow Cloak", "level": 1, "book": "v5-players-guide", "page": 85 },
+      { "id": "power:oblivion:the-binding-fetter", "name": "The Binding Fetter", "level": 1, "book": "v5-players-guide", "page": 86 } ] },
+    { "id": "discipline:presence", "name": "Presence", "powers": [
+      { "id": "power:presence:awe", "name": "Awe", "level": 1, "book": "v5-corebook", "page": 267 } ] },
+    { "id": "discipline:thin-blood-alchemy", "name": "Thin-Blood Alchemy", "powers": [] }
+  ],
+  "rituals": [{ "id": "ritual:blood-walk", "name": "Blood Walk", "level": 1, "book": "v5-corebook", "page": 276, "discipline": "discipline:blood-sorcery" }],
+  "ceremonies": [{ "id": "ceremony:summon-spirit", "name": "Summon Spirit", "level": 1, "book": "v5-players-guide", "page": 92, "prerequisite": { "power_id": "power:oblivion:the-binding-fetter" }, "discipline": "discipline:oblivion" }],
+  "formulae": [],
+  "predator_types": [
+    { "id": "predator:grim-reaper", "name": "Grim Reaper", "book": "v5-players-guide", "page": 108, "pool": "Intelligence + Awareness",
+      "specialty_choice": [{ "skill": "Awareness", "name": "Death" }, { "skill": "Larceny", "name": "Forgery" }],
+      "discipline_choice": [{ "discipline": "discipline:auspex", "clans_only": null }, { "discipline": "discipline:oblivion", "clans_only": ["clan:hecata"] }],
+      "humanity": 1, "blood_potency": 0, "max_blood_potency": null, "forbidden_clans": [],
+      "advantages": [{ "pick": "one_of", "options": [{ "id": "background:allies", "dots": 1, "note": "medical community" }, { "id": "background:influence", "dots": 1, "note": "medical community" }] }],
+      "flaws": [{ "pick": "all", "options": [{ "id": "flaw:prey-exclusion", "dots": 1, "note": "healthy mortals" }] }], "ancilla_only": false },
+    { "id": "predator:osiris", "name": "Osiris", "book": "v5-corebook", "page": 177, "pool": "Manipulation + Subterfuge",
+      "specialty_choice": [{ "skill": "Occult", "name": "Specific tradition" }, { "skill": "Performance", "name": "Specific field" }],
+      "discipline_choice": [{ "discipline": "discipline:presence", "clans_only": null }],
+      "humanity": 0, "blood_potency": 0, "max_blood_potency": null, "forbidden_clans": [],
+      "advantages": [{ "pick": "split", "dots_total": 3, "options": [{ "id": "background:fame", "dots": null }, { "id": "background:herd", "dots": null }] }],
+      "flaws": [], "ancilla_only": false },
+    { "id": "predator:montero", "name": "Montero", "book": "v5-players-guide", "page": 108, "pool": "Intelligence + Stealth",
+      "specialty_choice": [{ "skill": "Leadership", "name": "Hunting Pack" }, { "skill": "Stealth", "name": "Stakeout" }],
+      "discipline_choice": [{ "discipline": "discipline:dominate", "clans_only": null }],
+      "humanity": -1, "blood_potency": 0, "max_blood_potency": null, "forbidden_clans": [],
+      "advantages": [{ "pick": "all", "options": [{ "id": "background:retainers", "dots": 2 }] }], "flaws": [], "ancilla_only": false },
+    { "id": "predator:roadside-killer", "name": "Roadside Killer", "book": "v5-corebook", "page": 76, "pool": "Dexterity + Drive",
+      "specialty_choice": [{ "skill": "Survival", "name": "The road" }], "discipline_choice": [{ "discipline": "discipline:fortitude", "clans_only": null }],
+      "humanity": 0, "blood_potency": 0, "max_blood_potency": null, "forbidden_clans": [],
+      "advantages": [], "flaws": [{ "pick": "all", "options": [{ "id": "flaw:prey-exclusion", "dots": null, "note": "locals" }] }], "ancilla_only": false }
+  ]
+}
