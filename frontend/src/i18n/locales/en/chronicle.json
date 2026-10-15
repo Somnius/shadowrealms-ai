@@ -136,6 +136,7 @@
     "flawsMax": "Most Flaw dots a player may take (empty = no limit)",
     "fledgling": "Offer just-Embraced fledglings the Humanity 8 start",
     "houseRules": "House rules (shown at the top of the forge)",
-    "save": "Save creation rules"
+    "save": "Save creation rules",
+    "flawsHint": "Ancillae take 4 Flaw dots, so a limit under 4 needs ancillae left out."
   }
 }

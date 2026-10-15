@@ -241,6 +241,11 @@ describe('Forge v2 part A: book order, predator preview, chronicle settings', ()
     expect(screen.getByRole('option', { name: /Ancilla .*not in this chronicle/ })).toBeDisabled();
   });
 
+  test('no Thin-blood where childer are not allowed (thin-bloods are always childer)', () => {
+    renderWith({ allowed_ages: ['neonate', 'ancilla'] });
+    expect(screen.getByRole('option', { name: 'Thin-blood (not in this chronicle)' })).toBeDisabled();
+  });
+
   test("the Storyteller's house rules show at the top", () => {
     renderWith({ house_rules: 'No Malkavians in Elysium.' });
     expect(screen.getByRole('note', { name: 'House rules from your Storyteller' })).toHaveTextContent('No Malkavians in Elysium.');

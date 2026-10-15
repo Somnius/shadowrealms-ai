@@ -268,12 +268,12 @@
     "clanSubV2": "Your clan sets your Disciplines, bane and compulsion.",
     "convictionsTitle": "Convictions & Touchstones",
     "predatorPreview": "Predator type preview",
-    "predatorPreviewPick": "Preview a predator type (you choose it in the next step)",
     "previewDiscipline": "One Discipline dot: {{list}}",
     "previewNone": "none for this clan",
     "previewSpecialty": "One specialty: {{list}}",
     "previewAdvantages": "Advantages: {{list}}",
     "previewFlaws": "Flaws: {{list}} (extra, on top of your own {{min}})",
-    "predatorFlawsExtra": "These Flaws are extra: you still take {{min}} dots of Flaws of your own in Advantages."
+    "predatorFlawsExtra": "These Flaws are extra: you still take {{min}} dots of Flaws of your own in Advantages.",
+    "predatorPreviewPickV2": "Preview a predator type (this also sets it for the next step)"
   }
 }

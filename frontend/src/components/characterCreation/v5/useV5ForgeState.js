@@ -52,8 +52,11 @@ const generationFor = (age) => {
 export default function useV5ForgeState(settings, initial = {}) {
   const firstClan =
     initial.clan || (clanAllowed(settings, 'Brujah') ? 'Brujah' : V5_CLAN_NAMES.find((c) => clanAllowed(settings, c)) || 'Brujah');
+  // Thin-bloods are always childer of the 14th generation or later (the same as changeClan).
   const firstAge =
-    initial.age || (ageAllowed(settings, 'neonate') ? 'neonate' : CREATION_AGES.find((a) => ageAllowed(settings, a)) || 'neonate');
+    firstClan === THIN_BLOOD
+      ? 'childer'
+      : initial.age || (ageAllowed(settings, 'neonate') ? 'neonate' : CREATION_AGES.find((a) => ageAllowed(settings, a)) || 'neonate');
 
   const [name, setName] = useState(initial.name || '');
   const [concept, setConcept] = useState(initial.concept || '');
@@ -62,7 +65,7 @@ export default function useV5ForgeState(settings, initial = {}) {
   const [desire, setDesire] = useState('');
   const [clan, setClan] = useState(firstClan);
   const [age, setAge] = useState(firstAge);
-  const [generation, setGeneration] = useState(() => generationFor(firstAge));
+  const [generation, setGeneration] = useState(() => (firstClan === THIN_BLOOD ? 14 : generationFor(firstAge)));
   const [attributes, setAttributes] = useState(() => initial.attributes || emptyV5Attributes());
   const [skillDistribution, setSkillDistribution] = useState(initial.skillDistribution || 'balanced');
   const [skills, setSkills] = useState(() => initial.skills || emptyV5Skills());

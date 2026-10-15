@@ -20,7 +20,7 @@ export default function PredatorPreview() {
       style={{ marginTop: '18px', padding: '12px 14px', border: '1px dashed var(--sr-night-600)', borderRadius: '8px' }}
     >
       <label htmlFor="v5-field-predator-preview" style={labelStyle}>
-        {t('wizard:v5.predatorPreviewPick', 'Preview a predator type (you choose it in the next step)')}
+        {t('wizard:v5.predatorPreviewPickV2', 'Preview a predator type (this also sets it for the next step)')}
       </label>
       <select
         id="v5-field-predator-preview"
