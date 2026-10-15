@@ -56,7 +56,7 @@ Clan and predator names are the English names of the catalog (`docs/rules/v5/cat
 Code: `frontend/src/characterSheet/v5/guided.js`.
 
 1. The weights of the chosen answers add up, key by key.
-2. **Clan**: the clan with the most points among those the chronicle allows (the Storyteller's creation rules; Thin-blood only where childer are allowed). On a tie, catalog order wins.
+2. **Clan**: the clan with the most points among those the chronicle allows (the Storyteller's creation rules, its allowed books included; Thin-blood only where childer are allowed). On a tie, catalog order wins.
    - *share* = its points ÷ all the clan points the answers gave, clans the chronicle doesn't allow included. Below `min_score_share`, the player is off the path.
    - *lead* = its points minus the next allowed clan's. Below `min_lead`, the player is off the path, so a tie at the top is off the path unless `min_lead` is 0.
    - Picking "None of these" twice puts the player off the path straight away.

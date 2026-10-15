@@ -68,7 +68,7 @@ Code: `frontend/src/components/characterCreation/V5CharacterCreationWizard.js` (
 
 Guided mode (`components/characterCreation/V5ForgeEntry.jsx` and `v5/GuidedWizard.jsx`, scoring in `characterSheet/v5/guided.js`): before the blocks, the player can answer the scenario questions in `docs/rules/v5/guided/questions.json` (format in its README). The suggestion prefills `clan`, the predator type, `attributes` and `skills` (distribution and ratings) through `useV5ForgeState`'s `initial`, and sets the age to ancilla for an ancilla-only predator type. Nothing new is stored: the sheet is the same as one made in the full forge.
 
-The chronicle's creation rules (`campaigns.creation_settings`, set by the Storyteller) limit the clans, predator types and ages offered, can cap the Flaws, turn off the Humanity 8 option and add house rules shown at the top. The sheet records the forge that made it: `wod_meta.forge = { version: 2, settings_v: 1 }`.
+The chronicle's creation rules (`campaigns.creation_settings`, set by the Storyteller) limit the books the catalog entries come from (an entry printed in several books needs one of them), the clans, predator types and ages offered, can cap the Flaws, turn off the Humanity 8 option and add house rules shown at the top. The sheet records the forge that made it: `wod_meta.forge = { version: 2, settings_v: 1 }`.
 
 Advantage and Flaw rows (`wod_meta.advantages`, `wod_meta.flaws`):
 
