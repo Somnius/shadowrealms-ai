@@ -146,6 +146,9 @@ def reference_problems(data: dict) -> list[str]:
         for cl in (e.get("clans_only") or []) + [x["clan"] for x in e.get("cannot_buy_for", [])]:
             if cl not in clan_ids:
                 out.append(f"- {e['id']}: clan {cl} does not exist")
+        for ex in e.get("excludes", []):
+            if ex not in adv_ids:
+                out.append(f"- {e['id']}: excluded entry {ex} does not exist")
     for e in data["loresheets"]["entries"]:
         check_book(e["id"], e)
         if [lv["dots"] for lv in e["levels"]] != [1, 2, 3, 4, 5]:

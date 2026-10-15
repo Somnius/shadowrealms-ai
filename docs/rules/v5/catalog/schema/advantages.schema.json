@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "shadowrealms/v5/catalog/advantages.schema.json",
   "title": "V5 Merits, Backgrounds and Flaws",
-  "description": "dots: {min,max} as printed (max null = open-ended, '•+'), {allowed:[...]} for 'X or Y', null when no rating (thin-blood Merits/Flaws pair one for one) or not printed. levels: names printed per rating (no text). master_list_page: the PG Advantages Master List page that lists the entry. cannot_buy_for: clans that may not take it, at creation or always. requires: short wording of a printed prerequisite. Ids of Caitiff, thin-blood, ghoul and coterie entries carry that group (flaw:caitiff-clan-curse vs flaw:thin-blood-clan-curse).",
+  "description": "dots: {min,max} as printed (max null = open-ended, '•+'), {allowed:[...]} for 'X or Y', null when no rating (thin-blood Merits/Flaws pair one for one) or not printed. levels: names printed per rating (no text). master_list_page: the PG Advantages Master List page that lists the entry. cannot_buy_for: clans that may not take it, at creation or always. requires: short wording of a printed prerequisite. excludes: entries the book says can't be taken together with this one (checked both ways). Ids of Caitiff, thin-blood, ghoul and coterie entries carry that group (flaw:caitiff-clan-curse vs flaw:thin-blood-clan-curse).",
   "type": "object",
   "required": [
     "catalog",
@@ -289,6 +289,14 @@
               "null"
             ],
             "maxLength": 60
+          },
+          "excludes": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "pattern": "^(background|merit|flaw):[a-z0-9-]+$"
+            },
+            "uniqueItems": true
           },
           "parts": {
             "type": "array",

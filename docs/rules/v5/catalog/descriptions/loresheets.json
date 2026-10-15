@@ -20,8 +20,8 @@
     "el": "Μία φορά ανά story, αφού πιεις αίμα από τη μήτρα, παίρνεις δύο τελείες Stamina ή Resolve (και το αντίστοιχο Health ή Willpower) μέχρι την αυγή."
   },
   "loresheet:the-bahari:5": {
-    "en": "Walk in the first hour of day and the last of dusk and have sex without Rousing, but you count as Obvious Predator, slander against you is 1 easier, and reading you with Auspex costs the reader Resolve and Willpower for a scene.",
-    "el": "Βγαίνεις την πρώτη ώρα της μέρας και την τελευταία του σούρουπου και κάνεις σεξ χωρίς Rouse, αλλά μετράς ως Obvious Predator, η συκοφαντία κατά σου είναι 1 ευκολότερη, και όποιος σε διαβάσει με Auspex χάνει Resolve και Willpower μια σκηνή."
+    "en": "Walk in day's first hour and dusk's last and have sex without Rousing, but you count as Obvious Predator, tests to shun or slander you are at Difficulty -1, and reading you with Auspex costs the reader Resolve and Willpower for a scene.",
+    "el": "Αντέχεις πρώτη ώρα μέρας και τελευταία σούρουπου, σεξ χωρίς Rouse· είσαι Obvious Predator, τα Social τεστ για να σε απομονώσουν ή να σε συκοφαντήσουν έχουν Difficulty −1, κι όποιος σε δει με Auspex χάνει Resolve και Willpower μια σκηνή."
   },
   "loresheet:theo-bell": {
     "en": "The Brujah who defected to the Anarchs; levels give rebel mortals, Investigation successes against defectors, a line to Theo, Theo as a 5-dot Mawla and a Brujah following.",
@@ -65,7 +65,7 @@
   },
   "loresheet:cainite-heresy:4": {
     "en": "You know how to trigger the Red Pentecost in a human congregation, enough for one ceremony per story; it needs a Hunger check and may frenzy Kindred present.",
-    "el": "Ξέρεις πώς να προκαλέσεις το Red Pentecost σε μια ανθρώπινη εκκλησία, για μία τελετή ανά story· θέλει Hunger check και μπορεί να ρίξει σε frenzy τους παρόντες Kindred."
+    "el": "Ξέρεις πώς να προκαλέσεις το Red Pentecost σε ένα ανθρώπινο εκκλησίασμα, για μία τελετή ανά story· θέλει Hunger check και μπορεί να ρίξει σε frenzy τους παρόντες Kindred."
   },
   "loresheet:cainite-heresy:5": {
     "en": "The Heresy sees you as a linchpin of its plans. Once per story you decide who wins a Social conflict, given a plausible reason for it.",
@@ -84,8 +84,8 @@
     "el": "Όποτε κινδυνεύεις να δεθείς με Blood Bond, ρίχνεις Willpower με Difficulty ίσο με το Blood Potency του vitae για να το αγνοήσεις."
   },
   "loresheet:carna:3": {
-    "en": "Once per story perform a known ritual without spending Blood; on a messy critical you become deranged (paranoid, afraid of blood) until the story ends.",
-    "el": "Μία φορά ανά story κάνεις ένα γνωστό ritual χωρίς να ξοδέψεις αίμα· σε messy critical διαταράσσεσαι (παράνοια, φόβος για το αίμα) μέχρι το τέλος της story."
+    "en": "Once per story perform a known ritual without spending Blood; on a messy critical you become deranged (usually intense paranoia or a fear of blood) until the story ends.",
+    "el": "Μία φορά ανά story κάνεις ένα γνωστό ritual χωρίς να ξοδέψεις αίμα· σε messy critical παθαίνεις ψυχική διαταραχή (συνήθως έντονη παράνοια ή φόβο για το αίμα) μέχρι το τέλος της story."
   },
   "loresheet:carna:4": {
     "en": "Sex with a target, mortal or Kindred, creates a Blood Bond between them, you and Carna, bypassing the Tremere Bane; it lasts until the story ends.",
@@ -316,8 +316,8 @@
     "el": "Μάρτυρας ή μελετητής της έγερσης του Ravnos Antediluvian. Επίπεδα: φήμη αφηγητή, επαφές με απομεινάρια Ravnos, Status βετεράνου, το Red Star και ένα φιαλίδιο με αίμα του Zapathasura."
   },
   "loresheet:the-week-of-nightmares:1": {
-    "en": "+3 dice on Performance tests to tell the tale of the Week of Nightmares; important Kindred come to hear it.",
-    "el": "+3 ζάρια σε Performance τεστ για να αφηγηθείς το Week of Nightmares· σημαντικοί Kindred έρχονται να ακούσουν."
+    "en": "+3 dice on Performance tests when you recount what happened in the Week of Nightmares; important Kindred come to hear it.",
+    "el": "+3 ζάρια σε Performance τεστ όταν διηγείσαι τι έγινε στο Week of Nightmares· σημαντικοί Kindred έρχονται να ακούσουν."
   },
   "loresheet:the-week-of-nightmares:2": {
     "en": "Three dots of Mawla in surviving Ravnos who bring news and warnings and may cast a great illusion once per chronicle; the link is frowned upon.",
@@ -392,8 +392,8 @@
     "el": "Μοιράζεις δύο δωρεάν τελείες στα Haven Merits Postern και Security System· κάποιος κάπου έχει τα σχέδια."
   },
   "loresheet:descendant-of-zelios:2": {
-    "en": "With hand tools and as many nights on site as the building's Difficulty (4 for a house, 9 for a skyscraper) you can bring any structure down.",
-    "el": "Με εργαλεία χειρός και τόσες νύχτες επιτόπου όσο το Difficulty του κτιρίου (4 για σπίτι, 9 για ουρανοξύστη) γκρεμίζεις οποιοδήποτε οικοδόμημα."
+    "en": "With hand tools you can bring down any structure, given nights on site equal to its Difficulty (4 for a house, 9 for a skyscraper).",
+    "el": "Με εργαλεία χειρός γκρεμίζεις οποιοδήποτε οικοδόμημα, αν μείνεις επιτόπου τόσες νύχτες όσο το Difficulty του (4 για σπίτι, 9 για ουρανοξύστη)."
   },
   "loresheet:descendant-of-zelios:3": {
     "en": "Vampires pay you for haven advice: about one minor boon per story, and you know where several powerful Kindred sleep.",
@@ -636,8 +636,8 @@
     "el": "+2 ζάρια σε ρίψεις Ceremony του Oblivion για κάλεσμα, έλεγχο ή καταστροφή φαντασμάτων."
   },
   "loresheet:children-of-tenochtitlan:3": {
-    "en": "Once per story reroll any Skill roll; you also get one free Skill reroll in any scene against another Hecata (plus an extra success if they are a Harbinger of Skulls).",
-    "el": "Μία φορά ανά story ξαναρίχνεις οποιαδήποτε Skill ρίψη· έχεις και ένα δωρεάν Skill reroll σε κάθε σκηνή κατά άλλου Hecata (συν μία επιτυχία αν είναι Harbinger of Skulls)."
+    "en": "Once per story reroll any Skill roll. Against another Hecata you also get one free Skill reroll per scene (plus an extra success if they are a Harbinger of Skulls).",
+    "el": "Μία φορά ανά story ξαναρίχνεις οποιαδήποτε Skill ρίψη. Απέναντι σε άλλον Hecata έχεις και ένα δωρεάν Skill reroll ανά σκηνή (συν μία επιτυχία αν είναι Harbinger of Skulls)."
   },
   "loresheet:children-of-tenochtitlan:4": {
     "en": "Two automatic successes on any roll to activate a necromantic Oblivion Ceremony.",
@@ -660,7 +660,7 @@
     "el": "Χωρίς Obfuscate, παίρνεις δωρεάν Cloak of Shadows που δουλεύει μόνο σε φαντάσματα και πνεύματα· με Obfuscate, όλες οι δυνάμεις του πιάνουν και σε αυτά."
   },
   "loresheet:flesh-eaters:3": {
-    "en": "With at least a night to plan a deliberate murder, you get one extra success on all rolls in that scene; a Send a Murderer user cancels it.",
+    "en": "Plan a deliberate murder for at least a night and every roll in that scene gains an extra success; someone with Send a Murderer cancels it.",
     "el": "Με τουλάχιστον μία νύχτα για να σχεδιάσεις έναν προμελετημένο φόνο, παίρνεις μία επιπλέον επιτυχία σε όλες τις ρίψεις της σκηνής· όποιος έχει Send a Murderer το ακυρώνει."
   },
   "loresheet:flesh-eaters:4": {

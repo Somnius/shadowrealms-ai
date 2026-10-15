@@ -72,8 +72,8 @@
       "id": "background:contacts",
       "name": "Contacts",
       "desc": {
-        "en": "People who feed you information and small favours in their field. Each dot is one Contact able to get something cheap (1), useful (2) or expensive and hard (3), roughly matching Resources 1, 2 or 4.",
-        "el": "Άνθρωποι που σου δίνουν πληροφορίες και μικρές χάρες στον τομέα τους. Κάθε τελεία είναι ένας Contact που βρίσκει κάτι φτηνό (1), χρήσιμο (2) ή ακριβό και δύσκολο (3), περίπου σαν Resources 1, 2 ή 4."
+        "en": "People placed to get you information or goods in their field. Each purchase is one Contact; the rating sets their reach: cheap things (1), useful ones (2) or costly, hard-to-get ones (3), about Resources 1, 2 or 4.",
+        "el": "Άνθρωποι σε θέση να σου βρίσκουν πληροφορίες ή πράγματα στον τομέα τους. Κάθε αγορά είναι ένας Contact· οι τελείες ορίζουν πόσο φτάνει: φτηνά πράγματα (1), χρήσιμα (2) ή ακριβά και δυσεύρετα (3), περίπου σαν Resources 1, 2 ή 4."
       },
       "kind": "background",
       "group": "Contacts",
@@ -418,8 +418,8 @@
       "id": "background:minor-boon",
       "name": "Minor Boon",
       "desc": {
-        "en": "A one-off favour another Kindred owes you, bought only at character creation. Costs half the dots (rounded up) of a Mawla of the same standing; a Major Boon costs one dot more.",
-        "el": "Μια χάρη που σου χρωστά άλλος Kindred, αγοράζεται μόνο στη δημιουργία χαρακτήρα. Κοστίζει τις μισές τελείες (στρογγυλοποίηση πάνω) ενός Mawla ίδιας θέσης· το Major Boon κοστίζει μία τελεία παραπάνω."
+        "en": "A one-off favour another Kindred owes you, bought only at character creation. Costs half the dots (rounded up) of a Mawla of the same standing; a Major Boon costs one dot more (Players Guide p. 115).",
+        "el": "Μια χάρη που σου χρωστά άλλος Kindred, μόνο στη δημιουργία χαρακτήρα. Κοστίζει τις μισές τελείες (στρογγυλοποίηση πάνω) ενός Mawla ίδιας θέσης· το Major Boon μία τελεία παραπάνω (Players Guide σελ. 115)."
       },
       "kind": "background",
       "group": "Minor Boon",
@@ -1903,8 +1903,8 @@
       "id": "merit:location",
       "name": "Location",
       "desc": {
-        "en": "Your haven is in a prime spot. Add two dice (or +2 Difficulty for foes) to the bonuses from either Chasse or your base Haven rating, chosen when you take it.",
-        "el": "Το haven σου βρίσκεται σε προνομιακό σημείο. Πρόσθεσε δύο ζάρια (ή +2 Difficulty για τους αντιπάλους) στα bonus είτε του Chasse είτε της βασικής τιμής Haven, όπως διαλέξεις όταν το πάρεις."
+        "en": "Your haven sits somewhere exclusive. Pick Chasse or your base Haven rating when you take it; its bonuses grow by two dice (or foes face +2 Difficulty).",
+        "el": "Το haven σου είναι σε προνομιακό σημείο. Διάλεξε Chasse ή τη βασική τιμή Haven όταν το παίρνεις· τα bonus του ανεβαίνουν κατά δύο ζάρια (ή +2 Difficulty για τους αντιπάλους)."
       },
       "kind": "merit",
       "group": "Haven",
@@ -2230,7 +2230,7 @@
       "id": "merit:ingenue",
       "name": "Ingénue",
       "desc": {
-        "en": "You look innocent: +2 dice on rolls to avoid suspicion or deflect blame, at the Storyteller's discretion.",
+        "en": "You look innocent: +2 dice on rolls to stay above suspicion or shift blame elsewhere, at the Storyteller's discretion.",
         "el": "Δείχνεις αθώος: +2 ζάρια σε ρίψεις για να αποφύγεις υποψίες ή να απομακρύνεις την ευθύνη, κατά την κρίση του Storyteller."
       },
       "kind": "merit",
@@ -2561,7 +2561,7 @@
       "id": "merit:untouchable",
       "name": "Untouchable",
       "desc": {
-        "en": "Once per story you dodge every official penalty for a crime that would otherwise get you destroyed or cast out of your sect; lesser crimes are often overlooked too.",
+        "en": "Once per story you walk away from any formal sanction for an offence that should end in your destruction or exile from the sect; your smaller misdeeds tend to be ignored too.",
         "el": "Μία φορά ανά story γλιτώνεις κάθε επίσημη τιμωρία για αδίκημα που αλλιώς θα σε οδηγούσε σε καταστροφή ή εξορία από το sect σου· και τα μικρότερα συχνά παραβλέπονται."
       },
       "kind": "merit",
@@ -2590,7 +2590,7 @@
       "id": "merit:city-secrets",
       "name": "City Secrets",
       "desc": {
-        "en": "You hold a damning secret about the city's Kindred power structure; those it touches have reason to keep you happy. May add to Social, Research or Insight pools. Up to three times, a different secret each.",
+        "en": "You know a secret that could ruin part of the city's Kindred power structure; those it touches have reason to keep you happy. May add to Social, Research or Insight pools. Up to three times, a different secret each.",
         "el": "Κατέχεις ένα επικίνδυνο μυστικό για την εξουσία των Kindred της πόλης· όσους αφορά έχουν λόγο να σε κρατούν ευχαριστημένο. Μπορεί να προσθέτει σε Social, Research ή Insight pools. Ως τρεις φορές, με άλλο μυστικό."
       },
       "kind": "merit",
@@ -3017,8 +3017,8 @@
       "id": "flaw:enemies",
       "name": "Enemies",
       "desc": {
-        "en": "Mortals (or ghouls) out to harm you, rated two dots below what their Effectiveness would cost as Allies. The Storyteller brings them in when it suits, at least about once a story.",
-        "el": "Θνητοί (ή ghouls) που θέλουν το κακό σου, με δύο τελείες λιγότερες από την Effectiveness που θα είχαν ως Allies. Ο Storyteller τους βάζει όταν ταιριάζει, τουλάχιστον περίπου μία φορά ανά story."
+        "en": "Mortals out to harm you, rated two dots below what their Effectiveness would cost as Allies. The Storyteller brings them in when it suits, at least about once a story.",
+        "el": "Θνητοί που θέλουν το κακό σου, με δύο τελείες λιγότερες από την Effectiveness που θα είχαν ως Allies. Ο Storyteller τους βάζει όταν ταιριάζει, τουλάχιστον περίπου μία φορά ανά story."
       },
       "kind": "flaw",
       "group": "Allies",
@@ -3120,8 +3120,8 @@
       "id": "flaw:bond-junkie",
       "name": "Bond Junkie",
       "desc": {
-        "en": "The Bond feels sweet to you: -1 die on pools to act against a Blood Bond.",
-        "el": "Το Bond σού είναι γλυκό: −1 ζάρι στις ρίψεις για να πας κόντρα σε Blood Bond."
+        "en": "Once Bound, you savour it: one die fewer whenever you try to defy a Blood Bond.",
+        "el": "Όταν δεθείς, το απολαμβάνεις: ένα ζάρι λιγότερο όποτε προσπαθείς να αψηφήσεις ένα Blood Bond."
       },
       "kind": "flaw",
       "group": "Bonding",
@@ -4078,8 +4078,8 @@
       "id": "flaw:despised",
       "name": "Despised",
       "desc": {
-        "en": "One group or region of the city works against you: -2 dice on pools to win a neutral party's political support or a favour, and your haters keep turning up in the story.",
-        "el": "Μια ομάδα ή περιοχή της πόλης δουλεύει εναντίον σου: −2 ζάρια στις ρίψεις για να κερδίσεις πολιτική στήριξη ή χάρη από ουδέτερο, και οι εχθροί σου ξεφυτρώνουν συνέχεια στην ιστορία."
+        "en": "A faction or district of the city works against you: -2 dice on pools to win a neutral party's political support or a favour, and your haters keep turning up in the story.",
+        "el": "Μια φατρία ή συνοικία της πόλης δουλεύει εναντίον σου: −2 ζάρια στις ρίψεις για να κερδίσεις πολιτική στήριξη ή χάρη από ουδέτερο, και οι εχθροί σου ξεφυτρώνουν συνέχεια στην ιστορία."
       },
       "kind": "flaw",
       "group": "Influence",
@@ -4968,8 +4968,11 @@
       "clans_only": null,
       "cannot_buy_for": [],
       "repeatable": false,
-      "requires": null,
-      "levels": []
+      "requires": "Brujah/Gangrel: Bestial Temper; Tremere: Catenating Blood",
+      "levels": [],
+      "manual_fields": [
+        "requires"
+      ]
     },
     {
       "id": "flaw:thin-blood-dead-flesh",
@@ -4995,7 +4998,13 @@
       "cannot_buy_for": [],
       "repeatable": false,
       "requires": null,
-      "levels": []
+      "levels": [],
+      "excludes": [
+        "merit:thin-blood-lifelike"
+      ],
+      "manual_fields": [
+        "excludes"
+      ]
     },
     {
       "id": "flaw:thin-blood-heliophobia",
@@ -5047,7 +5056,13 @@
       "cannot_buy_for": [],
       "repeatable": false,
       "requires": null,
-      "levels": []
+      "levels": [],
+      "excludes": [
+        "merit:thin-blood-vampiric-resilience"
+      ],
+      "manual_fields": [
+        "excludes"
+      ]
     },
     {
       "id": "flaw:thin-blood-night-terrors",
@@ -5125,7 +5140,13 @@
       "cannot_buy_for": [],
       "repeatable": false,
       "requires": null,
-      "levels": []
+      "levels": [],
+      "excludes": [
+        "merit:thin-blood-anarch-comrades"
+      ],
+      "manual_fields": [
+        "excludes"
+      ]
     },
     {
       "id": "flaw:thin-blood-sloppy-drinker",

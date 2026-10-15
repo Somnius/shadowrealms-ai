@@ -275,6 +275,40 @@
         "kind": "flaw"
       },
       "why": "see rename"
+    },
+    {
+      "id": "flaw:thin-blood-dead-flesh",
+      "set": {
+        "excludes": [
+          "merit:thin-blood-lifelike"
+        ]
+      },
+      "why": "core pr 183, Dead Flesh: not together with the Lifelike Merit"
+    },
+    {
+      "id": "flaw:thin-blood-mortal-frailty",
+      "set": {
+        "excludes": [
+          "merit:thin-blood-vampiric-resilience"
+        ]
+      },
+      "why": "core pr 183, Mortal Frailty: not together with the Vampiric Resilience Merit"
+    },
+    {
+      "id": "flaw:thin-blood-shunned-by-the-anarchs",
+      "set": {
+        "excludes": [
+          "merit:thin-blood-anarch-comrades"
+        ]
+      },
+      "why": "core pr 183, Shunned by the Anarchs: not together with the Anarch Comrades Merit"
+    },
+    {
+      "id": "flaw:thin-blood-clan-curse",
+      "set": {
+        "requires": "Brujah/Gangrel: Bestial Temper; Tremere: Catenating Blood"
+      },
+      "why": "core pr 183: the Bane you pick is limited (Brujah or Gangrel Bane with the Bestial Temper Flaw, Tremere Bane with the Catenating Blood Merit); any other Bane needs neither"
     }
   ],
   "add": [
