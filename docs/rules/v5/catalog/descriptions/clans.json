@@ -1,0 +1,178 @@
+{
+  "clan:banu-haqim": {
+    "en": "Judges, warriors and assassins bound to a personal code of law. In-clan Disciplines: Blood Sorcery, Celerity and Obfuscate.",
+    "el": "Κριτές, πολεμιστές και δολοφόνοι δεμένοι με έναν προσωπικό κώδικα δικαίου. Disciplines του clan: Blood Sorcery, Celerity και Obfuscate."
+  },
+  "clan:banu-haqim:bane": {
+    "en": "Vampire Blood is addictive to them: slaking at least 1 Hunger from a vampire forces a hunger frenzy test at Difficulty 2 + Bane Severity; on a failure they keep drinking, possibly to diablerie.",
+    "el": "Το αίμα των βαμπίρ τούς εθίζει: αν κατεβάσουν έστω 1 Hunger από βαμπίρ, κάνουν τεστ για hunger frenzy με Difficulty 2 + Bane Severity· αν αποτύχουν, συνεχίζουν να πίνουν, ίσως ως τη diablerie."
+  },
+  "clan:banu-haqim:compulsion": {
+    "en": "For one scene they must drink at least 1 Hunger from anyone who acts against one of their Convictions; until they do, every roll takes a 3-dice penalty.",
+    "el": "Για μία σκηνή πρέπει να πιουν τουλάχιστον 1 Hunger από όποιον πάει κόντρα σε Conviction τους· μέχρι τότε, −3 ζάρια σε κάθε ρίψη."
+  },
+  "clan:brujah": {
+    "en": "Rebels and firebrands with a short fuse, as passionate as they are physical. In-clan Disciplines: Celerity, Potence and Presence.",
+    "el": "Επαναστάτες με κοντό φιτίλι, όσο παθιασμένοι τόσο και σωματικοί. Disciplines του clan: Celerity, Potence και Presence."
+  },
+  "clan:brujah:bane": {
+    "en": "Their Blood runs hot: remove Bane Severity dice from any roll to resist fury frenzy, never below one die.",
+    "el": "Το αίμα τους βράζει: αφαίρεσε ζάρια ίσα με το Bane Severity από κάθε ρίψη αντίστασης σε fury frenzy, ποτέ κάτω από ένα ζάρι."
+  },
+  "clan:brujah:compulsion": {
+    "en": "Must defy whatever counts as authority or expectation right now: 2-dice penalty on all rolls until they change someone's mind or do the opposite of what was expected.",
+    "el": "Πρέπει να αψηφήσουν ό,τι θεωρούν εξουσία ή προσδοκία εκείνη τη στιγμή: −2 ζάρια σε όλες τις ρίψεις μέχρι να αλλάξουν τη γνώμη κάποιου ή να κάνουν το αντίθετο από ό,τι περίμεναν από αυτούς."
+  },
+  "clan:caitiff": {
+    "en": "Clanless vampires with no in-clan Disciplines, no shared Bane and no clan Compulsion. They start with the Suspect (•) Flaw, cannot buy positive Status at creation, and a Discipline costs 6 × the new level in XP.",
+    "el": "Βαμπίρ χωρίς clan, χωρίς Disciplines του clan, κοινό Bane ή Compulsion του clan. Ξεκινούν με το Flaw Suspect (•), δεν αγοράζουν θετικό Status στη δημιουργία, και κάθε Discipline ανεβαίνει με 6 × το νέο επίπεδο σε XP."
+  },
+  "clan:gangrel": {
+    "en": "Feral survivors who live close to their Beast and far from the cities. In-clan Disciplines: Animalism, Fortitude and Protean.",
+    "el": "Άγριοι επιζώντες που ζουν κοντά στο Κτήνος τους και μακριά από τις πόλεις. Disciplines του clan: Animalism, Fortitude και Protean."
+  },
+  "clan:gangrel:bane": {
+    "en": "Every frenzy leaves animal features (as many as Bane Severity) that linger one more night; each lowers an Attribute by 1. Riding the Wave limits it to one feature.",
+    "el": "Κάθε frenzy αφήνει ζωώδη χαρακτηριστικά (τόσα όσο το Bane Severity) που μένουν μία νύχτα ακόμα· το καθένα ρίχνει ένα Attribute κατά 1. Με Riding the Wave μένει μόνο ένα."
+  },
+  "clan:gangrel:compulsion": {
+    "en": "For one scene the vampire regresses toward the animal: 3-dice penalty on rolls using Manipulation or Intelligence, and speech limited to single words.",
+    "el": "Για μία σκηνή το βαμπίρ γυρίζει προς το ζώο: −3 ζάρια σε ρίψεις με Manipulation ή Intelligence, και μιλά μόνο με μονολεκτικές φράσεις."
+  },
+  "clan:hecata": {
+    "en": "The clan of death: necromancers, merchants and a family of old bloodlines. In-clan Disciplines: Auspex, Fortitude and Oblivion.",
+    "el": "Το clan του θανάτου: νεκρομάντες, έμποροι και μια οικογένεια παλιών γενεαλογιών. Disciplines του clan: Auspex, Fortitude και Oblivion."
+  },
+  "clan:hecata:bane": {
+    "en": "Their bite brings agony, not bliss: drinking directly is always a harmful drink, unrestrained victims struggle, and even willing mortals need Stamina + Resolve at Difficulty 2 + Bane Severity to hold still.",
+    "el": "Το δάγκωμά τους φέρνει πόνο, όχι ηδονή: το απευθείας πιόμα είναι πάντα harmful, τα θύματα παλεύουν, και ακόμα και οι πρόθυμοι θνητοί χρειάζονται Stamina + Resolve με Difficulty 2 + Bane Severity για να μείνουν ακίνητοι."
+  },
+  "clan:hecata:compulsion": {
+    "en": "Driven to push something across the line between life and death, in either direction, even an idea or a conversation: 2-dice penalty on anything else until they end or revive something.",
+    "el": "Παρόρμηση να περάσουν κάτι από τη ζωή στον θάνατο ή αντίστροφα, έστω μια ιδέα ή μια συζήτηση: −2 ζάρια σε οτιδήποτε άλλο μέχρι να τερματίσουν ή να αναστήσουν κάτι."
+  },
+  "clan:lasombra": {
+    "en": "Ruthless masters of shadow who take power by any means. In-clan Disciplines: Dominate, Oblivion and Potence.",
+    "el": "Αδίστακτοι κύριοι της σκιάς που παίρνουν την εξουσία με κάθε μέσο. Disciplines του clan: Dominate, Oblivion και Potence."
+  },
+  "clan:lasombra:bane": {
+    "en": "Mirrors and recordings show them warped, and anyone who knows the signs recognizes a vampire; modern technology, even a phone call, needs a Technology roll against Difficulty 2 + Bane Severity.",
+    "el": "Καθρέφτες και εγγραφές τούς δείχνουν παραμορφωμένους, και όποιος ξέρει τα σημάδια αναγνωρίζει βαμπίρ· η χρήση σύγχρονης τεχνολογίας, ακόμα κι ένα τηλεφώνημα, θέλει τεστ Technology με Difficulty 2 + Bane Severity."
+  },
+  "clan:lasombra:compulsion": {
+    "en": "After their next failed action they take a 2-dice penalty on all rolls until a later attempt at that same action succeeds or the scene ends.",
+    "el": "Μετά την επόμενη αποτυχημένη τους ενέργεια παίρνουν −2 ζάρια σε όλες τις ρίψεις μέχρι μια νέα προσπάθεια στην ίδια ενέργεια να πετύχει ή να τελειώσει η σκηνή."
+  },
+  "clan:malkavian": {
+    "en": "Seers and lunatics whose Blood carries both insight and derangement. In-clan Disciplines: Auspex, Dominate and Obfuscate.",
+    "el": "Οραματιστές και παράφρονες, με αίμα που κουβαλά διορατικότητα και παραφροσύνη μαζί. Disciplines του clan: Auspex, Dominate και Obfuscate."
+  },
+  "clan:malkavian:bane": {
+    "en": "Each Malkavian has a derangement set at creation; on a bestial failure or a Compulsion it flares, costing Bane Severity dice from one category of pools (Physical, Social or Mental) for the scene.",
+    "el": "Κάθε Malkavian έχει μια διαταραχή που ορίζεται στη δημιουργία· σε bestial failure ή Compulsion ξεσπά και αφαιρεί ζάρια ίσα με το Bane Severity από μία κατηγορία pools (Physical, Social ή Mental) για τη σκηνή."
+  },
+  "clan:malkavian:compulsion": {
+    "en": "Visions crowd in for one scene: 2-dice penalty on rolls using Dexterity, Manipulation, Composure or Wits, and on rolls to resist terror frenzy.",
+    "el": "Τα οράματα πλημμυρίζουν το μυαλό για μία σκηνή: −2 ζάρια σε ρίψεις με Dexterity, Manipulation, Composure ή Wits, και στις ρίψεις αντίστασης σε terror frenzy."
+  },
+  "clan:ministry": {
+    "en": "Tempters and cult leaders who free others by breaking the chains of their beliefs. In-clan Disciplines: Obfuscate, Presence and Protean.",
+    "el": "Πειραστές και αρχηγοί λατρειών που απελευθερώνουν τους άλλους σπάζοντας τις αλυσίδες των πεποιθήσεών τους. Disciplines του clan: Obfuscate, Presence και Protean."
+  },
+  "clan:ministry:bane": {
+    "en": "Bright light aimed straight at them costs Bane Severity dice from every pool, and they take Bane Severity extra Aggravated damage from sunlight.",
+    "el": "Έντονο φως στραμμένο κατευθείαν πάνω τους αφαιρεί ζάρια ίσα με το Bane Severity από κάθε pool, και παίρνουν επιπλέον Aggravated ζημιά ίση με το Bane Severity από τον ήλιο."
+  },
+  "clan:ministry:compulsion": {
+    "en": "2-dice penalty on every pool not aimed at tempting someone, themselves included, to break a Chronicle Tenet or Conviction; it ends once that causes a Stain.",
+    "el": "−2 ζάρια σε κάθε pool που δεν αποσκοπεί στο να βάλουν κάποιον, ακόμα και τον εαυτό τους, να παραβεί Chronicle Tenet ή Conviction· τελειώνει μόλις αυτό προκαλέσει Stain."
+  },
+  "clan:nosferatu": {
+    "en": "Hideous information brokers who live hidden beneath the city. In-clan Disciplines: Animalism, Obfuscate and Potence.",
+    "el": "Αποκρουστικοί έμποροι πληροφοριών που ζουν κρυμμένοι κάτω από την πόλη. Disciplines του clan: Animalism, Obfuscate και Potence."
+  },
+  "clan:nosferatu:bane": {
+    "en": "Always count as having the Repulsive (−2) Flaw and can never buy Looks Merits; any attempt to pass as undeformed, including Mask of a Thousand Faces, loses Bane Severity dice.",
+    "el": "Μετρούν πάντα ως να έχουν το Flaw Repulsive (−2) και δεν αγοράζουν ποτέ Looks Merits· κάθε προσπάθεια να φανούν χωρίς παραμόρφωση, ακόμα και με Mask of a Thousand Faces, χάνει ζάρια ίσα με το Bane Severity."
+  },
+  "clan:nosferatu:compulsion": {
+    "en": "A craving for secrets: 2-dice penalty on any action not aimed at learning one, until they uncover a secret worth knowing. Sharing it is optional.",
+    "el": "Λαχτάρα για μυστικά: −2 ζάρια σε κάθε ενέργεια που δεν αποσκοπεί στο να μάθουν ένα, μέχρι να ανακαλύψουν μυστικό που αξίζει. Δεν είναι υποχρεωμένοι να το μοιραστούν."
+  },
+  "clan:ravnos": {
+    "en": "Nomadic tricksters and daredevils who never stay in one place. In-clan Disciplines: Animalism, Obfuscate and Presence.",
+    "el": "Νομάδες κατεργάρηδες και ριψοκίνδυνοι που δεν μένουν ποτέ στο ίδιο μέρος. Disciplines του clan: Animalism, Obfuscate και Presence."
+  },
+  "clan:ravnos:bane": {
+    "en": "Sleeping where they slept within the last seven nights burns them from within: roll Bane Severity dice and take Aggravated damage equal to the 10s. Resting places must be at least a mile apart; no No Haven Flaw at creation.",
+    "el": "Αν κοιμηθούν εκεί όπου κοιμήθηκαν μέσα στις τελευταίες επτά νύχτες, καίγονται από μέσα: ρίξε ζάρια ίσα με το Bane Severity και πάρε Aggravated ζημιά ίση με τα 10. Τα καταφύγια πρέπει να απέχουν τουλάχιστον ένα μίλι."
+  },
+  "clan:ravnos:compulsion": {
+    "en": "Faced with a problem, every approach except the boldest or riskiest one takes a 2-dice penalty, until the problem is solved or no further attempt is possible.",
+    "el": "Μπροστά σε ένα πρόβλημα, κάθε λύση που δεν είναι η πιο τολμηρή ή επικίνδυνη παίρνει −2 ζάρια, μέχρι να λυθεί το πρόβλημα ή να μην υπάρχει άλλη δυνατή προσπάθεια."
+  },
+  "clan:salubri": {
+    "en": "Rare healers and warriors marked by a third eye, hunted by the other clans. In-clan Disciplines: Auspex, Dominate and Fortitude.",
+    "el": "Σπάνιοι θεραπευτές και πολεμιστές με ένα τρίτο μάτι, κυνηγημένοι από τα άλλα clans. Disciplines του clan: Auspex, Dominate και Fortitude."
+  },
+  "clan:salubri:bane": {
+    "en": "Their vitae is addictive: a non-Salubri slaking at least 1 Hunger from them tests for hunger frenzy at Difficulty 2 + Bane Severity (3 + for Banu Haqim). The third eye weeps blood whenever they use a Discipline power.",
+    "el": "Το αίμα τους εθίζει: όποιος μη Salubri κατεβάσει έστω 1 Hunger από αυτούς κάνει τεστ για hunger frenzy με Difficulty 2 + Bane Severity (3 + για Banu Haqim). Το τρίτο μάτι δακρύζει αίμα όποτε χρησιμοποιούν δύναμη Discipline."
+  },
+  "clan:salubri:compulsion": {
+    "en": "Overcome with empathy for someone's personal problem in the scene: 2-dice penalty on actions not aimed at easing it, until it eases, a bigger crisis takes over or the scene ends.",
+    "el": "Τους κυριεύει συμπόνια για το προσωπικό πρόβλημα κάποιου στη σκηνή: −2 ζάρια σε ενέργειες που δεν το ανακουφίζουν, μέχρι να ανακουφιστεί, να προκύψει μεγαλύτερη κρίση ή να τελειώσει η σκηνή."
+  },
+  "clan:thin-blood": {
+    "en": "Vampires of the 14th generation and beyond: clanless, always Blood Potency 0, no Bane or Compulsion, no in-clan Disciplines. They practice Thin-Blood Alchemy and borrow a Discipline dot from the Resonant blood they drink.",
+    "el": "Βαμπίρ 14ης generation και πέρα: χωρίς clan, πάντα Blood Potency 0, χωρίς Bane ή Compulsion, χωρίς Disciplines του clan. Ασκούν Thin-Blood Alchemy και δανείζονται μια τελεία Discipline από το Resonant αίμα που πίνουν."
+  },
+  "clan:toreador": {
+    "en": "Artists, socialites and sensualists obsessed with beauty. In-clan Disciplines: Auspex, Celerity and Presence.",
+    "el": "Καλλιτέχνες, κοσμικοί και ηδονιστές με εμμονή στην ομορφιά. Disciplines του clan: Auspex, Celerity και Presence."
+  },
+  "clan:toreador:bane": {
+    "en": "In ugly surroundings (the Storyteller judges by the character's taste) they lose Bane Severity dice from pools used for Discipline powers.",
+    "el": "Σε άσχημο περιβάλλον (το κρίνει ο Storyteller με βάση το γούστο του χαρακτήρα) χάνουν ζάρια ίσα με το Bane Severity από τα pools των δυνάμεων Discipline."
+  },
+  "clan:toreador:compulsion": {
+    "en": "Fixated on one beautiful thing: they can talk only about it and take a 2-dice penalty on everything else until it is out of sight or the scene ends.",
+    "el": "Καθηλωμένοι σε ένα όμορφο πράγμα: μιλούν μόνο γι’ αυτό και παίρνουν −2 ζάρια σε οτιδήποτε άλλο μέχρι να πάψουν να το αντιλαμβάνονται ή να τελειώσει η σκηνή."
+  },
+  "clan:tremere": {
+    "en": "Blood sorcerers of a shattered pyramid of warlocks. In-clan Disciplines: Auspex, Blood Sorcery and Dominate.",
+    "el": "Μάγοι του αίματος από μια διαλυμένη πυραμίδα μάγων. Disciplines του clan: Auspex, Blood Sorcery και Dominate."
+  },
+  "clan:tremere:bane": {
+    "en": "Their vitae cannot Blood Bond other vampires, though they can still be Bound; binding mortals and ghouls takes Bane Severity extra drinks.",
+    "el": "Το αίμα τους δεν μπορεί να δέσει με Blood Bond άλλα βαμπίρ, αν και οι ίδιοι μπορούν να δεθούν· το δέσιμο θνητών και ghouls θέλει επιπλέον πιόματα ίσα με το Bane Severity."
+  },
+  "clan:tremere:compulsion": {
+    "en": "2-dice penalty on all pools until a critical win on a Skill roll or the end of the scene; repeating an action drops the penalty to 1 die, a second repeat removes it.",
+    "el": "−2 ζάρια σε όλα τα pools μέχρι ένα critical win σε ρίψη Skill ή το τέλος της σκηνής· η επανάληψη μιας ενέργειας ρίχνει την ποινή στο 1 ζάρι, η δεύτερη επανάληψη την αφαιρεί."
+  },
+  "clan:tzimisce": {
+    "en": "Territorial old-world lords and fleshcrafters, obsessed with what they own. In-clan Disciplines: Animalism, Dominate and Protean.",
+    "el": "Κτητικοί άρχοντες του παλιού κόσμου και πλάστες της σάρκας, με εμμονή σε ό,τι τους ανήκει. Disciplines του clan: Animalism, Dominate και Protean."
+  },
+  "clan:tzimisce:bane": {
+    "en": "Must spend the day surrounded by a chosen charge (their land, their people, an organization); otherwise they wake with Aggravated Willpower damage equal to Bane Severity.",
+    "el": "Πρέπει να περνούν τη μέρα περιτριγυρισμένοι από ό,τι έχουν ορίσει δικό τους (τη γη, τους ανθρώπους, μια οργάνωση)· αλλιώς ξυπνούν με Aggravated ζημιά Willpower ίση με το Bane Severity."
+  },
+  "clan:tzimisce:compulsion": {
+    "en": "Must possess something in the scene, an object, a property, even a person: 2-dice penalty on other actions until ownership is established or the prize becomes unattainable.",
+    "el": "Πρέπει να αποκτήσουν κάτι από τη σκηνή, αντικείμενο, ακίνητο, ακόμα και άνθρωπο: −2 ζάρια σε άλλες ενέργειες μέχρι να εδραιωθεί η κατοχή ή να γίνει ανέφικτη."
+  },
+  "clan:ventrue": {
+    "en": "Aristocrats and rulers of the Camarilla, born to command. In-clan Disciplines: Dominate, Fortitude and Presence.",
+    "el": "Αριστοκράτες και κυβερνήτες της Camarilla, γεννημένοι να διατάζουν. Disciplines του clan: Dominate, Fortitude και Presence."
+  },
+  "clan:ventrue:bane": {
+    "en": "Can only feed from a narrow preferred kind of mortal; feeding on anyone else costs Willpower equal to Bane Severity. Resolve + Awareness (Difficulty 4+) tells whether a mortal fits.",
+    "el": "Τρέφονται μόνο από ένα στενό είδος θνητών της προτίμησής τους· για οποιονδήποτε άλλον ξοδεύουν Willpower ίσο με το Bane Severity. Με Resolve + Awareness (Difficulty 4+) καταλαβαίνουν αν κάποιος ταιριάζει."
+  },
+  "clan:ventrue:compulsion": {
+    "en": "Must be obeyed: 2-dice penalty on actions unrelated to leadership until someone follows an order given without supernatural coercion.",
+    "el": "Πρέπει να τους υπακούσουν: −2 ζάρια σε ενέργειες άσχετες με την ηγεσία μέχρι κάποιος να εκτελέσει διαταγή τους που δεν επιβλήθηκε υπερφυσικά."
+  }
+}
