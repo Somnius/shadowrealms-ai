@@ -165,13 +165,9 @@ function OffPath({ reason, headingRef, onChangeAnswers, onFullForge }) {
       <p style={noteStyle}>{why}</p>
       <p style={noteStyle}>{t('wizard:guided.offHelp', 'In the full forge you choose everything yourself, step by step.')}</p>
       <div style={rowStyle}>
-        {onChangeAnswers ? (
-          <button type="button" onClick={onChangeAnswers} style={buttonStyle}>
-            {t('wizard:guided.changeAnswers', 'Change my answers')}
-          </button>
-        ) : (
-          <span />
-        )}
+        <button type="button" onClick={onChangeAnswers} style={buttonStyle}>
+          {t('wizard:guided.changeAnswers', 'Change my answers')}
+        </button>
         <button type="button" onClick={onFullForge} style={primaryButtonStyle}>
           {t('wizard:guided.fullForge', 'Open the full forge')}
         </button>
@@ -208,9 +204,9 @@ export default function GuidedWizard({ token, settings, onBuild, onFullForge, on
     return (
       <section aria-labelledby="guided-off-title">
         <h3 id="guided-off-title" ref={headingRef} tabIndex={-1} style={headingStyle}>
-          {t('wizard:guided.unavailableTitle', 'The guide is not available')}
+          {t('wizard:guided.unavailableNow', 'The guide isn’t available right now')}
         </h3>
-        <p style={noteStyle}>{t('wizard:guided.unavailable', 'The questions could not be loaded. You can still build your character in the full forge.')}</p>
+        <p style={noteStyle}>{t('wizard:guided.unavailableHelp', 'You can still build your character in the full forge.')}</p>
         <div style={rowStyle}>
           <button type="button" onClick={onBack} style={buttonStyle}>
             {t('wizard:guided.back', 'Back')}

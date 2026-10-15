@@ -168,7 +168,7 @@
         {
           "id": "street",
           "text": {"en": "Into the dark streets, to take whoever comes along.",
-                   "el": "Στους σκοτεινούς δρόμους, να αρπάξεις όποιον βρεθεί μπροστά σου."},
+                   "el": "Στους σκοτεινούς δρόμους, να αρπάξω όποιον βρεθεί μπροστά μου."},
           "weights": {
             "clan": {"Brujah": 3, "Caitiff": 1},
             "predator": {"Alleycat": 3},
@@ -201,7 +201,7 @@
         {
           "id": "bag",
           "text": {"en": "To a blood bag I bought, stole or traded for. Hunting is for animals.",
-                   "el": "Σε μια σακούλα αίμα που αγόρασα, έκλεψα ή αντάλλαξα. Το κυνήγι είναι για τα ζώα."},
+                   "el": "Σε έναν ασκό αίματος που αγόρασα, έκλεψα ή αντάλλαξα. Το κυνήγι είναι για τα ζώα."},
           "weights": {
             "clan": {"Tremere": 3, "Thin-blood": 1},
             "predator": {"Bagger": 3},
@@ -276,7 +276,7 @@
         {
           "id": "losing_mine",
           "text": {"en": "Losing what is mine: my home, my people, my piece of this city.",
-                   "el": "Να χάσω ό,τι είναι δικό μου: το σπίτι μου, τους ανθρώπους μου, το κομμάτι μου σε αυτή την πόλη."},
+                   "el": "Να χάσω ό,τι είναι δικό μου: το σπίτι μου, τους ανθρώπους μου, τη γωνιά μου σε αυτή την πόλη."},
           "weights": {
             "clan": {"Tzimisce": 3, "Ventrue": 1},
             "predator": {"Montero": 1, "Trapdoor": 1},
@@ -347,7 +347,7 @@
       "axis": "mortal ties",
       "text": {
         "en": "Your family and old friends still call you. What do you do about them?",
-        "el": "Η οικογένεια και οι παλιοί σου φίλοι ακόμα σου τηλεφωνούν. Τι κάνεις μαζί τους;"
+        "el": "Η οικογένειά σου και οι παλιοί σου φίλοι ακόμα σου τηλεφωνούν. Τι κάνεις με αυτούς;"
       },
       "options": [
         {
@@ -472,7 +472,7 @@
         {
           "id": "leak",
           "text": {"en": "Leak it. Everyone deserves to see what they really are.",
-                   "el": "Το διαρρέω. Όλοι αξίζουν να δουν τι είναι στ' αλήθεια."},
+                   "el": "Το βγάζω στη φόρα. Όλοι πρέπει να δουν τι είναι στ' αλήθεια."},
           "weights": {
             "clan": {"Brujah": 3, "Caitiff": 1},
             "attributes": {"social": 1},

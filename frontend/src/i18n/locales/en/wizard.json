@@ -300,7 +300,6 @@
   },
   "guided": {
     "bannerLabel": "Suggested by the guide",
-    "banner": "Suggested by the guide: {{suggestion}}. Clan, predator type, Attributes and Skills are filled in; change anything you like.",
     "chooseIntro": "How do you want to start?",
     "modeGuided": "Guided",
     "modeGuidedHelp": "A few questions about who your character is. The guide suggests a clan and a predator type and fills in Attributes and Skills; you finish the sheet in the forge.",
@@ -324,13 +323,16 @@
     "offHelp": "In the full forge you choose everything yourself, step by step.",
     "fullForge": "Open the full forge",
     "loading": "Loading the questions…",
-    "unavailableTitle": "The guide is not available",
-    "unavailable": "The questions could not be loaded. You can still build your character in the full forge.",
     "back": "Back",
     "progress": "Question {{n}} of {{total}}",
     "none": "None of these",
     "finish": "See the suggestion",
     "next": "Next",
-    "skillsLinePlain": "Skills: {{distribution}}."
+    "skillsLinePlain": "Skills: {{distribution}}.",
+    "bannerNoPredator": "Suggested by the guide: {{clan}}. Clan, Attributes and Skills are filled in. No predator type stood out, so pick one in the Predator step. Change anything you like.",
+    "bannerThinBlood": "Suggested by the guide: {{clan}} · {{predator}}. Clan, predator type, Attributes and Skills are filled in. In the Predator step you still pick its specialty. Change anything you like.",
+    "bannerPredator": "Suggested by the guide: {{clan}} · {{predator}}. Clan, predator type, Attributes and Skills are filled in. In the Predator step you still pick its specialty and Discipline dot. Change anything you like.",
+    "unavailableNow": "The guide isn’t available right now",
+    "unavailableHelp": "You can still build your character in the full forge."
   }
 }

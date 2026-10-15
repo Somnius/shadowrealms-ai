@@ -130,7 +130,9 @@ test('happy path: one question per screen, back keeps the answer, the suggestion
   expect(document.getElementById('v5-field-clan')).toHaveValue('Hecata');
   expect(document.getElementById('v5-field-predator')).toHaveValue('Grim Reaper');
   expect(document.getElementById('v5-field-distribution')).toHaveValue('specialist');
-  expect(screen.getByRole('note', { name: 'Suggested by the guide' })).toHaveTextContent('Hecata · Grim Reaper');
+  const banner = screen.getByRole('note', { name: 'Suggested by the guide' });
+  expect(banner).toHaveTextContent('Suggested by the guide: Hecata · Grim Reaper.');
+  expect(banner).toHaveTextContent('In the Predator step you still pick its specialty and Discipline dot.');
   expect(screen.getByRole('group', { name: 'Resolve: 4 of 4' })).toBeInTheDocument();
   expect(screen.getByRole('group', { name: 'Composure: 1 of 4' })).toBeInTheDocument();
   expect(screen.getByRole('group', { name: 'Occult: 4 of 4' })).toBeInTheDocument();
@@ -179,13 +181,71 @@ test('Back on the first question returns to the choice', async () => {
   expect(screen.getByText('How do you want to start?')).toHaveFocus();
 });
 
+/** A two-question set where both first answers give `weights`. */
+const twoQuestions = (weights) => ({
+  ...SET,
+  questions: ['one', 'two'].map((id) => ({
+    id,
+    text: { en: `Question ${id}?`, el: `Ερώτηση ${id};` },
+    options: [
+      { id: 'yes', text: { en: `Yes to ${id}.`, el: `Ναι στο ${id}.` }, weights },
+      { id: 'no', text: { en: `No to ${id}.`, el: `Όχι στο ${id}.` }, weights: {} },
+    ],
+  })),
+});
+
+async function answerTwo() {
+  fireEvent.click(screen.getByRole('button', { name: 'Guided' }));
+  await screen.findByRole('heading', { name: 'Question one?' });
+  answer('Yes to one.');
+  answer('Yes to two.');
+}
+
+test('no predator type in the answers: the forge banner says to pick one', async () => {
+  guided = respond(200, twoQuestions({ clan: { Hecata: 3 } }));
+  renderEntry();
+  await answerTwo();
+  expect(screen.getByRole('region', { name: 'The guide suggests' })).toHaveTextContent('No predator type stood out in your answers');
+  fireEvent.click(screen.getByRole('button', { name: 'Build this character' }));
+  expect(document.getElementById('v5-field-clan')).toHaveValue('Hecata');
+  expect(document.getElementById('v5-field-predator')).toHaveValue('');
+  expect(screen.getByRole('note', { name: 'Suggested by the guide' })).toHaveTextContent(
+    'Suggested by the guide: Hecata. Clan, Attributes and Skills are filled in. No predator type stood out, so pick one in the Predator step.'
+  );
+});
+
+test('a thin-blood takes no predator Discipline dot, and the banner says so', async () => {
+  guided = respond(200, twoQuestions({ clan: { 'Thin-blood': 3 }, predator: { Montero: 2 } }));
+  renderEntry();
+  await answerTwo();
+  fireEvent.click(screen.getByRole('button', { name: 'Build this character' }));
+  expect(document.getElementById('v5-field-clan')).toHaveValue('Thin-blood');
+  const banner = screen.getByRole('note', { name: 'Suggested by the guide' });
+  expect(banner).toHaveTextContent('Thin-blood · Montero');
+  expect(banner).toHaveTextContent('In the Predator step you still pick its specialty.');
+  expect(banner).not.toHaveTextContent('Discipline dot');
+});
+
 test('without the questions the guide says so and offers the full forge', async () => {
   guided = respond(404, { error: 'The guided questions are not installed' });
   renderEntry();
   fireEvent.click(screen.getByRole('button', { name: 'Guided' }));
-  expect(await screen.findByRole('heading', { name: 'The guide is not available' })).toHaveFocus();
+  expect(await screen.findByRole('heading', { name: 'The guide isn’t available right now' })).toHaveFocus();
   fireEvent.click(screen.getByRole('button', { name: 'Open the full forge' }));
   expect(screen.getByLabelText('Character name')).toBeInTheDocument();
+});
+
+test('without the catalog the guide is not offered either (the fallback rules lack 7 clans)', async () => {
+  applyV5Catalog(null); // back to src/rules/v5.json; the catalog request below gets a 404
+  try {
+    renderEntry();
+    fireEvent.click(screen.getByRole('button', { name: 'Guided' }));
+    expect(await screen.findByRole('heading', { name: 'The guide isn’t available right now' })).toHaveFocus();
+    expect(screen.queryByRole('radiogroup')).toBeNull();
+    expect(global.fetch.mock.calls.map(([u]) => String(u))).toContain('/api/rules/v5/catalog');
+  } finally {
+    applyV5Catalog(fixture);
+  }
 });
 
 test('the guide speaks Greek; the game terms and names stay English', async () => {

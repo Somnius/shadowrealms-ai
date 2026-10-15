@@ -13,6 +13,7 @@ import {
   THIN_BLOOD,
   V5_ATTRIBUTES,
   V5_ATTRIBUTE_SPREAD,
+  V5_FREE_SPECIALTY_SKILLS,
   V5_SKILLS,
   V5_SKILL_CATEGORIES,
   V5_SKILL_DISTRIBUTIONS,
@@ -164,16 +165,20 @@ export function distributionVote(points = {}) {
 /**
  * The distribution's ratings given to the skills with the most points, highest first. Skills with
  * the same points go by the order of their category in `categories` (the Attributes' order), then
- * the sheet order. Exactly the distribution's ratings, so the forge's skill check passes.
+ * the sheet order; but among skills without points, Academics, Craft, Performance and Science come
+ * last, since a dot there asks for a free specialty the player didn't choose (there are always
+ * enough other skills). Exactly the distribution's ratings, so the forge's skill check passes.
  */
 export function skillPrefill(points = {}, distribution = DEFAULT_DISTRIBUTION, categories = CATEGORIES) {
   const dist = V5_SKILL_DISTRIBUTIONS[distribution] || V5_SKILL_DISTRIBUTIONS[DEFAULT_DISTRIBUTION];
   const ratings = Object.entries(dist.counts)
     .flatMap(([rating, count]) => Array(count).fill(Number(rating)))
     .sort((a, b) => b - a);
-  const order = V5_SKILL_KEYS.map((k, i) => ({ k, p: weight(points[k]), c: categories.indexOf(CATEGORY_OF_SKILL[k]), i })).sort(
-    (a, b) => b.p - a.p || a.c - b.c || a.i - b.i
-  );
+  const order = V5_SKILL_KEYS.map((k, i) => {
+    const p = weight(points[k]);
+    const late = p === 0 && V5_FREE_SPECIALTY_SKILLS.includes(k) ? 1 : 0;
+    return { k, p, late, c: categories.indexOf(CATEGORY_OF_SKILL[k]), i };
+  }).sort((a, b) => b.p - a.p || a.late - b.late || a.c - b.c || a.i - b.i);
   const skills = Object.fromEntries(V5_SKILL_KEYS.map((k) => [k, 0]));
   ratings.forEach((r, i) => {
     skills[order[i].k] = r;

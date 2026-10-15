@@ -300,7 +300,6 @@
   },
   "guided": {
     "bannerLabel": "Πρόταση του οδηγού",
-    "banner": "Πρόταση του οδηγού: {{suggestion}}. Clan, predator type, Attributes και Skills είναι ήδη συμπληρωμένα. Άλλαξε ό,τι θέλεις.",
     "chooseIntro": "Πώς θέλεις να ξεκινήσεις;",
     "modeGuided": "Με οδηγό",
     "modeGuidedHelp": "Λίγες ερωτήσεις για το ποιος είναι ο χαρακτήρας σου. Ο οδηγός προτείνει clan και predator type και συμπληρώνει Attributes και Skills. Το φύλλο το ολοκληρώνεις στη σφυρηλάτηση.",
@@ -324,13 +323,16 @@
     "offHelp": "Στην πλήρη σφυρηλάτηση διαλέγεις τα πάντα εσύ, βήμα βήμα.",
     "fullForge": "Άνοιξε την πλήρη σφυρηλάτηση",
     "loading": "Φορτώνουν οι ερωτήσεις…",
-    "unavailableTitle": "Ο οδηγός δεν είναι διαθέσιμος",
-    "unavailable": "Οι ερωτήσεις δεν φορτώθηκαν. Μπορείς να φτιάξεις τον χαρακτήρα σου στην πλήρη σφυρηλάτηση.",
     "back": "Πίσω",
     "progress": "Ερώτηση {{n}} από {{total}}",
     "none": "Τίποτα από αυτά",
     "finish": "Δες την πρόταση",
     "next": "Επόμενη",
-    "skillsLinePlain": "Skills: {{distribution}}."
+    "skillsLinePlain": "Skills: {{distribution}}.",
+    "bannerNoPredator": "Πρόταση του οδηγού: {{clan}}. Clan, Attributes και Skills είναι ήδη συμπληρωμένα. Κανένας predator type δεν ξεχώρισε, οπότε διάλεξε έναν στο βήμα Predator. Άλλαξε ό,τι θέλεις.",
+    "bannerThinBlood": "Πρόταση του οδηγού: {{clan}} · {{predator}}. Clan, predator type, Attributes και Skills είναι ήδη συμπληρωμένα. Στο βήμα Predator διαλέγεις ακόμα την specialty του. Άλλαξε ό,τι θέλεις.",
+    "bannerPredator": "Πρόταση του οδηγού: {{clan}} · {{predator}}. Clan, predator type, Attributes και Skills είναι ήδη συμπληρωμένα. Στο βήμα Predator διαλέγεις ακόμα την specialty και την τελεία Discipline του. Άλλαξε ό,τι θέλεις.",
+    "unavailableNow": "Ο οδηγός δεν είναι διαθέσιμος αυτή τη στιγμή",
+    "unavailableHelp": "Μπορείς να φτιάξεις τον χαρακτήρα σου στην πλήρη σφυρηλάτηση."
   }
 }

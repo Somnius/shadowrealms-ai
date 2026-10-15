@@ -33,8 +33,8 @@ The V5 forge starts with a choice: **Guided** or **Full forge**. Guided asks a f
 ```
 
 - `version`: a whole number; raise it when you change the set. `author`: who wrote it.
-- `questions`: 1 to 30, asked in this order. `id`: lowercase letters, digits, `_` or `-`, unique. `axis`: optional, a note for you (not shown). `text`: English and Greek, up to 300 characters each.
-- `options`: 2 to 10 answers. `id` unique within the question, `text` in both languages, `weights` below. The player always gets an extra "None of these" answer, so don't write one.
+- `questions`: 1 to 30, asked in this order. `id`: lowercase letters, digits, `_` or `-`, starting with a letter or digit, at most 40 characters, unique. `axis`: optional, a note for you (not shown). `text`: English and Greek, up to 300 characters each.
+- `options`: 2 to 10 answers. `id`: the same rule as a question id, unique within the question. `text` in both languages, `weights` below. The player always gets an extra "None of these" answer, so don't write one.
 - `note`: optional free text on the file, a question or an answer (JSON has no comments). Any other unknown key is reported as an error, so a typo like `weigths` can't silently drop the weights.
 
 ## Weights
@@ -64,12 +64,12 @@ Code: `frontend/src/characterSheet/v5/guided.js`.
 3. **Predator type**: the one with the most points among those that fit. It must be allowed in the chronicle and not forbidden to the clan (Ventrue: no Bagger, no Farmer). Tithe Collector fits only where ancillae are allowed, and never thin-bloods; the character then starts as an ancilla. Farmer doesn't fit at Blood Potency 3 or more (a chronicle of ancillae only). If no type that fits has points, the player picks one in the forge.
 4. **Attributes**: the 4/3/3/3/2/2/2/2/1 spread. The category with the most points gets 4, 3, 3, the next gets 3, 2, 2 and the last gets 2, 2, 1. An Attribute's own points also count for its category, and inside a category they decide which Attribute gets the higher value. Ties go physical, social, mental, then sheet order.
 5. **Skill distribution**: the one with the most points. With no points or a tie, it's balanced.
-6. **Skills**: the distribution's dots go to the skills with the most points first. Skills with the same points come from the strongest Attribute category first, then in sheet order.
+6. **Skills**: the distribution's dots go to the skills with the most points first. Skills with the same points come from the strongest Attribute category first, then in sheet order. Academics, Craft, Performance and Science get dots only when the answers gave them points, since a dot there asks for a free specialty.
 
 ## Writing tips
 
 - One idea per question (the placeholder set covers: violence or talk, night job, how you feed, what you fear, mortal ties, secrets, ambition, body or mind), with 4 to 8 answers a player could really say.
-- Give each answer one main clan (3) and at most one or two that also fit (1). A clan needs to be the main clan of about three answers, or players who want it can't reach it.
+- Give each answer one main clan (3) and at most one or two that also fit (1). Every clan should be the main clan of about three answers, or players who want it can't reach it. In the placeholder set Caitiff and Hecata have only two, so their margins are thin: one answer that doesn't fit the clan often loses it (Gangrel has two as well, but its many 1-point answers carry it).
 - The thresholds depend on the set. For the placeholder set (16 clans, 8 questions), 0.3 and 2 send every clan's in-character answers to that clan, while about 95% of random answer sets end off the path. With 0.35, four clans could not be reached at all. Raise them to send more players to the full forge, lower them to suggest more often.
 - Game terms stay English in the Greek text too (clan names, Prince, sire). Write the Greek without assuming the character's gender where you can.
 

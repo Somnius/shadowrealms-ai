@@ -12,7 +12,7 @@ import {
   scoreAnswers,
   skillPrefill,
 } from './guided';
-import { V5_ATTRIBUTE_KEYS, V5_ATTRIBUTE_SPREAD, V5_SKILL_DISTRIBUTIONS, V5_SKILL_KEYS } from './constants';
+import { V5_ATTRIBUTE_KEYS, V5_ATTRIBUTE_SPREAD, V5_FREE_SPECIALTY_SKILLS, V5_SKILL_DISTRIBUTIONS, V5_SKILL_KEYS } from './constants';
 import { normalizeCreationSettings } from './creationSettings';
 import { applyV5Catalog, getV5Rules } from './rulesData';
 import { validateV5Attributes, validateV5Skills } from './validation';
@@ -281,11 +281,25 @@ describe('prefill', () => {
     expect(skills.occult).toBe(4);
     expect(skills.academics).toBe(3);
     expect(skills.brawl).toBe(3); // any points beat none
-    // the rest go to the first category's skills (mental here), in sheet order
+    // the rest go to the first category's skills (mental here), in sheet order, then the next category's
     expect(skills.awareness).toBe(3);
     expect([skills.finance, skills.investigation, skills.medicine]).toEqual([2, 2, 2]);
-    expect([skills.politics, skills.science, skills.technology]).toEqual([1, 1, 1]);
+    expect([skills.politics, skills.technology, skills.animal_ken]).toEqual([1, 1, 1]);
+    expect(skills.science).toBe(0); // no points: it would ask for a free specialty, so it comes last
     expect(skills.athletics).toBe(0);
+  });
+
+  test('Academics, Craft, Performance and Science get dots only when the answers gave them points', () => {
+    Object.keys(V5_SKILL_DISTRIBUTIONS).forEach((name) => {
+      [['mental', 'social', 'physical'], ['physical', 'social', 'mental'], ['social', 'mental', 'physical']].forEach((cats) => {
+        const skills = skillPrefill({}, name, cats);
+        // jack of all trades rates 19 skills: the 23 others are always enough
+        V5_FREE_SPECIALTY_SKILLS.forEach((k) => expect(skills[k]).toBe(0));
+        expect(validateV5Skills(skills, name)).toBeNull();
+      });
+    });
+    expect(skillPrefill({ academics: 1 }, 'balanced').academics).toBeGreaterThan(0);
+    expect(skillPrefill({ performance: 2, brawl: 3 }, 'specialist').performance).toBe(3);
   });
 
   test('the ratings are exactly the distribution, for every distribution and many point mixes', () => {
@@ -299,6 +313,7 @@ describe('prefill', () => {
         const points = Object.fromEntries(V5_SKILL_KEYS.filter(() => rnd() < 0.4).map((k) => [k, Math.floor(rnd() * 4) + 1]));
         const skills = skillPrefill(points, name, ['social', 'physical', 'mental']);
         expect(validateV5Skills(skills, name)).toBeNull();
+        V5_FREE_SPECIALTY_SKILLS.filter((k) => !points[k]).forEach((k) => expect(skills[k]).toBe(0));
         const want = Object.entries(dist.counts).flatMap(([r, n]) => Array(n).fill(Number(r)));
         expect(sorted(Object.values(skills).filter((v) => v > 0))).toEqual(sorted(want));
         expect(Object.keys(skills).sort()).toEqual([...V5_SKILL_KEYS].sort());

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { GothicBox } from '../GothicDecorations';
-import { V5_SECTION_IDS } from '../../characterSheet/v5/constants';
+import { THIN_BLOOD, V5_SECTION_IDS } from '../../characterSheet/v5/constants';
 import { useV5Catalog } from '../../rules/v5Catalog';
 import { buildV5Payload, validateV5Sheet } from '../../characterSheet/v5/validation';
 import { settingsForCampaign } from '../../characterSheet/v5/creationSettings';
@@ -23,6 +23,29 @@ import ExperienceStep from './v5/ExperienceStep';
 import StoryStep from './v5/StoryStep';
 
 const API_URL = '/api';
+
+/** The banner over a forge the guide filled in: what it set and what is still to pick. */
+function guidedBanner({ clan, predator }) {
+  if (!predator) {
+    return t(
+      'wizard:guided.bannerNoPredator',
+      'Suggested by the guide: {{clan}}. Clan, Attributes and Skills are filled in. No predator type stood out, so pick one in the Predator step. Change anything you like.',
+      { clan }
+    );
+  }
+  if (clan === THIN_BLOOD) {
+    return t(
+      'wizard:guided.bannerThinBlood',
+      'Suggested by the guide: {{clan}} · {{predator}}. Clan, predator type, Attributes and Skills are filled in. In the Predator step you still pick its specialty. Change anything you like.',
+      { clan, predator }
+    );
+  }
+  return t(
+    'wizard:guided.bannerPredator',
+    'Suggested by the guide: {{clan}} · {{predator}}. Clan, predator type, Attributes and Skills are filled in. In the Predator step you still pick its specialty and Discipline dot. Change anything you like.',
+    { clan, predator }
+  );
+}
 
 // The corebook's order (p. 136): concept, clan and sire, Attributes, Skills, Disciplines,
 // predator type, Advantages, Convictions and Touchstones, then age and generation.
@@ -124,9 +147,7 @@ export default function V5CharacterCreationWizard({
                 aria-label={t('wizard:guided.bannerLabel', 'Suggested by the guide')}
                 style={{ margin: '0 0 12px', padding: '10px 12px', borderLeft: '3px solid var(--sr-gold-400)', background: 'rgba(0,0,0,0.25)', color: 'var(--sr-bone-100)', fontSize: '13px' }}
               >
-                {t('wizard:guided.banner', 'Suggested by the guide: {{suggestion}}. Clan, predator type, Attributes and Skills are filled in; change anything you like.', {
-                  suggestion: [guided.clan, guided.predator].filter(Boolean).join(' · '),
-                })}
+                {guidedBanner(guided)}
               </div>
             ) : null}
             <p style={{ color: 'var(--sr-bone-500)', fontSize: '14px', lineHeight: 1.5 }}>

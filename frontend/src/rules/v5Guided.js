@@ -17,14 +17,17 @@ export async function fetchV5Guided(token = getCurrentToken()) {
   }
 }
 
-/** { status: 'loading' | 'ready' | 'error', set }: ready once the questions and the catalog are in. */
+/**
+ * { status: 'loading' | 'ready' | 'error', set }: ready once the questions and the catalog are in.
+ * Without the catalog the guide is not offered: the rules fallback (src/rules/v5.json) lacks the
+ * Players Guide clans and predator types, so answers pointing there would read as "not allowed".
+ */
 export function useV5Guided(token) {
   const [state, setState] = useState({ status: 'loading', set: null });
   useEffect(() => {
     let alive = true;
-    // Without the catalog the guide still works on the rules fallback (fewer clans).
-    Promise.all([fetchV5Guided(token), loadV5Catalog(token)]).then(([set]) => {
-      if (alive) setState(set ? { status: 'ready', set } : { status: 'error', set: null });
+    Promise.all([fetchV5Guided(token), loadV5Catalog(token)]).then(([set, catalog]) => {
+      if (alive) setState(set && catalog ? { status: 'ready', set } : { status: 'error', set: null });
     });
     return () => {
       alive = false;
