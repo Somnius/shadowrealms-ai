@@ -11,9 +11,10 @@ import {
   clanFlaws,
   clanInfo,
   loresheetAllowed,
+  resolvePredatorGrants,
   thinBloodOptions,
 } from '../../../characterSheet/v5/validation';
-import { advantageEntries, loresheetEntries } from '../../../characterSheet/v5/rulesData';
+import { advantageEntries, findAdvantage, findLoresheet, loresheetEntries } from '../../../characterSheet/v5/rulesData';
 import { t } from '../../../i18n';
 import { Term } from '../../../i18n/glossary';
 import { newAdvRow, newLoreRow } from './useV5ForgeState';
@@ -28,7 +29,13 @@ const ratingLabel = (choices) => {
   return contiguous ? `${choices[0]}–${choices[choices.length - 1]}` : choices.join('/');
 };
 
-const KIND_LABEL = { background: 'Background', merit: 'Merit', flaw: 'Flaw' };
+// Game terms: English in both languages, but through t() so a locale can say otherwise.
+const KIND_LABEL = {
+  background: () => t('wizard:v5.kindBackground', 'Background'),
+  merit: () => t('wizard:v5.kindMerit', 'Merit'),
+  flaw: () => t('wizard:v5.kindFlaw', 'Flaw'),
+  loresheet: () => t('wizard:v5.kindLoresheet', 'Loresheet'),
+};
 const sectionStyle = { marginTop: '14px', paddingTop: '10px', borderTop: '1px solid var(--sr-night-700)' };
 const headingStyle = { ...labelStyle, fontSize: '14px', fontFamily: 'var(--sr-font-display)', marginBottom: '8px' };
 
@@ -55,40 +62,42 @@ function GroupedOptions({ entries, takenIds, current }) {
   ));
 }
 
-/** One Background, Merit or Flaw row. */
-function AdvRow({ row, index, rows, setRows, clan }) {
-  const label = t('wizard:v5.advRowLabel', '{{kind}} {{n}}', { kind: KIND_LABEL[row.kind], n: index + 1 });
+/** One Background, Merit or Flaw row. `fixedIds`: the clan's and the predator type's entries. */
+function AdvRow({ row, index, rows, setRows, clan, fixedIds }) {
+  const label = t('wizard:v5.advRowLabel', '{{kind}} {{n}}', { kind: KIND_LABEL[row.kind](), n: index + 1 });
   const set = (patch) => setRows((prev) => prev.map((r) => (r.key === row.key ? { ...r, ...patch } : r)));
   const options = advantageOptions(clan, row.kind);
-  const entry = row.id && row.id !== 'custom' ? advantageEntries().find((a) => a.id === row.id) : null;
+  // By id, or by name when the catalog doesn't know the id (then it shows as a custom row).
+  const entry = row.id && row.id !== 'custom' ? findAdvantage({ id: row.id, name: row.name }, row.kind) : null;
+  const custom = row.id === 'custom' || Boolean(row.id && !entry && String(row.name || '').trim());
   // Not offered any more (the clan changed): kept visible so its error makes sense.
   const stray = entry && !options.some((o) => o.id === entry.id) ? entry : null;
-  // A non-repeatable entry once; a repeatable one up to its max_instances. The clan's own Flaws count.
-  const fixed = clanFlaws({ clan }).map((f) => f.id);
+  // A non-repeatable entry once; a repeatable one up to its max_instances. The rows the clan and
+  // the predator type give count too (a Bagger isn't offered Iron Gullet again).
   const taken = (e) => {
-    const n = rows.filter((r) => r.id === e.id).length + fixed.filter((id) => id === e.id).length;
+    const n = rows.filter((r) => r.id === e.id).length + fixedIds.filter((id) => id === e.id).length;
     return e.repeatable ? Boolean(e.max_instances && n >= e.max_instances) : n >= 1;
   };
   const choices = entry ? advantageDotChoices(entry) : [];
   const level = entry ? (entry.levels || []).find((l) => l.dots === Number(row.dots)) : null;
-  const custom = row.id === 'custom';
   return (
     <div style={{ marginBottom: '12px' }}>
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', alignItems: 'center' }}>
         <select
           aria-label={label}
-          value={row.id}
+          value={entry ? entry.id : custom ? 'custom' : row.id}
           onChange={(e) => {
             const id = e.target.value;
             const next = advantageEntries().find((a) => a.id === id);
             const first = next ? advantageDotChoices(next)[0] : null;
-            set({ id, dots: id === 'custom' ? 1 : first || 0 });
+            // the name is kept with the id, so the row survives an id the catalog later renames
+            set({ id, name: next ? next.name : id === 'custom' ? '' : row.name, dots: id === 'custom' ? 1 : first || 0 });
           }}
           style={{ ...inputStyle, flex: '2 1 220px', width: 'auto', padding: '8px' }}
         >
           <option value="">{t('wizard:v5.choose', 'Choose…')}</option>
           {stray ? <option value={stray.id}>{stray.name}</option> : null}
-          <GroupedOptions entries={options} takenIds={taken} current={row.id} />
+          <GroupedOptions entries={options} takenIds={taken} current={entry ? entry.id : row.id} />
           <option value="custom">{t('wizard:v5.advCustom', 'Custom (Storyteller approval)…')}</option>
         </select>
         {custom ? (
@@ -130,7 +139,11 @@ function AdvRow({ row, index, rows, setRows, clan }) {
             ))}
           </select>
         ) : entry && choices.length === 1 ? (
-          <span aria-label={t('wizard:v5.advDots', '{{name}} dots', { name: entry.name })} style={{ color: 'var(--sr-blood-400)', minWidth: '60px' }}>
+          <span
+            role="img"
+            aria-label={t('wizard:v5.advFixedDots', { one: '{{name}}: {{count}} dot', other: '{{name}}: {{count}} dots' }, { name: entry.name, count: choices[0] })}
+            style={{ color: 'var(--sr-blood-400)', minWidth: '60px' }}
+          >
             {dots(choices[0])}
           </span>
         ) : null}
@@ -177,15 +190,17 @@ function AdvRow({ row, index, rows, setRows, clan }) {
 function AdvSection({ kind, title, children }) {
   const f = useForge();
   const rows = f.advRows.filter((r) => r.kind === kind);
+  const pred = resolvePredatorGrants(f.sheet);
+  const fixedIds = [...clanFlaws({ clan: f.clan }), ...pred.advantages, ...pred.flaws].map((r) => r.id).filter(Boolean);
   return (
     <div style={sectionStyle} data-adv-section={kind}>
       <div style={headingStyle}>{title}</div>
       {children}
       {rows.map((r, i) => (
-        <AdvRow key={r.key} row={r} index={i} rows={rows} setRows={f.setAdvRows} clan={f.clan} />
+        <AdvRow key={r.key} row={r} index={i} rows={rows} setRows={f.setAdvRows} clan={f.clan} fixedIds={fixedIds} />
       ))}
       <button type="button" onClick={() => f.setAdvRows((prev) => [...prev, newAdvRow(kind)])} style={addButtonStyle}>
-        {t('wizard:v5.advAdd', '+ Add {{kind}}', { kind: KIND_LABEL[kind] })}
+        {t('wizard:v5.advAdd', '+ Add {{kind}}', { kind: KIND_LABEL[kind]() })}
       </button>
     </div>
   );
@@ -194,9 +209,9 @@ function AdvSection({ kind, title, children }) {
 /** One loresheet: the sheet, then the levels taken (each its own benefit, its number in dots). */
 function LoreRow({ row, index }) {
   const f = useForge();
-  const label = t('wizard:v5.advRowLabel', '{{kind}} {{n}}', { kind: 'Loresheet', n: index + 1 });
+  const label = t('wizard:v5.advRowLabel', '{{kind}} {{n}}', { kind: KIND_LABEL.loresheet(), n: index + 1 });
   const set = (patch) => f.setLoreRows((prev) => prev.map((r) => (r.key === row.key ? { ...r, ...patch } : r)));
-  const sheet = loresheetEntries().find((l) => l.id === row.id) || null;
+  const sheet = row.id ? findLoresheet({ id: row.id, name: row.name }) : null;
   const offered = loresheetEntries().filter((l) => loresheetAllowed(l, f.sheet));
   const takenElsewhere = f.loreRows.filter((r) => r.key !== row.key).map((r) => r.id);
   const total = row.levels.reduce((s, n) => s + n, 0);
@@ -205,8 +220,11 @@ function LoreRow({ row, index }) {
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', alignItems: 'center' }}>
         <select
           aria-label={label}
-          value={row.id}
-          onChange={(e) => set({ id: e.target.value, levels: [] })}
+          value={sheet ? sheet.id : row.id}
+          onChange={(e) => {
+            const next = loresheetEntries().find((l) => l.id === e.target.value);
+            set({ id: e.target.value, name: next ? next.name : '', levels: [] });
+          }}
           style={{ ...inputStyle, flex: '2 1 260px', width: 'auto', padding: '8px' }}
         >
           <option value="">{t('wizard:v5.choose', 'Choose…')}</option>
@@ -240,13 +258,14 @@ function LoreRow({ row, index }) {
               <label style={{ display: 'flex', gap: '8px', alignItems: 'baseline', cursor: 'pointer', color: 'var(--sr-bone-100)', fontSize: '13px' }}>
                 <input
                   type="checkbox"
+                  aria-label={t('wizard:v5.loreLevelLabel', 'Level {{n}}: {{name}}', { n: lv.dots, name: lv.name })}
                   checked={row.levels.includes(lv.dots)}
                   onChange={(e) =>
                     set({ levels: e.target.checked ? [...row.levels, lv.dots] : row.levels.filter((n) => n !== lv.dots) })
                   }
                 />
-                <span style={{ color: 'var(--sr-blood-400)', minWidth: '52px' }}>{dots(lv.dots)}</span>
-                <span lang="en">{lv.name}</span>
+                <span aria-hidden="true" style={{ color: 'var(--sr-blood-400)', minWidth: '52px' }}>{dots(lv.dots)}</span>
+                <span lang="en" aria-hidden="true">{lv.name}</span>
               </label>
               <CatalogNote entry={lv.desc ? { desc: lv.desc } : null} style={{ marginLeft: '70px', marginTop: '0' }} />
             </div>
@@ -262,13 +281,21 @@ function ThinSelects({ kind }) {
   const f = useForge();
   const rows = kind === 'merit' ? f.thinBloodMerits : f.thinBloodFlaws;
   const setRows = kind === 'merit' ? f.setThinBloodMerits : f.setThinBloodFlaws;
-  const word = kind === 'merit' ? 'Merit' : 'Flaw';
+  const word = KIND_LABEL[kind]();
   const options = thinBloodOptions(kind);
   const [, hi] = V5_THIN_BLOOD_MERITS;
+  const count = rows.filter((r) => String(r.name || '').trim()).length;
+  // entries already picked on either side (an excluded pair is greyed out, core p. 183)
+  const picked = [...f.thinBloodMerits, ...f.thinBloodFlaws]
+    .map((r) => thinBloodOptions('merit').concat(thinBloodOptions('flaw')).find((o) => o.name === r.name))
+    .filter(Boolean);
+  const excluded = (o) => picked.some((x) => x.id !== o.id && ((x.excludes || []).includes(o.id) || (o.excludes || []).includes(x.id)));
   return (
     <div style={{ flex: '1 1 260px', minWidth: 0 }}>
       <div style={labelStyle}>
-        Thin-blood {word}s ({rows.filter((r) => String(r.name || '').trim()).length})
+        {kind === 'merit'
+          ? t('wizard:v5.thinMeritsHeader', 'Thin-blood Merits ({{n}})', { n: count })
+          : t('wizard:v5.thinFlawsHeader', 'Thin-blood Flaws ({{n}})', { n: count })}
       </div>
       {rows.map((r, i) => {
         const entry = options.find((o) => o.name === r.name) || null;
@@ -278,7 +305,7 @@ function ThinSelects({ kind }) {
             <div style={{ display: 'flex', gap: '8px' }}>
               <select
                 value={r.name}
-                aria-label={`Thin-blood ${word} ${i + 1}`}
+                aria-label={t('wizard:v5.thinRowLabel', 'Thin-blood {{kind}} {{n}}', { kind: word, n: i + 1 })}
                 onChange={(e) => {
                   const pick = options.find((o) => o.name === e.target.value);
                   setRows((prev) => prev.map((x, j) => (j === i ? { name: e.target.value, id: pick?.id } : x)));
@@ -288,7 +315,7 @@ function ThinSelects({ kind }) {
                 <option value="">{t('wizard:v5.choose', 'Choose…')}</option>
                 {r.name && !entry ? <option value={r.name}>{r.name}</option> : null}
                 {options.map((o) => (
-                  <option key={o.id} value={o.name} disabled={others.includes(o.name)}>
+                  <option key={o.id} value={o.name} disabled={others.includes(o.name) || (o.name !== r.name && excluded(o))}>
                     {o.name}
                   </option>
                 ))}
@@ -304,6 +331,11 @@ function ThinSelects({ kind }) {
                 </button>
               ) : null}
             </div>
+            {entry?.requires ? (
+              <div style={{ color: 'var(--sr-bone-300)', fontSize: '12px', marginTop: '4px' }}>
+                {t('wizard:v5.advRequires', 'Needs: {{req}}', { req: entry.requires })}
+              </div>
+            ) : null}
             <CatalogNote entry={entry} />
           </div>
         );
@@ -332,8 +364,8 @@ export default function CatalogAdvantages() {
           </p>
         ) : null}
       </AdvSection>
-      <AdvSection kind="merit" title="Merits" />
-      <AdvSection kind="flaw" title="Flaws">
+      <AdvSection kind="merit" title={t('wizard:v5.sectionMerits', 'Merits')} />
+      <AdvSection kind="flaw" title={t('wizard:v5.sectionFlaws', 'Flaws')}>
         {fixedFlaws.map((fl) => {
           const entry = advantageEntries().find((a) => a.id === fl.id);
           return (
@@ -341,7 +373,7 @@ export default function CatalogAdvantages() {
               <div style={{ color: 'var(--sr-bone-100)', fontSize: '14px' }}>
                 <span lang="en">{fl.name}</span> <span style={{ color: 'var(--sr-blood-400)' }}>{dots(fl.dots)}</span>{' '}
                 <span style={{ color: 'var(--sr-gold-400)', fontSize: '12px' }}>
-                  {t('wizard:v5.clanFlaw', '{{clan}} start with it; it counts as one of your own Flaws.', { clan: f.clan })}
+                  {t('wizard:v5.clanFlawV2', '{{clan}} start with it (core p. 107). This app counts it toward your {{min}} Flaw dots; your Storyteller may rule otherwise.', { clan: f.clan, min: f.derived.flaw_min_dots })}
                 </span>
               </div>
               <CatalogNote entry={entry} />
@@ -351,22 +383,22 @@ export default function CatalogAdvantages() {
       </AdvSection>
       {hasLore ? (
         <div style={sectionStyle} data-adv-section="loresheet">
-          <div style={headingStyle}>Loresheets</div>
+          <div style={headingStyle}>{t('wizard:v5.sectionLoresheets', 'Loresheets')}</div>
           <p style={{ ...noteStyle, fontSize: '12px', margin: '0 0 8px' }}>
-            {t('wizard:v5.loreHelp', 'Each level is its own benefit and costs its number in Advantage dots; it does not include the lower ones (core p. 190).')}
+            {t('wizard:v5.loreHelpV2', 'Loresheets are bought with Advantage dots like any other Advantage (core p. 151). Each level is its own benefit, costs its number in dots and does not include the lower ones (p. 190). The corebook has each player choose a Loresheet at creation, more in play if the Storyteller allows (p. 151).')}
           </p>
           {f.loreRows.map((r, i) => (
             <LoreRow key={r.key} row={r} index={i} />
           ))}
           <button type="button" onClick={() => f.setLoreRows((prev) => [...prev, newLoreRow()])} style={addButtonStyle}>
-            {t('wizard:v5.advAdd', '+ Add {{kind}}', { kind: 'Loresheet' })}
+            {t('wizard:v5.advAdd', '+ Add {{kind}}', { kind: KIND_LABEL.loresheet() })}
           </button>
         </div>
       ) : null}
       {f.clan === THIN_BLOOD ? (
         <div style={sectionStyle}>
           <p style={{ color: 'var(--sr-bone-300)', fontSize: '12px', margin: '0 0 10px', lineHeight: 1.5 }}>
-            {t('wizard:v5.thinHelpCatalog', 'Thin-bloods also take {{lo}}–{{hi}} thin-blood Merits and the same number of thin-blood Flaws (core p. 182). They have no dot value and don\'t count toward the totals above.', { lo: V5_THIN_BLOOD_MERITS[0], hi: V5_THIN_BLOOD_MERITS[1] })}
+            {t('wizard:v5.thinHelpCatalogV2', 'Thin-bloods also take {{lo}}–{{hi}} thin-blood Merits and the same number of thin-blood Flaws (core p. 182). They have no dot value and don\'t count toward the totals above. A few can\'t be taken together (p. 183).', { lo: V5_THIN_BLOOD_MERITS[0], hi: V5_THIN_BLOOD_MERITS[1] })}
           </p>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '16px' }}>
             <ThinSelects kind="merit" />

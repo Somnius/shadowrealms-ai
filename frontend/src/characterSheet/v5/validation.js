@@ -248,11 +248,25 @@ export function predatorSpecialtyLabels(p) {
   return (p?.specialties || []).map((s) => `${V5_SKILL_LABELS[s.skill] || s.skill} (${s.name})`);
 }
 
+const KIND_WORD = { background: 'Background', merit: 'Merit', flaw: 'Flaw' };
+
+/**
+ * The catalog entries a predator grant option that stands for a whole group ("any Mythic Flaw")
+ * lets this sheet pick from; empty for an ordinary option or without the catalog's advantages.
+ */
+export function predatorGroupOptions(sheet, option) {
+  if (!option?.group) return [];
+  return advantageOptions(sheet?.clan, option.kind).filter((a) => a.group === option.group);
+}
+
 /**
  * The advantages and flaws a predator type grants, after the player's choices.
  * sheet.predatorChoices: { 'a0': optionIndex } for "one of", { 'a1': { [optionIndex]: dots } } for
- * a split of dots, and { 'f0:dots': n } where the book prints no rating for an option.
- * Returns { advantages, flaws, problems }: rows {name, dots, kind: 'predator', note}.
+ * a split of dots, { 'f0:dots': n } where the book prints no rating for an option, and
+ * { 'f0:1:pick': id } for the entry chosen for an option that stands for a group.
+ * Returns { advantages, flaws, problems }: rows {id, name, dots, kind: 'predator', note}. A group
+ * pick is stored as "Mythic: Folkloric Bane" with the chosen entry's id (the group name kept so a
+ * reader that only knows the grant still recognises it).
  */
 export function resolvePredatorGrants(sheet) {
   const p = predatorInfo(sheet?.predatorType);
@@ -260,13 +274,21 @@ export function resolvePredatorGrants(sheet) {
   if (!p) return out;
   const choices = sheet?.predatorChoices || {};
   const label = (o) => (o.note ? `${o.name} (${o.note})` : o.name);
-  const row = (o, dots) => ({
-    ...(o.id ? { id: o.id } : {}),
-    name: label(o),
-    dots,
-    kind: 'predator',
-    ...(o.note ? { note: o.note } : {}),
-  });
+  const row = (o, dots, key, oi) => {
+    const options = predatorGroupOptions(sheet, o);
+    if (options.length) {
+      const picked = options.find((a) => a.id === choices[`${key}:${oi}:pick`]);
+      if (picked) return { id: picked.id, name: `${o.group}: ${picked.name}`, dots, kind: 'predator' };
+      out.problems.push(`${p.name}: choose which ${o.group} ${KIND_WORD[o.kind] || o.kind}.`);
+    }
+    return {
+      ...(o.id ? { id: o.id } : {}),
+      name: label(o),
+      dots,
+      kind: 'predator',
+      ...(o.note ? { note: o.note } : {}),
+    };
+  };
   const walk = (grants, prefix, list) =>
     grants.forEach((g, gi) => {
       const key = `${prefix}${gi}`;
@@ -280,20 +302,20 @@ export function resolvePredatorGrants(sheet) {
         const oi = choices[key];
         const o = g.options[oi];
         if (!o) out.problems.push(`${p.name}: choose one of ${g.options.map((x) => x.name).join(' or ')}.`);
-        else list.push(row(o, dotsOf(o, oi)));
+        else list.push(row(o, dotsOf(o, oi), key, oi));
       } else if (g.pick === 'split') {
         const split = choices[key] || {};
         let total = 0;
         g.options.forEach((o, oi) => {
           const n = int(split[oi]);
           total += n;
-          if (n > 0) list.push(row(o, n));
+          if (n > 0) list.push(row(o, n, key, oi));
         });
         if (total !== g.dots_total) {
           out.problems.push(`${p.name}: share ${g.dots_total} dots between ${g.options.map((x) => x.name).join(' and ')} (you have ${total}).`);
         }
       } else {
-        g.options.forEach((o, oi) => list.push(row(o, dotsOf(o, oi))));
+        g.options.forEach((o, oi) => list.push(row(o, dotsOf(o, oi), key, oi)));
       }
     });
   walk(p.advantages, 'a', out.advantages);
@@ -332,6 +354,21 @@ export function validateThinBloodMeritsFlaws(sheet) {
     const key = String(r.name).trim().toLowerCase();
     if (seen.has(key)) return `${String(r.name).trim()} can be taken only once.`;
     seen.add(key);
+  }
+  // Pairs the book rules out (core p. 183: Dead Flesh and Lifelike, Mortal Frailty and Vampiric
+  // Resilience, Shunned by the Anarchs and Anarch Comrades), from the catalog's `excludes`.
+  return exclusionError([
+    ...namedList(sheet.thinBloodMerits).map((r) => findAdvantage(r, 'merit', 'thin_blood')),
+    ...namedList(sheet.thinBloodFlaws).map((r) => findAdvantage(r, 'flaw', 'thin_blood')),
+  ]);
+}
+
+/** "A and B can't be taken together." for the first pair of entries one of which excludes the other. */
+export function exclusionError(entries) {
+  const list = (entries || []).filter(Boolean);
+  for (const e of list) {
+    const other = list.find((x) => x !== e && ((e.excludes || []).includes(x.id) || (x.excludes || []).includes(e.id)));
+    if (other) return `${e.name} and ${other.name} can't be taken together.`;
   }
   return null;
 }
@@ -827,14 +864,14 @@ export function validateV5AdvantageRows(sheet) {
     if (e) counts[e.id] = (counts[e.id] || 0) + 1;
   });
   const bare = (r, e) => (e ? e.name.toLowerCase() : bareName(r.name));
-  // the highest rating of a Background (a requirement names one Haven, not the sum of several)
-  const backgroundDots = (name) =>
-    Math.max(
-      0,
-      ...withEntry
-        .filter(([r, e, flaw]) => !flaw && r.kind !== 'loresheet' && bare(r, e) === name.toLowerCase())
-        .map(([r]) => int(r.dots))
-    );
+  // A Background's rating for a requirement: the predator type's rows of it (Trapdoor's Haven) plus
+  // the dots bought on top of them; the player's own separate rows (two havens) are not added up,
+  // the highest counts.
+  const backgroundDots = (name) => {
+    const rows = withEntry.filter(([r, e, flaw]) => !flaw && r.kind !== 'loresheet' && bare(r, e) === name.toLowerCase());
+    const pred = rows.filter(([r]) => r.kind === 'predator').reduce((sum, [r]) => sum + int(r.dots), 0);
+    return pred + Math.max(0, ...rows.filter(([r]) => r.kind !== 'predator').map(([r]) => int(r.dots)));
+  };
   const ownIds = new Set(own.map(([r]) => r));
   for (const [r, e] of withEntry) {
     if (!e || !ownIds.has(r)) continue;
@@ -857,8 +894,12 @@ export function validateV5AdvantageRows(sheet) {
     if (req && (!req.onlyAbove1 || int(r.dots) > 1) && backgroundDots(req.name) < req.dots) {
       return `${e.name} needs ${req.name} at ${req.dots} dots or more.`;
     }
+    // Archaic and Living in the Past (core p. 180); the forge's oldest age is ancilla
+    if (/^ancilla or older$/i.test(String(e.requires || '').trim()) && s.age !== 'ancilla') {
+      return `${e.name} is only for ancillae or older.`;
+    }
   }
-  return null;
+  return exclusionError(withEntry.filter(([, e]) => e && e.excludes).map(([, e]) => e));
 }
 
 // ---------- Chronicle creation settings (set by the Storyteller) ----------

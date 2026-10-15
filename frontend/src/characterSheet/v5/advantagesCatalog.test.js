@@ -16,13 +16,16 @@ import {
   dotRequirement,
   loresheetOptions,
   ownFlawDots,
+  predatorGroupOptions,
   predatorInfo,
+  resolvePredatorGrants,
   thinBloodOptions,
   validateThinBloodMeritsFlaws,
   validateV5AdvantageRows,
   validateV5Sheet,
 } from './validation';
 import { V5_SECTION_IDS } from './constants';
+import { meritRowsToAdvRows } from '../../components/characterCreation/v5/useV5ForgeState';
 
 beforeAll(() => applyV5Catalog(fixture));
 afterAll(() => applyV5Catalog(null));
@@ -56,6 +59,12 @@ describe('the registry', () => {
     expect(findAdvantage({ name: 'Clan Curse' }, 'flaw', 'thin_blood').id).toBe('flaw:thin-blood-clan-curse');
     expect(findAdvantage({ name: 'Clan Curse' }, 'flaw', 'caitiff').id).toBe('flaw:caitiff-clan-curse');
     expect(findAdvantage({ name: 'Suspect' }, 'flaw', 'caitiff').id).toBe('flaw:suspect');
+  });
+
+  it('an id the catalog doesn\'t know falls back to the name', () => {
+    expect(findAdvantage({ id: 'merit:renamed-since', name: 'Beautiful' }, 'merit').id).toBe('merit:beautiful');
+    expect(findAdvantage({ id: 'merit:renamed-since' }, 'merit')).toBeNull();
+    expect(findLoresheet({ id: 'loresheet:old-id', name: 'The Bahari' }).id).toBe('loresheet:the-bahari');
   });
 
   it('predator grants carry the catalog names', () => {
@@ -120,7 +129,7 @@ describe('what a clan is offered', () => {
   it('thin-bloods: no Status at creation, their own Merits and Flaws', () => {
     expect(ids(advantageOptions('Thin-blood', 'background'))).not.toContain('background:status');
     expect(ids(thinBloodOptions('merit'))).toEqual(['merit:thin-blood-day-drinker', 'merit:thin-blood-lifelike']);
-    expect(ids(thinBloodOptions('flaw'))).toEqual(['flaw:thin-blood-baby-teeth', 'flaw:thin-blood-clan-curse']);
+    expect(ids(thinBloodOptions('flaw'))).toEqual(['flaw:thin-blood-baby-teeth', 'flaw:thin-blood-clan-curse', 'flaw:thin-blood-dead-flesh']);
   });
 
   it('loresheets follow their clan restriction', () => {
@@ -170,9 +179,92 @@ describe('row checks', () => {
     expect(v([row('merit:laboratory', 1), row('background:haven', 2)])).toBeNull();
   });
 
+  it('a predator Background counts with the dots bought on top of it (Trapdoor\'s Haven)', () => {
+    applyV5Catalog({
+      ...fixture,
+      predator_types: [
+        ...fixture.predator_types,
+        { id: 'predator:trapdoor', name: 'Trapdoor', specialty_choice: [], discipline_choice: [],
+          advantages: [{ pick: 'all', options: [{ id: 'background:haven', dots: 1 }] }], flaws: [] },
+      ],
+    });
+    const s = { clan: 'Hecata', predatorType: 'Trapdoor' };
+    expect(validateV5AdvantageRows({ ...s, advantages: [row('merit:laboratory', 1)] })).toBe('Laboratory needs Haven at 2 dots or more.');
+    expect(validateV5AdvantageRows({ ...s, advantages: [row('merit:laboratory', 1), row('background:haven', 1)] })).toBeNull();
+    // two havens of the player's own are two Backgrounds, not one at 2
+    expect(v([row('merit:laboratory', 1), row('background:haven', 1), row('background:haven', 1)])).toBe(
+      'Laboratory needs Haven at 2 dots or more.'
+    );
+    applyV5Catalog(fixture);
+  });
+
+  it('"ancilla or older" entries need an ancilla', () => {
+    expect(v([], [row('flaw:archaic', 2)], { age: 'neonate' })).toBe('Archaic is only for ancillae or older.');
+    expect(v([], [row('flaw:archaic', 2)], { age: 'ancilla' })).toBeNull();
+  });
+
   it('a loresheet needs a level; custom and free-text rows are left alone', () => {
     expect(v([lore('loresheet:the-bahari', [])])).toBe('Pick at least one level of The Bahari.');
     expect(v([{ name: 'Homebrew Patron', dots: 2, kind: 'background', custom: true }])).toBeNull();
+  });
+});
+
+describe('predator grants that stand for a group', () => {
+  const mythic = (id, name, dots) => ({
+    ...fixture.advantages.find((a) => a.id === 'flaw:prey-exclusion'),
+    id, name, group: 'Mythic', dots: { min: dots, max: dots },
+  });
+  beforeAll(() =>
+    applyV5Catalog({
+      ...fixture,
+      advantages: [...fixture.advantages, mythic('flaw:folkloric-bane', 'Folkloric Bane', 1), mythic('flaw:stake-bait', 'Stake Bait', 2)],
+      predator_types: fixture.predator_types.map((p) =>
+        p.id === 'predator:osiris'
+          ? { ...p, flaws: [{ pick: 'split', dots_total: 2, options: [
+              { id: 'flaw:enemies', dots: null }, { id: 'flaw:mythic', dots: null, note: 'any Mythic Flaw', group: true }] }] }
+          : p
+      ),
+    })
+  );
+  afterAll(() => applyV5Catalog(fixture));
+
+  it('"any Mythic Flaw" asks which one and stores it', () => {
+    const opt = predatorInfo('Osiris').flaws[0].options[1];
+    expect(opt).toMatchObject({ id: 'flaw:mythic', name: 'Mythic', group: 'Mythic', kind: 'flaw' });
+    const s = { clan: 'Hecata', predatorType: 'Osiris', predatorChoices: { a0: { 0: 2, 1: 1 }, f0: { 0: 1, 1: 1 } } };
+    expect(ids(predatorGroupOptions(s, opt))).toEqual(['flaw:folkloric-bane', 'flaw:stake-bait']);
+    expect(resolvePredatorGrants(s).problems).toEqual(['Osiris: choose which Mythic Flaw.']);
+    const ok = resolvePredatorGrants({ ...s, predatorChoices: { ...s.predatorChoices, 'f0:1:pick': 'flaw:folkloric-bane' } });
+    expect(ok.problems).toEqual([]);
+    expect(ok.flaws).toEqual([
+      { id: 'flaw:enemies', name: 'Enemies', dots: 1, kind: 'predator' },
+      { id: 'flaw:folkloric-bane', name: 'Mythic: Folkloric Bane', dots: 1, kind: 'predator' },
+    ]);
+  });
+
+  it('without the group\'s entries in the catalog nothing is asked', () => {
+    applyV5Catalog({ ...fixture, predator_types: [{ ...fixture.predator_types.find((p) => p.id === 'predator:osiris'),
+      flaws: [{ pick: 'all', options: [{ id: 'flaw:mythic', dots: 1, note: 'any Mythic Flaw', group: true }] }] }] });
+    const g = resolvePredatorGrants({ clan: 'Hecata', predatorType: 'Osiris', predatorChoices: { a0: { 0: 3 } } });
+    expect(g.problems).toEqual([]);
+    expect(g.flaws).toEqual([{ id: 'flaw:mythic', name: 'Mythic (any Mythic Flaw)', dots: 1, kind: 'predator', note: 'any Mythic Flaw' }]);
+  });
+});
+
+describe('free-text rows typed before the catalog arrived', () => {
+  it('become catalog rows where the name is known, custom rows otherwise', () => {
+    const rows = meritRowsToAdvRows([
+      { name: 'Allies (police)', points: 2, note: '' },
+      { name: 'Homebrew Patron', points: 1, note: 'my sire' },
+      { name: 'Dark Secret', points: -2, note: 'diablerie' },
+      { name: '', points: 3 },
+      { name: 'Nothing yet', points: 0 },
+    ]);
+    expect(rows.map(({ key, ...r }) => r)).toEqual([
+      { kind: 'background', id: 'background:allies', name: 'Allies', dots: 2, note: 'police' },
+      { kind: 'merit', id: 'custom', name: 'Homebrew Patron', dots: 1, note: 'my sire' },
+      { kind: 'flaw', id: 'flaw:dark-secret', name: 'Dark Secret', dots: 2, note: 'diablerie' },
+    ]);
   });
 });
 
@@ -229,6 +321,12 @@ describe('the whole sheet and the payload', () => {
       validateThinBloodMeritsFlaws({ ...tb, thinBloodMerits: [{ name: 'Day Drinker' }, { name: 'Day Drinker' }], thinBloodFlaws: [{ name: 'Baby Teeth' }, { name: 'Clan Curse' }] })
     ).toBe('Day Drinker can be taken only once.');
   });
+
+  it('pairs the book rules out (core p. 183)', () => {
+    const tb = { clan: 'Thin-blood', thinBloodMerits: [{ name: 'Lifelike' }], thinBloodFlaws: [{ name: 'Dead Flesh' }] };
+    expect(validateThinBloodMeritsFlaws(tb)).toBe("Lifelike and Dead Flesh can't be taken together.");
+    expect(validateThinBloodMeritsFlaws({ ...tb, thinBloodMerits: [{ name: 'Day Drinker' }] })).toBeNull();
+  });
 });
 
 describe('messages in Greek', () => {
@@ -245,11 +343,14 @@ describe('messages in Greek', () => {
       'City Secrets can be taken at most 3 times.',
       'Laboratory needs Haven at 2 dots or more.',
       'Pick at least one level of The Bahari.',
+      "Lifelike and Dead Flesh can't be taken together.",
+      'Archaic is only for ancillae or older.',
+      'Osiris: choose which Mythic Flaw.',
     ].forEach((msg) => {
       const el = translateSheetError(msg);
       expect(el).not.toBe(msg);
       expect(el).toMatch(/[α-ω]/);
     });
-    expect(translateSheetError('Mask takes 1 or 2 dots (you have 3).')).toMatch(/1 ή 2/);
+    expect(translateSheetError('Mask takes 1 or 2 dots (you have 3).')).toBe('Το Mask είναι 1 ή 2 τελείες (έχεις 3).');
   });
 });

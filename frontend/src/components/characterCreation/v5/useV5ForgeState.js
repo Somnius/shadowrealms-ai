@@ -27,7 +27,13 @@ import {
   startingXp,
   xpLedger,
 } from '../../../characterSheet/v5/validation';
-import { advantageEntries, clanNames, disciplineNames, loresheetEntries } from '../../../characterSheet/v5/rulesData';
+import {
+  advantageEntries,
+  clanNames,
+  disciplineNames,
+  findAdvantage,
+  findLoresheet,
+} from '../../../characterSheet/v5/rulesData';
 
 // Free-text rows (no catalog): a Background is told apart by its name.
 const isBackgroundName = (name) =>
@@ -39,20 +45,46 @@ export const newAdvRow = (kind) => ({ key: `adv${(rowSeq += 1)}`, kind, id: '', 
 /** A new loresheet row: the sheet's id and the levels taken (each level is bought on its own). */
 export const newLoreRow = () => ({ key: `lore${(rowSeq += 1)}`, id: '', levels: [] });
 
-/** Catalog-forge rows → sheet rows ({id, name, dots, kind, note} or {name, dots, kind, custom}). */
+/**
+ * Free-text rows typed before the catalog loaded, as catalog-forge rows: a catalog entry when the
+ * name matches one, else a custom row (nothing typed is lost).
+ */
+export function meritRowsToAdvRows(meritRows) {
+  return (meritRows || [])
+    .filter((r) => String(r.name || '').trim() && Number(r.points))
+    .map((r) => {
+      const points = Number(r.points);
+      const name = String(r.name).trim();
+      const flaw = points < 0;
+      const found = findAdvantage({ name }, flaw ? 'flaw' : 'merit');
+      const e = found && !found.thin_blood ? found : null;
+      // "Allies (police)": the bracket becomes the note of the catalog row
+      const bracket = name.match(/\(([^)]*)\)\s*$/);
+      return {
+        ...newAdvRow(e ? e.kind : flaw ? 'flaw' : isBackgroundName(name) ? 'background' : 'merit'),
+        id: e ? e.id : 'custom',
+        name: e ? e.name : name,
+        dots: Math.abs(points),
+        note: String(r.note || '').trim() || (e && bracket ? bracket[1].trim() : ''),
+      };
+    });
+}
+
+/**
+ * Catalog-forge rows → sheet rows ({id, name, dots, kind, note} or {name, dots, kind, custom}). A
+ * row whose id the catalog doesn't know is found by its name, else kept as a custom row.
+ */
 function catalogRows(advRows, loreRows) {
-  const byId = Object.fromEntries(advantageEntries().map((a) => [a.id, a]));
-  const lore = Object.fromEntries(loresheetEntries().map((l) => [l.id, l]));
   const toRow = (r) => {
-    if (r.id === 'custom') {
-      return String(r.name || '').trim() ? { name: r.name, dots: Number(r.dots) || 0, kind: r.kind, note: r.note, custom: true } : null;
-    }
-    const e = byId[r.id];
-    return e ? { id: e.id, name: e.name, dots: Number(r.dots) || 0, kind: e.kind, note: r.note } : null;
+    const name = String(r.name || '').trim();
+    const e = r.id && r.id !== 'custom' ? findAdvantage({ id: r.id, name }, r.kind) : null;
+    if (e) return { id: e.id, name: e.name, dots: Number(r.dots) || 0, kind: e.kind, note: r.note };
+    if (!name || (!r.id && !r.custom)) return null; // nothing chosen yet
+    return { name, dots: Number(r.dots) || 0, kind: r.kind, note: r.note, custom: true };
   };
   const advantages = advRows.filter((r) => r.kind !== 'flaw').map(toRow).filter(Boolean);
   loreRows.forEach((r) => {
-    const l = lore[r.id];
+    const l = r.id ? findLoresheet({ id: r.id, name: r.name }) : null;
     if (!l) return;
     const levels = [...r.levels].sort((a, b) => a - b);
     advantages.push({ id: l.id, name: l.name, dots: levels.reduce((sum, n) => sum + n, 0), kind: 'loresheet', levels });
@@ -124,6 +156,15 @@ export default function useV5ForgeState(settings, initialValues) {
 
   // The catalog (once loaded) turns the step into dropdowns; until then, or without it, free text.
   const catalogAdvantages = advantageEntries().length > 0;
+  // Rows typed before the catalog arrived move over to the dropdown rows (as custom rows when the
+  // catalog doesn't know the name). Once moved, meritRows is empty again, so this runs once.
+  useEffect(() => {
+    if (!catalogAdvantages) return;
+    const moved = meritRowsToAdvRows(meritRows);
+    if (!moved.length) return;
+    setAdvRows((prev) => [...prev, ...moved]);
+    setMeritRows([createEmptyMeritRow()]);
+  }, [catalogAdvantages, meritRows]);
   const { advantages, flaws } = catalogAdvantages
     ? catalogRows(advRows, loreRows)
     : {

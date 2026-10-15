@@ -40,6 +40,9 @@ const PATTERNS = [
   [/^(.+) can be taken at most (\d+) times\.$/, (m) => t('wizard:validation.v5AdvMaxTimes', '{{name}} can be taken at most {{n}} times.', { name: m[1], n: m[2] })],
   [/^(.+) needs (.+) at (\d+) dots or more\.$/, (m) => t('wizard:validation.v5AdvRequires', '{{name}} needs {{other}} at {{n}} dots or more.', { name: m[1], other: m[2], n: m[3] })],
   [/^Pick at least one level of (.+)\.$/, (m) => t('wizard:validation.v5LoreLevel', 'Pick at least one level of {{name}}.', { name: m[1] })],
+  [/^(.+) and (.+) can't be taken together\.$/, (m) => t('wizard:validation.v5AdvExcludes', "{{a}} and {{b}} can't be taken together.", { a: m[1], b: m[2] })],
+  [/^(.+) is only for ancillae or older\.$/, (m) => t('wizard:validation.v5AdvAncilla', '{{name}} is only for ancillae or older.', { name: m[1] })],
+  [/^(.+): choose which (.+)\.$/, (m) => t('wizard:validation.v5GrantGroup', '{{type}}: choose which {{what}}.', { type: m[1], what: m[2] })],
   // V5 chronicle creation settings (settingsErrors)
   [/^The Storyteller doesn't allow the (.+) predator type in this chronicle\.$/, (m) => t('wizard:validation.v5SettingsPredator', "The Storyteller doesn't allow the {{type}} predator type in this chronicle.", { type: m[1] })],
   [/^The Storyteller doesn't allow (.+) characters in this chronicle\.$/, (m) => t('wizard:validation.v5SettingsAge', "The Storyteller doesn't allow {{age}} characters in this chronicle.", { age: m[1] })],

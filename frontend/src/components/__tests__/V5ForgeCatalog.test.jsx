@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, within } from '@testing-library/react';
+import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import V5CharacterCreationWizard from '../characterCreation/V5CharacterCreationWizard';
 import fixture from '../../rules/__fixtures__/v5-catalog.json';
 import { applyV5Catalog } from '../../characterSheet/v5/rulesData';
@@ -92,7 +92,7 @@ describe('Advantages from the catalog (Forge v2 part C)', () => {
     expect(within(sel).queryByRole('option', { name: /Iron Gullet/ })).toBeNull();
     expect(within(sel).queryByRole('option', { name: /Mark of Caine|All Access|Blood Empathy|Day Drinker/ })).toBeNull();
     pick(sel, 'merit:beautiful');
-    expect(screen.getByLabelText('Beautiful dots')).toHaveTextContent('●●'); // fixed rating
+    expect(screen.getByRole('img', { name: 'Beautiful: 2 dots' })).toHaveTextContent('●●'); // fixed rating
     add('Merit');
     expect(within(screen.getByLabelText('Merit 2')).getByRole('option', { name: 'Beautiful (2)' })).toBeDisabled();
   });
@@ -114,8 +114,8 @@ describe('Advantages from the catalog (Forge v2 part C)', () => {
     const sel = screen.getByLabelText('Loresheet 1');
     expect(within(sel).queryByRole('option', { name: /Hardestadt/ })).toBeNull(); // Ventrue only
     pick(sel, 'loresheet:harbingers-of-ashur');
-    fireEvent.click(screen.getByRole('checkbox', { name: /The Ashen Mask/ }));
-    fireEvent.click(screen.getByRole('checkbox', { name: /The White Mask/ }));
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Level 1: The Ashen Mask' }));
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Level 3: The White Mask' }));
     expect(screen.getByText('4 dots')).toBeInTheDocument();
     expect(screen.getByText(/Test level 3 of Harbingers of Ashur\./)).toBeInTheDocument();
     expect(count()).toHaveTextContent('Advantages 4/7');
@@ -138,6 +138,58 @@ describe('Advantages from the catalog (Forge v2 part C)', () => {
     expect(within(merit).getAllByRole('option').map((o) => o.textContent)).toEqual(['Choose…', 'Day Drinker', 'Lifelike']);
     pick(merit, 'Day Drinker');
     expect(screen.getByText(/Test text for Day Drinker\./)).toBeInTheDocument();
+  });
+
+  test('what the predator type gives is not offered again', () => {
+    renderForge();
+    pick(document.getElementById('v5-field-clan'), 'Hecata');
+    pick(document.getElementById('v5-field-predator'), 'Grim Reaper'); // Prey Exclusion (healthy mortals)
+    add('Flaw');
+    expect(within(screen.getByLabelText('Flaw 1')).getByRole('option', { name: 'Prey Exclusion (1)' })).toBeDisabled();
+  });
+
+  test('rows typed before the catalog loaded move over to the dropdowns', () => {
+    applyV5Catalog(null);
+    const view = renderForge();
+    pick(screen.getAllByPlaceholderText('Name')[0], 'Allies (police)');
+    pick(screen.getAllByTitle('Points (+ merit / − flaw)')[0], '2');
+    act(() => {
+      applyV5Catalog(fixture);
+    });
+    view.rerender(<V5CharacterCreationWizard token="x" campaigns={campaigns} campaignId="2" onCampaignChange={() => {}} />);
+    expect(screen.getByLabelText('Background 1')).toHaveValue('background:allies');
+    expect(screen.getByLabelText('Background 1 note')).toHaveValue('police');
+    expect(count()).toHaveTextContent('Advantages 2/7');
+  });
+
+  test('a thin-blood Flaw greys out the Merit it rules out (core p. 183)', () => {
+    renderForge();
+    pick(document.getElementById('v5-field-clan'), 'Thin-blood');
+    pick(screen.getByLabelText('Thin-blood Flaw 1'), 'Dead Flesh');
+    expect(within(screen.getByLabelText('Thin-blood Merit 1')).getByRole('option', { name: 'Lifelike' })).toBeDisabled();
+    expect(within(screen.getByLabelText('Thin-blood Merit 1')).getByRole('option', { name: 'Day Drinker' })).not.toBeDisabled();
+  });
+
+  test('"any Mythic Flaw" from a predator type asks which one', () => {
+    const mythic = {
+      ...fixture.advantages.find((a) => a.id === 'flaw:prey-exclusion'),
+      id: 'flaw:stake-bait', name: 'Stake Bait', group: 'Mythic', dots: { min: 2, max: 2 },
+      desc: { en: 'Test text for Stake Bait.', el: 'Κείμενο δοκιμής.' },
+    };
+    applyV5Catalog({
+      ...fixture,
+      advantages: [...fixture.advantages, mythic],
+      predator_types: fixture.predator_types.map((p) =>
+        p.id === 'predator:montero' ? { ...p, flaws: [{ pick: 'all', options: [{ id: 'flaw:mythic', dots: 2, note: 'any Mythic Flaw', group: true }] }] } : p
+      ),
+    });
+    renderForge();
+    pick(document.getElementById('v5-field-predator'), 'Montero');
+    const which = screen.getByLabelText('Which Mythic Flaw');
+    pick(which, 'flaw:stake-bait');
+    expect(screen.getByText(/Test text for Stake Bait\./)).toBeInTheDocument();
+    expect(document.getElementById('v5-predator-rows')).toHaveTextContent('Mythic: Stake Bait ●●');
+    applyV5Catalog(fixture);
   });
 
   test('the predator type\'s rows show in the step with their catalog names', () => {

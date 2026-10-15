@@ -12,13 +12,15 @@ function ThinRows({ kind, rows, setRows }) {
   return (
     <div style={{ flex: '1 1 240px', minWidth: 0 }}>
       <div id={`v5-thin-${kind}-label`} style={labelStyle}>
-        Thin-blood {kind} ({rows.filter((r) => String(r.name || '').trim()).length})
+        {kind === 'Merits'
+          ? t('wizard:v5.thinMeritsHeader', 'Thin-blood Merits ({{n}})', { n: rows.filter((r) => String(r.name || '').trim()).length })
+          : t('wizard:v5.thinFlawsHeader', 'Thin-blood Flaws ({{n}})', { n: rows.filter((r) => String(r.name || '').trim()).length })}
       </div>
       {rows.map((r, i) => (
         <div key={i} style={{ display: 'flex', gap: '8px', marginBottom: '6px' }}>
           <input
             value={r.name}
-            aria-label={`Thin-blood ${kind.replace(/s$/, '')} ${i + 1}`}
+            aria-label={t('wizard:v5.thinRowLabel', 'Thin-blood {{kind}} {{n}}', { kind: kind.replace(/s$/, ''), n: i + 1 })}
             placeholder={kind === 'Merits' ? t('wizard:v5.thinMeritPlaceholder', 'e.g. Day Drinker') : t('wizard:v5.thinFlawPlaceholder', 'e.g. Baby Teeth')}
             onChange={(e) => setRows((prev) => prev.map((x, j) => (j === i ? { name: e.target.value } : x)))}
             style={{ ...inputStyle, flex: '1 1 auto', width: 'auto', padding: '8px' }}

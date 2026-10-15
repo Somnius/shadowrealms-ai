@@ -35,6 +35,7 @@ test('advantages, flaws, loresheet levels and thin-blood entries open to their d
             { id: 'background:allies', name: 'Allies (police)', dots: 2, kind: 'background', note: 'police' },
             { id: 'loresheet:the-bahari', name: 'The Bahari', dots: 3, kind: 'loresheet', levels: [1, 2] },
             { name: 'Homebrew Patron', dots: 1, kind: 'merit', custom: true },
+            { id: 'merit:renamed-since', name: 'Beautiful', dots: 2, kind: 'merit' }, // unknown id: by name
           ],
           flaws: [{ name: 'Prey Exclusion (locals)', dots: 1, kind: 'predator' }],
           thin_blood_merits: ['Day Drinker'],
@@ -50,6 +51,7 @@ test('advantages, flaws, loresheet levels and thin-blood entries open to their d
   expect(screen.getByText(/Test level 2 of The Bahari\./)).toBeInTheDocument();
   expect(screen.queryByText(/Sacrifice the Children/)).toBeNull(); // level 3 not taken
   expect(screen.getByText('Homebrew Patron').tagName).toBe('SPAN');
+  expect(screen.getByText('Beautiful').tagName).toBe('SUMMARY');
   expect(screen.getByText('Prey Exclusion (locals)').tagName).toBe('SUMMARY'); // an older row: by name
   expect(screen.getByText(/Test text for Day Drinker\./)).toBeInTheDocument();
   expect(screen.getByText(/Test text for Clan Curse\./)).toBeInTheDocument(); // the thin-blood one

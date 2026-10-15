@@ -76,7 +76,10 @@
     "v5AdvOnce": "{{name}} can be taken only once.",
     "v5AdvMaxTimes": "{{name}} can be taken at most {{n}} times.",
     "v5AdvRequires": "{{name}} needs {{other}} at {{n}} dots or more.",
-    "v5LoreLevel": "Pick at least one level of {{name}}."
+    "v5LoreLevel": "Pick at least one level of {{name}}.",
+    "v5AdvExcludes": "{{a}} and {{b}} can't be taken together.",
+    "v5AdvAncilla": "{{name}} is only for ancillae or older.",
+    "v5GrantGroup": "{{type}}: choose which {{what}}."
   },
   "error": {
     "name": "Character name is required.",
@@ -319,9 +322,24 @@
     "loreDots_other": "{{count}} dots",
     "loreLevels": "{{name}} levels",
     "noPositiveStatus": "{{clan}} can't buy positive Status at creation.",
-    "clanFlaw": "{{clan}} start with it; it counts as one of your own Flaws.",
-    "loreHelp": "Each level is its own benefit and costs its number in Advantage dots; it does not include the lower ones (core p. 190).",
-    "thinHelpCatalog": "Thin-bloods also take {{lo}}–{{hi}} thin-blood Merits and the same number of thin-blood Flaws (core p. 182). They have no dot value and don't count toward the totals above."
+    "thinMeritsHeader": "Thin-blood Merits ({{n}})",
+    "thinFlawsHeader": "Thin-blood Flaws ({{n}})",
+    "thinRowLabel": "Thin-blood {{kind}} {{n}}",
+    "kindBackground": "Background",
+    "kindMerit": "Merit",
+    "kindFlaw": "Flaw",
+    "kindLoresheet": "Loresheet",
+    "advFixedDots_one": "{{name}}: {{count}} dot",
+    "advFixedDots_other": "{{name}}: {{count}} dots",
+    "loreLevelLabel": "Level {{n}}: {{name}}",
+    "sectionMerits": "Merits",
+    "sectionFlaws": "Flaws",
+    "clanFlawV2": "{{clan}} start with it (core p. 107). This app counts it toward your {{min}} Flaw dots; your Storyteller may rule otherwise.",
+    "sectionLoresheets": "Loresheets",
+    "loreHelpV2": "Loresheets are bought with Advantage dots like any other Advantage (core p. 151). Each level is its own benefit, costs its number in dots and does not include the lower ones (p. 190). The corebook has each player choose a Loresheet at creation, more in play if the Storyteller allows (p. 151).",
+    "thinHelpCatalogV2": "Thin-bloods also take {{lo}}–{{hi}} thin-blood Merits and the same number of thin-blood Flaws (core p. 182). They have no dot value and don't count toward the totals above. A few can't be taken together (p. 183).",
+    "grantGroupPick": "Which {{group}} {{kind}}",
+    "grantGroupChoose": "Which {{group}} {{kind}}…"
   },
   "guided": {
     "bannerLabel": "Suggested by the guide",
