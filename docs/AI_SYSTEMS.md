@@ -153,6 +153,10 @@ Now (`services/assistant_grants.py`): `role` must be `user` or `assistant` (else
 - the exact text (trimmed, SHA-256) was handed to this user for this campaign **and room** by `/api/ai/chat` or `/api/ai/slash` in the last 30 minutes (table `ai_reply_grants`). Each grant works once, also under parallel saves (the consuming `UPDATE` re-checks `consumed_at IS NULL`). Replies issued without a room get no grant.
 - `/api/ai/chat` rejects a `message` that isn't a non-blank string of at most 8000 characters (400). When every model fails it answers 503 with a fixed text and issues no grant; it never echoes the player's text as a reply.
 
+### "AI Storyteller" approvals of saved points (a rule check, not the LLM)
+
+A V5 chronicle can set `creation_settings.st_mode` to `'ai'` (chronicle settings → Character creation rules → "Who approves spending saved points"). Then, when a player spends the Advantage dots or the free specialty saved at creation (Forge v2 part D, `routes/spend_requests.py`), the "AI Storyteller" approves the spend on its own only if it passes `services/saved_points.validate_spend`: a **fixed, deterministic rule check** (enough saved dots, the chronicle's cap, 1-5 dots per Advantage, the specialty's skill has a dot and isn't a repeat, and, when `docs/rules/v5/catalog/advantages.json` is installed, the Advantage is in the catalog, in its dot range, from an allowed book and for the character's clan). No language model is asked anything. The request is stored with `approver: 'ai'`, the rule check and the touched sheet keys before and after, and shows under Approvals, where the chronicle's creator or staff can reverse it. A spend that fails the check is a house rule: it stays pending for a person, in AI mode too. Nothing is inferred from who created the chronicle: the creator picks the mode (the settings suggest it when the creator also plays a character there).
+
 ### Environment variables (phase 2)
 
 | Variable | Default | |

@@ -84,6 +84,14 @@ Advantage and Flaw rows (`wod_meta.advantages`, `wod_meta.flaws`):
 
 The server checks a new V5 sheet against the creation rules (`backend/services/v5_chargen.py`, V5.md §4.1) and records the result in `wod_meta.creation`, which only the server writes (edits keep it): `{ validated: true, at, rules: "v2" }`; `{ validated: false, at, rules, override: { by, reason, at }, problems: [{ code, params }] }` when the Storyteller or staff approved it outside the rules; `{ validated: false, at, rules, reason }` when the rules couldn't be checked (`"catalog_missing"`: no catalog, or one without clans, Disciplines or predator types; `"catalog_error"`: reading it or the check failed), and an override record then carries the same `reason`.
 
+**Saved points** (Forge v2 part D). Advantage dots left unspent and the free specialty of the player's choice left unused are kept: `wod_meta.saved = { advantage_dots, specialty }` (`savedAtCreation` in `validation.js`; dots up to `creation_settings.saved_points.advantage_dots_cap`, the specialty only when `allow_specialty`; bounds 0-20 and 0-1 in `character_sheet_v5.py`). The Advantages and Skills steps say what will be saved. On the read-only sheet the "Saved points" block (`components/SavedPointsBlock.jsx`) shows them, lets the owner spend them with a live rule check (`characterSheet/v5/savedPoints.js`, the same codes as `services/saved_points.py`) and lists the character's spends. A spend is a row in `character_spend_requests` (`routes/spend_requests.py`); when it is approved (by the Storyteller, or at once by the rule check in a chronicle with `st_mode: 'ai'`):
+
+- Advantage dots raise the player's own row with the same `id` or name (never a predator grant), or add a row `{name, dots, kind, id?, note?}`; either way the row gets `saved_dots` (how many of its dots came from saved points), `merits_flaws.entries` follows, and `saved.advantage_dots` goes down (not below 0).
+- The specialty is added to `skills.specialties` as `{skill, name, source: 'saved'}` and `saved.specialty` goes to 0.
+- Reverse puts back only the touched keys (`wod_meta.advantages`, `wod_meta.saved`, `merits_flaws.entries`, or `skills.specialties` and `wod_meta.saved`) from the request's `before_state`, and only while they still hold what the approval wrote (a later spend is reversed first).
+
+The sheet view marks saved-point dots ("+1 from saved points") and specialties ("– saved points").
+
 Derived values are stored in `wod_meta` too: `edition: "v5"`, `hunger`, `blood_potency`, `health` and `willpower` (each `{ max, superficial, aggravated }`), `stains`.
 
 `wod_meta.experience` (only when the age gives XP):
