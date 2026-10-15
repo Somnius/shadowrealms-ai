@@ -52,3 +52,14 @@ test('Oblivion with The Binding Fetter offers the starting ceremony', () => {
   pick(sel, 'Summon Spirit');
   expect(sel).toHaveValue('Summon Spirit');
 });
+
+test('a power above a lowered rating stays visible so its error makes sense', () => {
+  renderForge();
+  pick(document.getElementById('v5-field-clan'), 'Ventrue');
+  pick(screen.getByLabelText('Discipline at 1 dot'), 'Dominate');
+  pick(document.getElementById('v5-field-predator'), 'Montero');
+  pick(document.getElementById('v5-field-predator-discipline'), 'Dominate');
+  pick(screen.getByLabelText('Dominate power 1'), 'Mesmerize');
+  pick(document.getElementById('v5-field-predator'), 'Grim Reaper'); // Dominate drops back to 1
+  expect(screen.getByLabelText('Dominate power 1')).toHaveValue('Mesmerize');
+});

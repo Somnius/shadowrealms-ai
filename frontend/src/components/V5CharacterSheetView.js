@@ -276,9 +276,9 @@ export default function V5CharacterSheetView({ character }) {
         <ResponsiveSheetBlock sectionId="v5-view-rituals" title="Rituals" accent={ACCENT}>
           {rituals.map((r, i) => (
             <div key={i} style={{ margin: '0 0 6px', color: 'var(--sr-bone-100)' }}>
-              <strong>
+              <span style={{ fontWeight: 700 }}>
                 <CatalogItem name={String(r.name)} entry={findRitual(String(r.name))} />
-              </strong>{' '}
+              </span>{' '}
               <span style={{ color: 'var(--sr-bone-300)', fontSize: '12px' }}>
                 {r.kind === 'ceremony' ? `${t('sheet:v5.ceremony', 'Ceremony')} · ` : ''}
                 {t('sheet:v5.ritualLevel', 'Level {{n}}', { n: n(r.level) })}

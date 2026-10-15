@@ -7,7 +7,7 @@
       "name": "Animalism",
       "desc": {
         "en": "Commune with, command and feed on animals, and reach the Beast inside mortals and vampires. Works only on vertebrates unless a power says otherwise.",
-        "el": "Επικοινωνία, έλεγχος και τροφή από ζώα, και επαφή με το Κτήνος μέσα σε θνητούς και βαμπίρ. Πιάνει μόνο σε σπονδυλωτά, εκτός αν μια δύναμη λέει αλλιώς."
+        "el": "Επικοινωνείς με ζώα, τα διατάζεις και τρέφεσαι από αυτά, και αγγίζεις το Κτήνος μέσα σε θνητούς και βαμπίρ. Πιάνει μόνο σε σπονδυλωτά, εκτός αν μια δύναμη λέει αλλιώς."
       },
       "book": "v5-corebook",
       "page": 244,
@@ -18,7 +18,7 @@
           "name": "Bond Famulus",
           "desc": {
             "en": "Blood Bond one animal as your famulus: a mental link lets it follow simple spoken orders and defend you. Three nights of feeding, one Rouse Check each; a starting character gets one for free.",
-            "el": "Δένεις με Blood Bond ένα ζώο ως famulus: με νοητικό δεσμό ακολουθεί απλές προφορικές εντολές και σε υπερασπίζεται. Τρεις νύχτες τάισμα, 1 Rouse Check η καθεμία· στη δημιουργία το παίρνεις δωρεάν."
+            "el": "Δένεις με Blood Bond ένα ζώο ως famulus: με νοητικό δεσμό ακολουθεί απλές προφορικές εντολές και σε υπερασπίζεται. Τρεις νύχτες το ποτίζεις με το αίμα σου, 1 Rouse Check η καθεμία· στη δημιουργία το παίρνεις δωρεάν."
           },
           "level": 1,
           "book": "v5-corebook",
@@ -99,7 +99,7 @@
           "name": "Animal Succulence",
           "desc": {
             "en": "Animal blood slakes 1 more Hunger and you count your Blood Potency two lower for its penalties. Devouring your famulus slakes 4 Hunger and raises a related Attribute by 2 until you next feed. Free.",
-            "el": "Το αίμα ζώων σβήνει 1 Hunger παραπάνω και μετράς το Blood Potency σου δύο επίπεδα χαμηλότερα για τις ποινές του. Αν φας το famulus, σβήνεις 4 Hunger και ένα σχετικό Attribute ανεβαίνει κατά 2 ως το επόμενο τάισμα."
+            "el": "Το αίμα ζώων σβήνει 1 Hunger παραπάνω και μετράς το Blood Potency σου δύο επίπεδα χαμηλότερα για τις ποινές του. Αν φας το famulus, σβήνεις 4 Hunger και ένα σχετικό Attribute ανεβαίνει κατά 2 ως την επόμενη φορά που θα τραφείς."
           },
           "level": 3,
           "book": "v5-corebook",
@@ -1087,7 +1087,7 @@
           "name": "Cloud Memory",
           "desc": {
             "en": "With one word the victim forgets the last few minutes, enough to hide a feeding or a meeting. Free; no roll against an unprepared mortal, Charisma + Dominate vs Wits + Resolve against a resisting one or a vampire.",
-            "el": "Με μία λέξη το θύμα ξεχνά τα τελευταία λεπτά, αρκετά για να κρυφτεί ένα τάισμα ή μια συνάντηση. Δωρεάν· χωρίς ρίψη σε ανυποψίαστο θνητό, Charisma + Dominate εναντίον Wits + Resolve σε όποιον αντιστέκεται ή σε βαμπίρ."
+            "el": "Με μία λέξη το θύμα ξεχνά τα τελευταία λεπτά, αρκετά για να κρύψεις ότι τράφηκες ή ότι συναντηθήκατε. Δωρεάν· χωρίς ρίψη σε ανυποψίαστο θνητό, Charisma + Dominate εναντίον Wits + Resolve σε όποιον αντιστέκεται ή σε βαμπίρ."
           },
           "level": 1,
           "book": "v5-corebook",
@@ -2380,7 +2380,7 @@
           "name": "Brutal Feed",
           "desc": {
             "en": "Drain a human in about one turn: bite damage, then automatic feeding actions up to your Potence, each Hunger slaked dealing one Aggravated to the victim. Half as many actions against vampires, as Superficial. Free.",
-            "el": "Στραγγίζεις άνθρωπο σε περίπου έναν γύρο: ζημιά δαγκώματος και μετά αυτόματες ενέργειες τροφής έως το Potence σου, με ένα Aggravated στο θύμα ανά Hunger που σβήνεις. Σε βαμπίρ οι μισές ενέργειες, ως Superficial. Δωρεάν."
+            "el": "Στραγγίζεις άνθρωπο σε περίπου έναν γύρο: ζημιά δαγκώματος και μετά τόσες αυτόματες ενέργειες για να τραφείς όσο το Potence σου, με ένα Aggravated στο θύμα ανά Hunger που σβήνεις. Σε βαμπίρ οι μισές ενέργειες, ως Superficial. Δωρεάν."
           },
           "level": 3,
           "book": "v5-corebook",

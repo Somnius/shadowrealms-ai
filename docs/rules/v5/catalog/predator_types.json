@@ -581,7 +581,7 @@
       "name": "Grim Reaper",
       "desc": {
         "en": "Feeds only on the dying, in hospices, care homes and shelters, so is always on the move. Gains 1 Humanity and a dot of medical Allies or Influence; cannot feed on the healthy (Prey Exclusion).",
-        "el": "Τρέφεται μόνο από ετοιμοθάνατους, σε hospice, γηροκομεία και άσυλα, γι’ αυτό μετακινείται διαρκώς. Κερδίζει 1 Humanity και μια τελεία Allies ή Influence στον ιατρικό χώρο· δεν τρέφεται από υγιείς (Prey Exclusion)."
+        "el": "Τρέφεται μόνο από ετοιμοθάνατους, σε hospice, γηροκομεία και ξενώνες αστέγων, γι’ αυτό μετακινείται διαρκώς. Κερδίζει 1 Humanity και μια τελεία Allies ή Influence στον ιατρικό χώρο· δεν τρέφεται από υγιείς (Prey Exclusion)."
       },
       "book": "v5-players-guide",
       "page": 108,
@@ -654,7 +654,7 @@
       "name": "Montero",
       "desc": {
         "en": "Hunts like a Spanish huntsman: retainers act as beaters and drive the prey to the vampire. Gains 2 dots of Retainers, loses 1 Humanity. Pool: Intelligence + Stealth or Resolve + Stealth.",
-        "el": "Κυνηγά σαν Ισπανός κυνηγός: οι retainers κάνουν τους οδηγούς και σπρώχνουν το θήραμα προς το βαμπίρ. Παίρνει Retainers 2 τελειών, χάνει 1 Humanity. Pool: Intelligence + Stealth ή Resolve + Stealth."
+        "el": "Κυνηγά σαν Ισπανός montero: οι retainers κάνουν την παγάνα και σπρώχνουν το θήραμα πάνω στο βαμπίρ. Παίρνει Retainers 2 τελειών, χάνει 1 Humanity. Pool: Intelligence + Stealth ή Resolve + Stealth."
       },
       "book": "v5-players-guide",
       "page": 108,

@@ -137,6 +137,31 @@ describe('powers and ceremonies', () => {
     expect(validateV5Powers(three)).toBe('Submerged Directive needs Mesmerize first.');
   });
 
+  it('a prerequisite in another Discipline counts', () => {
+    applyV5Catalog({
+      ...fixture,
+      disciplines: [
+        ...fixture.disciplines,
+        { id: 'discipline:animalism', name: 'Animalism', powers: [
+          { id: 'power:animalism:animal-messenger', name: 'Animal Messenger', level: 1 },
+          { id: 'power:animalism:messengers-command', name: "Messenger's Command", level: 2,
+            prerequisite: { all_of: [{ power_id: 'power:animalism:animal-messenger' }, { any_of: ['power:dominate:compel', 'power:dominate:mesmerize'] }] } },
+        ] },
+      ],
+    });
+    const s = {
+      clan: 'Caitiff',
+      disciplines: [
+        { name: 'Animalism', level: 2, powers: ['Animal Messenger', "Messenger's Command"] },
+        { name: 'Dominate', level: 1, powers: ['Cloud Memory'] },
+      ],
+    };
+    expect(validateV5Powers(s)).toBe("Messenger's Command needs Compel or Mesmerize first.");
+    s.disciplines[1] = { name: 'Dominate', level: 2, powers: ['Cloud Memory', 'Mesmerize'] };
+    expect(validateV5Powers(s)).toBeNull();
+    applyV5Catalog(fixture);
+  });
+
   it('a ceremony needs its prerequisite Oblivion power, and is stored with kind ceremony', () => {
     const s = sheet();
     expect(startingCeremonyOptions(s)).toEqual([]);

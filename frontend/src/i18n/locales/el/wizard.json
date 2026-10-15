@@ -61,7 +61,16 @@
     "v5SettingsAge": "Ο Storyteller δεν επιτρέπει χαρακτήρες {{age}} σε αυτό το χρονικό.",
     "v5SettingsClan": "Ο Storyteller δεν επιτρέπει {{clan}} σε αυτό το χρονικό.",
     "v5SettingsFlawCap": "Αυτό το χρονικό επιτρέπει έως {{max}} τελείες σε δικά σου Flaws (έχεις {{n}}).",
-    "v5SettingsFledgling": "Ο Storyteller δεν δίνει σε αυτό το χρονικό την επιλογή να ξεκινά ο fledgling με Humanity 8."
+    "v5SettingsFledgling": "Ο Storyteller δεν δίνει σε αυτό το χρονικό την επιλογή να ξεκινά ο fledgling με Humanity 8.",
+    "v5PowerTwice": "{{disc}}: το {{name}} το έχεις πάρει δύο φορές.",
+    "v5PowerUnknown": "Το {{name}} δεν είναι δύναμη του {{disc}}.",
+    "v5PowerLevel": "Το {{name}} είναι δύναμη επιπέδου {{level}}· το {{disc}} είναι στο {{rating}}.",
+    "v5PowerAmalgam": "Το {{name}} θέλει και {{disc}} {{level}}.",
+    "v5PowerPrereq": "Το {{name}} θέλει πρώτα {{pre}}.",
+    "v5GrantOneOf": "{{type}}: διάλεξε ένα από {{list}}.",
+    "v5GrantSplit": "{{type}}: μοίρασε {{n}} τελείες σε {{list}} (έχεις {{have}}).",
+    "v5GrantDots": "{{type}}: διάλεξε τις τελείες για το {{name}} (ρώτα τον Storyteller σου· το βιβλίο δεν γράφει).",
+    "v5AncillaOnly": "Το {{type}} είναι μόνο για ancillae."
   },
   "error": {
     "name": "Το όνομα του χαρακτήρα είναι υποχρεωτικό.",

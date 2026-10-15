@@ -23,6 +23,16 @@ const PATTERNS = [
   [/^Sphere (.+) must be 0–5\.$/, (m) => t('wizard:validation.sphereRange', 'Sphere {{key}} must be 0–5.', { key: m[1] })],
   [/^Allocate exactly 6 sphere dots at creation \(currently (\d+)\)\.$/, (m) => t('wizard:validation.spheresTotal', 'Allocate exactly 6 sphere dots at creation (currently {{current}}).', { current: m[1] })],
   // V5 whole-sheet checks (validateV5Sheet)
+  // V5 catalog checks (validateV5Powers, resolvePredatorGrants)
+  [/^(.+): (.+) is taken twice\.$/, (m) => t('wizard:validation.v5PowerTwice', '{{disc}}: {{name}} is taken twice.', { disc: m[1], name: m[2] })],
+  [/^(.+) is not a (.+) power\.$/, (m) => t('wizard:validation.v5PowerUnknown', '{{name}} is not a {{disc}} power.', { name: m[1], disc: m[2] })],
+  [/^(.+) is a level (\d+) power; (.+) is at (\d+)\.$/, (m) => t('wizard:validation.v5PowerLevel', '{{name}} is a level {{level}} power; {{disc}} is at {{rating}}.', { name: m[1], level: m[2], disc: m[3], rating: m[4] })],
+  [/^(.+) also needs (.+) (\d+)\.$/, (m) => t('wizard:validation.v5PowerAmalgam', '{{name}} also needs {{disc}} {{level}}.', { name: m[1], disc: m[2], level: m[3] })],
+  [/^(.+) needs (.+) first\.$/, (m) => t('wizard:validation.v5PowerPrereq', '{{name}} needs {{pre}} first.', { name: m[1], pre: m[2].replace(/ or /g, ` ${t('wizard:v5.grantOr', 'or')} `) })],
+  [/^(.+): choose one of (.+)\.$/, (m) => t('wizard:validation.v5GrantOneOf', '{{type}}: choose one of {{list}}.', { type: m[1], list: m[2].replace(/ or /g, ` ${t('wizard:v5.grantOr', 'or')} `) })],
+  [/^(.+): share (\d+) dots between (.+) \(you have (\d+)\)\.$/, (m) => t('wizard:validation.v5GrantSplit', '{{type}}: share {{n}} dots between {{list}} (you have {{have}}).', { type: m[1], n: m[2], list: m[3].replace(/ and /g, ` ${t('wizard:v5.grantAnd', 'and')} `), have: m[4] })],
+  [/^(.+): choose the dots for (.+) \(ask your Storyteller; the book prints none\)\.$/, (m) => t('wizard:validation.v5GrantDots', '{{type}}: choose the dots for {{name}} (ask your Storyteller; the book prints none).', { type: m[1], name: m[2] })],
+  [/^(.+) is for ancillae only\.$/, (m) => t('wizard:validation.v5AncillaOnly', '{{type}} is for ancillae only.', { type: m[1] })],
   // V5 chronicle creation settings (settingsErrors)
   [/^The Storyteller doesn't allow the (.+) predator type in this chronicle\.$/, (m) => t('wizard:validation.v5SettingsPredator', "The Storyteller doesn't allow the {{type}} predator type in this chronicle.", { type: m[1] })],
   [/^The Storyteller doesn't allow (.+) characters in this chronicle\.$/, (m) => t('wizard:validation.v5SettingsAge', "The Storyteller doesn't allow {{age}} characters in this chronicle.", { age: m[1] })],

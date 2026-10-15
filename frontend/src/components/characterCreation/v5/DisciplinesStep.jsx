@@ -86,6 +86,7 @@ export default function DisciplinesStep() {
                 }
                 const taken = row.powers.filter((x, j) => j !== p && x);
                 const chosen = catalog.find((x) => x.name === pw);
+                const offered = catalog.filter((x) => x.level <= row.level);
                 return (
                   <div key={p} style={{ flex: '1 1 240px', minWidth: 0 }}>
                     <select
@@ -95,10 +96,8 @@ export default function DisciplinesStep() {
                       style={{ ...inputStyle, padding: '6px 8px', fontSize: '12px' }}
                     >
                       <option value="">{t('wizard:v5.powerPick', 'Power {{n}}…', { n: p + 1 })}</option>
-                      {pw && !chosen ? <option value={pw}>{pw}</option> : null}
-                      {catalog
-                        .filter((x) => x.level <= row.level)
-                        .map((x) => (
+                      {pw && !offered.some((x) => x.name === pw) ? <option value={pw}>{pw}</option> : null}
+                      {offered.map((x) => (
                           <option key={x.id || x.name} value={x.name} disabled={taken.includes(x.name)}>
                             {t('wizard:v5.powerOption', '{{name}} (level {{level}})', { name: x.name, level: x.level })}
                             {x.amalgam ? ` · ${x.amalgam.discipline} ${x.amalgam.level}` : ''}

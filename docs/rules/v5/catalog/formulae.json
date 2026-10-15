@@ -45,7 +45,7 @@
       "name": "Mercurian Tongue",
       "desc": {
         "en": "Speak the native language of the mortal whose blood went into the formula until you next sleep; spending 1 Willpower and feeding from another mortal switches to their language. 1 Rouse Check.",
-        "el": "Μιλάς τη μητρική γλώσσα του θνητού που το αίμα του μπήκε στη formula ώσπου να κοιμηθείς· με 1 Willpower και τροφή από άλλον θνητό αλλάζεις στη δική του γλώσσα. 1 Rouse Check."
+        "el": "Μιλάς τη μητρική γλώσσα του θνητού που το αίμα του μπήκε στη formula ώσπου να κοιμηθείς· με 1 Willpower και αν τραφείς από άλλον θνητό, αλλάζεις στη δική του γλώσσα. 1 Rouse Check."
       },
       "level": 1,
       "book": "v5-players-guide",
