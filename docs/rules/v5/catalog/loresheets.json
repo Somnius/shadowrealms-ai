@@ -5,6 +5,10 @@
     {
       "id": "loresheet:the-bahari",
       "name": "The Bahari",
+      "desc": {
+        "en": "Followers of Lilith who seek strength through pain. Levels: intimidation bonus against Caine-worshippers, Willpower from self-scarring, a diablerie bonus against your own childe, womb-blood boosts and First-Cursed.",
+        "el": "Οπαδοί της Lilith που βρίσκουν δύναμη στον πόνο. Επίπεδα: bonus εκφοβισμού σε λάτρεις του Caine, Willpower από αυτοτραυματισμό, bonus diablerie στο ίδιο σου το childe, ενίσχυση από αίμα μήτρας και First-Cursed."
+      },
       "book": "v5-corebook",
       "page": 382,
       "restriction": null,
@@ -14,23 +18,43 @@
       "levels": [
         {
           "dots": 1,
-          "name": "Dangerous Reputation"
+          "name": "Dangerous Reputation",
+          "desc": {
+            "en": "Once per story, +2 dice on Intimidation against Caine-worshippers who know your allegiance.",
+            "el": "Μία φορά ανά story, +2 ζάρια σε Intimidation απέναντι σε λάτρεις του Caine που ξέρουν πού ανήκεις."
+          }
         },
         {
           "dots": 2,
-          "name": "Ritual Scarification"
+          "name": "Ritual Scarification",
+          "desc": {
+            "en": "Once per session, scar yourself for 1 Aggravated damage to heal one Willpower level, whether Superficial or Aggravated.",
+            "el": "Μία φορά ανά session, χαράζεσαι για 1 Aggravated damage και γιατρεύεις ένα επίπεδο Willpower damage, Superficial ή Aggravated."
+          }
         },
         {
           "dots": 3,
-          "name": "Sacrifice the Children"
+          "name": "Sacrifice the Children",
+          "desc": {
+            "en": "If you diablerize your own childe, add three dice to the Humanity + Blood Potency pool to absorb their Disciplines.",
+            "el": "Αν κάνεις diablerie στο ίδιο σου το childe, πρόσθεσε τρία ζάρια στο pool Humanity + Blood Potency για να απορροφήσεις τα Disciplines του."
+          }
         },
         {
           "dots": 4,
-          "name": "The Womb's Blood"
+          "name": "The Womb's Blood",
+          "desc": {
+            "en": "Once per story, after drinking blood from the uterus, gain two dots of Stamina or Resolve (and the Health or Willpower that goes with them) until dawn.",
+            "el": "Μία φορά ανά story, αφού πιεις αίμα από τη μήτρα, παίρνεις δύο τελείες Stamina ή Resolve (και το αντίστοιχο Health ή Willpower) μέχρι την αυγή."
+          }
         },
         {
           "dots": 5,
-          "name": "First-Cursed"
+          "name": "First-Cursed",
+          "desc": {
+            "en": "Walk in the first hour of day and the last of dusk and have sex without Rousing, but you count as Obvious Predator, slander against you is 1 easier, and reading you with Auspex costs the reader Resolve and Willpower for a scene.",
+            "el": "Βγαίνεις την πρώτη ώρα της μέρας και την τελευταία του σούρουπου και κάνεις σεξ χωρίς Rouse, αλλά μετράς ως Obvious Predator, η συκοφαντία κατά σου είναι 1 ευκολότερη, και όποιος σε διαβάσει με Auspex χάνει Resolve και Willpower μια σκηνή."
+          }
         }
       ],
       "also_in": [],
@@ -40,6 +64,10 @@
     {
       "id": "loresheet:theo-bell",
       "name": "Theo Bell",
+      "desc": {
+        "en": "The Brujah who defected to the Anarchs; levels give rebel mortals, Investigation successes against defectors, a line to Theo, Theo as a 5-dot Mawla and a Brujah following.",
+        "el": "Ο Brujah που αυτομόλησε στους Anarchs· τα επίπεδα δίνουν επαναστάτες θνητούς, επιτυχίες Investigation για αυτόμολους, γραμμή με τον Theo, τον Theo ως Mawla 5 τελειών και Brujah ακόλουθους."
+      },
       "book": "v5-corebook",
       "page": 383,
       "restriction": null,
@@ -49,23 +77,43 @@
       "levels": [
         {
           "dots": 1,
-          "name": "Rebel Cell"
+          "name": "Rebel Cell",
+          "desc": {
+            "en": "A pack of rebellious mortals (a 3-dot Ally group) does one dangerous job for you per story without you present, then scatters.",
+            "el": "Μια ομάδα επαναστατημένων θνητών (Ally group 3 τελειών) κάνει μία επικίνδυνη δουλειά για σένα ανά story χωρίς να είσαι εκεί, και μετά σκορπίζει."
+          }
         },
         {
           "dots": 2,
-          "name": "True Anarch"
+          "name": "True Anarch",
+          "desc": {
+            "en": "Any Investigation test about Kindred who went over to the Anarchs starts with two automatic successes.",
+            "el": "Δύο αυτόματες επιτυχίες σε κάθε Investigation τεστ για βαμπίρ που πέρασαν στο Anarch Movement."
+          }
         },
         {
           "dots": 3,
-          "name": "Contact Information"
+          "name": "Contact Information",
+          "desc": {
+            "en": "You can get a message to Theo Bell; whether he answers, and what comes of it, is up to the Storyteller.",
+            "el": "Μπορείς να στείλεις μήνυμα στον Theo Bell· αν απαντήσει, και τι θα βγει, το ορίζει ο Storyteller."
+          }
         },
         {
           "dots": 4,
-          "name": "Bell's Circle"
+          "name": "Bell's Circle",
+          "desc": {
+            "en": "Theo trusts you: he counts as a 5-dot Mawla, with all the baggage that association brings.",
+            "el": "Ο Theo σε εμπιστεύεται: μετρά ως Mawla 5 τελειών, με όλα τα βάρη που φέρνει αυτή η σχέση."
+          }
         },
         {
           "dots": 5,
-          "name": "Sect Neutrality"
+          "name": "Sect Neutrality",
+          "desc": {
+            "en": "A few Brujah follow your lead toward Camarilla, Anarchs or a neutral sub-sect; until they turn on you, spend five dots among Contacts, Haven, Mawla and Retainers.",
+            "el": "Λίγοι Brujah ακολουθούν τη γραμμή σου προς Camarilla, Anarchs ή ουδέτερο υπο-sect· μέχρι να στραφούν εναντίον σου, μοιράζεις πέντε τελείες σε Contacts, Haven, Mawla και Retainers."
+          }
         }
       ],
       "also_in": [],
@@ -75,6 +123,10 @@
     {
       "id": "loresheet:cainite-heresy",
       "name": "Cainite Heresy",
+      "desc": {
+        "en": "The Gnostic vampire cult that holds Caine as messiah. Levels: a free clue per story, three dots in the Heresy's deaconate, smelling True Faith, inducing the Red Pentecost and being named in prophecy.",
+        "el": "Η γνωστική λατρεία βαμπίρ που βλέπει τον Caine ως μεσσία. Επίπεδα: δωρεάν στοιχείο ανά story, τρεις τελείες στο διακονικό της Heresy, όσφρηση True Faith, πρόκληση Red Pentecost και όνομα στην προφητεία."
+      },
       "book": "v5-corebook",
       "page": 384,
       "restriction": null,
@@ -84,23 +136,43 @@
       "levels": [
         {
           "dots": 1,
-          "name": "Let He Who Hath Understanding"
+          "name": "Let He Who Hath Understanding",
+          "desc": {
+            "en": "Once per story the Storyteller hands you a free clue about what the Heresy is doing or planning, tonight or centuries ago.",
+            "el": "Μία φορά ανά story ο Storyteller σού δίνει δωρεάν ένα στοιχείο για τις κινήσεις ή τα σχέδια της Heresy, τώρα ή σε περασμένους αιώνες."
+          }
         },
         {
           "dots": 2,
-          "name": "Hand of the Heresy"
+          "name": "Hand of the Heresy",
+          "desc": {
+            "en": "Three dots split among Allies, Herd, Mawla and Retainers for your place in the city's Heretical deaconate, plus Dark Secret (Heresy) in some domains.",
+            "el": "Τρεις τελείες μοιρασμένες σε Allies, Herd, Mawla και Retainers για τη θέση σου στο διακονικό της Heresy στην πόλη, συν Dark Secret (Heresy) σε κάποια domains."
+          }
         },
         {
           "dots": 3,
-          "name": "Counter-Inquisition"
+          "name": "Counter-Inquisition",
+          "desc": {
+            "en": "True Faith on a human has a scent to you; when a test is needed, roll Resolve + your highest Cainite Heresy level.",
+            "el": "Μυρίζεις το True Faith σε άνθρωπο· αν χρειαστεί τεστ, ρίχνεις Resolve + το υψηλότερο επίπεδό σου στο Cainite Heresy."
+          }
         },
         {
           "dots": 4,
-          "name": "Red Celebrant"
+          "name": "Red Celebrant",
+          "desc": {
+            "en": "You know how to trigger the Red Pentecost in a human congregation, enough for one ceremony per story; it needs a Hunger check and may frenzy Kindred present.",
+            "el": "Ξέρεις πώς να προκαλέσεις το Red Pentecost σε μια ανθρώπινη εκκλησία, για μία τελετή ανά story· θέλει Hunger check και μπορεί να ρίξει σε frenzy τους παρόντες Kindred."
+          }
         },
         {
           "dots": 5,
-          "name": "The One Named in Prophecy"
+          "name": "The One Named in Prophecy",
+          "desc": {
+            "en": "The Heresy sees you as a linchpin of its plans. Once per story you decide who wins a Social conflict, given a plausible reason for it.",
+            "el": "Η Heresy σε θεωρεί κλειδί των σχεδίων της. Μία φορά ανά story ορίζεις τον νικητή μιας Social σύγκρουσης αν δώσεις εύλογη αιτιολογία."
+          }
         }
       ],
       "also_in": [],
@@ -110,6 +182,10 @@
     {
       "id": "loresheet:carna",
       "name": "Carna",
+      "desc": {
+        "en": "The Tremere rebel who broke with the Pyramid. Levels: Willpower bonus among her house, resisting Blood Bonds, bloodless rituals, Bonds through sex and the Book of the Grave-War.",
+        "el": "Η Tremere αντάρτισσα που έσπασε με την Pyramid. Επίπεδα: bonus Willpower ανάμεσα στον οίκο της, αντίσταση σε Blood Bonds, rituals χωρίς αίμα, Bonds μέσω σεξ και το Book of the Grave-War."
+      },
       "book": "v5-corebook",
       "page": 385,
       "restriction": null,
@@ -119,23 +195,43 @@
       "levels": [
         {
           "dots": 1,
-          "name": "Embrace the Vision"
+          "name": "Embrace the Vision",
+          "desc": {
+            "en": "+1 die on all Willpower tests while other members of House Carna are around.",
+            "el": "+1 ζάρι σε όλα τα Willpower τεστ όσο υπάρχουν γύρω σου άλλα μέλη του House Carna."
+          }
         },
         {
           "dots": 2,
-          "name": "The Rebel Trail"
+          "name": "The Rebel Trail",
+          "desc": {
+            "en": "Whenever you risk becoming Blood Bound, roll Willpower at Difficulty equal to the vitae's Blood Potency to ignore it.",
+            "el": "Όποτε κινδυνεύεις να δεθείς με Blood Bond, ρίχνεις Willpower με Difficulty ίσο με το Blood Potency του vitae για να το αγνοήσεις."
+          }
         },
         {
           "dots": 3,
-          "name": "Unorthodox Rituals"
+          "name": "Unorthodox Rituals",
+          "desc": {
+            "en": "Once per story perform a known ritual without spending Blood; on a messy critical you become deranged (paranoid, afraid of blood) until the story ends.",
+            "el": "Μία φορά ανά story κάνεις ένα γνωστό ritual χωρίς να ξοδέψεις αίμα· σε messy critical διαταράσσεσαι (παράνοια, φόβος για το αίμα) μέχρι το τέλος της story."
+          }
         },
         {
           "dots": 4,
-          "name": "Reimagined Bond"
+          "name": "Reimagined Bond",
+          "desc": {
+            "en": "Sex with a target, mortal or Kindred, creates a Blood Bond between them, you and Carna, bypassing the Tremere Bane; it lasts until the story ends.",
+            "el": "Το σεξ με έναν στόχο, θνητό ή Kindred, δημιουργεί Blood Bond ανάμεσα σε εκείνον, εσένα και την Carna, παρακάμπτοντας το Bane των Tremere· κρατά μέχρι το τέλος της story."
+          }
         },
         {
           "dots": 5,
-          "name": "Book of the Grave-War"
+          "name": "Book of the Grave-War",
+          "desc": {
+            "en": "Your copy gives one automatic success on Occult tests about Gehenna and breaking elder shackles and makes you unbondable while you keep it; Tremere hunt you and paranoia may cost -1 die on Social or Mental tests.",
+            "el": "Το αντίγραφό σου δίνει μία αυτόματη επιτυχία σε Occult τεστ για τη Gehenna και το σπάσιμο των δεσμών με τους elders και σε κάνει unbondable όσο το κρατάς· οι Tremere σε κυνηγούν και η παράνοια ίσως κοστίσει −1 ζάρι σε Social ή Mental τεστ."
+          }
         }
       ],
       "also_in": [],
@@ -145,6 +241,10 @@
     {
       "id": "loresheet:the-circulatory-system",
       "name": "The Circulatory System",
+      "desc": {
+        "en": "The Kindred trafficking ring that moves and studies prized vessels. Levels: ordering vessels, a little black book, a vessel farm, armored transport and blood sommelier skills.",
+        "el": "Το κύκλωμα Kindred που διακινεί και μελετά εκλεκτά θύματα. Επίπεδα: παραγγελία θυμάτων, μαύρο βιβλιαράκι, φάρμα θυμάτων, θωρακισμένη μεταφορά και δεξιότητες blood sommelier."
+      },
       "book": "v5-corebook",
       "page": 386,
       "restriction": null,
@@ -154,23 +254,43 @@
       "levels": [
         {
           "dots": 1,
-          "name": "Tap into the System"
+          "name": "Tap into the System",
+          "desc": {
+            "en": "Once per story you can request specific vessels from the System, for a given ability or for a Ventrue with an unmet feeding preference.",
+            "el": "Μία φορά ανά story ζητάς συγκεκριμένα θύματα από το System, για κάποια ικανότητα ή για Ventrue που δεν βρίσκει την προτίμησή του."
+          }
         },
         {
           "dots": 2,
-          "name": "Little Black Book"
+          "name": "Little Black Book",
+          "desc": {
+            "en": "A System notebook of blood experiments: +1 die when Investigation, Alchemy, Medicine or Science is rolled to find or test a vintage; a 2- or 3-dot Alchemy formula takes half the research time.",
+            "el": "Σημειωματάριο του System με πειράματα αίματος: +1 ζάρι σε Investigation, Alchemy, Medicine ή Science τεστ για να βρεις ή να εξετάσεις ένα vintage, και μισός χρόνος έρευνας για formula Alchemy 2 ή 3 τελειών."
+          }
         },
         {
           "dots": 3,
-          "name": "Farm Upstate"
+          "name": "Farm Upstate",
+          "desc": {
+            "en": "You know a System farm of potent vessels: the equivalent of 4 dots of Herd, usable once a week unless you take the farm over.",
+            "el": "Ξέρεις μια φάρμα του System με ισχυρά θύματα: ισοδύναμο 4 τελειών Herd, μία φορά την εβδομάδα εκτός αν καταλάβεις τη φάρμα."
+          }
         },
         {
           "dots": 4,
-          "name": "Secure Transit"
+          "name": "Secure Transit",
+          "desc": {
+            "en": "You have the use of one of the System's armored vans with armed ghoul drivers, enough to move one or more Kindred safely with little effort.",
+            "el": "Έχεις πρόσβαση σε ένα από τα θωρακισμένα βαν του System με οπλισμένους ghoul οδηγούς, αρκετό για να μεταφέρεις με ασφάλεια έναν ή περισσότερους Kindred."
+          }
         },
         {
           "dots": 5,
-          "name": "Blood Sommelier"
+          "name": "Blood Sommelier",
+          "desc": {
+            "en": "+2 dice on tests to discover blood Resonance, three dots to spend on Contacts, Allies or Haven Merits, and once per story the Storyteller reveals what the finest vessel's blood does.",
+            "el": "+2 ζάρια σε τεστ για να βρεις το Resonance του αίματος, τρεις τελείες σε Contacts, Allies ή Haven Merits, και μία φορά ανά story ο Storyteller σού λέει τις ιδιότητες του πιο πολύτιμου θύματος."
+          }
         }
       ],
       "also_in": [],
@@ -183,6 +303,10 @@
     {
       "id": "loresheet:convention-of-thorns",
       "name": "Convention of Thorns",
+      "desc": {
+        "en": "Scholar of the convention that founded the Camarilla. Levels: convention trivia, apocryphal Traditions, secret proposals, a path to Justicar and proposing new Traditions.",
+        "el": "Μελετητής της συνέλευσης που ίδρυσε την Camarilla. Επίπεδα: γνώσεις της συνέλευσης, απόκρυφες Traditions, μυστικές προτάσεις, δρόμος για Justicar και πρόταση νέων Traditions."
+      },
       "book": "v5-corebook",
       "page": 387,
       "restriction": null,
@@ -192,23 +316,43 @@
       "levels": [
         {
           "dots": 1,
-          "name": "Thorns Historian"
+          "name": "Thorns Historian",
+          "desc": {
+            "en": "You know the convention's minor pacts and can press them on participants or their descendants; once per story ask the Storyteller for a known fact about it.",
+            "el": "Ξέρεις τα μικρά σύμφωνα της συνέλευσης και τα επικαλείσαι σε συμμετέχοντες ή απογόνους τους· μία φορά ανά story ζητάς από τον Storyteller ένα γνωστό στοιχείο γι' αυτήν."
+          }
         },
         {
           "dots": 2,
-          "name": "Tradition Master"
+          "name": "Tradition Master",
+          "desc": {
+            "en": "Once per chronicle you may invoke a fringe or near-passed Tradition in a domain whose ruling clans still sympathize with it.",
+            "el": "Μία φορά ανά chronicle επικαλείσαι μια ακραία ή σχεδόν ψηφισμένη Tradition σε domain όπου τα άρχοντα clans ακόμη τη συμπαθούν."
+          }
         },
         {
           "dots": 3,
-          "name": "Convention Secrets"
+          "name": "Convention Secrets",
+          "desc": {
+            "en": "+1 die on Social tests with Kindred who attended the convention, and once per story the Storyteller names a Kindred who needs one of the major secrets you hold, each worth a Major Boon.",
+            "el": "+1 ζάρι σε Social τεστ με Kindred που ήταν στη συνέλευση, και μία φορά ανά story ο Storyteller σού λέει ποιος Kindred χρειάζεται ένα από τα μεγάλα μυστικά σου, το καθένα αξίας Major Boon."
+          }
         },
         {
           "dots": 4,
-          "name": "Prospective Justicar"
+          "name": "Prospective Justicar",
+          "desc": {
+            "en": "You (or your sire) have powerful backing to become your clan's next Justicar, whatever your politics.",
+            "el": "Εσύ (ή ο sire σου) έχετε ισχυρή στήριξη για να γίνετε ο επόμενος Justicar του clan σας, όποια κι αν είναι η πολιτική σας."
+          }
         },
         {
           "dots": 5,
-          "name": "New Traditions"
+          "name": "New Traditions",
+          "desc": {
+            "en": "You can bring a new Tradition, or an amendment, before the Camarilla's Inner Circle and be heard without prejudice; it may pass or mark you as a danger.",
+            "el": "Μπορείς να φέρεις νέα Tradition, ή τροποποίηση, στο Inner Circle της Camarilla και να ακουστείς χωρίς προκατάληψη· μπορεί να περάσει ή να σε σημαδέψει ως κίνδυνο."
+          }
         }
       ],
       "also_in": [],
@@ -218,6 +362,10 @@
     {
       "id": "loresheet:the-first-inquisition",
       "name": "The First Inquisition",
+      "desc": {
+        "en": "Expert on the medieval Inquisition that burned Kindred domains. Levels: historical facts, blackmail names, old-Inquisitor contacts, a source inside the Second Inquisition and a place hunters avoid.",
+        "el": "Ειδικός στη μεσαιωνική Inquisition που έκαψε domains των Kindred. Επίπεδα: ιστορικά στοιχεία, ονόματα για εκβιασμό, επαφές παλαιών Inquisitors, πηγή μέσα στη Second Inquisition και μέρος που οι κυνηγοί αποφεύγουν."
+      },
       "book": "v5-corebook",
       "page": 388,
       "restriction": null,
@@ -227,23 +375,43 @@
       "levels": [
         {
           "dots": 1,
-          "name": "Mistakes of the Past"
+          "name": "Mistakes of the Past",
+          "desc": {
+            "en": "Once per story the Storyteller gives you one fact about the original Inquisition.",
+            "el": "Μία φορά ανά story ο Storyteller σού δίνει ένα στοιχείο για την αρχική Inquisition."
+          }
         },
         {
           "dots": 2,
-          "name": "Names of the Guilty"
+          "name": "Names of the Guilty",
+          "desc": {
+            "en": "Once per story the Storyteller names a local descendant of the Kindred who manipulated the Inquisition, open to blackmail for their sire's treachery.",
+            "el": "Μία φορά ανά story ο Storyteller σού δίνει έναν ντόπιο απόγονο των Kindred που χειραγώγησαν την Inquisition, εκβιάσιμο για την προδοσία του sire του."
+          }
         },
         {
           "dots": 3,
-          "name": "The Sect of St. James"
+          "name": "The Sect of St. James",
+          "desc": {
+            "en": "Contacts among the zealots who call themselves old Inquisitors; their abbé is a 4-dot Contact you can reach once per story.",
+            "el": "Επαφές με τους φανατικούς που αυτοαποκαλούνται παλαιοί Inquisitors· ο abbé τους είναι Contact 4 τελειών που φτάνεις μία φορά ανά story."
+          }
         },
         {
           "dots": 4,
-          "name": "The Second Act"
+          "name": "The Second Act",
+          "desc": {
+            "en": "A Contact inside the Second Inquisition or the local archdiocese whom you can pump for information or feed disinformation.",
+            "el": "Ένας Contact μέσα στη Second Inquisition ή στην τοπική αρχιεπισκοπή, από τον οποίο βγάζεις πληροφορίες ή του περνάς παραπληροφόρηση."
+          }
         },
         {
           "dots": 5,
-          "name": "Black Spot"
+          "name": "Black Spot",
+          "desc": {
+            "en": "A place in your domain the Second Inquisition fears: once per story, anyone they hunt who hides there has the search called off.",
+            "el": "Ένα μέρος στο domain σου που η Second Inquisition φοβάται: μία φορά ανά story, όποιον κυνηγούν και κρυφτεί εκεί, η έρευνα σταματά."
+          }
         }
       ],
       "also_in": [],
@@ -253,6 +421,10 @@
     {
       "id": "loresheet:golconda",
       "name": "Golconda",
+      "desc": {
+        "en": "Seeker (or debunker) of the fabled balance between Humanity and Beast. Levels: guidance on the path, a treatise, Saulot's dual existence, Hunger relief and walking in daylight.",
+        "el": "Αναζητητής (ή απομυθοποιητής) της θρυλικής ισορροπίας Humanity και Κτήνους. Επίπεδα: καθοδήγηση στον δρόμο, μια πραγματεία, η διπλή ύπαρξη του Saulot, ανακούφιση από το Hunger και περπάτημα στο φως."
+      },
       "book": "v5-corebook",
       "page": 389,
       "restriction": null,
@@ -262,23 +434,43 @@
       "levels": [
         {
           "dots": 1,
-          "name": "Seeds of Golconda"
+          "name": "Seeds of Golconda",
+          "desc": {
+            "en": "Once per story ask the Storyteller whether an action you are about to take would jeopardize your chance at Golconda.",
+            "el": "Μία φορά ανά story ρωτάς τον Storyteller αν μια ενέργεια που ετοιμάζεσαι να κάνεις θα έβλαπτε την προοπτική σου για Golconda."
+          }
         },
         {
           "dots": 2,
-          "name": "The One True Way"
+          "name": "The One True Way",
+          "desc": {
+            "en": "Your copy of the Master of Ravens' treatise gives +3 dice once per story on a Social test about the nature of Golconda.",
+            "el": "Το αντίγραφό σου της πραγματείας του Master of Ravens δίνει +3 ζάρια μία φορά ανά story σε Social τεστ για τη φύση της Golconda."
+          }
         },
         {
           "dots": 3,
-          "name": "Saulot's Disciple"
+          "name": "Saulot's Disciple",
+          "desc": {
+            "en": "You let the Beast loose on purpose now and then; after willingly giving in to frenzy, you automatically pass your next frenzy test.",
+            "el": "Αφήνεις επίτηδες το Κτήνος ελεύθερο πού και πού· αφού ενδώσεις με τη θέλησή σου σε frenzy, περνάς αυτόματα το επόμενο τεστ frenzy."
+          }
         },
         {
           "dots": 4,
-          "name": "Satisfy the Hunger"
+          "name": "Satisfy the Hunger",
+          "desc": {
+            "en": "Once per session lower your Hunger by one (not below 1) without feeding.",
+            "el": "Μία φορά ανά session ρίχνεις το Hunger σου κατά ένα (όχι κάτω από 1) χωρίς να τραφείς."
+          }
         },
         {
           "dots": 5,
-          "name": "Greet the Sun"
+          "name": "Greet the Sun",
+          "desc": {
+            "en": "Once per story you can walk in full daylight unharmed; the next night you wake in Hunger frenzy.",
+            "el": "Μία φορά ανά story περπατάς αβλαβής στο πλήρες φως της μέρας· την επόμενη νύχτα ξυπνάς σε Hunger frenzy."
+          }
         }
       ],
       "also_in": [],
@@ -291,6 +483,10 @@
     {
       "id": "loresheet:descendant-of-hardestadt",
       "name": "Descendant of Hardestadt",
+      "desc": {
+        "en": "Ventrue only: lineage of the Camarilla's Ventrue founder. Levels: a voice that carries, leading without penalty, Status among Ventrue, a line to the founders and Hardestadt's succession document.",
+        "el": "Μόνο Ventrue: γενιά του Ventrue ιδρυτή της Camarilla. Επίπεδα: φωνή που ακούγεται παντού, ηγεσία χωρίς ποινή, Status στους Ventrue, γραμμή με τους ιδρυτές και το έγγραφο διαδοχής του Hardestadt."
+      },
       "book": "v5-corebook",
       "page": 390,
       "restriction": "ventrue characters only",
@@ -302,23 +498,43 @@
       "levels": [
         {
           "dots": 1,
-          "name": "Voice of Hardestadt"
+          "name": "Voice of Hardestadt",
+          "desc": {
+            "en": "You can be heard over any noise and draw attention in any room; whether they listen is another matter.",
+            "el": "Ακούγεσαι πάνω από κάθε θόρυβο και τραβάς την προσοχή σε κάθε χώρο· αν θα σε ακούσουν είναι άλλο θέμα."
+          }
         },
         {
           "dots": 2,
-          "name": "Supreme Leader"
+          "name": "Supreme Leader",
+          "desc": {
+            "en": "Once per story you take no dice penalty for sending people into danger.",
+            "el": "Μία φορά ανά story δεν έχεις ποινή ζαριών όταν στέλνεις ανθρώπους σε κίνδυνο."
+          }
         },
         {
           "dots": 3,
-          "name": "Ventrue Pillar"
+          "name": "Ventrue Pillar",
+          "desc": {
+            "en": "You always have three dots of Status among Ventrue, whatever your standing elsewhere.",
+            "el": "Έχεις πάντα τρεις τελείες Status στους Ventrue, όποια κι αν είναι η θέση σου αλλού."
+          }
         },
         {
           "dots": 4,
-          "name": "Line to the Founders"
+          "name": "Line to the Founders",
+          "desc": {
+            "en": "One time per chronicle you may phone, write to or meet a surviving Camarilla founder in Hardestadt's place.",
+            "el": "Μία φορά ανά chronicle τηλεφωνείς, γράφεις ή συναντάς έναν από τους επιζώντες ιδρυτές της Camarilla στη θέση του Hardestadt."
+          }
         },
         {
           "dots": 5,
-          "name": "Hardestadt's Heir"
+          "name": "Hardestadt's Heir",
+          "desc": {
+            "en": "You hold a signed document naming you Hardestadt's successor; taking his name claims the Camarilla's loyalty and brings the Anarchs down on you.",
+            "el": "Κατέχεις υπογεγραμμένο έγγραφο που σε ονομάζει διάδοχο του Hardestadt· αν πάρεις το όνομά του διεκδικείς την πίστη της Camarilla και φέρνεις τους Anarchs στο κατόπι σου."
+          }
         }
       ],
       "also_in": [],
@@ -328,6 +544,10 @@
     {
       "id": "loresheet:descendant-of-helena",
       "name": "Descendant of Helena",
+      "desc": {
+        "en": "Toreador only: lineage of the clan's icon of beauty and talent. Levels: name-dropping for Status, cheaper Skill growth, legendary parties, looking innocent and a Succubus Club franchise.",
+        "el": "Μόνο Toreador: γενιά του ινδάλματος ομορφιάς και ταλέντου του clan. Επίπεδα: Status από το όνομά της, φθηνότερα Skills, θρυλικά πάρτι, αθώα όψη και franchise του Succubus Club."
+      },
       "book": "v5-corebook",
       "page": 391,
       "restriction": "toreador characters only",
@@ -339,23 +559,43 @@
       "levels": [
         {
           "dots": 1,
-          "name": "Skin-Deep"
+          "name": "Skin-Deep",
+          "desc": {
+            "en": "Once per story, dropping Helena's name to a Toreador or anyone who knows of her raises your Status by one dot for the conversation.",
+            "el": "Μία φορά ανά story, αναφέροντας το όνομα της Helena σε Toreador ή σε όποιον την ξέρει, το Status σου ανεβαίνει μία τελεία για τη συζήτηση."
+          }
         },
         {
           "dots": 2,
-          "name": "Real Talent"
+          "name": "Real Talent",
+          "desc": {
+            "en": "Choose Craft, Etiquette or Performance: raising that Skill costs half the usual experience (rounded down).",
+            "el": "Διάλεξε Craft, Etiquette ή Performance: η άνοδος αυτού του Skill κοστίζει τα μισά experience (στρογγυλοποίηση κάτω)."
+          }
         },
         {
           "dots": 3,
-          "name": "Embrace the Stereotype"
+          "name": "Embrace the Stereotype",
+          "desc": {
+            "en": "Once per story you throw a party; while it runs, your Status or Influence (or both) with the guests is two dots higher.",
+            "el": "Μία φορά ανά story διοργανώνεις πάρτι· όσο κρατά, το Status ή το Influence σου (ή και τα δύο) με τους καλεσμένους είναι δύο τελείες ψηλότερα."
+          }
         },
         {
           "dots": 4,
-          "name": "Divine Purity"
+          "name": "Divine Purity",
+          "desc": {
+            "en": "+2 dice on tests to avoid blame for your actions; you always look innocent.",
+            "el": "+2 ζάρια σε τεστ για να αποφύγεις την ευθύνη για τις πράξεις σου· πάντα δείχνεις αθώος."
+          }
         },
         {
           "dots": 5,
-          "name": "Succubus Club Franchise"
+          "name": "Succubus Club Franchise",
+          "desc": {
+            "en": "Licensed to open a Succubus Club in your domain: while it runs, your coterie's Chasse rises by two dots and you get four dots among Resources, Fame and Status with all Kindred.",
+            "el": "Άδεια για Succubus Club στο domain σου: όσο λειτουργεί, το Chasse της coterie ανεβαίνει δύο τελείες και παίρνεις τέσσερις τελείες σε Resources, Fame και Status με όλους τους Kindred."
+          }
         }
       ],
       "also_in": [],
@@ -365,6 +605,10 @@
     {
       "id": "loresheet:sect-war-veteran",
       "name": "Sect War Veteran",
+      "desc": {
+        "en": "You lived through the Sabbat-Camarilla war for North America. Levels: war lore, Status or Mawla from your service, a trophy kill, knowing the ground and sparking new wars.",
+        "el": "Έζησες τον πόλεμο Sabbat–Camarilla για τη Βόρεια Αμερική. Επίπεδα: γνώση του πολέμου, Status ή Mawla από τη θητεία σου, ένα τρόπαιο, γνώση του εδάφους και άναμμα νέων πολέμων."
+      },
       "book": "v5-corebook",
       "page": 392,
       "restriction": null,
@@ -374,23 +618,43 @@
       "levels": [
         {
           "dots": 1,
-          "name": "Survivor"
+          "name": "Survivor",
+          "desc": {
+            "en": "Once per story the Storyteller gives you one fact about the sect war in your domain.",
+            "el": "Μία φορά ανά story ο Storyteller σού δίνει ένα στοιχείο για τον πόλεμο των sects στο domain σου."
+          }
         },
         {
           "dots": 2,
-          "name": "Active Participant"
+          "name": "Active Participant",
+          "desc": {
+            "en": "Three dots of Status or Mawla for your part in the war, as hero to one side and criminal to the other.",
+            "el": "Τρεις τελείες Status ή Mawla για τη συμμετοχή σου στον πόλεμο, ήρωας για τη μία πλευρά και εγκληματίας για την άλλη."
+          }
         },
         {
           "dots": 3,
-          "name": "Trophy Kill"
+          "name": "Trophy Kill",
+          "desc": {
+            "en": "You destroyed a name vampire in the war; once per story this legend lets you bypass a contest where it would help, and it can bring enemies.",
+            "el": "Κατέστρεψες γνωστό βαμπίρ στον πόλεμο· μία φορά ανά story ο θρύλος σε βγάζει από μια αναμέτρηση όπου βοηθά, και μπορεί να φέρει εχθρούς."
+          }
         },
         {
           "dots": 4,
-          "name": "No Vampire's Land"
+          "name": "No Vampire's Land",
+          "desc": {
+            "en": "+2 dots to your Domain's Portillon and +2 dice on Streetwise, Larceny and Stealth in two neighbouring domains.",
+            "el": "+2 τελείες στο Portillon του Domain σου και +2 ζάρια σε Streetwise, Larceny και Stealth σε δύο γειτονικά domains."
+          }
         },
         {
           "dots": 5,
-          "name": "Sect Agitator"
+          "name": "Sect Agitator",
+          "desc": {
+            "en": "+2 dice on Social tests to inflame sectarian tension; you know exactly how to start a new sect war.",
+            "el": "+2 ζάρια σε Social τεστ για να ανάψεις ένταση μεταξύ sects· ξέρεις ακριβώς πώς ξεκινά ένας νέος πόλεμος."
+          }
         }
       ],
       "also_in": [],
@@ -400,6 +664,10 @@
     {
       "id": "loresheet:the-trinity",
       "name": "The Trinity",
+      "desc": {
+        "en": "Keeper of the Dream of Constantinople, the lost vampire utopia of Michael, Antonius and the Dracon. Levels: city lore, Politics bonus, calming the Beast, the Dracon as Mawla and removing Stains.",
+        "el": "Φύλακας του Ονείρου της Κωνσταντινούπολης, της χαμένης ουτοπίας των Michael, Antonius και Dracon. Επίπεδα: γνώση της πόλης, bonus Politics, ηρέμηση του Κτήνους, ο Dracon ως Mawla και αφαίρεση Stains."
+      },
       "book": "v5-corebook",
       "page": 393,
       "restriction": null,
@@ -409,23 +677,43 @@
       "levels": [
         {
           "dots": 1,
-          "name": "Constantinople"
+          "name": "Constantinople",
+          "desc": {
+            "en": "Once per story the Storyteller answers one question of yours about Constantinople's past truthfully.",
+            "el": "Μία φορά ανά story ρωτάς τον Storyteller κάτι για το παρελθόν της Κωνσταντινούπολης και παίρνεις ακριβή απάντηση."
+          }
         },
         {
           "dots": 2,
-          "name": "Antonius' Architecture"
+          "name": "Antonius' Architecture",
+          "desc": {
+            "en": "+2 dice on Politics tests about domain government, and once per story you can calm a court debate before it turns violent.",
+            "el": "+2 ζάρια σε Politics τεστ για τη διακυβέρνηση domain, και μία φορά ανά story ηρεμείς μια διαμάχη στην αυλή πριν γίνει βίαιη."
+          }
         },
         {
           "dots": 3,
-          "name": "The Dream"
+          "name": "The Dream",
+          "desc": {
+            "en": "+1 die on Insight to gauge another's Beast; once per story spend a Willpower point so another vampire may reroll as many as three dice against frenzy.",
+            "el": "+1 ζάρι σε Insight για να μετρήσεις το Κτήνος κάποιου· μία φορά ανά story ξοδεύεις Willpower για να ξαναρίξει άλλος βαμπίρ ως τρία ζάρια ενάντια σε frenzy."
+          }
         },
         {
           "dots": 4,
-          "name": "The Dracon"
+          "name": "The Dracon",
+          "desc": {
+            "en": "You are a disciple of the Dracon and likely know where to find him; he counts as a 5-dot Mawla for spiritual and Discipline matters.",
+            "el": "Είσαι μαθητής του Dracon και μάλλον ξέρεις πού να τον βρεις· μετρά ως Mawla 5 τελειών για πνευματικά θέματα και Disciplines."
+          }
         },
         {
           "dots": 5,
-          "name": "The New Trinity"
+          "name": "The New Trinity",
+          "desc": {
+            "en": "Prophecy names you a founder of a reborn Constantinople; Stains earned on that path, up to five per story, are removed before the Remorse test.",
+            "el": "Η προφητεία σε ονομάζει ιδρυτή μιας αναγεννημένης Κωνσταντινούπολης· τα Stains που κερδίζεις σε αυτόν τον δρόμο, ως πέντε ανά story, αφαιρούνται πριν το Remorse τεστ."
+          }
         }
       ],
       "also_in": [],
@@ -435,6 +723,10 @@
     {
       "id": "loresheet:jeanette-therese-voerman",
       "name": "Jeanette / Therese Voerman",
+      "desc": {
+        "en": "Tied to the Malkavian owner(s) of the Asylum clubs. Levels: VIP access and easy hunting, missions, Jeanette or Therese as Mawla, and your own Asylum franchise.",
+        "el": "Δεσμός με τη Malkavian ιδιοκτήτρια (ή τις ιδιοκτήτριες) των κλαμπ Asylum. Επίπεδα: VIP είσοδος και εύκολο κυνήγι, αποστολές, η Jeanette ή η Therese ως Mawla, και δικό σου Asylum franchise."
+      },
       "book": "v5-corebook",
       "page": 394,
       "restriction": null,
@@ -444,23 +736,43 @@
       "levels": [
         {
           "dots": 1,
-          "name": "Asylum Membership"
+          "name": "Asylum Membership",
+          "desc": {
+            "en": "No queue and the best seat at the Asylum; once or twice per session you may hunt there at Difficulty 2 without trouble.",
+            "el": "Χωρίς ουρά και με την καλύτερη θέση στο Asylum· μία δύο φορές ανά session κυνηγάς εκεί με Difficulty 2 χωρίς πρόβλημα."
+          }
         },
         {
           "dots": 2,
-          "name": "Performing Monkey"
+          "name": "Performing Monkey",
+          "desc": {
+            "en": "The Voermans send you on missions, from serious investigations to mad whims; dangerous, but they pay their boons.",
+            "el": "Οι Voerman σε στέλνουν σε αποστολές, από σοβαρές έρευνες ως τρελά καπρίτσια· επικίνδυνο, αλλά ξεπληρώνουν τα boons τους."
+          }
         },
         {
           "dots": 3,
-          "name": "Jeanette's Favorite"
+          "name": "Jeanette's Favorite",
+          "desc": {
+            "en": "Jeanette adores you: day chambers and parties at any Asylum, favours from the Baron; she counts as a 4-dot Mawla for Malkavian and Anarch dealings.",
+            "el": "Η Jeanette σε λατρεύει: ημερήσια καταφύγια και πάρτι σε κάθε Asylum, χάρες από τον Baron· μετρά ως Mawla 4 τελειών για υποθέσεις Malkavian και Anarch."
+          }
         },
         {
           "dots": 4,
-          "name": "Therese's Favorite"
+          "name": "Therese's Favorite",
+          "desc": {
+            "en": "Therese values you: she speaks for you wherever an Asylum stands and can school you in business; she counts as a 3-dot Mawla.",
+            "el": "Η Therese σε εκτιμά: μιλά για σένα όπου υπάρχει Asylum και μπορεί να σε μάθει επιχειρήσεις· μετρά ως Mawla 3 τελειών."
+          }
         },
         {
           "dots": 5,
-          "name": "Asylum Operator"
+          "name": "Asylum Operator",
+          "desc": {
+            "en": "You may franchise an Asylum in your domain; while it is open, four dots go into Haven, Herd, Resources or your Domain's Chasse.",
+            "el": "Μπορείς να ανοίξεις Asylum στο domain σου· όσο λειτουργεί έχεις τέσσερις τελείες για Haven, Herd, Resources ή το Chasse του Domain σου."
+          }
         }
       ],
       "also_in": [],
@@ -470,6 +782,10 @@
     {
       "id": "loresheet:the-week-of-nightmares",
       "name": "The Week of Nightmares",
+      "desc": {
+        "en": "Witness or student of the Ravnos Antediluvian's rising. Levels: storytelling fame, Ravnos remnant contacts, veteran Status, the Red Star and a vial of Zapathasura's Blood.",
+        "el": "Μάρτυρας ή μελετητής της έγερσης του Ravnos Antediluvian. Επίπεδα: φήμη αφηγητή, επαφές με απομεινάρια Ravnos, Status βετεράνου, το Red Star και ένα φιαλίδιο με αίμα του Zapathasura."
+      },
       "book": "v5-corebook",
       "page": 395,
       "restriction": null,
@@ -479,23 +795,43 @@
       "levels": [
         {
           "dots": 1,
-          "name": "Oral History"
+          "name": "Oral History",
+          "desc": {
+            "en": "+3 dice on Performance tests to tell the tale of the Week of Nightmares; important Kindred come to hear it.",
+            "el": "+3 ζάρια σε Performance τεστ για να αφηγηθείς το Week of Nightmares· σημαντικοί Kindred έρχονται να ακούσουν."
+          }
         },
         {
           "dots": 2,
-          "name": "Ravnos Remains"
+          "name": "Ravnos Remains",
+          "desc": {
+            "en": "Three dots of Mawla in surviving Ravnos who bring news and warnings and may cast a great illusion once per chronicle; the link is frowned upon.",
+            "el": "Τρεις τελείες Mawla σε επιζώντες Ravnos που φέρνουν νέα και προειδοποιήσεις και ίσως κάνουν μία μεγάλη ψευδαίσθηση ανά chronicle· η σχέση δεν αρέσει σε όλους."
+          }
         },
         {
           "dots": 3,
-          "name": "I Was There"
+          "name": "I Was There",
+          "desc": {
+            "en": "Status among Kindred historians, occultists, Ravnos and Gehenna cultists; once per story it earns you a minor boon from one of them or a curious courtier.",
+            "el": "Status ανάμεσα σε ιστορικούς Kindred, αποκρυφιστές, Ravnos και λάτρεις της Gehenna· μία φορά ανά story σου φέρνει minor boon από κάποιον τους ή από περίεργο αυλικό."
+          }
         },
         {
           "dots": 4,
-          "name": "The Red Star"
+          "name": "The Red Star",
+          "desc": {
+            "en": "Once per story, stare at Anthelios for ten minutes to drop your Hunger to 2 or add one die to one Discipline's pools for a night.",
+            "el": "Μία φορά ανά story κοιτάς τον Anthelios δέκα λεπτά και είτε ρίχνεις το Hunger σου στο 2 είτε παίρνεις ένα ζάρι στα pools ενός Discipline για μία νύχτα."
+          }
         },
         {
           "dots": 5,
-          "name": "Blood of Zapathasura"
+          "name": "Blood of Zapathasura",
+          "desc": {
+            "en": "You own a vial of the Ravnos Antediluvian's Blood; what it does to whoever drinks it is up to the Storyteller.",
+            "el": "Έχεις ένα φιαλίδιο με αίμα του Ravnos Antediluvian· τι κάνει σε όποιον το πιει, το ορίζει ο Storyteller."
+          }
         }
       ],
       "also_in": [],
@@ -505,6 +841,10 @@
     {
       "id": "loresheet:rudi",
       "name": "Rudi",
+      "desc": {
+        "en": "Follower of the Gangrel Anarch who champions the oppressed. Levels: rebel rerolls, defending Touchstones, Gangrel advocacy, the Bear Pack and Rudi's Army.",
+        "el": "Οπαδός του Gangrel Anarch που υπερασπίζεται τους καταπιεσμένους. Επίπεδα: rerolls επανάστασης, προστασία Touchstones, συνηγορία Gangrel, το Bear Pack και ο στρατός του Rudi."
+      },
       "book": "v5-corebook",
       "page": 396,
       "restriction": null,
@@ -514,23 +854,43 @@
       "levels": [
         {
           "dots": 1,
-          "name": "Newfound Rights"
+          "name": "Newfound Rights",
+          "desc": {
+            "en": "Once per story, when striking at or denouncing the establishment, reroll one Skill test pool.",
+            "el": "Μία φορά ανά story, όταν χτυπάς ή καταγγέλλεις το κατεστημένο, ξαναρίχνεις το pool ενός Skill τεστ."
+          }
         },
         {
           "dots": 2,
-          "name": "Them and Theirs"
+          "name": "Them and Theirs",
+          "desc": {
+            "en": "You sense when a Touchstone of any coterie member comes under threat and stand up for them.",
+            "el": "Νιώθεις όταν απειλείται Touchstone οποιουδήποτε μέλους της coterie και τον υπερασπίζεσαι."
+          }
         },
         {
           "dots": 3,
-          "name": "Gangrel Advocate"
+          "name": "Gangrel Advocate",
+          "desc": {
+            "en": "+1 die on Social tests with Gangrel; you can arrange truce meetings between Gangrel and Camarilla with Charisma + Politics, but are blamed for what Gangrel do.",
+            "el": "+1 ζάρι σε Social τεστ με Gangrel· κανονίζεις συναντήσεις ανακωχής Gangrel–Camarilla με Charisma + Politics, αλλά σε χρεώνουν ό,τι κάνουν οι Gangrel."
+          }
         },
         {
           "dots": 4,
-          "name": "The Bear Pack"
+          "name": "The Bear Pack",
+          "desc": {
+            "en": "Your pack counts as a 3-dot Mawla group that likes a fight; once per story all of you get one automatic success to rouse Anarchs and mortals against the establishment.",
+            "el": "Η ομάδα σου μετρά ως Mawla group 3 τελειών που του αρέσει η μάχη· μία φορά ανά story όλοι σας παίρνετε μία αυτόματη επιτυχία για να ξεσηκώσετε Anarchs και θνητούς κατά του κατεστημένου."
+          }
         },
         {
           "dots": 5,
-          "name": "Rudi's Army"
+          "name": "Rudi's Army",
+          "desc": {
+            "en": "You command a wing of Rudi's outsider army: six dots split among Allies, Influence and Contacts, directed but never controlled.",
+            "el": "Διοικείς μια πτέρυγα του στρατού απόκληρων του Rudi: έξι τελείες μοιρασμένες σε Allies, Influence και Contacts, που κατευθύνεις αλλά ποτέ δεν ελέγχεις."
+          }
         }
       ],
       "also_in": [],
@@ -540,6 +900,10 @@
     {
       "id": "loresheet:descendant-of-tyler",
       "name": "Descendant of Tyler",
+      "desc": {
+        "en": "Brujah only: lineage of the rebel who inspired the Anarch Movement. Levels: inciting crowds, rebel leadership, stopping your own frenzy, the Furores and permanent revolution.",
+        "el": "Μόνο Brujah: γενιά της αντάρτισσας που ενέπνευσε το Anarch Movement. Επίπεδα: ξεσήκωμα πλήθους, ηγεσία εξέγερσης, διακοπή του δικού σου frenzy, οι Furores και η διαρκής επανάσταση."
+      },
       "book": "v5-corebook",
       "page": 397,
       "restriction": "brujah characters only",
@@ -551,23 +915,43 @@
       "levels": [
         {
           "dots": 1,
-          "name": "Instigator"
+          "name": "Instigator",
+          "desc": {
+            "en": "Once per story, +2 dice to push a mortal crowd into violence.",
+            "el": "Μία φορά ανά story, +2 ζάρια για να σπρώξεις ένα πλήθος θνητών στη βία."
+          }
         },
         {
           "dots": 2,
-          "name": "Champion of the Cause"
+          "name": "Champion of the Cause",
+          "desc": {
+            "en": "Vampires planning a rebellion come to you; during one you add two dots to your Status with them.",
+            "el": "Βαμπίρ που σχεδιάζουν εξέγερση έρχονται σε σένα· στη διάρκειά της προσθέτεις δύο τελείες στο Status σου μαζί τους."
+          }
         },
         {
           "dots": 3,
-          "name": "Tyler's Mercy"
+          "name": "Tyler's Mercy",
+          "desc": {
+            "en": "Once per story, while frenzying, take a Brujah Compulsion to end the frenzy at once, with no after-effects.",
+            "el": "Μία φορά ανά story, μέσα σε frenzy, παίρνεις Brujah Compulsion και το frenzy σταματά αμέσως, χωρίς συνέπειες."
+          }
         },
         {
           "dots": 4,
-          "name": "The Furores"
+          "name": "The Furores",
+          "desc": {
+            "en": "Once per chronicle the secret Furores arm you, shelter you and activate surprise Allies (up to five dots of Effectiveness) to take down a Prince or unfit Baron; misuse makes you their target.",
+            "el": "Μία φορά ανά chronicle οι μυστικοί Furores σε οπλίζουν, σε στεγάζουν και ενεργοποιούν αιφνίδιους Allies (ως πέντε τελείες Effectiveness) για να ρίξεις Prince ή ανάξιο Baron· η κατάχρηση σε κάνει στόχο τους."
+          }
         },
         {
           "dots": 5,
-          "name": "Permanent Revolution"
+          "name": "Permanent Revolution",
+          "desc": {
+            "en": "Having toppled a sect figurehead, you lead a revolutionary army: Anarchs listen and Brujah Anarchs obey, even on suicide missions, as long as you keep fighting and shun luxury.",
+            "el": "Έχοντας ρίξει ηγετική φυσιογνωμία ενός sect, ηγείσαι επαναστατικού στρατού: οι Anarchs ακούν και οι Brujah Anarchs υπακούν, ακόμη και σε αποστολές αυτοκτονίας, όσο πολεμάς και αποφεύγεις τις πολυτέλειες."
+          }
         }
       ],
       "also_in": [],
@@ -577,6 +961,10 @@
     {
       "id": "loresheet:descendant-of-zelios",
       "name": "Descendant of Zelios",
+      "desc": {
+        "en": "Nosferatu only: lineage of the clan's master architect and geomancer. Levels: a secure haven, bringing down buildings, haven commissions, a labyrinth and sensing ley lines.",
+        "el": "Μόνο Nosferatu: γενιά του μεγάλου αρχιτέκτονα και γεωμάντη του clan. Επίπεδα: ασφαλές haven, γκρέμισμα κτιρίων, παραγγελίες για havens, λαβύρινθος και αίσθηση των ley lines."
+      },
       "book": "v5-corebook",
       "page": 398,
       "restriction": "nosferatu characters only",
@@ -588,23 +976,43 @@
       "levels": [
         {
           "dots": 1,
-          "name": "Sanctuary"
+          "name": "Sanctuary",
+          "desc": {
+            "en": "Two free dots to divide between Postern and Security System on your haven; someone somewhere has the plans.",
+            "el": "Μοιράζεις δύο δωρεάν τελείες στα Haven Merits Postern και Security System· κάποιος κάπου έχει τα σχέδια."
+          }
         },
         {
           "dots": 2,
-          "name": "Saboteur"
+          "name": "Saboteur",
+          "desc": {
+            "en": "With hand tools and as many nights on site as the building's Difficulty (4 for a house, 9 for a skyscraper) you can bring any structure down.",
+            "el": "Με εργαλεία χειρός και τόσες νύχτες επιτόπου όσο το Difficulty του κτιρίου (4 για σπίτι, 9 για ουρανοξύστη) γκρεμίζεις οποιοδήποτε οικοδόμημα."
+          }
         },
         {
           "dots": 3,
-          "name": "On Commission"
+          "name": "On Commission",
+          "desc": {
+            "en": "Vampires pay you for haven advice: about one minor boon per story, and you know where several powerful Kindred sleep.",
+            "el": "Βαμπίρ σε πληρώνουν για συμβουλές στα havens τους: περίπου ένα minor boon ανά story, και ξέρεις πού κοιμούνται αρκετοί ισχυροί Kindred."
+          }
         },
         {
           "dots": 4,
-          "name": "The Labyrinth"
+          "name": "The Labyrinth",
+          "desc": {
+            "en": "A secret maze under your domain, known only to those you tell; it cannot serve as a Haven, but once you reach it no pursuer can follow.",
+            "el": "Μυστικός λαβύρινθος κάτω από το domain σου, γνωστός μόνο σε όποιον πεις· δεν γίνεται Haven, αλλά μόλις τον φτάσεις κανείς διώκτης δεν σε ακολουθεί."
+          }
         },
         {
           "dots": 5,
-          "name": "Sense the Ley Lines"
+          "name": "Sense the Ley Lines",
+          "desc": {
+            "en": "You glimpse ley lines; sleeping where they meet lets you roll two dice and keep the best on the awakening Rouse Check, and their other secrets can be researched.",
+            "el": "Διακρίνεις ley lines· όποιος κοιμάται όπου συγκλίνουν ρίχνει δύο ζάρια και κρατά το καλύτερο στο Rouse Check του ξυπνήματος, και τα άλλα μυστικά τους ερευνώνται."
+          }
         }
       ],
       "also_in": [],
@@ -614,6 +1022,10 @@
     {
       "id": "loresheet:descendant-of-vasantasena",
       "name": "Descendant of Vasantasena",
+      "desc": {
+        "en": "Malkavian only: lineage of the preacher against the Blood Bond and all enslavement. Levels: thriving in chaos, persuasive counsel, scenting Bonds, breaking them and deprogramming sect zealots.",
+        "el": "Μόνο Malkavian: γενιά της κήρυκα κατά του Blood Bond και κάθε υποδούλωσης. Επίπεδα: ευδοκίμηση στο χάος, πειστικές συμβουλές, όσφρηση των Bonds, σπάσιμό τους και αποπρογραμματισμός φανατικών."
+      },
       "book": "v5-corebook",
       "page": 399,
       "restriction": "malkavian characters only",
@@ -625,23 +1037,43 @@
       "levels": [
         {
           "dots": 1,
-          "name": "Agent of Chaos"
+          "name": "Agent of Chaos",
+          "desc": {
+            "en": "Once per session, in a chaotic situation such as a wild fight or a car chase, reroll a single die without spending Willpower.",
+            "el": "Μία φορά ανά session, σε χαοτική κατάσταση όπως άγρια μάχη ή καταδίωξη με αυτοκίνητα, ξαναρίχνεις ένα ζάρι χωρίς να ξοδέψεις Willpower."
+          }
         },
         {
           "dots": 2,
-          "name": "Hear My Words"
+          "name": "Hear My Words",
+          "desc": {
+            "en": "Once per story, those who stop to hear your counsel amid chaos may reroll one pool in a later test of the same situation.",
+            "el": "Μία φορά ανά story, όσοι σταματήσουν να ακούσουν τη συμβουλή σου μέσα στο χάος ξαναρίχνουν ένα pool σε επόμενο τεστ της ίδιας κατάστασης."
+          }
         },
         {
           "dots": 3,
-          "name": "Scent the Bond"
+          "name": "Scent the Bond",
+          "desc": {
+            "en": "Once per story, with Resolve + Awareness at Difficulty 4, smell a Blood Bond on a vampire and recognize the same scent on the one who holds it.",
+            "el": "Μία φορά ανά story, με Resolve + Awareness σε Difficulty 4, μυρίζεις το Blood Bond πάνω σε βαμπίρ και αναγνωρίζεις την ίδια οσμή σε όποιον το κρατά."
+          }
         },
         {
           "dots": 4,
-          "name": "Destroy the Bond"
+          "name": "Destroy the Bond",
+          "desc": {
+            "en": "Once per story you can break the Blood Bond on a victim by drinking a mouthful of their vitae and riding out a frenzy.",
+            "el": "Μία φορά ανά story σπας το Blood Bond ενός θύματος πίνοντας μια γουλιά από το vitae του και αντέχοντας ένα frenzy."
+          }
         },
         {
           "dots": 5,
-          "name": "Sabbat Becomes Camarilla"
+          "name": "Sabbat Becomes Camarilla",
+          "desc": {
+            "en": "Once per story, deprogram an isolated vampire from their sect beliefs: an extended Intelligence or Charisma + Insight test, one roll per three nights, until successes reach twice their Willpower.",
+            "el": "Μία φορά ανά story αποπρογραμματίζεις απομονωμένο βαμπίρ από τις πεποιθήσεις του sect του: εκτεταμένο τεστ Intelligence ή Charisma + Insight, μία ρίψη ανά τρεις νύχτες, ως επιτυχίες διπλάσιες του Willpower του."
+          }
         }
       ],
       "also_in": [],
@@ -654,6 +1086,10 @@
     {
       "id": "loresheet:high-clan",
       "name": "High Clan",
+      "desc": {
+        "en": "You belong to a clan the old order calls High. Levels: rerolls to command deference, a Low Clan retinue, promising elevation, Leadership among peers and ignoring your Bane.",
+        "el": "Ανήκεις σε clan που η παλιά τάξη λέει High. Επίπεδα: reroll για να επιβάλεις σεβασμό, ακολουθία Low Clan, υπόσχεση ανύψωσης, Leadership στους ομοίους σου και αγνόηση του Bane σου."
+      },
       "book": "v5-corebook",
       "page": 400,
       "restriction": null,
@@ -663,23 +1099,43 @@
       "levels": [
         {
           "dots": 1,
-          "name": "Peacock"
+          "name": "Peacock",
+          "desc": {
+            "en": "Once per session reroll a single die when demanding deference from one untitled vampire in your domain.",
+            "el": "Μία φορά ανά session ξαναρίχνεις ένα ζάρι όταν απαιτείς σεβασμό από έναν βαμπίρ χωρίς τίτλο στο domain σου."
+          }
         },
         {
           "dots": 2,
-          "name": "Sway the Low"
+          "name": "Sway the Low",
+          "desc": {
+            "en": "A bullied retinue of Low Clan vampires worth three dots of Mawla, and +3 dice on Intimidation or Leadership against them; a total failure means you must pay them off or they turn.",
+            "el": "Μια εκφοβισμένη ακολουθία βαμπίρ Low Clan ίση με τρεις τελείες Mawla, και +3 ζάρια σε Intimidation ή Leadership εναντίον τους· σε total failure πρέπει να τους αποζημιώσεις αλλιώς στρέφονται εναντίον σου."
+          }
         },
         {
           "dots": 3,
-          "name": "Elevate the Low"
+          "name": "Elevate the Low",
+          "desc": {
+            "en": "Once per chronicle you can proclaim one Low Clan in your city High; until then, +1 die on Social tests with Low Clan Kindred when you hint at it.",
+            "el": "Μία φορά ανά chronicle ανακηρύσσεις ένα Low Clan της πόλης σου High· μέχρι τότε, +1 ζάρι σε Social τεστ με Kindred Low Clan όταν το υπαινίσσεσαι."
+          }
         },
         {
           "dots": 4,
-          "name": "Embraced to Rule"
+          "name": "Embraced to Rule",
+          "desc": {
+            "en": "+1 die on Leadership tests with High Clan Kindred who know your line; once per story they defer to you in votes or hand you high responsibility, barring a personal grudge.",
+            "el": "+1 ζάρι σε Leadership τεστ με βαμπίρ High Clan που ξέρουν τη γενιά σου· μία φορά ανά story σου παραχωρούν ψήφους ή υψηλή ευθύνη, εκτός αν υπάρχει προσωπική έχθρα."
+          }
         },
         {
           "dots": 5,
-          "name": "Blessed, not Cursed"
+          "name": "Blessed, not Cursed",
+          "desc": {
+            "en": "Once per session spend one Willpower to ignore your clan Bane.",
+            "el": "Μία φορά ανά session ξοδεύεις ένα Willpower για να αγνοήσεις το Bane του clan σου."
+          }
         }
       ],
       "also_in": [],
@@ -689,6 +1145,10 @@
     {
       "id": "loresheet:low-clan",
       "name": "Low Clan",
+      "desc": {
+        "en": "You belong to a clan the old order calls Low. Levels: shrugging off insults, weaponizing your Bane, Low Clan solidarity, learning another Low Clan's Discipline and staging a coup.",
+        "el": "Ανήκεις σε clan που η παλιά τάξη λέει Low. Επίπεδα: αδιαφορία στις προσβολές, το Bane ως όπλο, αλληλεγγύη Low Clan, εκμάθηση Discipline άλλου Low Clan και πραξικόπημα."
+      },
       "book": "v5-corebook",
       "page": 401,
       "restriction": null,
@@ -698,23 +1158,43 @@
       "levels": [
         {
           "dots": 1,
-          "name": "Thick Hide"
+          "name": "Thick Hide",
+          "desc": {
+            "en": "Once per story, ignore verbal barbs and provocations for a scene without a test.",
+            "el": "Μία φορά ανά story αγνοείς προσβολές και προκλήσεις για μία σκηνή χωρίς τεστ."
+          }
         },
         {
           "dots": 2,
-          "name": "Cursed with Pride"
+          "name": "Cursed with Pride",
+          "desc": {
+            "en": "Once per story gain an automatic success on a roll where you work your clan Bane into the action.",
+            "el": "Μία φορά ανά story παίρνεις μία αυτόματη επιτυχία σε ρίψη όπου βάζεις το Bane του clan σου μέσα στην ενέργεια."
+          }
         },
         {
           "dots": 3,
-          "name": "Uncanny Kinship"
+          "name": "Uncanny Kinship",
+          "desc": {
+            "en": "Three dots to spend on Mawla or Status among the other Low Clans of your domain.",
+            "el": "Τρεις τελείες για Mawla ή Status ανάμεσα στα άλλα Low Clans του domain σου."
+          }
         },
         {
           "dots": 4,
-          "name": "Trade Among Equals"
+          "name": "Trade Among Equals",
+          "desc": {
+            "en": "Pick one Discipline of another Low Clan; you buy its dots with experience at in-clan cost.",
+            "el": "Διάλεξε ένα Discipline άλλου Low Clan· αγοράζεις τις τελείες του με experience σε κόστος in-clan."
+          }
         },
         {
           "dots": 5,
-          "name": "Criticality Incident"
+          "name": "Criticality Incident",
+          "desc": {
+            "en": "+1 die on Project pools against High Clans in your domain; once per chronicle sacrifice up to 10 of your Background dots to bring down as many High Clan Kindred in a coup.",
+            "el": "+1 ζάρι στα pools για Projects κατά των High Clans στο domain σου· μία φορά ανά chronicle θυσιάζεις ως 10 τελείες Background για να ρίξεις ισάριθμους Kindred High Clan σε πραξικόπημα."
+          }
         }
       ],
       "also_in": [],
@@ -724,6 +1204,10 @@
     {
       "id": "loresheet:ambrus-maropis",
       "name": "Ambrus Maropis",
+      "desc": {
+        "en": "Disciple of the reclusive Nosferatu hacker and trendsetter. Levels: Kindred hideouts, hacks on request, Ambrus as Mawla, a surveillance back door and a Zeroed double identity.",
+        "el": "Μαθητής του απομονωμένου Nosferatu hacker και trendsetter. Επίπεδα: κρυψώνες Kindred, hacks κατά παραγγελία, ο Ambrus ως Mawla, κερκόπορτα παρακολούθησης και διπλή ταυτότητα Zeroed."
+      },
       "book": "v5-corebook",
       "page": 402,
       "restriction": null,
@@ -733,23 +1217,43 @@
       "levels": [
         {
           "dots": 1,
-          "name": "True Believer"
+          "name": "True Believer",
+          "desc": {
+            "en": "+1 die on tests to find the city's shared Kindred hiding places, unless the domain opposes your politics.",
+            "el": "+1 ζάρι σε τεστ για να βρεις τις κοινές κρυψώνες των Kindred της πόλης, εκτός αν το domain είναι αντίθετο στην πολιτική σου."
+          }
         },
         {
           "dots": 2,
-          "name": "Clandestine Information"
+          "name": "Clandestine Information",
+          "desc": {
+            "en": "Once per story, through a digital dead drop, get one piece of information about almost any mortal online within 2 to 20 hours.",
+            "el": "Μία φορά ανά story, μέσω ψηφιακού dead drop, παίρνεις μία online πληροφορία για σχεδόν οποιονδήποτε θνητό μέσα σε 2 ως 20 ώρες."
+          }
         },
         {
           "dots": 3,
-          "name": "Taught by the Best"
+          "name": "Taught by the Best",
+          "desc": {
+            "en": "Ambrus feeds you intel and hacker contacts at friend prices; he counts as a 3-dot Mawla.",
+            "el": "Ο Ambrus σού δίνει πληροφορίες και επαφές hackers σε φιλικές τιμές· μετρά ως Mawla 3 τελειών."
+          }
         },
         {
           "dots": 4,
-          "name": "Back Door Panopticon"
+          "name": "Back Door Panopticon",
+          "desc": {
+            "en": "Once per story log into mass surveillance software for two automatic successes on an Investigation test about anyone's phone or online activity.",
+            "el": "Μία φορά ανά story μπαίνεις σε λογισμικό μαζικής παρακολούθησης για δύο αυτόματες επιτυχίες σε Investigation τεστ για το κινητό ή την online δράση οποιουδήποτε."
+          }
         },
         {
           "dots": 5,
-          "name": "On Another Grid Entirely"
+          "name": "On Another Grid Entirely",
+          "desc": {
+            "en": "Two 2-dot Mask identities plus Zeroed, and +3 dice against anyone researching you online or digging into your mortal-world activities.",
+            "el": "Δύο ταυτότητες Mask 2 τελειών συν Zeroed, και +3 ζάρια ενάντια σε όποιον σε ερευνά online ή σκαλίζει τη δράση σου στον κόσμο των θνητών."
+          }
         }
       ],
       "also_in": [],
@@ -759,6 +1263,10 @@
     {
       "id": "loresheet:carmelita-neillson",
       "name": "Carmelita Neillson",
+      "desc": {
+        "en": "Linked to the Toreador archaeologist who chronicles Kindred history. Levels: a storyteller's audience, Willpower from an artifact, curating a library, a Methuselah interview and guarding an ancestor's tomb.",
+        "el": "Δεσμός με την Toreador αρχαιολόγο που καταγράφει την ιστορία των Kindred. Επίπεδα: κοινό για τις αφηγήσεις σου, Willpower από κειμήλιο, επιμέλεια βιβλιοθήκης, συνέντευξη Methuselah και φύλαξη τάφου προγόνου."
+      },
       "book": "v5-corebook",
       "page": 403,
       "restriction": null,
@@ -768,23 +1276,43 @@
       "levels": [
         {
           "dots": 1,
-          "name": "The Art of Story"
+          "name": "The Art of Story",
+          "desc": {
+            "en": "Toreador gravitate to hear you whenever you tell historic lore, myth or legend, whatever your mutual standing.",
+            "el": "Οι Toreador μαζεύονται να σε ακούσουν όποτε αφηγείσαι ιστορία, μύθο ή θρύλο, όποια κι αν είναι η σχέση σας."
+          }
         },
         {
           "dots": 2,
-          "name": "The Art of Will"
+          "name": "The Art of Will",
+          "desc": {
+            "en": "Once per session, meditate an hour on Neillson's relic before resting (Resolve + Academics, Difficulty 5) to wake with one extra Willpower point.",
+            "el": "Μία φορά ανά session, διαλογίζεσαι μία ώρα πάνω στο κειμήλιο της Neillson πριν κοιμηθείς (Resolve + Academics, Difficulty 5) και ξυπνάς με ένα επιπλέον Willpower."
+          }
         },
         {
           "dots": 3,
-          "name": "Neillson Library"
+          "name": "Neillson Library",
+          "desc": {
+            "en": "You curate one of her libraries: a 2-dot Haven with a 2-dot Library, where other Kindred historians also meet.",
+            "el": "Επιμελείσαι μία από τις βιβλιοθήκες της: Haven 2 τελειών με Library 2 τελειών, όπου συναντιούνται και άλλοι ιστορικοί Kindred."
+          }
         },
         {
           "dots": 4,
-          "name": "Interview With the Methuselah"
+          "name": "Interview With the Methuselah",
+          "desc": {
+            "en": "A recording of Carmelita interviewing an ancient vampire; once per story ask the Storyteller for a secret about one clan in your domain.",
+            "el": "Ηχογράφηση της Carmelita με έναν πανάρχαιο βαμπίρ· μία φορά ανά story ζητάς από τον Storyteller ένα μυστικό για ένα clan του domain σου."
+          }
         },
         {
           "dots": 5,
-          "name": "Ancestor's Tomb"
+          "name": "Ancestor's Tomb",
+          "desc": {
+            "en": "You guard an ancestor's supposed resting place for Carmelita; while it stays safe, she owes you a major boon each story.",
+            "el": "Φυλάς τον υποτιθέμενο τάφο ενός προγόνου για την Carmelita· όσο είναι ασφαλής, της ζητάς ένα major boon μία φορά ανά story."
+          }
         }
       ],
       "also_in": [],
@@ -794,6 +1322,10 @@
     {
       "id": "loresheet:fiorenza-savona",
       "name": "Fiorenza Savona",
+      "desc": {
+        "en": "Known to the Ventrue power broker of the Davos elite. Levels: a spying Retainer, meetings with her, friendly favours, the Directorate's offer and a government favour.",
+        "el": "Γνωστός στη Ventrue διαμεσολαβήτρια εξουσίας της ελίτ του Davos. Επίπεδα: ένας Retainer-κατάσκοπος, συναντήσεις μαζί της, φιλικές χάρες, η προσφορά του Directorate και μια κυβερνητική χάρη."
+      },
       "book": "v5-corebook",
       "page": 404,
       "restriction": null,
@@ -803,23 +1335,43 @@
       "levels": [
         {
           "dots": 1,
-          "name": "On Fiorenza's List"
+          "name": "On Fiorenza's List",
+          "desc": {
+            "en": "Fiorenza assigns you a Gifted mortal Retainer who openly spies on you for her; treat them well and you rise in her esteem.",
+            "el": "Η Fiorenza σού αναθέτει έναν Gifted θνητό Retainer που σε κατασκοπεύει φανερά για λογαριασμό της· φέρσου του καλά και ανεβαίνεις στην εκτίμησή της."
+          }
         },
         {
           "dots": 2,
-          "name": "Breakfast with Fiorenza"
+          "name": "Breakfast with Fiorenza",
+          "desc": {
+            "en": "Once per story Fiorenza makes time to meet you; ask the right questions and it pays.",
+            "el": "Μία φορά ανά story η Fiorenza βρίσκει χρόνο να σε δει· με τις σωστές ερωτήσεις αποδίδει."
+          }
         },
         {
           "dots": 3,
-          "name": "Friendly Benefits"
+          "name": "Friendly Benefits",
+          "desc": {
+            "en": "An old friendship worth a 3-dot Mawla: smoothing over Ventrue, insider tips, a borrowed jet; overuse it and she cuts you off.",
+            "el": "Παλιά φιλία ίση με Mawla 3 τελειών: ηρεμεί Ventrue, δίνει εσωτερικές πληροφορίες, δανείζει τζετ· αν το παρακάνεις σε κόβει."
+          }
         },
         {
           "dots": 4,
-          "name": "The Directorate"
+          "name": "The Directorate",
+          "desc": {
+            "en": "The Ventrue Directorate wants you to suborn Fiorenza: accept a Blood Bond and a memory wipe for six dots among Contacts, Mawla and Resources, or turn double agent for her.",
+            "el": "Το Ventrue Directorate θέλει να της στήσεις παγίδα: δέχεσαι Blood Bond και σβήσιμο μνήμης για έξι τελείες σε Contacts, Mawla και Resources, ή γίνεσαι διπλός πράκτορας για εκείνη."
+          }
         },
         {
           "dots": 5,
-          "name": "Government Motion"
+          "name": "Government Motion",
+          "desc": {
+            "en": "Once per chronicle Fiorenza leans on a mortal political leader for you: five dice to spread over rolls involving government action.",
+            "el": "Μία φορά ανά chronicle η Fiorenza πιέζει έναν θνητό πολιτικό ηγέτη για σένα: πέντε ζάρια να μοιράσεις σε ρίψεις που αφορούν κυβερνητική δράση."
+          }
         }
       ],
       "also_in": [],
@@ -829,6 +1381,10 @@
     {
       "id": "loresheet:descendant-of-karl-schrekt",
       "name": "Descendant of Karl Schrekt",
+      "desc": {
+        "en": "Tremere only: lineage of the former Justicar and hunter of the supernatural. Levels: House lore, hardline resolve, instant rituals, a hunted supernatural Ally and archives on other creatures.",
+        "el": "Μόνο Tremere: γενιά του πρώην Justicar και κυνηγού του υπερφυσικού. Επίπεδα: γνώση του House, σκληροπυρηνική αποφασιστικότητα, άμεσα rituals, ένας κυνηγημένος υπερφυσικός Ally και αρχεία για άλλα πλάσματα."
+      },
       "book": "v5-corebook",
       "page": 405,
       "restriction": "tremere characters only",
@@ -840,23 +1396,43 @@
       "levels": [
         {
           "dots": 1,
-          "name": "Remember the House"
+          "name": "Remember the House",
+          "desc": {
+            "en": "Once per story the Storyteller gives you one fact about House Tremere or the clan before its fall.",
+            "el": "Μία φορά ανά story ο Storyteller σού δίνει ένα στοιχείο για το House Tremere ή το clan πριν την πτώση του."
+          }
         },
         {
           "dots": 2,
-          "name": "Hardliner"
+          "name": "Hardliner",
+          "desc": {
+            "en": "+2 dice whenever someone tries to turn you from Schrekt's goals (Storyteller's call).",
+            "el": "+2 ζάρια ενάντια σε προσπάθειες να σε απομακρύνουν από τους στόχους του Schrekt, με σύμφωνη γνώμη του Storyteller."
+          }
         },
         {
           "dots": 3,
-          "name": "Ritual Preparedness"
+          "name": "Ritual Preparedness",
+          "desc": {
+            "en": "Once per story a ritual you know takes you five minutes, its preparations made in advance.",
+            "el": "Μία φορά ανά story κάνεις ένα από τα rituals σου σε πέντε λεπτά, με όλη την προετοιμασία έτοιμη από πριν."
+          }
         },
         {
           "dots": 4,
-          "name": "Archon's Bane"
+          "name": "Archon's Bane",
+          "desc": {
+            "en": "A 4-dot Ally from another supernatural kind (mage, werewolf, wraith, changeling…) whom you must keep safe; once per story they come within 1 to 10 hours of a call.",
+            "el": "Ally 4 τελειών από άλλο υπερφυσικό είδος (mage, werewolf, wraith, changeling…) που πρέπει να προστατεύεις· μία φορά ανά story έρχεται 1 ως 10 ώρες αφού τον καλέσεις."
+          }
         },
         {
           "dots": 5,
-          "name": "Know the World"
+          "name": "Know the World",
+          "desc": {
+            "en": "Archives on werewolves, mages, wraiths and fae equal to a 3-dot Haven Library (three Occult specialties); once per story the Storyteller answers a simple question about such beings.",
+            "el": "Αρχεία για werewolves, mages, wraiths και fae ίσα με Haven Library 3 τελειών (τρεις specialties Occult)· μία φορά ανά story ο Storyteller απαντά σε απλή ερώτηση για τέτοια όντα."
+          }
         }
       ],
       "also_in": [],
@@ -866,6 +1442,10 @@
     {
       "id": "loresheet:descendant-of-xaviar",
       "name": "Descendant of Xaviar",
+      "desc": {
+        "en": "Gangrel only: lineage of the Justicar who led the clan out of the Camarilla. Levels: Gangrel sanctuary, sensing buried vampires, Camarilla rewards, a bat-hybrid form and touching the Antediluvian.",
+        "el": "Μόνο Gangrel: γενιά του Justicar που έβγαλε το clan από την Camarilla. Επίπεδα: καταφύγιο στους Gangrel, εντοπισμός θαμμένων βαμπίρ, αμοιβές της Camarilla, υβριδική μορφή νυχτερίδας και επαφή με τον Antediluvian."
+      },
       "book": "v5-corebook",
       "page": 406,
       "restriction": "gangrel characters only",
@@ -877,23 +1457,43 @@
       "levels": [
         {
           "dots": 1,
-          "name": "Martyred Ancestor"
+          "name": "Martyred Ancestor",
+          "desc": {
+            "en": "Other Gangrel give you sanctuary wherever they are, until you insult them badly, and you have two dots of Status with them.",
+            "el": "Οι άλλοι Gangrel σού δίνουν καταφύγιο όπου κι αν είναι, μέχρι να τους προσβάλεις βαριά, και έχεις δύο τελείες Status μαζί τους."
+          }
         },
         {
           "dots": 2,
-          "name": "Where the Bodies Are Buried"
+          "name": "Where the Bodies Are Buried",
+          "desc": {
+            "en": "Roll Resolve + Awareness to sense whether a vampire has melded into the earth or lies torpid beneath it; Difficulty depends on the area.",
+            "el": "Ρίχνεις Resolve + Awareness για να νιώσεις αν βαμπίρ έχει σμίξει με τη γη ή κείτεται σε torpor από κάτω· το Difficulty εξαρτάται από την έκταση."
+          }
         },
         {
           "dots": 3,
-          "name": "Loyal Hound"
+          "name": "Loyal Hound",
+          "desc": {
+            "en": "You stayed with the Camarilla: four dots to spread among Domain, Herd and Status from a grateful Prince, while other Gangrel despise you.",
+            "el": "Έμεινες με την Camarilla: τέσσερις τελείες μοιρασμένες σε Domain, Herd και Status από ευγνώμονα Prince, ενώ οι άλλοι Gangrel σε περιφρονούν."
+          }
         },
         {
           "dots": 4,
-          "name": "Monstrous Bat"
+          "name": "Monstrous Bat",
+          "desc": {
+            "en": "Once per story, when the moon is right, take a man-sized bat form: +1 to all Physical Attributes, gliding from any height, and bites deal +1 Aggravated damage.",
+            "el": "Μία φορά ανά story, με το κατάλληλο φεγγάρι, παίρνεις μορφή νυχτερίδας σε μέγεθος ανθρώπου: +1 σε όλα τα Physical Attributes, ανεμοπορία από κάθε ύψος, και τα δαγκώματα κάνουν +1 Aggravated damage."
+          }
         },
         {
           "dots": 5,
-          "name": "Experienced the Antediluvian"
+          "name": "Experienced the Antediluvian",
+          "desc": {
+            "en": "You sank into your clan founder and came back a little mad; once per story, on open ground, sense any Gangrel's location and draw a drop of their vitae to reset your Hunger to 2.",
+            "el": "Βυθίστηκες μέσα στον ιδρυτή του clan σου και γύρισες λίγο τρελός· μία φορά ανά story, πάνω σε ανοιχτό χώμα, νιώθεις πού είναι οποιοσδήποτε Gangrel και τραβάς μια σταγόνα vitae του για να πέσει το Hunger σου στο 2."
+          }
         }
       ],
       "also_in": [],
@@ -906,6 +1506,10 @@
     {
       "id": "loresheet:bankers-of-dunsirn",
       "name": "Bankers of Dunsirn",
+      "desc": {
+        "en": "Hecata bloodline of cannibal financiers. Levels: a free Mask, money as Contacts, better equipment, Resources and cheaper buys for the coterie, and control of the family accounts.",
+        "el": "Bloodline των Hecata, κανίβαλοι χρηματιστές. Επίπεδα: δωρεάν Mask, χρήμα αντί Contacts, καλύτερος εξοπλισμός, Resources και φθηνότερες αγορές για την coterie, και έλεγχος των οικογενειακών λογαριασμών."
+      },
       "book": "v5-players-guide",
       "page": 223,
       "restriction": "Bloodline; Hecata characters only",
@@ -917,23 +1521,43 @@
       "levels": [
         {
           "dots": 1,
-          "name": "Money Obfuscates"
+          "name": "Money Obfuscates",
+          "desc": {
+            "en": "Two free dots of Mask, as long as you maintain the identity at least once per story.",
+            "el": "Δύο δωρεάν τελείες Mask, αρκεί να συντηρείς την ταυτότητα τουλάχιστον μία φορά ανά story."
+          }
         },
         {
           "dots": 2,
-          "name": "Money Talks"
+          "name": "Money Talks",
+          "desc": {
+            "en": "Once per story, for one scene, find information as if you had Contacts equal to your Resources.",
+            "el": "Μία φορά ανά story, για μία σκηνή, βρίσκεις πληροφορίες σαν να είχες Contacts ίσα με τα Resources σου."
+          }
         },
         {
           "dots": 3,
-          "name": "Money Enhances"
+          "name": "Money Enhances",
+          "desc": {
+            "en": "+1 die on any roll where you use your own equipment.",
+            "el": "+1 ζάρι σε κάθε ρίψη όπου χρησιμοποιείς δικό σου εξοπλισμό."
+          }
         },
         {
           "dots": 4,
-          "name": "Money Multiplies"
+          "name": "Money Multiplies",
+          "desc": {
+            "en": "Gain three dots of Resources (to a maximum of five); your coterie loses the Destitute Flaw and buys Resources at 2 experience per dot.",
+            "el": "Παίρνεις τρεις τελείες Resources (μέγιστο πέντε)· η coterie σου χάνει το Destitute Flaw και αγοράζει Resources με 2 experience ανά τελεία."
+          }
         },
         {
           "dots": 5,
-          "name": "Money Dictates"
+          "name": "Money Dictates",
+          "desc": {
+            "en": "Three free dots of Status among the Hecata; once per chronicle give every Hecata two dots of Resources for a story, or strip them all, gaining a chronicle-long Adversary.",
+            "el": "Τρεις δωρεάν τελείες Status στους Hecata· μία φορά ανά chronicle δίνεις σε κάθε Hecata δύο τελείες Resources για μία story, ή τους τα αφαιρείς όλα, κερδίζοντας Adversary για όλο το chronicle."
+          }
         }
       ],
       "also_in": [],
@@ -943,6 +1567,10 @@
     {
       "id": "loresheet:children-of-tenochtitlan",
       "name": "Children of Tenochtitlan",
+      "desc": {
+        "en": "Hecata bloodline of Aztec necromancers, the Pisanob. Levels: hiding bonus, ghost Ceremonies, rerolls against Hecata, automatic Ceremony successes and a claim to lead the bloodline.",
+        "el": "Bloodline των Hecata με αζτέκους νεκρομάντεις, οι Pisanob. Επίπεδα: bonus κρυψίματος, Ceremonies φαντασμάτων, rerolls κατά Hecata, αυτόματες επιτυχίες σε Ceremonies και διεκδίκηση της ηγεσίας."
+      },
       "book": "v5-players-guide",
       "page": 224,
       "restriction": "Bloodline; Hecata characters only",
@@ -954,23 +1582,43 @@
       "levels": [
         {
           "dots": 1,
-          "name": "Hiding from the Wolf"
+          "name": "Hiding from the Wolf",
+          "desc": {
+            "en": "+1 die on any roll to hide, including through Disciplines or Ceremonies.",
+            "el": "+1 ζάρι σε κάθε ρίψη για να κρυφτείς, και μέσω Disciplines ή Ceremonies."
+          }
         },
         {
           "dots": 2,
-          "name": "Ghostly Instincts"
+          "name": "Ghostly Instincts",
+          "desc": {
+            "en": "+2 dice on Oblivion Ceremony rolls to summon, control or destroy ghosts.",
+            "el": "+2 ζάρια σε ρίψεις Ceremony του Oblivion για κάλεσμα, έλεγχο ή καταστροφή φαντασμάτων."
+          }
         },
         {
           "dots": 3,
-          "name": "Forward Thinking"
+          "name": "Forward Thinking",
+          "desc": {
+            "en": "Once per story reroll any Skill roll; you also get one free Skill reroll in any scene against another Hecata (plus an extra success if they are a Harbinger of Skulls).",
+            "el": "Μία φορά ανά story ξαναρίχνεις οποιαδήποτε Skill ρίψη· έχεις και ένα δωρεάν Skill reroll σε κάθε σκηνή κατά άλλου Hecata (συν μία επιτυχία αν είναι Harbinger of Skulls)."
+          }
         },
         {
           "dots": 4,
-          "name": "Necromantic Prodigy"
+          "name": "Necromantic Prodigy",
+          "desc": {
+            "en": "Two automatic successes on any roll to activate a necromantic Oblivion Ceremony.",
+            "el": "Δύο αυτόματες επιτυχίες σε κάθε ρίψη ενεργοποίησης νεκρομαντικής Ceremony του Oblivion."
+          }
         },
         {
           "dots": 5,
-          "name": "Next in Line"
+          "name": "Next in Line",
+          "desc": {
+            "en": "Two extra dots of Status within the Hecata, and an ally in the Hecata leadership who acts as a 5-dot Mawla every other story.",
+            "el": "Δύο επιπλέον τελείες Status στους Hecata, και σύμμαχος στην ηγεσία των Hecata που λειτουργεί ως Mawla 5 τελειών κάθε δεύτερη story."
+          }
         }
       ],
       "also_in": [],
@@ -983,6 +1631,10 @@
     {
       "id": "loresheet:flesh-eaters",
       "name": "Flesh-Eaters",
+      "desc": {
+        "en": "Hecata bloodline, the Nagaraja, who eat flesh in place of blood. Levels: feeding on flesh, hiding from ghosts, planned murders, forensic contacts and a monstrous bite.",
+        "el": "Bloodline των Hecata, οι Nagaraja, που τρώνε σάρκα αντί για αίμα. Επίπεδα: τροφή από σάρκα, απόκρυψη από φαντάσματα, σχεδιασμένοι φόνοι, εγκληματολογικές επαφές και τερατώδες δάγκωμα."
+      },
       "book": "v5-players-guide",
       "page": 225,
       "restriction": "Bloodline; Hecata Characters Only",
@@ -994,23 +1646,43 @@
       "levels": [
         {
           "dots": 1,
-          "name": "Viscus"
+          "name": "Viscus",
+          "desc": {
+            "en": "You can feed on flesh instead of blood: a bite that causes an Aggravated wound counts as drinking; fresh corpses work too, if less tasty.",
+            "el": "Τρέφεσαι με σάρκα αντί για αίμα: δάγκωμα που προκαλεί Aggravated πληγή μετρά σαν να πίνεις· και τα φρέσκα πτώματα κάνουν, αν και λιγότερο νόστιμα."
+          }
         },
         {
           "dots": 2,
-          "name": "Unseen Spirit"
+          "name": "Unseen Spirit",
+          "desc": {
+            "en": "Without Obfuscate, you get a free Cloak of Shadows that works only on ghosts and spirits; with it, all your Obfuscate powers also work on them.",
+            "el": "Χωρίς Obfuscate, παίρνεις δωρεάν Cloak of Shadows που δουλεύει μόνο σε φαντάσματα και πνεύματα· με Obfuscate, όλες οι δυνάμεις του πιάνουν και σε αυτά."
+          }
         },
         {
           "dots": 3,
-          "name": "The Perfect Murder"
+          "name": "The Perfect Murder",
+          "desc": {
+            "en": "With at least a night to plan a deliberate murder, you get one extra success on all rolls in that scene; a Send a Murderer user cancels it.",
+            "el": "Με τουλάχιστον μία νύχτα για να σχεδιάσεις έναν προμελετημένο φόνο, παίρνεις μία επιπλέον επιτυχία σε όλες τις ρίψεις της σκηνής· όποιος έχει Send a Murderer το ακυρώνει."
+          }
         },
         {
           "dots": 4,
-          "name": "Send a Murderer"
+          "name": "Send a Murderer",
+          "desc": {
+            "en": "+2 dice to study murder scenes or track killers, plus three dots among police Contacts, Kindred investigator Contacts and Status.",
+            "el": "+2 ζάρια για να μελετήσεις σκηνές φόνου ή να εντοπίσεις δολοφόνους, συν τρεις τελείες σε Contacts στην αστυνομία, Contacts σε ερευνητές Kindred και Status."
+          }
         },
         {
           "dots": 5,
-          "name": "Monstrous Bite"
+          "name": "Monstrous Bite",
+          "desc": {
+            "en": "Your fangs become splayed daggers: no called-shot penalty on bites, one extra success on Intimidation, and bite damage rises to 3.",
+            "el": "Οι κυνόδοντές σου γίνονται ανοιχτά στιλέτα: χωρίς ποινή called shot στα δαγκώματα, μία επιπλέον επιτυχία σε Intimidation, και το damage του δαγκώματος ανεβαίνει στο 3."
+          }
         }
       ],
       "also_in": [],
@@ -1023,6 +1695,10 @@
     {
       "id": "loresheet:harbingers-of-ashur",
       "name": "Harbingers of Ashur",
+      "desc": {
+        "en": "Hecata bloodline of the masked Cappadocian survivors. Levels, one mask each: moving a Conviction from a dead Touchstone, covering up deaths, speaking for the elders, a wraith in a vampire's body and killing Hecata without Stains.",
+        "el": "Bloodline των Hecata, οι μασκοφόροι επιζώντες Cappadocians. Επίπεδα, μία μάσκα το καθένα: μεταφορά Conviction από νεκρό Touchstone, συγκάλυψη θανάτων, φωνή των elders, wraith σε σώμα βαμπίρ και φόνος Hecata χωρίς Stains."
+      },
       "book": "v5-players-guide",
       "page": 226,
       "restriction": "Bloodline; Hecata Characters Only",
@@ -1034,23 +1710,43 @@
       "levels": [
         {
           "dots": 1,
-          "name": "The Ashen Mask"
+          "name": "The Ashen Mask",
+          "desc": {
+            "en": "Studying a dead Touchstone's corpse lets you move their Conviction to another mortal as if they died peacefully (+1 die on the Humanity test if they did); if anyone disturbs the body, test Fury Frenzy at Difficulty 3.",
+            "el": "Μελετώντας το πτώμα νεκρού Touchstone μεταφέρεις την Conviction του σε άλλον θνητό σαν να πέθανε ήσυχα (+1 ζάρι στο Humanity τεστ αν όντως έτσι έγινε)· αν κάποιος πειράξει το σώμα, τεστ Fury Frenzy με Difficulty 3."
+          }
         },
         {
           "dots": 2,
-          "name": "The Gold Mask"
+          "name": "The Gold Mask",
+          "desc": {
+            "en": "Counts as Influence 4 whenever you hide a death, your own work or your coterie's.",
+            "el": "Μετρά ως Influence 4 όποτε συγκαλύπτεις έναν θάνατο, δικό σου έργο ή της coterie σου."
+          }
         },
         {
           "dots": 3,
-          "name": "The White Mask"
+          "name": "The White Mask",
+          "desc": {
+            "en": "You speak for your bloodline's elders: +3 dice on social rolls against other Harbingers and +2 against other Hecata.",
+            "el": "Μιλάς για τους elders της bloodline σου: +3 ζάρια σε social ρίψεις κατά άλλων Harbingers και +2 κατά άλλων Hecata."
+          }
         },
         {
           "dots": 4,
-          "name": "The Obsidian Mask"
+          "name": "The Obsidian Mask",
+          "desc": {
+            "en": "You are a wraith in a vampire's body: learn Oblivion Ceremonies without a teacher (or in half the time), -2 dice to resist effects that target ghosts, +2 dice against control of your body such as Dominate.",
+            "el": "Είσαι wraith σε σώμα βαμπίρ: μαθαίνεις Ceremonies του Oblivion χωρίς δάσκαλο (ή στον μισό χρόνο), −2 ζάρια ενάντια σε ό,τι στοχεύει φαντάσματα, +2 ζάρια ενάντια σε έλεγχο του σώματός σου όπως το Dominate."
+          }
         },
         {
           "dots": 5,
-          "name": "The Lazarene Mask"
+          "name": "The Lazarene Mask",
+          "desc": {
+            "en": "You take no Stains for any action in pursuit of killing another Hecata or anyone who serves the Hecata.",
+            "el": "Δεν παίρνεις Stains για καμία ενέργεια που αποσκοπεί στον φόνο άλλου Hecata ή οποιουδήποτε υπηρετεί τους Hecata."
+          }
         }
       ],
       "also_in": [],
@@ -1060,6 +1756,10 @@
     {
       "id": "loresheet:la-famiglia-giovanni",
       "name": "La Famiglia Giovanni",
+      "desc": {
+        "en": "Hecata bloodline of the old necromancer family. Levels: a family question-for-question, Hecata obedience, family money, an enslaved spectre and a seat near the top.",
+        "el": "Bloodline των Hecata, η παλιά οικογένεια νεκρομαντών. Επίπεδα: ερώτηση-για-ερώτηση με συγγενείς, υπακοή των Hecata, οικογενειακό χρήμα, υποδουλωμένο spectre και θέση κοντά στην κορυφή."
+      },
       "book": "v5-players-guide",
       "page": 227,
       "restriction": "Bloodline; Hecata Characters Only",
@@ -1071,23 +1771,43 @@
       "levels": [
         {
           "dots": 1,
-          "name": "A Cousin's Ear"
+          "name": "A Cousin's Ear",
+          "desc": {
+            "en": "Once per session ask a Giovanni family member a direct question and get a straight answer, owing one in return; once per story call on mortal relatives as 3-dot Allies.",
+            "el": "Μία φορά ανά session ρωτάς μέλος της οικογένειας Giovanni κάτι ευθέως και παίρνεις ευθεία απάντηση, χρωστώντας μία· μία φορά ανά story ζητάς χάρη από θνητούς συγγενείς ως Allies 3 τελειών."
+          }
         },
         {
           "dots": 2,
-          "name": "Faded Glamor"
+          "name": "Faded Glamor",
+          "desc": {
+            "en": "Once per session add one automatic success to a social roll against another Hecata, ghoul or retainer.",
+            "el": "Μία φορά ανά session προσθέτεις μία αυτόματη επιτυχία σε social ρίψη κατά άλλου Hecata, ghoul ή retainer."
+          }
         },
         {
           "dots": 3,
-          "name": "Petty Cash"
+          "name": "Petty Cash",
+          "desc": {
+            "en": "Four free dots to spread between Resources and Retainers, which family elders can pull back at any time, especially if you cross them.",
+            "el": "Τέσσερις δωρεάν τελείες μοιρασμένες σε Resources και Retainers, που οι elders της οικογένειας μπορούν να πάρουν πίσω όποτε θέλουν, ειδικά αν τους προδώσεις."
+          }
         },
         {
           "dots": 4,
-          "name": "Spectre Servant"
+          "name": "Spectre Servant",
+          "desc": {
+            "en": "A captured spectre serves you as an Ally with spectre stats: summon it once per session and it arrives within 10 hours, longing to break the leash and eat your spirit.",
+            "el": "Ένα αιχμάλωτο spectre σε υπηρετεί ως Ally με τα stats του spectre: το καλείς μία φορά ανά session και φτάνει μέσα σε 10 ώρες, ποθώντας να σπάσει το λουρί και να φάει το πνεύμα σου."
+          }
         },
         {
           "dots": 5,
-          "name": "Aspiring Anziano"
+          "name": "Aspiring Anziano",
+          "desc": {
+            "en": "Five dots of Hecata Status, and the Capuchin receives you privately every few stories; push your luck and you join the corpses.",
+            "el": "Πέντε τελείες Status στους Hecata και ιδιωτική ακρόαση με τον Capuchin κάθε λίγες stories· αν το παρατραβήξεις, θα βρεθείς με τα πτώματα."
+          }
         }
       ],
       "also_in": [],
@@ -1097,6 +1817,10 @@
     {
       "id": "loresheet:the-gorgons",
       "name": "The Gorgons",
+      "desc": {
+        "en": "Hecata bloodline, the Lamiae, warrior-priestesses of Lilith. Levels: a plague bite, protecting others, humoral manipulation, taming messy criticals and a paralysing gaze.",
+        "el": "Bloodline των Hecata, οι Lamiae, πολεμίστριες-ιέρειες της Lilith. Επίπεδα: δάγκωμα-πανούκλα, προστασία άλλων, χειρισμός χυμών, έλεγχος των messy criticals και παραλυτικό βλέμμα."
+      },
       "book": "v5-players-guide",
       "page": 228,
       "restriction": "Bloodline; Hecata Characters Only",
@@ -1108,23 +1832,43 @@
       "levels": [
         {
           "dots": 1,
-          "name": "The Serpent's Kiss"
+          "name": "The Serpent's Kiss",
+          "desc": {
+            "en": "Once per story infect a mortal you feed on: one Aggravated Health damage per night for three nights. No effect on vampires.",
+            "el": "Μία φορά ανά story μολύνεις θνητό από τον οποίο τρέφεσαι: ένα Aggravated Health damage κάθε νύχτα για τρεις νύχτες. Δεν πιάνει σε βαμπίρ."
+          }
         },
         {
           "dots": 2,
-          "name": "Protection"
+          "name": "Protection",
+          "desc": {
+            "en": "+2 dice when using the Block maneuver to shield someone else.",
+            "el": "+2 ζάρια όταν χρησιμοποιείς τον ελιγμό Block για να προστατέψεις κάποιον άλλον."
+          }
         },
         {
           "dots": 3,
-          "name": "Four Humours"
+          "name": "Four Humours",
+          "desc": {
+            "en": "Once per story your bite gives a mortal -2 dice on actions that do not further their current Resonance until the night ends or it changes; -3 if their blood has a Dyscrasia.",
+            "el": "Μία φορά ανά story το δάγκωμά σου δίνει σε θνητό −2 ζάρια σε ενέργειες που δεν υπηρετούν το τρέχον Resonance του μέχρι να τελειώσει η νύχτα ή να αλλάξει· −3 αν το αίμα του έχει Dyscrasia."
+          }
         },
         {
           "dots": 4,
-          "name": "Controlling the Beast"
+          "name": "Controlling the Beast",
+          "desc": {
+            "en": "Once per session a messy critical you roll in combat becomes a normal critical.",
+            "el": "Μία φορά ανά session ένα messy critical που ρίχνεις στη μάχη γίνεται απλό critical."
+          }
         },
         {
           "dots": 5,
-          "name": "Medusa's Gaze"
+          "name": "Medusa's Gaze",
+          "desc": {
+            "en": "Once per session, after winning an Intimidation or conflict roll, the losers cannot act next turn; outside combat they are frozen for a scene unless they pass Willpower at Difficulty 5.",
+            "el": "Μία φορά ανά session, αφού κερδίσεις ρίψη Intimidation ή σύγκρουσης, οι χαμένοι δεν δρουν τον επόμενο γύρο· εκτός μάχης μένουν ακίνητοι για μία σκηνή εκτός αν περάσουν Willpower με Difficulty 5."
+          }
         }
       ],
       "also_in": [],
@@ -1134,6 +1878,10 @@
     {
       "id": "loresheet:nasyon-san-an",
       "name": "Nasyon San An",
+      "desc": {
+        "en": "Hecata bloodline with vodou roots, once called the Samedi. Levels: reading corpses, gift-bound truces, indulging like a mortal, a Ministry friend and the Bloody Doctor's favour.",
+        "el": "Bloodline των Hecata με ρίζες στο vodou, κάποτε οι Samedi. Επίπεδα: ανάγνωση πτωμάτων, ανακωχή μέσω δώρων, απολαύσεις σαν θνητός, φίλος στο Ministry και η εύνοια του Bloody Doctor."
+      },
       "book": "v5-players-guide",
       "page": 229,
       "restriction": "Bloodline; Hecata Characters Only",
@@ -1145,23 +1893,43 @@
       "levels": [
         {
           "dots": 1,
-          "name": "CSI Shit"
+          "name": "CSI Shit",
+          "desc": {
+            "en": "Examining a mortal corpse tells you the cause of death at once; if it is supernaturally hidden you still get to roll.",
+            "el": "Εξετάζοντας θνητό πτώμα μαθαίνεις αμέσως την αιτία θανάτου· αν είναι υπερφυσικά κρυμμένη, πάλι μπορείς να ρίξεις."
+          }
         },
         {
           "dots": 2,
-          "name": "Pound of Flesh"
+          "name": "Pound of Flesh",
+          "desc": {
+            "en": "If you accept a freely given gift, you and the giver take -3 dice on any action against each other for the rest of the night.",
+            "el": "Αν δεχτείς δώρο που δίνεται ελεύθερα, εσύ και ο δωρητής παίρνετε −3 ζάρια σε κάθε ενέργεια ο ένας κατά του άλλου για την υπόλοιπη νύχτα."
+          }
         },
         {
           "dots": 3,
-          "name": "Treat Yourself"
+          "name": "Treat Yourself",
+          "desc": {
+            "en": "Once a night enjoy a meal, cigar, drink or sexual encounter like a human, with no Humanity penalty and no Hunger cost, and it looks convincingly human.",
+            "el": "Μία φορά τη νύχτα απολαμβάνεις γεύμα, πούρο, ποτό ή σεξ σαν άνθρωπος, χωρίς ποινή Humanity και χωρίς κόστος Hunger, και φαίνεται πειστικά ανθρώπινο."
+          }
         },
         {
           "dots": 4,
-          "name": "My Setite Friend"
+          "name": "My Setite Friend",
+          "desc": {
+            "en": "Once per story ask a Ministry friend for a favour worth three dots in Backgrounds such as Allies, Influence or Resources.",
+            "el": "Μία φορά ανά story ζητάς από φίλο στο Ministry χάρη αξίας τριών τελειών σε Backgrounds όπως Allies, Influence ή Resources."
+          }
         },
         {
           "dots": 5,
-          "name": "The Silk Hat"
+          "name": "The Silk Hat",
+          "desc": {
+            "en": "You are next in line to the Bloody Doctor's practice; until you claim it he acts as a 5-dot Mawla, in cryptic ways, and his enemies become yours.",
+            "el": "Είσαι ο επόμενος στη διαδοχή της πρακτικής του Bloody Doctor· μέχρι να τη διεκδικήσεις λειτουργεί ως Mawla 5 τελειών, με αινιγματικούς τρόπους, και οι εχθροί του γίνονται δικοί σου."
+          }
         }
       ],
       "also_in": [],
