@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "shadowrealms/v5/catalog/ceremonies.schema.json",
   "title": "Oblivion Ceremonies",
-  "description": "Oblivion Ceremonies by level; prerequisite = the Oblivion power the Ceremony requires.",
+  "description": "Oblivion Ceremonies by level; prerequisite = the Oblivion power the Ceremony requires. prerequisite shapes as in disciplines.schema.json (power_id / any_of / all_of).",
   "type": "object",
   "required": [
     "catalog",

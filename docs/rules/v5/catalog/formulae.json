@@ -179,7 +179,7 @@
       "prerequisite": null,
       "rouse_cost": 1,
       "rouse_cost_conditional": false,
-      "dice_pool": null,
+      "dice_pool": "Strength + Alchemy vs Strength + Athletics",
       "discipline": "discipline:thin-blood-alchemy"
     },
     {

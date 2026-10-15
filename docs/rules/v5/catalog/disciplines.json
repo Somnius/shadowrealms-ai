@@ -37,7 +37,7 @@
           "amalgam": null,
           "rouse_cost": 0,
           "rouse_cost_conditional": false,
-          "dice_pool": null
+          "dice_pool": "Resolve + Animalism vs Composure + Subterfuge"
         },
         {
           "id": "power:animalism:animal-messenger",
@@ -72,7 +72,7 @@
           "amalgam": null,
           "rouse_cost": 1,
           "rouse_cost_conditional": true,
-          "dice_pool": null
+          "dice_pool": "Manipulation + Animalism, Charisma + Animalism"
         },
         {
           "id": "power:animalism:animal-succulence",
@@ -85,6 +85,36 @@
           "source": "pdf",
           "prerequisite": null,
           "amalgam": null,
+          "rouse_cost": 0,
+          "rouse_cost_conditional": false,
+          "dice_pool": null
+        },
+        {
+          "id": "power:animalism:messengers-command",
+          "name": "Messenger's Command",
+          "level": 3,
+          "book": "v5-players-guide",
+          "page": 69,
+          "also_in": [],
+          "aliases": [],
+          "source": "pdf",
+          "prerequisite": {
+            "all_of": [
+              {
+                "power_id": "power:animalism:animal-messenger"
+              },
+              {
+                "any_of": [
+                  "power:dominate:compel",
+                  "power:dominate:mesmerize"
+                ]
+              }
+            ]
+          },
+          "amalgam": {
+            "discipline": "discipline:dominate",
+            "level": 1
+          },
           "rouse_cost": 0,
           "rouse_cost_conditional": false,
           "dice_pool": null
@@ -117,7 +147,7 @@
           "amalgam": null,
           "rouse_cost": 1,
           "rouse_cost_conditional": false,
-          "dice_pool": null
+          "dice_pool": "Charisma + Animalism vs Stamina + Resolve"
         },
         {
           "id": "power:animalism:unliving-hive",
@@ -180,7 +210,7 @@
           "amalgam": null,
           "rouse_cost": 2,
           "rouse_cost_conditional": false,
-          "dice_pool": null
+          "dice_pool": "Charisma + Animalism"
         },
         {
           "id": "power:animalism:coax-the-bestial-temper",
@@ -337,7 +367,7 @@
           "amalgam": null,
           "rouse_cost": 1,
           "rouse_cost_conditional": false,
-          "dice_pool": null
+          "dice_pool": "Intelligence + Auspex vs Composure + Subterfuge"
         },
         {
           "id": "power:auspex:share-the-senses",
@@ -494,7 +524,7 @@
           "amalgam": null,
           "rouse_cost": 1,
           "rouse_cost_conditional": false,
-          "dice_pool": null
+          "dice_pool": "Intelligence + Blood Sorcery vs Stamina + Composure"
         },
         {
           "id": "power:blood-sorcery:scour-secrets",
@@ -569,7 +599,7 @@
           "amalgam": null,
           "rouse_cost": 1,
           "rouse_cost_conditional": false,
-          "dice_pool": null
+          "dice_pool": "Wits + Blood Sorcery vs Wits + Occult"
         },
         {
           "id": "power:blood-sorcery:baals-caress",
@@ -706,7 +736,7 @@
           "amalgam": null,
           "rouse_cost": 1,
           "rouse_cost_conditional": false,
-          "dice_pool": null
+          "dice_pool": "Dexterity + Athletics"
         },
         {
           "id": "power:celerity:weaving",
@@ -845,7 +875,7 @@
           "amalgam": null,
           "rouse_cost": 0,
           "rouse_cost_conditional": false,
-          "dice_pool": null
+          "dice_pool": "Charisma + Dominate vs Wits + Resolve"
         },
         {
           "id": "power:dominate:compel",
@@ -860,7 +890,7 @@
           "amalgam": null,
           "rouse_cost": 0,
           "rouse_cost_conditional": false,
-          "dice_pool": null
+          "dice_pool": "Charisma + Dominate vs Intelligence + Resolve"
         },
         {
           "id": "power:dominate:slavish-devotion",
@@ -902,9 +932,14 @@
           "id": "power:dominate:domitors-favor",
           "name": "Domitor's Favor",
           "level": 2,
-          "book": "v5-companion",
-          "page": 25,
-          "also_in": [],
+          "book": "v5-players-guide",
+          "page": 74,
+          "also_in": [
+            {
+              "book": "v5-companion",
+              "page": 25
+            }
+          ],
           "aliases": [],
           "source": "pdf",
           "prerequisite": null,
@@ -1081,6 +1116,21 @@
           "dice_pool": null
         },
         {
+          "id": "power:fortitude:earths-perseverance",
+          "name": "Earth's Perseverance",
+          "level": 2,
+          "book": "v5-players-guide",
+          "page": 74,
+          "also_in": [],
+          "aliases": [],
+          "source": "pdf",
+          "prerequisite": null,
+          "amalgam": null,
+          "rouse_cost": 1,
+          "rouse_cost_conditional": false,
+          "dice_pool": null
+        },
+        {
           "id": "power:fortitude:enduring-beasts",
           "name": "Enduring Beasts",
           "level": 2,
@@ -1096,7 +1146,7 @@
           },
           "rouse_cost": 0,
           "rouse_cost_conditional": true,
-          "dice_pool": null
+          "dice_pool": "Stamina + Animalism"
         },
         {
           "id": "power:fortitude:invigorating-vitae",
@@ -1144,7 +1194,7 @@
           "amalgam": null,
           "rouse_cost": 1,
           "rouse_cost_conditional": false,
-          "dice_pool": null
+          "dice_pool": "Wits + Survival"
         },
         {
           "id": "power:fortitude:fortify-the-inner-facade",
@@ -1190,6 +1240,21 @@
           "level": 4,
           "book": "v5-corebook",
           "page": 259,
+          "also_in": [],
+          "aliases": [],
+          "source": "pdf",
+          "prerequisite": null,
+          "amalgam": null,
+          "rouse_cost": 1,
+          "rouse_cost_conditional": false,
+          "dice_pool": null
+        },
+        {
+          "id": "power:fortitude:gorgons-scales",
+          "name": "Gorgon's Scales",
+          "level": 4,
+          "book": "v5-players-guide",
+          "page": 75,
           "also_in": [],
           "aliases": [],
           "source": "pdf",
@@ -1460,7 +1525,7 @@
           "amalgam": null,
           "rouse_cost": 1,
           "rouse_cost_conditional": false,
-          "dice_pool": null
+          "dice_pool": "Wits + Obfuscate, Manipulation + Performance"
         }
       ]
     },
@@ -1485,6 +1550,21 @@
           "rouse_cost": 1,
           "rouse_cost_conditional": false,
           "dice_pool": "Stamina + Oblivion vs Stamina + Medicine or Fortitude"
+        },
+        {
+          "id": "power:oblivion:oblivions-sight",
+          "name": "Oblivion's Sight",
+          "level": 1,
+          "book": "v5-players-guide",
+          "page": 85,
+          "also_in": [],
+          "aliases": [],
+          "source": "pdf",
+          "prerequisite": null,
+          "amalgam": null,
+          "rouse_cost": 0,
+          "rouse_cost_conditional": false,
+          "dice_pool": null
         },
         {
           "id": "power:oblivion:shadow-cloak",
@@ -1979,7 +2059,7 @@
           "amalgam": null,
           "rouse_cost": 0,
           "rouse_cost_conditional": false,
-          "dice_pool": null
+          "dice_pool": "Manipulation + Presence vs Composure + Intelligence"
         },
         {
           "id": "power:presence:daunt",
@@ -2057,7 +2137,7 @@
           "amalgam": null,
           "rouse_cost": 1,
           "rouse_cost_conditional": false,
-          "dice_pool": null
+          "dice_pool": "Charisma + Presence vs Composure + Resolve"
         },
         {
           "id": "power:presence:entrancement",
@@ -2072,7 +2152,7 @@
           "amalgam": null,
           "rouse_cost": 1,
           "rouse_cost_conditional": false,
-          "dice_pool": null
+          "dice_pool": "Charisma + Presence vs Composure + Wits"
         },
         {
           "id": "power:presence:thrown-voice",
@@ -2138,7 +2218,7 @@
           "amalgam": null,
           "rouse_cost": 1,
           "rouse_cost_conditional": false,
-          "dice_pool": null
+          "dice_pool": "Manipulation + Presence vs Composure + Intelligence"
         },
         {
           "id": "power:presence:majesty",
@@ -2153,7 +2233,7 @@
           "amalgam": null,
           "rouse_cost": 2,
           "rouse_cost_conditional": false,
-          "dice_pool": null
+          "dice_pool": "Charisma + Presence vs Composure + Resolve"
         },
         {
           "id": "power:presence:star-magnetism",

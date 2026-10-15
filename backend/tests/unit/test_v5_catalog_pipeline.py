@@ -45,7 +45,22 @@ def test_rouse_cost(text, expected):
     assert common.rouse_cost(text) == expected
 
 
+def test_capital_titles_with_apostrophes_stay_titles():
+    assert common.looks_like_name("GORGON’S SCALES")
+    assert common.looks_like_name("MESSENGER’S COMMAND")
+    assert common.title_case("GORGON’S SCALES") == "Gorgon's Scales"
+
+
+def test_join_wrapped_undoes_hyphenation():
+    assert common.join_wrapped("Charisma + Animal-", "ism") == "Charisma + Animalism"
+    assert common.join_wrapped("Wits +", "Survival") == "Wits + Survival"
+
+
 def test_dice_pool_only_plain_traits():
+    assert common.dice_pool("Wits + Survival (to activate reflexively)") == "Wits + Survival"
+    assert common.dice_pool("Manipulation + Glimmer, Charisma + Glimmer") == \
+        "Manipulation + Glimmer, Charisma + Glimmer"
+    assert common.dice_pool("Dexterity + Athletics, or as needed") is None
     assert common.dice_pool("Wits+Glimmer vs. Resolve + Shade") == "Wits + Glimmer vs Resolve + Shade"
     assert common.dice_pool("None, though a test may be needed") is None
     assert common.dice_pool("N/A") is None
@@ -109,11 +124,12 @@ def _fake_discipline():
         L("Auspex", 30.0),
         L("Level 1", 17.0), L("moon sight", 10.8),
         L("Invented flavour text for a test."),
-        L("■ ■ Cost: Free"), L("■ ■ Dice Pools: Wits + Glimmer"), L("■ ■ Duration: One scene"),
+        L("■ ■ Cost: Free"), L("■ ■ Dice Pools: Wits + Glim-"), L("mer"), L("■ ■ Duration: One scene"),
         L("silver step", 10.8), L("Amalgam: Celerity 2"), L("Prerequisite: Moon Si-"), L("ght"),
         L("More invented text."), L("■ ■ Cost: One Rouse Check per turn"), L("■ ■ System: Roll it."),
         L("Level 2", 17.0), L("moon ’ s long fresh -", 15.4), L("ness", 10.8),
         L("Prerequisite: Moon Sight or Silver Step"), L("Cost: Two Rouse Checks"),
+        L("STAR’S EDGE", 10.8), L("Cost: One Rouse Check"),
         L("sidebar title", 10.8), L("No labels follow this one."),
         L("Rituals", 30.0), L("Level 1 Rituals", 17.0), L("lantern rite", 10.8),
         L("Ingredients: invented things."), L("System: invented."),
@@ -124,7 +140,7 @@ def _fake_discipline():
 def test_powers_parser():
     recs, report = powers.parse(_fake_discipline())
     by = {r["name"]: r for r in recs}
-    assert set(by) == {"Moon Sight", "Silver Step", "Moon's Long Freshness", "Lantern Rite"}
+    assert set(by) == {"Moon Sight", "Silver Step", "Moon's Long Freshness", "Star's Edge", "Lantern Rite"}
     assert by["Moon Sight"]["level"] == 1 and by["Moon Sight"]["rouse_cost"] == 0
     assert by["Moon Sight"]["dice_pool"] == "Wits + Glimmer"
     assert by["Silver Step"]["amalgam"] == {"discipline": "Celerity", "level": 2}

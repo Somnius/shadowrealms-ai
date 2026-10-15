@@ -91,6 +91,23 @@ def test_known_facts(data):
     assert (montero["book"], montero["page"], montero["humanity"]) == ("v5-players-guide", 108, -1)
     assert montero["advantages"] == [{"pick": "all", "options": [{"id": "background:retainers", "dots": 2}]}]
     assert "clan:ventrue" in preds["Bagger"]["forbidden_clans"]
+    assert clans["Caitiff"]["bane"] is None and clans["Thin-blood"]["bane"] is None
+    assert clans["Caitiff"]["creation"]["flaws"] == [{"id": "flaw:suspect", "dots": 1}]
+
+
+def test_players_guide_powers_with_apostrophes(data):
+    powers = {p["id"]: p for d in _entries(data, "disciplines") for p in d["powers"]}
+    for pid, level in (("power:animalism:messengers-command", 3), ("power:fortitude:earths-perseverance", 2),
+                       ("power:fortitude:gorgons-scales", 4), ("power:oblivion:oblivions-sight", 1)):
+        assert powers[pid]["book"] == "v5-players-guide" and powers[pid]["level"] == level, pid
+    assert powers["power:animalism:messengers-command"]["prerequisite"] == {"all_of": [
+        {"power_id": "power:animalism:animal-messenger"},
+        {"any_of": ["power:dominate:compel", "power:dominate:mesmerize"]}]}
+    favor = powers["power:dominate:domitors-favor"]
+    assert (favor["book"], favor["page"], favor["also_in"]) == (
+        "v5-players-guide", 74, [{"book": "v5-companion", "page": 25}])
+    assert powers["power:animalism:quell-the-beast"]["dice_pool"] == "Charisma + Animalism vs Stamina + Resolve"
+    assert sum(len(d["powers"]) for d in _entries(data, "disciplines")) == 145
 
 
 def test_power_levels_and_split_grants(data):

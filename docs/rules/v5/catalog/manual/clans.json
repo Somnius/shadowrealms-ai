@@ -164,6 +164,25 @@
         ]
       },
       "why": "PG pr 12 clan sheet prints 'The Ministry'"
+    },
+    {
+      "id": "clan:caitiff",
+      "set": {
+        "bane_page": null,
+        "creation": {
+          "flaws": [
+            {
+              "id": "flaw:suspect",
+              "dots": 1
+            }
+          ],
+          "no_positive_status": true,
+          "discipline_xp_multiplier": 6,
+          "book": "v5-corebook",
+          "page": 107
+        }
+      },
+      "why": "core pr 107 'Bane' section: Caitiff share no clan bane (bane null, same as Thin-blood); they start with the Suspect (•) Flaw, may not buy positive Status at creation, and raise Disciplines at 6x the new level in XP"
     }
   ]
 }

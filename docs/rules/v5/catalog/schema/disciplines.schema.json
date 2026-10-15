@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "shadowrealms/v5/catalog/disciplines.schema.json",
   "title": "V5 Disciplines and their powers",
-  "description": "12 Disciplines incl. Oblivion and Thin-Blood Alchemy. rouse_cost: printed base Rouse Checks (0 = free); null when the page gives alternatives or no plain count; rouse_cost_conditional: the cost line adds conditions. dice_pool only when it is a plain list of traits.",
+  "description": "12 Disciplines incl. Oblivion and Thin-Blood Alchemy. rouse_cost: printed base Rouse Checks (0 = free); null when the page gives alternatives or no plain count; rouse_cost_conditional: the cost line adds conditions. dice_pool only when it is a plain list of traits. prerequisite: null, {power_id}, {any_of: [power ids]} (one of them), or {all_of: [{power_id} | {any_of}]} (every clause; e.g. Messenger's Command needs Animal Messenger and one of Compel/Mesmerize).",
   "type": "object",
   "required": [
     "catalog",
