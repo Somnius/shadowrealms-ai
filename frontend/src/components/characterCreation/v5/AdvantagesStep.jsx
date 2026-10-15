@@ -1,8 +1,9 @@
 import ResponsiveSheetBlock from '../ResponsiveSheetBlock';
 import MeritFlawRows from '../MeritFlawRows';
 import { THIN_BLOOD, V5_AGE_BRACKETS, V5_SECTION_IDS, V5_THIN_BLOOD_MERITS } from '../../../characterSheet/v5/constants';
-import { ageAllowed } from '../../../characterSheet/v5/validation';
+import { ageAllowed, resolvePredatorGrants } from '../../../characterSheet/v5/validation';
 import { t } from '../../../i18n';
+import CatalogAdvantages from './CatalogAdvantages';
 import { ACCENT, InlineError, addButtonStyle, inputStyle, labelStyle, smallButtonStyle, useForge } from './forgeUi';
 
 /** Free-text rows for thin-blood Merits or Flaws (names only, no dots). */
@@ -43,6 +44,26 @@ function ThinRows({ kind, rows, setRows }) {
   );
 }
 
+/** The predator type's advantages and Flaws, read-only (chosen in the Predator step; extra to the budget). */
+function PredatorRows() {
+  const f = useForge();
+  const { advantages, flaws } = resolvePredatorGrants(f.sheet);
+  const rows = [...advantages, ...flaws.map((r) => ({ ...r, flaw: true }))].filter((r) => r.dots > 0);
+  if (!rows.length) return null;
+  return (
+    <p id="v5-predator-rows" style={{ color: 'var(--sr-gold-400)', fontSize: '12px', margin: '0 0 10px' }}>
+      {t('wizard:v5.predatorRowsExtra', 'From {{type}} (extra):', { type: f.predatorType })}{' '}
+      {rows.map((r, i) => (
+        <span key={i} lang="en">
+          {i ? ' · ' : ''}
+          {r.flaw ? 'Flaw: ' : ''}
+          {r.name} {'●'.repeat(r.dots)}
+        </span>
+      ))}
+    </p>
+  );
+}
+
 /** Step 7 (core p. 136): 7 dots of Advantages and 2 dots of Flaws of your own. */
 export default function AdvantagesStep() {
   const f = useForge();
@@ -54,7 +75,11 @@ export default function AdvantagesStep() {
     <ResponsiveSheetBlock
       sectionId={V5_SECTION_IDS.advantages}
       title="Advantages & Flaws"
-      subtitle={t('wizard:v5.advantagesSubV2', 'Up to {{adv}} dots of Merits and Backgrounds (+ for advantages), at least {{flaws}} dots of Flaws of your own (− for flaws). The predator type\'s advantages and Flaws are extra, on top of these.', { adv: derived.advantage_dots, flaws: derived.flaw_min_dots })}
+      subtitle={
+        f.catalogAdvantages
+          ? t('wizard:v5.advantagesSubCatalog', 'Up to {{adv}} dots of Backgrounds, Merits and loresheets, at least {{flaws}} dots of Flaws of your own. The predator type\'s advantages and Flaws are extra, on top of these.', { adv: derived.advantage_dots, flaws: derived.flaw_min_dots })
+          : t('wizard:v5.advantagesSubV2', 'Up to {{adv}} dots of Merits and Backgrounds (+ for advantages), at least {{flaws}} dots of Flaws of your own (− for flaws). The predator type\'s advantages and Flaws are extra, on top of these.', { adv: derived.advantage_dots, flaws: derived.flaw_min_dots })
+      }
       accent={ACCENT}
     >
       <InlineError id={V5_SECTION_IDS.advantages} />
@@ -67,8 +92,13 @@ export default function AdvantagesStep() {
           {t('wizard:v5.ancillaBudgetHint', 'An ancilla (chosen in the Age step) gets {{adv}} more Advantage dots and takes {{flaws}} more Flaw dots.', { adv: ancilla.advantage_dots_bonus, flaws: ancilla.flaw_dots_bonus })}
         </p>
       ) : null}
-      <MeritFlawRows rows={f.meritRows} setRows={f.setMeritRows} globalNotes={f.meritNotes} setGlobalNotes={f.setMeritNotes} />
-      {f.clan === THIN_BLOOD ? (
+      <PredatorRows />
+      {f.catalogAdvantages ? (
+        <CatalogAdvantages />
+      ) : (
+        <MeritFlawRows rows={f.meritRows} setRows={f.setMeritRows} globalNotes={f.meritNotes} setGlobalNotes={f.setMeritNotes} />
+      )}
+      {f.clan === THIN_BLOOD && !f.catalogAdvantages ? (
         <div style={{ marginTop: '16px', paddingTop: '12px', borderTop: '1px solid var(--sr-night-700)' }}>
           <p style={{ color: 'var(--sr-bone-300)', fontSize: '12px', margin: '0 0 10px', lineHeight: 1.5 }}>
             {t('wizard:v5.thinHelp', "Thin-bloods also take {{lo}}–{{hi}} thin-blood Merits and the same number of thin-blood Flaws (core p. 182). They have no dot value and don't count toward the totals above. The rules file has no list of them, so write the names from the book.", { lo: V5_THIN_BLOOD_MERITS[0], hi: V5_THIN_BLOOD_MERITS[1] })}

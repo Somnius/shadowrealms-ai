@@ -63,3 +63,87 @@ test('a power above a lowered rating stays visible so its error makes sense', ()
   pick(document.getElementById('v5-field-predator'), 'Grim Reaper'); // Dominate drops back to 1
   expect(screen.getByLabelText('Dominate power 1')).toHaveValue('Mesmerize');
 });
+
+describe('Advantages from the catalog (Forge v2 part C)', () => {
+  const add = (kind) => fireEvent.click(screen.getByRole('button', { name: `+ Add ${kind}` }));
+  const count = () => document.getElementById('v5-advantages-count');
+
+  test('a Background from the grouped list: its rating, note, description and page', () => {
+    renderForge();
+    pick(document.getElementById('v5-field-clan'), 'Hecata');
+    add('Background');
+    const sel = screen.getByLabelText('Background 1');
+    expect(within(sel).queryByRole('option', { name: /^Loresheets/ })).toBeNull(); // its own section
+    expect(sel.querySelector('optgroup[label="Allies"]')).not.toBeNull();
+    pick(sel, 'background:allies');
+    const dots = screen.getByLabelText('Allies dots');
+    expect(within(dots).getAllByRole('option')).toHaveLength(6); // up to 6 in one Ally
+    pick(dots, '3');
+    pick(screen.getByLabelText('Background 1 note'), 'police');
+    expect(screen.getByText(/Test text for Allies\./)).toBeInTheDocument();
+    expect(count()).toHaveTextContent('Advantages 3/7');
+  });
+
+  test('the clan filters the list; a non-repeatable Merit is offered once', () => {
+    renderForge();
+    pick(document.getElementById('v5-field-clan'), 'Ventrue');
+    add('Merit');
+    const sel = screen.getByLabelText('Merit 1');
+    expect(within(sel).queryByRole('option', { name: /Iron Gullet/ })).toBeNull();
+    expect(within(sel).queryByRole('option', { name: /Mark of Caine|All Access|Blood Empathy|Day Drinker/ })).toBeNull();
+    pick(sel, 'merit:beautiful');
+    expect(screen.getByLabelText('Beautiful dots')).toHaveTextContent('●●'); // fixed rating
+    add('Merit');
+    expect(within(screen.getByLabelText('Merit 2')).getByRole('option', { name: 'Beautiful (2)' })).toBeDisabled();
+  });
+
+  test('Caitiff start with Suspect and are offered no Status', () => {
+    renderForge();
+    pick(document.getElementById('v5-field-clan'), 'Caitiff');
+    expect(document.querySelector('[data-clan-flaw="flaw:suspect"]')).toHaveTextContent('Suspect');
+    expect(count()).toHaveTextContent('Flaws 1 (min 2)');
+    add('Background');
+    expect(within(screen.getByLabelText('Background 1')).queryByRole('option', { name: /^Status/ })).toBeNull();
+    expect(screen.getByText("Caitiff can't buy positive Status at creation.")).toBeInTheDocument();
+  });
+
+  test('a loresheet: the levels taken cost their numbers in Advantage dots', () => {
+    renderForge();
+    pick(document.getElementById('v5-field-clan'), 'Hecata');
+    add('Loresheet');
+    const sel = screen.getByLabelText('Loresheet 1');
+    expect(within(sel).queryByRole('option', { name: /Hardestadt/ })).toBeNull(); // Ventrue only
+    pick(sel, 'loresheet:harbingers-of-ashur');
+    fireEvent.click(screen.getByRole('checkbox', { name: /The Ashen Mask/ }));
+    fireEvent.click(screen.getByRole('checkbox', { name: /The White Mask/ }));
+    expect(screen.getByText('4 dots')).toBeInTheDocument();
+    expect(screen.getByText(/Test level 3 of Harbingers of Ashur\./)).toBeInTheDocument();
+    expect(count()).toHaveTextContent('Advantages 4/7');
+  });
+
+  test('a custom row for anything the catalog lacks', () => {
+    renderForge();
+    add('Flaw');
+    pick(screen.getByLabelText('Flaw 1'), 'custom');
+    pick(screen.getByLabelText('Flaw 1 name'), 'Hunted by a Lasombra');
+    pick(screen.getByLabelText('Hunted by a Lasombra dots'), '2');
+    expect(screen.getByText(/your Storyteller has to approve it/)).toBeInTheDocument();
+    expect(count()).toHaveTextContent('Flaws 2 (min 2)');
+  });
+
+  test('thin-bloods pick their Merits and Flaws from the catalog', () => {
+    renderForge();
+    pick(document.getElementById('v5-field-clan'), 'Thin-blood');
+    const merit = screen.getByLabelText('Thin-blood Merit 1');
+    expect(within(merit).getAllByRole('option').map((o) => o.textContent)).toEqual(['Choose…', 'Day Drinker', 'Lifelike']);
+    pick(merit, 'Day Drinker');
+    expect(screen.getByText(/Test text for Day Drinker\./)).toBeInTheDocument();
+  });
+
+  test('the predator type\'s rows show in the step with their catalog names', () => {
+    renderForge();
+    pick(document.getElementById('v5-field-clan'), 'Hecata');
+    pick(document.getElementById('v5-field-predator'), 'Grim Reaper');
+    expect(document.getElementById('v5-predator-rows')).toHaveTextContent('Prey Exclusion (healthy mortals) ●');
+  });
+});

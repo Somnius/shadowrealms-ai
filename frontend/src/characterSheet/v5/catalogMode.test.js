@@ -86,10 +86,14 @@ describe('predator types from the catalog', () => {
     const s = sheet({ predatorType: 'Grim Reaper' });
     const none = resolvePredatorGrants(s);
     expect(none.problems).toEqual(['Grim Reaper: choose one of Allies or Influence.']);
-    expect(none.flaws).toEqual([{ name: 'Prey Exclusion (healthy mortals)', dots: 1, kind: 'predator' }]);
+    expect(none.flaws).toEqual([
+      { id: 'flaw:prey-exclusion', name: 'Prey Exclusion (healthy mortals)', dots: 1, kind: 'predator', note: 'healthy mortals' },
+    ]);
     const picked = resolvePredatorGrants({ ...s, predatorChoices: { a0: 1 } });
     expect(picked.problems).toEqual([]);
-    expect(picked.advantages).toEqual([{ name: 'Influence (medical community)', dots: 1, kind: 'predator' }]);
+    expect(picked.advantages).toEqual([
+      { id: 'background:influence', name: 'Influence (medical community)', dots: 1, kind: 'predator', note: 'medical community' },
+    ]);
   });
 
   it('a split must add up to its total', () => {
@@ -107,7 +111,7 @@ describe('predator types from the catalog', () => {
     expect(resolvePredatorGrants(s).problems[0]).toMatch(/choose the dots for Prey Exclusion/);
     const ok = resolvePredatorGrants({ ...s, predatorChoices: { 'f0:0:dots': 2 } });
     expect(ok.problems).toEqual([]);
-    expect(ok.flaws).toEqual([{ name: 'Prey Exclusion (locals)', dots: 2, kind: 'predator' }]);
+    expect(ok.flaws).toEqual([{ id: 'flaw:prey-exclusion', name: 'Prey Exclusion (locals)', dots: 2, kind: 'predator', note: 'locals' }]);
   });
 });
 

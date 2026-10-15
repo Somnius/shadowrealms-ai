@@ -15,10 +15,14 @@
  *   startingCeremony: string (one free Level 1 Oblivion ceremony whose prerequisite power is taken),
  *   predatorChoices: the player's picks among the predator type's grants (see resolvePredatorGrants),
  *   predatorDiscipline (name), extraPowers: {[discipline]: [power]} (powers for a predator/XP
- *   Discipline that isn't one of the two picks), advantages: [{name, dots, kind: 'merit'|'background'}],
- *   flaws: [{name, dots}], convictions: [{conviction, touchstone}],
+ *   Discipline that isn't one of the two picks),
+ *   advantages: [{id?, name, dots, kind: 'merit'|'background'|'loresheet', note?, custom?, levels?}]
+ *   (catalog rows have the id; `custom` rows are free text for the Storyteller to approve; a
+ *   loresheet row has the levels taken, its dots are their sum), flaws: [{id?, name, dots, note?, custom?}]
+ *   (the clan's own Flaws, Caitiff Suspect, are added from the catalog: see clanFlaws),
+ *   convictions: [{conviction, touchstone}],
  *   fledglingHumanity: bool (childer only: start at Humanity 8 instead of 7),
- *   thinBloodMerits: [{name}], thinBloodFlaws: [{name}] (thin-bloods: 1–3 each, equal counts),
+ *   thinBloodMerits: [{name, id?}], thinBloodFlaws: [{name, id?}] (thin-bloods: 1–3 each, equal counts),
  *   xpPurchases: starting experience (neonates 15, ancillae 35), one entry per dot, in order:
  *     {kind: 'attribute'|'skill', trait: key, specialty?: name (free one with a first dot in
  *     Academics/Craft/Performance/Science)} | {kind: 'discipline', trait: name}
@@ -56,7 +60,16 @@ import {
   V5_RITUALS_MAX,
   generationBloodPotency,
 } from './constants';
-import { disciplineNames, getV5Rules, powersOf, ritualsOf } from './rulesData';
+import {
+  advantageEntries,
+  disciplineNames,
+  findAdvantage,
+  findLoresheet,
+  getV5Rules,
+  loresheetEntries,
+  powersOf,
+  ritualsOf,
+} from './rulesData';
 import { CREATION_AGES } from './creationSettings';
 
 const int = (v) => {
@@ -247,7 +260,13 @@ export function resolvePredatorGrants(sheet) {
   if (!p) return out;
   const choices = sheet?.predatorChoices || {};
   const label = (o) => (o.note ? `${o.name} (${o.note})` : o.name);
-  const row = (o, dots) => ({ name: label(o), dots, kind: 'predator' });
+  const row = (o, dots) => ({
+    ...(o.id ? { id: o.id } : {}),
+    name: label(o),
+    dots,
+    kind: 'predator',
+    ...(o.note ? { note: o.note } : {}),
+  });
   const walk = (grants, prefix, list) =>
     grants.forEach((g, gi) => {
       const key = `${prefix}${gi}`;
@@ -307,6 +326,12 @@ export function validateThinBloodMeritsFlaws(sheet) {
   }
   if (f !== m) {
     return `Take as many thin-blood Flaws as thin-blood Merits (${m} Merits, ${f} Flaws).`;
+  }
+  const seen = new Set();
+  for (const r of [...namedList(sheet.thinBloodMerits), ...namedList(sheet.thinBloodFlaws)]) {
+    const key = String(r.name).trim().toLowerCase();
+    if (seen.has(key)) return `${String(r.name).trim()} can be taken only once.`;
+    seen.add(key);
   }
   return null;
 }
@@ -676,9 +701,164 @@ export function predatorAdvantages(sheet) {
   return { advantages, flaws };
 }
 
-/** The player's own Flaw dots (the predator type's flaws don't count toward the minimum). */
+/** "Allies (police)" → "allies": a row's name without its note, for matching. */
+const bareName = (name) => String(name || '').replace(/\s*\([^)]*\)\s*$/, '').trim().toLowerCase();
+
+/**
+ * Flaws the clan starts with, from the catalog clan's creation rules (Caitiff: Suspect •, core
+ * p. 107), unless the player already listed them. The book doesn't say they are extra the way the
+ * predator type's are (p. 136), so they count as the player's own:
+ * [{ id, name, dots, kind: 'flaw', source: 'clan' }].
+ */
+export function clanFlaws(sheet) {
+  const own = named(sheet?.flaws);
+  const listed = (f) => own.some((r) => (r.id ? r.id === f.id : bareName(r.name) === bareName(f.name)));
+  return (clanInfo(sheet?.clan)?.creation?.flaws || [])
+    .filter((f) => !listed(f))
+    .map((f) => ({ id: f.id, name: f.name, dots: f.dots, kind: 'flaw', source: 'clan' }));
+}
+
+/** The player's own Flaw dots, the clan's included (the predator type's flaws don't count toward the minimum). */
 export function ownFlawDots(sheet) {
-  return sumDots(named(sheet?.flaws));
+  return sumDots(named(sheet?.flaws)) + sumDots(clanFlaws(sheet));
+}
+
+// ---------- Advantages, Flaws and loresheets from the catalog ----------
+
+/** Ratings printed "•+" go up to this at creation. */
+const OPEN_MAX_DOTS = 5;
+
+/** The dot values a catalog entry may take: its allowed list, else min..max ([] for none). */
+export function advantageDotChoices(entry) {
+  const d = entry?.dots;
+  if (!d) return [];
+  if (Array.isArray(d.allowed)) return [...d.allowed].map(int).sort((a, b) => a - b);
+  const lo = Math.max(1, int(d.min) || 1);
+  const hi = d.max == null ? Math.max(lo, OPEN_MAX_DOTS) : int(d.max);
+  return Array.from({ length: Math.max(0, hi - lo + 1) }, (_, i) => lo + i);
+}
+
+/** [1,2,3,4,5,6] → "1–6", [2,3] → "2 or 3", [3] → "3", [1,3,5] → "1, 3 or 5". */
+export function dotChoicesText(choices) {
+  const c = choices || [];
+  if (c.length <= 1) return String(c[0] ?? '');
+  const contiguous = c.every((v, i) => !i || v === c[i - 1] + 1);
+  if (contiguous && c.length > 2) return `${c[0]}–${c[c.length - 1]}`;
+  return `${c.slice(0, -1).join(', ')} or ${c[c.length - 1]}`;
+}
+
+/**
+ * May a character of this clan take this catalog Merit/Background/Flaw at creation? Ghoul and
+ * coterie entries never (not character Advantages); Caitiff and thin-blood ones only for those;
+ * clans_only and cannot_buy_for as printed; a clan whose creation rules forbid positive Status
+ * (Caitiff, core p. 107) can't buy the Status Background.
+ */
+export function advantageAllowed(entry, clan) {
+  if (!entry) return true;
+  const c = clanInfo(clan);
+  if (entry.ghoul_only || entry.coterie) return false;
+  if (entry.caitiff && !(clan === CAITIFF || c?.caitiff)) return false;
+  if (entry.thin_blood && !(clan === THIN_BLOOD || c?.thin_blood)) return false;
+  if (entry.clans_only && !entry.clans_only.includes(clan)) return false;
+  if ((entry.cannot_buy_for || []).includes(clan)) return false;
+  if (c?.creation?.no_positive_status && entry.kind === 'background' && entry.group === 'Status') return false;
+  return true;
+}
+
+/**
+ * Catalog entries a section offers ('background' | 'merit' | 'flaw') to this clan. Thin-blood
+ * Merits/Flaws have their own lists; the Loresheets Background is the Loresheets section.
+ */
+export function advantageOptions(clan, kind) {
+  return advantageEntries().filter(
+    (a) => a.kind === kind && !a.thin_blood && a.group !== 'Loresheets' && advantageAllowed(a, clan)
+  );
+}
+
+/** Thin-blood Merits ('merit') or Flaws ('flaw') from the catalog. */
+export function thinBloodOptions(kind) {
+  return advantageEntries().filter((a) => a.thin_blood && a.kind === kind);
+}
+
+/** May the sheet take this loresheet (clan, thin-blood or Discipline restriction)? */
+export function loresheetAllowed(ls, sheet) {
+  if (!ls) return true;
+  const clan = sheet?.clan;
+  if (ls.clans_only && !ls.clans_only.includes(clan)) return false;
+  if (ls.thin_blood_only && clan !== THIN_BLOOD) return false;
+  if (ls.disciplines_only) {
+    const have = finalDisciplines(sheet).map((d) => d.name);
+    if (!ls.disciplines_only.some((d) => have.includes(d))) return false;
+  }
+  return true;
+}
+
+export function loresheetOptions(sheet) {
+  return loresheetEntries().filter((l) => loresheetAllowed(l, sheet));
+}
+
+/** "Haven ••" or "more than one dot: Haven ••": another Background at that rating. */
+const DOT_REQUIREMENT = /^(more than one dot:\s*)?([A-Za-z][\w' -]*?)\s+(•+)\+?$/;
+
+/** { name, dots, onlyAbove1 } for a requirement the forge can check, else null (shown as a hint only). */
+export function dotRequirement(entry) {
+  const m = String(entry?.requires || '').trim().match(DOT_REQUIREMENT);
+  return m ? { name: m[2], dots: m[3].length, onlyAbove1: Boolean(m[1]) } : null;
+}
+
+/**
+ * First problem with the catalog rows of Advantages, Flaws and loresheets, or null: not open to
+ * the clan, dots outside the printed rating, taken more often than allowed, a Background another
+ * entry needs, a loresheet without a level. Free-text and custom rows are left to the Storyteller.
+ */
+export function validateV5AdvantageRows(sheet) {
+  const s = sheet || {};
+  const own = [...named(s.advantages).map((r) => [r, false]), ...named(s.flaws).map((r) => [r, true])];
+  const pred = resolvePredatorGrants(s);
+  // every row with its catalog entry, the clan's and the predator type's included
+  const withEntry = [
+    ...clanFlaws(s).map((r) => [r, true]),
+    ...own,
+    ...pred.advantages.map((r) => [r, false]),
+    ...pred.flaws.map((r) => [r, true]),
+  ].map(([r, flaw]) => [r, r.kind === 'loresheet' ? findLoresheet(r) : r.custom ? null : findAdvantage(r, flaw ? 'flaw' : r.kind), flaw]);
+  const counts = {};
+  withEntry.forEach(([, e]) => {
+    if (e) counts[e.id] = (counts[e.id] || 0) + 1;
+  });
+  const bare = (r, e) => (e ? e.name.toLowerCase() : bareName(r.name));
+  // the highest rating of a Background (a requirement names one Haven, not the sum of several)
+  const backgroundDots = (name) =>
+    Math.max(
+      0,
+      ...withEntry
+        .filter(([r, e, flaw]) => !flaw && r.kind !== 'loresheet' && bare(r, e) === name.toLowerCase())
+        .map(([r]) => int(r.dots))
+    );
+  const ownIds = new Set(own.map(([r]) => r));
+  for (const [r, e] of withEntry) {
+    if (!e || !ownIds.has(r)) continue;
+    if (r.kind === 'loresheet') {
+      if (!(r.levels || []).length) return `Pick at least one level of ${e.name}.`;
+      if (!loresheetAllowed(e, s)) return `${s.clan} can't take ${e.name} at creation.`;
+      if (counts[e.id] > 1) return `${e.name} can be taken only once.`;
+      continue;
+    }
+    if (!advantageAllowed(e, s.clan)) return `${s.clan} can't take ${e.name} at creation.`;
+    const choices = advantageDotChoices(e);
+    if (choices.length && !choices.includes(int(r.dots))) {
+      return `${e.name} takes ${dotChoicesText(choices)} dots (you have ${int(r.dots)}).`;
+    }
+    if (!e.repeatable && counts[e.id] > 1) return `${e.name} can be taken only once.`;
+    if (e.repeatable && e.max_instances && counts[e.id] > e.max_instances) {
+      return `${e.name} can be taken at most ${e.max_instances} times.`;
+    }
+    const req = dotRequirement(e);
+    if (req && (!req.onlyAbove1 || int(r.dots) > 1) && backgroundDots(req.name) < req.dots) {
+      return `${e.name} needs ${req.name} at ${req.dots} dots or more.`;
+    }
+  }
+  return null;
 }
 
 // ---------- Chronicle creation settings (set by the Storyteller) ----------
@@ -795,7 +975,13 @@ export function validateV5Sheet(sheet, allDisciplines = disciplineNames(), setti
   if (flawDots < d.flaw_min_dots) {
     add(V5_SECTION_IDS.advantages, `Take at least ${d.flaw_min_dots} dots of Flaws (you have ${flawDots}).`);
   }
-  if ([...named(s.advantages), ...named(s.flaws)].some((r) => int(r.dots) < 1 || int(r.dots) > 5)) {
+  add(V5_SECTION_IDS.advantages, validateV5AdvantageRows(s));
+  // Free-text rows (custom ones, or every row without the catalog): 1–5 dots. Catalog rows are
+  // held to their printed rating above; a loresheet's dots are the levels it takes.
+  const freeRows = [...named(s.advantages), ...named(s.flaws)].filter(
+    (r) => r.kind !== 'loresheet' && (r.custom || !r.id)
+  );
+  if (freeRows.some((r) => int(r.dots) < 1 || int(r.dots) > 5)) {
     add(V5_SECTION_IDS.advantages, 'Each Advantage or Flaw is 1–5 dots.');
   }
   add(V5_SECTION_IDS.advantages, validateThinBloodMeritsFlaws(s));
@@ -829,18 +1015,24 @@ export function buildV5Payload(sheet) {
 
   const attributes = finalAttributes(s);
   const pred = predatorAdvantages(s);
-  const advantages = [
-    ...named(s.advantages).map((a) => ({
-      name: String(a.name).trim(),
+  // Rows keep the English name (with the note in brackets, as the predator rows do), plus the
+  // catalog id, the note, `custom` for free-text rows on a catalog sheet, and a loresheet's levels.
+  const ownRow = (a, kind) => {
+    const name = String(a.name).trim();
+    const note = String(a.note || '').trim();
+    return {
+      ...(a.id ? { id: a.id } : {}),
+      name: note && kind !== 'loresheet' ? `${name} (${note})` : name,
       dots: int(a.dots),
-      kind: a.kind === 'background' ? 'background' : 'merit',
-    })),
-    ...pred.advantages,
-  ];
-  const flaws = [
-    ...named(s.flaws).map((f) => ({ name: String(f.name).trim(), dots: int(f.dots), kind: 'flaw' })),
-    ...pred.flaws,
-  ];
+      kind,
+      ...(note ? { note } : {}),
+      ...(a.custom ? { custom: true } : {}),
+      ...(kind === 'loresheet' ? { levels: [...(a.levels || [])].map(int).sort((x, y) => x - y) } : {}),
+    };
+  };
+  const advKind = (k) => (k === 'background' || k === 'loresheet' ? k : 'merit');
+  const advantages = [...named(s.advantages).map((a) => ownRow(a, advKind(a.kind))), ...pred.advantages];
+  const flaws = [...clanFlaws(s), ...named(s.flaws).map((f) => ownRow(f, 'flaw')), ...pred.flaws];
   const touchstones = (s.convictions || [])
     .filter((c) => c && String(c.conviction || '').trim())
     .map((c) => ({ name: String(c.touchstone || '').trim(), conviction: String(c.conviction).trim() }));
@@ -888,7 +1080,7 @@ export function buildV5Payload(sheet) {
       ...flaws.map((f) => ({
         name: f.name,
         points: -f.dots,
-        note: f.kind === 'predator' ? 'predator type' : 'flaw',
+        note: f.kind === 'predator' ? 'predator type' : f.source === 'clan' ? 'clan flaw' : 'flaw',
       })),
       ...(wodMeta.thin_blood_merits || []).map((n) => ({ name: n, points: 0, note: 'thin-blood merit' })),
       ...(wodMeta.thin_blood_flaws || []).map((n) => ({ name: n, points: 0, note: 'thin-blood flaw' })),

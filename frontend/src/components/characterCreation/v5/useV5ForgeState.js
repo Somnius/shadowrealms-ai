@@ -27,10 +27,39 @@ import {
   startingXp,
   xpLedger,
 } from '../../../characterSheet/v5/validation';
-import { clanNames, disciplineNames } from '../../../characterSheet/v5/rulesData';
+import { advantageEntries, clanNames, disciplineNames, loresheetEntries } from '../../../characterSheet/v5/rulesData';
 
+// Free-text rows (no catalog): a Background is told apart by its name.
 const isBackgroundName = (name) =>
   V5_BACKGROUNDS.some((b) => String(name || '').toLowerCase().startsWith(b.toLowerCase()));
+
+let rowSeq = 0;
+/** A new Advantage/Flaw row of the catalog forge: id '' (nothing chosen yet), a catalog id or 'custom'. */
+export const newAdvRow = (kind) => ({ key: `adv${(rowSeq += 1)}`, kind, id: '', name: '', dots: 0, note: '' });
+/** A new loresheet row: the sheet's id and the levels taken (each level is bought on its own). */
+export const newLoreRow = () => ({ key: `lore${(rowSeq += 1)}`, id: '', levels: [] });
+
+/** Catalog-forge rows → sheet rows ({id, name, dots, kind, note} or {name, dots, kind, custom}). */
+function catalogRows(advRows, loreRows) {
+  const byId = Object.fromEntries(advantageEntries().map((a) => [a.id, a]));
+  const lore = Object.fromEntries(loresheetEntries().map((l) => [l.id, l]));
+  const toRow = (r) => {
+    if (r.id === 'custom') {
+      return String(r.name || '').trim() ? { name: r.name, dots: Number(r.dots) || 0, kind: r.kind, note: r.note, custom: true } : null;
+    }
+    const e = byId[r.id];
+    return e ? { id: e.id, name: e.name, dots: Number(r.dots) || 0, kind: e.kind, note: r.note } : null;
+  };
+  const advantages = advRows.filter((r) => r.kind !== 'flaw').map(toRow).filter(Boolean);
+  loreRows.forEach((r) => {
+    const l = lore[r.id];
+    if (!l) return;
+    const levels = [...r.levels].sort((a, b) => a - b);
+    advantages.push({ id: l.id, name: l.name, dots: levels.reduce((sum, n) => sum + n, 0), kind: 'loresheet', levels });
+  });
+  const flaws = advRows.filter((r) => r.kind === 'flaw').map(toRow).filter(Boolean);
+  return { advantages, flaws };
+}
 
 const emptyDisciplines = () => [
   { name: '', level: V5_DISCIPLINE_DOTS[0], powers: [] },
@@ -74,8 +103,12 @@ export default function useV5ForgeState(settings, initialValues) {
   const [startingRitual, setStartingRitual] = useState('');
   // One optional Level 1 Oblivion ceremony whose prerequisite power is taken (Players Guide p. 91).
   const [startingCeremony, setStartingCeremony] = useState('');
+  // Without the catalog: free-text rows (the same rows as the Classic forge).
   const [meritRows, setMeritRows] = useState(() => [createEmptyMeritRow()]);
   const [meritNotes, setMeritNotes] = useState('');
+  // With the catalog: Backgrounds, Merits and Flaws (newAdvRow) and loresheets (newLoreRow).
+  const [advRows, setAdvRows] = useState([]);
+  const [loreRows, setLoreRows] = useState([]);
   const [convictions, setConvictions] = useState([{ conviction: '', touchstone: '' }]);
   const [tenets, setTenets] = useState('');
   const [background, setBackground] = useState('');
@@ -89,16 +122,22 @@ export default function useV5ForgeState(settings, initialValues) {
   const [xpDraft, setXpDraft] = useState({ kind: 'attribute', trait: '', skill: '', specialty: '', level: 1 });
   const [fieldErrors, setFieldErrors] = useState({});
 
-  const advantages = meritRows
-    .filter((r) => String(r.name || '').trim() && Number(r.points) > 0)
-    .map((r) => ({
-      name: r.name,
-      dots: Number(r.points),
-      kind: isBackgroundName(r.name) ? 'background' : 'merit',
-    }));
-  const flaws = meritRows
-    .filter((r) => String(r.name || '').trim() && Number(r.points) < 0)
-    .map((r) => ({ name: r.name, dots: -Number(r.points) }));
+  // The catalog (once loaded) turns the step into dropdowns; until then, or without it, free text.
+  const catalogAdvantages = advantageEntries().length > 0;
+  const { advantages, flaws } = catalogAdvantages
+    ? catalogRows(advRows, loreRows)
+    : {
+        advantages: meritRows
+          .filter((r) => String(r.name || '').trim() && Number(r.points) > 0)
+          .map((r) => ({
+            name: r.name,
+            dots: Number(r.points),
+            kind: isBackgroundName(r.name) ? 'background' : 'merit',
+          })),
+        flaws: meritRows
+          .filter((r) => String(r.name || '').trim() && Number(r.points) < 0)
+          .map((r) => ({ name: r.name, dots: -Number(r.points) })),
+      };
 
   const sheet = {
     name,
@@ -199,6 +238,7 @@ export default function useV5ForgeState(settings, initialValues) {
     predatorType, setPredatorType, predatorSpecialty, setPredatorSpecialty,
     predatorDiscipline, setPredatorDiscipline, predatorChoices, setPredatorChoices, extraPowers, setExtraPowers,
     startingRitual, setStartingRitual, startingCeremony, setStartingCeremony, meritRows, setMeritRows, meritNotes, setMeritNotes,
+    catalogAdvantages, advRows, setAdvRows, loreRows, setLoreRows,
     convictions, setConvictions, tenets, setTenets, background, setBackground,
     fledglingHumanity, setFledglingHumanity, thinBloodMerits, setThinBloodMerits,
     thinBloodFlaws, setThinBloodFlaws, xpPurchases, setXpPurchases, xpDraft, setXpDraft,

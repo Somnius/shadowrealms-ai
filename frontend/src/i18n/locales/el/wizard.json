@@ -70,7 +70,13 @@
     "v5GrantOneOf": "{{type}}: διάλεξε ένα από {{list}}.",
     "v5GrantSplit": "{{type}}: μοίρασε {{n}} τελείες σε {{list}} (έχεις {{have}}).",
     "v5GrantDots": "{{type}}: διάλεξε τις τελείες για το {{name}} (ρώτα τον Storyteller σου· το βιβλίο δεν γράφει).",
-    "v5AncillaOnly": "Το {{type}} είναι μόνο για ancillae."
+    "v5AncillaOnly": "Το {{type}} είναι μόνο για ancillae.",
+    "v5AdvNotForClan": "Οι {{clan}} δεν μπορούν να πάρουν {{name}} στη δημιουργία.",
+    "v5AdvDots": "Το {{name}} παίρνει {{allowed}} τελείες (έχεις {{n}}).",
+    "v5AdvOnce": "Το {{name}} παίρνεται μόνο μία φορά.",
+    "v5AdvMaxTimes": "Το {{name}} παίρνεται το πολύ {{n}} φορές.",
+    "v5AdvRequires": "Το {{name}} θέλει {{other}} με τουλάχιστον {{n}} τελείες.",
+    "v5LoreLevel": "Διάλεξε τουλάχιστον ένα επίπεδο από το {{name}}."
   },
   "error": {
     "name": "Το όνομα του χαρακτήρα είναι υποχρεωτικό.",
@@ -296,7 +302,26 @@
     "grantNoRating": "το βιβλίο δεν γράφει τελείες: ρώτα τον Storyteller σου",
     "ancillaOnly": "Μόνο για ancillae (η ηλικία ορίζεται στο βήμα της ηλικίας).",
     "grantAdvantages": "Advantages που δίνει",
-    "grantFlaws": "Flaws που δίνει"
+    "grantFlaws": "Flaws που δίνει",
+    "predatorRowsExtra": "Από τον {{type}} (έξτρα):",
+    "advantagesSubCatalog": "Έως {{adv}} τελείες σε Backgrounds, Merits και loresheets, τουλάχιστον {{flaws}} τελείες σε δικά σου Flaws. Τα advantages και τα Flaws του predator type είναι έξτρα, πάνω από αυτά.",
+    "advRowLabel": "{{kind}} {{n}}",
+    "advCustom": "Δικό σου (με έγκριση του Storyteller)…",
+    "advCustomName": "Όνομα για {{label}}",
+    "advCustomPlaceholder": "Όνομα, όπως στο βιβλίο σου",
+    "advDots": "Τελείες {{name}}",
+    "advNote": "Σημείωση για {{label}}",
+    "advRemove": "Αφαίρεση {{label}}",
+    "advRequires": "Θέλει: {{req}}",
+    "advCustomHint": "Δεν είναι στον κατάλογο: πρέπει να το εγκρίνει ο Storyteller σου.",
+    "advAdd": "+ Πρόσθεσε {{kind}}",
+    "loreDots_one": "{{count}} τελεία",
+    "loreDots_other": "{{count}} τελείες",
+    "loreLevels": "Επίπεδα του {{name}}",
+    "noPositiveStatus": "Οι {{clan}} δεν αγοράζουν θετικό Status στη δημιουργία.",
+    "clanFlaw": "Οι {{clan}} ξεκινούν με αυτό· μετράει ως ένα από τα δικά σου Flaws.",
+    "loreHelp": "Κάθε επίπεδο είναι ξεχωριστό όφελος και κοστίζει τον αριθμό του σε τελείες Advantages· δεν περιλαμβάνει τα χαμηλότερα (core σελ. 190).",
+    "thinHelpCatalog": "Οι thin-bloods παίρνουν επίσης {{lo}}–{{hi}} thin-blood Merits και ίσο αριθμό thin-blood Flaws (core σελ. 182). Δεν έχουν τελείες και δεν μετράνε στα παραπάνω σύνολα."
   },
   "guided": {
     "bannerLabel": "Πρόταση του οδηγού",

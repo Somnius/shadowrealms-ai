@@ -33,6 +33,13 @@ const PATTERNS = [
   [/^(.+): share (\d+) dots between (.+) \(you have (\d+)\)\.$/, (m) => t('wizard:validation.v5GrantSplit', '{{type}}: share {{n}} dots between {{list}} (you have {{have}}).', { type: m[1], n: m[2], list: m[3].replace(/ and /g, ` ${t('wizard:v5.grantAnd', 'and')} `), have: m[4] })],
   [/^(.+): choose the dots for (.+) \(ask your Storyteller; the book prints none\)\.$/, (m) => t('wizard:validation.v5GrantDots', '{{type}}: choose the dots for {{name}} (ask your Storyteller; the book prints none).', { type: m[1], name: m[2] })],
   [/^(.+) is for ancillae only\.$/, (m) => t('wizard:validation.v5AncillaOnly', '{{type}} is for ancillae only.', { type: m[1] })],
+  // V5 catalog Advantages, Flaws and loresheets (validateV5AdvantageRows)
+  [/^(.+) can't take (.+) at creation\.$/, (m) => t('wizard:validation.v5AdvNotForClan', "{{clan}} can't take {{name}} at creation.", { clan: m[1], name: m[2] })],
+  [/^(.+) takes (.+) dots \(you have (\d+)\)\.$/, (m) => t('wizard:validation.v5AdvDots', '{{name}} takes {{allowed}} dots (you have {{n}}).', { name: m[1], allowed: m[2].replace(/ or /g, ` ${t('wizard:v5.grantOr', 'or')} `), n: m[3] })],
+  [/^(.+) can be taken only once\.$/, (m) => t('wizard:validation.v5AdvOnce', '{{name}} can be taken only once.', { name: m[1] })],
+  [/^(.+) can be taken at most (\d+) times\.$/, (m) => t('wizard:validation.v5AdvMaxTimes', '{{name}} can be taken at most {{n}} times.', { name: m[1], n: m[2] })],
+  [/^(.+) needs (.+) at (\d+) dots or more\.$/, (m) => t('wizard:validation.v5AdvRequires', '{{name}} needs {{other}} at {{n}} dots or more.', { name: m[1], other: m[2], n: m[3] })],
+  [/^Pick at least one level of (.+)\.$/, (m) => t('wizard:validation.v5LoreLevel', 'Pick at least one level of {{name}}.', { name: m[1] })],
   // V5 chronicle creation settings (settingsErrors)
   [/^The Storyteller doesn't allow the (.+) predator type in this chronicle\.$/, (m) => t('wizard:validation.v5SettingsPredator', "The Storyteller doesn't allow the {{type}} predator type in this chronicle.", { type: m[1] })],
   [/^The Storyteller doesn't allow (.+) characters in this chronicle\.$/, (m) => t('wizard:validation.v5SettingsAge', "The Storyteller doesn't allow {{age}} characters in this chronicle.", { age: m[1] })],

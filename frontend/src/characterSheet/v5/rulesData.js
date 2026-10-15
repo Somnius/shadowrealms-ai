@@ -14,6 +14,14 @@
  *               prerequisite: [[name]] | null (every group needed, any name of a group will do),
  *               dice_pool, rouse_cost, desc, book, page }
  *   ritual    { id, name, level, kind: 'ritual' | 'ceremony', prerequisite: [[name]] | null, desc, book, page }
+ *   advantage { id, name, kind: 'background' | 'merit' | 'flaw', group, dots: { min, max } | { allowed } | null,
+ *               levels: [{ dots, name }], thin_blood, caitiff, ghoul_only, coterie, clans_only: [name] | null,
+ *               cannot_buy_for: [name], repeatable, max_instances, requires, aliases, desc, book, page }
+ *   loresheet { id, name, restriction, clans_only: [name] | null, disciplines_only: [name] | null,
+ *               thin_blood_only, levels: [{ dots, name, desc }], aliases, desc, book, page }
+ * Clans also carry caitiff / thin_blood and `creation` ({ flaws: [{ id, name, dots }],
+ * no_positive_status }, the Caitiff rules); without the catalog advantages and loresheets are empty
+ * and the forge falls back to free text.
  */
 import V5_RULES from '../../rules/v5.json';
 
@@ -82,6 +90,8 @@ function fromRulesJson() {
       page: null,
     })),
     rituals: [],
+    advantages: [],
+    loresheets: [],
     books: [],
   };
 }
@@ -95,12 +105,15 @@ function fromCatalog(cat) {
   const discName = Object.fromEntries((cat.disciplines || []).map((d) => [d.id, d.name]));
   const powerName = {};
   (cat.disciplines || []).forEach((d) => (d.powers || []).forEach((p) => (powerName[p.id] = p.name)));
+  const advName = Object.fromEntries((cat.advantages || []).map((a) => [a.id, a.name]));
+  const clanNamesOf = (ids) => (Array.isArray(ids) && ids.length ? ids.map((c) => clanName[c] || nameFromId(c).name) : null);
+  // Predator grants name catalog Merits, Backgrounds and Flaws by id: use their real names.
   const grant = (g, fallbackKind) => ({
     pick: g.pick || 'all',
     dots_total: g.dots_total ?? null,
     options: (g.options || []).map((o) => {
       const { kind, name } = nameFromId(o.id);
-      return { id: o.id, name, dots: o.dots ?? null, note: o.note || '', kind: kind || fallbackKind };
+      return { id: o.id, name: advName[o.id] || name, dots: o.dots ?? null, note: o.note || '', kind: kind || fallbackKind };
     }),
   });
   const pname = (x) => {
@@ -142,6 +155,16 @@ function fromCatalog(cat) {
       desc: pickDesc(c),
       book: c.book,
       page: c.page,
+      caitiff: Boolean(c.caitiff),
+      thin_blood: Boolean(c.thin_blood),
+      creation: c.creation
+        ? {
+            flaws: (c.creation.flaws || []).map((f) => ({ id: f.id, name: advName[f.id] || nameFromId(f.id).name, dots: f.dots })),
+            no_positive_status: Boolean(c.creation.no_positive_status),
+            book: c.creation.book || c.book,
+            page: c.creation.page || null,
+          }
+        : null,
     })),
     disciplines: (cat.disciplines || []).map((d) => ({
       id: d.id,
@@ -182,6 +205,42 @@ function fromCatalog(cat) {
       page: p.page,
     })),
     rituals: [...(cat.rituals || []).map(ritualOf('ritual')), ...(cat.ceremonies || []).map(ritualOf('ceremony'))],
+    advantages: (cat.advantages || []).map((a) => ({
+      id: a.id,
+      name: a.name,
+      kind: a.kind,
+      group: a.group || '',
+      dots: a.dots || null,
+      levels: (a.levels || []).map((l) => ({ dots: l.dots, name: l.name, desc: pickDesc(l) })),
+      thin_blood: Boolean(a.thin_blood),
+      caitiff: Boolean(a.caitiff),
+      ghoul_only: Boolean(a.ghoul_only),
+      coterie: Boolean(a.coterie),
+      clans_only: clanNamesOf(a.clans_only),
+      cannot_buy_for: (a.cannot_buy_for || []).map((c) => clanName[c.clan] || nameFromId(c.clan).name),
+      repeatable: Boolean(a.repeatable),
+      max_instances: a.max_instances ?? null,
+      requires: a.requires || null,
+      aliases: a.aliases || [],
+      desc: pickDesc(a),
+      book: a.book,
+      page: a.page,
+    })),
+    loresheets: (cat.loresheets || []).map((l) => ({
+      id: l.id,
+      name: l.name,
+      restriction: l.restriction || null,
+      clans_only: clanNamesOf(l.clans_only),
+      disciplines_only: Array.isArray(l.disciplines_only) && l.disciplines_only.length
+        ? l.disciplines_only.map((d) => discName[d] || nameFromId(d).name)
+        : null,
+      thin_blood_only: Boolean(l.thin_blood_only),
+      levels: (l.levels || []).map((x) => ({ dots: x.dots, name: x.name, desc: pickDesc(x) })),
+      aliases: l.aliases || [],
+      desc: pickDesc(l),
+      book: l.book,
+      page: l.page,
+    })),
     books: cat.books || [],
   };
 }
@@ -220,6 +279,43 @@ export function powersOf(discipline) {
 /** Rituals ('ritual') or Oblivion ceremonies ('ceremony') of a level or lower. */
 export function ritualsOf(kind, maxLevel = 5) {
   return current.rituals.filter((r) => r.kind === kind && r.level <= maxLevel);
+}
+
+/** Catalog Merits, Backgrounds and Flaws (empty without the catalog). */
+export const advantageEntries = () => current.advantages || [];
+/** Catalog loresheets (empty without the catalog). */
+export const loresheetEntries = () => current.loresheets || [];
+
+const bareName = (name) => String(name || '').replace(/\s*\([^)]*\)\s*$/, '').trim().toLowerCase();
+const named = (e, want) => [e.name, ...(e.aliases || [])].some((n) => String(n).toLowerCase() === want);
+
+/**
+ * The catalog entry of a sheet row: by id, else by name or alias (a trailing "(note)" ignored).
+ * kind 'flaw' looks among Flaws only, anything else among Merits and Backgrounds. Names shared by
+ * several entries ("Clan Curse") prefer the `special` one ('thin_blood' | 'caitiff': the sheet's
+ * clan), then the plain one.
+ */
+export function findAdvantage(row, kind, special = null) {
+  const list = advantageEntries();
+  if (row?.id) return list.find((a) => a.id === row.id) || null;
+  const want = bareName(row?.name ?? row);
+  if (!want) return null;
+  const flaw = kind === 'flaw';
+  const hits = list.filter((a) => (a.kind === 'flaw') === flaw && named(a, want));
+  return (
+    hits.find((a) => special && a[special]) ||
+    hits.find((a) => !a.thin_blood && !a.caitiff) ||
+    hits[0] ||
+    null
+  );
+}
+
+/** The catalog loresheet of a sheet row: by id, else by name or alias. */
+export function findLoresheet(row) {
+  const list = loresheetEntries();
+  if (row?.id) return list.find((l) => l.id === row.id) || null;
+  const want = bareName(row?.name ?? row);
+  return want ? list.find((l) => named(l, want)) || null : null;
 }
 
 /** A description in the UI language, English as fallback. */

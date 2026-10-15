@@ -70,7 +70,13 @@
     "v5GrantOneOf": "{{type}}: choose one of {{list}}.",
     "v5GrantSplit": "{{type}}: share {{n}} dots between {{list}} (you have {{have}}).",
     "v5GrantDots": "{{type}}: choose the dots for {{name}} (ask your Storyteller; the book prints none).",
-    "v5AncillaOnly": "{{type}} is for ancillae only."
+    "v5AncillaOnly": "{{type}} is for ancillae only.",
+    "v5AdvNotForClan": "{{clan}} can't take {{name}} at creation.",
+    "v5AdvDots": "{{name}} takes {{allowed}} dots (you have {{n}}).",
+    "v5AdvOnce": "{{name}} can be taken only once.",
+    "v5AdvMaxTimes": "{{name}} can be taken at most {{n}} times.",
+    "v5AdvRequires": "{{name}} needs {{other}} at {{n}} dots or more.",
+    "v5LoreLevel": "Pick at least one level of {{name}}."
   },
   "error": {
     "name": "Character name is required.",
@@ -296,7 +302,26 @@
     "grantNoRating": "the book prints no rating: ask your Storyteller",
     "ancillaOnly": "Ancillae only (set the age in the Age step).",
     "grantAdvantages": "Advantages it gives",
-    "grantFlaws": "Flaws it gives"
+    "grantFlaws": "Flaws it gives",
+    "predatorRowsExtra": "From {{type}} (extra):",
+    "advantagesSubCatalog": "Up to {{adv}} dots of Backgrounds, Merits and loresheets, at least {{flaws}} dots of Flaws of your own. The predator type's advantages and Flaws are extra, on top of these.",
+    "advRowLabel": "{{kind}} {{n}}",
+    "advCustom": "Custom (Storyteller approval)…",
+    "advCustomName": "{{label}} name",
+    "advCustomPlaceholder": "Name, as in your book",
+    "advDots": "{{name}} dots",
+    "advNote": "{{label}} note",
+    "advRemove": "Remove {{label}}",
+    "advRequires": "Needs: {{req}}",
+    "advCustomHint": "Not in the catalog: your Storyteller has to approve it.",
+    "advAdd": "+ Add {{kind}}",
+    "loreDots_one": "{{count}} dot",
+    "loreDots_other": "{{count}} dots",
+    "loreLevels": "{{name}} levels",
+    "noPositiveStatus": "{{clan}} can't buy positive Status at creation.",
+    "clanFlaw": "{{clan}} start with it; it counts as one of your own Flaws.",
+    "loreHelp": "Each level is its own benefit and costs its number in Advantage dots; it does not include the lower ones (core p. 190).",
+    "thinHelpCatalog": "Thin-bloods also take {{lo}}–{{hi}} thin-blood Merits and the same number of thin-blood Flaws (core p. 182). They have no dot value and don't count toward the totals above."
   },
   "guided": {
     "bannerLabel": "Suggested by the guide",
