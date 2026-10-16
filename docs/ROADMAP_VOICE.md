@@ -12,9 +12,9 @@ How each phase runs: build in its own git worktree → tests and CI green → on
 | 1 | Listen with the phone's own voices | CSP and glyphs · player voice settings · chronicle read-out defaults · Listen toggle and queue · read-out rules | 0.16 | until 02:00 | done: released 0.16.0 |
 | 2 | Server voices | speech container · gender on the sheet · TTS jobs and cache · voice catalog and narrator voices · server mode in the app | 0.17 | until 03:45 | done: released 0.17.0 |
 | 3 | Speaking | clip upload · transcription jobs and the GPU policy · recorder with the timer · review and text steps · mic marker and replay · phone dictation | 0.18 | until 06:00 | done: released 0.18.0 |
-| 4 | Language override | translator · ahead-of-time translation · captions with "show original" · speak in one language, write in the other | 0.19 | until 06:45 | built, names fix and review in progress |
-| 5 | Ops and polish | health panel · cache and disk caps · per-character voice · device checklist | 0.20 | after the deadline | building |
-| 6 | Transcript check | Whisper hints with the chronicle's names · recmeets Laya-words flags misheard words · Krikri fixes only those (split words, slang) · changed words marked, tap to undo | 0.21 | until 06:30 | building |
+| 4 | Language override | translator · ahead-of-time translation · captions with "show original" · speak in one language, write in the other | 0.19 | until 06:45 | done: released 0.19.0 |
+| 5 | Ops and polish | health panel · cache and disk caps · per-character voice · device checklist | 0.20 | after the deadline | built, review fixes in progress |
+| 6 | Transcript check | Whisper hints with the chronicle's names · recmeets Laya-words flags misheard words · Krikri fixes only those (split words, slang) · changed words marked, tap to undo | 0.21 | until 06:30 | built on `voice/p6-check`, release 0.21.0 pending review |
 
 ## Decisions (2026-10-16)
 
@@ -66,11 +66,11 @@ How each phase runs: build in its own git worktree → tests and CI green → on
 
 ## Phase 4 — Language override (0.19)
 
-- [ ] 4.1 Translator role, translations table, translate lane, prompt checked on 20 lines each way. Status: not started.
-- [ ] 4.2 Translate right after a message is saved for the players who need it; message language stored when known. Status: not started.
-- [ ] 4.3 Hearing in the chosen language, captions under messages with "show original" (typed messages too). Status: not started.
-- [ ] 4.4 Speak in one language, write in the other: the text step shows both; the original stays as the caption. Status: not started.
-- [ ] 4.5 Release 0.19: docs, CHANGELOG. Status: not started.
+- [x] 4.1 Translator role, translations table, translate lane, prompt checked on 20 lines each way. Status: done 00:05. `translator` role (Krikri, no Ollama fallback), `message_translations`, one background worker in the backend (not a lane in the speech service: it is an LM Studio call, not audio), few-shot prompt + glossary file. Phase 0 lines + game lines read: meaning and game terms kept; names are now hidden behind ⟦n⟧ placeholders and put back exactly (they were transliterated before: Ελένη → Eleni), lowercase hunger kept as Hunger, Greek articles fixed to the name's gender. pytest with a fake LM Studio.
+- [x] 4.2 Translate right after a message is saved for the players who need it; message language stored when known. Status: done 00:05. Members' hear-in languages cached 60 s (cleared when someone saves voice settings); `messages.lang`/`orig_lang`. pytest: a hear-in-Greek member gets a row in one job, one call per (message, language), no job when nobody needs it.
+- [x] 4.3 Hearing in the chosen language, captions under messages with "show original" (typed messages too). Status: done 00:05. `waiting_translation` then the original after ~9 s; captions with EL/EN chip and 44-px swap button; phone voices use the translation when ready. jest for the swap, pytest for 404/waiting. Not tried on phones.
+- [x] 4.4 Speak in one language, write in the other: the text step shows both; the original stays as the caption. Status: done 00:05. STT poll translates when done; `POST /api/voice/translate` for phone dictation and "Translate again"; original row so the speaker hears his own words. Round-trip pytest.
+- [x] 4.5 Release 0.19: docs, CHANGELOG. Status: done 00:05. Waiting for review, merge, deploy (Krikri must stay loaded in LM Studio) and phone check.
 
 ## Phase 5 — Ops and polish (0.20)
 
@@ -80,10 +80,20 @@ How each phase runs: build in its own git worktree → tests and CI green → on
 - [ ] 5.4 Device checklist in VOICE.md and a load check (4 listeners + one narration under 3 s to first audio). Status: not started.
 - [ ] 5.5 Release 0.20. Status: not started.
 
+## Phase 6 — Transcript check (0.21)
+
+- [x] 6.1 Whisper hint: the chronicle's character, NPC and location names and a short WoD glossary as `initial_prompt` (≤ 400 characters). Status: done. On the test clips it fixed "the Prince" casing and Elysium, but once glued «Άντε ρε βλαχάρα» into «Άντερευλαχάρα»: it biases, it can hurt.
+- [x] 6.2 Laya-words (somniusx/recmeets-laya-words, ONNX int8, 4 CPU threads) in the speech service: Whisper's word probabilities in, the chance each unsure word (< 0.985, 3+ letters, ±10 words of context) is a mistake out, least sure first, 2 s budget. Status: done, ~0.12 s a word.
+- [x] 6.3 Krikri (LM Studio, temperature 0, 3 s budget) proposes a fix for the flagged spans only (Laya ≥ 0.7, plus a neighbour Whisper was < 0.7 sure of, for split words); fixes that do not sound like the span (synonyms), rewrites and accent-only changes are dropped. Status: done.
+- [x] 6.4 Recorder text step: fixed words as 44-px chips under the text ("heard: …"), a tap puts Whisper's words back (and again re-applies the fix). EN + EL. `voice_clips.transcript_raw` keeps Whisper's text, `transcript_checked` the segments. Status: done.
+- [x] 6.5 Evaluation on the phase 0 samples and synthetic slang lines (VOICE.md). Status: done; the check is conservative and misses most mistakes Whisper was sure of.
+- [ ] 6.6 Release 0.21 after Lef's review; rebuild the speech image (tokenizers pinned) and copy `data/voice/models/laya-words`. Status: waiting.
+
 ## Log
 
 - 23:05 — Plan revised with the answers; this file created. Nothing built yet.
 - 23:55 — Phase 3 (speaking) built on `voice/p3-speak`, release 0.18.0 pending review.
+- 00:05 — Phase 4 (language override) built on `voice/p4-translate` (p3 merged in), release 0.19.0 pending review.
 
 ## Left for later
 

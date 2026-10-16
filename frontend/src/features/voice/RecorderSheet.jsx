@@ -58,6 +58,7 @@ export default function RecorderSheet({
   campaignId,
   locationId,
   lang,
+  writeLang = 'same',
   enAccent = 'us',
   maxSeconds = 180,
   phoneDictation = false,
@@ -93,6 +94,11 @@ export default function RecorderSheet({
   const [pulse, setPulse] = useState(false);
   const [blobUrl, setBlobUrl] = useState(null);
   const [text, setText] = useState('');
+  // write-in language (docs/VOICE.md §7): {text, from} of the line in the other language, or null
+  const [translated, setTranslated] = useState(null);
+  const [trNote, setTrNote] = useState('');
+  const sendLang = writeLang === 'en' || writeLang === 'el' ? writeLang : null;
+  const crossing = !!sendLang && sendLang !== spoken;
   const [note, setNote] = useState('');
   const [changes, setChanges] = useState([]); // phase 6: [{ fixed, raw, reverted }]
   const [busy, setBusy] = useState('');
@@ -103,6 +109,7 @@ export default function RecorderSheet({
   const [dur, setDur] = useState(0);
   const [rate, setRate] = useState(1);
   const rec = useRef(null);
+  const translateRef = useRef(() => {});
   const stream = useRef(null);
   const chunks = useRef([]);
   const blob = useRef(null);
@@ -138,6 +145,7 @@ export default function RecorderSheet({
             if (!live) return;
             setText(stripFillers(final));
             setStep('text');
+            translateRef.current(stripFillers(final));
           })
           .catch(() => {
             if (!live) return;
@@ -257,6 +265,19 @@ export default function RecorderSheet({
     }
   };
 
+  const translate = async (from) => {
+    const src = String(from || '').trim();
+    if (!crossing || !src) return;
+    setTrNote('');
+    setBusy(t('voice:rec.translating', 'Translating…'));
+    const r = await api('/voice/translate', { method: 'POST', body: { text: src, from: spoken, to: sendLang } });
+    setBusy('');
+    if (r.ok && r.data && r.data.text) setTranslated({ text: r.data.text, from: src });
+    else setTrNote(t('voice:rec.translateFailed', 'Could not translate it now. Send it as you said it, or try again.'));
+  };
+
+  translateRef.current = translate;
+
   const transcribe = async () => {
     if (!blob.current) return;
     if (audioEl.current) audioEl.current.pause();
@@ -288,6 +309,8 @@ export default function RecorderSheet({
     setBusy('');
     if (job.state === 'done') {
       setText(stripFillers(job.text));
+      if (crossing && job.translated && job.translated.text) setTranslated({ text: job.translated.text, from: stripFillers(job.text) });
+      else if (crossing && job.translate_failed) setTrNote(t('voice:rec.translateFailed', 'Could not translate it now. Send it as you said it, or try again.'));
       setChanges(checkedChanges(job.checked).map((c) => ({ ...c, reverted: false })));
       if (!String(job.text || '').trim()) setNote(t('voice:rec.empty', 'No words were heard. Type what you said, or record again.'));
     } else setNote(sttErrorText(job.error || 'timeout'));
@@ -300,7 +323,10 @@ export default function RecorderSheet({
     dictation.current = d;
     setBusy(t('voice:rec.dictating', 'Listening… tap Stop when you are done.'));
     d.done
-      .then((final) => setText(stripFillers(final)))
+      .then((final) => {
+        setText(stripFillers(final));
+        translateRef.current(stripFillers(final));
+      })
       .catch(() => setNote(t('voice:rec.dictationFailed', 'Phone dictation stopped. Type what you said.')))
       .finally(() => {
         dictation.current = null;
@@ -312,14 +338,23 @@ export default function RecorderSheet({
   const send = async () => {
     if (!text.trim()) return;
     setBusy(t('voice:rec.sending', 'Sending…'));
-    const ok = await onSend({ text: text.trim(), clipId, source: clipId ? 'voice' : source === 'phone-voice' ? 'phone-voice' : null });
+    const tr = crossing && translated && translated.text.trim() ? translated : null;
+    const ok = await onSend({
+      text: tr ? tr.text.trim() : text.trim(),
+      clipId,
+      source: clipId ? 'voice' : source === 'phone-voice' ? 'phone-voice' : null,
+      ...(tr ? { original: { text: text.trim(), lang: spoken } } : {}),
+    });
     setBusy('');
     if (ok !== false) onClose();
   };
 
   const phase = timerPhase(elapsed, maxSeconds);
   const left = Math.max(0, maxSeconds - elapsed);
-  const langLabel = spoken === 'el' ? 'Ελληνικά' : 'English';
+  const langName = (l) => (l === 'el' ? t('voice:langName.el', 'Greek') : t('voice:langName.en', 'English'));
+  const langLabel = langName(spoken);
+  const sendLabel = langName(sendLang);
+  const stale = !!translated && translated.from !== text.trim();
 
   return (
     <section className="sr-recsheet" aria-label={t('voice:rec.title', 'Voice message')} data-testid="recorder-sheet">
@@ -332,7 +367,7 @@ export default function RecorderSheet({
         </span>
         {step !== 'text' ? (
           <div className="sr-rec-lang" role="group" aria-label={t('voice:rec.spokenLang', 'Language you speak')}>
-            {[['el', '🇬🇷', 'Ελληνικά'], ['en', enAccent === 'gb' ? '🇬🇧' : '🇺🇸', 'English']].map(([v, short, full]) => (
+            {[['el', '🇬🇷', langName('el')], ['en', enAccent === 'gb' ? '🇬🇧' : '🇺🇸', langName('en')]].map(([v, short, full]) => (
               <button
                 key={v}
                 type="button"
@@ -420,6 +455,20 @@ export default function RecorderSheet({
         <div className="sr-rec-text">
           <span className="sr-rec-text__lang">{langLabel}</span>
           <label className="sr-visually-hidden" htmlFor="sr-rec-text">{t('voice:rec.text', 'What you said')}</label>
+          <textarea id="sr-rec-text" className="sr-rec-text__input" rows={crossing ? 3 : 4} value={text} onChange={(e) => setText(e.target.value)} />
+          {crossing && translated ? (
+            <div className="sr-rec-text__translated">
+              <label className="sr-rec-text__lang" htmlFor="sr-rec-translated">{t('voice:rec.sentIn', '{{lang}} (sent)', { lang: sendLabel })}</label>
+              <textarea id="sr-rec-translated" className="sr-rec-text__input" rows={3} value={translated.text} onChange={(e) => setTranslated({ ...translated, text: e.target.value })} />
+              <p className="sr-rec__note">{t('voice:rec.originalKept', 'Your words in {{lang}} stay under the message as “your original”.', { lang: langLabel })}</p>
+            </div>
+          ) : null}
+          {crossing && text.trim() && (!translated || stale) && !busy ? (
+            <Button type="button" variant="secondary" size="sm" onClick={() => translate(text)}>
+              {translated ? t('voice:rec.translateAgain', 'Translate again') : t('voice:rec.translateTo', 'Write it in {{lang}}', { lang: sendLabel })}
+            </Button>
+          ) : null}
+          {trNote ? <p className="sr-rec__note" role="alert">{trNote}</p> : null}
           <textarea id="sr-rec-text" className="sr-rec-text__input" rows={4} value={text} onChange={(e) => setText(e.target.value)} />
           {changes.length ? (
             <div className="sr-rec-fixes" aria-label={t('voice:rec.fixesLabel', 'Words fixed by the check')}>

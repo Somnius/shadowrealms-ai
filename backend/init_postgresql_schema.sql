@@ -204,7 +204,9 @@ CREATE TABLE IF NOT EXISTS messages (
     reply_to_id     INTEGER REFERENCES messages(id) ON DELETE SET NULL,  -- quoted message (v0.10 phase 3)
     source          TEXT,                                                -- NULL | 'voice' | 'phone-voice'
     clip_id         TEXT,                                                -- voice_clips.clip_id
-    clip_ms         INTEGER                                              -- clip length
+    clip_ms         INTEGER,                                             -- clip length
+    lang            TEXT,                                                -- 'en' | 'el': language of content
+    orig_lang       TEXT                                                 -- set when the original is in message_translations
 );
 
 CREATE INDEX IF NOT EXISTS idx_messages_location ON messages(campaign_id, location_id, created_at DESC);
@@ -679,10 +681,25 @@ CREATE TABLE IF NOT EXISTS voice_clips (
     lang            TEXT,
     transcript_raw  TEXT,
     transcript_checked TEXT,  -- voice phase 6: JSON segments [{"t": text, "raw": Whisper's words}]
+    translated_lang TEXT,
+    translated_text TEXT,
     created_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE INDEX IF NOT EXISTS idx_voice_clips_message ON voice_clips(message_id);
 CREATE INDEX IF NOT EXISTS idx_voice_clips_campaign ON voice_clips(campaign_id);
+
+-- -----------------------------------------------------------------------------
+-- message_translations: a message in the other language ('ai') or the player's original words ('original')
+-- -----------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS message_translations (
+    message_id      INTEGER NOT NULL REFERENCES messages(id) ON DELETE CASCADE,
+    lang            TEXT NOT NULL,
+    text            TEXT NOT NULL,
+    kind            TEXT NOT NULL DEFAULT 'ai',
+    model           TEXT,
+    created_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (message_id, lang)
+);
 
 COMMIT;

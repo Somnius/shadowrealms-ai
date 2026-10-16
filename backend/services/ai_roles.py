@@ -12,6 +12,9 @@ Roles:
   (default: LM Studio's loaded model). Measured 2026-10-04 on 12 labelled messages:
   llama3.2:3b called 7 of 7 OOC messages "in character" (useless, and warnings lead to bans);
   gemma-4-e2b got 12/12. So this role never falls back to the small Ollama model.
+- translator: a chat line into the other language for players who hear/read in it (voice
+  phase 4, services/translation.py). Default: LM Studio `llama-krikri-8b-instruct` (0.1-0.5 s a
+  line in phase 0). Never falls back to the small Ollama model either (it writes poor Greek).
 
 Settings live in app_settings (`ai_role:<role>:provider`, `ai_role:<role>:model`);
 cloud keys in secret_store (`anthropic_api_key`, `openai_api_key`). A cloud provider is
@@ -43,7 +46,7 @@ from services.ai_providers import (
 
 logger = logging.getLogger(__name__)
 
-ROLES = ("storyteller_en", "storyteller_el", "utility", "classifier")
+ROLES = ("storyteller_en", "storyteller_el", "utility", "classifier", "translator")
 CLOUD_KEY_NAMES = {"anthropic": "anthropic_api_key", "openai": "openai_api_key"}
 
 
@@ -57,6 +60,7 @@ def role_defaults() -> Dict[str, Dict[str, str]]:
         "storyteller_el": {"provider": "lm_studio", "model": _env("STORYTELLER_EL_MODEL", "llama-krikri-8b-instruct")},
         "utility": {"provider": _env("UTILITY_PROVIDER", "ollama"), "model": _env("UTILITY_MODEL", "llama3.2:3b")},
         "classifier": {"provider": "lm_studio", "model": ""},  # "" = the loaded LM Studio model
+        "translator": {"provider": "lm_studio", "model": _env("TRANSLATOR_MODEL", "llama-krikri-8b-instruct")},
     }
 
 
@@ -130,8 +134,8 @@ def _model_for(provider: str, model: str, role: str) -> str:
     if model:
         return model
     if provider == "lm_studio":
-        if role == "storyteller_el":
-            return role_defaults()["storyteller_el"]["model"]
+        if role in ("storyteller_el", "translator"):
+            return role_defaults()[role]["model"]
         return effective_lm_studio_model()
     return DEFAULT_MODELS.get(provider, "")
 
@@ -152,7 +156,7 @@ def fallback_chain(role: str, cfg: Optional[Dict[str, str]] = None) -> List[Tupl
             if m != loaded:
                 chain.append(("lm_studio", loaded))
             break
-    if not any(p == "ollama" for p, _ in chain) and role != "classifier":
+    if not any(p == "ollama" for p, _ in chain) and role not in ("classifier", "translator"):
         util = role_defaults()["utility"]
         chain.append(("ollama", util["model"] if util["provider"] == "ollama" else DEFAULT_MODELS["ollama"]))
     if not any(p == "lm_studio" for p, _ in chain):

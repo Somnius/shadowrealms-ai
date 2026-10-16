@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.21.0] - 2026-10-17 - Transcript check
+
+### Added
+- **Transcript check.** After Transcribe, Whisper's text is checked: the chronicle's names and a short WoD glossary are given to Whisper as a hint, Laya-words (somniusx/recmeets-laya-words, a fine-tune of convaiinnovations' Laya, Apache 2.0) flags words that were probably misheard, and Krikri fixes only those (it may join a split word, «βλυχ άρα» → «βλαχάρα», and keeps slang and swearing). Fixed words are shown as chips under the text; a tap puts back what Whisper heard. If anything is slow or down, Whisper's text is shown unchanged. EN + EL.
+- `voice_clips.transcript_checked`; speech `/stt` takes `prompt` and `check`; `VOICE_TRANSCRIPT_CHECK`, `TRANSCRIPT_CHECK_MODEL`.
+
+## [0.19.0] - 2026-10-17 - Language override
+
+### Added
+- **Hear and read in your language.** Profile → Voice → "Read and hear messages in" (as written by default). Lines in the other language are translated ahead of time, right after they are saved, for the players who need it; the body shows your language and the original sits under it as a two-line italic caption with an EL/EN chip and a 44-px "Show original" button that swaps them. Typed lines too.
+- **Listening in your language.** Server voices speak the translation (waiting a few seconds for it, then the original); phone voices read it when it is ready.
+- **Write in the other language.** "Voice messages are sent in": speak Greek, send English (or the other way round). The recorder's text step shows both, editable; the original is kept with the message, shown to everyone (the Storyteller too) under "Show original" / "Show your original", and played back to you in your own words.
+- **Translator AI role** (Admin → AI): Krikri in LM Studio by default, temperature 0, with a game-term glossary (`backend/services/translation_glossary.txt`) and a few examples; names (the chronicle's characters, NPCs, locations and other proper names) are hidden from the model and put back exactly as written, so Ελένη stays Ελένη and Marcus stays Marcus; never falls back to the small Ollama model.
+- Routes: `GET /api/voice/translations`, `POST /api/voice/translate`; `original` on `POST /api/voice/tts/jobs` and on sending a message. EN + EL.
+
+### Changed
+- Schema: `message_translations`, `messages.lang`, `messages.orig_lang`.
+- TTS job limit 90 a minute (a line waiting for its translation is asked again).
+
 ## [0.18.0] - 2026-10-17 - Speaking
 
 ### Added

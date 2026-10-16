@@ -75,6 +75,55 @@ Rate limits per user: 6 clips a minute (60 an hour), 120 job polls and 120 repla
 
 Not tried on real phones yet (step 0.5): iOS home-screen mic access, which format each phone records, 2× review playback on older iOS, and Opus replay on the iPhone.
 
+## Language override (0.19)
+
+- **Hear in** (Profile → Voice → "Read and hear messages in": As written / English / Ελληνικά; default as written, each player opts in). Lines in the other language are translated **ahead of time**: right after a message is saved, the server checks which languages the chronicle's members hear in (their settings, cached 60 s) and queues a translation job on one background worker. Nothing is translated inside an audio request.
+- **On screen** (typed lines too): the body shows your language; the other text sits under it as a 13-px italic caption (`--sr-text-2`, two lines with "more") with an **EL** / **EN** text chip, and a 44-px **Show original** button (`--sr-arcane-300`) swaps body and caption for that row (not saved). A line that is still being translated shows as written and swaps when its translation arrives (the room asks every 3 s while some are pending).
+- **Listening**: server voices speak the translation in the voice of that language; while it is not ready the server answers `waiting_translation` and the app asks again (6 times, 1.5 s apart), then reads the original. Phone voices read the translation if it is there by the time the line's turn comes, else the original.
+- **Write in** (Profile → Voice → "Voice messages are sent in": The language I speak / English / Ελληνικά): speak Greek and send English, or the other way round. The recorder's text step shows both: your words (editable) and the line that will be sent, labelled "English (sent)" (editable too; "Translate again" after you change your words). Phone dictation gets the same through `POST /api/voice/translate`. Your words are kept with the message: everyone, the Storyteller included, sees them as the caption with "Show original" ("Show your original" on your own lines), and when you hear in your language you hear your own words, not a translation back.
+- **Translator**: the `translator` AI role (Admin → AI; default LM Studio `llama-krikri-8b-instruct`, temperature 0; falls back to LM Studio's loaded model, never to the small Ollama model). Names never reach the model: proper names (the chronicle's characters, NPCs and locations, plus capitalised words that read as names) become ⟦1⟧, ⟦2⟧… placeholders it copies, with a man/woman hint for the Greek article, and go back in exactly as written (if a placeholder gets lost the line is translated once more without them). The prompt keeps dice, *actions* and markdown, asks for the exact meaning, and carries a few examples (one is "misses by a hair" → «αστοχεί παρά τρίχα», which it once reversed) plus the lines of the game-term glossary (`backend/services/translation_glossary.txt`: Wits, Disciplines, clan names, Hunger… stay in English; Storyteller ↔ Αφηγητής) that appear in the line. Answers with notes or far longer than the line are dropped (no caption rather than a wrong one).
+- Checked on the 20 phase 0 lines plus a few game lines (0.1–0.5 s a line on this GPU): meaning kept, glossary terms kept, Greek attribute names (Οξύνοια, Επίγνωση) come back as Wits, Awareness. Names now come through as written in all 28 test lines (before: Ελένη → Eleni, Μάρκος → Marcus, Eleni → Ελένη); lowercase "hunger" in narration stays Hunger; «η αίμα» and wrong articles before names are fixed after the model. A name that opens a sentence and is not in the chronicle is only caught by its grammar ("Eleni whispers", "Eleni,").
+
+### Language override API
+
+| Route | Who | What |
+|---|---|---|
+| `GET /api/voice/translations?campaign_id&location_id&ids=1,2&lang=el` | whoever may read the room | `{translations: {id: {lang: {text, kind}}}, pending: [ids]}`: the rows in `lang` and every `original`; a missing one is queued and listed as pending. At most 60 ids; dice, slash and system lines are skipped |
+| `POST /api/voice/tts/jobs {message_id, original?}` | as before | in the listener's hear-in language; `{state: 'waiting_translation'}` while the translation is made; `original: true` reads the line as written |
+| `GET /api/voice/stt/jobs/<id>` | the clip's owner | with a write-in language: `translated: {lang, text}` (or `translate_failed`) once done |
+| `POST /api/voice/translate {text, from, to}` | signed in | one line for the recorder's text step; 503 `translation_failed` |
+| `POST /api/campaigns/<cid>/locations/<lid>` + `original: {text, lang}` | the player, voice lines | the sent line is the translation; the original is stored as the `original` row |
+
+Rate limits per user: translations 60 a minute, translate 20 a minute (200 an hour), TTS jobs 90 a minute. Stored: `message_translations (message_id, lang, text, kind 'ai'|'original', model, created_at)`, deleted with the message; `messages.lang` (language of the text, guessed from the letters) and `messages.orig_lang`.
+
+## Transcript check (0.21)
+
+When you tap Transcribe, the text is checked before you see it. Nothing is ever held up: if a step is missing, down or slow, you get Whisper's text unchanged.
+
+1. **Hint.** Whisper gets the chronicle's character, NPC and location names and a short World of Darkness glossary as its `initial_prompt` (≤ 400 characters). It only nudges spellings.
+2. **Flags.** In the speech service, Laya-words scores Whisper's unsure words (word probability < 0.985, 3+ letters; least sure first, up to 12, within 2 s; about 0.12 s a word on 4 CPU threads): "is the word marked ⟦ ⟧ a recognition mistake?", asked with the 10 words each side. The input is built exactly as RecMeets builds it (laya.common.build_sequence).
+3. **Fix.** The backend sends Krikri (`TRANSCRIPT_CHECK_MODEL`, default LM Studio `llama-krikri-8b-instruct`, temperature 0, 3 s in all) the whole line with only the flagged spans marked (Laya ≥ 0.7; a neighbour Whisper was under 0.7 sure of joins the span, so «βλυχ άρα» is one span) and the names. It may join split words and writes slang and swearing as spoken. A fix that does not sound like the span (a synonym), a rewrite, or an accent-only change is dropped.
+4. **Show.** Under the text, each fixed word is a 44-px chip ("heard: βλυχ άρα"); a tap puts Whisper's words back in the text, another tap re-applies the fix. The text stays editable.
+
+`GET /api/voice/stt/jobs/<id>` adds `checked` (segments `[{t}, {t, raw}]`) and `text_raw` when something was fixed; `text` is then the checked text (and what a write-in translation uses). Stored: `voice_clips.transcript_raw` (Whisper, always) and `voice_clips.transcript_checked` (JSON segments, `[]` when nothing changed). `VOICE_TRANSCRIPT_CHECK=0` turns it off. The speech service's `/stt` takes `prompt` and `check=1` and returns `words`, `probs`, `suspects [{i, word, p_whisper, p_laya}]` and `check_ms`; `/health` has `check`.
+
+**Model.** `data/voice/models/laya-words/` (`model.onnx`, `tokenizer.json`, `laya.json`; 378 MB) from [somniusx/recmeets-laya-words](https://huggingface.co/somniusx/recmeets-laya-words) at revision `8ae611d196aef03143b926a86bca67268d6b92b9` (SHA-256 of model.onnx `73e49fbc…a566`). Without it, the check is skipped. Laya is by [convaiinnovations](https://huggingface.co/convaiinnovations) (Apache 2.0); the fine-tune on Whisper's own mistakes in Greek and English is somniusx/recmeets-laya-words (Apache 2.0), from RecMeets.
+
+**Measured** (2026-10-17, phase 0 samples and synthetic lines spoken by Pocket TTS kostas; Krikri 0.1–0.5 s; Laya 0.15–1.1 s a line):
+
+| Clip | Whisper | After the check |
+|---|---|---|
+| synthetic text: Whisper's split as Lef saw it | Ο Νίκος του λέει είσαι μεγάλη βλυχ άρα ρε μαλάκα. | … μεγάλη **βλαχάρα** ρε μαλάκα. |
+| synthetic text, same split | Άντε ρε βλυχ άρα, πάλι χάθηκες στο Elysium; | unchanged (Krikri offered «βρε άρη», dropped as not alike) |
+| Pocket «Άντε ρε βλαχάρα, πάλι χάθηκες στο Elysium;» | no hint: Άντερε Βλαχάρα … Ελίσιουμ; with the hint: Άντερευλαχάρα, … Elysium. | unchanged (Laya 0.69, under 0.7) |
+| Pocket «… είσαι μεγάλη βλαχάρα, φίλε μου.» | right | unchanged |
+| Pocket «Γαμώτο, ο Πρίγκιπας μας έστησε, ρε μαλάκα.» | Αγαμώτο, … έστεισε, ρε Μαλάκα. | unchanged (Laya 0.13 and 0.23: not flagged) |
+| Pocket athina 07 | … πυρώνεται … | unchanged (Laya 0.25) |
+| Piper ryan 07 «Blood is a debt …» | Elud is a debt … | unchanged (Krikri offered Elysium, then Eld; dropped) |
+| Pocket 03, Piper ryan 01 (right) | right; Laya flagged σιγανά, candles | unchanged (before the guards Krikri made σιγά-σιγά, ψιθυριστά, candle) |
+
+So: it does what it should on a split word in a clear sentence, it does not damage right text in these cases, and it misses most mistakes Whisper was sure of (Laya scores them low). Real recordings from players are the next test.
+
 ## Speech service (server side)
 
 The `speech` container turns text into audio (TTS) and voice clips into text (transcription). Only the backend talks to it. It is a small FastAPI app in `speech/`.
