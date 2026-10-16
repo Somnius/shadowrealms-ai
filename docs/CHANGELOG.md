@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- Fillable character sheet in Adobe Acrobat Reader: when Acrobat redrew a field (after editing it, or in a copy saved with redraw on), every letter showed as a dot. Fields now redraw with standard Helvetica, which Acrobat handles, Greek and Turkish included. The pre-filled values still show in EB Garamond until a field is redrawn. The custom form font (EBGaramond-Form.ttf and its build script) is gone.
+
 ## [0.18.0] - 2026-10-17 - Speaking
 
 ### Added

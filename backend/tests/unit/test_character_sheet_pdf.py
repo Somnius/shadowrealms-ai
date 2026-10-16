@@ -13,7 +13,6 @@ pytest.importorskip("reportlab")
 
 from services.character_sheet_pdf import (  # noqa: E402
     CINZEL_BOLD,
-    FORM_CODES,
     SERIF,
     SERIF_ITALIC,
     SheetCanvas,
@@ -427,8 +426,12 @@ def test_tabs_become_spaces():
 
 
 def test_form_resources_hold_both_fonts(v5_pdf):
-    dr = re.search(rb"/DR << /Font << /SRG \d+ 0 R /ZaDb \d+ 0 R >> >>", v5_pdf)
-    assert dr, "one /Font dictionary with the Garamond form font and ZapfDingbats"
+    dr = re.search(rb"/DR << /Font << /Helv (\d+) 0 R /ZaDb \d+ 0 R >> >>", v5_pdf)
+    assert dr, "one /Font dictionary with Helvetica and ZapfDingbats"
+    helv = dict(_objects(v5_pdf))[dr.group(1)]
+    assert b"/BaseFont /Helvetica" in helv and b"/WinAnsiEncoding" in helv and b"/Subtype /Type1" in helv
+    assert b"/SRG" not in v5_pdf
+    assert re.search(rb"/AcroForm.*?/DA \(/Helv 0 Tf 0 g\)", v5_pdf, re.S) or b"/DA (/Helv 0 Tf 0 g)" in v5_pdf
     assert b"/DA (/ZaDb 0 Tf 0 g)" in v5_pdf
 
 
@@ -439,14 +442,7 @@ def test_fields_are_editable(v5_pdf):
         if b"/FT /Btn" in w:  # toggles between an empty and a marked appearance
             assert re.search(rb"/N <<\s*/Off \d+ 0 R /Yes \d+ 0 R", w)
         else:
-            assert b"/DA (/SRG " in w  # edits redraw with the embedded Latin + Greek font
-
-
-def test_form_font_covers_greek(v5_pdf):
-    for ch in "ΑΩαωςάώΐΰ€éüñ":
-        assert ord(ch) in FORM_CODES
-    assert b"/Font << /SRG " in v5_pdf
-    assert b"/Differences [" in v5_pdf and b"/uni03A9" in v5_pdf
+            assert b"/DA (/Helv " in w  # Acrobat can redraw edits with Helvetica, not with a custom-encoded TrueType
 
 
 def test_black_and_white_only(v5_pdf, classic_pdf):
@@ -1318,44 +1314,9 @@ def test_route_print_version(api):
     assert api("/api/characters/9/sheet.pdf?flat=1", "4").status_code == 404
 
 
-def _form_cmap(pdf: bytes) -> dict:
-    for s in _content_streams_all(pdf):
-        if b"/CMapName /SRG-UCS" in s:
-            return {int(b, 16): chr(int(u, 16)) for b, u in re.findall(rb"<([0-9A-F]{2})> <([0-9A-F]{4})>", s)}
-    raise AssertionError("no SRG ToUnicode")
-
-
 def _content_streams_all(pdf: bytes):
     for _, body in _objects(pdf):
         m = re.match(rb"(.*?)stream\r?\n(.*?)\r?\n?endstream", body, re.S)
         if m:
             yield _decode_stream(m.group(1), m.group(2))
 
-
-def test_form_font_holds_turkish_and_latin_extended(v5_pdf):
-    from reportlab.pdfbase._glyphlist import _glyphname2unicode
-
-    from services import character_sheet_pdf as m
-
-    letters = "ğĞıİşŞçÇöÖüÜéèàñäőŐűŰčČžŽšŠłŁ" + "ΑΩαωςάώΐΰ"
-    codes = [FORM_CODES.get(ord(c)) for c in letters]
-    assert None not in codes and all(0 < b < 256 and b not in (9, 10, 13) for b in codes)
-    assert len(set(FORM_CODES.values())) == len(FORM_CODES)  # one code per character
-    # a Turkish name encodes to one byte per letter and reads back through the ToUnicode map
-    cmap = _form_cmap(v5_pdf)
-    assert "".join(cmap[FORM_CODES[ord(c)]] for c in TURKISH_NAME) == TURKISH_NAME
-    # the /Differences glyph names mean those letters, and the embedded font has the glyphs
-    diffs = re.search(rb"/Differences \[(.*?)\]", v5_pdf, re.S).group(1).decode()
-    named, code = {}, 0
-    for tok in diffs.split():
-        if tok.startswith("/"):
-            named[code] = tok[1:]
-            code += 1
-        else:
-            code = int(tok)
-    for c in "ğĞıİşŞőűčłΩ":
-        g = named[FORM_CODES[ord(c)]]
-        assert (chr(int(g[3:], 16)) if g.startswith("uni") else chr(_glyphname2unicode[g])) == c
-        assert ord(c) in m._form_face.charToGlyph
-    for c in "šžŠŽ":  # WinAnsi letters stay at their own codes
-        assert FORM_CODES[ord(c)] == c.encode("cp1252")[0]
