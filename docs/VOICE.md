@@ -75,6 +75,27 @@ Rate limits per user: 6 clips a minute (60 an hour), 120 job polls and 120 repla
 
 Not tried on real phones yet (step 0.5): iOS home-screen mic access, which format each phone records, 2× review playback on older iOS, and Opus replay on the iPhone.
 
+## Language override (0.19)
+
+- **Hear in** (Profile → Voice → "Read and hear messages in": As written / English / Ελληνικά; default as written, each player opts in). Lines in the other language are translated **ahead of time**: right after a message is saved, the server checks which languages the chronicle's members hear in (their settings, cached 60 s) and queues a translation job on one background worker. Nothing is translated inside an audio request.
+- **On screen** (typed lines too): the body shows your language; the other text sits under it as a 13-px italic caption (`--sr-text-2`, two lines with "more") with an **EL** / **EN** text chip, and a 44-px **Show original** button (`--sr-arcane-300`) swaps body and caption for that row (not saved). A line that is still being translated shows as written and swaps when its translation arrives (the room asks every 3 s while some are pending).
+- **Listening**: server voices speak the translation in the voice of that language; while it is not ready the server answers `waiting_translation` and the app asks again (6 times, 1.5 s apart), then reads the original. Phone voices read the translation if it is there by the time the line's turn comes, else the original.
+- **Write in** (Profile → Voice → "Voice messages are sent in": The language I speak / English / Ελληνικά): speak Greek and send English, or the other way round. The recorder's text step shows both: your words (editable) and the line that will be sent, labelled "English (sent)" (editable too; "Translate again" after you change your words). Phone dictation gets the same through `POST /api/voice/translate`. Your words are kept with the message: everyone, the Storyteller included, sees them as the caption with "Show original" ("Show your original" on your own lines), and when you hear in your language you hear your own words, not a translation back.
+- **Translator**: the `translator` AI role (Admin → AI; default LM Studio `llama-krikri-8b-instruct`, temperature 0; falls back to LM Studio's loaded model, never to the small Ollama model). Names never reach the model: proper names (the chronicle's characters, NPCs and locations, plus capitalised words that read as names) become ⟦1⟧, ⟦2⟧… placeholders it copies, with a man/woman hint for the Greek article, and go back in exactly as written (if a placeholder gets lost the line is translated once more without them). The prompt keeps dice, *actions* and markdown, asks for the exact meaning, and carries a few examples (one is "misses by a hair" → «αστοχεί παρά τρίχα», which it once reversed) plus the lines of the game-term glossary (`backend/services/translation_glossary.txt`: Wits, Disciplines, clan names, Hunger… stay in English; Storyteller ↔ Αφηγητής) that appear in the line. Answers with notes or far longer than the line are dropped (no caption rather than a wrong one).
+- Checked on the 20 phase 0 lines plus a few game lines (0.1–0.5 s a line on this GPU): meaning kept, glossary terms kept, Greek attribute names (Οξύνοια, Επίγνωση) come back as Wits, Awareness. Names now come through as written in all 28 test lines (before: Ελένη → Eleni, Μάρκος → Marcus, Eleni → Ελένη); lowercase "hunger" in narration stays Hunger; «η αίμα» and wrong articles before names are fixed after the model. A name that opens a sentence and is not in the chronicle is only caught by its grammar ("Eleni whispers", "Eleni,").
+
+### Language override API
+
+| Route | Who | What |
+|---|---|---|
+| `GET /api/voice/translations?campaign_id&location_id&ids=1,2&lang=el` | whoever may read the room | `{translations: {id: {lang: {text, kind}}}, pending: [ids]}`: the rows in `lang` and every `original`; a missing one is queued and listed as pending. At most 60 ids; dice, slash and system lines are skipped |
+| `POST /api/voice/tts/jobs {message_id, original?}` | as before | in the listener's hear-in language; `{state: 'waiting_translation'}` while the translation is made; `original: true` reads the line as written |
+| `GET /api/voice/stt/jobs/<id>` | the clip's owner | with a write-in language: `translated: {lang, text}` (or `translate_failed`) once done |
+| `POST /api/voice/translate {text, from, to}` | signed in | one line for the recorder's text step; 503 `translation_failed` |
+| `POST /api/campaigns/<cid>/locations/<lid>` + `original: {text, lang}` | the player, voice lines | the sent line is the translation; the original is stored as the `original` row |
+
+Rate limits per user: translations 60 a minute, translate 20 a minute (200 an hour), TTS jobs 90 a minute. Stored: `message_translations (message_id, lang, text, kind 'ai'|'original', model, created_at)`, deleted with the message; `messages.lang` (language of the text, guessed from the letters) and `messages.orig_lang`.
+
 ## Speech service (server side)
 
 The `speech` container turns text into audio (TTS) and voice clips into text (transcription). Only the backend talks to it. It is a small FastAPI app in `speech/`.

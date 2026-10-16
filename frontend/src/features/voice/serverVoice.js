@@ -8,6 +8,8 @@ import { API_URL, authFetch, getCurrentToken } from '../../app/http';
 
 export const POLL_MS = 400;
 export const MAX_POLLS = 150; // a minute
+export const TRANSLATION_TRIES = 6; // a line in the hear-in language waits up to ~9 s for its translation
+export const TRANSLATION_WAIT_MS = 1500;
 
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 
@@ -72,6 +74,20 @@ export async function awaitJob(api, start, { pollMs = POLL_MS, maxPolls = MAX_PO
   return job.key;
 }
 
+/**
+ * POST a TTS job for a message. While its translation into the player's hear-in language is not
+ * made yet the server answers waiting_translation; after a few tries the original is read instead.
+ */
+export async function startTtsJob(api, messageId, { tries = TRANSLATION_TRIES, waitMs = TRANSLATION_WAIT_MS } = {}) {
+  const post = (body) => api('/voice/tts/jobs', { method: 'POST', body });
+  for (let n = 0; ; n += 1) {
+    const r = await post({ message_id: messageId });
+    if (!r.ok || !r.data || r.data.state !== 'waiting_translation') return r;
+    if (n >= tries) return post({ message_id: messageId, original: true });
+    await wait(waitMs);
+  }
+}
+
 export async function fetchAudioUrl(key, fmt) {
   const res = await authFetch(`${API_URL}/voice/audio/${encodeURIComponent(key)}?fmt=${fmt}`, {
     headers: { Authorization: `Bearer ${getCurrentToken()}` },
@@ -117,7 +133,7 @@ export function serverEngine({ api, getAudio, getSettings, fallback, onFallback 
 
   const load = (item) => {
     if (!loads.has(item.id)) {
-      const p = awaitJob(api, api('/voice/tts/jobs', { method: 'POST', body: { message_id: Number(item.id) } })).then((key) =>
+      const p = awaitJob(api, startTtsJob(api, Number(item.id))).then((key) =>
         fetchAudioUrl(key, preferredFormat(getAudio())),
       );
       p.catch(() => {});

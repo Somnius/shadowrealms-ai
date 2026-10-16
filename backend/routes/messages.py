@@ -15,6 +15,7 @@ from database import (
     ensure_messages_ai_message_kind_column,
     ensure_messages_speaker_mode_column,
     ensure_messages_voice_columns,
+    ensure_message_translations_table,
     ensure_locations_player_access_columns,
     ensure_users_player_profile_columns,
     ensure_campaign_players_active_character_id_column,
@@ -39,6 +40,8 @@ from services.message_actions import (
 )
 from datetime import datetime
 from services.message_time_format import format_message_time
+from services import translation
+from services.voice_tts import guess_lang
 import logging
 from services.log_safety import safe_log_value
 
@@ -73,6 +76,22 @@ def _campaign_accessible_to_viewer(cursor, campaign_id: int, user_id: int) -> bo
     return cursor.fetchone() is not None
 
 
+def room_visible(cursor, campaign_id: int, location_id: int, user_id: int) -> bool:
+    """The viewer may read this room: chronicle access, and a closed room only for who may bypass it."""
+    if not _campaign_accessible_to_viewer(cursor, campaign_id, user_id):
+        return False
+    cursor.execute(
+        "SELECT is_open FROM locations WHERE id = %s AND campaign_id = %s",
+        (location_id, campaign_id),
+    )
+    loc = cursor.fetchone()
+    if not loc:
+        return False
+    raw_open = loc.get("is_open")
+    is_open = True if raw_open is None else bool(raw_open) if not isinstance(raw_open, (int, float)) else raw_open != 0
+    return is_open or bool(user_can_bypass_closed_location(cursor, user_id, campaign_id))
+
+
 def visible_message(cursor, message_id: int, user_id: int):
     """One message as get_messages would show it to this viewer, else None (missing and forbidden
     alike: callers answer 404 both ways). Same checks: chronicle access, a closed room unless the
@@ -83,18 +102,7 @@ def visible_message(cursor, message_id: int, user_id: int):
     if not row:
         return None
     campaign_id = row['campaign_id']
-    if not _campaign_accessible_to_viewer(cursor, campaign_id, user_id):
-        return None
-    cursor.execute(
-        "SELECT is_open FROM locations WHERE id = %s AND campaign_id = %s",
-        (row['location_id'], campaign_id),
-    )
-    loc = cursor.fetchone()
-    if not loc:
-        return None
-    raw_open = loc.get("is_open")
-    is_open = True if raw_open is None else bool(raw_open) if not isinstance(raw_open, (int, float)) else raw_open != 0
-    if not is_open and not user_can_bypass_closed_location(cursor, user_id, campaign_id):
+    if not room_visible(cursor, campaign_id, row['location_id'], user_id):
         return None
     if is_hidden_kind(row.get('ai_message_kind')):
         cursor.execute("SELECT role FROM users WHERE id = %s", (user_id,))
@@ -139,6 +147,8 @@ _MESSAGE_SELECT = """
         m.source,
         m.clip_id,
         m.clip_ms,
+        m.lang,
+        m.orig_lang,
         camp.created_by as campaign_created_by,
         rm.id as reply_id,
         SUBSTR(rm.content, 1, 400) as reply_content,
@@ -191,6 +201,8 @@ def _message_dict_from_row(row, allow_hidden: bool = True) -> dict:
         'source': row.get('source'),
         'clip_id': row.get('clip_id'),
         'clip_ms': row.get('clip_ms'),
+        'lang': row.get('lang'),
+        'orig_lang': row.get('orig_lang'),
     }
 
 @messages_bp.route('/campaigns/<int:campaign_id>/locations/<int:location_id>', methods=['GET'])
@@ -591,6 +603,14 @@ def save_message(campaign_id, location_id):
             return jsonify({'error': 'A voice line needs its recording', 'code': 'clip_not_found'}), 400
         if (clip_id or source) and role != 'user':
             return jsonify({'error': 'Only players send voice messages'}), 400
+        # Language override (voice phase 4): the player wrote or spoke in one language and the
+        # write-in language turned it into the other; the original stays as a caption.
+        original = data.get('original')
+        if original is not None:
+            if (not isinstance(original, dict) or role != 'user'
+                    or not isinstance(original.get('text'), str) or not original['text'].strip()
+                    or len(original['text']) > translation.MAX_CHARS or original.get('lang') not in ('en', 'el')):
+                return jsonify({'error': 'original must be {text, lang: en|el}'}), 400
 
         conn = get_db()
         cursor = conn.cursor()
@@ -695,20 +715,25 @@ def save_message(campaign_id, location_id):
                 requested_voice = str(data.get('speak_as') or data.get('voice') or '').strip().lower()
                 ooc_monitor = create_ooc_monitor()
                 
-                is_violation, warning_msg, should_ban = ooc_monitor.check_message(
-                    message=content,
-                    user_id=user_id,
-                    campaign_id=campaign_id,
-                    location_type=location_type,
-                    site_role=who.get('role'),
-                    is_campaign_owner=(
-                        who.get('created_by') is not None and int(who['created_by']) == int(user_id)
-                    ),
-                    # staff voice is validated below (only admin/helper/owner may use it, and
-                    # they are exempt anyway)
-                    speaker_mode=requested_voice,
-                )
-                
+                # the original under "Show original" reaches every reader too: same check
+                is_violation, warning_msg, should_ban = False, None, False
+                for checked in [content] + ([original['text']] if original else []):
+                    is_violation, warning_msg, should_ban = ooc_monitor.check_message(
+                        message=checked,
+                        user_id=user_id,
+                        campaign_id=campaign_id,
+                        location_type=location_type,
+                        site_role=who.get('role'),
+                        is_campaign_owner=(
+                            who.get('created_by') is not None and int(who['created_by']) == int(user_id)
+                        ),
+                        # staff voice is validated below (only admin/helper/owner may use it, and
+                        # they are exempt anyway)
+                        speaker_mode=requested_voice,
+                    )
+                    if is_violation:
+                        break
+
                 if is_violation:
                     logger.warning(f"OOC violation detected for user {safe_log_value(user_id)}: {safe_log_value(content, 50)}")
                     ooc_warning_info = getattr(ooc_monitor, 'last_warning', None)
@@ -848,6 +873,9 @@ def save_message(campaign_id, location_id):
                     'code': reply_err,
                 }), 400
 
+        msg_lang = guess_lang(content)
+        orig_lang = original['lang'] if original and original['lang'] != msg_lang else None
+
         clip_ms = None
         if source:
             from database import ensure_campaigns_voice_settings_column
@@ -881,8 +909,8 @@ def save_message(campaign_id, location_id):
                 INSERT INTO messages (
                     campaign_id, location_id, user_id, character_id,
                     message_type, content, role, created_at, ai_message_kind, speaker_mode,
-                    reply_to_id, source, clip_id, clip_ms
-                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                    reply_to_id, source, clip_id, clip_ms, lang, orig_lang
+                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                 RETURNING id
                 """,
                 (
@@ -900,6 +928,8 @@ def save_message(campaign_id, location_id):
                     source,
                     clip_id or None,
                     clip_ms,
+                    msg_lang,
+                    orig_lang,
                 ),
             )
         except Exception as e:  # noqa: BLE001
@@ -918,7 +948,12 @@ def save_message(campaign_id, location_id):
         if clip_id and not voice_clips.attach(cursor, clip_id, message_id):
             conn.rollback()
             return jsonify({'error': 'That recording cannot be sent here.', 'code': 'clip_already_sent'}), 400
+        if orig_lang:
+            ensure_message_translations_table(cursor)
+            translation.store(cursor, message_id, orig_lang, original['text'].strip(), 'original')
         conn.commit()
+        if not translation.readout_skip({'ai_message_kind': ai_message_kind, 'message_type': message_type}):
+            translation.after_save(cursor, message_id, campaign_id, content, msg_lang)
         
         # Store message embedding in ChromaDB for semantic search
         try:

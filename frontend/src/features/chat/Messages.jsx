@@ -11,6 +11,7 @@ import { formatClock, formatFull, formatShort, isoOf } from './timeFormat';
 import { MessageActions, ReplyQuote, useMessageRowProps } from './MessageActions';
 import { t } from '../../i18n';
 import { ClipChip, VoiceMark } from '../voice/ClipChip';
+import { Caption, useCaption } from '../voice/Caption';
 
 const BADGE_TONE = { success: 'ok', gold: 'gold', blood: 'blood', danger: 'danger', muted: 'neutral' };
 
@@ -80,6 +81,8 @@ export function MessageGroup({ group, timeZone, now }) {
 function GroupRow({ m, first, sp, group, longNarration, timeZone, now }) {
   const ms = messageTime(m);
   const press = useMessageRowProps(m);
+  const cap = useCaption(m);
+  const plain = cap.view && !parseRouseLine(m) && !(m.role === 'assistant' && rollRequestsOf(m).length);
   return (
     <div
       id={m.id != null ? `msg-${m.id}` : undefined}
@@ -104,9 +107,10 @@ function GroupRow({ m, first, sp, group, longNarration, timeZone, now }) {
       {m.reply_to ? <ReplyQuote reply={m.reply_to} /> : null}
       <div className={`sr-msg__body${group.kind === 'action' ? ' sr-msg__body--action' : ''}${first && longNarration ? ' sr-msg__body--dropcap' : ''}`}>
         {!first ? <VoiceMark message={m} /> : null}
-        <MessageBody message={m} />
+        {plain ? <Markdown text={cap.bodyText} /> : <MessageBody message={m} />}
       </div>
       <ClipChip message={m} />
+      {plain ? <Caption cap={cap} /> : null}
       <MessageActions message={m} />
     </div>
   );

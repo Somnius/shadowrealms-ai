@@ -123,6 +123,12 @@
     "dictateInstead": "Use phone dictation",
     "denied": "The microphone is blocked. Allow the microphone for this site in your phone’s Settings, then try again.",
     "deniedShort": "Microphone blocked: allow the microphone in Settings",
+    "translating": "Translating…",
+    "translateFailed": "Could not translate it now. Send it as you said it, or try again.",
+    "sentIn": "{{lang}} (sent)",
+    "originalKept": "Your words in {{lang}} stay under the message as “your original”.",
+    "translateAgain": "Translate again",
+    "translateTo": "Write it in {{lang}}",
     "spokenLang": "Language you speak"
   },
   "stt": {
@@ -139,5 +145,27 @@
     "legend": "Voice messages",
     "max": "Longest recording: {{value}} min",
     "phone": "Players may use their phone’s dictation (audio goes to Apple or Google)"
+  },
+  "hear": {
+    "label": "Read and hear messages in",
+    "hint": "Lines in the other language are translated on the server ahead of time and shown in your language, with the original a tap away.",
+    "written": "As written"
+  },
+  "write": {
+    "label": "Voice messages are sent in",
+    "hint": "Speak in one language and send the other: you see both before you send, and your original words stay under the message.",
+    "same": "The language I speak"
+  },
+  "caption": {
+    "showOriginal": "Show original",
+    "showTranslation": "Show translation",
+    "showSent": "Show as sent",
+    "showYourOriginal": "Show your original",
+    "yourOriginal": "Your original:",
+    "more": "more"
+  },
+  "langName": {
+    "en": "English",
+    "el": "Greek"
   }
 }
