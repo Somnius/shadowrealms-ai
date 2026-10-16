@@ -8,8 +8,8 @@ How each phase runs: build in its own git worktree → tests and CI green → on
 
 | # | Phase | Parts | Version | Time box | Status |
 |---|---|---|---|---|---|
-| 0 | Measure | voices listened to · Whisper on the GPU timed and its real VRAM read · phone test page | — | until 00:00 | not started |
-| 1 | Listen with the phone's own voices | CSP and glyphs · player voice settings · chronicle read-out defaults · Listen toggle and queue · read-out rules | 0.16 | until 02:00 | not started |
+| 0 | Measure | voices listened to · Whisper on the GPU timed and its real VRAM read · phone test page | — | until 00:00 | done except 0.5 (phones) |
+| 1 | Listen with the phone's own voices | CSP and glyphs · player voice settings · chronicle read-out defaults · Listen toggle and queue · read-out rules | 0.16 | until 02:00 | built on voice/p1-listen, waiting for review |
 | 2 | Server voices | speech container · gender on the sheet · TTS jobs and cache · voice catalog and narrator voices · server mode in the app | 0.17 | until 03:45 | not started |
 | 3 | Speaking | clip upload · transcription jobs and the GPU policy · recorder with the timer · review and text steps · mic marker and replay · phone dictation | 0.18 | until 06:00 | not started |
 | 4 | Language override | translator · ahead-of-time translation · captions with "show original" · speak in one language, write in the other | 0.19 | until 06:45 | not started |
@@ -29,20 +29,20 @@ How each phase runs: build in its own git worktree → tests and CI green → on
 
 ## Phase 0 — Measure
 
-- [ ] 0.1 Piper voices (EN US, EN UK, Greek): seconds per sentence, listened to, Greek intelligibility scored by transcribing it back. Status: not started.
-- [ ] 0.2 Pocket TTS Greek (the only local Greek male voice found): same test. Status: not started.
-- [ ] 0.3 Whisper large-v3-turbo on the GPU in the CUDA image: seconds for 10 s / 60 s / 180 s clips, cold start, real VRAM read from `nvidia-smi` during a clip, name prompt on/off, Parakeet A/B. Status: not started.
-- [ ] 0.4 Opus bitrate (64/48/32) against transcription accuracy; 20 chat lines translated each way, timed. Status: not started (moved into 4.1 if time is short).
-- [ ] 0.5 Phone test page (recording formats, voices, home-screen mic, silent switch, 2× playback, Opus playback, phone recognition) on an iPhone and an Android phone. Status: not started.
+- [x] 0.1 Piper voices (EN US, EN UK, Greek): seconds per sentence, listened to, Greek intelligibility scored by transcribing it back. Status: done 23:17. Piper EN go (alan, jenny, cori); Piper EL no-go as the main voice (WER 24–27 %).
+- [x] 0.2 Pocket TTS Greek (the only local Greek male voice found): same test. Status: done 23:17. Pocket TTS Greek go (kostas, spyros, eleni, athina), about 0.28× real time on one thread.
+- [x] 0.3 Whisper large-v3-turbo on the GPU in the CUDA image: seconds for 10 s / 60 s / 180 s clips, cold start, real VRAM read from `nvidia-smi` during a clip, name prompt on/off, Parakeet A/B. Status: done 23:17. faster-whisper large-v3-turbo int8_float16 on the GPU go: +1.6 GB VRAM, about 30× real time.
+- [x] 0.4 Opus bitrate (64/48/32) against transcription accuracy; 20 chat lines translated each way, timed. Status: done 23:17. Clips as Opus 16 kbps mono (about 115 KB a minute); Krikri translation go with a game-term glossary. Models in data/voice/models (2.5 GB).
+- [ ] 0.5 Phone test page (recording formats, voices, home-screen mic, silent switch, 2× playback, Opus playback, phone recognition) on an iPhone and an Android phone. Status: still needs Lef's phones.
 
 ## Phase 1 — Listen with the phone's own voices (0.16)
 
-- [ ] 1.1 `media-src 'self' blob:` in nginx; nine new glyphs (mic, mic-off, ear, play, pause, stop, skip, waveform, tongue). Status: not started.
-- [ ] 1.2 Player voice settings column, `GET/PUT /api/voice/settings`, Profile → Voice panel (source, accent, speed, volume, opt-outs). Status: not started.
-- [ ] 1.3 Chronicle voice settings column, route, "Voice" block in Create chronicle and Chronicle settings (read-out defaults). Status: not started.
-- [ ] 1.4 Listen toggle in the room header, audio unlock on tap, speech queue (order, skip own, cap 20, pause in background, tap to resume), speaking bar, "read the last 3?" on open. Status: not started.
-- [ ] 1.5 Read-out rules (Storyteller / IC / OOC / dice from chronicle defaults and player overrides), dice read as one sentence, system lines skipped. Status: not started.
-- [ ] 1.6 Release 0.16: `docs/VOICE.md`, FEATURES, CHANGELOG. Status: not started.
+- [x] 1.1 `media-src 'self' blob:` in nginx; nine new glyphs (mic, mic-off, ear, play, pause, stop, skip, waveform, tongue). Status: done 23:10. Glyph test added; blob playback on live nginx is checked at release.
+- [x] 1.2 Player voice settings column, `GET/PUT /api/voice/settings`, Profile → Voice panel (source, accent, speed, volume, opt-outs). Status: done 23:17. Profile → Voice panel (Phone voices / Off, accent, speed, volume, per-kind opt-outs); pytest + jest.
+- [x] 1.3 Chronicle voice settings column, route, "Voice" block in Create chronicle and Chronicle settings (read-out defaults). Status: done 23:17. Voice block in Create chronicle and Chronicle settings; creator/admin only, effective rule tested.
+- [x] 1.4 Listen toggle in the room header, audio unlock on tap, speech queue (order, skip own, cap 20, pause in background, tap to resume), speaking bar, "read the last 3?" on open. Status: done 23:17. Ear in the room header, speaking bar (44 px), queue with cap 20 / missed / pause on hidden / tap to resume, catch-up of 3; jest for the queue. Not yet tried on real phones.
+- [x] 1.5 Read-out rules (Storyteller / IC / OOC / dice from chronicle defaults and player overrides), dice read as one sentence, system lines skipped. Status: done 23:17. Storyteller / IC / OOC / dice / actions rules, dice as one sentence, system lines skipped; jest table.
+- [x] 1.6 Release 0.16: `docs/VOICE.md`, FEATURES, CHANGELOG. Status: done 23:19. VOICE.md, FEATURES, CHANGELOG, version 0.16.0. Backend 1256 passed, frontend 929 passed, lint clean. Waiting for review, merge, tag and phone check.
 
 ## Phase 2 — Server voices (0.17)
 
