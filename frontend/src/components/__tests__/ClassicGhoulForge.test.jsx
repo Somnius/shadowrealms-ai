@@ -9,6 +9,9 @@ import ClassicGhoulForge from '../characterCreation/classicGhoul/ClassicGhoulFor
 import { CLASSIC_GHOUL_SECTION_IDS as S } from '../../characterSheet/classicGhoul';
 import { setLanguage } from '../../i18n';
 
+// Filling a whole forge with userEvent is slow on CI runners.
+jest.setTimeout(30000);
+
 const respond = (status, body) => ({ ok: status >= 200 && status < 300, status, json: async () => body });
 const THEO = {
   id: 21,

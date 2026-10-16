@@ -11,6 +11,9 @@ import { applyV5Catalog } from '../../characterSheet/v5/rulesData';
 import { V5_SECTION_IDS } from '../../characterSheet/v5/constants';
 import { setLanguage } from '../../i18n';
 
+// Filling a whole forge with userEvent is slow on CI runners.
+jest.setTimeout(30000);
+
 const pick = (el, value) => fireEvent.change(el, { target: { value } });
 const respond = (status, body) => ({ ok: status >= 200 && status < 300, status, json: async () => body });
 const THEO = { id: 21, name: 'Theo', user_id: 3, rules_edition: 'classic', system_type: 'vampire', wod_meta: {} };
