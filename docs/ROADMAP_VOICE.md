@@ -9,7 +9,7 @@ How each phase runs: build in its own git worktree → tests and CI green → on
 | # | Phase | Parts | Version | Time box | Status |
 |---|---|---|---|---|---|
 | 0 | Measure | voices listened to · Whisper on the GPU timed and its real VRAM read · phone test page | — | until 00:00 | not started |
-| 1 | Listen with the phone's own voices | CSP and glyphs · player voice settings · chronicle read-out defaults · Listen toggle and queue · read-out rules | 0.16 | until 02:00 | not started |
+| 1 | Listen with the phone's own voices | CSP and glyphs · player voice settings · chronicle read-out defaults · Listen toggle and queue · read-out rules | 0.16 | until 02:00 | in progress |
 | 2 | Server voices | speech container · gender on the sheet · TTS jobs and cache · voice catalog and narrator voices · server mode in the app | 0.17 | until 03:45 | not started |
 | 3 | Speaking | clip upload · transcription jobs and the GPU policy · recorder with the timer · review and text steps · mic marker and replay · phone dictation | 0.18 | until 06:00 | not started |
 | 4 | Language override | translator · ahead-of-time translation · captions with "show original" · speak in one language, write in the other | 0.19 | until 06:45 | not started |
@@ -37,7 +37,7 @@ How each phase runs: build in its own git worktree → tests and CI green → on
 
 ## Phase 1 — Listen with the phone's own voices (0.16)
 
-- [ ] 1.1 `media-src 'self' blob:` in nginx; nine new glyphs (mic, mic-off, ear, play, pause, stop, skip, waveform, tongue). Status: not started.
+- [x] 1.1 `media-src 'self' blob:` in nginx; nine new glyphs (mic, mic-off, ear, play, pause, stop, skip, waveform, tongue). Status: done 23:10. Glyph test added; blob playback on live nginx is checked at release.
 - [ ] 1.2 Player voice settings column, `GET/PUT /api/voice/settings`, Profile → Voice panel (source, accent, speed, volume, opt-outs). Status: not started.
 - [ ] 1.3 Chronicle voice settings column, route, "Voice" block in Create chronicle and Chronicle settings (read-out defaults). Status: not started.
 - [ ] 1.4 Listen toggle in the room header, audio unlock on tap, speech queue (order, skip own, cap 20, pause in background, tap to resume), speaking bar, "read the last 3?" on open. Status: not started.
