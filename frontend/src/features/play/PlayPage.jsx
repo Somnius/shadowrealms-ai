@@ -16,6 +16,8 @@ import Markdown from '../chat/markdown';
 import Composer, { voiceOptions } from '../chat/Composer';
 import { sendChatMessage } from '../chat/sendFlow';
 import { seenParam, useRoomMessages } from '../chat/useRoomMessages';
+import { useListen } from '../voice/useListen';
+import { ListenButton, SpeakingBar } from '../voice/ListenControls';
 import { useLiveUpdates } from '../chat/useLiveUpdates';
 import { MessageActionsContext, useMessageActions } from '../chat/MessageActions';
 import { useDiceOverlay } from '../dice/useDiceOverlay';
@@ -209,6 +211,14 @@ export default function PlayPage() {
     enabled: ready,
   });
   const dice = useDiceOverlay(room.messages);
+  const listen = useListen({
+    api,
+    campaignId,
+    roomKey: `${campaignId}:${locationId}`,
+    messages: room.messages,
+    status: ready ? room.status : 'loading',
+    userId: user ? user.id : null,
+  });
   // Copy / Reply / Delete on messages (features/chat/MessageActions.jsx).
   const actions = useMessageActions({
     api,
@@ -455,6 +465,7 @@ export default function PlayPage() {
                   <Glyph name="moon-crescent" size={14} /> {t('play:live.polling', 'Polling')}
                 </span>
               ) : null}
+              <ListenButton listen={listen} />
               <IconButton
                 icon="users"
                 label={isWide && panelOpen ? t('play:panel.hide', 'Hide member list') : t('play:panel.show', 'Show member list')}
@@ -537,6 +548,7 @@ export default function PlayPage() {
                   elsewhere={String(reroll.locationId) !== String(location?.id)}
                 />
               ) : null}
+              <SpeakingBar listen={listen} />
               <Composer
                 inputRef={composerRef}
                 draftKey={`${user ? user.id : 'anon'}:${campaignId}:${locationId}`}

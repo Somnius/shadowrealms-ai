@@ -1,0 +1,33 @@
+/* Voice (docs/VOICE.md): Listen toggle and the speaking bar. */
+.sr-listen--on {
+  color: var(--sr-gold-400);
+}
+.sr-speakbar {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-height: var(--sr-tap, 44px);
+  padding: 0 8px;
+  border-top: 1px solid var(--sr-border, rgba(255, 255, 255, 0.08));
+  font-size: 13px;
+  color: var(--sr-text-muted);
+}
+.sr-speakbar__text {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.sr-speakbar__wave {
+  flex: none;
+  opacity: 0.5;
+}
+.sr-speakbar__wave.is-on {
+  color: var(--sr-gold-400);
+  opacity: 1;
+}
+.sr-speakbar .sr-btn--square {
+  min-width: var(--sr-tap, 44px);
+  min-height: var(--sr-tap, 44px);
+}

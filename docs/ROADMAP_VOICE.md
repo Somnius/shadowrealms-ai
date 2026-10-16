@@ -40,7 +40,7 @@ How each phase runs: build in its own git worktree → tests and CI green → on
 - [x] 1.1 `media-src 'self' blob:` in nginx; nine new glyphs (mic, mic-off, ear, play, pause, stop, skip, waveform, tongue). Status: done 23:10. Glyph test added; blob playback on live nginx is checked at release.
 - [x] 1.2 Player voice settings column, `GET/PUT /api/voice/settings`, Profile → Voice panel (source, accent, speed, volume, opt-outs). Status: done 23:17. Profile → Voice panel (Phone voices / Off, accent, speed, volume, per-kind opt-outs); pytest + jest.
 - [x] 1.3 Chronicle voice settings column, route, "Voice" block in Create chronicle and Chronicle settings (read-out defaults). Status: done 23:17. Voice block in Create chronicle and Chronicle settings; creator/admin only, effective rule tested.
-- [ ] 1.4 Listen toggle in the room header, audio unlock on tap, speech queue (order, skip own, cap 20, pause in background, tap to resume), speaking bar, "read the last 3?" on open. Status: not started.
+- [x] 1.4 Listen toggle in the room header, audio unlock on tap, speech queue (order, skip own, cap 20, pause in background, tap to resume), speaking bar, "read the last 3?" on open. Status: done 23:17. Ear in the room header, speaking bar (44 px), queue with cap 20 / missed / pause on hidden / tap to resume, catch-up of 3; jest for the queue. Not yet tried on real phones.
 - [ ] 1.5 Read-out rules (Storyteller / IC / OOC / dice from chronicle defaults and player overrides), dice read as one sentence, system lines skipped. Status: not started.
 - [ ] 1.6 Release 0.16: `docs/VOICE.md`, FEATURES, CHANGELOG. Status: not started.
 

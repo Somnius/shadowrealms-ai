@@ -52,8 +52,8 @@ test('renders every section of the tour, signed out and without network', () => 
   expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('ShadowRealms');
   // chat preview uses the real chat list
   expect(within(screen.getByTestId('chat-preview')).getByRole('log')).toBeInTheDocument();
-  // all 100 glyphs are listed
-  expect(screen.getByTestId('glyph-count')).toHaveTextContent('Showing 100 of 100');
+  // all 109 glyphs are listed
+  expect(screen.getByTestId('glyph-count')).toHaveTextContent('Showing 109 of 109');
   // CTA goes back to login
   expect(screen.getByTestId('cta-login')).toHaveAttribute('href', '/login');
   expect(fetchSpy).not.toHaveBeenCalled();
@@ -155,7 +155,7 @@ test('atmosphere control switches the level for the whole app', () => {
 test('glyph search filters the gallery', () => {
   renderPage();
   fireEvent.change(screen.getByTestId('glyph-search'), { target: { value: 'moon' } });
-  expect(screen.getByTestId('glyph-count')).toHaveTextContent('Showing 5 of 100');
+  expect(screen.getByTestId('glyph-count')).toHaveTextContent('Showing 5 of 109');
   fireEvent.change(screen.getByTestId('glyph-search'), { target: { value: 'zzzz' } });
   expect(screen.getByText(/Nothing in the dark matches/)).toBeInTheDocument();
 });
