@@ -1,8 +1,65 @@
-# ShadowRealms AI trailer: plan
+# ShadowRealms AI trailer
+
+Two trailers so far, both in English and Greek, both made with the scripts in `tools/trailer/`:
+
+- **v2** (2026-10-16, app v0.14.0, 2:30): https://github.com/Somnius/shadowrealms-ai/releases/tag/trailer-v0.14.0
+- **v1** (2026-10-04, app v0.10.0, 2:00): https://github.com/Somnius/shadowrealms-ai/releases/tag/trailer-v0.10.0
+
+## Trailer v2 (v0.14.0)
+
+Status: **done** (2026-10-16). 150 s, 1920×1080, 60 fps, H.264, English and Greek renders. The timing contract is `tools/trailer/CUES_v2.md`, the cut `tools/trailer/timeline_v2.json`, the recordings `tools/trailer/record_v2.mjs`, the score `tools/trailer/music/` (preset `v2`).
+
+### What's in it
+
+| Time | Scene | Source |
+|---|---|---|
+| 0:00 | Intro: the login page's sigil draws, the wordmark | v1 footage |
+| 0:08 | Sign-in, the hall opens | v1 |
+| 0:15 | New chronicle: Classic or V5 | v1 |
+| 0:27 | The Storyteller sets the chronicle's character creation rules: allowed clans (Hecata in, Caitiff and Thin-blood out), neonates only, a house rule | new |
+| 0:35 | Guided mode: a new player answers the eight questions, the guide suggests Hecata · Grim Reaper | new |
+| 0:47 | The forge with the guide's prefill: the clan card, the Oblivion power list and its description with book and page, the Summon Spirit ceremony, the predator preview, Backgrounds from the catalog, then the finished sheet | new |
+| 1:01 | Play: the Storyteller answers and asks for Dexterity + Stealth with 4 Hunger | new |
+| 1:17 | The roll from the chip: a **bestial failure** on the big hit (1:25.000) | new |
+| 1:26 | `/ai explain` on the dice card: the counting and the result, page by page | new, same take |
+| 1:36 | A Classic **botch** on the second hit (1:39.000) | new |
+| 1:42 | English and Greek in the same chronicle | v1 |
+| 1:52 | Laya flags an in-character line in the OOC room; admin pages | v1 |
+| 2:01 | Export PDF: the real exported sheet, page 1 and the Reference page | new |
+| 2:07 | The theme showcase: the switch to Full atmosphere lands on the theme's downbeat (2:08.000), glyphs, clan sigils, Subtle, Off, the dice editions | new |
+| 2:22 | Outro: Enter the night, run it on your own server, the GitHub link | v1 card |
+
+Captions: 13, English and Greek, game terms in English in both; Greek is set in Alegreya / EB Garamond, never Cinzel.
+
+### How it was made
+
+The same way as v1 (below): a separate demo copy of the stack with its own database (project `srdemo`, loopback ports only), headless Chromium driven over the DevTools protocol at 1920×1080, frames captured with their compositor timestamps and turned into 60 fps, an original score generated from code, ffmpeg for the edit.
+
+- The demo stack ran the v0.14.0 backend and frontend, with the v1 accounts, chronicles and characters plus a fourth player, `kalliroi`, who made her Hecata *Kalliroi Daskalaki* (Grim Reaper, Oblivion, an undertaker who talks to the dead) on camera: Guided mode, then the forge, then the sheet, in one take.
+- Real results only. The Storyteller lines come from Llama-Krikri running locally; the dice are server rolls, rolled until the wanted result landed. V5 bestial failure: English on take 5, then again on take 2 of a retake (the script that opens the `/ai explain` card failed on the first one), Greek on take 4. Classic botch: English take 2, Greek take 3. The Storyteller's roll chip came on its first reply in both languages. Every take is logged by the recorder.
+- The hits are frame-exact: the first frame showing "Result" is pinned to 1:25.000 and 1:39.000, the first frame of the Full switch to 2:08.000 (checked frame by frame on the review sheets), and `check_hits.py` measured the hits in the rendered audio at 85.000, 99.000 and 128.000 s.
+- The forge, Guided and explain shots are zoomed in (static crops) so their text can be read. The PDF shot is the file the app downloaded, rendered page by page at 300 dpi.
+- Score: 150 s, the v1 instruments and motif with new cue times, −14 LUFS integrated, true peak below −1 dBTP.
+
+### Tools
+
+```sh
+# demo stack for one language (from a worktree: DEMO_ROOT=<main checkout>), then the recordings
+DEMO_ROOT=<main checkout> TRAILER_DATA=data/trailer-v2 RESYNC=1 tools/trailer/reset_demo.sh en
+TRAILER_DATA=data/trailer-v2 taskset -c 0-15 nice -n 10 node tools/trailer/record_v2.mjs en
+# reused v1 clips, cut and render, then measure the hits
+python3 tools/trailer/reuse_v1.py --timeline tools/trailer/timeline_v2.json --from <main checkout>/data/trailer
+taskset -c 0-15 nice -n 10 python3 tools/trailer/edit.py --timeline tools/trailer/timeline_v2.json --lang both --final
+uv run --with numpy --with scipy --with soundfile python3 tools/trailer/check_hits.py data/trailer-v2/out/trailer_en_1080p60.mp4
+# remove the demo stack and its data
+DEMO_ROOT=<main checkout> TRAILER_DATA=data/trailer-v2 tools/trailer/demo-down.sh --purge
+```
+
+## Trailer v1 (v0.10.0)
 
 Status: **done** (2026-10-04). Published at https://github.com/Somnius/shadowrealms-ai/releases/tag/trailer-v0.10.0 (English and Greek). The scripts are in `tools/trailer/` (`CUES.md`, `timeline.json`, `edit.py`, `record.mjs`, `music/compose.py`).
 
-## What was decided (2026-10-04)
+### What was decided (2026-10-04)
 
 | | |
 |---|---|
@@ -15,7 +72,7 @@ Status: **done** (2026-10-04). Published at https://github.com/Somnius/shadowrea
 | Style | Sigil intro, title card, URL outro; fog, film grain, vignette, blood-red accents, Cinzel captions |
 | Where it's recorded | **A separate demo copy of the stack** with its own database; the live site and its data aren't touched |
 
-## Shot list (English version; the Greek one follows the same cuts)
+### Shot list (English version; the Greek one follows the same cuts)
 
 Times are targets; the edit will move them by a second or two to sit on the music.
 
@@ -34,7 +91,7 @@ Times are targets; the edit will move them by a second or two to sit on the musi
 
 Game terms stay in English in the Greek captions (Hunger, messy critical, botch), the same rule the app's Greek UI follows.
 
-## Demo data (in the separate stack only)
+### Demo data (in the separate stack only)
 
 All made up for the trailer:
 
@@ -47,7 +104,7 @@ All made up for the trailer:
   - **Brother Anselm**, Classic Tremere, a scholar-monk of Mistra (the botch shot).
 - Some earlier chat so the rooms don't look empty.
 
-## How it gets made
+### How it gets made
 
 1. **Demo stack.** A second Docker Compose project with its own PostgreSQL, Redis, ChromaDB, backend and nginx on other localhost ports (e.g. 127.0.0.1:8180), the same LM Studio and Ollama. The demo data is created through the app's API. Deleted afterwards.
 2. **Recording.** A script drives Chromium at exactly 1920×1080 (no desktop, no notifications) and captures frames over the DevTools protocol; typing and clicks are scripted, so every take is the same. Frames are turned into constant 60 fps with ffmpeg.
@@ -57,13 +114,13 @@ All made up for the trailer:
 6. **Edit and render.** ffmpeg: cuts, cross-fades, speed-ups for the forge, grain and vignette, fades. GPU encoding (NVENC) for drafts, a final x264 render. Machine limits as always: under 80% CPU, capped containers.
 7. **Review.** You get both drafts to watch; changes, then the final.
 
-## Where it goes
+### Where it goes
 
 - Both MP4s attached to a GitHub release (direct download and playable in the browser) and linked from the README's "Demo video" section, plus a poster frame image in the README.
 - YouTube: you upload it (I have no access to your channel); I'll prepare the title, description and chapters text in both languages.
 - The scripts that build it (demo stack, recording, music, edit) go in the repo, so it can be re-made for later versions. The rendered files stay out of git.
 
-## Things to confirm before go
+### Things to confirm before go
 
 1. **Captions:** the wording above, English and Greek. Change anything you like.
 2. ~~Demo names~~: decided, made up (see Demo data).

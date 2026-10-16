@@ -17,11 +17,11 @@
 
 ### ▶ Watch the trailer
 
-[![Trailer preview: a V5 roll lands a messy critical with the blood-red flash](assets/trailer/trailer-preview.webp)](https://github.com/Somnius/shadowrealms-ai/releases/download/trailer-v0.10.0/trailer_en_1080p60.mp4)
+[![Trailer preview: a V5 roll from the Storyteller's roll chip ends in a bestial failure, then /ai explain on the dice card](assets/trailer/trailer-preview.webp)](https://github.com/Somnius/shadowrealms-ai/releases/download/trailer-v0.14.0/trailer_en_1080p60.mp4)
 
-**[English (2 min)](https://github.com/Somnius/shadowrealms-ai/releases/download/trailer-v0.10.0/trailer_en_1080p60.mp4)** · **[Ελληνικά (2 λεπτά)](https://github.com/Somnius/shadowrealms-ai/releases/download/trailer-v0.10.0/trailer_el_1080p60.mp4)** · [release page](https://github.com/Somnius/shadowrealms-ai/releases/tag/trailer-v0.10.0)
+**[English (2:30)](https://github.com/Somnius/shadowrealms-ai/releases/download/trailer-v0.14.0/trailer_en_1080p60.mp4)** · **[Ελληνικά (2:30)](https://github.com/Somnius/shadowrealms-ai/releases/download/trailer-v0.14.0/trailer_el_1080p60.mp4)** · [release page](https://github.com/Somnius/shadowrealms-ai/releases/tag/trailer-v0.14.0)
 
-<sub>Recorded on a fresh copy of the app: real AI Storyteller replies from a local model, real server dice rolls, original score.</sub>
+<sub>Recorded on a demo copy of the app: real AI Storyteller replies from a local model, real server dice rolls, original score. The first trailer (v0.10.0) is still <a href="https://github.com/Somnius/shadowrealms-ai/releases/tag/trailer-v0.10.0">here</a>.</sub>
 
 </div>
 

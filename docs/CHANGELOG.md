@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Trailer v2 (2:30, English and Greek, release `trailer-v0.14.0`): creation rules, Guided mode, the new forge, a real bestial failure with `/ai explain`, a Classic botch, the PDF sheet and the showcase, recorded from a demo copy of the app; the README preview is replaced. Made with `tools/trailer/record_v2.mjs`, `timeline_v2.json` and the v2 score preset, see docs/video/TRAILER_PLAN.md.
+
 ## [0.14.1] - 2026-10-16 - House rulings
 
 ### Changed
