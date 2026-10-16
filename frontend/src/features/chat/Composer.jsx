@@ -5,6 +5,8 @@ import MenuButton from '../../app/Menu';
 import { completeSlash, parseLocalCommand, slashSuggestions } from './slashCommands';
 import { ReplyBar } from './MessageActions';
 import { t } from '../../i18n';
+import RecorderSheet from '../voice/RecorderSheet';
+import { canRecord } from '../voice/recorder';
 
 const MAX_ROWS = 10;
 
@@ -86,7 +88,36 @@ export default function Composer({
   inputRef,
   replyTo = null,
   onCancelReply,
+  voice = null,
 }) {
+  // voice: {api, campaignId, locationId, lang, maxSeconds, phoneDictation, canPhoneDictate, onSend}
+  const [recording, setRecording] = useState(0); // 0 closed, else a key (Record again remounts)
+  const micStream = useRef(null);
+  // iOS Safari only grants the mic when getUserMedia runs inside the tap, so ask here and hand
+  // the pending stream to the sheet (phone dictation asks on its own).
+  const openRecorder = (key) => {
+    micStream.current = null;
+    if (!voice.phoneDictation && typeof navigator !== 'undefined' && navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+      micStream.current = navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true } });
+      micStream.current.catch(() => {}); // the sheet reports the error
+    }
+    setRecording(key);
+  };
+  const [micDenied, setMicDenied] = useState(false);
+  const [micHint, setMicHint] = useState(false);
+  const voiceOn = !!voice && !disabled && (voice.phoneDictation ? voice.canPhoneDictate : canRecord());
+  useEffect(() => {
+    if (!voiceOn || voice.phoneDictation || typeof navigator === 'undefined' || !navigator.permissions) return undefined;
+    let live = true;
+    navigator.permissions.query({ name: 'microphone' }).then((p) => {
+      if (!live) return;
+      setMicDenied(p.state === 'denied');
+      p.onchange = () => setMicDenied(p.state === 'denied');
+    }).catch(() => {});
+    return () => {
+      live = false;
+    };
+  }, [voiceOn, voice && voice.phoneDictation]); // eslint-disable-line react-hooks/exhaustive-deps
   // The unsent draft lives in sessionStorage per user and room, so it survives switching rooms and
   // the remount that a language switch causes (App re-keys the tree on language change).
   const storeKey = draftKey ? `${DRAFT_PREFIX}${draftKey}` : null;
@@ -236,7 +267,30 @@ export default function Composer({
           }}
         />
       ) : null}
-      <div className="sr-composer__box">
+      {recording ? (
+        <RecorderSheet
+          key={recording}
+          api={voice.api}
+          campaignId={voice.campaignId}
+          locationId={voice.locationId}
+          lang={voice.lang}
+          maxSeconds={voice.maxSeconds}
+          phoneDictation={voice.phoneDictation}
+          canPhoneDictate={voice.canPhoneDictate}
+          header={<SpeakingAs voices={voices} value={speakAs} onChange={onSpeakAsChange} />}
+          onSend={voice.onSend}
+          onClose={() => setRecording(0)}
+          onRestart={() => openRecorder(recording + 1)}
+          micStream={micStream.current}
+          onMicDenied={() => setMicDenied(true)}
+        />
+      ) : null}
+      {micHint && micDenied ? (
+        <p className="sr-composer__michint" role="status">
+          {t('voice:rec.denied', 'The microphone is blocked. Allow the microphone for this site in your phone’s Settings, then try again.')}
+        </p>
+      ) : null}
+      <div className="sr-composer__box" hidden={!!recording}>
         <SpeakingAs voices={voices} value={speakAs} onChange={onSpeakAsChange} />
         <label className="sr-visually-hidden" htmlFor={`${listId}-input`}>
           {t('chat:composer.label', 'Message {{room}}', { room: roomName })}
@@ -262,6 +316,24 @@ export default function Composer({
           enterKeyHint="send"
         />
         <div className="sr-composer__tools">
+          {voiceOn ? (
+            micDenied ? (
+              <IconButton
+                icon="mic-off"
+                label={t('voice:rec.deniedShort', 'Microphone blocked: allow the microphone in Settings')}
+                onClick={() => setMicHint((v) => !v)}
+                aria-pressed={micHint}
+                data-testid="mic-off"
+              />
+            ) : (
+              <IconButton
+                icon="mic"
+                label={voice.phoneDictation ? t('voice:rec.dictate', 'Dictate a message') : t('voice:rec.record', 'Record a voice message')}
+                onClick={() => openRecorder(1)}
+                data-testid="mic"
+              />
+            )
+          ) : null}
           {onRoll ? <IconButton icon="d10" label={t('chat:composer.roll', 'Roll dice')} onClick={onRoll} disabled={disabled} /> : null}
           <IconButton
             type="submit"

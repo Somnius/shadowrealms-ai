@@ -784,6 +784,43 @@ def ensure_voice_audio_table(cursor):
 
 
 @once_per_process
+def ensure_messages_voice_columns(cursor):
+    """messages.source (NULL | 'voice' | 'phone-voice'), clip_id (voice_clips) and clip_ms."""
+    _ensure_text_column(cursor, "messages", "source")
+    _ensure_text_column(cursor, "messages", "clip_id")
+    db_type = os.getenv("DATABASE_TYPE", "sqlite").lower()
+    if db_type == "postgresql":
+        cursor.execute("ALTER TABLE messages ADD COLUMN IF NOT EXISTS clip_ms INTEGER")
+        return
+    cursor.execute("PRAGMA table_info(messages)")
+    if "clip_ms" not in [row["name"] for row in cursor.fetchall()]:
+        cursor.execute("ALTER TABLE messages ADD COLUMN clip_ms INTEGER")
+
+
+@once_per_process
+def ensure_voice_clips_table(cursor):
+    """Recorded voice messages (Ogg/Opus in the speech service, keyed by clip_id). Kept for the
+    chronicle's lifetime; deleted with their message and with the chronicle."""
+    cursor.execute(
+        """
+        CREATE TABLE IF NOT EXISTS voice_clips (
+            clip_id TEXT PRIMARY KEY,
+            campaign_id INTEGER NOT NULL,
+            location_id INTEGER,
+            user_id INTEGER NOT NULL,
+            message_id INTEGER,
+            duration_ms INTEGER,
+            lang TEXT,
+            transcript_raw TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+        """
+    )
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_voice_clips_message ON voice_clips(message_id)")
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_voice_clips_campaign ON voice_clips(campaign_id)")
+
+
+@once_per_process
 def ensure_campaigns_staff_pause_columns(cursor):
     """Optional note when staff sets campaigns.is_active false (discover/join gate)."""
     db_type = os.getenv("DATABASE_TYPE", "sqlite").lower()
@@ -1283,6 +1320,8 @@ def migrate_db():
                 ensure_campaigns_voice_settings_column(cursor)
                 ensure_characters_gender_column(cursor)
                 ensure_voice_audio_table(cursor)
+                ensure_messages_voice_columns(cursor)
+                ensure_voice_clips_table(cursor)
                 ensure_character_downtime_requests_table(cursor)
                 ensure_character_spend_requests_table(cursor)
                 ensure_characters_is_npc_column(cursor)
@@ -1659,6 +1698,8 @@ def migrate_db():
         ensure_campaigns_voice_settings_column(cursor)
         ensure_characters_gender_column(cursor)
         ensure_voice_audio_table(cursor)
+        ensure_messages_voice_columns(cursor)
+        ensure_voice_clips_table(cursor)
         ensure_character_downtime_requests_table(cursor)
         ensure_character_spend_requests_table(cursor)
         ensure_messages_ai_message_kind_column(cursor)

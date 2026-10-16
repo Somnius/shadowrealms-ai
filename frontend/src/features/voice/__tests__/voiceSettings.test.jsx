@@ -42,6 +42,7 @@ test('chronicle panel saves read-out defaults', async () => {
     expect(mockApi).toHaveBeenCalledWith('/campaigns/4/voice-settings', { method: 'PUT', body: {
       defaults: { ...settings.defaults, dice: false },
       narrator_voice_en: null, narrator_voice_en_gb: null, narrator_voice_el: null,
+      max_clip_seconds: 180, allow_phone_stt: true,
     } })
   );
 });

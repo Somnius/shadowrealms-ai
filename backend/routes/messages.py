@@ -14,6 +14,7 @@ from database import (
     ensure_character_portrait_url_column,
     ensure_messages_ai_message_kind_column,
     ensure_messages_speaker_mode_column,
+    ensure_messages_voice_columns,
     ensure_locations_player_access_columns,
     ensure_users_player_profile_columns,
     ensure_campaign_players_active_character_id_column,
@@ -76,6 +77,7 @@ def visible_message(cursor, message_id: int, user_id: int):
     """One message as get_messages would show it to this viewer, else None (missing and forbidden
     alike: callers answer 404 both ways). Same checks: chronicle access, a closed room unless the
     viewer may bypass it, hidden rolls for staff and the chronicle's creator only."""
+    ensure_messages_voice_columns(cursor)
     cursor.execute(_MESSAGE_SELECT + " WHERE m.id = %s", (message_id,))
     row = cursor.fetchone()
     if not row:
@@ -134,6 +136,9 @@ _MESSAGE_SELECT = """
         c.portrait_url as character_portrait_url,
         m.ai_message_kind,
         m.speaker_mode,
+        m.source,
+        m.clip_id,
+        m.clip_ms,
         camp.created_by as campaign_created_by,
         rm.id as reply_id,
         SUBSTR(rm.content, 1, 400) as reply_content,
@@ -183,6 +188,9 @@ def _message_dict_from_row(row, allow_hidden: bool = True) -> dict:
         'speaker_mode': sm,
         'staff_kind': staff_kind,
         'reply_to': reply_payload(row, allow_hidden),
+        'source': row.get('source'),
+        'clip_id': row.get('clip_id'),
+        'clip_ms': row.get('clip_ms'),
     }
 
 @messages_bp.route('/campaigns/<int:campaign_id>/locations/<int:location_id>', methods=['GET'])
@@ -214,6 +222,7 @@ def get_messages(campaign_id, location_id):
         ensure_character_portrait_url_column(cursor)
         ensure_messages_ai_message_kind_column(cursor)
         ensure_messages_speaker_mode_column(cursor)
+        ensure_messages_voice_columns(cursor)
         ensure_messages_reply_to_column(cursor)
         ensure_locations_player_access_columns(cursor)
         ensure_users_player_profile_columns(cursor)
@@ -568,6 +577,21 @@ def save_message(campaign_id, location_id):
             if reply_to_id <= 0:
                 return jsonify({'error': 'reply_to_id must be a message id', 'code': 'invalid_reply_to'}), 400
         
+        # Voice (docs/VOICE.md): a dictated line goes through every check below like typed text;
+        # source marks it, clip_id links the recording the player made (kept for replay).
+        clip_id = data.get('clip_id')
+        source = data.get('source')
+        if clip_id is not None and not isinstance(clip_id, str):
+            return jsonify({'error': 'clip_id must be a clip id', 'code': 'clip_not_found'}), 400
+        if source is not None and source not in ('voice', 'phone-voice'):
+            return jsonify({'error': 'source must be voice or phone-voice'}), 400
+        if clip_id and not source:
+            source = 'voice'
+        if source == 'voice' and not clip_id:
+            return jsonify({'error': 'A voice line needs its recording', 'code': 'clip_not_found'}), 400
+        if (clip_id or source) and role != 'user':
+            return jsonify({'error': 'Only players send voice messages'}), 400
+
         conn = get_db()
         cursor = conn.cursor()
         ensure_character_portrait_url_column(cursor)
@@ -576,6 +600,7 @@ def save_message(campaign_id, location_id):
         ensure_users_player_profile_columns(cursor)
         ensure_campaign_players_active_character_id_column(cursor)
         ensure_messages_speaker_mode_column(cursor)
+        ensure_messages_voice_columns(cursor)
         ensure_messages_reply_to_column(cursor)
         conn.commit()
 
@@ -823,6 +848,31 @@ def save_message(campaign_id, location_id):
                     'code': reply_err,
                 }), 400
 
+        clip_ms = None
+        if source:
+            from database import ensure_campaigns_voice_settings_column
+            from services import voice_clips
+            from services.voice_settings import normalize_campaign_voice_settings
+
+            ensure_campaigns_voice_settings_column(cursor)
+            cursor.execute("SELECT voice_settings FROM campaigns WHERE id = %s", (campaign_id,))
+            vrow = cursor.fetchone() or {}
+            rules = normalize_campaign_voice_settings(vrow.get('voice_settings'))
+            if source == 'phone-voice' and not rules['allow_phone_stt']:
+                conn.rollback()
+                return jsonify({'error': 'Phone dictation is off in this chronicle.',
+                                'code': 'phone_stt_off'}), 400
+        if clip_id:
+            clip = voice_clips.get(cursor, clip_id)
+            clip_err = voice_clips.attach_error(clip, user_id, campaign_id, location_id)
+            if not clip_err and clip.get('duration_ms') and \
+                    int(clip['duration_ms']) > rules['max_clip_seconds'] * 1000 + 500:
+                clip_err = 'too_long'
+            if clip_err:
+                conn.rollback()
+                return jsonify({'error': 'That recording cannot be sent here.', 'code': clip_err}), 400
+            clip_ms = clip.get('duration_ms')
+
         # Insert message. The quoted message can be deleted between the check above and here;
         # the foreign key then refuses the row, which is the same "not found" answer.
         try:
@@ -831,8 +881,8 @@ def save_message(campaign_id, location_id):
                 INSERT INTO messages (
                     campaign_id, location_id, user_id, character_id,
                     message_type, content, role, created_at, ai_message_kind, speaker_mode,
-                    reply_to_id
-                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                    reply_to_id, source, clip_id, clip_ms
+                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                 RETURNING id
                 """,
                 (
@@ -847,6 +897,9 @@ def save_message(campaign_id, location_id):
                     ai_message_kind,
                     speaker_mode,
                     reply_to_id,
+                    source,
+                    clip_id or None,
+                    clip_ms,
                 ),
             )
         except Exception as e:  # noqa: BLE001
@@ -862,6 +915,9 @@ def save_message(campaign_id, location_id):
 
         result = cursor.fetchone()
         message_id = result['id']
+        if clip_id and not voice_clips.attach(cursor, clip_id, message_id):
+            conn.rollback()
+            return jsonify({'error': 'That recording cannot be sent here.', 'code': 'clip_already_sent'}), 400
         conn.commit()
         
         # Store message embedding in ChromaDB for semantic search
@@ -998,7 +1054,10 @@ def delete_message(message_id):
         try:
             from services.voice_audio import forget_message_audio
 
+            from services.voice_clips import forget_message_clips
+
             forget_message_audio(cursor, deleted_ids)
+            forget_message_clips(cursor, deleted_ids)
             conn.commit()
         except Exception as e:
             logger.warning("Failed to drop voice audio: %s", safe_log_value(e))

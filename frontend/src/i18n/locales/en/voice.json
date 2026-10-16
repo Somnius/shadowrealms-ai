@@ -78,5 +78,65 @@
     "unset": "Not set",
     "reminder": "Set a voice so this character is read aloud with a matching voice. Until then a neutral voice is used.",
     "saveFailed": "Could not save the voice."
+  },
+  "mark": {
+    "voice": "Sent by voice",
+    "phone": "Dictated on the phone"
+  },
+  "clip": {
+    "play": "Play the recording",
+    "pause": "Pause the recording",
+    "seek": "Position in the recording",
+    "failed": "Could not play it"
+  },
+  "rec": {
+    "title": "Voice message",
+    "record": "Record a voice message",
+    "dictate": "Dictate a message",
+    "recording": "Recording",
+    "dictateTitle": "Dictating",
+    "review": "Your recording · {{time}}",
+    "text": "What you said",
+    "cancel": "Cancel the voice message",
+    "cancelShort": "Cancel",
+    "stop": "Stop",
+    "left": "{{time}} left",
+    "rate": "Playback speed {{rate}}×. Tap to change",
+    "discard": "Discard",
+    "again": "Record again",
+    "transcribe": "Transcribe",
+    "back": "Back",
+    "send": "Send",
+    "sending": "Sending…",
+    "uploading": "Sending the recording…",
+    "transcribing": "Transcribing…",
+    "position": "Transcribing… {{count}} ahead of you",
+    "empty": "No words were heard. Type what you said, or record again.",
+    "busy": "The server’s speech engine is busy. Type what you said, or use phone dictation.",
+    "tooLong": "The recording is too long for the server.",
+    "diskFull": "The server has no room for more recordings. Tell the site admin.",
+    "down": "The speech service is not running. Type what you said, or use phone dictation.",
+    "failed": "Transcription failed. Type what you said, or record again.",
+    "dictationFailed": "Phone dictation stopped. Type what you said.",
+    "noDictation": "This phone has no dictation here. Type what you said.",
+    "dictating": "Listening… tap Stop when you are done.",
+    "dictateInstead": "Use phone dictation",
+    "denied": "The microphone is blocked. Allow the microphone for this site in your phone’s Settings, then try again.",
+    "deniedShort": "Microphone blocked: allow the microphone in Settings"
+  },
+  "stt": {
+    "label": "Voice messages are written by",
+    "hint": "The server keeps your recording so the table can replay it. Phone dictation sends your audio to Apple or Google and keeps no recording.",
+    "server": "This site’s server",
+    "phone": "My phone’s dictation"
+  },
+  "speak": {
+    "label": "I speak",
+    "auto": "The app’s language"
+  },
+  "rules": {
+    "legend": "Voice messages",
+    "max": "Longest recording: {{value}} min",
+    "phone": "Players may use their phone’s dictation (audio goes to Apple or Google)"
   }
 }

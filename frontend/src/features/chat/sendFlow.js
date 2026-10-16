@@ -104,7 +104,7 @@ export function optimisticMessage({ text, user, campaign, location, speakAs, cha
  *             onAiPending(bool), onDiceMarker(marker), onRoomReload(), onLocationsChanged(),
  *             onReplyGone() (the replied-to message was deleted meanwhile)
  * @param {string} rawText
- * @param {{ messageType?: 'action', replyTo?: {id, author, excerpt, role} }} [opts]
+ * @param {{ messageType?: 'action', replyTo?: {id, author, excerpt, role}, voice?: {clipId, source} }} [opts]
  *   replyTo: the message this line answers (reply_to_id; shown as a quote above it)
  * @returns {Promise<boolean>} true when the user's line was saved
  */
@@ -143,9 +143,11 @@ export async function sendChatMessage(ctx, rawText, opts = {}) {
   const roomPath = `/campaigns/${campaign.id}/locations/${location.id}`;
 
   const replyTo = opts.replyTo && opts.replyTo.id != null ? opts.replyTo : null;
+  const voice = opts.voice || null; // {clipId, source}: a line spoken into the recorder
   // /ai commands are posted with the staff voice; a player's /ai explain uses the player voice.
   const slashVoice = explain && !canUseStaffVoice(user, campaign) ? 'player' : 'staff';
   const temp = optimisticMessage({ text, user, campaign, location, speakAs: slashMatch ? slashVoice : speakAs, character, messageType, replyTo });
+  if (voice && !slashMatch) Object.assign(temp, { source: voice.source || 'voice', clip_id: voice.clipId || null });
   cb.onOptimistic(temp);
 
   const save = await api(roomPath, {
@@ -159,6 +161,7 @@ export async function sendChatMessage(ctx, rawText, opts = {}) {
       ...(!slashMatch && speakAs === 'character' && character?.id ? { character_id: character.id } : {}),
       ...(slashMatch ? { ai_message_kind: 'slash_user' } : chatMatch ? { ai_message_kind: 'chat_user' } : {}),
       ...(replyTo ? { reply_to_id: replyTo.id } : {}),
+      ...(voice && !slashMatch ? { source: voice.source || 'voice', ...(voice.clipId ? { clip_id: voice.clipId } : {}) } : {}),
     },
   });
   const notifyOoc = (data) => {

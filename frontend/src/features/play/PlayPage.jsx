@@ -18,8 +18,11 @@ import { sendChatMessage } from '../chat/sendFlow';
 import { seenParam, useRoomMessages } from '../chat/useRoomMessages';
 import { useListen } from '../voice/useListen';
 import { ListenButton, SpeakingBar } from '../voice/ListenControls';
+import { speechRecognitionCtor, sttLang } from '../voice/recorder';
+import * as clipPlayer from '../voice/clipPlayer';
 import { useLiveUpdates } from '../chat/useLiveUpdates';
 import { MessageActionsContext, useMessageActions } from '../chat/MessageActions';
+import { setDefaults as setClipDefaults } from '../voice/clipPlayer';
 import { useDiceOverlay } from '../dice/useDiceOverlay';
 import { useDiceActions } from '../dice/useDiceActions';
 import { DiceHistoryDialog, DiceRulesDialog, RollDialog } from '../dice/DiceDialogs';
@@ -30,7 +33,7 @@ import MemberPanel from './MemberPanel';
 import QuickSwitcher from './QuickSwitcher';
 import { closedRoomCopy } from './closedRoom';
 import { editionOf } from '../../rules/rulesEdition';
-import { t } from '../../i18n';
+import { getLanguage, t } from '../../i18n';
 import '../chat/chat.css';
 import './play.css';
 
@@ -341,7 +344,8 @@ export default function PlayPage() {
   }, [ready, locationId, isMobile]);
 
   // ---- send ----
-  const onSend = async (text, local) => {
+  // opts.voice: {clipId, source} for a line spoken into the recorder (docs/VOICE.md)
+  const onSend = async (text, local, voiceOpts) => {
     if (!ready) return false;
     setAiFailure(null);
     setSending(true);
@@ -368,7 +372,7 @@ export default function PlayPage() {
           onReplyGone: actions.clearReply,
         },
         local && local.type === 'me' ? local.text : text,
-        { ...(local && local.type === 'me' ? { messageType: 'action' } : {}), replyTo: actions.replyTo }
+        { ...(local && local.type === 'me' ? { messageType: 'action' } : {}), replyTo: actions.replyTo, ...(voiceOpts ? { voice: voiceOpts } : {}) }
       );
       if (ok) actions.clearReply();
       return ok;
@@ -376,6 +380,27 @@ export default function PlayPage() {
       setSending(false);
     }
   };
+
+  // Speaking: the recorder in the composer (phone dictation if the player chose it and the chronicle allows it)
+  const vs = listen.settings || {};
+  const vc = listen.chronicle || {};
+  useEffect(() => {
+    setClipDefaults({ rate: Number(vs.rate) || 1, volume: vs.volume == null ? 1 : Number(vs.volume) });
+  }, [vs.rate, vs.volume]);
+  const canPhoneDictate = vc.allow_phone_stt !== false && !!speechRecognitionCtor();
+  const voiceCfg = ready && location
+    ? {
+        api,
+        campaignId,
+        locationId: location.id,
+        lang: sttLang(vs.speak_lang, getLanguage()),
+        maxSeconds: Number(vc.max_clip_seconds) || 180,
+        phoneDictation: vs.stt_source === 'phone' && canPhoneDictate,
+        canPhoneDictate,
+        onSend: ({ text, clipId, source }) => onSend(text, null, clipId || source ? { clipId, source } : null),
+      }
+    : null;
+  useEffect(() => () => clipPlayer.reset(), [locationId]);
 
   const onPortrait = async (dataUrl) => {
     if (!character) return;
@@ -558,6 +583,7 @@ export default function PlayPage() {
               ) : null}
               <SpeakingBar listen={listen} />
               <Composer
+                voice={voiceCfg}
                 inputRef={composerRef}
                 draftKey={`${user ? user.id : 'anon'}:${campaignId}:${locationId}`}
                 roomName={location?.name || ''}
