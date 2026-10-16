@@ -40,6 +40,8 @@ def run_tts(p):
     if not os.path.exists(ogg):
         os.makedirs(os.path.dirname(ogg), exist_ok=True)
         engine = piper if catalog.VOICES[p["voice"]]["engine"] == "piper" else pocket
+        if engine is pocket and not pocket.ok():  # waits for the warm-up load on the first Greek line
+            raise RuntimeError("pocket tts not loaded")
         with tempfile.TemporaryDirectory(dir=TMP_DIR) as td:
             wavs = []
             for i, part in enumerate(textprep.split_parts(p["text"], config.TEXT_PART_CHARS)):

@@ -651,7 +651,6 @@ CREATE OR REPLACE TRIGGER trg_messages_activity
     FOR EACH ROW EXECUTE FUNCTION messages_bump_activity();
 
 
-COMMIT;
 
 -- -----------------------------------------------------------------------------
 -- voice_audio: spoken lines in the speech service's cache, per message (NULL = a voice preview)
@@ -684,3 +683,5 @@ CREATE TABLE IF NOT EXISTS voice_clips (
 
 CREATE INDEX IF NOT EXISTS idx_voice_clips_message ON voice_clips(message_id);
 CREATE INDEX IF NOT EXISTS idx_voice_clips_campaign ON voice_clips(campaign_id);
+
+COMMIT;

@@ -7,7 +7,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { guessLang, shouldRead, spokenText } from './readout';
 import { createSpeechQueue } from './speechQueue';
 import { hasPhoneVoices, phoneEngine, unlockPhoneVoice } from './phoneVoice';
-import { makeRoomAudio, serverEngine, switchingEngine } from './serverVoice';
+import { makeRoomAudio, serverEngine, switchingEngine, unlockRoomAudio } from './serverVoice';
 import { presentSpeaker } from '../chat/messageModel';
 
 export const CATCH_UP = 3;
@@ -51,6 +51,14 @@ export function useListen({ api, campaignId, roomKey, messages, status, userId, 
 
   useEffect(() => queue.subscribe(setQs), [queue]);
   useEffect(() => () => queue.stop(), [queue]);
+  useEffect(
+    () => () => {
+      const el = audioRef.current;
+      audioRef.current = null;
+      if (el && el.parentNode) el.parentNode.removeChild(el);
+    },
+    [],
+  );
 
   useEffect(() => {
     let live = true;
@@ -116,13 +124,7 @@ export function useListen({ api, campaignId, roomKey, messages, status, userId, 
     unlockPhoneVoice(); // inside the tap
     if (settingsRef.current && settingsRef.current.tts_source === 'server') {
       // the room's <audio> may only start from a tap on iOS: touch it now, inside this one
-      const el = audioRef.current || (audioRef.current = makeRoomAudio());
-      try {
-        const p = el && el.play();
-        if (p && p.catch) p.catch(() => {});
-      } catch {
-        /* nothing loaded yet */
-      }
+      unlockRoomAudio(audioRef.current || (audioRef.current = makeRoomAudio()));
     }
     lastId.current = maxId(messages);
     setCatchUp(Math.min(CATCH_UP, readable().length));

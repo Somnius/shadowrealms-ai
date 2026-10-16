@@ -46,12 +46,19 @@ def forget_message_audio(cursor, message_ids):
     cursor.execute(f"DELETE FROM voice_audio WHERE message_id IN ({ph})", tuple(ids))
     gone = []
     for key in keys:
-        cursor.execute("SELECT 1 FROM voice_audio WHERE audio_key = %s", (key,))
-        if cursor.fetchone():
+        # Claim the file with a tombstone row only if no row uses the key (one statement, so a
+        # line cached meanwhile keeps its file); the file goes, then the tombstone.
+        cursor.execute(
+            "INSERT INTO voice_audio (message_id, audio_key, voice_id) "
+            "SELECT -1, %s, NULL WHERE NOT EXISTS (SELECT 1 FROM voice_audio WHERE audio_key = %s)",
+            (key, key),
+        )
+        if cursor.rowcount != 1:
             continue  # another message (or a preview) still says the same words
         try:
             speech_client.call_json("DELETE", f"/audio/{key}")
         except speech_client.SpeechUnavailable:
             logger.warning("speech service down: audio %s left in the cache", key[:8])
+        cursor.execute("DELETE FROM voice_audio WHERE message_id = -1 AND audio_key = %s", (key,))
         gone.append(key)
     return gone
