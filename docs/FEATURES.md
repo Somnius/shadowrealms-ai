@@ -1,7 +1,7 @@
 # Feature Documentation
 
 **Last Updated**: 2026-10-16  
-**Version**: 0.13.0
+**Version**: 0.14.0
 
 Feature notes for ShadowRealms AI that don't have their own document. The full list of changes per release is in [CHANGELOG.md](CHANGELOG.md); the plans are in [ROADMAP_v0.9.md](ROADMAP_v0.9.md) and [ROADMAP_v0.10.md](ROADMAP_v0.10.md).
 
@@ -9,6 +9,7 @@ Feature notes for ShadowRealms AI that don't have their own document. The full l
 
 ## Table of Contents
 
+1. [What's new in v0.14.0](#whats-new-in-v0140)
 1. [What's new in v0.13.0](#whats-new-in-v0130)
 1. [What's new in v0.12.0](#whats-new-in-v0120)
 1. [What's new in v0.11.0](#whats-new-in-v0110)
@@ -23,6 +24,10 @@ Feature notes for ShadowRealms AI that don't have their own document. The full l
 8. [Invite Code System](#invite-code-system)
 
 ---
+
+## What's new in v0.14.0
+
+- **Supplement books** in the V5 forge (loresheets, powers, rituals, ceremonies, formulae, Merits and Flaws, with descriptions and pages), and an **Allowed books** list per chronicle for the Storyteller. Forge v2 is complete.
 
 ## What's new in v0.13.0
 

@@ -295,6 +295,7 @@ This philosophy ensures:
 - [Performance & Scalability](#performance--scalability)
 
 ### **📊 Current Status & Versions**
+- [Version 0.14.0 - The library](#version-0140---the-library)
 - [Version 0.13.0 - Saved for later](#version-0130---saved-for-later)
 - [Version 0.12.0 - Merits and guides](#version-0120---merits-and-guides)
 - [Version 0.11.0 - By the book](#version-0110---by-the-book)
@@ -1326,6 +1327,20 @@ The project now includes comprehensive `.gitignore` rules covering:
 - **Campaign Continuity**: Persistent AI memory across multiple sessions
 - **Multi-Language**: Global accessibility with translation pipelines
 - **Real-time Collaboration**: Live AI-assisted gaming experiences
+
+## Version 0.14.0 - The library
+
+### What changed from 0.13.0
+
+- **Supplement books in the forge**: loresheets, Discipline powers, rituals, ceremonies, thin-blood formulae and Merits and Flaws from the V5 supplements (Camarilla, Chicago by Night, Cults of the Blood Gods, Blood Sigils, Children of the Blood, Live from the Succubus Club, Tattered Façade, Courts of the Damned, In Memoriam, Let the Streets Run Red and more): 157 loresheets, 210 powers, 109 rituals, 279 Advantages and Flaws in all, each with its book page and a short description in English and Greek.
+- **Allowed books per chronicle**: the Storyteller ticks which books a chronicle uses (the corebook always); the forge, the guided mode, saved points and the server follow it.
+- Printed rules the forge and the server now apply: Koldunic Sorcery (Tzimisce), ritual prerequisites, loresheet and level restrictions, requirements such as "Fame ••+" or "Haven ••", and Merits and Flaws that exclude each other.
+
+This completes Forge v2.
+
+**See also:** [docs/CHANGELOG.md](docs/CHANGELOG.md) (`[0.14.0]`), [docs/rules/V5.md](docs/rules/V5.md).
+
+---
 
 ## Version 0.13.0 - Saved for later
 
