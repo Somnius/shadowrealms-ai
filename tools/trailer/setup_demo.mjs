@@ -1,18 +1,20 @@
 // Seed the trailer's demo stack through the app's API (no SQL):
 //   chronicles + rooms, memberships, characters, earlier chat (Storyteller lines from the real model).
-// Usage: node tools/trailer/setup_demo.mjs en|el      (accounts first: register_accounts.mjs)
-// Writes data/trailer/demo-state.<lang>.json (ids for the recording script).
+// Usage: [TRAILER_DATA=data/trailer-v2] node tools/trailer/setup_demo.mjs en|el   (accounts first: register_accounts.mjs)
+// Writes <trailer data>/demo-state.<lang>.json (ids for the recording script). Trailer v2 adds a fourth
+// player, kalliroi (a member of the V5 chronicle with no character: she makes hers on camera).
 import fs from 'node:fs';
 import { api, must, login, accounts, T } from './lib/api.mjs';
 
 const LANG = process.argv[2] === 'el' ? 'el' : 'en';
 const L = (en, el) => (LANG === 'el' ? el : en);
 
+const USERS = ['nyx', 'ianthe', 'stavros', 'kalliroi'].filter((u) => accounts()[u]?.registered);
 const tok = {};
-for (const u of ['nyx', 'ianthe', 'stavros']) tok[u] = await login(u);
+for (const u of USERS) tok[u] = await login(u);
 const ids = Object.fromEntries(Object.entries(accounts()).map(([k, v]) => [k, v.id]));
 
-for (const u of ['nyx', 'ianthe', 'stavros']) {
+for (const u of USERS) {
   await must(api('/users/me/language', { method: 'PUT', token: tok[u], body: { ui_language: LANG } }));
 }
 // Site admin lets both players hold a locked character in more than one chronicle
@@ -67,7 +69,7 @@ const clRooms = await rooms(cl, [
   ['crypt', L('Pantanassa Crypt', 'Η κρύπτη της Παντάνασσας'), L('A crypt under the Pantanassa monastery: bones, icons, a Tremere library hidden behind the ossuary.', 'Κρύπτη κάτω από τη μονή της Παντάνασσας: οστά, εικόνες, μια βιβλιοθήκη των Tremere κρυμμένη πίσω από το οστεοφυλάκιο.')],
 ]);
 
-for (const [cid, users] of [[v5, ['ianthe', 'stavros']], [cl, ['stavros']]]) {
+for (const [cid, users] of [[v5, ['ianthe', 'stavros', 'kalliroi'].filter((u) => tok[u])], [cl, ['stavros']]]) {
   for (const u of users) {
     const r = await api(`/campaigns/${cid}/members`, { method: 'POST', token: tok.nyx, body: { username: u } });
     if (!r.ok && r.status !== 409 && !/already/i.test(JSON.stringify(r.data))) throw new Error(`member ${u}: ${JSON.stringify(r.data)}`);
@@ -109,7 +111,7 @@ const IANTHE = {
   specialties: [{ skill: 'etiquette', name: L('Art collectors', 'Συλλέκτες τέχνης') }, { skill: 'persuasion', name: 'Seduction', source: 'predator' }],
   disciplines: [{ name: 'Presence', level: 3, powers: [] }, { name: 'Auspex', level: 1, powers: [] }],
   advantages: [{ name: 'Resources', dots: 3, kind: 'background' }, { name: 'Haven', dots: 2, kind: 'background' }, { name: 'Contacts', dots: 2, kind: 'background' }, { name: 'Looks: Beautiful', dots: 2, kind: 'predator' }],
-  flaws: [{ name: 'Prey Exclusion (artists)', dots: 1, kind: 'flaw' }, { name: 'Enemy (spurned lover or jealous partner)', dots: 1, kind: 'predator' }],
+  flaws: [{ name: 'Prey Exclusion (artists)', dots: 1, kind: 'flaw' }, { name: 'Dark Secret', dots: 1, kind: 'flaw' }, { name: 'Enemy (spurned lover or jealous partner)', dots: 1, kind: 'predator' }],
   touchstones: [{ name: L('Daphne, her gallery assistant', 'Η Δάφνη, η βοηθός της στη γκαλερί'), conviction: L('Never destroy a work of art', 'Ποτέ μην καταστρέψεις έργο τέχνης') }],
   background: L('Ianthe runs a gallery on Proxenou Koromila and has not seen a sunrise since 1998.', 'Η Ιάνθη έχει γκαλερί στην Προξένου Κορομηλά και δεν έχει δει ανατολή από το 1998.'),
 };
@@ -220,6 +222,6 @@ if (!(await seeded(cl, clRooms.crypt))) {
   await storyteller('stavros', cl, clRooms.crypt, l);
 }
 
-const state = { lang: LANG, v5, cl, v5Rooms, clRooms, chars, users: ids, names: { v5: V5_NAME, cl: CL_NAME, ianthe: IANTHE.name, stavros: STAVROS.name, anselm: ANSELM.name } };
+const state = { lang: LANG, v5, cl, v5Rooms, clRooms, chars, users: ids, names: { v5: V5_NAME, cl: CL_NAME, ianthe: IANTHE.name, stavros: STAVROS.name, anselm: ANSELM.name, kalliroi: L('Kalliroi Daskalaki', 'Καλλιρρόη Δασκαλάκη') } };
 fs.writeFileSync(T + `demo-state.${LANG}.json`, JSON.stringify(state, null, 2));
 console.log(JSON.stringify(state, null, 1));

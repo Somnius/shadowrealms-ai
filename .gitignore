@@ -507,3 +507,6 @@ CLAUDE.md
 
 # Basic-auth gate for the test instance (local only)
 .srai-gate-credentials.txt
+
+# the trailer recorder library (tools/trailer/lib) is code, not a Python build folder
+!tools/trailer/lib/

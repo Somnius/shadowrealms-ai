@@ -245,7 +245,8 @@ class Planner:
             seg.base = self.clip_source(pc["clip"], p, m, seg.ostart, seg.nframes, align=pc.get("align"),
                                         fit=pc.get("fit", False), speed=pc.get("speed"),
                                         quiet_pad=bool(pc.get("fade_in")))
-            seg.base["crop"] = pc.get("crop")
+            crop = pc.get("crop")  # [x, y, w], or {lang: [x, y, w]} when the recordings differ
+            seg.base["crop"] = crop.get(self.lang) if isinstance(crop, dict) else crop
             seg.base["fade_in"] = pc.get("fade_in")
         # Sanity: the plan covers exactly 0..TOTAL.
         total = sum(sg.nframes for sg in segs) - sum(fr(sg.t_in) for sg in segs)
