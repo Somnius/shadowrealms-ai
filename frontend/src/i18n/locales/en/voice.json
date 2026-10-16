@@ -1,0 +1,57 @@
+{
+  "listen": {
+    "off": "Stop listening",
+    "on": "Listen: read new messages aloud",
+    "announceOn": "Listening on"
+  },
+  "catchUp": "Read the last {{count}} messages?",
+  "tapResume": "Paused in the background. Tap to resume.",
+  "speaking": "Speaking: {{name}}",
+  "waiting": "Listening for new messages",
+  "bar": "Read-out",
+  "queued": "{{count}} queued",
+  "missed": "missed {{count}}",
+  "yes": "Yes",
+  "no": "No",
+  "resume": "Resume",
+  "pause": "Pause",
+  "skip": "Skip",
+  "stop": "Stop listening",
+  "kind": {
+    "storyteller": "Storyteller",
+    "ic": "In character",
+    "ooc": "Out of character",
+    "dice": "Dice results",
+    "actions": "Actions"
+  },
+  "defaults": {
+    "legend": "Read aloud by default",
+    "hint": "Each player can still turn any of these off for themselves in Profile → Voice."
+  },
+  "saveFailed": "Could not save the voice settings",
+  "saved": "Voice settings saved.",
+  "chronicle": {
+    "title": "Voice"
+  },
+  "profile": {
+    "title": "Voice"
+  },
+  "source": {
+    "label": "Read messages aloud with",
+    "hint": "Phone voices are your phone’s or browser’s own; nothing leaves your device. Turn on Listen (the ear) in a room.",
+    "phone": "Phone voices",
+    "off": "Off"
+  },
+  "accent": {
+    "label": "English accent",
+    "us": "American",
+    "gb": "British"
+  },
+  "rate": "Speed: {{value}}×",
+  "volume": "Volume: {{value}}%",
+  "override": {
+    "default": "As the chronicle sets it",
+    "on": "Always read",
+    "off": "Never read"
+  }
+}

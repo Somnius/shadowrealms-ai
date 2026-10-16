@@ -38,7 +38,7 @@ How each phase runs: build in its own git worktree → tests and CI green → on
 ## Phase 1 — Listen with the phone's own voices (0.16)
 
 - [x] 1.1 `media-src 'self' blob:` in nginx; nine new glyphs (mic, mic-off, ear, play, pause, stop, skip, waveform, tongue). Status: done 23:10. Glyph test added; blob playback on live nginx is checked at release.
-- [ ] 1.2 Player voice settings column, `GET/PUT /api/voice/settings`, Profile → Voice panel (source, accent, speed, volume, opt-outs). Status: not started.
+- [x] 1.2 Player voice settings column, `GET/PUT /api/voice/settings`, Profile → Voice panel (source, accent, speed, volume, opt-outs). Status: done 23:17. Profile → Voice panel (Phone voices / Off, accent, speed, volume, per-kind opt-outs); pytest + jest.
 - [ ] 1.3 Chronicle voice settings column, route, "Voice" block in Create chronicle and Chronicle settings (read-out defaults). Status: not started.
 - [ ] 1.4 Listen toggle in the room header, audio unlock on tap, speech queue (order, skip own, cap 20, pause in background, tap to resume), speaking bar, "read the last 3?" on open. Status: not started.
 - [ ] 1.5 Read-out rules (Storyteller / IC / OOC / dice from chronicle defaults and player overrides), dice read as one sentence, system lines skipped. Status: not started.
