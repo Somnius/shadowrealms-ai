@@ -25,6 +25,10 @@ Feature notes for ShadowRealms AI that don't have their own document. The full l
 
 ---
 
+## What's new in v0.18.0
+
+- **Voice messages.** The mic in the message box records up to 3 minutes, lets you listen back and fix the text before you send it; everyone sees a mic on voice lines and can replay the recording. Phone dictation is an option. See [VOICE.md](VOICE.md).
+
 ## What's new in v0.17.0
 
 - **Server voices.** Listen can use voices made on the server: the chronicle's narrator for the Storyteller, actions and dice, a voice per character by gender (set in the Forge or on the sheet), a neutral voice for OOC. Falls back to the phone's voice when the server is busy. See [VOICE.md](VOICE.md).

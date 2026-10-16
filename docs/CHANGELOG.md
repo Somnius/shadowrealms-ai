@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.18.0] - 2026-10-17 - Speaking
+
+### Added
+- **Voice messages.** A mic in the message box opens a recorder in its place: 28-px timer, a 44-px ring that goes gold → warn (1:00) → blood (2:00) → bright blood (2:45) and pulses every 5 s (colour only with reduced motion), auto-stop at the chronicle's limit (3 min by default), pause with "Tap to resume" in the background. Review on the phone with seek and one speed button (0.75–2×); nothing is uploaded until Transcribe. The transcript (hesitations stripped) is editable and sent with a separate tap through the normal send, so OOC warnings, the Storyteller and replies work as for typed text. Speaking as and the reply bar choose in character, out of character or a quote. EN + EL.
+- **Mic marker and replay.** Voice lines carry a 14-px mic with a spoken name, seen by everyone; recorded ones a one-line chip (play/pause, time, separate seek) using one `<audio playsinline>` per room, Ogg/Opus or the AAC copy on iOS.
+- **Phone dictation** as a choice in Profile → Voice (the phone's own recogniser; audio goes to Apple or Google; text only), offered too when the server's GPU is busy. Chronicle settings → Voice: longest recording and whether phone dictation is allowed. "I speak" (language for transcription).
+- Microphone blocked: the mic becomes mic-off with "allow the microphone in Settings".
+- Routes: `POST /api/voice/clips`, `GET /api/voice/stt/jobs/<id>`, `GET /api/voice/clips/<id>/audio`; `clip_id` and `source` on `POST /api/campaigns/<cid>/locations/<lid>`. Rate limits per user.
+
+### Changed
+- Clips are kept as Ogg/Opus 16 kbps for the chronicle's lifetime and deleted with their message and with the chronicle; `VOICE_CLIPS_MAX_GB` (default 20) caps the disk.
+- nginx: `client_max_body_size 8m` on `/api/voice/clips` only.
+- Schema: `voice_clips`, `messages.source`, `messages.clip_id`, `messages.clip_ms`.
+
 ## [0.17.0] - 2026-10-17 - Server voices
 
 ### Added
