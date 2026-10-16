@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.21.1] - 2026-10-17 - Acrobat
+
+### Fixed
+- Fillable character sheet in Adobe Acrobat Reader: when Acrobat redrew a field (after you edit it, or in a copy saved with "redraw fields" on), every letter showed as a dot. Fields now redraw with the standard Helvetica every PDF reader has, and the field size is "auto" so a reader that redraws can shrink long text. The values the app fills in still show in EB Garamond until a field is redrawn. Checked: Turkish letters in Acrobat, Greek and Turkish in Edge. Not checked yet: Greek in Acrobat. Edge ignores the auto size, so a long value it redraws can be cut off. To share a sheet, the print version is still the safe choice.
+
 ## [0.21.0] - 2026-10-17 - Transcript check
 
 ### Added

@@ -21,9 +21,10 @@ Form fields and Greek: reportlab's AcroForm helpers only know the 14 standard PD
 so the widgets are written here by hand:
 - each field's appearance (/AP) is a form XObject drawn with the embedded EB Garamond, so the
   pre-filled values show correctly in every viewer without regenerating anything;
-- the field's /DA font, which a viewer uses to redraw the field after the player edits it, is a
-  Latin + Greek cut of EB Garamond (EBGaramond-Form.ttf, see scripts/build_form_font.py) embedded
-  whole as a simple TrueType font, with an encoding that names its Greek glyphs.
+- the field's /DA font, which a viewer uses to redraw the field after the player edits it, is the
+  standard Helvetica (/Helv, WinAnsiEncoding). Acrobat can't redraw with an embedded simple TrueType
+  font that has a custom encoding (every letter shows as a dot); with Helvetica it substitutes a
+  font for letters outside WinAnsi (Greek, Turkish) and shows them.
 """
 
 from __future__ import annotations
@@ -41,9 +42,8 @@ from reportlab.lib.pagesizes import A4, LETTER
 from reportlab.lib.styles import ParagraphStyle
 from reportlab.lib.utils import simpleSplit
 from reportlab.pdfbase import pdfdoc, pdfmetrics
-from reportlab.pdfbase._glyphlist import _glyphname2unicode
 from reportlab.pdfbase.acroform import PDFFromString
-from reportlab.pdfbase.ttfonts import TTFont, TTFontFile
+from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.pdfgen import canvas as rl_canvas
 from reportlab.platypus import Paragraph
 
@@ -62,19 +62,16 @@ _FONT_FILES = {
     SERIF: "EBGaramond-Regular.ttf",
     SERIF_ITALIC: "EBGaramond-Italic.ttf",
 }
-FORM_FONT_FILE = "EBGaramond-Form.ttf"
-FORM_FONT_KEY = "SRG"  # resource name in the AcroForm /DR
+FORM_FONT_KEY = "Helv"  # resource name in the AcroForm /DR
 
 PAPER = {"a4": A4, "letter": LETTER}
 
 _fonts_lock = threading.Lock()
 _fonts_ready = False
-_form_face: Optional[TTFontFile] = None
-_form_font_bytes = b""
 
 
 def _ensure_fonts() -> None:
-    global _fonts_ready, _form_face, _form_font_bytes
+    global _fonts_ready
     if _fonts_ready:
         return
     with _fonts_lock:
@@ -82,143 +79,7 @@ def _ensure_fonts() -> None:
             return
         for name, fn in _FONT_FILES.items():
             pdfmetrics.registerFont(TTFont(name, os.path.join(FONT_DIR, fn)))
-        path = os.path.join(FONT_DIR, FORM_FONT_FILE)
-        with open(path, "rb") as f:
-            _form_font_bytes = f.read()
-        _form_face = TTFontFile(path)
         _fonts_ready = True
-
-
-# ---------------------------------------------------------------------------------------------
-# Form font encoding: WinAnsi, with Greek and Latin Extended letters (Turkish, Polish, Czech,
-# Hungarian...) moved into codes whose WinAnsi characters are rare (unused codes, typographic odds
-# and ends, Icelandic letters) and, once those run out, the control codes 1-31 (all but tab, LF, CR).
-# Kept characters stay at their WinAnsi codes, so a viewer that encodes typed text through the base
-# encoding still picks the right glyph. A viewer that regenerates a field (NeedAppearances, Windows
-# viewers) can only show characters this encoding holds: anything else vanishes.
-
-_GREEK = (
-    [c for c in range(0x391, 0x3AA) if c != 0x3A2]  # Α-Ω
-    + list(range(0x3B1, 0x3CA))                      # α-ω (incl. ς)
-    + [0x386, 0x388, 0x389, 0x38A, 0x38C, 0x38E, 0x38F,  # Ά Έ Ή Ί Ό Ύ Ώ
-       0x3AC, 0x3AD, 0x3AE, 0x3AF, 0x3CC, 0x3CD, 0x3CE,  # ά έ ή ί ό ύ ώ
-       0x3CA, 0x3CB, 0x390, 0x3B0, 0x3AA, 0x3AB, 0x387]  # ϊ ϋ ΐ ΰ Ϊ Ϋ ·
-)
-# Latin Extended letters that aren't in WinAnsi: Turkish first, then Hungarian, Czech, Polish...
-_LATIN_EXT = [ord(c) for c in "ğĞıİşŞőŐűŰčČłŁćĆśŚęĘąĄżŻ"]
-_KEEP_HIGH = (set("€…‘’“”•–—œŒ\xa0£«°·»") | set("ÀÁÂÄÇÈÉÊËÍÎÏÑÓÔÖØÚÜßàáâäçèéêëíîïñóôöøúü")
-              | set("ŠšŽžãõå"))
-# The overflow (ΐ ΰ Ϊ Ϋ ·, then the Latin Extended letters) goes to control codes 1-31, minus tab, LF
-# and CR. Checked by hand in Edge 155 on Windows (it rebuilds field appearances): those letters show
-# and can be typed correctly, so this stays as it is.
-_CONTROL_CODES = [b for b in range(1, 32) if b not in (9, 10, 13)]
-
-
-def _winansi(b: int) -> Optional[str]:
-    try:
-        ch = bytes([b]).decode("cp1252")
-    except UnicodeDecodeError:
-        return None
-    return None if b == 0x7F else ch
-
-
-def _build_encoding() -> Tuple[Dict[int, int], Dict[int, int]]:
-    """(byte -> unicode for the codes in use, the bytes that differ from WinAnsi -> unicode)."""
-    table: Dict[int, int] = {}
-    free = []
-    for b in range(32, 256):
-        ch = _winansi(b)
-        if b < 127 or (ch is not None and ch in _KEEP_HIGH):
-            table[b] = ord(ch)
-        else:
-            free.append(b)
-    free += _CONTROL_CODES
-    extra = _GREEK + _LATIN_EXT
-    assert len(free) >= len(extra), "form font encoding has no room for Greek and Latin Extended"
-    diffs = dict(zip(free, extra))
-    table.update(diffs)
-    return table, diffs
-
-
-_BYTE_TO_UNI, _DIFFS = _build_encoding()
-FORM_CODES: Dict[int, int] = {u: b for b, u in _BYTE_TO_UNI.items()}  # unicode -> byte
-
-_AGL = {}
-for _name, _uni in _glyphname2unicode.items():
-    if "." not in _name and not _name.startswith("uni") and _uni not in _AGL:
-        _AGL[_uni] = _name
-
-
-def _glyph_name(cp: int) -> str:
-    # Greek gets uniXXXX names: some AGL names (Delta, Omega, mu) also mean math symbols.
-    if 0x370 <= cp < 0x400 or cp not in _AGL:
-        return "uni%04X" % cp
-    return _AGL[cp]
-
-
-def _to_unicode_cmap() -> str:
-    pairs = sorted(_BYTE_TO_UNI.items())
-    out = ["/CIDInit /ProcSet findresource begin", "12 dict begin", "begincmap",
-           "/CIDSystemInfo << /Registry (Adobe) /Ordering (UCS) /Supplement 0 >> def",
-           "/CMapName /SRG-UCS def", "/CMapType 2 def",
-           "1 begincodespacerange", "<00> <FF>", "endcodespacerange"]
-    for i in range(0, len(pairs), 100):
-        chunk = pairs[i:i + 100]
-        out.append("%d beginbfchar" % len(chunk))
-        out.extend("<%02X> <%04X>" % (b, u) for b, u in chunk)
-        out.append("endbfchar")
-    out += ["endcmap", "CMapName currentdict /CMap defineresource pop", "end", "end"]
-    return "\n".join(out)
-
-
-def _add_form_font(doc) -> str:
-    """Embed the form font once per document; returns its reference string for /DR."""
-    face = _form_face
-    ff = pdfdoc.PDFStream(content=_form_font_bytes)
-    ff.dictionary["Length1"] = len(_form_font_bytes)
-    ff.filters = [pdfdoc.PDFZCompress]
-    ff_ref = doc.Reference(ff, "SRFormFontFile")
-    base = face.name.decode("latin-1") if isinstance(face.name, bytes) else str(face.name)
-    descriptor = pdfdoc.PDFDictionary({
-        "Type": pdfdoc.PDFName("FontDescriptor"),
-        "FontName": pdfdoc.PDFName(base),
-        "Flags": 32 | 2,  # nonsymbolic, serif
-        "FontBBox": pdfdoc.PDFArray(face.bbox),
-        "ItalicAngle": face.italicAngle,
-        "Ascent": face.ascent,
-        "Descent": face.descent,
-        "CapHeight": face.capHeight,
-        "StemV": face.stemV,
-        "FontFile2": ff_ref,
-    })
-    tu = pdfdoc.PDFStream(content=_to_unicode_cmap())
-    tu.filters = [pdfdoc.PDFZCompress]
-    first = min(_BYTE_TO_UNI)
-    widths = [face.charWidths.get(_BYTE_TO_UNI.get(b, 0x20), face.defaultWidth) for b in range(first, 256)]
-    diffs: List[Any] = []
-    prev = None
-    for code in sorted(_DIFFS):
-        if prev is None or code != prev + 1:
-            diffs.append(code)
-        diffs.append(pdfdoc.PDFName(_glyph_name(_DIFFS[code])))
-        prev = code
-    font = pdfdoc.PDFDictionary({
-        "Type": pdfdoc.PDFName("Font"),
-        "Subtype": pdfdoc.PDFName("TrueType"),
-        "BaseFont": pdfdoc.PDFName(base),
-        "FirstChar": first,
-        "LastChar": 255,
-        "Widths": pdfdoc.PDFArray(widths),
-        "Encoding": pdfdoc.PDFDictionary({
-            "Type": pdfdoc.PDFName("Encoding"),
-            "BaseEncoding": pdfdoc.PDFName("WinAnsiEncoding"),
-            "Differences": pdfdoc.PDFArray(diffs),
-        }),
-        "FontDescriptor": doc.Reference(descriptor, "SRFormFontDescriptor"),
-        "ToUnicode": doc.Reference(tu, "SRFormFontToUnicode"),
-    })
-    ref = doc.Reference(font, "SRFormFont")
-    return ref.format(doc).decode("latin-1")
 
 
 # ---------------------------------------------------------------------------------------------
@@ -481,12 +342,14 @@ class SheetCanvas:
     def _init_form(self):
         c = self.c
         form = c.acroForm  # registers /AcroForm in the catalog
-        form.fonts[FORM_FONT_KEY] = _add_form_font(c._doc)
         # reportlab writes one /Font key per font into /DR; with two fonts, write /DR here instead.
-        # /ZaDb is for viewers that redraw the checkboxes' /MK marks themselves.
+        # /Helv redraws edited text fields; /ZaDb is for viewers that redraw the checkboxes' /MK marks.
+        helv = form.getRefStr(PDFFromString(
+            "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Name /Helv /Encoding /WinAnsiEncoding >>"))
         zadb = form.getRefStr(PDFFromString("<< /Type /Font /Subtype /Type1 /BaseFont /ZapfDingbats /Name /ZaDb >>"))
-        form.extras["DR"] = PDFFromString(
-            f"<< /Font << /{FORM_FONT_KEY} {form.fonts[FORM_FONT_KEY]} /ZaDb {zadb} >> >>")
+        form.fonts[FORM_FONT_KEY] = helv
+        form.extras["DR"] = PDFFromString(f"<< /Font << /{FORM_FONT_KEY} {helv} /ZaDb {zadb} >> >>")
+        form.extras["DA"] = PDFFromString(f"(/{FORM_FONT_KEY} 0 Tf 0 g)")
         self.form = form
 
     # -- basics ------------------------------------------------------------------------------
@@ -639,7 +502,8 @@ class SheetCanvas:
             "T": pdfdoc.PDFString(name),
             "V": pdfdoc.PDFString(value),
             "Rect": pdfdoc.PDFArray([x, y, x + w, y + h]),
-            "DA": pdfdoc.PDFString(f"/{FORM_FONT_KEY} {size:g} Tf 0 g"),
+            # size 0 = auto: a viewer that redraws the field (Acrobat, Edge) shrinks long text to fit
+            "DA": pdfdoc.PDFString(f"/{FORM_FONT_KEY} 0 Tf 0 g"),
             "Q": {"left": 0, "center": 1, "right": 2}[align],
             "AP": pdfdoc.PDFDictionary({"N": pdfdoc.PDFObjectReference(pdfdoc.xObjectName(xo))}),
             "MK": pdfdoc.PDFDictionary({}),
