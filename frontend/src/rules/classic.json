@@ -714,5 +714,169 @@
       "disciplines": [],
       "note": "any Disciplines with ST approval; XP cost current x 6 for all"
     }
-  ]
+  ],
+  "ghoul": {
+    "source": "Ghouls: Fatal Addiction (1997), the book Revised p. 276 points to; Revised core pp. 275-276. Fatal Addiction's printed pages are about PDF + 5 (its scan has no page numbers): 'p. N (PDF n)'.",
+    "kinds": [
+      "vassal",
+      "independent",
+      "revenant"
+    ],
+    "kinds_in_forge": [
+      "vassal",
+      "independent"
+    ],
+    "creation": {
+      "attributes": {
+        "priorities": [
+          6,
+          4,
+          3
+        ],
+        "free_dot_each": 1
+      },
+      "abilities": {
+        "priorities": [
+          11,
+          7,
+          4
+        ],
+        "max_before_freebies": 3
+      },
+      "disciplines": {
+        "potence": 1,
+        "other": 1,
+        "creation_dots": 2,
+        "instinctive": [
+          "Potence",
+          "Fortitude",
+          "Celerity"
+        ],
+        "vassal": "a Discipline the domitor knows",
+        "independent": "any; the Storyteller may require Celerity, Fortitude or Potence",
+        "only_for_clan": {
+          "Protean": "Gangrel",
+          "Thaumaturgy": "Tremere"
+        }
+      },
+      "backgrounds": {
+        "dots": 5,
+        "not_allowed": [
+          "Generation",
+          "Herd",
+          "Status"
+        ],
+        "mentor_only_for": [
+          "independent",
+          "revenant"
+        ],
+        "retainers": "domitors seldom allow them",
+        "new": [
+          "Domitor"
+        ]
+      },
+      "virtues": {
+        "dots": 7,
+        "path_dots": 5,
+        "free_dot_each": 1,
+        "path_start_max": 5
+      },
+      "humanity": "Conscience + Self-Control",
+      "willpower": "Courage (Morale on a Path)",
+      "blood_pool_start": {
+        "roll": "1d10",
+        "vassal_reroll_1": "Storyteller's option",
+        "independent": "halve, round up"
+      },
+      "blood_bond_start": {
+        "vassal": 3,
+        "independent": 0
+      },
+      "freebies": 21,
+      "flaws_max_points": 7,
+      "freebies_max_with_flaws": 28,
+      "freebie_costs": {
+        "discipline": 10,
+        "attribute": 5,
+        "ability": 2,
+        "virtue": 2,
+        "willpower": 1,
+        "humanity_or_path": 1,
+        "background": 1
+      },
+      "ref": "FA pp. 68-70 (PDF 63-65)"
+    },
+    "discipline_cap_by_donor_generation": {
+      "13": 1,
+      "12": 1,
+      "11": 1,
+      "10": 1,
+      "9": 1,
+      "8": 1,
+      "7": 2,
+      "6": 3,
+      "5": 4,
+      "4": 5,
+      "ref": "FA p. 70 (PDF 65); the optional faster column is unreadable in our scan"
+    },
+    "domitor_background": {
+      "1": "11th generation or higher number",
+      "2": "9th or 10th",
+      "3": "8th",
+      "4": "7th",
+      "5": "6th",
+      "ref": "FA pp. 81-82 (PDF 76-77)"
+    },
+    "blood_pool": {
+      "max": 10,
+      "per_turn": 1,
+      "min_for_disciplines": 1,
+      "physical_boost_cap": "twice the original Attribute",
+      "soak_lethal_while_holding_vitae": true,
+      "bashing_not_halved": true,
+      "last_point_lasts": "one month",
+      "elder_extra": "+1 per two centuries beyond 10",
+      "stomach_comfortable_optional": 2,
+      "ref": "FA pp. 30-32 (PDF 25-27); Revised p. 275"
+    },
+    "blood_bond": {
+      "drinks_to_bind": 3,
+      "second_drink": "about a Vinculum of 5",
+      "weaning_months_per_level": "12 - Willpower",
+      "ref": "Revised pp. 218-219; FA p. 32 (PDF 27)"
+    },
+    "disciplines_atrophy": {
+      "after_months_dry": 6,
+      "then": "one dot per month; levels above 1 first; Potence last",
+      "ref": "FA p. 33 (PDF 28)"
+    },
+    "frenzy": {
+      "difficulty_modifier_revised": -2,
+      "difficulty_modifier_fa": -3,
+      "successes_to_resist": 5,
+      "dice_cap": "the Blood Pool",
+      "ref": "Revised p. 276; FA p. 33 (PDF 28)"
+    },
+    "overdosing": {
+      "extra_points": "one per dot of Stamina",
+      "check": "Stamina, difficulty 8",
+      "fail": "one health level per point over; the excess is unusable until a scene of purging",
+      "while": "+1 Dexterity; frenzy as a vampire; Perception + Self-Control each scene against hallucinations",
+      "ref": "FA p. 33 (PDF 28)"
+    },
+    "withdrawal": {
+      "weeks": "6 - Stamina",
+      "self_control_difficulty": 7,
+      "weekly_roll": "Intelligence + Self-Control, difficulty 6",
+      "ref": "FA p. 35 (PDF 30)"
+    },
+    "aging": {
+      "feeding": "monthly",
+      "within_lifespan": "normal aging resumes",
+      "100_to_250_years": "x10",
+      "over_250": "dust",
+      "ref": "FA p. 31 (PDF 26); Revised p. 275"
+    },
+    "templates_ref": "Revised p. 276: Trusted Valet (Potence 1, Humanity 7, Willpower 4); Ghoul Bodyguard (Fortitude 1, Potence 1, Humanity 5, Willpower 5)"
+  }
 }

@@ -37,3 +37,7 @@
 .sr-app .sr-spend__ok { color: var(--sr-ok-400); }
 .sr-app .sr-spend__warn { color: var(--sr-warn-400); }
 .sr-app .sr-spend__err { color: var(--sr-blood-300); }
+
+/* Export PDF / print version: which one to share, on its own line under the two buttons */
+.sr-app .sr-sheet-pdf__note { flex-basis: 100%; font-size: var(--sr-text-sm); text-align: center; }
+.sr-app .sr-modal__footer .sr-sheet-pdf__note { text-align: right; }

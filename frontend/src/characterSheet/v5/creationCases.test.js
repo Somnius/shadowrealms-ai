@@ -10,13 +10,33 @@
 import fs from 'fs';
 import path from 'path';
 import fixture from './__fixtures__/creation-cases.json';
-import { CASE_DEFS, buildCases, formatCasesFile, storedCase } from './__fixtures__/creationCaseDefs';
+import { buildCases, formatCasesFile, storedCase } from './__fixtures__/creationCaseDefs';
 import { applyV5Catalog } from './rulesData';
 import { validateV5Sheet } from './validation';
+import { validateGhoulSheet } from './ghoul';
 import { normalizeCreationSettings } from './creationSettings';
 
-/** Client messages (validation.js) -> the server's problem codes. */
+/** Client messages (validation.js, ghoul.js) -> the server's problem codes. */
 const CODES = [
+  // the ghoul forge (ghoul.js validateGhoulSheet; backend/services/v5_ghoul_chargen.py)
+  [/^Choose a template for the ghoul\.$/, 'ghoul_template'],
+  [/^Choose the ghoul's domitor\.$/, 'ghoul_domitor'],
+  [/^No Retainers rating buys a Deadly mortal\.$/, 'ghoul_retainer_dots'],
+  [/^A .+ ghoul takes Retainers \d+; the domitor pays \d+\.$/, 'ghoul_retainer_dots'],
+  [/^Attributes don't match the .+ spread\.$/, 'ghoul_attr_spread'],
+  [/^Skills don't match the .+ template: .+\.$/, 'skill_dist'],
+  [/^The .+ template gives \d+ specialties here/, 'ghoul_specialty_count'],
+  [/^A ghoul starts with exactly one level-1 power/, 'ghoul_power_count'],
+  [/^.+ is not one of the domitor's Disciplines\.$/, 'ghoul_power_discipline'],
+  [/^.+: a ghoul's power is level 1\.$/, 'ghoul_power_level'],
+  [/^The domitor doesn't have .+: the first power is one the domitor has\.$/, 'ghoul_power_not_domitors'],
+  [/^The .+ template allows at most \d+ dots of Flaws/, 'ghoul_flaws_over'],
+  [/^.+ is not open to ghouls: .+\.$/, 'ghoul_adv_restricted'],
+  [/^The .+ template has \d+ specialties of its own/, 'ghoul_template_specialty'],
+  [/^The Gifted mortal template's specialty goes on one of its Skills at 4\.$/, 'ghoul_template_specialty'],
+  [/^A ghoul has one Blood Bond, to the domitor/, 'ghoul_bonds'],
+  [/^Bond Strength is 0–\d+\.$/, 'ghoul_bonds'],
+  [/^A second Blood Bond needs the Two Masters Flaw\.$/, 'ghoul_bonds'],
   [/^Character name is required\.$/, 'name_missing'],
   [/^Choose a clan\.$/, 'clan_missing'],
   [/^Choose an age\.$/, 'age_missing'],
@@ -93,7 +113,12 @@ const codesOf = (msg) => {
   return hit ? [].concat(hit[1]) : [`unmapped: ${msg}`];
 };
 
-const clientMessages = (c) => Object.values(validateV5Sheet(c.sheet, undefined, normalizeCreationSettings(c.settings)));
+const clientMessages = (c) =>
+  Object.values(
+    c.kind === 'ghoul'
+      ? validateGhoulSheet(c.sheet, c.domitor, normalizeCreationSettings(c.settings))
+      : validateV5Sheet(c.sheet, undefined, normalizeCreationSettings(c.settings))
+  );
 
 beforeAll(() => applyV5Catalog(fixture.catalog));
 afterAll(() => applyV5Catalog(null));
@@ -101,7 +126,7 @@ afterAll(() => applyV5Catalog(null));
 const FILE = path.join(__dirname, '__fixtures__', 'creation-cases.json');
 // Built on import, with the fixture's catalog (the forge's rules registry is module state).
 applyV5Catalog(fixture.catalog);
-const CASES = buildCases(CASE_DEFS);
+const CASES = buildCases();
 applyV5Catalog(null);
 
 test('the fixture is current (cases built from the definitions with buildV5Payload)', () => {
@@ -118,6 +143,9 @@ test('there are enough cases, valid and invalid, with unique names', () => {
   expect(CASES.length).toBeGreaterThanOrEqual(40);
   expect(CASES.filter((c) => !c.expect.length).length).toBeGreaterThanOrEqual(10);
   expect(new Set(CASES.map((c) => c.name)).size).toBe(CASES.length);
+  const ghouls = CASES.filter((c) => c.kind === 'ghoul');
+  expect(ghouls.length).toBeGreaterThanOrEqual(11);
+  expect(ghouls.filter((c) => !c.expect.length).length).toBeGreaterThanOrEqual(5);
 });
 
 describe.each(CASES.filter((c) => c.client).map((c) => [c.name, c]))('client agrees: %s', (_name, c) => {

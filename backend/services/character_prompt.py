@@ -14,6 +14,10 @@ import json
 import re
 from typing import Any, Dict, Iterable, List, Optional
 
+from services.character_sheet_v5 import ghoul_feeding
+from services.classic_ghoul import BLOOD_BOND_DRINKS, ghoul_pool, kind_label
+from services.rules_edition import edition_of
+
 MAX_BACKGROUND_CHARS = 400
 # Every player-written value (names, concept, ambition, tenets, touchstones, discipline
 # and power names, sheet keys...) is cleaned and capped before it reaches the prompt, and
@@ -201,8 +205,68 @@ def _merits_flaws_line(mf: Any) -> str:
     return "; ".join(parts)
 
 
+def _ordinal(n: int) -> str:
+    return f"{n}{'th' if 10 <= n % 100 <= 20 else {1: 'st', 2: 'nd', 3: 'rd'}.get(n % 10, 'th')}"
+
+
+def _classic_ghoul_lines(meta: Dict[str, Any]) -> List[str]:
+    """A Classic (Revised) ghoul's sheet: domitor, kind, duties, its Blood Pool (vitae it holds, max 10,
+    1 point per turn; Fatal Addiction), Blood Bond in drinks, feeding, overdosing, frenzy. There is
+    no Hunger and no Rouse Check on it."""
+    g = meta.get("ghoul") if isinstance(meta.get("ghoul"), dict) else {}
+    dom = g.get("domitor") if isinstance(g.get("domitor"), dict) else {}
+    dom_name = _clean(dom.get("name") or "an unnamed vampire", MAX_NAME_CHARS)
+    head = f"Ghoul of {dom_name}"
+    gen = _num(dom.get("generation"))
+    extra = [p for p in (_clean(dom.get("clan") or "", MAX_LABEL_CHARS),
+                         f"{_ordinal(gen)} generation" if gen and 3 <= gen <= 15 else "") if p]
+    if extra:
+        head += f" ({', '.join(extra)})"
+    parts = [head]
+    if g.get("kind"):
+        kind = _clean(kind_label(str(g["kind"])), MAX_LABEL_CHARS)
+        if g.get("kind") == "revenant" and g.get("family"):
+            kind += f" ({_clean(g['family'], MAX_LABEL_CHARS)} family)"
+        parts.append(kind)
+    if g.get("duties"):
+        parts.append(f"Duties: {_clean(g['duties'])}")
+    lines = [" · ".join(parts)]
+    age = [f"{_label(k)} {_num(g[k])}" for k in ("age", "apparent_age") if _num(g.get(k)) is not None]
+    if age:
+        lines.append(", ".join(age))
+    if g.get("ghouled_since"):
+        lines.append(f"Ghoul since: {_clean(g['ghouled_since'])}")
+    pool = ghoul_pool(meta)
+    lines.append(
+        f"Blood Pool {pool['current']}/{pool['max']} (vitae; spend 1 point per turn: heal 1 health level, or +1 to "
+        "a Physical Attribute for the scene up to twice the original; Disciplines need at least 1 point; soaks "
+        "lethal damage while holding vitae; no Hunger, no Rouse Checks)")
+    bond = g.get("bond") if isinstance(g.get("bond"), dict) else {}
+    stage = _num(bond.get("stage"))
+    if stage is not None or bond.get("note"):
+        line = f"Blood Bond to {dom_name}: "
+        if stage is not None:
+            stage = max(0, min(BLOOD_BOND_DRINKS, stage))
+            line += f"{stage}/{BLOOD_BOND_DRINKS} drinks" + (", fully Bound" if stage >= BLOOD_BOND_DRINKS else "")
+        else:
+            line += "drinks not set"
+        if bond.get("note"):
+            line += f" ({_clean(bond['note'])})"
+        lines.append(line)
+    feeding = ghoul_feeding(g)
+    if feeding.get("last"):
+        lines.append(f"Last fed on the domitor's vitae: {_clean(feeding['last'], 60)}")
+    if feeding.get("note"):
+        lines.append(f"Feeding note: {_clean(feeding['note'])}")
+    if g.get("overdosing"):
+        lines.append(f"Overdosing: {_clean(g['overdosing'])}")
+    lines.append("Frenzy: Self-Control, difficulties two lower than a vampire's (Revised; Fatal Addiction: three), "
+                 "no more dice than Blood Points held")
+    return lines
+
+
 def _classic_meta_lines(meta: Dict[str, Any]) -> List[str]:
-    lines = []
+    lines = _classic_ghoul_lines(meta) if meta.get("sheet_kind") == "ghoul" else []
     ident = []
     for k in ("clan", "generation", "sect", "breed", "auspice", "tribe", "tradition", "arete"):
         if meta.get(k) not in (None, ""):
@@ -246,7 +310,90 @@ def _classic_meta_lines(meta: Dict[str, Any]) -> List[str]:
     return lines
 
 
+GHOUL_TEMPLATES = {"weak": "Weak mortal", "average": "Average mortal", "gifted": "Gifted mortal",
+                   "deadly": "Deadly mortal", "player": "Players Guide ghoul"}
+MAX_RETAINERS = 2
+MAX_RETAINER_CHARS = 700
+
+
+def _ghoul_meta_lines(meta: Dict[str, Any]) -> List[str]:
+    """A ghoul's sheet (wod_meta.sheet_kind 'ghoul'): domitor, template, Blood Bond, when it last fed
+    on the domitor's Blood, power. A V5 ghoul has no vitae track, Hunger or Blood Potency, so none is
+    printed; feeding is a note, not a resource."""
+    g = meta.get("ghoul") if isinstance(meta.get("ghoul"), dict) else {}
+    dom = g.get("domitor") if isinstance(g.get("domitor"), dict) else {}
+    lines = []
+    head = f"Ghoul of {_clean(dom.get('name') or 'an unnamed vampire', MAX_NAME_CHARS)}"
+    if dom.get("clan"):
+        head += f" ({_clean(dom['clan'], MAX_LABEL_CHARS)})"
+    tpl = g.get("template")
+    parts = [head]
+    if tpl:
+        parts.append(f"{_clean(GHOUL_TEMPLATES.get(tpl, tpl), MAX_LABEL_CHARS)} template")
+    if _num(g.get("retainer_dots")):
+        parts.append(f"Retainers {_num(g['retainer_dots'])}")
+    lines.append(" · ".join(parts))
+    age = [f"{_label(k)} {_num(g[k])}" for k in ("age", "apparent_age") if _num(g.get(k)) is not None]
+    if age:
+        lines.append(", ".join(age))
+    if g.get("ghouled_since"):
+        lines.append(f"Ghoul since: {_clean(g['ghouled_since'])}")
+    discs = meta.get("disciplines") if isinstance(meta.get("disciplines"), list) else []
+    powers = []
+    for d in discs[:MAX_LIST_ITEMS]:
+        if isinstance(d, dict) and d.get("name"):
+            names = [_clean(p.get("name", "") if isinstance(p, dict) else p) for p in (d.get("powers") or [])[:MAX_LIST_ITEMS]]
+            powers.append(f"{_clean(d['name'])} 1" + (f" ({', '.join(n for n in names if n)})" if any(names) else ""))
+    if powers:
+        lines.append(f"Ghoul power: {'; '.join(powers)} (powers above level 1 cost 1 Aggravated, no Rouse Checks)")
+    for b in (g.get("bonds") if isinstance(g.get("bonds"), list) else [])[:2]:
+        if not isinstance(b, dict):
+            continue
+        st = _num(b.get("strength"))
+        line = f"Blood Bond to {_clean(b.get('name') or 'the domitor', MAX_NAME_CHARS)}: " + (
+            f"Strength {st}/6" if st is not None else "Strength not set")
+        if b.get("note"):
+            line += f" ({_clean(b['note'])})"
+        lines.append(line)
+    feeding = ghoul_feeding(g)
+    if feeding.get("last"):
+        lines.append(f"Last fed on the domitor's Blood: {_clean(feeding['last'], 60)}")
+    if feeding.get("note"):
+        lines.append(f"Feeding note: {_clean(feeding['note'])}")
+    for k in ("ambition", "desire"):
+        if meta.get(k):
+            lines.append(f"{_label(k)}: {_clean(meta[k])}")
+    if meta.get("humanity") is not None:
+        h = f"Humanity {_clean(meta['humanity'], 10)}"
+        if _num(meta.get("stains")):
+            h += f" ({_num(meta['stains'])} stains)"
+        lines.append(h)
+    for k in ("health", "willpower"):
+        t = _track(meta.get(k))
+        if t:
+            lines.append(f"{_label(k)}: {t}")
+    for label, key in (("Advantages", "advantages"), ("Flaws", "flaws")):
+        text = _named_list(meta.get(key))
+        if text:
+            lines.append(f"{label}: {text}")
+    lines.extend(_touchstone_lines(meta))
+    return lines
+
+
+def _touchstone_lines(meta: Dict[str, Any]) -> List[str]:
+    tc = meta.get("touchstones")
+    if not isinstance(tc, list) or not tc:
+        return []
+    items = []
+    for t in tc[:MAX_LIST_ITEMS]:
+        if isinstance(t, dict) and t.get("name"):
+            items.append(f"{_clean(t['name'])} — {_clean(t['conviction'])}" if t.get("conviction") else _clean(t["name"]))
+    return [f"Touchstones/Convictions: {'; '.join(items)}"] if items else []
+
+
 def _v5_meta_lines(meta: Dict[str, Any]) -> List[str]:
+    if meta.get("sheet_kind") == "ghoul":
+        return _ghoul_meta_lines(meta)
     lines = []
     ident = []
     for k in ("clan", "generation", "sire", "predator_type"):
@@ -285,16 +432,7 @@ def _v5_meta_lines(meta: Dict[str, Any]) -> List[str]:
     fl = _named_list(meta.get("flaws"))
     if fl:
         lines.append(f"Flaws: {fl}")
-    tc = meta.get("touchstones")
-    if isinstance(tc, list) and tc:
-        items = []
-        for t in tc[:MAX_LIST_ITEMS]:
-            if isinstance(t, dict) and t.get("name"):
-                items.append(
-                    f"{_clean(t['name'])} — {_clean(t['conviction'])}" if t.get("conviction") else _clean(t["name"])
-                )
-        if items:
-            lines.append(f"Touchstones/Convictions: {'; '.join(items)}")
+    lines.extend(_touchstone_lines(meta))
     tenets = meta.get("chronicle_tenets")
     if tenets:
         if isinstance(tenets, (list, tuple)):
@@ -306,8 +444,9 @@ def _v5_meta_lines(meta: Dict[str, Any]) -> List[str]:
     return lines
 
 
-def format_character_for_prompt(row: Dict[str, Any], edition: str = "classic") -> str:
-    """Compact character sheet text for the storyteller system prompt."""
+def format_character_for_prompt(row: Dict[str, Any], edition: str = "classic", role: Optional[str] = None) -> str:
+    """Compact character sheet text for the storyteller system prompt. role='retainer': a player
+    character's ghoul, listed after the character (format_retainers_for_prompt)."""
     edition = "v5" if str(edition or "").lower() == "v5" else "classic"
     attrs = _json(row.get("attributes"), {})
     skills = _json(row.get("skills"), {})
@@ -315,7 +454,12 @@ def format_character_for_prompt(row: Dict[str, Any], edition: str = "classic") -
     mf = _json(row.get("merits_flaws"), {})
 
     system = _clean(row.get("system_type") or row.get("game_system") or "unknown", MAX_LABEL_CHARS)
-    header = f"Character: {_clean(row.get('name') or 'Unnamed', MAX_NAME_CHARS)}"
+    name = _clean(row.get("name") or "Unnamed", MAX_NAME_CHARS)
+    ghoul = meta.get("sheet_kind") == "ghoul"  # V5 or Classic
+    if role == "retainer":
+        header = f"Retainer: {name}" + (" (ghoul)" if ghoul else "")
+    else:
+        header = f"Character: {name}" + (" (ghoul)" if ghoul else "")
     lines = [header, f"Sheet: {system} — {'V5' if edition == 'v5' else 'Classic (Revised)'} rules"]
     if meta.get("concept"):
         lines.append(f"Concept: {_clean(meta['concept'])}")
@@ -351,3 +495,30 @@ def format_character_for_prompt(row: Dict[str, Any], edition: str = "classic") -
                 lines.append(f"{_label(k)}: {_clean(legacy[k])}")
 
     return "\n".join(lines)
+
+
+def _row_edition(row: Dict[str, Any]) -> str:
+    """A row's rules edition (its rules_edition column; without one, wod_meta.edition)."""
+    if row.get("rules_edition"):
+        return edition_of(row)
+    return "v5" if str(_json(row.get("wod_meta"), {}).get("edition") or "").lower() == "v5" else "classic"
+
+
+def format_retainers_for_prompt(pc_name: Any, rows: Iterable[Dict[str, Any]], limit: int = MAX_RETAINERS,
+                                max_chars: int = MAX_RETAINER_CHARS) -> str:
+    """The player character's ghouls (services/retainers.ghouls_of), at most `limit`, each block cut
+    at a line under `max_chars`: the Storyteller plays them, the player directs them. '' for none.
+    Each ghoul is formatted by its own rules edition (a V5 vampire's ghouls are V5, a Classic one's
+    Classic)."""
+    blocks = []
+    for row in list(rows)[:max(0, limit)]:
+        text = format_character_for_prompt(row, _row_edition(row), role="retainer")
+        if len(text) > max_chars:
+            cut = text[:max_chars]
+            text = (cut[:cut.rfind("\n")] if "\n" in cut else cut).rstrip() + "\n..."
+        blocks.append(text)
+    if not blocks:
+        return ""
+    head = (f"Retainers of {_clean(pc_name or 'the character', MAX_NAME_CHARS)} "
+            "(ghouls; the Storyteller plays them, the player directs them):")
+    return "\n".join([head, *blocks])

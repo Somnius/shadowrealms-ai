@@ -4,6 +4,9 @@
  * description; loresheets with their five levels; thin-blood Merits and Flaws; the clan's own Flaws
  * (Caitiff). A "Custom" row keeps anything the catalog lacks possible, for the Storyteller to approve.
  * Only entries from the chronicle's books are offered; one already chosen stays (the check says why).
+ *
+ * `rules` (the ghoul forge, ../ghoul/): { options(kind, settings), loresheets(settings), levelAllowed(level) }
+ * replaces the clan's filters; a ghoul has no clan, predator type or thin-blood rows.
  */
 import { THIN_BLOOD, V5_THIN_BLOOD_MERITS } from '../../../characterSheet/v5/constants';
 import {
@@ -75,10 +78,10 @@ function GroupedOptions({ entries, takenIds, current }) {
 }
 
 /** One Background, Merit or Flaw row. `fixedIds`: the clan's and the predator type's entries. */
-function AdvRow({ row, index, rows, setRows, clan, settings, fixedIds }) {
+function AdvRow({ row, index, rows, setRows, clan, settings, fixedIds, rules }) {
   const label = t('wizard:v5.advRowLabel', '{{kind}} {{n}}', { kind: KIND_LABEL[row.kind](), n: index + 1 });
   const set = (patch) => setRows((prev) => prev.map((r) => (r.key === row.key ? { ...r, ...patch } : r)));
-  const options = advantageOptions(clan, row.kind, settings);
+  const options = rules ? rules.options(row.kind, settings) : advantageOptions(clan, row.kind, settings);
   // By id, or by name when the catalog doesn't know the id (then it shows as a custom row).
   const entry = row.id && row.id !== 'custom' ? findAdvantage({ id: row.id, name: row.name }, row.kind) : null;
   const custom = row.id === 'custom' || Boolean(row.id && !entry && String(row.name || '').trim());
@@ -205,17 +208,17 @@ function AdvRow({ row, index, rows, setRows, clan, settings, fixedIds }) {
 }
 
 /** Backgrounds, Merits or Flaws: the rows of one kind and the add button. */
-function AdvSection({ kind, title, children }) {
+function AdvSection({ kind, title, children, rules }) {
   const f = useForge();
   const rows = f.advRows.filter((r) => r.kind === kind);
-  const pred = resolvePredatorGrants(f.sheet);
-  const fixedIds = [...clanFlaws({ clan: f.clan }), ...pred.advantages, ...pred.flaws].map((r) => r.id).filter(Boolean);
+  const pred = rules ? { advantages: [], flaws: [] } : resolvePredatorGrants(f.sheet);
+  const fixedIds = [...(rules ? [] : clanFlaws({ clan: f.clan })), ...pred.advantages, ...pred.flaws].map((r) => r.id).filter(Boolean);
   return (
     <div style={sectionStyle} data-adv-section={kind}>
       <div style={headingStyle}>{title}</div>
       {children}
       {rows.map((r, i) => (
-        <AdvRow key={r.key} row={r} index={i} rows={rows} setRows={f.setAdvRows} clan={f.clan} settings={f.settings} fixedIds={fixedIds} />
+        <AdvRow key={r.key} row={r} index={i} rows={rows} setRows={f.setAdvRows} clan={f.clan} settings={f.settings} fixedIds={fixedIds} rules={rules} />
       ))}
       <button type="button" onClick={() => f.setAdvRows((prev) => [...prev, newAdvRow(kind)])} style={addButtonStyle}>
         {t('wizard:v5.advAdd', '+ Add {{kind}}', { kind: KIND_LABEL[kind]() })}
@@ -225,12 +228,12 @@ function AdvSection({ kind, title, children }) {
 }
 
 /** One loresheet: the sheet, then the levels taken (each its own benefit, its number in dots). */
-function LoreRow({ row, index }) {
+function LoreRow({ row, index, rules }) {
   const f = useForge();
   const label = t('wizard:v5.advRowLabel', '{{kind}} {{n}}', { kind: KIND_LABEL.loresheet(), n: index + 1 });
   const set = (patch) => f.setLoreRows((prev) => prev.map((r) => (r.key === row.key ? { ...r, ...patch } : r)));
   const sheet = row.id ? findLoresheet({ id: row.id, name: row.name }) : null;
-  const offered = loresheetOptions(f.sheet, f.settings);
+  const offered = rules ? rules.loresheets(f.settings) : loresheetOptions(f.sheet, f.settings);
   const shared = sharedNames(loresheetEntries());
   const takenElsewhere = f.loreRows.filter((r) => r.key !== row.key).map((r) => r.id);
   const total = row.levels.reduce((s, n) => s + n, 0);
@@ -282,7 +285,7 @@ function LoreRow({ row, index }) {
             const taken = row.levels.includes(lv.dots);
             // A level with its own restriction (Tegyrius ••••: Banu Haqim only) isn't offered to
             // other clans; one already taken stays, so the check can say why.
-            const open = loresheetLevelAllowed(lv, f.sheet);
+            const open = rules ? rules.levelAllowed(lv) : loresheetLevelAllowed(lv, f.sheet);
             return (
               <div key={lv.dots}>
                 <label style={{ display: 'flex', gap: '8px', alignItems: 'baseline', cursor: open || taken ? 'pointer' : 'default', color: open ? 'var(--sr-bone-100)' : 'var(--sr-bone-300)', fontSize: '13px' }}>
@@ -386,23 +389,23 @@ function ThinSelects({ kind }) {
   );
 }
 
-export default function CatalogAdvantages() {
+export default function CatalogAdvantages({ rules = null }) {
   const f = useForge();
-  const clan = clanInfo(f.clan);
-  const fixedFlaws = clanFlaws(f.sheet);
+  const clan = rules ? null : clanInfo(f.clan);
+  const fixedFlaws = rules ? [] : clanFlaws(f.sheet);
   const noStatus = Boolean(clan?.creation?.no_positive_status);
   const hasLore = loresheetEntries().length > 0;
   return (
     <div>
-      <AdvSection kind="background" title={<Term id="backgrounds">Backgrounds</Term>}>
+      <AdvSection kind="background" title={<Term id="backgrounds">Backgrounds</Term>} rules={rules}>
         {noStatus ? (
           <p style={{ ...noteStyle, fontSize: '12px', margin: '0 0 8px' }}>
             {t('wizard:v5.noPositiveStatus', '{{clan}} can\'t buy positive Status at creation.', { clan: f.clan })}
           </p>
         ) : null}
       </AdvSection>
-      <AdvSection kind="merit" title={t('wizard:v5.sectionMerits', 'Merits')} />
-      <AdvSection kind="flaw" title={t('wizard:v5.sectionFlaws', 'Flaws')}>
+      <AdvSection kind="merit" title={t('wizard:v5.sectionMerits', 'Merits')} rules={rules} />
+      <AdvSection kind="flaw" title={t('wizard:v5.sectionFlaws', 'Flaws')} rules={rules}>
         {fixedFlaws.map((fl) => {
           const entry = advantageEntries().find((a) => a.id === fl.id);
           return (
@@ -425,14 +428,14 @@ export default function CatalogAdvantages() {
             {t('wizard:v5.loreHelpV3', 'Loresheets are bought with Advantage dots like any other Advantage (core p. 151). Each level is its own benefit, costs its number in dots and does not include the lower ones (p. 190). This app lets you take more than one at creation, a house ruling: the corebook has each player choose a Loresheet, more in play if the Storyteller allows (p. 151).')}
           </p>
           {f.loreRows.map((r, i) => (
-            <LoreRow key={r.key} row={r} index={i} />
+            <LoreRow key={r.key} row={r} index={i} rules={rules} />
           ))}
           <button type="button" onClick={() => f.setLoreRows((prev) => [...prev, newLoreRow()])} style={addButtonStyle}>
             {t('wizard:v5.advAdd', '+ Add {{kind}}', { kind: KIND_LABEL.loresheet() })}
           </button>
         </div>
       ) : null}
-      {f.clan === THIN_BLOOD ? (
+      {!rules && f.clan === THIN_BLOOD ? (
         <div style={sectionStyle}>
           <p style={{ color: 'var(--sr-bone-300)', fontSize: '12px', margin: '0 0 10px', lineHeight: 1.5 }}>
             {t('wizard:v5.thinHelpCatalogV2', 'Thin-bloods also take {{lo}}–{{hi}} thin-blood Merits and the same number of thin-blood Flaws (core p. 182). They have no dot value and don\'t count toward the totals above. A few can\'t be taken together (p. 183).', { lo: V5_THIN_BLOOD_MERITS[0], hi: V5_THIN_BLOOD_MERITS[1] })}

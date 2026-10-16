@@ -31,7 +31,11 @@
     "ic": "IC",
     "downtime": "Downtime",
     "elysium": "Elysium",
-    "haven": "Haven"
+    "haven": "Haven",
+    "ghoul": "Ghoul",
+    "domitor": "Domitor",
+    "bloodBond": "Blood Bond",
+    "bloodPool": "Blood Pool"
   },
   "hint": {
     "hunger": "The Beast's craving for blood (0-5). Hunger dice replace normal dice in V5 rolls.",
@@ -65,7 +69,11 @@
     "ic": "In character: speaking and acting as your character.",
     "downtime": "Time between sessions; sheet changes are requested here.",
     "elysium": "Neutral ground where violence is forbidden.",
-    "haven": "A vampire's safe place to sleep through the day."
+    "haven": "A vampire's safe place to sleep through the day.",
+    "ghoul": "A mortal kept on a vampire's Blood: stops aging, heals fast, has one small Discipline power.",
+    "domitor": "The vampire whose Blood a ghoul drinks: the ghoul's master.",
+    "bloodBond": "Drinking one vampire's Blood three times binds you to them: Bond Strength 1-6, Resolve + Intelligence to defy it.",
+    "bloodPool": "Classic rules: the points of blood (vitae) a vampire or ghoul holds, spent to heal, to boost Physical Attributes and to power Disciplines; a ghoul holds up to 10 and spends 1 per turn."
   },
   "line": {
     "vampire": "Vampire: The Masquerade",

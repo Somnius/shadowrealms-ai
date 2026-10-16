@@ -1,6 +1,8 @@
 import { createContext, useCallback, useContext, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router';
 import CharacterSheetModal from '../components/CharacterSheetModal';
 import { useToast } from '../design';
+import { useAuth } from './AuthContext';
 import { apiFetch, errorText, getCurrentToken } from './http';
 import { t } from '../i18n';
 
@@ -9,6 +11,8 @@ const SheetContext = createContext(null);
 /** Open the (phase 1) character sheet modal from anywhere in the shell: useSheet().openSheet(id). */
 export function SheetProvider({ children }) {
   const { toast } = useToast();
+  const { user } = useAuth();
+  const navigate = useNavigate();
   const [sheet, setSheet] = useState(null);
 
   const openSheet = useCallback(
@@ -35,6 +39,12 @@ export function SheetProvider({ children }) {
           gameSystem={sheet.gameSystem}
           onClose={() => setSheet(null)}
           onChanged={() => openSheet(sheet.character.id, sheet.gameSystem)}
+          onOpenSheet={(id) => openSheet(id)}
+          viewerId={user?.id}
+          onAddGhoul={(id) => {
+            setSheet(null);
+            navigate(`/profile/characters/new?ghoul_of=${id}`);
+          }}
         />
       ) : null}
     </SheetContext.Provider>

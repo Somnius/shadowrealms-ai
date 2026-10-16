@@ -7,8 +7,14 @@
  *
  * The catalog is the snapshot stored in creation-cases.json. Regenerate the vectors after changing
  * this file or buildV5Payload: see scripts/v5_creation_cases.py.
+ *
+ * Ghoul cases (GHOUL_CASE_DEFS, `kind: 'ghoul'`) are ghoul forge sheets (../ghoul.js) that
+ * buildGhoulPayload makes, with the `domitor` row both checks receive (the server's
+ * validate_ghoul_creation in backend/services/v5_ghoul_chargen.py).
  */
 import { buildV5Payload, emptyV5Skills } from '../validation';
+import { buildGhoulPayload } from '../ghoul';
+import { DARIUS, miraSheet, skillsOf } from './ghoulFixtures';
 
 const ATTRS = {
   strength: 4,
@@ -1239,17 +1245,250 @@ export const CASE_DEFS = [
     },
     expect: [],
   },
+  {
+    name: 'advantages: a non-repeatable Merit twice (Beautiful)',
+    sheet: () =>
+      brujah0({
+        advantages: [
+          { id: 'merit:beautiful', name: 'Beautiful', dots: 2, kind: 'merit' },
+          { id: 'merit:beautiful', name: 'Beautiful', dots: 2, kind: 'merit' },
+          { name: 'Resources', dots: 3, kind: 'background' },
+        ],
+      }),
+    expect: ['adv_repeat'],
+  },
 ];
 
-/** The cases with their forge sheets: {name, settings, client, sheet, payload, expect}. */
-export function buildCases(defs = CASE_DEFS) {
+// ---------- ghouls (kind 'ghoul') ----------
+
+const NOT_YET = { strength: null, note: '' };
+
+/** Weak mortal at Retainers • (core p. 185): no Advantages, no Flaws. */
+const weakGhoul = (over = {}) =>
+  miraSheet({
+    name: 'Mehmet',
+    template: 'weak',
+    retainerDots: 1,
+    attributes: { strength: 2, dexterity: 1, stamina: 1, charisma: 2, manipulation: 1, composure: 1, intelligence: 1, wits: 1, resolve: 1 },
+    skills: skillsOf({ 2: ['drive', 'streetwise', 'larceny'], 1: ['brawl', 'stealth', 'insight', 'awareness', 'athletics'] }),
+    specialties: [],
+    advantages: [],
+    flaws: [],
+    bonds: [NOT_YET],
+    humanityTracked: false,
+    ...over,
+  });
+
+/** Average mortal at Retainers ••: a ghoul built with no Advantages (core p. 194), Flaws only. */
+const averageGhoul = (over = {}) =>
+  miraSheet({
+    name: 'Deniz',
+    template: 'average',
+    retainerDots: 2,
+    attributes: { strength: 2, dexterity: 2, stamina: 3, charisma: 1, manipulation: 1, composure: 3, intelligence: 1, wits: 2, resolve: 1 },
+    skills: skillsOf({ 3: ['drive', 'brawl', 'firearms'], 2: ['streetwise', 'larceny', 'stealth', 'athletics'], 1: ['insight', 'awareness', 'intimidation', 'melee', 'survival'] }),
+    specialties: [],
+    advantages: [],
+    flaws: [{ id: 'flaw:bondslave', name: 'Bondslave', dots: 2 }],
+    bonds: [{ strength: 3, note: '' }],
+    ...over,
+  });
+
+/** Deadly mortal (no Retainers rating buys it): three specialties, up to 15 Advantages, no Flaws. */
+const deadlyGhoul = (over = {}) =>
+  miraSheet({
+    name: 'Kaan',
+    template: 'deadly',
+    retainerDots: null,
+    attributes: { strength: 5, dexterity: 5, stamina: 4, charisma: 2, manipulation: 3, composure: 4, intelligence: 2, wits: 3, resolve: 2 },
+    skills: skillsOf({
+      5: ['firearms'],
+      4: ['brawl', 'melee', 'athletics'],
+      3: ['stealth', 'drive', 'awareness', 'intimidation', 'survival'],
+      2: ['larceny', 'streetwise', 'insight', 'investigation', 'medicine', 'occult'],
+    }),
+    specialties: [
+      { skill: 'firearms', name: 'Sniper rifles' },
+      { skill: 'brawl', name: 'Grappling' },
+      { skill: 'melee', name: 'Knives' },
+    ],
+    advantages: [
+      { id: 'background:resources', name: 'Resources', dots: 3, kind: 'background' },
+      { id: 'merit:ghoul-blood-empathy', name: 'Blood Empathy', dots: 2, kind: 'merit' },
+    ],
+    flaws: [],
+    ...over,
+  });
+
+/** Players Guide ghoul (pp. 140–142): the vampire spread, Balanced Skills, 7 and 2+, Humanity 7, a Conviction. */
+const playerGhoul = (over = {}) =>
+  miraSheet({
+    name: 'Selin',
+    template: 'player',
+    retainerDots: null,
+    attributes: { strength: 3, dexterity: 3, stamina: 3, charisma: 2, manipulation: 2, composure: 2, intelligence: 2, wits: 1, resolve: 4 },
+    skillDistribution: 'balanced',
+    skills: skillsOf({
+      3: ['athletics', 'brawl', 'stealth'],
+      2: ['drive', 'firearms', 'insight', 'persuasion', 'awareness'],
+      1: ['melee', 'larceny', 'etiquette', 'streetwise', 'subterfuge', 'investigation', 'occult'],
+    }),
+    specialties: [{ skill: 'athletics', name: 'Parkour' }],
+    advantages: [
+      { id: 'background:resources', name: 'Resources', dots: 3, kind: 'background' },
+      { id: 'background:allies', name: 'Allies', dots: 2, kind: 'background', note: 'dock workers' },
+      { id: 'merit:ghoul-unseemly-aura', name: 'Unseemly Aura', dots: 2, kind: 'merit' },
+    ],
+    flaws: [
+      { id: 'flaw:ghoul-distressing-fangs', name: 'Distressing Fangs', dots: 1 },
+      { id: 'flaw:ghoul-crones-curse', name: "Crone's Curse", dots: 2 },
+    ],
+    convictions: [{ conviction: 'Never hurt a stray', touchstone: 'Elif, my sister' }],
+    ...over,
+  });
+
+const without = (rows, id) => rows.filter((r) => r.id !== id);
+
+export const GHOUL_CASE_DEFS = [
+  { name: 'ghoul valid: Mira Tanis, Gifted ghoul of Darius Vale (Retainers •••)', sheet: () => miraSheet(), expect: [] },
+  {
+    name: 'ghoul valid: Mira with a second Blood Bond (Two Masters)',
+    sheet: () => miraSheet({ bonds: [{ strength: 6, note: '' }, { name: 'Leyla', strength: 1, note: 'one taste' }] }),
+    expect: [],
+  },
+  { name: 'ghoul valid: Weak mortal at Retainers •', sheet: () => weakGhoul(), expect: [] },
+  { name: 'ghoul valid: Average ghoul at Retainers •• (no Advantages, Flaws only)', sheet: () => averageGhoul(), expect: [] },
+  { name: 'ghoul valid: Deadly mortal with a ghoul-only Merit', sheet: () => deadlyGhoul(), expect: [] },
+  { name: "ghoul valid: player ghoul (Balanced) with Crone's Curse", sheet: () => playerGhoul(), expect: [] },
+  {
+    name: 'ghoul: two Attributes at 4 on a Gifted ghoul',
+    sheet: () => miraSheet({ attributes: { ...miraSheet().attributes, wits: 4 } }),
+    expect: ['ghoul_attr_spread'],
+  },
+  {
+    name: 'ghoul: 11 Advantage dots on a Gifted ghoul',
+    sheet: () => miraSheet({ advantages: [...miraSheet().advantages, { id: 'background:resources', name: 'Resources', dots: 1, kind: 'background' }] }),
+    expect: ['adv_over'],
+  },
+  {
+    name: 'ghoul: Herd is for Kindred',
+    sheet: () => miraSheet({ advantages: [...without(miraSheet().advantages, 'background:fame'), { id: 'background:herd', name: 'Herd', dots: 1, kind: 'background' }] }),
+    expect: ['ghoul_adv_restricted'],
+  },
+  {
+    name: 'ghoul: a level 2 power (Mesmerize)',
+    sheet: () => miraSheet({ power: { discipline: 'Dominate', name: 'Mesmerize' } }),
+    expect: ['ghoul_power_level'],
+  },
+  {
+    name: 'ghoul: Compel, a power the domitor lacks',
+    sheet: () => miraSheet({ power: { discipline: 'Dominate', name: 'Compel' } }),
+    expect: ['ghoul_power_not_domitors'],
+  },
+  {
+    name: "ghoul: Auspex is not one of the domitor's Disciplines",
+    sheet: () => miraSheet({ power: { discipline: 'Auspex', name: 'Heightened Senses' } }),
+    expect: ['ghoul_power_discipline'],
+  },
+  {
+    name: 'ghoul: a second Blood Bond without Two Masters',
+    sheet: () => miraSheet({ flaws: without(miraSheet().flaws, 'flaw:two-masters'), bonds: [NOT_YET, { name: 'Leyla', strength: 1, note: '' }] }),
+    expect: ['ghoul_bonds'],
+  },
+  { name: 'ghoul: a Gifted ghoul at Retainers ••', sheet: () => miraSheet({ retainerDots: 2 }), expect: ['ghoul_retainer_dots'] },
+  {
+    name: 'ghoul: an Advantage on a Retainers •• Average ghoul',
+    sheet: () => averageGhoul({ advantages: [{ id: 'background:resources', name: 'Resources', dots: 1, kind: 'background' }] }),
+    expect: ['adv_over'],
+  },
+  {
+    name: 'ghoul: a fourth specialty on a Gifted ghoul',
+    sheet: () => miraSheet({ specialties: [...miraSheet().specialties, { skill: 'subterfuge', name: 'Cover stories' }] }),
+    expect: ['ghoul_specialty_count'],
+  },
+  { name: 'ghoul: a Flaw on a Deadly mortal', sheet: () => deadlyGhoul({ flaws: [{ id: 'flaw:addiction', name: 'Addiction', dots: 1 }] }), expect: ['ghoul_flaws_over'] },
+  {
+    name: 'ghoul: a player ghoul with one Flaw dot',
+    sheet: () => playerGhoul({ flaws: [{ id: 'flaw:ghoul-distressing-fangs', name: 'Distressing Fangs', dots: 1 }] }),
+    expect: ['flaw_under'],
+  },
+  {
+    name: 'ghoul: allowed books: Two Masters is from Blood-Stained Love',
+    settings: COREBOOK,
+    sheet: () => miraSheet(),
+    expect: ['book_not_allowed'],
+  },
+  {
+    name: 'ghoul: Beautiful taken twice',
+    sheet: () =>
+      miraSheet({
+        advantages: [
+          { id: 'merit:beautiful', name: 'Beautiful', dots: 2, kind: 'merit' },
+          { id: 'merit:beautiful', name: 'Beautiful', dots: 2, kind: 'merit' },
+          ...miraSheet().advantages.filter((a) => !['merit:beautiful', 'background:fame', 'background:influence'].includes(a.id)),
+        ],
+      }),
+    expect: ['adv_repeat'],
+  },
+  { name: 'ghoul: no Blood Bond at all', sheet: () => miraSheet({ bonds: [] }), expect: ['ghoul_bonds'] },
+  { name: 'ghoul: a Weak mortal at Retainers •••', sheet: () => weakGhoul({ retainerDots: 3 }), expect: ['ghoul_retainer_dots'] },
+  {
+    name: 'ghoul: a Deadly mortal without its three specialties',
+    sheet: () => deadlyGhoul({ specialties: [{ skill: 'firearms', name: 'Sniper rifles' }] }),
+    expect: ['ghoul_template_specialty'],
+  },
+  {
+    name: "ghoul: the Gifted template's specialty on a Skill at 3",
+    sheet: () => miraSheet({ specialties: [{ skill: 'finance', name: 'Budgets' }, ...miraSheet().specialties.slice(1)] }),
+    expect: ['ghoul_template_specialty'],
+  },
+  {
+    name: 'ghoul server: XP on a ghoul is not a vampire key',
+    sheet: () => miraSheet(),
+    tamper: (p) => {
+      meta(p).experience = { total: 0, spent: 0, unspent: 0, log: [] };
+    },
+    expect: [],
+  },
+  {
+    name: "ghoul server: a sheet with no Bond rows",
+    sheet: () => miraSheet(),
+    tamper: (p) => {
+      delete meta(p).ghoul.bonds;
+    },
+    expect: ['ghoul_bonds'],
+  },
+  {
+    name: 'ghoul server: Health typed by hand',
+    sheet: () => miraSheet(),
+    tamper: (p) => {
+      meta(p).health.max = 5;
+    },
+    expect: ['derived_value'],
+  },
+  {
+    name: "ghoul server: a clan on a ghoul's sheet",
+    sheet: () => miraSheet(),
+    tamper: (p) => {
+      meta(p).clan = 'Ventrue';
+    },
+    expect: ['ghoul_vampire_field'],
+  },
+];
+
+/** The cases with their forge sheets: {name, settings, client, sheet, payload, expect}; a ghoul case
+ * also carries kind 'ghoul' and its `domitor` (DARIUS unless the definition says). */
+export function buildCases(defs = [...CASE_DEFS, ...GHOUL_CASE_DEFS]) {
   return defs.map((d) => {
     const sheet = d.sheet();
-    const payload = buildV5Payload(sheet);
+    const ghoul = GHOUL_CASE_DEFS.includes(d);
+    const domitor = ghoul ? d.domitor || DARIUS : undefined;
+    const payload = ghoul ? buildGhoulPayload(sheet, domitor) : buildV5Payload(sheet);
     if (d.tamper) d.tamper(payload);
     return JSON.parse(
       JSON.stringify({
         name: d.name,
+        ...(ghoul ? { kind: 'ghoul', domitor } : {}),
         settings: d.settings || null,
         client: !d.tamper,
         expect: [...new Set(d.expect)].sort(),

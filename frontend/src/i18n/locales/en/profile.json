@@ -97,5 +97,16 @@
     "admin": "Admin",
     "helper": "Helper",
     "player": "Player"
+  },
+  "ghoul": {
+    "loading": "Loading your characters…",
+    "title": "New ghoul",
+    "step1": "A ghoul belongs to one of your vampires; it has no chronicle of its own.",
+    "step2": "The server checks the template; your Storyteller can approve exceptions.",
+    "badge": "Ghoul of {{domitor}}",
+    "add": "Add a ghoul retainer",
+    "step3": "A Classic vampire's ghoul is a Classic sheet (Ghouls: Fatal Addiction, with a Blood Pool); a V5 vampire's is a V5 one.",
+    "domitorNotFound": "That vampire isn't one of your characters, or can't have ghouls. Pick the domitor again from your characters.",
+    "backToCharacters": "Back to your characters"
   }
 }

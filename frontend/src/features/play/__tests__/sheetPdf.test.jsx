@@ -87,6 +87,20 @@ test('the sheet modal has the same action, in Greek too', async () => {
     </DesignProvider>
   );
   expect(screen.getByRole('button', { name: 'Εξαγωγή PDF' })).toBeInTheDocument();
+  expect(screen.getByRole('button', { name: 'Λήψη έκδοσης για εκτύπωση' })).toBeInTheDocument();
+  expect(screen.getByText(/Έκδοση για εκτύπωση: φαίνεται ίδια παντού/)).toBeInTheDocument();
+});
+
+test('the print version asks for flat=1 and says which one to share', async () => {
+  const user = setupUser();
+  mountPanel();
+  expect(screen.getByText(/Print version: looks the same everywhere/)).toBeInTheDocument();
+  await user.click(screen.getByRole('button', { name: 'Download print version' }));
+  await waitFor(() => expect(clicked).toHaveLength(1));
+  const [url, init] = global.fetch.mock.calls[0];
+  expect(url).toMatch(/^\/api\/characters\/9\/sheet\.pdf\?(paper=letter&)?flat=1$/);
+  expect(init.headers.Authorization).toBe('Bearer jwt-abc');
+  expect(clicked[0].download).toBe('Κωνσταντίνος Κατακουζηνός (print).pdf');
 });
 
 test('a download that breaks off mid-body shows an error', async () => {

@@ -97,5 +97,16 @@
     "admin": "Διαχειριστής",
     "helper": "Βοηθός",
     "player": "Παίκτης"
+  },
+  "ghoul": {
+    "loading": "Φόρτωση των χαρακτήρων σου…",
+    "title": "Νέο ghoul",
+    "step1": "Ένα ghoul ανήκει σε ένα από τα βαμπίρ σου· δεν έχει δικό του χρονικό.",
+    "step2": "Ο server ελέγχει το πρότυπο· ο Storyteller σου μπορεί να εγκρίνει εξαιρέσεις.",
+    "badge": "Ghoul του/της {{domitor}}",
+    "add": "Πρόσθεσε ghoul retainer",
+    "step3": "Το ghoul ενός Classic βαμπίρ είναι φύλλο Classic (Ghouls: Fatal Addiction, με Blood Pool)· ενός V5 βαμπίρ, φύλλο V5.",
+    "domitorNotFound": "Αυτός ο vampire δεν είναι από τους χαρακτήρες σου ή δεν μπορεί να έχει ghouls. Διάλεξε ξανά τον domitor από τους χαρακτήρες σου.",
+    "backToCharacters": "Πίσω στους χαρακτήρες σου"
   }
 }

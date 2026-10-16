@@ -148,4 +148,6 @@ export const V5_SECTION_IDS = {
   age: 'v5-section-age',
   experience: 'v5-section-experience',
   story: 'v5-section-story',
+  // the ghoul forge's Blood Bond & feeding step (components/characterCreation/ghoul/)
+  bond: 'v5-section-bond',
 };

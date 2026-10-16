@@ -233,6 +233,7 @@ Conventions:
   - Average human 10 BP. Taking 20% is safe. Half needs hospital care. Draining kills.
   - Animals: cow 5, dog 2, cat 1, rat ½, bat/bird ¼. V20 lists bird ½ and bat/rat ¼.
   - Kindred can resist the Kiss: Self-Control at difficulty 8.
+- **Ghouls** have a Blood Pool of their own (max 10, 1 point per turn): see §7.
 
 ### 2.8 Generation chart (core p. 139; identical to V20)
 
@@ -478,6 +479,62 @@ There are 13 clans plus Caitiff (core ch. 2 intro, p. 64). Clan Disciplines are 
 
 ---
 
+## 7. Ghouls (Revised core pp. 275–276; Ghouls: Fatal Addiction)
+
+The Revised core covers ghouls in two pages (pp. 275–276, PDF 277–278) and sends the reader to *Ghouls: Fatal Addiction* (1997, "FA") for creating them. The app builds Classic ghouls by FA, with the core's own statements where they differ. V20 and *Ghouls & Revenants* are not used.
+
+**Page numbers.** Our FA copy is an image scan with no page numbers; its printed pages run about **PDF + 5** (the Chapter Three opener, PDF 63, is p. 68 in the book's contents; the book's own "Domitor, p. 82" lands on PDF 76–77). FA pages below are "≈p. N (PDF n)": open the PDF page. Revised printed = PDF − 2.
+
+Code: `backend/services/classic_ghoul.py` (constants, bounds), `frontend/src/characterSheet/classicGhoul.js` (the forge's rules), numbers in `classic.json` `ghoul`; storage and screens in [../CHARACTER_SHEET_BLOCKS.md](../CHARACTER_SHEET_BLOCKS.md) (Classic: Ghoul).
+
+### 7.1 Creation (FA Chapter Three, ≈pp. 68–70, PDF 63–65)
+
+| Step | Rule | Where |
+|---|---|---|
+| Concept | Vassal (serves a domitor), independent (no master), revenant (a ghoul family: out of the app's forge). Nature and Demeanor as usual. FA mentions an optional five-point Merit some chronicles ask for being a ghoul: not built. | PDF 63 |
+| Attributes | 1 free dot each, then **6 / 4 / 3** for primary / secondary / tertiary. | PDF 63–64 |
+| Abilities | **11 / 7 / 4**, no Ability above 3 at this stage. | PDF 63–64 |
+| Disciplines | **Potence 1** for every ghoul, plus **one dot in one other Discipline**: a vassal's from its domitor's Disciplines; a revenant's from its family's; an independent's any (the Storyteller may limit it to Celerity, Fortitude or Potence). Protean and Thaumaturgy only for vassals of Gangrel and Tremere. | PDF 64 |
+| Discipline cap | The highest level a ghoul learns follows the generation of the vampire whose blood it drinks: 13th–8th: 1, 7th: 2, 6th: 3, 5th: 4, 4th: 5. FA's chart has an optional faster column whose values our scan lost: **not used** (unconfirmed). | PDF 65 (≈p. 70) |
+| Backgrounds | **5** dots. No Generation, Herd or Status; Mentor normally for independents and revenants; domitors seldom let vassals keep Retainers. New Background **Domitor** (optional): the master takes some care of the ghoul; its dots say the domitor's generation: • 11th or higher number, •• 9th–10th, ••• 8th, •••• 7th, ••••• 6th. | PDF 65; PDF 76–77 (≈pp. 81–82) |
+| Virtues | 1 free dot each + **7** (Conscience, Self-Control, Courage); 5 for a Path (revenants, Sabbat-raised ghouls; a Path starts at 5 at most). | PDF 65 |
+| Humanity, Willpower | Humanity = Conscience + Self-Control; Willpower = Courage (Morale on a Path). | PDF 65 |
+| Blood Pool | Roll one die for the starting points. The Storyteller may let a vassal reroll a 1; an independent halves the roll, rounding up (1–5). | PDF 65, PDF 68 (≈p. 73) |
+| Freebies | **21**, plus up to 7 from Flaws (28 at most). Costs per dot: Discipline (or Path) **10**, Attribute 5, Ability 2, Virtue 2, Willpower 1, Humanity / Path 1, Background 1. | PDF 65 |
+
+Revised p. 276 adds two sample ghouls (a valet and a bodyguard, both with Potence 1 and possibly one more Discipline) and says every ghoul learns Potence 1 within minutes of its first drink and can learn Fortitude.
+
+### 7.2 The Blood Pool and vitae
+
+- **Size 10**, as a human's (FA PDF 25–27); an optional FA sidebar says only two points sit comfortably in the stomach (the app shows no limit). Ghouls who lived for centuries gain about one point per two centuries beyond 10 (staff can set `max` up to 20).
+- **One point per turn**, at most (FA PDF 26).
+- **Uses** (FA PDF 26, 28; Revised p. 275): heal wounds and raise Physical Attributes as vampires do, up to twice the original rating; any Discipline needs at least one point of vitae in the body. While holding vitae a ghoul soaks lethal damage; bashing is not halved (it soaks as a mortal). Without vitae it heals at mortal rates.
+- **Feeding:** about once a month keeps a ghoul a ghoul; nightly feeding turns its own blood into vitae a point a night up to 10; the last point lasts a month (FA PDF 26–27). Losing more than 5 points of blood costs health (FA PDF 26–27).
+- **Overdosing** (FA PDF 28): one extra point per dot of Stamina; past that a Stamina roll at difficulty 8, or a health level per point over and a scene of purging. While overdosed: frenzies like a vampire, +1 Dexterity, hallucinations (Perception + Self-Control each scene).
+- **Withdrawal** (FA PDF 30): symptoms for (6 − Stamina) weeks, Self-Control rolls to stay away from vitae.
+- **Aging** (FA PDF 26; Revised p. 275): a ghoul does not age while fed; past its natural lifespan it must always hold vitae, and a very old one dies at once without it.
+
+### 7.3 Blood Bond, Disciplines, frenzy
+
+- **Blood Bond** (Revised pp. 218–219; FA PDF 27): three drinks on three nights bind. For ghouls FA makes it a slide: the second drink already acts like a strong bond; after a dry spell of (12 − Willpower) months the ghoul drops a step. The app stores the **drinks, 0–3** (`ghoul.bond.stage`): a vassal begins play Bound (3), an independent with none.
+- **Disciplines in play** (FA PDF 27–28): a ghoul uses only its latest donor's Disciplines, except the instinctive Potence, Fortitude and Celerity; six months without vitae and they fade a dot a month, Potence 1 last. The forge offers a vassal its domitor's Disciplines plus Celerity and Fortitude.
+- **Frenzy:** Revised p. 276 makes a ghoul's difficulties **two lower** than a vampire's; FA (PDF 28) says **three lower**, five Self-Control successes, and never more dice than Blood Points held. The app prints both (sheet, AI Storyteller) and computes neither.
+- **Clan side effects:** long-term ghouls may show their domitor's clan weakness (Revised p. 276; FA PDF 29–30): narrative only.
+
+### 7.4 Merits and Flaws
+
+FA (PDF 77, ≈p. 82) recommends some Vampire Players Guide Merits and Flaws for ghouls, bars others (all Kindred ties except Enemy and Twisted Upbringing, Deep Sleeper, Eat Food, Prey Exclusion, the supernatural banes such as Light-Sensitive, Permanent Wound, Thin-Blooded…) and adds ghoul-only ones. The Classic side has no Merit catalog: rows stay free text, with a hint in the forge.
+
+### 7.5 What the app decides
+
+- The domitor is one of the owner's Classic vampires; the ghoul's `rules_edition` is the domitor's. **No chronicle of its own**, as for V5 ghouls.
+- The forge holds the budgets (as the Classic vampire wizard does); **the server checks bounds only** (`sanity_check_classic_ghoul`) and records `wod_meta.creation = {rules: 'classic-ghoul-v1', checked: 'bounds', at}`.
+- Blood Pool max 10, 1 per turn, the starting points a roll the player can still edit (1–10). The Domitor Background is pre-filled from the domitor's generation and can be changed.
+- Vassal and independent in the forge; revenants are data only (`kind: 'revenant'`, `family`), set by staff. Humanity only (a Path by staff edit).
+- The PDF follows the 1997 ghoul character sheet: Domitor / Duties on top, Potence printed on the first Discipline line, a Blood Pool row, "Blood Bond" (the sheet's "Weakness/Blood Bond") and "Overdosing?" lines.
+
+---
+
 ## Differences that matter for the app
 
 - **Botch rule:** botch only when **no success was rolled at all** and at least one 1 shows. Cancelling successes down to zero is a plain failure. At d5686c4, `dice_service.py` treated net ≤ 0 with 1s, or net < 0, as a botch, which is the pre-Revised reading. Make sure the new code follows p. 192.
@@ -490,3 +547,4 @@ There are 13 clans plus Caitiff (core ch. 2 intro, p. 64). Clan Disciplines are 
 - **Morality:** Humanity/Path 1–10 with Virtue-driven rolls (Conscience/Self-Control/Courage) and Virtue dice caps. No Stains/Remorse.
 - **Creation:** 7/5/3, 13/9/5, 3 Disciplines, 5 Backgrounds, 7 Virtues, 15 freebies (+ up to 7 from Flaws), Abilities ≤ 3 before freebies.
 - **XP costs:** "current rating × N", one dot per story.
+- **Ghouls:** a Classic ghoul has a **Blood Pool** (10, 1 per turn) and a Blood Bond counted in drinks (0–3); a V5 ghoul has neither a pool nor Hunger (V5.md §7). Creation by Ghouls: Fatal Addiction (§7): 6/4/3, 11/7/4, Potence 1 + one Discipline, 5 Backgrounds, 7 Virtues, 21 freebies.

@@ -35,7 +35,10 @@
   "pdf": {
     "export": "Εξαγωγή PDF",
     "failed": "Δεν ήταν δυνατή η εξαγωγή του PDF.",
-    "hint": "Συμπληρώσιμο φύλλο για ασπρόμαυρη εκτύπωση"
+    "hint": "Συμπληρώσιμο φύλλο για ασπρόμαυρη εκτύπωση",
+    "print": "Λήψη έκδοσης για εκτύπωση",
+    "printHint": "Φαίνεται ίδια σε κάθε πρόγραμμα PDF· δεν συμπληρώνεται",
+    "which": "Έκδοση για εκτύπωση: φαίνεται ίδια παντού, αυτή στέλνεις. Συμπληρώσιμο: για αλλαγές σε εφαρμογή PDF."
   },
   "spend": {
     "problem": {
@@ -104,5 +107,53 @@
     "help": "Πόντοι που έμειναν αξόδευτοι στη δημιουργία. Ξόδεψέ τους αργότερα· εγκρίνει ο Storyteller.",
     "spend": "Ξόδεψε…",
     "requests": "Ξοδέματα"
+  },
+  "ghoul": {
+    "ghoulOf": "Ghoul του/της {{domitor}}",
+    "retainersTitle": "Retainers (ghouls)",
+    "openSheet": "Άνοιγμα φύλλου",
+    "noRetainers": "Κανένα ghoul ακόμη.",
+    "addRetainer": "Πρόσθεσε ghoul retainer",
+    "domitorGone": "(το φύλλο δεν υπάρχει πια)",
+    "intro": "Φύλλο ghoul, V5 (μόνο για ανάγνωση). Κανόνες: core σελ. 234, Players Guide σελ. 140–142.",
+    "domitorClan": "Clan του domitor",
+    "template": "Πρότυπο",
+    "ageLooks": "Ηλικία / δείχνει",
+    "since": "Ghoul από",
+    "healing": "Γιατρεύεται δύο φορές πιο γρήγορα από έναν θνητό, εκτός από τη φωτιά (Players Guide σελ. 142). Χωρίς Hunger, χωρίς Blood Potency.",
+    "powerTitle": "Δύναμη του ghoul",
+    "oneDot": "(μετρά για 1 τελεία)",
+    "powerNote": "Χωρίς Rouse Checks: μια δύναμη πάνω από το επίπεδο 1 κοστίζει 1 Aggravated (core σελ. 234).",
+    "bondTitle": "Blood Bond και τροφοδοσία",
+    "strengthNotSet": "Το Bond Strength δεν έχει οριστεί (το ορίζει ο Storyteller)",
+    "bondFlaws": "Flaws του Bond",
+    "lastFed": "Τελευταία φορά που ήπιε από το αίμα του domitor",
+    "feedingNote": "Σημείωση τροφοδοσίας",
+    "feedingRule": "Όσο αίμα του domitor αντιστοιχεί σε ένα Rouse Check κρατά ένα ghoul περίπου έναν μήνα (core σελ. 234). Χωρίς track για vitae, χωρίς Hunger."
+  },
+  "classicGhoul": {
+    "generationN": "generation {{n}}",
+    "intro": "Φύλλο ghoul, Classic (Revised), μόνο για ανάγνωση. Κανόνες: Revised σελ. 275–276, Ghouls: Fatal Addiction.",
+    "domitorClan": "Clan και generation του domitor",
+    "kindLabel": "Είδος",
+    "duties": "Καθήκοντα",
+    "bloodTitle": "Blood Pool και Blood Bond",
+    "poolLine": "{{current}} / {{max}} · {{perTurn}} ανά γύρο",
+    "poolRule": "Ξόδεψε έναν πόντο για να γιατρέψεις ένα επίπεδο ή να ανεβάσεις ένα Physical Attribute (έως το διπλάσιο του αρχικού)· τα Disciplines θέλουν τουλάχιστον έναν πόντο· όσο κρατά vitae κάνει soak σε lethal ζημιά. Χωρίς Hunger, χωρίς Rouse Checks.",
+    "bondNotSet": "δεν έχει οριστεί (το ορίζει ο Storyteller)",
+    "bondStage_one": "{{count}} από {{max}} γουλιές",
+    "bondStage_other": "{{count}} από {{max}} γουλιές",
+    "bound": "πλήρως δεμένο",
+    "bondNote": "Σημείωση για το Bond",
+    "lastFed": "Τελευταία φορά που ήπιε vitae του domitor",
+    "overdosing": "Overdosing;",
+    "frenzyRule": "Frenzy: Self-Control, με δυσκολίες δύο μικρότερες από ενός βαμπίρ (Revised σελ. 276), ποτέ περισσότερα ζάρια από τους πόντους αίματος που κρατά.",
+    "damage": "Χαμένα επίπεδα Health",
+    "poolAria": "Blood Pool {{current}} από {{max}}",
+    "kind": {
+      "vassal": "Vassal",
+      "independent": "Independent",
+      "revenant": "Revenant"
+    }
   }
 }

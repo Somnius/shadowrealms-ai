@@ -114,7 +114,7 @@ PROBLEM_CODES = (
     "predator_missing", "predator_forbidden", "predator_specialty", "predator_discipline",
     "predator_grant", "predator_bp", "predator_ancilla",
     "adv_over", "flaw_under", "flaw_over", "adv_dots_range", "adv_unknown", "adv_restricted", "adv_requires",
-    "adv_excluded",
+    "adv_excluded", "adv_repeat",
     "loresheet_restricted", "loresheet_levels", "custom_row", "caitiff_status",
     "thin_blood_merits", "thin_blood_only",
     "conviction_count", "conviction_pairs", "derived_value",
@@ -478,9 +478,12 @@ def _names(v: Any) -> List[str]:
     return out
 
 
-def _skill_problems(pre: Dict[str, int], dist_key: Any) -> List[Tuple[str, dict]]:
-    """validateV5Skills: the distribution's counts, exactly."""
-    dist = SKILL_DISTRIBUTIONS.get(dist_key) if isinstance(dist_key, str) else None
+def _skill_problems(pre: Dict[str, int], dist_key: Any,
+                   distributions: Optional[Dict[str, Dict[int, int]]] = None) -> List[Tuple[str, dict]]:
+    """validateV5Skills: the distribution's counts, exactly. `distributions`: rating -> count per
+    key, SKILL_DISTRIBUTIONS by default (the ghoul check passes the mortal templates')."""
+    table = SKILL_DISTRIBUTIONS if distributions is None else distributions
+    dist = table.get(dist_key) if isinstance(dist_key, str) else None
     if not dist:
         return [("skill_dist", {"distribution": dist_key if isinstance(dist_key, str) else None})]
     vals = [pre.get(k, 0) for k in SKILL_KEYS]
@@ -848,6 +851,7 @@ def _check_advantages(p: _Problems, sh: _Sheet, cat: _Catalog, s: Dict[str, Any]
                 p.add("adv_requires", name=_str(row.get("name")), requires=_str(entry.get("requires")))
 
     _check_exclusions(p, sh, cat)
+    check_repeats(p, cat, sh.advantages, sh.flaws, own_adv + own_flaws, sh.clan)
 
     tb_merits = _names(sh.meta.get("thin_blood_merits"))
     tb_flaws = _names(sh.meta.get("thin_blood_flaws"))
@@ -857,6 +861,36 @@ def _check_advantages(p: _Problems, sh: _Sheet, cat: _Catalog, s: Dict[str, Any]
             p.add("thin_blood_merits", merits=len(tb_merits), flaws=len(tb_flaws), min=lo, max=hi)
     elif sh.clan and (tb_merits or tb_flaws):
         p.add("thin_blood_only")
+
+
+def check_repeats(p: _Problems, cat: _Catalog, advantages: List[dict], flaws: List[dict], own: List[dict],
+                  clan: Optional[dict]) -> None:
+    """A catalog entry taken more often than it may be (`adv_repeat {name, max}`): once unless it is
+    `repeatable`, a repeatable one up to its `max_instances`. Every row counts (the predator type's
+    and the clan's too, as the forge's validateV5AdvantageRows does); only the player's own rows are
+    reported. Custom rows are free text, never counted."""
+    if not cat.advantages and not cat.loresheets:
+        return
+    counts: Counter = Counter()
+    found: List[Tuple[dict, Optional[dict]]] = []
+    for row, flaw in [(r, False) for r in advantages] + [(r, True) for r in flaws]:
+        if row.get("custom") is True:
+            found.append((row, None))
+            continue
+        lore = not flaw and (row.get("kind") == "loresheet" or _sid(row.get("id")).startswith("loresheet:"))
+        e = cat.loresheet(row) if lore else cat.advantage(row, flaw, clan)
+        found.append((row, e))
+        if e is not None:
+            counts[id(e)] += 1
+    own_ids = {id(r) for r in own}
+    for row, e in found:
+        if e is None or id(row) not in own_ids:
+            continue
+        repeatable = e.get("repeatable") is True and not _sid(e.get("id")).startswith("loresheet:")
+        most = e.get("max_instances") if repeatable else 1
+        most = most if isinstance(most, int) and not isinstance(most, bool) and most > 0 else None
+        if most is not None and counts[id(e)] > most:
+            p.add("adv_repeat", name=_str(e.get("name")), max=most)
 
 
 def _check_exclusions(p: _Problems, sh: _Sheet, cat: _Catalog) -> None:

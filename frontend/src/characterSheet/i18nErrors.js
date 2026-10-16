@@ -10,10 +10,63 @@
 import { t } from '../i18n';
 import { V5_AGE_BRACKETS, V5_ATTRIBUTES, V5_SECTION_IDS, V5_SKILL_DISTRIBUTIONS, V5_SKILL_LABELS } from './v5/constants';
 import { bookTitle } from './v5/rulesData';
+import { GHOUL_RESTRICTION_TEXT, GHOUL_TEMPLATE_LABELS } from './v5/ghoul';
 
 const atList = (s) => s.replace(/ at (\d)/g, (m, r) => t('wizard:validation.atRating', ' at {{r}}', { r }));
 
+/** 'Gifted mortal' (the English label in a ghoul message) -> its name in the active language. */
+const ghoulLabel = (label) => ghoulTemplateName(Object.keys(GHOUL_TEMPLATE_LABELS).find((k) => GHOUL_TEMPLATE_LABELS[k] === label) || label);
+const ghoulWhyKey = (text) => Object.keys(GHOUL_RESTRICTION_TEXT).find((k) => GHOUL_RESTRICTION_TEXT[k] === text) || text;
+
+/** The Classic ghoul forge's field names in its too-long messages -> wizard:classicGhoul.fieldName keys. */
+const CLASSIC_GHOUL_FIELD_KEYS = {
+  Concept: 'concept',
+  Nature: 'nature',
+  Demeanor: 'demeanor',
+  Duties: 'duties',
+  'Ghoul since': 'ghouledSince',
+  'Bond note': 'bondNote',
+  'Last fed': 'feedingLast',
+  'Feeding note': 'feedingNote',
+  Overdosing: 'overdosing',
+};
+
 const PATTERNS = [
+  // the Classic ghoul forge (characterSheet/classicGhoul.js validateClassicGhoulSheet)
+  [/^Character name is required\.$/, () => t('wizard:error.name', 'Character name is required.')],
+  [/^Enter your Nature \(free text\), or pick a preset archetype\.$/, () => t('wizard:classic.error.nature', 'Enter your Nature (free text), or pick a preset archetype.')],
+  [/^Enter your Demeanor \(free text\), or pick a preset archetype\.$/, () => t('wizard:classic.error.demeanor', 'Enter your Demeanor (free text), or pick a preset archetype.')],
+  [/^Choose whether the ghoul is a vassal or independent\.$/, () => t('wizard:classicGhoul.error.kind', 'Choose whether the ghoul is a vassal or independent.')],
+  [/^Every ghoul has Potence 1 or more\.$/, () => t('wizard:classicGhoul.error.potence', 'Every ghoul has Potence 1 or more (Revised p. 276).')],
+  [/^Place the dot in a Discipline besides Potence\.$/, () => t('wizard:classicGhoul.error.secondDiscipline', 'Place the dot in a Discipline besides Potence.')],
+  [/^(.+) (\d+): the ghoul of a generation (\d+) domitor learns Disciplines up to (\d+)\.$/, (m) => t('wizard:classicGhoul.error.disciplineCap', '{{name}} {{dots}}: the ghoul of a generation {{gen}} domitor learns Disciplines up to {{cap}}.', { name: m[1], dots: m[2], gen: m[3], cap: m[4] })],
+  [/^(.+) is not a Discipline this ghoul can learn\.$/, (m) => t('wizard:classicGhoul.error.disciplineNotOpen', '{{name}} is not a Discipline this ghoul can learn.', { name: m[1] })],
+  [/^Ghouls take no (.+) Background\.$/, (m) => t('wizard:classicGhoul.error.background', 'Ghouls take no {{name}} Background.', { name: m[1] })],
+  [/^Place all (\d+) Background dots\.$/, (m) => t('wizard:classic.error.backgrounds', 'Place all {{n}} Background dots.', { n: m[1] })],
+  [/^Roll or set the starting Blood Pool \(1–(\d+)\)\.$/, (m) => t('wizard:classicGhoul.error.bloodPool', 'Roll or set the starting Blood Pool (1–{{max}}).', { max: m[1] })],
+  [/^(Concept|Nature|Demeanor|Duties|Ghoul since|Bond note|Last fed|Feeding note|Overdosing): at most (\d+) characters\.$/, (m) => t('wizard:classicGhoul.error.tooLong', '{{field}}: at most {{n}} characters.', { field: t(`wizard:classicGhoul.fieldName.${CLASSIC_GHOUL_FIELD_KEYS[m[1]]}`, m[1]), n: m[2] })],
+  [/^(.+)…: a name is at most (\d+) characters\.$/, (m) => t('wizard:classicGhoul.error.rowNameTooLong', '{{name}}…: a name is at most {{n}} characters.', { name: m[1], n: m[2] })],
+  [/^Only a vassal takes the Domitor Background\.$/, () => t('wizard:classicGhoul.error.domitorVassal', 'Only a vassal takes the Domitor Background (Fatal Addiction).')],
+  [/^Blood Bond: 0 to (\d+) drinks\.$/, (m) => t('wizard:classicGhoul.error.bond', 'Blood Bond: 0 to {{n}} drinks.', { n: m[1] })],
+  // the ghoul forge (characterSheet/v5/ghoul.js validateGhoulSheet)
+  [/^Choose a template for the ghoul\.$/, () => t('wizard:problem.ghoul_template', 'Choose a template for the ghoul.')],
+  [/^Choose the ghoul's domitor\.$/, () => t('wizard:validation.ghoulDomitor', "Choose the ghoul's domitor.")],
+  [/^No Retainers rating buys a Deadly mortal\.$/, () => t('wizard:problem.ghoul_retainer_dots_deadly', 'No Retainers rating buys a Deadly mortal (core p. 194): only the Storyteller can approve one.')],
+  [/^A (.+) ghoul takes Retainers (\d+); the domitor pays (\d+)\.$/, (m) => t('wizard:problem.ghoul_retainer_dots', 'A {{template}} ghoul takes Retainers {{need}}; the domitor pays {{dots}} (core p. 194).', { template: ghoulLabel(m[1]), need: m[2], dots: m[3] })],
+  [/^Attributes don't match the (.+) spread\.$/, (m) => t('wizard:problem.ghoul_attr_spread', "Attributes don't match the {{template}} spread.", { template: ghoulLabel(m[1]) })],
+  [/^Skills don't match the (.+) template: (.+)\.$/, (m) => t('wizard:validation.ghoulSkills', "Skills don't match the {{template}} template: {{want}}.", { template: ghoulLabel(m[1]), want: atList(m[2]) })],
+  [/^The (.+) template gives (\d+) specialties here \(you named (\d+)\)\.$/, (m) => t('wizard:problem.ghoul_specialty_count', 'The {{template}} template gives {{max}} specialties here (you named {{have}}).', { template: ghoulLabel(m[1]), max: m[2], have: m[3] })],
+  [/^A ghoul starts with exactly one level-1 power \(you have (\d+)\)\.$/, (m) => t('wizard:problem.ghoul_power_count', 'A ghoul starts with exactly one level-1 power (you have {{have}}).', { have: m[1] })],
+  [/^(.+) is not one of the domitor's Disciplines\.$/, (m) => t('wizard:problem.ghoul_power_discipline', "{{discipline}} is not one of the domitor's Disciplines.", { discipline: m[1] })],
+  [/^(.+): a ghoul's power is level 1\.$/, (m) => t('wizard:problem.ghoul_power_level', "{{discipline}}: a ghoul's power is level 1 (it counts as one dot).", { discipline: m[1] })],
+  [/^The domitor doesn't have (.+) \((.+)\): the first power is one the domitor has\.$/, (m) => t('wizard:validation.ghoulPowerNotDomitors', "The domitor doesn't have {{power}} ({{discipline}}): the first power is one the domitor has (core p. 234). Pick another, or ask your Storyteller.", { power: m[1], discipline: m[2] })],
+  [/^The (.+) template allows at most (\d+) dots of Flaws \(you have (\d+)\)\.$/, (m) => t('wizard:problem.ghoul_flaws_over', 'The {{template}} template allows at most {{max}} dots of Flaws (you have {{have}}).', { template: ghoulLabel(m[1]), max: m[2], have: m[3] })],
+  [/^(.+) is not open to ghouls: (.+) \(Players Guide p\. 141\)\.$/, (m) => t('wizard:problem.ghoul_adv_restricted', '{{name}} is not open to ghouls: {{why}} (Players Guide p. 141).', { name: m[1], why: ghoulRestrictionWhy(ghoulWhyKey(m[2])) })],
+  [/^The (.+) template has (\d+) specialties of its own \(you named (\d+)\)\.$/, (m) => t('wizard:problem.ghoul_template_specialty', 'The {{template}} template has {{need}} specialties of its own (you named {{have}}).', { template: ghoulLabel(m[1]), need: m[2], have: m[3] })],
+  [/^The Gifted mortal template's specialty goes on one of its Skills at 4\.$/, () => t('wizard:problem.ghoul_template_specialty_rating', "The Gifted mortal template's specialty goes on one of its two Skills at 4 (core p. 185).")],
+  [/^A ghoul has one Blood Bond, to the domitor \(two with Two Masters\)\.$/, () => t('wizard:problem.ghoul_bonds', 'A ghoul has one Blood Bond, to the domitor (two with Two Masters).')],
+  [/^Bond Strength is 0–(\d+)\.$/, () => t('wizard:problem.ghoul_bonds_strength', 'Bond Strength is 0–6 (core p. 234).')],
+  [/^A second Blood Bond needs the Two Masters Flaw\.$/, () => t('wizard:problem.ghoul_bonds_two_masters', 'A second Blood Bond needs the Two Masters Flaw (Blood-Stained Love p. 151).')],
   [/^Nosferatu have Appearance (\d+) and can never raise it\.$/, (m) => t('wizard:validation.nosferatuAppearance', 'Nosferatu have Appearance {{n}} and can never raise it.', { n: m[1] })],
   [/^Each attribute must be between 1 and 5 \((.+)\)\.$/, (m) => t('wizard:validation.attrRange', 'Each attribute must be between 1 and 5 ({{key}}).', { key: m[1] })],
   [/^(.+): add exactly (\d+) dots on top of the free dot in each attribute \(added (\d+)\)\.$/, (m) => t('wizard:validation.attrPool', '{{label}}: add exactly {{n}} dots on top of the free dot in each attribute (added {{added}}).', { label: m[1], n: m[2], added: m[3] })],
@@ -111,6 +164,50 @@ const DERIVED_LABELS = { humanity: 'Humanity', blood_potency: 'Blood Potency', h
 const skillLabel = (k) => V5_SKILL_LABELS[k] || k || '';
 const traitLabel = (k) => V5_SKILL_LABELS[k] || ATTRIBUTE_LABELS[k] || DERIVED_LABELS[k] || k || '';
 const ageLabel = (a) => V5_AGE_BRACKETS[a]?.label || a || '';
+// wod_meta keys a ghoul's sheet leaves out (ghoul_vampire_field); game terms stay English.
+const VAMPIRE_FIELD_LABELS = {
+  clan: 'Clan', sire: 'Sire', generation: 'Generation', age: 'Age', predator_type: 'Predator type', hunger: 'Hunger',
+  blood_potency: 'Blood Potency', experience: 'XP', saved: 'saved points', rituals: 'Rituals',
+  thin_blood_merits: 'thin-blood Merits', thin_blood_flaws: 'thin-blood Flaws', predator_rows: 'predator type rows',
+};
+
+/** A ghoul template's name ('gifted' -> "Gifted mortal"), in the active language. */
+export function ghoulTemplateName(key) {
+  switch (key) {
+    case 'weak':
+      return t('wizard:ghoul.templateName.weak', 'Weak mortal');
+    case 'average':
+      return t('wizard:ghoul.templateName.average', 'Average mortal');
+    case 'gifted':
+      return t('wizard:ghoul.templateName.gifted', 'Gifted mortal');
+    case 'deadly':
+      return t('wizard:ghoul.templateName.deadly', 'Deadly mortal');
+    case 'player':
+      return t('wizard:ghoul.templateName.player', 'Player ghoul');
+    default:
+      return key || '';
+  }
+}
+
+/** Why a ghoul can't take an entry (ghoul_adv_restricted params.why). */
+function ghoulRestrictionWhy(why) {
+  switch (why) {
+    case 'domain':
+      return t('wizard:problem.ghoulWhy.domain', 'Domain belongs to Kindred');
+    case 'feeding':
+      return t('wizard:problem.ghoulWhy.feeding', 'Feeding Merits and Flaws are for Kindred');
+    case 'herd':
+      return t('wizard:problem.ghoulWhy.herd', 'Herd belongs to Kindred');
+    case 'thin_blood':
+      return t('wizard:problem.ghoulWhy.thinBlood', 'it is for thin-bloods');
+    case 'caitiff':
+      return t('wizard:problem.ghoulWhy.caitiff', 'it is for Caitiff');
+    case 'coterie':
+      return t('wizard:problem.ghoulWhy.coterie', "it is a coterie's, bought from the coterie pool");
+    default:
+      return why || '';
+  }
+}
 
 /** One entry per code of backend/services/v5_chargen.py PROBLEM_CODES (a pytest checks it). */
 const PROBLEMS = {
@@ -154,6 +251,10 @@ const PROBLEMS = {
   adv_restricted: (p) => t('wizard:problem.adv_restricted', '{{name}} is not open to {{clan}}.', p),
   adv_requires: (p) => t('wizard:problem.adv_requires', '{{name}} needs {{requires}}.', p),
   adv_excluded: (p) => t('wizard:problem.adv_excluded', "{{a}} and {{b}} can't be taken together.", p),
+  adv_repeat: (p) =>
+    Number(p.max) > 1
+      ? t('wizard:problem.adv_repeat_max', '{{name}} can be taken at most {{max}} times.', p)
+      : t('wizard:problem.adv_repeat', '{{name}} can be taken only once.', p),
   loresheet_restricted: (p) => t('wizard:problem.loresheet_restricted', 'The {{name}} loresheet is not open to {{clan}}.', p),
   loresheet_levels: (p) => t('wizard:problem.loresheet_levels', 'The {{name}} loresheet: take each level once (1–5); its dots are their sum (you have {{dots}}).', p),
   custom_row: (p) => t('wizard:problem.custom_row', '{{name}} is a custom row: only the Storyteller can approve it.', p),
@@ -181,6 +282,39 @@ const PROBLEMS = {
   age_not_allowed: (p) => t('wizard:problem.age_not_allowed', "The Storyteller doesn't allow {{age}} characters in this chronicle.", { age: ageLabel(p.age) }),
   fledgling_not_allowed: () => t('wizard:problem.fledgling_not_allowed', "The Storyteller doesn't offer the Humanity 8 fledgling start in this chronicle."),
   book_not_allowed: (p) => t('wizard:problem.book_not_allowed', "{{name}} comes from a book this chronicle doesn't use ({{book}}).", { name: p.name, book: bookTitle(p.book) }),
+  // the ghoul check (backend/services/v5_ghoul_chargen.py GHOUL_PROBLEM_CODES; the shared codes are above)
+  ghoul_template: () => t('wizard:problem.ghoul_template', 'Choose a template for the ghoul.'),
+  ghoul_domitor: (p) =>
+    p.why === 'not_vampire'
+      ? t('wizard:problem.ghoul_domitor_not_vampire', "The domitor must be a V5 vampire's sheet.")
+      : p.why === 'mismatch'
+        ? t('wizard:problem.ghoul_domitor_mismatch', "The domitor doesn't match the sheet.")
+        : t('wizard:problem.ghoul_domitor', "Choose the ghoul's domitor: one of your V5 vampires."),
+  ghoul_retainer_dots: (p) =>
+    p.need == null
+      ? t('wizard:problem.ghoul_retainer_dots_deadly', 'No Retainers rating buys a Deadly mortal (core p. 194): only the Storyteller can approve one.')
+      : t('wizard:problem.ghoul_retainer_dots', 'A {{template}} ghoul takes Retainers {{need}}; the domitor pays {{dots}} (core p. 194).', { ...p, template: ghoulTemplateName(p.template) }),
+  ghoul_vampire_field: (p) => t('wizard:problem.ghoul_vampire_field', "A ghoul's sheet has no {{field}}: that is a vampire's.", { field: VAMPIRE_FIELD_LABELS[p.field] || p.field }),
+  ghoul_attr_spread: (p) => t('wizard:problem.ghoul_attr_spread', "Attributes don't match the {{template}} spread.", { template: ghoulTemplateName(p.template) }),
+  ghoul_specialty_count: (p) => t('wizard:problem.ghoul_specialty_count', 'The {{template}} template gives {{max}} specialties here (you named {{have}}).', { ...p, template: ghoulTemplateName(p.template) }),
+  ghoul_template_specialty: (p) =>
+    p.why === 'rating'
+      ? t('wizard:problem.ghoul_template_specialty_rating', "The Gifted mortal template's specialty goes on one of its two Skills at 4 (core p. 185).")
+      : t('wizard:problem.ghoul_template_specialty', 'The {{template}} template has {{need}} specialties of its own (you named {{have}}).', { ...p, template: ghoulTemplateName(p.template) }),
+  ghoul_power_count: (p) => t('wizard:problem.ghoul_power_count', 'A ghoul starts with exactly one level-1 power (you have {{have}}).', p),
+  ghoul_power_level: (p) => t('wizard:problem.ghoul_power_level', "{{discipline}}: a ghoul's power is level 1 (it counts as one dot).", p),
+  ghoul_power_discipline: (p) => t('wizard:problem.ghoul_power_discipline', "{{discipline}} is not one of the domitor's Disciplines.", p),
+  ghoul_power_not_domitors: (p) => t('wizard:problem.ghoul_power_not_domitors', "The domitor doesn't have {{power}} ({{discipline}}): the first power is one the domitor has (core p. 234). Your Storyteller can approve another.", p),
+  ghoul_flaws_over: (p) => t('wizard:problem.ghoul_flaws_over', 'The {{template}} template allows at most {{max}} dots of Flaws (you have {{have}}).', { ...p, template: ghoulTemplateName(p.template) }),
+  ghoul_adv_restricted: (p) => t('wizard:problem.ghoul_adv_restricted', '{{name}} is not open to ghouls: {{why}} (Players Guide p. 141).', { name: p.name, why: ghoulRestrictionWhy(p.why) }),
+  ghoul_bonds: (p) =>
+    p.why === 'strength'
+      ? t('wizard:problem.ghoul_bonds_strength', 'Bond Strength is 0–6 (core p. 234).')
+      : p.why === 'domitor'
+        ? t('wizard:problem.ghoul_bonds_domitor', 'The first Blood Bond is to the domitor.')
+        : p.why === 'two_masters'
+          ? t('wizard:problem.ghoul_bonds_two_masters', 'A second Blood Bond needs the Two Masters Flaw (Blood-Stained Love p. 151).')
+          : t('wizard:problem.ghoul_bonds', 'A ghoul has one Blood Bond, to the domitor (two with Two Masters).'),
 };
 
 /** One server problem ({code, params}) in the active language; a string goes through translateSheetError. */
@@ -209,6 +343,13 @@ const BOOK_SECTIONS = {
 export function problemSection(code, params) {
   const S = V5_SECTION_IDS;
   if (code === 'book_not_allowed') return S[BOOK_SECTIONS[params?.kind] || 'identity'];
+  // the ghoul forge's sections (the same ids where the step is the same)
+  if (code === 'ghoul_attr_spread') return S.attributes;
+  if (code === 'ghoul_specialty_count' || code === 'ghoul_template_specialty') return S.skills;
+  if (/^ghoul_power_/.test(code)) return S.disciplines;
+  if (/^ghoul_(adv_restricted|flaws_over)$/.test(code)) return S.advantages;
+  if (code === 'ghoul_bonds') return S.bond;
+  if (/^ghoul_/.test(code)) return S.identity;
   if (/^(clan_missing|clan_not_allowed)$/.test(code)) return S.clan;
   if (/^(age_|thin_blood_generation|generation_thin_blood)/.test(code)) return S.age;
   if (/^attr_/.test(code)) return S.attributes;
@@ -233,9 +374,10 @@ const STRING_SECTIONS = [
 /**
  * The problems of a 400 from POST /api/characters/: { messages: [translated], bySection:
  * {sectionId: first message} }. Codes ({code, params}) and plain English messages (the chronicle's
- * creation rules) both come out in the active language.
+ * creation rules) both come out in the active language. `sections` ({code: sectionId}) moves a code
+ * to another section (the ghoul forge has no XP step: its name_length goes to Skills).
  */
-export function serverProblemErrors(problems) {
+export function serverProblemErrors(problems, sections = null) {
   const bySection = {};
   const messages = [];
   (Array.isArray(problems) ? problems : []).forEach((p) => {
@@ -247,7 +389,7 @@ export function serverProblemErrors(problems) {
       id = V5_SECTION_IDS[hit ? hit[1] : 'identity'];
     } else if (p && typeof p === 'object' && p.code) {
       msg = translateProblem(p);
-      id = problemSection(p.code, p.params);
+      id = sections?.[p.code] || problemSection(p.code, p.params);
     } else {
       return;
     }

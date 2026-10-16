@@ -149,6 +149,16 @@ def _widgets(pdf: bytes):
     return [body for _, body in _objects(pdf) if b"/Subtype /Widget" in body]
 
 
+def _long_text(f, key):
+    """A Background or Notes field and its 'continued' parts (key.cont1, key.cont2...), one text."""
+    parts = [f.get(key, "")]
+    i = 1
+    while f"{key}.cont{i}" in f:
+        parts.append(f[f"{key}.cont{i}"])
+        i += 1
+    return " ".join(" ".join(parts).split())
+
+
 # --- the document --------------------------------------------------------------------------
 
 @pytest.fixture(scope="module")
@@ -349,7 +359,8 @@ def test_never_raises(base, mangle, paper):
     t = time.monotonic()
     pdf = build_sheet_pdf(ch, paper=paper)
     took = time.monotonic() - t
-    assert pdf.startswith(b"%PDF-") and len(re.findall(rb"/Type /Page\b", pdf)) == 2
+    # long Background / Notes go on over continuation pages
+    assert pdf.startswith(b"%PDF-") and len(re.findall(rb"/Type /Page\b", pdf)) >= 2
     assert took < 2.0 and len(pdf) < 3_000_000, (took, len(pdf))
     height = 841.89 if paper == "a4" else 792.0
     for x0, y0, x1, y1 in _rects(pdf):
@@ -361,7 +372,8 @@ def test_never_raises(base, mangle, paper):
     if mangle is _text:
         assert f["name"] == "Κων\ufffdσταντίνος" and f["background"] == "Ζ\ufffdω\nend\ufffd"
     if mangle is _huge:
-        assert f["background"].endswith("…") and len(f["name"]) <= 500
+        assert _long_text(f, "background").endswith("…") and len(f["name"]) <= 500
+        assert len(_long_text(f, "background")) <= 40000
 
 
 def test_classic_overflow_goes_to_notes():
@@ -378,7 +390,7 @@ def test_classic_overflow_goes_to_notes():
         for x0, y0, x1, y1 in _rects(pdf):
             assert 24 <= y0 < y1 <= height - 24
         f = _fields(pdf)
-        notes = f["notes"]
+        notes = _long_text(f, "notes")
         assert "Owes a boon." in notes and "Ability notes here" in notes
         assert "More disciplines: Disc 9 (1); Disc 10 (1); Disc 11 (1)" in notes
         assert "Bg 10 (2)" in notes
@@ -978,3 +990,372 @@ def test_can_view_character_sheet_rule():
     assert [can_view_character_sheet(Cur(), u, ch) for u in (2, 3, 1, 5, 4)] == [True, True, True, True, False]
     assert not can_view_character_sheet(Cur(), 3, {"user_id": 2, "campaign_id": 8})  # not their chronicle
     assert not can_view_character_sheet(Cur(), 2, None)
+
+
+# --- Background & Notes that run over their box -------------------------------------------
+
+LONG_PARA = ("Darius filmed the raid from the roof across the street, then sold the footage before dawn. "
+             "Ο Σερκάν τα κατέγραψε όλα από τη στέγη απέναντι. ") * 8
+
+
+def _long_background(n=24):
+    return "\n\n".join(f"{i}. {LONG_PARA}" for i in range(n))  # about 16 000 characters, like character 17's
+
+
+@pytest.fixture
+def page_text(monkeypatch):
+    """Every string drawn as page text (labels upper-cased), in order."""
+    seen = []
+    real = SheetCanvas.text
+
+    def spy(self, x, y, s, *a, **k):
+        seen.append(s)
+        return real(self, x, y, s, *a, **k)
+
+    monkeypatch.setattr(SheetCanvas, "text", spy)
+    return seen
+
+
+@pytest.mark.parametrize("base", [V5_CHAR, CLASSIC_CHAR], ids=["v5", "classic"])
+@pytest.mark.parametrize("paper,height", [("a4", 841.89), ("letter", 792.0)])
+def test_a_long_background_goes_on_a_continued_page(base, paper, height, page_text):
+    ch = copy.deepcopy(base)
+    ch["background"] = _long_background()
+    assert len(ch["background"]) > 15000
+    pdf = build_sheet_pdf(ch, paper=paper)
+    f = _fields(pdf)
+    n = _pages(pdf)
+    assert n >= 3
+    # the box keeps the start, as a field; the rest is in background.cont1, .cont2...
+    assert f["background"] and len(f["background"]) < 6000
+    assert ch["background"].startswith(f["background"].split("\n")[0])
+    assert "background.cont1" in f and "notes.cont1" not in f
+    assert _long_text(f, "background") == " ".join(ch["background"].split())
+    assert "BACKGROUND (CONTINUED ON P. 3)" in page_text
+    assert "BACKGROUND & NOTES (CONTINUED)" in page_text and "BACKGROUND (CONTINUED)" in page_text
+    assert f"2 / {n}" in page_text and f"{n} / {n}" in page_text
+    for x0, y0, x1, y1 in _rects(pdf):
+        assert 24 <= y0 < y1 <= height - 24
+
+
+def test_long_notes_continue_after_the_background(page_text):
+    ch = copy.deepcopy(V5_CHAR)
+    ch["background"] = _long_background(12)
+    ch["merits_flaws"]["notes"] = "Bane Severity 2.\n" + _long_background(10)
+    f = _fields(build_sheet_pdf(ch))
+    assert _long_text(f, "notes") == " ".join(ch["merits_flaws"]["notes"].split())
+    assert _long_text(f, "background") == " ".join(ch["background"].split())
+    assert any(t.startswith("NOTES (CONTINUED ON P. ") for t in page_text)
+
+
+def test_text_that_fits_still_shrinks_into_the_box():
+    ch = copy.deepcopy(V5_CHAR)
+    ch["background"] = LONG_PARA[:500]  # fits, at a smaller size if need be
+    pdf = build_sheet_pdf(ch)
+    f = _fields(pdf)
+    assert _pages(pdf) == 2 and "background.cont1" not in f
+    assert f["background"] == " ".join(ch["background"].split()) or f["background"] == ch["background"].strip()
+
+
+def test_continued_pages_come_before_the_reference(page_text):
+    ch = copy.deepcopy(V5_CHAR)
+    ch["background"] = _long_background()
+    plain = _pages(build_sheet_pdf(ch))
+    pdf = build_sheet_pdf(ch, catalog=REF_CATALOG)
+    assert _pages(pdf) == plain + 1
+    total = _pages(pdf)
+    assert "REFERENCE" in page_text and f"{total} / {total}" in page_text
+    assert page_text.count(f"1 / {total}") >= 1
+
+
+def test_the_split_keeps_every_word():
+    from services.character_sheet_pdf import _split_text
+
+    text = "one two three\n\nfour five six seven eight nine ten " * 40
+    head, tail = _split_text(text, 200, 60, 8.2)
+    assert head and tail
+    assert " ".join((head + " " + tail).split()) == " ".join(text.split())
+    assert _split_text("short", 200, 60, 8.2) == ("short", "")
+
+
+# --- a ghoul's sheet ----------------------------------------------------------------------
+
+def _mira():
+    from tests.unit.test_v5_ghoul_chargen import MIRA
+
+    ch = {"id": 30, "name": "Mira Tanis", "system_type": "vampire", "rules_edition": "v5",
+          **copy.deepcopy(MIRA), "background": "Πρώην στέλεχος της τηλεόρασης. Former television executive.",
+          "merits_flaws": {"notes": "Resources 0: in debt."},
+          "domitor": {"id": 17, "name": "Darius Vale", "clan": "Ventrue", "campaign_id": None,
+                      "campaign_name": None, "exists": True}}
+    return ch
+
+
+def test_ghoul_sheet_fields(page_text):
+    pdf = build_sheet_pdf(_mira(), player_name="adminator")
+    assert _pages(pdf) == 2
+    f = _fields(pdf)
+    assert f["name"] == "Mira Tanis" and f["player"] == "adminator"
+    assert f["ghoul.domitor"] == "Darius Vale" and f["ghoul.domitor_clan"] == "Ventrue"
+    # '•' is 0x80 in a PDF text string (PDFDocEncoding); _pdf_string reads Latin-1
+    assert f["ghoul.template"].replace("\x80", "•") == "Gifted mortal · Retainers •••" and f["ghoul.age"] == "55 / 53"
+    assert f["power.discipline.name"] == "Dominate" and f["power.name"] == "Cloud Memory"
+    assert [f[f"power.discipline.{i}"] for i in range(1, 6)] == ["Yes"] + ["Off"] * 4
+    assert f["bond.regnant"] == "Darius Vale" and f["bond.flaws"] == "Bondslave · Two Masters"
+    assert [f[f"bond.strength.{i}"] for i in range(1, 7)] == ["Off"] * 6  # not set
+    assert "not set" in page_text
+    assert "bond2.regnant" not in f and f["feeding.note"] == "About once a month" and f["feeding.last"] == ""
+    assert not any(k.startswith("vitae") for k in f)
+    assert "FEEDING" in page_text and "Ghoul Power  ·  Blood Bond & Feeding".upper() in page_text
+    assert not any("Vitae" == t or "VITAE" == t for t in page_text)
+    assert [f[f"attr.manipulation.{i}"] for i in range(1, 6)].count("Yes") == 4
+    assert f["skill.persuasion.specialty"] == "Negotiation"
+    assert f["adv1.name"] == "Beautiful" and f["flaw1.name"] == "Two Masters"
+    assert [f[f"humanity.{i}"] for i in range(1, 11)].count("Yes") == 7
+    assert f["health.superficial.1"] == "Off"
+    assert not any(k.startswith(("hunger", "blood_potency", "disc1", "ritual", "predator")) for k in f)
+    assert f["background"].startswith("Πρώην") and f["notes"] == "Resources 0: in debt."
+    assert "GHOUL" in page_text and "Mira Tanis · Ghoul of Darius Vale" in page_text
+
+
+def test_ghoul_with_two_bonds_and_no_humanity():
+    ch = _mira()
+    g = ch["wod_meta"]["ghoul"]
+    g["bonds"][0]["strength"] = 4
+    g["bonds"].append({"character_id": None, "name": "Leyla", "strength": 1, "note": "One taste, at the gallery"})
+    del ch["wod_meta"]["humanity"]
+    f = _fields(build_sheet_pdf(ch))
+    assert [f[f"bond.strength.{i}"] for i in range(1, 7)].count("Yes") == 4
+    assert f["bond2.regnant"] == "Leyla" and f["bond2.strength.1"] == "Yes" and f["bond2.strength.2"] == "Off"
+    assert not any(k.startswith("humanity") for k in f)
+
+
+def test_ghoul_reference_and_footer(page_text):
+    from tests.unit.test_creation_validation_routes import DOC
+
+    items = v5_reference(_mira(), DOC["catalog"], "en")
+    names = [o["name"] for k, o in items if k == "entry"]
+    assert items[:2] == [("section", "Ghoul"), ("entry", items[1][1])] and names[0] == "Retainers"
+    assert {"Cloud Memory", "Beautiful", "Two Masters", "Bondslave", "Contacts"} <= set(names)
+    pdf = build_sheet_pdf(_mira(), catalog=DOC["catalog"])
+    assert _pages(pdf) == 3 and "Ghoul of Darius Vale" in page_text and "REFERENCE" in page_text
+
+
+def test_ghoul_pdf_is_black_and_white_and_never_raises():
+    ops = re.compile(rb"((?:-?\d*\.?\d+\s+){1,4})(rg|RG|k|K|g|G|sc|SC|scn|SCN)(?=\s)")
+    pdf = build_sheet_pdf(_mira())
+    for s in _content_streams(pdf):
+        for m in ops.finditer(s):
+            assert {float(x) for x in m.group(1).split()} <= {0.0, 1.0}
+    for mangle in (_numbers, _text, _lists, _huge):
+        ch = mangle(_mira())
+        if mangle is _numbers:
+            ch["wod_meta"]["ghoul"] = {"bonds": [{"strength": "x"}] * 5, "domitor": "y", "feeding": [1], "vitae": "z"}
+        out = build_sheet_pdf(ch, paper="letter")
+        assert out.startswith(b"%PDF-") and _pages(out) >= 2
+
+
+def test_a_ghoul_sheet_from_before_the_rename_prints_its_feeding_note():
+    ch = _mira()
+    g = ch["wod_meta"]["ghoul"]
+    g["vitae"] = {"last": "early October", "note": "old key"}
+    del g["feeding"]
+    f = _fields(build_sheet_pdf(ch))
+    assert (f["feeding.last"], f["feeding.note"]) == ("early October", "old key")
+
+
+@pytest.mark.parametrize("key", ["background", "notes"])
+def test_a_long_unbroken_token_is_cut_and_continued(key):
+    """A URL or a pasted line with no spaces is cut into pieces that fit, so nothing is clipped."""
+    token = "https://example.org/" + "x" * 6000
+    ch = copy.deepcopy(V5_CHAR)
+    if key == "background":
+        ch["background"] = "Start. " + token + " End."
+    else:
+        ch["merits_flaws"]["notes"] = "Start. " + token + " End."
+    pdf = build_sheet_pdf(ch)
+    f = _fields(pdf)
+    assert _pages(pdf) >= 3 and f"{key}.cont1" in f
+    assert _long_text(f, key).replace(" ", "") == ("Start." + token + "End.")
+    for field in [k for k in f if k == key or k.startswith(f"{key}.cont")]:
+        assert len(f[field]) <= 20000
+
+
+# --- a Classic ghoul's sheet (the 1997 ghoul sheet's page 1) ----------------------------------
+
+def _marta():
+    from tests.unit.test_ghoul_routes import classic_body
+
+    b = classic_body()
+    g = b["wod_meta"]["ghoul"]
+    g["domitor"] = {"character_id": 8, "name": "Theodore Doukas", "clan": "Ventrue", "generation": 12}
+    g["bond"] = {"stage": 3, "note": "Third drink in 1998"}
+    g["feeding"] = {"last": "Sunday", "note": "A point of Theodore's vitae each month"}
+    g["overdosing"] = "Can cram 2 extra (Stamina 2)"
+    b["merits_flaws"] = {"entries": [{"name": "Unbondable", "points": 3}]}
+    return {"id": 40, **b, "rules_edition": "classic",
+            "domitor": {"id": 8, "name": "Theodore Doukas", "clan": "Ventrue", "generation": 12,
+                        "campaign_id": 12, "campaign_name": "Byzantium by Night", "exists": True}}
+
+
+def test_classic_ghoul_sheet_fields(page_text):
+    pdf = build_sheet_pdf(_marta(), player_name="lef", chronicle_name="Byzantium by Night", catalog=REF_CATALOG)
+    assert _pages(pdf) == 2  # Classic: never a Reference page
+    f = _fields(pdf)
+    assert f["ghoul.domitor"] == "Theodore Doukas (Ventrue, 12th)" and f["ghoul.duties"] == "Drives, keeps the house"
+    assert f["ghoul.kind"] == "Vassal"
+    assert not any(k in f for k in ("clan", "generation", "sire", "weakness"))
+    assert f["disc1.name"] == "Potence" and f["disc2.name"] == "Fortitude" and f["disc1.1"] == "Yes"
+    assert f["bg1.name"] == "Domitor"
+    # Blood Pool: one row of 10, 6 held, 1 per turn
+    assert f["blood.max"] == "10" and f["blood.per_turn"] == "1"
+    assert [f[f"blood.r1.{i}"] for i in range(1, 11)] == ["Yes"] * 6 + ["Off"] * 4
+    assert not any(k.startswith("blood.r2") for k in f)
+    assert f["bond"] == "3/3 drinks · Third drink in 1998" and f["overdosing"] == "Can cram 2 extra (Stamina 2)"
+    assert f["path.name"] == "Humanity" and [f[f"path.{i}"] for i in range(1, 11)].count("Yes") == 6
+    assert [f[f"willpower.{i}"] for i in range(1, 11)].count("Yes") == 2
+    assert f["health.1"] == "Off" and f["merit1.name"] == "Unbondable"
+    # page 2: its ages, when it was ghouled, its feeding
+    assert f["desc.age"] == "51" and f["desc.apparent_age"] == "38" and f["desc.ghouled_since"] == "1998"
+    assert "desc.rip" not in f and "poss.feeding_grounds" not in f
+    assert f["poss.feeding"] == "Last fed: Sunday\nA point of Theodore's vitae each month"
+    assert "GHOUL" in page_text and "Marta Ionescu · Ghoul of Theodore Doukas · Byzantium by Night" in page_text
+    assert not any(t in ("Hunger", "HUNGER", "Rouse") for t in page_text)
+
+
+def test_classic_ghoul_pool_potence_and_old_sheets():
+    ch = _marta()
+    m = ch["wod_meta"]
+    m["blood_pool"] = {"max": 14, "current": 12}  # an old ghoul (staff edit)
+    m["disciplines"] = [{"name": "Dominate", "dots": 1}, {"name": "potence", "dots": 2}]
+    m["ghoul"].update(kind="revenant", family="Zantosa", bond={"stage": 1})
+    del ch["domitor"]  # the domitor's row is gone: the stored copy stands in
+    f = _fields(build_sheet_pdf(ch))
+    assert f["blood.max"] == "14" and [f[f"blood.r2.{i}"] for i in range(1, 11)].count("Yes") == 2
+    assert f["disc1.name"] == "potence" and f["disc1.2"] == "Yes" and f["disc2.name"] == "Dominate"
+    assert f["ghoul.kind"] == "Revenant: Zantosa" and f["bond"] == "1/3 drinks"
+    assert f["ghoul.domitor"] == "Theodore Doukas (Ventrue, 12th)"
+    m["disciplines"] = []
+    m.pop("blood_pool")
+    m["ghoul"] = {"domitor": {"name": "Theo"}}
+    f = _fields(build_sheet_pdf(ch))
+    assert f["disc1.name"] == "Potence" and f["blood.max"] == "10" and f["blood.r1.1"] == "Off"
+    assert f["ghoul.domitor"] == "Theo" and f["bond"] == "" and f["ghoul.kind"] == ""
+
+
+def test_classic_ghoul_pdf_is_black_and_white_and_never_raises():
+    ops = re.compile(rb"((?:-?\d*\.?\d+\s+){1,4})(rg|RG|k|K|g|G|sc|SC|scn|SCN)(?=\s)")
+    pdf = build_sheet_pdf(_marta())
+    for s in _content_streams(pdf):
+        for m in ops.finditer(s):
+            assert {float(x) for x in m.group(1).split()} <= {0.0, 1.0}
+    for mangle in (_numbers, _text, _lists, _huge):
+        ch = mangle(_marta())
+        if mangle is _numbers:
+            ch["wod_meta"]["ghoul"] = {"bond": {"stage": "x"}, "domitor": "y", "feeding": [1], "kind": 3}
+            ch["wod_meta"]["blood_pool"] = {"max": "ten", "current": [1]}
+        out = build_sheet_pdf(ch, paper="letter")
+        assert out.startswith(b"%PDF-") and _pages(out) >= 2
+
+
+@pytest.mark.parametrize("paper,height", [("a4", 841.89), ("letter", 792.0)])
+def test_classic_ghoul_page_one_fits(paper, height):
+    """The two extra lines in the Health column keep Experience above the band's last row."""
+    pdf = build_sheet_pdf(_marta(), paper=paper)
+    for x0, y0, x1, y1 in _rects(pdf):
+        assert 0 <= y0 < y1 <= height
+    rect = {}
+    for w in _widgets(pdf):
+        t = re.search(rb"/T " + _STR, w)
+        r = re.search(rb"/Rect \[\s*([-\d.]+)\s+([-\d.]+)\s+([-\d.]+)\s+([-\d.]+)\s*\]", w)
+        rect[_pdf_string(t.group(1))] = [float(v) for v in r.groups()]
+    lowest_merit = min(v[1] for k, v in rect.items() if k.startswith("merit") and k.endswith(".name"))
+    assert rect["xp.unspent"][1] >= lowest_merit and rect["overdosing"][1] > rect["xp.total"][3]
+    assert _pages(pdf) == 2
+
+
+# --- print version (flat) and the form font's Latin Extended letters -----------------------------
+
+TURKISH_NAME = "Nazlı Özdoğan İşçi Şahin"
+
+
+@pytest.mark.parametrize("make", [
+    lambda: copy.deepcopy(V5_CHAR),
+    lambda: copy.deepcopy(CLASSIC_CHAR),
+    lambda: _mira(),
+    lambda: _marta(),
+    lambda: {**copy.deepcopy(V5_CHAR), "background": _long_background(), "name": TURKISH_NAME},
+    lambda: {**copy.deepcopy(CLASSIC_CHAR), "background": _long_background()},
+], ids=["v5", "classic", "v5-ghoul", "classic-ghoul", "v5-long", "classic-long"])
+def test_print_version_has_no_form_and_draws_every_value(make, page_text):
+    ch = make()
+    fillable = build_sheet_pdf(ch, player_name="adminator")
+    values = _fields(fillable)
+    page_text.clear()
+    flat = build_sheet_pdf(ch, player_name="adminator", flat=True)
+    assert flat.startswith(b"%PDF-") and _pages(flat) == _pages(fillable)
+    assert b"/AcroForm" not in flat and b"/Widget" not in flat and b"/Annots" not in flat
+    words = set(" ".join(page_text).split())
+    for key, v in values.items():
+        if v in ("Yes", "Off"):
+            continue
+        for w in v.replace("\x80", "•").split():  # '•' is 0x80 in a PDF text string
+            assert w in words, (key, w)
+
+
+def test_print_version_marks_are_page_content():
+    flat = build_sheet_pdf(V5_CHAR, flat=True)
+    # the 'Yes' marks are drawn inline: filled dots (curves) and squares in the page streams
+    assert any(b" c f" in s and b"BT" in s for s in _content_streams(flat))
+    assert b"SRap" not in flat  # no field appearance XObjects
+
+
+def test_route_print_version(api):
+    r = api("/api/characters/9/sheet.pdf?flat=1", "2")
+    assert r.status_code == 200 and b"/AcroForm" not in r.data
+    assert "%28print%29.pdf" in r.headers["Content-Disposition"]
+    assert b"/AcroForm" in api("/api/characters/9/sheet.pdf", "2").data
+    assert api("/api/characters/9/sheet.pdf?flat=1", "4").status_code == 404
+
+
+def _form_cmap(pdf: bytes) -> dict:
+    for s in _content_streams_all(pdf):
+        if b"/CMapName /SRG-UCS" in s:
+            return {int(b, 16): chr(int(u, 16)) for b, u in re.findall(rb"<([0-9A-F]{2})> <([0-9A-F]{4})>", s)}
+    raise AssertionError("no SRG ToUnicode")
+
+
+def _content_streams_all(pdf: bytes):
+    for _, body in _objects(pdf):
+        m = re.match(rb"(.*?)stream\r?\n(.*?)\r?\n?endstream", body, re.S)
+        if m:
+            yield _decode_stream(m.group(1), m.group(2))
+
+
+def test_form_font_holds_turkish_and_latin_extended(v5_pdf):
+    from reportlab.pdfbase._glyphlist import _glyphname2unicode
+
+    from services import character_sheet_pdf as m
+
+    letters = "ğĞıİşŞçÇöÖüÜéèàñäőŐűŰčČžŽšŠłŁ" + "ΑΩαωςάώΐΰ"
+    codes = [FORM_CODES.get(ord(c)) for c in letters]
+    assert None not in codes and all(0 < b < 256 and b not in (9, 10, 13) for b in codes)
+    assert len(set(FORM_CODES.values())) == len(FORM_CODES)  # one code per character
+    # a Turkish name encodes to one byte per letter and reads back through the ToUnicode map
+    cmap = _form_cmap(v5_pdf)
+    assert "".join(cmap[FORM_CODES[ord(c)]] for c in TURKISH_NAME) == TURKISH_NAME
+    # the /Differences glyph names mean those letters, and the embedded font has the glyphs
+    diffs = re.search(rb"/Differences \[(.*?)\]", v5_pdf, re.S).group(1).decode()
+    named, code = {}, 0
+    for tok in diffs.split():
+        if tok.startswith("/"):
+            named[code] = tok[1:]
+            code += 1
+        else:
+            code = int(tok)
+    for c in "ğĞıİşŞőűčłΩ":
+        g = named[FORM_CODES[ord(c)]]
+        assert (chr(int(g[3:], 16)) if g.startswith("uni") else chr(_glyphname2unicode[g])) == c
+        assert ord(c) in m._form_face.charToGlyph
+    for c in "šžŠŽ":  # WinAnsi letters stay at their own codes
+        assert FORM_CODES[ord(c)] == c.encode("cp1252")[0]

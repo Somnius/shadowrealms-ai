@@ -13,6 +13,7 @@ import { useSignOutEverywhere } from '../../app/SignOutEverywhere';
 import PasswordRules, { brokenRule, passwordProblem } from '../auth/PasswordRules';
 import { useChronicles } from '../../app/ChroniclesContext';
 import { BringIntoChronicleDialog, isUnassigned } from './BringIntoChronicle';
+import { canBeDomitor, ghoulDomitorId, isGhoul } from '../../characterSheet/v5/ghoul';
 import './profile.css';
 
 const MAX_IMAGE = 360000;
@@ -33,6 +34,26 @@ function downtimeStatusLabel(status) {
 }
 
 export const ownCharacters = (list, user) => (list || []).filter((c) => user && String(c.user_id) === String(user.id));
+
+/** Characters with each vampire's ghouls right after it (ghouls whose domitor isn't listed go last). */
+export function groupGhouls(list) {
+  const chars = list || [];
+  const ids = new Set(chars.filter((c) => !isGhoul(c)).map((c) => String(c.id)));
+  const out = [];
+  chars.forEach((c) => {
+    if (isGhoul(c) && ids.has(String(ghoulDomitorId(c)))) return;
+    out.push(c);
+    if (!isGhoul(c)) chars.filter((g) => isGhoul(g) && String(ghoulDomitorId(g)) === String(c.id)).forEach((g) => out.push(g));
+  });
+  return out;
+}
+
+/** "Ghoul of …": the domitor's name from the list, else the one the ghoul's sheet stored. */
+function domitorName(ch, list) {
+  const id = ghoulDomitorId(ch);
+  const d = (list || []).find((c) => String(c.id) === String(id));
+  return d ? d.name : ch.wod_meta?.ghoul?.domitor?.name || '';
+}
 
 function readImage(file) {
   return new Promise((resolve, reject) => {
@@ -310,14 +331,19 @@ function CharactersSection() {
         </EmptyState>
       ) : null}
       <ul className="sr-chars">
-        {(chars || []).map((ch) => (
-          <li key={ch.id}>
+        {groupGhouls(chars).map((ch) => (
+          <li key={ch.id} className={isGhoul(ch) ? 'sr-char--ghoul' : undefined}>
             <Card className="sr-char">
               <div className="sr-row">
                 <Avatar src={ch.portrait_url} name={ch.name} size={56} alt="" sigil="mask" />
                 <div className="sr-char__text">
-                  <strong className="sr-char__name">{ch.name}</strong>
-                  {isUnassigned(ch) ? (
+                  <strong className="sr-char__name">
+                    {isGhoul(ch) ? <span aria-hidden="true">↳ </span> : null}
+                    {ch.name}
+                  </strong>
+                  {isGhoul(ch) ? (
+                    <Badge tone="neutral">{t('profile:ghoul.badge', 'Ghoul of {{domitor}}', { domitor: domitorName(ch, chars) })}</Badge>
+                  ) : isUnassigned(ch) ? (
                     <Badge tone="warn">{t('profile:characters.noChronicle', 'No chronicle yet')}</Badge>
                   ) : (
                     <Link to={`/c/${ch.campaign_id}`} className="sr-small">
@@ -338,7 +364,12 @@ function CharactersSection() {
                   {t('play:panel.sheet', 'Character sheet')}
                 </Button>
                 <ImagePicker label={t('play:panel.portrait', 'Portrait')} toast={toast} onPick={(url) => setPortrait(ch, url)} />
-                {isUnassigned(ch) ? (
+                {canBeDomitor(ch) ? (
+                  <ButtonLink to={`/profile/characters/new?ghoul_of=${ch.id}`} size="sm" variant="ghost" icon="plus">
+                    {t('profile:ghoul.add', 'Add a ghoul retainer')}
+                  </ButtonLink>
+                ) : null}
+                {isUnassigned(ch) && !isGhoul(ch) ? (
                   <Button size="sm" variant="primary" icon="quill" onClick={() => setBringing(ch)}>
                     {t('profile:bring.action', 'Bring into a chronicle')}
                   </Button>

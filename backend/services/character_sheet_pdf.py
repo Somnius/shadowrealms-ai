@@ -8,6 +8,10 @@ names and notes, one checkbox per dot or box so players can fill and clear them.
 V5 sheets given the rules catalog get Reference page(s) after the two sheet pages: the catalog's
 short descriptions of the clan (bane, compulsion), predator type, Discipline powers, rituals,
 ceremonies and formulae on the sheet, in the requester's language. Page text only, no fields.
+A ghoul's sheet (wod_meta.sheet_kind 'ghoul') has its own two pages: the ghoul power and Blood
+Bond & feeding instead of Disciplines; a V5 ghoul has no vitae track, Hunger or Blood Potency. A
+Background or Notes text too long for its box on page 2 keeps what fits there and goes on over
+'Background & Notes (continued)' page(s) right after it, before the Reference pages.
 
 Fonts (backend/assets/fonts, SIL OFL 1.1, licence files next to them):
 - Cinzel for headings and labels. Caps only and no Greek, so it never shows user text.
@@ -42,6 +46,9 @@ from reportlab.pdfbase.acroform import PDFFromString
 from reportlab.pdfbase.ttfonts import TTFont, TTFontFile
 from reportlab.pdfgen import canvas as rl_canvas
 from reportlab.platypus import Paragraph
+
+from services.character_sheet_v5 import ghoul_feeding
+from services.classic_ghoul import BLOOD_BOND_DRINKS, ghoul_pool, kind_label
 
 FONT_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "assets", "fonts")
 
@@ -83,9 +90,12 @@ def _ensure_fonts() -> None:
 
 
 # ---------------------------------------------------------------------------------------------
-# Form font encoding: WinAnsi, with Greek moved into codes whose WinAnsi characters are rare
-# (unused codes, typographic odds and ends, Icelandic letters). Kept characters stay at their WinAnsi
-# codes, so a viewer that encodes typed text through the base encoding still picks the right glyph.
+# Form font encoding: WinAnsi, with Greek and Latin Extended letters (Turkish, Polish, Czech,
+# Hungarian...) moved into codes whose WinAnsi characters are rare (unused codes, typographic odds
+# and ends, Icelandic letters) and, once those run out, the control codes 1-31 (all but tab, LF, CR).
+# Kept characters stay at their WinAnsi codes, so a viewer that encodes typed text through the base
+# encoding still picks the right glyph. A viewer that regenerates a field (NeedAppearances, Windows
+# viewers) can only show characters this encoding holds: anything else vanishes.
 
 _GREEK = (
     [c for c in range(0x391, 0x3AA) if c != 0x3A2]  # Α-Ω
@@ -94,7 +104,14 @@ _GREEK = (
        0x3AC, 0x3AD, 0x3AE, 0x3AF, 0x3CC, 0x3CD, 0x3CE,  # ά έ ή ί ό ύ ώ
        0x3CA, 0x3CB, 0x390, 0x3B0, 0x3AA, 0x3AB, 0x387]  # ϊ ϋ ΐ ΰ Ϊ Ϋ ·
 )
-_KEEP_HIGH = set("€…‘’“”•–—œŒ\xa0£«°·»") | set("ÀÁÂÄÇÈÉÊËÍÎÏÑÓÔÖØÚÜßàáâäçèéêëíîïñóôöøúü")
+# Latin Extended letters that aren't in WinAnsi: Turkish first, then Hungarian, Czech, Polish...
+_LATIN_EXT = [ord(c) for c in "ğĞıİşŞőŐűŰčČłŁćĆśŚęĘąĄżŻ"]
+_KEEP_HIGH = (set("€…‘’“”•–—œŒ\xa0£«°·»") | set("ÀÁÂÄÇÈÉÊËÍÎÏÑÓÔÖØÚÜßàáâäçèéêëíîïñóôöøúü")
+              | set("ŠšŽžãõå"))
+# The overflow (ΐ ΰ Ϊ Ϋ ·, then the Latin Extended letters) goes to control codes 1-31, minus tab, LF
+# and CR. Checked by hand in Edge 155 on Windows (it rebuilds field appearances): those letters show
+# and can be typed correctly, so this stays as it is.
+_CONTROL_CODES = [b for b in range(1, 32) if b not in (9, 10, 13)]
 
 
 def _winansi(b: int) -> Optional[str]:
@@ -106,7 +123,7 @@ def _winansi(b: int) -> Optional[str]:
 
 
 def _build_encoding() -> Tuple[Dict[int, int], Dict[int, int]]:
-    """(byte -> unicode for 32..255, the bytes that differ from WinAnsi -> unicode)."""
+    """(byte -> unicode for the codes in use, the bytes that differ from WinAnsi -> unicode)."""
     table: Dict[int, int] = {}
     free = []
     for b in range(32, 256):
@@ -115,8 +132,10 @@ def _build_encoding() -> Tuple[Dict[int, int], Dict[int, int]]:
             table[b] = ord(ch)
         else:
             free.append(b)
-    assert len(free) >= len(_GREEK), "form font encoding has no room for Greek"
-    diffs = dict(zip(free, _GREEK))
+    free += _CONTROL_CODES
+    extra = _GREEK + _LATIN_EXT
+    assert len(free) >= len(extra), "form font encoding has no room for Greek and Latin Extended"
+    diffs = dict(zip(free, extra))
     table.update(diffs)
     return table, diffs
 
@@ -174,7 +193,8 @@ def _add_form_font(doc) -> str:
     })
     tu = pdfdoc.PDFStream(content=_to_unicode_cmap())
     tu.filters = [pdfdoc.PDFZCompress]
-    widths = [face.charWidths.get(_BYTE_TO_UNI.get(b, 0x20), face.defaultWidth) for b in range(32, 256)]
+    first = min(_BYTE_TO_UNI)
+    widths = [face.charWidths.get(_BYTE_TO_UNI.get(b, 0x20), face.defaultWidth) for b in range(first, 256)]
     diffs: List[Any] = []
     prev = None
     for code in sorted(_DIFFS):
@@ -186,7 +206,7 @@ def _add_form_font(doc) -> str:
         "Type": pdfdoc.PDFName("Font"),
         "Subtype": pdfdoc.PDFName("TrueType"),
         "BaseFont": pdfdoc.PDFName(base),
-        "FirstChar": 32,
+        "FirstChar": first,
         "LastChar": 255,
         "Widths": pdfdoc.PDFArray(widths),
         "Encoding": pdfdoc.PDFDictionary({
@@ -422,9 +442,13 @@ RULE = 0.8
 
 
 class SheetCanvas:
-    """reportlab canvas plus black-and-white form helpers."""
+    """reportlab canvas plus black-and-white form helpers.
 
-    def __init__(self, paper: str = "a4", title: str = "", author: str = ""):
+    flat=True (the print version): the same layout with every value and mark drawn as page content
+    and no form at all, so it looks the same in every viewer.
+    """
+
+    def __init__(self, paper: str = "a4", title: str = "", author: str = "", flat: bool = False):
         _ensure_fonts()
         self.buf = io.BytesIO()
         self.W, self.H = PAPER.get(paper, A4)
@@ -442,6 +466,14 @@ class SheetCanvas:
         self._names: Dict[str, int] = {}
         self._ap = 0
         self._cb_refs: Dict[Tuple[str, float, str], Any] = {}
+        self.flat = flat
+        self.form = None
+        if not flat:
+            self._init_form()
+        self._ink()
+
+    def _init_form(self):
+        c = self.c
         form = c.acroForm  # registers /AcroForm in the catalog
         form.fonts[FORM_FONT_KEY] = _add_form_font(c._doc)
         # reportlab writes one /Font key per font into /DR; with two fonts, write /DR here instead.
@@ -450,7 +482,6 @@ class SheetCanvas:
         form.extras["DR"] = PDFFromString(
             f"<< /Font << /{FORM_FONT_KEY} {form.fonts[FORM_FONT_KEY]} /ZaDb {zadb} >> >>")
         self.form = form
-        self._ink()
 
     # -- basics ------------------------------------------------------------------------------
     def _ink(self):
@@ -569,6 +600,20 @@ class SheetCanvas:
             value = " ".join(value.split("\n"))
         value = _cap(value, MAX_TEXT if multiline else MAX_LINE)
         name = self.unique(name)
+        if self.flat:
+            c.saveState()
+            c.translate(x, y)
+            p = c.beginPath()
+            p.rect(1, 0.5, w - 2, h - 1)
+            c.clipPath(p, stroke=0, fill=0)
+            c.setFillGray(0)
+            if value:
+                self._draw_value(value, w, h, size, multiline, align)
+            c.restoreState()
+            self._ink()
+            if underline:
+                self.hline(x, x + w, y)
+            return name
         self._ap += 1
         xo = f"SRap{self._ap}"
         c.beginForm(xo, 0, 0, w, h)
@@ -607,6 +652,13 @@ class SheetCanvas:
         """Draw the pre-filled value; returns the font size used (shrunk until the value fits)."""
         c = self.c
         pad = 2.0
+        if self.flat:  # page text: the font is set per string
+            def draw(x, y, s, size, align="left"):
+                self.text(x, y, s, SERIF, size, align)
+        else:
+            def draw(x, y, s, size, align="left"):
+                c.setFont(SERIF, size)
+                {"left": c.drawString, "center": c.drawCentredString, "right": c.drawRightString}[align](x, y, s)
         if multiline:
             s, lines = _fit_lines(value, w - 2 * pad, h - 2, size)
             leading = s * 1.17
@@ -615,29 +667,21 @@ class SheetCanvas:
                 y = (h + block) / 2 - s * 0.82
             else:
                 y = h - pad - s * 0.82
-            c.setFont(SERIF, s)
             for ln in lines:
                 if y < -s * 0.2:
                     break
-                c.drawString(pad, y, ln)
+                draw(pad, y, ln, s)
                 y -= leading
             return s
         width = pdfmetrics.stringWidth(value, SERIF, size)
         s = size if width <= w - 2 * pad else max(6.0, size * (w - 2 * pad) / width)
-        c.setFont(SERIF, s)
         y = max(1.6, min(3.2, (h - s * 0.66) / 2))  # sit on the underline
-        if align == "center":
-            c.drawCentredString(w / 2, y, value)
-        elif align == "right":
-            c.drawRightString(w - pad, y, value)
-        else:
-            c.drawString(pad, y, value)
+        x = {"center": w / 2, "right": w - pad}.get(align, pad)
+        draw(x, y, value, s, align)
         return s
 
-    def _check_ap(self, mark: str, size: float, state: str):
-        key = (mark, round(size, 2), state)
-        if key in self._cb_refs:
-            return self._cb_refs[key]
+    @staticmethod
+    def _check_ops(mark: str, size: float, state: str) -> str:
         s = size
         ops = ["q 0 g 0 G"]
         if state == "Yes":
@@ -660,7 +704,14 @@ class SheetCanvas:
                 if mark == "cross":
                     ops.append(f"{i:.2f} {s - i:.2f} m {s - i:.2f} {i:.2f} l S")
         ops.append("Q")
-        stream = self.form.makeStream(s, s, "\n".join(ops),
+        return "\n".join(ops)
+
+    def _check_ap(self, mark: str, size: float, state: str):
+        key = (mark, round(size, 2), state)
+        if key in self._cb_refs:
+            return self._cb_refs[key]
+        s = size
+        stream = self.form.makeStream(s, s, self._check_ops(mark, size, state),
                                       Resources=PDFFromString("<< /ProcSet [/PDF] >>"))
         ref = self.c._doc.Reference(stream)
         self._cb_refs[key] = ref
@@ -680,6 +731,13 @@ class SheetCanvas:
         else:
             c.rect(x + 0.3, y + 0.3, size - 0.6, size - 0.6, stroke=1, fill=0)
         c.restoreState()
+        if self.flat:
+            if checked:
+                c.saveState()
+                c.translate(x, y)
+                c._code.append(self._check_ops(mark, size, "Yes"))
+                c.restoreState()
+            return name
         state = "Yes" if checked else "Off"
         ca = {"dot": "l", "fill": "n", "slash": "8", "cross": "8"}[mark]
         d = {
@@ -861,6 +919,172 @@ def _notes_box(sc: SheetCanvas, name: str, title: str, x, y, w, h, value: str, s
     sc.field(name, x, y - h, w, h - 12, value, size=size, multiline=True, underline=False, tooltip=title)
 
 
+# Background & Notes that don't fit their box on page 2 go on "Background & Notes (continued)"
+# page(s) right after it: the box keeps the part that fits (as a field, at the box's own size),
+# the rest goes into full-width fields, as many pages as it takes. Text that fits at
+# CONT_MIN_SIZE or more still shrinks into the box as before.
+CONT_MIN_SIZE = 7.0
+LONG_TEXT_MAX = 40000   # characters of Background or Notes printed across the pages
+CONT_LABEL_H = 12.0     # label above a box (as _notes_box)
+CONT_GAP = 8.0
+
+
+def _field_lines(h: float, size: float) -> int:
+    """Lines a multiline field of height h shows at `size` (the test _fit_lines uses)."""
+    room = h - 2
+    return int((room - size * 1.1) // (size * 1.17)) + 1 if room >= size * 1.1 else 0
+
+
+def _wrap_width(w: float) -> float:
+    # what _fit_lines estimates a line at (w - 2 * pad, then 94 %): wrapping at it means the field
+    # never shrinks a part that was cut to fit
+    return (w - 4) * 0.94
+
+
+def _fits(text: str, w: float, h: float, size: float) -> bool:
+    """Does the text fit a w x h multiline field at CONT_MIN_SIZE or more?"""
+    if not text:
+        return True
+    s, lines = _fit_lines(text, w - 4, h - 2, size)
+    return s >= CONT_MIN_SIZE and (len(lines) - 1) * s * 1.17 + s * 1.1 <= h - 2
+
+
+def _split_text(text: str, w: float, h: float, size: float) -> Tuple[str, str]:
+    """(head, tail): as much of the text as a w x h field shows at `size`, cut between words, and
+    the rest. Paragraphs (newlines) are kept; spaces inside the cut paragraph are single."""
+    room = _field_lines(h, size)
+    paras = text.split("\n")
+    used = 0
+    for i, para in enumerate(paras):
+        lines = simpleSplit(para, SERIF, size, _wrap_width(w)) or [""]
+        if used + len(lines) <= room:
+            used += len(lines)
+            continue
+        take = room - used
+        words = para.split()
+        n = sum(len(ln.split()) for ln in lines[:take]) if take > 0 else 0
+        head = paras[:i] + ([" ".join(words[:n])] if n else [])
+        tail = [" ".join(words[n:])] + paras[i + 1:]
+        return "\n".join(head), "\n".join(tail)
+    return text, ""
+
+
+def _text_height(text: str, w: float, size: float) -> float:
+    """Height of a field that shows all of the text at `size`."""
+    n = sum(len(simpleSplit(p, SERIF, size, _wrap_width(w)) or [""]) for p in text.split("\n"))
+    return (n - 1) * size * 1.17 + size * 1.1 + 4
+
+
+ContItem = Tuple[str, str, str, float, int]  # (field key, title, text, field height, part)
+
+
+def _layout_continuation(sc: SheetCanvas, items: List[Tuple[str, str, str]], size: float) -> List[List[ContItem]]:
+    """Pages of full-width boxes for what didn't fit on page 2: [(key, title, text, height, part)]."""
+    w = sc.x1 - sc.x0
+    top = sc.top - SMALL_HEADER_H - 15
+    pages: List[List[ContItem]] = []
+    y = None
+    for key, title, text in items:
+        part = 0
+        while text:
+            if y is None or y - sc.bottom - CONT_LABEL_H - 2 < 3 * size * 1.17 + 4:
+                pages.append([])
+                y = top
+            avail = y - sc.bottom - CONT_LABEL_H - 2
+            head, tail = _split_text(text, w, avail, size)
+            if not head.strip() and tail:
+                if y == top:  # nothing fits a whole page (a word wider than the page): cut it
+                    head, tail = text[:MAX_LINE], text[MAX_LINE:]
+                else:
+                    y = None
+                    continue
+            box_h = avail if tail else min(avail, _text_height(head, w, size))
+            pages[-1].append((key, title, head, box_h, part))
+            part += 1
+            y -= CONT_LABEL_H + box_h + CONT_GAP
+            text = tail.strip("\n") if tail.strip() else ""
+    return pages
+
+
+def _break_long_words(text: str, w: float, size: float) -> str:
+    """Words wider than a w-wide field's line (a URL, a pasted line with no spaces) cut into pieces
+    that fit, so the box and the continued pages show them whole instead of clipping them."""
+    limit = _wrap_width(w)
+
+    def wide(word: str) -> bool:
+        return pdfmetrics.stringWidth(word, SERIF, size) > limit
+
+    paras = []
+    for para in text.split("\n"):
+        words = para.split(" ")
+        if not any(wide(wd) for wd in words):
+            paras.append(para)
+            continue
+        pieces = []
+        for wd in words:
+            while len(wd) > 1 and wide(wd):
+                lo, hi = 1, len(wd)
+                while lo < hi:  # the longest prefix that fits
+                    mid = (lo + hi + 1) // 2
+                    if wide(wd[:mid]):
+                        hi = mid - 1
+                    else:
+                        lo = mid
+                pieces.append(wd[:lo])
+                wd = wd[lo:]
+            pieces.append(wd)
+        paras.append(" ".join(pieces))
+    return "\n".join(paras)
+
+
+def _background_notes(sc: SheetCanvas, y: float, background: str, notes: str, size: float) -> List[List[ContItem]]:
+    """'Background & Notes' at the foot of page 2: Background (60 %) and Notes boxes down to the
+    bottom. A text too long for its box keeps what fits there and goes on in the returned
+    continuation pages (_render_continuation draws them); the box title says on which page."""
+    y = sc.section("Background & Notes", y)
+    h = max(30.0, y - sc.bottom - 2)
+    bw = (sc.x1 - sc.x0 - 14) * 0.6
+    boxes = (("background", "Background", sc.x0, bw, background),
+             ("notes", "Notes", sc.x0 + bw + 14, sc.x1 - sc.x0 - bw - 14, notes))
+    heads, rest = [], []
+    for key, title, _x, w, text in boxes:
+        text = _break_long_words(_cap(_s(text), LONG_TEXT_MAX), w, size)
+        if _fits(text, w, h - CONT_LABEL_H, size):
+            heads.append(text)
+            continue
+        head, tail = _split_text(text, w, h - CONT_LABEL_H, size)
+        heads.append(head)
+        rest.append((key, title, tail))
+    pages = _layout_continuation(sc, rest, size)
+    first = {}
+    for i, page in enumerate(pages):
+        for item in page:
+            first.setdefault(item[0], i)
+    for (key, title, x, w, _), head in zip(boxes, heads):
+        label = f"{title} (continued on p. {3 + first[key]})" if key in first else title
+        _notes_box(sc, key, label, x, y, w, h, head, size=size)
+    return pages
+
+
+def _render_continuation(sc: SheetCanvas, pages: List[List[ContItem]], name: str, sub: str, footer: str,
+                         first: int, total: int, size: float) -> None:
+    """The 'Background & Notes (continued)' pages, numbered from `first`."""
+    w = sc.x1 - sc.x0
+    for k, items in enumerate(pages):
+        sc.page()
+        sc.frame()
+        y = _small_header(sc, name, sub, sc.top)
+        y = sc.section("Background & Notes (continued)", y)
+        for key, title, text, box_h, part in items:
+            label = f"{title} (continued)"
+            sc.label(sc.x0, y - 8, label, size=7, bold=True)
+            sc.rect(sc.x0, y - CONT_LABEL_H - box_h, w, box_h)
+            sc.field(f"{key}.cont{part + 1}", sc.x0, y - CONT_LABEL_H - box_h, w, box_h, text, size=size,
+                     multiline=True, underline=False, tooltip=label)
+            y -= CONT_LABEL_H + box_h + CONT_GAP
+        sc.footer(footer, first + k, total)
+
+
 def _ritual_rows(rituals: List[Any]) -> int:
     """Two columns, every saved ritual plus one blank line."""
     return max(2, math.ceil((len(rituals) + 1) / 2))
@@ -1001,11 +1225,8 @@ def _discipline_text(d: Dict[str, Any]) -> str:
     return _trait_text(d) + (": " + ", ".join(powers) if powers else "")
 
 
-def _render_v5(sc: SheetCanvas, ch: Dict[str, Any], chronicle: str, player: str, pages: int = 2) -> None:
-    wm = _obj(ch.get("wod_meta"))
-    attrs = _obj(ch.get("attributes"))
-    sk = _obj(ch.get("skills"))
-    name = _s(ch.get("name"))
+def _v5_specialties(sk: Dict[str, Any]) -> Tuple[Dict[str, List[str]], List[str]]:
+    """Specialties by Skill key, and 'Skill: name' for those on keys the sheet doesn't print."""
     known = {k for ks in V5_SKILLS.values() for k in ks}
     spec: Dict[str, List[str]] = {}
     other_spec = []
@@ -1015,19 +1236,12 @@ def _render_v5(sc: SheetCanvas, ch: Dict[str, Any], chronicle: str, player: str,
                 spec.setdefault(s["skill"], []).append(_s(s["name"]))
             else:
                 other_spec.append(f"{_label(_s(s.get('skill')))}: {_s(s['name'])}")
+    return spec, other_spec
 
-    # ---- page 1: identity, attributes, skills, disciplines
-    sc.frame()
-    y = _header(sc, "Vampire", "The Masquerade · Fifth Edition", sc.top)
-    y = _identity(sc, [
-        [("Name", "name", name), ("Concept", "concept", wm.get("concept") or ch.get("concept")),
-         ("Predator", "predator_type", wm.get("predator_type")), ("Player", "player", player)],
-        [("Chronicle", "chronicle", chronicle), ("Ambition", "ambition", wm.get("ambition")),
-         ("Desire", "desire", wm.get("desire"))],
-        [("Clan", "clan", wm.get("clan")), ("Generation", "generation", wm.get("generation")),
-         ("Sire", "sire", wm.get("sire")), ("Age", "age", wm.get("age"))],
-    ], y)
 
+def _v5_attributes_skills(sc: SheetCanvas, y: float, attrs: Dict[str, Any], sk: Dict[str, Any],
+                          spec: Dict[str, List[str]]) -> float:
+    """Page 1's Attributes and Skills (with their specialties); returns the y below them."""
     y = sc.section("Attributes", y)
     cols, cw = _columns(sc, 3, gap=22)
     for x, (cat, keys) in zip(cols, V5_ATTRS.items()):
@@ -1049,7 +1263,91 @@ def _render_v5(sc: SheetCanvas, ch: Dict[str, Any], chronicle: str, player: str,
             sc.field(f"skill.{k}.specialty", fx, base - 2.5, cw - dw - 62, 11, ", ".join(spec.get(k, [])),
                      size=7.6, tooltip=f"{lbl} specialties")
             sc.dots(f"skill.{k}", x + cw - dw, base - 1.2, _n(vals.get(k), 0, 5), tooltip=lbl)
-    y -= 9 + 8 * pitch + 10
+    return y - (9 + 8 * pitch + 10)
+
+
+def _advantage_rows(sc: SheetCanvas, y: float, advs: List[Dict[str, Any]], flaws: List[Dict[str, Any]],
+                    rows: int) -> float:
+    """'Advantages & Flaws': Merits & Backgrounds beside Flaws, `rows` lines each."""
+    y = sc.section("Advantages & Flaws", y)
+    cols2, cw2 = _columns(sc, 2, gap=22)
+    for col, (title, items, key) in enumerate((("Merits & Backgrounds", advs, "adv"), ("Flaws", flaws, "flaw"))):
+        x = cols2[col]
+        _col_title(sc, x, cw2, y - 8, title)
+        for i in range(rows):
+            a = items[i] if i < len(items) else {}
+            nm = _s(a.get("name"))
+            if nm and a.get("kind") == "predator":
+                nm += " (predator)"
+            sc.named_trait(f"{key}{i + 1}", x, y - 21 - i * 13, cw2, nm, _n(a.get("dots", a.get("level")), 0, 5),
+                           extra=_s(a.get("kind")))
+    return y - (21 + (rows - 1) * 13 + 10)
+
+
+def _health_willpower(sc: SheetCanvas, x: float, ty: float, wm: Dict[str, Any], attrs: Dict[str, Any],
+                      health_fallback: int) -> None:
+    """Health and Willpower boxes (superficial / aggravated rows) from ty down, 84 points tall."""
+    hmax, hsup, hagg = _track(wm.get("health"), health_fallback)
+    wmax, wsup, wagg = _track(wm.get("willpower"), _n(attrs.get("composure"), 0, 10) + _n(attrs.get("resolve"), 0, 10))
+    for i, (lbl, key, mx, sup, agg) in enumerate((("Health", "health", hmax, hsup, hagg),
+                                                  ("Willpower", "willpower", wmax, wsup, wagg))):
+        by = ty - i * 42
+        n = max(10, mx)
+        sc.label(x, by, lbl, size=7.2, bold=True)
+        sc.text(x + pdfmetrics.stringWidth(lbl.upper(), CINZEL_BOLD, 7.2) + 5, by, f"max {mx}",
+                SERIF_ITALIC, 7.5)
+        for r, (hint, mark, count) in enumerate((("superficial", "slash", sup), ("aggravated", "cross", agg))):
+            ry = by - 13 - r * 12
+            sc.text(x + 56, ry, hint, SERIF_ITALIC, 7.5, "right")
+            sc.dots(f"{key}.{hint}", x + 62, ry - 2, 0, n=n, size=8.4, gap=1.8, mark=mark, shape="square",
+                    solid=mx, checked=[j < count for j in range(n)], tooltip=f"{lbl}: {hint}")
+
+
+def _humanity_stains(sc: SheetCanvas, x: float, ty: float, w: float, wm: Dict[str, Any]) -> None:
+    hum = _n(wm.get("humanity"), 0, 10)
+    stains = _n(wm.get("stains"), 0, 10)
+    sc.tracker("humanity", "Humanity", x, ty, w, [j < hum for j in range(10)], mark="fill", label_w=78)
+    sc.tracker("stains", "Stains", x, ty - 14, w, [j >= 10 - stains for j in range(10)], mark="slash", label_w=78)
+
+
+def _convictions(sc: SheetCanvas, y: float, touch: List[Dict[str, Any]], rows: int) -> float:
+    """'Convictions & Touchstones', `rows` pairs; returns the y below them."""
+    y = sc.section("Convictions & Touchstones", y)
+    cols2, cw2 = _columns(sc, 2, gap=22)
+    _col_title(sc, cols2[0], cw2, y - 8, "Conviction")
+    _col_title(sc, cols2[1], cw2, y - 8, "Touchstone")
+    rh = 21.0
+    for i in range(rows):
+        t = touch[i] if i < len(touch) else {}
+        by = y - 12 - (i + 1) * rh
+        sc.field(f"conviction{i + 1}", cols2[0], by, cw2, rh - 2, t.get("conviction"), size=8.2, multiline=True)
+        sc.field(f"touchstone{i + 1}", cols2[1], by, cw2, rh - 2, t.get("name"), size=8.2, multiline=True)
+        sc.diamond((cols2[0] + cw2 + cols2[1]) / 2, by + rh / 2, 1.4)
+    return y - (12 + rows * rh + 4)
+
+
+def _render_v5(sc: SheetCanvas, ch: Dict[str, Any], chronicle: str, player: str, pages: int = 2) -> int:
+    """The two V5 sheet pages, then any 'Background & Notes (continued)' pages; returns how many
+    of those it drew (build_sheet_pdf counts them into `pages`)."""
+    wm = _obj(ch.get("wod_meta"))
+    attrs = _obj(ch.get("attributes"))
+    sk = _obj(ch.get("skills"))
+    name = _s(ch.get("name"))
+    spec, other_spec = _v5_specialties(sk)
+    footer = f"{name} · {chronicle}" if chronicle else name
+
+    # ---- page 1: identity, attributes, skills, disciplines
+    sc.frame()
+    y = _header(sc, "Vampire", "The Masquerade · Fifth Edition", sc.top)
+    y = _identity(sc, [
+        [("Name", "name", name), ("Concept", "concept", wm.get("concept") or ch.get("concept")),
+         ("Predator", "predator_type", wm.get("predator_type")), ("Player", "player", player)],
+        [("Chronicle", "chronicle", chronicle), ("Ambition", "ambition", wm.get("ambition")),
+         ("Desire", "desire", wm.get("desire"))],
+        [("Clan", "clan", wm.get("clan")), ("Generation", "generation", wm.get("generation")),
+         ("Sire", "sire", wm.get("sire")), ("Age", "age", wm.get("age"))],
+    ], y)
+    y = _v5_attributes_skills(sc, y, attrs, sk, spec)
 
     discs = [d for d in _list(wm.get("disciplines")) if isinstance(d, dict)]
     y = sc.section("Disciplines", y)
@@ -1079,12 +1377,13 @@ def _render_v5(sc: SheetCanvas, ch: Dict[str, Any], chronicle: str, player: str,
             sc.diamond(x + pad + 2, py + 3.5, 1.1, fill=False)
             sc.field(f"disc{i + 1}.power{j + 1}", x + pad + 6, py, dw_ - 2 * pad - 6, min(11.5, lh - 1),
                      powers[j] if j < len(powers) else "", size=8.4, tooltip="Power")
-    sc.footer(f"{name} · {chronicle}" if chronicle else name, 1, pages)
+    sc.footer(footer, 1, pages)
     sc.page()
 
     # ---- page 2: advantages, trackers, convictions, rituals, XP, notes
     sc.frame()
-    y = _small_header(sc, name, " · ".join(p for p in (_s(wm.get("clan")), chronicle) if p), sc.top)
+    sub = " · ".join(p for p in (_s(wm.get("clan")), chronicle) if p)
+    y = _small_header(sc, name, sub, sc.top)
 
     advs = [a for a in _list(wm.get("advantages")) if isinstance(a, dict)]
     flaws = [a for a in _list(wm.get("flaws")) if isinstance(a, dict)]
@@ -1099,43 +1398,13 @@ def _render_v5(sc: SheetCanvas, ch: Dict[str, Any], chronicle: str, player: str,
     overflow = disc_overflow + _v5_overflow(advs[adv_rows:], flaws[adv_rows:], touch[touch_rows:],
                                             rituals[rit_rows * 2:])
 
-    y = sc.section("Advantages & Flaws", y)
-    rows = adv_rows
-    cols2, cw2 = _columns(sc, 2, gap=22)
-    for col, (title, items, key) in enumerate((("Merits & Backgrounds", advs, "adv"), ("Flaws", flaws, "flaw"))):
-        x = cols2[col]
-        _col_title(sc, x, cw2, y - 8, title)
-        for i in range(rows):
-            a = items[i] if i < len(items) else {}
-            nm = _s(a.get("name"))
-            if nm and a.get("kind") == "predator":
-                nm += " (predator)"
-            sc.named_trait(f"{key}{i + 1}", x, y - 21 - i * 13, cw2, nm, _n(a.get("dots", a.get("level")), 0, 5),
-                           extra=_s(a.get("kind")))
-    y -= 21 + (rows - 1) * 13 + 10
+    y = _advantage_rows(sc, y, advs, flaws, adv_rows)
 
     y = sc.section("Trackers", y)
-    hmax, hsup, hagg = _track(wm.get("health"), _n(attrs.get("stamina"), 0, 10) + 3)
-    wmax, wsup, wagg = _track(wm.get("willpower"), _n(attrs.get("composure"), 0, 10) + _n(attrs.get("resolve"), 0, 10))
-    left, right = cols2
+    (left, right), cw2 = _columns(sc, 2, gap=22)
     ty = y - 10
-    for i, (lbl, key, mx, sup, agg) in enumerate((("Health", "health", hmax, hsup, hagg),
-                                                  ("Willpower", "willpower", wmax, wsup, wagg))):
-        by = ty - i * 42
-        n = max(10, mx)
-        sc.label(left, by, lbl, size=7.2, bold=True)
-        sc.text(left + pdfmetrics.stringWidth(lbl.upper(), CINZEL_BOLD, 7.2) + 5, by, f"max {mx}",
-                SERIF_ITALIC, 7.5)
-        for r, (hint, mark, count) in enumerate((("superficial", "slash", sup), ("aggravated", "cross", agg))):
-            ry = by - 13 - r * 12
-            sc.text(left + 56, ry, hint, SERIF_ITALIC, 7.5, "right")
-            sc.dots(f"{key}.{hint}", left + 62, ry - 2, 0, n=n, size=8.4, gap=1.8, mark=mark, shape="square",
-                    solid=mx, checked=[j < count for j in range(n)], tooltip=f"{lbl}: {hint}")
-    hum = _n(wm.get("humanity"), 0, 10)
-    stains = _n(wm.get("stains"), 0, 10)
-    sc.tracker("humanity", "Humanity", right, ty, cw2, [j < hum for j in range(10)], mark="fill", label_w=78)
-    sc.tracker("stains", "Stains", right, ty - 14, cw2, [j >= 10 - stains for j in range(10)], mark="slash",
-               label_w=78)
+    _health_willpower(sc, left, ty, wm, attrs, _n(attrs.get("stamina"), 0, 10) + 3)
+    _humanity_stains(sc, right, ty, cw2, wm)
     sc.tracker("hunger", "Hunger", right, ty - 30, cw2, [j < _n(wm.get("hunger"), 0, 5) for j in range(5)],
                mark="fill", label_w=78)
     bp = _n(wm.get("blood_potency"), 0, 10)
@@ -1143,18 +1412,7 @@ def _render_v5(sc: SheetCanvas, ch: Dict[str, Any], chronicle: str, player: str,
                shape="circle", label_w=78)
     y = ty - 84
 
-    y = sc.section("Convictions & Touchstones", y)
-    rows = touch_rows
-    _col_title(sc, cols2[0], cw2, y - 8, "Conviction")
-    _col_title(sc, cols2[1], cw2, y - 8, "Touchstone")
-    rh = 21.0
-    for i in range(rows):
-        t = touch[i] if i < len(touch) else {}
-        by = y - 12 - (i + 1) * rh
-        sc.field(f"conviction{i + 1}", cols2[0], by, cw2, rh - 2, t.get("conviction"), size=8.2, multiline=True)
-        sc.field(f"touchstone{i + 1}", cols2[1], by, cw2, rh - 2, t.get("name"), size=8.2, multiline=True)
-        sc.diamond((cols2[0] + cw2 + cols2[1]) / 2, by + rh / 2, 1.4)
-    y -= 12 + rows * rh + 4
+    y = _convictions(sc, y, touch, touch_rows)
     tenets = wm.get("chronicle_tenets")
     if isinstance(tenets, (list, tuple)):
         tenets = "\n".join(_s(t) for t in tenets if _s(t))
@@ -1170,16 +1428,195 @@ def _render_v5(sc: SheetCanvas, ch: Dict[str, Any], chronicle: str, player: str,
     y = sc.section("Experience", y)
     y = _experience(sc, xp, sc.x0, y, sc.x1 - sc.x0, log_h)
 
-    y = sc.section("Background & Notes", y)
-    h = max(30.0, y - sc.bottom - 2)
-    bw = (sc.x1 - sc.x0 - 14) * 0.6
     mf = _obj(ch.get("merits_flaws"))
     notes = "\n".join(p for p in (_s(mf.get("notes")),
                                   ("Specialties: " + "; ".join(other_spec)) if other_spec else "",
                                   *overflow) if p)
-    _notes_box(sc, "background", "Background", sc.x0, y, bw, h, _s(ch.get("background")), size=8.2)
-    _notes_box(sc, "notes", "Notes", sc.x0 + bw + 14, y, sc.x1 - sc.x0 - bw - 14, h, notes, size=8.2)
-    sc.footer(f"{name} · {chronicle}" if chronicle else name, 2, pages)
+    cont = _background_notes(sc, y, _s(ch.get("background")), notes, 8.2)
+    sc.footer(footer, 2, pages)
+    _render_continuation(sc, cont, name, sub, footer, 3, pages, 8.2)
+    return len(cont)
+
+
+# ---------------------------------------------------------------------------------------------
+# V5 ghoul (wod_meta.sheet_kind 'ghoul', services/v5_ghoul_chargen.py): the same Attributes,
+# Skills and Advantages; a ghoul power and a Blood Bond & feeding block instead of Disciplines; no
+# Hunger, Blood Potency, predator type, rituals; Humanity only when the sheet tracks it.
+
+GHOUL_TEMPLATE_NAMES = {"weak": "Weak mortal", "average": "Average mortal", "gifted": "Gifted mortal",
+                        "deadly": "Deadly mortal", "player": "Player ghoul"}
+BOND_FLAWS = (("flaw:bondslave", "Bondslave"), ("flaw:two-masters", "Two Masters"), ("flaw:bond-junkie", "Bond Junkie"),
+              ("flaw:long-bond", "Long Bond"))
+
+
+def _ghoul_domitor_name(ch: Dict[str, Any], g: Dict[str, Any]) -> str:
+    """The domitor's name: GET's resolved `domitor`, else the name the sheet stored."""
+    dom = ch.get("domitor") if isinstance(ch.get("domitor"), dict) else {}
+    return _s(dom.get("name")) or _s(_obj(g.get("domitor")).get("name"))
+
+
+def _ghoul_template_text(g: Dict[str, Any]) -> str:
+    """'Gifted mortal · Retainers •••'."""
+    t = GHOUL_TEMPLATE_NAMES.get(_s(g.get("template")), _s(g.get("template")))
+    dots = _n(g.get("retainer_dots"), 0, 5)
+    return " · ".join(p for p in (t, f"Retainers {'•' * dots}" if dots else "") if p)
+
+
+def _bond_flaws(flaws: List[Dict[str, Any]]) -> str:
+    """The Bond Flaws on the sheet ('Bondslave · Two Masters'), by id or name."""
+    found = []
+    for fid, label in BOND_FLAWS:
+        if any(_s(f.get("id")) == fid or _norm(_s(f.get("name"))).startswith(_norm(label)) for f in flaws):
+            found.append(label)
+    return " · ".join(found)
+
+
+def _ghoul_footer(name: str, domitor: str, chronicle: str) -> str:
+    return " · ".join(p for p in (name, f"Ghoul of {domitor}" if domitor else "Ghoul", chronicle) if p)
+
+
+def _render_v5_ghoul(sc: SheetCanvas, ch: Dict[str, Any], chronicle: str, player: str, pages: int = 2) -> int:
+    """A ghoul's two sheet pages and any continuation pages (returns how many); see _render_v5."""
+    wm = _obj(ch.get("wod_meta"))
+    g = _obj(wm.get("ghoul"))
+    attrs = _obj(ch.get("attributes"))
+    sk = _obj(ch.get("skills"))
+    name = _s(ch.get("name"))
+    domitor = _ghoul_domitor_name(ch, g)
+    dom_clan = _s(_obj(ch.get("domitor")).get("clan")) or _s(_obj(g.get("domitor")).get("clan"))
+    spec, other_spec = _v5_specialties(sk)
+    footer = _ghoul_footer(name, domitor, chronicle)
+    flaws = [a for a in _list(wm.get("flaws")) if isinstance(a, dict)]
+
+    # ---- page 1: identity, attributes, skills, ghoul power, Blood Bond & feeding
+    sc.frame()
+    y = _header(sc, "Ghoul", "Vampire: The Masquerade · Fifth Edition", sc.top)
+    age, looks = _s(g.get("age")), _s(g.get("apparent_age"))
+    y = _identity(sc, [
+        [("Name", "name", name), ("Concept", "concept", wm.get("concept")),
+         ("Domitor", "ghoul.domitor", domitor), ("Player", "player", player)],
+        [("Chronicle", "chronicle", chronicle), ("Ambition", "ambition", wm.get("ambition")),
+         ("Desire", "desire", wm.get("desire"))],
+        [("Template", "ghoul.template", _ghoul_template_text(g)),
+         ("Age / looks", "ghoul.age", " / ".join(p for p in (age, looks) if p)),
+         ("Ghoul since", "ghoul.since", g.get("ghouled_since")), ("Domitor's clan", "ghoul.domitor_clan", dom_clan)],
+    ], y)
+    y = _v5_attributes_skills(sc, y, attrs, sk, spec)
+
+    y = sc.section("Ghoul Power  ·  Blood Bond & Feeding", y)
+    avail = y - sc.bottom - 4
+    gap = 12.0
+    lw = (sc.x1 - sc.x0 - gap) * 0.42
+    rx, rw = sc.x0 + lw + gap, sc.x1 - sc.x0 - lw - gap
+    pad = 6.0
+    sc.rect(sc.x0, y - avail, lw, avail)
+    sc.rect(rx, y - avail, rw, avail)
+
+    # left: the power(s), one dot of their Discipline (PG p. 141); blank lines for powers bought later
+    discs = [d for d in _list(wm.get("disciplines")) if isinstance(d, dict)]
+    power_lines = [(d, p) for d in discs for p in (_power_names(d.get("powers")) or [""])]
+    first = power_lines[0] if power_lines else ({}, "")
+    x, w = sc.x0 + pad, lw - 2 * pad
+    sc.label(x, y - 11, "Ghoul Power", size=7.2, bold=True)
+    sc.named_trait("power.discipline", x, y - 26, w, _s(first[0].get("name")), 1 if _s(first[0].get("name")) else 0)
+    sc.field("power.name", x, y - 42, w, 12, first[1], size=8.8, tooltip="Power (level 1)")
+    more = [f"{_s(d.get('name'))}: {p}" if p else _s(d.get("name")) for d, p in power_lines[1:]]
+    py = y - 58
+    for i in range(3):  # more level-1 powers, 10 XP each (PG p. 141)
+        sc.diamond(x + 2, py + 3.5, 1.1, fill=False)
+        sc.field(f"power{i + 2}.name", x + 6, py, w - 6, 11.5, more[i] if i < len(more) else "", size=8.4,
+                 tooltip="Another level-1 power")
+        py -= 14
+    if len(more) > 3:
+        other_spec.append("More powers: " + "; ".join(more[3:]))
+    note = ("Counts as one dot (Players Guide p. 141). A power above level 1 costs 1 Aggravated, "
+            "not a Rouse Check (core p. 234). More level-1 powers of the domitor's Disciplines: 10 XP each.")
+    for i, line in enumerate(simpleSplit(note, SERIF_ITALIC, 7.2, w)):
+        if py - 4 - i * 8.6 < y - avail + 4:
+            break
+        sc.text(x, py - 4 - i * 8.6, line, SERIF_ITALIC, 7.2)
+
+    # right: Blood Bond(s) and a feeding note (core pp. 233-234): a note, never a pool or boxes
+    x, w = rx + pad, rw - 2 * pad
+    bonds = [b for b in _list(g.get("bonds")) if isinstance(b, dict)] or [{"name": domitor}]
+    by = y - 11
+    for i, b in enumerate(bonds[:2]):
+        key = "bond" if i == 0 else "bond2"
+        sc.label(x, by, "Blood Bond" if i == 0 else "Second Blood Bond", size=7.2, bold=True)
+        sc.label(x, by - 14, "Regnant", size=6.6)
+        sc.field(f"{key}.regnant", x + 46, by - 17, w * 0.5 - 46, 12, b.get("name") or (domitor if i == 0 else ""),
+                 size=8.8, tooltip="Regnant")
+        sx = x + w * 0.5 + 8
+        sc.label(sx, by - 14, "Strength", size=6.6)
+        st = b.get("strength")
+        sc.dots(f"{key}.strength", sx + 44, by - 16, _n(st, 0, 6), n=6, tooltip="Bond Strength (0-6)")
+        if st is None:
+            sc.text(sx + 44 + SheetCanvas.dots_width(6) + 4, by - 14, "not set", SERIF_ITALIC, 7)
+        sc.field(f"{key}.note", x, by - 42, w, 22, b.get("note"), size=7.8, multiline=True, tooltip="Bond note")
+        by -= 52
+    sc.label(x, by, "Bond Flaws", size=6.6)
+    sc.field("bond.flaws", x + 56, by - 3, w - 56, 12, _bond_flaws(flaws), size=8.4, tooltip="Bond Flaws")
+    by -= 16
+    rules = ("Strength = drinks of the regnant's Blood, up to 6; -1 for each month without. To act against "
+             "the regnant: Resolve + Intelligence vs Bond Strength (core p. 234).")
+    for line in simpleSplit(rules, SERIF_ITALIC, 7.2, w):
+        sc.text(x, by, line, SERIF_ITALIC, 7.2)
+        by -= 8.6
+    by -= 6
+    feeding = ghoul_feeding(g)
+    sc.label(x, by, "Feeding", size=7.2, bold=True)
+    sc.label(x, by - 14, "Last fed", size=6.6)
+    sc.field("feeding.last", x + 46, by - 17, w - 46, 12, feeding.get("last"), size=8.8,
+             tooltip="Last fed on the domitor's Blood")
+    by -= 30
+    cadence = ("A Rouse Check's worth of the domitor's Blood keeps a ghoul about a month (core p. 234). "
+               "A V5 ghoul has no vitae track, Hunger or Blood Potency.")
+    for line in simpleSplit(cadence, SERIF_ITALIC, 7.2, w):
+        sc.text(x, by, line, SERIF_ITALIC, 7.2)
+        by -= 8.6
+    vh = max(24.0, by - (y - avail) - 6)
+    sc.field("feeding.note", x, by - vh, w, vh, feeding.get("note"), size=7.8, multiline=True, tooltip="Feeding note")
+    sc.footer(footer, 1, pages)
+    sc.page()
+
+    # ---- page 2: advantages, trackers, convictions, experience, notes
+    sc.frame()
+    sub = " · ".join(p for p in (f"Ghoul of {domitor}" if domitor else "Ghoul", chronicle) if p)
+    y = _small_header(sc, name, sub, sc.top)
+    advs = [a for a in _list(wm.get("advantages")) if isinstance(a, dict)]
+    touch = [t for t in _list(wm.get("touchstones")) if isinstance(t, dict)]
+    adv_rows = min(12, max(6, len(advs), len(flaws)))
+    touch_rows = min(6, max(2, len(touch)))
+    overflow = _v5_overflow(advs[adv_rows:], flaws[adv_rows:], touch[touch_rows:], [])
+    y = _advantage_rows(sc, y, advs, flaws, adv_rows)
+
+    y = sc.section("Trackers", y)
+    (left, right), cw2 = _columns(sc, 2, gap=22)
+    ty = y - 10
+    crone = any(_s(f.get("id")) == "flaw:ghoul-crones-curse" for f in flaws)
+    _health_willpower(sc, left, ty, wm, attrs, _n(attrs.get("stamina"), 0, 10) + 3 - (1 if crone else 0))
+    if wm.get("humanity") is not None:
+        _humanity_stains(sc, right, ty, cw2, wm)
+    heal = ("Ghouls heal twice as fast as mortals, except fire (Players Guide p. 142). Fresh Blood from the "
+            "vein heals one Aggravated level per Rouse Check the vampire makes, a turn each (p. 139).")
+    hy = ty - (34 if wm.get("humanity") is not None else 0)
+    for line in simpleSplit(heal, SERIF_ITALIC, 7.2, cw2):
+        sc.text(right, hy, line, SERIF_ITALIC, 7.2)
+        hy -= 8.6
+    y = ty - 84
+
+    y = _convictions(sc, y, touch, touch_rows)
+    y = sc.section("Experience", y)
+    y = _experience(sc, _obj(wm.get("experience")), sc.x0, y, sc.x1 - sc.x0)
+
+    mf = _obj(ch.get("merits_flaws"))
+    notes = "\n".join(p for p in (_s(mf.get("notes")),
+                                  ("Specialties: " + "; ".join(other_spec)) if other_spec else "",
+                                  *overflow) if p)
+    cont = _background_notes(sc, y, _s(ch.get("background")), notes, 8.2)
+    sc.footer(footer, 2, pages)
+    _render_continuation(sc, cont, name, sub, footer, 3, pages, 8.2)
+    return len(cont)
 
 
 # ---------------------------------------------------------------------------------------------
@@ -1263,6 +1700,11 @@ def v5_reference(ch: Dict[str, Any], catalog: Optional[Dict[str, Any]], lang: st
     books = {_s(b.get("book_id")): _s(b.get("title")) for b in _list(catalog.get("books")) if isinstance(b, dict)}
     out: List[Tuple[str, Any]] = []
 
+    if wm.get("sheet_kind") == "ghoul":  # what the domitor's Retainers buy (core p. 194)
+        retainers = next((a for a in _list(catalog.get("advantages"))
+                          if isinstance(a, dict) and a.get("id") == "background:retainers"), None)
+        if retainers:
+            out += [("section", "Ghoul"), ("entry", _ref_entry(retainers.get("name"), retainers, lang, books))]
     clan = _lookup(_index(catalog.get("clans")), wm.get("clan_id"), wm.get("clan"))
     if clan:
         out += [("section", "Clan"), ("entry", _ref_entry(clan.get("name"), clan, lang, books))]
@@ -1516,7 +1958,14 @@ def _layout_reference(sc: SheetCanvas, items: List[Tuple[str, Any]]) -> List[Ref
 def _render_reference(sc: SheetCanvas, ch: Dict[str, Any], chronicle: str, pages: List[RefPage], first: int,
                       total: int) -> None:
     name = _s(ch.get("name"))
-    sub = " · ".join(p for p in (_s(_obj(ch.get("wod_meta")).get("clan")), chronicle) if p)
+    wm = _obj(ch.get("wod_meta"))
+    if wm.get("sheet_kind") == "ghoul":
+        domitor = _ghoul_domitor_name(ch, _obj(wm.get("ghoul")))
+        sub = " · ".join(p for p in (f"Ghoul of {domitor}" if domitor else "Ghoul", chronicle) if p)
+        footer = _ghoul_footer(name, domitor, chronicle)
+    else:
+        sub = " · ".join(p for p in (_s(wm.get("clan")), chronicle) if p)
+        footer = f"{name} · {chronicle}" if chronicle else name
     _, cw = _columns(sc, 2, gap=22)
     for k, placed in enumerate(pages):
         sc.page()
@@ -1531,7 +1980,7 @@ def _render_reference(sc: SheetCanvas, ch: Dict[str, Any], chronicle: str, pages
             else:  # wrapped again: the balancing trials may have wrapped it last (same width, same lines)
                 obj.drawOn(sc.c, x, y - obj.wrap(cw, 10 ** 6)[1])
         sc._ink()
-        sc.footer(f"{name} · {chronicle}" if chronicle else name, first + k, total)
+        sc.footer(footer, first + k, total)
 
 
 # ---------------------------------------------------------------------------------------------
@@ -1563,7 +2012,48 @@ LINE_TITLES = {
 }
 
 
-def _render_classic(sc: SheetCanvas, ch: Dict[str, Any], chronicle: str, player: str) -> None:
+def _ordinal(n: int) -> str:
+    return f"{n}{'th' if 10 <= n % 100 <= 20 else {1: 'st', 2: 'nd', 3: 'rd'}.get(n % 10, 'th')}"
+
+
+def _classic_domitor_text(ch: Dict[str, Any], g: Dict[str, Any]) -> str:
+    """'Theodore Doukas (Ventrue, 12th)': GET's resolved `domitor`, else what the sheet stored."""
+    dom = ch.get("domitor") if isinstance(ch.get("domitor"), dict) else {}
+    stored = _obj(g.get("domitor"))
+    name = _s(dom.get("name")) or _s(stored.get("name"))
+    clan = _s(dom.get("clan")) or _s(stored.get("clan"))
+    gen = dom.get("generation") if dom.get("generation") is not None else stored.get("generation")
+    gen_text = _ordinal(gen) if isinstance(gen, int) and not isinstance(gen, bool) and 3 <= gen <= 15 else ""
+    extra = ", ".join(p for p in (clan, gen_text) if p)
+    return f"{name} ({extra})" if name and extra else name or extra
+
+
+def _classic_kind_text(g: Dict[str, Any]) -> str:
+    """'Vassal' / 'Independent' / 'Revenant: Zantosa'."""
+    kind = _s(g.get("kind"))
+    family = _s(g.get("family")) if kind == "revenant" else ""
+    return f"{kind_label(kind)}: {family}" if family else kind_label(kind)
+
+
+def _classic_bond_text(g: Dict[str, Any]) -> str:
+    """'3/3 drinks · Third drink in 1994' (a Classic ghoul's Blood Bond to its domitor)."""
+    bond = _obj(g.get("bond"))
+    stage = bond.get("stage")
+    head = f"{_n(stage, 0, BLOOD_BOND_DRINKS)}/{BLOOD_BOND_DRINKS} drinks" if stage not in (None, "") else ""
+    return " · ".join(p for p in (head, _s(bond.get("note"))) if p)
+
+
+def _potence_first(discs: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    """A ghoul's Disciplines with Potence on the first line, as the 1997 ghoul sheet prints it."""
+    pot = [d for d in discs if _s(d.get("name")).lower() == "potence"]
+    rest = [d for d in discs if _s(d.get("name")).lower() != "potence"]
+    return (pot[:1] or [{"name": "Potence", "dots": 1}]) + pot[1:] + rest
+
+
+def _render_classic(sc: SheetCanvas, ch: Dict[str, Any], chronicle: str, player: str, pages: int = 2) -> int:
+    """The two Classic sheet pages and any continuation pages (returns how many). A Classic ghoul
+    (vampire line, wod_meta.sheet_kind 'ghoul') gets the 1997 ghoul sheet's page 1: Domitor /
+    Duties / Kind, Potence first, a Blood Pool of 10, Blood Bond and Overdosing? lines."""
     line = _s(ch.get("system_type")).lower()
     line = line if line in LINE_TITLES else "vampire"
     wm0 = _obj(ch.get("wod_meta"))
@@ -1571,7 +2061,8 @@ def _render_classic(sc: SheetCanvas, ch: Dict[str, Any], chronicle: str, player:
     attrs = _obj(ch.get("attributes"))
     sk = _obj(ch.get("skills"))
     name = _s(ch.get("name"))
-    title, sub = LINE_TITLES[line]
+    g = _obj(wm0.get("ghoul")) if line == "vampire" and wm0.get("sheet_kind") == "ghoul" else None
+    title, sub = ("Ghoul", "Vampire: The Masquerade · Revised") if g is not None else LINE_TITLES[line]
 
     sc.frame()
     y = _header(sc, title, sub, sc.top)
@@ -1583,6 +2074,9 @@ def _render_classic(sc: SheetCanvas, ch: Dict[str, Any], chronicle: str, player:
         "mage": [("Tradition", "tradition", wm.get("tradition")), ("Essence", "essence", wm.get("essence")),
                  ("Cabal", "cabal", wm.get("cabal"))],
     }[line]
+    if g is not None:
+        third = [("Domitor", "ghoul.domitor", _classic_domitor_text(ch, g)),
+                 ("Duties", "ghoul.duties", g.get("duties")), ("Kind", "ghoul.kind", _classic_kind_text(g))]
     y = _identity(sc, [
         [("Name", "name", name), ("Player", "player", player), ("Chronicle", "chronicle", chronicle)],
         [("Nature", "nature", wm.get("nature")), ("Demeanor", "demeanor", wm.get("demeanor")),
@@ -1621,6 +2115,8 @@ def _render_classic(sc: SheetCanvas, ch: Dict[str, Any], chronicle: str, player:
     arow = 12.8
     if line == "vampire":
         discs = [d for d in _list(wm.get("disciplines")) if isinstance(d, dict)]
+        if g is not None:
+            discs = _potence_first(discs)
         bgs = [d for d in _list(wm.get("backgrounds")) if isinstance(d, dict)]
         rows = min(9, max(6, len(discs), len(bgs)))
         overflow += _more("disciplines", discs[rows:]) + _more("backgrounds", bgs[rows:])
@@ -1713,7 +2209,24 @@ def _render_classic(sc: SheetCanvas, ch: Dict[str, Any], chronicle: str, player:
     sc.dots("willpower.current", dx, yy - 22, 0, n=10, mark="cross", shape="square",
             checked=[j < (wp - _n(cur, 0, 10) if cur is not None else 0) for j in range(10)])
     yy -= 38
-    if line == "vampire":
+    if g is not None:
+        # a ghoul's Blood Pool: 10 (one row), 1 point per turn (Fatal Addiction); more only for old ghouls
+        pool = ghoul_pool(wm)
+        mx, per_turn, cur_b = pool["max"], pool["per_turn"], pool["current"]
+        sc.text(x + cw / 2, yy, "Blood Pool", SERIF_ITALIC, 8.6, "center")
+        bw = SheetCanvas.dots_width(10)
+        nrows = 2 if mx > 10 else 1
+        for r in range(nrows):
+            sc.dots(f"blood.r{r + 1}", x + (cw - bw) / 2, yy - 12 - r * 10, 0, n=10, mark="fill",
+                    shape="square", solid=max(0, min(10, mx - r * 10)),
+                    checked=[r * 10 + j < cur_b for j in range(10)])
+        by = yy - 38 + (2 - nrows) * 10
+        sc.label(x + (cw - bw) / 2, by, "Per turn", size=6.5)
+        sc.field("blood.per_turn", x + (cw - bw) / 2 + 42, by - 3, 24, 11, str(per_turn), size=8.6, align="center")
+        sc.label(x + (cw - bw) / 2 + 76, by, "Max", size=6.5)
+        sc.field("blood.max", x + (cw - bw) / 2 + 96, by - 3, 24, 11, str(mx), size=8.6, align="center")
+        yy = by - 14
+    elif line == "vampire":
         gen = _n(wm.get("generation"), 3, 16) if wm.get("generation") not in (None, "") else 13
         mx, per_turn = BLOOD_POOL.get(gen, (10, 1)) if gen >= 4 else (50, 10)
         cur_b = wm.get("blood_pool")
@@ -1749,7 +2262,19 @@ def _render_classic(sc: SheetCanvas, ch: Dict[str, Any], chronicle: str, player:
         sc.checkbox(f"health.{i + 1}", x + cw - 9, base - 1.6, 8.4, i < dmg, mark="cross", shape="square",
                     tooltip=lvl)
     hy = band_top - 21 - 7 * 12.4 - 4
-    if line == "vampire":
+    if g is not None:
+        # the 1997 ghoul sheet's "Weakness/Blood Bond" and "Overdosing?" lines (13 pt each, so
+        # Experience stays above the band's last row)
+        lw = max(pdfmetrics.stringWidth(t.upper(), CINZEL, 7) for t in ("Blood Bond", "Overdosing?")) + 4
+        sc.label(x, hy, "Blood Bond", size=7)
+        sc.field("bond", x + lw, hy - 3, cw - lw, 12, _classic_bond_text(g), size=8.4,
+                 tooltip="Drinks of the domitor's vitae: the third binds (Blood Bond)")
+        hy -= 13
+        sc.label(x, hy, "Overdosing?", size=7)
+        sc.field("overdosing", x + lw, hy - 3, cw - lw, 12, g.get("overdosing"), size=8.4,
+                 tooltip="One extra point per dot of Stamina; Stamina roll, difficulty 8 (Fatal Addiction)")
+        hy -= 13
+    elif line == "vampire":
         sc.label(x, hy, "Weakness", size=7)
         sc.field("weakness", x + 50, hy - 3, cw - 50, 12, wm.get("weakness"), size=8.4)
         hy -= 16
@@ -1761,13 +2286,16 @@ def _render_classic(sc: SheetCanvas, ch: Dict[str, Any], chronicle: str, player:
         base = hy - 18 - i * 14
         sc.label(x, base, lbl, size=7)
         sc.field(key, x + 50, base - 3, cw - 50, 12.5, val, size=9, align="center", tooltip=f"Experience {lbl}")
-    sc.footer(f"{name} · {chronicle}" if chronicle else name, 1, 2)
+    footer = f"{name} · {chronicle}" if chronicle else name
+    if g is not None:
+        footer = _ghoul_footer(name, _ghoul_domitor_name(ch, g), chronicle)
+    sc.footer(footer, 1, pages)
     sc.page()
 
     # ---- page 2: rituals, XP log, background, notes
     sc.frame()
-    y = _small_header(sc, name, " · ".join(p for p in (_s(wm.get("clan") or wm.get("tribe") or wm.get("tradition")),
-                                                        chronicle) if p), sc.top)
+    sub = " · ".join(p for p in (_s(wm.get("clan") or wm.get("tribe") or wm.get("tradition")), chronicle) if p)
+    y = _small_header(sc, name, sub, sc.top)
     rituals = _list(wm.get("rituals"))
     if rituals:
         # what the rest of the page needs: other traits, combat, description, possessions,
@@ -1803,60 +2331,86 @@ def _render_classic(sc: SheetCanvas, ch: Dict[str, Any], chronicle: str, player:
     desc = (("Age", "age"), ("Apparent Age", "apparent_age"), ("Date of Birth", "date_of_birth"),
             ("R.I.P.", "rip"), ("Hair", "hair"), ("Eyes", "eyes"), ("Nationality", "nationality"),
             ("Height", "height"))
+    if g is not None:  # a ghoul: its ages are in wod_meta.ghoul, and it was ghouled, not Embraced
+        desc = tuple(("Ghouled", "ghouled_since") if k == "rip" else (lbl, k) for lbl, k in desc)
     dcols, dcw = _columns(sc, 4, gap=12)
     for i, (lbl, key) in enumerate(desc):
         x = dcols[i % 4]
         base = y - 10 - (i // 4) * 15
         lw = pdfmetrics.stringWidth(lbl.upper(), CINZEL, 6.6) + 4
+        val = wm.get(key)
+        if g is not None and key in ("age", "apparent_age", "ghouled_since") and _s(g.get(key)):
+            val = g.get(key)
         sc.label(x, base, lbl, size=6.6)
-        sc.field(f"desc.{key}", x + lw, base - 2.5, dcw - lw, 12, wm.get(key), size=8.6)
+        sc.field(f"desc.{key}", x + lw, base - 2.5, dcw - lw, 12, val, size=8.6)
     y -= 10 + 15 + 10
 
     y = sc.section("Possessions", y)
     third_box = {"vampire": ("Feeding Grounds", "feeding_grounds"), "werewolf": ("Fetishes", "fetishes"),
                  "mage": ("Wonders", "wonders")}[line]
+    texts = {}
+    if g is not None:  # a ghoul's feeding on its domitor's vitae (wod_meta.ghoul.feeding)
+        third_box = ("Feeding", "feeding")
+        fd = ghoul_feeding(g)
+        last, fnote = _s(fd.get("last")), _s(fd.get("note"))
+        texts["feeding"] = "\n".join(p for p in (f"Last fed: {last}" if last else "", fnote) if p)
     pcols, pcw = _columns(sc, 3, gap=12)
     for x, (lbl, key) in zip(pcols, (("Gear", "equipment"), third_box, ("Havens", "havens"))):
-        _notes_box(sc, f"poss.{key}", lbl, x, y, pcw, 66, _s(wm.get(key)))
+        _notes_box(sc, f"poss.{key}", lbl, x, y, pcw, 66, texts.get(key, _s(wm.get(key))))
     y -= 70
     if log:
         y = sc.section("Experience Log", y)
         sc.rect(sc.x0, y - 60, sc.x1 - sc.x0, 60)
         sc.field("xp.log", sc.x0, y - 60, sc.x1 - sc.x0, 60, log, size=7.8, multiline=True, underline=False)
         y -= 66
-    y = sc.section("Background & Notes", y)
-    h = max(30.0, y - sc.bottom - 2)
-    bw = (sc.x1 - sc.x0 - 14) * 0.6
     notes = "\n".join(p for p in (_s(mf.get("notes")), _s(sk.get("notes")), *overflow) if p)
-    _notes_box(sc, "background", "Background", sc.x0, y, bw, h, _s(ch.get("background")))
-    _notes_box(sc, "notes", "Notes", sc.x0 + bw + 14, y, sc.x1 - sc.x0 - bw - 14, h, notes)
-    sc.footer(f"{name} · {chronicle}" if chronicle else name, 2, 2)
+    cont = _background_notes(sc, y, _s(ch.get("background")), notes, 8.4)
+    sc.footer(footer, 2, pages)
+    _render_continuation(sc, cont, name, sub, footer, 3, pages, 8.4)
+    return len(cont)
 
 
 # ---------------------------------------------------------------------------------------------
 
 
 def build_sheet_pdf(character: Dict[str, Any], *, paper: str = "a4", chronicle_name: str = "",
-                    player_name: str = "", catalog: Optional[Dict[str, Any]] = None, lang: str = "en") -> bytes:
+                    player_name: str = "", catalog: Optional[Dict[str, Any]] = None, lang: str = "en",
+                    flat: bool = False) -> bytes:
     """
-    Fillable two-page PDF for a character dict (as returned by GET /api/characters/<id>). A V5 sheet
-    given the rules catalog (v5_catalog.load_catalog()) gets Reference page(s) after those two when
-    anything on it matches, with descriptions in `lang` ('en' / 'el', English when missing).
+    Fillable two-page PDF for a character dict (as returned by GET /api/characters/<id>; a ghoul's
+    sheet, wod_meta.sheet_kind 'ghoul', gets the ghoul pages: V5's own, or the Classic sheet's
+    ghoul page 1). A Background or Notes too long for
+    its box goes on over 'Background & Notes (continued)' page(s) after those two. A V5 sheet given
+    the rules catalog (v5_catalog.load_catalog()) gets Reference page(s) last when anything on it
+    matches, with descriptions in `lang` ('en' / 'el', English when missing). flat=True is the print
+    version: the same pages with every value drawn as page text and no form fields.
     """
     ch = dict(character or {})
     name = _s(ch.get("name")) or "Character"
-    sc = SheetCanvas(paper if paper in PAPER else "a4", title=name, author=_s(player_name))
     edition = _s(ch.get("rules_edition")).lower()
     if not edition:
         edition = "v5" if _s(_obj(ch.get("wod_meta")).get("edition")).lower() == "v5" else "classic"
     chronicle = _s(chronicle_name or ch.get("campaign_name"))
-    if edition == "v5":
-        ref = _layout_reference(sc, v5_reference(ch, catalog, lang)) if catalog else []
-        _render_v5(sc, ch, chronicle, _s(player_name), pages=2 + len(ref))
+    ghoul = edition == "v5" and _obj(ch.get("wod_meta")).get("sheet_kind") == "ghoul"
+    items = v5_reference(ch, catalog, lang) if edition == "v5" and catalog else []
+
+    def build(cont: int) -> Tuple[SheetCanvas, int]:
+        sc = SheetCanvas(paper if paper in PAPER else "a4", title=name, author=_s(player_name), flat=flat)
+        ref = _layout_reference(sc, items)
+        total = 2 + cont + len(ref)
+        if edition != "v5":
+            drawn = _render_classic(sc, ch, chronicle, _s(player_name), pages=total)
+        else:
+            drawn = (_render_v5_ghoul if ghoul else _render_v5)(sc, ch, chronicle, _s(player_name), pages=total)
         if ref:
-            _render_reference(sc, ch, chronicle, ref, 3, 2 + len(ref))
-    else:
-        _render_classic(sc, ch, chronicle, _s(player_name))
+            _render_reference(sc, ch, chronicle, ref, 3 + drawn, total)
+        return sc, drawn
+
+    # Background & Notes continuation pages are known once page 2 is laid out: with any, the
+    # sheet is drawn again so every footer counts them (only long texts pay for that)
+    sc, drawn = build(0)
+    if drawn:
+        sc, _ = build(drawn)
     return sc.finish()
 
 

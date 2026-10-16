@@ -19,6 +19,7 @@ from services.v5_chargen import (
     XP_COSTS,
     validate_creation,
 )
+from services.v5_ghoul_chargen import GHOUL_PROBLEM_CODES, validate_ghoul_creation
 
 REPO = Path(__file__).resolve().parents[3]
 
@@ -52,7 +53,10 @@ def case(name):
 
 @pytest.mark.parametrize("c", DOC["cases"], ids=[c["name"] for c in DOC["cases"]])
 def test_shared_case(c):
-    assert codes(validate_creation(c["payload"], CATALOG, c["settings"])) == c["expect"]
+    if c.get("kind") == "ghoul":  # a ghoul's sheet and its domitor's row (services/v5_ghoul_chargen.py)
+        assert codes(validate_ghoul_creation(c["payload"], CATALOG, c["settings"], c["domitor"])) == c["expect"]
+    else:
+        assert codes(validate_creation(c["payload"], CATALOG, c["settings"])) == c["expect"]
 
 
 def test_frontend_copy_is_the_same_file():
@@ -65,8 +69,11 @@ def test_frontend_copy_is_the_same_file():
 
 
 def test_vectors_cover_the_vocabulary():
-    seen = {code for c in DOC["cases"] for code in c["expect"]}
+    seen = {code for c in DOC["cases"] if c.get("kind") != "ghoul" for code in c["expect"]}
     assert seen <= set(PROBLEM_CODES)
+    ghoul = [c for c in DOC["cases"] if c.get("kind") == "ghoul"]
+    assert {code for c in ghoul for code in c["expect"]} <= set(GHOUL_PROBLEM_CODES)
+    assert len(ghoul) >= 11 and sum(1 for c in ghoul if not c["expect"]) >= 5
     assert len(DOC["cases"]) >= 40
     assert sum(1 for c in DOC["cases"] if not c["expect"]) >= 10
 
@@ -229,7 +236,11 @@ def _with_adv_catalog():
 def test_forge_sheets_still_pass_with_the_advantages_catalog():
     cat = _with_adv_catalog()
     for c in DOC["cases"]:
-        if not c["expect"]:
+        if c["expect"]:
+            continue
+        if c.get("kind") == "ghoul":
+            assert validate_ghoul_creation(c["payload"], cat, c["settings"], c["domitor"]) == [], c["name"]
+        else:
             assert validate_creation(c["payload"], cat, c["settings"]) == [], c["name"]
 
 
@@ -450,6 +461,7 @@ def test_malformed_catalog_entries_never_raise():
     for name in [c["name"] for c in DOC["cases"]]:
         validate_creation(case(name)["payload"], bad, None)  # no exception
         validate_creation(case(name)["payload"], bad, books)
+        validate_ghoul_creation(case(name)["payload"], bad, books, case(name).get("domitor"))
     for junk in (None, [], "x", 3, {"clans": "x"}, {"advantages": [None, "x", 3]}):
         validate_creation(case("valid: Brujah with no XP spent")["payload"], junk, None)
         validate_creation(case("valid: Brujah with no XP spent")["payload"], junk, books)

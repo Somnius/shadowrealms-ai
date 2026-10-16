@@ -10,11 +10,20 @@ Storage is the same TEXT JSON columns as classic sheets:
   rituals[{name,level,source}], experience{total,spent,unspent,log[{kind,trait,what,from,to,cost}]},
   saved{advantage_dots 0-20, specialty 0-1}, ...}
 
+A ghoul is a V5 row too, told apart by wod_meta.sheet_kind = 'ghoul' (is_ghoul()); its
+wod_meta.ghoul block is bounded here as well: {template, retainer_dots 1-3 | null, domitor
+{character_id, name, clan}, age, apparent_age 0-150 | null, ghouled_since, bonds[<=2]
+{character_id, name, strength 0-6 | null, note}, feeding {last, note}} and its Disciplines are at
+most 1 dot (docs/CHARACTER_SHEET_BLOCKS.md, services/v5_ghoul_chargen.py). `feeding` is a note on
+when the ghoul last drank the domitor's Blood, not a track: a V5 ghoul has no vitae, Hunger or Blood
+Potency (core p. 234). Older sheets named it `vitae`; both keys are read and bounded.
+
 Missing keys are fine (sheets are filled in over time); present values must be in range.
 """
 
 from __future__ import annotations
 
+import json
 from typing import Any, Dict, List
 
 V5_ATTRIBUTES = (
@@ -39,6 +48,23 @@ _META_BOUNDS = {
     "blood_potency": (0, 10),
     "generation": (3, 16),
 }
+
+
+GHOUL = "ghoul"
+# The ghoul templates: the corebook's mortal templates (p. 185) and the Players Guide's player ghoul.
+GHOUL_TEMPLATES = ("weak", "average", "gifted", "deadly", "player")
+_GHOUL_TEXT_MAX = 200
+_GHOUL_NOTE_MAX = 500
+
+
+def is_ghoul(wod_meta: Any) -> bool:
+    """True for a ghoul's sheet (wod_meta.sheet_kind == 'ghoul'); wod_meta may be a dict or its JSON text."""
+    if isinstance(wod_meta, str):
+        try:
+            wod_meta = json.loads(wod_meta)
+        except ValueError:
+            return False
+    return isinstance(wod_meta, dict) and wod_meta.get("sheet_kind") == GHOUL
 
 
 def _is_int(v: Any) -> bool:
@@ -218,8 +244,72 @@ def sanity_check_v5(
             ed = wod_meta.get("edition")
             if ed is not None and ed != "v5":
                 errors.append("wod_meta.edition must be 'v5' for a V5 character")
+            kind = wod_meta.get("sheet_kind")
+            if kind is not None and kind != GHOUL:
+                errors.append("wod_meta.sheet_kind must be 'ghoul' when present")
+            if kind == GHOUL:
+                _check_ghoul(errors, wod_meta)
 
     return errors
+
+
+def _check_text(errors: List[str], label: str, v: Any, limit: int) -> None:
+    if v is not None and (not isinstance(v, str) or len(v) > limit):
+        errors.append(f"{label} must be text of at most {limit} characters")
+
+
+def _check_ghoul(errors: List[str], wod_meta: Dict[str, Any]) -> None:
+    """Bounds of a ghoul's sheet: wod_meta.ghoul and Disciplines of at most 1 dot."""
+    for i, d in enumerate(wod_meta.get("disciplines") if isinstance(wod_meta.get("disciplines"), list) else []):
+        if isinstance(d, dict):
+            _check_range(errors, f"wod_meta.disciplines[{i}].level (a ghoul)", d.get("level"), 0, 1)
+    g = wod_meta.get("ghoul")
+    if not isinstance(g, dict):
+        errors.append("wod_meta.ghoul is required on a ghoul's sheet")
+        return
+    if g.get("template") not in GHOUL_TEMPLATES:
+        errors.append(f"wod_meta.ghoul.template must be one of {', '.join(GHOUL_TEMPLATES)}")
+    _check_range(errors, "wod_meta.ghoul.retainer_dots", g.get("retainer_dots"), 1, 3)
+    dom = g.get("domitor")
+    if not isinstance(dom, dict) or not _is_int(dom.get("character_id")) or dom["character_id"] < 1:
+        errors.append("wod_meta.ghoul.domitor.character_id must be a character id")
+    else:
+        _check_text(errors, "wod_meta.ghoul.domitor.name", dom.get("name"), 120)
+        _check_text(errors, "wod_meta.ghoul.domitor.clan", dom.get("clan"), 120)
+    for k in ("age", "apparent_age"):
+        _check_range(errors, f"wod_meta.ghoul.{k}", g.get(k), 0, 150)
+    _check_text(errors, "wod_meta.ghoul.ghouled_since", g.get("ghouled_since"), _GHOUL_TEXT_MAX)
+    bonds = g.get("bonds")
+    if bonds is not None:
+        if not isinstance(bonds, list) or len(bonds) > 2:
+            errors.append("wod_meta.ghoul.bonds must be a list of at most 2 Blood Bonds")
+        else:
+            for i, b in enumerate(bonds):
+                if not isinstance(b, dict):
+                    errors.append(f"wod_meta.ghoul.bonds[{i}] must be an object")
+                    continue
+                cid = b.get("character_id")
+                if cid is not None and (not _is_int(cid) or cid < 1):
+                    errors.append(f"wod_meta.ghoul.bonds[{i}].character_id must be a character id")
+                _check_range(errors, f"wod_meta.ghoul.bonds[{i}].strength", b.get("strength"), 0, 6)
+                _check_text(errors, f"wod_meta.ghoul.bonds[{i}].name", b.get("name"), 120)
+                _check_text(errors, f"wod_meta.ghoul.bonds[{i}].note", b.get("note"), _GHOUL_NOTE_MAX)
+    for key in ("feeding", "vitae"):  # `vitae`: the key's earlier name
+        feeding = g.get(key)
+        if feeding is None:
+            continue
+        if not isinstance(feeding, dict):
+            errors.append(f"wod_meta.ghoul.{key} must be an object")
+        else:
+            _check_text(errors, f"wod_meta.ghoul.{key}.last", feeding.get("last"), 60)
+            _check_text(errors, f"wod_meta.ghoul.{key}.note", feeding.get("note"), _GHOUL_NOTE_MAX)
+
+
+def ghoul_feeding(ghoul: Any) -> Dict[str, Any]:
+    """wod_meta.ghoul.feeding ({last, note}); a sheet from before the rename has it as `vitae`."""
+    g = ghoul if isinstance(ghoul, dict) else {}
+    f = g.get("feeding") if isinstance(g.get("feeding"), dict) else g.get("vitae")
+    return f if isinstance(f, dict) else {}
 
 
 def stamp_v5_meta(wod_meta: Dict[str, Any]) -> Dict[str, Any]:

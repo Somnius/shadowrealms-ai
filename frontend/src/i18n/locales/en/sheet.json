@@ -35,7 +35,10 @@
   "pdf": {
     "export": "Export PDF",
     "failed": "Could not export the PDF.",
-    "hint": "Fillable sheet for black-and-white printing"
+    "hint": "Fillable sheet for black-and-white printing",
+    "print": "Download print version",
+    "printHint": "Looks the same in every PDF viewer; not fillable",
+    "which": "Print version: looks the same everywhere, share this one. Fillable: edit in a PDF app."
   },
   "spend": {
     "problem": {
@@ -104,5 +107,53 @@
     "help": "Points left unspent at creation. Spend them later; the Storyteller approves.",
     "spend": "Spend…",
     "requests": "Spends"
+  },
+  "ghoul": {
+    "ghoulOf": "Ghoul of {{domitor}}",
+    "retainersTitle": "Retainers (ghouls)",
+    "openSheet": "Open sheet",
+    "noRetainers": "No ghouls yet.",
+    "addRetainer": "Add a ghoul retainer",
+    "domitorGone": "(sheet no longer exists)",
+    "intro": "Ghoul sheet, V5 (read-only). Rules: core p. 234, Players Guide pp. 140–142.",
+    "domitorClan": "Domitor's clan",
+    "template": "Template",
+    "ageLooks": "Age / looks",
+    "since": "Ghoul since",
+    "healing": "Heals twice as fast as a mortal, except fire (Players Guide p. 142). No Hunger, no Blood Potency.",
+    "powerTitle": "Ghoul power",
+    "oneDot": "(counts as 1 dot)",
+    "powerNote": "No Rouse Checks: a power above level 1 costs 1 Aggravated (core p. 234).",
+    "bondTitle": "Blood Bond & feeding",
+    "strengthNotSet": "Bond Strength not set (the Storyteller sets it)",
+    "bondFlaws": "Bond Flaws",
+    "lastFed": "Last fed on the domitor's Blood",
+    "feedingNote": "Feeding note",
+    "feedingRule": "A Rouse Check's worth of the domitor's Blood keeps a ghoul about a month (core p. 234). No vitae track, no Hunger."
+  },
+  "classicGhoul": {
+    "generationN": "generation {{n}}",
+    "intro": "Ghoul sheet, Classic (Revised), read-only. Rules: Revised pp. 275–276, Ghouls: Fatal Addiction.",
+    "domitorClan": "Domitor's clan and generation",
+    "kindLabel": "Kind",
+    "duties": "Duties",
+    "bloodTitle": "Blood Pool & Blood Bond",
+    "poolLine": "{{current}} / {{max}} · {{perTurn}} per turn",
+    "poolRule": "Spend a point to heal a level or to raise a Physical Attribute (up to twice the original); Disciplines need at least one point; soaks lethal damage while holding vitae. No Hunger, no Rouse Checks.",
+    "bondNotSet": "not set (the Storyteller sets it)",
+    "bondStage_one": "{{count}} of {{max}} drinks",
+    "bondStage_other": "{{count}} of {{max}} drinks",
+    "bound": "fully Bound",
+    "bondNote": "Bond note",
+    "lastFed": "Last fed on the domitor's vitae",
+    "overdosing": "Overdosing?",
+    "frenzyRule": "Frenzy: Self-Control, at difficulties two lower than a vampire's (Revised p. 276), never more dice than Blood Points held.",
+    "damage": "Health levels lost",
+    "poolAria": "Blood Pool {{current}} of {{max}}",
+    "kind": {
+      "vassal": "Vassal",
+      "independent": "Independent",
+      "revenant": "Revenant"
+    }
   }
 }

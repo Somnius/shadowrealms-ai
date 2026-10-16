@@ -6,6 +6,7 @@ import { getLanguage, t } from '../i18n';
 import { bookRef, descIn, findAdvantage, findLoresheet, fromWiki, getV5Rules, powersOf } from '../characterSheet/v5/rulesData';
 import { useV5Catalog } from '../rules/v5Catalog';
 import { Term } from '../i18n/glossary';
+import RetainersBlock from './RetainersBlock';
 
 const ACCENT = 'var(--sr-blood-500)';
 const obj = (v) => (v && typeof v === 'object' ? v : {});
@@ -14,12 +15,12 @@ const n = (v) => {
   return Number.isFinite(x) ? x : 0;
 };
 
-function StaticDots({ value, maxRank = 5, accent = ACCENT }) {
+export function StaticDots({ value, maxRank = 5, accent = ACCENT }) {
   return <DotTrack value={n(value)} maxRank={maxRank} accent={accent} disabled onChange={() => {}} />;
 }
 
 /** Health / Willpower boxes: aggravated (X), superficial (/), empty. */
-function TrackerBoxes({ termId, label, track, fallbackMax }) {
+export function TrackerBoxes({ termId, label, track, fallbackMax }) {
   const tr = obj(track);
   const max = Math.max(0, n(tr.max) || n(fallbackMax));
   const agg = Math.min(max, n(tr.aggravated));
@@ -58,7 +59,7 @@ function TrackerBoxes({ termId, label, track, fallbackMax }) {
 }
 
 /** Humanity track: filled left to right, Stains right to left. */
-function HumanityTrack({ humanity, stains }) {
+export function HumanityTrack({ humanity, stains }) {
   const h = n(humanity);
   const s = n(stains);
   return (
@@ -95,7 +96,7 @@ function HumanityTrack({ humanity, stains }) {
   );
 }
 
-const p = (label, value) =>
+export const p = (label, value) =>
   value != null && String(value).trim() !== '' ? (
     <p style={{ margin: '0 0 6px', color: 'var(--sr-bone-100)' }}>
       <strong style={{ color: 'var(--sr-arcane-300)' }}>{label}:</strong> {String(value)}
@@ -103,7 +104,7 @@ const p = (label, value) =>
   ) : null;
 
 /** A power or ritual name; with a catalog description it opens to show it (and the book page). */
-function CatalogItem({ name, entry }) {
+export function CatalogItem({ name, entry }) {
   const text = entry ? descIn(entry, getLanguage()) : '';
   if (!text) return <span>{name}</span>;
   const ref = bookRef(entry);
@@ -119,7 +120,7 @@ function CatalogItem({ name, entry }) {
   );
 }
 
-const findPower = (discipline, name) =>
+export const findPower = (discipline, name) =>
   powersOf(discipline).find((p) => p.name === name || (p.aliases || []).includes(name)) || null;
 const findRitual = (name) => getV5Rules().rituals.find((r) => r.name === name) || null;
 
@@ -127,7 +128,7 @@ const findRitual = (name) => getV5Rules().rituals.find((r) => r.name === name) |
 const specialOf = (clan) => (clan === 'Caitiff' ? 'caitiff' : clan === 'Thin-blood' ? 'thin_blood' : null);
 
 /** One Advantage, Flaw or loresheet row: the name opens its description; a loresheet lists its levels. */
-function AdvantageRow({ a, special }) {
+export function AdvantageRow({ a, special }) {
   const lore = a.kind === 'loresheet' ? findLoresheet(a) : null;
   const entry = lore || (a.kind === 'loresheet' || a.custom ? null : findAdvantage(a, a.flaw ? 'flaw' : a.kind, special));
   const levels = lore && Array.isArray(a.levels) ? lore.levels.filter((l) => a.levels.map(n).includes(l.dots)) : [];
@@ -172,9 +173,10 @@ function AdvantageRow({ a, special }) {
 }
 
 /**
- * Read-only V5 sheet body (rendered inside CharacterSheetModal).
+ * Read-only V5 sheet body (rendered inside CharacterSheetModal). `onOpenSheet` / `onAddGhoul`
+ * (from the sheet modal) open a ghoul's sheet and the ghoul forge.
  */
-export default function V5CharacterSheetView({ character }) {
+export default function V5CharacterSheetView({ character, onOpenSheet, onAddGhoul }) {
   useV5Catalog();
   const wm = obj(character?.wod_meta);
   const attrs = obj(character?.attributes);
@@ -374,6 +376,8 @@ export default function V5CharacterSheetView({ character }) {
           <p style={{ color: 'var(--sr-bone-100)', whiteSpace: 'pre-wrap', lineHeight: 1.55, margin: 0 }}>{String(character.background)}</p>
         </ResponsiveSheetBlock>
       ) : null}
+
+      <RetainersBlock character={character} onOpenSheet={onOpenSheet} onAddGhoul={onAddGhoul} />
     </>
   );
 }

@@ -30,3 +30,6 @@ export const FREEBIE_COSTS = Object.fromEntries(
 
 export const CLASSIC_DISCIPLINES = CLASSIC_RULES.disciplines;
 export const CLASSIC_DIFFICULTY_DEFAULT = CLASSIC_RULES.dice.difficulty_default;
+
+/** Classic (Revised) ghouls: Ghouls: Fatal Addiction's creation and Blood Pool (classic.json "ghoul"). */
+export const CLASSIC_GHOUL = CLASSIC_RULES.ghoul;

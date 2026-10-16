@@ -49,4 +49,5 @@ def test_labels_and_briefs():
     assert "Hunger" in v5 and "Rouse" in v5
     classic = storyteller_rules_brief("classic", "vampire")
     assert "botch" in classic.lower() and "blood pool" in classic.lower()
+    assert "- Ghouls: a Blood Pool of vitae (max 10, 1 point per turn)" in classic
     assert "blood pool" not in storyteller_rules_brief("classic", "werewolf").lower()

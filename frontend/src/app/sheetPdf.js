@@ -1,11 +1,12 @@
 /**
  * "Export PDF" for a character sheet: GET /api/characters/<id>/sheet.pdf with the Bearer token (a plain
- * link wouldn't authenticate), then save the blob under the character's name.
+ * link wouldn't authenticate), then save the blob under the character's name. { flat: true } gets the
+ * print version (?flat=1): every value drawn as page text, no form fields, the same in every viewer.
  */
 import { API_URL, authFetch, getCurrentToken } from './http';
 
 /** 'Κωνσταντίνος / X?' → 'Κωνσταντίνος X.pdf': no path or reserved characters, keeps Greek. */
-export function pdfFileName(name) {
+export function pdfFileName(name, suffix = '') {
   const base = String(name || '')
     // eslint-disable-next-line no-control-regex
     .replace(/[\\/:*?"<>|\u0000-\u001f\u007f]+/g, ' ')
@@ -14,7 +15,7 @@ export function pdfFileName(name) {
     .replace(/\s+/g, ' ')
     .replace(/^[\s.]+|[\s.]+$/g, '')
     .slice(0, 80);
-  return `${base || 'character'}.pdf`;
+  return `${base || 'character'}${suffix}.pdf`;
 }
 
 /** US Letter where it's the norm, A4 everywhere else. */
@@ -24,9 +25,10 @@ export function defaultPaper(langs = typeof navigator !== 'undefined' ? navigato
 }
 
 /** Resolves { ok: true } once the download starts, or { ok: false, status }. */
-export async function downloadSheetPdf(characterId, name, { paper = defaultPaper() } = {}) {
+export async function downloadSheetPdf(characterId, name, { paper = defaultPaper(), flat = false } = {}) {
   const token = getCurrentToken();
-  const query = paper === 'letter' ? '?paper=letter' : '';
+  const params = [paper === 'letter' ? 'paper=letter' : '', flat ? 'flat=1' : ''].filter(Boolean);
+  const query = params.length ? `?${params.join('&')}` : '';
   let blob;
   try {
     const res = await authFetch(`${API_URL}/characters/${encodeURIComponent(characterId)}/sheet.pdf${query}`, {
@@ -41,7 +43,7 @@ export async function downloadSheetPdf(characterId, name, { paper = defaultPaper
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = pdfFileName(name);
+  a.download = pdfFileName(name, flat ? ' (print)' : '');
   a.rel = 'noopener';
   document.body.appendChild(a);
   a.click();

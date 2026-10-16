@@ -3,9 +3,11 @@ import { Button, Modal, Select } from '../../design';
 import { useApi, useAuth } from '../../app/AuthContext';
 import { errorText } from '../../app/http';
 import { editionOf } from '../../rules/rulesEdition';
+import { isGhoul } from '../../characterSheet/v5/ghoul';
 import { t } from '../../i18n';
 
-/** A character that doesn't belong to a chronicle yet (e.g. an imported sheet). */
+/** A character that doesn't belong to a chronicle yet (e.g. an imported sheet). A ghoul has none by
+ * design (it goes where its domitor goes): see isGhoul, it is never offered for a chronicle. */
 export const isUnassigned = (ch) => !!ch && (ch.campaign_id === null || ch.campaign_id === undefined);
 
 const WOD_LINES = ['vampire', 'werewolf', 'mage'];
@@ -109,7 +111,7 @@ export function UnassignedOffer({ campaign, onAssigned, toast }) {
   const load = useCallback(async () => {
     const r = await api('/characters/');
     const list = r.ok && Array.isArray(r.data.characters) ? r.data.characters : [];
-    setChars(list.filter((c) => user && String(c.user_id) === String(user.id) && isUnassigned(c) && fitsChronicle(c, campaign)));
+    setChars(list.filter((c) => user && String(c.user_id) === String(user.id) && isUnassigned(c) && !isGhoul(c) && fitsChronicle(c, campaign)));
   }, [api, user, campaign]);
   useEffect(() => {
     load();

@@ -88,7 +88,8 @@ _CLASSIC_BRIEF = """RULES: Classic World of Darkness (Revised Storyteller system
 - Traits: Attributes (Physical/Social/Mental), Abilities (Talents/Skills/Knowledges), Backgrounds, Virtues, Willpower, Humanity/Path.
 - Never use V5 terms (Hunger dice, Rouse checks, messy criticals, Blood Potency) in this chronicle."""
 
-_CLASSIC_VAMPIRE_EXTRA = """- Vampires: blood pool (by Generation), spend blood for Disciplines/healing/boosting Physical Attributes; Frenzy and Rotschreck are Virtue rolls (Self-Control/Courage)."""
+_CLASSIC_VAMPIRE_EXTRA = """- Vampires: blood pool (by Generation), spend blood for Disciplines/healing/boosting Physical Attributes; Frenzy and Rotschreck are Virtue rolls (Self-Control/Courage).
+- Ghouls: a Blood Pool of vitae (max 10, 1 point per turn), Potence 1, a Blood Bond to the domitor (three drinks bind); frenzy difficulties lower than a vampire's."""
 
 _V5_BRIEF = """RULES: Vampire: The Masquerade 5th Edition (V5). Use ONLY these mechanics.
 - Dice: pools of d10 = Attribute + Skill. Each die showing 6-10 is a success. Difficulty = number of successes needed. No botches; 1s cancel nothing.

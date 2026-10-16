@@ -3,6 +3,10 @@ import './sheet.css';
 import DotTrack from './characterCreation/DotTrack';
 import ResponsiveSheetBlock from './characterCreation/ResponsiveSheetBlock';
 import V5CharacterSheetView from './V5CharacterSheetView';
+import V5GhoulSheetView from './V5GhoulSheetView';
+import ClassicGhoulSheetView from './ClassicGhoulSheetView';
+import RetainersBlock from './RetainersBlock';
+import { isGhoul } from '../characterSheet/v5/ghoul';
 import SavedPointsBlock from './SavedPointsBlock';
 import SheetPdfButton from './SheetPdfButton';
 import { editionLabel, editionOf, V5 } from '../rules/rulesEdition';
@@ -31,12 +35,19 @@ function attrPoolLabel(attrs, keys) {
 /**
  * Read-only oWoD-style sheet (dots + sections) for viewing a sealed character — similar layout to the forge.
  * V5 sheets add the saved points block; `onChanged` reloads the sheet after a spend was applied.
+ * A ghoul's sheet (wod_meta.sheet_kind 'ghoul') shows V5GhoulSheetView (V5) or ClassicGhoulSheetView
+ * on top of the Classic blocks (Classic: it has a Blood Pool). `onOpenSheet(id)` opens another sheet
+ * (a ghoul's domitor, a vampire's ghoul); `onAddGhoul(id)` opens the ghoul forge, offered when
+ * `viewerId` owns the character (a V5 or a Classic vampire).
  */
-export default function CharacterSheetModal({ character, gameSystem, onClose, onChanged }) {
+export default function CharacterSheetModal({ character, gameSystem, onClose, onChanged, onOpenSheet, onAddGhoul, viewerId }) {
   if (!character) return null;
 
   const gs = String(gameSystem || character.system_type || '').toLowerCase();
   const isV5Sheet = editionOf(character) === V5;
+  const ghoul = isGhoul(character);
+  const ghoulOf = ghoul ? character.domitor?.name || character.wod_meta?.ghoul?.domitor?.name : null;
+  const owner = viewerId != null && String(character.user_id) === String(viewerId);
   const wm = character.wod_meta && typeof character.wod_meta === 'object' ? character.wod_meta : {};
   const attrs = character.attributes && typeof character.attributes === 'object' ? character.attributes : {};
   const skillsRoot = character.skills && typeof character.skills === 'object' ? character.skills : {};
@@ -139,18 +150,23 @@ export default function CharacterSheetModal({ character, gameSystem, onClose, on
         character.campaign_name || gs === 'vampire' || isV5Sheet ? (
           <span className="sr-sheet__sub">
             {character.campaign_name ? <span>{character.campaign_name}</span> : null}
+            {ghoulOf ? <span>{t('sheet:ghoul.ghoulOf', 'Ghoul of {{domitor}}', { domitor: ghoulOf })}</span> : null}
             {gs === 'vampire' || isV5Sheet ? <Badge edition={editionLabel(character)} tone={isV5Sheet ? 'blood' : 'neutral'} /> : null}
           </span>
         ) : null
       }
     >
           <div className="sr-sheet__body" data-line={theme}>
-            {isV5Sheet ? (
+            {ghoul && isV5Sheet ? (
+              <V5GhoulSheetView character={character} onOpenSheet={onOpenSheet} />
+            ) : isV5Sheet ? (
               <>
-                <V5CharacterSheetView character={character} />
+                <V5CharacterSheetView character={character} onOpenSheet={onOpenSheet} onAddGhoul={owner ? onAddGhoul : null} />
                 <SavedPointsBlock character={character} onChanged={onChanged} />
               </>
             ) : (
+            <>
+            {ghoul ? <ClassicGhoulSheetView character={character} onOpenSheet={onOpenSheet} /> : (
             <>
             <p style={{ color: 'var(--sr-bone-500)', fontSize: '13px', marginTop: 0, lineHeight: 1.5 }}>
               {t('sheet:classicIntro', 'Classic WoD–style sheet (read-only). Numbers match your sealed chronicle record.')}
@@ -291,6 +307,8 @@ export default function CharacterSheetModal({ character, gameSystem, onClose, on
                 </div>
               )}
             </ResponsiveSheetBlock>
+            </>
+            )}
 
             <ResponsiveSheetBlock sectionId="view-attr" title={<Term id="attributes" />} accent={accent}>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '16px' }}>
@@ -337,6 +355,9 @@ export default function CharacterSheetModal({ character, gameSystem, onClose, on
                   <p style={{ color: 'var(--sr-bone-300)', whiteSpace: 'pre-wrap', marginTop: 8 }}>{mf.notes}</p>
                 ) : null}
               </ResponsiveSheetBlock>
+            ) : null}
+            {gs === 'vampire' && !ghoul ? (
+              <RetainersBlock character={character} onOpenSheet={onOpenSheet} onAddGhoul={owner ? onAddGhoul : null} accent={accent} sectionId="view-retainers" />
             ) : null}
             </>
             )}

@@ -119,10 +119,23 @@ def can_view_character_sheet(cursor: Any, user_id: int, character: Any) -> bool:
     """Who may read a full character sheet (GET /api/characters/<id> and its PDF).
 
     The character's owner, the Storyteller of its chronicle (the campaign creator), and site
-    admins/helpers.
+    admins/helpers. A ghoul has no chronicle of its own: the Storyteller of its domitor's chronicle
+    may read it (the domitor being the owner's character the ghoul's sheet names).
     """
     if not character:
         return False
     if str(character.get("user_id")) == str(user_id):
         return True
-    return is_campaign_storyteller_or_staff(cursor, user_id, character.get("campaign_id"))
+    campaign_id = character.get("campaign_id")
+    if campaign_id is None:
+        from services.retainers import domitor_id
+
+        dom = domitor_id(character.get("wod_meta"))
+        if dom is not None:
+            cursor.execute(
+                "SELECT campaign_id FROM characters WHERE id = %s AND user_id = %s",
+                (dom, character.get("user_id")),
+            )
+            row = cursor.fetchone()
+            campaign_id = row.get("campaign_id") if row else None
+    return is_campaign_storyteller_or_staff(cursor, user_id, campaign_id)

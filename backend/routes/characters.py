@@ -13,8 +13,9 @@ from flask_jwt_extended import jwt_required, get_jwt_identity
 import logging
 import json
 from datetime import datetime
-from services.rules_edition import V5, edition_of
-from services.character_sheet_v5 import sanity_check_v5, stamp_v5_meta
+from services.rules_edition import CLASSIC, V5, edition_of
+from services.classic_ghoul import CLASSIC_GHOUL_RULES_VERSION, domitor_generation, sanity_check_classic_ghoul
+from services.character_sheet_v5 import is_ghoul, sanity_check_v5, stamp_v5_meta
 from services.creation_settings import creation_problems
 from services.language import normalize_language
 from services.saved_points import clamp_saved
@@ -22,6 +23,8 @@ from services.log_safety import safe_log_value
 from services.playing_character import can_view_character_sheet, is_campaign_storyteller_or_staff
 from services.v5_catalog import load_catalog
 from services.v5_chargen import validate_creation
+from services.v5_ghoul_chargen import validate_ghoul_creation
+from services.retainers import domitor_id, domitor_summary, load_domitor, retainer_summaries
 
 from database import (
     get_db,
@@ -43,6 +46,8 @@ MAX_PORTRAIT_URL_LEN = 524288
 # reason, at}, problems: [{code, params}]}; `reason: 'catalog_missing' | 'catalog_error'` when the
 # rules couldn't be checked.
 CREATION_RULES_VERSION = 'v2'
+# A ghoul's record says which check it passed (services/v5_ghoul_chargen.py).
+GHOUL_RULES_VERSION = 'ghoul-v1'
 CREATION_OVERRIDE_REASON_MAX = 500
 
 
@@ -61,11 +66,12 @@ def _override_reason(raw):
 _CATALOG_CORE = ('clans', 'disciplines', 'predator_types')
 
 
-def _creation_check(attributes, skills, wod_meta, settings):
+def _creation_check(attributes, skills, wod_meta, settings, domitor=None):
     """
-    validate_creation() on a V5 sheet: (problems, status). status is 'ok', 'catalog_missing' (no
-    catalog, or one without clans, Disciplines or predator types) or 'catalog_error' (the catalog
-    or the check itself failed). The sheet isn't refused for those two: its record says why.
+    validate_creation() on a V5 sheet (validate_ghoul_creation() on a ghoul's, with its domitor's
+    row): (problems, status). status is 'ok', 'catalog_missing' (no catalog, or one without clans,
+    Disciplines or predator types) or 'catalog_error' (the catalog or the check itself failed). The
+    sheet isn't refused for those two: its record says why.
     """
     try:
         catalog = load_catalog()
@@ -78,6 +84,8 @@ def _creation_check(attributes, skills, wod_meta, settings):
     meta = {k: v for k, v in (wod_meta if isinstance(wod_meta, dict) else {}).items() if k != 'creation'}
     payload = {'attributes': attributes, 'skills': skills, 'wod_meta': meta}
     try:
+        if is_ghoul(meta):
+            return validate_ghoul_creation(payload, catalog, settings, domitor), 'ok'
         return validate_creation(payload, catalog, settings), 'ok'
     except Exception as e:
         logger.error("V5 creation check failed: %s", safe_log_value(e))
@@ -147,6 +155,7 @@ def _sheet_locked_bool(val):
 
 
 def _character_public_dict(row, owner_name=None, campaign_name=None):
+    wod_meta = _wod_meta_parse(row.get('wod_meta'))
     d = {
         'id': row['id'],
         'name': row['name'],
@@ -161,7 +170,9 @@ def _character_public_dict(row, owner_name=None, campaign_name=None):
         'updated_at': row['updated_at'],
         'portrait_url': row.get('portrait_url'),
         'sheet_locked': _sheet_locked_bool(row.get('sheet_locked')),
-        'wod_meta': _wod_meta_parse(row.get('wod_meta')),
+        'wod_meta': wod_meta,
+        # 'ghoul' for a ghoul's sheet (wod_meta.sheet_kind), else None
+        'sheet_kind': wod_meta.get('sheet_kind') if isinstance(wod_meta, dict) else None,
         'rules_edition': edition_of(row),
         'is_active': bool(row.get('is_active', True)),
         'play_suspended': _sheet_locked_bool(row.get('play_suspended')),
@@ -318,6 +329,9 @@ def create_character():
         if not data:
             return jsonify({'error': 'No data provided'}), 400
 
+        if isinstance(data.get('wod_meta'), dict) and data['wod_meta'].get('sheet_kind') == 'ghoul':
+            return _create_ghoul(current_user_id, data)
+
         name = (data.get('name') or '').strip()
         raw_cid = data.get('campaign_id')
         try:
@@ -467,7 +481,8 @@ def create_character():
         else:
             portrait_url = None
 
-        sheet_locked = bool(data.get('sheet_locked', True))
+        # Players' sheets are locked at creation (changes go through downtime); staff may leave one open.
+        sheet_locked = bool(data.get('sheet_locked', True)) if user_role in ('admin', 'helper') else True
         is_active = bool(data.get('is_active', True))
 
         cursor.execute(
@@ -564,6 +579,242 @@ def create_character():
         return jsonify({'error': 'Failed to create character'}), 500
     finally:
         if 'db' in locals():
+            db.close()
+
+
+def _creation_record(found, status, override_reason, by, rules):
+    """wod_meta.creation for a sheet the check passed, or an override let in (see the module note)."""
+    stamp = _utc_stamp()
+    checked = status == 'ok'
+    if override_reason is not None and (found or not checked):
+        record = {
+            'validated': False,
+            'at': stamp,
+            'rules': rules,
+            'override': {'by': by, 'reason': override_reason, 'at': stamp},
+            'problems': found,
+        }
+        if not checked:
+            record['reason'] = status
+        return record
+    if checked:
+        return {'validated': True, 'at': stamp, 'rules': rules}
+    return {'validated': False, 'at': stamp, 'rules': rules, 'reason': status}
+
+
+def _create_ghoul(current_user_id, data):
+    """
+    POST /api/characters/ for a ghoul's sheet (wod_meta.sheet_kind 'ghoul',
+    docs/CHARACTER_SHEET_BLOCKS.md). A ghoul has no chronicle of its own (campaign_id must be null)
+    and belongs to its domitor's owner; the domitor (wod_meta.ghoul.domitor.character_id) is a V5
+    vampire of the caller's (any for staff; a player's of their chronicle for its Storyteller, with
+    creation_override). A player's ghoul is locked like any player's sheet.
+    The server copies the domitor's name and clan onto the sheet, checks it with
+    validate_ghoul_creation (the domitor's chronicle settings when it has one) and records the
+    result as for vampires (rules 'ghoul-v1'); the domitor's Storyteller or staff may override.
+    """
+    name = (data.get('name') or '').strip()
+    system_type = (data.get('system_type') or 'vampire').strip().lower()
+    if not name:
+        return jsonify({'error': 'Name is required'}), 400
+    if system_type != 'vampire':
+        return jsonify({
+            'error': 'A ghoul is a Vampire: The Masquerade sheet.',
+            'error_code': 'ghoul_not_vampire_line',
+        }), 400
+    if data.get('campaign_id') is not None:
+        return jsonify({
+            'error': 'A ghoul has no chronicle of its own; it goes where its domitor goes.',
+            'error_code': 'ghoul_has_no_chronicle',
+        }), 400
+    wm = data['wod_meta']
+    dom_id = domitor_id(wm)
+    if dom_id is None:
+        return jsonify({"error": "Choose the ghoul's domitor.", 'error_code': 'ghoul_domitor_missing'}), 400
+
+    db = None
+    try:
+        db = get_db()
+        cursor = db.cursor()
+        _ensure_character_schema(cursor)
+        db.commit()
+
+        cursor.execute("SELECT role FROM users WHERE id = %s", (current_user_id,))
+        ur = cursor.fetchone()
+        if not ur:
+            return jsonify({'error': 'User not found'}), 404
+        staff = ur['role'] in ('admin', 'helper')
+        admin = ur['role'] == 'admin'
+        domitor = load_domitor(cursor, dom_id)
+        if not domitor:
+            return jsonify({'error': 'The domitor was not found.', 'error_code': 'ghoul_domitor_not_found'}), 404
+        # the domitor's owner or staff; the Storyteller of the domitor's chronicle only to approve an
+        # exception for their player (with creation_override)
+        if (
+            str(domitor.get('user_id')) != str(current_user_id)
+            and not staff
+            and not (
+                data.get('creation_override') is not None
+                and domitor.get('campaign_id') is not None
+                and is_campaign_storyteller_or_staff(cursor, current_user_id, domitor['campaign_id'])
+            )
+        ):
+            return jsonify({
+                'error': 'A ghoul can only be made for one of your own characters.',
+                'error_code': 'ghoul_domitor_not_yours',
+            }), 403
+        dom_meta = _wod_meta_parse(domitor.get('wod_meta'))
+        dom_meta = dom_meta if isinstance(dom_meta, dict) else {}
+        if (domitor.get('system_type') or '').strip().lower() != 'vampire' or is_ghoul(dom_meta):
+            return jsonify({
+                'error': "A ghoul's domitor is a vampire (V5 or Classic) of the Vampire line.",
+                'error_code': 'ghoul_domitor_not_vampire',
+            }), 400
+        owner_id = int(domitor['user_id'])
+        # a ghoul follows its domitor's rules: a V5 ghoul (no Blood Pool) or a Classic one (Blood Pool 10)
+        classic = edition_of(domitor) != V5
+
+        override = data.get('creation_override')
+        override_reason = None
+        if override is not None:
+            override_reason = _override_reason(override)
+            if override_reason is None:
+                return jsonify({
+                    'error': f'creation_override needs a reason (1-{CREATION_OVERRIDE_REASON_MAX} characters).',
+                    'error_code': 'creation_override_reason',
+                }), 400
+            # as for a sheet without a chronicle: the domitor's Storyteller or staff, an admin when it has none
+            if not (
+                is_campaign_storyteller_or_staff(cursor, current_user_id, domitor['campaign_id'])
+                if domitor.get('campaign_id') is not None else admin
+            ):
+                return jsonify({
+                    'error': (
+                        "Only the domitor's Storyteller or staff can approve a ghoul outside the "
+                        'creation rules (a site admin when the domitor has no chronicle).'
+                    ),
+                    'error_code': 'creation_override_forbidden',
+                }), 403
+
+        if classic:
+            # Classic sheets have no creation check (the Classic forge holds the budgets, as for
+            # Classic vampires): the server checks the bounds and records what it did.
+            wm_dict = {k: v for k, v in wm.items() if k != 'creation'}
+            # an object here: domitor_id(wm) above refused a missing / non-object ghoul block (400)
+            ghoul = dict(wm_dict['ghoul'])
+            ghoul['domitor'] = {
+                'character_id': dom_id,
+                'name': domitor.get('name'),
+                'clan': dom_meta.get('clan'),
+                'generation': domitor_generation(dom_meta),
+            }
+            wm_dict['ghoul'] = ghoul
+            problems = sanity_check_classic_ghoul(data.get('attributes'), data.get('skills'), wm_dict)
+            if problems:
+                return jsonify({
+                    'error': 'Invalid Classic ghoul sheet: ' + '; '.join(problems[:10]),
+                    'error_code': 'classic_ghoul_bounds',
+                    'problems': problems,
+                }), 400
+            stamp = _utc_stamp()
+            wm_dict['creation'] = {'rules': CLASSIC_GHOUL_RULES_VERSION, 'checked': 'bounds', 'at': stamp}
+            if override_reason is not None:
+                wm_dict['creation']['override'] = {'by': current_user_id, 'reason': override_reason, 'at': stamp}
+        else:
+            wm_dict = stamp_v5_meta(wm)
+            ghoul = dict(wm_dict['ghoul'])
+            # the server's copy of who the domitor is, for the PDF and the AI prompt
+            ghoul['domitor'] = {'character_id': dom_id, 'name': domitor.get('name'), 'clan': dom_meta.get('clan')}
+            wm_dict['ghoul'] = ghoul
+            problems = sanity_check_v5(data.get('attributes'), data.get('skills'), wm_dict)
+            if problems:
+                return jsonify({
+                    'error': 'Invalid V5 sheet: ' + '; '.join(problems[:10]),
+                    'problems': problems,
+                }), 400
+            settings = domitor.get('creation_settings') if domitor.get('campaign_id') is not None else None
+            found, status = _creation_check(data.get('attributes'), data.get('skills'), wm_dict, settings, domitor)
+            if found and override_reason is None:
+                return jsonify({
+                    'error': (
+                        "This ghoul breaks the creation rules: "
+                        + ', '.join(dict.fromkeys(p['code'] for p in found)) + '.'
+                    ),
+                    'error_code': 'creation_invalid',
+                    'problems': found,
+                }), 400
+            wm_dict['creation'] = _creation_record(found, status, override_reason, current_user_id,
+                                                   GHOUL_RULES_VERSION)
+
+        portrait_url = data.get('portrait_url')
+        if portrait_url is not None and portrait_url != '':
+            if not isinstance(portrait_url, str) or len(portrait_url) > MAX_PORTRAIT_URL_LEN:
+                return jsonify({'error': 'portrait_url is invalid or too large'}), 400
+        else:
+            portrait_url = None
+
+        cursor.execute(
+            "SELECT id FROM characters WHERE name = %s AND user_id = %s AND campaign_id IS NULL",
+            (name, owner_id),
+        )
+        if cursor.fetchone():
+            return jsonify({'error': 'A character without a chronicle already has this name.'}), 409
+
+        now = datetime.utcnow()
+        cursor.execute(
+            """
+            INSERT INTO characters (
+                name, system_type, attributes, skills, background, merits_flaws,
+                user_id, campaign_id, portrait_url, is_active, sheet_locked,
+                wod_meta, created_at, updated_at, rules_edition
+            )
+            VALUES (%s, %s, %s, %s, %s, %s, %s, NULL, %s, %s, %s, %s, %s, %s, %s)
+            RETURNING id
+            """,
+            (
+                name,
+                'vampire',
+                json.dumps(data.get('attributes') or {}),
+                json.dumps(data.get('skills') or {}),
+                data.get('background') or '',
+                json.dumps(data.get('merits_flaws') or {}),
+                owner_id,
+                portrait_url,
+                bool(data.get('is_active', True)),
+                bool(data.get('sheet_locked', True)) if staff else True,  # a player's ghoul is locked
+                json.dumps(wm_dict),
+                now,
+                now,
+                CLASSIC if classic else V5,
+            ),
+        )
+        character_id = cursor.fetchone()['id']
+        db.commit()
+        logger.info(
+            "Ghoul '%s' (domitor %s) created by user %s",
+            safe_log_value(name),
+            safe_log_value(dom_id),
+            safe_log_value(current_user_id),
+        )
+        return jsonify({
+            'message': 'Ghoul created',
+            'character_id': character_id,
+            'name': name,
+            'rules_edition': CLASSIC if classic else V5,
+            'sheet_kind': 'ghoul',
+            'domitor_id': dom_id,
+        }), 201
+    except _INTEGRITY_ERRORS as e:
+        logger.exception("Error creating ghoul (integrity): %s", e)
+        return jsonify({
+            'error': 'Could not create the ghoul. The name may already be taken.',
+            'error_code': 'character_create_integrity',
+        }), 409
+    except Exception as e:
+        logger.exception("Error creating ghoul: %s", e)
+        return jsonify({'error': 'Failed to create character'}), 500
+    finally:
+        if db is not None:
             db.close()
 
 
@@ -727,6 +978,7 @@ def get_character(character_id):
             owner_name=character['owner_name'],
             campaign_name=character['campaign_name'],
         )
+        _add_ghoul_links(cursor, character, ch)
         return jsonify({'character': ch}), 200
         
     except Exception as e:
@@ -735,6 +987,20 @@ def get_character(character_id):
     finally:
         if 'db' in locals():
             db.close()
+
+def _add_ghoul_links(cursor, row, ch):
+    """A ghoul's sheet gets `domitor` ({id, name, clan, generation, campaign_id, campaign_name,
+    exists}); a vampire's (V5 or Classic) gets `retainers` (its ghouls: [{id, name, portrait_url,
+    template, kind, retainer_dots, rules_edition, is_active}]). A failed lookup leaves them out
+    rather than failing the sheet."""
+    try:
+        if ch.get('sheet_kind') == 'ghoul':
+            ch['domitor'] = domitor_summary(cursor, row)
+        elif (row.get('system_type') or '').strip().lower() == 'vampire':
+            ch['retainers'] = retainer_summaries(cursor, row.get('user_id'), row.get('id'))
+    except Exception as e:  # noqa: BLE001 - the sheet still loads
+        logger.warning(f"Ghoul links of character {safe_log_value(row.get('id'))}: {safe_log_value(e)}")
+
 
 def _requester_ui_language(cursor, user_id):
     """users.ui_language of the requester ('en' / 'el'); 'en' when unset or unreadable."""
@@ -751,6 +1017,9 @@ def _requester_ui_language(cursor, user_id):
 def character_sheet_pdf(character_id):
     """Fillable PDF of the sheet (?paper=a4|letter): the owner, the chronicle's Storyteller, staff.
 
+    ?flat=1 is the print version: the same sheet with every value drawn as page text and no form
+    fields, so it looks the same in every viewer.
+
     Anyone else gets 404, so the endpoint doesn't tell which character ids exist.
     """
     try:
@@ -760,6 +1029,7 @@ def character_sheet_pdf(character_id):
     paper = (request.args.get('paper') or 'a4').strip().lower()
     if paper not in ('a4', 'letter'):
         paper = 'a4'
+    flat = (request.args.get('flat') or '').strip().lower() in ('1', 'true', 'yes')
     db = None
     try:
         db = get_db()
@@ -775,6 +1045,7 @@ def character_sheet_pdf(character_id):
         if not can_view_character_sheet(cursor, current_user_id, row):
             return jsonify({'error': 'Character not found'}), 404
         ch = _character_public_dict(row, owner_name=row['owner_name'], campaign_name=row['campaign_name'])
+        _add_ghoul_links(cursor, row, ch)
         lang = _requester_ui_language(cursor, current_user_id) if ch['rules_edition'] == V5 else 'en'
     except Exception as e:
         logger.error(f"Error loading character {safe_log_value(character_id)} for PDF: {safe_log_value(e)}")
@@ -794,13 +1065,17 @@ def character_sheet_pdf(character_id):
         except Exception as e:  # noqa: BLE001 - the sheet still prints, without the Reference page
             logger.warning(f"V5 catalog unreadable, sheet PDF without Reference page: {safe_log_value(e)}")
 
+    # a ghoul's chronicle is its domitor's
+    chronicle = ch.get('campaign_name') or ((ch.get('domitor') or {}).get('campaign_name')) or ''
     try:
-        pdf = build_sheet_pdf(ch, paper=paper, chronicle_name=ch.get('campaign_name') or '',
-                              player_name=ch.get('owner_name') or '', catalog=catalog, lang=lang)
+        pdf = build_sheet_pdf(ch, paper=paper, chronicle_name=chronicle,
+                              player_name=ch.get('owner_name') or '', catalog=catalog, lang=lang, flat=flat)
     except Exception as e:
         logger.exception(f"Error building sheet PDF for character {safe_log_value(character_id)}: {safe_log_value(e)}")
         return jsonify({'error': 'Failed to build the PDF'}), 500
     name = safe_filename(ch.get('name'))
+    if flat:
+        name += ' (print)'
     ascii_name = name.encode('ascii', 'ignore').decode().strip() or 'character'
     resp = Response(pdf, mimetype='application/pdf')
     resp.headers['Content-Disposition'] = (
@@ -918,7 +1193,30 @@ def update_character(character_id):
                 updates.append("is_active = %s")
                 params.append(bool(data['is_active']))
 
-        if edition_of(character) == V5 and any(
+        stored_meta = _wod_meta_parse(character.get('wod_meta'))
+        if edition_of(character) != V5 and is_ghoul(stored_meta) and any(
+            k in data for k in ('attributes', 'skills', 'wod_meta')
+        ):
+            # a Classic ghoul keeps its bounds (services/classic_ghoul.py) and its creation record
+            new_meta = None
+            if 'wod_meta' in data and current_user['role'] in ('admin', 'helper'):
+                new_meta = dict(data['wod_meta'] or {})
+                new_meta.pop('creation', None)
+                if isinstance(stored_meta, dict) and stored_meta.get('creation') is not None:
+                    new_meta['creation'] = stored_meta['creation']
+                params[updates.index("wod_meta = %s")] = json.dumps(new_meta)
+            problems = sanity_check_classic_ghoul(
+                data.get('attributes') if 'attributes' in data else None,
+                data.get('skills') if 'skills' in data else None,
+                new_meta,
+            )
+            if problems:
+                return jsonify({
+                    'error': 'Invalid Classic ghoul sheet: ' + '; '.join(problems[:10]),
+                    'error_code': 'classic_ghoul_bounds',
+                    'problems': problems,
+                }), 400
+        elif edition_of(character) == V5 and any(
             k in data for k in ('attributes', 'skills', 'wod_meta')
         ):
             new_meta = None
@@ -1051,6 +1349,11 @@ def assign_character_to_chronicle(character_id):
         owner_id = int(character['user_id'])
         if actor['role'] not in ('admin', 'helper') and owner_id != current_user_id:
             return jsonify({'error': 'Access denied'}), 403
+        if is_ghoul(character.get('wod_meta')):
+            return jsonify({
+                'error': 'A ghoul has no chronicle of its own; it goes where its domitor goes.',
+                'error_code': 'ghoul_follows_domitor',
+            }), 400
         if character.get('campaign_id') is not None:
             return jsonify({
                 'error': 'This character already belongs to a chronicle.',
@@ -1175,7 +1478,8 @@ def creation_override(character_id):
     """
     Approve an existing V5 sheet outside the creation rules (an imported sheet, a house rule):
     {reason}. The Storyteller of the character's chronicle or staff may do it; a site admin
-    when the character has no chronicle. Stores wod_meta.creation = {validated: false,
+    when the character has no chronicle; for a ghoul, staff or the Storyteller of its domitor's
+    chronicle (an admin when the domitor has none); the ghoul check reruns with the domitor's row. Stores wod_meta.creation = {validated: false,
     override: {by, reason, at}, problems} with what the creation check finds now.
     """
     try:
@@ -1205,7 +1509,16 @@ def creation_override(character_id):
             db.rollback()
             return jsonify({'error': 'Character not found'}), 404
         campaign_id = character.get('campaign_id')
-        if campaign_id is None:
+        meta = _wod_meta_parse(character.get('wod_meta'))
+        meta = meta if isinstance(meta, dict) else {}
+        ghoul = is_ghoul(meta)
+        domitor = load_domitor(cursor, domitor_id(meta)) if ghoul else None
+        if domitor is not None and str(domitor.get('user_id')) != str(character.get('user_id')):
+            domitor = None  # not this owner's character any more: checked without it
+        if ghoul and campaign_id is None and (domitor or {}).get('campaign_id') is not None:
+            # the Storyteller of the domitor's chronicle, or staff
+            allowed = is_campaign_storyteller_or_staff(cursor, current_user_id, domitor['campaign_id'])
+        elif campaign_id is None:
             allowed = actor.get('role') == 'admin'
         else:
             allowed = is_campaign_storyteller_or_staff(cursor, current_user_id, campaign_id)
@@ -1229,8 +1542,8 @@ def creation_override(character_id):
         if campaign_id is not None:
             cursor.execute("SELECT creation_settings FROM campaigns WHERE id = %s", (campaign_id,))
             settings = (cursor.fetchone() or {}).get('creation_settings')
-        meta = _wod_meta_parse(character.get('wod_meta'))
-        meta = meta if isinstance(meta, dict) else {}
+        elif domitor is not None and domitor.get('campaign_id') is not None:
+            settings = domitor.get('creation_settings')
 
         def _json(col):
             try:
@@ -1239,12 +1552,12 @@ def creation_override(character_id):
                 return {}
             return v if isinstance(v, dict) else {}
 
-        found, status = _creation_check(_json('attributes'), _json('skills'), meta, settings)
+        found, status = _creation_check(_json('attributes'), _json('skills'), meta, settings, domitor)
         stamp = _utc_stamp()
         meta['creation'] = {
             'validated': False,
             'at': stamp,
-            'rules': CREATION_RULES_VERSION,
+            'rules': GHOUL_RULES_VERSION if ghoul else CREATION_RULES_VERSION,
             'override': {'by': current_user_id, 'reason': reason, 'at': stamp},
             'problems': found,
         }

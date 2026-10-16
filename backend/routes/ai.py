@@ -1698,6 +1698,18 @@ def get_character_context(user_id: int, campaign_id: int) -> dict:
         edition = edition_of(character)
         game_system = character['game_system'] or 'Unknown'
         formatted = format_character_for_prompt(dict(character), edition)
+        # the character's ghouls (V5 or Classic, by the domitor's edition) have no chronicle of
+        # their own: found by owner and domitor
+        try:
+            from services.character_prompt import format_retainers_for_prompt
+            from services.retainers import ghouls_of
+
+            ghouls = [g for g in ghouls_of(cursor, user_id, eid) if g.get('is_active') in (None, True, 1)]
+            retainers = format_retainers_for_prompt(character['name'], ghouls)
+            if retainers:
+                formatted += "\n\n" + retainers
+        except Exception as e:  # noqa: BLE001 - the character's own sheet still goes in
+            logger.warning(f"Retainers for character {eid} not loaded: {e}")
 
         character_data = {}
         if character.get('character_data'):

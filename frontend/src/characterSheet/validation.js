@@ -76,17 +76,23 @@ export function emptyVirtues() {
   return { conscience: VIRTUE_BASE, self_control: VIRTUE_BASE, courage: VIRTUE_BASE };
 }
 
-/** {physical, social, mental} dots to add, by primary/secondary/tertiary choice. */
-export function attributePools(primary) {
-  const [a, b, c] = ATTRIBUTE_PRIORITIES;
+/**
+ * {physical, social, mental} dots to add, by primary/secondary/tertiary choice.
+ * @param [priorities] - the budgets, highest first (a vampire's 7/5/3 by default; a ghoul's 6/4/3)
+ */
+export function attributePools(primary, priorities = ATTRIBUTE_PRIORITIES) {
+  const [a, b, c] = priorities;
   if (primary === 'social') return { physical: b, social: a, mental: c };
   if (primary === 'mental') return { physical: c, social: b, mental: a };
   return { physical: a, social: b, mental: c };
 }
 
-/** {talents, skills, knowledges} dots, by primary column choice (secondary/tertiary fixed as before). */
-export function abilityPools(primary) {
-  const [a, b, c] = ABILITY_PRIORITIES;
+/**
+ * {talents, skills, knowledges} dots, by primary column choice (secondary/tertiary fixed as before).
+ * @param [priorities] - the budgets, highest first (a vampire's 13/9/5 by default; a ghoul's 11/7/4)
+ */
+export function abilityPools(primary, priorities = ABILITY_PRIORITIES) {
+  const [a, b, c] = priorities;
   if (primary === 'skills') return { talents: b, skills: a, knowledges: c };
   if (primary === 'knowledges') return { talents: c, skills: b, knowledges: a };
   return { talents: a, skills: b, knowledges: c };
@@ -294,11 +300,20 @@ export function meritFlawPoints(meritRows) {
   return { merits, flaws, flawBonus: Math.min(flaws, FLAWS_MAX_POINTS) };
 }
 
+/** A vampire's freebie budget and costs (classic.json creation); a ghoul passes its own (classicGhoul.js). */
+export const VAMPIRE_FREEBIE_RULES = {
+  points: FREEBIE_POINTS,
+  costs: FREEBIE_COSTS,
+  disciplineDots: DISCIPLINE_DOTS,
+  backgroundDots: BACKGROUND_DOTS,
+};
+
 /**
  * Freebie points spent by a classic sheet.
  * Attributes/Abilities/Merits/Flaws apply to every Revised line; Disciplines,
- * Backgrounds, Virtues, Humanity and Willpower only to Vampire.
+ * Backgrounds, Virtues, Humanity and Willpower only to Vampire (and its ghouls).
  *
+ * @param [rules] - {points, costs, disciplineDots, backgroundDots}: VAMPIRE_FREEBIE_RULES by default
  * @returns {{ lines: Array<{key,label,dots,cost}>, spent, available, remaining, flaws }}
  */
 export function computeClassicFreebies({
@@ -316,7 +331,9 @@ export function computeClassicFreebies({
   willpowerBonus = 0,
   meritRows,
   nosferatu = false,
+  rules = VAMPIRE_FREEBIE_RULES,
 }) {
+  const costs = rules.costs;
   const lines = [];
   const push = (key, label, dots, perDot) => {
     if (dots > 0) lines.push({ key, label, dots, cost: dots * perDot });
@@ -327,28 +344,28 @@ export function computeClassicFreebies({
     (s, cat) => s + Math.max(0, added[cat] - (attrPools?.[cat] || 0)),
     0
   );
-  push('attributes', 'Attributes', attrExtra, FREEBIE_COSTS.attribute);
+  push('attributes', 'Attributes', attrExtra, costs.attribute);
 
   const ab = abilityDotBreakdown(abilities || {}, abilityPoolsSel || {}, customAbilities);
   const abExtra = Object.values(ab).reduce((s, x) => s + x.freebieDots, 0);
-  push('abilities', 'Abilities', abExtra, FREEBIE_COSTS.ability);
+  push('abilities', 'Abilities', abExtra, costs.ability);
 
   if (String(systemType || '').toLowerCase() === 'vampire') {
     const dSum = (disciplines || []).reduce((s, d) => s + int(d.dots), 0);
-    push('disciplines', 'Disciplines', Math.max(0, dSum - DISCIPLINE_DOTS), FREEBIE_COSTS.discipline);
+    push('disciplines', 'Disciplines', Math.max(0, dSum - rules.disciplineDots), costs.discipline);
     const bSum = (backgrounds || []).reduce((s, b) => s + int(b.dots), 0);
-    push('backgrounds', 'Backgrounds', Math.max(0, bSum - BACKGROUND_DOTS), FREEBIE_COSTS.background);
+    push('backgrounds', 'Backgrounds', Math.max(0, bSum - rules.backgroundDots), costs.background);
     const m = deriveClassicMorality(virtues, virtueFreebies);
-    push('virtues', 'Virtues', m.virtueFreebieDots, FREEBIE_COSTS.virtue);
-    push('humanity', 'Humanity', Math.max(0, int(humanityBonus)), FREEBIE_COSTS.humanity_or_path);
-    push('willpower', 'Willpower', Math.max(0, int(willpowerBonus)), FREEBIE_COSTS.willpower);
+    push('virtues', 'Virtues', m.virtueFreebieDots, costs.virtue);
+    push('humanity', 'Humanity', Math.max(0, int(humanityBonus)), costs.humanity_or_path);
+    push('willpower', 'Willpower', Math.max(0, int(willpowerBonus)), costs.willpower);
   }
 
   const mf = meritFlawPoints(meritRows);
   if (mf.merits > 0) lines.push({ key: 'merits', label: 'Merits', dots: mf.merits, cost: mf.merits });
 
   const spent = lines.reduce((s, l) => s + l.cost, 0);
-  const available = FREEBIE_POINTS + mf.flawBonus;
+  const available = rules.points + mf.flawBonus;
   return { lines, spent, available, remaining: available - spent, flaws: mf };
 }
 

@@ -87,7 +87,8 @@ test('profile shows the badge, and bringing a character in lists only fitting ch
   renderProfile();
   const card = (await screen.findByText('Volkan Kibar')).closest('.sr-char');
   expect(within(card).getByText('No chronicle yet')).toBeInTheDocument();
-  expect(within(card).queryByRole('link')).toBeNull();
+  // no chronicle link (a V5 vampire's only link is the ghoul forge)
+  expect(within(card).queryAllByRole('link').map((l) => l.textContent)).toEqual(['Add a ghoul retainer']);
   // a character in a chronicle keeps its chronicle link and has no bring action
   const other = screen.getByText('Theodore Doukas').closest('.sr-char');
   expect(within(other).getByRole('link', { name: 'Constantinople Nights' })).toBeInTheDocument();
@@ -151,4 +152,98 @@ test('play panel without a character offers fitting unassigned characters', asyn
   await waitFor(() => expect(onAssigned).toHaveBeenCalled());
   expect(mockApi).toHaveBeenCalledWith('/characters/10/assign', { method: 'POST', body: { campaign_id: 8 } });
   expect(toast).toHaveBeenCalledWith(expect.objectContaining({ tone: 'ok' }));
+});
+
+// --- ghouls: no chronicle by design ---------------------------------------------------------
+
+const ayla = {
+  id: 31, name: 'Ayla', user_id: 13, campaign_id: null, system_type: 'vampire', rules_edition: 'v5', sheet_kind: 'ghoul',
+  wod_meta: { edition: 'v5', sheet_kind: 'ghoul', ghoul: { template: 'gifted', domitor: { character_id: 10, name: 'Volkan Kibar' } } },
+  is_active: true,
+};
+
+test('a ghoul sits under its domitor, says whose it is, and is never brought into a chronicle', async () => {
+  mockApi.mockImplementation(async (path) =>
+    path === '/characters/' ? { ok: true, status: 200, data: { characters: [ayla, theodore, volkan] } } : { ok: false, status: 404, data: {} }
+  );
+  renderProfile();
+  const card = (await screen.findByText('Ayla')).closest('.sr-char');
+  expect(within(card).getByText('Ghoul of Volkan Kibar')).toBeInTheDocument();
+  expect(within(card).queryByText('No chronicle yet')).toBeNull();
+  expect(within(card).queryByRole('button', { name: 'Bring into a chronicle' })).toBeNull();
+  expect(within(card).queryByRole('link', { name: 'Add a ghoul retainer' })).toBeNull();
+  // the ghoul comes right after its domitor
+  const names = [...document.querySelectorAll('.sr-char__name')].map((n) => n.textContent.replace('↳ ', ''));
+  expect(names).toEqual(['Theodore Doukas', 'Volkan Kibar', 'Ayla']);
+  // a V5 vampire and a Classic one both offer the ghoul forge (of their own edition)
+  const volkanCard = screen.getByText('Volkan Kibar').closest('.sr-char');
+  expect(within(volkanCard).getByRole('link', { name: 'Add a ghoul retainer' })).toHaveAttribute('href', '/profile/characters/new?ghoul_of=10');
+  expect(within(screen.getByText('Theodore Doukas').closest('.sr-char')).getByRole('link', { name: 'Add a ghoul retainer' })).toHaveAttribute(
+    'href',
+    '/profile/characters/new?ghoul_of=8'
+  );
+});
+
+test("a Classic vampire's ghoul sits under it too", async () => {
+  const marta = {
+    id: 32, name: 'Marta Ionescu', user_id: 13, campaign_id: null, system_type: 'vampire', rules_edition: 'classic', sheet_kind: 'ghoul',
+    wod_meta: { sheet_kind: 'ghoul', ghoul: { kind: 'vassal', domitor: { character_id: 8, name: 'Theodore Doukas' } }, blood_pool: { max: 10, current: 6, per_turn: 1 } },
+    is_active: true,
+  };
+  mockApi.mockImplementation(async (path) =>
+    path === '/characters/' ? { ok: true, status: 200, data: { characters: [marta, volkan, theodore] } } : { ok: false, status: 404, data: {} }
+  );
+  renderProfile();
+  const card = (await screen.findByText('Marta Ionescu')).closest('.sr-char');
+  expect(within(card).getByText('Ghoul of Theodore Doukas')).toBeInTheDocument();
+  expect(within(card).queryByRole('button', { name: 'Bring into a chronicle' })).toBeNull();
+  expect(within(card).queryByRole('link', { name: 'Add a ghoul retainer' })).toBeNull();
+  const names = [...document.querySelectorAll('.sr-char__name')].map((n) => n.textContent.replace('↳ ', ''));
+  expect(names.indexOf('Marta Ionescu')).toBe(names.indexOf('Theodore Doukas') + 1);
+});
+
+test('the play panel never offers a ghoul', async () => {
+  mockApi.mockImplementation(async (path) =>
+    path === '/characters/' ? { ok: true, status: 200, data: { characters: [ayla] } } : { ok: false, status: 404, data: {} }
+  );
+  render(
+    <DesignProvider>
+      <MemoryRouter>
+        <MemberPanel campaign={mockChronicles[0]} character={null} members={[]} user={{ id: 13 }} onCharacterAssigned={() => {}} toast={() => {}} />
+      </MemoryRouter>
+    </DesignProvider>
+  );
+  await waitFor(() => expect(mockApi).toHaveBeenCalledWith('/characters/'));
+  expect(screen.queryByRole('button', { name: 'Bring Ayla here' })).toBeNull();
+});
+
+test("the ghoul page opens the forge of the domitor's edition", async () => {
+  const CharacterCreatePage = require('../CharacterCreatePage').default;
+  mockApi.mockImplementation(async (path) =>
+    path === '/characters/' ? { ok: true, status: 200, data: { characters: [volkan, theodore] } } : { ok: false, status: 404, data: {} }
+  );
+  const page = (id) =>
+    render(
+      <DesignProvider>
+        <ToastProvider>
+          <MemoryRouter initialEntries={[`/profile/characters/new?ghoul_of=${id}`]}>
+            <Routes>
+              <Route path="/profile/characters/new" element={<CharacterCreatePage />} />
+            </Routes>
+          </MemoryRouter>
+        </ToastProvider>
+      </DesignProvider>
+    );
+  const classic = page(8);
+  expect(await screen.findByText('Ghoul forge · Classic (Revised)')).toBeInTheDocument();
+  expect(screen.getByText(/A Classic vampire's ghoul is a Classic sheet/)).toBeInTheDocument();
+  classic.unmount();
+  const v5 = page(10);
+  expect(await screen.findByText('Ghoul forge · V5')).toBeInTheDocument();
+  v5.unmount();
+  // an id that isn't one of yours: a message, not another vampire's forge
+  page(999);
+  expect(await screen.findByText(/isn't one of your characters, or can't have ghouls/)).toBeInTheDocument();
+  expect(screen.queryByText(/Ghoul forge/)).not.toBeInTheDocument();
+  expect(screen.getByRole('button', { name: 'Back to your characters' })).toBeInTheDocument();
 });

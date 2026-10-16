@@ -12,6 +12,7 @@ This document describes data fields, API routes, and UI behavior for leaving a c
 - **Switching PCs inside one chronicle:** Players may set their playing character the **first** time (or when unchanged). Changing to **another** PC in the **same** chronicle requires the chronicle **creator**, or site **admin** / **helper**.
 - **Another chronicle:** Binding and switches are evaluated **per campaign**; activity in chronicle B is not blocked by chronicle A’s binding.
 - **Characters without a chronicle:** `characters.campaign_id` may be `NULL` (e.g. a sheet imported for a new player who isn't in a chronicle yet). The owner and admins/helpers see it in `GET /api/characters/` and `GET /api/characters/<id>` with `campaign_id: null` and no `campaign_name`; the character's own `rules_edition` column (and `wod_meta.edition` on V5 sheets) gives its edition. It can't be played, and downtime requests for it are refused (`400`, `character_has_no_chronicle`) until it is brought into a chronicle. It doesn't count as "a locked character in another chronicle" for the one-locked-character rule.
+- **Ghouls** (either edition: a V5 vampire's ghoul is a V5 sheet, a Classic vampire's a Classic one with a Blood Pool; `wod_meta.sheet_kind = 'ghoul'`, docs/CHARACTER_SHEET_BLOCKS.md): `campaign_id` is `NULL` by design and stays so. A ghoul belongs to its domitor's owner and goes where its domitor goes: the Storyteller of the domitor's chronicle may read its sheet and PDF (`can_view_character_sheet` follows `wod_meta.ghoul.domitor.character_id` to the owner's character and its chronicle), it is never a playing character, it isn't offered in the play panel or listed for downtime, and `assign` refuses it (`400`, `ghoul_follows_domitor`). Creating one never runs the one-locked-character rule.
 
 ## Schema (PostgreSQL)
 
@@ -52,7 +53,8 @@ Site-wide campaign membership override remains: `POST /api/admin/users/<user_id>
 - `tests/test_campaign_membership.py` — PostgreSQL integration: detach → blocked join to unrelated chronicle; storyteller sets playing character after player switch blocked.
 
 - `backend/tests/unit/test_unassigned_characters.py` — list/get of characters without a chronicle and the assign rules (SQLite, no server).
-- `frontend/src/features/profile/__tests__/unassignedCharacters.test.jsx` — badge, bring-in dialog, play panel offer.
+- `frontend/src/features/profile/__tests__/unassignedCharacters.test.jsx` — badge, bring-in dialog, play panel offer; ghouls under their domitor, never offered.
+- `backend/tests/unit/test_ghoul_routes.py` — creating a ghoul without a chronicle (V5 and Classic), the domitor's Storyteller reading it, `assign` refused.
 
 ## Related documentation
 

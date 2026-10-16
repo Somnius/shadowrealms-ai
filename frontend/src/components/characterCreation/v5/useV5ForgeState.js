@@ -74,9 +74,10 @@ export function meritRowsToAdvRows(meritRows) {
 
 /**
  * Catalog-forge rows → sheet rows ({id, name, dots, kind, note} or {name, dots, kind, custom}). A
- * row whose id the catalog doesn't know is found by its name, else kept as a custom row.
+ * row whose id the catalog doesn't know is found by its name, else kept as a custom row. The ghoul
+ * forge (../ghoul/useGhoulForgeState.js) uses it too.
  */
-function catalogRows(advRows, loreRows) {
+export function catalogRows(advRows, loreRows) {
   const toRow = (r) => {
     const name = String(r.name || '').trim();
     const e = r.id && r.id !== 'custom' ? findAdvantage({ id: r.id, name }, r.kind) : null;
