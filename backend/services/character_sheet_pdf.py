@@ -502,7 +502,8 @@ class SheetCanvas:
             "T": pdfdoc.PDFString(name),
             "V": pdfdoc.PDFString(value),
             "Rect": pdfdoc.PDFArray([x, y, x + w, y + h]),
-            "DA": pdfdoc.PDFString(f"/{FORM_FONT_KEY} {size:g} Tf 0 g"),
+            # size 0 = auto: a viewer that redraws the field (Acrobat, Edge) shrinks long text to fit
+            "DA": pdfdoc.PDFString(f"/{FORM_FONT_KEY} 0 Tf 0 g"),
             "Q": {"left": 0, "center": 1, "right": 2}[align],
             "AP": pdfdoc.PDFDictionary({"N": pdfdoc.PDFObjectReference(pdfdoc.xObjectName(xo))}),
             "MK": pdfdoc.PDFDictionary({}),
