@@ -27,6 +27,7 @@ from services.v5_ghoul_chargen import validate_ghoul_creation
 from services.retainers import domitor_id, domitor_summary, load_domitor, retainer_summaries
 
 from database import (
+    ensure_characters_gender_column,
     get_db,
     ensure_campaigns_creation_settings_column,
     ensure_character_portrait_url_column,
@@ -131,6 +132,22 @@ def _ensure_character_schema(cursor):
     ensure_character_downtime_requests_table(cursor)
     ensure_users_allow_multi_campaign_play_column(cursor)
     ensure_campaigns_creation_settings_column(cursor)
+    ensure_characters_gender_column(cursor)
+
+
+GENDERS = ('female', 'male', 'neutral')
+
+
+def _gender_error(data):
+    """An error message when data carries a bad voice gender (None/'' clears it)."""
+    if 'gender' not in data or data['gender'] in (None, '') or data['gender'] in GENDERS:
+        return None
+    return 'gender must be female, male, neutral or empty'
+
+
+def _set_gender(cursor, character_id, data):
+    if 'gender' in data and _gender_error(data) is None:
+        cursor.execute("UPDATE characters SET gender = %s WHERE id = %s", (data['gender'] or None, character_id))
 
 
 def _wod_meta_parse(raw):
@@ -170,6 +187,8 @@ def _character_public_dict(row, owner_name=None, campaign_name=None):
         'updated_at': row['updated_at'],
         'portrait_url': row.get('portrait_url'),
         'sheet_locked': _sheet_locked_bool(row.get('sheet_locked')),
+        # voice gender for read-out (docs/VOICE.md); None = not set, spoken as neutral
+        'gender': row.get('gender') if row.get('gender') in GENDERS else None,
         'wod_meta': wod_meta,
         # 'ghoul' for a ghoul's sheet (wod_meta.sheet_kind), else None
         'sheet_kind': wod_meta.get('sheet_kind') if isinstance(wod_meta, dict) else None,
@@ -328,6 +347,9 @@ def create_character():
 
         if not data:
             return jsonify({'error': 'No data provided'}), 400
+
+        if _gender_error(data):
+            return jsonify({'error': _gender_error(data)}), 400
 
         if isinstance(data.get('wod_meta'), dict) and data['wod_meta'].get('sheet_kind') == 'ghoul':
             return _create_ghoul(current_user_id, data)
@@ -536,6 +558,7 @@ def create_character():
 
         result = cursor.fetchone()
         character_id = result['id']
+        _set_gender(cursor, character_id, data)
         ensure_campaign_players_active_character_id_column(cursor)
         cursor.execute(
             """
@@ -789,6 +812,7 @@ def _create_ghoul(current_user_id, data):
             ),
         )
         character_id = cursor.fetchone()['id']
+        _set_gender(cursor, character_id, data)
         db.commit()
         logger.info(
             "Ghoul '%s' (domitor %s) created by user %s",
@@ -1123,8 +1147,12 @@ def update_character(character_id):
             'admin',
             'helper',
         ) and _sheet_locked_bool(character.get('sheet_locked'))
+        if _gender_error(data):
+            return jsonify({'error': _gender_error(data)}), 400
+
         if player_locked:
-            data = {k: v for k, v in data.items() if k == 'portrait_url'}
+            # portrait and voice gender are not rules: a locked sheet may still change them
+            data = {k: v for k, v in data.items() if k in ('portrait_url', 'gender')}
             if not data:
                 return jsonify(
                     {
@@ -1167,6 +1195,10 @@ def update_character(character_id):
         if 'merits_flaws' in data:
             updates.append("merits_flaws = %s")
             params.append(json.dumps(data['merits_flaws']))
+
+        if 'gender' in data:
+            updates.append("gender = %s")
+            params.append(data['gender'] or None)
 
         if 'portrait_url' in data:
             pu = data['portrait_url']

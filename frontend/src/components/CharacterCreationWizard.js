@@ -49,6 +49,7 @@ import { BACKGROUND_DOTS, DISCIPLINE_DOTS } from '../rules/classicRules';
 import { t } from '../i18n';
 import { Term } from '../i18n/glossary';
 import { translateSheetError } from '../characterSheet/i18nErrors';
+import { GenderField } from '../features/voice/VoiceGender';
 import { authFetch } from '../app/http';
 
 const API_URL = '/api';
@@ -120,6 +121,7 @@ export default function CharacterCreationWizard({
       : '';
   const [name, setName] = useState('');
   const [concept, setConcept] = useState('');
+  const [gender, setGender] = useState('');
   const [priority, setPriority] = useState('physical');
   const [attrsRaw, setAttrs] = useState(() => emptyAttrMap());
   const [abilityPriority, setAbilityPriority] = useState('talents');
@@ -405,6 +407,7 @@ export default function CharacterCreationWizard({
           background: background.trim(),
           merits_flaws: meritsPayload,
           wod_meta: wodMeta(),
+          gender: gender || null,
           sheet_locked: true,
           is_active: true,
         }),
@@ -623,12 +626,14 @@ export default function CharacterCreationWizard({
               style={{
                 width: '100%',
                 padding: '10px',
+                marginBottom: '16px',
                 background: 'var(--sr-night-850)',
                 color: 'var(--sr-bone-100)',
                 border: '2px solid var(--sr-night-700)',
                 borderRadius: '8px',
               }}
             />
+            <GenderField id="classic-field-gender" value={gender} onChange={setGender} />
           </ResponsiveSheetBlock>
 
           <ResponsiveSheetBlock

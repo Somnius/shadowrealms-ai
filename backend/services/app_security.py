@@ -117,6 +117,11 @@ ROUTE_LIMITS = {
     "events.events_ticket": ("30 per minute", user_or_ip_key),
     "messages.save_message": ("60 per minute;1000 per hour", user_or_ip_key),
     "characters.character_sheet_pdf": ("20 per minute", user_or_ip_key),  # builds a PDF each time
+    # server voices (docs/VOICE.md): one job per spoken line, polled until done
+    "voice.create_tts_job": ("60 per minute;1500 per hour", user_or_ip_key),
+    "voice.tts_job_status": ("240 per minute", user_or_ip_key),
+    "voice.tts_audio": ("120 per minute", user_or_ip_key),
+    "voice.tts_preview": ("10 per minute", user_or_ip_key),
 }
 AI_LIMIT = "12 per minute;300 per hour"      # every POST in the ai blueprint + dice.ai_roll
 DICE_LIMIT = "60 per minute"                 # other dice POSTs

@@ -377,6 +377,12 @@ def _list(v: Any) -> List[Any]:
     return v if isinstance(v, list) else []
 
 
+def _voice(ch: Dict[str, Any]) -> str:
+    """The voice gender line (read-out voices, docs/VOICE.md); blank when not set."""
+    g = _s(ch.get("gender")).lower()
+    return g.title() if g in ("female", "male", "neutral") else ""
+
+
 def _label(key: str) -> str:
     return key.replace("_", " ").title()
 
@@ -1343,7 +1349,7 @@ def _render_v5(sc: SheetCanvas, ch: Dict[str, Any], chronicle: str, player: str,
         [("Name", "name", name), ("Concept", "concept", wm.get("concept") or ch.get("concept")),
          ("Predator", "predator_type", wm.get("predator_type")), ("Player", "player", player)],
         [("Chronicle", "chronicle", chronicle), ("Ambition", "ambition", wm.get("ambition")),
-         ("Desire", "desire", wm.get("desire"))],
+         ("Desire", "desire", wm.get("desire")), ("Voice", "voice_gender", _voice(ch))],
         [("Clan", "clan", wm.get("clan")), ("Generation", "generation", wm.get("generation")),
          ("Sire", "sire", wm.get("sire")), ("Age", "age", wm.get("age"))],
     ], y)
@@ -1496,7 +1502,7 @@ def _render_v5_ghoul(sc: SheetCanvas, ch: Dict[str, Any], chronicle: str, player
         [("Name", "name", name), ("Concept", "concept", wm.get("concept")),
          ("Domitor", "ghoul.domitor", domitor), ("Player", "player", player)],
         [("Chronicle", "chronicle", chronicle), ("Ambition", "ambition", wm.get("ambition")),
-         ("Desire", "desire", wm.get("desire"))],
+         ("Desire", "desire", wm.get("desire")), ("Voice", "voice_gender", _voice(ch))],
         [("Template", "ghoul.template", _ghoul_template_text(g)),
          ("Age / looks", "ghoul.age", " / ".join(p for p in (age, looks) if p)),
          ("Ghoul since", "ghoul.since", g.get("ghouled_since")), ("Domitor's clan", "ghoul.domitor_clan", dom_clan)],

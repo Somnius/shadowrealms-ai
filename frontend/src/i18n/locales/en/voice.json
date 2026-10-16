@@ -40,7 +40,9 @@
     "label": "Read messages aloud with",
     "hint": "Phone voices are your phone’s or browser’s own; nothing leaves your device. Turn on Listen (the ear) in a room.",
     "phone": "Phone voices",
-    "off": "Off"
+    "off": "Off",
+    "server": "Server voices",
+    "hint2": "Phone voices are your phone’s or browser’s own; nothing leaves your device. Server voices are made on this site’s server: one voice per character by gender, the chronicle’s narrator for the Storyteller. Turn on Listen (the ear) in a room."
   },
   "accent": {
     "label": "English accent",
@@ -53,5 +55,28 @@
     "default": "As the chronicle sets it",
     "on": "Always read",
     "off": "Never read"
+  },
+  "fallback": "Server voices are busy or off; using your phone’s voice for now.",
+  "previewFailed": "Could not play the sample. Try again in a moment.",
+  "narrator": {
+    "legend": "Narrator voice (server voices)",
+    "enUs": "English (American)",
+    "enGb": "English (British)",
+    "el": "Greek",
+    "default": "Default: {{name}}",
+    "defaultPlain": "Default",
+    "hear": "Hear it",
+    "hint": "Used for the Storyteller, actions and dice results for players who listen with server voices.",
+    "off": "Server voices are not running on this site, so the narrator voice cannot be chosen now. The default is used."
+  },
+  "gender": {
+    "label": "Voice",
+    "hint": "Which voice reads this character’s lines aloud. Not set uses a neutral voice.",
+    "female": "Female",
+    "male": "Male",
+    "neutral": "Neutral",
+    "unset": "Not set",
+    "reminder": "Set a voice so this character is read aloud with a matching voice. Until then a neutral voice is used.",
+    "saveFailed": "Could not save the voice."
   }
 }

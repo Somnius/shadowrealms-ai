@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.17.0] - 2026-10-17 - Server voices
+
+### Added
+- **Server voices for Listen.** Profile → Voice → Server voices: lines are spoken on this site's server (the opt-in `speech` container: Piper for English, Pocket TTS for Greek) instead of the phone. The Storyteller, actions and dice use the chronicle's narrator voice; a player character speaks with the voice of its gender, unset and OOC lines with a neutral voice; English in your accent (American / British). One `<audio playsinline>` per room, Ogg/Opus or the AAC copy where Opus does not play (iOS), your speed (0.75–2×) and volume, the next line prepared while this one plays. If the server is busy or off the line is read with the phone's voice and a notice says so. EN + EL.
+- **Voice gender** (Female / Male / Neutral / not set) in the V5 and Classic forges and as a "Voice" line on the character sheet (the owner can change it, also on a locked sheet; a reminder while unset); a "Voice" line on the V5 and V5 ghoul PDF. `characters.gender` (and an unused `npcs.gender` column, for later).
+- **Narrator voice per chronicle** for English (American), English (British) and Greek, with "Hear it", in Create chronicle and Chronicle settings → Voice (`narrator_voice_en`, `narrator_voice_en_gb`, `narrator_voice_el`).
+- Routes: `GET /api/voice/voices`, `POST /api/voice/tts/jobs`, `GET /api/voice/tts/jobs/<id>`, `GET /api/voice/audio/<key>`, `POST /api/voice/tts/preview`. A line may be spoken and heard only by someone who may read it (same checks as reading the room; 404 for missing and forbidden alike). Rate limits per user.
+- The `speech` service (merged from `voice/speech-service`): FastAPI on 127.0.0.1:5055 with a shared secret, TTS and transcription jobs, cache by text and voice, `DELETE /audio/<key>`. See docs/VOICE.md and docs/AI_SYSTEMS.md (VRAM policy).
+
+### Changed
+- Deleting a message deletes its spoken audio (the `voice_audio` index; a file another message still uses is kept).
+- Backend environment: `SPEECH_SECRET`, `SPEECH_PORT`. Schema: `characters.gender`, `npcs.gender`, `voice_audio`.
+
 ## [0.16.0] - 2026-10-17 - Listen
 
 ### Added

@@ -742,6 +742,47 @@ def ensure_campaigns_voice_settings_column(cursor):
     _ensure_voice_settings_column(cursor, "campaigns")
 
 
+def _ensure_text_column(cursor, table, column):
+    db_type = os.getenv("DATABASE_TYPE", "sqlite").lower()
+    if db_type == "postgresql":
+        cursor.execute(f"ALTER TABLE {table} ADD COLUMN IF NOT EXISTS {column} TEXT")
+        return
+    cursor.execute(f"SELECT name FROM sqlite_master WHERE type='table' AND name='{table}'")
+    if not cursor.fetchone():
+        return
+    cursor.execute(f"PRAGMA table_info({table})")
+    if column not in [row["name"] for row in cursor.fetchall()]:
+        cursor.execute(f"ALTER TABLE {table} ADD COLUMN {column} TEXT")
+
+
+@once_per_process
+def ensure_characters_gender_column(cursor):
+    """Voice gender ('female' | 'male' | 'neutral' | NULL) on characters and npcs; NULL speaks neutral."""
+    _ensure_text_column(cursor, "characters", "gender")
+    _ensure_text_column(cursor, "npcs", "gender")
+
+
+@once_per_process
+def ensure_voice_audio_table(cursor):
+    """Index of spoken lines in the speech cache: which message (NULL for a preview) used which key,
+    so deleting a message can delete its audio, and the audio route can check who may hear it."""
+    db_type = os.getenv("DATABASE_TYPE", "sqlite").lower()
+    pk = "SERIAL PRIMARY KEY" if db_type == "postgresql" else "INTEGER PRIMARY KEY AUTOINCREMENT"
+    cursor.execute(
+        f"""
+        CREATE TABLE IF NOT EXISTS voice_audio (
+            id {pk},
+            message_id INTEGER,
+            audio_key TEXT NOT NULL,
+            voice_id TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+        """
+    )
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_voice_audio_message ON voice_audio(message_id)")
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_voice_audio_key ON voice_audio(audio_key)")
+
+
 @once_per_process
 def ensure_campaigns_staff_pause_columns(cursor):
     """Optional note when staff sets campaigns.is_active false (discover/join gate)."""
@@ -1240,6 +1281,8 @@ def migrate_db():
                 ensure_campaigns_creation_settings_column(cursor)
                 ensure_users_voice_settings_column(cursor)
                 ensure_campaigns_voice_settings_column(cursor)
+                ensure_characters_gender_column(cursor)
+                ensure_voice_audio_table(cursor)
                 ensure_character_downtime_requests_table(cursor)
                 ensure_character_spend_requests_table(cursor)
                 ensure_characters_is_npc_column(cursor)
@@ -1614,6 +1657,8 @@ def migrate_db():
         ensure_campaigns_creation_settings_column(cursor)
         ensure_users_voice_settings_column(cursor)
         ensure_campaigns_voice_settings_column(cursor)
+        ensure_characters_gender_column(cursor)
+        ensure_voice_audio_table(cursor)
         ensure_character_downtime_requests_table(cursor)
         ensure_character_spend_requests_table(cursor)
         ensure_messages_ai_message_kind_column(cursor)

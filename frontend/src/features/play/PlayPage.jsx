@@ -211,6 +211,7 @@ export default function PlayPage() {
     enabled: ready,
   });
   const dice = useDiceOverlay(room.messages);
+  const lastFallbackToast = useRef(0);
   const listen = useListen({
     api,
     campaignId,
@@ -218,6 +219,13 @@ export default function PlayPage() {
     messages: room.messages,
     status: ready ? room.status : 'loading',
     userId: user ? user.id : null,
+    onFallback: () => {
+      // once a minute at most: a busy server would otherwise toast on every line
+      const now = Date.now();
+      if (now - lastFallbackToast.current < 60000) return;
+      lastFallbackToast.current = now;
+      toast({ tone: 'warn', title: t('voice:fallback', 'Server voices are busy or off; using your phone’s voice for now.') });
+    },
   });
   // Copy / Reply / Delete on messages (features/chat/MessageActions.jsx).
   const actions = useMessageActions({

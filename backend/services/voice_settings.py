@@ -43,7 +43,8 @@ USER_DEFAULTS: Dict[str, Any] = {
 }
 
 CAMPAIGN_DEFAULTS: Dict[str, Any] = {
-    "narrator_voice_en": None,
+    "narrator_voice_en": None,  # English, US accent
+    "narrator_voice_en_gb": None,
     "narrator_voice_el": None,
     "defaults": {k: True for k in READOUT_KINDS},
     "max_clip_seconds": 180,
@@ -115,7 +116,7 @@ def validate_user_voice_settings(data: Any, current: Any = None) -> Dict[str, An
 
 def _apply_campaign(out: Dict[str, Any], data: Dict[str, Any], strict: bool) -> None:
     for key, value in data.items():
-        if key in ("narrator_voice_en", "narrator_voice_el"):
+        if key in ("narrator_voice_en", "narrator_voice_en_gb", "narrator_voice_el"):
             if value is None or (isinstance(value, str) and 0 < len(value.strip()) <= VOICE_ID_MAX):
                 out[key] = value.strip() if isinstance(value, str) else None
             elif strict:

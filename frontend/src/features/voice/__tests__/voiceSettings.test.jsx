@@ -29,12 +29,56 @@ test('profile panel saves an opt-out', async () => {
 
 test('chronicle panel saves read-out defaults', async () => {
   const settings = { defaults: { storyteller: true, ic: true, ooc: true, dice: true } };
-  mockApi.mockResolvedValue({ ok: true, status: 200, data: { settings, can_edit: true, effective: {} } });
+  mockApi.mockImplementation(async (path) =>
+    path === '/voice/voices'
+      ? { ok: true, status: 200, data: { available: false, voices: [] } }
+      : { ok: true, status: 200, data: { settings, can_edit: true, effective: {} } });
   const user = setupUser();
   wrap(<ChronicleVoicePanel campaignId={4} />);
+  expect(await screen.findByTestId('narrator-off')).toBeInTheDocument();
   await user.click(await screen.findByLabelText('Dice results'));
   await user.click(screen.getByRole('button', { name: 'Save' }));
   await waitFor(() =>
-    expect(mockApi).toHaveBeenCalledWith('/campaigns/4/voice-settings', { method: 'PUT', body: { defaults: { ...settings.defaults, dice: false } } })
+    expect(mockApi).toHaveBeenCalledWith('/campaigns/4/voice-settings', { method: 'PUT', body: {
+      defaults: { ...settings.defaults, dice: false },
+      narrator_voice_en: null, narrator_voice_en_gb: null, narrator_voice_el: null,
+    } })
   );
+});
+
+const VOICES = {
+  available: true,
+  voices: [
+    { id: 'en_US-ryan-high', lang: 'en', accent: 'us', gender: 'male', default_for: ['male', 'narrator'] },
+    { id: 'en_US-lessac-medium', lang: 'en', accent: 'us', gender: 'female', default_for: ['female'] },
+    { id: 'en_GB-alan-medium', lang: 'en', accent: 'gb', gender: 'male', default_for: ['narrator'] },
+    { id: 'el-spyros', lang: 'el', accent: 'gr', gender: 'male', default_for: ['narrator'] },
+    { id: 'el-eleni', lang: 'el', accent: 'gr', gender: 'female', default_for: ['neutral'] },
+  ],
+};
+
+test('chronicle panel picks a narrator voice per language', async () => {
+  const settings = { defaults: { storyteller: true, ic: true, ooc: true, dice: true }, narrator_voice_el: 'el-spyros' };
+  mockApi.mockImplementation(async (path) =>
+    path === '/voice/voices'
+      ? { ok: true, status: 200, data: VOICES }
+      : { ok: true, status: 200, data: { settings, can_edit: true, effective: {} } });
+  const user = setupUser();
+  wrap(<ChronicleVoicePanel campaignId={4} />);
+  const us = await screen.findByLabelText('English (American)');
+  expect(screen.getByLabelText('Greek')).toHaveValue('el-spyros');
+  expect(screen.getAllByRole('option', { name: /lessac/ })).toHaveLength(1); // US list only has US voices
+  await user.selectOptions(us, 'en_US-lessac-medium');
+  await user.click(screen.getByRole('button', { name: 'Save' }));
+  await waitFor(() => expect(mockApi).toHaveBeenCalledWith('/campaigns/4/voice-settings', expect.objectContaining({ method: 'PUT' })));
+  const body = mockApi.mock.calls.find((c) => c[1] && c[1].method === 'PUT')[1].body;
+  expect(body).toMatchObject({ narrator_voice_en: 'en_US-lessac-medium', narrator_voice_en_gb: null, narrator_voice_el: 'el-spyros' });
+});
+
+test('profile panel offers server voices', async () => {
+  mockApi.mockResolvedValue({ ok: true, status: 200, data: USER });
+  wrap(<VoiceSettingsPanel />);
+  const source = await screen.findByLabelText('Read messages aloud with');
+  expect(screen.getByRole('option', { name: 'Server voices' })).toBeInTheDocument();
+  expect(source).toHaveValue('phone');
 });
