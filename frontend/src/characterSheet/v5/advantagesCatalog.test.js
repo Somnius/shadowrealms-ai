@@ -172,6 +172,8 @@ describe('row checks', () => {
       'Suspect can be taken only once.'
     );
     expect(v([lore('loresheet:the-bahari', [1]), lore('loresheet:the-bahari', [2])])).toBe('The Bahari can be taken only once.');
+    // more than one loresheet at creation: a house ruling (V5.md §4 step 12), no limit of its own
+    expect(v([lore('loresheet:the-bahari', [1]), lore('loresheet:harbingers-of-ashur', [2])])).toBeNull();
   });
 
   it('a Background another entry needs', () => {

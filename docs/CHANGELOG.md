@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Changed
+- V5 forge: the Caitiff's Suspect (•) note now reads as a plain rule, "It counts toward your 2 Flaw dots" (it already counted on both sides), recorded in V5.md as a house ruling since the book doesn't say (pp. 107, 194). EN + EL.
+- V5 forge: the Loresheets help says the app lets you take more than one loresheet at creation (a house ruling; the corebook has each player choose one, p. 151). Nothing limited the number before either; each sheet is still taken once. EN + EL. Shared creation vectors: 3 new (Suspect counted, a Caitiff with only Suspect, two loresheets).
 - Rule books: Let the Streets Run Red is imported from PDF pages 1–252, the updated text the V5 catalog reads too, instead of 253–504, the older copy the PDF also holds (its "XX" page references never filled in). It is an adventure, so it only goes into RAG when attached to a chronicle (`import_books.py attach`); attaching it again replaces the old chunks.
 
 ## [0.14.0] - 2026-10-16 - The library

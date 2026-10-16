@@ -101,6 +101,10 @@ describe('Advantages from the catalog (Forge v2 part C)', () => {
     renderForge();
     pick(document.getElementById('v5-field-clan'), 'Caitiff');
     expect(document.querySelector('[data-clan-flaw="flaw:suspect"]')).toHaveTextContent('Suspect');
+    // a house ruling (V5.md §4 step 11), said as a plain rule
+    expect(document.querySelector('[data-clan-flaw="flaw:suspect"]')).toHaveTextContent(
+      'Caitiff start with it (core p. 107). It counts toward your 2 Flaw dots.'
+    );
     expect(count()).toHaveTextContent('Flaws 1 (min 2)');
     add('Background');
     expect(within(screen.getByLabelText('Background 1')).queryByRole('option', { name: /^Status/ })).toBeNull();
@@ -119,6 +123,23 @@ describe('Advantages from the catalog (Forge v2 part C)', () => {
     expect(screen.getByText('4 dots')).toBeInTheDocument();
     expect(screen.getByText(/Test level 3 of Harbingers of Ashur\./)).toBeInTheDocument();
     expect(count()).toHaveTextContent('Advantages 4/7');
+  });
+
+  test('more than one loresheet at creation (a house ruling), each sheet once', () => {
+    renderForge();
+    pick(document.getElementById('v5-field-clan'), 'Hecata');
+    expect(screen.getByText(/This app lets you take more than one at creation, a house ruling/)).toBeInTheDocument();
+    add('Loresheet');
+    pick(screen.getByLabelText('Loresheet 1'), 'loresheet:harbingers-of-ashur');
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Level 1: The Ashen Mask' }));
+    add('Loresheet');
+    const second = screen.getByLabelText('Loresheet 2');
+    expect(within(second).getByRole('option', { name: /^Harbingers of Ashur/ })).toBeDisabled();
+    pick(second, 'loresheet:the-bahari');
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Level 2: Ritual Scarification' }));
+    expect(count()).toHaveTextContent('Advantages 3/7');
+    add('Loresheet');
+    expect(within(screen.getByLabelText('Loresheet 3')).getByRole('option', { name: /^The Bahari/ })).toBeDisabled();
   });
 
   test('a custom row for anything the catalog lacks', () => {

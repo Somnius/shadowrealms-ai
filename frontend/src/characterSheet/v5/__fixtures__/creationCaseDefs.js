@@ -672,6 +672,9 @@ export const CASE_DEFS = [
     expect: ['adv_over'],
   },
   { name: 'flaws: a Siren with only the type’s Enemy', sheet: () => toreador({ flaws: [] }), expect: ['flaw_under'] },
+  // the Caitiff's Suspect counts toward the 2 Flaw dots (a house ruling, V5.md §4 step 11)
+  { name: 'valid: a Caitiff’s Suspect counts toward the 2 Flaw dots', sheet: () => caitiff({ flaws: [{ name: 'Addiction', dots: 1 }] }), expect: [] },
+  { name: 'flaws: a Caitiff with only the clan’s Suspect', sheet: () => caitiff({ flaws: [] }), expect: ['flaw_under'] },
   { name: 'advantages: a 6-dot row', sheet: () => brujah0({ advantages: [{ name: 'Resources', dots: 6, kind: 'background' }] }), expect: ['adv_dots_range'] },
   // Saved points (forge v2 D): the unspent dots and the unused free specialty go to wod_meta.saved,
   // which counts toward the 7 dots, so a payload can't claim more than it left unspent.
@@ -784,6 +787,19 @@ export const CASE_DEFS = [
     name: 'loresheets: Tegyrius the Vizier level 4 is Banu Haqim only',
     sheet: () => brujah0({ advantages: [{ name: 'Resources', dots: 3, kind: 'background' }, { id: 'loresheet:tegyrius-the-vizier', name: 'Tegyrius the Vizier', dots: 4, kind: 'loresheet', levels: [4] }] }),
     expect: ['loresheet_restricted'],
+  },
+  {
+    // more than one loresheet at creation: a house ruling (V5.md §4 step 12)
+    name: 'valid: two loresheets at creation',
+    sheet: () =>
+      brujah0({
+        advantages: [
+          { name: 'Resources', dots: 3, kind: 'background' },
+          { id: 'loresheet:child-of-the-angel-michael', name: 'Child of the Angel Michael', dots: 2, kind: 'loresheet', levels: [2] },
+          { id: 'loresheet:salvador-garcia', name: 'Salvador Garcia', dots: 2, kind: 'loresheet', levels: [2] },
+        ],
+      }),
+    expect: [],
   },
   {
     name: 'loresheets: an Anarch sheet whose level names our sources lack can be taken',

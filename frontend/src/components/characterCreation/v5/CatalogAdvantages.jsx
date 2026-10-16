@@ -409,7 +409,7 @@ export default function CatalogAdvantages() {
               <div style={{ color: 'var(--sr-bone-100)', fontSize: '14px' }}>
                 <span lang="en">{fl.name}</span> <span style={{ color: 'var(--sr-blood-400)' }}>{dots(fl.dots)}</span>{' '}
                 <span style={{ color: 'var(--sr-gold-400)', fontSize: '12px' }}>
-                  {t('wizard:v5.clanFlawV2', '{{clan}} start with it (core p. 107). This app counts it toward your {{min}} Flaw dots; your Storyteller may rule otherwise.', { clan: f.clan, min: f.derived.flaw_min_dots })}
+                  {t('wizard:v5.clanFlawV3', '{{clan}} start with it (core p. 107). It counts toward your {{min}} Flaw dots.', { clan: f.clan, min: f.derived.flaw_min_dots })}
                 </span>
               </div>
               <CatalogNote entry={entry} />
@@ -421,7 +421,7 @@ export default function CatalogAdvantages() {
         <div style={sectionStyle} data-adv-section="loresheet">
           <div style={headingStyle}>{t('wizard:v5.sectionLoresheets', 'Loresheets')}</div>
           <p style={{ ...noteStyle, fontSize: '12px', margin: '0 0 8px' }}>
-            {t('wizard:v5.loreHelpV2', 'Loresheets are bought with Advantage dots like any other Advantage (core p. 151). Each level is its own benefit, costs its number in dots and does not include the lower ones (p. 190). The corebook has each player choose a Loresheet at creation, more in play if the Storyteller allows (p. 151).')}
+            {t('wizard:v5.loreHelpV3', 'Loresheets are bought with Advantage dots like any other Advantage (core p. 151). Each level is its own benefit, costs its number in dots and does not include the lower ones (p. 190). This app lets you take more than one at creation, a house ruling: the corebook has each player choose a Loresheet, more in play if the Storyteller allows (p. 151).')}
           </p>
           {f.loreRows.map((r, i) => (
             <LoreRow key={r.key} row={r} index={i} />
