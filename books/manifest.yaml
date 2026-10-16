@@ -297,8 +297,9 @@ books:
   kind: adventure
   precedence: 60
   year: 2020
-  include: 253-504
-  notes: The PDF holds two copies of the book; pages 1-252 are the duplicate.
+  include: 1-252
+  notes: The PDF holds the book twice. Pages 1-252 are the updated text (the V5 catalog reads these too);
+    253-504 are the older copy, labelled "Old Version" in the PDF, with "page XX" left in its cross-references.
 - book_id: v5-love-bites
   path: V5/Love Bites (Hi-Res) NYE 2024 [2024-12-07].pdf
   title: Love Bites

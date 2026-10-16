@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- Rule books: Let the Streets Run Red is imported from PDF pages 1–252, the updated text the V5 catalog reads too, instead of 253–504, the older copy the PDF also holds (its "XX" page references never filled in). It is an adventure, so it only goes into RAG when attached to a chronicle (`import_books.py attach`); attaching it again replaces the old chunks.
+
 ## [0.14.0] - 2026-10-16 - The library
 
 ### Added
