@@ -36,7 +36,7 @@ test('roll requests are said in the listener language, never the English chip te
   const st = { id: 1, role: 'assistant', content: 'Κοιτάς γύρω. [[roll: Intelligence + Investigation | 7 dice | 1 hunger | difficulty 2]]' };
   const el = spokenParts(st, { listenLang: 'el' });
   expect(el[0]).toEqual({ text: 'Κοιτάς γύρω. Intelligence + Investigation', lang: 'el' });
-  expect(el[1]).toEqual({ text: 'Ρίψη: Intelligence συν Investigation, 7 ζάρια, 1 Πείνα, δυσκολία 2.', lang: 'el' });
+  expect(el[1]).toEqual({ text: 'Ρίψη: Intelligence συν Investigation, 7 ζάρια, Πείνα 1, δυσκολία 2.', lang: 'el' });
   expect(rollRequestSentence({ label: 'Wits + Awareness', pool: 1, difficulty: 6 }, 'en')).toBe('Roll: Wits plus Awareness, 1 die, difficulty 6.');
 });
 

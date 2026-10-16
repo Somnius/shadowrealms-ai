@@ -177,12 +177,9 @@ def delete_campaign_clips(campaign_id):
         if not can_edit:
             return jsonify({"error": "Only the Storyteller can change this"}), 403
         ensure_messages_voice_columns(cursor)
-        gone = voice_clips.forget_campaign_clips(cursor, campaign_id)
-        cursor.execute(
-            "UPDATE messages SET clip_id = NULL, clip_ms = NULL WHERE campaign_id = %s AND clip_id IS NOT NULL",
-            (campaign_id,),
-        )
+        gone = voice_clips.forget_sent_clips(cursor, campaign_id)  # unsent drafts: the 24 h sweep
         conn.commit()
+        voice_clips.drop_files(gone)  # files only once the rows are gone for good
         return jsonify({"deleted": len(gone)}), 200
     except Exception as e:  # noqa: BLE001
         logger.error("delete chronicle clips error: %s", type(e).__name__)

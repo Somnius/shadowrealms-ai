@@ -18,26 +18,35 @@ export const MessageActionsContext = createContext(null);
 
 export const LONG_PRESS_MS = 500;
 
-/** Long press (touch) on a message opens its toolbar; moving the finger cancels it. */
+/**
+ * Long press (touch) on a message opens its toolbar; moving the finger cancels it. The menu opens
+ * on touchend, once the timer has fired, and only if the press did not select text (phones make
+ * the selection at the end of the gesture, so it is checked then, not when the timer fires).
+ */
 function useLongPress(onLongPress) {
   const timer = useRef(null);
+  const fired = useRef(false);
   const cancel = () => {
     if (timer.current) clearTimeout(timer.current);
     timer.current = null;
+    fired.current = false;
   };
   return {
     onTouchStart: () => {
       cancel();
       timer.current = setTimeout(() => {
         timer.current = null;
-        // a long press that selected text is for the selection, not the menu
-        const sel = typeof window !== 'undefined' && window.getSelection ? String(window.getSelection() || '') : '';
-        if (sel.trim()) return;
-        onLongPress();
+        fired.current = true;
       }, LONG_PRESS_MS);
     },
     onTouchMove: cancel,
-    onTouchEnd: cancel,
+    onTouchEnd: () => {
+      const wasLong = fired.current;
+      cancel();
+      if (!wasLong) return;
+      const sel = typeof window !== 'undefined' && window.getSelection ? String(window.getSelection() || '') : '';
+      if (!sel.trim()) onLongPress();
+    },
     onTouchCancel: cancel,
   };
 }

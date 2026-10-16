@@ -54,6 +54,11 @@ export function createSpeechQueue(engine, { onDone } = {}) {
     if (current && items.length && engine.prefetch) engine.prefetch(items[0]);
   }
 
+  // lines thrown away by stop / play: the engine drops anything it fetched ahead for them
+  const forget = (list) => {
+    if (engine.forget && list.length) engine.forget(list.map((it) => it.id));
+  };
+
   const interrupt = () => {
     token += 1;
     engine.cancel();
@@ -88,6 +93,7 @@ export function createSpeechQueue(engine, { onDone } = {}) {
     /** "Read this" / "Read from here": stop what is said and read these now, even if read before. */
     play(list) {
       interrupt();
+      forget(items);
       current = null;
       part = null;
       paused = false;
@@ -125,6 +131,7 @@ export function createSpeechQueue(engine, { onDone } = {}) {
     },
     stop() {
       interrupt();
+      forget(items);
       items = [];
       current = null;
       part = null;

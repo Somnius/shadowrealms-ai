@@ -20,6 +20,7 @@ from concurrent.futures import ThreadPoolExecutor
 from typing import Any, Callable, Dict, Iterable, List, Optional, Set, Tuple
 
 from services.voice_settings import normalize_user_voice_settings
+from services.voice_tts import strip_roll_tags  # noqa: F401  (re-export; the translator never sees roll tags)
 
 logger = logging.getLogger(__name__)
 
@@ -431,12 +432,6 @@ def _executor() -> ThreadPoolExecutor:
     if _pool is None:
         _pool = ThreadPoolExecutor(max_workers=1, thread_name_prefix="translate")
     return _pool
-
-
-def strip_roll_tags(text):
-    from services.voice_tts import strip_roll_tags as strip
-
-    return strip(text)
 
 
 def run_job(message_id: int, langs: Optional[List[str]] = None, *, get_db=None, generate=None) -> List[str]:

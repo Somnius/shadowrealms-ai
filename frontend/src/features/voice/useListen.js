@@ -63,8 +63,8 @@ export function catchUpList(readable, choice, lastRead) {
  */
 export function toItem(msg, getHeard, opts = {}) {
   const heard = () => (getHeard && getHeard(msg)) || null;
-  const parts = () => {
-    const h = heard();
+  const parts = (useHeard = true) => {
+    const h = useHeard ? heard() : null;
     const said = h ? { ...msg, content: h.content, lang: h.lang } : msg;
     const listenLang = typeof opts.listenLang === 'function' ? opts.listenLang() : opts.listenLang;
     return spokenParts(said, { listenLang, marker: opts.getMarker ? opts.getMarker(msg) : null, rollSource: msg.content });
@@ -73,6 +73,10 @@ export function toItem(msg, getHeard, opts = {}) {
     id: msg.id,
     get parts() {
       return parts();
+    },
+    // the line without the translation: the phone falls back to this when the server spoke the original
+    get originalParts() {
+      return parts(false);
     },
     get text() {
       return parts().map((p) => p.text).join(' ');

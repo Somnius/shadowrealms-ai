@@ -181,6 +181,7 @@ export function serverEngine({ api, getAudio, getSettings, fallback, onFallback 
       let cancelled = false;
       let finished = false;
       const el = getAudio();
+      let lastText = null; // the chunk last played, to find where the phone goes on from
       const finish = () => {
         if (finished) return;
         finished = true;
@@ -190,12 +191,21 @@ export function serverEngine({ api, getAudio, getSettings, fallback, onFallback 
       const viaPhone = (err, from = 0) => {
         if (cancelled || finished) return;
         if (onFallback) onFallback(err);
-        const rest = from > 0 && item.parts ? { ...item, parts: item.parts.slice(from) } : item;
+        // the phone goes on from the same chunks the server used (original or translation), after
+        // the last chunk heard, so no sentence is skipped or said twice
+        const src = (item.original && item.originalParts) || item.parts;
+        let start = from;
+        if (src && lastText != null) {
+          const at = src.findIndex((p) => p.text === lastText);
+          if (at >= 0) start = at + 1;
+        }
+        const rest = src ? { ...item, parts: src.slice(start) } : item;
         if (fallback) fallback.speak(rest, finish, onPart);
         else finish();
       };
       cancelCurrent = () => {
         cancelled = true;
+        release(item.id);
         if (el) {
           el.onended = null;
           el.onerror = null;
@@ -212,7 +222,11 @@ export function serverEngine({ api, getAudio, getSettings, fallback, onFallback 
             if (cancelled) return;
             for (let n = i + 1; n <= i + AHEAD && n < c.chunks; n += 1) load(item, n);
             if (onPart) onPart({ index: i, count: c.chunks, text: c.text });
-            el.onended = () => (i + 1 < c.chunks ? playChunk(i + 1) : finish());
+            el.onended = () => {
+              lastText = c.text;
+              if (i + 1 < c.chunks) playChunk(i + 1);
+              else finish();
+            };
             el.onerror = () => viaPhone(new Error('audio'), i);
             const p = playOn(el, c.url, getSettings());
             if (p && p.catch) p.catch((e) => viaPhone(e, i));
@@ -221,6 +235,9 @@ export function serverEngine({ api, getAudio, getSettings, fallback, onFallback 
             if (!cancelled) viaPhone(e, i);
           });
       playChunk(0);
+    },
+    forget(ids) {
+      (ids || []).forEach(release);
     },
     cancel() {
       if (cancelCurrent) cancelCurrent();
@@ -238,6 +255,9 @@ export function switchingEngine(getSettings, server, phone) {
     prefetch: (item) => {
       const e = pick();
       if (e.prefetch) e.prefetch(item);
+    },
+    forget: (ids) => {
+      if (server.forget) server.forget(ids);
     },
     cancel: () => {
       server.cancel();

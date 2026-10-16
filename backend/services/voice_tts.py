@@ -100,7 +100,7 @@ WORDS = {
     "el": {"roll": "Ρίψη", "plus": "συν", "die": "ζάρι", "dice": "ζάρια", "hunger": "Πείνα",
            "difficulty": "δυσκολία", "specialty": "ειδίκευση", "success": "επιτυχία",
            "successes": "επιτυχίες", "critical": "κρίσιμη επιτυχία",
-           "messy": "κρίσιμη επιτυχία με Πείνα", "bestial": "κτηνώδης αποτυχία",
+           "messy": "βρώμικη κρίσιμη επιτυχία", "bestial": "θηριώδης αποτυχία",
            "total": "ολική αποτυχία", "botch": "καταστροφική αποτυχία", "win": "επιτυχία",
            "fail": "αποτυχία", "reroll": "νέα ρίψη με Willpower"},
 }
@@ -173,7 +173,8 @@ def roll_request_sentence(req: Dict[str, Any], lang: str) -> str:
         bits.append(f"{w['specialty']} {plain_text(req['specialty'])}")
     bits.append(_dice(int(req.get("pool") or 0), lang))
     if req.get("hunger"):
-        bits.append(f"{int(req['hunger'])} {w['hunger']}")
+        n = int(req["hunger"])
+        bits.append(f"{w['hunger']} {n}" if lang == "el" else f"{n} {w['hunger']}")  # «Πείνα 1», as on screen
     if req.get("difficulty") is not None:
         bits.append(f"{w['difficulty']} {int(req['difficulty'])}")
     return ", ".join(bits) + "."

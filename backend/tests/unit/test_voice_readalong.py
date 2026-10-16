@@ -28,7 +28,7 @@ def test_roll_request_read_in_listener_language():
     st = row(role="assistant", content="Κοιτάς γύρω. [[roll: Intelligence + Investigation | 7 dice | 1 hunger | difficulty 2]]")
     el = vt.spoken_parts(st, "storyteller", "el")
     assert el[0] == {"text": "Κοιτάς γύρω. Intelligence + Investigation", "lang": "el"}
-    assert el[-1] == {"text": "Ρίψη: Intelligence συν Investigation, 7 ζάρια, 1 Πείνα, δυσκολία 2.", "lang": "el"}
+    assert el[-1] == {"text": "Ρίψη: Intelligence συν Investigation, 7 ζάρια, Πείνα 1, δυσκολία 2.", "lang": "el"}
     en = vt.spoken_parts(st, "storyteller", "en")
     assert en[-1] == {"text": "Roll: Intelligence plus Investigation, 7 dice, 1 Hunger, difficulty 2.", "lang": "en"}
     assert "[[" not in " ".join(p["text"] for p in el)
@@ -102,6 +102,7 @@ def test_storyteller_deletes_chronicle_recordings(api, speech):  # noqa: F811
     ensure_voice_clips_table(cur)
     ensure_messages_voice_columns(cur)
     api.raw.execute("INSERT INTO voice_clips (clip_id, campaign_id, user_id, message_id) VALUES (?, 10, 3, 1)", ("a" * 32,))
+    api.raw.execute("INSERT INTO voice_clips (clip_id, campaign_id, user_id, message_id) VALUES (?, 10, 3, NULL)", ("d" * 32,))
     api.raw.execute("UPDATE messages SET clip_id = ?, clip_ms = 4000, source = 'voice' WHERE id = 1", ("a" * 32,))
     assert api("DELETE", "/api/campaigns/10/voice-clips", 3).status_code == 403  # a player
     assert api("DELETE", "/api/campaigns/10/voice-clips", 4).status_code == 404  # not a member
@@ -110,6 +111,7 @@ def test_storyteller_deletes_chronicle_recordings(api, speech):  # noqa: F811
     assert speech["deleted"] == ["a" * 32]
     m = api.raw.execute("SELECT content, clip_id, source FROM messages WHERE id = 1").fetchone()
     assert m[0] == "Good evening" and m[1] is None and m[2] == "voice"
+    assert api.raw.execute("SELECT clip_id FROM voice_clips").fetchall() == [("d" * 32,)]  # the unsent draft stays
     assert api("DELETE", "/api/campaigns/10/voice-clips", 1).status_code == 200  # an admin
 
 

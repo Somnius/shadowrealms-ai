@@ -163,6 +163,26 @@ def forget_campaign_clips(cursor, campaign_id):
     return gone
 
 
+def forget_sent_clips(cursor, campaign_id):
+    """Delete the rows of the chronicle's sent clips (attached to a message) and clear the
+    messages' clip_id. Unsent drafts are left to the orphan sweep. Returns the clip ids; the caller
+    deletes the files after its commit (drop_files)."""
+    ensure_voice_clips_table(cursor)
+    cursor.execute(
+        "SELECT clip_id FROM voice_clips WHERE campaign_id = %s AND message_id IS NOT NULL", (campaign_id,)
+    )
+    gone = [r["clip_id"] for r in cursor.fetchall()]
+    for cid in gone:
+        cursor.execute("UPDATE messages SET clip_id = NULL, clip_ms = NULL WHERE clip_id = %s", (cid,))
+        cursor.execute("DELETE FROM voice_clips WHERE clip_id = %s", (cid,))
+    return gone
+
+
+def drop_files(clip_ids):
+    """Delete clip files (after the rows are committed). Returns the ids that could not go."""
+    return _drop_files(clip_ids)
+
+
 ORPHAN_HOURS = 24
 
 

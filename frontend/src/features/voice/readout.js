@@ -89,8 +89,8 @@ export const WORDS = {
   },
   el: {
     roll: 'Ρίψη', plus: 'συν', die: 'ζάρι', dice: 'ζάρια', hunger: 'Πείνα', difficulty: 'δυσκολία', specialty: 'ειδίκευση',
-    success: 'επιτυχία', successes: 'επιτυχίες', critical: 'κρίσιμη επιτυχία', messy: 'κρίσιμη επιτυχία με Πείνα',
-    bestial: 'κτηνώδης αποτυχία', total: 'ολική αποτυχία', botch: 'καταστροφική αποτυχία', win: 'επιτυχία', fail: 'αποτυχία',
+    success: 'επιτυχία', successes: 'επιτυχίες', critical: 'κρίσιμη επιτυχία', messy: 'βρώμικη κρίσιμη επιτυχία',
+    bestial: 'θηριώδης αποτυχία', total: 'ολική αποτυχία', botch: 'καταστροφική αποτυχία', win: 'επιτυχία', fail: 'αποτυχία',
     reroll: 'νέα ρίψη με Willpower',
   },
 };
@@ -105,7 +105,7 @@ export function rollRequestSentence(req, lang) {
   const bits = [`${w.roll}: ${sayLabel(req.label, lang)}`];
   if (req.specialty) bits.push(`${w.specialty} ${plainText(req.specialty)}`);
   bits.push(diceWord(Number(req.pool) || 0, lang));
-  if (Number(req.hunger)) bits.push(`${Number(req.hunger)} ${w.hunger}`);
+  if (Number(req.hunger)) bits.push(lang === 'el' ? `${w.hunger} ${Number(req.hunger)}` : `${Number(req.hunger)} ${w.hunger}`); // «Πείνα 1», as on screen
   if (req.difficulty != null) bits.push(`${w.difficulty} ${Number(req.difficulty)}`);
   return `${bits.join(', ')}.`;
 }

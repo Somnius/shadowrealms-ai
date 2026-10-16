@@ -20,6 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Notes
 - Trait names stay in English (game terms by decision; the app has no Greek names for attributes and skills), so the Greek voice still says "Intelligence".
+- The Greek voice says the roll outcomes in Greek («κρίσιμη επιτυχία», «βρώμικη κρίσιμη επιτυχία», «θηριώδης αποτυχία», «ολική αποτυχία», «καταστροφική αποτυχία», «Πείνα 1»), while the screen keeps the English game terms (Messy critical, Bestial failure, Hunger).
 - NPC voices: NPC lines in rooms are characters marked as NPCs and already speak with their own gender (`characters.gender`). The `npcs` table's lines (`npc_messages`) are AI context only and never posted to a room, and there is no screen that edits `npcs`, so nothing was added there.
 - No schema changes.
 
