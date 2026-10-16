@@ -12,6 +12,7 @@ import { editionLabel } from '../../rules/rulesEdition';
 import LocationManager from './LocationManager';
 import CreationRulesPanel from './CreationRulesPanel';
 import SpendApprovalsPanel from './SpendApprovalsPanel';
+import { ChronicleVoicePanel } from '../voice/VoiceSettings';
 import { t } from '../../i18n';
 import { Term } from '../../i18n/glossary';
 import './chronicle.css';
@@ -427,6 +428,8 @@ export default function ChronicleSettingsPage() {
               onSave={(creation_settings) => update({ creation_settings }, t('chronicle:creation.saved', 'Creation rules saved.'))}
             />
           ) : null}
+
+          {canManage ? <ChronicleVoicePanel campaignId={campaign.id} /> : null}
 
           {staff && campaign.rules_edition === 'v5' ? (
             <SpendApprovalsPanel

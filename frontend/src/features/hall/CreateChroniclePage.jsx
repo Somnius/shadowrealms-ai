@@ -9,6 +9,7 @@ import { errorText } from '../../app/http';
 import { isV5Allowed } from '../../rules/rulesEdition';
 import { t } from '../../i18n';
 import './hall.css';
+import { DEFAULT_READOUT, ReadoutDefaults } from '../voice/VoiceSettings';
 
 // Game lines per edition: Classic covers the Revised-era lines (and a custom system with Classic
 // dice); V5 currently means Vampire: The Masquerade 5th Edition only (that's what the backend allows).
@@ -42,6 +43,7 @@ export default function CreateChroniclePage() {
     if (!(GAME_LINES[next] || []).some((g) => g.value === system)) setSystem(GAME_LINES[next][0].value);
   };
   const [busy, setBusy] = useState(false);
+  const [readout, setReadout] = useState(DEFAULT_READOUT);
   const [error, setError] = useState('');
 
   const submit = async (e) => {
@@ -63,6 +65,8 @@ export default function CreateChroniclePage() {
       setError(errorText(r.data, t('chronicle:create.failed', 'Could not create the chronicle')));
       return;
     }
+    // voice read-out defaults: best effort, they can be changed later in Chronicle settings
+    await api(`/campaigns/${r.data.campaign_id}/voice-settings`, { method: 'PUT', body: { defaults: readout } });
     toast({ tone: 'ok', title: t('chronicle:create.done', 'Chronicle created.') });
     await reload();
     navigate(`/chronicles/${r.data.campaign_id}`);
@@ -104,6 +108,7 @@ export default function CreateChroniclePage() {
               options={lines.map((g) => ({ value: g.value, label: g.label() }))}
               hint={edition === 'v5' ? t('chronicle:field.systemV5Hint', 'V5 currently supports Vampire: The Masquerade.') : undefined}
             />
+            <ReadoutDefaults value={readout} onChange={setReadout} />
             {error ? (
               <p className="sr-error" role="alert">
                 <Glyph name="warning" size={16} /> {error}
