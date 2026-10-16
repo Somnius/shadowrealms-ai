@@ -99,6 +99,29 @@ services:
     network_mode: "host"
     restart: unless-stopped
 
+  # Speech (docs/VOICE.md): TTS + transcription jobs for the backend. Host network like the
+  # backend, but it binds 127.0.0.1 only and every call needs SPEECH_SECRET.
+  speech:
+    profiles: ["voice"]  # opt-in: docker compose --profile voice up -d speech
+    build:
+      context: ./speech
+      dockerfile: Dockerfile
+    runtime: nvidia
+    cpus: 8
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all
+      - NVIDIA_DRIVER_CAPABILITIES=compute,utility
+      - SPEECH_SECRET=${SPEECH_SECRET:-}
+      - SPEECH_HOST=127.0.0.1
+      - SPEECH_PORT=${SPEECH_PORT:-5055}
+      - VOICE_STT_VRAM_MB=${VOICE_STT_VRAM_MB:-2150}
+      - VOICE_STT_IDLE_SECONDS=${VOICE_STT_IDLE_SECONDS:-600}
+    volumes:
+      - ./data/voice/models:/models:ro
+      - ./data/voice/cache:/cache
+    network_mode: "host"
+    restart: unless-stopped
+
   postgresql:
     image: postgres:16-alpine
     ports:
