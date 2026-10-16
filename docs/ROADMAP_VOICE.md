@@ -41,7 +41,7 @@ How each phase runs: build in its own git worktree → tests and CI green → on
 - [x] 1.2 Player voice settings column, `GET/PUT /api/voice/settings`, Profile → Voice panel (source, accent, speed, volume, opt-outs). Status: done 23:17. Profile → Voice panel (Phone voices / Off, accent, speed, volume, per-kind opt-outs); pytest + jest.
 - [x] 1.3 Chronicle voice settings column, route, "Voice" block in Create chronicle and Chronicle settings (read-out defaults). Status: done 23:17. Voice block in Create chronicle and Chronicle settings; creator/admin only, effective rule tested.
 - [x] 1.4 Listen toggle in the room header, audio unlock on tap, speech queue (order, skip own, cap 20, pause in background, tap to resume), speaking bar, "read the last 3?" on open. Status: done 23:17. Ear in the room header, speaking bar (44 px), queue with cap 20 / missed / pause on hidden / tap to resume, catch-up of 3; jest for the queue. Not yet tried on real phones.
-- [ ] 1.5 Read-out rules (Storyteller / IC / OOC / dice from chronicle defaults and player overrides), dice read as one sentence, system lines skipped. Status: not started.
+- [x] 1.5 Read-out rules (Storyteller / IC / OOC / dice from chronicle defaults and player overrides), dice read as one sentence, system lines skipped. Status: done 23:17. Storyteller / IC / OOC / dice / actions rules, dice as one sentence, system lines skipped; jest table.
 - [ ] 1.6 Release 0.16: `docs/VOICE.md`, FEATURES, CHANGELOG. Status: not started.
 
 ## Phase 2 — Server voices (0.17)
