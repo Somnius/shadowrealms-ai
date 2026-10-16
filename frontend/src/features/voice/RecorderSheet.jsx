@@ -58,6 +58,7 @@ export default function RecorderSheet({
   campaignId,
   locationId,
   lang,
+  enAccent = 'us',
   maxSeconds = 180,
   phoneDictation = false,
   canPhoneDictate = false,
@@ -329,7 +330,7 @@ export default function RecorderSheet({
         </span>
         {step !== 'text' ? (
           <div className="sr-rec-lang" role="group" aria-label={t('voice:rec.spokenLang', 'Language you speak')}>
-            {[['el', 'ΕΛ', 'Ελληνικά'], ['en', 'EN', 'English']].map(([v, short, full]) => (
+            {[['el', '🇬🇷', 'Ελληνικά'], ['en', enAccent === 'gb' ? '🇬🇧' : '🇺🇸', 'English']].map(([v, short, full]) => (
               <button
                 key={v}
                 type="button"

@@ -394,6 +394,7 @@ export default function PlayPage() {
         campaignId,
         locationId: location.id,
         lang: sttLang(vs.speak_lang, getLanguage()),
+        enAccent: vs.en_accent === 'gb' ? 'gb' : 'us',
         maxSeconds: Number(vc.max_clip_seconds) || 180,
         phoneDictation: vs.stt_source === 'phone' && canPhoneDictate,
         canPhoneDictate,

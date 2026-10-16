@@ -262,3 +262,5 @@
   background: transparent; color: var(--sr-text-2, inherit); font: inherit; font-weight: 600;
 }
 .sr-rec-lang__btn[aria-pressed="true"] { border-color: var(--sr-gold-400, #c9a227); color: var(--sr-gold-400, #c9a227); }
+.sr-rec-lang__btn { font-size: 1.35rem; line-height: 1; opacity: .55; }
+.sr-rec-lang__btn[aria-pressed="true"] { opacity: 1; box-shadow: 0 0 0 2px var(--sr-gold-400, #c9a227) inset; }
