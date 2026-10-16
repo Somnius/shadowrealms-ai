@@ -4,7 +4,7 @@
  */
 import { createContext, useContext } from 'react';
 import { getLanguage, t } from '../../../i18n';
-import { bookRef, descIn } from '../../../characterSheet/v5/rulesData';
+import { bookRef, descIn, fromWiki } from '../../../characterSheet/v5/rulesData';
 
 export const ACCENT = 'var(--sr-blood-500)';
 
@@ -179,6 +179,7 @@ export function CatalogNote({ entry, style }) {
       {text}
       {text && ref ? ' ' : ''}
       {ref ? <span style={{ color: 'var(--sr-bone-500)', whiteSpace: 'nowrap' }}>({ref})</span> : null}
+      {fromWiki(entry) ? <span style={{ color: 'var(--sr-bone-500)' }}> · {t('common:wikiCredit', 'facts from vtm.paradoxwikis.com (CC BY-SA)')}</span> : null}
     </p>
   );
 }

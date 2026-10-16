@@ -14,6 +14,7 @@
     "value": "{{value}} of {{max}}"
   },
   "close": "Close",
+  "wikiCredit": "facts from vtm.paradoxwikis.com (CC BY-SA)",
   "notifications": "Notifications",
   "dismiss": "Dismiss",
   "time": {

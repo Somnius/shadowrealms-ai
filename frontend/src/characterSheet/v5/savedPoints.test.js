@@ -137,4 +137,11 @@ describe('saved points: the live check with the catalog loaded', () => {
     expect(validateSpend(meta(), adv(helena), {}, skills).ok).toBe(true); // meta() is a Toreador
     expect(codes(validateSpend(meta({ clan: 'Brujah' }), adv(helena), {}, skills))).toEqual(['loresheet_restricted']);
   });
+
+  it('Student of Kirin Taunk: the Thin-Blood Alchemist Merit brings Thin-Blood Alchemy', () => {
+    const kirin = { id: 'loresheet:student-of-kirin-taunk', name: 'Student of Kirin Taunk', kind: 'loresheet', levels: [1] };
+    const m = meta({ clan: 'Thin-blood', advantages: [], thin_blood_merits: ['Day Drinker', 'Thin-Blood Alchemist'] });
+    expect(validateSpend(m, adv(kirin), {}, skills).ok).toBe(true);
+    expect(codes(validateSpend({ ...m, thin_blood_merits: ['Day Drinker'] }, adv(kirin), {}, skills))).toEqual(['loresheet_restricted']);
+  });
 });

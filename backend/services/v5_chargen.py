@@ -99,6 +99,7 @@ CAITIFF = "Caitiff"
 BLOOD_SORCERY = "Blood Sorcery"
 OBLIVION = "Oblivion"
 ALCHEMY = "Thin-Blood Alchemy"
+ALCHEMIST = "Thin-Blood Alchemist"  # the thin-blood Merit that brings Thin-Blood Alchemy (core p. 184)
 
 SKILL_KEYS = tuple(k for group in ("physical", "social", "mental") for k in V5_SKILLS[group])
 
@@ -109,10 +110,11 @@ PROBLEM_CODES = (
     "skill_dist", "specialty_count", "specialty_skill", "specialty_missing", "specialty_duplicate",
     "disc_thin_blood", "disc_pick", "disc_clan",
     "power_unknown", "power_level", "power_amalgam", "power_prereq", "power_duplicate", "power_count",
-    "power_clan", "power_first_dot",
+    "power_clan",
     "predator_missing", "predator_forbidden", "predator_specialty", "predator_discipline",
     "predator_grant", "predator_bp", "predator_ancilla",
     "adv_over", "flaw_under", "flaw_over", "adv_dots_range", "adv_unknown", "adv_restricted", "adv_requires",
+    "adv_excluded",
     "loresheet_restricted", "loresheet_levels", "custom_row", "caitiff_status",
     "thin_blood_merits", "thin_blood_only",
     "conviction_count", "conviction_pairs", "derived_value",
@@ -563,6 +565,11 @@ class _Sheet:
                 powers = d.get("powers") if isinstance(d.get("powers"), list) else []
                 self.discs.append((entry["name"] if entry else name, _int(d.get("level")), powers))
         self.level = {_norm(n): lv for n, lv, _ in self.discs}
+        # Disciplines a loresheet's restriction may ask for: a thin-blood with the Thin-Blood
+        # Alchemist Merit has Thin-Blood Alchemy (Student of Kirin Taunk, Blood Sigils p. 178).
+        self.access = dict(self.level)
+        if any(_norm(n) == _norm(ALCHEMIST) for n in _names(meta.get("thin_blood_merits"))):
+            self.access[_norm(ALCHEMY)] = max(1, self.access.get(_norm(ALCHEMY), 0))
 
         self.advantages = _named_rows(meta.get("advantages"))
         self.flaws = _named_rows(meta.get("flaws"))
@@ -761,21 +768,21 @@ def _check_powers(p: _Problems, sh: _Sheet, cat: _Catalog) -> None:
         if len(chosen) > level:
             p.add("power_count", discipline=name, have=len(chosen), max=level)
         taken = set()
-        for i, pw_name in enumerate(chosen):
+        for pw_name in chosen:
             pw = next((x for x in entry["powers"] if _norm(pw_name) in x["keys"]), None)
             key = pw["id"] if pw else _norm(pw_name)
+            # Koldunic Sorcery is taken again for each further element (Blood Sigils p. 61). Its
+            # "with the first Blood Sorcery dot" (at_first_dot) is about order, and creation dots
+            # come all at once: any slot will do here.
             if key in taken and not (pw and pw["repeatable"]):
                 p.add("power_duplicate", discipline=name, power=pw_name)
                 continue
-            first_time = key not in taken
             taken.add(key)
             if not pw:
                 p.add("power_unknown", discipline=name, power=pw_name)
                 continue
             if pw["clans_only"] and _norm(sh.clan_name) not in {_norm(c) for c in pw["clans_only"]}:
                 p.add("power_clan", power=pw["name"], clans=", ".join(pw["clans_only"]))
-            if pw["at_first_dot"] and first_time and i != 0:
-                p.add("power_first_dot", power=pw["name"], discipline=name)
             if pw["level"] > level:
                 p.add("power_level", discipline=name, power=pw["name"], level=pw["level"], rating=level)
             if pw["amalgam"] and sh.level.get(_norm(pw["amalgam"][0]), 0) < pw["amalgam"][1]:
@@ -829,7 +836,7 @@ def _check_advantages(p: _Problems, sh: _Sheet, cat: _Catalog, s: Dict[str, Any]
     cap = s.get("flaws_max_dots")
     if cap is not None and flaw_dots > cap:
         p.add("flaw_over", max=cap, have=flaw_dots)
-    _check_rows(p, cat, sh.clan, own_adv, own_flaws, sh.level, s)
+    _check_rows(p, cat, sh.clan, own_adv, own_flaws, sh.access, s)
     # A Merit's printed prerequisite the check can verify (Influencer: Fame ••+, Armored: Mobile,
     # Archaic: ancilla or older); other requirements are for the Storyteller.
     if cat.advantages:
@@ -840,6 +847,8 @@ def _check_advantages(p: _Problems, sh: _Sheet, cat: _Catalog, s: Dict[str, Any]
             if entry is not None and requirement_met(entry, _int(row.get("dots")), sh.advantages, sh.level, sh.age, cat) is False:
                 p.add("adv_requires", name=_str(row.get("name")), requires=_str(entry.get("requires")))
 
+    _check_exclusions(p, sh, cat)
+
     tb_merits = _names(sh.meta.get("thin_blood_merits"))
     tb_flaws = _names(sh.meta.get("thin_blood_flaws"))
     if sh.thin:
@@ -848,6 +857,37 @@ def _check_advantages(p: _Problems, sh: _Sheet, cat: _Catalog, s: Dict[str, Any]
             p.add("thin_blood_merits", merits=len(tb_merits), flaws=len(tb_flaws), min=lo, max=hi)
     elif sh.clan and (tb_merits or tb_flaws):
         p.add("thin_blood_only")
+
+
+def _check_exclusions(p: _Problems, sh: _Sheet, cat: _Catalog) -> None:
+    """Catalog entries the book says can't be taken together (`excludes`, either way round): the
+    thin-blood pairs (core p. 183), one Ingrained Discipline Flaw only (Tattered Facade p. 108),
+    Oblivion's Corruption and Protean Sorcerer (Courts of the Damned p. 166), Groveling Worm
+    and Penitence (Forbidden Religions p. 86). Every row counts:
+    the player's, the predator type's and the thin-blood Merits and Flaws (the forge's exclusionError)."""
+    if not cat.advantages:
+        return
+    entries: List[dict] = []
+    for row, flaw in [(r, False) for r in sh.advantages] + [(r, True) for r in sh.flaws]:
+        if row.get("custom") is True or row.get("kind") == "loresheet" or _sid(row.get("id")).startswith("loresheet:"):
+            continue
+        e = cat.advantage(row, flaw, sh.clan)
+        if e is not None:
+            entries.append(e)
+    for key, flaw in (("thin_blood_merits", False), ("thin_blood_flaws", True)):
+        for n in _names(sh.meta.get(key)):
+            e = cat.thin_blood(n, flaw)
+            if e is not None:
+                entries.append(e)
+    seen = set()
+    for i, a in enumerate(entries):
+        for b in entries[i + 1:]:
+            ia, ib = _sid(a.get("id")), _sid(b.get("id"))
+            if ia != ib and (ib in _strs(a.get("excludes")) or ia in _strs(b.get("excludes"))):
+                pair = tuple(sorted((ia, ib)))
+                if pair not in seen:
+                    seen.add(pair)
+                    p.add("adv_excluded", a=_str(a.get("name")), b=_str(b.get("name")))
 
 
 def _check_rituals(p: _Problems, sh: _Sheet, cat: _Catalog) -> None:
@@ -880,8 +920,8 @@ def _check_rituals(p: _Problems, sh: _Sheet, cat: _Catalog) -> None:
             or (known and any(not any(_norm(x) in taken for x in g) for g in known["prerequisite"]))
         ):
             p.add("ceremony_start")
-    # A ritual's printed prerequisite power (Blood Sigils' Koldunic rituals need Koldunic Sorcery;
-    # Tattered Facade's need Shape the Sanguine Sacrament): the starting ritual and the XP ones.
+    # A ritual's printed prerequisite power (Blood Sigils' Koldunic rituals need Koldunic Sorcery):
+    # the starting ritual and the XP ones.
     pool = set().union(*(_powers_taken(sh, cat, n) for n, _, _ in sh.discs))
     for r in sh.rituals:
         if r.get("kind") == "ceremony":
@@ -1222,7 +1262,7 @@ def check_advantage_rows(meta: Any, rows: Any, catalog: Any, settings: Any = Non
     cat = _Catalog(catalog)
     sh = _Sheet({"wod_meta": meta if isinstance(meta, dict) else {}}, cat)
     s = normalize_creation_settings(settings) if settings is not None else None
-    _check_rows(p, cat, sh.clan, _named_rows(rows), [], sh.level, s)
+    _check_rows(p, cat, sh.clan, _named_rows(rows), [], sh.access, s)
     return p.items
 
 

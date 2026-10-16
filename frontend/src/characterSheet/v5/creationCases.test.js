@@ -46,7 +46,6 @@ const CODES = [
   [/^.+ needs .+ first\.$/, 'power_prereq'],
   [/^.+ is only for ancillae or older\.$/, 'adv_requires'],
   [/^.+ is only for .+\.$/, 'power_clan'],
-  [/^.+ is taken with the first .+ dot\.$/, 'power_first_dot'],
   [/^The .+ ritual needs the .+ power\.$/, 'ritual_prereq'],
   [/^Choose a predator type\.$/, 'predator_missing'],
   [/^.+ cannot take the .+ predator type\.$/, 'predator_forbidden'],
@@ -85,6 +84,7 @@ const CODES = [
   [/^.+ can be taken (only once|at most \d+ times)\.$/, 'adv_repeat'],
   [/^.+ needs .+ at \d+ dots or more\.$/, 'adv_requires'],
   [/^.+ needs .+ on the sheet\.$/, 'adv_requires'],
+  [/^.+ and .+ can't be taken together\.$/, 'adv_excluded'],
 ];
 
 /** The server codes a client message stands for. */

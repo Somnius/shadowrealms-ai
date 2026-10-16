@@ -556,15 +556,15 @@ export function validateV5Powers(sheet) {
     if (!list.length) continue;
     const chosen = r.powers.map((x) => String(x || '').trim()).filter(Boolean);
     const seen = new Set();
-    for (const [i, name] of chosen.entries()) {
+    for (const name of chosen) {
       const pw = list.find((x) => x.name === name || (x.aliases || []).includes(name));
-      // Koldunic Sorcery is taken again for each further element (Blood Sigils p. 61)
+      // Koldunic Sorcery is taken again for each further element (Blood Sigils p. 61). Its "with the
+      // first Blood Sorcery dot" (at_first_dot) is about order; creation dots come all at once, so
+      // any slot will do at creation.
       if (seen.has(name) && !pw?.repeatable) return `${r.name}: ${name} is taken twice.`;
-      const firstTime = !seen.has(name);
       seen.add(name);
       if (!pw) return `${name} is not a ${r.name} power.`;
       if (pw.clans_only && !pw.clans_only.includes(s.clan)) return `${name} is only for ${pw.clans_only.join(', ')}.`;
-      if (pw.at_first_dot && firstTime && i !== 0) return `${name} is taken with the first ${r.name} dot.`;
       if (pw.level > r.level) return `${name} is a level ${pw.level} power; ${r.name} is at ${r.level}.`;
       if (pw.amalgam && (level[pw.amalgam.discipline] || 0) < pw.amalgam.level) {
         return `${name} also needs ${pw.amalgam.discipline} ${pw.amalgam.level}.`;
@@ -588,8 +588,7 @@ function chosenPowers(sheet) {
 
 /**
  * The first prerequisite group of a ritual the sheet lacks ([name, …], any one will do), or null:
- * Blood Sigils' Koldunic rituals need the Koldunic Sorcery power, Tattered Façade's Grim Chrysalis
- * Shape the Sanguine Sacrament (as printed under each ritual).
+ * Blood Sigils' Koldunic rituals need the Koldunic Sorcery power (as printed under each ritual).
  */
 export function ritualPrereqMissing(sheet, ritual) {
   const have = chosenPowers(sheet);
@@ -807,6 +806,8 @@ export function ownFlawDots(sheet) {
 
 // ---------- Advantages, Flaws and loresheets from the catalog ----------
 
+const THIN_BLOOD_ALCHEMY = 'Thin-Blood Alchemy';
+
 /** Ratings printed "•+" go up to this at creation. */
 const OPEN_MAX_DOTS = 5;
 
@@ -881,7 +882,7 @@ export function loresheetAllowed(ls, sheet) {
   if (ls.clans_excluded && ls.clans_excluded.includes(clan)) return false;
   if (ls.thin_blood_only && clan !== THIN_BLOOD) return false;
   if (ls.disciplines_only) {
-    const have = finalDisciplines(sheet).map((d) => d.name);
+    const have = disciplineAccess(sheet);
     if (!ls.disciplines_only.some((d) => have.includes(d))) return false;
   }
   return true;
@@ -894,6 +895,17 @@ export function loresheetAllowed(ls, sheet) {
  */
 export function loresheetLevelAllowed(level, sheet) {
   return !level?.clans_only || level.clans_only.includes(sheet?.clan);
+}
+
+/**
+ * The Disciplines a loresheet's restriction may ask for: the sheet's, and Thin-Blood Alchemy for a
+ * thin-blood with the Thin-Blood Alchemist Merit (core p. 184; Student of Kirin Taunk, Blood Sigils
+ * p. 178, is for thin-blood alchemists).
+ */
+export function disciplineAccess(sheet) {
+  const have = finalDisciplines(sheet).map((d) => d.name);
+  const alchemist = (sheet?.thinBloodMerits || []).some((m) => String(m?.name || '').trim().toLowerCase() === 'thin-blood alchemist');
+  return alchemist && !have.includes(THIN_BLOOD_ALCHEMY) ? [...have, THIN_BLOOD_ALCHEMY] : have;
 }
 
 /** Loresheets open to the sheet (from the chronicle's books when `settings` are given). */

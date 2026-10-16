@@ -71,6 +71,11 @@ export function loresheetOpen(ls, meta) {
   if (ls.thin_blood_only && meta?.clan !== THIN_BLOOD) return false;
   if (ls.disciplines_only) {
     const have = (Array.isArray(meta?.disciplines) ? meta.disciplines : []).filter((d) => d && count(d.level || d.dots)).map((d) => d.name);
+    // the Thin-Blood Alchemist Merit brings Thin-Blood Alchemy (core p. 184)
+    const merits = Array.isArray(meta?.thin_blood_merits) ? meta.thin_blood_merits : [];
+    if (merits.some((m) => String(typeof m === 'string' ? m : m?.name || '').trim().toLowerCase() === 'thin-blood alchemist')) {
+      have.push('Thin-Blood Alchemy');
+    }
     if (!ls.disciplines_only.some((d) => have.includes(d))) return false;
   }
   return true;

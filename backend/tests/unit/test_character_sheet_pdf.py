@@ -524,7 +524,7 @@ def test_reference_lists_matches_only():
     ]  # no Extinguish Vitae, Cloud Memory, Mesmerize or Θυρεός του Αίματος: not in the catalog
     clan, bane, compulsion, _, corrosive = _entries(items)[:5]
     assert clan == {"name": "Tremere", "prefix": "", "level": 0, "desc": "Warlocks of a broken pyramid.",
-                    "ref": "Corebook, p. 75"}
+                    "ref": "Corebook, p. 75", "credit": ""}
     assert bane["prefix"] == "Bane" and bane["ref"] == "Corebook, p. 76"  # the clan's book
     assert compulsion["prefix"] == "Compulsion" and compulsion["ref"] == "Corebook, p. 77"
     assert corrosive["level"] == 1 and corrosive["ref"] == "Corebook, p. 272"
@@ -727,6 +727,30 @@ def test_reference_loresheet_levels_without_names():
     entries = [(e["prefix"], e["name"], e["level"]) for e in _entries(v5_reference(ch, catalog))]
     assert ("Salvador Garcia", "Level 2", 2) in entries
     assert build_sheet_pdf(ch, catalog=catalog).startswith(b"%PDF-")
+
+
+@pytest.mark.parametrize("lang,credit", [("en", "facts from vtm.paradoxwikis.com (CC BY-SA)"),
+                                         ("el", "στοιχεία από το vtm.paradoxwikis.com (CC BY-SA)"),
+                                         ("fr", "facts from vtm.paradoxwikis.com (CC BY-SA)")])
+def test_reference_credits_wiki_facts(lang, credit):
+    """An entry whose facts come from the Paradox wiki (source "online") credits it (CC BY-SA)."""
+    catalog = copy.deepcopy(ADV_CATALOG)
+    catalog["loresheets"].append({"id": "loresheet:salvador-garcia", "name": "Salvador Garcia", "book": "v5-anarch",
+                                  "page": 190, "source": "online", "desc": _d("Ties to an Anarch."),
+                                  "levels": [{"dots": n, "name": None} for n in range(1, 6)]})
+    ch = copy.deepcopy(V5_CHAR)
+    ch["wod_meta"].update(advantages=[
+        {"id": "loresheet:salvador-garcia", "name": "Salvador Garcia", "dots": 2, "kind": "loresheet", "levels": [2]},
+        {"id": "loresheet:the-bahari", "name": "The Bahari", "dots": 1, "kind": "loresheet", "levels": [1]}], flaws=[])
+    by_name = {e["name"]: e for e in _entries(v5_reference(ch, catalog, lang))}
+    assert by_name["Salvador Garcia"]["credit"] == credit
+    assert by_name["The Bahari"]["credit"] == "" and by_name["Tremere"]["credit"] == ""  # book entries
+    from reportlab.pdfbase import pdfmetrics
+
+    assert build_sheet_pdf(ch, catalog=catalog, lang=lang).startswith(b"%PDF-")  # registers the fonts too
+    assert credit in _ref_paragraph(by_name["Salvador Garcia"]).text
+    assert "paradoxwikis" not in _ref_paragraph(by_name["The Bahari"]).text
+    assert all(ord(c) in pdfmetrics.getFont(SERIF_ITALIC).face.charToGlyph for c in "· " + credit)
 
 
 def test_reference_advantages_of_older_and_caitiff_sheets():

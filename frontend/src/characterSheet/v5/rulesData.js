@@ -443,6 +443,9 @@ export function descIn(entry, lang) {
   return d[lang] || d.en || '';
 }
 
+/** True for an entry whose facts come from the Paradox wiki (CC BY-SA), not from a book we hold. */
+export const fromWiki = (entry) => entry?.source === 'online';
+
 /** "Corebook p. 245" style reference for an entry. */
 export function bookRef(entry) {
   if (!entry?.book) return '';

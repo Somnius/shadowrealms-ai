@@ -454,8 +454,8 @@
     "unknown": "Το φύλλο παραβαίνει έναν κανόνα δημιουργίας ({{code}}).",
     "refused": "Ο server δεν δέχτηκε το φύλλο:",
     "power_clan": "Το {{power}} είναι μόνο για {{clans}}.",
-    "power_first_dot": "Το {{power}} παίρνεται με την πρώτη τελεία {{discipline}}.",
     "adv_requires": "Το {{name}} απαιτεί {{requires}}.",
-    "ritual_prereq": "Το ritual {{ritual}} θέλει τη δύναμη {{needs}}."
+    "ritual_prereq": "Το ritual {{ritual}} θέλει τη δύναμη {{needs}}.",
+    "adv_excluded": "Τα {{a}} και {{b}} δεν παίρνονται μαζί."
   }
 }

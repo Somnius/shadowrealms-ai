@@ -44,7 +44,7 @@ const CATALOG = {
   ],
   loresheets: [
     ...fixture.loresheets,
-    { id: 'loresheet:salvador-garcia', name: 'Salvador Garcia', book: 'v5-anarch', page: 190, source: 'online', levels: levels([null, null, null, null, null]) },
+    { id: 'loresheet:salvador-garcia', name: 'Salvador Garcia', book: 'v5-anarch', page: 190, source: 'online', desc: { en: 'Ties to an Anarch.' }, levels: levels([null, null, null, null, null]) },
     {
       id: 'loresheet:tegyrius-the-vizier',
       name: 'Tegyrius the Vizier',
@@ -80,6 +80,7 @@ test('a sheet whose level names our sources lack: "Level N", with the note, stil
   fireEvent.click(lv2);
   expect(lv2).toBeChecked();
   expect(screen.getByText('2 dots')).toBeInTheDocument();
+  expect(screen.getByText('· facts from vtm.paradoxwikis.com (CC BY-SA)')).toBeInTheDocument(); // the wiki credit
 });
 
 test('a level with its own restriction is not offered to other clans; the rest of the sheet is', () => {
@@ -90,6 +91,7 @@ test('a level with its own restriction is not offered to other clans; the rest o
   expect(screen.getByRole('checkbox', { name: 'Level 4: Perception is Power' })).toBeDisabled();
   expect(screen.getByRole('checkbox', { name: 'Level 1: One' })).not.toBeDisabled();
   expect(screen.getByText('(Hecata characters only)')).toBeInTheDocument();
+  expect(screen.queryByText(/paradoxwikis/)).toBeNull(); // a sheet from a book: no wiki credit
 });
 
 test('a Flaw the book gives no rating: dots 1–5 and the hint', () => {

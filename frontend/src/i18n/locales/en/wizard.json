@@ -454,8 +454,8 @@
     "unknown": "The sheet breaks a creation rule ({{code}}).",
     "refused": "The server refused the sheet:",
     "power_clan": "{{power}} is only for {{clans}}.",
-    "power_first_dot": "{{power}} is taken with the first {{discipline}} dot.",
     "adv_requires": "{{name}} needs {{requires}}.",
-    "ritual_prereq": "The {{ritual}} ritual needs the {{needs}} power."
+    "ritual_prereq": "The {{ritual}} ritual needs the {{needs}} power.",
+    "adv_excluded": "{{a}} and {{b}} can't be taken together."
   }
 }

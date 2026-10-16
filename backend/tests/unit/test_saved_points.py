@@ -481,3 +481,19 @@ def test_loresheet_restrictions_from_the_supplements():
     assert codes(validate_spend(m, adv(lore("Tegyrius the Vizier", 2)), cat, {}, skills())) == []
     assert codes(validate_spend(m, adv(lore("Tegyrius the Vizier", 4)), cat, {}, skills())) == ["loresheet_restricted"]
     assert codes(validate_spend(meta(clan="Banu Haqim", saved={"advantage_dots": 5}), adv(lore("Tegyrius the Vizier", 4)), cat, {}, skills())) == []
+
+
+def test_thin_blood_alchemist_opens_a_thin_blood_alchemy_loresheet():
+    """Student of Kirin Taunk (Blood Sigils p. 178) asks for Thin-Blood Alchemy; the Thin-Blood
+    Alchemist Merit brings it (core p. 184)."""
+    cat = {**CATALOG,
+           "disciplines": CATALOG["disciplines"] + [{"id": "discipline:thin-blood-alchemy", "name": "Thin-Blood Alchemy", "powers": []}],
+           "loresheets": CATALOG["loresheets"] + [
+               {"id": "loresheet:student-of-kirin-taunk", "name": "Student of Kirin Taunk", "clans_only": None,
+                "disciplines_only": ["discipline:thin-blood-alchemy"], "thin_blood_only": True, "book": "v5-blood-sigils",
+                "levels": [{"dots": n, "name": f"L{n}"} for n in range(1, 6)]}]}
+    kirin = {"name": "Student of Kirin Taunk", "kind": "loresheet", "levels": [1]}
+    m = meta(clan="Thin-blood", saved={"advantage_dots": 5}, thin_blood_merits=["Day Drinker", "Thin-Blood Alchemist"])
+    assert codes(validate_spend(m, adv(kirin), cat, {}, skills())) == []
+    m["thin_blood_merits"] = ["Day Drinker"]
+    assert codes(validate_spend(m, adv(kirin), cat, {}, skills())) == ["loresheet_restricted"]

@@ -18,6 +18,7 @@ import {
 import {
   advantageDotChoices,
   advantageUnrated,
+  disciplineAccess,
   dotRequirement,
   loresheetAllowed,
   loresheetLevelAllowed,
@@ -138,6 +139,16 @@ const CATALOG = {
       clans_only: null,
       levels: levels([null, null, null, null, null]),
     },
+    {
+      id: 'loresheet:student-of-kirin-taunk',
+      name: 'Student of Kirin Taunk',
+      book: 'v5-blood-sigils',
+      page: 178,
+      restriction: 'Thin-Blood Alchemists only',
+      disciplines_only: ['discipline:thin-blood-alchemy'],
+      thin_blood_only: true,
+      levels: levels(['1', '2', '3', '4', '5']),
+    },
     { id: 'loresheet:annabelle', name: 'Annabelle', book: 'v5-chicago-by-night', page: 262, levels: levels(['1', '2', '3', '4', '5']) },
     { id: 'loresheet:annabelle-la-by-night', name: 'Annabelle', book: 'v5-la-by-night-loresheets', page: 4, levels: levels(['1', '2', '3', '4', '5']) },
   ],
@@ -187,6 +198,22 @@ describe('loresheet restrictions', () => {
     expect(validateV5AdvantageRows(sheet)).toBe("Ventrue can't take Child of the Angel Michael at creation.");
   });
 
+  it('Student of Kirin Taunk asks for Thin-Blood Alchemy, which the Thin-Blood Alchemist Merit brings', () => {
+    const kirin = findLoresheet({ id: 'loresheet:student-of-kirin-taunk' });
+    expect(kirin.disciplines_only).toEqual(['Thin-Blood Alchemy']);
+    const tb = { clan: 'Thin-blood', thinBloodMerits: [{ name: 'Day Drinker' }, { name: 'Lifelike' }] };
+    expect(disciplineAccess(tb)).toEqual([]);
+    expect(loresheetAllowed(kirin, tb)).toBe(false);
+    const alchemist = { ...tb, thinBloodMerits: [{ name: 'Day Drinker' }, { name: 'Thin-Blood Alchemist' }] };
+    expect(disciplineAccess(alchemist)).toEqual(['Thin-Blood Alchemy']);
+    expect(loresheetAllowed(kirin, alchemist)).toBe(true);
+    expect(loresheetOptions(alchemist).map((l) => l.id)).toContain(kirin.id);
+    expect(validateV5AdvantageRows({ ...alchemist, advantages: [lore('loresheet:student-of-kirin-taunk', [1])] })).toBeNull();
+    expect(validateV5AdvantageRows({ ...tb, advantages: [lore('loresheet:student-of-kirin-taunk', [1])] })).toBe(
+      "Thin-blood can't take Student of Kirin Taunk at creation."
+    );
+  });
+
   it('a level with its own restriction: refused for others, the rest of the sheet is fine', () => {
     const teg = findLoresheet({ id: 'loresheet:tegyrius-the-vizier' });
     expect(loresheetLevelAllowed(teg.levels[3], { clan: 'Ventrue' })).toBe(false);
@@ -213,10 +240,9 @@ describe('Koldunic Sorcery (Blood Sigils p. 61)', () => {
     expect(validateV5Powers(sheet('Tzimisce', ['Koldunic Sorcery']))).toBeNull();
   });
 
-  it('taken with the first Blood Sorcery dot, and again for another element', () => {
-    expect(validateV5Powers(sheet('Tzimisce', ['A Taste for Blood', 'Koldunic Sorcery']))).toBe(
-      'Koldunic Sorcery is taken with the first Blood Sorcery dot.'
-    );
+  it('any creation slot (creation dots come all at once), and again for another element', () => {
+    expect(validateV5Powers(sheet('Tzimisce', ['A Taste for Blood', 'Koldunic Sorcery']))).toBeNull();
+    expect(validateV5Powers(sheet('Ventrue', ['A Taste for Blood', 'Koldunic Sorcery']))).toBe('Koldunic Sorcery is only for Tzimisce.');
     expect(validateV5Powers(sheet('Tzimisce', ['Koldunic Sorcery', 'Koldunic Sorcery']))).toBeNull();
     expect(validateV5Powers(sheet('Tzimisce', ['A Taste for Blood', 'A Taste for Blood']))).toBe('Blood Sorcery: A Taste for Blood is taken twice.');
   });

@@ -57,3 +57,33 @@ test('advantages, flaws, loresheet levels and thin-blood entries open to their d
   expect(screen.getByText(/Test text for Clan Curse\./)).toBeInTheDocument(); // the thin-blood one
   expect(screen.queryByText(/Caitiff Clan Curse/)).toBeNull();
 });
+
+test('a loresheet whose facts come from the wiki credits it', () => {
+  applyV5Catalog({
+    ...fixture,
+    loresheets: [
+      ...fixture.loresheets,
+      { id: 'loresheet:salvador-garcia', name: 'Salvador Garcia', book: 'v5-anarch', page: 190, source: 'online', desc: { en: 'Ties to an Anarch.' }, levels: [1, 2, 3, 4, 5].map((dots) => ({ dots, name: null })) },
+    ],
+  });
+  try {
+    render(
+      <V5CharacterSheetView
+        character={{
+          wod_meta: {
+            edition: 'v5',
+            advantages: [
+              { id: 'loresheet:salvador-garcia', name: 'Salvador Garcia', dots: 2, kind: 'loresheet', levels: [2] },
+              { id: 'loresheet:the-bahari', name: 'The Bahari', dots: 1, kind: 'loresheet', levels: [1] },
+            ],
+          },
+        }}
+      />
+    );
+    expect(screen.getByText('Salvador Garcia').tagName).toBe('SUMMARY');
+    expect(screen.getByText('●● Level 2')).toBeInTheDocument();
+    expect(screen.getAllByText('· facts from vtm.paradoxwikis.com (CC BY-SA)')).toHaveLength(1); // not on The Bahari
+  } finally {
+    applyV5Catalog(fixture);
+  }
+});

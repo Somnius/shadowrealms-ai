@@ -1235,18 +1235,25 @@ def _book_ref(books: Dict[str, str], book: Any, page: Any) -> str:
     return f"{label}, p. {p}" if label and p else label
 
 
+# Entries whose facts come from the Paradox wiki (catalog source "online") say so, as CC BY-SA asks.
+WIKI_CREDIT = {"en": "facts from vtm.paradoxwikis.com (CC BY-SA)",
+               "el": "στοιχεία από το vtm.paradoxwikis.com (CC BY-SA)"}
+
+
 def _ref_entry(name: Any, e: Dict[str, Any], lang: str, books: Dict[str, str], *, book: Any = None,
                prefix: str = "", level: Any = None) -> Dict[str, Any]:
     d = e.get("desc")
     desc = _s(d.get(lang) or d.get("en")) if isinstance(d, dict) else ""
+    credit = WIKI_CREDIT.get(lang, WIKI_CREDIT["en"]) if e.get("source") == "online" else ""
     return {"name": _cap(_s(name), MAX_LINE), "prefix": prefix, "level": _n(level, 0, 10),
-            "desc": _cap(desc, REF_DESC_MAX), "ref": _book_ref(books, book or e.get("book"), e.get("page"))}
+            "desc": _cap(desc, REF_DESC_MAX), "ref": _book_ref(books, book or e.get("book"), e.get("page")),
+            "credit": credit}
 
 
 def v5_reference(ch: Dict[str, Any], catalog: Optional[Dict[str, Any]], lang: str = "en") -> List[Tuple[str, Any]]:
     """
     What the Reference page lists, in order: ('section', title), ('group', Discipline name) and
-    ('entry', {name, prefix, level, desc, ref}). Only names with a catalog match (id, name or alias);
+    ('entry', {name, prefix, level, desc, ref, credit}). Only names with a catalog match (id, name or alias);
     an empty list means no Reference page.
     """
     if not isinstance(catalog, dict):
@@ -1402,6 +1409,8 @@ def _ref_paragraph(e: Dict[str, Any]) -> Paragraph:
         parts.append(" — " + esc(e["desc"]))
     if e["ref"]:
         parts.append(f' <font name="{SERIF_ITALIC}">({esc(e["ref"])})</font>')
+    if e.get("credit"):
+        parts.append(f' <font name="{SERIF_ITALIC}">· {esc(e["credit"])}</font>')
     return Paragraph("".join(parts), _REF_STYLE)
 
 

@@ -3,7 +3,7 @@ import DotTrack from './characterCreation/DotTrack';
 import ResponsiveSheetBlock from './characterCreation/ResponsiveSheetBlock';
 import { V5_ATTRIBUTES, V5_SKILLS, V5_SKILL_LABELS } from '../characterSheet/v5/constants';
 import { getLanguage, t } from '../i18n';
-import { bookRef, descIn, findAdvantage, findLoresheet, getV5Rules, powersOf } from '../characterSheet/v5/rulesData';
+import { bookRef, descIn, findAdvantage, findLoresheet, fromWiki, getV5Rules, powersOf } from '../characterSheet/v5/rulesData';
 import { useV5Catalog } from '../rules/v5Catalog';
 import { Term } from '../i18n/glossary';
 
@@ -113,6 +113,7 @@ function CatalogItem({ name, entry }) {
       <span style={{ display: 'block', maxWidth: '520px', color: 'var(--sr-bone-300)', fontSize: '12px', margin: '2px 0 6px' }}>
         {text}
         {ref ? <span style={{ color: 'var(--sr-bone-500)' }}> ({ref})</span> : null}
+        {fromWiki(entry) ? <span style={{ color: 'var(--sr-bone-500)' }}> · {t('common:wikiCredit', 'facts from vtm.paradoxwikis.com (CC BY-SA)')}</span> : null}
       </span>
     </details>
   );

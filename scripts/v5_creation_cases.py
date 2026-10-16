@@ -49,7 +49,7 @@ KEEP = {
     # forge v2 C: only when the catalog has them (advantages.json, loresheets.json)
     "advantages": ("id", "name", "aliases", "kind", "group", "dots", "book", "also_in", "page", "thin_blood", "caitiff",
                    "ghoul_only", "coterie", "clans_only", "cannot_buy_for", "repeatable", "max_instances",
-                   "requires", "levels"),
+                   "requires", "excludes", "levels"),
     "loresheets": ("id", "name", "aliases", "book", "also_in", "page", "restriction", "clans_only", "clans_excluded",
                    "disciplines_only", "thin_blood_only", "levels"),
 }
@@ -60,8 +60,8 @@ NAMED_KEEP = ("name",)  # clan bane / compulsion: the name only
 
 
 def _facts(entry: Dict[str, Any], keep) -> Dict[str, Any]:
-    """The kept keys of an entry; an empty also_in is left out (most entries are in one book)."""
-    return {k: entry[k] for k in keep if k in entry and not (k == "also_in" and not entry[k])}
+    """The kept keys of an entry; an empty also_in or excludes is left out (most entries have none)."""
+    return {k: entry[k] for k in keep if k in entry and not (k in ("also_in", "excludes") and not entry[k])}
 
 
 def snapshot(catalog: Dict[str, Any]) -> Dict[str, Any]:

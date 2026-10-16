@@ -607,20 +607,62 @@ def test_loresheets_and_rows_without_a_book():
 
 # ---------- supplement rules (Forge v2 part F) ----------
 
-def test_koldunic_sorcery_first_dot_and_again_per_element():
-    """Blood Sigils p. 61: Tzimisce only (a shared vector), taken with the first Blood Sorcery dot,
-    taken again for each further element."""
+def test_koldunic_sorcery_any_slot_and_again_per_element():
+    """Blood Sigils p. 61: Tzimisce only (a shared vector), taken again for each further element. Its
+    "with the first Blood Sorcery dot" is about order: at creation any slot will do (a shared vector)."""
     c = case("powers: a Tzimisce buys Blood Sorcery with XP and takes Koldunic Sorcery with it")
     meta = c["payload"]["wod_meta"]
     bs = next(d for d in meta["disciplines"] if d["name"] == "Blood Sorcery")
     bs["powers"] = ["A Taste for Blood", "Koldunic Sorcery"]
     bs["level"] = 2
     problems = validate_creation(c["payload"], CATALOG, None)
-    assert {"code": "power_first_dot", "params": {"power": "Koldunic Sorcery", "discipline": "Blood Sorcery"}} in problems
+    assert not [x for x in problems if x["code"].startswith("power_")]
+    meta["clan"] = "Ventrue"
+    assert {"code": "power_clan", "params": {"power": "Koldunic Sorcery", "clans": "Tzimisce"}} in validate_creation(
+        c["payload"], CATALOG, None)
+    meta["clan"] = "Tzimisce"
     bs["powers"] = ["Koldunic Sorcery", "Koldunic Sorcery"]
     assert "power_duplicate" not in codes(validate_creation(c["payload"], CATALOG, None))
     bs["powers"] = ["A Taste for Blood", "A Taste for Blood"]
     assert "power_duplicate" in codes(validate_creation(c["payload"], CATALOG, None))
+
+
+def test_entries_the_book_rules_out_together():
+    """`excludes`, either way round, once per pair (shared vectors for the pairs; the server didn't
+    check it before Forge v2 F)."""
+    c = case("advantages: Groveling Worm and Penitence can't be taken together")
+    excluded = [x for x in validate_creation(c["payload"], CATALOG, None) if x["code"] == "adv_excluded"]
+    assert excluded == [{"code": "adv_excluded", "params": {"a": "Penitence", "b": "Groveling Worm"}}]
+    c = case("advantages: a thin-blood can't take Dead Flesh with Lifelike")
+    excluded = [x for x in validate_creation(c["payload"], CATALOG, None) if x["code"] == "adv_excluded"]
+    assert excluded == [{"code": "adv_excluded", "params": {"a": "Lifelike", "b": "Dead Flesh"}}]
+
+    # one Ingrained Discipline Flaw only (Tattered Facade p. 108): three of them make three pairs
+    c = case("advantages: a Flaw the book gives no rating takes the dots the player picks")
+    meta = c["payload"]["wod_meta"]
+    meta["flaws"] += [{"id": "flaw:ingrained-egomaniac", "name": "Egomaniac", "dots": 1},
+                      {"id": "flaw:ingrained-blunt", "name": "Blunt", "dots": 1}]
+    problems = validate_creation(c["payload"], CATALOG, None)
+    assert len([x for x in problems if x["code"] == "adv_excluded"]) == 3
+    # Oblivion's Corruption and Protean Sorcerer (Courts of the Damned p. 166), by name too
+    meta["flaws"] = meta["flaws"][:1]
+    meta["advantages"] = [{"name": "Oblivion's Corruption", "dots": 1, "kind": "merit"},
+                          {"id": "merit:protean-sorcerer", "name": "Protean Sorcerer", "dots": 1, "kind": "merit"}]
+    assert "adv_excluded" in codes(validate_creation(c["payload"], CATALOG, None))
+    meta["advantages"] = meta["advantages"][1:]
+    assert "adv_excluded" not in codes(validate_creation(c["payload"], CATALOG, None))
+
+
+def test_thin_blood_alchemist_counts_as_thin_blood_alchemy_for_a_loresheet():
+    """Student of Kirin Taunk (Blood Sigils p. 178) asks for Thin-Blood Alchemy, which a thin-blood
+    has through the Thin-Blood Alchemist Merit (core p. 184); shared vectors for both ways."""
+    c = case("loresheets: Student of Kirin Taunk is open to a thin-blood with the Thin-Blood Alchemist Merit")
+    assert validate_creation(c["payload"], CATALOG, None) == []
+    meta = c["payload"]["wod_meta"]
+    meta["thin_blood_merits"] = [n for n in meta["thin_blood_merits"]
+                                 if (n.get("name") if isinstance(n, dict) else n) != "Thin-Blood Alchemist"]
+    meta["thin_blood_merits"].append("Low Appetite")
+    assert codes(validate_creation(c["payload"], CATALOG, None)) == ["loresheet_restricted"]
 
 
 def test_a_flaw_without_a_printed_rating_takes_1_to_5():

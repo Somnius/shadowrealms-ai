@@ -240,8 +240,9 @@ const thinBlood = (over = {}) => ({
     { name: 'Prey Exclusion (animals)', dots: 1 },
     { name: 'Risk-Taker', dots: 1 },
   ],
+  // Dead Flesh would rule out Lifelike (core p. 183): Vitae Dependency instead
   thinBloodMerits: [{ name: 'Day Drinker' }, { name: 'Lifelike' }],
-  thinBloodFlaws: [{ name: 'Baby Teeth' }, { name: 'Dead Flesh' }],
+  thinBloodFlaws: [{ name: 'Baby Teeth' }, { name: 'Vitae Dependency' }],
   ...over,
 });
 
@@ -809,6 +810,29 @@ export const CASE_DEFS = [
     expect: [],
   },
   {
+    // its "with the first Blood Sorcery dot" is about order; creation dots come all at once
+    name: 'powers: an ancilla Tzimisce takes Koldunic Sorcery in the second Blood Sorcery slot',
+    sheet: () =>
+      tzimisce({
+        age: 'ancilla',
+        generation: 11,
+        disciplines: [
+          { name: 'Animalism', level: 2, powers: ['Bond Famulus', 'Feral Whispers'] },
+          { name: 'Dominate', level: 1, powers: ['Compel'] },
+        ],
+        flaws: [
+          { name: 'Enemy', dots: 2 },
+          { name: 'Dark Secret', dots: 2 },
+        ],
+        extraPowers: { Auspex: ['Heightened Senses'], 'Blood Sorcery': ['A Taste for Blood', 'Koldunic Sorcery'] },
+        xpPurchases: [
+          { kind: 'discipline', trait: 'Blood Sorcery' },
+          { kind: 'discipline', trait: 'Blood Sorcery' },
+        ],
+      }),
+    expect: [],
+  },
+  {
     name: 'rituals: a Koldunic ritual needs the Koldunic Sorcery power',
     sheet: () => tremere({ xpPurchases: [{ kind: 'ritual', trait: 'Elemental Grasp', level: 2 }, { kind: 'discipline', trait: 'Dominate' }] }),
     expect: ['ritual_prereq'],
@@ -831,6 +855,58 @@ export const CASE_DEFS = [
     name: 'advantages: an Ingrained Discipline Flaw needs that Discipline at 3',
     sheet: () => brujah0({ flaws: [{ id: 'flaw:ingrained-killer-instinct', name: 'Killer Instinct', dots: 2 }] }),
     expect: ['adv_requires'],
+  },
+  {
+    name: 'advantages: two Ingrained Discipline Flaws (one only), the second without its Discipline',
+    sheet: () =>
+      brujah0({
+        predatorDiscipline: 'Potence',
+        disciplines: [
+          { name: 'Potence', level: 2, powers: ['Lethal Body', 'Prowess', 'Brutal Feed'] },
+          { name: 'Presence', level: 1, powers: ['Awe'] },
+        ],
+        extraPowers: {},
+        flaws: [
+          { id: 'flaw:ingrained-killer-instinct', name: 'Killer Instinct', dots: 1 },
+          { id: 'flaw:ingrained-egomaniac', name: 'Egomaniac', dots: 1 },
+        ],
+      }),
+    expect: ['adv_excluded', 'adv_requires'],
+  },
+  {
+    name: "advantages: Groveling Worm and Penitence can't be taken together",
+    sheet: () =>
+      brujah0({
+        advantages: [
+          { name: 'Resources', dots: 3, kind: 'background' },
+          { name: 'Haven', dots: 2, kind: 'background' },
+          { id: 'merit:penitence', name: 'Penitence', dots: 2, kind: 'merit' },
+        ],
+        flaws: [{ id: 'flaw:groveling-worm', name: 'Groveling Worm', dots: 2 }],
+      }),
+    expect: ['adv_excluded'],
+  },
+  {
+    name: "advantages: a thin-blood can't take Dead Flesh with Lifelike",
+    sheet: () => thinBlood({ thinBloodFlaws: [{ name: 'Baby Teeth' }, { name: 'Dead Flesh' }] }),
+    expect: ['adv_excluded'],
+  },
+  {
+    name: 'loresheets: Student of Kirin Taunk is open to a thin-blood with the Thin-Blood Alchemist Merit',
+    sheet: () =>
+      thinBlood({
+        advantages: [...thinBlood().advantages, { id: 'loresheet:student-of-kirin-taunk', name: 'Student of Kirin Taunk', dots: 1, kind: 'loresheet', levels: [1] }],
+        thinBloodMerits: [{ name: 'Day Drinker' }, { name: 'Thin-Blood Alchemist' }],
+      }),
+    expect: [],
+  },
+  {
+    name: 'loresheets: Student of Kirin Taunk needs the Thin-Blood Alchemist Merit',
+    sheet: () =>
+      thinBlood({
+        advantages: [...thinBlood().advantages, { id: 'loresheet:student-of-kirin-taunk', name: 'Student of Kirin Taunk', dots: 1, kind: 'loresheet', levels: [1] }],
+      }),
+    expect: ['loresheet_restricted'],
   },
   {
     name: 'advantages: Influencer (Succubus Club) needs Fame 2',
