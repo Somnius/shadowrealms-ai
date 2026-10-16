@@ -115,6 +115,7 @@ export default function V5CharacterCreationWizard({
           campaign_id: parseInt(campaignId, 10),
           ...payload,
           background: f.background.trim(),
+          gender: f.gender || null,
           sheet_locked: true,
           is_active: true,
         }),

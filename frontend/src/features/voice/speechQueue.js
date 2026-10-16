@@ -1,7 +1,8 @@
 /**
  * The read-out queue (docs/VOICE.md): arrival order, at most QUEUE_CAP waiting (older ones are
  * dropped and counted as missed), pause / resume / skip / stop. Engine-agnostic: the engine is
- * { speak(item, onDone), cancel() }; phase 1 uses the phone's own voices (phoneVoice.js).
+ * { speak(item, onDone), cancel(), prefetch?(item) }: the phone's own voices (phoneVoice.js) or
+ * server voices (serverVoice.js), which start the next line's audio while this one plays.
  */
 export const QUEUE_CAP = 20;
 
@@ -26,12 +27,17 @@ export function createSpeechQueue(engine) {
     current = items.shift();
     const mine = ++token;
     emit();
+    prefetchNext();
     engine.speak(current, () => {
       if (mine !== token) return; // cancelled by skip / stop / pause
       current = null;
       next();
     });
   };
+
+  function prefetchNext() {
+    if (current && items.length && engine.prefetch) engine.prefetch(items[0]);
+  }
 
   const interrupt = () => {
     token += 1;
@@ -60,6 +66,7 @@ export function createSpeechQueue(engine) {
         missed += items.length - QUEUE_CAP;
         items = items.slice(-QUEUE_CAP);
       }
+      if (current) prefetchNext();
       next();
     },
     /** Ids that must never be read (already on screen when listening started). */

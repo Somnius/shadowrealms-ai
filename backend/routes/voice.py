@@ -186,13 +186,15 @@ def _speech_tts(cursor, body, message_id):
 @voice_bp.route("/voice/voices", methods=["GET"])
 @jwt_required()
 def voices():
+    # 200 with available false when the service is off: a GET 503 would raise the app-wide notice
     try:
         status, data = speech_client.call_json("GET", "/voices")
     except speech_client.SpeechUnavailable:
-        return jsonify(_SPEECH_DOWN[0]), 503
+        status, data = 503, {}
     if status != 200:
-        return jsonify({"error": "speech_failed"}), 503
-    return jsonify({"voices": data.get("voices") or [], "defaults": data.get("defaults") or {}}), 200
+        return jsonify({"available": False, "voices": [], "defaults": {}}), 200
+    return jsonify({"available": True, "voices": data.get("voices") or [],
+                    "defaults": data.get("defaults") or {}}), 200
 
 
 @voice_bp.route("/voice/tts/jobs", methods=["POST"])
@@ -241,8 +243,8 @@ def tts_job_status(job_id):
         return jsonify({"error": "Job not found"}), 404
     try:
         status, job = speech_client.call_json("GET", f"/tts/{job_id}")
-    except speech_client.SpeechUnavailable:
-        return jsonify(_SPEECH_DOWN[0]), 503
+    except speech_client.SpeechUnavailable:  # a failed job, not a GET 503 (app-wide notice)
+        return jsonify({"job_id": job_id, "state": "failed", "error": "speech_unavailable"}), 200
     if status != 200:
         return jsonify({"error": "Job not found"}), 404
     return jsonify(_job_out(job)), 200

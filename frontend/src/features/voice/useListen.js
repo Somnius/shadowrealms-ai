@@ -7,6 +7,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { guessLang, shouldRead, spokenText } from './readout';
 import { createSpeechQueue } from './speechQueue';
 import { hasPhoneVoices, phoneEngine, unlockPhoneVoice } from './phoneVoice';
+import { makeRoomAudio, serverEngine, switchingEngine } from './serverVoice';
 import { presentSpeaker } from '../chat/messageModel';
 
 export const CATCH_UP = 3;
@@ -19,14 +20,29 @@ export function toItem(msg) {
   return { id: msg.id, text, lang: msg.lang || guessLang(msg.content), speaker: presentSpeaker(msg).name };
 }
 
-export function useListen({ api, campaignId, roomKey, messages, status, userId, engine }) {
+export function useListen({ api, campaignId, roomKey, messages, status, userId, engine, onFallback }) {
   const [settings, setSettings] = useState(null);
   const [rules, setRules] = useState(null);
   const [on, setOn] = useState(false);
   const [catchUp, setCatchUp] = useState(0);
   const settingsRef = useRef(null);
   settingsRef.current = settings;
-  const queue = useMemo(() => createSpeechQueue(engine || phoneEngine(() => settingsRef.current)), [engine]);
+  const audioRef = useRef(null);
+  const fallbackRef = useRef(onFallback);
+  fallbackRef.current = onFallback;
+  const queue = useMemo(() => {
+    if (engine) return createSpeechQueue(engine);
+    const getSettings = () => settingsRef.current;
+    const phone = phoneEngine(getSettings);
+    const server = serverEngine({
+      api,
+      getAudio: () => audioRef.current || (audioRef.current = makeRoomAudio()),
+      getSettings,
+      fallback: phone,
+      onFallback: (e) => fallbackRef.current && fallbackRef.current(e),
+    });
+    return createSpeechQueue(switchingEngine(getSettings, server, phone));
+  }, [engine, api]);
   const [qs, setQs] = useState(queue.state());
   const lastId = useRef(0);
   const primed = useRef(null);
@@ -94,6 +110,16 @@ export function useListen({ api, campaignId, roomKey, messages, status, userId, 
       return;
     }
     unlockPhoneVoice(); // inside the tap
+    if (settingsRef.current && settingsRef.current.tts_source === 'server') {
+      // the room's <audio> may only start from a tap on iOS: touch it now, inside this one
+      const el = audioRef.current || (audioRef.current = makeRoomAudio());
+      try {
+        const p = el && el.play();
+        if (p && p.catch) p.catch(() => {});
+      } catch {
+        /* nothing loaded yet */
+      }
+    }
     lastId.current = maxId(messages);
     setCatchUp(Math.min(CATCH_UP, readable().length));
     setOn(true);
@@ -104,7 +130,8 @@ export function useListen({ api, campaignId, roomKey, messages, status, userId, 
     setCatchUp(0);
   }, [queue, readable]);
 
-  const available = hasPhoneVoices() && !(settings && settings.tts_source === 'off');
+  const source = settings ? settings.tts_source : 'phone';
+  const available = source !== 'off' && (source === 'server' || hasPhoneVoices());
   return {
     available,
     on,

@@ -31,3 +31,17 @@
   min-width: var(--sr-tap, 44px);
   min-height: var(--sr-tap, 44px);
 }
+/* Narrator voice row: the select takes the room, "Hear it" stays a 44-px tap beside it */
+.sr-voice-narrator {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--sr-space-2, 8px);
+  flex-wrap: wrap;
+}
+.sr-voice-narrator > :first-child {
+  flex: 1 1 12rem;
+  min-width: 0;
+}
+.sr-voice-narrator .sr-btn {
+  min-height: var(--sr-tap, 44px);
+}

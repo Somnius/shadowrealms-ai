@@ -116,6 +116,7 @@ export default function useV5ForgeState(settings, initialValues) {
 
   const [name, setName] = useState(initial.name || '');
   const [concept, setConcept] = useState(initial.concept || '');
+  const [gender, setGender] = useState(initial.gender || '');
   const [sire, setSire] = useState('');
   const [ambition, setAmbition] = useState('');
   const [desire, setDesire] = useState('');
@@ -277,7 +278,7 @@ export default function useV5ForgeState(settings, initialValues) {
     flawDots: ownFlawDots(sheet),
     saved: savedAtCreation(sheet, settings),
     // values and setters
-    name, setName, concept, setConcept, sire, setSire, ambition, setAmbition, desire, setDesire,
+    name, setName, concept, setConcept, gender, setGender, sire, setSire, ambition, setAmbition, desire, setDesire,
     clan, changeClan, age, changeAge, generation, setGeneration,
     attributes, setAttributes, skillDistribution, setSkillDistribution, skills, setSkills,
     specialties, setSpecialties, disciplines, setDisc,

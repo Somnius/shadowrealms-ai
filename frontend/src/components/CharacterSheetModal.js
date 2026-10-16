@@ -20,6 +20,7 @@ import {
 } from '../characterSheet/constants';
 import { t } from '../i18n';
 import { Term } from '../i18n/glossary';
+import { VoiceGenderLine } from '../features/voice/VoiceGender';
 
 function StaticDots({ value, maxRank = 5, accent = 'var(--sr-arcane-300)' }) {
   const rank = Math.max(0, Math.min(maxRank, parseInt(value, 10) || 0));
@@ -157,6 +158,7 @@ export default function CharacterSheetModal({ character, gameSystem, onClose, on
       }
     >
           <div className="sr-sheet__body" data-line={theme}>
+            <VoiceGenderLine key={character.id} character={character} owner={owner} />
             {ghoul && isV5Sheet ? (
               <V5GhoulSheetView character={character} onOpenSheet={onOpenSheet} />
             ) : isV5Sheet ? (
