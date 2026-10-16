@@ -1,6 +1,6 @@
 # ShadowRealms AI Documentation
 
-Index of the documentation in this folder (current release: v0.15.0). The [project wiki](https://github.com/Somnius/shadowrealms-ai/wiki) has step-by-step pages for installation, configuration, AI models, rules editions, books, architecture and troubleshooting.
+Index of the documentation in this folder (current release: v0.16.0). The [project wiki](https://github.com/Somnius/shadowrealms-ai/wiki) has step-by-step pages for installation, configuration, AI models, rules editions, books, architecture and troubleshooting.
 
 ## Getting started
 
@@ -19,6 +19,7 @@ Index of the documentation in this folder (current release: v0.15.0). The [proje
 - [location-naming-world-of-darkness.md](location-naming-world-of-darkness.md): naming guide used for AI location suggestions
 - [TECH_STACK.md](TECH_STACK.md): AI models, technologies, versions and the tools the project was built with
 - [FEATURES.md](FEATURES.md): feature notes (what's new per release, admin tools, profile, dice theatre, chat actions, theme, invite codes)
+- [VOICE.md](VOICE.md): voice in the chat (listening with the phone's voices, read-out settings); plan in [ROADMAP_VOICE.md](ROADMAP_VOICE.md)
 
 ## AI
 

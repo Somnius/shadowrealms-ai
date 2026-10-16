@@ -9,7 +9,7 @@ How each phase runs: build in its own git worktree → tests and CI green → on
 | # | Phase | Parts | Version | Time box | Status |
 |---|---|---|---|---|---|
 | 0 | Measure | voices listened to · Whisper on the GPU timed and its real VRAM read · phone test page | — | until 00:00 | done except 0.5 (phones) |
-| 1 | Listen with the phone's own voices | CSP and glyphs · player voice settings · chronicle read-out defaults · Listen toggle and queue · read-out rules | 0.16 | until 02:00 | in progress |
+| 1 | Listen with the phone's own voices | CSP and glyphs · player voice settings · chronicle read-out defaults · Listen toggle and queue · read-out rules | 0.16 | until 02:00 | built on voice/p1-listen, waiting for review |
 | 2 | Server voices | speech container · gender on the sheet · TTS jobs and cache · voice catalog and narrator voices · server mode in the app | 0.17 | until 03:45 | not started |
 | 3 | Speaking | clip upload · transcription jobs and the GPU policy · recorder with the timer · review and text steps · mic marker and replay · phone dictation | 0.18 | until 06:00 | not started |
 | 4 | Language override | translator · ahead-of-time translation · captions with "show original" · speak in one language, write in the other | 0.19 | until 06:45 | not started |
@@ -42,7 +42,7 @@ How each phase runs: build in its own git worktree → tests and CI green → on
 - [x] 1.3 Chronicle voice settings column, route, "Voice" block in Create chronicle and Chronicle settings (read-out defaults). Status: done 23:17. Voice block in Create chronicle and Chronicle settings; creator/admin only, effective rule tested.
 - [x] 1.4 Listen toggle in the room header, audio unlock on tap, speech queue (order, skip own, cap 20, pause in background, tap to resume), speaking bar, "read the last 3?" on open. Status: done 23:17. Ear in the room header, speaking bar (44 px), queue with cap 20 / missed / pause on hidden / tap to resume, catch-up of 3; jest for the queue. Not yet tried on real phones.
 - [x] 1.5 Read-out rules (Storyteller / IC / OOC / dice from chronicle defaults and player overrides), dice read as one sentence, system lines skipped. Status: done 23:17. Storyteller / IC / OOC / dice / actions rules, dice as one sentence, system lines skipped; jest table.
-- [ ] 1.6 Release 0.16: `docs/VOICE.md`, FEATURES, CHANGELOG. Status: not started.
+- [x] 1.6 Release 0.16: `docs/VOICE.md`, FEATURES, CHANGELOG. Status: done 23:19. VOICE.md, FEATURES, CHANGELOG, version 0.16.0. Backend 1256 passed, frontend 929 passed, lint clean. Waiting for review, merge, tag and phone check.
 
 ## Phase 2 — Server voices (0.17)
 
