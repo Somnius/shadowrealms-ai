@@ -9,6 +9,7 @@ Voice (docs/VOICE.md).
   GET     /api/voice/tts/jobs/<job_id>            job state
   GET     /api/voice/audio/<key>?fmt=ogg|m4a      the audio, for whoever may read one of its messages
   POST    /api/voice/tts/preview {voice_id}       a fixed sample sentence in that voice
+  GET     /api/voice/health                       site admin: speech status, queues, VRAM, disk, minutes today
 """
 
 import json
@@ -218,13 +219,15 @@ def create_tts_job():
         msg = visible_message(cursor, mid, user_id)
         if msg is None:
             return jsonify({"error": "Message not found"}), 404
-        gender = None
+        gender = override = None
         if msg.get("character_id"):
-            cursor.execute("SELECT gender FROM characters WHERE id = %s", (msg["character_id"],))
-            gender = (cursor.fetchone() or {}).get("gender")
+            cursor.execute("SELECT gender, voice_override FROM characters WHERE id = %s",
+                           (msg["character_id"],))
+            ch = cursor.fetchone() or {}
+            gender, override = ch.get("gender"), ch.get("voice_override")
         cursor.execute("SELECT voice_settings FROM campaigns WHERE id = %s", (msg["campaign_id"],))
         camp = (cursor.fetchone() or {}).get("voice_settings")
-        body = tts_request(msg, gender, _user_settings(cursor, user_id), camp)
+        body = tts_request(msg, gender, _user_settings(cursor, user_id), camp, override)
         if body is None:
             return jsonify({"error": "not_spoken"}), 400
         out, status = _speech_tts(cursor, body, mid)
@@ -446,3 +449,40 @@ def clip_audio(clip_id):
     resp = Response(raw, mimetype="audio/ogg" if fmt == "ogg" else "audio/mp4")
     resp.headers["Cache-Control"] = "private, max-age=86400"
     return resp
+
+
+# ---------------------------------------------------------------------------------------------
+# Health (Phase 5): site admins only.
+
+@voice_bp.route("/voice/health", methods=["GET"])
+@jwt_required()
+def voice_health():
+    user_id = _uid()
+    if user_id is None:
+        return jsonify({"error": "Invalid session"}), 401
+    conn, cursor = _open()
+    try:
+        cursor.execute("SELECT role FROM users WHERE id = %s", (user_id,))
+        u = cursor.fetchone()
+        if not u or u.get("role") != "admin":
+            return jsonify({"error": "Admin only"}), 403
+        minutes = voice_clips.minutes_today(cursor)
+        est = voice_clips.used_bytes(cursor)
+    finally:
+        conn.close()
+    try:
+        status, speech = speech_client.call_json("GET", "/health")
+    except speech_client.SpeechUnavailable:
+        status, speech = 503, {}
+    up = status == 200
+    stt, tts, clips = (speech.get(k) or {} for k in ("stt", "tts", "clips")) if up else ({}, {}, {})
+    return jsonify({
+        "speech": {"up": up, "stt_loaded": stt.get("loaded"), "pocket_loaded": tts.get("pocket_loaded"),
+                   "pocket_error": tts.get("pocket_error")},
+        "queues": {"stt": stt.get("queue"), "tts": tts.get("queue")},
+        "vram": {"free_mb": stt.get("vram_free_mb"), "needed_mb": stt.get("vram_needed_mb")},
+        "disk": {"clips_bytes": clips.get("bytes"), "clips_estimate_bytes": est,
+                 "clips_cap_bytes": voice_clips.clips_max_bytes(),
+                 "tts_cache_bytes": tts.get("cache_bytes"), "tts_cache_cap_bytes": tts.get("cache_cap_bytes")},
+        "minutes_today": minutes,
+    }), 200

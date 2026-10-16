@@ -107,3 +107,20 @@ def test_probe_checks():
     for p in cases:
         with pytest.raises(Refused):
             check_probe(p, 180)
+
+
+def test_tts_cache_lru_with_tiny_cap(tmp_path):
+    import time
+    from app import diskcache
+    for i, k in enumerate(["aa1", "bb2", "cc3"]):
+        d = tmp_path / k[:2]
+        d.mkdir()
+        (d / f"{k}.ogg").write_bytes(b"x" * 100)
+        (d / f"{k}.m4a").write_bytes(b"x" * 100)
+        t = time.time() - 100 + i
+        os.utime(d / f"{k}.ogg", (t, t))
+    diskcache.touch(str(tmp_path / "aa" / "aa1.ogg"))  # just used: kept
+    assert diskcache.evict_lru(str(tmp_path), 250) == 2
+    assert (tmp_path / "aa" / "aa1.ogg").exists()
+    assert not (tmp_path / "bb" / "bb2.ogg").exists() and not (tmp_path / "cc" / "cc3.m4a").exists()
+    assert diskcache.dir_bytes(str(tmp_path)) == 200

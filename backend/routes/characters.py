@@ -145,6 +145,18 @@ def _gender_error(data):
     return 'gender must be female, male, neutral or empty'
 
 
+def catalog_voice_ids():
+    """Voice ids the speech service lists, or None when it is down."""
+    from services import speech_client
+    try:
+        status, data = speech_client.call_json("GET", "/voices")
+    except speech_client.SpeechUnavailable:
+        return None
+    if status != 200:
+        return None
+    return {v.get("id") for v in data.get("voices") or [] if isinstance(v, dict)}
+
+
 def _set_gender(cursor, character_id, data):
     if 'gender' in data and _gender_error(data) is None:
         cursor.execute("UPDATE characters SET gender = %s WHERE id = %s", (data['gender'] or None, character_id))
@@ -189,6 +201,7 @@ def _character_public_dict(row, owner_name=None, campaign_name=None):
         'sheet_locked': _sheet_locked_bool(row.get('sheet_locked')),
         # voice gender for read-out (docs/VOICE.md); None = not set, spoken as neutral
         'gender': row.get('gender') if row.get('gender') in GENDERS else None,
+        'voice_override': row.get('voice_override') or None,
         'wod_meta': wod_meta,
         # 'ghoul' for a ghoul's sheet (wod_meta.sheet_kind), else None
         'sheet_kind': wod_meta.get('sheet_kind') if isinstance(wod_meta, dict) else None,
@@ -350,6 +363,13 @@ def create_character():
 
         if _gender_error(data):
             return jsonify({'error': _gender_error(data)}), 400
+        if data.get('voice_override') not in (None, ''):
+            from services.voice_tts import voice_override_error
+            verr = voice_override_error(data['voice_override'], catalog_voice_ids())
+            if verr == 'speech_unavailable':
+                return jsonify({'error': verr}), 503
+            if verr:
+                return jsonify({'error': verr}), 400
 
         if isinstance(data.get('wod_meta'), dict) and data['wod_meta'].get('sheet_kind') == 'ghoul':
             return _create_ghoul(current_user_id, data)
@@ -1152,7 +1172,7 @@ def update_character(character_id):
 
         if player_locked:
             # portrait and voice gender are not rules: a locked sheet may still change them
-            data = {k: v for k, v in data.items() if k in ('portrait_url', 'gender')}
+            data = {k: v for k, v in data.items() if k in ('portrait_url', 'gender', 'voice_override')}
             if not data:
                 return jsonify(
                     {
@@ -1199,6 +1219,10 @@ def update_character(character_id):
         if 'gender' in data:
             updates.append("gender = %s")
             params.append(data['gender'] or None)
+
+        if 'voice_override' in data:
+            updates.append("voice_override = %s")
+            params.append(data['voice_override'] or None)
 
         if 'portrait_url' in data:
             pu = data['portrait_url']

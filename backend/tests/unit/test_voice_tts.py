@@ -183,3 +183,23 @@ def test_gender_validation():
     assert _gender_error({}) is None and _gender_error({"gender": None}) is None
     assert _gender_error({"gender": "male"}) is None and _gender_error({"gender": ""}) is None
     assert _gender_error({"gender": "other"})
+
+
+def test_voice_override_wins_when_language_matches():
+    from services import voice_tts as vt
+    en = vt.tts_request(row(), "male", {}, {}, "en_GB-alan-medium")
+    assert en["voice"] == "en_GB-alan-medium" and en["gender"] == "male"
+    el = vt.tts_request(row(content="Καλησπέρα σας"), "female", {}, {}, "en_GB-alan-medium")
+    assert "voice" not in el and el["gender"] == "female"  # an English pick does not speak Greek
+    assert vt.tts_request(row(content="Καλησπέρα"), None, {}, {}, "el-kostas")["voice"] == "el-kostas"
+    assert "voice" not in vt.tts_request(row(speaker_mode="player", character_id=None), None, {}, {}, "el-kostas")
+
+
+def test_voice_override_validation():
+    from services.voice_tts import voice_override_error as err
+    cat = {"el-kostas", "en_US-ryan-high"}
+    assert err(None, None) is None and err("", cat) is None
+    assert err("el-kostas", cat) is None
+    assert err("el-nobody", cat) == "unknown voice"
+    assert err("fr-x", cat) and err(5, cat) and err("el-kostas; drop", cat)
+    assert err("el-kostas", None) == "speech_unavailable"

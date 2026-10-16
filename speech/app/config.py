@@ -29,3 +29,13 @@ STT_VRAM_MB = _int("VOICE_STT_VRAM_MB", 2150)
 STT_MODEL = os.environ.get("VOICE_STT_MODEL", "large-v3-turbo")
 STT_COMPUTE = os.environ.get("VOICE_STT_COMPUTE", "int8_float16")
 JOB_KEEP_SECONDS = _int("VOICE_JOB_KEEP_SECONDS", 3600)
+
+
+def _float(name, default):
+    try:
+        return float(os.environ.get(name, default))
+    except ValueError:
+        return default
+
+
+TTS_CACHE_BYTES = int(_float("VOICE_TTS_CACHE_GB", 5) * 1024 ** 3)

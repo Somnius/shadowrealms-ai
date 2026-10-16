@@ -175,6 +175,15 @@ def start_background_jobs(app):
         reembed_in_background(app.config)
     except Exception as e:  # noqa: BLE001
         logger.warning("Could not start RAG re-embed: %s", e)
+    # Voice clips recorded but never sent: removed after 24 h (on start, then daily)
+    try:
+        import threading
+
+        from services.voice_clips import sweep_loop
+
+        threading.Thread(target=sweep_loop, args=(app,), daemon=True, name="voice-sweep").start()
+    except Exception as e:  # noqa: BLE001
+        logger.warning("Could not start voice clip sweep: %s", e)
 
 def test_main_application():
     """Standalone test function for Main Application"""
