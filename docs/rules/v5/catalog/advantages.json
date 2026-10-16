@@ -4741,11 +4741,12 @@
       "coterie": false,
       "clans_only": null,
       "cannot_buy_for": [],
-      "repeatable": false,
+      "repeatable": true,
       "requires": null,
       "levels": [],
       "manual_fields": [
-        "aliases"
+        "aliases",
+        "repeatable"
       ]
     },
     {
@@ -6187,9 +6188,12 @@
       "coterie": false,
       "clans_only": null,
       "cannot_buy_for": [],
-      "repeatable": false,
+      "repeatable": true,
       "requires": null,
-      "levels": []
+      "levels": [],
+      "manual_fields": [
+        "repeatable"
+      ]
     },
     {
       "id": "flaw:infamy",

@@ -85,7 +85,8 @@ function AdvRow({ row, index, rows, setRows, clan, settings, fixedIds }) {
   // Not offered any more (the clan changed, or its book isn't the chronicle's): kept visible so its error makes sense.
   const stray = entry && !options.some((o) => o.id === entry.id) ? entry : null;
   // A non-repeatable entry once; a repeatable one up to its max_instances. The rows the clan and
-  // the predator type give count too (a Bagger isn't offered Iron Gullet again).
+  // the predator type give count too (a Bagger isn't offered Iron Gullet again); Enemies and Dark
+  // Secret are repeatable, so a player's own one can sit beside the predator type's.
   const taken = (e) => {
     const n = rows.filter((r) => r.id === e.id).length + fixedIds.filter((id) => id === e.id).length;
     return e.repeatable ? Boolean(e.max_instances && n >= e.max_instances) : n >= 1;

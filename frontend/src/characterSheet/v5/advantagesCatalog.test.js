@@ -172,8 +172,27 @@ describe('row checks', () => {
       'Suspect can be taken only once.'
     );
     expect(v([lore('loresheet:the-bahari', [1]), lore('loresheet:the-bahari', [2])])).toBe('The Bahari can be taken only once.');
+    // the predator type's rows count: Grim Reaper's Prey Exclusion can't be taken again
+    expect(validateV5AdvantageRows({ clan: 'Hecata', predatorType: 'Grim Reaper', flaws: [row('flaw:prey-exclusion', 1)] })).toBe(
+      'Prey Exclusion can be taken only once.'
+    );
     // more than one loresheet at creation: a house ruling (V5.md §4 step 12), no limit of its own
     expect(v([lore('loresheet:the-bahari', [1]), lore('loresheet:harbingers-of-ashur', [2])])).toBeNull();
+  });
+
+  it('Enemies and Dark Secret: an own one beside the predator type\'s (both repeatable)', () => {
+    expect(entry('flaw:dark-secret').repeatable).toBe(true);
+    applyV5Catalog({
+      ...fixture,
+      predator_types: fixture.predator_types.map((p) =>
+        p.id === 'predator:montero' ? { ...p, flaws: [{ pick: 'all', options: [{ id: 'flaw:dark-secret', dots: 1, note: 'Cleaver' }] }] } : p
+      ),
+    });
+    const s = { clan: 'Hecata', predatorType: 'Montero' };
+    expect(resolvePredatorGrants(s).flaws.map((r) => r.id)).toEqual(['flaw:dark-secret']);
+    expect(validateV5AdvantageRows({ ...s, flaws: [row('flaw:dark-secret', 2)] })).toBeNull();
+    expect(validateV5AdvantageRows({ ...s, flaws: [row('flaw:dark-secret', 2), row('flaw:dark-secret', 1)] })).toBeNull();
+    applyV5Catalog(fixture);
   });
 
   it('a Background another entry needs', () => {

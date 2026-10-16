@@ -169,6 +169,26 @@ describe('Advantages from the catalog (Forge v2 part C)', () => {
     expect(within(screen.getByLabelText('Flaw 1')).getByRole('option', { name: 'Prey Exclusion (1)' })).toBeDisabled();
   });
 
+  test('Dark Secret (repeatable) is offered beside the one the predator type gives', () => {
+    applyV5Catalog({
+      ...fixture,
+      predator_types: fixture.predator_types.map((p) =>
+        p.id === 'predator:montero' ? { ...p, flaws: [{ pick: 'all', options: [{ id: 'flaw:dark-secret', dots: 1, note: 'Cleaver' }] }] } : p
+      ),
+    });
+    renderForge();
+    pick(document.getElementById('v5-field-clan'), 'Hecata');
+    pick(document.getElementById('v5-field-predator'), 'Montero');
+    expect(document.getElementById('v5-predator-rows')).toHaveTextContent('Dark Secret (Cleaver) ●');
+    add('Flaw');
+    const own = screen.getByLabelText('Flaw 1');
+    expect(within(own).getByRole('option', { name: 'Dark Secret (1–4)' })).not.toBeDisabled();
+    pick(own, 'flaw:dark-secret');
+    pick(screen.getByLabelText('Dark Secret dots'), '2');
+    expect(count()).toHaveTextContent('Flaws 2 (min 2)'); // the predator type's dot is extra
+    applyV5Catalog(fixture);
+  });
+
   test('rows typed before the catalog loaded move over to the dropdowns', () => {
     applyV5Catalog(null);
     const view = renderForge();

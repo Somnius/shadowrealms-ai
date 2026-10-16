@@ -60,6 +60,20 @@
       "why": "core pr 182: each folkloric block taken is a separate one-dot Flaw"
     },
     {
+      "id": "flaw:enemies",
+      "set": {
+        "repeatable": true
+      },
+      "why": "core pr 184: Backgrounds are discrete and the same one can be bought more than once (two Allies), and Enemies are the Flaw side of Allies, one per enemy. House ruling of 2026-10-16: a player's own Enemy may sit beside the one a predator type gives (Bagger, Extortionist, Osiris, Siren)"
+    },
+    {
+      "id": "flaw:dark-secret",
+      "set": {
+        "repeatable": true
+      },
+      "why": "core pr 187: the Fame Background's milder Infamy, one per secret; read like its Background (pr 184: the same one more than once). House ruling of 2026-10-16: a player's own Dark Secret may sit beside the one a predator type gives (Blood Leech, Cleaver, Consensualist)"
+    },
+    {
       "id": "merit:cobbler",
       "set": {
         "requires": "Mask ••"

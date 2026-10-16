@@ -675,6 +675,26 @@ export const CASE_DEFS = [
   // the Caitiff's Suspect counts toward the 2 Flaw dots (a house ruling, V5.md §4 step 11)
   { name: 'valid: a Caitiff’s Suspect counts toward the 2 Flaw dots', sheet: () => caitiff({ flaws: [{ name: 'Addiction', dots: 1 }] }), expect: [] },
   { name: 'flaws: a Caitiff with only the clan’s Suspect', sheet: () => caitiff({ flaws: [] }), expect: ['flaw_under'] },
+  // Enemies and Dark Secret are repeatable (core p. 184, house ruling of 2026-10-16): a player's own one
+  // beside the one the predator type gives
+  {
+    name: 'valid: a Bagger takes an Enemy of their own beside the type’s',
+    sheet: () => tremere({ flaws: [{ id: 'flaw:enemies', name: 'Enemies', dots: 2 }] }),
+    expect: [],
+  },
+  { name: 'valid: a Siren takes an Enemy of their own beside the type’s', sheet: () => toreador({ flaws: [{ name: 'Enemy', dots: 2 }] }), expect: [] },
+  {
+    name: 'valid: a Cleaver takes a Dark Secret of their own beside the type’s',
+    sheet: () =>
+      brujah0({
+        predatorType: 'Cleaver',
+        predatorSpecialty: 0,
+        predatorDiscipline: 'Animalism',
+        extraPowers: { Animalism: ['Sense the Beast'] },
+        flaws: [{ id: 'flaw:dark-secret', name: 'Dark Secret', dots: 2 }],
+      }),
+    expect: [],
+  },
   { name: 'advantages: a 6-dot row', sheet: () => brujah0({ advantages: [{ name: 'Resources', dots: 6, kind: 'background' }] }), expect: ['adv_dots_range'] },
   // Saved points (forge v2 D): the unspent dots and the unused free specialty go to wod_meta.saved,
   // which counts toward the 7 dots, so a payload can't claim more than it left unspent.
