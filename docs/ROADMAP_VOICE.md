@@ -46,7 +46,7 @@ How each phase runs: build in its own git worktree → tests and CI green → on
 
 ## Phase 2 — Server voices (0.17)
 
-- [ ] 2.1 `speech` container (CUDA base, ffmpeg, Piper, Pocket TTS, faster-whisper installed), host network, GPU checked with `nvidia-smi` inside, 8 CPUs, job queue with STT / TTS / translate lanes, `/health`. Status: not started.
+- [x] 2.1 `speech` container (CUDA base, ffmpeg, Piper, Pocket TTS, faster-whisper installed), host network, GPU checked with `nvidia-smi` inside, 8 CPUs, job queue with STT / TTS / translate lanes, `/health`. Status: done on `voice/speech-service` (STT and TTS lanes; the translate lane comes with 4.1). Opt-in compose profile `voice`, 127.0.0.1:5055, shared secret. Checked once on the host GPU: EN line 0.23 s warm, EL (Pocket) 0.81 s warm, 170 s Greek clip transcribed in 3.5 s.
 - [ ] 2.2 Gender on the character sheet and NPCs (Forge and sheet select), returned with messages. Status: not started.
 - [ ] 2.3 TTS jobs, audio route and cache; the same visibility check as reading messages (404 for missing and forbidden alike); audio removed when a message is deleted. Status: not started.
 - [ ] 2.4 Voice catalog, previews, narrator voice per language in chronicle creation and settings, neutral voice per language, attributions in About. Status: not started.
@@ -56,7 +56,7 @@ How each phase runs: build in its own git worktree → tests and CI green → on
 ## Phase 3 — Speaking (0.18)
 
 - [ ] 3.1 Clip upload: nginx 8 MB on the clips route, clips table, probe before decode, transcode to Ogg/Opus, temp files cleaned; a 6 MB test clip through the public address to learn the front proxy's limits. Status: not started.
-- [ ] 3.2 Transcription jobs with the GPU policy (lazy load, idle unload, VRAM gate, one at a time, queue depth, CPU fallback for short clips), silence guards. Status: not started.
+- [ ] 3.2 Transcription jobs with the GPU policy (lazy load, idle unload, VRAM gate, one at a time, queue depth, CPU fallback for short clips), silence guards. Status: speech service side done on `voice/speech-service` (lazy load, 10-min idle unload, VRAM gate → `gpu_busy`, one at a time, queue of 8, VAD); no CPU fallback yet, backend side not started.
 - [ ] 3.3 Recorder step 1: mic button in the composer, permission path, timer with the pulse colours, auto-stop at the chronicle's limit (3 min). Status: not started.
 - [ ] 3.4 Review and text steps: seek slider, speeds, upload with progress, job position, editable transcript, Speaking as and reply kept, send is a separate tap. Status: not started.
 - [ ] 3.5 Mic marker on voice-sent messages (everyone sees it), clip replay chip, AAC copy for phones that cannot play Opus, disk cap. Status: not started.
