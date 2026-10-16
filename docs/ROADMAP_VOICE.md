@@ -65,11 +65,11 @@ How each phase runs: build in its own git worktree → tests and CI green → on
 
 ## Phase 4 — Language override (0.19)
 
-- [ ] 4.1 Translator role, translations table, translate lane, prompt checked on 20 lines each way. Status: not started.
-- [ ] 4.2 Translate right after a message is saved for the players who need it; message language stored when known. Status: not started.
-- [ ] 4.3 Hearing in the chosen language, captions under messages with "show original" (typed messages too). Status: not started.
-- [ ] 4.4 Speak in one language, write in the other: the text step shows both; the original stays as the caption. Status: not started.
-- [ ] 4.5 Release 0.19: docs, CHANGELOG. Status: not started.
+- [x] 4.1 Translator role, translations table, translate lane, prompt checked on 20 lines each way. Status: done 00:05. `translator` role (Krikri, no Ollama fallback), `message_translations`, one background worker in the backend (not a lane in the speech service: it is an LM Studio call, not audio), few-shot prompt + glossary file. Phase 0 lines + game lines read: meaning and game terms kept; Greek names sometimes transliterated (Ελένη → Eleni). pytest with a fake LM Studio.
+- [x] 4.2 Translate right after a message is saved for the players who need it; message language stored when known. Status: done 00:05. Members' hear-in languages cached 60 s (cleared when someone saves voice settings); `messages.lang`/`orig_lang`. pytest: a hear-in-Greek member gets a row in one job, one call per (message, language), no job when nobody needs it.
+- [x] 4.3 Hearing in the chosen language, captions under messages with "show original" (typed messages too). Status: done 00:05. `waiting_translation` then the original after ~9 s; captions with EL/EN chip and 44-px swap button; phone voices use the translation when ready. jest for the swap, pytest for 404/waiting. Not tried on phones.
+- [x] 4.4 Speak in one language, write in the other: the text step shows both; the original stays as the caption. Status: done 00:05. STT poll translates when done; `POST /api/voice/translate` for phone dictation and "Translate again"; original row so the speaker hears his own words. Round-trip pytest.
+- [x] 4.5 Release 0.19: docs, CHANGELOG. Status: done 00:05. Waiting for review, merge, deploy (Krikri must stay loaded in LM Studio) and phone check.
 
 ## Phase 5 — Ops and polish (0.20)
 
@@ -83,6 +83,7 @@ How each phase runs: build in its own git worktree → tests and CI green → on
 
 - 23:05 — Plan revised with the answers; this file created. Nothing built yet.
 - 23:55 — Phase 3 (speaking) built on `voice/p3-speak`, release 0.18.0 pending review.
+- 00:05 — Phase 4 (language override) built on `voice/p4-translate` (p3 merged in), release 0.19.0 pending review.
 
 ## Left for later
 
