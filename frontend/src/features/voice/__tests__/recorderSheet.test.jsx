@@ -109,3 +109,31 @@ test('no recorder and no dictation: no mic button at all', () => {
   renderIt({ api: jest.fn(), campaignId: 1, locationId: 2, lang: 'en', onSend: jest.fn() });
   expect(screen.queryByTestId('mic')).toBeNull();
 });
+
+test('the mic tap asks for the microphone itself (iOS), once; backgrounding stops and goes to review', async () => {
+  const u = setupUser();
+  getUserMedia.mockResolvedValue({ getTracks: () => [{ stop: jest.fn() }] });
+  renderIt({ api: jest.fn(), campaignId: 1, locationId: 2, lang: 'en', maxSeconds: 180, onSend: jest.fn() });
+  await u.click(screen.getByRole('button', { name: 'Record a voice message' }));
+  expect(getUserMedia).toHaveBeenCalledTimes(1);
+  await waitFor(() => expect(FakeRecorder.last && FakeRecorder.last.state).toBe('recording'));
+  expect(getUserMedia).toHaveBeenCalledTimes(1);
+  Object.defineProperty(document, 'visibilityState', { value: 'hidden', configurable: true });
+  act(() => {
+    document.dispatchEvent(new Event('visibilitychange'));
+  });
+  delete document.visibilityState;
+  expect(screen.getByRole('slider', { name: 'Position in the recording' })).toBeInTheDocument();
+});
+
+test('phone dictation unavailable and the line typed: sent as a normal line, not as voice', async () => {
+  const u = setupUser();
+  const onSend = jest.fn().mockResolvedValue(true);
+  renderIt({ api: jest.fn(), campaignId: 1, locationId: 2, lang: 'en', maxSeconds: 180, phoneDictation: true, canPhoneDictate: true, onSend });
+  await u.click(screen.getByRole('button', { name: 'Dictate a message' }));
+  expect(getUserMedia).not.toHaveBeenCalled();
+  const box = await screen.findByRole('textbox', { name: 'What you said' });
+  await u.type(box, 'I open the door');
+  await u.click(screen.getByRole('button', { name: 'Send' }));
+  expect(onSend).toHaveBeenCalledWith({ text: 'I open the door', clipId: null, source: null });
+});

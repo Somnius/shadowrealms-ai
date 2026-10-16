@@ -3,24 +3,24 @@
  * control and the filler stripping are testable without a microphone.
  */
 
-export const MAX_SECONDS = 180;
 export const RATES = [0.75, 1, 1.25, 1.5, 1.75, 2];
 
 /**
- * Timer phase by elapsed seconds: gold until 0:59, warn from 1:00, blood from 2:00, the bright
- * blood from 2:45 to the end. The class names are sr-rec--<phase>.
+ * Timer phase by elapsed seconds against the chronicle's limit (max, default 180 s): gold for the
+ * first third, warn for the second, blood for the last, the bright blood in the last 15 s.
+ * With 180 s: warn from 1:00, blood from 2:00, bright from 2:45. Class names: sr-rec--<phase>.
  */
-export function timerPhase(sec) {
-  if (sec >= 165) return 'bright';
-  if (sec >= 120) return 'blood';
-  if (sec >= 60) return 'warn';
+export function timerPhase(sec, max = 180) {
+  if (sec >= max - 15) return 'bright';
+  if (sec >= (2 * max) / 3) return 'blood';
+  if (sec >= max / 3) return 'warn';
   return 'gold';
 }
 
 /** Pulse every 5 s; every second in the last 15 s. True on the seconds that pulse. */
-export function pulsesAt(sec) {
+export function pulsesAt(sec, max = 180) {
   if (sec <= 0) return false;
-  return sec >= 165 ? true : sec % 5 === 0;
+  return sec >= max - 15 ? true : sec % 5 === 0;
 }
 
 export function nextRate(rate) {

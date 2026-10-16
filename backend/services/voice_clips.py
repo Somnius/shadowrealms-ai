@@ -30,12 +30,18 @@ def clips_max_bytes():
     return int(gb * 1024 ** 3)
 
 
+UNMETERED_MS = 180_000  # a clip with no known length counts as the longest one
+
+
 def used_bytes(cursor):
-    """Rough disk use: 16 kbps Opus is 2 KB a second (plus an AAC copy for some phones)."""
+    """Rough disk use: 16 kbps Opus is 2 KB a second, plus room for an AAC copy (another ~2 KB/s)
+    for some phones. A clip whose length is not known yet counts as the longest allowed."""
     ensure_voice_clips_table(cursor)
-    cursor.execute("SELECT COALESCE(SUM(duration_ms), 0) AS ms FROM voice_clips")
+    cursor.execute(
+        "SELECT COALESCE(SUM(COALESCE(duration_ms, %s)), 0) AS ms FROM voice_clips", (UNMETERED_MS,)
+    )
     ms = (cursor.fetchone() or {}).get("ms") or 0
-    return int(ms) * 2
+    return int(ms) * 4
 
 
 def record(cursor, clip_id, campaign_id, location_id, user_id, lang, duration_ms=None):
@@ -79,7 +85,12 @@ def attach_error(clip, user_id, campaign_id, location_id):
 
 
 def attach(cursor, clip_id, message_id):
-    cursor.execute("UPDATE voice_clips SET message_id = %s WHERE clip_id = %s", (message_id, clip_id))
+    """Link the clip to its message. False when another send got it first (the caller rolls back)."""
+    cursor.execute(
+        "UPDATE voice_clips SET message_id = %s WHERE clip_id = %s AND message_id IS NULL",
+        (message_id, clip_id),
+    )
+    return cursor.rowcount == 1
 
 
 def _drop_files(clip_ids):

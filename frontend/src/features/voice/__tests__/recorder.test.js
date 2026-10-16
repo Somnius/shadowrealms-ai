@@ -1,13 +1,18 @@
 import { RATES, clock, nextRate, pickMime, pulsesAt, sttLang, stripFillers, timerPhase } from '../recorder';
 
 test('timer colours: gold, warn at 1:00, blood at 2:00, bright blood from 2:45', () => {
-  expect([0, 59, 60, 119, 120, 164, 165, 180].map(timerPhase)).toEqual(
+  expect([0, 59, 60, 119, 120, 164, 165, 180].map((s) => timerPhase(s))).toEqual(
     ['gold', 'gold', 'warn', 'warn', 'blood', 'blood', 'bright', 'bright']
   );
 });
 
+test('a 60 s limit scales the colours and the last-15-s pulse', () => {
+  expect([0, 19, 20, 40, 44, 45].map((s) => timerPhase(s, 60))).toEqual(['gold', 'gold', 'warn', 'blood', 'blood', 'bright']);
+  expect([44, 45, 46].map((s) => pulsesAt(s, 60))).toEqual([false, true, true]);
+});
+
 test('pulse every 5 s, every second in the last 15 s', () => {
-  expect([0, 1, 5, 10, 11, 160, 164, 165, 166].map(pulsesAt)).toEqual(
+  expect([0, 1, 5, 10, 11, 160, 164, 165, 166].map((s) => pulsesAt(s))).toEqual(
     [false, false, true, true, false, true, false, true, true]
   );
 });

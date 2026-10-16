@@ -64,7 +64,7 @@ def test_upload_checks(api, speech):  # noqa: F811
     assert speech["uploads"] == []
     r = post_clip(api, 3)
     assert r.status_code == 200 and r.get_json()["clip_id"] == CLIP
-    assert speech["uploads"][0][:3] == ("/stt", {"lang": "en"}, "audio/mp4")
+    assert speech["uploads"][0][:3] == ("/stt", {"lang": "en", "max_seconds": "180"}, "audio/mp4")
     row = api.raw.execute("SELECT user_id, campaign_id, location_id, message_id FROM voice_clips").fetchone()
     assert tuple(row) == (3, 10, 100, None)
 
@@ -111,3 +111,22 @@ def test_deleted_with_message_and_chronicle(api, speech):  # noqa: F811
     assert speech["deleted"] == ["a" * 32]
     assert voice_clips.forget_campaign_clips(cur, 10) == ["b" * 32]
     assert api.raw.execute("SELECT COUNT(*) FROM voice_clips").fetchone()[0] == 0
+
+
+def test_closed_room_refuses_upload(api, speech):  # noqa: F811
+    api.raw.execute("UPDATE locations SET is_open = 0 WHERE id = 100")
+    assert post_clip(api, 3).status_code == 404
+    assert speech["uploads"] == []
+
+
+def test_attach_once(api, speech):  # noqa: F811
+    cur = Conn(api.raw).cursor()
+    voice_clips.record(cur, "a" * 32, 10, 100, 3, "en")
+    assert voice_clips.attach(cur, "a" * 32, 1) is True
+    assert voice_clips.attach(cur, "a" * 32, 2) is False
+
+
+def test_unmetered_clips_count(api, speech):  # noqa: F811
+    cur = Conn(api.raw).cursor()
+    voice_clips.record(cur, "a" * 32, 10, 100, 3, "en")
+    assert voice_clips.used_bytes(cur) == voice_clips.UNMETERED_MS * 4

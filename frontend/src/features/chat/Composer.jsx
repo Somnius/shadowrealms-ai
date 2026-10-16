@@ -92,6 +92,17 @@ export default function Composer({
 }) {
   // voice: {api, campaignId, locationId, lang, maxSeconds, phoneDictation, canPhoneDictate, onSend}
   const [recording, setRecording] = useState(0); // 0 closed, else a key (Record again remounts)
+  const micStream = useRef(null);
+  // iOS Safari only grants the mic when getUserMedia runs inside the tap, so ask here and hand
+  // the pending stream to the sheet (phone dictation asks on its own).
+  const openRecorder = (key) => {
+    micStream.current = null;
+    if (!voice.phoneDictation && typeof navigator !== 'undefined' && navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+      micStream.current = navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true } });
+      micStream.current.catch(() => {}); // the sheet reports the error
+    }
+    setRecording(key);
+  };
   const [micDenied, setMicDenied] = useState(false);
   const [micHint, setMicHint] = useState(false);
   const voiceOn = !!voice && !disabled && (voice.phoneDictation ? voice.canPhoneDictate : canRecord());
@@ -269,7 +280,8 @@ export default function Composer({
           header={<SpeakingAs voices={voices} value={speakAs} onChange={onSpeakAsChange} />}
           onSend={voice.onSend}
           onClose={() => setRecording(0)}
-          onRestart={() => setRecording((k) => k + 1)}
+          onRestart={() => openRecorder(recording + 1)}
+          micStream={micStream.current}
           onMicDenied={() => setMicDenied(true)}
         />
       ) : null}
@@ -317,7 +329,7 @@ export default function Composer({
               <IconButton
                 icon="mic"
                 label={voice.phoneDictation ? t('voice:rec.dictate', 'Dictate a message') : t('voice:rec.record', 'Record a voice message')}
-                onClick={() => setRecording(1)}
+                onClick={() => openRecorder(1)}
                 data-testid="mic"
               />
             )

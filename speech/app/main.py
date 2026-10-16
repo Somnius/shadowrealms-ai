@@ -180,8 +180,9 @@ def tts_audio_delete(key: str):
 
 
 @app.post("/stt", dependencies=[Depends(auth)])
-def stt(file: UploadFile = File(...), lang: str = Form(...)):
+def stt(file: UploadFile = File(...), lang: str = Form(...), max_seconds: int = Form(0)):
     check_lang(lang)
+    limit = min(max_seconds, config.CLIP_MAX_SECONDS) if max_seconds > 0 else config.CLIP_MAX_SECONDS
     if stt_lane.q.full():
         raise Refused("queue_full")
     clip = uuid.uuid4().hex
@@ -195,18 +196,18 @@ def stt(file: UploadFile = File(...), lang: str = Form(...)):
                     raise Refused("too_large", f"max {config.CLIP_MAX_BYTES} bytes")
                 f.write(chunk)
         check_size(n, config.CLIP_MAX_BYTES)
-        dur = check_probe(audio.probe(raw), config.CLIP_MAX_SECONDS)
+        dur = check_probe(audio.probe(raw), limit)
         ogg = os.path.join(CLIP_DIR, clip + ".ogg")
-        audio.to_opus(raw, ogg, config.CLIP_BITRATE, max_seconds=config.CLIP_MAX_SECONDS)
+        audio.to_opus(raw, ogg, config.CLIP_BITRATE, max_seconds=limit)
         if dur is None:
-            real = audio.duration(ogg)
-            if real > config.CLIP_MAX_SECONDS + 0.5:
+            real = dur = audio.duration(ogg)
+            if real > limit + 0.5:
                 os.remove(ogg)
-                raise Refused("too_long", f"max {config.CLIP_MAX_SECONDS} s")
+                raise Refused("too_long", f"max {limit} s")
     finally:
         if os.path.exists(raw):
             os.remove(raw)
-    return stt_lane.submit(dict(ogg=ogg, lang=lang, clip=clip), dict(clip=clip))
+    return stt_lane.submit(dict(ogg=ogg, lang=lang, clip=clip), dict(clip=clip, duration=round(dur, 2)))
 
 
 @app.get("/stt/{job_id}", dependencies=[Depends(auth)])

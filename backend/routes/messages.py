@@ -587,6 +587,8 @@ def save_message(campaign_id, location_id):
             return jsonify({'error': 'source must be voice or phone-voice'}), 400
         if clip_id and not source:
             source = 'voice'
+        if source == 'voice' and not clip_id:
+            return jsonify({'error': 'A voice line needs its recording', 'code': 'clip_not_found'}), 400
         if (clip_id or source) and role != 'user':
             return jsonify({'error': 'Only players send voice messages'}), 400
 
@@ -847,11 +849,25 @@ def save_message(campaign_id, location_id):
                 }), 400
 
         clip_ms = None
-        if clip_id:
+        if source:
+            from database import ensure_campaigns_voice_settings_column
             from services import voice_clips
+            from services.voice_settings import normalize_campaign_voice_settings
 
+            ensure_campaigns_voice_settings_column(cursor)
+            cursor.execute("SELECT voice_settings FROM campaigns WHERE id = %s", (campaign_id,))
+            vrow = cursor.fetchone() or {}
+            rules = normalize_campaign_voice_settings(vrow.get('voice_settings'))
+            if source == 'phone-voice' and not rules['allow_phone_stt']:
+                conn.rollback()
+                return jsonify({'error': 'Phone dictation is off in this chronicle.',
+                                'code': 'phone_stt_off'}), 400
+        if clip_id:
             clip = voice_clips.get(cursor, clip_id)
             clip_err = voice_clips.attach_error(clip, user_id, campaign_id, location_id)
+            if not clip_err and clip.get('duration_ms') and \
+                    int(clip['duration_ms']) > rules['max_clip_seconds'] * 1000 + 500:
+                clip_err = 'too_long'
             if clip_err:
                 conn.rollback()
                 return jsonify({'error': 'That recording cannot be sent here.', 'code': clip_err}), 400
@@ -899,8 +915,9 @@ def save_message(campaign_id, location_id):
 
         result = cursor.fetchone()
         message_id = result['id']
-        if clip_id:
-            voice_clips.attach(cursor, clip_id, message_id)
+        if clip_id and not voice_clips.attach(cursor, clip_id, message_id):
+            conn.rollback()
+            return jsonify({'error': 'That recording cannot be sent here.', 'code': 'clip_already_sent'}), 400
         conn.commit()
         
         # Store message embedding in ChromaDB for semantic search

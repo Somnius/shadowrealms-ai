@@ -47,8 +47,15 @@ async function clipUrl(clipId, fmt) {
   return url;
 }
 
+let defaults = { rate: 1, volume: 1 };
+/** The player's listening speed and volume (voice settings), used when a chip passes none. */
+export function setDefaults({ rate = 1, volume = 1 } = {}) {
+  defaults = { rate, volume };
+}
+
 /** Play or pause this clip (a tap: the user gesture iOS needs). */
-export async function toggle(clipId, { rate = 1, volume = 1 } = {}) {
+export async function toggle(clipId, opts) {
+  const { rate = 1, volume = 1 } = opts || defaults;
   const a = audio();
   if (!a) return;
   if (state.clipId === clipId && state.playing) {

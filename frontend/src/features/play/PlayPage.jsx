@@ -22,6 +22,7 @@ import { speechRecognitionCtor, sttLang } from '../voice/recorder';
 import * as clipPlayer from '../voice/clipPlayer';
 import { useLiveUpdates } from '../chat/useLiveUpdates';
 import { MessageActionsContext, useMessageActions } from '../chat/MessageActions';
+import { setDefaults as setClipDefaults } from '../voice/clipPlayer';
 import { useDiceOverlay } from '../dice/useDiceOverlay';
 import { useDiceActions } from '../dice/useDiceActions';
 import { DiceHistoryDialog, DiceRulesDialog, RollDialog } from '../dice/DiceDialogs';
@@ -383,6 +384,9 @@ export default function PlayPage() {
   // Speaking: the recorder in the composer (phone dictation if the player chose it and the chronicle allows it)
   const vs = listen.settings || {};
   const vc = listen.chronicle || {};
+  useEffect(() => {
+    setClipDefaults({ rate: Number(vs.rate) || 1, volume: vs.volume == null ? 1 : Number(vs.volume) });
+  }, [vs.rate, vs.volume]);
   const canPhoneDictate = vc.allow_phone_stt !== false && !!speechRecognitionCtor();
   const voiceCfg = ready && location
     ? {
@@ -393,7 +397,7 @@ export default function PlayPage() {
         maxSeconds: Number(vc.max_clip_seconds) || 180,
         phoneDictation: vs.stt_source === 'phone' && canPhoneDictate,
         canPhoneDictate,
-        onSend: ({ text, clipId, source }) => onSend(text, null, { clipId, source }),
+        onSend: ({ text, clipId, source }) => onSend(text, null, clipId || source ? { clipId, source } : null),
       }
     : null;
   useEffect(() => () => clipPlayer.reset(), [locationId]);

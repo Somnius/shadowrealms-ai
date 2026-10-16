@@ -32,6 +32,7 @@ from database import (
     get_db,
 )
 from routes.messages import visible_message
+from services.location_access import user_can_bypass_closed_location
 from services import speech_client, voice_audio, voice_clips
 from services.request_validation import RequestValidationError
 from services.voice_tts import PREVIEW_TEXT, tts_request
@@ -306,12 +307,20 @@ _MIMES = ("audio/webm", "audio/mp4", "audio/ogg", "audio/mpeg", "audio/wav", "au
 
 
 def _room_ok(cursor, campaign_id, location_id, user_id):
+    """The chronicle row when this player may post in this room (same closed-room rule as
+    save_message), else None."""
     row, _ = _campaign_access(cursor, campaign_id, user_id)
     if row is None:
-        return False
-    cursor.execute("SELECT campaign_id FROM locations WHERE id = %s", (location_id,))
+        return None
+    cursor.execute("SELECT campaign_id, is_open FROM locations WHERE id = %s", (location_id,))
     loc = cursor.fetchone()
-    return bool(loc) and int(loc["campaign_id"]) == int(campaign_id)
+    if not loc or int(loc["campaign_id"]) != int(campaign_id):
+        return None
+    raw_open = loc.get("is_open")
+    is_open = True if raw_open is None else bool(raw_open) if not isinstance(raw_open, (int, float)) else raw_open != 0
+    if not is_open and not user_can_bypass_closed_location(cursor, user_id, campaign_id):
+        return None
+    return row
 
 
 @voice_bp.route("/voice/clips", methods=["POST"])
@@ -341,18 +350,26 @@ def create_clip():
         return jsonify({"error": "too_large"}), 413
     conn, cursor = _open()
     try:
-        if not _room_ok(cursor, campaign_id, location_id, user_id):
+        camp = _room_ok(cursor, campaign_id, location_id, user_id)
+        if camp is None:
             return jsonify({"error": "Chronicle not found"}), 404
+        max_s = normalize_campaign_voice_settings(camp.get("voice_settings"))["max_clip_seconds"]
         if voice_clips.used_bytes(cursor) >= voice_clips.clips_max_bytes():
             return jsonify({"error": "clips_disk_full"}), 507
         try:
-            status, job = speech_client.call_upload("/stt", {"lang": lang}, "clip", data, mime)
+            status, job = speech_client.call_upload(
+                "/stt", {"lang": lang, "max_seconds": str(max_s)}, "clip", data, mime
+            )
         except speech_client.SpeechUnavailable:
             return jsonify(_SPEECH_DOWN[0]), 503
         if status >= 400 or not job.get("clip"):
             code = job.get("error") if isinstance(job.get("error"), str) else "speech_failed"
             return jsonify({"error": code}), (503 if status >= 500 else 400)
-        voice_clips.record(cursor, job["clip"], campaign_id, location_id, user_id, lang)
+        try:
+            dur_ms = int(round(float(job["duration"]) * 1000)) if job.get("duration") else None
+        except (TypeError, ValueError):
+            dur_ms = None
+        voice_clips.record(cursor, job["clip"], campaign_id, location_id, user_id, lang, dur_ms)
         conn.commit()
         out = _job_out(job)
         out["clip_id"] = job["clip"]
