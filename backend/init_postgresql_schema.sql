@@ -135,6 +135,7 @@ CREATE TABLE IF NOT EXISTS characters (
     play_suspended_at           TIMESTAMP,
     play_suspended_by           INTEGER REFERENCES users(id) ON DELETE SET NULL,
     play_suspension_updated_at  TIMESTAMP,
+    gender                      TEXT,                                -- voice gender: female/male/neutral, NULL = not set (docs/VOICE.md)
     created_at                  TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at                  TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -455,7 +456,8 @@ CREATE TABLE IF NOT EXISTS npcs (
     created_by  INTEGER NOT NULL REFERENCES users(id),           -- reassigned on account delete
     created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     last_seen   TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    is_active   BOOLEAN NOT NULL DEFAULT TRUE
+    is_active   BOOLEAN NOT NULL DEFAULT TRUE,
+    gender      TEXT                                             -- voice gender, as characters.gender
 );
 
 CREATE INDEX IF NOT EXISTS idx_npcs_location ON npcs(campaign_id, location_id);
@@ -647,3 +649,17 @@ CREATE OR REPLACE TRIGGER trg_messages_activity
 
 
 COMMIT;
+
+-- -----------------------------------------------------------------------------
+-- voice_audio: spoken lines in the speech service's cache, per message (NULL = a voice preview)
+-- -----------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS voice_audio (
+    id          SERIAL PRIMARY KEY,
+    message_id  INTEGER,
+    audio_key   TEXT NOT NULL,
+    voice_id    TEXT,
+    created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_voice_audio_message ON voice_audio(message_id);
+CREATE INDEX IF NOT EXISTS idx_voice_audio_key ON voice_audio(audio_key);
