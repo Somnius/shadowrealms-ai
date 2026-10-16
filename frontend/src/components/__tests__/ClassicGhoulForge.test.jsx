@@ -196,7 +196,7 @@ test("the server's bounds answer lands on each problem's section, in Greek", asy
   await act(() => setLanguage('el', { remember: false, save: false }));
   fireEvent.click(screen.getByRole('button', { name: /Create the ghoul|Δημιούργησε το ghoul/ }));
   await waitFor(() => expect(errors.length).toBe(1));
-  expect(errors[0]).toBe('Ο server δεν δέχτηκε το χαρτί: wod_meta.blood_pool.max must be between 1 and 20');
-  expect(within(document.getElementById(S.advantages)).getByRole('alert')).toHaveTextContent('Ο server δεν δέχτηκε το χαρτί');
-  expect(within(document.getElementById(S.bond)).getByRole('alert')).toHaveTextContent('Ο server δεν δέχτηκε το χαρτί: Τελευταία φορά που ήπιε: έως 60 χαρακτήρες.');
+  expect(errors[0]).toBe('Ο server δεν δέχτηκε το χαρτί του χαρακτήρα: wod_meta.blood_pool.max must be between 1 and 20');
+  expect(within(document.getElementById(S.advantages)).getByRole('alert')).toHaveTextContent('Ο server δεν δέχτηκε το χαρτί του χαρακτήρα');
+  expect(within(document.getElementById(S.bond)).getByRole('alert')).toHaveTextContent('Ο server δεν δέχτηκε το χαρτί του χαρακτήρα: Τελευταία φορά που ήπιε: έως 60 χαρακτήρες.');
 });
