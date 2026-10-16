@@ -8,7 +8,7 @@ How each phase runs: build in its own git worktree → tests and CI green → on
 
 | # | Phase | Parts | Version | Time box | Status |
 |---|---|---|---|---|---|
-| 0 | Measure | voices listened to · Whisper on the GPU timed and its real VRAM read · phone test page | — | until 00:00 | not started |
+| 0 | Measure | voices listened to · Whisper on the GPU timed and its real VRAM read · phone test page | — | until 00:00 | done except 0.5 (phones) |
 | 1 | Listen with the phone's own voices | CSP and glyphs · player voice settings · chronicle read-out defaults · Listen toggle and queue · read-out rules | 0.16 | until 02:00 | in progress |
 | 2 | Server voices | speech container · gender on the sheet · TTS jobs and cache · voice catalog and narrator voices · server mode in the app | 0.17 | until 03:45 | not started |
 | 3 | Speaking | clip upload · transcription jobs and the GPU policy · recorder with the timer · review and text steps · mic marker and replay · phone dictation | 0.18 | until 06:00 | not started |
@@ -29,11 +29,11 @@ How each phase runs: build in its own git worktree → tests and CI green → on
 
 ## Phase 0 — Measure
 
-- [ ] 0.1 Piper voices (EN US, EN UK, Greek): seconds per sentence, listened to, Greek intelligibility scored by transcribing it back. Status: not started.
-- [ ] 0.2 Pocket TTS Greek (the only local Greek male voice found): same test. Status: not started.
-- [ ] 0.3 Whisper large-v3-turbo on the GPU in the CUDA image: seconds for 10 s / 60 s / 180 s clips, cold start, real VRAM read from `nvidia-smi` during a clip, name prompt on/off, Parakeet A/B. Status: not started.
-- [ ] 0.4 Opus bitrate (64/48/32) against transcription accuracy; 20 chat lines translated each way, timed. Status: not started (moved into 4.1 if time is short).
-- [ ] 0.5 Phone test page (recording formats, voices, home-screen mic, silent switch, 2× playback, Opus playback, phone recognition) on an iPhone and an Android phone. Status: not started.
+- [x] 0.1 Piper voices (EN US, EN UK, Greek): seconds per sentence, listened to, Greek intelligibility scored by transcribing it back. Status: done 23:17. Piper EN go (alan, jenny, cori); Piper EL no-go as the main voice (WER 24–27 %).
+- [x] 0.2 Pocket TTS Greek (the only local Greek male voice found): same test. Status: done 23:17. Pocket TTS Greek go (kostas, spyros, eleni, athina), about 0.28× real time on one thread.
+- [x] 0.3 Whisper large-v3-turbo on the GPU in the CUDA image: seconds for 10 s / 60 s / 180 s clips, cold start, real VRAM read from `nvidia-smi` during a clip, name prompt on/off, Parakeet A/B. Status: done 23:17. faster-whisper large-v3-turbo int8_float16 on the GPU go: +1.6 GB VRAM, about 30× real time.
+- [x] 0.4 Opus bitrate (64/48/32) against transcription accuracy; 20 chat lines translated each way, timed. Status: done 23:17. Clips as Opus 16 kbps mono (about 115 KB a minute); Krikri translation go with a game-term glossary. Models in data/voice/models (2.5 GB).
+- [ ] 0.5 Phone test page (recording formats, voices, home-screen mic, silent switch, 2× playback, Opus playback, phone recognition) on an iPhone and an Android phone. Status: still needs Lef's phones.
 
 ## Phase 1 — Listen with the phone's own voices (0.16)
 
