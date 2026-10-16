@@ -153,13 +153,25 @@ def sweep_orphans(cursor, hours=ORPHAN_HOURS, now=None):
     gone = [r["clip_id"] for r in cursor.fetchall()]
     if not gone:
         return []
-    # files first: a row whose file could not be deleted stays, so the next sweep tries again
+    # rows first, only those still unsent (one may have been sent since the select)
+    ph = ", ".join(["%s"] * len(gone))
+    cursor.execute(f"SELECT * FROM voice_clips WHERE message_id IS NULL AND clip_id IN ({ph})", tuple(gone))
+    rows = {r["clip_id"]: dict(r) for r in cursor.fetchall()}
+    gone = list(rows)
+    if not gone:
+        return []
+    ph = ", ".join(["%s"] * len(gone))
+    cursor.execute(f"DELETE FROM voice_clips WHERE message_id IS NULL AND clip_id IN ({ph})", tuple(gone))
+    cursor.execute(f"SELECT clip_id FROM voice_clips WHERE clip_id IN ({ph})", tuple(gone))
+    sent = {r["clip_id"] for r in cursor.fetchall()}  # sent in between: not ours to delete
+    gone = [c for c in gone if c not in sent]
+    # a row whose file could not be deleted comes back, so the next sweep tries again
     failed = set(_drop_files(gone))
-    gone = [c for c in gone if c not in failed]
-    if gone:
-        ph = ", ".join(["%s"] * len(gone))
-        cursor.execute(f"DELETE FROM voice_clips WHERE clip_id IN ({ph})", tuple(gone))
-    return gone
+    for cid in failed:
+        row = rows[cid]
+        cols = ", ".join(row)
+        cursor.execute(f"INSERT INTO voice_clips ({cols}) VALUES ({', '.join(['%s'] * len(row))})", tuple(row.values()))
+    return [c for c in gone if c not in failed]
 
 
 def minutes_today(cursor, now=None):

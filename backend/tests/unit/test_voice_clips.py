@@ -195,3 +195,30 @@ def test_orphan_sweep_keeps_rows_when_speech_down(api, monkeypatch):  # noqa: F8
     cur = Conn(api.raw).cursor()
     assert voice_clips.sweep_orphans(cur, now=datetime.utcnow() + timedelta(hours=1)) == []
     assert [r[0] for r in api.raw.execute("SELECT clip_id FROM voice_clips")] == ["e"]
+
+
+def test_orphan_sweep_spares_a_clip_sent_meanwhile(api, speech, monkeypatch):  # noqa: F811
+    from datetime import datetime, timedelta
+    post_clip(api, 3)
+    from tests.unit.test_creation_validation_routes import Conn
+    cur = Conn(api.raw).cursor()
+    real = voice_clips._drop_files
+    seen = []
+
+    def sent_first(ids):
+        seen.append(list(ids))
+        return real(ids)
+
+    monkeypatch.setattr(voice_clips, "_drop_files", sent_first)
+    real_exec = cur.execute
+    state = {"done": False}
+
+    def execute(sql, params=()):
+        if sql.startswith("DELETE FROM voice_clips") and not state["done"]:
+            state["done"] = True
+            api.raw.execute("UPDATE voice_clips SET message_id = 1")  # a send lands just now
+        return real_exec(sql, params)
+
+    cur.execute = execute
+    assert voice_clips.sweep_orphans(cur, now=datetime.utcnow() + timedelta(hours=25)) == []
+    assert speech["deleted"] == [] and api.raw.execute("SELECT COUNT(*) FROM voice_clips").fetchone()[0] == 1

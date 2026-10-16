@@ -108,12 +108,21 @@ export default function Composer({
   const voiceOn = !!voice && !disabled && (voice.phoneDictation ? voice.canPhoneDictate : canRecord());
   // Desktop push-to-talk: hold Space with focus on the page or the message list to record, release to stop and review.
   const [ptt, setPtt] = useState(false);
+  const pttReleased = useRef(false);
   const pttOn = voiceOn && !voice.phoneDictation && !micDenied && !recording;
   useEffect(() => {
     if (!pttOn || typeof window === 'undefined') return undefined;
     const down = (e) => {
       if (!isPushToTalkKey(e)) return;
       e.preventDefault();
+      // a quick tap can let go before the sheet listens: note the keyup here too
+      pttReleased.current = false;
+      const up = (ev) => {
+        if (ev.code !== 'Space' && ev.key !== ' ') return;
+        pttReleased.current = true;
+        window.removeEventListener('keyup', up);
+      };
+      window.addEventListener('keyup', up);
       setPtt(true);
       openRecorder(1);
     };
@@ -297,6 +306,7 @@ export default function Composer({
           onClose={() => { setRecording(0); setPtt(false); }}
           onRestart={() => { setPtt(false); openRecorder(recording + 1); }}
           pushToTalk={ptt}
+          pushToTalkReleased={pttReleased}
           micStream={micStream.current}
           onMicDenied={() => setMicDenied(true)}
         />

@@ -69,6 +69,7 @@ export default function RecorderSheet({
   onRestart,
   micStream = null,
   pushToTalk = false,
+  pushToTalkReleased = null,
 }) {
   // The language you speak in this recording: it tells the transcriber which language to expect.
   // Remembered on this device; first time it follows your voice settings / interface language.
@@ -201,7 +202,7 @@ export default function RecorderSheet({
         rec.current = r;
         clockRef.current = { start: Date.now(), pausedAt: 0, pausedFor: 0 };
         r.start(1000);
-        if (released.current) r.stop(); // Space let go before the mic was ready
+        if (released.current || (pushToTalk && pushToTalkReleased && pushToTalkReleased.current)) r.stop(); // Space let go before the mic was ready
       } catch {
         rec.current = null;
         stopTracks();
