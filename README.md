@@ -66,6 +66,8 @@ ShadowRealms AI is a web app for running World of Darkness chronicles with an AI
 
 - A character forge per edition: Classic with the Revised budgets (7/5/3, 13/9/5, virtues, 15 freebies), V5 in the corebook's order with all 16 clans, powers, rituals, predator types, Merits, Flaws and loresheets picked from a catalog built from the books (with short descriptions in English and Greek), a guided mode for new players, a check on the server, and creation rules each Storyteller sets per chronicle.
 - Read-only sheets with trackers (Hunger, Willpower, Humanity), portraits, and one playing character per chronicle.
+- Ghoul sheets for both editions, made from a vampire's sheet ("Add a ghoul retainer"): V5 retainers on the corebook's mortal templates or player ghouls by the Players Guide, with a level 1 power from the domitor and a Blood Bond (no blood pool, as in V5); Classic Revised ghouls by *Ghouls: Fatal Addiction*, with their Blood Pool. A ghoul follows its domitor, and the AI Storyteller knows about it.
+- Character sheets export to PDF, V5 and Classic, ghouls included: a fillable version, and a print version without form fields that looks the same in every PDF viewer. Long backgrounds and notes continue on extra pages.
 - Sheets lock after creation; later changes go through downtime requests the Storyteller approves.
 
 ### AI
