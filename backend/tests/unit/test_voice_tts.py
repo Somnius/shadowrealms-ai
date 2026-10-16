@@ -129,7 +129,7 @@ def api(monkeypatch):
     def call(method, url, uid, body=None):
         return c.open(url, method=method, json=body, headers={"Authorization": f"Bearer {tokens[uid]}"})
 
-    call.raw, call.speech = raw, speech
+    call.raw, call.speech, call.client, call.tokens = raw, speech, c, tokens
     return call
 
 

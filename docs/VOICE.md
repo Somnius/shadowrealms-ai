@@ -51,6 +51,30 @@ Rate limits: 60 jobs a minute (1,500 an hour), 240 status polls, 120 audio fetch
 
 Stored: `characters.gender` and `npcs.gender` (`ensure_characters_gender_column`), the chronicle's `narrator_voice_en` (American), `narrator_voice_en_gb` and `narrator_voice_el` in `campaigns.voice_settings`, and `voice_audio (message_id, audio_key, voice_id)` (`ensure_voice_audio_table`): which message used which cached file (NULL for previews). Deleting a message deletes its rows and asks the service to delete each file no other message still uses (`DELETE /audio/<key>`). The backend reaches the service at `127.0.0.1:${SPEECH_PORT}` with `SPEECH_SECRET` (both in the backend's compose environment).
 
+## Speaking (0.18)
+
+- **Record.** The mic in the message box opens the recorder in place of the box (the reply bar stays above it, Speaking as sits in its header: in character, out of character, or a quote by replying). The timer is 28 px with tabular digits; the 44-px mic ring is gold, then `--sr-warn-400` from 1:00, `--sr-blood-500` from 2:00 and `--sr-blood-300` from 2:45. It pulses every 5 s (every second in the last 15 s) by a class toggle; with reduced motion it only changes colour. At the chronicle's limit (3:00 by default) it stops by itself and goes to review. If the app goes to the background the recording pauses and shows "Tap to resume".
+- **Review.** Play it back on the phone, seek (44-px touch box), one speed button stepping 0.75 → 1 → 1.25 → 1.5 → 1.75 → 2×, Record again, Discard, Transcribe. **Nothing leaves the phone until Transcribe.** Formats: WebM/Opus (Android, desktop) or MP4/AAC (iOS), whichever `MediaRecorder` offers.
+- **Text.** Transcribe sends the clip (`POST /api/voice/clips`), the speech service keeps it as Ogg/Opus 16 kbps and transcribes it (Whisper on the GPU); the app polls and shows the place in the queue. The text (hesitations like "um", "εε" removed) is editable. Back / Discard / Send are one 44-px row; **Send is always a separate tap** and goes through the normal send: OOC warnings and the ban, the Storyteller's reply, reply-to, all exactly as typed text. If the GPU is busy (`gpu_busy`) or the service is down, the text step says so and offers the phone's dictation; the recording is still sent with the line.
+- **Phone dictation** (Profile → Voice → "Voice messages are written by: My phone's dictation", if the chronicle allows it): the phone's own recogniser (`SpeechRecognition`, audio goes to Apple or Google) writes while you speak; no recording is kept, so the line gets the mic marker and no replay chip.
+- **Marker and replay.** A line sent by voice has a 14-px mic after the speaker's name (and at the start of later rows of the same speaker), with a spoken name ("Sent by voice" / "Dictated on the phone"); everyone sees it. A recorded line has a one-line chip under it: play/pause, time, and a separate seek bar. One `<audio playsinline>` per room, so one clip plays at a time; Ogg/Opus where the browser plays it, the AAC copy (made on first request) on iOS.
+- **Microphone blocked**: the mic button becomes `mic-off`; tapping it says to allow the microphone in the phone's Settings.
+- **Chronicle settings → Voice**: longest recording (30 s to 3 min) and whether players may use phone dictation.
+- **Kept** for the chronicle's lifetime; deleted with the message, and all of a chronicle's clips with the chronicle. A recording that was transcribed but never sent stays until the chronicle goes (an orphan sweep is Phase 5).
+
+### Speaking API
+
+| Route | Who | What |
+|---|---|---|
+| `POST /api/voice/clips` (multipart `audio`, `campaign_id`, `location_id`, `lang` el/en) | chronicle members | ≤ 8 MB (nginx `client_max_body_size 8m` on this route only; Flask checks too); sent to the speech service `/stt`, which probes, transcodes and queues it. `{clip_id, job_id, state, position?}`; 404 not a member / not a room of the chronicle, 400 bad type or language, 413 too large, 507 `clips_disk_full`, 503 when the service is down or the queue is full |
+| `GET /api/voice/stt/jobs/<job_id>` | the clip's owner | `{state, position?, text?, duration_ms?, error?}`; the raw transcript is stored on the clip |
+| `GET /api/voice/clips/<clip_id>/audio?fmt=ogg\|m4a` | whoever may read the message; an unsent clip only its owner | the audio; 404 otherwise |
+| `POST /api/campaigns/<cid>/locations/<lid>` + `clip_id`, `source` | the clip's owner, same room, not sent before | `source` `voice` or `phone-voice`; the message JSON carries `source`, `clip_id`, `clip_ms` |
+
+Rate limits per user: 6 clips a minute (60 an hour), 120 job polls and 120 replays a minute. Disk cap: `VOICE_CLIPS_MAX_GB` (default 20, counted from the stored durations). Stored: `voice_clips (clip_id, campaign_id, location_id, user_id, message_id, duration_ms, lang, transcript_raw, created_at)` and `messages.source`, `messages.clip_id`, `messages.clip_ms`.
+
+Not tried on real phones yet (step 0.5): iOS home-screen mic access, which format each phone records, 2× review playback on older iOS, and Opus replay on the iPhone.
+
 ## Speech service (server side)
 
 The `speech` container turns text into audio (TTS) and voice clips into text (transcription). Only the backend talks to it. It is a small FastAPI app in `speech/`.

@@ -138,6 +138,7 @@ export function ChronicleVoicePanel({ campaignId }) {
   const { toast } = useToast();
   const [defaults, setDefaults] = useState(null);
   const [narrator, setNarrator] = useState(narratorOf(null));
+  const [speaking, setSpeaking] = useState({ max_clip_seconds: 180, allow_phone_stt: true });
   const [busy, setBusy] = useState(false);
   useEffect(() => {
     let live = true;
@@ -145,6 +146,10 @@ export function ChronicleVoicePanel({ campaignId }) {
       if (live && r.ok && r.data && r.data.settings) {
         setDefaults(r.data.settings.defaults);
         setNarrator(narratorOf(r.data.settings));
+        setSpeaking({
+          max_clip_seconds: r.data.settings.max_clip_seconds || 180,
+          allow_phone_stt: r.data.settings.allow_phone_stt !== false,
+        });
       }
     });
     return () => {
@@ -155,7 +160,7 @@ export function ChronicleVoicePanel({ campaignId }) {
   const save = async (e) => {
     e.preventDefault();
     setBusy(true);
-    const r = await api(`/campaigns/${campaignId}/voice-settings`, { method: 'PUT', body: { defaults, ...narrator } });
+    const r = await api(`/campaigns/${campaignId}/voice-settings`, { method: 'PUT', body: { defaults, ...narrator, ...speaking } });
     setBusy(false);
     if (!r.ok) toast({ tone: 'danger', title: errorText(r.data, t('voice:saveFailed', 'Could not save the voice settings')) });
     else toast({ tone: 'ok', title: t('voice:saved', 'Voice settings saved.') });
@@ -165,11 +170,31 @@ export function ChronicleVoicePanel({ campaignId }) {
       <form className="sr-form" onSubmit={save}>
         <ReadoutDefaults value={defaults} onChange={setDefaults} />
         <NarratorVoices value={narrator} onChange={setNarrator} />
+        <SpeakingRules value={speaking} onChange={setSpeaking} />
         <div className="sr-form__actions">
           <Button type="submit" variant="primary" loading={busy}>{t('common:save', 'Save')}</Button>
         </div>
       </form>
     </Panel>
+  );
+}
+
+/** Chronicle: longest voice message, and whether players may use their phone's dictation. */
+export function SpeakingRules({ value, onChange }) {
+  const minutes = Math.round((Number(value.max_clip_seconds) || 180) / 6) / 10;
+  return (
+    <fieldset className="sr-radio-group" data-testid="speaking-rules">
+      <legend>{t('voice:rules.legend', 'Voice messages')}</legend>
+      <label className="sr-field">
+        <span className="sr-field__label">{t('voice:rules.max', 'Longest recording: {{value}} min', { value: minutes })}</span>
+        <input type="range" min="30" max="180" step="30" value={value.max_clip_seconds} onChange={(e) => onChange({ ...value, max_clip_seconds: Number(e.target.value) })} />
+      </label>
+      <Checkbox
+        label={t('voice:rules.phone', 'Players may use their phone’s dictation (audio goes to Apple or Google)')}
+        checked={value.allow_phone_stt !== false}
+        onChange={(e) => onChange({ ...value, allow_phone_stt: e.target.checked })}
+      />
+    </fieldset>
   );
 }
 
@@ -197,7 +222,7 @@ export function VoiceSettingsPanel() {
   const save = async (e) => {
     e.preventDefault();
     setBusy(true);
-    const body = { tts_source: s.tts_source, en_accent: s.en_accent, rate: Number(s.rate), volume: Number(s.volume), overrides: s.overrides };
+    const body = { tts_source: s.tts_source, stt_source: s.stt_source, speak_lang: s.speak_lang, en_accent: s.en_accent, rate: Number(s.rate), volume: Number(s.volume), overrides: s.overrides };
     const r = await api('/voice/settings', { method: 'PUT', body });
     setBusy(false);
     if (!r.ok) toast({ tone: 'danger', title: errorText(r.data, t('voice:saveFailed', 'Could not save the voice settings')) });
@@ -218,6 +243,26 @@ export function VoiceSettingsPanel() {
             { value: 'phone', label: t('voice:source.phone', 'Phone voices') },
             { value: 'server', label: t('voice:source.server', 'Server voices') },
             { value: 'off', label: t('voice:source.off', 'Off') },
+          ]}
+        />
+        <Select
+          label={t('voice:stt.label', 'Voice messages are written by')}
+          hint={t('voice:stt.hint', 'The server keeps your recording so the table can replay it. Phone dictation sends your audio to Apple or Google and keeps no recording.')}
+          value={s.stt_source}
+          onChange={(e) => set({ stt_source: e.target.value })}
+          options={[
+            { value: 'server', label: t('voice:stt.server', 'This site’s server') },
+            { value: 'phone', label: t('voice:stt.phone', 'My phone’s dictation') },
+          ]}
+        />
+        <Select
+          label={t('voice:speak.label', 'I speak')}
+          value={s.speak_lang}
+          onChange={(e) => set({ speak_lang: e.target.value })}
+          options={[
+            { value: 'auto', label: t('voice:speak.auto', 'The app’s language') },
+            { value: 'en', label: 'English' },
+            { value: 'el', label: 'Ελληνικά' },
           ]}
         />
         <Select

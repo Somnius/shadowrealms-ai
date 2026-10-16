@@ -22,6 +22,7 @@ export function toItem(msg) {
 
 export function useListen({ api, campaignId, roomKey, messages, status, userId, engine, onFallback }) {
   const [settings, setSettings] = useState(null);
+  const [chronicle, setChronicle] = useState(null);
   const [rules, setRules] = useState(null);
   const [on, setOn] = useState(false);
   const [catchUp, setCatchUp] = useState(0);
@@ -57,7 +58,10 @@ export function useListen({ api, campaignId, roomKey, messages, status, userId, 
     Promise.all([api('/voice/settings'), api(`/campaigns/${campaignId}/voice-settings`)]).then(([u, c]) => {
       if (!live) return;
       if (u.ok) setSettings(u.data);
-      if (c.ok) setRules(c.data.effective);
+      if (c.ok) {
+        setRules(c.data.effective);
+        setChronicle(c.data.settings || null);
+      }
     });
     return () => {
       live = false;
@@ -133,6 +137,8 @@ export function useListen({ api, campaignId, roomKey, messages, status, userId, 
   const source = settings ? settings.tts_source : 'phone';
   const available = source !== 'off' && (source === 'server' || hasPhoneVoices());
   return {
+    settings,
+    chronicle,
     available,
     on,
     toggle,

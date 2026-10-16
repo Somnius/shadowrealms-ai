@@ -181,6 +181,13 @@ A breach returns `429 {"error": "...", "code": "RATE_LIMITED", "retry_after": <s
   worker) and reads the room rows only when the version moved; streams don't hold a database
   connection between polls. Measured: 6 open streams added no connections beyond the pools
   (8 idle connections for 2 workers).
+- Voice clips (0.18): uploads only from signed-in chronicle members, ≤ 8 MB (nginx on
+  `/api/voice/clips` only, and Flask), an allow-list of audio types; the speech service probes the
+  file with `ffprobe` before decoding (one audio stream, no video, known codec, ≤ 3 min), transcodes
+  it to Ogg/Opus under a name from a random id, and deletes the raw upload in `finally`. A clip can
+  be heard by whoever may read its message (`visible_message`, 404 both ways); before it is sent,
+  only by its owner. Only its owner can attach it, once, to a message in the same room. Clips go
+  with the message and with the chronicle; `VOICE_CLIPS_MAX_GB` caps the disk.
 
 ## Rule books API
 

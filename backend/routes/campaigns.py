@@ -1014,6 +1014,14 @@ def delete_campaign(campaign_id):
 
         # SQLite's ON DELETE CASCADE will handle related records
         # (locations, characters, messages, dice_rolls, etc.)
+        # Voice clips of the chronicle go with it (rows and files; best effort)
+        try:
+            from services.voice_clips import forget_campaign_clips
+
+            forget_campaign_clips(cursor, campaign_id)
+        except Exception as e:  # noqa: BLE001
+            logger.warning("Voice clip cleanup failed (campaign delete continues): %s", type(e).__name__)
+
         cursor.execute("DELETE FROM campaigns WHERE id = %s", (campaign_id,))
         conn.commit()
         

@@ -10,6 +10,7 @@ import { diceAnimationId, messageTime, parseRouseLine, presentSpeaker } from './
 import { formatClock, formatFull, formatShort, isoOf } from './timeFormat';
 import { MessageActions, ReplyQuote, useMessageRowProps } from './MessageActions';
 import { t } from '../../i18n';
+import { ClipChip, VoiceMark } from '../voice/ClipChip';
 
 const BADGE_TONE = { success: 'ok', gold: 'gold', blood: 'blood', danger: 'danger', muted: 'neutral' };
 
@@ -51,6 +52,7 @@ function SpeakerName({ msg, secondaryLast = false }) {
         {sp.tone === 'storyteller' ? <Glyph name="crown-thorns" size={14} /> : null}
         {sp.name}
       </span>
+      <VoiceMark message={msg} />
       {sp.badge ? (
         <Badge tone={sp.tone === 'ai' ? 'arcane' : sp.tone === 'storyteller' ? 'gold' : 'neutral'} className="sr-msg__badge">
           {sp.badge}
@@ -101,8 +103,10 @@ function GroupRow({ m, first, sp, group, longNarration, timeZone, now }) {
       )}
       {m.reply_to ? <ReplyQuote reply={m.reply_to} /> : null}
       <div className={`sr-msg__body${group.kind === 'action' ? ' sr-msg__body--action' : ''}${first && longNarration ? ' sr-msg__body--dropcap' : ''}`}>
+        {!first ? <VoiceMark message={m} /> : null}
         <MessageBody message={m} />
       </div>
+      <ClipChip message={m} />
       <MessageActions message={m} />
     </div>
   );

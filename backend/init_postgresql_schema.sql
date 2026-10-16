@@ -201,7 +201,10 @@ CREATE TABLE IF NOT EXISTS messages (
     created_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     ai_message_kind TEXT,
     speaker_mode    TEXT,                                                -- 'character' | 'player' | 'staff'
-    reply_to_id     INTEGER REFERENCES messages(id) ON DELETE SET NULL   -- quoted message (v0.10 phase 3)
+    reply_to_id     INTEGER REFERENCES messages(id) ON DELETE SET NULL,  -- quoted message (v0.10 phase 3)
+    source          TEXT,                                                -- NULL | 'voice' | 'phone-voice'
+    clip_id         TEXT,                                                -- voice_clips.clip_id
+    clip_ms         INTEGER                                              -- clip length
 );
 
 CREATE INDEX IF NOT EXISTS idx_messages_location ON messages(campaign_id, location_id, created_at DESC);
@@ -663,3 +666,21 @@ CREATE TABLE IF NOT EXISTS voice_audio (
 
 CREATE INDEX IF NOT EXISTS idx_voice_audio_message ON voice_audio(message_id);
 CREATE INDEX IF NOT EXISTS idx_voice_audio_key ON voice_audio(audio_key);
+
+-- -----------------------------------------------------------------------------
+-- voice_clips: recorded voice messages (Ogg/Opus in the speech service), kept for the chronicle's life
+-- -----------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS voice_clips (
+    clip_id         TEXT PRIMARY KEY,
+    campaign_id     INTEGER NOT NULL,
+    location_id     INTEGER,
+    user_id         INTEGER NOT NULL,
+    message_id      INTEGER,
+    duration_ms     INTEGER,
+    lang            TEXT,
+    transcript_raw  TEXT,
+    created_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_voice_clips_message ON voice_clips(message_id);
+CREATE INDEX IF NOT EXISTS idx_voice_clips_campaign ON voice_clips(campaign_id);

@@ -122,6 +122,10 @@ ROUTE_LIMITS = {
     "voice.tts_job_status": ("240 per minute", user_or_ip_key),
     "voice.tts_audio": ("120 per minute", user_or_ip_key),
     "voice.tts_preview": ("10 per minute", user_or_ip_key),
+    # speaking (Phase 3): upload + transcription, then polling; replay like the TTS audio
+    "voice.create_clip": ("6 per minute;60 per hour", user_or_ip_key),
+    "voice.stt_job_status": ("120 per minute", user_or_ip_key),
+    "voice.clip_audio": ("120 per minute", user_or_ip_key),
 }
 AI_LIMIT = "12 per minute;300 per hour"      # every POST in the ai blueprint + dice.ai_roll
 DICE_LIMIT = "60 per minute"                 # other dice POSTs

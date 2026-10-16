@@ -32,7 +32,7 @@ from database import (
     get_db,
 )
 from routes.messages import visible_message
-from services import speech_client, voice_audio
+from services import speech_client, voice_audio, voice_clips
 from services.request_validation import RequestValidationError
 from services.voice_tts import PREVIEW_TEXT, tts_request
 from services.voice_settings import (
@@ -295,3 +295,137 @@ def tts_preview():
         return jsonify(out), status
     finally:
         conn.close()
+
+
+# ---------------------------------------------------------------------------------------------
+# Speaking (Phase 3): a recorded clip goes up only when the player taps Transcribe; the speech
+# service keeps it as Ogg/Opus and transcribes it (Whisper on the GPU, or gpu_busy). The text
+# comes back to the player to edit; nothing is posted until they send it (save_message, clip_id).
+
+_MIMES = ("audio/webm", "audio/mp4", "audio/ogg", "audio/mpeg", "audio/wav", "audio/x-m4a", "audio/aac")
+
+
+def _room_ok(cursor, campaign_id, location_id, user_id):
+    row, _ = _campaign_access(cursor, campaign_id, user_id)
+    if row is None:
+        return False
+    cursor.execute("SELECT campaign_id FROM locations WHERE id = %s", (location_id,))
+    loc = cursor.fetchone()
+    return bool(loc) and int(loc["campaign_id"]) == int(campaign_id)
+
+
+@voice_bp.route("/voice/clips", methods=["POST"])
+@jwt_required()
+def create_clip():
+    user_id = _uid()
+    if user_id is None:
+        return jsonify({"error": "Invalid session"}), 401
+    f = request.files.get("audio")
+    lang = request.form.get("lang", "")
+    try:
+        campaign_id = int(request.form.get("campaign_id", ""))
+        location_id = int(request.form.get("location_id", ""))
+    except ValueError:
+        return jsonify({"error": "campaign_id and location_id are needed"}), 400
+    if f is None:
+        return jsonify({"error": "audio is needed"}), 400
+    if lang not in ("el", "en"):
+        return jsonify({"error": "lang must be el or en"}), 400
+    mime = (f.mimetype or "").split(";")[0].strip().lower()
+    if mime not in _MIMES:
+        return jsonify({"error": "bad_format"}), 400
+    data = f.read(voice_clips.max_clip_bytes() + 1)
+    if not data:
+        return jsonify({"error": "empty_upload"}), 400
+    if len(data) > voice_clips.max_clip_bytes():
+        return jsonify({"error": "too_large"}), 413
+    conn, cursor = _open()
+    try:
+        if not _room_ok(cursor, campaign_id, location_id, user_id):
+            return jsonify({"error": "Chronicle not found"}), 404
+        if voice_clips.used_bytes(cursor) >= voice_clips.clips_max_bytes():
+            return jsonify({"error": "clips_disk_full"}), 507
+        try:
+            status, job = speech_client.call_upload("/stt", {"lang": lang}, "clip", data, mime)
+        except speech_client.SpeechUnavailable:
+            return jsonify(_SPEECH_DOWN[0]), 503
+        if status >= 400 or not job.get("clip"):
+            code = job.get("error") if isinstance(job.get("error"), str) else "speech_failed"
+            return jsonify({"error": code}), (503 if status >= 500 else 400)
+        voice_clips.record(cursor, job["clip"], campaign_id, location_id, user_id, lang)
+        conn.commit()
+        out = _job_out(job)
+        out["clip_id"] = job["clip"]
+        return jsonify(out), 200
+    except Exception as e:  # noqa: BLE001
+        logger.error("clip upload error: %s", type(e).__name__)
+        return jsonify({"error": "Failed to keep the recording"}), 500
+    finally:
+        conn.close()
+
+
+@voice_bp.route("/voice/stt/jobs/<job_id>", methods=["GET"])
+@jwt_required()
+def stt_job_status(job_id):
+    user_id = _uid()
+    if user_id is None or not _HEX.match(job_id or ""):
+        return jsonify({"error": "Job not found"}), 404
+    try:
+        status, job = speech_client.call_json("GET", f"/stt/{job_id}")
+    except speech_client.SpeechUnavailable:
+        return jsonify({"job_id": job_id, "state": "failed", "error": "speech_unavailable"}), 200
+    if status != 200:
+        return jsonify({"error": "Job not found"}), 404
+    conn, cursor = _open()
+    try:
+        clip = voice_clips.get(cursor, job.get("clip"))
+        if clip is None or int(clip["user_id"]) != user_id:
+            return jsonify({"error": "Job not found"}), 404
+        out = _job_out(job)
+        out["clip_id"] = clip["clip_id"]
+        if job.get("status") == "done":
+            text = (job.get("text") or "").strip()
+            if clip.get("transcript_raw") is None:
+                voice_clips.note_transcript(cursor, clip["clip_id"], text, job.get("duration"))
+                conn.commit()
+            out["text"] = text
+            out["duration_ms"] = int(round(float(job.get("duration") or 0) * 1000))
+        return jsonify(out), 200
+    finally:
+        conn.close()
+
+
+@voice_bp.route("/voice/clips/<clip_id>/audio", methods=["GET"])
+@jwt_required()
+def clip_audio(clip_id):
+    """Everyone who can read the message may replay it; an unsent clip only its owner."""
+    user_id = _uid()
+    fmt = request.args.get("fmt", "ogg")
+    if user_id is None or fmt not in ("ogg", "m4a"):
+        return jsonify({"error": "Not found"}), 404
+    conn, cursor = _open()
+    try:
+        for ensure in (ensure_character_portrait_url_column, ensure_messages_ai_message_kind_column,
+                       ensure_messages_speaker_mode_column, ensure_messages_reply_to_column,
+                       ensure_users_player_profile_columns):
+            ensure(cursor)
+        clip = voice_clips.get(cursor, clip_id)
+        if clip is None:
+            ok = False
+        elif clip.get("message_id"):
+            ok = visible_message(cursor, int(clip["message_id"]), user_id) is not None
+        else:
+            ok = int(clip["user_id"]) == user_id
+    finally:
+        conn.close()
+    if not ok:
+        return jsonify({"error": "Not found"}), 404
+    try:
+        status, raw, _ = speech_client.call_bytes(f"/clips/{clip_id}?fmt={fmt}")
+    except speech_client.SpeechUnavailable:
+        return jsonify(_SPEECH_DOWN[0]), 503
+    if status != 200:
+        return jsonify({"error": "Not found"}), 404
+    resp = Response(raw, mimetype="audio/ogg" if fmt == "ogg" else "audio/mp4")
+    resp.headers["Cache-Control"] = "private, max-age=86400"
+    return resp

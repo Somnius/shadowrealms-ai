@@ -45,3 +45,211 @@
 .sr-voice-narrator .sr-btn {
   min-height: var(--sr-tap, 44px);
 }
+
+/* ---- Speaking (Phase 3): mic marker, replay chip, recorder sheet ---- */
+.sr-msg__voice {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  color: var(--sr-text-muted);
+  margin-inline: 2px;
+}
+.sr-msg__body > .sr-msg__voice {
+  float: left;
+  margin: 4px 4px 0 0;
+}
+.sr-clipchip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 4px;
+  max-width: 28rem;
+  font-size: 13px;
+  color: var(--sr-text-2);
+}
+.sr-clipchip__time {
+  flex: none;
+  font-variant-numeric: tabular-nums;
+  min-width: 2.6em;
+}
+.sr-clipchip__err {
+  color: var(--sr-blood-300);
+}
+/* seek: a 44-px touch box around a thin painted bar */
+.sr-seek {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  min-height: var(--sr-tap, 44px);
+}
+.sr-seek input[type='range'] {
+  width: 100%;
+  height: var(--sr-tap, 44px);
+  margin: 0;
+  background: transparent;
+  accent-color: var(--sr-gold-400);
+}
+.sr-composer__box[hidden] {
+  display: none;
+}
+.sr-composer__michint {
+  margin: 0;
+  padding: 6px 12px;
+  font-size: 13px;
+  color: var(--sr-warn-400);
+}
+.sr-recsheet {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 8px 12px calc(8px + env(safe-area-inset-bottom, 0px));
+  border-top: 1px solid var(--sr-border);
+  background: var(--sr-surface);
+  max-height: 100dvh;
+  overflow-y: auto;
+}
+.sr-recsheet__head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.sr-recsheet__title {
+  flex: 1;
+  min-width: 0;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.sr-recsheet__row {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  min-height: var(--sr-tap, 44px);
+}
+.sr-recsheet__row .sr-btn {
+  min-height: var(--sr-tap, 44px);
+}
+.sr-recsheet__send {
+  margin-inline-start: auto;
+}
+.sr-rec {
+  --sr-rec-colour: var(--sr-gold-400);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+.sr-rec--warn {
+  --sr-rec-colour: var(--sr-warn-400);
+}
+.sr-rec--blood {
+  --sr-rec-colour: var(--sr-blood-500);
+}
+.sr-rec--bright {
+  --sr-rec-colour: var(--sr-blood-300);
+}
+.sr-rec__ring {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 2px solid var(--sr-rec-colour);
+  color: var(--sr-rec-colour);
+  transition: transform 300ms ease-out, box-shadow 300ms ease-out;
+}
+.sr-rec.is-pulse .sr-rec__ring {
+  transform: scale(1.15);
+  box-shadow: 0 0 0 6px color-mix(in srgb, var(--sr-rec-colour) 35%, transparent);
+}
+.sr-rec__timer {
+  font-family: var(--sr-font-display);
+  font-size: 28px;
+  font-variant-numeric: tabular-nums;
+  color: var(--sr-text);
+}
+.sr-rec:not(.sr-rec--gold) .sr-rec__timer {
+  color: var(--sr-rec-colour);
+}
+.sr-rec__bar {
+  width: 100%;
+  height: 3px;
+  background: var(--sr-surface-sunken);
+  border-radius: 2px;
+  overflow: hidden;
+}
+.sr-rec__bar > span {
+  display: block;
+  height: 100%;
+  background: var(--sr-rec-colour);
+}
+.sr-rec__partial,
+.sr-rec__note {
+  margin: 0;
+  font-size: 14px;
+  color: var(--sr-text-2);
+}
+.sr-rec__note[role='alert'] {
+  color: var(--sr-warn-400);
+}
+.sr-rec-review__player {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.sr-rec-rate {
+  flex: none;
+  min-width: var(--sr-tap, 44px);
+  min-height: var(--sr-tap, 44px);
+  padding: 0 8px;
+  border: 1px solid var(--sr-border-strong);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--sr-text);
+  font-variant-numeric: tabular-nums;
+}
+.sr-rec-text {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.sr-rec-text__lang {
+  align-self: flex-end;
+  font-size: 12px;
+  color: var(--sr-text-muted);
+}
+.sr-rec-text__input {
+  width: 100%;
+  min-height: 6rem;
+  font: inherit;
+  color: var(--sr-text);
+  background: var(--sr-surface-sunken);
+  border: 1px solid var(--sr-border-input);
+  border-radius: 8px;
+  padding: 8px;
+}
+/* reduced motion: the pulse changes colour only, no scale and no glow */
+@media (prefers-reduced-motion: reduce) {
+  .sr-rec__ring {
+    transition: none;
+  }
+  .sr-rec.is-pulse .sr-rec__ring {
+    transform: none;
+    box-shadow: none;
+    background: var(--sr-rec-colour);
+    color: var(--sr-bg);
+  }
+}
+[data-motion='reduced'] .sr-rec__ring {
+  transition: none;
+}
+[data-motion='reduced'] .sr-rec.is-pulse .sr-rec__ring {
+  transform: none;
+  box-shadow: none;
+  background: var(--sr-rec-colour);
+  color: var(--sr-bg);
+}

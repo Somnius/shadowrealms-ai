@@ -55,13 +55,13 @@ How each phase runs: build in its own git worktree → tests and CI green → on
 
 ## Phase 3 — Speaking (0.18)
 
-- [ ] 3.1 Clip upload: nginx 8 MB on the clips route, clips table, probe before decode, transcode to Ogg/Opus, temp files cleaned; a 6 MB test clip through the public address to learn the front proxy's limits. Status: not started.
-- [ ] 3.2 Transcription jobs with the GPU policy (lazy load, idle unload, VRAM gate, one at a time, queue depth, CPU fallback for short clips), silence guards. Status: speech service side done on `voice/speech-service` (lazy load, 10-min idle unload, VRAM gate → `gpu_busy`, one at a time, queue of 8, VAD); no CPU fallback yet, backend side not started.
-- [ ] 3.3 Recorder step 1: mic button in the composer, permission path, timer with the pulse colours, auto-stop at the chronicle's limit (3 min). Status: not started.
-- [ ] 3.4 Review and text steps: seek slider, speeds, upload with progress, job position, editable transcript, Speaking as and reply kept, send is a separate tap. Status: not started.
-- [ ] 3.5 Mic marker on voice-sent messages (everyone sees it), clip replay chip, AAC copy for phones that cannot play Opus, disk cap. Status: not started.
-- [ ] 3.6 Phone dictation as a choice (text only unless the phone can record at the same time), privacy note. Status: not started.
-- [ ] 3.7 Release 0.18: docs, CHANGELOG, security model paragraph on uploads. Status: not started.
+- [x] 3.1 Clip upload: nginx 8 MB on the clips route, clips table, probe before decode, transcode to Ogg/Opus, temp files cleaned; a 6 MB test clip through the public address to learn the front proxy's limits. Status: done 23:50. `POST /api/voice/clips` → speech `/stt` (probe, Ogg/Opus 16 kbps, raw deleted), `voice_clips` table, nginx 8 MB on that route; pytest for member/room/type/size/disk cap. The 6 MB clip through the public address still needs Lef.
+- [x] 3.2 Transcription jobs with the GPU policy (lazy load, idle unload, VRAM gate, one at a time, queue depth, CPU fallback for short clips), silence guards. Status: done 23:50. Backend `GET /api/voice/stt/jobs/<id>` (owner only, transcript stored on the clip); `gpu_busy` sends the player to phone dictation or typing. No CPU fallback (left for later: phone dictation covers it). Not run against the live GPU here.
+- [x] 3.3 Recorder step 1: mic button in the composer, permission path, timer with the pulse colours, auto-stop at the chronicle's limit (3 min). Status: done 23:50. Sheet replaces the box, mic-off + Settings hint when blocked, pause + Tap to resume in the background; jest for the colour schedule and the flow. Not tried on phones.
+- [x] 3.4 Review and text steps: seek slider, speeds, upload with progress, job position, editable transcript, Speaking as and reply kept, send is a separate tap. Status: done 23:50. One rate button 0.75→2×, upload only on Transcribe, queue position, fillers stripped, Back/Discard/Send row, sent through the normal send (same OOC checks as typed; not tested separately). jest flow test.
+- [x] 3.5 Mic marker on voice-sent messages (everyone sees it), clip replay chip, AAC copy for phones that cannot play Opus, disk cap. Status: done 23:50. 14-px mic with a spoken name, one-line chip with separate play and seek, one `<audio playsinline>`, m4a copy by `canPlayType`, `VOICE_CLIPS_MAX_GB`; clips deleted with the message and the chronicle. jest + pytest.
+- [x] 3.6 Phone dictation as a choice (text only unless the phone can record at the same time), privacy note. Status: done 23:50. Profile → Voice choice with the Apple/Google note, chronicle switch, text only (no parallel recording), also offered when the GPU is busy. Not tried on phones.
+- [x] 3.7 Release 0.18: docs, CHANGELOG, security model paragraph on uploads. Status: done 23:55. Waiting for review, merge, deploy (nginx reload for the clip route) and phone check.
 
 ## Phase 4 — Language override (0.19)
 
@@ -82,6 +82,7 @@ How each phase runs: build in its own git worktree → tests and CI green → on
 ## Log
 
 - 23:05 — Plan revised with the answers; this file created. Nothing built yet.
+- 23:55 — Phase 3 (speaking) built on `voice/p3-speak`, release 0.18.0 pending review.
 
 ## Left for later
 
