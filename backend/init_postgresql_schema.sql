@@ -53,7 +53,8 @@ CREATE TABLE IF NOT EXISTS users (
     -- 'en' | 'el' | NULL; Storyteller reply language when a message is too short to tell
     ui_language                       TEXT,
     -- bumped on password/role change and deactivation (trigger below); JWTs carry it (phase 5)
-    token_version                     INTEGER NOT NULL DEFAULT 0
+    token_version                     INTEGER NOT NULL DEFAULT 0,
+    voice_settings                    TEXT NOT NULL DEFAULT '{}'           -- player voice settings JSON (docs/VOICE.md)
 );
 
 -- -----------------------------------------------------------------------------
@@ -74,7 +75,8 @@ CREATE TABLE IF NOT EXISTS campaigns (
     admin_inactive_reason TEXT,
     admin_inactive_at     TIMESTAMP,
     rules_edition         TEXT NOT NULL DEFAULT 'classic',              -- 'classic' (oWoD Revised) | 'v5'
-    creation_settings     TEXT NOT NULL DEFAULT '{}'                    -- V5 creation rules JSON (services/creation_settings.py)
+    creation_settings     TEXT NOT NULL DEFAULT '{}',                   -- V5 creation rules JSON (services/creation_settings.py)
+    voice_settings        TEXT NOT NULL DEFAULT '{}'                    -- voice read-out defaults JSON (docs/VOICE.md)
 );
 
 CREATE INDEX IF NOT EXISTS idx_campaigns_created_by ON campaigns(created_by);
