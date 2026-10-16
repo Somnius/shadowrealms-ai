@@ -69,6 +69,7 @@ export function useListen({ api, campaignId, roomKey, messages, status, userId, 
     if (primed.current !== roomKey) return;
     const fresh = (messages || []).filter((m) => idNum(m) > lastId.current);
     if (!fresh.length) return;
+    if (on && !rules) return; // wait for the read-out rules, so opt-outs apply from the first line
     lastId.current = maxId(messages);
     if (!on) return;
     queue.enqueue(fresh.filter((m) => shouldRead(m, rules, userId)).map(toItem));

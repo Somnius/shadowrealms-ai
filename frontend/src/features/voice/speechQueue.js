@@ -75,7 +75,7 @@ export function createSpeechQueue(engine) {
     pause,
     /** The page went to the background: pause, and wait for a tap to go on. */
     hide() {
-      if (!current && !items.length) return;
+      // Also when idle: lines that arrive while hidden wait for the tap instead of being lost.
       needsResume = true;
       pause();
     },
