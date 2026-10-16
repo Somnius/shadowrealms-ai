@@ -1,7 +1,7 @@
 # Feature Documentation
 
 **Last Updated**: 2026-10-16  
-**Version**: 0.16.0
+**Version**: 0.17.0
 
 Feature notes for ShadowRealms AI that don't have their own document. The full list of changes per release is in [CHANGELOG.md](CHANGELOG.md); the plans are in [ROADMAP_v0.9.md](ROADMAP_v0.9.md) and [ROADMAP_v0.10.md](ROADMAP_v0.10.md).
 
@@ -24,6 +24,10 @@ Feature notes for ShadowRealms AI that don't have their own document. The full l
 8. [Invite Code System](#invite-code-system)
 
 ---
+
+## What's new in v0.17.0
+
+- **Server voices.** Listen can use voices made on the server: the chronicle's narrator for the Storyteller, actions and dice, a voice per character by gender (set in the Forge or on the sheet), a neutral voice for OOC. Falls back to the phone's voice when the server is busy. See [VOICE.md](VOICE.md).
 
 ## What's new in v0.16.0
 
