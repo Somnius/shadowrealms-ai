@@ -12,8 +12,9 @@ How each phase runs: build in its own git worktree → tests and CI green → on
 | 1 | Listen with the phone's own voices | CSP and glyphs · player voice settings · chronicle read-out defaults · Listen toggle and queue · read-out rules | 0.16 | until 02:00 | done: released 0.16.0 |
 | 2 | Server voices | speech container · gender on the sheet · TTS jobs and cache · voice catalog and narrator voices · server mode in the app | 0.17 | until 03:45 | done: released 0.17.0 |
 | 3 | Speaking | clip upload · transcription jobs and the GPU policy · recorder with the timer · review and text steps · mic marker and replay · phone dictation | 0.18 | until 06:00 | done: released 0.18.0 |
-| 4 | Language override | translator · ahead-of-time translation · captions with "show original" · speak in one language, write in the other | 0.19 | until 06:45 | building |
-| 5 | Ops and polish | health panel · cache and disk caps · per-character voice · device checklist | 0.20 | after the deadline | done: released 0.20.0 (device checklist to fill in) |
+| 4 | Language override | translator · ahead-of-time translation · captions with "show original" · speak in one language, write in the other | 0.19 | until 06:45 | built, names fix and review in progress |
+| 5 | Ops and polish | health panel · cache and disk caps · per-character voice · device checklist | 0.20 | after the deadline | building |
+| 6 | Transcript check | Whisper hints with the chronicle's names · recmeets Laya-words flags misheard words · Krikri fixes only those (split words, slang) · changed words marked, tap to undo | 0.21 | until 06:30 | building |
 
 ## Decisions (2026-10-16)
 
