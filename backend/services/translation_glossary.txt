@@ -1,0 +1,54 @@
+# Game terms for the translator (services/translation.py). One line: English | Greek.
+# Only the lines whose term appears in a message are put into the prompt.
+# "English | keep | Greek words": the term stays in English in both languages (the table uses it
+# that way); the Greek words after the second bar are what a Greek player may say for it.
+Storyteller | Αφηγητής
+Wits | keep | Οξύνοια
+Disciplines | keep | Πειθαρχίες
+Discipline | keep | Πειθαρχία
+Hunger | keep | Πείνα, πείνα
+Humanity | keep | Ανθρωπιά
+Willpower | keep | Θέληση, Θέλησης
+Blood Potency | keep
+Rouse check | keep
+Frenzy | keep | Μανία
+Masquerade | keep
+Camarilla | keep
+Anarch | keep
+Sabbat | keep
+Kindred | keep
+Kine | keep
+Elysium | keep
+Prince | Πρίγκιπας
+Sheriff | keep
+Primogen | keep
+Brujah | keep
+Gangrel | keep
+Malkavian | keep
+Nosferatu | keep
+Toreador | keep
+Tremere | keep
+Ventrue | keep
+Lasombra | keep
+Tzimisce | keep
+Banu Haqim | keep
+Hecata | keep
+Ministry | keep
+Ravnos | keep
+Salubri | keep
+Caitiff | keep
+Thin-blood | keep
+Dexterity | keep | Επιδεξιότητα
+Strength | keep
+Stamina | keep | Αντοχή
+Charisma | keep | Χάρισμα
+Manipulation | keep | Χειραγώγηση
+Composure | keep | Ψυχραιμία
+Intelligence | keep | Ευφυΐα
+Resolve | keep | Αποφασιστικότητα
+Awareness | keep | Επίγνωση
+difficulty | δυσκολία
+successes | επιτυχίες
+character sheet | χαρτί του χαρακτήρα
+in character | εντός ρόλου
+out of character | εκτός ρόλου

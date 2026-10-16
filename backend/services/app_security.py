@@ -118,7 +118,8 @@ ROUTE_LIMITS = {
     "messages.save_message": ("60 per minute;1000 per hour", user_or_ip_key),
     "characters.character_sheet_pdf": ("20 per minute", user_or_ip_key),  # builds a PDF each time
     # server voices (docs/VOICE.md): one job per spoken line, polled until done
-    "voice.create_tts_job": ("60 per minute;1500 per hour", user_or_ip_key),
+    # (a line waiting for its translation is asked again a few times)
+    "voice.create_tts_job": ("90 per minute;2000 per hour", user_or_ip_key),
     "voice.tts_job_status": ("240 per minute", user_or_ip_key),
     "voice.tts_audio": ("120 per minute", user_or_ip_key),
     "voice.tts_preview": ("10 per minute", user_or_ip_key),
@@ -126,6 +127,8 @@ ROUTE_LIMITS = {
     "voice.create_clip": ("6 per minute;60 per hour", user_or_ip_key),
     "voice.stt_job_status": ("120 per minute", user_or_ip_key),
     "voice.clip_audio": ("120 per minute", user_or_ip_key),
+    # captions (language override): one poll per room every few seconds while some are pending
+    "voice.room_translations": ("60 per minute", user_or_ip_key),
 }
 AI_LIMIT = "12 per minute;300 per hour"      # every POST in the ai blueprint + dice.ai_roll
 DICE_LIMIT = "60 per minute"                 # other dice POSTs

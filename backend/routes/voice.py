@@ -9,6 +9,8 @@ Voice (docs/VOICE.md).
   GET     /api/voice/tts/jobs/<job_id>            job state
   GET     /api/voice/audio/<key>?fmt=ogg|m4a      the audio, for whoever may read one of its messages
   POST    /api/voice/tts/preview {voice_id}       a fixed sample sentence in that voice
+  GET     /api/voice/translations?campaign_id&location_id&ids=1,2&lang=el
+                                                  translations / originals of a room's messages
 """
 
 import json
@@ -28,13 +30,15 @@ from database import (
     ensure_users_player_profile_columns,
     ensure_voice_audio_table,
     ensure_campaigns_voice_settings_column,
+    ensure_message_translations_table,
+    ensure_messages_voice_columns,
     ensure_users_voice_settings_column,
     get_db,
 )
-from routes.messages import visible_message
-from services import speech_client, voice_audio, voice_clips
+from routes.messages import room_visible, visible_message
+from services import speech_client, translation, voice_audio, voice_clips
 from services.request_validation import RequestValidationError
-from services.voice_tts import PREVIEW_TEXT, tts_request
+from services.voice_tts import PREVIEW_TEXT, guess_lang, tts_request
 from services.voice_settings import (
     effective_readout,
     normalize_campaign_voice_settings,
@@ -88,6 +92,7 @@ def my_voice_settings():
             "UPDATE users SET voice_settings = %s WHERE id = %s", (json.dumps(settings), user_id)
         )
         conn.commit()
+        translation.forget_members()  # hear-in language changes count from the next message
         return jsonify(settings), 200
     except Exception as e:  # noqa: BLE001
         logger.error("voice settings error: %s", type(e).__name__)
@@ -183,6 +188,22 @@ def _speech_tts(cursor, body, message_id):
     return _job_out(job), 200
 
 
+def _in_hear_lang(cursor, msg, user_settings):
+    """(message to speak, waiting). The listener's hear-in language: its translation (or the
+    speaker's own original) when there is one; else a translation is queued and the client waits
+    (never translated inside this audio request)."""
+    hear = normalize_user_voice_settings(user_settings).get("hear_lang")
+    src = msg.get("lang") or guess_lang(msg.get("content"))
+    if hear not in translation.LANGS or hear == src or translation.readout_skip(msg):
+        return msg, False
+    ensure_message_translations_table(cursor)
+    row = translation.get_rows(cursor, [msg["id"]]).get(int(msg["id"]), {}).get(hear)
+    if row:
+        return {**msg, "content": row["text"], "lang": hear}, False
+    translation.schedule(msg["id"], [hear])
+    return msg, True
+
+
 @voice_bp.route("/voice/voices", methods=["GET"])
 @jwt_required()
 def voices():
@@ -223,7 +244,12 @@ def create_tts_job():
             gender = (cursor.fetchone() or {}).get("gender")
         cursor.execute("SELECT voice_settings FROM campaigns WHERE id = %s", (msg["campaign_id"],))
         camp = (cursor.fetchone() or {}).get("voice_settings")
-        body = tts_request(msg, gender, _user_settings(cursor, user_id), camp)
+        user_settings = _user_settings(cursor, user_id)
+        if data.get("original") is not True:
+            msg, waiting = _in_hear_lang(cursor, msg, user_settings)
+            if waiting:
+                return jsonify({"state": "waiting_translation"}), 200
+        body = tts_request(msg, gender, user_settings, camp)
         if body is None:
             return jsonify({"error": "not_spoken"}), 400
         out, status = _speech_tts(cursor, body, mid)
@@ -390,6 +416,16 @@ def stt_job_status(job_id):
                 conn.commit()
             out["text"] = text
             out["duration_ms"] = int(round(float(job.get("duration") or 0) * 1000))
+            write = normalize_user_voice_settings(_user_settings(cursor, user_id)).get("write_lang")
+            spoke = clip.get("lang") or guess_lang(text)
+            if text and write in translation.LANGS and write != spoke:
+                # the text step shows both at once (one short line through the translator role)
+                try:
+                    tr, _ = translation.translate(text, spoke, write)
+                    out["translated"] = {"lang": write, "text": tr}
+                except Exception as e:  # noqa: BLE001
+                    logger.warning("dictation translation failed: %s", type(e).__name__)
+                    out["translate_failed"] = write
         return jsonify(out), 200
     finally:
         conn.close()
@@ -429,3 +465,59 @@ def clip_audio(clip_id):
     resp = Response(raw, mimetype="audio/ogg" if fmt == "ogg" else "audio/mp4")
     resp.headers["Cache-Control"] = "private, max-age=86400"
     return resp
+
+
+# ---------------------------------------------------------------------------------------------
+# Language override (Phase 4): captions. Translations are made ahead of time (after the message
+# is saved); this only reads them, and queues one that a listener needs but nobody made yet.
+
+MAX_TRANSLATION_IDS = 60
+
+
+@voice_bp.route("/voice/translations", methods=["GET"])
+@jwt_required()
+def room_translations():
+    user_id = _uid()
+    if user_id is None:
+        return jsonify({"error": "Invalid session"}), 401
+    lang = request.args.get("lang") or ""
+    try:
+        campaign_id = int(request.args.get("campaign_id", ""))
+        location_id = int(request.args.get("location_id", ""))
+        ids = sorted({int(x) for x in (request.args.get("ids") or "").split(",") if x.strip()})
+    except ValueError:
+        return jsonify({"error": "campaign_id, location_id and ids are needed"}), 400
+    if lang and lang not in translation.LANGS:
+        return jsonify({"error": "lang must be en or el"}), 400
+    ids = ids[:MAX_TRANSLATION_IDS]
+    conn, cursor = _open()
+    try:
+        ensure_messages_voice_columns(cursor)
+        ensure_messages_ai_message_kind_column(cursor)
+        ensure_message_translations_table(cursor)
+        conn.commit()
+        if not room_visible(cursor, campaign_id, location_id, user_id):
+            return jsonify({"error": "Not found"}), 404
+        if not ids:
+            return jsonify({"translations": {}, "pending": []}), 200
+        marks = ",".join(["%s"] * len(ids))
+        cursor.execute(
+            f"SELECT id, content, lang, role, message_type, ai_message_kind FROM messages"
+            f" WHERE campaign_id = %s AND location_id = %s AND id IN ({marks})",
+            [campaign_id, location_id, *ids],
+        )
+        msgs = {int(r["id"]): r for r in cursor.fetchall() if not translation.readout_skip(r)}
+        rows = translation.get_rows(cursor, msgs.keys())
+        out, pending = {}, []
+        for mid, m in msgs.items():
+            have = rows.get(mid, {})
+            mine = {lg: r for lg, r in have.items() if r["kind"] == "original" or lg == lang}
+            if mine:
+                out[str(mid)] = mine
+            src = m.get("lang") or guess_lang(m.get("content"))
+            if lang and lang != src and lang not in have:
+                translation.schedule(mid, [lang])
+                pending.append(mid)
+        return jsonify({"translations": out, "pending": pending}), 200
+    finally:
+        conn.close()

@@ -317,7 +317,8 @@
       "storyteller_en": "Storyteller — English players",
       "storyteller_el": "Storyteller — Greek players",
       "utility": "Utility (quick dice/combat answers)",
-      "classifier": "Classifier fallback (OOC check when Laya/Jev are not used)"
+      "classifier": "Classifier fallback (OOC check when Laya/Jev are not used)",
+      "translator": "Translator (voice: hear or write in the other language)"
     },
     "provider": {
       "lm_studio": "LM Studio (local)",

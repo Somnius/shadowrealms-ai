@@ -785,9 +785,13 @@ def ensure_voice_audio_table(cursor):
 
 @once_per_process
 def ensure_messages_voice_columns(cursor):
-    """messages.source (NULL | 'voice' | 'phone-voice'), clip_id (voice_clips) and clip_ms."""
+    """messages.source (NULL | 'voice' | 'phone-voice'), clip_id (voice_clips) and clip_ms;
+    lang ('en' | 'el', the language of content) and orig_lang (set when the player wrote or spoke
+    in the other language and the original is kept in message_translations)."""
     _ensure_text_column(cursor, "messages", "source")
     _ensure_text_column(cursor, "messages", "clip_id")
+    _ensure_text_column(cursor, "messages", "lang")
+    _ensure_text_column(cursor, "messages", "orig_lang")
     db_type = os.getenv("DATABASE_TYPE", "sqlite").lower()
     if db_type == "postgresql":
         cursor.execute("ALTER TABLE messages ADD COLUMN IF NOT EXISTS clip_ms INTEGER")
@@ -818,6 +822,25 @@ def ensure_voice_clips_table(cursor):
     )
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_voice_clips_message ON voice_clips(message_id)")
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_voice_clips_campaign ON voice_clips(campaign_id)")
+
+
+@once_per_process
+def ensure_message_translations_table(cursor):
+    """A message's text in another language (kind 'ai': translated by the translator role) or the
+    player's own words before the write-in language was applied (kind 'original')."""
+    cursor.execute(
+        """
+        CREATE TABLE IF NOT EXISTS message_translations (
+            message_id INTEGER NOT NULL REFERENCES messages(id) ON DELETE CASCADE,
+            lang TEXT NOT NULL,
+            text TEXT NOT NULL,
+            kind TEXT NOT NULL DEFAULT 'ai',
+            model TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY (message_id, lang)
+        )
+        """
+    )
 
 
 @once_per_process
@@ -1322,6 +1345,7 @@ def migrate_db():
                 ensure_voice_audio_table(cursor)
                 ensure_messages_voice_columns(cursor)
                 ensure_voice_clips_table(cursor)
+                ensure_message_translations_table(cursor)
                 ensure_character_downtime_requests_table(cursor)
                 ensure_character_spend_requests_table(cursor)
                 ensure_characters_is_npc_column(cursor)
@@ -1700,6 +1724,7 @@ def migrate_db():
         ensure_voice_audio_table(cursor)
         ensure_messages_voice_columns(cursor)
         ensure_voice_clips_table(cursor)
+        ensure_message_translations_table(cursor)
         ensure_character_downtime_requests_table(cursor)
         ensure_character_spend_requests_table(cursor)
         ensure_messages_ai_message_kind_column(cursor)
