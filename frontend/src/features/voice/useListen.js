@@ -9,18 +9,38 @@ import { createSpeechQueue } from './speechQueue';
 import { hasPhoneVoices, phoneEngine, unlockPhoneVoice } from './phoneVoice';
 import { makeRoomAudio, serverEngine, switchingEngine, unlockRoomAudio } from './serverVoice';
 import { presentSpeaker } from '../chat/messageModel';
+import { hearText } from './translations';
 
 export const CATCH_UP = 3;
 
 const idNum = (m) => Number(m && m.id) || 0;
 const maxId = (messages) => (messages || []).reduce((a, m) => Math.max(a, idNum(m)), 0);
 
-export function toItem(msg) {
-  const text = spokenText(msg);
-  return { id: msg.id, text, lang: msg.lang || guessLang(msg.content), speaker: presentSpeaker(msg).name };
+/**
+ * A queue item. getHeard(msg) -> {content, lang} | null is the translation in the player's
+ * hear-in language (docs/VOICE.md §8); it is read when the line is spoken, so a translation that
+ * arrives while the line waits in the queue is used. Server voices ask the server instead.
+ */
+export function toItem(msg, getHeard) {
+  const heard = () => (getHeard && getHeard(msg)) || null;
+  const said = () => {
+    const h = heard();
+    return h ? { ...msg, content: h.content, lang: h.lang } : msg;
+  };
+  return {
+    id: msg.id,
+    get text() {
+      return spokenText(said());
+    },
+    get lang() {
+      const m = said();
+      return m.lang || guessLang(m.content);
+    },
+    speaker: presentSpeaker(msg).name,
+  };
 }
 
-export function useListen({ api, campaignId, roomKey, messages, status, userId, engine, onFallback }) {
+export function useListen({ api, campaignId, roomKey, messages, status, userId, engine, onFallback, translationsRef }) {
   const [settings, setSettings] = useState(null);
   const [chronicle, setChronicle] = useState(null);
   const [rules, setRules] = useState(null);
@@ -29,6 +49,10 @@ export function useListen({ api, campaignId, roomKey, messages, status, userId, 
   const settingsRef = useRef(null);
   settingsRef.current = settings;
   const audioRef = useRef(null);
+  const getHeard = useCallback(
+    (msg) => hearText(msg, translationsRef && translationsRef.current ? translationsRef.current[msg.id] : null, (settingsRef.current || {}).hear_lang),
+    [translationsRef],
+  );
   const fallbackRef = useRef(onFallback);
   fallbackRef.current = onFallback;
   const queue = useMemo(() => {
@@ -101,8 +125,8 @@ export function useListen({ api, campaignId, roomKey, messages, status, userId, 
     if (on && !rules) return; // wait for the read-out rules, so opt-outs apply from the first line
     lastId.current = maxId(messages);
     if (!on) return;
-    queue.enqueue(fresh.filter((m) => shouldRead(m, rules, userId)).map(toItem));
-  }, [messages, on, rules, userId, queue, roomKey]);
+    queue.enqueue(fresh.filter((m) => shouldRead(m, rules, userId)).map((m) => toItem(m, getHeard)));
+  }, [messages, on, rules, userId, queue, roomKey, getHeard]);
 
   useEffect(() => {
     if (!on || typeof document === 'undefined') return undefined;
@@ -133,9 +157,9 @@ export function useListen({ api, campaignId, roomKey, messages, status, userId, 
   }, [on, queue, messages, readable]);
 
   const acceptCatchUp = useCallback(() => {
-    queue.enqueue(readable().slice(-CATCH_UP).map(toItem));
+    queue.enqueue(readable().slice(-CATCH_UP).map((m) => toItem(m, getHeard)));
     setCatchUp(0);
-  }, [queue, readable]);
+  }, [queue, readable, getHeard]);
 
   const source = settings ? settings.tts_source : 'phone';
   const available = source !== 'off' && (source === 'server' || hasPhoneVoices());

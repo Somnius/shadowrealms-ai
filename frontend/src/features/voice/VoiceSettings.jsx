@@ -222,7 +222,7 @@ export function VoiceSettingsPanel() {
   const save = async (e) => {
     e.preventDefault();
     setBusy(true);
-    const body = { tts_source: s.tts_source, stt_source: s.stt_source, speak_lang: s.speak_lang, en_accent: s.en_accent, rate: Number(s.rate), volume: Number(s.volume), overrides: s.overrides };
+    const body = { tts_source: s.tts_source, stt_source: s.stt_source, speak_lang: s.speak_lang, hear_lang: s.hear_lang, write_lang: s.write_lang, en_accent: s.en_accent, rate: Number(s.rate), volume: Number(s.volume), overrides: s.overrides };
     const r = await api('/voice/settings', { method: 'PUT', body });
     setBusy(false);
     if (!r.ok) toast({ tone: 'danger', title: errorText(r.data, t('voice:saveFailed', 'Could not save the voice settings')) });
@@ -261,8 +261,30 @@ export function VoiceSettingsPanel() {
           onChange={(e) => set({ speak_lang: e.target.value })}
           options={[
             { value: 'auto', label: t('voice:speak.auto', 'The app’s language') },
-            { value: 'en', label: 'English' },
-            { value: 'el', label: 'Ελληνικά' },
+            { value: 'en', label: t('voice:langName.en', 'English') },
+            { value: 'el', label: t('voice:langName.el', 'Greek') },
+          ]}
+        />
+        <Select
+          label={t('voice:hear.label', 'Read and hear messages in')}
+          hint={t('voice:hear.hint', 'Lines in the other language are translated on the server ahead of time and shown in your language, with the original a tap away.')}
+          value={s.hear_lang}
+          onChange={(e) => set({ hear_lang: e.target.value })}
+          options={[
+            { value: 'written', label: t('voice:hear.written', 'As written') },
+            { value: 'en', label: t('voice:langName.en', 'English') },
+            { value: 'el', label: t('voice:langName.el', 'Greek') },
+          ]}
+        />
+        <Select
+          label={t('voice:write.label', 'Voice messages are sent in')}
+          hint={t('voice:write.hint', 'Speak in one language and send the other: you see both before you send, and your original words stay under the message.')}
+          value={s.write_lang}
+          onChange={(e) => set({ write_lang: e.target.value })}
+          options={[
+            { value: 'same', label: t('voice:write.same', 'The language I speak') },
+            { value: 'en', label: t('voice:langName.en', 'English') },
+            { value: 'el', label: t('voice:langName.el', 'Greek') },
           ]}
         />
         <Select

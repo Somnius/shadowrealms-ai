@@ -71,6 +71,14 @@ def note_transcript(cursor, clip_id, text, duration_s):
     )
 
 
+def note_translation(cursor, clip_id, lang, text):
+    ensure_voice_clips_table(cursor)
+    cursor.execute(
+        "UPDATE voice_clips SET translated_lang = %s, translated_text = %s WHERE clip_id = %s",
+        (lang, text, clip_id),
+    )
+
+
 def attach_error(clip, user_id, campaign_id, location_id):
     """Why this clip cannot be sent with a new message here, or None."""
     if clip is None:

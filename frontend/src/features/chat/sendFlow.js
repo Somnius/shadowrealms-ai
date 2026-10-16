@@ -143,7 +143,7 @@ export async function sendChatMessage(ctx, rawText, opts = {}) {
   const roomPath = `/campaigns/${campaign.id}/locations/${location.id}`;
 
   const replyTo = opts.replyTo && opts.replyTo.id != null ? opts.replyTo : null;
-  const voice = opts.voice || null; // {clipId, source}: a line spoken into the recorder
+  const voice = opts.voice || null; // {clipId, source, original?}: a line spoken into the recorder
   // /ai commands are posted with the staff voice; a player's /ai explain uses the player voice.
   const slashVoice = explain && !canUseStaffVoice(user, campaign) ? 'player' : 'staff';
   const temp = optimisticMessage({ text, user, campaign, location, speakAs: slashMatch ? slashVoice : speakAs, character, messageType, replyTo });
@@ -161,7 +161,7 @@ export async function sendChatMessage(ctx, rawText, opts = {}) {
       ...(!slashMatch && speakAs === 'character' && character?.id ? { character_id: character.id } : {}),
       ...(slashMatch ? { ai_message_kind: 'slash_user' } : chatMatch ? { ai_message_kind: 'chat_user' } : {}),
       ...(replyTo ? { reply_to_id: replyTo.id } : {}),
-      ...(voice && !slashMatch ? { source: voice.source || 'voice', ...(voice.clipId ? { clip_id: voice.clipId } : {}) } : {}),
+      ...(voice && !slashMatch ? { source: voice.source || 'voice', ...(voice.clipId ? { clip_id: voice.clipId } : {}), ...(voice.original ? { original: voice.original } : {}) } : {}),
     },
   });
   const notifyOoc = (data) => {
