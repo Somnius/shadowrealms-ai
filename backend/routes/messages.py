@@ -72,6 +72,37 @@ def _campaign_accessible_to_viewer(cursor, campaign_id: int, user_id: int) -> bo
     return cursor.fetchone() is not None
 
 
+def visible_message(cursor, message_id: int, user_id: int):
+    """One message as get_messages would show it to this viewer, else None (missing and forbidden
+    alike: callers answer 404 both ways). Same checks: chronicle access, a closed room unless the
+    viewer may bypass it, hidden rolls for staff and the chronicle's creator only."""
+    cursor.execute(_MESSAGE_SELECT + " WHERE m.id = %s", (message_id,))
+    row = cursor.fetchone()
+    if not row:
+        return None
+    campaign_id = row['campaign_id']
+    if not _campaign_accessible_to_viewer(cursor, campaign_id, user_id):
+        return None
+    cursor.execute(
+        "SELECT is_open FROM locations WHERE id = %s AND campaign_id = %s",
+        (row['location_id'], campaign_id),
+    )
+    loc = cursor.fetchone()
+    if not loc:
+        return None
+    raw_open = loc.get("is_open")
+    is_open = True if raw_open is None else bool(raw_open) if not isinstance(raw_open, (int, float)) else raw_open != 0
+    if not is_open and not user_can_bypass_closed_location(cursor, user_id, campaign_id):
+        return None
+    if is_hidden_kind(row.get('ai_message_kind')):
+        cursor.execute("SELECT role FROM users WHERE id = %s", (user_id,))
+        role = ((cursor.fetchone() or {}).get('role') or '').strip().lower()
+        creator = row.get('campaign_created_by')
+        if role not in ('admin', 'helper') and (creator is None or str(creator) != str(user_id)):
+            return None
+    return _message_dict_from_row(row, True)
+
+
 def _staff_kind_from_row(row) -> Optional[str]:
     """When speaker_mode is staff: site admin/helper vs chronicle storyteller."""
     pr = (row.get('poster_role') or row.get('user_role') or '').lower()
@@ -962,6 +993,15 @@ def delete_message(message_id):
         conn.commit()
 
         logger.info("Messages deleted: IDs=%s by User=%s", deleted_ids, user_id)
+
+        # Spoken audio of these lines goes too (best effort; never fails the delete).
+        try:
+            from services.voice_audio import forget_message_audio
+
+            forget_message_audio(cursor, deleted_ids)
+            conn.commit()
+        except Exception as e:
+            logger.warning("Failed to drop voice audio: %s", safe_log_value(e))
 
         # A deleted line shouldn't come back as AI memory (best effort; never fails the delete).
         try:

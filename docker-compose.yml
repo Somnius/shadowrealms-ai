@@ -83,6 +83,9 @@ services:
       # Laya classifier runtime (model: data/laya/model via the ./data mount; loaded lazily per worker)
       - LAYA_RUNTIME=/app/ml/laya/infer.py
       # Optional SMTP (copy values from .env)
+      # Server voices (docs/VOICE.md): the speech service on the same host, same secret
+      - SPEECH_SECRET=${SPEECH_SECRET:-}
+      - SPEECH_PORT=${SPEECH_PORT:-5055}
       - SMTP_HOST=${SMTP_HOST:-}
       - SMTP_PORT=${SMTP_PORT:-587}
       - SMTP_USER=${SMTP_USER:-}

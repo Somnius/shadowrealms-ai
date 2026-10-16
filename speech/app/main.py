@@ -166,6 +166,17 @@ def tts_audio(key: str, fmt: str = "ogg"):
     return FileResponse(path, media_type="audio/ogg" if fmt == "ogg" else "audio/mp4")
 
 
+@app.delete("/audio/{key}", dependencies=[Depends(auth)])
+def tts_audio_delete(key: str):
+    """The backend removes a spoken line when its message is deleted (and no other message uses it)."""
+    if not key.isalnum():
+        raise HTTPException(404)
+    for p in _tts_paths(key):
+        if os.path.exists(p):
+            os.remove(p)
+    return {"ok": True}
+
+
 @app.post("/stt", dependencies=[Depends(auth)])
 def stt(file: UploadFile = File(...), lang: str = Form(...)):
     check_lang(lang)
