@@ -4,6 +4,7 @@ service for the chronicle's lifetime. The voice_clips row says whose it is, whic
 message it was sent with (NULL until sent). Deleted with the message and with the chronicle.
 """
 
+import json
 import logging
 import os
 import re
@@ -69,6 +70,27 @@ def note_transcript(cursor, clip_id, text, duration_s):
         "WHERE clip_id = %s",
         (text, ms, clip_id),
     )
+
+
+def note_checked(cursor, clip_id, segments):
+    """Phase 6: the checked transcript (JSON segments), or "[]" when the check changed nothing."""
+    ensure_voice_clips_table(cursor)
+    cursor.execute(
+        "UPDATE voice_clips SET transcript_checked = %s WHERE clip_id = %s",
+        (json.dumps(segments or [], ensure_ascii=False), clip_id),
+    )
+
+
+def checked_segments(clip):
+    """None when not checked yet, [] when checked and unchanged, else the segments."""
+    raw = (clip or {}).get("transcript_checked")
+    if raw is None:
+        return None
+    try:
+        segs = json.loads(raw)
+    except ValueError:
+        return []
+    return segs if isinstance(segs, list) else []
 
 
 def attach_error(clip, user_id, campaign_id, location_id):

@@ -64,7 +64,9 @@ def test_upload_checks(api, speech):  # noqa: F811
     assert speech["uploads"] == []
     r = post_clip(api, 3)
     assert r.status_code == 200 and r.get_json()["clip_id"] == CLIP
-    assert speech["uploads"][0][:3] == ("/stt", {"lang": "en", "max_seconds": "180"}, "audio/mp4")
+    path, fields, mime = speech["uploads"][0][:3]
+    assert (path, fields["lang"], fields["max_seconds"], mime) == ("/stt", "en", "180", "audio/mp4")
+    assert fields["check"] == "1" and "Camarilla" in fields["prompt"]  # phase 6: names + glossary hint
     row = api.raw.execute("SELECT user_id, campaign_id, location_id, message_id FROM voice_clips").fetchone()
     assert tuple(row) == (3, 10, 100, None)
 

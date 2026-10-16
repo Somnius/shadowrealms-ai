@@ -678,6 +678,7 @@ CREATE TABLE IF NOT EXISTS voice_clips (
     duration_ms     INTEGER,
     lang            TEXT,
     transcript_raw  TEXT,
+    transcript_checked TEXT,  -- voice phase 6: JSON segments [{"t": text, "raw": Whisper's words}]
     created_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 

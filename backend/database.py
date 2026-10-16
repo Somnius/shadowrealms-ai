@@ -818,6 +818,8 @@ def ensure_voice_clips_table(cursor):
     )
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_voice_clips_message ON voice_clips(message_id)")
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_voice_clips_campaign ON voice_clips(campaign_id)")
+    # Phase 6: the checked transcript as JSON segments [{"t": text, "raw": Whisper's words}]
+    _ensure_text_column(cursor, "voice_clips", "transcript_checked")
 
 
 @once_per_process

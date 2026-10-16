@@ -29,3 +29,7 @@ STT_VRAM_MB = _int("VOICE_STT_VRAM_MB", 2150)
 STT_MODEL = os.environ.get("VOICE_STT_MODEL", "large-v3-turbo")
 STT_COMPUTE = os.environ.get("VOICE_STT_COMPUTE", "int8_float16")
 JOB_KEEP_SECONDS = _int("VOICE_JOB_KEEP_SECONDS", 3600)
+# Transcript check (phase 6): Laya-words on a few CPU threads, a time budget, a capped Whisper prompt
+LAYA_THREADS = _int("VOICE_LAYA_THREADS", 4)
+LAYA_BUDGET_S = _int("VOICE_LAYA_BUDGET_MS", 2000) / 1000
+PROMPT_MAX_CHARS = _int("VOICE_STT_PROMPT_MAX_CHARS", 400)

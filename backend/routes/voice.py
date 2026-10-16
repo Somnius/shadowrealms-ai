@@ -33,7 +33,7 @@ from database import (
 )
 from routes.messages import visible_message
 from services.location_access import user_can_bypass_closed_location
-from services import speech_client, voice_audio, voice_clips
+from services import speech_client, transcript_check, voice_audio, voice_clips
 from services.request_validation import RequestValidationError
 from services.voice_tts import PREVIEW_TEXT, tts_request
 from services.voice_settings import (
@@ -356,10 +356,13 @@ def create_clip():
         max_s = normalize_campaign_voice_settings(camp.get("voice_settings"))["max_clip_seconds"]
         if voice_clips.used_bytes(cursor) >= voice_clips.clips_max_bytes():
             return jsonify({"error": "clips_disk_full"}), 507
+        fields = {"lang": lang, "max_seconds": str(max_s)}
+        if transcript_check.enabled():  # phase 6: names as a Whisper hint, Laya flags misheard words
+            fields["prompt"] = transcript_check.whisper_prompt(
+                transcript_check.chronicle_names(cursor, campaign_id), lang)
+            fields["check"] = "1"
         try:
-            status, job = speech_client.call_upload(
-                "/stt", {"lang": lang, "max_seconds": str(max_s)}, "clip", data, mime
-            )
+            status, job = speech_client.call_upload("/stt", fields, "clip", data, mime)
         except speech_client.SpeechUnavailable:
             return jsonify(_SPEECH_DOWN[0]), 503
         if status >= 400 or not job.get("clip"):
@@ -406,6 +409,19 @@ def stt_job_status(job_id):
                 voice_clips.note_transcript(cursor, clip["clip_id"], text, job.get("duration"))
                 conn.commit()
             out["text"] = text
+            segs = voice_clips.checked_segments(clip)
+            if segs is None and job.get("words"):
+                # Phase 6: Krikri fixes only Laya's flagged words, within 3 s, else Whisper's text
+                segs = transcript_check.check(
+                    job["words"], job.get("suspects") or [], clip.get("lang") or "en",
+                    transcript_check.chronicle_names(cursor, int(clip["campaign_id"])),
+                    probs=job.get("probs"))
+                voice_clips.note_checked(cursor, clip["clip_id"], segs)
+                conn.commit()
+            if segs:
+                out["checked"] = segs
+                out["text"] = transcript_check.text_of(segs)
+                out["text_raw"] = text
             out["duration_ms"] = int(round(float(job.get("duration") or 0) * 1000))
         return jsonify(out), 200
     finally:

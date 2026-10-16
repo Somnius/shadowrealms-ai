@@ -98,3 +98,20 @@ export function startPhoneDictation(lang, { onPartial = () => {} } = {}) {
   rec.start();
   return { stop: () => rec.stop(), done };
 }
+
+/** Phase 6 (transcript check): swap one checked span in the text, e.g. back to Whisper's words.
+ * Replaces the first whole occurrence of `from`; the text is returned unchanged when it is gone
+ * (the player edited it). */
+export function swapSpan(text, from, to) {
+  const s = String(text || '');
+  if (!from || from === to) return s;
+  const at = s.indexOf(from);
+  return at < 0 ? s : s.slice(0, at) + to + s.slice(at + from.length);
+}
+
+/** The changed spans of a checked transcript: [{ fixed, raw }]. */
+export function checkedChanges(segments) {
+  return (Array.isArray(segments) ? segments : [])
+    .filter((x) => x && typeof x.t === 'string' && typeof x.raw === 'string')
+    .map((x) => ({ fixed: x.t, raw: x.raw }));
+}

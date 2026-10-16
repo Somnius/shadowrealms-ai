@@ -9,3 +9,4 @@ scipy==1.18.1
 faster-whisper==1.2.1
 ctranslate2==4.8.3
 av==15.1.0
+tokenizers==0.23.3

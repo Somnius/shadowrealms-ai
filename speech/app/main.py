@@ -16,6 +16,7 @@ from fastapi.responses import FileResponse, JSONResponse
 from pydantic import BaseModel
 
 from . import audio, catalog, config, textprep
+from .check import LayaWords
 from .cachekeys import tts_key
 from .engines import PiperEngine, PocketEngine, WhisperEngine, gpu_free_mb
 from .jobs import Lane
@@ -29,6 +30,7 @@ CLIP_DIR = os.path.join(config.CACHE_DIR, "clips")
 TMP_DIR = os.path.join(config.CACHE_DIR, "tmp")
 
 piper, pocket, whisper = PiperEngine(), PocketEngine(), WhisperEngine()
+laya = LayaWords()
 
 
 def _tts_paths(key):
@@ -66,8 +68,16 @@ def run_tts(p):
 
 
 def run_stt(p):
-    text, dur = whisper.transcribe(p["ogg"], p["lang"])
-    return dict(text=text, duration=round(dur, 2), clip=p["clip"])
+    text, dur, words = whisper.transcribe(p["ogg"], p["lang"], p.get("prompt"))
+    out = dict(text=text, duration=round(dur, 2), clip=p["clip"])
+    if p.get("check") and words:
+        # Phase 6: Whisper's words and Laya's flags; the backend asks Krikri to fix only those
+        t0 = time.perf_counter()
+        out["words"] = [w for w, _ in words]
+        out["probs"] = [round(pr, 3) for _, pr in words]
+        out["suspects"] = laya.score(out["words"], [pr for _, pr in words], p["lang"])
+        out["check_ms"] = int((time.perf_counter() - t0) * 1000)
+    return out
 
 
 tts_lane = Lane("tts", config.TTS_QUEUE_MAX, run_tts)
@@ -103,6 +113,8 @@ def _startup():
     stt_lane.start()
     threading.Thread(target=_idle_loop, daemon=True).start()
     threading.Thread(target=pocket.ok, daemon=True).start()  # warm Greek TTS in the background
+    if laya.present():
+        threading.Thread(target=laya.ok, daemon=True).start()  # transcript check model (CPU, small)
 
 
 @app.get("/health", dependencies=[Depends(auth)])
@@ -111,7 +123,8 @@ def health():
                                   queue=stt_lane.depth(), vram_free_mb=gpu_free_mb(),
                                   vram_needed_mb=config.STT_VRAM_MB, idle_unload_s=config.STT_IDLE_SECONDS),
                 tts=dict(queue=tts_lane.depth(), pocket_loaded=pocket._model is not None,
-                         pocket_error=pocket.error))
+                         pocket_error=pocket.error),
+                check=dict(present=laya.present(), loaded=laya._sess is not None, error=laya.error))
 
 
 @app.get("/voices", dependencies=[Depends(auth)])
@@ -180,8 +193,10 @@ def tts_audio_delete(key: str):
 
 
 @app.post("/stt", dependencies=[Depends(auth)])
-def stt(file: UploadFile = File(...), lang: str = Form(...), max_seconds: int = Form(0)):
+def stt(file: UploadFile = File(...), lang: str = Form(...), max_seconds: int = Form(0),
+        prompt: str = Form(""), check: int = Form(0)):
     check_lang(lang)
+    prompt = " ".join(prompt.split())[: config.PROMPT_MAX_CHARS]
     limit = min(max_seconds, config.CLIP_MAX_SECONDS) if max_seconds > 0 else config.CLIP_MAX_SECONDS
     if stt_lane.q.full():
         raise Refused("queue_full")
@@ -207,7 +222,8 @@ def stt(file: UploadFile = File(...), lang: str = Form(...), max_seconds: int = 
     finally:
         if os.path.exists(raw):
             os.remove(raw)
-    return stt_lane.submit(dict(ogg=ogg, lang=lang, clip=clip), dict(clip=clip, duration=round(dur, 2)))
+    return stt_lane.submit(dict(ogg=ogg, lang=lang, clip=clip, prompt=prompt, check=bool(check)),
+                          dict(clip=clip, duration=round(dur, 2)))
 
 
 @app.get("/stt/{job_id}", dependencies=[Depends(auth)])

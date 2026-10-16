@@ -107,3 +107,17 @@ def test_probe_checks():
     for p in cases:
         with pytest.raises(Refused):
             check_probe(p, 180)
+
+
+def test_laya_words_marking_and_sequence():
+    from app import check
+    words = "Άντε ρε βλυχ άρα, πάλι".split()
+    assert check.mark(words, 3) == "Άντε ρε βλυχ ⟦άρα⟧, πάλι"
+    st = check.state(words, 2, 0.42, "el")
+    assert st.startswith("Sentence: Άντε ρε ⟦βλυχ⟧ άρα, πάλι\nWord: βλυχ\nEngine confidence: 0.42")
+    assert st.endswith("In the Greek dictionary: can't tell")
+    m = dict(instructions="Q <mask>?", criteria_false="no", criteria_true="yes", max_len=40,
+             head_max_len=20, cls=2, sep=1, mask=4, pad=0, mask_token="<mask>", temperature=1.0)
+    ids, markers = check.build(lambda t: [10 + len(x) for x in t.split()], m, "a b c")
+    assert ids[0] == 2 and ids[-1] == 1 and [ids[p] for p in markers] == [4, 4]
+    assert check.candidates(["ο", "βλυχ", "άρα", "πάλι"], [0.1, 0.4, 0.99, 0.3]) == [3, 1]

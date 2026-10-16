@@ -43,3 +43,17 @@ test('fillers are stripped, words kept', () => {
   expect(stripFillers('Εε, ανοίγω την πόρτα μμμ αργά.')).toBe('ανοίγω την πόρτα αργά.');
   expect(stripFillers('Ερμής ήρθε')).toBe('Ερμής ήρθε');
 });
+
+describe('transcript check (phase 6)', () => {
+  const { checkedChanges, swapSpan } = require('../recorder');
+  test('changed spans and tap to put back what was heard', () => {
+    const segs = [{ t: 'Ο Νίκος λέει είσαι' }, { t: 'βλαχάρα', raw: 'βλυχ άρα' }, { t: 'ρε μαλάκα.' }];
+    expect(checkedChanges(segs)).toEqual([{ fixed: 'βλαχάρα', raw: 'βλυχ άρα' }]);
+    const text = 'Ο Νίκος λέει είσαι βλαχάρα ρε μαλάκα.';
+    const back = swapSpan(text, 'βλαχάρα', 'βλυχ άρα');
+    expect(back).toBe('Ο Νίκος λέει είσαι βλυχ άρα ρε μαλάκα.');
+    expect(swapSpan(back, 'βλυχ άρα', 'βλαχάρα')).toBe(text);
+    expect(swapSpan('edited away', 'βλαχάρα', 'x')).toBe('edited away');
+    expect(checkedChanges(null)).toEqual([]);
+  });
+});

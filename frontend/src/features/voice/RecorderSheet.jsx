@@ -9,7 +9,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { Button, Glyph, IconButton } from '../../design';
 import { API_URL, authFetch, getCurrentToken } from '../../app/http';
 import { t } from '../../i18n';
-import { clock, nextRate, pickMime, pulsesAt, startPhoneDictation, stripFillers, timerPhase } from './recorder';
+import { checkedChanges, clock, nextRate, pickMime, pulsesAt, startPhoneDictation, stripFillers, swapSpan, timerPhase } from './recorder';
 import './voice.css';
 
 const POLL_MS = 700;
@@ -94,6 +94,7 @@ export default function RecorderSheet({
   const [blobUrl, setBlobUrl] = useState(null);
   const [text, setText] = useState('');
   const [note, setNote] = useState('');
+  const [changes, setChanges] = useState([]); // phase 6: [{ fixed, raw, reverted }]
   const [busy, setBusy] = useState('');
   const [clipId, setClipId] = useState(null);
   const [source, setSource] = useState(phoneDictation ? 'phone-voice' : 'voice');
@@ -287,6 +288,7 @@ export default function RecorderSheet({
     setBusy('');
     if (job.state === 'done') {
       setText(stripFillers(job.text));
+      setChanges(checkedChanges(job.checked).map((c) => ({ ...c, reverted: false })));
       if (!String(job.text || '').trim()) setNote(t('voice:rec.empty', 'No words were heard. Type what you said, or record again.'));
     } else setNote(sttErrorText(job.error || 'timeout'));
     setStep('text');
@@ -419,6 +421,28 @@ export default function RecorderSheet({
           <span className="sr-rec-text__lang">{langLabel}</span>
           <label className="sr-visually-hidden" htmlFor="sr-rec-text">{t('voice:rec.text', 'What you said')}</label>
           <textarea id="sr-rec-text" className="sr-rec-text__input" rows={4} value={text} onChange={(e) => setText(e.target.value)} />
+          {changes.length ? (
+            <div className="sr-rec-fixes" aria-label={t('voice:rec.fixesLabel', 'Words fixed by the check')}>
+              <p className="sr-rec-fixes__hint">{t('voice:rec.fixesHint', 'Fixed words the recogniser probably misheard. Tap one to put back what it heard.')}</p>
+              {changes.map((c, i) => (
+                <button
+                  key={`${i}-${c.raw}`}
+                  type="button"
+                  className={`sr-rec-fix${c.reverted ? ' sr-rec-fix--reverted' : ''}`}
+                  aria-pressed={c.reverted}
+                  onClick={() => {
+                    setText((v) => (c.reverted ? swapSpan(v, c.raw, c.fixed) : swapSpan(v, c.fixed, c.raw)));
+                    setChanges((all) => all.map((x, j) => (j === i ? { ...x, reverted: !x.reverted } : x)));
+                  }}
+                >
+                  <span className="sr-rec-fix__now">{c.reverted ? c.raw : c.fixed}</span>
+                  <span className="sr-rec-fix__was">
+                    {c.reverted ? t('voice:rec.fixRedo', 'fix: {{w}}', { w: c.fixed }) : t('voice:rec.fixWas', 'heard: {{w}}', { w: c.raw })}
+                  </span>
+                </button>
+              ))}
+            </div>
+          ) : null}
           {note ? <p className="sr-rec__note" role="alert">{note}</p> : null}
           {busy ? <p className="sr-rec__note" role="status">{busy}</p> : null}
           {canPhoneDictate && !dictation.current && source !== 'phone-voice' && note ? (

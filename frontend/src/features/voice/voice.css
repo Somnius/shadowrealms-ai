@@ -232,6 +232,42 @@
   border-radius: 8px;
   padding: 8px;
 }
+/* phase 6: words the transcript check fixed; tap one to put back what Whisper heard */
+.sr-rec-fixes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.sr-rec-fixes__hint {
+  flex-basis: 100%;
+  margin: 0;
+  font-size: 12px;
+  color: var(--sr-text-muted);
+}
+.sr-rec-fix {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  min-height: 44px;
+  min-width: 44px;
+  padding: 4px 10px;
+  font: inherit;
+  color: var(--sr-text);
+  background: var(--sr-surface-sunken);
+  border: 1px solid var(--sr-border-input);
+  border-bottom: 2px dotted var(--sr-text-muted);
+  border-radius: 8px;
+  cursor: pointer;
+}
+.sr-rec-fix__was {
+  font-size: 11px;
+  color: var(--sr-text-muted);
+}
+.sr-rec-fix--reverted .sr-rec-fix__now {
+  text-decoration: none;
+  opacity: 0.85;
+}
 /* reduced motion: the pulse changes colour only, no scale and no glow */
 @media (prefers-reduced-motion: reduce) {
   .sr-rec__ring {
