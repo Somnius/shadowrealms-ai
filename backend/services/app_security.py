@@ -129,6 +129,7 @@ ROUTE_LIMITS = {
     "voice.clip_audio": ("120 per minute", user_or_ip_key),
     # captions (language override): one poll per room every few seconds while some are pending
     "voice.room_translations": ("60 per minute", user_or_ip_key),
+    "voice.translate_text": ("20 per minute;200 per hour", user_or_ip_key),
 }
 AI_LIMIT = "12 per minute;300 per hour"      # every POST in the ai blueprint + dice.ai_roll
 DICE_LIMIT = "60 per minute"                 # other dice POSTs

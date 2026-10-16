@@ -137,3 +137,11 @@ def test_captions_endpoint(api, monkeypatch):  # noqa: F811
     api.raw.execute("UPDATE message_translations SET kind = 'original'")
     api.raw.commit()
     assert "1" in api("GET", url.replace("&lang=el", ""), 2).get_json()["translations"]
+
+
+def test_translate_endpoint(api, monkeypatch):  # noqa: F811
+    monkeypatch.setattr(tr, "translate", lambda text, src, dst, generate=None: ("I open the door.", "krikri"))
+    r = api("POST", "/api/voice/translate", 3, {"text": "Ανοίγω την πόρτα.", "from": "el", "to": "en"})
+    assert r.status_code == 200 and r.get_json() == {"lang": "en", "text": "I open the door."}
+    assert api("POST", "/api/voice/translate", 3, {"text": "x", "from": "el", "to": "el"}).status_code == 400
+    assert api("POST", "/api/voice/translate", 3, {"text": "", "from": "el", "to": "en"}).status_code == 400

@@ -521,3 +521,23 @@ def room_translations():
         return jsonify({"translations": out, "pending": pending}), 200
     finally:
         conn.close()
+
+
+@voice_bp.route("/voice/translate", methods=["POST"])
+@jwt_required()
+def translate_text():
+    """The recorder's text step: the player's own line into the write-in language (phone
+    dictation, or after editing the transcript). Short lines only."""
+    if _uid() is None:
+        return jsonify({"error": "Invalid session"}), 401
+    data = request.get_json(silent=True) or {}
+    text, src, dst = data.get("text"), data.get("from"), data.get("to")
+    if (not isinstance(text, str) or not text.strip() or len(text) > translation.MAX_CHARS
+            or src not in translation.LANGS or dst not in translation.LANGS or src == dst):
+        return jsonify({"error": "text, from and to (en or el, different) are needed"}), 400
+    try:
+        out, _ = translation.translate(text, src, dst)
+    except Exception as e:  # noqa: BLE001
+        logger.warning("translate failed: %s", type(e).__name__)
+        return jsonify({"error": "translation_failed"}), 503
+    return jsonify({"lang": dst, "text": out}), 200

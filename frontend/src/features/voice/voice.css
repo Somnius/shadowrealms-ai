@@ -253,3 +253,75 @@
   background: var(--sr-rec-colour);
   color: var(--sr-bg);
 }
+
+/* Translated caption (language override, docs/VOICE.md §6.3) */
+.sr-msg__caption {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 4px 8px;
+  margin-top: 4px;
+}
+.sr-msg__langchip {
+  flex: none;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  line-height: 1;
+  padding: 3px 5px;
+  margin-top: 2px;
+  border: 1px solid var(--sr-border, rgba(255, 255, 255, 0.2));
+  border-radius: 4px;
+  color: var(--sr-text-muted);
+}
+.sr-msg__caption-text {
+  flex: 1 1 12em;
+  min-width: 0;
+  margin: 0;
+  font-size: 13px;
+  font-style: italic;
+  line-height: 1.4;
+  color: var(--sr-text-2);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+}
+.sr-msg__caption-text.is-open {
+  display: block;
+  -webkit-line-clamp: unset;
+}
+.sr-msg__caption-label {
+  font-style: normal;
+  color: var(--sr-text-muted);
+}
+.sr-msg__more,
+.sr-msg__orig {
+  background: none;
+  border: 0;
+  cursor: pointer;
+  font: inherit;
+  font-size: 13px;
+  color: var(--sr-arcane-300);
+}
+.sr-msg__orig {
+  min-height: 44px;
+  padding: 0 12px;
+  margin-top: -12px;
+  margin-bottom: -8px;
+}
+.sr-msg__more {
+  padding: 0 4px;
+}
+.sr-msg__more:focus-visible,
+.sr-msg__orig:focus-visible {
+  outline: 2px solid var(--sr-arcane-300);
+  outline-offset: 2px;
+}
+.sr-rec-text__translated {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 8px;
+}

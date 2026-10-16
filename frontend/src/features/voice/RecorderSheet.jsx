@@ -58,6 +58,7 @@ export default function RecorderSheet({
   campaignId,
   locationId,
   lang,
+  writeLang = 'same',
   maxSeconds = 180,
   phoneDictation = false,
   canPhoneDictate = false,
@@ -73,6 +74,11 @@ export default function RecorderSheet({
   const [paused, setPaused] = useState(false);
   const [blobUrl, setBlobUrl] = useState(null);
   const [text, setText] = useState('');
+  // write-in language (docs/VOICE.md §7): {text, from} of the line in the other language, or null
+  const [translated, setTranslated] = useState(null);
+  const [trNote, setTrNote] = useState('');
+  const sendLang = writeLang === 'en' || writeLang === 'el' ? writeLang : null;
+  const crossing = !!sendLang && sendLang !== lang;
   const [note, setNote] = useState('');
   const [busy, setBusy] = useState('');
   const [clipId, setClipId] = useState(null);
@@ -82,6 +88,7 @@ export default function RecorderSheet({
   const [dur, setDur] = useState(0);
   const [rate, setRate] = useState(1);
   const rec = useRef(null);
+  const translateRef = useRef(() => {});
   const stream = useRef(null);
   const chunks = useRef([]);
   const blob = useRef(null);
@@ -117,6 +124,7 @@ export default function RecorderSheet({
             if (!live) return;
             setText(stripFillers(final));
             setStep('text');
+            translateRef.current(stripFillers(final));
           })
           .catch(() => {
             if (!live) return;
@@ -235,6 +243,19 @@ export default function RecorderSheet({
     }
   };
 
+  const translate = async (from) => {
+    const src = String(from || '').trim();
+    if (!crossing || !src) return;
+    setTrNote('');
+    setBusy(t('voice:rec.translating', 'Translating…'));
+    const r = await api('/voice/translate', { method: 'POST', body: { text: src, from: lang, to: sendLang } });
+    setBusy('');
+    if (r.ok && r.data && r.data.text) setTranslated({ text: r.data.text, from: src });
+    else setTrNote(t('voice:rec.translateFailed', 'Could not translate it now. Send it as you said it, or try again.'));
+  };
+
+  translateRef.current = translate;
+
   const transcribe = async () => {
     if (!blob.current) return;
     if (audioEl.current) audioEl.current.pause();
@@ -266,6 +287,8 @@ export default function RecorderSheet({
     setBusy('');
     if (job.state === 'done') {
       setText(stripFillers(job.text));
+      if (crossing && job.translated && job.translated.text) setTranslated({ text: job.translated.text, from: stripFillers(job.text) });
+      else if (crossing && job.translate_failed) setTrNote(t('voice:rec.translateFailed', 'Could not translate it now. Send it as you said it, or try again.'));
       if (!String(job.text || '').trim()) setNote(t('voice:rec.empty', 'No words were heard. Type what you said, or record again.'));
     } else setNote(sttErrorText(job.error || 'timeout'));
     setStep('text');
@@ -277,7 +300,10 @@ export default function RecorderSheet({
     dictation.current = d;
     setBusy(t('voice:rec.dictating', 'Listening… tap Stop when you are done.'));
     d.done
-      .then((final) => setText(stripFillers(final)))
+      .then((final) => {
+        setText(stripFillers(final));
+        translateRef.current(stripFillers(final));
+      })
       .catch(() => setNote(t('voice:rec.dictationFailed', 'Phone dictation stopped. Type what you said.')))
       .finally(() => {
         dictation.current = null;
@@ -289,7 +315,13 @@ export default function RecorderSheet({
   const send = async () => {
     if (!text.trim()) return;
     setBusy(t('voice:rec.sending', 'Sending…'));
-    const ok = await onSend({ text: text.trim(), clipId, source: clipId ? 'voice' : source });
+    const tr = crossing && translated && translated.text.trim() ? translated : null;
+    const ok = await onSend({
+      text: tr ? tr.text.trim() : text.trim(),
+      clipId,
+      source: clipId ? 'voice' : source,
+      ...(tr ? { original: { text: text.trim(), lang } } : {}),
+    });
     setBusy('');
     if (ok !== false) onClose();
   };
@@ -297,6 +329,8 @@ export default function RecorderSheet({
   const phase = timerPhase(elapsed);
   const left = Math.max(0, maxSeconds - elapsed);
   const langLabel = lang === 'el' ? 'Ελληνικά' : 'English';
+  const sendLabel = sendLang === 'el' ? 'Ελληνικά' : 'English';
+  const stale = !!translated && translated.from !== text.trim();
 
   return (
     <section className="sr-recsheet" aria-label={t('voice:rec.title', 'Voice message')} data-testid="recorder-sheet">
@@ -384,7 +418,20 @@ export default function RecorderSheet({
         <div className="sr-rec-text">
           <span className="sr-rec-text__lang">{langLabel}</span>
           <label className="sr-visually-hidden" htmlFor="sr-rec-text">{t('voice:rec.text', 'What you said')}</label>
-          <textarea id="sr-rec-text" className="sr-rec-text__input" rows={4} value={text} onChange={(e) => setText(e.target.value)} />
+          <textarea id="sr-rec-text" className="sr-rec-text__input" rows={crossing ? 3 : 4} value={text} onChange={(e) => setText(e.target.value)} />
+          {crossing && translated ? (
+            <div className="sr-rec-text__translated">
+              <label className="sr-rec-text__lang" htmlFor="sr-rec-translated">{t('voice:rec.sentIn', '{{lang}} (sent)', { lang: sendLabel })}</label>
+              <textarea id="sr-rec-translated" className="sr-rec-text__input" rows={3} value={translated.text} onChange={(e) => setTranslated({ ...translated, text: e.target.value })} />
+              <p className="sr-rec__note">{t('voice:rec.originalKept', 'Your words in {{lang}} stay under the message as “your original”.', { lang: langLabel })}</p>
+            </div>
+          ) : null}
+          {crossing && text.trim() && (!translated || stale) && !busy ? (
+            <Button type="button" variant="secondary" size="sm" onClick={() => translate(text)}>
+              {translated ? t('voice:rec.translateAgain', 'Translate again') : t('voice:rec.translateTo', 'Write it in {{lang}}', { lang: sendLabel })}
+            </Button>
+          ) : null}
+          {trNote ? <p className="sr-rec__note" role="alert">{trNote}</p> : null}
           {note ? <p className="sr-rec__note" role="alert">{note}</p> : null}
           {busy ? <p className="sr-rec__note" role="status">{busy}</p> : null}
           {canPhoneDictate && !dictation.current && source !== 'phone-voice' && note ? (

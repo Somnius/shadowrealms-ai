@@ -109,3 +109,27 @@ test('no recorder and no dictation: no mic button at all', () => {
   renderIt({ api: jest.fn(), campaignId: 1, locationId: 2, lang: 'en', onSend: jest.fn() });
   expect(screen.queryByTestId('mic')).toBeNull();
 });
+
+test('write in the other language: both texts shown, the translation sent with the original', async () => {
+  const u = setupUser();
+  getUserMedia.mockResolvedValue({ getTracks: () => [{ stop: jest.fn() }] });
+  mockAuthFetch.mockResolvedValue({ ok: true, status: 200, json: async () => ({ clip_id: 'c'.repeat(32), job_id: 'j1', state: 'queued' }) });
+  const api = jest.fn().mockResolvedValue({
+    ok: true,
+    data: { state: 'done', text: 'Ανοίγω την πόρτα.', clip_id: 'c'.repeat(32), translated: { lang: 'en', text: 'I open the door.' } },
+  });
+  const onSend = jest.fn().mockResolvedValue(true);
+  renderIt({ api, campaignId: 1, locationId: 2, lang: 'el', writeLang: 'en', maxSeconds: 180, onSend });
+  await u.click(screen.getByRole('button', { name: 'Record a voice message' }));
+  await waitFor(() => expect(FakeRecorder.last && FakeRecorder.last.state).toBe('recording'));
+  await u.click(screen.getByRole('button', { name: 'Stop' }));
+  await act(async () => {
+    await u.click(screen.getByRole('button', { name: 'Transcribe' }));
+  });
+  await waitFor(() => expect(screen.getByRole('textbox', { name: 'English (sent)' })).toHaveValue('I open the door.'), { timeout: 3000 });
+  expect(screen.getByRole('textbox', { name: 'What you said' })).toHaveValue('Ανοίγω την πόρτα.');
+  await u.click(screen.getByRole('button', { name: 'Send' }));
+  expect(onSend).toHaveBeenCalledWith({
+    text: 'I open the door.', clipId: 'c'.repeat(32), source: 'voice', original: { text: 'Ανοίγω την πόρτα.', lang: 'el' },
+  });
+});

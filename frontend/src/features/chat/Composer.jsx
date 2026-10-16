@@ -263,6 +263,7 @@ export default function Composer({
           campaignId={voice.campaignId}
           locationId={voice.locationId}
           lang={voice.lang}
+          writeLang={voice.writeLang}
           maxSeconds={voice.maxSeconds}
           phoneDictation={voice.phoneDictation}
           canPhoneDictate={voice.canPhoneDictate}

@@ -17,6 +17,7 @@ import Composer, { voiceOptions } from '../chat/Composer';
 import { sendChatMessage } from '../chat/sendFlow';
 import { seenParam, useRoomMessages } from '../chat/useRoomMessages';
 import { useListen } from '../voice/useListen';
+import { TranslationsContext, useRoomTranslations } from '../voice/translations';
 import { ListenButton, SpeakingBar } from '../voice/ListenControls';
 import { speechRecognitionCtor, sttLang } from '../voice/recorder';
 import * as clipPlayer from '../voice/clipPlayer';
@@ -214,7 +215,9 @@ export default function PlayPage() {
   });
   const dice = useDiceOverlay(room.messages);
   const lastFallbackToast = useRef(0);
+  const translationsRef = useRef({});
   const listen = useListen({
+    translationsRef,
     api,
     campaignId,
     roomKey: `${campaignId}:${locationId}`,
@@ -229,6 +232,18 @@ export default function PlayPage() {
       toast({ tone: 'warn', title: t('voice:fallback', 'Server voices are busy or off; using your phone’s voice for now.') });
     },
   });
+  // Language override (docs/VOICE.md §8): captions, and the text phone voices read
+  const hearLang = (listen.settings && listen.settings.hear_lang) || 'written';
+  const translations = useRoomTranslations({
+    api,
+    campaignId,
+    locationId: location ? location.id : null,
+    messages: room.messages,
+    hearLang,
+  });
+  translationsRef.current = translations;
+  const userIdForCaptions = user ? user.id : null;
+  const translationsCtx = useMemo(() => ({ map: translations, hearLang, userId: userIdForCaptions }), [translations, hearLang, userIdForCaptions]);
   // Copy / Reply / Delete on messages (features/chat/MessageActions.jsx).
   const actions = useMessageActions({
     api,
@@ -393,7 +408,8 @@ export default function PlayPage() {
         maxSeconds: Number(vc.max_clip_seconds) || 180,
         phoneDictation: vs.stt_source === 'phone' && canPhoneDictate,
         canPhoneDictate,
-        onSend: ({ text, clipId, source }) => onSend(text, null, { clipId, source }),
+        writeLang: vs.write_lang || 'same',
+        onSend: ({ text, clipId, source, original }) => onSend(text, null, { clipId, source, original }),
       }
     : null;
   useEffect(() => () => clipPlayer.reset(), [locationId]);
@@ -515,6 +531,7 @@ export default function PlayPage() {
               </div>
             ) : (
               <RollRequestContext.Provider value={rollRequestCtx}>
+                <TranslationsContext.Provider value={translationsCtx}>
                 <MessageActionsContext.Provider value={actions.value}>
                   <MessageList
                     roomKey={`${campaignId}:${locationId}`}
@@ -531,6 +548,7 @@ export default function PlayPage() {
                     onLoadOlder={room.loadOlder}
                   />
                 </MessageActionsContext.Provider>
+                </TranslationsContext.Provider>
               </RollRequestContext.Provider>
             )}
             <div className="sr-chat__bottom">
