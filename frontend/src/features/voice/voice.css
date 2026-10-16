@@ -253,3 +253,12 @@
   background: var(--sr-rec-colour);
   color: var(--sr-bg);
 }
+
+/* Language you speak in a recording (tells the transcriber what to expect) */
+.sr-rec-lang { display: inline-flex; gap: 4px; margin-inline: 8px; }
+.sr-rec-lang__btn {
+  min-width: var(--sr-tap, 44px); min-height: var(--sr-tap, 44px);
+  border: 1px solid var(--sr-line, rgba(255,255,255,.15)); border-radius: 8px;
+  background: transparent; color: var(--sr-text-2, inherit); font: inherit; font-weight: 600;
+}
+.sr-rec-lang__btn[aria-pressed="true"] { border-color: var(--sr-gold-400, #c9a227); color: var(--sr-gold-400, #c9a227); }

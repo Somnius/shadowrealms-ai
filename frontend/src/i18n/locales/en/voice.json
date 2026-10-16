@@ -122,7 +122,8 @@
     "dictating": "Listening… tap Stop when you are done.",
     "dictateInstead": "Use phone dictation",
     "denied": "The microphone is blocked. Allow the microphone for this site in your phone’s Settings, then try again.",
-    "deniedShort": "Microphone blocked: allow the microphone in Settings"
+    "deniedShort": "Microphone blocked: allow the microphone in Settings",
+    "spokenLang": "Language you speak"
   },
   "stt": {
     "label": "Voice messages are written by",

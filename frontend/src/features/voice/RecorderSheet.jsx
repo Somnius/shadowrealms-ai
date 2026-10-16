@@ -68,6 +68,25 @@ export default function RecorderSheet({
   onRestart,
   micStream = null,
 }) {
+  // The language you speak in this recording: it tells the transcriber which language to expect.
+  // Remembered on this device; first time it follows your voice settings / interface language.
+  const [spoken, setSpokenState] = useState(() => {
+    try {
+      const v = window.localStorage.getItem('sr.voice.spokenLang');
+      if (v === 'el' || v === 'en') return v;
+    } catch {
+      /* no storage */
+    }
+    return lang === 'el' ? 'el' : 'en';
+  });
+  const setSpoken = (v) => {
+    setSpokenState(v);
+    try {
+      window.localStorage.setItem('sr.voice.spokenLang', v);
+    } catch {
+      /* no storage */
+    }
+  };
   const [step, setStep] = useState('record');
   const [elapsed, setElapsed] = useState(0);
   const [pulse, setPulse] = useState(false);
@@ -109,7 +128,7 @@ export default function RecorderSheet({
     clockRef.current = { start: Date.now(), pausedAt: 0, pausedFor: 0 };
     if (phoneDictation) {
       try {
-        const d = startPhoneDictation(lang, { onPartial: (p) => live && setText(p) });
+        const d = startPhoneDictation(spoken, { onPartial: (p) => live && setText(p) });
         if (!d) throw new Error('none');
         dictation.current = d;
         d.done
@@ -245,7 +264,7 @@ export default function RecorderSheet({
     }
     setNote('');
     setBusy(t('voice:rec.uploading', 'Sending the recording…'));
-    const up = await uploadClip({ blob: blob.current, campaignId, locationId, lang });
+    const up = await uploadClip({ blob: blob.current, campaignId, locationId, lang: spoken });
     if (!up.ok || !up.data.clip_id) {
       setBusy('');
       setNote(sttErrorText(up.data && up.data.error));
@@ -273,7 +292,7 @@ export default function RecorderSheet({
   };
 
   const dictateInstead = () => {
-    const d = startPhoneDictation(lang, { onPartial: setText });
+    const d = startPhoneDictation(spoken, { onPartial: setText });
     if (!d) return;
     dictation.current = d;
     setBusy(t('voice:rec.dictating', 'Listening… tap Stop when you are done.'));
@@ -297,7 +316,7 @@ export default function RecorderSheet({
 
   const phase = timerPhase(elapsed, maxSeconds);
   const left = Math.max(0, maxSeconds - elapsed);
-  const langLabel = lang === 'el' ? 'Ελληνικά' : 'English';
+  const langLabel = spoken === 'el' ? 'Ελληνικά' : 'English';
 
   return (
     <section className="sr-recsheet" aria-label={t('voice:rec.title', 'Voice message')} data-testid="recorder-sheet">
@@ -308,6 +327,24 @@ export default function RecorderSheet({
             : step === 'review' ? t('voice:rec.review', 'Your recording · {{time}}', { time: clock(dur || elapsed) })
               : t('voice:rec.text', 'What you said')}
         </span>
+        {step !== 'text' ? (
+          <div className="sr-rec-lang" role="group" aria-label={t('voice:rec.spokenLang', 'Language you speak')}>
+            {[['el', 'ΕΛ', 'Ελληνικά'], ['en', 'EN', 'English']].map(([v, short, full]) => (
+              <button
+                key={v}
+                type="button"
+                className="sr-rec-lang__btn"
+                aria-pressed={spoken === v}
+                aria-label={full}
+                title={full}
+                onClick={() => setSpoken(v)}
+                data-testid={`spoken-${v}`}
+              >
+                {short}
+              </button>
+            ))}
+          </div>
+        ) : null}
         {header}
       </div>
 

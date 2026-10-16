@@ -83,11 +83,14 @@ test('record → review → transcribe → edit → send with the clip; the box 
   await u.click(rate);
   expect(rate).toHaveTextContent('1.25×');
   expect(mockAuthFetch).not.toHaveBeenCalled(); // nor while reviewing
+  await u.click(screen.getByTestId('spoken-el')); // speaking Greek: the transcriber is told so
+  expect(screen.getByTestId('spoken-el')).toHaveAttribute('aria-pressed', 'true');
   await act(async () => {
     await u.click(screen.getByRole('button', { name: 'Transcribe' }));
   });
   await waitFor(() => expect(screen.getByRole('textbox', { name: 'What you said' })).toHaveValue('I open the door.'), { timeout: 3000 });
   expect(mockAuthFetch.mock.calls[0][0]).toBe('/api/voice/clips');
+  expect(mockAuthFetch.mock.calls[0][1].body.get('lang')).toBe('el');
   await u.click(screen.getByRole('button', { name: 'Send' }));
   expect(onSend).toHaveBeenCalledWith({ text: 'I open the door.', clipId: 'c'.repeat(32), source: 'voice' });
   await waitFor(() => expect(screen.queryByTestId('recorder-sheet')).toBeNull());
