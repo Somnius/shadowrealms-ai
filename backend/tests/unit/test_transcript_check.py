@@ -65,3 +65,32 @@ def test_checked_segments_round_trip():
     assert voice_clips.checked_segments({"transcript_checked": "[]"}) == []
     segs = [{"t": "a"}, {"t": "b", "raw": "c"}]
     assert voice_clips.checked_segments({"transcript_checked": json.dumps(segs)}) == segs
+
+
+def test_real_role_path_reaches_krikri(monkeypatch):
+    """No fake generate: the check goes through ai_roles and its time budget really calls the model."""
+    from services import ai_roles
+    calls = []
+
+    class Krikri:
+        def generate(self, messages, params):
+            calls.append(params)
+            return '{"1": "βλαχάρα"}'
+
+    monkeypatch.setitem(ai_roles.generate_for_role.__kwdefaults__, "builder", lambda name: Krikri())
+    monkeypatch.setattr(ai_roles, "_load_failed_until", {})
+    segs = tc.check(WORDS, [{"i": 6, "p_laya": 0.8}], "el", [], probs=PROBS)
+    assert len(calls) == 1 and calls[0]["timeout"] <= tc.TIMEOUT_S
+    assert tc.BUDGET_S > ai_roles.MIN_ATTEMPT_SEC
+    assert tc.text_of(segs) == "Ο Νίκος του λέει είσαι μεγάλη βλαχάρα ρε μαλάκα."
+
+
+def test_long_names_are_skipped():
+    class Cur:
+        def execute(self, sql, args):
+            self.sql = sql
+
+        def fetchall(self):
+            return [{"name": "Dimitra"}, {"name": "x" * (tc.NAME_MAX + 1)}] if "characters" in self.sql else []
+
+    assert tc.chronicle_names(Cur(), 1) == ["Dimitra"]

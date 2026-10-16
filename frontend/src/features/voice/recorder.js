@@ -105,8 +105,11 @@ export function startPhoneDictation(lang, { onPartial = () => {} } = {}) {
 export function swapSpan(text, from, to) {
   const s = String(text || '');
   if (!from || from === to) return s;
-  const at = s.indexOf(from);
-  return at < 0 ? s : s.slice(0, at) + to + s.slice(at + from.length);
+  const edge = (c) => c === undefined || !/[\p{L}\p{N}]/u.test(c);
+  for (let at = s.indexOf(from); at >= 0; at = s.indexOf(from, at + 1)) {
+    if (edge(s[at - 1]) && edge(s[at + from.length])) return s.slice(0, at) + to + s.slice(at + from.length);
+  }
+  return s;
 }
 
 /** The changed spans of a checked transcript: [{ fixed, raw }]. */

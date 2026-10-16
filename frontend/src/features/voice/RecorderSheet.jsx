@@ -456,20 +456,6 @@ export default function RecorderSheet({
           <span className="sr-rec-text__lang">{langLabel}</span>
           <label className="sr-visually-hidden" htmlFor="sr-rec-text">{t('voice:rec.text', 'What you said')}</label>
           <textarea id="sr-rec-text" className="sr-rec-text__input" rows={crossing ? 3 : 4} value={text} onChange={(e) => setText(e.target.value)} />
-          {crossing && translated ? (
-            <div className="sr-rec-text__translated">
-              <label className="sr-rec-text__lang" htmlFor="sr-rec-translated">{t('voice:rec.sentIn', '{{lang}} (sent)', { lang: sendLabel })}</label>
-              <textarea id="sr-rec-translated" className="sr-rec-text__input" rows={3} value={translated.text} onChange={(e) => setTranslated({ ...translated, text: e.target.value })} />
-              <p className="sr-rec__note">{t('voice:rec.originalKept', 'Your words in {{lang}} stay under the message as “your original”.', { lang: langLabel })}</p>
-            </div>
-          ) : null}
-          {crossing && text.trim() && (!translated || stale) && !busy ? (
-            <Button type="button" variant="secondary" size="sm" onClick={() => translate(text)}>
-              {translated ? t('voice:rec.translateAgain', 'Translate again') : t('voice:rec.translateTo', 'Write it in {{lang}}', { lang: sendLabel })}
-            </Button>
-          ) : null}
-          {trNote ? <p className="sr-rec__note" role="alert">{trNote}</p> : null}
-          <textarea id="sr-rec-text" className="sr-rec-text__input" rows={4} value={text} onChange={(e) => setText(e.target.value)} />
           {changes.length ? (
             <div className="sr-rec-fixes" aria-label={t('voice:rec.fixesLabel', 'Words fixed by the check')}>
               <p className="sr-rec-fixes__hint">{t('voice:rec.fixesHint', 'Fixed words the recogniser probably misheard. Tap one to put back what it heard.')}</p>
@@ -492,6 +478,19 @@ export default function RecorderSheet({
               ))}
             </div>
           ) : null}
+          {crossing && translated ? (
+            <div className="sr-rec-text__translated">
+              <label className="sr-rec-text__lang" htmlFor="sr-rec-translated">{t('voice:rec.sentIn', '{{lang}} (sent)', { lang: sendLabel })}</label>
+              <textarea id="sr-rec-translated" className="sr-rec-text__input" rows={3} value={translated.text} onChange={(e) => setTranslated({ ...translated, text: e.target.value })} />
+              <p className="sr-rec__note">{t('voice:rec.originalKept', 'Your words in {{lang}} stay under the message as “your original”.', { lang: langLabel })}</p>
+            </div>
+          ) : null}
+          {crossing && text.trim() && (!translated || stale) && !busy ? (
+            <Button type="button" variant="secondary" size="sm" onClick={() => translate(text)}>
+              {translated ? t('voice:rec.translateAgain', 'Translate again') : t('voice:rec.translateTo', 'Write it in {{lang}}', { lang: sendLabel })}
+            </Button>
+          ) : null}
+          {trNote ? <p className="sr-rec__note" role="alert">{trNote}</p> : null}
           {note ? <p className="sr-rec__note" role="alert">{note}</p> : null}
           {busy ? <p className="sr-rec__note" role="status">{busy}</p> : null}
           {canPhoneDictate && !dictation.current && source !== 'phone-voice' && note ? (

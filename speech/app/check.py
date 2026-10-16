@@ -7,7 +7,7 @@ builds it (src/laya.rs, a port of laya.common.build_sequence):
 [CLS] noul question: <instructions> [SEP] [MASK] false: … [MASK] true: … [SEP] <state> [SEP],
 answer read at the two [MASK]s, divided by the fitted temperature in laya.json.
 
-Only Whisper's unsure words are asked (one ~0.1-0.2 s pass each on 2 CPU threads), the least sure
+Only Whisper's unsure words are asked (one ~0.1-0.2 s pass each on LAYA_THREADS (4) CPU threads), the least sure
 first, within a time budget; a missing model or a slow machine just means fewer (or no) flags.
 """
 import json

@@ -68,7 +68,7 @@ def run_tts(p):
 
 
 def run_stt(p):
-    text, dur, words = whisper.transcribe(p["ogg"], p["lang"], p.get("prompt"))
+    text, dur, words = whisper.transcribe(p["ogg"], p["lang"], p.get("prompt"), words=bool(p.get("check")))
     out = dict(text=text, duration=round(dur, 2), clip=p["clip"])
     if p.get("check") and words:
         # Phase 6: Whisper's words and Laya's flags; the backend asks Krikri to fix only those

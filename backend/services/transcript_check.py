@@ -10,7 +10,7 @@ Transcript check (docs/VOICE.md, voice phase 6): Whisper's text, checked and fix
    «βλαχάρα») and writes slang and swearing as spoken. Nothing that was not flagged can change.
 4. The recorder shows the result with each changed span marked; a tap puts Whisper's words back.
 
-Never in the way: no flags, a slow (> BUDGET_S) or missing Krikri, or an unusable answer all
+Never in the way: no flags, a slow (> TIMEOUT_S) or missing Krikri, or an unusable answer all
 mean Whisper's text unchanged. Whisper's text always stays in voice_clips.transcript_raw.
 """
 
@@ -27,7 +27,11 @@ from typing import Any, Callable, Dict, List, Optional, Sequence
 logger = logging.getLogger(__name__)
 
 FLAG = 0.7          # Laya's chance of a mistake from which a word is sent to Krikri
-BUDGET_S = 3.0      # Krikri's whole time; past it the player gets Whisper's text
+TIMEOUT_S = 3.5     # one Krikri HTTP call; past it the player gets Whisper's text
+# ai_roles skips an attempt with less than MIN_ATTEMPT_SEC (3 s) left, so the chain budget
+# must sit above it or Krikri is never asked.
+BUDGET_S = 4.5
+NAME_MAX = 40       # one long free-text name must not eat the whole Whisper hint
 PROMPT_MAX = 400    # characters of Whisper hint
 MAX_SPANS = 8
 NEIGHBOUR = 0.7     # a word next to a flagged one joins its span when Whisper was this unsure of it
@@ -72,7 +76,7 @@ def chronicle_names(cursor, campaign_id: int, limit: int = 40) -> List[str]:
             continue
         for r in rows:
             n = " ".join(str((r.get("name") if isinstance(r, dict) else r[0]) or "").split())
-            if n and n.lower() not in {x.lower() for x in names}:
+            if n and len(n) <= NAME_MAX and n.lower() not in {x.lower() for x in names}:
                 names.append(n)
     return names[:limit]
 
@@ -236,8 +240,10 @@ def check(words: Sequence[str], suspects: Sequence[Dict[str, Any]], lang: str, n
         from services.ai_roles import generate_for_role
 
         def generate(messages):
+            # The role only picks the provider settings; the chain names Krikri explicitly,
+            # so English clips go to the same model.
             return generate_for_role("storyteller_el", messages,
-                                     {"temperature": 0, "max_tokens": 200, "timeout": BUDGET_S},
+                                     {"temperature": 0, "max_tokens": 200, "timeout": TIMEOUT_S},
                                      chain=[("lm_studio", model())], budget_s=BUDGET_S)
     try:
         res = generate(build_messages(words, sp, lang, names))

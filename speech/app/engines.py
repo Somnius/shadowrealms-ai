@@ -93,9 +93,10 @@ class WhisperEngine:
         self.load_seconds = time.perf_counter() - t0
         log.info("whisper loaded in %.1fs", self.load_seconds)
 
-    def transcribe(self, path, lang, prompt=None):
+    def transcribe(self, path, lang, prompt=None, words=False):
         """(text, duration, words): words are (word, probability) as Whisper wrote them.
         prompt: the chronicle's names and a short glossary (initial_prompt), only a bias."""
+        # words: word timestamps (and so per-word probabilities) only when the check wants them
         with self._lock:
             if self._model is None:
                 self._load()
@@ -103,7 +104,7 @@ class WhisperEngine:
             segs, info = self._model.transcribe(
                 path, language=lang, beam_size=5, vad_filter=True,
                 condition_on_previous_text=False, no_speech_threshold=0.6,
-                initial_prompt=prompt or None, word_timestamps=True)
+                initial_prompt=prompt or None, word_timestamps=bool(words))
             kept = [s for s in segs if s.no_speech_prob < 0.8]
             text = " ".join(s.text.strip() for s in kept).strip()
             words = [(w.word.strip(), float(w.probability)) for s in kept for w in (s.words or []) if w.word.strip()]

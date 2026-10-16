@@ -54,6 +54,9 @@ describe('transcript check (phase 6)', () => {
     expect(back).toBe('Ο Νίκος λέει είσαι βλυχ άρα ρε μαλάκα.');
     expect(swapSpan(back, 'βλυχ άρα', 'βλαχάρα')).toBe(text);
     expect(swapSpan('edited away', 'βλαχάρα', 'x')).toBe('edited away');
+    // whole words only: «άρα» inside «βλαχάρα» is not the fixed word
+    expect(swapSpan('βλαχάρα, άρα ναι', 'άρα', 'αρά')).toBe('βλαχάρα, αρά ναι');
+    expect(swapSpan('βλαχάρα', 'άρα', 'x')).toBe('βλαχάρα');
     expect(checkedChanges(null)).toEqual([]);
   });
 });
