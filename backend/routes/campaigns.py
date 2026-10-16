@@ -974,6 +974,17 @@ def delete_campaign(campaign_id):
         logger.info(f"   • {location_count} locations")
         logger.info(f"   • {message_count} messages")
         
+        # Spoken audio of the chronicle's lines goes too (best effort; never fails the delete).
+        try:
+            from services.voice_audio import forget_message_audio
+
+            cursor.execute("SELECT id FROM messages WHERE campaign_id = %s", (campaign_id,))
+            forget_message_audio(cursor, [r['id'] for r in cursor.fetchall()])
+            conn.commit()
+        except Exception as e:
+            conn.rollback()
+            logger.warning(f"Voice audio cleanup failed (non-critical): {safe_log_value(e)}")
+
         # CLEAN UP AI MEMORY - Remove all message embeddings for this campaign from ChromaDB
         try:
             rag_service = get_rag_service()

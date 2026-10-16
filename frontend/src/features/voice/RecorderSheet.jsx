@@ -67,11 +67,11 @@ export default function RecorderSheet({
   onClose,
   onMicDenied,
   onRestart,
+  micStream = null,
 }) {
   const [step, setStep] = useState('record');
   const [elapsed, setElapsed] = useState(0);
   const [pulse, setPulse] = useState(false);
-  const [paused, setPaused] = useState(false);
   const [blobUrl, setBlobUrl] = useState(null);
   const [text, setText] = useState('');
   // write-in language (docs/VOICE.md §7): {text, from} of the line in the other language, or null
@@ -128,10 +128,12 @@ export default function RecorderSheet({
           })
           .catch(() => {
             if (!live) return;
+            setSource(null); // typed after all: a normal line
             setNote(t('voice:rec.dictationFailed', 'Phone dictation stopped. Type what you said.'));
             setStep('text');
           });
       } catch {
+        setSource(null);
         setNote(t('voice:rec.noDictation', 'This phone has no dictation here. Type what you said.'));
         setStep('text');
       }
@@ -143,7 +145,8 @@ export default function RecorderSheet({
     (async () => {
       let s;
       try {
-        s = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true } });
+        // micStream comes from the mic tap itself (iOS wants getUserMedia inside the user gesture)
+        s = await (micStream || navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true } }));
       } catch (e) {
         if (!live) return;
         if (e && (e.name === 'NotAllowedError' || e.name === 'SecurityError')) onMicDenied && onMicDenied();
@@ -156,19 +159,26 @@ export default function RecorderSheet({
       }
       stream.current = s;
       const mime = pickMime();
-      const r = new MediaRecorder(s, { ...(mime ? { mimeType: mime } : {}), audioBitsPerSecond: 32000 });
-      chunks.current = [];
-      r.ondataavailable = (e) => e.data && e.data.size && chunks.current.push(e.data);
-      r.onstop = () => {
+      let r;
+      try {
+        r = new MediaRecorder(s, { ...(mime ? { mimeType: mime } : {}), audioBitsPerSecond: 32000 });
+        chunks.current = [];
+        r.ondataavailable = (e) => e.data && e.data.size && chunks.current.push(e.data);
+        r.onstop = () => {
+          stopTracks();
+          if (!live) return;
+          blob.current = new Blob(chunks.current, { type: r.mimeType || mime || 'audio/webm' });
+          setBlobUrl(URL.createObjectURL(blob.current));
+          setStep('review');
+        };
+        rec.current = r;
+        clockRef.current = { start: Date.now(), pausedAt: 0, pausedFor: 0 };
+        r.start(1000);
+      } catch {
+        rec.current = null;
         stopTracks();
-        if (!live) return;
-        blob.current = new Blob(chunks.current, { type: r.mimeType || mime || 'audio/webm' });
-        setBlobUrl(URL.createObjectURL(blob.current));
-        setStep('review');
-      };
-      rec.current = r;
-      clockRef.current = { start: Date.now(), pausedAt: 0, pausedFor: 0 };
-      r.start(1000);
+        onClose();
+      }
     })();
     return () => {
       live = false;
@@ -185,7 +195,7 @@ export default function RecorderSheet({
       if (c.pausedAt) return;
       const sec = Math.floor((Date.now() - c.start - c.pausedFor) / 1000);
       setElapsed(sec);
-      if (pulsesAt(sec) && lastPulse.current !== sec) {
+      if (pulsesAt(sec, maxSeconds) && lastPulse.current !== sec) {
         lastPulse.current = sec;
         setPulse(true);
         setTimeout(() => setPulse(false), 300);
@@ -195,31 +205,22 @@ export default function RecorderSheet({
     return () => clearInterval(id);
   }, [step, maxSeconds, stop]);
 
-  // backgrounding: the phone may kill the mic, so pause and wait for a tap to carry on
+  // backgrounding: the phone may kill the mic (and iOS cannot pause a MediaRecorder), so stop
+  // and go to review with what was recorded so far
   useEffect(() => {
     if (step !== 'record' || phoneDictation) return undefined;
     const onVis = () => {
-      if (document.visibilityState === 'hidden' && rec.current && rec.current.state === 'recording') {
+      if (document.visibilityState === 'hidden' && rec.current && rec.current.state !== 'inactive') {
         try {
-          rec.current.pause();
+          rec.current.stop();
         } catch {
-          return;
+          stopTracks();
         }
-        clockRef.current.pausedAt = Date.now();
-        setPaused(true);
       }
     };
     document.addEventListener('visibilitychange', onVis);
     return () => document.removeEventListener('visibilitychange', onVis);
   }, [step, phoneDictation]);
-
-  const resume = () => {
-    const c = clockRef.current;
-    if (rec.current && rec.current.state === 'paused') rec.current.resume();
-    if (c.pausedAt) c.pausedFor += Date.now() - c.pausedAt;
-    c.pausedAt = 0;
-    setPaused(false);
-  };
 
   useEffect(() => () => blobUrl && URL.revokeObjectURL(blobUrl), [blobUrl]);
 
@@ -319,14 +320,14 @@ export default function RecorderSheet({
     const ok = await onSend({
       text: tr ? tr.text.trim() : text.trim(),
       clipId,
-      source: clipId ? 'voice' : source,
+      source: clipId ? 'voice' : source === 'phone-voice' ? 'phone-voice' : null,
       ...(tr ? { original: { text: text.trim(), lang } } : {}),
     });
     setBusy('');
     if (ok !== false) onClose();
   };
 
-  const phase = timerPhase(elapsed);
+  const phase = timerPhase(elapsed, maxSeconds);
   const left = Math.max(0, maxSeconds - elapsed);
   const langLabel = lang === 'el' ? 'Ελληνικά' : 'English';
   const sendLabel = sendLang === 'el' ? 'Ελληνικά' : 'English';
@@ -356,11 +357,6 @@ export default function RecorderSheet({
             <span style={{ width: `${Math.min(100, (elapsed / maxSeconds) * 100)}%` }} />
           </span>
           {phoneDictation && text ? <p className="sr-rec__partial">{text}</p> : null}
-          {paused ? (
-            <Button type="button" variant="primary" onClick={resume} className="sr-rec__resume">
-              {t('voice:tapResume', 'Paused in the background. Tap to resume.')}
-            </Button>
-          ) : null}
           <div className="sr-recsheet__row">
             <Button type="button" variant="ghost" onClick={onClose}>{t('voice:rec.cancelShort', 'Cancel')}</Button>
             <IconButton size="lg" icon="stop" variant="primary" label={t('voice:rec.stop', 'Stop')} onClick={stop} />

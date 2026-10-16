@@ -653,7 +653,6 @@ CREATE OR REPLACE TRIGGER trg_messages_activity
     FOR EACH ROW EXECUTE FUNCTION messages_bump_activity();
 
 
-COMMIT;
 
 -- -----------------------------------------------------------------------------
 -- voice_audio: spoken lines in the speech service's cache, per message (NULL = a voice preview)
@@ -699,3 +698,5 @@ CREATE TABLE IF NOT EXISTS message_translations (
     created_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (message_id, lang)
 );
+
+COMMIT;

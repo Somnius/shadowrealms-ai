@@ -44,7 +44,7 @@ export function ClipChip({ message, settings }) {
         icon={playing ? 'pause' : 'play'}
         label={playing ? t('voice:clip.pause', 'Pause the recording') : t('voice:clip.play', 'Play the recording')}
         loading={mine && s.loading}
-        onClick={() => player.toggle(message.clip_id, settings || {})}
+        onClick={() => player.toggle(message.clip_id, settings)}
       />
       <span className="sr-clipchip__time">{clock(playing || time ? time : total)}</span>
       <label className="sr-seek">
