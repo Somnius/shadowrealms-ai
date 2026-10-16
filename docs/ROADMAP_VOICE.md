@@ -15,7 +15,7 @@ How each phase runs: build in its own git worktree → tests and CI green → on
 | 4 | Language override | translator · ahead-of-time translation · captions with "show original" · speak in one language, write in the other | 0.19 | until 06:45 | done: released 0.19.0 |
 | 5 | Ops and polish | health panel · cache and disk caps · per-character voice · device checklist | 0.20 | after the deadline | done: released 0.20.0 (phone checklist still open) |
 | 6 | Transcript check | Whisper hints with the chronicle's names · recmeets Laya-words flags misheard words · Krikri fixes only those (split words, slang) · changed words marked, tap to undo | 0.21 | until 06:30 | done: released 0.21.0 |
-| 7 | Read along | sentence by sentence (first audio fast) · highlight the message and sentence being read · "Read this" / "Read from here" in the message menu (long-press on phones) · catch-up choice · dice read in the listener's language · NPC voices · ST deletes all recordings | 0.22 | night of 17 Oct | built, review fixed (0.22.0 on `voice/p7-readalong`) |
+| 7 | Read along | sentence by sentence (first audio fast) · highlight the message and sentence being read · "Read this" / "Read from here" in the message menu (long-press on phones) · catch-up choice · dice read in the listener's language · NPC voices · ST deletes all recordings | 0.22 | night of 17 Oct | done: released 0.22.0 |
 
 ## Decisions (2026-10-16)
 
