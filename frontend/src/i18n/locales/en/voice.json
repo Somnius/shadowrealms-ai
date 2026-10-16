@@ -139,5 +139,33 @@
     "legend": "Voice messages",
     "max": "Longest recording: {{value}} min",
     "phone": "Players may use their phone’s dictation (audio goes to Apple or Google)"
+  },
+  "pick": {
+    "label": "Specific voice",
+    "hint": "Optional. This voice reads the character’s lines in its language, instead of the one chosen by gender.",
+    "auto": "Automatic (by gender)",
+    "el": "Greek",
+    "enGb": "English (UK)",
+    "enUs": "English (US)"
+  },
+  "health": {
+    "title": "Voice (speech service)",
+    "failed": "Could not read the voice status.",
+    "service": "Speech service:",
+    "up": "running",
+    "down": "not reachable",
+    "whisper": "Whisper",
+    "loaded": "loaded",
+    "idle": "unloaded (idle)",
+    "pocketError": "Greek voices failed to load",
+    "queues": "Queues:",
+    "queueLine": "transcribe {{stt}}, speak {{tts}}",
+    "vram": "GPU memory:",
+    "vramLine": "{{free}} MB free, {{needed}} MB needed to transcribe",
+    "clips": "Recordings on disk:",
+    "cache": "Spoken-line cache:",
+    "today": "Recorded today:",
+    "none": "nothing yet",
+    "refresh": "Refresh"
   }
 }

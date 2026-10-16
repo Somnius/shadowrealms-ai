@@ -60,7 +60,7 @@ Stored: `characters.gender` and `npcs.gender` (`ensure_characters_gender_column`
 - **Marker and replay.** A line sent by voice has a 14-px mic after the speaker's name (and at the start of later rows of the same speaker), with a spoken name ("Sent by voice" / "Dictated on the phone"); everyone sees it. A recorded line has a one-line chip under it: play/pause, time, and a separate seek bar. One `<audio playsinline>` per room, so one clip plays at a time; Ogg/Opus where the browser plays it, the AAC copy (made on first request) on iOS.
 - **Microphone blocked**: the mic button becomes `mic-off`; tapping it says to allow the microphone in the phone's Settings.
 - **Chronicle settings → Voice**: longest recording (30 s to 3 min) and whether players may use phone dictation.
-- **Kept** for the chronicle's lifetime; deleted with the message, and all of a chronicle's clips with the chronicle. A recording that was transcribed but never sent stays until the chronicle goes (an orphan sweep is Phase 5).
+- **Kept** for the chronicle's lifetime; deleted with the message, and all of a chronicle's clips with the chronicle. A recording that was transcribed but never sent is removed after 24 hours (0.20).
 
 ### Speaking API
 
@@ -74,6 +74,13 @@ Stored: `characters.gender` and `npcs.gender` (`ensure_characters_gender_column`
 Rate limits per user: 6 clips a minute (60 an hour), 120 job polls and 120 replays a minute. Disk cap: `VOICE_CLIPS_MAX_GB` (default 20, counted from the stored durations). Stored: `voice_clips (clip_id, campaign_id, location_id, user_id, message_id, duration_ms, lang, transcript_raw, created_at)` and `messages.source`, `messages.clip_id`, `messages.clip_ms`.
 
 Not tried on real phones yet (step 0.5): iOS home-screen mic access, which format each phone records, 2× review playback on older iOS, and Opus replay on the iPhone.
+
+## Ops and polish (0.20)
+
+- **Your character's own voice.** On the character sheet («χαρτί του χαρακτήρα») the owner can pick one voice from the server's list (e.g. `el-kostas`) under "Specific voice". It reads that character's in-character lines («Εντός ρόλου») in its language instead of the voice chosen by gender; lines in the other language keep the gender voice; out-of-character lines («Εκτός ρόλου») keep the neutral voice. "Automatic (by gender)" clears it. The pick is checked against the speech service's catalog (`characters.voice_override`; 503 `speech_unavailable` if the service is down when you save).
+- **Push-to-talk on a computer.** In a room, hold Space to record and let go to stop and review. It does nothing while you are typing in a box, with a modifier key held, or when the microphone is blocked.
+- **Admin → AI system → Voice**: whether the speech service runs, Whisper loaded or idle, both queues, free GPU memory against what transcription needs, recordings on disk against the cap, the spoken-line cache against its cap, and minutes recorded per player today (UTC). `GET /api/voice/health`, site admins only (403 for everyone else).
+- **Clean-up.** The spoken-line cache is capped at `VOICE_TTS_CACHE_GB` (default 5): the least recently played lines are removed first, checked at start and after every 20 new lines. Recordings transcribed but never sent are removed after 24 hours (rows and files), at backend start and then daily. Deleting a chronicle deletes all its recordings (since 0.18).
 
 ## Speech service (server side)
 
@@ -133,8 +140,33 @@ TTS audio is cached by a hash of the engine version, voice, bitrate and cleaned 
 
 ### Settings (`.env`)
 
-`SPEECH_SECRET`, `SPEECH_PORT` (5055), `VOICE_STT_VRAM_MB` (2150), `VOICE_STT_IDLE_SECONDS` (600). Others with defaults in `speech/app/config.py`: text limit 5,000 characters, clip limits, bitrates (clips 16k, TTS 24k), queue sizes.
+`SPEECH_SECRET`, `SPEECH_PORT` (5055), `VOICE_STT_VRAM_MB` (2150), `VOICE_STT_IDLE_SECONDS` (600), `VOICE_TTS_CACHE_GB` (5). Backend: `VOICE_CLIPS_MAX_GB` (20). Others with defaults in `speech/app/config.py`: text limit 5,000 characters, clip limits, bitrates (clips 16k, TTS 24k), queue sizes.
 
 ### Tests
 
-`python -m pytest speech/tests` covers text cleaning, Greek numbers, splitting, cache keys, limits and the voice mapping (including neutral). They need no models.
+`python -m pytest speech/tests` covers text cleaning, Greek numbers, splitting, cache keys, limits, the voice mapping (including neutral) and the TTS cache eviction with a tiny cap. They need no models.
+
+## Device checklist
+
+Fill in on the real phones after each voice release (✓ works, ✗ fails, note what happened). Results are left blank until someone runs it.
+
+| Check | iPhone, Safari tab | iPhone, home-screen app | Android, Chrome |
+|---|---|---|---|
+| Listen with phone voices: first line plays after the ear tap | | | |
+| Listen with server voices: Greek and English lines play | | | |
+| Silent / mute switch on: does Listen still play? | | | |
+| App in the background: Listen pauses, "Tap to resume" on return | | | |
+| Screen locked during a narration | | | |
+| Record 20 s, review at 2×, Transcribe, Send | | | |
+| Record to the 3-minute auto-stop | | | |
+| Recording when the app goes to the background (pauses or stops) | | | |
+| Microphone denied: mic-off button and the Settings hint | | | |
+| Microphone allowed again after denying | | | |
+| Replay a recorded line (Ogg or the AAC copy) | | | |
+| Phone dictation (Greek and English) | | | |
+| GPU busy: the text step offers phone dictation | | | |
+| Character's specific voice heard on its lines | | | |
+
+Desktop (one browser is enough): Space push-to-talk starts and stops; Space while typing in the message box types a space.
+
+Load check (server): 4 listeners in one room and one Storyteller narration, cold cache: first audio in under 3 s, CPU under the 80% cap. Result: 

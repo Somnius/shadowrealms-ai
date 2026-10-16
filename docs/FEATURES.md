@@ -25,6 +25,10 @@ Feature notes for ShadowRealms AI that don't have their own document. The full l
 
 ---
 
+## What's new in v0.20.0
+
+- **Voice polish.** Pick a specific voice for your character on its sheet, hold Space to talk on a computer, and a voice health panel for admins; old unsent recordings and the voice cache clean themselves up. See [VOICE.md](VOICE.md).
+
 ## What's new in v0.18.0
 
 - **Voice messages.** The mic in the message box records up to 3 minutes, lets you listen back and fix the text before you send it; everyone sees a mic on voice lines and can replay the recording. Phone dictation is an option. See [VOICE.md](VOICE.md).

@@ -68,6 +68,7 @@ export default function RecorderSheet({
   onMicDenied,
   onRestart,
   micStream = null,
+  pushToTalk = false,
 }) {
   // The language you speak in this recording: it tells the transcriber which language to expect.
   // Remembered on this device; first time it follows your voice settings / interface language.
@@ -109,6 +110,20 @@ export default function RecorderSheet({
   const clockRef = useRef({ start: 0, pausedAt: 0, pausedFor: 0 });
   const audioEl = useRef(null);
   const lastPulse = useRef(0);
+  const released = useRef(false);
+
+  // push-to-talk (desktop Space): letting go of Space stops the recording
+  useEffect(() => {
+    if (!pushToTalk || typeof window === 'undefined') return undefined;
+    const up = (e) => {
+      if (e.code !== 'Space' && e.key !== ' ') return;
+      e.preventDefault();
+      released.current = true;
+      if (rec.current && rec.current.state !== 'inactive') rec.current.stop();
+    };
+    window.addEventListener('keyup', up);
+    return () => window.removeEventListener('keyup', up);
+  }, [pushToTalk]);
 
   const stopTracks = () => {
     if (stream.current) stream.current.getTracks().forEach((tr) => tr.stop());
@@ -186,6 +201,7 @@ export default function RecorderSheet({
         rec.current = r;
         clockRef.current = { start: Date.now(), pausedAt: 0, pausedFor: 0 };
         r.start(1000);
+        if (released.current) r.stop(); // Space let go before the mic was ready
       } catch {
         rec.current = null;
         stopTracks();

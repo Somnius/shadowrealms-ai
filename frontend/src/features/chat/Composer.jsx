@@ -6,7 +6,7 @@ import { completeSlash, parseLocalCommand, slashSuggestions } from './slashComma
 import { ReplyBar } from './MessageActions';
 import { t } from '../../i18n';
 import RecorderSheet from '../voice/RecorderSheet';
-import { canRecord } from '../voice/recorder';
+import { canRecord, isPushToTalkKey } from '../voice/recorder';
 
 const MAX_ROWS = 10;
 
@@ -106,6 +106,20 @@ export default function Composer({
   const [micDenied, setMicDenied] = useState(false);
   const [micHint, setMicHint] = useState(false);
   const voiceOn = !!voice && !disabled && (voice.phoneDictation ? voice.canPhoneDictate : canRecord());
+  // Desktop push-to-talk: hold Space (not while typing) to record, release to stop and review.
+  const [ptt, setPtt] = useState(false);
+  const pttOn = voiceOn && !voice.phoneDictation && !micDenied && !recording;
+  useEffect(() => {
+    if (!pttOn || typeof window === 'undefined') return undefined;
+    const down = (e) => {
+      if (!isPushToTalkKey(e)) return;
+      e.preventDefault();
+      setPtt(true);
+      openRecorder(1);
+    };
+    window.addEventListener('keydown', down);
+    return () => window.removeEventListener('keydown', down);
+  }, [pttOn]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (!voiceOn || voice.phoneDictation || typeof navigator === 'undefined' || !navigator.permissions) return undefined;
     let live = true;
@@ -280,8 +294,9 @@ export default function Composer({
           canPhoneDictate={voice.canPhoneDictate}
           header={<SpeakingAs voices={voices} value={speakAs} onChange={onSpeakAsChange} />}
           onSend={voice.onSend}
-          onClose={() => setRecording(0)}
-          onRestart={() => openRecorder(recording + 1)}
+          onClose={() => { setRecording(0); setPtt(false); }}
+          onRestart={() => { setPtt(false); openRecorder(recording + 1); }}
+          pushToTalk={ptt}
           micStream={micStream.current}
           onMicDenied={() => setMicDenied(true)}
         />

@@ -13,7 +13,7 @@ How each phase runs: build in its own git worktree → tests and CI green → on
 | 2 | Server voices | speech container · gender on the sheet · TTS jobs and cache · voice catalog and narrator voices · server mode in the app | 0.17 | until 03:45 | done: released 0.17.0 |
 | 3 | Speaking | clip upload · transcription jobs and the GPU policy · recorder with the timer · review and text steps · mic marker and replay · phone dictation | 0.18 | until 06:00 | done: released 0.18.0 |
 | 4 | Language override | translator · ahead-of-time translation · captions with "show original" · speak in one language, write in the other | 0.19 | until 06:45 | building |
-| 5 | Ops and polish | health panel · cache and disk caps · per-character voice · device checklist | 0.20 | after the deadline | not started |
+| 5 | Ops and polish | health panel · cache and disk caps · per-character voice · device checklist | 0.20 | after the deadline | done: released 0.20.0 (device checklist to fill in) |
 
 ## Decisions (2026-10-16)
 
@@ -73,11 +73,11 @@ How each phase runs: build in its own git worktree → tests and CI green → on
 
 ## Phase 5 — Ops and polish (0.20)
 
-- [ ] 5.1 Admin health: queue depths, VRAM, minutes per player today, clip disk use, in the monitoring panel. Status: not started.
-- [ ] 5.2 TTS cache LRU, clip folder removed with the chronicle, orphan sweep. Status: not started.
-- [ ] 5.3 Per-character voice pick; desktop Space push-to-talk. Status: not started.
-- [ ] 5.4 Device checklist in VOICE.md and a load check (4 listeners + one narration under 3 s to first audio). Status: not started.
-- [ ] 5.5 Release 0.20. Status: not started.
+- [x] 5.1 Admin health: queue depths, VRAM, minutes per player today, clip disk use, in the monitoring panel. Status: done. `GET /api/voice/health` (admin only) and a Voice panel in Admin → AI system; pytest for 403s and the speech-down path, jest for the panel.
+- [x] 5.2 TTS cache LRU, clip folder removed with the chronicle, orphan sweep. Status: done. `VOICE_TTS_CACHE_GB` (default 5) with LRU in the speech service (tested with a tiny cap); unsent clips older than 24 h swept at start and daily; chronicle delete already removed its clips since 0.18.
+- [x] 5.3 Per-character voice pick; desktop Space push-to-talk. Status: done. `characters.voice_override` checked against the catalog, used for in-character lines in its language; Space held records, release stops (not while typing).
+- [ ] 5.4 Device checklist in VOICE.md and a load check (4 listeners + one narration under 3 s to first audio). Status: checklist written in VOICE.md; results and the load check still need the real phones and the live server.
+- [x] 5.5 Release 0.20. Status: done (0.20.0).
 
 ## Log
 

@@ -98,3 +98,19 @@ export function startPhoneDictation(lang, { onPartial = () => {} } = {}) {
   rec.start();
   return { stop: () => rec.stop(), done };
 }
+
+/**
+ * Desktop push-to-talk: Space held anywhere in the room starts the recorder, release stops it.
+ * Never while typing (inputs, text areas, selects, contenteditable) or with a modifier.
+ */
+export function isTypingTarget(el) {
+  if (!el || !el.tagName) return false;
+  const tag = el.tagName.toLowerCase();
+  if (tag === 'textarea' || tag === 'select' || tag === 'button') return true;
+  if (tag === 'input') return true;
+  return !!el.isContentEditable || el.getAttribute?.('contenteditable') === 'true';
+}
+
+export function isPushToTalkKey(e) {
+  return !!e && (e.code === 'Space' || e.key === ' ') && !e.repeat && !e.ctrlKey && !e.metaKey && !e.altKey && !e.shiftKey && !isTypingTarget(e.target);
+}

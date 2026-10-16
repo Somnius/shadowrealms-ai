@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.20.0] - 2026-10-17 - Voice ops and polish
+
+### Added
+- **A character's own voice.** On the sheet the owner can pick one catalog voice (e.g. `el-kostas`); it reads that character's in-character lines in its language instead of the gender voice. Checked against the speech service's catalog. EN + EL.
+- **Push-to-talk on a computer:** hold Space in a room to record, let go to review. Not while typing.
+- **Voice health** in Admin → AI system: speech service state, queues, free VRAM, recordings and cache on disk against their caps, minutes recorded per player today. `GET /api/voice/health`, site admins only.
+- Device checklist in docs/VOICE.md (to fill in on real phones).
+
+### Changed
+- The spoken-line cache is capped at `VOICE_TTS_CACHE_GB` (default 5), least recently played first.
+- Recordings transcribed but never sent are removed after 24 hours (at start, then daily).
+- Schema: `characters.voice_override`.
+
 ## [0.18.0] - 2026-10-17 - Speaking
 
 ### Added
