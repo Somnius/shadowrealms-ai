@@ -13,7 +13,8 @@ How each phase runs: build in its own git worktree → tests and CI green → on
 | 2 | Server voices | speech container · gender on the sheet · TTS jobs and cache · voice catalog and narrator voices · server mode in the app | 0.17 | until 03:45 | done: released 0.17.0 |
 | 3 | Speaking | clip upload · transcription jobs and the GPU policy · recorder with the timer · review and text steps · mic marker and replay · phone dictation | 0.18 | until 06:00 | done: released 0.18.0 |
 | 4 | Language override | translator · ahead-of-time translation · captions with "show original" · speak in one language, write in the other | 0.19 | until 06:45 | built: 0.19.0 on voice/p4-translate, waiting for review |
-| 5 | Ops and polish | health panel · cache and disk caps · per-character voice · device checklist | 0.20 | after the deadline | not started |
+| 5 | Ops and polish | health panel · cache and disk caps · per-character voice · device checklist | 0.20 | after the deadline | building |
+| 6 | Transcript check | Whisper hints with the chronicle's names · recmeets Laya-words flags misheard words · Krikri fixes only those (split words, slang) · changed words marked, tap to undo | 0.21 | until 06:30 | building |
 
 ## Decisions (2026-10-16)
 
@@ -65,7 +66,7 @@ How each phase runs: build in its own git worktree → tests and CI green → on
 
 ## Phase 4 — Language override (0.19)
 
-- [x] 4.1 Translator role, translations table, translate lane, prompt checked on 20 lines each way. Status: done 00:05. `translator` role (Krikri, no Ollama fallback), `message_translations`, one background worker in the backend (not a lane in the speech service: it is an LM Studio call, not audio), few-shot prompt + glossary file. Phase 0 lines + game lines read: meaning and game terms kept; Greek names sometimes transliterated (Ελένη → Eleni). pytest with a fake LM Studio.
+- [x] 4.1 Translator role, translations table, translate lane, prompt checked on 20 lines each way. Status: done 00:05. `translator` role (Krikri, no Ollama fallback), `message_translations`, one background worker in the backend (not a lane in the speech service: it is an LM Studio call, not audio), few-shot prompt + glossary file. Phase 0 lines + game lines read: meaning and game terms kept; names are now hidden behind ⟦n⟧ placeholders and put back exactly (they were transliterated before: Ελένη → Eleni), lowercase hunger kept as Hunger, Greek articles fixed to the name's gender. pytest with a fake LM Studio.
 - [x] 4.2 Translate right after a message is saved for the players who need it; message language stored when known. Status: done 00:05. Members' hear-in languages cached 60 s (cleared when someone saves voice settings); `messages.lang`/`orig_lang`. pytest: a hear-in-Greek member gets a row in one job, one call per (message, language), no job when nobody needs it.
 - [x] 4.3 Hearing in the chosen language, captions under messages with "show original" (typed messages too). Status: done 00:05. `waiting_translation` then the original after ~9 s; captions with EL/EN chip and 44-px swap button; phone voices use the translation when ready. jest for the swap, pytest for 404/waiting. Not tried on phones.
 - [x] 4.4 Speak in one language, write in the other: the text step shows both; the original stays as the caption. Status: done 00:05. STT poll translates when done; `POST /api/voice/translate` for phone dictation and "Translate again"; original row so the speaker hears his own words. Round-trip pytest.

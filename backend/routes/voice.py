@@ -438,7 +438,8 @@ def stt_job_status(job_id):
             if text and write in translation.LANGS and write != spoke:
                 # the text step shows both at once (one short line through the translator role)
                 try:
-                    tr, _ = translation.translate(text, spoke, write)
+                    tr, _ = translation.translate(
+                        text, spoke, write, names=translation.chronicle_names(cursor, clip.get("campaign_id")))
                     out["translated"] = {"lang": write, "text": tr}
                 except Exception as e:  # noqa: BLE001
                     logger.warning("dictation translation failed: %s", type(e).__name__)

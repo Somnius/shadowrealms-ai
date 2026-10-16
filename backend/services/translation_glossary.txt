@@ -6,7 +6,7 @@ Storyteller | Αφηγητής
 Wits | keep | Οξύνοια
 Disciplines | keep | Πειθαρχίες
 Discipline | keep | Πειθαρχία
-Hunger | keep | Πείνα, πείνα
+Hunger | keep | Πείνα, πείνα, πείνας, Πείνας
 Humanity | keep | Ανθρωπιά
 Willpower | keep | Θέληση, Θέλησης
 Blood Potency | keep

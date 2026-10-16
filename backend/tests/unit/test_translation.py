@@ -22,12 +22,38 @@ def test_prompt_glossary_and_examples():
     msgs = tr.build_messages("Roll Wits + Awareness for the Prince.", "en", "el")
     system = msgs[0]["content"]
     assert 'Wits: keep as "Wits"' in system and "Prince -> Πρίγκιπας" in system
-    assert "Hunger" not in system  # only the terms in the line
+    assert "- Hunger" not in system  # only the terms in the line
     assert "misses by a hair" in system and "Ελένη stays Ελένη" in system
     assert msgs[-1] == {"role": "user", "content": "Roll Wits + Awareness for the Prince."}
     assert any("παρά τρίχα" in m["content"] for m in msgs if m["role"] == "assistant")
     back = tr.build_messages("Ρίξε Οξύνοια.", "el", "en")[0]["content"]
     assert "Οξύνοια -> Wits" in back
+
+
+def test_names_found_without_a_list():
+    assert tr.find_names("Eleni whispers to Marcus: the Sheriff is coming.") == ["Eleni", "Marcus"]
+    assert tr.find_names("The Prince summons Sofia and Nikos to the Elysium.") == ["Sofia", "Nikos"]
+    assert tr.find_names("Η Ελένη κοιτάζει τον Μάρκο.") == ["Ελένη", "Μάρκο"]
+    assert tr.find_names("Ελένη, πάμε στο Elysium πριν μας δει ο Πρίγκιπας.") == ["Ελένη"]
+    assert tr.find_names("Somewhere below the city, something stirs. Roll Wits.") == []
+    assert tr.find_names("Ρίξε Οξύνοια συν Επίγνωση, ξόδεψε Θέλησης.") == []  # glossary words
+    assert tr.find_names("the old Lady Ash waits", ["Lady Ash"]) == ["Lady Ash"]
+
+
+def test_names_protected_and_restored_exactly():
+    calls = []
+    gen = fake_gen(calls, "Η ⟦1⟧ ψιθυρίζει στον ⟦2⟧.")
+    out, _ = tr.translate("Ελένη whispers to Μάρκος.", "en", "el", gen, ["Ελένη", "Μάρκος"])
+    assert out == "Η Ελένη ψιθυρίζει στον Μάρκος."
+    assert "Ελένη" not in calls[0][1][-1]["content"]  # the model never sees the name
+    # the article follows who the name is
+    out, _ = tr.translate("The Prince calls Sofia.", "en", "el", fake_gen([], "Ο Πρίγκιπας καλεί τον ⟦1⟧."))
+    assert out == "Ο Πρίγκιπας καλεί την Sofia."
+    # a lost placeholder: once more without them
+    calls = []
+    out, _ = tr.translate("Eleni smiles.", "en", "el", fake_gen(calls, "Η Ελένη χαμογελά."))
+    assert len(calls) == 2 and "Eleni" in calls[1][1][-1]["content"]
+    assert tr.fix_articles("Η αίμα είναι χρέος.", []) == "Το αίμα είναι χρέος."
 
 
 def test_clean_output():

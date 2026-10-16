@@ -13,7 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Hear and read in your language.** Profile → Voice → "Read and hear messages in" (as written by default). Lines in the other language are translated ahead of time, right after they are saved, for the players who need it; the body shows your language and the original sits under it as a two-line italic caption with an EL/EN chip and a 44-px "Show original" button that swaps them. Typed lines too.
 - **Listening in your language.** Server voices speak the translation (waiting a few seconds for it, then the original); phone voices read it when it is ready.
 - **Write in the other language.** "Voice messages are sent in": speak Greek, send English (or the other way round). The recorder's text step shows both, editable; the original is kept with the message, shown to everyone (the Storyteller too) under "Show original" / "Show your original", and played back to you in your own words.
-- **Translator AI role** (Admin → AI): Krikri in LM Studio by default, temperature 0, with a game-term glossary (`backend/services/translation_glossary.txt`) and a few examples; never falls back to the small Ollama model.
+- **Translator AI role** (Admin → AI): Krikri in LM Studio by default, temperature 0, with a game-term glossary (`backend/services/translation_glossary.txt`) and a few examples; names (the chronicle's characters, NPCs, locations and other proper names) are hidden from the model and put back exactly as written, so Ελένη stays Ελένη and Marcus stays Marcus; never falls back to the small Ollama model.
 - Routes: `GET /api/voice/translations`, `POST /api/voice/translate`; `original` on `POST /api/voice/tts/jobs` and on sending a message. EN + EL.
 
 ### Changed
