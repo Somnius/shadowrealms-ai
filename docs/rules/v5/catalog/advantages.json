@@ -2954,7 +2954,8 @@
       "dots": {
         "allowed": [
           1,
-          2
+          2,
+          3
         ]
       },
       "book": "v5-succubus-club",
@@ -3234,7 +3235,10 @@
       "cannot_buy_for": [],
       "repeatable": false,
       "requires": "Ministry",
-      "levels": []
+      "levels": [],
+      "excludes": [
+        "merit:protean-sorcerer"
+      ]
     },
     {
       "id": "merit:protean-sorcerer",
@@ -3266,7 +3270,10 @@
       "cannot_buy_for": [],
       "repeatable": false,
       "requires": "Gangrel, Ministry, or Tzimisce",
-      "levels": []
+      "levels": [],
+      "excludes": [
+        "merit:oblivions-corruption"
+      ]
     },
     {
       "id": "merit:linguistics",
@@ -3346,7 +3353,12 @@
       },
       "book": "v5-players-guide",
       "page": 118,
-      "also_in": [],
+      "also_in": [
+        {
+          "book": "v5-succubus-club",
+          "page": 26
+        }
+      ],
       "aliases": [],
       "source": "pdf",
       "master_list_page": 233,
@@ -3358,7 +3370,10 @@
       "cannot_buy_for": [],
       "repeatable": false,
       "requires": null,
-      "levels": []
+      "levels": [],
+      "manual_fields": [
+        "also_in"
+      ]
     },
     {
       "id": "merit:ingenue",
@@ -5651,7 +5666,19 @@
       "cannot_buy_for": [],
       "repeatable": false,
       "requires": "Dominate •••+, Storyteller's consent",
-      "levels": []
+      "levels": [],
+      "excludes": [
+        "flaw:ingrained-breakdown",
+        "flaw:ingrained-daymares",
+        "flaw:ingrained-egomaniac",
+        "flaw:ingrained-faded",
+        "flaw:ingrained-killer-instinct",
+        "flaw:ingrained-monstrous",
+        "flaw:ingrained-sanguinary-animism",
+        "flaw:ingrained-scar-tissue",
+        "flaw:ingrained-stasis",
+        "flaw:ingrained-untamed"
+      ]
     },
     {
       "id": "flaw:ingrained-breakdown",
@@ -5676,7 +5703,19 @@
       "cannot_buy_for": [],
       "repeatable": false,
       "requires": "Celerity •••+, Storyteller's consent",
-      "levels": []
+      "levels": [],
+      "excludes": [
+        "flaw:ingrained-blunt",
+        "flaw:ingrained-daymares",
+        "flaw:ingrained-egomaniac",
+        "flaw:ingrained-faded",
+        "flaw:ingrained-killer-instinct",
+        "flaw:ingrained-monstrous",
+        "flaw:ingrained-sanguinary-animism",
+        "flaw:ingrained-scar-tissue",
+        "flaw:ingrained-stasis",
+        "flaw:ingrained-untamed"
+      ]
     },
     {
       "id": "flaw:ingrained-daymares",
@@ -5701,7 +5740,19 @@
       "cannot_buy_for": [],
       "repeatable": false,
       "requires": "Auspex •••+, Storyteller's consent",
-      "levels": []
+      "levels": [],
+      "excludes": [
+        "flaw:ingrained-blunt",
+        "flaw:ingrained-breakdown",
+        "flaw:ingrained-egomaniac",
+        "flaw:ingrained-faded",
+        "flaw:ingrained-killer-instinct",
+        "flaw:ingrained-monstrous",
+        "flaw:ingrained-sanguinary-animism",
+        "flaw:ingrained-scar-tissue",
+        "flaw:ingrained-stasis",
+        "flaw:ingrained-untamed"
+      ]
     },
     {
       "id": "flaw:ingrained-egomaniac",
@@ -5726,7 +5777,19 @@
       "cannot_buy_for": [],
       "repeatable": false,
       "requires": "Presence •••+, Storyteller's consent",
-      "levels": []
+      "levels": [],
+      "excludes": [
+        "flaw:ingrained-blunt",
+        "flaw:ingrained-breakdown",
+        "flaw:ingrained-daymares",
+        "flaw:ingrained-faded",
+        "flaw:ingrained-killer-instinct",
+        "flaw:ingrained-monstrous",
+        "flaw:ingrained-sanguinary-animism",
+        "flaw:ingrained-scar-tissue",
+        "flaw:ingrained-stasis",
+        "flaw:ingrained-untamed"
+      ]
     },
     {
       "id": "flaw:ingrained-faded",
@@ -5751,7 +5814,19 @@
       "cannot_buy_for": [],
       "repeatable": false,
       "requires": "Obfuscate •••+, Storyteller's consent",
-      "levels": []
+      "levels": [],
+      "excludes": [
+        "flaw:ingrained-blunt",
+        "flaw:ingrained-breakdown",
+        "flaw:ingrained-daymares",
+        "flaw:ingrained-egomaniac",
+        "flaw:ingrained-killer-instinct",
+        "flaw:ingrained-monstrous",
+        "flaw:ingrained-sanguinary-animism",
+        "flaw:ingrained-scar-tissue",
+        "flaw:ingrained-stasis",
+        "flaw:ingrained-untamed"
+      ]
     },
     {
       "id": "flaw:ingrained-killer-instinct",
@@ -5776,7 +5851,19 @@
       "cannot_buy_for": [],
       "repeatable": false,
       "requires": "Potence •••+, Storyteller's consent",
-      "levels": []
+      "levels": [],
+      "excludes": [
+        "flaw:ingrained-blunt",
+        "flaw:ingrained-breakdown",
+        "flaw:ingrained-daymares",
+        "flaw:ingrained-egomaniac",
+        "flaw:ingrained-faded",
+        "flaw:ingrained-monstrous",
+        "flaw:ingrained-sanguinary-animism",
+        "flaw:ingrained-scar-tissue",
+        "flaw:ingrained-stasis",
+        "flaw:ingrained-untamed"
+      ]
     },
     {
       "id": "flaw:ingrained-monstrous",
@@ -5801,7 +5888,19 @@
       "cannot_buy_for": [],
       "repeatable": false,
       "requires": "Oblivion •••+, Storyteller's consent",
-      "levels": []
+      "levels": [],
+      "excludes": [
+        "flaw:ingrained-blunt",
+        "flaw:ingrained-breakdown",
+        "flaw:ingrained-daymares",
+        "flaw:ingrained-egomaniac",
+        "flaw:ingrained-faded",
+        "flaw:ingrained-killer-instinct",
+        "flaw:ingrained-sanguinary-animism",
+        "flaw:ingrained-scar-tissue",
+        "flaw:ingrained-stasis",
+        "flaw:ingrained-untamed"
+      ]
     },
     {
       "id": "flaw:ingrained-sanguinary-animism",
@@ -5826,7 +5925,19 @@
       "cannot_buy_for": [],
       "repeatable": false,
       "requires": "Blood Sorcery •••+, Storyteller's consent",
-      "levels": []
+      "levels": [],
+      "excludes": [
+        "flaw:ingrained-blunt",
+        "flaw:ingrained-breakdown",
+        "flaw:ingrained-daymares",
+        "flaw:ingrained-egomaniac",
+        "flaw:ingrained-faded",
+        "flaw:ingrained-killer-instinct",
+        "flaw:ingrained-monstrous",
+        "flaw:ingrained-scar-tissue",
+        "flaw:ingrained-stasis",
+        "flaw:ingrained-untamed"
+      ]
     },
     {
       "id": "flaw:ingrained-scar-tissue",
@@ -5851,7 +5962,19 @@
       "cannot_buy_for": [],
       "repeatable": false,
       "requires": "Fortitude •••+, Storyteller's consent",
-      "levels": []
+      "levels": [],
+      "excludes": [
+        "flaw:ingrained-blunt",
+        "flaw:ingrained-breakdown",
+        "flaw:ingrained-daymares",
+        "flaw:ingrained-egomaniac",
+        "flaw:ingrained-faded",
+        "flaw:ingrained-killer-instinct",
+        "flaw:ingrained-monstrous",
+        "flaw:ingrained-sanguinary-animism",
+        "flaw:ingrained-stasis",
+        "flaw:ingrained-untamed"
+      ]
     },
     {
       "id": "flaw:ingrained-stasis",
@@ -5876,7 +5999,19 @@
       "cannot_buy_for": [],
       "repeatable": false,
       "requires": "Protean •••+, Storyteller's consent",
-      "levels": []
+      "levels": [],
+      "excludes": [
+        "flaw:ingrained-blunt",
+        "flaw:ingrained-breakdown",
+        "flaw:ingrained-daymares",
+        "flaw:ingrained-egomaniac",
+        "flaw:ingrained-faded",
+        "flaw:ingrained-killer-instinct",
+        "flaw:ingrained-monstrous",
+        "flaw:ingrained-sanguinary-animism",
+        "flaw:ingrained-scar-tissue",
+        "flaw:ingrained-untamed"
+      ]
     },
     {
       "id": "flaw:ingrained-untamed",
@@ -5901,7 +6036,19 @@
       "cannot_buy_for": [],
       "repeatable": false,
       "requires": "Animalism •••+, Storyteller's consent",
-      "levels": []
+      "levels": [],
+      "excludes": [
+        "flaw:ingrained-blunt",
+        "flaw:ingrained-breakdown",
+        "flaw:ingrained-daymares",
+        "flaw:ingrained-egomaniac",
+        "flaw:ingrained-faded",
+        "flaw:ingrained-killer-instinct",
+        "flaw:ingrained-monstrous",
+        "flaw:ingrained-sanguinary-animism",
+        "flaw:ingrained-scar-tissue",
+        "flaw:ingrained-stasis"
+      ]
     },
     {
       "id": "flaw:disputed-domain",

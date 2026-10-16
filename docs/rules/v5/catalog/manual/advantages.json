@@ -309,6 +309,19 @@
         "requires": "Brujah/Gangrel: Bestial Temper; Tremere: Catenating Blood"
       },
       "why": "core pr 183: the Bane you pick is limited (Brujah or Gangrel Bane with the Bestial Temper Flaw, Tremere Bane with the Catenating Blood Merit); any other Bane needs neither"
+    },
+    {
+      "id": "merit:famous-face",
+      "book": "v5-players-guide",
+      "set": {
+        "also_in": [
+          {
+            "book": "v5-succubus-club",
+            "page": 26
+          }
+        ]
+      },
+      "why": "Live from the Succubus Club p.26 reprints Famous Face (same rating and effect)."
     }
   ],
   "add": [
@@ -1680,7 +1693,8 @@
       "dots": {
         "allowed": [
           1,
-          2
+          2,
+          3
         ]
       },
       "book": "v5-succubus-club",
@@ -1697,7 +1711,7 @@
       "repeatable": false,
       "requires": null,
       "levels": [],
-      "why": "Succubus Club p.25, Haven section, printed '• or •• Mobile' (checked on rendered pdf 27), but its text also describes a three-dot mobile haven (train, jet, large ship); recorded the printed rating. Page says coterie dots can be used for it, so it is not coterie-only (coterie false)"
+      "why": "Succubus Club p.25, Haven section, printed '• or •• Mobile' (checked on rendered pdf 27), but its text goes on to a three-dot mobile haven (a train, a jet, a large ship): 1, 2 or 3. Page says coterie dots can be used for it, so it is not coterie-only (coterie false)."
     },
     {
       "id": "merit:armored",
@@ -2614,7 +2628,10 @@
       "repeatable": false,
       "requires": "Gangrel, Ministry, or Tzimisce",
       "levels": [],
-      "why": "Courts of the Damned p.166, sidebar 'Learning Blood Sorcery and Oblivion', under 'Optional Merits'; printed '• Protean Sorcerer (Prerequisite: Gangrel, Ministry, or Tzimisce)' in the page text"
+      "why": "Courts of the Damned p.166, sidebar 'Learning Blood Sorcery and Oblivion', under 'Optional Merits'; printed '• Protean Sorcerer (Prerequisite: Gangrel, Ministry, or Tzimisce)' in the page text. The page says a character can't have both Oblivion's Corruption and Protean Sorcerer (excludes).",
+      "excludes": [
+        "merit:oblivions-corruption"
+      ]
     },
     {
       "id": "merit:oblivions-corruption",
@@ -2641,7 +2658,10 @@
       "repeatable": false,
       "requires": "Ministry",
       "levels": [],
-      "why": "Courts of the Damned p.166, same sidebar, under 'Optional Merits'; printed '• Oblivion's Corruption (Prerequisite: Ministry)' in the page text; cannot be held together with Protean Sorcerer"
+      "why": "Courts of the Damned p.166, same sidebar, under 'Optional Merits'; printed '• Oblivion's Corruption (Prerequisite: Ministry)' in the page text; cannot be held together with Protean Sorcerer. The page says a character can't have both Oblivion's Corruption and Protean Sorcerer (excludes).",
+      "excludes": [
+        "merit:protean-sorcerer"
+      ]
     },
     {
       "id": "merit:semblance-of-the-methuselah",
@@ -2999,7 +3019,19 @@
       "repeatable": false,
       "requires": "Animalism •••+, Storyteller's consent",
       "levels": [],
-      "why": "Printed p.108 as 'Ingrained Animalism Flaw: Untamed' (Animalism) under 'New Mythic Flaw: Ingrained Discipline'; the page says these Flaws have no dot value, so dots null. Requires is the printed general rule (three levels in the Discipline, Storyteller's consent); only one Ingrained Flaw per character."
+      "why": "Printed p.108 as 'Ingrained Animalism Flaw: Untamed' (Animalism) under 'New Mythic Flaw: Ingrained Discipline'; the page says these Flaws have no dot value, so dots null. Requires is the printed general rule (three levels in the Discipline, Storyteller's consent); only one Ingrained Flaw per character (p.108), so it excludes the other ten.",
+      "excludes": [
+        "flaw:ingrained-blunt",
+        "flaw:ingrained-breakdown",
+        "flaw:ingrained-daymares",
+        "flaw:ingrained-egomaniac",
+        "flaw:ingrained-faded",
+        "flaw:ingrained-killer-instinct",
+        "flaw:ingrained-monstrous",
+        "flaw:ingrained-sanguinary-animism",
+        "flaw:ingrained-scar-tissue",
+        "flaw:ingrained-stasis"
+      ]
     },
     {
       "id": "flaw:ingrained-daymares",
@@ -3021,7 +3053,19 @@
       "repeatable": false,
       "requires": "Auspex •••+, Storyteller's consent",
       "levels": [],
-      "why": "Printed p.108 as 'Ingrained Auspex Flaw: Daymares' (Auspex) under 'New Mythic Flaw: Ingrained Discipline'; the page says these Flaws have no dot value, so dots null. Requires is the printed general rule (three levels in the Discipline, Storyteller's consent); only one Ingrained Flaw per character."
+      "why": "Printed p.108 as 'Ingrained Auspex Flaw: Daymares' (Auspex) under 'New Mythic Flaw: Ingrained Discipline'; the page says these Flaws have no dot value, so dots null. Requires is the printed general rule (three levels in the Discipline, Storyteller's consent); only one Ingrained Flaw per character (p.108), so it excludes the other ten.",
+      "excludes": [
+        "flaw:ingrained-blunt",
+        "flaw:ingrained-breakdown",
+        "flaw:ingrained-egomaniac",
+        "flaw:ingrained-faded",
+        "flaw:ingrained-killer-instinct",
+        "flaw:ingrained-monstrous",
+        "flaw:ingrained-sanguinary-animism",
+        "flaw:ingrained-scar-tissue",
+        "flaw:ingrained-stasis",
+        "flaw:ingrained-untamed"
+      ]
     },
     {
       "id": "flaw:ingrained-sanguinary-animism",
@@ -3043,7 +3087,19 @@
       "repeatable": false,
       "requires": "Blood Sorcery •••+, Storyteller's consent",
       "levels": [],
-      "why": "Printed p.109 as 'Ingrained Blood Sorcery Flaw: Sanguinary Animism' (Blood Sorcery) under 'New Mythic Flaw: Ingrained Discipline' (p.108); the page says these Flaws have no dot value, so dots null. Requires is the printed general rule (three levels in the Discipline, Storyteller's consent); only one Ingrained Flaw per character."
+      "why": "Printed p.109 as 'Ingrained Blood Sorcery Flaw: Sanguinary Animism' (Blood Sorcery) under 'New Mythic Flaw: Ingrained Discipline' (p.108); the page says these Flaws have no dot value, so dots null. Requires is the printed general rule (three levels in the Discipline, Storyteller's consent); only one Ingrained Flaw per character (p.108), so it excludes the other ten.",
+      "excludes": [
+        "flaw:ingrained-blunt",
+        "flaw:ingrained-breakdown",
+        "flaw:ingrained-daymares",
+        "flaw:ingrained-egomaniac",
+        "flaw:ingrained-faded",
+        "flaw:ingrained-killer-instinct",
+        "flaw:ingrained-monstrous",
+        "flaw:ingrained-scar-tissue",
+        "flaw:ingrained-stasis",
+        "flaw:ingrained-untamed"
+      ]
     },
     {
       "id": "flaw:ingrained-breakdown",
@@ -3065,7 +3121,19 @@
       "repeatable": false,
       "requires": "Celerity •••+, Storyteller's consent",
       "levels": [],
-      "why": "Printed p.109 as 'Ingrained Celerity Flaw: Breakdown' (Celerity) under 'New Mythic Flaw: Ingrained Discipline' (p.108); the page says these Flaws have no dot value, so dots null. Requires is the printed general rule (three levels in the Discipline, Storyteller's consent); only one Ingrained Flaw per character."
+      "why": "Printed p.109 as 'Ingrained Celerity Flaw: Breakdown' (Celerity) under 'New Mythic Flaw: Ingrained Discipline' (p.108); the page says these Flaws have no dot value, so dots null. Requires is the printed general rule (three levels in the Discipline, Storyteller's consent); only one Ingrained Flaw per character (p.108), so it excludes the other ten.",
+      "excludes": [
+        "flaw:ingrained-blunt",
+        "flaw:ingrained-daymares",
+        "flaw:ingrained-egomaniac",
+        "flaw:ingrained-faded",
+        "flaw:ingrained-killer-instinct",
+        "flaw:ingrained-monstrous",
+        "flaw:ingrained-sanguinary-animism",
+        "flaw:ingrained-scar-tissue",
+        "flaw:ingrained-stasis",
+        "flaw:ingrained-untamed"
+      ]
     },
     {
       "id": "flaw:ingrained-blunt",
@@ -3087,7 +3155,19 @@
       "repeatable": false,
       "requires": "Dominate •••+, Storyteller's consent",
       "levels": [],
-      "why": "Printed p.109 as 'Ingrained Dominate Flaw: Blunt' (Dominate) under 'New Mythic Flaw: Ingrained Discipline' (p.108); the page says these Flaws have no dot value, so dots null. Requires is the printed general rule (three levels in the Discipline, Storyteller's consent); only one Ingrained Flaw per character."
+      "why": "Printed p.109 as 'Ingrained Dominate Flaw: Blunt' (Dominate) under 'New Mythic Flaw: Ingrained Discipline' (p.108); the page says these Flaws have no dot value, so dots null. Requires is the printed general rule (three levels in the Discipline, Storyteller's consent); only one Ingrained Flaw per character (p.108), so it excludes the other ten.",
+      "excludes": [
+        "flaw:ingrained-breakdown",
+        "flaw:ingrained-daymares",
+        "flaw:ingrained-egomaniac",
+        "flaw:ingrained-faded",
+        "flaw:ingrained-killer-instinct",
+        "flaw:ingrained-monstrous",
+        "flaw:ingrained-sanguinary-animism",
+        "flaw:ingrained-scar-tissue",
+        "flaw:ingrained-stasis",
+        "flaw:ingrained-untamed"
+      ]
     },
     {
       "id": "flaw:ingrained-scar-tissue",
@@ -3109,7 +3189,19 @@
       "repeatable": false,
       "requires": "Fortitude •••+, Storyteller's consent",
       "levels": [],
-      "why": "Printed p.109 as 'Ingrained Fortitude Flaw: Scar Tissue' (Fortitude) under 'New Mythic Flaw: Ingrained Discipline' (p.108); the page says these Flaws have no dot value, so dots null. Requires is the printed general rule (three levels in the Discipline, Storyteller's consent); only one Ingrained Flaw per character."
+      "why": "Printed p.109 as 'Ingrained Fortitude Flaw: Scar Tissue' (Fortitude) under 'New Mythic Flaw: Ingrained Discipline' (p.108); the page says these Flaws have no dot value, so dots null. Requires is the printed general rule (three levels in the Discipline, Storyteller's consent); only one Ingrained Flaw per character (p.108), so it excludes the other ten.",
+      "excludes": [
+        "flaw:ingrained-blunt",
+        "flaw:ingrained-breakdown",
+        "flaw:ingrained-daymares",
+        "flaw:ingrained-egomaniac",
+        "flaw:ingrained-faded",
+        "flaw:ingrained-killer-instinct",
+        "flaw:ingrained-monstrous",
+        "flaw:ingrained-sanguinary-animism",
+        "flaw:ingrained-stasis",
+        "flaw:ingrained-untamed"
+      ]
     },
     {
       "id": "flaw:ingrained-faded",
@@ -3131,7 +3223,19 @@
       "repeatable": false,
       "requires": "Obfuscate •••+, Storyteller's consent",
       "levels": [],
-      "why": "Printed p.109 as 'Ingrained Obfuscate Flaw: Faded' (Obfuscate) under 'New Mythic Flaw: Ingrained Discipline' (p.108); the page says these Flaws have no dot value, so dots null. Requires is the printed general rule (three levels in the Discipline, Storyteller's consent); only one Ingrained Flaw per character."
+      "why": "Printed p.109 as 'Ingrained Obfuscate Flaw: Faded' (Obfuscate) under 'New Mythic Flaw: Ingrained Discipline' (p.108); the page says these Flaws have no dot value, so dots null. Requires is the printed general rule (three levels in the Discipline, Storyteller's consent); only one Ingrained Flaw per character (p.108), so it excludes the other ten.",
+      "excludes": [
+        "flaw:ingrained-blunt",
+        "flaw:ingrained-breakdown",
+        "flaw:ingrained-daymares",
+        "flaw:ingrained-egomaniac",
+        "flaw:ingrained-killer-instinct",
+        "flaw:ingrained-monstrous",
+        "flaw:ingrained-sanguinary-animism",
+        "flaw:ingrained-scar-tissue",
+        "flaw:ingrained-stasis",
+        "flaw:ingrained-untamed"
+      ]
     },
     {
       "id": "flaw:ingrained-monstrous",
@@ -3153,7 +3257,19 @@
       "repeatable": false,
       "requires": "Oblivion •••+, Storyteller's consent",
       "levels": [],
-      "why": "Printed p.109 as 'Ingrained Oblivion Flaw: Monstrous' (Oblivion) under 'New Mythic Flaw: Ingrained Discipline' (p.108); the page says these Flaws have no dot value, so dots null. Requires is the printed general rule (three levels in the Discipline, Storyteller's consent); only one Ingrained Flaw per character."
+      "why": "Printed p.109 as 'Ingrained Oblivion Flaw: Monstrous' (Oblivion) under 'New Mythic Flaw: Ingrained Discipline' (p.108); the page says these Flaws have no dot value, so dots null. Requires is the printed general rule (three levels in the Discipline, Storyteller's consent); only one Ingrained Flaw per character (p.108), so it excludes the other ten.",
+      "excludes": [
+        "flaw:ingrained-blunt",
+        "flaw:ingrained-breakdown",
+        "flaw:ingrained-daymares",
+        "flaw:ingrained-egomaniac",
+        "flaw:ingrained-faded",
+        "flaw:ingrained-killer-instinct",
+        "flaw:ingrained-sanguinary-animism",
+        "flaw:ingrained-scar-tissue",
+        "flaw:ingrained-stasis",
+        "flaw:ingrained-untamed"
+      ]
     },
     {
       "id": "flaw:ingrained-killer-instinct",
@@ -3175,7 +3291,19 @@
       "repeatable": false,
       "requires": "Potence •••+, Storyteller's consent",
       "levels": [],
-      "why": "Printed p.109 as 'Ingrained Potence Flaw: Killer Instinct' (Potence) under 'New Mythic Flaw: Ingrained Discipline' (p.108); the page says these Flaws have no dot value, so dots null. Requires is the printed general rule (three levels in the Discipline, Storyteller's consent); only one Ingrained Flaw per character."
+      "why": "Printed p.109 as 'Ingrained Potence Flaw: Killer Instinct' (Potence) under 'New Mythic Flaw: Ingrained Discipline' (p.108); the page says these Flaws have no dot value, so dots null. Requires is the printed general rule (three levels in the Discipline, Storyteller's consent); only one Ingrained Flaw per character (p.108), so it excludes the other ten.",
+      "excludes": [
+        "flaw:ingrained-blunt",
+        "flaw:ingrained-breakdown",
+        "flaw:ingrained-daymares",
+        "flaw:ingrained-egomaniac",
+        "flaw:ingrained-faded",
+        "flaw:ingrained-monstrous",
+        "flaw:ingrained-sanguinary-animism",
+        "flaw:ingrained-scar-tissue",
+        "flaw:ingrained-stasis",
+        "flaw:ingrained-untamed"
+      ]
     },
     {
       "id": "flaw:ingrained-egomaniac",
@@ -3197,7 +3325,19 @@
       "repeatable": false,
       "requires": "Presence •••+, Storyteller's consent",
       "levels": [],
-      "why": "Printed p.109 as 'Ingrained Presence Flaw: Egomaniac' (Presence) under 'New Mythic Flaw: Ingrained Discipline' (p.108); the page says these Flaws have no dot value, so dots null. Requires is the printed general rule (three levels in the Discipline, Storyteller's consent); only one Ingrained Flaw per character."
+      "why": "Printed p.109 as 'Ingrained Presence Flaw: Egomaniac' (Presence) under 'New Mythic Flaw: Ingrained Discipline' (p.108); the page says these Flaws have no dot value, so dots null. Requires is the printed general rule (three levels in the Discipline, Storyteller's consent); only one Ingrained Flaw per character (p.108), so it excludes the other ten.",
+      "excludes": [
+        "flaw:ingrained-blunt",
+        "flaw:ingrained-breakdown",
+        "flaw:ingrained-daymares",
+        "flaw:ingrained-faded",
+        "flaw:ingrained-killer-instinct",
+        "flaw:ingrained-monstrous",
+        "flaw:ingrained-sanguinary-animism",
+        "flaw:ingrained-scar-tissue",
+        "flaw:ingrained-stasis",
+        "flaw:ingrained-untamed"
+      ]
     },
     {
       "id": "flaw:ingrained-stasis",
@@ -3219,7 +3359,19 @@
       "repeatable": false,
       "requires": "Protean •••+, Storyteller's consent",
       "levels": [],
-      "why": "Printed p.109 as 'Ingrained Protean Flaw: Stasis' (Protean) under 'New Mythic Flaw: Ingrained Discipline' (p.108); the page says these Flaws have no dot value, so dots null. Requires is the printed general rule (three levels in the Discipline, Storyteller's consent); only one Ingrained Flaw per character."
+      "why": "Printed p.109 as 'Ingrained Protean Flaw: Stasis' (Protean) under 'New Mythic Flaw: Ingrained Discipline' (p.108); the page says these Flaws have no dot value, so dots null. Requires is the printed general rule (three levels in the Discipline, Storyteller's consent); only one Ingrained Flaw per character (p.108), so it excludes the other ten.",
+      "excludes": [
+        "flaw:ingrained-blunt",
+        "flaw:ingrained-breakdown",
+        "flaw:ingrained-daymares",
+        "flaw:ingrained-egomaniac",
+        "flaw:ingrained-faded",
+        "flaw:ingrained-killer-instinct",
+        "flaw:ingrained-monstrous",
+        "flaw:ingrained-sanguinary-animism",
+        "flaw:ingrained-scar-tissue",
+        "flaw:ingrained-untamed"
+      ]
     }
   ],
   "rename": [
