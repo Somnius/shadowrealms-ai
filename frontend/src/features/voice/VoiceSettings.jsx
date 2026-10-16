@@ -261,8 +261,8 @@ export function VoiceSettingsPanel() {
           onChange={(e) => set({ speak_lang: e.target.value })}
           options={[
             { value: 'auto', label: t('voice:speak.auto', 'The app’s language') },
-            { value: 'en', label: 'English' },
-            { value: 'el', label: 'Ελληνικά' },
+            { value: 'en', label: t('voice:langName.en', 'English') },
+            { value: 'el', label: t('voice:langName.el', 'Greek') },
           ]}
         />
         <Select
@@ -272,8 +272,8 @@ export function VoiceSettingsPanel() {
           onChange={(e) => set({ hear_lang: e.target.value })}
           options={[
             { value: 'written', label: t('voice:hear.written', 'As written') },
-            { value: 'en', label: 'English' },
-            { value: 'el', label: 'Ελληνικά' },
+            { value: 'en', label: t('voice:langName.en', 'English') },
+            { value: 'el', label: t('voice:langName.el', 'Greek') },
           ]}
         />
         <Select
@@ -283,8 +283,8 @@ export function VoiceSettingsPanel() {
           onChange={(e) => set({ write_lang: e.target.value })}
           options={[
             { value: 'same', label: t('voice:write.same', 'The language I speak') },
-            { value: 'en', label: 'English' },
-            { value: 'el', label: 'Ελληνικά' },
+            { value: 'en', label: t('voice:langName.en', 'English') },
+            { value: 'el', label: t('voice:langName.el', 'Greek') },
           ]}
         />
         <Select

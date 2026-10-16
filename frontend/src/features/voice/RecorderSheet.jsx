@@ -349,8 +349,9 @@ export default function RecorderSheet({
 
   const phase = timerPhase(elapsed, maxSeconds);
   const left = Math.max(0, maxSeconds - elapsed);
-  const langLabel = spoken === 'el' ? 'Ελληνικά' : 'English';
-  const sendLabel = sendLang === 'el' ? 'Ελληνικά' : 'English';
+  const langName = (l) => (l === 'el' ? t('voice:langName.el', 'Greek') : t('voice:langName.en', 'English'));
+  const langLabel = langName(spoken);
+  const sendLabel = langName(sendLang);
   const stale = !!translated && translated.from !== text.trim();
 
   return (
@@ -364,7 +365,7 @@ export default function RecorderSheet({
         </span>
         {step !== 'text' ? (
           <div className="sr-rec-lang" role="group" aria-label={t('voice:rec.spokenLang', 'Language you speak')}>
-            {[['el', '🇬🇷', 'Ελληνικά'], ['en', enAccent === 'gb' ? '🇬🇧' : '🇺🇸', 'English']].map(([v, short, full]) => (
+            {[['el', '🇬🇷', langName('el')], ['en', enAccent === 'gb' ? '🇬🇧' : '🇺🇸', langName('en')]].map(([v, short, full]) => (
               <button
                 key={v}
                 type="button"

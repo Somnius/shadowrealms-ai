@@ -7,7 +7,9 @@ import { createContext, useContext, useEffect, useMemo, useRef, useState } from 
 import { guessLang } from './readout';
 
 export const POLL_MS = 3000;
-export const MAX_ROUNDS = 8; // ~24 s for a batch, then wait for the next message
+export const MAX_ROUNDS = 8; // every 3 s for ~24 s, then slower while the translator is behind
+export const SLOW_POLL_MS = 15000;
+export const MAX_SLOW_ROUNDS = 40; // ~10 min more, then wait for the next message
 const WINDOW = 60;
 
 export const TranslationsContext = createContext(null);
@@ -66,7 +68,9 @@ export function useRoomTranslations({ api, campaignId, locationId, messages, hea
       });
       if (Object.keys(done).length) setMap((prev) => ({ ...prev, ...done }));
       rounds.current += 1;
-      if ((r.data.pending || []).length && rounds.current < MAX_ROUNDS) timer = setTimeout(ask, POLL_MS);
+      if ((r.data.pending || []).length && rounds.current < MAX_ROUNDS + MAX_SLOW_ROUNDS) {
+        timer = setTimeout(ask, rounds.current < MAX_ROUNDS ? POLL_MS : SLOW_POLL_MS);
+      }
     };
     ask();
     return () => {

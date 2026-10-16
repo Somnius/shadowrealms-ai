@@ -680,6 +680,8 @@ CREATE TABLE IF NOT EXISTS voice_clips (
     duration_ms     INTEGER,
     lang            TEXT,
     transcript_raw  TEXT,
+    translated_lang TEXT,
+    translated_text TEXT,
     created_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 

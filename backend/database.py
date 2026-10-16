@@ -822,6 +822,9 @@ def ensure_voice_clips_table(cursor):
     )
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_voice_clips_message ON voice_clips(message_id)")
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_voice_clips_campaign ON voice_clips(campaign_id)")
+    # the dictation step's translation into the write-in language (asked once, not per poll)
+    _ensure_text_column(cursor, "voice_clips", "translated_lang")
+    _ensure_text_column(cursor, "voice_clips", "translated_text")
 
 
 @once_per_process

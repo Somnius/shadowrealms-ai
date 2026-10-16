@@ -438,8 +438,13 @@ def stt_job_status(job_id):
             if text and write in translation.LANGS and write != spoke:
                 # the text step shows both at once (one short line through the translator role)
                 try:
-                    tr, _ = translation.translate(
-                        text, spoke, write, names=translation.chronicle_names(cursor, clip.get("campaign_id")))
+                    if clip.get("translated_lang") == write and clip.get("translated_text"):
+                        tr = clip["translated_text"]
+                    else:
+                        tr, _ = translation.translate(
+                            text, spoke, write, names=translation.chronicle_names(cursor, clip.get("campaign_id")))
+                        voice_clips.note_translation(cursor, clip["clip_id"], write, tr)
+                        conn.commit()
                     out["translated"] = {"lang": write, "text": tr}
                 except Exception as e:  # noqa: BLE001
                     logger.warning("dictation translation failed: %s", type(e).__name__)
@@ -490,6 +495,7 @@ def clip_audio(clip_id):
 # is saved); this only reads them, and queues one that a listener needs but nobody made yet.
 
 MAX_TRANSLATION_IDS = 60
+RECENT_TRANSLATION_WINDOW = 200  # GET only queues jobs for the newest lines of a room
 
 
 @voice_bp.route("/voice/translations", methods=["GET"])
@@ -525,6 +531,11 @@ def room_translations():
             [campaign_id, location_id, *ids],
         )
         msgs = {int(r["id"]): r for r in cursor.fetchall() if not translation.readout_skip(r)}
+        # only the room's recent lines are queued from here (old ids are answered, never queued)
+        cursor.execute("SELECT MAX(id) AS top FROM messages WHERE campaign_id = %s AND location_id = %s",
+                       (campaign_id, location_id))
+        top = cursor.fetchone() or {}
+        floor = int(top.get("top") or 0) - RECENT_TRANSLATION_WINDOW
         rows = translation.get_rows(cursor, msgs.keys())
         out, pending = {}, []
         for mid, m in msgs.items():
@@ -534,8 +545,9 @@ def room_translations():
                 out[str(mid)] = mine
             src = m.get("lang") or guess_lang(m.get("content"))
             if lang and lang != src and lang not in have:
-                translation.schedule(mid, [lang])
-                pending.append(mid)
+                if translation.is_pending(mid, lang) or (
+                        mid > floor and translation.schedule(mid, [lang], cap=translation.MAX_PENDING)):
+                    pending.append(mid)
         return jsonify({"translations": out, "pending": pending}), 200
     finally:
         conn.close()

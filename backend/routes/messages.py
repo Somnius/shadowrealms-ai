@@ -609,7 +609,7 @@ def save_message(campaign_id, location_id):
         if original is not None:
             if (not isinstance(original, dict) or role != 'user'
                     or not isinstance(original.get('text'), str) or not original['text'].strip()
-                    or len(original['text']) > 4000 or original.get('lang') not in ('en', 'el')):
+                    or len(original['text']) > translation.MAX_CHARS or original.get('lang') not in ('en', 'el')):
                 return jsonify({'error': 'original must be {text, lang: en|el}'}), 400
 
         conn = get_db()
@@ -715,20 +715,25 @@ def save_message(campaign_id, location_id):
                 requested_voice = str(data.get('speak_as') or data.get('voice') or '').strip().lower()
                 ooc_monitor = create_ooc_monitor()
                 
-                is_violation, warning_msg, should_ban = ooc_monitor.check_message(
-                    message=content,
-                    user_id=user_id,
-                    campaign_id=campaign_id,
-                    location_type=location_type,
-                    site_role=who.get('role'),
-                    is_campaign_owner=(
-                        who.get('created_by') is not None and int(who['created_by']) == int(user_id)
-                    ),
-                    # staff voice is validated below (only admin/helper/owner may use it, and
-                    # they are exempt anyway)
-                    speaker_mode=requested_voice,
-                )
-                
+                # the original under "Show original" reaches every reader too: same check
+                is_violation, warning_msg, should_ban = False, None, False
+                for checked in [content] + ([original['text']] if original else []):
+                    is_violation, warning_msg, should_ban = ooc_monitor.check_message(
+                        message=checked,
+                        user_id=user_id,
+                        campaign_id=campaign_id,
+                        location_type=location_type,
+                        site_role=who.get('role'),
+                        is_campaign_owner=(
+                            who.get('created_by') is not None and int(who['created_by']) == int(user_id)
+                        ),
+                        # staff voice is validated below (only admin/helper/owner may use it, and
+                        # they are exempt anyway)
+                        speaker_mode=requested_voice,
+                    )
+                    if is_violation:
+                        break
+
                 if is_violation:
                     logger.warning(f"OOC violation detected for user {safe_log_value(user_id)}: {safe_log_value(content, 50)}")
                     ooc_warning_info = getattr(ooc_monitor, 'last_warning', None)

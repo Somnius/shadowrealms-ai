@@ -163,5 +163,9 @@
     "showYourOriginal": "Show your original",
     "yourOriginal": "Your original:",
     "more": "more"
+  },
+  "langName": {
+    "en": "English",
+    "el": "Greek"
   }
 }
