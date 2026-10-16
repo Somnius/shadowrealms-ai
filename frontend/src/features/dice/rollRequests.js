@@ -56,6 +56,14 @@ export function stripRollTags(text) {
   });
 }
 
+/** The text with each tag replaced by its plain label (captions, which show plain text). */
+export function plainRollTags(text) {
+  return String(text || '').replace(ROLL_TAG_RE, (all, body) => {
+    const r = parseRollTag(body);
+    return r ? r.label : all;
+  });
+}
+
 /** Requests of a Storyteller message: the API's structured ones when attached, else the text's. */
 export function rollRequestsOf(message) {
   if (!message || message.role !== 'assistant') return [];

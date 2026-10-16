@@ -112,7 +112,9 @@
     "reply": "Reply",
     "delete": "Delete message",
     "copied": "Copied to the clipboard.",
-    "copyFailed": "Could not copy the text."
+    "copyFailed": "Could not copy the text.",
+    "readThis": "Read this",
+    "readFrom": "Read from here"
   },
   "reply": {
     "replyingTo": "Replying to {{name}}",

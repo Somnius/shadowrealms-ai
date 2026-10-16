@@ -63,28 +63,46 @@ function voicesReady(timeoutMs = 1500) {
 // voices) instead of waiting forever.
 const START_TIMEOUT_MS = 4000;
 
+/** The chunks of a queue item: item.parts (read along, 0.22), else the whole text. */
+export const partsOf = (item) =>
+  (item.parts && item.parts.length ? item.parts : [{ text: item.text, lang: item.lang }]).filter((p) => p && p.text);
+
 export function phoneEngine(getSettings, getFallback = () => null) {
-  const toFallback = (item, done) => {
+  let gen = 0; // bumped by cancel(): a cancelled line never goes on to its next chunk
+  const toFallback = (item, done, onPart) => {
     const fb = getFallback();
-    if (fb) fb.speak(item, done);
+    if (fb) fb.speak(item, done, onPart);
     else done();
   };
   return {
-    speak(item, done) {
+    speak(item, done, onPart) {
       if (!hasPhoneVoices()) {
-        toFallback(item, done);
+        toFallback(item, done, onPart);
         return;
       }
+      const mine = gen;
+      const parts = partsOf(item);
+      const sayPart = (i) => {
+        if (mine !== gen) return;
+        if (i >= parts.length) {
+          done();
+          return;
+        }
+        if (onPart) onPart({ index: i, count: parts.length, text: parts[i].text });
+        speakNow(parts[i], () => sayPart(i + 1), () => toFallback({ ...item, parts: parts.slice(i) }, done, onPart));
+      };
       const wait = Math.max(0, AFTER_CANCEL_MS - (Date.now() - cancelledAt));
       const start = () =>
         voicesReady().then((voices) => {
-          if (!voices || !voices.length) toFallback(item, done);
-          else speakNow(item, done);
+          if (mine !== gen) return;
+          if (!voices || !voices.length) toFallback(item, done, onPart);
+          else sayPart(0);
         });
       if (wait) setTimeout(start, wait);
       else start();
     },
     cancel() {
+      gen += 1;
       if (!hasPhoneVoices()) return;
       window.speechSynthesis.cancel();
       cancelledAt = Date.now();
@@ -96,16 +114,16 @@ export function phoneEngine(getSettings, getFallback = () => null) {
     },
   };
 
-  function speakNow(item, done) {
+  function speakNow(part, next, fallback) {
     const s = getSettings() || {};
-    const u = new window.SpeechSynthesisUtterance(item.text);
+    const u = new window.SpeechSynthesisUtterance(part.text);
     const voice = pickVoice(
       window.speechSynthesis.getVoices(),
-      item.lang,
+      part.lang,
       s.en_accent,
     );
     u.lang =
-      item.lang === "el" ? "el-GR" : s.en_accent === "gb" ? "en-GB" : "en-US";
+      part.lang === "el" ? "el-GR" : s.en_accent === "gb" ? "en-GB" : "en-US";
     if (voice) u.voice = voice;
     u.rate = Number(s.rate) || 1;
     u.volume = s.volume == null ? 1 : Number(s.volume);
@@ -114,7 +132,7 @@ export function phoneEngine(getSettings, getFallback = () => null) {
     const finish = () => {
       if (finished) return;
       finished = true;
-      done();
+      next();
     };
     u.onstart = () => {
       started = true;
@@ -126,7 +144,7 @@ export function phoneEngine(getSettings, getFallback = () => null) {
       if (started || finished) return;
       finished = true;
       window.speechSynthesis.cancel();
-      toFallback(item, done);
+      fallback();
     }, START_TIMEOUT_MS);
   }
 }

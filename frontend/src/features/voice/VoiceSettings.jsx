@@ -1,6 +1,6 @@
 /** Voice settings: the player's own (Profile → Voice) and the chronicle's read-out defaults. */
 import { useEffect, useState } from 'react';
-import { Button, Checkbox, Panel, Select, useToast } from '../../design';
+import { Button, Checkbox, Modal, Panel, Select, useToast } from '../../design';
 import { useApi } from '../../app/AuthContext';
 import { errorText } from '../../app/http';
 import { t } from '../../i18n';
@@ -140,10 +140,12 @@ export function ChronicleVoicePanel({ campaignId }) {
   const [narrator, setNarrator] = useState(narratorOf(null));
   const [speaking, setSpeaking] = useState({ max_clip_seconds: 180, allow_phone_stt: true });
   const [busy, setBusy] = useState(false);
+  const [canEdit, setCanEdit] = useState(false);
   useEffect(() => {
     let live = true;
     api(`/campaigns/${campaignId}/voice-settings`).then((r) => {
       if (live && r.ok && r.data && r.data.settings) {
+        setCanEdit(!!r.data.can_edit);
         setDefaults(r.data.settings.defaults);
         setNarrator(narratorOf(r.data.settings));
         setSpeaking({
@@ -175,7 +177,48 @@ export function ChronicleVoicePanel({ campaignId }) {
           <Button type="submit" variant="primary" loading={busy}>{t('common:save', 'Save')}</Button>
         </div>
       </form>
+      {canEdit ? <DeleteRecordings campaignId={campaignId} /> : null}
     </Panel>
+  );
+}
+
+/** Chronicle settings → Voice: the Storyteller deletes every recording (messages keep their text). */
+export function DeleteRecordings({ campaignId }) {
+  const api = useApi();
+  const { toast } = useToast();
+  const [asking, setAsking] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const run = async () => {
+    setBusy(true);
+    const r = await api(`/campaigns/${campaignId}/voice-clips`, { method: 'DELETE' });
+    setBusy(false);
+    setAsking(false);
+    if (!r.ok) toast({ tone: 'danger', title: errorText(r.data, t('voice:chronicle.recordings.failed', 'Could not delete the recordings.')) });
+    else toast({ tone: 'ok', title: t('voice:chronicle.recordings.done', 'Deleted {{count}} recordings.', { count: (r.data && r.data.deleted) || 0 }) });
+  };
+  return (
+    <div className="sr-voice-recordings">
+      <h3 className="sr-voice-recordings__title">{t('voice:chronicle.recordings.title', 'Voice recordings')}</h3>
+      <p className="sr-field__hint">{t('voice:chronicle.recordings.hint', 'Delete every voice recording in this chronicle. The messages keep their text; only the replay goes.')}</p>
+      <Button variant="danger" icon="trash" onClick={() => setAsking(true)}>
+        {t('voice:chronicle.recordings.button', 'Delete all recordings')}
+      </Button>
+      <Modal
+        open={asking}
+        onClose={() => setAsking(false)}
+        title={t('voice:chronicle.recordings.confirmTitle', 'Delete all voice recordings?')}
+        icon="trash"
+        size="sm"
+        footer={
+          <>
+            <Button variant="secondary" onClick={() => setAsking(false)}>{t('voice:chronicle.recordings.cancel', 'Keep them')}</Button>
+            <Button variant="danger" icon="trash" loading={busy} onClick={run}>{t('voice:chronicle.recordings.confirm', 'Delete recordings')}</Button>
+          </>
+        }
+      >
+        <p>{t('voice:chronicle.recordings.confirmBody', 'Every recorded voice message in this chronicle is deleted for everyone. The messages keep their text. This can’t be undone.')}</p>
+      </Modal>
+    </div>
   );
 }
 

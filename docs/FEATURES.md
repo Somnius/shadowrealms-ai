@@ -25,6 +25,10 @@ Feature notes for ShadowRealms AI that don't have their own document. The full l
 
 ---
 
+## What's new in v0.22.0
+
+- **Read along.** Listen starts after the first sentence, the message being read is highlighted and followed, "Read this" / "Read from here" in the message menu, a catch-up choice (last 3, last 10, from where you stopped, none), dice and rolls read in your language, and the Storyteller can delete a chronicle's recordings. See [VOICE.md](VOICE.md).
+
 ## What's new in v0.21.0
 
 - **Transcript check.** Voice messages are checked after transcription: words the recogniser probably misheard are fixed using the line and the chronicle's names (split words joined, slang kept), shown as chips you can tap to undo. See [VOICE.md](VOICE.md).

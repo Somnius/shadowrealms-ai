@@ -2,7 +2,9 @@
  * Copy / Reply / Delete on chat messages (v0.10 phase 3).
  *
  * - Desktop: a small toolbar appears on hover or keyboard focus of a message.
- * - Touch (no hover): a "…" button on each message, or a long press, opens the toolbar.
+ * - Touch (no hover): a "…" button on each message, or a long press, opens the toolbar (not while
+ *   the finger scrolls or selects text).
+ * - "Read this" / "Read from here" (read along, 0.22) when the page passes canRead / onRead.
  * - The page provides MessageActionsContext (PlayPage via useMessageActions); without it (the
  *   showcase preview) messages render without actions.
  */
@@ -28,6 +30,9 @@ function useLongPress(onLongPress) {
       cancel();
       timer.current = setTimeout(() => {
         timer.current = null;
+        // a long press that selected text is for the selection, not the menu
+        const sel = typeof window !== 'undefined' && window.getSelection ? String(window.getSelection() || '') : '';
+        if (sel.trim()) return;
         onLongPress();
       }, LONG_PRESS_MS);
     },
@@ -91,6 +96,30 @@ export function MessageActions({ message }) {
             ctx.onReply(message);
           }}
         />
+        {ctx.canRead && ctx.canRead(message) ? (
+          <>
+            <IconButton
+              icon="play"
+              size="sm"
+              tooltip={false}
+              label={t('chat:actions.readThis', 'Read this')}
+              onClick={() => {
+                close();
+                ctx.onRead(message, false);
+              }}
+            />
+            <IconButton
+              icon="ear"
+              size="sm"
+              tooltip={false}
+              label={t('chat:actions.readFrom', 'Read from here')}
+              onClick={() => {
+                close();
+                ctx.onRead(message, true);
+              }}
+            />
+          </>
+        ) : null}
         {deletable ? (
           <IconButton
             icon="trash"

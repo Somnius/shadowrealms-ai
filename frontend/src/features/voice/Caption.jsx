@@ -6,6 +6,7 @@
 import { useState } from 'react';
 import { t } from '../../i18n';
 import { captionView, useTranslationsContext } from './translations';
+import { plainRollTags } from '../dice/rollRequests';
 import './voice.css';
 
 const LONG = 140;
@@ -36,7 +37,7 @@ export function Caption({ cap }) {
   const [open, setOpen] = useState(false);
   const { view, swapped } = cap;
   if (!view) return null;
-  const text = swapped ? view.body : view.caption;
+  const text = plainRollTags(swapped ? view.body : view.caption); // roll lines: the chips say the roll
   const lang = swapped ? view.bodyLang : view.captionLang;
   const langName = lang === 'el' ? 'Ελληνικά' : 'English';
   return (

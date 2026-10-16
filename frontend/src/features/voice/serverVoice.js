@@ -59,7 +59,12 @@ export function preferredFormat(el) {
 }
 
 /** Waits for a TTS job started by `start` (an api() promise); resolves to the audio key. */
-export async function awaitJob(api, start, { pollMs = POLL_MS, maxPolls = MAX_POLLS } = {}) {
+export async function awaitJob(api, start, opts) {
+  return (await awaitJobInfo(api, start, opts)).key;
+}
+
+/** The same, resolving to the whole job: {key, chunks, chunk, text, original?}. */
+export async function awaitJobInfo(api, start, { pollMs = POLL_MS, maxPolls = MAX_POLLS } = {}) {
   const r = await start;
   if (!r.ok) throw new Error((r.data && r.data.error) || 'speech_failed');
   let job = r.data || {};
@@ -71,19 +76,23 @@ export async function awaitJob(api, start, { pollMs = POLL_MS, maxPolls = MAX_PO
     if (!s.ok) throw new Error((s.data && s.data.error) || 'speech_failed');
     job = { ...job, ...s.data };
   }
-  return job.key;
+  if (r.usedOriginal) job.original = true;
+  return job;
 }
 
 /**
  * POST a TTS job for a message. While its translation into the player's hear-in language is not
  * made yet the server answers waiting_translation; after a few tries the original is read instead.
  */
-export async function startTtsJob(api, messageId, { tries = TRANSLATION_TRIES, waitMs = TRANSLATION_WAIT_MS } = {}) {
-  const post = (body) => api('/voice/tts/jobs', { method: 'POST', body });
+export async function startTtsJob(api, messageId, { tries = TRANSLATION_TRIES, waitMs = TRANSLATION_WAIT_MS, chunk = 0, lang, original = false } = {}) {
+  const body = { message_id: messageId, chunk, ...(lang === 'en' || lang === 'el' ? { lang } : {}) };
+  const post = (orig) => api('/voice/tts/jobs', { method: 'POST', body: orig ? { ...body, original: true } : body });
+  const asOriginal = async () => ({ ...(await post(true)), usedOriginal: true });
+  if (original) return asOriginal();
   for (let n = 0; ; n += 1) {
-    const r = await post({ message_id: messageId });
+    const r = await post(false);
     if (!r.ok || !r.data || r.data.state !== 'waiting_translation') return r;
-    if (n >= tries) return post({ message_id: messageId, original: true });
+    if (n >= tries) return asOriginal();
     await wait(waitMs);
   }
 }
@@ -126,33 +135,49 @@ export async function previewVoice(api, voiceId, lang) {
 /**
  * Engine for createSpeechQueue. getAudio() returns the room's element, getSettings() the
  * player's voice settings, fallback is the phone engine, onFallback(error) tells the player.
+ * A line is said chunk by chunk (one job each, read along 0.22): chunk N plays while N+1 and N+2
+ * are made, so the first audio of a long Storyteller reply comes after one sentence, not all.
  */
+export const AHEAD = 2;
+
 export function serverEngine({ api, getAudio, getSettings, fallback, onFallback }) {
-  const loads = new Map(); // message id -> Promise<blob url>
+  const loads = new Map(); // "id:chunk" -> Promise<{url, chunks, text}>
   let cancelCurrent = null;
 
-  const load = (item) => {
-    if (!loads.has(item.id)) {
-      const p = awaitJob(api, startTtsJob(api, Number(item.id))).then((key) =>
-        fetchAudioUrl(key, preferredFormat(getAudio())),
+  const load = (item, i) => {
+    const k = `${item.id}:${i}`;
+    if (!loads.has(k)) {
+      const p = awaitJobInfo(api, startTtsJob(api, Number(item.id), { chunk: i, lang: item.listenLang, original: !!item.original })).then(
+        (job) => {
+          if (job.original) item.original = true; // the rest of the line in the same language
+          return fetchAudioUrl(job.key, preferredFormat(getAudio())).then((url) => ({
+            url,
+            chunks: Number(job.chunks) || 1,
+            text: job.text || '',
+          }));
+        },
       );
       p.catch(() => {});
-      loads.set(item.id, p);
+      loads.set(k, p);
     }
-    return loads.get(item.id);
+    return loads.get(k);
   };
 
   const release = (id) => {
-    const p = loads.get(id);
-    loads.delete(id);
-    if (p) p.then((url) => URL.revokeObjectURL(url)).catch(() => {});
+    [...loads.keys()]
+      .filter((k) => k.startsWith(`${id}:`))
+      .forEach((k) => {
+        const p = loads.get(k);
+        loads.delete(k);
+        p.then((x) => URL.revokeObjectURL(x.url)).catch(() => {});
+      });
   };
 
   return {
     prefetch(item) {
-      if (item) load(item);
+      if (item) load(item, 0);
     },
-    speak(item, done) {
+    speak(item, done, onPart) {
       let cancelled = false;
       let finished = false;
       const el = getAudio();
@@ -162,10 +187,11 @@ export function serverEngine({ api, getAudio, getSettings, fallback, onFallback 
         release(item.id);
         done();
       };
-      const viaPhone = (err) => {
+      const viaPhone = (err, from = 0) => {
         if (cancelled || finished) return;
         if (onFallback) onFallback(err);
-        if (fallback) fallback.speak(item, finish);
+        const rest = from > 0 && item.parts ? { ...item, parts: item.parts.slice(from) } : item;
+        if (fallback) fallback.speak(rest, finish, onPart);
         else finish();
       };
       cancelCurrent = () => {
@@ -180,17 +206,21 @@ export function serverEngine({ api, getAudio, getSettings, fallback, onFallback 
         viaPhone(new Error('no_audio'));
         return;
       }
-      load(item)
-        .then((url) => {
-          if (cancelled) return;
-          el.onended = finish;
-          el.onerror = () => viaPhone(new Error('audio'));
-          const p = playOn(el, url, getSettings());
-          if (p && p.catch) p.catch((e) => viaPhone(e));
-        })
-        .catch((e) => {
-          if (!cancelled) viaPhone(e);
-        });
+      const playChunk = (i) =>
+        load(item, i)
+          .then((c) => {
+            if (cancelled) return;
+            for (let n = i + 1; n <= i + AHEAD && n < c.chunks; n += 1) load(item, n);
+            if (onPart) onPart({ index: i, count: c.chunks, text: c.text });
+            el.onended = () => (i + 1 < c.chunks ? playChunk(i + 1) : finish());
+            el.onerror = () => viaPhone(new Error('audio'), i);
+            const p = playOn(el, c.url, getSettings());
+            if (p && p.catch) p.catch((e) => viaPhone(e, i));
+          })
+          .catch((e) => {
+            if (!cancelled) viaPhone(e, i);
+          });
+      playChunk(0);
     },
     cancel() {
       if (cancelCurrent) cancelCurrent();
@@ -204,7 +234,7 @@ export function serverEngine({ api, getAudio, getSettings, fallback, onFallback 
 export function switchingEngine(getSettings, server, phone) {
   const pick = () => ((getSettings() || {}).tts_source === 'server' ? server : phone);
   return {
-    speak: (item, done) => pick().speak(item, done),
+    speak: (item, done, onPart) => pick().speak(item, done, onPart),
     prefetch: (item) => {
       const e = pick();
       if (e.prefetch) e.prefetch(item);

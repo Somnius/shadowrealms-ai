@@ -433,6 +433,12 @@ def _executor() -> ThreadPoolExecutor:
     return _pool
 
 
+def strip_roll_tags(text):
+    from services.voice_tts import strip_roll_tags as strip
+
+    return strip(text)
+
+
 def run_job(message_id: int, langs: Optional[List[str]] = None, *, get_db=None, generate=None) -> List[str]:
     """Translate one message into `langs` (default: what the members need). Returns langs done."""
     if get_db is None:
@@ -457,7 +463,8 @@ def run_job(message_id: int, langs: Optional[List[str]] = None, *, get_db=None, 
         names = chronicle_names(cursor, row["campaign_id"]) if todo else []
         for dst in todo:
             try:
-                text, model = translate(row["content"], src, dst, generate, names)
+                # roll tags stay out of the translator: the chips come from the original (0.22)
+                text, model = translate(strip_roll_tags(row["content"]), src, dst, generate, names)
             except Exception as e:  # noqa: BLE001 - a missing caption, not an error for the player
                 logger.warning("translation of message %s to %s failed: %s", message_id, dst, type(e).__name__)
                 continue

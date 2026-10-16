@@ -15,7 +15,7 @@ How each phase runs: build in its own git worktree → tests and CI green → on
 | 4 | Language override | translator · ahead-of-time translation · captions with "show original" · speak in one language, write in the other | 0.19 | until 06:45 | done: released 0.19.0 |
 | 5 | Ops and polish | health panel · cache and disk caps · per-character voice · device checklist | 0.20 | after the deadline | done: released 0.20.0 (phone checklist still open) |
 | 6 | Transcript check | Whisper hints with the chronicle's names · recmeets Laya-words flags misheard words · Krikri fixes only those (split words, slang) · changed words marked, tap to undo | 0.21 | until 06:30 | done: released 0.21.0 |
-| 7 | Read along | sentence by sentence (first audio fast) · highlight the message and sentence being read · "Read this" / "Read from here" in the message menu (long-press on phones) · catch-up choice · dice read in the listener's language · NPC voices · ST deletes all recordings | 0.22 | night of 17 Oct | building |
+| 7 | Read along | sentence by sentence (first audio fast) · highlight the message and sentence being read · "Read this" / "Read from here" in the message menu (long-press on phones) · catch-up choice · dice read in the listener's language · NPC voices · ST deletes all recordings | 0.22 | night of 17 Oct | done: 0.22.0 on `voice/p7-readalong`, waiting for review |
 
 ## Decisions (2026-10-16)
 
@@ -89,6 +89,18 @@ How each phase runs: build in its own git worktree → tests and CI green → on
 - [x] 6.4 Recorder text step: fixed words as 44-px chips under the text ("heard: …"), a tap puts Whisper's words back (and again re-applies the fix). EN + EL. `voice_clips.transcript_raw` keeps Whisper's text, `transcript_checked` the segments. Status: done.
 - [x] 6.5 Evaluation on the phase 0 samples and synthetic slang lines (VOICE.md). Status: done; the check is conservative and misses most mistakes Whisper was sure of.
 - [x] 6.6 Release 0.21. Status: done (0.21.0); on deploy rebuild the speech image (tokenizers pinned) and copy `data/voice/models/laya-words`.
+
+## Phase 7 — Read along (0.22)
+
+- [x] 7.1 Sentence chunks: split rules in the app and the backend, one TTS job and cached file per chunk, N+1 and N+2 made while N plays, phone voices per chunk. Status: done; pytest + jest.
+- [x] 7.2 Highlight the message being read (theme tokens, reduced-motion safe); the current sentence in the speaking bar (exact wrapping inside the Markdown left out). Status: done. Not yet seen on a real phone.
+- [x] 7.3 Follow: scroll to the message being read, paused by a hand scroll, "Follow" resumes. Status: done.
+- [x] 7.4 "Read this" / "Read from here" in the message menu (… and long-press, not when text was selected); works with Listen off. Status: done; jest.
+- [x] 7.5 Catch-up choice: Last 3 / Last 10 / From where I stopped / None, remembered. Status: done; jest.
+- [x] 7.6 Dice and roll requests read in the listener's language, each chunk in its own language's voice. Status: done; trait names stay English (no Greek names in the app).
+- [x] 7.7 NPC voices by gender. Status: checked: NPC lines in rooms are NPC characters and already use `characters.gender`; `npcs` has no room lines and no editing UI, so nothing added. Test added.
+- [x] 7.8 Storyteller deletes all recordings of a chronicle (Chronicle settings → Voice, confirm). Status: done; pytest + jest.
+- [x] 7.9 Roll-request lines get translation captions; roll tags kept out of the translator. Status: done; jest.
 
 ## Log
 

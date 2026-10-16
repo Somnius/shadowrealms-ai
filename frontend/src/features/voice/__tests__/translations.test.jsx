@@ -88,9 +88,9 @@ test('server voices wait for the translation, then read the original', async () 
   const last = { ok: true, data: { state: 'queued', job_id: 'j1' } };
   api.mockImplementation((url, opts) => Promise.resolve(opts.body.original ? last : { ok: true, data: { state: 'waiting_translation' } }));
   const r = await startTtsJob(api, 7, { tries: 2, waitMs: 0 });
-  expect(r).toBe(last);
+  expect(r).toEqual({ ...last, usedOriginal: true });
   expect(api).toHaveBeenCalledTimes(4);
-  expect(api.mock.calls[3][1].body).toEqual({ message_id: 7, original: true });
+  expect(api.mock.calls[3][1].body).toEqual({ message_id: 7, chunk: 0, original: true });
 });
 
 test('phone voices read the translation when it is there by the time the line is spoken', () => {

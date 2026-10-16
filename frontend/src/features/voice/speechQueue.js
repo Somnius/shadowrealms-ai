@@ -1,22 +1,25 @@
 /**
  * The read-out queue (docs/VOICE.md): arrival order, at most QUEUE_CAP waiting (older ones are
  * dropped and counted as missed), pause / resume / skip / stop. Engine-agnostic: the engine is
- * { speak(item, onDone), cancel(), prefetch?(item) }: the phone's own voices (phoneVoice.js) or
- * server voices (serverVoice.js), which start the next line's audio while this one plays.
+ * { speak(item, onDone, onPart?), cancel(), prefetch?(item) }: the phone's own voices (phoneVoice.js) or
+ * server voices (serverVoice.js), which start the next line's audio while this one plays. An
+ * engine says a line chunk by chunk and calls onPart({index, count, text}) as each one starts
+ * (read along, 0.22); `part` in the state is the chunk being said.
  */
 export const QUEUE_CAP = 20;
 
-export function createSpeechQueue(engine) {
+export function createSpeechQueue(engine, { onDone } = {}) {
   let items = [];
   let current = null;
   let paused = false;
   let needsResume = false;
   let missed = 0;
   let token = 0;
+  let part = null;
   const seen = new Set();
   const listeners = new Set();
 
-  const snapshot = () => ({ current, queued: items.length, paused, needsResume, missed });
+  const snapshot = () => ({ current, part, queued: items.length, paused, needsResume, missed });
   const emit = () => listeners.forEach((fn) => fn(snapshot()));
 
   const next = () => {
@@ -25,14 +28,26 @@ export function createSpeechQueue(engine) {
       return;
     }
     current = items.shift();
+    part = null;
     const mine = ++token;
     emit();
     prefetchNext();
-    engine.speak(current, () => {
-      if (mine !== token) return; // cancelled by skip / stop / pause
-      current = null;
-      next();
-    });
+    const said = current;
+    engine.speak(
+      current,
+      () => {
+        if (mine !== token) return; // cancelled by skip / stop / pause
+        current = null;
+        part = null;
+        if (onDone) onDone(said);
+        next();
+      },
+      (p) => {
+        if (mine !== token) return;
+        part = p;
+        emit();
+      },
+    );
   };
 
   function prefetchNext() {
@@ -51,6 +66,7 @@ export function createSpeechQueue(engine) {
       interrupt();
       items.unshift(current); // said again from the start on resume
       current = null;
+      part = null;
     }
     emit();
   };
@@ -69,6 +85,21 @@ export function createSpeechQueue(engine) {
       if (current) prefetchNext();
       next();
     },
+    /** "Read this" / "Read from here": stop what is said and read these now, even if read before. */
+    play(list) {
+      interrupt();
+      current = null;
+      part = null;
+      paused = false;
+      needsResume = false;
+      items = [];
+      for (const it of list || []) {
+        if (!it) continue;
+        seen.add(it.id);
+        items.push(it);
+      }
+      next();
+    },
     /** Ids that must never be read (already on screen when listening started). */
     markSeen(ids) {
       (ids || []).forEach((id) => seen.add(id));
@@ -77,6 +108,7 @@ export function createSpeechQueue(engine) {
       if (!current) return;
       interrupt();
       current = null;
+      part = null;
       next();
     },
     pause,
@@ -95,6 +127,7 @@ export function createSpeechQueue(engine) {
       interrupt();
       items = [];
       current = null;
+      part = null;
       paused = false;
       needsResume = false;
       missed = 0;

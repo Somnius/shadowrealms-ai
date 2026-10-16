@@ -255,6 +255,18 @@ export default function PlayPage() {
     reduced: reducedMotion,
     onReplyStart: () => requestAnimationFrame(() => composerRef.current && composerRef.current.focus()),
   });
+  // Read along (0.22): "Read this" / "Read from here" in the message menu.
+  const listenRef = useRef(listen);
+  listenRef.current = listen;
+  const canReadNow = listen.available;
+  const actionsValue = useMemo(
+    () => ({
+      ...actions.value,
+      canRead: canReadNow ? (m) => listenRef.current.canRead(m) : null,
+      onRead: (m, onwards) => listenRef.current.readFrom(m, onwards),
+    }),
+    [actions.value, canReadNow]
+  );
   const { clearReply } = actions;
   useEffect(() => {
     clearReply();
@@ -537,7 +549,7 @@ export default function PlayPage() {
             ) : (
               <RollRequestContext.Provider value={rollRequestCtx}>
                 <TranslationsContext.Provider value={translationsCtx}>
-                <MessageActionsContext.Provider value={actions.value}>
+                <MessageActionsContext.Provider value={actionsValue}>
                   <MessageList
                     roomKey={`${campaignId}:${locationId}`}
                     roomName={location?.name}

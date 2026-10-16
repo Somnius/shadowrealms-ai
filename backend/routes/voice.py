@@ -40,7 +40,7 @@ from routes.messages import room_visible, visible_message
 from services.location_access import user_can_bypass_closed_location
 from services import speech_client, transcript_check, translation, voice_audio, voice_clips
 from services.request_validation import RequestValidationError
-from services.voice_tts import PREVIEW_TEXT, guess_lang, tts_request
+from services.voice_tts import PREVIEW_TEXT, guess_lang, readout_kind, tts_bodies
 from services.voice_settings import (
     effective_readout,
     normalize_campaign_voice_settings,
@@ -161,6 +161,36 @@ def campaign_voice_settings(campaign_id):
         conn.close()
 
 
+@voice_bp.route("/campaigns/<int:campaign_id>/voice-clips", methods=["DELETE"])
+@jwt_required()
+def delete_campaign_clips(campaign_id):
+    """The Storyteller (creator) or an admin deletes every voice recording of the chronicle; the
+    messages keep their text and the mic mark, only the replay goes (0.22)."""
+    user_id = _uid()
+    if user_id is None:
+        return jsonify({"error": "Invalid session"}), 401
+    conn, cursor = _open()
+    try:
+        row, can_edit = _campaign_access(cursor, campaign_id, user_id)
+        if row is None:
+            return jsonify({"error": "Chronicle not found"}), 404
+        if not can_edit:
+            return jsonify({"error": "Only the Storyteller can change this"}), 403
+        ensure_messages_voice_columns(cursor)
+        gone = voice_clips.forget_campaign_clips(cursor, campaign_id)
+        cursor.execute(
+            "UPDATE messages SET clip_id = NULL, clip_ms = NULL WHERE campaign_id = %s AND clip_id IS NOT NULL",
+            (campaign_id,),
+        )
+        conn.commit()
+        return jsonify({"deleted": len(gone)}), 200
+    except Exception as e:  # noqa: BLE001
+        logger.error("delete chronicle clips error: %s", type(e).__name__)
+        return jsonify({"error": "Failed to delete the recordings"}), 500
+    finally:
+        conn.close()
+
+
 # ---------------------------------------------------------------------------------------------
 # Server voices (Phase 2): the speech service does the work and keeps the cache.
 
@@ -210,6 +240,26 @@ def _in_hear_lang(cursor, msg, user_settings):
     return msg, True
 
 
+def _dice_marker(cursor, msg):
+    """The JSON marker row of a roll line (same room, same animation id), or None."""
+    kind = str(msg.get("ai_message_kind") or "").strip().lower()
+    prefix, _, anim = kind.partition(":")
+    if not anim:
+        return None
+    marker_kind = ("dice_animation_hidden:" if prefix == "dice_roll_hidden" else "dice_animation:") + anim
+    cursor.execute(
+        "SELECT content FROM messages WHERE campaign_id = %s AND location_id = %s "
+        "AND LOWER(ai_message_kind) = %s ORDER BY id ASC LIMIT 1",
+        (msg["campaign_id"], msg["location_id"], marker_kind),
+    )
+    row = cursor.fetchone()
+    try:
+        out = json.loads((row or {}).get("content") or "")
+    except (TypeError, ValueError):
+        return None
+    return out if isinstance(out, dict) else None
+
+
 @voice_bp.route("/voice/voices", methods=["GET"])
 @jwt_required()
 def voices():
@@ -234,6 +284,10 @@ def create_tts_job():
     mid = data.get("message_id")
     if isinstance(mid, bool) or not isinstance(mid, int) or mid <= 0:
         return jsonify({"error": "message_id must be a message id"}), 400
+    chunk = data.get("chunk", 0)  # read along (0.22): one job per sentence-sized chunk
+    if isinstance(chunk, bool) or not isinstance(chunk, int) or not 0 <= chunk < 200:
+        return jsonify({"error": "chunk must be a chunk number"}), 400
+    ui_lang = data.get("lang") if data.get("lang") in ("en", "el") else None
     conn, cursor = _open()
     try:
         for ensure in (ensure_character_portrait_url_column, ensure_messages_ai_message_kind_column, ensure_messages_speaker_mode_column,
@@ -253,15 +307,24 @@ def create_tts_job():
         cursor.execute("SELECT voice_settings FROM campaigns WHERE id = %s", (msg["campaign_id"],))
         camp = (cursor.fetchone() or {}).get("voice_settings")
         user_settings = _user_settings(cursor, user_id)
+        original = msg.get("content")
         if data.get("original") is not True:
             msg, waiting = _in_hear_lang(cursor, msg, user_settings)
             if waiting:
                 return jsonify({"state": "waiting_translation"}), 200
-        body = tts_request(msg, gender, user_settings, camp, override)
-        if body is None:
+        hear = normalize_user_voice_settings(user_settings).get("hear_lang")
+        listen_lang = hear if hear in ("en", "el") else (ui_lang or "en")
+        marker = _dice_marker(cursor, msg) if readout_kind(msg) == "dice" else None
+        bodies = tts_bodies(msg, gender, user_settings, camp, override, listen_lang=listen_lang,
+                            marker=marker, roll_source=original)
+        if not bodies:
             return jsonify({"error": "not_spoken"}), 400
-        out, status = _speech_tts(cursor, body, mid)
+        if chunk >= len(bodies):
+            return jsonify({"error": "no_such_chunk"}), 400
+        out, status = _speech_tts(cursor, dict(bodies[chunk]), mid)
         conn.commit()
+        if status == 200:
+            out.update({"chunk": chunk, "chunks": len(bodies), "text": bodies[chunk]["text"]})
         return jsonify(out), status
     except Exception as e:  # noqa: BLE001
         logger.error("tts job error: %s", type(e).__name__)

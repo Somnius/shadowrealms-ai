@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.22.0] - 2026-10-17 - Read along
+
+### Added
+- **Sentence by sentence.** A line is spoken in chunks (sentences, Greek and English punctuation, quotes kept, at most 220 characters): one TTS job and one cached file per chunk, chunk N plays while N+1 and N+2 are made, so a long Storyteller reply starts after its first sentence. Phone voices speak per chunk too. `POST /api/voice/tts/jobs` takes `chunk` and `lang` and answers `chunks` and `text`; same visibility check per message.
+- **Highlight and follow.** The message being read is marked (theme colour, no animation with reduced motion) and the sentence being said is shown in the speaking bar. Follow keeps the message in view; scrolling by hand pauses it, "Follow" resumes.
+- **Read this / Read from here** in the message menu (the … button, long-press on phones). Works with Listen off: it reads that and stops.
+- **Catch-up choice** when Listen is turned on: Last 3 / Last 10 / From where I stopped (last read message per room, kept in the browser) / None; the last choice comes first next time.
+- **Dice and roll requests in your language.** A roll is read as one sentence from its result («Mira: Ρίψη Brawl, 7 ζάρια, 4 επιτυχίες, κρίσιμη επιτυχία», "Roll: Intelligence plus Investigation, 7 dice, 1 Hunger, difficulty 2"), in the voice of your hear-in language (else the app's language). The English chip text is never read by the Greek voice.
+- **Delete all recordings.** Chronicle settings → Voice: the Storyteller (or an admin) deletes every voice recording of the chronicle after a confirm; the messages keep their text. `DELETE /api/campaigns/<id>/voice-clips`.
+- Roll-request lines (Storyteller messages with roll chips) get translation captions like other lines; the roll tags are kept out of the translator.
+
+### Notes
+- Trait names stay in English (game terms by decision; the app has no Greek names for attributes and skills), so the Greek voice still says "Intelligence".
+- NPC voices: NPC lines in rooms are characters marked as NPCs and already speak with their own gender (`characters.gender`). The `npcs` table's lines (`npc_messages`) are AI context only and never posted to a room, and there is no screen that edits `npcs`, so nothing was added there.
+- No schema changes.
+
 ## [0.21.1] - 2026-10-17 - Acrobat
 
 ### Fixed

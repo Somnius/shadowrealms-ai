@@ -31,7 +31,18 @@
   "saveFailed": "Could not save the voice settings",
   "saved": "Voice settings saved.",
   "chronicle": {
-    "title": "Voice"
+    "title": "Voice",
+    "recordings": {
+      "title": "Voice recordings",
+      "hint": "Delete every voice recording in this chronicle. The messages keep their text; only the replay goes.",
+      "button": "Delete all recordings",
+      "confirmTitle": "Delete all voice recordings?",
+      "confirmBody": "Every recorded voice message in this chronicle is deleted for everyone. The messages keep their text. This can’t be undone.",
+      "confirm": "Delete recordings",
+      "cancel": "Keep them",
+      "done": "Deleted {{count}} recordings.",
+      "failed": "Could not delete the recordings."
+    }
   },
   "profile": {
     "title": "Voice"
@@ -199,5 +210,14 @@
   "langName": {
     "en": "English",
     "el": "Greek"
-  }
+  },
+  "catchUpAsk": "Read earlier messages?",
+  "catchUpChoice": {
+    "last3": "Last 3",
+    "last10": "Last 10",
+    "resume": "From where I stopped",
+    "none": "None"
+  },
+  "follow": "Follow",
+  "stopReading": "Stop reading"
 }

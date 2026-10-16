@@ -82,7 +82,10 @@ function GroupRow({ m, first, sp, group, longNarration, timeZone, now }) {
   const ms = messageTime(m);
   const press = useMessageRowProps(m);
   const cap = useCaption(m);
-  const plain = cap.view && !parseRouseLine(m) && !(m.role === 'assistant' && rollRequestsOf(m).length);
+  const rolls = m.role === 'assistant' && rollRequestsOf(m).length > 0;
+  const plain = cap.view && !parseRouseLine(m) && !rolls;
+  // Roll-request lines get captions too (0.22): translated prose, the chips from the original
+  const rollCap = !!cap.view && rolls;
   return (
     <div
       id={m.id != null ? `msg-${m.id}` : undefined}
@@ -107,10 +110,19 @@ function GroupRow({ m, first, sp, group, longNarration, timeZone, now }) {
       {m.reply_to ? <ReplyQuote reply={m.reply_to} /> : null}
       <div className={`sr-msg__body${group.kind === 'action' ? ' sr-msg__body--action' : ''}${first && longNarration ? ' sr-msg__body--dropcap' : ''}`}>
         {!first ? <VoiceMark message={m} /> : null}
-        {plain ? <Markdown text={cap.bodyText} /> : <MessageBody message={m} />}
+        {plain ? (
+          <Markdown text={cap.bodyText} />
+        ) : rollCap ? (
+          <>
+            <Markdown text={stripRollTags(cap.bodyText)} />
+            <RollRequestChips message={m} />
+          </>
+        ) : (
+          <MessageBody message={m} />
+        )}
       </div>
       <ClipChip message={m} />
-      {plain ? <Caption cap={cap} /> : null}
+      {plain || rollCap ? <Caption cap={cap} /> : null}
       <MessageActions message={m} />
     </div>
   );
