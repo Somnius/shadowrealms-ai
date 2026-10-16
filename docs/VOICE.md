@@ -1,6 +1,6 @@
 # Voice
 
-Voice in the chat comes in phases (see [ROADMAP_VOICE.md](ROADMAP_VOICE.md)). Release 0.16 has the first one: **listening with your phone's own voices**. Server voices, speaking and the language override follow.
+Voice in the chat comes in phases (see [ROADMAP_VOICE.md](ROADMAP_VOICE.md)). Release 0.16 has the first one: **listening with your phone's own voices**; 0.17 adds **server voices** (a voice per character by gender, a narrator chosen per chronicle). Speaking and the language override follow.
 
 ## Listening (0.16)
 
@@ -26,6 +26,30 @@ Each player can override any of them in **Profile → Voice** (as the chronicle 
 | `PUT /api/campaigns/<id>/voice-settings` | creator, site admins | `{defaults: {storyteller, ic, ooc, dice}}` and the later keys |
 
 Stored as JSON text in `users.voice_settings` and `campaigns.voice_settings` (`ensure_users_voice_settings_column`, `ensure_campaigns_voice_settings_column`); the rules are in `backend/services/voice_settings.py`. The CSP allows `media-src 'self' blob:` for the audio of the next phases.
+
+## Server voices (0.17)
+
+- In **Profile → Voice** pick **Server voices**. Listen (the ear) then plays each line made on this site's server instead of the phone's voice. The English accent (American / British), speed (0.75–2×) and volume apply as before.
+- **Who sounds like what.** The Storyteller (AI, or the chronicle's Storyteller speaking as staff), actions and dice results use the chronicle's narrator voice. A character, or an NPC, speaks with the voice of its gender (Female / Male / Neutral); not set uses the neutral voice. Out-of-character lines use the neutral voice. Greek text gets a Greek voice, English text an English one in your accent.
+- **Voice gender** is set in the Forge (Concept step in V5, next to Concept in Classic) and on the character sheet ("Voice"), where only the owner can change it, also on a locked sheet: it is not a rule. Unset shows a reminder to the owner. The PDF has a "Voice" line (V5 and V5 ghoul sheets).
+- **Narrator voice**: in Create chronicle and Chronicle settings → Voice, one choice each for English (American), English (British) and Greek, with "Hear it". Left on Default, the catalog's narrator for that language is used. If the speech service is not running, the block says so and the default is kept.
+- **Playback**: one `<audio playsinline>` per room. The app asks for Ogg/Opus where the browser can play it and for the AAC (m4a) copy otherwise (iOS Safari). While a line plays, the next one in the queue is already being made and fetched. If the server is busy or off, or the audio will not play, that line is read with the phone's voice and a notice says so (at most once a minute).
+- Text sent to the speaker: markdown and emoji removed, an in-character or OOC line starts with the speaker's name, a dice result is its first line as one sentence with the roller's name, at most 600 characters (the service then cleans per language, see below).
+
+### Server voices API
+
+| Route | Who | What |
+|---|---|---|
+| `GET /api/voice/voices` | signed in | `{available, voices, defaults}`; `available: false` (200) when the speech service is off |
+| `POST /api/voice/tts/jobs` `{message_id}` | whoever may read the message | `{job_id, state, key?, position?}`; `state` is `done` at once when the line is cached. 404 for a missing message and for one the viewer may not read (same checks as reading the room: chronicle access, closed rooms, hidden rolls); 400 `not_spoken` for markers and system lines; 503 when the service is busy or off |
+| `GET /api/voice/tts/jobs/<job_id>` | signed in | `{state, position?, key?, error?}`; a service that went away reads as `failed` / `speech_unavailable` |
+| `GET /api/voice/audio/<key>?fmt=ogg\|m4a` | whoever may read a message with that audio | the audio, `Cache-Control: private, max-age=86400`; 404 otherwise |
+| `POST /api/voice/tts/preview` `{voice_id, lang}` | signed in | a fixed sample sentence in that voice (a job, as above) |
+| `PUT /api/characters/<id>` `{gender}` | owner, staff | `female`, `male`, `neutral` or `null`; allowed on a locked sheet |
+
+Rate limits: 60 jobs a minute (1,500 an hour), 240 status polls, 120 audio fetches, 10 previews a minute per user.
+
+Stored: `characters.gender` and `npcs.gender` (`ensure_characters_gender_column`), the chronicle's `narrator_voice_en` (American), `narrator_voice_en_gb` and `narrator_voice_el` in `campaigns.voice_settings`, and `voice_audio (message_id, audio_key, voice_id)` (`ensure_voice_audio_table`): which message used which cached file (NULL for previews). Deleting a message deletes its rows and asks the service to delete each file no other message still uses (`DELETE /audio/<key>`). The backend reaches the service at `127.0.0.1:${SPEECH_PORT}` with `SPEECH_SECRET` (both in the backend's compose environment).
 
 ## Speech service (server side)
 
@@ -63,6 +87,7 @@ Before speaking, text is cleaned: markdown removed, links dropped, and for Greek
 | `GET /audio/<key>?fmt=ogg\|m4a` | the spoken line, Ogg/Opus or an AAC copy for phones that cannot play Opus |
 | `POST /stt` | multipart `file` + `lang` (`el` or `en`) → a job; the clip is checked and transcoded before it is queued |
 | `GET /stt/<job>` | job status; `done` has `text`, `duration` and `clip` |
+| `DELETE /audio/<key>` | removes a spoken line (the backend calls it when the last message using it is deleted) |
 | `GET /clips/<clip>?fmt=ogg\|m4a` | the stored clip (the AAC copy is made on first request) |
 | `DELETE /clips/<clip>` | removes a clip and its copy |
 

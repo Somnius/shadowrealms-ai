@@ -47,11 +47,11 @@ How each phase runs: build in its own git worktree → tests and CI green → on
 ## Phase 2 — Server voices (0.17)
 
 - [x] 2.1 `speech` container (CUDA base, ffmpeg, Piper, Pocket TTS, faster-whisper installed), host network, GPU checked with `nvidia-smi` inside, 8 CPUs, job queue with STT / TTS / translate lanes, `/health`. Status: done on `voice/speech-service` (STT and TTS lanes; the translate lane comes with 4.1). Opt-in compose profile `voice`, 127.0.0.1:5055, shared secret. Checked once on the host GPU: EN line 0.23 s warm, EL (Pocket) 0.81 s warm, 170 s Greek clip transcribed in 3.5 s.
-- [ ] 2.2 Gender on the character sheet and NPCs (Forge and sheet select), returned with messages. Status: not started.
-- [ ] 2.3 TTS jobs, audio route and cache; the same visibility check as reading messages (404 for missing and forbidden alike); audio removed when a message is deleted. Status: not started.
-- [ ] 2.4 Voice catalog, previews, narrator voice per language in chronicle creation and settings, neutral voice per language, attributions in About. Status: not started.
-- [ ] 2.5 Server mode in the app: job → audio → play, prefetch, fallback to the phone's voice when the server is busy. Status: not started.
-- [ ] 2.6 Release 0.17: docs (VOICE.md, AI_SYSTEMS.md section on the speech container and VRAM policy), CHANGELOG. Status: not started.
+- [x] 2.2 Gender on the character sheet and NPCs (Forge and sheet select), returned with messages. Status: done 23:35. `characters.gender` + `npcs.gender`; V5 and Classic forges, the sheet's "Voice" line (owner sets it, also on a locked sheet; reminder when unset), PDF line on V5 and V5 ghoul sheets (the Classic identity block is full: no line there). Not added to the message JSON: the backend picks the voice, the app does not need it. Ghoul forges have no field; set it on the sheet.
+- [x] 2.3 TTS jobs, audio route and cache; the same visibility check as reading messages (404 for missing and forbidden alike); audio removed when a message is deleted. Status: done 23:35. `visible_message()` in messages.py, `voice_audio` index, `DELETE /audio/<key>` on the service; pytest (404 both ways, one file for two listeners, delete). Chronicle delete does not clean the cache yet (Phase 5).
+- [x] 2.4 Voice catalog, previews, narrator voice per language in chronicle creation and settings, neutral voice per language, attributions in About. Status: done 23:35. EN-US / EN-UK / Greek narrator with "Hear it"; neutral voice per language from the catalog. The app has no About page: licences and the Pocket TTS CC BY 4.0 credit are in VOICE.md and `GET /voices`. Not synthesised against the live service here (no container started); every catalog id is checked at deploy.
+- [x] 2.5 Server mode in the app: job → audio → play, prefetch, fallback to the phone's voice when the server is busy. Status: done 23:35. One `<audio playsinline>` per room, Ogg or m4a by `canPlayType`, speed and volume, next line prefetched, fallback with a notice at most once a minute; jest. Not yet tried on real phones (iOS audio unlock on the ear tap is untested).
+- [x] 2.6 Release 0.17: docs (VOICE.md, AI_SYSTEMS.md section on the speech container and VRAM policy), CHANGELOG. Status: done 23:40. Waiting for review, merge, deploy (`--profile voice`, `SPEECH_SECRET` in .env) and phone check.
 
 ## Phase 3 — Speaking (0.18)
 

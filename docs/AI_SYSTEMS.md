@@ -178,6 +178,16 @@ A V5 chronicle can set `creation_settings.st_mode` to `'ai'` (chronicle settings
 
 ---
 
+## Speech container (voice, 0.17)
+
+Text to speech and transcription run in their own container, `speech` (`speech/`, compose profile `voice`, opt-in), not in the backend. Details in [VOICE.md](VOICE.md).
+
+- Host network, bound to `127.0.0.1:5055`, never behind nginx; every call carries `X-Speech-Secret` (`SPEECH_SECRET`). Only the backend calls it (`backend/services/speech_client.py`).
+- TTS: Piper for English, Pocket TTS for Greek (Piper rapunzelina if Pocket TTS cannot load), on the CPU. Jobs on their own lane; the audio is cached by engine, voice, bitrate and cleaned text, so listeners of the same line share one file.
+- Transcription (used from 0.18): faster-whisper `large-v3-turbo` int8 on the GPU, one clip at a time, at most 8 waiting.
+- **VRAM policy**: Whisper loads only when a clip arrives and unloads after 10 idle minutes. Before loading it reads free VRAM with `nvidia-smi`; under `VOICE_STT_VRAM_MB` (default 2150 MB: the measured 1.6 GB plus headroom) the job fails with `gpu_busy` and the app offers the phone's dictation. It never unloads another model (LM Studio, Ollama).
+- CPU: `cpus: 8`, the server under `nice -n 10`, ffmpeg 2 threads, Pocket TTS 1 thread.
+
 ## OOC channel AI (storyteller chat)
 
 When a player sends a message from a location whose **database** `type` is `ooc`, `POST /api/ai/chat` does **not** run the normal in-character storyteller (efficient / balanced / full). Instead:
