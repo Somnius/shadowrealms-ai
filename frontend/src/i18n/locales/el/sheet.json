@@ -1,9 +1,9 @@
 {
-  "loadFailed": "Δεν ήταν δυνατή η φόρτωση του φύλλου χαρακτήρα.",
+  "loadFailed": "Δεν ήταν δυνατή η φόρτωση του χαρτιού του χαρακτήρα.",
   "pts": "({{n}} πόντοι)",
   "untitled": "Χαρακτήρας",
   "close": "Κλείσιμο",
-  "classicIntro": "Φύλλο τύπου Classic WoD (μόνο για ανάγνωση). Οι αριθμοί είναι αυτοί που έχουν κλειδώσει στο χρονικό σου.",
+  "classicIntro": "Χαρτί τύπου Classic WoD (μόνο για ανάγνωση). Οι αριθμοί είναι αυτοί που έχουν κλειδώσει στο χρονικό σου.",
   "identity": "Ταυτότητα",
   "identitySub": "Concept και Nature",
   "concept": "Concept:",
@@ -14,7 +14,7 @@
     "trackerAria": "{{label}}: {{sup}} superficial, {{agg}} aggravated από {{max}}",
     "stains_one": "{{count}} Stain",
     "stains_other": "{{count}} Stains",
-    "intro": "Φύλλο Vampire: The Masquerade 5th Edition (μόνο για ανάγνωση).",
+    "intro": "Χαρτί Vampire: The Masquerade 5th Edition (μόνο για ανάγνωση).",
     "concept": "Concept",
     "trackers": "Μετρητές",
     "otherSpecialties": "Άλλες specialties:",
@@ -35,7 +35,7 @@
   "pdf": {
     "export": "Εξαγωγή PDF",
     "failed": "Δεν ήταν δυνατή η εξαγωγή του PDF.",
-    "hint": "Συμπληρώσιμο φύλλο για ασπρόμαυρη εκτύπωση",
+    "hint": "Συμπληρώσιμο χαρτί για ασπρόμαυρη εκτύπωση",
     "print": "Λήψη έκδοσης για εκτύπωση",
     "printHint": "Φαίνεται ίδια σε κάθε πρόγραμμα PDF· δεν συμπληρώνεται",
     "which": "Έκδοση για εκτύπωση: φαίνεται ίδια παντού, αυτή στέλνεις. Συμπληρώσιμο: για αλλαγές σε εφαρμογή PDF."
@@ -50,7 +50,7 @@
       "skillNoDot": "Το {{skill}} χρειάζεται τουλάχιστον μία τελεία για specialty.",
       "duplicate": "Το {{skill}} έχει ήδη τη specialty {{name}}.",
       "requires": "Το {{name}} θέλει {{requires}}: αυτό το ελέγχει ο Storyteller.",
-      "repeat": "Το φύλλο έχει ήδη το {{name}} όσες φορές παίρνεται.",
+      "repeat": "Το χαρτί έχει ήδη το {{name}} όσες φορές παίρνεται.",
       "catalogError": "Ο κατάλογος κανόνων δεν διαβάστηκε, οπότε αποφασίζει ο Storyteller."
     },
     "status": {
@@ -111,11 +111,11 @@
   "ghoul": {
     "ghoulOf": "Ghoul του/της {{domitor}}",
     "retainersTitle": "Retainers (ghouls)",
-    "openSheet": "Άνοιγμα φύλλου",
+    "openSheet": "Άνοιγμα χαρτιού",
     "noRetainers": "Κανένα ghoul ακόμη.",
     "addRetainer": "Πρόσθεσε ghoul retainer",
-    "domitorGone": "(το φύλλο δεν υπάρχει πια)",
-    "intro": "Φύλλο ghoul, V5 (μόνο για ανάγνωση). Κανόνες: core σελ. 234, Players Guide σελ. 140–142.",
+    "domitorGone": "(το χαρτί δεν υπάρχει πια)",
+    "intro": "Χαρτί ghoul, V5 (μόνο για ανάγνωση). Κανόνες: core σελ. 234, Players Guide σελ. 140–142.",
     "domitorClan": "Clan του domitor",
     "template": "Πρότυπο",
     "ageLooks": "Ηλικία / δείχνει",
@@ -133,7 +133,7 @@
   },
   "classicGhoul": {
     "generationN": "generation {{n}}",
-    "intro": "Φύλλο ghoul, Classic (Revised), μόνο για ανάγνωση. Κανόνες: Revised σελ. 275–276, Ghouls: Fatal Addiction.",
+    "intro": "Χαρτί ghoul, Classic (Revised), μόνο για ανάγνωση. Κανόνες: Revised σελ. 275–276, Ghouls: Fatal Addiction.",
     "domitorClan": "Clan και generation του domitor",
     "kindLabel": "Είδος",
     "duties": "Καθήκοντα",

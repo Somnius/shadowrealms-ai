@@ -76,7 +76,7 @@ test('in Greek', async () => {
   render(<ClassicGhoulSheetView character={marta()} />);
   expect(screen.getByText('6 / 10 · 1 ανά γύρο')).toBeInTheDocument();
   expect(screen.getByText('3 από 3 γουλιές · πλήρως δεμένο')).toBeInTheDocument();
-  expect(screen.getByText(/Φύλλο ghoul, Classic \(Revised\)/)).toBeInTheDocument();
+  expect(screen.getByText(/Χαρτί ghoul, Classic \(Revised\)/)).toBeInTheDocument();
 });
 
 const theoSheet = {

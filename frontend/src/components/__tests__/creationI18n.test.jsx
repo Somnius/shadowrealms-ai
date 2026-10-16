@@ -16,7 +16,7 @@ afterEach(async () => {
 test('classic and V5 forges render in Greek, game terms stay English', async () => {
   await act(() => setLanguage('el', { remember: false, save: false }));
   const { unmount } = render(<CharacterCreationWizard token="x" campaigns={classic} />);
-  expect(screen.getByText('Σφυρηλάτηση φύλλου χαρακτήρα')).toBeInTheDocument();
+  expect(screen.getByText('Σφυρηλάτηση χαρτιού του χαρακτήρα')).toBeInTheDocument();
   expect(screen.getByRole('button', { name: 'Δημιουργία χαρακτήρα' })).toBeInTheDocument();
   // Game term label with a Greek explanation as the tooltip.
   const gen = screen.getAllByText('Generation')[0];
@@ -25,7 +25,7 @@ test('classic and V5 forges render in Greek, game terms stay English', async () 
   unmount();
 
   render(<CharacterCreationWizard token="x" campaigns={v5} />);
-  expect(screen.getByText('Σφυρηλάτηση φύλλου χαρακτήρα · V5')).toBeInTheDocument();
+  expect(screen.getByText('Σφυρηλάτηση χαρτιού του χαρακτήρα · V5')).toBeInTheDocument();
   // V5 starts with the choice between the guide and the full forge
   expect(screen.getByRole('button', { name: 'Με οδηγό' })).toBeInTheDocument();
   fireEvent.click(screen.getByRole('button', { name: 'Πλήρης σφυρηλάτηση' }));
