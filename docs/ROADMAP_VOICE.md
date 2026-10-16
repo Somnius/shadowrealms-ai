@@ -14,7 +14,7 @@ How each phase runs: build in its own git worktree → tests and CI green → on
 | 3 | Speaking | clip upload · transcription jobs and the GPU policy · recorder with the timer · review and text steps · mic marker and replay · phone dictation | 0.18 | until 06:00 | done: released 0.18.0 |
 | 4 | Language override | translator · ahead-of-time translation · captions with "show original" · speak in one language, write in the other | 0.19 | until 06:45 | done: released 0.19.0 |
 | 5 | Ops and polish | health panel · cache and disk caps · per-character voice · device checklist | 0.20 | after the deadline | done: released 0.20.0 (phone checklist still open) |
-| 6 | Transcript check | Whisper hints with the chronicle's names · recmeets Laya-words flags misheard words · Krikri fixes only those (split words, slang) · changed words marked, tap to undo | 0.21 | until 06:30 | done: released 0.21.0 (speech image rebuild + model copy on deploy) |
+| 6 | Transcript check | Whisper hints with the chronicle's names · recmeets Laya-words flags misheard words · Krikri fixes only those (split words, slang) · changed words marked, tap to undo | 0.21 | until 06:30 | done: released 0.21.0 |
 
 ## Decisions (2026-10-16)
 
