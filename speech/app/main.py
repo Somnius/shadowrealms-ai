@@ -165,6 +165,7 @@ def tts(req: TTSReq):
     key = tts_key(engine, vid, text, config.TTS_BITRATE)
     meta = dict(voice=vid, key=key)
     if os.path.exists(_tts_paths(key)[0]):
+        diskcache.touch(_tts_paths(key)[0])  # a hit is a use: keep it out of the next eviction
         return tts_lane.add_done(dict(meta, cached=True))
     return tts_lane.submit(dict(voice=vid, key=key, text=text), dict(meta, cached=False))
 

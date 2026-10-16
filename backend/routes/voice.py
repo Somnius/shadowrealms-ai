@@ -175,6 +175,10 @@ def _speech_tts(cursor, body, message_id):
     """POST /tts on the speech service; remembers the key. (json, status)."""
     try:
         status, job = speech_client.call_json("POST", "/tts", body)
+        if status == 400 and job.get("error") == "unknown_voice" and body.get("voice"):
+            # the character's chosen voice left the catalog: speak with the gender voice instead
+            body = {k: v for k, v in body.items() if k != "voice"}
+            status, job = speech_client.call_json("POST", "/tts", body)
     except speech_client.SpeechUnavailable:
         return _SPEECH_DOWN
     if status >= 400:

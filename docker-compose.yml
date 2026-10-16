@@ -85,6 +85,7 @@ services:
       # Optional SMTP (copy values from .env)
       # Server voices (docs/VOICE.md): the speech service on the same host, same secret
       - SPEECH_SECRET=${SPEECH_SECRET:-}
+      - VOICE_CLIPS_MAX_GB=${VOICE_CLIPS_MAX_GB:-20}
       - SPEECH_PORT=${SPEECH_PORT:-5055}
       - SMTP_HOST=${SMTP_HOST:-}
       - SMTP_PORT=${SMTP_PORT:-587}

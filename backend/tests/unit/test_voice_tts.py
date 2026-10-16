@@ -203,3 +203,24 @@ def test_voice_override_validation():
     assert err("el-nobody", cat) == "unknown voice"
     assert err("fr-x", cat) and err(5, cat) and err("el-kostas; drop", cat)
     assert err("el-kostas", None) == "speech_unavailable"
+
+
+def test_gone_override_falls_back_to_gender_voice(api, monkeypatch):
+    from database import ensure_characters_gender_column
+    from services import speech_client
+
+    ensure_characters_gender_column(Conn(api.raw).cursor())
+    api.raw.execute("UPDATE characters SET gender = 'male', voice_override = 'en_GB-gone-medium' WHERE id = 7")
+    base = speech_client.call_json
+
+    def cj(method, path, body=None):
+        if path == "/tts" and body.get("voice") == "en_GB-gone-medium":
+            api.speech["calls"].append((method, path, body))
+            return 400, {"error": "unknown_voice"}
+        return base(method, path, body)
+
+    monkeypatch.setattr(speech_client, "call_json", cj)
+    r = api("POST", "/api/voice/tts/jobs", 5, {"message_id": 1})
+    assert r.status_code == 200
+    sent = [b for m, p, b in api.speech["calls"] if p == "/tts"]
+    assert sent[-2]["voice"] == "en_GB-gone-medium" and "voice" not in sent[-1] and sent[-1]["gender"] == "male"

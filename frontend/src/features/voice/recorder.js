@@ -112,5 +112,15 @@ export function isTypingTarget(el) {
 }
 
 export function isPushToTalkKey(e) {
-  return !!e && (e.code === 'Space' || e.key === ' ') && !e.repeat && !e.ctrlKey && !e.metaKey && !e.altKey && !e.shiftKey && !isTypingTarget(e.target);
+  return !!e && (e.code === 'Space' || e.key === ' ') && !e.repeat && !e.ctrlKey && !e.metaKey && !e.altKey && !e.shiftKey && isPushToTalkTarget(e.target);
+}
+
+// Space records only with focus on the page itself or the room's message list (role=log),
+// never on a link, a button-like element or inside a dialog, so Space keeps scrolling elsewhere.
+export function isPushToTalkTarget(el) {
+  if (!el || !el.tagName || isTypingTarget(el)) return false;
+  const tag = el.tagName.toLowerCase();
+  if (tag === 'body' || tag === 'html') return !(el.ownerDocument && el.ownerDocument.querySelector('[role="dialog"],[aria-modal="true"]'));
+  if (!el.closest || el.closest('a,[role="button"],[role="dialog"],[aria-modal="true"]')) return false;
+  return !!el.closest('[role="log"]');
 }

@@ -176,3 +176,22 @@ def test_orphan_sweep(api, speech):  # noqa: F811
     assert voice_clips.sweep_orphans(cur, now=later) == [CLIP]
     assert speech["deleted"] == [CLIP]
     assert [r[0] for r in api.raw.execute("SELECT clip_id FROM voice_clips")] == ["d"]
+
+
+def test_orphan_sweep_keeps_rows_when_speech_down(api, monkeypatch):  # noqa: F811
+    from datetime import datetime, timedelta
+
+    from services import speech_client
+    from tests.unit.test_creation_validation_routes import Conn
+    voice_clips.ensure_voice_clips_table(Conn(api.raw).cursor())
+    api.raw.execute("INSERT INTO voice_clips (clip_id, campaign_id, user_id, created_at) "
+                    "VALUES ('e', 10, 3, '2000-01-01 00:00:00')")
+
+    def down(*a, **k):
+        raise speech_client.SpeechUnavailable("x")
+
+    monkeypatch.setattr(speech_client, "call_json", down)
+    from tests.unit.test_creation_validation_routes import Conn
+    cur = Conn(api.raw).cursor()
+    assert voice_clips.sweep_orphans(cur, now=datetime.utcnow() + timedelta(hours=1)) == []
+    assert [r[0] for r in api.raw.execute("SELECT clip_id FROM voice_clips")] == ["e"]

@@ -94,11 +94,19 @@ def attach(cursor, clip_id, message_id):
 
 
 def _drop_files(clip_ids):
+    """Ask speech to delete the files. Returns the ids it could not delete."""
+    failed = []
     for cid in clip_ids:
         try:
-            speech_client.call_json("DELETE", f"/clips/{cid}")
+            status, _ = speech_client.call_json("DELETE", f"/clips/{cid}")
         except speech_client.SpeechUnavailable:
             logger.warning("speech service down: clip %s left on disk", cid[:8])
+            failed.append(cid)
+            continue
+        if status >= 500:
+            logger.warning("speech could not delete clip %s (%s)", cid[:8], status)
+            failed.append(cid)
+    return failed
 
 
 def forget_message_clips(cursor, message_ids):
@@ -143,10 +151,14 @@ def sweep_orphans(cursor, hours=ORPHAN_HOURS, now=None):
         (_utc_str(now - timedelta(hours=hours)),),
     )
     gone = [r["clip_id"] for r in cursor.fetchall()]
+    if not gone:
+        return []
+    # files first: a row whose file could not be deleted stays, so the next sweep tries again
+    failed = set(_drop_files(gone))
+    gone = [c for c in gone if c not in failed]
     if gone:
         ph = ", ".join(["%s"] * len(gone))
         cursor.execute(f"DELETE FROM voice_clips WHERE clip_id IN ({ph})", tuple(gone))
-        _drop_files(gone)
     return gone
 
 

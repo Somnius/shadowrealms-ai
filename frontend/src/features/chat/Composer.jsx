@@ -106,7 +106,7 @@ export default function Composer({
   const [micDenied, setMicDenied] = useState(false);
   const [micHint, setMicHint] = useState(false);
   const voiceOn = !!voice && !disabled && (voice.phoneDictation ? voice.canPhoneDictate : canRecord());
-  // Desktop push-to-talk: hold Space (not while typing) to record, release to stop and review.
+  // Desktop push-to-talk: hold Space with focus on the page or the message list to record, release to stop and review.
   const [ptt, setPtt] = useState(false);
   const pttOn = voiceOn && !voice.phoneDictation && !micDenied && !recording;
   useEffect(() => {

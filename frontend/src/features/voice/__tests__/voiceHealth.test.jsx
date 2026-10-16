@@ -29,7 +29,16 @@ test('fmtBytes', () => {
 });
 
 test('Space is push-to-talk, but not while typing, repeating or with a modifier', () => {
+  const log = document.createElement('div');
+  log.setAttribute('role', 'log');
   const div = document.createElement('div');
+  log.appendChild(div);
+  const link = document.createElement('a');
+  log.appendChild(link);
+  const loose = document.createElement('div');
+  document.body.appendChild(log);
+  expect(isPushToTalkKey({ code: 'Space', target: link })).toBe(false);
+  expect(isPushToTalkKey({ code: 'Space', target: loose })).toBe(false);
   const input = document.createElement('input');
   const ta = document.createElement('textarea');
   expect(isPushToTalkKey({ code: 'Space', target: div })).toBe(true);

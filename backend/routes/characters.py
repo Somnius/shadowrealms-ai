@@ -145,6 +145,17 @@ def _gender_error(data):
     return 'gender must be female, male, neutral or empty'
 
 
+def _voice_override_response(data):
+    """(json, status) when data's voice_override is not a catalog voice, else None."""
+    if data.get('voice_override') in (None, ''):
+        return None
+    from services.voice_tts import voice_override_error
+    verr = voice_override_error(data['voice_override'], catalog_voice_ids())
+    if verr:
+        return jsonify({'error': verr}), (503 if verr == 'speech_unavailable' else 400)
+    return None
+
+
 def catalog_voice_ids():
     """Voice ids the speech service lists, or None when it is down."""
     from services import speech_client
@@ -363,13 +374,9 @@ def create_character():
 
         if _gender_error(data):
             return jsonify({'error': _gender_error(data)}), 400
-        if data.get('voice_override') not in (None, ''):
-            from services.voice_tts import voice_override_error
-            verr = voice_override_error(data['voice_override'], catalog_voice_ids())
-            if verr == 'speech_unavailable':
-                return jsonify({'error': verr}), 503
-            if verr:
-                return jsonify({'error': verr}), 400
+        verr = _voice_override_response(data)
+        if verr:
+            return verr
 
         if isinstance(data.get('wod_meta'), dict) and data['wod_meta'].get('sheet_kind') == 'ghoul':
             return _create_ghoul(current_user_id, data)
@@ -1169,6 +1176,9 @@ def update_character(character_id):
         ) and _sheet_locked_bool(character.get('sheet_locked'))
         if _gender_error(data):
             return jsonify({'error': _gender_error(data)}), 400
+        verr = _voice_override_response(data)
+        if verr:
+            return verr
 
         if player_locked:
             # portrait and voice gender are not rules: a locked sheet may still change them
