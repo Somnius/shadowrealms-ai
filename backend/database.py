@@ -710,6 +710,38 @@ def ensure_campaigns_creation_settings_column(cursor):
         )
 
 
+def _ensure_voice_settings_column(cursor, table):
+    db_type = os.getenv("DATABASE_TYPE", "sqlite").lower()
+    if db_type == "postgresql":
+        cursor.execute(
+            f"ALTER TABLE {table} ADD COLUMN IF NOT EXISTS voice_settings TEXT NOT NULL DEFAULT '{{}}'"
+        )
+        return
+    cursor.execute(
+        f"SELECT name FROM sqlite_master WHERE type='table' AND name='{table}'"
+    )
+    if not cursor.fetchone():
+        return
+    cursor.execute(f"PRAGMA table_info({table})")
+    cols = [row["name"] for row in cursor.fetchall()]
+    if "voice_settings" not in cols:
+        cursor.execute(
+            f"ALTER TABLE {table} ADD COLUMN voice_settings TEXT NOT NULL DEFAULT '{{}}'"
+        )
+
+
+@once_per_process
+def ensure_users_voice_settings_column(cursor):
+    """A player's own voice choices as JSON text (services.voice_settings)."""
+    _ensure_voice_settings_column(cursor, "users")
+
+
+@once_per_process
+def ensure_campaigns_voice_settings_column(cursor):
+    """A chronicle's read-out defaults as JSON text (services.voice_settings)."""
+    _ensure_voice_settings_column(cursor, "campaigns")
+
+
 @once_per_process
 def ensure_campaigns_staff_pause_columns(cursor):
     """Optional note when staff sets campaigns.is_active false (discover/join gate)."""
@@ -1206,6 +1238,8 @@ def migrate_db():
                 ensure_campaigns_listing_columns(cursor)
                 ensure_rules_edition_columns(cursor)
                 ensure_campaigns_creation_settings_column(cursor)
+                ensure_users_voice_settings_column(cursor)
+                ensure_campaigns_voice_settings_column(cursor)
                 ensure_character_downtime_requests_table(cursor)
                 ensure_character_spend_requests_table(cursor)
                 ensure_characters_is_npc_column(cursor)
@@ -1578,6 +1612,8 @@ def migrate_db():
         ensure_campaigns_listing_columns(cursor)
         ensure_rules_edition_columns(cursor)
         ensure_campaigns_creation_settings_column(cursor)
+        ensure_users_voice_settings_column(cursor)
+        ensure_campaigns_voice_settings_column(cursor)
         ensure_character_downtime_requests_table(cursor)
         ensure_character_spend_requests_table(cursor)
         ensure_messages_ai_message_kind_column(cursor)
