@@ -17,7 +17,35 @@ export function makeRoomAudio() {
   const el = document.createElement('audio');
   el.setAttribute('playsinline', '');
   el.preload = 'auto';
+  el.style.display = 'none';
+  if (document.body) document.body.appendChild(el); // iOS unlocks only an element in the document
   return el;
+}
+
+/** A 0.05 s silent WAV, played inside the ear tap so later play() calls are allowed on iOS. */
+export const SILENT_CLIP = (() => {
+  const n = 400; // 8 kHz, 8-bit mono
+  const bytes = [];
+  const str = (s) => [...s].forEach((c) => bytes.push(c.charCodeAt(0)));
+  const u32 = (v) => bytes.push(v & 255, (v >> 8) & 255, (v >> 16) & 255, (v >> 24) & 255);
+  const u16 = (v) => bytes.push(v & 255, (v >> 8) & 255);
+  str('RIFF'); u32(36 + n); str('WAVE'); str('fmt '); u32(16); u16(1); u16(1); u32(8000); u32(8000); u16(1); u16(8);
+  str('data'); u32(n);
+  for (let i = 0; i < n; i += 1) bytes.push(128);
+  const b64 = typeof btoa === 'function' ? btoa(String.fromCharCode(...bytes)) : '';
+  return `data:audio/wav;base64,${b64}`;
+})();
+
+/** Call inside a user gesture: plays the silent clip on the room's element (unlocks it on iOS). */
+export function unlockRoomAudio(el) {
+  if (!el) return;
+  try {
+    el.src = SILENT_CLIP;
+    const p = el.play();
+    if (p && p.catch) p.catch(() => {});
+  } catch {
+    /* not supported here */
+  }
 }
 
 export function preferredFormat(el) {
@@ -61,7 +89,10 @@ export function playOn(el, url, settings) {
   el.defaultPlaybackRate = rate;
   el.playbackRate = rate;
   el.volume = s.volume == null ? 1 : Math.max(0, Math.min(1, Number(s.volume)));
-  return el.play();
+  const p = el.play();
+  // WebKit resets the rate when playback starts: set it again once it has
+  if (p && p.then) return p.then(() => { el.playbackRate = rate; });
+  return p;
 }
 
 /** Speak a voice preview (settings and chronicle pages): a fixed sentence in voice `voiceId`. */
@@ -69,7 +100,10 @@ export async function previewVoice(api, voiceId, lang) {
   const key = await awaitJob(api, api('/voice/tts/preview', { method: 'POST', body: { voice_id: voiceId, lang } }));
   const el = makeRoomAudio();
   const url = await fetchAudioUrl(key, preferredFormat(el));
-  el.onended = () => URL.revokeObjectURL(url);
+  el.onended = () => {
+    URL.revokeObjectURL(url);
+    if (el.parentNode) el.parentNode.removeChild(el);
+  };
   await playOn(el, url, { rate: 1, volume: 1 });
 }
 
