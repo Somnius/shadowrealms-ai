@@ -39,10 +39,10 @@
   "source": {
     "label": "Read messages aloud with",
     "hint": "Phone voices are your phone’s or browser’s own; nothing leaves your device. Turn on Listen (the ear) in a room.",
-    "phone": "Phone voices",
+    "phone": "My device’s voices",
     "off": "Off",
-    "server": "Server voices",
-    "hint2": "Phone voices are your phone’s or browser’s own; nothing leaves your device. Server voices are made on this site’s server: one voice per character by gender, the chronicle’s narrator for the Storyteller. Turn on Listen (the ear) in a room."
+    "server": "Server voices (recommended)",
+    "hint2": "Server voices (recommended): made on this site’s server, so they sound the same on every device: male, female and neutral voices in US or UK English and in Greek; each character speaks with the voice of its gender, and the Storyteller with the chronicle’s narrator. My device’s voices: the voices built into your phone or computer; nothing leaves your device, but what you get depends on it: some have no Greek voice, and some computers have no voices at all (for example Linux without a speech engine). When the device has no voice, the server voices read the line instead. Turn on Listen (the ear) in a room."
   },
   "accent": {
     "label": "English accent",
@@ -128,7 +128,8 @@
     "sentIn": "{{lang}} (sent)",
     "originalKept": "Your words in {{lang}} stay under the message as “your original”.",
     "translateAgain": "Translate again",
-    "translateTo": "Write it in {{lang}}"
+    "translateTo": "Write it in {{lang}}",
+    "spokenLang": "Language you speak"
   },
   "stt": {
     "label": "Voice messages are written by",

@@ -236,12 +236,12 @@ export function VoiceSettingsPanel() {
       <form className="sr-form" onSubmit={save}>
         <Select
           label={t('voice:source.label', 'Read messages aloud with')}
-          hint={t('voice:source.hint2', 'Phone voices are your phone’s or browser’s own; nothing leaves your device. Server voices are made on this site’s server: one voice per character by gender, the chronicle’s narrator for the Storyteller. Turn on Listen (the ear) in a room.')}
+          hint={t('voice:source.hint2')}
           value={s.tts_source}
           onChange={(e) => set({ tts_source: e.target.value })}
           options={[
-            { value: 'phone', label: t('voice:source.phone', 'Phone voices') },
-            { value: 'server', label: t('voice:source.server', 'Server voices') },
+            { value: 'server', label: t('voice:source.server', 'Server voices (recommended)') },
+            { value: 'phone', label: t('voice:source.phone', 'My device’s voices') },
             { value: 'off', label: t('voice:source.off', 'Off') },
           ]}
         />

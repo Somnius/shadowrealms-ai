@@ -31,7 +31,7 @@ USER_CHOICES = {
 }
 
 USER_DEFAULTS: Dict[str, Any] = {
-    "tts_source": "phone",
+    "tts_source": "server",
     "stt_source": "server",
     "en_accent": "us",
     "hear_lang": "written",

@@ -58,8 +58,9 @@ export function useListen({ api, campaignId, roomKey, messages, status, userId, 
   const queue = useMemo(() => {
     if (engine) return createSpeechQueue(engine);
     const getSettings = () => settingsRef.current;
-    const phone = phoneEngine(getSettings);
-    const server = serverEngine({
+    let server = null;
+    const phone = phoneEngine(getSettings, () => server);
+    server = serverEngine({
       api,
       getAudio: () => audioRef.current || (audioRef.current = makeRoomAudio()),
       getSettings,
