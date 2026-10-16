@@ -1,7 +1,7 @@
 # Feature Documentation
 
 **Last Updated**: 2026-10-16  
-**Version**: 0.14.1
+**Version**: 0.15.0
 
 Feature notes for ShadowRealms AI that don't have their own document. The full list of changes per release is in [CHANGELOG.md](CHANGELOG.md); the plans are in [ROADMAP_v0.9.md](ROADMAP_v0.9.md) and [ROADMAP_v0.10.md](ROADMAP_v0.10.md).
 
