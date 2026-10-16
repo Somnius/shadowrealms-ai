@@ -80,6 +80,6 @@ test('profile panel offers server voices', async () => {
   mockApi.mockResolvedValue({ ok: true, status: 200, data: USER });
   wrap(<VoiceSettingsPanel />);
   const source = await screen.findByLabelText('Read messages aloud with');
-  expect(screen.getByRole('option', { name: 'Server voices' })).toBeInTheDocument();
+  expect(screen.getByRole('option', { name: 'Server voices (recommended)' })).toBeInTheDocument();
   expect(source).toHaveValue('phone');
 });

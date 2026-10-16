@@ -21,7 +21,7 @@ from tests.unit.test_creation_validation_routes import Conn
 def test_user_defaults_and_lenient_normalize():
     s = normalize_user_voice_settings('{"rate": 9, "tts_source": "off", "junk": 1}')
     assert s["rate"] == 1.0 and s["tts_source"] == "off" and s["hear_lang"] == "written"
-    assert normalize_user_voice_settings("not json")["tts_source"] == "phone"
+    assert normalize_user_voice_settings("not json")["tts_source"] == "server"
 
 
 @pytest.mark.parametrize("body", [
@@ -103,7 +103,7 @@ def api(monkeypatch):
 
 
 def test_user_settings_route(api):
-    assert api("GET", "/api/voice/settings", 3).get_json()["tts_source"] == "phone"
+    assert api("GET", "/api/voice/settings", 3).get_json()["tts_source"] == "server"
     assert api("PUT", "/api/voice/settings", 3, {"bogus": 1}).status_code == 400
     r = api("PUT", "/api/voice/settings", 3, {"rate": 1.25, "overrides": {"ooc": False}})
     assert r.status_code == 200

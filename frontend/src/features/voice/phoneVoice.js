@@ -58,15 +58,29 @@ function voicesReady(timeoutMs = 1500) {
 }
 
 /** Engine for createSpeechQueue. settings: { rate, volume, en_accent }. */
-export function phoneEngine(getSettings) {
+// A browser with no speech engine (e.g. Firefox on Linux without speech-dispatcher) has an empty
+// voice list and never starts or ends an utterance. Then the line goes to `fallback` (the server
+// voices) instead of waiting forever.
+const START_TIMEOUT_MS = 4000;
+
+export function phoneEngine(getSettings, getFallback = () => null) {
+  const toFallback = (item, done) => {
+    const fb = getFallback();
+    if (fb) fb.speak(item, done);
+    else done();
+  };
   return {
     speak(item, done) {
       if (!hasPhoneVoices()) {
-        done();
+        toFallback(item, done);
         return;
       }
       const wait = Math.max(0, AFTER_CANCEL_MS - (Date.now() - cancelledAt));
-      const start = () => voicesReady().then(() => speakNow(item, done));
+      const start = () =>
+        voicesReady().then((voices) => {
+          if (!voices || !voices.length) toFallback(item, done);
+          else speakNow(item, done);
+        });
       if (wait) setTimeout(start, wait);
       else start();
     },
@@ -95,8 +109,24 @@ export function phoneEngine(getSettings) {
     if (voice) u.voice = voice;
     u.rate = Number(s.rate) || 1;
     u.volume = s.volume == null ? 1 : Number(s.volume);
-    u.onend = done;
-    u.onerror = done;
+    let started = false;
+    let finished = false;
+    const finish = () => {
+      if (finished) return;
+      finished = true;
+      done();
+    };
+    u.onstart = () => {
+      started = true;
+    };
+    u.onend = finish;
+    u.onerror = finish;
     window.speechSynthesis.speak(u);
+    setTimeout(() => {
+      if (started || finished) return;
+      finished = true;
+      window.speechSynthesis.cancel();
+      toFallback(item, done);
+    }, START_TIMEOUT_MS);
   }
 }
