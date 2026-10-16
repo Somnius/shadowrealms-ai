@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.16.0] - 2026-10-17 - Listen
+
+### Added
+- **Listen in the chat with the phone's own voices.** An ear in the room header reads new messages aloud with the device's `speechSynthesis` voices (Greek or English by the text, US or UK accent): your own lines skipped, system lines skipped, dice read as one sentence, up to 20 waiting ("missed N" past that), a 44-px bar above the message box with who is speaking, pause / skip / stop, "Read the last 3 messages?" when turned on, and a pause with "tap to resume" when the app goes to the background. Nothing leaves the device. See docs/VOICE.md. EN + EL.
+- **Read-out defaults per chronicle** (Storyteller, in character, out of character, dice) in Create chronicle and Chronicle settings → Voice; `GET/PUT /api/campaigns/<id>/voice-settings` (creator or site admin to change).
+- **Profile → Voice**: Phone voices or Off, English accent, speed 0.75–2×, volume, and per-kind overrides of the chronicle's defaults (actions too); `GET/PUT /api/voice/settings`.
+- Nine glyphs: mic, mic-off, ear, play, pause, stop, skip, waveform, tongue.
+
+### Changed
+- CSP: `media-src 'self' blob:`.
+- Schema: `users.voice_settings` and `campaigns.voice_settings` (JSON text, default `{}`).
+
 ## [0.15.0] - 2026-10-16 - Blood servants
 
 ### Added

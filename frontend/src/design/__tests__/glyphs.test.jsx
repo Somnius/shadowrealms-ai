@@ -66,4 +66,12 @@ describe('glyph set', () => {
     render(<DieFace value={10} hunger />);
     expect(screen.getByRole('img', { name: 'Hunger die: 10, critical' })).toBeInTheDocument();
   });
+
+  test('voice glyphs exist in the ui group', () => {
+    ['mic', 'mic-off', 'ear', 'play', 'pause', 'stop', 'skip', 'waveform', 'tongue'].forEach((name) => {
+      expect(GLYPHS[name].group).toBe('ui');
+      const { container } = render(<Glyph name={name} />);
+      expect(container.querySelector('svg')).not.toBeNull();
+    });
+  });
 });

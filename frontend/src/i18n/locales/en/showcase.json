@@ -307,6 +307,15 @@
     "trash": "Delete",
     "warning": "Warning",
     "info": "Information",
-    "ornament": "Ornament"
+    "ornament": "Ornament",
+    "mic": "Microphone",
+    "mic-off": "Microphone off",
+    "ear": "Listen",
+    "play": "Play",
+    "pause": "Pause",
+    "stop": "Stop",
+    "skip": "Skip",
+    "waveform": "Speaking",
+    "tongue": "Translation"
   }
 }

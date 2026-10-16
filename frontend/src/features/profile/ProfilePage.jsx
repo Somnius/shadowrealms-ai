@@ -14,6 +14,7 @@ import PasswordRules, { brokenRule, passwordProblem } from '../auth/PasswordRule
 import { useChronicles } from '../../app/ChroniclesContext';
 import { BringIntoChronicleDialog, isUnassigned } from './BringIntoChronicle';
 import { canBeDomitor, ghoulDomitorId, isGhoul } from '../../characterSheet/v5/ghoul';
+import { VoiceSettingsPanel } from '../voice/VoiceSettings';
 import './profile.css';
 
 const MAX_IMAGE = 360000;
@@ -282,6 +283,7 @@ function AccountSection() {
           />
         </div>
       </Panel>
+      <VoiceSettingsPanel />
       <ChangePasswordPanel />
       <SessionsPanel />
     </div>

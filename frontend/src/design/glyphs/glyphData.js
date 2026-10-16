@@ -465,6 +465,32 @@ export const GLYPHS = {
     group: 'ui',
     shapes: [{ d: 'M6 16.5V11a6 6 0 0 1 12 0v5.5l1.5 2h-15Z' }, { d: 'M10 21a2 2 0 0 0 4 0M12 3v2' }],
   },
+  /* voice (0.16) */
+  mic: {
+    label: 'Microphone',
+    group: 'ui',
+    shapes: [{ r: [9, 3, 6, 10, 3] }, { d: 'M6 11a6 6 0 0 0 12 0M12 17v4M9 21h6' }],
+  },
+  'mic-off': {
+    label: 'Microphone off',
+    group: 'ui',
+    shapes: [{ r: [9, 3, 6, 10, 3] }, { d: 'M6 11a6 6 0 0 0 12 0M12 17v4M9 21h6' }, { d: 'M4 4L20 20' }],
+  },
+  ear: {
+    label: 'Listen',
+    group: 'ui',
+    shapes: [{ d: 'M7 9a5 5 0 0 1 10 0c0 3-2.5 4-2.5 7a2.5 2.5 0 0 1-5 0' }, { d: 'M10 9a2 2 0 0 1 4 0' }],
+  },
+  play: { label: 'Play', group: 'ui', shapes: [{ d: 'M8 5l11 7-11 7Z', a: true }, { d: 'M8 5l11 7-11 7Z' }] },
+  pause: { label: 'Pause', group: 'ui', shapes: [{ d: 'M8 5v14M16 5v14' }] },
+  stop: { label: 'Stop', group: 'ui', shapes: [{ r: [6, 6, 12, 12, 1.5] }] },
+  skip: { label: 'Skip', group: 'ui', shapes: [{ d: 'M5 5l9 7-9 7ZM18 5v14' }] },
+  waveform: { label: 'Speaking', group: 'ui', shapes: [{ d: 'M3 12h2M7 8v8M11 5v14M15 8v8M19 11v2' }] },
+  tongue: {
+    label: 'Translation',
+    group: 'ui',
+    shapes: [{ r: [3, 4, 11, 8, 2] }, { r: [10, 10, 11, 8, 2] }, { d: 'M14 18l1 3l1-3' }],
+  },
   search: { label: 'Search', group: 'ui', shapes: [{ c: [10.5, 10.5, 6.5] }, { d: 'M15.5 15.5L21 21' }] },
   'chevron-down': { label: 'Expand', group: 'ui', shapes: [{ d: 'M6 9l6 6 6-6' }] },
   'chevron-up': { label: 'Collapse', group: 'ui', shapes: [{ d: 'M6 15l6-6 6 6' }] },

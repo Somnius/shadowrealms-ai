@@ -1,7 +1,7 @@
 # Feature Documentation
 
 **Last Updated**: 2026-10-16  
-**Version**: 0.15.0
+**Version**: 0.16.0
 
 Feature notes for ShadowRealms AI that don't have their own document. The full list of changes per release is in [CHANGELOG.md](CHANGELOG.md); the plans are in [ROADMAP_v0.9.md](ROADMAP_v0.9.md) and [ROADMAP_v0.10.md](ROADMAP_v0.10.md).
 
@@ -24,6 +24,10 @@ Feature notes for ShadowRealms AI that don't have their own document. The full l
 8. [Invite Code System](#invite-code-system)
 
 ---
+
+## What's new in v0.16.0
+
+- **Listen.** The ear in a room's header reads new messages aloud with the phone's own voices; the chronicle sets what is read by default and each player can change it in Profile → Voice. See [VOICE.md](VOICE.md).
 
 ## What's new in v0.14.0
 
