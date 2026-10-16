@@ -99,7 +99,31 @@ def narrator_voice(campaign_settings: Any, lang: str, accent: str) -> Optional[s
     return c.get("narrator_voice_en_gb") if accent == "gb" else c.get("narrator_voice_en")
 
 
-def tts_request(row: Dict[str, Any], gender: Any, user_settings: Any, campaign_settings: Any) -> Optional[Dict[str, Any]]:
+VOICE_ID = re.compile(r"^[A-Za-z0-9_.-]{2,80}$")
+
+
+def voice_lang(voice_id: Any) -> Optional[str]:
+    """'en' or 'el' from a catalog id ("en_GB-alan-medium", "el-kostas"), else None."""
+    s = str(voice_id or "")
+    return s[:2] if s[:2] in ("en", "el") and VOICE_ID.match(s) else None
+
+
+def voice_override_error(value: Any, catalog_ids: Any) -> Optional[str]:
+    """Why a character's voice pick is refused, or None. None/'' clears it. catalog_ids is the set
+    of voice ids the speech service lists (None when it cannot be asked)."""
+    if value in (None, ""):
+        return None
+    if not isinstance(value, str) or voice_lang(value) is None:
+        return "voice_override must be a voice id"
+    if catalog_ids is None:
+        return "speech_unavailable"
+    if value not in catalog_ids:
+        return "unknown voice"
+    return None
+
+
+def tts_request(row: Dict[str, Any], gender: Any, user_settings: Any, campaign_settings: Any,
+                voice_override: Any = None) -> Optional[Dict[str, Any]]:
     """The body for the speech service's POST /tts, or None when the row is never spoken."""
     kind = readout_kind(row)
     if not kind:
@@ -118,6 +142,8 @@ def tts_request(row: Dict[str, Any], gender: Any, user_settings: Any, campaign_s
             body["voice"] = chosen
     elif kind == "ic":
         body["gender"] = gender if gender in GENDERS else "neutral"
+        if voice_lang(voice_override) == lang:  # the owner's pick, when it speaks this language
+            body["voice"] = voice_override
     else:
         body["gender"] = "neutral"
     return body

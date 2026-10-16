@@ -94,3 +94,9 @@ def test_long_names_are_skipped():
             return [{"name": "Dimitra"}, {"name": "x" * (tc.NAME_MAX + 1)}] if "characters" in self.sql else []
 
     assert tc.chronicle_names(Cur(), 1) == ["Dimitra"]
+
+
+def test_numbered_pairs_survive_a_remark_inside_the_braces():
+    answer = '{"1": "βλαχάρα", "βλυχ άρα" sounds like a misheard spelling of "βλαχάρα"} \n\n(Note: ...)'
+    segs = tc.check(WORDS, [{"i": 6, "p_laya": 0.8}], "el", [], fake(answer), probs=PROBS)
+    assert tc.text_of(segs) == "Ο Νίκος του λέει είσαι μεγάλη βλαχάρα ρε μαλάκα."

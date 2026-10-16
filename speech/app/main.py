@@ -15,7 +15,7 @@ from fastapi import Depends, FastAPI, File, Form, Header, HTTPException, UploadF
 from fastapi.responses import FileResponse, JSONResponse
 from pydantic import BaseModel
 
-from . import audio, catalog, config, textprep
+from . import audio, catalog, config, diskcache, textprep
 from .check import LayaWords
 from .cachekeys import tts_key
 from .engines import PiperEngine, PocketEngine, WhisperEngine, gpu_free_mb
@@ -64,6 +64,7 @@ def run_tts(p):
             audio.to_m4a(tmp_ogg, tmp_m4a)
             os.replace(tmp_m4a, m4a)
             os.replace(tmp_ogg, ogg)  # ogg last: its presence means the entry is complete
+        _evict_soon()
     return dict(key=p["key"], duration=round(audio.duration(ogg), 2))
 
 
@@ -78,6 +79,22 @@ def run_stt(p):
         out["suspects"] = laya.score(out["words"], [pr for _, pr in words], p["lang"])
         out["check_ms"] = int((time.perf_counter() - t0) * 1000)
     return out
+
+
+_evict_lock = threading.Lock()
+_since_evict = [0]
+
+
+def _evict_soon(every=20):
+    """Check the cache cap after every 20 new lines (and at start): a walk of the cache is cheap."""
+    with _evict_lock:
+        _since_evict[0] += 1
+        if _since_evict[0] < every:
+            return
+        _since_evict[0] = 0
+    n = diskcache.evict_lru(TTS_DIR, config.TTS_CACHE_BYTES)
+    if n:
+        log.info("tts cache: %d old lines removed (cap %d bytes)", n, config.TTS_CACHE_BYTES)
 
 
 tts_lane = Lane("tts", config.TTS_QUEUE_MAX, run_tts)
@@ -109,6 +126,7 @@ def _startup():
         os.makedirs(d, exist_ok=True)
     for f in os.listdir(TMP_DIR):  # leftovers from a crash
         shutil.rmtree(os.path.join(TMP_DIR, f), ignore_errors=True)
+    diskcache.evict_lru(TTS_DIR, config.TTS_CACHE_BYTES)
     tts_lane.start()
     stt_lane.start()
     threading.Thread(target=_idle_loop, daemon=True).start()
@@ -123,7 +141,9 @@ def health():
                                   queue=stt_lane.depth(), vram_free_mb=gpu_free_mb(),
                                   vram_needed_mb=config.STT_VRAM_MB, idle_unload_s=config.STT_IDLE_SECONDS),
                 tts=dict(queue=tts_lane.depth(), pocket_loaded=pocket._model is not None,
-                         pocket_error=pocket.error),
+                         pocket_error=pocket.error, cache_bytes=diskcache.dir_bytes(TTS_DIR),
+                         cache_cap_bytes=config.TTS_CACHE_BYTES),
+                clips=dict(bytes=diskcache.dir_bytes(CLIP_DIR)),
                 check=dict(present=laya.present(), loaded=laya._sess is not None, error=laya.error))
 
 
@@ -158,6 +178,7 @@ def tts(req: TTSReq):
     key = tts_key(engine, vid, text, config.TTS_BITRATE)
     meta = dict(voice=vid, key=key)
     if os.path.exists(_tts_paths(key)[0]):
+        diskcache.touch(_tts_paths(key)[0])  # a hit is a use: keep it out of the next eviction
         return tts_lane.add_done(dict(meta, cached=True))
     return tts_lane.submit(dict(voice=vid, key=key, text=text), dict(meta, cached=False))
 
@@ -178,6 +199,7 @@ def tts_audio(key: str, fmt: str = "ogg"):
     path = ogg if fmt == "ogg" else m4a
     if not os.path.exists(ogg) or not os.path.exists(path):
         raise HTTPException(404)
+    diskcache.touch(ogg)
     return FileResponse(path, media_type="audio/ogg" if fmt == "ogg" else "audio/mp4")
 
 

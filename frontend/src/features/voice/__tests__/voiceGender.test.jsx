@@ -27,3 +27,23 @@ test('the owner gets the reminder and can set it', async () => {
   await waitFor(() => expect(mockFetch).toHaveBeenCalledWith('tok', '/characters/3', { method: 'PUT', body: { gender: 'female' } }));
   expect(screen.queryByText(/Until then/)).toBeNull();
 });
+
+test('the owner can pick a specific catalog voice; Automatic clears it', async () => {
+  mockFetch.mockImplementation((tok, path) => Promise.resolve(path === '/voice/voices'
+    ? { ok: true, data: { available: true, voices: [{ id: 'el-kostas', lang: 'el', accent: 'gr', gender: 'male' }, { id: 'x', lang: 'en', available: false }] } }
+    : { ok: true, data: {} }));
+  const user = setupUser();
+  wrap(<VoiceGenderLine character={{ id: 3, gender: 'male', voice_override: null }} owner />);
+  const pick = await screen.findByLabelText('Specific voice');
+  expect(screen.getByRole('option', { name: 'el-kostas · Greek · Male' })).toBeInTheDocument();
+  expect(screen.queryByRole('option', { name: /^x/ })).toBeNull();
+  await user.selectOptions(pick, 'el-kostas');
+  await waitFor(() => expect(mockFetch).toHaveBeenCalledWith('tok', '/characters/3', { method: 'PUT', body: { voice_override: 'el-kostas' } }));
+  await user.selectOptions(pick, '');
+  await waitFor(() => expect(mockFetch).toHaveBeenCalledWith('tok', '/characters/3', { method: 'PUT', body: { voice_override: null } }));
+});
+
+test('no pick for others', () => {
+  wrap(<VoiceGenderLine character={{ id: 3, gender: 'male', voice_override: 'el-kostas' }} owner={false} />);
+  expect(screen.queryByTestId('voice-pick')).toBeNull();
+});

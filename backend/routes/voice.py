@@ -9,6 +9,7 @@ Voice (docs/VOICE.md).
   GET     /api/voice/tts/jobs/<job_id>            job state
   GET     /api/voice/audio/<key>?fmt=ogg|m4a      the audio, for whoever may read one of its messages
   POST    /api/voice/tts/preview {voice_id}       a fixed sample sentence in that voice
+  GET     /api/voice/health                       site admin: speech status, queues, VRAM, disk, minutes today
   GET     /api/voice/translations?campaign_id&location_id&ids=1,2&lang=el
                                                   translations / originals of a room's messages
 """
@@ -179,6 +180,10 @@ def _speech_tts(cursor, body, message_id):
     """POST /tts on the speech service; remembers the key. (json, status)."""
     try:
         status, job = speech_client.call_json("POST", "/tts", body)
+        if status == 400 and job.get("error") == "unknown_voice" and body.get("voice"):
+            # the character's chosen voice left the catalog: speak with the gender voice instead
+            body = {k: v for k, v in body.items() if k != "voice"}
+            status, job = speech_client.call_json("POST", "/tts", body)
     except speech_client.SpeechUnavailable:
         return _SPEECH_DOWN
     if status >= 400:
@@ -239,10 +244,12 @@ def create_tts_job():
         msg = visible_message(cursor, mid, user_id)
         if msg is None:
             return jsonify({"error": "Message not found"}), 404
-        gender = None
+        gender = override = None
         if msg.get("character_id"):
-            cursor.execute("SELECT gender FROM characters WHERE id = %s", (msg["character_id"],))
-            gender = (cursor.fetchone() or {}).get("gender")
+            cursor.execute("SELECT gender, voice_override FROM characters WHERE id = %s",
+                           (msg["character_id"],))
+            ch = cursor.fetchone() or {}
+            gender, override = ch.get("gender"), ch.get("voice_override")
         cursor.execute("SELECT voice_settings FROM campaigns WHERE id = %s", (msg["campaign_id"],))
         camp = (cursor.fetchone() or {}).get("voice_settings")
         user_settings = _user_settings(cursor, user_id)
@@ -250,7 +257,7 @@ def create_tts_job():
             msg, waiting = _in_hear_lang(cursor, msg, user_settings)
             if waiting:
                 return jsonify({"state": "waiting_translation"}), 200
-        body = tts_request(msg, gender, user_settings, camp)
+        body = tts_request(msg, gender, user_settings, camp, override)
         if body is None:
             return jsonify({"error": "not_spoken"}), 400
         out, status = _speech_tts(cursor, body, mid)
@@ -437,7 +444,7 @@ def stt_job_status(job_id):
             out["text"] = text
             segs = voice_clips.checked_segments(clip)
             if segs is None and job.get("words"):
-                # Phase 6: Krikri fixes only Laya's flagged words, within 3 s, else Whisper's text
+                # Phase 6: Krikri fixes only Laya's flagged words, within 4.5 s, else Whisper's text
                 segs = transcript_check.check(
                     job["words"], job.get("suspects") or [], clip.get("lang") or "en",
                     transcript_check.chronicle_names(cursor, int(clip["campaign_id"])),
@@ -508,6 +515,42 @@ def clip_audio(clip_id):
 
 
 # ---------------------------------------------------------------------------------------------
+# Health (Phase 5): site admins only.
+
+@voice_bp.route("/voice/health", methods=["GET"])
+@jwt_required()
+def voice_health():
+    user_id = _uid()
+    if user_id is None:
+        return jsonify({"error": "Invalid session"}), 401
+    conn, cursor = _open()
+    try:
+        cursor.execute("SELECT role FROM users WHERE id = %s", (user_id,))
+        u = cursor.fetchone()
+        if not u or u.get("role") != "admin":
+            return jsonify({"error": "Admin only"}), 403
+        minutes = voice_clips.minutes_today(cursor)
+        est = voice_clips.used_bytes(cursor)
+    finally:
+        conn.close()
+    try:
+        status, speech = speech_client.call_json("GET", "/health")
+    except speech_client.SpeechUnavailable:
+        status, speech = 503, {}
+    up = status == 200
+    stt, tts, clips = (speech.get(k) or {} for k in ("stt", "tts", "clips")) if up else ({}, {}, {})
+    return jsonify({
+        "speech": {"up": up, "stt_loaded": stt.get("loaded"), "pocket_loaded": tts.get("pocket_loaded"),
+                   "pocket_error": tts.get("pocket_error")},
+        "queues": {"stt": stt.get("queue"), "tts": tts.get("queue")},
+        "vram": {"free_mb": stt.get("vram_free_mb"), "needed_mb": stt.get("vram_needed_mb")},
+        "disk": {"clips_bytes": clips.get("bytes"), "clips_estimate_bytes": est,
+                 "clips_cap_bytes": voice_clips.clips_max_bytes(),
+                 "tts_cache_bytes": tts.get("cache_bytes"), "tts_cache_cap_bytes": tts.get("cache_cap_bytes")},
+        "minutes_today": minutes,
+    }), 200
+
+
 # Language override (Phase 4): captions. Translations are made ahead of time (after the message
 # is saved); this only reads them, and queues one that a listener needs but nobody made yet.
 

@@ -13,6 +13,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Transcript check.** After Transcribe, Whisper's text is checked: the chronicle's names and a short WoD glossary are given to Whisper as a hint, Laya-words (somniusx/recmeets-laya-words, a fine-tune of convaiinnovations' Laya, Apache 2.0) flags words that were probably misheard, and Krikri fixes only those (it may join a split word, «βλυχ άρα» → «βλαχάρα», and keeps slang and swearing). Fixed words are shown as chips under the text; a tap puts back what Whisper heard. If anything is slow or down, Whisper's text is shown unchanged. EN + EL.
 - `voice_clips.transcript_checked`; speech `/stt` takes `prompt` and `check`; `VOICE_TRANSCRIPT_CHECK`, `TRANSCRIPT_CHECK_MODEL`.
 
+## [0.20.0] - 2026-10-17 - Voice ops and polish
+
+### Added
+- **A character's own voice.** On the sheet the owner can pick one catalog voice (e.g. `el-kostas`); it reads that character's in-character lines in its language instead of the gender voice. Checked against the speech service's catalog. EN + EL.
+- **Push-to-talk on a computer:** hold Space in a room to record, let go to review. Not while typing.
+- **Voice health** in Admin → AI system: speech service state, queues, free VRAM, recordings and cache on disk against their caps, minutes recorded per player today. `GET /api/voice/health`, site admins only.
+- Device checklist in docs/VOICE.md (to fill in on real phones).
+
+### Changed
+- The spoken-line cache is capped at `VOICE_TTS_CACHE_GB` (default 5), least recently played first.
+- Recordings transcribed but never sent are removed after 24 hours (at start, then daily).
+- Schema: `characters.voice_override`.
+
 ## [0.19.0] - 2026-10-17 - Language override
 
 ### Added

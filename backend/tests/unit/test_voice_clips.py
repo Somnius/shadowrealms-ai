@@ -132,3 +132,95 @@ def test_unmetered_clips_count(api, speech):  # noqa: F811
     cur = Conn(api.raw).cursor()
     voice_clips.record(cur, "a" * 32, 10, 100, 3, "en")
     assert voice_clips.used_bytes(cur) == voice_clips.UNMETERED_MS * 4
+
+
+def test_health_admin_only(api, speech, monkeypatch):  # noqa: F811
+    from services import speech_client
+    base = speech_client.call_json
+
+    def cj(method, path, body=None):
+        if path == "/health":
+            return 200, {"stt": {"loaded": True, "queue": 1, "vram_free_mb": 9000, "vram_needed_mb": 2150},
+                         "tts": {"queue": 2, "cache_bytes": 10, "cache_cap_bytes": 99}, "clips": {"bytes": 5}}
+        return base(method, path, body)
+
+    monkeypatch.setattr(speech_client, "call_json", cj)
+    post_clip(api, 3)
+    api.raw.execute("UPDATE voice_clips SET duration_ms = 90000")
+    for uid in (2, 3, 4):
+        assert api("GET", "/api/voice/health", uid).status_code == 403
+    r = api("GET", "/api/voice/health", 1).get_json()
+    assert r["speech"]["up"] and r["queues"] == {"stt": 1, "tts": 2} and r["vram"]["free_mb"] == 9000
+    assert r["disk"]["clips_bytes"] == 5 and r["disk"]["tts_cache_cap_bytes"] == 99
+    assert r["minutes_today"][0]["user_id"] == 3 and r["minutes_today"][0]["minutes"] == 1.5
+
+
+def test_health_speech_down(api, monkeypatch):  # noqa: F811
+    from services import speech_client
+
+    def down(*a, **k):
+        raise speech_client.SpeechUnavailable("x")
+
+    monkeypatch.setattr(speech_client, "call_json", down)
+    r = api("GET", "/api/voice/health", 1)
+    assert r.status_code == 200 and r.get_json()["speech"]["up"] is False
+
+
+def test_orphan_sweep(api, speech):  # noqa: F811
+    from datetime import datetime, timedelta
+    post_clip(api, 3)
+    api.raw.execute("INSERT INTO voice_clips (clip_id, campaign_id, user_id, message_id, created_at) "
+                    "VALUES ('d', 10, 3, 1, '2000-01-01 00:00:00')")  # sent: kept
+    from tests.unit.test_creation_validation_routes import Conn
+    cur = Conn(api.raw).cursor()
+    assert voice_clips.sweep_orphans(cur) == []  # fresh
+    later = datetime.utcnow() + timedelta(hours=25)
+    assert voice_clips.sweep_orphans(cur, now=later) == [CLIP]
+    assert speech["deleted"] == [CLIP]
+    assert [r[0] for r in api.raw.execute("SELECT clip_id FROM voice_clips")] == ["d"]
+
+
+def test_orphan_sweep_keeps_rows_when_speech_down(api, monkeypatch):  # noqa: F811
+    from datetime import datetime, timedelta
+
+    from services import speech_client
+    from tests.unit.test_creation_validation_routes import Conn
+    voice_clips.ensure_voice_clips_table(Conn(api.raw).cursor())
+    api.raw.execute("INSERT INTO voice_clips (clip_id, campaign_id, user_id, created_at) "
+                    "VALUES ('e', 10, 3, '2000-01-01 00:00:00')")
+
+    def down(*a, **k):
+        raise speech_client.SpeechUnavailable("x")
+
+    monkeypatch.setattr(speech_client, "call_json", down)
+    from tests.unit.test_creation_validation_routes import Conn
+    cur = Conn(api.raw).cursor()
+    assert voice_clips.sweep_orphans(cur, now=datetime.utcnow() + timedelta(hours=1)) == []
+    assert [r[0] for r in api.raw.execute("SELECT clip_id FROM voice_clips")] == ["e"]
+
+
+def test_orphan_sweep_spares_a_clip_sent_meanwhile(api, speech, monkeypatch):  # noqa: F811
+    from datetime import datetime, timedelta
+    post_clip(api, 3)
+    from tests.unit.test_creation_validation_routes import Conn
+    cur = Conn(api.raw).cursor()
+    real = voice_clips._drop_files
+    seen = []
+
+    def sent_first(ids):
+        seen.append(list(ids))
+        return real(ids)
+
+    monkeypatch.setattr(voice_clips, "_drop_files", sent_first)
+    real_exec = cur.execute
+    state = {"done": False}
+
+    def execute(sql, params=()):
+        if sql.startswith("DELETE FROM voice_clips") and not state["done"]:
+            state["done"] = True
+            api.raw.execute("UPDATE voice_clips SET message_id = 1")  # a send lands just now
+        return real_exec(sql, params)
+
+    cur.execute = execute
+    assert voice_clips.sweep_orphans(cur, now=datetime.utcnow() + timedelta(hours=25)) == []
+    assert speech["deleted"] == [] and api.raw.execute("SELECT COUNT(*) FROM voice_clips").fetchone()[0] == 1

@@ -183,3 +183,44 @@ def test_gender_validation():
     assert _gender_error({}) is None and _gender_error({"gender": None}) is None
     assert _gender_error({"gender": "male"}) is None and _gender_error({"gender": ""}) is None
     assert _gender_error({"gender": "other"})
+
+
+def test_voice_override_wins_when_language_matches():
+    from services import voice_tts as vt
+    en = vt.tts_request(row(), "male", {}, {}, "en_GB-alan-medium")
+    assert en["voice"] == "en_GB-alan-medium" and en["gender"] == "male"
+    el = vt.tts_request(row(content="Καλησπέρα σας"), "female", {}, {}, "en_GB-alan-medium")
+    assert "voice" not in el and el["gender"] == "female"  # an English pick does not speak Greek
+    assert vt.tts_request(row(content="Καλησπέρα"), None, {}, {}, "el-kostas")["voice"] == "el-kostas"
+    assert "voice" not in vt.tts_request(row(speaker_mode="player", character_id=None), None, {}, {}, "el-kostas")
+
+
+def test_voice_override_validation():
+    from services.voice_tts import voice_override_error as err
+    cat = {"el-kostas", "en_US-ryan-high"}
+    assert err(None, None) is None and err("", cat) is None
+    assert err("el-kostas", cat) is None
+    assert err("el-nobody", cat) == "unknown voice"
+    assert err("fr-x", cat) and err(5, cat) and err("el-kostas; drop", cat)
+    assert err("el-kostas", None) == "speech_unavailable"
+
+
+def test_gone_override_falls_back_to_gender_voice(api, monkeypatch):
+    from database import ensure_characters_gender_column
+    from services import speech_client
+
+    ensure_characters_gender_column(Conn(api.raw).cursor())
+    api.raw.execute("UPDATE characters SET gender = 'male', voice_override = 'en_GB-gone-medium' WHERE id = 7")
+    base = speech_client.call_json
+
+    def cj(method, path, body=None):
+        if path == "/tts" and body.get("voice") == "en_GB-gone-medium":
+            api.speech["calls"].append((method, path, body))
+            return 400, {"error": "unknown_voice"}
+        return base(method, path, body)
+
+    monkeypatch.setattr(speech_client, "call_json", cj)
+    r = api("POST", "/api/voice/tts/jobs", 5, {"message_id": 1})
+    assert r.status_code == 200
+    sent = [b for m, p, b in api.speech["calls"] if p == "/tts"]
+    assert sent[-2]["voice"] == "en_GB-gone-medium" and "voice" not in sent[-1] and sent[-1]["gender"] == "male"

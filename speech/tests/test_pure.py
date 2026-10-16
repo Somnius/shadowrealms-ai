@@ -121,3 +121,20 @@ def test_laya_words_marking_and_sequence():
     ids, markers = check.build(lambda t: [10 + len(x) for x in t.split()], m, "a b c")
     assert ids[0] == 2 and ids[-1] == 1 and [ids[p] for p in markers] == [4, 4]
     assert check.candidates(["ο", "βλυχ", "άρα", "πάλι"], [0.1, 0.4, 0.99, 0.3]) == [3, 1]
+
+
+def test_tts_cache_lru_with_tiny_cap(tmp_path):
+    import time
+    from app import diskcache
+    for i, k in enumerate(["aa1", "bb2", "cc3"]):
+        d = tmp_path / k[:2]
+        d.mkdir()
+        (d / f"{k}.ogg").write_bytes(b"x" * 100)
+        (d / f"{k}.m4a").write_bytes(b"x" * 100)
+        t = time.time() - 100 + i
+        os.utime(d / f"{k}.ogg", (t, t))
+    diskcache.touch(str(tmp_path / "aa" / "aa1.ogg"))  # just used: kept
+    assert diskcache.evict_lru(str(tmp_path), 250) == 2
+    assert (tmp_path / "aa" / "aa1.ogg").exists()
+    assert not (tmp_path / "bb" / "bb2.ogg").exists() and not (tmp_path / "cc" / "cc3.m4a").exists()
+    assert diskcache.dir_bytes(str(tmp_path)) == 200

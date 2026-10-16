@@ -118,3 +118,29 @@ export function checkedChanges(segments) {
     .filter((x) => x && typeof x.t === 'string' && typeof x.raw === 'string')
     .map((x) => ({ fixed: x.t, raw: x.raw }));
 }
+
+/**
+ * Desktop push-to-talk: Space held anywhere in the room starts the recorder, release stops it.
+ * Never while typing (inputs, text areas, selects, contenteditable) or with a modifier.
+ */
+export function isTypingTarget(el) {
+  if (!el || !el.tagName) return false;
+  const tag = el.tagName.toLowerCase();
+  if (tag === 'textarea' || tag === 'select' || tag === 'button') return true;
+  if (tag === 'input') return true;
+  return !!el.isContentEditable || el.getAttribute?.('contenteditable') === 'true';
+}
+
+export function isPushToTalkKey(e) {
+  return !!e && (e.code === 'Space' || e.key === ' ') && !e.repeat && !e.ctrlKey && !e.metaKey && !e.altKey && !e.shiftKey && isPushToTalkTarget(e.target);
+}
+
+// Space records only with focus on the page itself or the room's message list (role=log),
+// never on a link, a button-like element or inside a dialog, so Space keeps scrolling elsewhere.
+export function isPushToTalkTarget(el) {
+  if (!el || !el.tagName || isTypingTarget(el)) return false;
+  const tag = el.tagName.toLowerCase();
+  if (tag === 'body' || tag === 'html') return !(el.ownerDocument && el.ownerDocument.querySelector('[role="dialog"],[aria-modal="true"]'));
+  if (!el.closest || el.closest('a,[role="button"],[role="dialog"],[aria-modal="true"]')) return false;
+  return !!el.closest('[role="log"]');
+}

@@ -124,11 +124,19 @@ def attach(cursor, clip_id, message_id):
 
 
 def _drop_files(clip_ids):
+    """Ask speech to delete the files. Returns the ids it could not delete."""
+    failed = []
     for cid in clip_ids:
         try:
-            speech_client.call_json("DELETE", f"/clips/{cid}")
+            status, _ = speech_client.call_json("DELETE", f"/clips/{cid}")
         except speech_client.SpeechUnavailable:
             logger.warning("speech service down: clip %s left on disk", cid[:8])
+            failed.append(cid)
+            continue
+        if status >= 500:
+            logger.warning("speech could not delete clip %s (%s)", cid[:8], status)
+            failed.append(cid)
+    return failed
 
 
 def forget_message_clips(cursor, message_ids):
@@ -153,3 +161,82 @@ def forget_campaign_clips(cursor, campaign_id):
     cursor.execute("DELETE FROM voice_clips WHERE campaign_id = %s", (campaign_id,))
     _drop_files(gone)
     return gone
+
+
+ORPHAN_HOURS = 24
+
+
+def _utc_str(dt):
+    return dt.strftime("%Y-%m-%d %H:%M:%S")
+
+
+def sweep_orphans(cursor, hours=ORPHAN_HOURS, now=None):
+    """Clips recorded but never sent, older than `hours`: rows and files go. Returns the ids."""
+    from datetime import datetime, timedelta, timezone
+
+    now = now or datetime.now(timezone.utc).replace(tzinfo=None)
+    ensure_voice_clips_table(cursor)
+    cursor.execute(
+        "SELECT clip_id FROM voice_clips WHERE message_id IS NULL AND created_at < %s",
+        (_utc_str(now - timedelta(hours=hours)),),
+    )
+    gone = [r["clip_id"] for r in cursor.fetchall()]
+    if not gone:
+        return []
+    # rows first, only those still unsent (one may have been sent since the select)
+    ph = ", ".join(["%s"] * len(gone))
+    cursor.execute(f"SELECT * FROM voice_clips WHERE message_id IS NULL AND clip_id IN ({ph})", tuple(gone))
+    rows = {r["clip_id"]: dict(r) for r in cursor.fetchall()}
+    gone = list(rows)
+    if not gone:
+        return []
+    ph = ", ".join(["%s"] * len(gone))
+    cursor.execute(f"DELETE FROM voice_clips WHERE message_id IS NULL AND clip_id IN ({ph})", tuple(gone))
+    cursor.execute(f"SELECT clip_id FROM voice_clips WHERE clip_id IN ({ph})", tuple(gone))
+    sent = {r["clip_id"] for r in cursor.fetchall()}  # sent in between: not ours to delete
+    gone = [c for c in gone if c not in sent]
+    # a row whose file could not be deleted comes back, so the next sweep tries again
+    failed = set(_drop_files(gone))
+    for cid in failed:
+        row = rows[cid]
+        cols = ", ".join(row)
+        cursor.execute(f"INSERT INTO voice_clips ({cols}) VALUES ({', '.join(['%s'] * len(row))})", tuple(row.values()))
+    return [c for c in gone if c not in failed]
+
+
+def minutes_today(cursor, now=None):
+    """[{user_id, username, clips, minutes}] recorded since midnight UTC, most first."""
+    from datetime import datetime, timezone
+
+    now = now or datetime.now(timezone.utc).replace(tzinfo=None)
+    ensure_voice_clips_table(cursor)
+    cursor.execute(
+        "SELECT c.user_id, u.username, COUNT(*) AS n, COALESCE(SUM(c.duration_ms), 0) AS ms "
+        "FROM voice_clips c LEFT JOIN users u ON u.id = c.user_id WHERE c.created_at >= %s "
+        "GROUP BY c.user_id, u.username ORDER BY ms DESC",
+        (_utc_str(now.replace(hour=0, minute=0, second=0, microsecond=0)),),
+    )
+    return [{"user_id": r["user_id"], "username": r.get("username"), "clips": int(r["n"]),
+             "minutes": round(int(r["ms"] or 0) / 60000, 1)} for r in cursor.fetchall()]
+
+
+def sweep_loop(app, every_seconds=86400):
+    """Background thread: sweep on start, then daily. Never raises."""
+    import time
+
+    from database import get_db
+
+    while True:
+        try:
+            with app.app_context():
+                conn = get_db()
+                try:
+                    gone = sweep_orphans(conn.cursor())
+                    conn.commit()
+                finally:
+                    conn.close()
+            if gone:
+                logger.info("voice: %d unsent clips older than %d h removed", len(gone), ORPHAN_HOURS)
+        except Exception as e:  # noqa: BLE001
+            logger.warning("voice clip sweep failed: %s", type(e).__name__)
+        time.sleep(every_seconds)

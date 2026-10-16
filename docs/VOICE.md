@@ -60,7 +60,7 @@ Stored: `characters.gender` and `npcs.gender` (`ensure_characters_gender_column`
 - **Marker and replay.** A line sent by voice has a 14-px mic after the speaker's name (and at the start of later rows of the same speaker), with a spoken name ("Sent by voice" / "Dictated on the phone"); everyone sees it. A recorded line has a one-line chip under it: play/pause, time, and a separate seek bar. One `<audio playsinline>` per room, so one clip plays at a time; Ogg/Opus where the browser plays it, the AAC copy (made on first request) on iOS.
 - **Microphone blocked**: the mic button becomes `mic-off`; tapping it says to allow the microphone in the phone's Settings.
 - **Chronicle settings → Voice**: longest recording (30 s to 3 min) and whether players may use phone dictation.
-- **Kept** for the chronicle's lifetime; deleted with the message, and all of a chronicle's clips with the chronicle. A recording that was transcribed but never sent stays until the chronicle goes (an orphan sweep is Phase 5).
+- **Kept** for the chronicle's lifetime; deleted with the message, and all of a chronicle's clips with the chronicle. A recording that was transcribed but never sent is removed after 24 hours (0.20).
 
 ### Speaking API
 
@@ -96,13 +96,20 @@ Not tried on real phones yet (step 0.5): iOS home-screen mic access, which forma
 
 Rate limits per user: translations 60 a minute, translate 20 a minute (200 an hour), TTS jobs 90 a minute. Stored: `message_translations (message_id, lang, text, kind 'ai'|'original', model, created_at)`, deleted with the message; `messages.lang` (language of the text, guessed from the letters) and `messages.orig_lang`.
 
+## Ops and polish (0.20)
+
+- **Your character's own voice.** On the character sheet («χαρτί του χαρακτήρα») the owner can pick one voice from the server's list (e.g. `el-kostas`) under "Specific voice". It reads that character's in-character lines («Εντός ρόλου») in its language instead of the voice chosen by gender; lines in the other language keep the gender voice; out-of-character lines («Εκτός ρόλου») keep the neutral voice. "Automatic (by gender)" clears it. The pick is checked against the speech service's catalog (`characters.voice_override`; 503 `speech_unavailable` if the service is down when you save).
+- **Push-to-talk on a computer.** In a room, hold Space to record and let go to stop and review. It works only with focus on the page or the message list (not on a link, a button or an open dialog), so Space still scrolls and presses things elsewhere. It does nothing while you are typing in a box, with a modifier key held, or when the microphone is blocked.
+- **Admin → AI system → Voice**: whether the speech service runs, Whisper loaded or idle, both queues, free GPU memory against what transcription needs, recordings on disk against the cap, the spoken-line cache against its cap, and minutes recorded per player today (UTC). `GET /api/voice/health`, site admins only (403 for everyone else).
+- **Clean-up.** The spoken-line cache is capped at `VOICE_TTS_CACHE_GB` (default 5): the least recently played lines are removed first, checked at start and after every 20 new lines. Recordings transcribed but never sent are removed after 24 hours (rows and files), at backend start and then daily. Deleting a chronicle deletes all its recordings (since 0.18).
+
 ## Transcript check (0.21)
 
 When you tap Transcribe, the text is checked before you see it. Nothing is ever held up: if a step is missing, down or slow, you get Whisper's text unchanged.
 
 1. **Hint.** Whisper gets the chronicle's character, NPC and location names and a short World of Darkness glossary as its `initial_prompt` (≤ 400 characters). It only nudges spellings.
 2. **Flags.** In the speech service, Laya-words scores Whisper's unsure words (word probability < 0.985, 3+ letters; least sure first, up to 12, within 2 s; about 0.12 s a word on 4 CPU threads): "is the word marked ⟦ ⟧ a recognition mistake?", asked with the 10 words each side. The input is built exactly as RecMeets builds it (laya.common.build_sequence).
-3. **Fix.** The backend sends Krikri (`TRANSCRIPT_CHECK_MODEL`, default LM Studio `llama-krikri-8b-instruct`, temperature 0, 3 s in all) the whole line with only the flagged spans marked (Laya ≥ 0.7; a neighbour Whisper was under 0.7 sure of joins the span, so «βλυχ άρα» is one span) and the names. It may join split words and writes slang and swearing as spoken. A fix that does not sound like the span (a synonym), a rewrite, or an accent-only change is dropped.
+3. **Fix.** The backend sends Krikri (`TRANSCRIPT_CHECK_MODEL`, default LM Studio `llama-krikri-8b-instruct`, temperature 0, one call of at most 3.5 s, 4.5 s in all; asked once per clip, on the first poll after Whisper is done, then stored) the whole line with only the flagged spans marked (Laya ≥ 0.7; a neighbour Whisper was under 0.7 sure of joins the span, so «βλυχ άρα» is one span) and the names. It may join split words and writes slang and swearing as spoken. A fix that does not sound like the span (a synonym), a rewrite, or an accent-only change is dropped.
 4. **Show.** Under the text, each fixed word is a 44-px chip ("heard: βλυχ άρα"); a tap puts Whisper's words back in the text, another tap re-applies the fix. The text stays editable.
 
 `GET /api/voice/stt/jobs/<id>` adds `checked` (segments `[{t}, {t, raw}]`) and `text_raw` when something was fixed; `text` is then the checked text (and what a write-in translation uses). Stored: `voice_clips.transcript_raw` (Whisper, always) and `voice_clips.transcript_checked` (JSON segments, `[]` when nothing changed). `VOICE_TRANSCRIPT_CHECK=0` turns it off. The speech service's `/stt` takes `prompt` and `check=1` and returns `words`, `probs`, `suspects [{i, word, p_whisper, p_laya}]` and `check_ms`; `/health` has `check`.
@@ -182,8 +189,33 @@ TTS audio is cached by a hash of the engine version, voice, bitrate and cleaned 
 
 ### Settings (`.env`)
 
-`SPEECH_SECRET`, `SPEECH_PORT` (5055), `VOICE_STT_VRAM_MB` (2150), `VOICE_STT_IDLE_SECONDS` (600). Others with defaults in `speech/app/config.py`: text limit 5,000 characters, clip limits, bitrates (clips 16k, TTS 24k), queue sizes.
+`SPEECH_SECRET`, `SPEECH_PORT` (5055), `VOICE_STT_VRAM_MB` (2150), `VOICE_STT_IDLE_SECONDS` (600), `VOICE_TTS_CACHE_GB` (5). Backend: `VOICE_CLIPS_MAX_GB` (20). Others with defaults in `speech/app/config.py`: text limit 5,000 characters, clip limits, bitrates (clips 16k, TTS 24k), queue sizes.
 
 ### Tests
 
-`python -m pytest speech/tests` covers text cleaning, Greek numbers, splitting, cache keys, limits and the voice mapping (including neutral). They need no models.
+`python -m pytest speech/tests` covers text cleaning, Greek numbers, splitting, cache keys, limits, the voice mapping (including neutral) and the TTS cache eviction with a tiny cap. They need no models.
+
+## Device checklist
+
+Fill in on the real phones after each voice release (✓ works, ✗ fails, note what happened). Results are left blank until someone runs it.
+
+| Check | iPhone, Safari tab | iPhone, home-screen app | Android, Chrome |
+|---|---|---|---|
+| Listen with phone voices: first line plays after the ear tap | | | |
+| Listen with server voices: Greek and English lines play | | | |
+| Silent / mute switch on: does Listen still play? | | | |
+| App in the background: Listen pauses, "Tap to resume" on return | | | |
+| Screen locked during a narration | | | |
+| Record 20 s, review at 2×, Transcribe, Send | | | |
+| Record to the 3-minute auto-stop | | | |
+| Recording when the app goes to the background (pauses or stops) | | | |
+| Microphone denied: mic-off button and the Settings hint | | | |
+| Microphone allowed again after denying | | | |
+| Replay a recorded line (Ogg or the AAC copy) | | | |
+| Phone dictation (Greek and English) | | | |
+| GPU busy: the text step offers phone dictation | | | |
+| Character's specific voice heard on its lines | | | |
+
+Desktop (one browser is enough): Space push-to-talk starts and stops; Space while typing in the message box types a space.
+
+Load check (server): 4 listeners in one room and one Storyteller narration, cold cache: first audio in under 3 s, CPU under the 80% cap. Result: 

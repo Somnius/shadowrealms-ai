@@ -33,3 +33,13 @@ JOB_KEEP_SECONDS = _int("VOICE_JOB_KEEP_SECONDS", 3600)
 LAYA_THREADS = _int("VOICE_LAYA_THREADS", 4)
 LAYA_BUDGET_S = _int("VOICE_LAYA_BUDGET_MS", 2000) / 1000
 PROMPT_MAX_CHARS = _int("VOICE_STT_PROMPT_MAX_CHARS", 400)
+
+
+def _float(name, default):
+    try:
+        return float(os.environ.get(name, default))
+    except ValueError:
+        return default
+
+
+TTS_CACHE_BYTES = int(_float("VOICE_TTS_CACHE_GB", 5) * 1024 ** 3)

@@ -13,8 +13,8 @@ How each phase runs: build in its own git worktree → tests and CI green → on
 | 2 | Server voices | speech container · gender on the sheet · TTS jobs and cache · voice catalog and narrator voices · server mode in the app | 0.17 | until 03:45 | done: released 0.17.0 |
 | 3 | Speaking | clip upload · transcription jobs and the GPU policy · recorder with the timer · review and text steps · mic marker and replay · phone dictation | 0.18 | until 06:00 | done: released 0.18.0 |
 | 4 | Language override | translator · ahead-of-time translation · captions with "show original" · speak in one language, write in the other | 0.19 | until 06:45 | done: released 0.19.0 |
-| 5 | Ops and polish | health panel · cache and disk caps · per-character voice · device checklist | 0.20 | after the deadline | built, review fixes in progress |
-| 6 | Transcript check | Whisper hints with the chronicle's names · recmeets Laya-words flags misheard words · Krikri fixes only those (split words, slang) · changed words marked, tap to undo | 0.21 | until 06:30 | built on `voice/p6-check`, release 0.21.0 pending review |
+| 5 | Ops and polish | health panel · cache and disk caps · per-character voice · device checklist | 0.20 | after the deadline | done: released 0.20.0 (phone checklist still open) |
+| 6 | Transcript check | Whisper hints with the chronicle's names · recmeets Laya-words flags misheard words · Krikri fixes only those (split words, slang) · changed words marked, tap to undo | 0.21 | until 06:30 | done: released 0.21.0 (speech image rebuild + model copy on deploy) |
 
 ## Decisions (2026-10-16)
 
@@ -74,20 +74,20 @@ How each phase runs: build in its own git worktree → tests and CI green → on
 
 ## Phase 5 — Ops and polish (0.20)
 
-- [ ] 5.1 Admin health: queue depths, VRAM, minutes per player today, clip disk use, in the monitoring panel. Status: not started.
-- [ ] 5.2 TTS cache LRU, clip folder removed with the chronicle, orphan sweep. Status: not started.
-- [ ] 5.3 Per-character voice pick; desktop Space push-to-talk. Status: not started.
-- [ ] 5.4 Device checklist in VOICE.md and a load check (4 listeners + one narration under 3 s to first audio). Status: not started.
-- [ ] 5.5 Release 0.20. Status: not started.
+- [x] 5.1 Admin health: queue depths, VRAM, minutes per player today, clip disk use, in the monitoring panel. Status: done. `GET /api/voice/health` (admin only) and a Voice panel in Admin → AI system; pytest for 403s and the speech-down path, jest for the panel.
+- [x] 5.2 TTS cache LRU, clip folder removed with the chronicle, orphan sweep. Status: done. `VOICE_TTS_CACHE_GB` (default 5) with LRU in the speech service (tested with a tiny cap); unsent clips older than 24 h swept at start and daily; chronicle delete already removed its clips since 0.18.
+- [x] 5.3 Per-character voice pick; desktop Space push-to-talk. Status: done. `characters.voice_override` checked against the catalog, used for in-character lines in its language; Space held records, release stops (not while typing).
+- [ ] 5.4 Device checklist in VOICE.md and a load check (4 listeners + one narration under 3 s to first audio). Status: checklist written in VOICE.md; results and the load check still need the real phones and the live server.
+- [x] 5.5 Release 0.20. Status: done (0.20.0).
 
 ## Phase 6 — Transcript check (0.21)
 
 - [x] 6.1 Whisper hint: the chronicle's character, NPC and location names and a short WoD glossary as `initial_prompt` (≤ 400 characters). Status: done. On the test clips it fixed "the Prince" casing and Elysium, but once glued «Άντε ρε βλαχάρα» into «Άντερευλαχάρα»: it biases, it can hurt.
 - [x] 6.2 Laya-words (somniusx/recmeets-laya-words, ONNX int8, 4 CPU threads) in the speech service: Whisper's word probabilities in, the chance each unsure word (< 0.985, 3+ letters, ±10 words of context) is a mistake out, least sure first, 2 s budget. Status: done, ~0.12 s a word.
-- [x] 6.3 Krikri (LM Studio, temperature 0, 3 s budget) proposes a fix for the flagged spans only (Laya ≥ 0.7, plus a neighbour Whisper was < 0.7 sure of, for split words); fixes that do not sound like the span (synonyms), rewrites and accent-only changes are dropped. Status: done.
+- [x] 6.3 Krikri (LM Studio, temperature 0, 3.5 s call, 4.5 s budget) proposes a fix for the flagged spans only (Laya ≥ 0.7, plus a neighbour Whisper was < 0.7 sure of, for split words); fixes that do not sound like the span (synonyms), rewrites and accent-only changes are dropped. Status: done.
 - [x] 6.4 Recorder text step: fixed words as 44-px chips under the text ("heard: …"), a tap puts Whisper's words back (and again re-applies the fix). EN + EL. `voice_clips.transcript_raw` keeps Whisper's text, `transcript_checked` the segments. Status: done.
 - [x] 6.5 Evaluation on the phase 0 samples and synthetic slang lines (VOICE.md). Status: done; the check is conservative and misses most mistakes Whisper was sure of.
-- [ ] 6.6 Release 0.21 after Lef's review; rebuild the speech image (tokenizers pinned) and copy `data/voice/models/laya-words`. Status: waiting.
+- [x] 6.6 Release 0.21. Status: done (0.21.0); on deploy rebuild the speech image (tokenizers pinned) and copy `data/voice/models/laya-words`.
 
 ## Log
 

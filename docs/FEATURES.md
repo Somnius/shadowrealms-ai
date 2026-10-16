@@ -29,6 +29,10 @@ Feature notes for ShadowRealms AI that don't have their own document. The full l
 
 - **Transcript check.** Voice messages are checked after transcription: words the recogniser probably misheard are fixed using the line and the chronicle's names (split words joined, slang kept), shown as chips you can tap to undo. See [VOICE.md](VOICE.md).
 
+## What's new in v0.20.0
+
+- **Voice polish.** Pick a specific voice for your character on its sheet, hold Space to talk on a computer, and a voice health panel for admins; old unsent recordings and the voice cache clean themselves up. See [VOICE.md](VOICE.md).
+
 ## What's new in v0.19.0
 
 - **Language override.** Read and hear the table in English or Greek whatever each player writes: lines are translated ahead of time, shown in your language with "Show original" under them, and spoken in your language. Speak Greek and send English (or the reverse); your own words stay under the line. See [VOICE.md](VOICE.md).

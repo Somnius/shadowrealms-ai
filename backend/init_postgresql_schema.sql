@@ -136,6 +136,7 @@ CREATE TABLE IF NOT EXISTS characters (
     play_suspended_by           INTEGER REFERENCES users(id) ON DELETE SET NULL,
     play_suspension_updated_at  TIMESTAMP,
     gender                      TEXT,                                -- voice gender: female/male/neutral, NULL = not set (docs/VOICE.md)
+    voice_override              TEXT,                                -- a catalog voice id picked by the owner; beats gender
     created_at                  TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at                  TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );

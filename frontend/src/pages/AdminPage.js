@@ -8,6 +8,7 @@ import { t } from '../i18n';
 import AiProvidersPanel from './admin/AiProvidersPanel';
 import SecurityPanel from './admin/SecurityPanel';
 import LayaPanel from './admin/LayaPanel';
+import VoiceHealthPanel from '../features/voice/VoiceHealthPanel';
 import formatWhen from './admin/formatWhen';
 import './admin/admin.css';
 
@@ -1340,6 +1341,7 @@ function AdminPage({ token, user, displayTimezone = null, onAdminOpenCampaign = 
       <p className="sr-admin__lead">
         {t('admin:ai.lead', 'Choose which model id the backend sends to LM Studio’s OpenAI-compatible API, or leave the default to follow LM_STUDIO_MODEL in the environment and the model LM Studio reports as loaded. This is the default LM Studio model (used by the English Storyteller and fallbacks unless a role below names a model). The master system prompt is prepended to every feature-specific system prompt.')}
       </p>
+      <VoiceHealthPanel />
       {aiSectionLoading ? (
         <p className="sr-admin__muted">{t('admin:loading', 'Loading…')}</p>
       ) : (

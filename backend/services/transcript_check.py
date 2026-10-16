@@ -185,7 +185,9 @@ def parse_fixes(answer: str, sp: Sequence[Sequence[int]], words: Sequence[str]) 
     try:
         data = json.loads(m.group(0))
     except ValueError:
-        return {}
+        # Krikri sometimes adds a remark inside the braces ({"1": "βλαχάρα", "βλυχ άρα" sounds…});
+        # the numbered pairs are still usable, everything else is ignored.
+        data = {k: v for k, v in re.findall(r'"(\d+)"\s*:\s*"([^"\n]*)"', m.group(0))}
     out: Dict[int, str] = {}
     for k, (a, b) in enumerate(sp, 1):
         v = data.get(str(k)) if isinstance(data, dict) else None

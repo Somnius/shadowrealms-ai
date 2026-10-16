@@ -760,6 +760,8 @@ def ensure_characters_gender_column(cursor):
     """Voice gender ('female' | 'male' | 'neutral' | NULL) on characters and npcs; NULL speaks neutral."""
     _ensure_text_column(cursor, "characters", "gender")
     _ensure_text_column(cursor, "npcs", "gender")
+    # a specific catalog voice picked by the owner (e.g. "el-kostas"); beats the gender mapping
+    _ensure_text_column(cursor, "characters", "voice_override")
 
 
 @once_per_process
