@@ -10,7 +10,7 @@ How each phase runs: build in its own git worktree → tests and CI green → on
 
 | # | Phase | Parts | Version | Status |
 |---|---|---|---|---|
-| 0 | Measure | synthetic chronicles · a chapter timed on Krikri · does LM Studio queue a Storyteller reply behind a chapter call · VRAM headroom with Whisper and TTS · the live chronicle read by eye with Lef | — | measured 17 Oct; Lef's read and the context-size choice pending |
+| 0 | Measure | synthetic chronicles · a chapter timed on Krikri · does LM Studio queue a Storyteller reply behind a chapter call · VRAM headroom with Whisper and TTS · the live chronicle read by eye with Lef | — | done 17 Oct (Lef read the results and agreed; Krikri at 32k) |
 | 1 | Summary, minutes, archive | chronicler roles · busy marker · chapters (gap, session-mark ids, cleanup) · era digests · jobs · routes · panel · Markdown export · minutes for the whole chronicle or the last N nights · archive on delete (stored minutes + raw transcript) · `campaigns.language` column | 0.24 | not started |
 | 2 | Sheet-look PDF, edits, languages | PDF in the sheet's look · Storyteller's edit copy · translation on request · chronicle language asked at creation | 0.25 | not started |
 | 3 | Horror look, date ranges, session marks | horror PDF (committed paper image + reportlab, A4 and Letter, one test print) · minutes for a date range · "session ended here" from the message menu, shown to players | 0.26 | not started |
@@ -121,7 +121,7 @@ Build rules that come out of the reviews. These are not product choices; Lef's c
 - [ ] 0.1 Three synthetic chronicles (Greek, English, mixed; 1, 10 and 60 nights; hidden rolls, a closed room, in-room OOC, a session mark) as a pytest fixture generator. Status: moved into 1.2, where the tests that use them are written.
 - [x] 0.2 Krikri on real nights of 2,100–4,000 tokens: 4–7 s each at about 100 tokens a second, valid JSON every time, ids real (numbers with the enforced schema). **The instructions must be in Greek:** English instructions gave 0–13% Greek, Greek ones 94–100%. One invention ("Ventrue Prince"), so the prompt needs a rule against clans and titles that aren't in the lines. Status: done 17 Oct.
 - [x] 0.3 There are 4 parallel slots, so there's no queueing: a Storyteller reply during a chapter isn't slower. **But the slots share the context:** at 8k, a 4k chapter plus a 5.7k Storyteller prompt both fail with "context exceeded". At 16k both succeed, for +1 GB. GPU memory: 8.9 GB at 8k, 10.0 GB at 16k, 11.3 GB with Whisper too (of 16 GB). Status: done 17 Oct.
-- [ ] 0.4 "The Echoing Basement" summarised by the local model only and read by eye with Lef: does it get the gist, does it invent? Status: summaries in `to-lef/chronicle/PHASE0_RESULTS.md`, waiting for Lef's read.
+- [x] 0.4 "The Echoing Basement" summarised by the local model only and read by eye with Lef. Status: done 17 Oct; Lef is happy with the detailed summaries (`to-lef/chronicle/PHASE0_RESULTS.md`).
 
 ## Phase 1 — Summary, minutes, archive (0.24)
 
