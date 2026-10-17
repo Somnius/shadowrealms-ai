@@ -1071,9 +1071,12 @@ class Runner:
 
     def _translate_piece(self, text, src, dst, names, check_cancel):
         from services import translation
-        tr, model = translation.translate(cd.sentence_case(text, names), src, dst, generate=self.generate, names=names,
+        # rolls in brackets, "(Dexterity + Investigation)", stay as written: the model sometimes swaps the
+        # trait for another one, which also loses the placeholder of a protected game term
+        body, kept = cd.lift_latin_brackets(text)
+        tr, model = translation.translate(cd.sentence_case(body, names), src, dst, generate=self.generate, names=names,
                                           timeout=TRANSLATE_TIMEOUT_S, before_retry=check_cancel)
-        tr = tr[:1].upper() + tr[1:]
+        tr = cd.put_back_brackets(tr[:1].upper() + tr[1:], kept)
         self.model = model or self.model
         self.progress.token(cd.estimate_tokens(tr))
         # half-translated output ("Αναζήτηση of Δοκιμαστή"): the names put back are allowed to stay as written,

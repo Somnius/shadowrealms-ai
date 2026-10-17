@@ -1159,6 +1159,26 @@ def apply_translation(digest: Optional[Dict[str, Any]], chapters: Sequence[Dict[
     return d
 
 
+_LATIN_BRACKET = re.compile(r"\s*\(([A-Za-z0-9][A-Za-z0-9 +\-/,']*)\)")
+
+
+def lift_latin_brackets(text: str):
+    """(text without its Latin-only brackets, the brackets) — rolls like "(Dexterity + Investigation)"."""
+    kept = [m.group(0).strip() for m in _LATIN_BRACKET.finditer(text or "")]
+    return _LATIN_BRACKET.sub("", text or "").strip(), kept
+
+
+def put_back_brackets(text: str, kept: Sequence[str]) -> str:
+    """The lifted brackets back, before the final full stop."""
+    if not kept:
+        return text
+    t = (text or "").rstrip()
+    end = t[-1:] if t[-1:] in ".!?;" else ""
+    if end:
+        t = t[:-1].rstrip()
+    return t + " " + " ".join(kept) + end
+
+
 def sentence_case(text: str, names: Sequence[str] = ()) -> str:
     """A short Title Case text (a night's title) in sentence case before translation: the translator takes
     capitalised words for names and leaves them as they are. Words of the chronicle's names keep their case."""

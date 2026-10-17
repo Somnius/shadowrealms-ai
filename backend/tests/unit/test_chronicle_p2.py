@@ -447,3 +447,10 @@ def test_titles_go_to_the_translator_in_sentence_case():
     assert cd.sentence_case("Αινιγματικά Μηνύματα στο Υπόγειο") == "Αινιγματικά μηνύματα στο υπόγειο"
     assert cd.sentence_case("Η Αναζήτηση της Ελένης Βλαχάκη", ["Ελένης", "Βλαχάκη"]) == "Η αναζήτηση της Ελένης Βλαχάκη"
     assert cd.sentence_case("Ο Κωνσταντίνος βρήκε το υπόγειο. Μετά έφυγε.") == "Ο Κωνσταντίνος βρήκε το υπόγειο. Μετά έφυγε."
+
+
+def test_rolls_in_brackets_stay_as_written():
+    from services import chronicle_digest as cd
+    body, kept = cd.lift_latin_brackets("Η Μαρώ δείχνει μια σημείωση (Dexterity + Investigation).")
+    assert body == "Η Μαρώ δείχνει μια σημείωση." and kept == ["(Dexterity + Investigation)"]
+    assert cd.put_back_brackets("Maro shows a note.", kept) == "Maro shows a note (Dexterity + Investigation)."
