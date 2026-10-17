@@ -24,7 +24,7 @@ import re
 from datetime import datetime, timedelta
 from typing import Any, Dict, Iterable, List, Optional, Sequence, Set, Tuple
 
-PROMPT_VERSION = 1
+PROMPT_VERSION = 2  # 2: only the names the night uses
 GAP_HOURS = 6.0
 ERA_SIZE = 10
 MAX_ERAS_PER_JOIN = 8
