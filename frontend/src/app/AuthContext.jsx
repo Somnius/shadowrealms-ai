@@ -8,7 +8,7 @@ import {
   setTokenRefreshedHandler,
   setUnauthorizedHandler,
 } from './http';
-import { clearSessionPrefix, DRAFT_PREFIX } from './hooks';
+import { CHARS_CACHE_PREFIX, clearSessionPrefix, DRAFT_PREFIX } from './hooks';
 import {
   forgetStoredLanguage,
   onLanguageChosen,
@@ -78,6 +78,7 @@ export function AuthProvider({ children }) {
     store('token', null);
     store('user', null);
     clearSessionPrefix(DRAFT_PREFIX);
+    clearSessionPrefix(CHARS_CACHE_PREFIX);
     setLanguageOwner(null);
     setToken(null);
     setUserState(null);

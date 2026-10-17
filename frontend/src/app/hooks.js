@@ -125,3 +125,5 @@ export function clearSessionPrefix(prefix) {
 
 /** Composer drafts: one per user and room, in this tab only. */
 export const DRAFT_PREFIX = 'sr_draft_';
+/** Profile's remembered character list (sessionStorage), cleared at sign-out with the drafts. */
+export const CHARS_CACHE_PREFIX = 'sr_profile_chars_';

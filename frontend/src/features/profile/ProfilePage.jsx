@@ -4,6 +4,7 @@ import { Avatar, Badge, Button, Card, EmptyState, Glyph, Input, Panel, Select, S
 import { PageBody, TopBar } from '../../app/AppShell';
 import ButtonLink from '../../app/ButtonLink';
 import { useApi, useAuth } from '../../app/AuthContext';
+import { CHARS_CACHE_PREFIX } from '../../app/hooks';
 import { useSheet } from '../../app/SheetContext';
 import { errorText } from '../../app/http';
 import { getTimezoneSelectOptions } from '../../utils/timezones';
@@ -20,7 +21,7 @@ import './profile.css';
 const MAX_IMAGE = 360000;
 
 // The last character list, kept for this tab, so the page shows it at once and refreshes it behind.
-const charsCacheKey = (user) => (user && user.id != null ? `sr_profile_chars_${user.id}` : null);
+const charsCacheKey = (user) => (user && user.id != null ? `${CHARS_CACHE_PREFIX}${user.id}` : null);
 function readCachedChars(user) {
   const key = charsCacheKey(user);
   if (!key) return null;
@@ -37,7 +38,12 @@ function writeCachedChars(user, list) {
   try {
     sessionStorage.setItem(key, JSON.stringify(list));
   } catch {
-    /* full or blocked: the page still works, only without the instant list */
+    // full or blocked: drop the old copy so a stale list is never shown again
+    try {
+      sessionStorage.removeItem(key);
+    } catch {
+      /* storage blocked: nothing kept */
+    }
   }
 }
 
@@ -325,6 +331,7 @@ function CharactersSection() {
   const userId = user ? user.id : null;
   // Keyed on the user's id, not the user object: a refreshed /users/me must not fetch the list again.
   const load = useCallback(async () => {
+    if (userId == null) return; // no user yet: wait for it rather than flash "No characters yet"
     const r = await api('/characters/');
     if (!r.ok || !Array.isArray(r.data.characters)) {
       setChars((cur) => cur || []);
@@ -334,7 +341,7 @@ function CharactersSection() {
     const mine = ownCharacters(r.data.characters, userRef.current);
     setChars(mine);
     writeCachedChars(userRef.current, mine);
-  }, [api, userId]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [api, userId]);
   useEffect(() => {
     load();
   }, [load]);
@@ -455,7 +462,7 @@ function DowntimeSection() {
     setChars(list);
     setCharId((cur) => cur || (list[0] ? String(list[0].id) : ''));
     setMine(d.ok && Array.isArray(d.data.requests) ? d.data.requests : []);
-  }, [api, userId]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [api, userId]); // eslint-disable-line react-hooks/exhaustive-deps -- reload when the signed-in user changes
   useEffect(() => {
     load();
   }, [load]);
