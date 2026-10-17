@@ -13,7 +13,7 @@ How each phase runs: build in its own git worktree → tests and CI green → on
 | 0 | Measure | synthetic chronicles · a chapter timed on Krikri · does LM Studio queue a Storyteller reply behind a chapter call · VRAM headroom with Whisper and TTS · the live chronicle read by eye with Lef | — | done 17 Oct (Lef read the results and agreed; Krikri at 32k) |
 | 1 | Summary, minutes, archive | chronicler roles · busy marker · chapters (gap, session-mark ids, cleanup) · era digests · jobs · routes · panel · Markdown export · minutes for the whole chronicle or the last N nights · archive on delete (stored minutes + raw transcript) · `campaigns.language` column | 0.24 | done: released 0.24.0 (17 Oct) |
 | 2 | Sheet-look PDF, edits, languages | PDF in the sheet's look · Storyteller's edit copy · translation on request · chronicle language asked at creation | 0.25 | done: released 0.25.0 (17 Oct) |
-| 3 | Horror look, date ranges, session marks | horror PDF (committed paper image + reportlab, A4 and Letter, one test print) · minutes for a date range · "session ended here" from the message menu, shown to players | 0.26 | not started |
+| 3 | Horror look, date ranges, session marks | horror PDF (committed paper image + reportlab, A4 and Letter, one test print) · minutes for a date range · "session ended here" from the message menu, shown to players | 0.26 | built on `chronicle/p3` (17 Oct); review and Lef's test print next |
 | 4 | Previously on… | recap card after 12 h away and a button · jump to the message · read-out | 0.27 | not started |
 | 5 | Ops | nightly run (quiet window) · per-chronicle settings · caps · admin health · admin archive page | 0.28 | not started |
 
@@ -182,10 +182,10 @@ Build rules that come out of the reviews. These are not product choices; Lef's c
 
 ## Phase 3 — Horror look, date ranges, session marks (0.26)
 
-- [ ] 3.1 Horror look: the paper image made once from Serkan's builder (fixed seed) and committed per paper size; reportlab draws the paper, then the frame, thorns and blood as paths, then the text as vector. `look=horror` on exports. One test print by Lef. Status: not started.
-- [ ] 3.2 Minutes for a date range: a from/to picker in the Storyteller's timezone, nights counted by their first message, unwritten nights reported. Status: not started.
-- [ ] 3.3 "Session ended here" in the message menu (Storyteller only); players see a thin "— end of session —" line; the cutter already honours it. Status: not started.
-- [ ] 3.4 Release 0.26. Status: not started.
+- [x] 3.1 Horror look: the paper image made once from Serkan's builder (fixed seed) and committed per paper size; reportlab draws the paper, then the frame, thorns and blood as paths, then the text as vector. `look=horror` on exports. One test print by Lef. Status: built 17 Oct: `backend/assets/pdf/paper-a4.jpg` and `paper-letter.jpg` (seed 26, 250 dpi, about 320 KB, README beside them), `services/pdf_horror.py` (frame, thorned corners, splatters, drips from the builder's geometry, a fixed seed per page), ink and blood-red headings in `chronicle_pdf.py`; Look: Sheet / Horror in the panel. Greek checked by extraction, the paper embedded once, text inside the margins (tests). The sheet look is the default and unchanged. Lef's test print still to do.
+- [x] 3.2 Minutes for a date range: a from/to picker in the Storyteller's timezone, nights counted by their first message, unwritten nights reported. Status: done 17 Oct: `from`, `to`, `tz` on `minutes.md|pdf` (default the user's display timezone, then UTC; a range wins over `last`), nights keep their whole-chronicle numbers, unwritten nights in the range counted at the top; From/To pickers in the panel (sending the display timezone or the device's). Tests with Athens time and nights across midnight.
+- [x] 3.3 "Session ended here" in the message menu (Storyteller only); players see a thin "— end of session —" line; the cutter already honours it. Status: done 17 Oct: `GET/POST …/chronicle/session-marks`, `DELETE …/session-marks/<id>` (marking: Storyteller and site admins; reading: members, players only in rooms they can read); the chat loads the marks in one small request per chronicle; the line is a timeline row after the marked message. A mark makes the nights it cuts stale (test). No schema change.
+- [ ] 3.4 Release 0.26. Status: docs, changelog and the version bump done on the branch 17 Oct; review, Lef's test print, merge and release next.
 
 ## Phase 4 — Previously on… (0.27)
 
@@ -203,6 +203,7 @@ Build rules that come out of the reviews. These are not product choices; Lef's c
 
 ## Log
 
+- 2026-10-17 — Phase 3 built on `chronicle/p3`: the horror look (committed paper images, vector frame and blood, `look=horror`), minutes for a date range in the Storyteller's timezone, "Session ended here" in the message menu with the end-of-session line, docs and version 0.26.0. Backend and frontend tests green with fake models. Review and Lef's test print next.
 - 2026-10-17 — **0.25.0 released.**
   - Two reviews were fixed: the PDF crash on crossed bold/italic in an edit, translations lost on one timeout, long paragraphs cut, partial translations hidden.
   - Real bold in the PDF.

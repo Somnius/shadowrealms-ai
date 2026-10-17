@@ -27,7 +27,10 @@ export function dayKey(ms, timeZone) {
   }
 }
 
-export function buildTimeline(messages, { firstUnreadId = null, hiddenIds = null, timeZone = null, windowMs = GROUP_WINDOW_MS } = {}) {
+export function buildTimeline(
+  messages,
+  { firstUnreadId = null, hiddenIds = null, timeZone = null, windowMs = GROUP_WINDOW_MS, sessionEnds = null } = {}
+) {
   const rows = [];
   let lastDay = null;
   let group = null;
@@ -57,6 +60,7 @@ export function buildTimeline(messages, { firstUnreadId = null, hiddenIds = null
     if (CARD_KINDS.has(kind)) {
       rows.push({ type: 'card', key: msgKey, kind, message: msg });
       group = null;
+      if (sessionEnds && msg.id != null && sessionEnds.has(String(msg.id))) rows.push({ type: 'session-end', key: `end-${msg.id}`, id: msg.id });
       continue;
     }
 
@@ -69,6 +73,11 @@ export function buildTimeline(messages, { firstUnreadId = null, hiddenIds = null
     } else {
       group = { type: 'group', key: `g-${msgKey}`, kind, speaker: who, messages: [msg] };
       rows.push(group);
+    }
+    // "Session ended here" (0.26): a thin line under the marked message; the next message starts a new group
+    if (sessionEnds && msg.id != null && sessionEnds.has(String(msg.id))) {
+      rows.push({ type: 'session-end', key: `end-${msg.id}`, id: msg.id });
+      group = null;
     }
   }
   return rows;

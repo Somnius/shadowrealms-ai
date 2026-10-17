@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.26.0] - 2026-10-17 - Horror look, date ranges, session marks
+
+### Added
+- **The horror look for the chronicle PDFs.** Look: Sheet / Horror beside Paper in the export controls. The horror look has stained paper, a double blood-red frame with thorned corners, blood splatters in the margins and drips at the top of the first page, dark ink and blood-red headings, with real bold. The paper is one committed image per paper size (A4 and Letter); the frame, the blood and the text are vector, so Greek text can still be selected and searched. The sheet look stays the default and is unchanged.
+- **Minutes for a date range.** From and To date pickers beside "last N nights" and "whole chronicle" (`from=`, `to=`, `tz=` on the minutes exports). The days are in the Storyteller's timezone and a night counts by its first message. Only written nights are included; nights in the range that aren't written yet are listed at the top ("3 nights in this range are not written yet: press Update").
+- **Session ended here.** The chronicle's Storyteller and site admins can mark a message as the end of a session from the message menu, and take the mark away again. Everyone sees a thin "— end of session —" line under it. The next Update of the chronicle so far rewrites the nights the mark cuts.
+
 ## [0.25.0] - 2026-10-17 - Chronicle PDF, edits and languages
 
 ### Added

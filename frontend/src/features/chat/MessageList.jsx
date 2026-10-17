@@ -38,6 +38,7 @@ export default function MessageList({
   firstUnreadId,
   hiddenIds,
   timeZone,
+  sessionEnds = null,
   onAtBottomChange,
   userId,
   hasMore = false,
@@ -64,8 +65,8 @@ export default function MessageList({
   }, []);
 
   const rows = useMemo(
-    () => buildTimeline(messages, { firstUnreadId, hiddenIds, timeZone }),
-    [messages, firstUnreadId, hiddenIds, timeZone]
+    () => buildTimeline(messages, { firstUnreadId, hiddenIds, timeZone, sessionEnds }),
+    [messages, firstUnreadId, hiddenIds, timeZone, sessionEnds]
   );
   const markers = useMemo(() => markersById(messages), [messages]);
 
@@ -245,6 +246,13 @@ export default function MessageList({
                   return (
                     <div key={row.key} className="sr-chat__new" role="separator" aria-label={t('chat:newMessages', 'New messages')} data-unread-divider>
                       <span>{t('chat:new', 'New')}</span>
+                    </div>
+                  );
+                }
+                if (row.type === 'session-end') {
+                  return (
+                    <div key={row.key} className="sr-chat__session-end" role="separator" data-session-end={row.id}>
+                      <span>{t('chat:sessionEnd.line', '— end of session —')}</span>
                     </div>
                   );
                 }

@@ -258,7 +258,15 @@ function EditCopy({ api, id, edit, toast, onChanged }) {
  * open the chronicle. Update shows how long it will take first; while it runs the card polls the job
  * every 1.5 s (5 s while waiting for a quiet moment), the way the recorder polls its jobs.
  */
-export default function ChronicleSoFarPanel({ api, campaign, toast }) {
+function deviceTimeZone() {
+  try {
+    return Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
+  } catch {
+    return 'UTC';
+  }
+}
+
+export default function ChronicleSoFarPanel({ api, campaign, toast, timeZone = null }) {
   const id = campaign.id;
   const lang = getLanguage();
   const [data, setData] = useState(null);
@@ -273,6 +281,9 @@ export default function ChronicleSoFarPanel({ api, campaign, toast }) {
   const [tableTalk, setTableTalk] = useState(false);
   const [viewLang, setViewLang] = useState('');
   const [paper, setPaper] = useState('a4');
+  const [look, setLook] = useState('sheet');
+  const [fromDay, setFromDay] = useState('');
+  const [toDay, setToDay] = useState('');
   const alive = useRef(true);
 
   useEffect(() => {
@@ -373,21 +384,32 @@ export default function ChronicleSoFarPanel({ api, campaign, toast }) {
   const own = data ? data.own_lang || data.lang : lang;
   const other = data && data.lang !== own ? data.lang : '';
 
+  // PDF options: paper and look (the sheet is the default and is not sent)
+  const pdfOpts = (ext) => (ext === 'pdf' ? { paper, look: look === 'horror' ? 'horror' : '' } : {});
+  // a date range: calendar days in the Storyteller's timezone (the app's display timezone, else this device's)
+  const zone = timeZone || deviceTimeZone();
+  const rangeBad = !!(fromDay && toDay && fromDay > toDay);
+  const rangeSet = !!(fromDay && toDay && !rangeBad);
+
   const exportStory = async (ext) => {
-    const q = query({ lang: other, with_table_talk: tableTalk, paper: ext === 'pdf' ? paper : '' });
+    const q = query({ lang: other, with_table_talk: tableTalk, ...pdfOpts(ext) });
     const res = await downloadMarkdown(`/campaigns/${id}/chronicle.${ext}${q}`, mdFileName(campaign.name, fileLang === 'el' ? 'ως τώρα' : 'so far', ext));
     if (!res.ok) toast({ tone: 'danger', title: t('chronicle:soFar.exportFailed', 'Export failed.') });
   };
 
   const exportMinutes = async (ext) => {
     const n = parseInt(lastN, 10);
-    const q = query({ last: n > 0 ? n : '', lang: other, with_table_talk: tableTalk, paper: ext === 'pdf' ? paper : '' });
+    const range = rangeSet ? { from: fromDay, to: toDay, tz: zone } : { last: n > 0 ? n : '' };
+    const q = query({ ...range, lang: other, with_table_talk: tableTalk, ...pdfOpts(ext) });
     const res = await downloadMarkdown(`/campaigns/${id}/chronicle/minutes.${ext}${q}`, mdFileName(campaign.name, fileLang === 'el' ? 'πρακτικά' : 'minutes', ext));
     if (!res.ok) toast({ tone: 'danger', title: t('chronicle:soFar.exportFailed', 'Export failed.') });
   };
 
+  let minutesWhat = t('chronicle:soFar.minutesWhole', 'the whole chronicle');
+  if (rangeSet) minutesWhat = t('chronicle:soFar.minutesRange', '{{from}} to {{to}}', { from: fromDay, to: toDay });
+  else if (parseInt(lastN, 10) > 0) minutesWhat = t('chronicle:soFar.minutesLast', 'the last {{n}} nights', { n: parseInt(lastN, 10) });
+
   const live = isLive(job);
-  const n = parseInt(lastN, 10);
   return (
     <Panel title={t('chronicle:soFar.title', 'The chronicle so far')} icon="scroll" className="sr-sofar">
       <p className="sr-sofar__lead">{t('chronicle:soFar.lead', 'The chat written up as a story, night by night, by the local model. It only runs when you press Update, and waits for a quiet moment in play.')}</p>
@@ -455,20 +477,58 @@ export default function ChronicleSoFarPanel({ api, campaign, toast }) {
                   aria-label={t('chronicle:soFar.lastN', 'Number of nights')}
                   placeholder="∞"
                 />
-                <Button icon="scroll" onClick={() => exportMinutes('md')}>
+                <Button icon="scroll" onClick={() => exportMinutes('md')} disabled={rangeBad}>
                   {t('chronicle:soFar.exportMinutes', 'Export minutes')}
                   {' · '}
-                  {n > 0 ? t('chronicle:soFar.minutesLast', 'the last {{n}} nights', { n }) : t('chronicle:soFar.minutesWhole', 'the whole chronicle')}
+                  {minutesWhat}
                 </Button>
-                <Button icon="scroll" onClick={() => exportMinutes('pdf')}>{t('chronicle:soFar.exportMinutesPdf', 'Minutes PDF')}</Button>
+                <Button icon="scroll" onClick={() => exportMinutes('pdf')} disabled={rangeBad}>{t('chronicle:soFar.exportMinutesPdf', 'Minutes PDF')}</Button>
               </div>
-              <Select
-                label={t('chronicle:soFar.paper', 'Paper')}
-                value={paper}
-                onChange={(e) => setPaper(e.target.value)}
-                options={[{ value: 'a4', label: 'A4' }, { value: 'letter', label: 'Letter' }]}
-                fieldClassName="sr-field--short"
-              />
+              <div className="sr-sofar__range" data-testid="sofar-range">
+                <Input
+                  type="date"
+                  label={t('chronicle:soFar.from', 'From')}
+                  value={fromDay}
+                  max={toDay || undefined}
+                  onChange={(e) => setFromDay(e.target.value)}
+                />
+                <Input
+                  type="date"
+                  label={t('chronicle:soFar.to', 'To')}
+                  value={toDay}
+                  min={fromDay || undefined}
+                  onChange={(e) => setToDay(e.target.value)}
+                />
+                {fromDay || toDay ? (
+                  <Button variant="ghost" onClick={() => { setFromDay(''); setToDay(''); }}>
+                    {t('chronicle:soFar.clearRange', 'Clear dates')}
+                  </Button>
+                ) : null}
+              </div>
+              <p className="sr-sofar__hint">
+                {rangeBad
+                  ? t('chronicle:soFar.rangeBad', 'The first day must come before the last.')
+                  : t('chronicle:soFar.rangeHint', 'A night counts on the day of its first message ({{zone}}). Nights in the range that aren’t written yet are listed at the top.', { zone })}
+              </p>
+              <div className="sr-sofar__pdfopts">
+                <Select
+                  label={t('chronicle:soFar.paper', 'Paper')}
+                  value={paper}
+                  onChange={(e) => setPaper(e.target.value)}
+                  options={[{ value: 'a4', label: 'A4' }, { value: 'letter', label: 'Letter' }]}
+                  fieldClassName="sr-field--short"
+                />
+                <Select
+                  label={t('chronicle:soFar.look', 'Look')}
+                  value={look}
+                  onChange={(e) => setLook(e.target.value)}
+                  options={[
+                    { value: 'sheet', label: t('chronicle:soFar.lookSheet', 'Sheet') },
+                    { value: 'horror', label: t('chronicle:soFar.lookHorror', 'Horror') },
+                  ]}
+                  fieldClassName="sr-field--short"
+                />
+              </div>
               <Switch checked={tableTalk} onChange={setTableTalk} label={t('chronicle:soFar.withTableTalk', 'With table talk')} />
             </div>
           ) : null}

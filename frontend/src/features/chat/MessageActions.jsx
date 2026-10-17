@@ -5,13 +5,15 @@
  * - Touch (no hover): a "…" button on each message, or a long press, opens the toolbar (not while
  *   the finger scrolls or selects text).
  * - "Read this" / "Read from here" (read along, 0.22) when the page passes canRead / onRead.
+ * - "Session ended here" (0.26): the Storyteller and site admins mark or unmark a message; everyone
+ *   sees a thin "— end of session —" line under it (the marks come from a small endpoint).
  * - The page provides MessageActionsContext (PlayPage via useMessageActions); without it (the
  *   showcase preview) messages render without actions.
  */
-import { createContext, useCallback, useContext, useMemo, useRef, useState } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { Button, Glyph, IconButton, Modal } from '../../design';
 import { errorText } from '../../app/http';
-import { canDeleteMessage, copyTextOf, copyToClipboard, isActionable, replyTargetOf } from './messageRules';
+import { canDeleteMessage, copyTextOf, copyToClipboard, isActionable, isChronicleStaff, replyTargetOf } from './messageRules';
 import { t } from '../../i18n';
 
 export const MessageActionsContext = createContext(null);
@@ -129,6 +131,23 @@ export function MessageActions({ message }) {
             />
           </>
         ) : null}
+        {ctx.canMarkSession && ctx.canMarkSession(message) ? (
+          <IconButton
+            icon="moon-new"
+            size="sm"
+            tooltip={false}
+            aria-pressed={ctx.isSessionEnd(message)}
+            label={
+              ctx.isSessionEnd(message)
+                ? t('chat:actions.sessionEndRemove', 'Remove the end of session mark')
+                : t('chat:actions.sessionEnd', 'Session ended here')
+            }
+            onClick={() => {
+              close();
+              ctx.onToggleSessionEnd(message);
+            }}
+          />
+        ) : null}
         {deletable ? (
           <IconButton
             icon="trash"
@@ -220,6 +239,54 @@ export function useMessageActions({ api, user, campaign, room, toast, reduced = 
   const [replyTo, setReplyTo] = useState(null);
   const [confirming, setConfirming] = useState(null);
   const say = useCallback((opts) => toast && toast(opts), [toast]);
+  const campaignId = campaign ? campaign.id : null;
+  const [sessionEnds, setSessionEnds] = useState(() => new Set());
+
+  // Session-end marks of the chronicle (they cut every room): one small request per chronicle, apart
+  // from the room's messages so the chat never waits for it.
+  useEffect(() => {
+    let live = true;
+    setSessionEnds(new Set());
+    if (campaignId == null || !api) return undefined;
+    (async () => {
+      const r = await api(`/campaigns/${campaignId}/chronicle/session-marks`);
+      if (live && r && r.ok && r.data && Array.isArray(r.data.message_ids)) setSessionEnds(new Set(r.data.message_ids.map(String)));
+    })();
+    return () => {
+      live = false;
+    };
+  }, [api, campaignId]);
+
+  const onToggleSessionEnd = useCallback(
+    async (msg) => {
+      const key = String(msg.id);
+      const was = sessionEnds.has(key);
+      const flip = (on) =>
+        setSessionEnds((prev) => {
+          const next = new Set(prev);
+          if (on) next.add(key);
+          else next.delete(key);
+          return next;
+        });
+      flip(!was);
+      const r = was
+        ? await api(`/campaigns/${campaignId}/chronicle/session-marks/${msg.id}`, { method: 'DELETE' })
+        : await api(`/campaigns/${campaignId}/chronicle/session-marks`, { method: 'POST', body: { message_id: msg.id } });
+      if (r && r.ok) {
+        say({
+          tone: 'ok',
+          title: was
+            ? t('chat:sessionEnd.removed', 'End of session mark removed. The next Update of the chronicle so far rewrites those nights.')
+            : t('chat:sessionEnd.added', 'Marked as the end of the session. The next Update of the chronicle so far rewrites those nights.'),
+        });
+        return true;
+      }
+      flip(was);
+      say({ tone: 'danger', title: errorText(r && r.data, t('chat:sessionEnd.failed', 'Could not change the end of session mark.')) });
+      return false;
+    },
+    [api, campaignId, sessionEnds, say]
+  );
 
   const onCopy = useCallback(
     async (msg) => {
@@ -277,8 +344,11 @@ export function useMessageActions({ api, user, campaign, room, toast, reduced = 
       onReply,
       onJump,
       onDelete: (msg) => setConfirming(msg),
+      canMarkSession: (msg) => isChronicleStaff(user, campaign) && msg && typeof msg.id === 'number' && !msg.temp,
+      isSessionEnd: (msg) => !!msg && sessionEnds.has(String(msg.id)),
+      onToggleSessionEnd,
     }),
-    [openId, user, campaign, onCopy, onReply, onJump]
+    [openId, user, campaign, onCopy, onReply, onJump, sessionEnds, onToggleSessionEnd]
   );
 
   const dialog = (
@@ -318,5 +388,5 @@ export function useMessageActions({ api, user, campaign, room, toast, reduced = 
     </Modal>
   );
 
-  return { value, dialog, replyTo, clearReply: () => setReplyTo(null), deleteNow };
+  return { value, dialog, replyTo, clearReply: () => setReplyTo(null), deleteNow, sessionEnds };
 }

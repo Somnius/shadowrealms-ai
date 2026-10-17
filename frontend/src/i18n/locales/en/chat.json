@@ -114,7 +114,9 @@
     "copied": "Copied to the clipboard.",
     "copyFailed": "Could not copy the text.",
     "readThis": "Read this",
-    "readFrom": "Read from here"
+    "readFrom": "Read from here",
+    "sessionEnd": "Session ended here",
+    "sessionEndRemove": "Remove the end of session mark"
   },
   "reply": {
     "replyingTo": "Replying to {{name}}",
@@ -141,5 +143,11 @@
   },
   "explain": {
     "privateTitle": "Only you can see this (hidden roll)"
+  },
+  "sessionEnd": {
+    "line": "— end of session —",
+    "added": "Marked as the end of the session. The next Update of the chronicle so far rewrites those nights.",
+    "removed": "End of session mark removed. The next Update of the chronicle so far rewrites those nights.",
+    "failed": "Could not change the end of session mark."
   }
 }

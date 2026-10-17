@@ -558,6 +558,7 @@ export default function PlayPage() {
                     firstUnreadId={room.firstUnreadId}
                     hiddenIds={dice.hiddenMessageIds}
                     timeZone={user?.display_timezone || null}
+                    sessionEnds={actions.sessionEnds}
                     onAtBottomChange={setAtBottom}
                     userId={user?.id}
                     hasMore={room.hasMore}

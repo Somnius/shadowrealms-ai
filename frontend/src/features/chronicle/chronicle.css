@@ -67,6 +67,8 @@
   display: flex; flex-wrap: wrap; gap: var(--sr-space-2); align-items: center; margin-bottom: var(--sr-space-3);
 }
 .sr-app .sr-sofar__minutes input { width: 5.5em; }
+.sr-app .sr-sofar__range, .sr-app .sr-sofar__pdfopts { display: flex; flex-wrap: wrap; gap: var(--sr-space-2) var(--sr-space-3); align-items: flex-end; margin-bottom: var(--sr-space-2); }
+.sr-app .sr-sofar__range .sr-field { margin: 0; }
 .sr-app .sr-sofar__progress, .sr-app .sr-sofar__notice {
   display: flex; flex-direction: column; gap: var(--sr-space-2); padding: var(--sr-space-3);
   margin-bottom: var(--sr-space-3); border: 1px solid var(--sr-border); border-radius: var(--sr-radius-md, 8px);

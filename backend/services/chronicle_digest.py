@@ -21,7 +21,7 @@ import hashlib
 import json
 import math
 import re
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta, timezone
 from typing import Any, Dict, Iterable, List, Optional, Sequence, Set, Tuple
 
 PROMPT_VERSION = 2  # 2: only the names the night uses
@@ -84,6 +84,10 @@ WORDS: Dict[str, Dict[str, str]] = {
         "covers_last": "The last {n} nights, {first} – {last}.",
         "unwritten": "{n} nights are not written yet; Update carries on.",
         "nothing": "Nothing written yet.",
+        "covers_range": "From {start} to {end}: {n} written nights.",
+        "covers_range_1": "From {start} to {end}: 1 written night.",
+        "range_unwritten": "{n} nights in this range are not written yet: press Update.",
+        "range_unwritten_1": "1 night in this range is not written yet: press Update.",
         "botch": "Botch",
         "critical": "Critical",
         "hidden_roll": "hidden roll",
@@ -132,6 +136,10 @@ WORDS: Dict[str, Dict[str, str]] = {
         "covers_last": "Οι τελευταίες {n} νύχτες, {first} – {last}.",
         "unwritten": "{n} νύχτες δεν έχουν γραφτεί ακόμα· η Ενημέρωση συνεχίζει.",
         "nothing": "Δεν έχει γραφτεί τίποτα ακόμα.",
+        "covers_range": "Από {start} έως {end}: {n} γραμμένες νύχτες.",
+        "covers_range_1": "Από {start} έως {end}: 1 γραμμένη νύχτα.",
+        "range_unwritten": "{n} νύχτες σε αυτό το διάστημα δεν έχουν γραφτεί ακόμα: πάτα Ενημέρωση.",
+        "range_unwritten_1": "1 νύχτα σε αυτό το διάστημα δεν έχει γραφτεί ακόμα: πάτα Ενημέρωση.",
         "botch": "Καταστροφική αποτυχία",
         "critical": "Κρίσιμη επιτυχία",
         "hidden_roll": "κρυφή ρίψη",
@@ -149,6 +157,21 @@ WORDS: Dict[str, Dict[str, str]] = {
 
 def words(lang: str) -> Dict[str, str]:
     return WORDS["el" if lang == "el" else "en"]
+
+
+def local_date(at: Optional[datetime], tz) -> Optional[date]:
+    """The calendar date of a stored time (naive = UTC) in timezone tz (a ZoneInfo)."""
+    if not at:
+        return None
+    if at.tzinfo is None:
+        at = at.replace(tzinfo=timezone.utc)
+    return at.astimezone(tz).date()
+
+
+def in_range(at: Optional[datetime], tz, start: date, end: date) -> bool:
+    """A night counts by its first message: is that message's local date within start..end?"""
+    d = local_date(at, tz)
+    return bool(d and start <= d <= end)
 
 
 def fmt_date(at: Optional[datetime], lang: str) -> str:
@@ -1406,8 +1429,11 @@ def _cast(facts: Dict[str, Any], lang: str, st: bool) -> List[str]:
 
 def minutes_markdown(facts: Dict[str, Any], chapters: Sequence[Dict[str, Any]], lang: str, view: str = "st",
                      last_n: Optional[int] = None, existing_ids: Optional[Set[int]] = None,
-                     with_table_talk: bool = False, translated: bool = False) -> str:
-    """The full record of the written nights (all, or the last N), in a minutes layout. No model calls."""
+                     with_table_talk: bool = False, translated: bool = False,
+                     date_range: Optional[Dict[str, Any]] = None) -> str:
+    """The full record of the written nights (all, the last N, or a date range), in a minutes layout.
+    date_range: {"start": date, "end": date, "tz": ZoneInfo, "unwritten": int}; the nights keep the
+    numbers they have in the whole chronicle. No model calls."""
     w = words(lang)
     st = view == "st"
     story = [c for c in chapters if c.get("kind") == "story"]
@@ -1415,14 +1441,25 @@ def minutes_markdown(facts: Dict[str, Any], chapters: Sequence[Dict[str, Any]], 
     if last_n:
         numbered = numbered[-int(last_n):]
     out = [f"# {md(facts.get('name'))} — {w['minutes_title']}", ""]
-    if numbered:
+    if date_range:
+        start, end, tz = date_range["start"], date_range["end"], date_range["tz"]
+        numbered = [(seq, ch) for seq, ch in numbered if in_range(ch.get("started_at"), tz, start, end)]
+        missing = int(date_range.get("unwritten") or 0)
+        if missing:
+            out += [w["range_unwritten_1"] if missing == 1 else w["range_unwritten"].format(n=missing), ""]
+        fmt = lambda d: fmt_date(datetime(d.year, d.month, d.day), lang)  # noqa: E731
+        key = "covers_range_1" if len(numbered) == 1 else "covers_range"
+        out += [w[key].format(start=fmt(start), end=fmt(end), n=len(numbered)), ""]
+        if not numbered:
+            out += [w["nothing"], ""]
+    elif numbered:
         first, last = numbered[0][1].get("started_at"), numbered[-1][1].get("started_at")
         key = "covers_last" if last_n else "covers"
         out += [w[key].format(n=len(numbered), first=fmt_date(first, lang), last=fmt_date(last, lang)), ""]
     else:
         out += [w["nothing"], ""]
     total = facts.get("nights_total", len(story))
-    if total > len(story):
+    if total > len(story) and not date_range:
         out += [w["unwritten"].format(n=total - len(story)), ""]
     for seq, ch in numbered:
         c = ch.get("chapter") or {}

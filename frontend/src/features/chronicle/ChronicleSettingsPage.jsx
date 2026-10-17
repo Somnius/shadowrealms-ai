@@ -474,7 +474,7 @@ export default function ChronicleSettingsPage() {
             />
           ) : null}
 
-          {staff ? <ChronicleSoFarPanel api={api} campaign={campaign} toast={toast} /> : null}
+          {staff ? <ChronicleSoFarPanel api={api} campaign={campaign} toast={toast} timeZone={user?.display_timezone || null} /> : null}
 
           {staff ? <LocationManager api={api} campaign={campaign} canEditAccess={canManage} toast={toast} onChanged={load} /> : null}
 

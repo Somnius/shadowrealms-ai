@@ -147,9 +147,10 @@ def plain(md_text: str) -> str:
 class SectionRule(Flowable):
     """The sheet's section heading: a centred title between hairlines ending in diamonds."""
 
-    def __init__(self, title: str):
+    def __init__(self, title: str, horror: bool = False):
         super().__init__()
         self.title = title
+        self.horror = horror
 
     def wrap(self, aw, ah):
         self.width = aw
@@ -157,11 +158,29 @@ class SectionRule(Flowable):
 
     def draw(self):
         font, text = _caps(self.title)
+        if self.horror:
+            from services.pdf_horror import BLOOD, BLOOD_D
+
+            self.canv.setFillColor(BLOOD)
+            self.canv.setStrokeColor(BLOOD_D)
         draw_section(self.canv, text, 20, 0, self.width, size=10 if font == CINZEL_BOLD else 10.5, font=font)
 
 
-def _styles():
+def _styles(horror: bool = False):
     body = ParagraphStyle("sr-body", fontName=SERIF, fontSize=10.5, leading=14, spaceAfter=6)
+    if horror:
+        from services.pdf_horror import BLOOD, INK
+
+        body = ParagraphStyle("sr-hbody", fontName=SERIF, fontSize=10.5, leading=14.5, spaceAfter=6, textColor=INK)
+        return {
+            "h1": ParagraphStyle("sr-hh1", fontName=SERIF_BOLD, fontSize=20, leading=24, alignment=TA_CENTER,
+                                 spaceAfter=12, textColor=BLOOD),
+            "h3": ParagraphStyle("sr-hh3", fontName=SERIF_BOLD, fontSize=11.5, leading=15, spaceBefore=6, spaceAfter=4,
+                                 textColor=BLOOD),
+            "p": body,
+            "li": ParagraphStyle("sr-hli", parent=body, leftIndent=12, bulletIndent=2, bulletFontName=SERIF,
+                                 spaceAfter=3, bulletColor=BLOOD),
+        }
     return {
         "h1": ParagraphStyle("sr-h1", fontName=SERIF, fontSize=20, leading=24, alignment=TA_CENTER, spaceAfter=10),
         "h3": ParagraphStyle("sr-h3", fontName=SERIF_ITALIC, fontSize=12, leading=15, spaceBefore=6, spaceAfter=4),
@@ -190,8 +209,8 @@ def _register_family():
         addMapping(SERIF, bold, italic, face)
 
 
-def flowables(markdown: str, st_heading: Optional[str] = None) -> List[Flowable]:
-    st = _styles()
+def flowables(markdown: str, st_heading: Optional[str] = None, horror: bool = False) -> List[Flowable]:
+    st = _styles(horror)
     out: List[Flowable] = []
     for kind, text in blocks(markdown):
         if kind == "h1":
@@ -203,7 +222,7 @@ def flowables(markdown: str, st_heading: Optional[str] = None) -> List[Flowable]
                 out.append(CondPageBreak(60))
                 if out[:-1]:
                     out.append(Spacer(1, 8))
-            out.append(SectionRule(plain(text)))
+            out.append(SectionRule(plain(text), horror))
         elif kind == "h3":
             out.append(CondPageBreak(40))
             out.append(_para(text, st["h3"]))
@@ -219,7 +238,7 @@ def flowables(markdown: str, st_heading: Optional[str] = None) -> List[Flowable]
 # ---------------------------------------------------------------------------------------------
 # The document
 
-def _canvas_class(footer: str, link: str, title: str):
+def _canvas_class(footer: str, link: str, title: str, look: str = "sheet"):
     class NumberedCanvas(rl_canvas.Canvas):
         """Pages are kept until the end, so each footer can say 'page / pages'."""
 
@@ -243,7 +262,13 @@ def _canvas_class(footer: str, link: str, title: str):
                 self.__dict__.update(state)
                 self._annotationCount = max(links, getattr(self, "_annotationCount", 0))
                 W, H = self._pagesize
-                draw_footer(self, W, M, W - M - 18, footer, i, total, link=link)
+                if look == "horror":
+                    from services.pdf_horror import BLOOD_D
+
+                    self.setFillColor(BLOOD_D)
+                    draw_footer(self, W, HM_FOOT, W - HM_FOOT - 18, footer, i, total, link=link)
+                else:
+                    draw_footer(self, W, M, W - M - 18, footer, i, total, link=link)
                 links = self._annotationCount
                 super().showPage()
             super().save()
@@ -251,13 +276,21 @@ def _canvas_class(footer: str, link: str, title: str):
     return NumberedCanvas
 
 
+LOOKS = ("sheet", "horror")
+# The horror look: text kept clear of the darkened edges, the frame, the corners and the blood.
+HM_SIDE, HM_TOP_FIRST, HM_TOP, HM_BOTTOM, HM_FOOT = 70.0, 118.0, 74.0, 72.0, 34.0
+
+
 def build_pdf(markdown: str, lang: str, paper: str = "a4", edited: bool = False, translated: bool = False,
-              title: str = "") -> bytes:
-    """The PDF of a story or minutes Markdown (its own footer line is replaced by the page footer)."""
+              title: str = "", look: str = "sheet") -> bytes:
+    """The PDF of a story or minutes Markdown (its own footer line is replaced by the page footer).
+    look is "sheet" (the default, black and white) or "horror" (stained paper and blood)."""
     ensure_fonts()
     _register_family()
     W, H = PAPER.get(paper, PAPER["a4"])
     buf = io.BytesIO()
+    if look == "horror":
+        return _build_horror(buf, markdown, lang, paper, W, H, edited, translated, title)
     x0, x1 = M + 30, W - M - 30
     top_first, top_later, bottom = H - M - 70, H - M - 40, M + 30
 
@@ -285,4 +318,28 @@ def build_pdf(markdown: str, lang: str, paper: str = "a4", edited: bool = False,
     story = flowables(body, w["st_only"])
     footer = f"{cd.footer_text(lang, edited, translated)} · {cd.footer_url(lang)}"
     doc.build(story, canvasmaker=_canvas_class(footer, cd.footer_url(lang), title))
+    return buf.getvalue()
+
+
+def _build_horror(buf, markdown, lang, paper, W, H, edited, translated, title) -> bytes:
+    from services import pdf_horror
+
+    x0, x1 = HM_SIDE, W - HM_SIDE
+    bottom = HM_BOTTOM
+
+    def on_page(c, doc):
+        pdf_horror.draw_page(c, W, H, paper, doc.page)
+
+    doc = BaseDocTemplate(buf, pagesize=(W, H), leftMargin=x0, rightMargin=W - x1, topMargin=HM_TOP, bottomMargin=bottom,
+                          title=title, author="ShadowRealms AI", creator="ShadowRealms AI")
+    doc.addPageTemplates([
+        PageTemplate("first", [Frame(x0, bottom, x1 - x0, H - HM_TOP_FIRST - bottom, id="h1")], onPage=on_page,
+                     autoNextPageTemplate="later"),
+        PageTemplate("later", [Frame(x0, bottom, x1 - x0, H - HM_TOP - bottom, id="h2")], onPage=on_page),
+    ])
+    body = cd.strip_footer(markdown)
+    w = cd.words(lang)
+    story = flowables(body, w["st_only"], horror=True)
+    footer = f"{cd.footer_text(lang, edited, translated)} · {cd.footer_url(lang)}"
+    doc.build(story, canvasmaker=_canvas_class(footer, cd.footer_url(lang), title, look="horror"))
     return buf.getvalue()

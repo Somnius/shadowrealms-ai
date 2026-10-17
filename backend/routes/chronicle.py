@@ -12,8 +12,10 @@ Archives of deleted chronicles: /api/chronicle-archives (site admins; the deleti
 from __future__ import annotations
 
 import logging
-from datetime import datetime, timedelta
+import re
+from datetime import date, datetime, timedelta
 from urllib.parse import quote
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from flask import Blueprint, Response, jsonify, request, send_file
 from flask_jwt_extended import get_jwt_identity, jwt_required
@@ -311,6 +313,10 @@ def _paper():
     return "letter" if (request.args.get("paper") or "").strip().lower() == "letter" else "a4"
 
 
+def _look():
+    return "horror" if (request.args.get("look") or "").strip().lower() == "horror" else "sheet"
+
+
 def _story(cur, camp, view, lang=None, table_talk=None):
     """(markdown, lang, edited, translated) of the story so far. The Storyteller's view uses the edit
     copy when there is one (in the chronicle's own language); the player view never does. lang and
@@ -338,8 +344,9 @@ def _story(cur, camp, view, lang=None, table_talk=None):
     return text, lang, False, translated
 
 
-def _minutes(cur, camp, view, last_n):
-    """Always the generated record (never the edit copy), in the chronicle's language or its translation."""
+def _minutes(cur, camp, view, last_n, date_range=None):
+    """Always the generated record (never the edit copy), in the chronicle's language or its translation.
+    With a date range, the nights in it that have no record yet are counted for the top of the file."""
     own = cj.chronicle_lang(cur, camp)
     lang, chapters, digest, _w, _at, _x = _state(cur, camp, view, _want_lang(own))
     readable = _readable_for_players(cur, camp["id"]) if view == "player" else None
@@ -347,8 +354,64 @@ def _minutes(cur, camp, view, last_n):
     facts["nights_total"] = max((digest or {}).get("nights_total") or 0, len(chapters))
     existing = cj.message_ids(cur, camp["id"]) if view == "st" else None
     translated = lang != own
-    text = cd.minutes_markdown(facts, chapters, lang, view, last_n, existing, _flag("with_table_talk"), translated)
+    if date_range:
+        date_range = dict(date_range, unwritten=_unwritten_in_range(cur, camp, view, readable, date_range))
+    text = cd.minutes_markdown(facts, chapters, lang, view, last_n, existing, _flag("with_table_talk"), translated,
+                               date_range=date_range)
     return text, lang, translated
+
+
+def _unwritten_in_range(cur, camp, view, readable, rng):
+    """Story nights whose first message falls in the range and that have no stored record yet."""
+    p = cj.plan(cur, camp["id"])
+    n = 0
+    for ch in p["story"]:
+        if ch["key"] in p["stored"] or not cd.in_range(ch.get("started_at"), rng["tz"], rng["start"], rng["end"]):
+            continue
+        if view == "player" and (ch.get("visibility") != "all" or int(ch["location_id"]) not in readable):
+            continue
+        n += 1
+    return n
+
+
+_DAY = re.compile(r"^\d{4}-\d{2}-\d{2}$")
+
+
+def _user_tz(cur, uid):
+    try:
+        cur.execute("SELECT display_timezone FROM users WHERE id = %s", (uid,))
+        row = cur.fetchone()
+        return (row or {}).get("display_timezone") if isinstance(row, dict) else (row[0] if row else None)
+    except Exception:
+        try:
+            cur.connection.rollback()
+        except Exception:
+            pass
+        return None
+
+
+def _date_range(cur, uid):
+    """(range or None, error code or None) from from=, to= (YYYY-MM-DD) and tz= (an IANA name; default
+    the user's display timezone, then UTC). The dates are calendar days in that timezone, both included."""
+    a, b = (request.args.get("from") or "").strip(), (request.args.get("to") or "").strip()
+    if not a and not b:
+        return None, None
+    if not (_DAY.match(a) and _DAY.match(b)):
+        return None, "bad_range"
+    try:
+        start, end = date.fromisoformat(a), date.fromisoformat(b)
+    except ValueError:
+        return None, "bad_range"
+    if start > end:
+        return None, "bad_range"
+    name = (request.args.get("tz") or "").strip() or _user_tz(cur, uid) or "UTC"
+    try:
+        tz = ZoneInfo(name)
+    except (ZoneInfoNotFoundError, ValueError):
+        if request.args.get("tz"):
+            return None, "bad_tz"
+        tz = ZoneInfo("UTC")
+    return {"start": start, "end": end, "tz": tz}, None
 
 
 def _last_n():
@@ -379,7 +442,12 @@ def _export(campaign_id, what, fmt):
             last_n, bad = _last_n()
             if bad:
                 return jsonify({"error": "bad_last"}), 400
-            text, lang, translated = _minutes(cur, camp, view, last_n)
+            rng, rerr = _date_range(cur, uid)
+            if rerr:
+                return jsonify({"error": rerr}), 400
+            if rng:
+                last_n = None  # a date range wins over last=
+            text, lang, translated = _minutes(cur, camp, view, last_n, rng)
             edited = False
             suffix = "πρακτικά" if lang == "el" else "minutes"
         if fmt == "md":
@@ -387,7 +455,8 @@ def _export(campaign_id, what, fmt):
         from services.chronicle_pdf import build_pdf
 
         title = f"{camp['name']} — {cd.words(lang)['so_far_title' if what == 'story' else 'minutes_title']}"
-        data = build_pdf(text, lang, _paper(), edited=edited, translated=translated, title=title)
+        data = build_pdf(text, lang, _paper(), edited=edited, translated=translated, title=title,
+                         look=_look())
         return _pdf_response(data, _file_name(camp["name"], suffix, "pdf"))
     finally:
         conn.close()
@@ -474,6 +543,72 @@ def edit_copy(campaign_id):
 def _role(cur, uid):
     cur.execute("SELECT role FROM users WHERE id = %s", (uid,))
     return ((cur.fetchone() or {}).get("role") or "").strip().lower()
+
+
+@chronicle_bp.route("/campaigns/<int:campaign_id>/chronicle/session-marks", methods=["GET", "POST"])
+@jwt_required()
+def session_marks_route(campaign_id):
+    """GET: the message ids marked "session ended here" (every member; players only get marks in rooms
+    they can read). POST {message_id}: mark one (the Storyteller and site admins only). A mark cuts
+    every room at its time, so the nights around it are rewritten on the next Update."""
+    uid = _uid()
+    conn = get_db()
+    try:
+        cur = conn.cursor()
+        a = access(cur, uid, campaign_id)
+        if a == "none":
+            return jsonify({"error": "not_found"}), 404
+        if request.method == "GET":
+            cur.execute(
+                "SELECT s.message_id, m.location_id FROM chronicle_session_marks s JOIN messages m ON m.id = s.message_id "
+                "WHERE s.campaign_id = %s ORDER BY s.message_id",
+                (campaign_id,),
+            )
+            rows = cur.fetchall()
+            if a == "player":
+                readable = _readable_for_players(cur, campaign_id)
+                rows = [r for r in rows if int(r["location_id"]) in readable]
+            return jsonify({"message_ids": [int(r["message_id"]) for r in rows]})
+        if a != "st":
+            return jsonify({"error": "forbidden"}), 403
+        body = request.get_json(silent=True) or {}
+        try:
+            mid = int(body.get("message_id"))
+        except (TypeError, ValueError):
+            return jsonify({"error": "bad_message"}), 400
+        cur.execute("SELECT id FROM messages WHERE id = %s AND campaign_id = %s", (mid, campaign_id))
+        if not cur.fetchone():
+            return jsonify({"error": "not_found"}), 404
+        cur.execute(
+            "INSERT INTO chronicle_session_marks (message_id, campaign_id, created_by) VALUES (%s, %s, %s) "
+            "ON CONFLICT (message_id) DO NOTHING",
+            (mid, campaign_id, uid),
+        )
+        conn.commit()
+        return jsonify({"message_id": mid, "marked": True})
+    finally:
+        conn.close()
+
+
+@chronicle_bp.route("/campaigns/<int:campaign_id>/chronicle/session-marks/<int:message_id>", methods=["DELETE"])
+@jwt_required()
+def session_mark_delete(campaign_id, message_id):
+    """Remove a mark (the Storyteller and site admins only)."""
+    uid = _uid()
+    conn = get_db()
+    try:
+        cur = conn.cursor()
+        a = access(cur, uid, campaign_id)
+        if a == "none":
+            return jsonify({"error": "not_found"}), 404
+        if a != "st":
+            return jsonify({"error": "forbidden"}), 403
+        cur.execute("DELETE FROM chronicle_session_marks WHERE message_id = %s AND campaign_id = %s",
+                    (message_id, campaign_id))
+        conn.commit()
+        return jsonify({"message_id": message_id, "marked": False})
+    finally:
+        conn.close()
 
 
 @chronicle_bp.route("/chronicle-archives", methods=["GET"])
