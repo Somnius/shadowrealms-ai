@@ -13,6 +13,18 @@ export function fmtBytes(n) {
   return `${Math.round(n / 1024)} KB`;
 }
 
+/** A cloud error code from the speech service as words. */
+export function cloudErrorText(code) {
+  const c = String(code || '');
+  if (c === 'rate_limited') return t('voice:health.err.rateLimited', 'Google’s rate limit (429)');
+  if (c === 'timeout') return t('voice:health.err.timeout', 'no answer in time');
+  if (c === 'network') return t('voice:health.err.network', 'Google could not be reached');
+  if (c === 'no_key') return t('voice:health.err.noKey', 'no key for this tier');
+  if (c === 'bad_response') return t('voice:health.err.badResponse', 'an answer without audio');
+  if (/^http_\d+$/.test(c)) return t('voice:health.err.http', 'Google refused the request (HTTP {{status}})', { status: c.slice(5) });
+  return t('voice:health.err.other', 'an unexpected error');
+}
+
 const v = (x) => (x == null ? '—' : String(x));
 
 export default function VoiceHealthPanel() {
@@ -41,7 +53,7 @@ export default function VoiceHealthPanel() {
               <strong>{t('voice:health.cloud', 'Cloud voices:')}</strong>{' '}
               {h.cloud.tier === 'paid' ? t('voice:cloud.paid', 'Paid tier') : h.cloud.tier === 'free' ? t('voice:cloud.free', 'Free tier') : t('voice:cloud.off', 'Off')}
               {' · '}{t('voice:health.cloudErrors', 'errors today: {{count}}', { count: h.cloud.errors_today || 0 })}
-              {h.cloud.last_error ? ` · ${t('voice:health.cloudLast', 'last: {{code}} at {{at}}', { code: h.cloud.last_error.code, at: h.cloud.last_error.at || '' })}` : ''}
+              {h.cloud.last_error ? ` · ${t('voice:health.cloudLast', 'last: {{code}} at {{at}}', { code: cloudErrorText(h.cloud.last_error.code), at: h.cloud.last_error.at || '' })}` : ''}
             </div>
           ) : null}
           <div>

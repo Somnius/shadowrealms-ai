@@ -50,7 +50,8 @@ test('health panel shows the cloud errors today and the last one', async () => {
   const line = await screen.findByTestId('cloud-health');
   expect(line).toHaveTextContent('Free tier');
   expect(line).toHaveTextContent('errors today: 2');
-  expect(line).toHaveTextContent('rate_limited');
+  expect(line).toHaveTextContent('Google’s rate limit (429)');
+  expect(line).not.toHaveTextContent('rate_limited');
 });
 
 const CATALOG = {

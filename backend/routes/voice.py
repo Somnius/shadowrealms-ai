@@ -240,6 +240,16 @@ def _set_setting(key, value):
     set_app_setting(key, value)
 
 
+def _can_hear_cloud(cursor, user_id):
+    """A Gemini sample costs a call: site admins, and creators of at least one chronicle."""
+    if user_id is None:
+        return False
+    if _is_admin(cursor, user_id):
+        return True
+    cursor.execute("SELECT 1 FROM campaigns WHERE created_by = %s LIMIT 1", (user_id,))
+    return cursor.fetchone() is not None
+
+
 def _cloud_config():
     return cloud_voices.read_config(_get_setting)
 
@@ -414,7 +424,9 @@ def tts_preview():
         if cloud_voices.is_cloud_voice(vid):
             if cfg["tier"] == "off":
                 return jsonify({"error": "cloud_voices_off"}), 400
-            body["cloud"] = {"tier": cfg["tier"], "model": cfg["model"]}
+            if _can_hear_cloud(cursor, _uid()):
+                body["cloud"] = {"tier": cfg["tier"], "model": cfg["model"]}
+            # else: the sample is said by the local voice (the speech service ignores the gemini id)
         out, status = _speech_tts(cursor, body, None)
         conn.commit()
         return jsonify(out), status

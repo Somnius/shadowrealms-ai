@@ -190,7 +190,16 @@
     "refresh": "Refresh",
     "cloud": "Cloud voices:",
     "cloudErrors": "errors today: {{count}}",
-    "cloudLast": "last: {{code}} at {{at}}"
+    "cloudLast": "last: {{code}} at {{at}}",
+    "err": {
+      "rateLimited": "Google’s rate limit (429)",
+      "timeout": "no answer in time",
+      "network": "Google could not be reached",
+      "noKey": "no key for this tier",
+      "badResponse": "an answer without audio",
+      "http": "Google refused the request (HTTP {{status}})",
+      "other": "an unexpected error"
+    }
   },
   "hear": {
     "label": "Read and hear messages in",

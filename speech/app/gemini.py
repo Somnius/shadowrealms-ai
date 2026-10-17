@@ -12,6 +12,7 @@ import io
 import json
 import os
 import threading
+import time
 import urllib.error
 import urllib.request
 import wave
@@ -121,6 +122,38 @@ def wav_bytes(resp):
     return buf.getvalue()
 
 
+class _NoRedirect(urllib.request.HTTPRedirectHandler):
+    def redirect_request(self, *a, **k):  # the key header must never follow a redirect
+        return None
+
+
+# No proxies from the environment and no redirects: the key goes to Google's API host only.
+_OPENER = urllib.request.build_opener(urllib.request.ProxyHandler({}), _NoRedirect())
+
+
+def synth_until(deadline, text, name, model, tier, wav_path, opener=None):
+    """synth() bounded by a total deadline (time.monotonic()): CloudError('timeout') when it passes.
+    The call runs in a daemon thread; a late answer is dropped (its temp dir is gone by then)."""
+    left = deadline - time.monotonic()
+    if left <= 0:
+        raise CloudError("timeout")
+    box = {}
+
+    def go():
+        try:
+            synth(text, name, model, tier, wav_path, timeout=left, opener=opener)
+        except BaseException as e:  # noqa: BLE001  handed to the caller
+            box["e"] = e
+
+    th = threading.Thread(target=go, daemon=True)
+    th.start()
+    th.join(left)
+    if th.is_alive():
+        raise CloudError("timeout")
+    if "e" in box:
+        raise box["e"]
+
+
 def synth(text, name, model, tier, wav_path, timeout=20, opener=None):
     """One line to a WAV file. Raises CloudError (never with the key in it)."""
     key = key_for(tier)
@@ -130,7 +163,7 @@ def synth(text, name, model, tier, wav_path, timeout=20, opener=None):
                                  data=json.dumps(request_body(text, name)).encode("utf-8"),
                                  headers={"Content-Type": "application/json", "x-goog-api-key": key})
     try:
-        with (opener or urllib.request.urlopen)(req, timeout=timeout) as r:
+        with (opener or _OPENER.open)(req, timeout=timeout) as r:
             data = json.loads(r.read().decode("utf-8"))
     except urllib.error.HTTPError as e:
         raise CloudError("rate_limited" if e.code == 429 else f"http_{e.code}")

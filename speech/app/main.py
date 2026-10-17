@@ -6,7 +6,6 @@ import hmac
 import logging
 import os
 import shutil
-import tempfile
 import threading
 import time
 import uuid
@@ -20,6 +19,7 @@ from .check import LayaWords
 from .cachekeys import tts_key
 from .engines import PiperEngine, PocketEngine, WhisperEngine, gpu_free_mb
 from .jobs import Lane
+from .ttsrun import Runner
 from .limits import Refused, check_lang, check_probe, check_size, check_text
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(name)s %(levelname)s %(message)s")
@@ -36,61 +36,6 @@ cloud_stats = gemini.Stats()
 
 def _tts_paths(key):
     return os.path.join(TTS_DIR, key[:2], key + ".ogg"), os.path.join(TTS_DIR, key[:2], key + ".m4a")
-
-
-def _make(key, text, synth):
-    """Speak `text` part by part with synth(part, wav_path), then store Opus + AAC under `key`."""
-    ogg, m4a = _tts_paths(key)
-    os.makedirs(os.path.dirname(ogg), exist_ok=True)
-    with tempfile.TemporaryDirectory(dir=TMP_DIR) as td:
-        wavs = []
-        for i, part in enumerate(textprep.split_parts(text, config.TEXT_PART_CHARS)):
-            w = os.path.join(td, f"{i:03d}.wav")
-            synth(part, w)
-            wavs.append(w)
-        if len(wavs) == 1:
-            src = wavs[0]
-        else:
-            lst = os.path.join(td, "list.txt")
-            with open(lst, "w") as f:
-                f.writelines(f"file '{w}'\n" for w in wavs)
-            src = os.path.join(td, "all.wav")
-            audio._ff(["-f", "concat", "-safe", "0", "-i", lst, "-c", "copy", src])
-        tmp_ogg = os.path.join(td, "out.ogg")
-        audio.to_opus(src, tmp_ogg, config.TTS_BITRATE)
-        tmp_m4a = os.path.join(td, "out.m4a")
-        audio.to_m4a(tmp_ogg, tmp_m4a)
-        os.replace(tmp_m4a, m4a)
-        os.replace(tmp_ogg, ogg)  # ogg last: its presence means the entry is complete
-    _evict_soon()
-
-
-def run_tts(p):
-    out = {}
-    c = p.get("cloud")
-    if c:
-        if os.path.exists(_tts_paths(p["key"])[0]):
-            return dict(key=p["key"], voice=p["voice"], provider="gemini",
-                        duration=round(audio.duration(_tts_paths(p["key"])[0]), 2))
-        try:
-            _make(p["key"], p["text"], lambda part, w: gemini.synth(
-                part, c["name"], c["model"], c["tier"], w, timeout=config.GEMINI_TIMEOUT))
-            cloud_stats.success()
-            return dict(key=p["key"], voice=p["voice"], provider="gemini",
-                        duration=round(audio.duration(_tts_paths(p["key"])[0]), 2))
-        except Exception as e:  # any cloud failure: this line is spoken by the local voice
-            code = e.code if isinstance(e, gemini.CloudError) else "internal"
-            cloud_stats.error(code, c["model"], c["tier"])
-            log.warning("cloud voice failed (%s, %s); local voice used for this line", code, c["model"])
-            out["cloud_error"] = code
-            p = dict(p["fallback"], text=p["text"])
-    ogg = _tts_paths(p["key"])[0]
-    if not os.path.exists(ogg):
-        engine = piper if catalog.VOICES[p["voice"]]["engine"] == "piper" else pocket
-        if engine is pocket and not pocket.ok():  # waits for the warm-up load on the first Greek line
-            raise RuntimeError("pocket tts not loaded")
-        _make(p["key"], p["text"], lambda part, w: engine.synth(p["voice"], part, w))
-    return dict(out, key=p["key"], voice=p["voice"], provider="local", duration=round(audio.duration(ogg), 2))
 
 
 def run_stt(p):
@@ -122,7 +67,16 @@ def _evict_soon(every=20):
         log.info("tts cache: %d old lines removed (cap %d bytes)", n, config.TTS_CACHE_BYTES)
 
 
-tts_lane = Lane("tts", config.TTS_QUEUE_MAX, run_tts)
+def _local_engine(vid):
+    engine = piper if catalog.VOICES[vid]["engine"] == "piper" else pocket
+    if engine is pocket and not pocket.ok():  # waits for the warm-up load on the first Greek line
+        raise RuntimeError("pocket tts not loaded")
+    return engine
+
+
+runner = Runner(TTS_DIR, TMP_DIR, _local_engine, cloud_stats, after_new=_evict_soon)
+tts_lane = Lane("tts", config.TTS_QUEUE_MAX, runner.run_local)
+cloud_lane = Lane("cloud", config.TTS_QUEUE_MAX, runner.run_cloud)  # 0.23: never blocks local lines
 stt_lane = Lane("stt", config.STT_QUEUE_MAX, run_stt)
 
 app = FastAPI(title="speech", docs_url=None, redoc_url=None, openapi_url=None)
@@ -153,6 +107,7 @@ def _startup():
         shutil.rmtree(os.path.join(TMP_DIR, f), ignore_errors=True)
     diskcache.evict_lru(TTS_DIR, config.TTS_CACHE_BYTES)
     tts_lane.start()
+    cloud_lane.start()
     stt_lane.start()
     threading.Thread(target=_idle_loop, daemon=True).start()
     threading.Thread(target=pocket.ok, daemon=True).start()  # warm Greek TTS in the background
@@ -165,7 +120,7 @@ def health():
     return dict(ok=True, stt=dict(loaded=whisper.loaded, last_load_seconds=whisper.load_seconds,
                                   queue=stt_lane.depth(), vram_free_mb=gpu_free_mb(),
                                   vram_needed_mb=config.STT_VRAM_MB, idle_unload_s=config.STT_IDLE_SECONDS),
-                tts=dict(queue=tts_lane.depth(), pocket_loaded=pocket._model is not None,
+                tts=dict(queue=tts_lane.depth(), cloud_queue=cloud_lane.depth(), pocket_loaded=pocket._model is not None,
                          pocket_error=pocket.error, cache_bytes=diskcache.dir_bytes(TTS_DIR),
                          cache_cap_bytes=config.TTS_CACHE_BYTES),
                 clips=dict(bytes=diskcache.dir_bytes(CLIP_DIR)),
@@ -213,8 +168,8 @@ def tts(req: TTSReq):
         meta = dict(voice=gemini.PREFIX + name, key=gkey, provider="gemini", fallback_key=key)
         if os.path.exists(_tts_paths(gkey)[0]):
             diskcache.touch(_tts_paths(gkey)[0])
-            return tts_lane.add_done(dict(meta, cached=True))
-        return tts_lane.submit(dict(voice=meta["voice"], key=gkey, text=text,
+            return cloud_lane.add_done(dict(meta, cached=True))
+        return cloud_lane.submit(dict(voice=meta["voice"], key=gkey, text=text,
                                     cloud=dict(tier=tier, model=model, name=name),
                                     fallback=dict(voice=vid, key=key)), dict(meta, cached=False))
     meta = dict(voice=vid, key=key)
@@ -226,7 +181,7 @@ def tts(req: TTSReq):
 
 @app.get("/tts/{job_id}", dependencies=[Depends(auth)])
 def tts_status(job_id: str):
-    job = tts_lane.get(job_id)
+    job = tts_lane.get(job_id) or cloud_lane.get(job_id)
     if not job:
         raise HTTPException(404)
     return job

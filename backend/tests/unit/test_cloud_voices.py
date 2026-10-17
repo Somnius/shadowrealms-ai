@@ -40,6 +40,10 @@ def test_apply_needs_site_and_chronicle():
         assert "cloud" not in out and "voice" not in out
     local = cloud_voices.apply({"text": "Hi", "voice": "en_US-ryan-high"}, OFF, None)
     assert local["voice"] == "en_US-ryan-high"
+    # an explicit local pick (narrator slot or a character's own voice) stays local when opted in
+    kept = cloud_voices.apply({"text": "Hi", "voice": "el-kostas", "gender": "male"}, ON, {"cloud_voices": True})
+    assert "cloud" not in kept and kept["voice"] == "el-kostas"
+    assert cloud_voices.apply({"text": "Hi", "gender": "male"}, ON, {"cloud_voices": True})["cloud"] == ON
 
 
 def _settings(monkeypatch, store):
@@ -115,8 +119,11 @@ def test_preview_of_cloud_voice(api, monkeypatch):  # noqa: F811
     body = {"voice_id": "gemini-Kore", "lang": "el"}
     assert api("POST", "/api/voice/tts/preview", 5, body).get_json()["error"] == "cloud_voices_off"
     store["cloud_voices_tier"] = "paid"
-    assert api("POST", "/api/voice/tts/preview", 5, body).status_code == 200
-    assert [b for m, p, b in api.speech["calls"] if p == "/tts"][-1]["cloud"]["tier"] == "paid"
+    assert api("POST", "/api/voice/tts/preview", 5, body).status_code == 200  # a player: local sample
+    assert "cloud" not in [b for m, p, b in api.speech["calls"] if p == "/tts"][-1]
+    for uid in (1, 2):  # site admin, chronicle creator
+        assert api("POST", "/api/voice/tts/preview", uid, body).status_code == 200
+        assert [b for m, p, b in api.speech["calls"] if p == "/tts"][-1]["cloud"]["tier"] == "paid"
 
 
 def test_voices_list_cloud_only_when_on(api, monkeypatch):  # noqa: F811

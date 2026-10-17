@@ -53,10 +53,12 @@ def active_for(config: Dict[str, str], campaign_settings: Any) -> bool:
 
 
 def apply(body: Dict[str, Any], config: Dict[str, str], campaign_settings: Any) -> Dict[str, Any]:
-    """The POST /tts body for one line: asks for Gemini when the site and the chronicle allow it;
+    """The POST /tts body for one line: asks for Gemini when the site and the chronicle allow it and
+    the line has no explicit local voice (a narrator pick or a character's own voice stays local);
     otherwise a Gemini narrator pick is dropped so the local default speaks."""
     out = dict(body)
-    if active_for(config, campaign_settings):
+    local_pick = bool(out.get("voice")) and not is_cloud_voice(out.get("voice"))
+    if active_for(config, campaign_settings) and not local_pick:
         out["cloud"] = {"tier": config["tier"], "model": config["model"]}
     elif is_cloud_voice(out.get("voice")):
         out.pop("voice")
