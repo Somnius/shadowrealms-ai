@@ -75,7 +75,7 @@ function ChronicleCard({ c }) {
 export default function ChronicleHallPage() {
   const api = useApi();
   const { toast } = useToast();
-  const { chronicles, loaded, reload, expectedCount } = useChronicles();
+  const { chronicles, loaded, reload, refresh, expectedCount } = useChronicles();
   const [open, setOpen] = useState([]);
   const [joining, setJoining] = useState(null);
 
@@ -85,9 +85,10 @@ export default function ChronicleHallPage() {
   }, [api]);
 
   useEffect(() => {
-    reload();
+    // shares the provider's page-load request instead of sending a second one
+    (refresh || reload)();
     loadOpen();
-  }, [reload, loadOpen]);
+  }, [refresh, reload, loadOpen]);
 
   const join = async (id) => {
     setJoining(id);

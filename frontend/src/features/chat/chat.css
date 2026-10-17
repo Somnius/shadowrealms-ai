@@ -424,6 +424,10 @@
   .sr-app .sr-msg-actions__bar { display: none; }
   /* the open bar drops below the … button instead of pushing it left over the name and badges */
   .sr-app .sr-msg-actions.is-open .sr-msg-actions__bar { display: inline-flex; position: absolute; top: calc(100% + 4px); right: 0; }
+  /* above the next row's … button, which would otherwise take the tap on the delete button */
+  .sr-app .sr-msg-actions.is-open { z-index: 6; }
+  /* room under the newest message for its open bar */
+  .sr-app .sr-chat__rows { padding-bottom: calc(var(--sr-space-3) + 40px); }
   .sr-app .sr-msg { padding-right: 44px; }
 }
 .sr-app .sr-msg.is-flash,

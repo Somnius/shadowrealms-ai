@@ -99,7 +99,7 @@ export function ChroniclesProvider({ children }) {
   const byId = useCallback((id) => chronicles.find((c) => String(c.id) === String(id)) || null, [chronicles]);
 
   const [expectedCount] = useState(rememberedCount);
-  const value = useMemo(() => ({ chronicles, loaded, reload, byId, expectedCount }), [chronicles, loaded, reload, byId, expectedCount]);
+  const value = useMemo(() => ({ chronicles, loaded, reload, refresh, byId, expectedCount }), [chronicles, loaded, reload, refresh, byId, expectedCount]);
   return <ChroniclesContext.Provider value={value}>{children}</ChroniclesContext.Provider>;
 }
 
