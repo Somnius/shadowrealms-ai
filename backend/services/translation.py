@@ -283,8 +283,10 @@ def clean_output(out: str, source: str) -> Optional[str]:
 
 
 def translate(text: str, src: str, dst: str, generate: Optional[Callable] = None,
-              names: Iterable[str] = ()) -> Tuple[str, str]:
-    """(translated text, model). Raises ValueError / ProviderError when it cannot."""
+              names: Iterable[str] = (), timeout: int = 30,
+              before_retry: Optional[Callable[[], None]] = None) -> Tuple[str, str]:
+    """(translated text, model). Raises ValueError / ProviderError when it cannot.
+    `before_retry` runs before the second try (a job checks Cancel there)."""
     if src not in LANGS or dst not in LANGS or src == dst:
         raise ValueError("bad language pair")
     text = str(text or "").strip()[:MAX_CHARS]
@@ -294,19 +296,22 @@ def translate(text: str, src: str, dst: str, generate: Optional[Callable] = None
         from services.ai_roles import generate_for_role
 
         generate = generate_for_role
-    opts = {"temperature": 0, "max_tokens": min(1500, 40 + len(text) * 2), "timeout": 30}
+    opts = {"temperature": 0, "max_tokens": min(1500, 40 + len(text) * 2), "timeout": timeout}
     masked, table = protect(text, find_names(text, names))
     hints = [name_hint(n, text) for n in table]
-    res = generate("translator", build_messages(masked, src, dst, hints), opts)
-    out = clean_output(res.get("text") or "", masked)
-    if out is not None and dst == "el":
-        out = fix_articles(out, hints)
-    out = restore(out, table) if out is not None else None
-    if out is None and table:  # the model dropped a placeholder: once more without them
-        res = generate("translator", build_messages(text, src, dst), opts)
-        out = clean_output(res.get("text") or "", text)
+    out, res = None, {}
+    # the model dropped or invented a placeholder: once more, with the names still hidden (never in clear,
+    # so a name can't be translated on the retry)
+    for attempt in range(2 if table else 1):
+        if attempt and before_retry:
+            before_retry()
+        res = generate("translator", build_messages(masked, src, dst, hints), opts)
+        out = clean_output(res.get("text") or "", masked)
         if out is not None and dst == "el":
-            out = fix_articles(out, [])
+            out = fix_articles(out, hints)
+        out = restore(out, table) if out is not None else None
+        if out is not None:
+            break
     if out is None:
         raise ValueError("unusable translation")
     return out, str(res.get("model") or "")

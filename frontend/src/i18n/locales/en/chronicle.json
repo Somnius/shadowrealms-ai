@@ -270,7 +270,9 @@
     "translate": "Translate",
     "exportStoryPdf": "Export story PDF",
     "exportMinutesPdf": "Minutes PDF",
-    "paper": "Paper"
+    "paper": "Paper",
+    "editedInTarget": "There is an edit of the story in that language from before the chronicle’s language changed. Switch back and drop or keep it first; it is never deleted without you.",
+    "untranslated": "{{n}} texts are still in {{language}}."
   },
   "language": {
     "title": "Chronicle language",

@@ -47,9 +47,9 @@ export function ProgressCard({ job, onCancel, cancelling, quietMinutes = 10 }) {
           </p>
         </>
       )}
-      <Button variant="ghost" icon="close" onClick={onCancel} loading={cancelling} loadingLabel={t('chronicle:soFar.cancelling', 'Stopping…')}>
+      {onCancel ? <Button variant="ghost" icon="close" onClick={onCancel} loading={cancelling} loadingLabel={t('chronicle:soFar.cancelling', 'Stopping…')}>
         {t('chronicle:soFar.cancel', 'Cancel')}
-      </Button>
+      </Button> : null}
     </div>
   );
 }
@@ -353,6 +353,7 @@ export default function ChronicleSoFarPanel({ api, campaign, toast }) {
     if (code === 'too_soon') title = t('chronicle:soFar.tooSoon', 'Update was pressed a moment ago; try again in {{seconds}} s.', { seconds: r.data.retry_after || 0 });
     if (code === 'job_running') title = t('chronicle:soFar.busy', 'An update is already running.');
     if (r.status === 403) title = t('chronicle:soFar.forbidden', 'Only the Storyteller and site admins can update the chronicle so far.');
+    if (code === 'edited_in_target') title = t('chronicle:soFar.editedInTarget', 'There is an edit of the story in that language from before the chronicle’s language changed. Switch back and drop or keep it first; it is never deleted without you.');
     if (code === 'no_worker') title = t('chronicle:soFar.noWorker', 'The writer isn’t running on this server.');
     toast({ tone: 'danger', title });
   };
@@ -407,11 +408,14 @@ export default function ChronicleSoFarPanel({ api, campaign, toast }) {
                 <p className="sr-sofar__hint">
                   {t('chronicle:soFar.translatedOn', 'Translated {{date}}.', { date: shortDate(data.translation.written_at, lang) })}
                   {data.translation.stale ? ` ${t('chronicle:soFar.translationStale', 'The story was written again since; translate again to catch up.')}` : ''}
+                  {data.translation.untranslated > 0
+                    ? ` ${t('chronicle:soFar.untranslated', '{{n}} texts are still in {{language}}.', { n: data.translation.untranslated, language: LANG_NAMES()[own] })}`
+                    : ''}
                 </p>
               ) : (
                 <p className="sr-sofar__hint">{t('chronicle:soFar.noTranslation', 'Not translated yet.')}</p>
               )}
-              {data.can_update && !live && !estimate && (!data.translation || data.translation.stale) ? (
+              {data.can_update && !live && !estimate && (!data.translation || data.translation.stale || data.translation.untranslated > 0) ? (
                 <Button variant="secondary" icon="quill" onClick={() => askEstimate('translate')} loading={estimating === 'translate'}>
                   {t('chronicle:soFar.translate', 'Translate')}
                 </Button>
@@ -419,7 +423,7 @@ export default function ChronicleSoFarPanel({ api, campaign, toast }) {
             </div>
           ) : null}
           <p className="sr-sofar__status" data-testid="sofar-status">{statusLine(data, lang)}</p>
-          {live ? <ProgressCard job={job} onCancel={cancel} cancelling={cancelling} quietMinutes={data.quiet_minutes} /> : null}
+          {live ? <ProgressCard job={job} onCancel={data.can_update ? cancel : null} cancelling={cancelling} quietMinutes={data.quiet_minutes} /> : null}
           {!live && estimate ? (
             <EstimateNotice estimate={estimate} onStart={start} onClose={() => setEstimate(null)} starting={starting} />
           ) : null}

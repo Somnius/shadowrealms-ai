@@ -134,3 +134,39 @@ test('exports in the translated language pass lang=', async () => {
   expect(global.fetch.mock.calls[0][0]).toBe('/api/campaigns/10/chronicle.md?lang=en');
   expect(screen.queryByRole('button', { name: 'Edit the story' })).not.toBeInTheDocument();
 });
+
+test('a partial translation says how many texts are left and offers Translate again', async () => {
+  const api = jest.fn(async (path) => (path.includes('lang=en')
+    ? { ok: true, data: { ...written, lang: 'en', translation: { from: 'el', stale: false, untranslated: 3, written_at: '2026-10-17T10:00:00' } } }
+    : { ok: true, data: written }));
+  const user = setupUser();
+  renderPanel(api);
+  await user.selectOptions(await screen.findByRole('combobox', { name: 'Language' }), 'en');
+  expect(await screen.findByText(/3 texts are still in Ελληνικά\./)).toBeInTheDocument();
+  expect(screen.getByRole('button', { name: 'Translate' })).toBeInTheDocument();
+});
+
+test('an edit in the target language stops Translate with a sentence', async () => {
+  const api = jest.fn(async (path, opts) => {
+    if (path.includes('estimate')) return { ok: true, data: { texts: 4, seconds: 8 } };
+    if (opts && opts.method === 'POST') return { ok: false, status: 409, data: { error: 'edited_in_target' } };
+    if (path.includes('lang=en')) return { ok: true, data: { ...written, lang: 'en', digest: null, chapters: [], nights_written: 0 } };
+    return { ok: true, data: written };
+  });
+  const user = setupUser();
+  renderPanel(api);
+  await user.selectOptions(await screen.findByRole('combobox', { name: 'Language' }), 'en');
+  await user.click(await screen.findByRole('button', { name: 'Translate' }));
+  await user.click(await screen.findByRole('button', { name: 'Start' }));
+  await waitFor(() => expect(toast).toHaveBeenCalledWith({ tone: 'danger', title: expect.stringMatching(/never deleted without you/) }));
+});
+
+test('helpers see the live job but get no Cancel', async () => {
+  const running = { id: 7, status: 'running', phase: 'writing', night: 1, nights: 2, nights_done: 0, tokens_night: 0, elapsed_s: 1 };
+  const api = jest.fn(async (path) => (path.includes('/jobs/7')
+    ? { ok: true, data: { job: running } }
+    : { ok: true, data: { ...written, access: 'helper', can_update: false, can_edit: false, job: running } }));
+  renderPanel(api);
+  expect(await screen.findByTestId('sofar-progress')).toBeInTheDocument();
+  expect(screen.queryByRole('button', { name: 'Cancel' })).not.toBeInTheDocument();
+});

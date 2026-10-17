@@ -1159,6 +1159,33 @@ def apply_translation(digest: Optional[Dict[str, Any]], chapters: Sequence[Dict[
     return d
 
 
+def split_sentences(text: str, limit: int) -> List[str]:
+    """Text in pieces of at most `limit` characters, cut after sentence ends where it can (then at spaces,
+    then hard), so nothing is lost to a length cap."""
+    text = str(text or "").strip()
+    if len(text) <= limit:
+        return [text] if text else []
+    out: List[str] = []
+    cur = ""
+    for sent in re.split(r"(?<=[.!?;·…])\s+", text):
+        while len(sent) > limit:
+            cut = sent.rfind(" ", 0, limit)
+            cut = cut if cut > 0 else limit
+            if cur:
+                out.append(cur)
+                cur = ""
+            out.append(sent[:cut].strip())
+            sent = sent[cut:].strip()
+        if cur and len(cur) + 1 + len(sent) > limit:
+            out.append(cur)
+            cur = sent
+        else:
+            cur = f"{cur} {sent}".strip()
+    if cur:
+        out.append(cur)
+    return [p for p in out if p]
+
+
 def translation_hash(digest: Optional[Dict[str, Any]], chapters: Sequence[Dict[str, Any]]) -> str:
     """What a translation was made from: the digest's hash and each story night's hash."""
     src = {"d": (digest or {}).get("_hash"),

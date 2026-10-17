@@ -514,10 +514,13 @@ def create_job(cursor, campaign_id: int, user_id: int, scope: str = "update",
     if cursor.fetchone():
         raise JobRefused("job_running", 409)
     every = REWRITE_ALL_EVERY_S if scope == "all" else UPDATE_EVERY_S
+    # Update counts Update and Rewrite everything; Rewrite everything only itself; a translation only
+    # translations (so translating never holds Update back)
+    window = {"update": ("update", "all"), "all": ("all", "all"), "translate": ("translate", "translate")}[scope]
     cursor.execute(
-        "SELECT created_at FROM chronicle_jobs WHERE campaign_id = %s AND (scope = %s OR %s = 'update') "
+        "SELECT created_at FROM chronicle_jobs WHERE campaign_id = %s AND scope IN (%s, %s) "
         "AND status NOT IN ('cancelled', 'failed') ORDER BY id DESC LIMIT 1",
-        (campaign_id, scope, scope),
+        (campaign_id,) + window,
     )
     last = cursor.fetchone()
     if last and _dt(last["created_at"]):
@@ -991,6 +994,7 @@ class Runner:
 
     def run_translate(self) -> str:
         from services import translation
+        from services.ai_providers import Cancelled, ProviderError
 
         cur = self.conn.cursor()
         camp = campaign_row(cur, self.cid)
@@ -998,6 +1002,8 @@ class Runner:
         dst = self.job.get("lang")
         if dst not in cd.LANGS or dst == src:
             raise NightFailed("bad_lang")
+        if edited_in(cur, self.cid, dst):  # never drop a Storyteller's edit without them asking
+            raise NightFailed("edited_in_target")
         self.lang = src
         digest = stored_digest(cur, self.cid, src)
         if not digest:
@@ -1010,32 +1016,43 @@ class Runner:
                           night=0)
         self.progress.set_eta(len(todo) * TRANSLATE_SECONDS_PER_TEXT)
         self.progress.tick(force=True)
+
+        def check_cancel():
+            if not self.progress.tick(force=True):
+                raise JobCancelled()
+
         out = list(texts)
         failed = 0
         t0 = self.clock()
         for n, i in enumerate(todo, 1):
             self._wait_for_play()
             self.progress.set(night=n, tokens_night=0)
-            if not self.progress.tick(force=True):
-                raise JobCancelled()
+            check_cancel()
             try:
-                out[i], model = translation.translate(texts[i], src, dst, generate=self.generate, names=names)
-                self.model = model or self.model
-                self.progress.token(cd.estimate_tokens(out[i]))
-            except (ValueError, KeyError) as e:  # an unusable answer: this text stays as written
-                logger.info("chronicle %s: a text was not translated: %s", self.cid, e)
+                done = []
+                for piece in cd.split_sentences(texts[i], translation.MAX_CHARS):
+                    check_cancel()
+                    tr, model = translation.translate(piece, src, dst, generate=self.generate, names=names,
+                                                      timeout=TRANSLATE_TIMEOUT_S, before_retry=check_cancel)
+                    done.append(tr)
+                    self.model = model or self.model
+                    self.progress.token(cd.estimate_tokens(tr))
+                out[i] = " ".join(done)
+            except Cancelled:
+                raise JobCancelled()
+            except (ValueError, KeyError, ProviderError) as e:  # this text stays as written; the job goes on
+                logger.info("chronicle %s: a text was not translated: %s", self.cid, type(e).__name__)
                 failed += 1
             per = (self.clock() - t0) / n
             self.progress.set(nights_done=n)
             self.progress.set_eta((len(todo) - n) * per)
-            if not self.progress.tick(force=True):
-                raise JobCancelled()
+            check_cancel()
         if todo and failed == len(todo):
             raise NightFailed("translate_failed")
         row = cd.apply_translation(digest, chapters, out)
         row["untranslated"] = failed
         self._save_digest("final", 0, row, cd.translation_hash(digest, chapters), lang=dst, translated_from=src)
-        return "done"
+        return "partial" if failed else "done"
 
     def _wait_for_play(self):
         waited = 0.0
@@ -1047,6 +1064,16 @@ class Runner:
 
 
 TRANSLATE_SECONDS_PER_TEXT = 2.0
+TRANSLATE_TIMEOUT_S = 15  # per translator call, so Cancel is never far away
+
+
+def edited_in(cursor, campaign_id: int, lang: str) -> bool:
+    """A written (not translated) digest in `lang` carries a Storyteller's edit copy."""
+    cursor.execute(
+        "SELECT edited_markdown, translated_from FROM chronicle_digests WHERE campaign_id = %s AND kind = 'final' "
+        "AND era = 0 AND lang = %s", (campaign_id, lang))
+    r = cursor.fetchone()
+    return bool(r and r.get("edited_markdown") and not r.get("translated_from"))
 
 
 def translation_estimate(cursor, campaign_id: int) -> Dict[str, Any]:

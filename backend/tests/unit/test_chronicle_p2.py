@@ -303,3 +303,133 @@ def test_campaign_routes_take_the_language():
     update = src[src.index("def update_campaign"):]
     update = update[:update.index("\n@campaigns_bp.route")]
     assert "validate_chronicle_language(data.get('language'))" in update and "'language = %s'" in update
+
+
+# --- review fixes ------------------------------------------------------------------------------
+
+def test_crossed_marks_close_in_order_and_the_pdf_builds(api):
+    assert inline("**a _b** c_") == "<b>a <i>b</i></b><i> c</i>"
+    assert inline("_x **y_ z**") == "<i>x <b>y</b></i><b> z</b>"
+    write(api)
+    api("PUT", "/api/campaigns/10/chronicle/edit", ST, {"markdown": "# T\n\n**α _β** γ_ and <b>x & **unclosed\n\n- _i **j_"})
+    r = api("GET", "/api/campaigns/10/chronicle.pdf", ST)
+    assert r.status_code == 200
+    text = "\n".join(pdf_pages(r.get_data()))
+    assert "α β γ" in text and "<b>x &" in text
+
+
+def test_greek_bold_prints_bold_and_extracts():
+    md = "# Χρονικό\n\n**Κωνσταντίνος Κατακουζηνός** μίλησε.\n"
+    data = build_pdf(md, "el")
+    plain_data = build_pdf(md.replace("**", ""), "el")
+    # one more embedded font: the bold face (its internal name is the variable font's, so count files)
+    assert data.count(b"/FontFile2") == plain_data.count(b"/FontFile2") + 1
+    assert "Κωνσταντίνος Κατακουζηνός μίλησε." in "\n".join(pdf_pages(data))
+
+
+def test_the_sheet_pdf_is_byte_identical_after_a_chronicle_pdf(monkeypatch):
+    from reportlab import rl_config
+
+    from services.character_sheet_pdf import build_sheet_pdf
+    from tests.unit.test_character_sheet_pdf import V5_CHAR
+
+    monkeypatch.setattr(rl_config, "invariant", 1)
+    before = build_sheet_pdf(V5_CHAR, player_name="lef")
+    build_pdf("# T\n\n**bold** _it_\n", "el")
+    assert build_sheet_pdf(V5_CHAR, player_name="lef") == before
+
+
+def test_a_long_heading_stays_inside_the_rule():
+    from reportlab.pdfbase import pdfmetrics
+
+    from services.pdf_look import CINZEL_BOLD, _ellipsize
+
+    long = "A VERY LONG HEADING " * 20
+    short = _ellipsize(long, CINZEL_BOLD, 10, 400)
+    assert short.endswith("…") and pdfmetrics.stringWidth(short, CINZEL_BOLD, 10) <= 400
+    build_pdf("# T\n\n## " + long + "\n\ntext\n", "en")  # builds
+
+
+def test_split_sentences_keeps_everything():
+    text = ("Μία πρόταση εδώ. " * 300).strip()
+    parts = cd.split_sentences(text, 2000)
+    assert len(parts) > 1 and all(len(p) <= 2000 for p in parts)
+    assert " ".join(parts) == text
+    assert cd.split_sentences("x" * 4500, 2000) == ["x" * 2000, "x" * 2000, "x" * 500]
+    assert cd.split_sentences("short.", 2000) == ["short."]
+
+
+def test_translate_survives_provider_errors_and_reports_partial(api):
+    from services.ai_providers import ProviderError
+
+    write(api)
+
+    class Flaky(Translator):
+        n = 0
+
+        def __call__(self, role, messages, params, **kw):
+            if role == "translator":
+                Flaky.n += 1
+                assert params["timeout"] == cj.TRANSLATE_TIMEOUT_S
+                if Flaky.n % 3 == 0:
+                    raise ProviderError("timeout")
+            return super().__call__(role, messages, params, **kw)
+
+    status, _m, jid = _translate(api, Flaky())
+    assert status == "partial"
+    assert api.raw.execute("SELECT status FROM chronicle_jobs WHERE id = ?", (jid,)).fetchone()[0] == "partial"
+    en = api("GET", "/api/campaigns/10/chronicle?lang=en", ST).get_json()
+    assert en["translation"]["untranslated"] > 0
+
+
+def test_long_texts_are_translated_in_pieces(api):
+    write(api)
+    long_p = ("Ο Κωνσταντίνος κατέβηκε στο υπόγειο. " * 120).strip()
+    api.raw.execute("UPDATE chronicle_digests SET digest = json_set(digest, '$.tldr', ?) WHERE kind = 'final'", (long_p,))
+    api.raw.commit()
+    status, model, _j = _translate(api)
+    assert status == "done"
+    assert max(len(c["messages"][-1]["content"]) for c in model.calls) < 2100
+    tr = api("GET", "/api/campaigns/10/chronicle?lang=en", ST).get_json()["digest"]["tldr"]
+    assert tr.count("EN: translated") >= 3
+
+
+def test_translate_does_not_hold_update_back(api, monkeypatch):
+    write(api)
+    monkeypatch.setattr(cj, "_pg", lambda: True)
+    api.raw.execute("DELETE FROM chronicle_jobs")
+    api.raw.commit()
+    _translate(api)
+    api.raw.execute("UPDATE chronicle_jobs SET created_at = ?", (datetime.now().isoformat(" "),))
+    api.raw.commit()
+    assert api("POST", "/api/campaigns/10/chronicle/jobs", ST, {}).status_code == 202
+
+
+def test_translate_refuses_to_drop_an_edit_in_the_target_language(api, monkeypatch):
+    write(api)
+    monkeypatch.setattr(cj, "_pg", lambda: True)
+    # the chronicle was Greek and edited; now it is English with its own digest, and Greek is the other language
+    api("PUT", "/api/campaigns/10/chronicle/edit", ST, {"markdown": EDIT})
+    api.raw.execute("INSERT INTO chronicle_digests (campaign_id, kind, era, lang, digest, source_hash) "
+                    "VALUES (10, 'final', 0, 'en', '{\"tldr\": \"x\", \"so_far\": [\"x\"]}', 'h')")
+    api.raw.execute("UPDATE campaigns SET language = 'en'")
+    api.raw.commit()
+    r = api("POST", "/api/campaigns/10/chronicle/jobs", ST, {"scope": "translate", "lang": "el"})
+    assert r.status_code == 409 and r.get_json()["error"] == "edited_in_target"
+    conn = Conn(api.raw)
+    cur = conn.cursor()
+    jid = cj.create_job(cur, 10, ST, "translate", now=datetime(2020, 1, 1), lang="el")
+    cur.execute("UPDATE chronicle_jobs SET status = 'running' WHERE id = %s", (jid,))
+    conn.commit()
+    assert cj.run_job(conn, cj.get_job(cur, 10, jid), generate=Translator(), sleep=lambda s: None) == "failed"
+    edit = api.raw.execute("SELECT edited_markdown FROM chronicle_digests WHERE lang = 'el' AND kind = 'final'").fetchone()[0]
+    assert "Η δική μου εκδοχή" in edit
+
+
+def test_helpers_cannot_cancel(api, monkeypatch):
+    monkeypatch.setattr(cj, "_pg", lambda: True)
+    job = api("POST", "/api/campaigns/10/chronicle/jobs", ST, {}).get_json()["job"]
+    url = f"/api/campaigns/10/chronicle/jobs/{job['id']}"
+    assert api("DELETE", url, HELPER_IN).status_code == 403
+    assert api("GET", url, HELPER_IN).status_code == 200
+    assert api("DELETE", url, ADMIN).status_code == 200

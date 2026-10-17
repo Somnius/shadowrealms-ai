@@ -49,10 +49,11 @@ def test_names_protected_and_restored_exactly():
     # the article follows who the name is
     out, _ = tr.translate("The Prince calls Sofia.", "en", "el", fake_gen([], "Ο Πρίγκιπας καλεί τον ⟦1⟧."))
     assert out == "Ο Πρίγκιπας καλεί την Sofia."
-    # a lost placeholder: once more without them
+    # a lost placeholder: once more, the name still hidden; then it gives up rather than show the name
     calls = []
-    out, _ = tr.translate("Eleni smiles.", "en", "el", fake_gen(calls, "Η Ελένη χαμογελά."))
-    assert len(calls) == 2 and "Eleni" in calls[1][1][-1]["content"]
+    with pytest.raises(ValueError):
+        tr.translate("Eleni smiles.", "en", "el", fake_gen(calls, "Η Ελένη χαμογελά."))
+    assert len(calls) == 2 and "Eleni" not in calls[1][1][-1]["content"] and "⟦1⟧" in calls[1][1][-1]["content"]
     assert tr.fix_articles("Η αίμα είναι χρέος.", []) == "Το αίμα είναι χρέος."
 
 

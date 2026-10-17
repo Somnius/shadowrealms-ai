@@ -55,9 +55,24 @@ def _caps(text: str) -> Tuple[str, str]:
 
 def inline(text: str) -> str:
     """One line of our Markdown as reportlab paragraph markup. Escapes are honoured, ** and _ toggle
-    bold and italic, and everything else (including any < or &) is escaped text."""
+    bold and italic, and everything else (including any < or &) is escaped text. Tags always close in
+    order: crossed marks (**a _b** c_) close the inner tag and open it again."""
     out: List[str] = []
-    bold = ital = False
+    stack: List[str] = []
+
+    def toggle(tag):
+        if tag in stack:
+            inner = stack[stack.index(tag) + 1:]
+            for t in reversed(inner):
+                out.append(f"</{t}>")
+            out.append(f"</{tag}>")
+            stack.remove(tag)
+            for t in inner:
+                out.append(f"<{t}>")
+        else:
+            out.append(f"<{tag}>")
+            stack.append(tag)
+
     i, n = 0, len(text)
     while i < n:
         ch = text[i]
@@ -66,22 +81,27 @@ def inline(text: str) -> str:
             i += 2
             continue
         if text.startswith("**", i):
-            out.append("</b>" if bold else "<b>")
-            bold = not bold
+            toggle("b")
             i += 2
             continue
+        ital = "i" in stack
         if ch == "_" and (ital or i == 0 or not text[i - 1].isalnum()) and (not ital or i + 1 >= n or not text[i + 1].isalnum()):
-            out.append("</i>" if ital else "<i>")
-            ital = not ital
+            toggle("i")
             i += 1
             continue
         out.append(escape(ch))
         i += 1
-    if ital:
-        out.append("</i>")
-    if bold:
-        out.append("</b>")
+    for t in reversed(stack):
+        out.append(f"</{t}>")
     return "".join(out)
+
+
+def _para(md_text: str, style, **kw) -> Paragraph:
+    """A Paragraph of our Markdown; if reportlab still refuses the markup, the escaped plain text."""
+    try:
+        return Paragraph(inline(md_text), style, **kw)
+    except ValueError:
+        return Paragraph(escape(plain(md_text)), style, **kw)
 
 
 def blocks(markdown: str) -> List[Tuple[str, str]]:
@@ -150,13 +170,24 @@ def _styles():
     }
 
 
+SERIF_BOLD = "SR-Garamond-Bold"  # EB Garamond Bold (static wght 700 from the OFL variable font); chronicle PDF only
+
+
 def _register_family():
     from reportlab.lib.fonts import addMapping
+    from reportlab.pdfbase import pdfmetrics
+    from reportlab.pdfbase.ttfonts import TTFont
 
-    # EB Garamond has no bold file here: bold shows as the regular face (the sheet does the same)
-    for bold, italic, face in ((0, 0, SERIF), (1, 0, SERIF), (0, 1, SERIF_ITALIC), (1, 1, SERIF_ITALIC)):
+    from services.pdf_look import FONT_DIR
+
+    if SERIF_BOLD not in pdfmetrics.getRegisteredFontNames():
+        import os
+
+        pdfmetrics.registerFont(TTFont(SERIF_BOLD, os.path.join(FONT_DIR, "EBGaramond-Bold.ttf")))
+    # one family; no bold italic file, so bold italic shows as bold. An italic style (SERIF_ITALIC)
+    # maps back to (SERIF, italic), so <b> inside it is bold too.
+    for bold, italic, face in ((1, 1, SERIF_BOLD), (0, 0, SERIF), (1, 0, SERIF_BOLD), (0, 1, SERIF_ITALIC)):
         addMapping(SERIF, bold, italic, face)
-        addMapping(SERIF_ITALIC, bold, italic, SERIF_ITALIC)
 
 
 def flowables(markdown: str, st_heading: Optional[str] = None) -> List[Flowable]:
@@ -164,7 +195,7 @@ def flowables(markdown: str, st_heading: Optional[str] = None) -> List[Flowable]
     out: List[Flowable] = []
     for kind, text in blocks(markdown):
         if kind == "h1":
-            out.append(Paragraph(inline(text), st["h1"]))
+            out.append(_para(text, st["h1"]))
         elif kind == "h2":
             if st_heading and plain(text).strip() == st_heading:
                 out.append(PageBreak())  # the Storyteller-only part starts on its own page
@@ -175,11 +206,11 @@ def flowables(markdown: str, st_heading: Optional[str] = None) -> List[Flowable]
             out.append(SectionRule(plain(text)))
         elif kind == "h3":
             out.append(CondPageBreak(40))
-            out.append(Paragraph(inline(text), st["h3"]))
+            out.append(_para(text, st["h3"]))
         elif kind == "li":
-            out.append(Paragraph(inline(text), st["li"], bulletText="•"))
+            out.append(_para(text, st["li"], bulletText="•"))
         else:
-            out.append(Paragraph(inline(text), st["p"]))
+            out.append(_para(text, st["p"]))
     if not out:
         out.append(Spacer(1, 1))
     return out

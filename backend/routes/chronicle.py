@@ -238,6 +238,8 @@ def post_job(campaign_id):
                     return jsonify({"error": "bad_lang"}), 400
                 if not cj.stored_digest(cur, campaign_id, cj.chronicle_lang(cur, camp)):
                     return jsonify({"error": "no_digest"}), 409
+                if cj.edited_in(cur, campaign_id, lang):  # an edit from when the chronicle was in that language
+                    return jsonify({"error": "edited_in_target"}), 409
             job_id = cj.create_job(cur, campaign_id, uid, scope, lang=lang if scope == "translate" else None)
         except cj.JobRefused as e:
             conn.rollback()
@@ -259,10 +261,12 @@ def job(campaign_id, job_id):
     conn = get_db()
     try:
         cur = conn.cursor()
-        _a, err = _gate(cur, uid, campaign_id)
+        a, err = _gate(cur, uid, campaign_id)
         if err:
             return err
         if request.method == "DELETE":
+            if a != "st":  # helpers read and export only
+                return jsonify({"error": "forbidden"}), 403
             if not cj.cancel_job(cur, campaign_id, job_id):
                 conn.rollback()
                 row = cj.get_job(cur, campaign_id, job_id)
@@ -307,11 +311,13 @@ def _paper():
     return "letter" if (request.args.get("paper") or "").strip().lower() == "letter" else "a4"
 
 
-def _story(cur, camp, view):
+def _story(cur, camp, view, lang=None, table_talk=None):
     """(markdown, lang, edited, translated) of the story so far. The Storyteller's view uses the edit
-    copy when there is one (in the chronicle's own language); the player view never does."""
+    copy when there is one (in the chronicle's own language); the player view never does. lang and
+    table_talk default to the request's lang= and with_table_talk=."""
     own = cj.chronicle_lang(cur, camp)
-    lang = _want_lang(own)
+    lang = lang or _want_lang(own)
+    table_talk = _flag("with_table_talk") if table_talk is None else table_talk
     if view == "st" and lang == own:
         raw = cj.stored_digest(cur, camp["id"], own)
         if raw and raw.get("_edited_markdown"):
@@ -323,12 +329,12 @@ def _story(cur, camp, view):
     facts["nights_total"] = max((digest or {}).get("nights_total") or 0, len(chapters))
     if chapters:
         facts["first_at"], facts["last_at"] = chapters[0]["started_at"], chapters[-1]["started_at"]
-    if _flag("with_table_talk"):
+    if table_talk:
         lobby = [c for c in cj.stored_chapters(cur, camp["id"], own) if c["kind"] == "lobby"]
         chapters = chapters + lobby
     existing = cj.message_ids(cur, camp["id"]) if view == "st" else None
     translated = lang != own
-    text = cd.story_markdown(facts, digest, chapters, lang, view, _flag("with_table_talk"), existing, translated)
+    text = cd.story_markdown(facts, digest, chapters, lang, view, table_talk, existing, translated)
     return text, lang, False, translated
 
 
@@ -456,7 +462,7 @@ def edit_copy(campaign_id):
         if state["edited"]:
             text = cd.strip_footer(raw["_edited_markdown"])
         else:
-            text = cd.strip_footer(_story(cur, camp, "st")[0])
+            text = cd.strip_footer(_story(cur, camp, "st", lang=lang, table_talk=False)[0])
         return jsonify({"lang": lang, "markdown": text, "max": cj.EDIT_MAX_CHARS, **state})
     finally:
         conn.close()

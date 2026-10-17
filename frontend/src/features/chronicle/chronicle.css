@@ -59,7 +59,7 @@
 .sr-app .sr-approvals__problems-intro { color: var(--sr-warn-400); }
 
 /* The chronicle so far (0.24): phones first, 44 px targets */
-.sr-app .sr-sofar .sr-btn, .sr-app .sr-sofar .sr-switch, .sr-app .sr-sofar input { min-height: 44px; }
+.sr-app .sr-sofar .sr-btn, .sr-app .sr-sofar .sr-switch, .sr-app .sr-sofar input, .sr-app .sr-sofar select { min-height: 44px; }
 .sr-app .sr-sofar__lead, .sr-app .sr-sofar__hint { color: var(--sr-text-muted); margin: 0 0 var(--sr-space-3); }
 .sr-app .sr-sofar__status { margin: 0 0 var(--sr-space-3); }
 .sr-app .sr-sofar__error { color: var(--sr-danger-400); }

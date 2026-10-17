@@ -227,7 +227,7 @@ def draw_section(c, title: str, y: float, x0: float, x1: float, size: float = 9.
     """Centered heading (Cinzel caps) between hairlines ending in diamonds; returns the y below it."""
     text = text or canvas_text(c)
     mid = (x0 + x1) / 2
-    s = title.upper()
+    s = _ellipsize(title.upper(), font, size, max(20.0, x1 - x0 - 40))  # a long heading stays inside the rule
     tw = pdfmetrics.stringWidth(s, font, size)
     base = y - 9
     text(mid, base, s, font, size, "center")
