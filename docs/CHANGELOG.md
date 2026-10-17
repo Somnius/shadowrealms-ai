@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.22.2] - 2026-10-17 - Small fixes
+
+### Fixed
+- **Profile → Characters loads at once.** The last list is shown right away (kept for the tab, per account, cleared at sign-out) and refreshed behind; a "Drawing blood…" line while there is none yet; the list is fetched once instead of two or three times (it no longer refetches when the user object is refreshed). Downtime likewise.
+- **Chronicle list fetched once per page.** The page-load and window-focus refreshes share one request, the hall shares it too, a focus refresh within 5 s of a load is skipped, and only the newest request may change the list (a slower old answer, or one from before a sign-out, is ignored).
+- **Phone recorder header** wraps to two lines, so the title ("Your recording · 0:12") is no longer cut.
+- **Message menu on touch screens** opens below its "…" button instead of pushing it over the name and badges, sits above the next message's button, and the newest message has room under it.
+- nginx caches the app icons and the web app manifest for a day instead of revalidating them on every page.
+
+### Removed
+- The coding-tools credit line in the app footer, the README and docs/TECH_STACK.md.
+
 ## [0.22.1] - 2026-10-17 - Greek names
 
 ### Fixed

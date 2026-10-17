@@ -31,14 +31,18 @@ export function ChroniclesProvider({ children }) {
   const lastJson = useRef('');
   const inflight = useRef(null);
   const lastLoadAt = useRef(0);
+  const seq = useRef(0); // only the newest request may change the list
 
   // An explicit reload (after creating or changing a chronicle) always asks the server.
   const reload = useCallback(async () => {
     if (!authed) return [];
+    const mine = ++seq.current;
     const r = await apiFetch(getCurrentToken(), '/campaigns/');
-    lastLoadAt.current = Date.now();
     const list = r.ok && Array.isArray(r.data) ? r.data : [];
+    // A newer request was sent meanwhile (or the session ended): its answer counts, not this one.
+    if (mine !== seq.current) return list;
     if (r.ok) {
+      lastLoadAt.current = Date.now();
       // Background refreshes usually return the same list: keep the old array (no re-render).
       const json = JSON.stringify(list);
       if (json !== lastJson.current) {
@@ -90,6 +94,9 @@ export function ChroniclesProvider({ children }) {
   useEffect(() => {
     if (authed) refresh();
     else {
+      seq.current += 1; // answers still on their way belong to the old session
+      inflight.current = null;
+      lastLoadAt.current = 0;
       lastJson.current = '';
       setChronicles([]);
       setLoaded(false);
