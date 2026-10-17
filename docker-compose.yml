@@ -71,6 +71,11 @@ services:
       - OLLAMA_TIMEOUT=${OLLAMA_TIMEOUT:-30}
       # Phase 2 AI (docs/AI_SYSTEMS.md). Roles/keys are set in the admin panel; these are defaults.
       - STORYTELLER_EL_MODEL=${STORYTELLER_EL_MODEL:-llama-krikri-8b-instruct}
+      - CHRONICLER_EL_MODEL=${CHRONICLER_EL_MODEL:-llama-krikri-8b-instruct}
+      - CHRONICLER_EN_MODEL=${CHRONICLER_EN_MODEL:-}
+      - CHRONICLE_QUIET_MINUTES=${CHRONICLE_QUIET_MINUTES:-10}
+      - CHRONICLE_OVERFLOW_WAIT_S=${CHRONICLE_OVERFLOW_WAIT_S:-30}
+      - CHRONICLE_CONTEXT_TOKENS=${CHRONICLE_CONTEXT_TOKENS:-}
       - UTILITY_PROVIDER=${UTILITY_PROVIDER:-ollama}
       - UTILITY_MODEL=${UTILITY_MODEL:-llama3.2:3b}
       - EMBEDDING_MODEL=${EMBEDDING_MODEL:-text-embedding-bge-m3}

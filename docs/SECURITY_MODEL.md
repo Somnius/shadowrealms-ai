@@ -188,6 +188,18 @@ A breach returns `429 {"error": "...", "code": "RATE_LIMITED", "retry_after": <s
   be heard by whoever may read its message (`visible_message`, 404 both ways); before it is sent,
   only by its owner. Only its owner can attach it, once, to a message in the same room. Clips go
   with the message and with the chronicle; `VOICE_CLIPS_MAX_GB` caps the disk.
+- The chronicle so far (0.24, [CHRONICLE.md](CHRONICLE.md)): the Storyteller, site admins and
+  helpers who are members of the chronicle read and export it; players get 403 and outsiders 404.
+  Lines given to the model never hold usernames. The player view (`?view=player`) has no
+  Storyteller keys, no message ids, and checks rooms again when it is read.
+- **Archive on delete holds hidden rolls.** Deleting a chronicle first writes
+  `data/chronicle_archive/<id>-<name>-<time>/` (`minutes.md`, `transcript.md` with every room and
+  hidden rolls marked) and a `chronicle_archives` row; if that fails, nothing is deleted. The folder
+  is created `0700` and is never served by nginx. Downloads (`/api/chronicle-archives/...`): site
+  admins always, the Storyteller who deleted the chronicle for 30 days, anyone else 404. The file's
+  path comes from the index row (only `minutes` or `transcript` can be asked for, and the resolved
+  path must stay inside the archive folder), never from the request. Archives stay until an admin
+  deletes them, so a deleted chronicle's text is still on the server.
 
 ## Rule books API
 

@@ -11,7 +11,7 @@ How each phase runs: build in its own git worktree → tests and CI green → on
 | # | Phase | Parts | Version | Status |
 |---|---|---|---|---|
 | 0 | Measure | synthetic chronicles · a chapter timed on Krikri · does LM Studio queue a Storyteller reply behind a chapter call · VRAM headroom with Whisper and TTS · the live chronicle read by eye with Lef | — | done 17 Oct (Lef read the results and agreed; Krikri at 32k) |
-| 1 | Summary, minutes, archive | chronicler roles · busy marker · chapters (gap, session-mark ids, cleanup) · era digests · jobs · routes · panel · Markdown export · minutes for the whole chronicle or the last N nights · archive on delete (stored minutes + raw transcript) · `campaigns.language` column | 0.24 | not started |
+| 1 | Summary, minutes, archive | chronicler roles · busy marker · chapters (gap, session-mark ids, cleanup) · era digests · jobs · routes · panel · Markdown export · minutes for the whole chronicle or the last N nights · archive on delete (stored minutes + raw transcript) · `campaigns.language` column | 0.24 | built on branch `chronicle/p1` 17 Oct; tests green; review, merge and release pending |
 | 2 | Sheet-look PDF, edits, languages | PDF in the sheet's look · Storyteller's edit copy · translation on request · chronicle language asked at creation | 0.25 | not started |
 | 3 | Horror look, date ranges, session marks | horror PDF (committed paper image + reportlab, A4 and Letter, one test print) · minutes for a date range · "session ended here" from the message menu, shown to players | 0.26 | not started |
 | 4 | Previously on… | recap card after 12 h away and a button · jump to the message · read-out | 0.27 | not started |
@@ -125,15 +125,15 @@ Build rules that come out of the reviews. These are not product choices; Lef's c
 
 ## Phase 1 — Summary, minutes, archive (0.24)
 
-- [ ] 1.1 Schema through `ensure_*` and `init_postgresql_schema.sql`:
+- [x] 1.1 Schema through `ensure_*` and `init_postgresql_schema.sql`:
   - tables `chronicle_chapters`, `chronicle_digests`, `chronicle_jobs`, `chronicle_archives`
   - `campaigns.language` (nullable)
   - `messages.session_end` (or a marks table)
   - roles `chronicler_el` and `chronicler_en`, in `ROLES`, the admin AI panel and AI_SYSTEMS.md
   - the cross-process "Storyteller busy" marker
 
-  Status: not started.
-- [ ] 1.2 Pure core `services/chronicle_digest.py`:
+  Status: done 17 Oct: the four tables plus `chronicle_session_marks` (a marks table, not a column) and `ai_busy_marks` (the busy marker, bumped around every Storyteller generation in `SmartModelRouter`); one DDL list in `database.py` reused for SQLite; CI's schema diff checked locally against PostgreSQL 16 (no change after `migrate_db()`, twice).
+- [x] 1.2 Pure core `services/chronicle_digest.py`:
   - lines per view
   - the cutter: room, a 6-hour gap and session-mark ids
   - token budget and splitting; overflow is a failure, never a shrink
@@ -147,30 +147,30 @@ Build rules that come out of the reviews. These are not product choices; Lef's c
   - fixed words in EL and EN
   - Markdown for the story and the minutes
 
-  pytest on the synthetic chronicles with a fake model. Status: not started.
-- [ ] 1.3 Jobs `services/chronicle_jobs.py`:
+  pytest on the synthetic chronicles with a fake model. Status: done 17 Oct: 18 tests on synthetic chronicles (Greek, English, mixed; 1, 10, 60 nights; hidden roll, closed room, in-room OOC, session mark). A night that doesn't fit is written in parts and the parts are merged without another model call.
+- [x] 1.3 Jobs `services/chronicle_jobs.py`:
   - claim with `FOR UPDATE SKIP LOCKED` plus a per-chronicle lock
   - the quiet window (10 minutes with no message)
   - progress, partial runs reported ("40 of 63 nights"), cancel
   - stale chapters only; orphan chapter rows deleted
 
-  Status: not started.
-- [ ] 1.4 Routes under `/api/campaigns/<id>/chronicle`:
+  Status: done 17 Oct: streaming with `on_token` in `LMStudioProvider`, progress every 1.5 s, ETA from past jobs (6 s a night before any), stale jobs reclaimed after 60 s, overflow → wait 30 s → halves; claim and advisory lock checked against PostgreSQL by hand. 15 tests with a fake model.
+- [x] 1.4 Routes under `/api/campaigns/<id>/chronicle`:
   - the digest, jobs, chapters
   - `chronicle.md` (story, optional table talk)
   - `minutes.md` for the whole chronicle or the last N nights, as a render of stored chapters
 
-  Permission tests: outsider 404; player 403 on Update and exports; helper read and export only when they can open the chronicle; no username and no Storyteller keys in player data; rooms checked again at read time. Status: not started.
-- [ ] 1.5 Archive on delete:
+  Permission tests: outsider 404; player 403 on Update and exports; helper read and export only when they can open the chronicle; no username and no Storyteller keys in player data; rooms checked again at read time. Status: done 17 Oct: also `…/chronicle/estimate`; helpers may press Update (not Rewrite everything). 8 route tests.
+- [x] 1.5 Archive on delete:
   - inside `delete_campaign` before the SQL delete, write the stored minutes plus the raw Storyteller-view transcript (hidden rolls marked, header saying what's covered) to `data/chronicle_archive/`
   - an index row in `chronicle_archives`
   - if the write fails, the delete stops
   - download routes: site admins always, the deleting Storyteller for 30 days; the path comes from the row
   - noted in SECURITY_MODEL.md
 
-  Status: not started.
-- [ ] 1.6 Panel "The chronicle so far" in Chronicle settings: the time estimate before starting (Start / Cancel), the live progress card (night x of y, bar, tokens and tok/s from the LM Studio stream, elapsed and time left, waiting state, Cancel), the status line for partial runs, Export story / minutes, the digest read-only, the Storyteller part behind a toggle. A new `ProgressBar` component. 44 px buttons, EN + EL, jest. Status: not started.
-- [ ] 1.7 Release 0.24: `docs/CHRONICLE.md`, FEATURES, CHANGELOG, this file. Status: not started.
+  Status: done 17 Oct: `services/chronicle_archive.py`, written before any cleanup in `delete_campaign`; routes `/api/chronicle-archives`.
+- [x] 1.6 Panel "The chronicle so far" in Chronicle settings: the time estimate before starting (Start / Cancel), the live progress card (night x of y, bar, tokens and tok/s from the LM Studio stream, elapsed and time left, waiting state, Cancel), the status line for partial runs, Export story / minutes, the digest read-only, the Storyteller part behind a toggle. A new `ProgressBar` component. 44 px buttons, EN + EL, jest. Status: done 17 Oct: `ChronicleSoFarPanel.jsx`, `ProgressBar`, 7 jest tests.
+- [x] 1.7 Release 0.24: `docs/CHRONICLE.md`, FEATURES, CHANGELOG, this file. Status: done 17 Oct: CHRONICLE.md, FEATURES, CHANGELOG, AI_SYSTEMS, SECURITY_MODEL, version 0.24.0.
 
 ## Phase 2 — Sheet-look PDF, edits, languages (0.25)
 
@@ -203,6 +203,7 @@ Build rules that come out of the reviews. These are not product choices; Lef's c
 
 ## Log
 
+- 2026-10-17 — Phase 1 built on `chronicle/p1`: schema, roles, busy marker, digest core, jobs with live progress, routes, archive on delete, panel, docs. Backend and frontend tests green; one chapter checked against Krikri. Review next.
 - 2026-10-17 — Plan written from recmeets' minutes pipeline and the current code; questions for Lef listed in the plan. Nothing built yet.
 - 2026-10-17 — Live progress designed from what LM Studio actually returns (stream with usage); Krikri at 32k recommended (12.1 GB, 13.4 GB with Whisper; 64k does not fit).
 - 2026-10-17 — Phase 0 measured on the live chronicle (results: Greek instructions needed, shared context at 8k fails under load, 16k works with headroom).

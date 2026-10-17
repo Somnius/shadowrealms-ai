@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.24.0] - 2026-10-17 - The chronicle so far
+
+### Added
+- **The chronicle so far.** Chronicle settings has a new panel that writes the chat up as a story, one room and one night at a time, with the local model: in short, the story so far, open threads, and every night with a title, 2–4 explained paragraphs and what happened, each event pointing back to its messages. For the Storyteller, site admins and helpers who can open the chronicle; players don't see it yet. See [CHRONICLE.md](CHRONICLE.md).
+- **Update** says first how long it will take, then shows the work live: "Night 3 of 12", a progress bar, tokens and tokens per second as the model writes, elapsed and time left, and Cancel. It waits for 10 quiet minutes in the chronicle before it starts ("Waiting for a quiet moment"), and while a Storyteller reply is being written. At most 40 nights per run; the next Update carries on and the status line says so. Only nights that changed are written again.
+- **Written in the chronicle's language**, with instructions in that language; Greek by Krikri, English by the loaded model, as two new roles in Admin → AI system (`chronicler_el`, `chronicler_en`). Answers are checked: message numbers must exist, names must be the chronicle's own, the language and the alphabet must be right, and botches and criticals are always listed. A night that doesn't fit the model's context is split, never cut.
+- **Two views.** The story is built from what players could read (no hidden rolls, no closed rooms); the Storyteller's part, behind a toggle, adds what the players didn't see. Table talk is kept apart and exported only when asked.
+- **Exports as Markdown:** the story, and the full minutes of the whole chronicle or the last N nights, with or without table talk.
+- **Archive on delete.** Deleting a chronicle first saves its minutes and the full transcript of every room (hidden rolls marked) on the server; if that can't be written, the chronicle isn't deleted. Site admins can download them, and the Storyteller who deleted it can for 30 days.
+- A `ProgressBar` in the design system; `campaigns.language` (empty = the language most messages are in); session-end marks in the database (the menu for them comes later).
+
 ## [0.23.0] - 2026-10-17 - Cloud voices
 
 ### Added

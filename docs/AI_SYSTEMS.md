@@ -45,6 +45,10 @@ Roles (admin panel → **Ai System → Models per role**, stored in `app_setting
 | `storyteller_el` | Storyteller replies when the player writes Greek | LM Studio `llama-krikri-8b-instruct` (`STORYTELLER_EL_MODEL`) |
 | `utility` | Calls with no role whose task is dice/combat (as the old router did) | Ollama `llama3.2:3b` (`UTILITY_PROVIDER`, `UTILITY_MODEL`) |
 | `classifier` | The LLM-prompt fallback of the classifier (OOC check) | LM Studio, loaded model. Never falls back to Ollama (see below) |
+| `chronicler_el` | "The chronicle so far" for Greek chronicles ([CHRONICLE.md](CHRONICLE.md)) | LM Studio `llama-krikri-8b-instruct` (`CHRONICLER_EL_MODEL`). Never falls back to Ollama; streamed (`on_token`, `stream_options.include_usage`) with a JSON schema in `response_format`; an overflow is never trimmed (`shrink=False`): the night is split instead |
+| `chronicler_en` | "The chronicle so far" for English chronicles | LM Studio, loaded model (`CHRONICLER_EN_MODEL` to pin one). Same rules as `chronicler_el` |
+
+Every Storyteller generation also bumps the `ai_busy_marks` row (`services/ai_busy.py`), a marker that works across gunicorn workers, so the chronicle writer can wait while a reply is being written.
 
 **Fallback chain** (`ai_roles.fallback_chain`): cloud fails → the role's local model; an LM Studio model that isn't the loaded one fails → LM Studio's loaded model; LM Studio fails → Ollama; Ollama fails → LM Studio. When LM Studio answers "Failed to load model" (not enough VRAM), that model is skipped for 5 minutes so later messages don't wait ~7 s for the same failure. `POST /api/ai/chat` returns `ai_meta` (`provider`, `model_used`, `role`, `language`, `ms`, `fallback_from`) so you can see who answered.
 
