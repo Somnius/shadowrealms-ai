@@ -12,7 +12,7 @@ How each phase runs: build in its own git worktree → tests and CI green → on
 |---|---|---|---|---|
 | 0 | Measure | synthetic chronicles · a chapter timed on Krikri · does LM Studio queue a Storyteller reply behind a chapter call · VRAM headroom with Whisper and TTS · the live chronicle read by eye with Lef | — | done 17 Oct (Lef read the results and agreed; Krikri at 32k) |
 | 1 | Summary, minutes, archive | chronicler roles · busy marker · chapters (gap, session-mark ids, cleanup) · era digests · jobs · routes · panel · Markdown export · minutes for the whole chronicle or the last N nights · archive on delete (stored minutes + raw transcript) · `campaigns.language` column | 0.24 | done: released 0.24.0 (17 Oct) |
-| 2 | Sheet-look PDF, edits, languages | PDF in the sheet's look · Storyteller's edit copy · translation on request · chronicle language asked at creation | 0.25 | built on `chronicle/p2` (17 Oct); review and release next |
+| 2 | Sheet-look PDF, edits, languages | PDF in the sheet's look · Storyteller's edit copy · translation on request · chronicle language asked at creation | 0.25 | done: released 0.25.0 (17 Oct) |
 | 3 | Horror look, date ranges, session marks | horror PDF (committed paper image + reportlab, A4 and Letter, one test print) · minutes for a date range · "session ended here" from the message menu, shown to players | 0.26 | not started |
 | 4 | Previously on… | recap card after 12 h away and a button · jump to the message · read-out | 0.27 | not started |
 | 5 | Ops | nightly run (quiet window) · per-chronicle settings · caps · admin health · admin archive page | 0.28 | not started |
@@ -202,6 +202,11 @@ Build rules that come out of the reviews. These are not product choices; Lef's c
 - [ ] 5.4 Release 0.28. Status: not started.
 
 ## Log
+
+- 2026-10-17 — **0.25.0 released.**
+  - Two reviews were fixed: the PDF crash on crossed bold/italic in an edit, translations lost on one timeout, long paragraphs cut, partial translations hidden.
+  - Real bold in the PDF.
+  - Translation was tested on the live chronicle with Krikri and made robust (sentence fallback, titles in sentence case, rolls kept as written, half-translations rejected).
 
 - 2026-10-17 — Two reviews of phase 2 fixed: crossed bold/italic no longer breaks the PDF (tags close in order, plain-text fallback); EB Garamond Bold for the chronicle PDF (sheet output byte-identical); long headings cut with an ellipsis; translation keeps going past timeouts (job `partial`, "n texts still in …"), splits long texts at sentence ends, 15 s per call, Cancel before each call and retry; the name-protection retry keeps names hidden; translations don't hold Update back; Translate refuses to drop an edit in the target language (`edited_in_target`); cancel is Storyteller/admin only; 44 px selects.
 - 2026-10-17 — Phase 2 built on `chronicle/p2`: sheet-look PDF (A4 and Letter), the Storyteller's edit copy, translation on request, the chronicle language at creation and in settings, docs and version 0.25.0. Backend and frontend tests green with fake models. Review next.
