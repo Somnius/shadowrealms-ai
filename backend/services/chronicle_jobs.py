@@ -1075,6 +1075,14 @@ class Runner:
                                           timeout=TRANSLATE_TIMEOUT_S, before_retry=check_cancel)
         self.model = model or self.model
         self.progress.token(cd.estimate_tokens(tr))
+        # half-translated output ("Αναζήτηση of Δοκιμαστή"): the names put back are allowed to stay as written,
+        # the rest must be in the target language
+        rest = tr
+        for n in names or ():
+            rest = rest.replace(n, " ")
+        share = cd.greek_share(rest)
+        if (dst == "en" and share > 0.25) or (dst == "el" and share < 0.5 and len(rest.strip()) > 20):
+            raise ValueError("not in the target language")
         return cd.fix_question_mark(text, tr, dst)
 
     def _wait_for_play(self):
