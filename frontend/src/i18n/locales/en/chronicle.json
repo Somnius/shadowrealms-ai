@@ -180,7 +180,7 @@
   },
   "soFar": {
     "title": "The chronicle so far",
-    "lead": "The chat written up as a story, night by night, by the local model. It only runs when you press Update, and waits for a quiet moment in play.",
+    "lead": "The chat written up as a story, night by night, by the local model. It runs when you press Update (or nightly, if you turn that on in Settings), and waits for a quiet moment in play.",
     "update": "Update",
     "rewriteAll": "Rewrite everything",
     "start": "Start",
@@ -286,7 +286,25 @@
     "minutesUntil": "from the beginning to {{to}}",
     "color": "Colour",
     "colorColour": "Colour",
-    "colorPrint": "Print (black and white)"
+    "colorPrint": "Print (black and white)",
+    "settings": {
+      "title": "Settings",
+      "gap": "Night gap (hours)",
+      "gapHint": "A night ends after this many hours with no message ({{low}}–{{high}}). Changing it cuts the nights again.",
+      "gapBad": "A whole number from {{low}} to {{high}}.",
+      "tableTalk": "Table talk in exports by default",
+      "nightly": "Nightly run",
+      "nightlyHint": "At {{time}} (server time), when there are new messages, the chronicle is updated by itself, with the same rules as Update.",
+      "model": "Writer model",
+      "modelDefault": "Default (the chronicler roles)",
+      "cloudWarn": "A cloud writer sends the whole chat of this chronicle, hidden rolls included, to an outside service.",
+      "caps": "Each update writes at most {{nights}} nights and stops after about {{minutes}} minutes; Update carries on.",
+      "save": "Save settings",
+      "saved": "Settings saved.",
+      "savedGap": "Saved. The nights the new gap cuts differently are written again on the next Update.",
+      "saveFailed": "Could not save the settings.",
+      "loadFailed": "Could not load the settings."
+    }
   },
   "language": {
     "title": "Chronicle language",
@@ -294,5 +312,37 @@
     "label": "Language of the chronicle so far",
     "auto": "Most messages decide",
     "hint": "The next Update writes the story in this language; the other one comes from Translate."
+  },
+  "health": {
+    "title": "Chronicle writer",
+    "failed": "Could not read the writer status.",
+    "today": "Today:",
+    "todayLine": "{{jobs}} jobs, {{failures}} failed",
+    "speed": "Median per night:",
+    "seconds": "{{seconds}} s",
+    "lastError": "Last error:",
+    "none": "none",
+    "nightly": "Nightly run:",
+    "nightlyLine": "{{time}} server time, for chronicles that turned it on",
+    "jobs": "Running and queued:",
+    "noJobs": "nothing",
+    "running": "writing",
+    "waiting": "waiting for a quiet moment",
+    "queued": "queued",
+    "night": "night {{night}} of {{nights}}",
+    "byNightly": "nightly",
+    "refresh": "Refresh"
+  },
+  "archives": {
+    "title": "Archives of deleted chronicles",
+    "leadAdmin": "Written when a chronicle is deleted: the minutes of the nights already written and the full transcript, hidden rolls marked. Kept until removed on the server.",
+    "leadSt": "The chronicles you ran that were deleted, for {{days}} days after the delete: the minutes and the full transcript.",
+    "loadFailed": "Could not load the archives.",
+    "empty": "No archived chronicles.",
+    "meta": "Storyteller {{st}} · deleted {{date}} by {{by}} · {{size}} · {{written}} of {{nights}} nights written",
+    "minutes": "Minutes",
+    "transcript": "Transcript",
+    "downloadFailed": "Download failed.",
+    "missing": "The archive files are no longer on the server."
   }
 }

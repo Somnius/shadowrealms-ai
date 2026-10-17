@@ -193,6 +193,13 @@ def start_background_jobs(app):
         ensure_worker()
     except Exception as e:  # noqa: BLE001
         logger.warning("Could not start the chronicle writer: %s", e)
+    # The nightly run (off per chronicle by default): one scheduler, in this first worker only.
+    try:
+        from services.chronicle_nightly import start as start_nightly
+
+        start_nightly()
+    except Exception as e:  # noqa: BLE001
+        logger.warning("Could not start the chronicle nightly run: %s", e)
 
 def test_main_application():
     """Standalone test function for Main Application"""

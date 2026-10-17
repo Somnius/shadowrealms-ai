@@ -20,7 +20,7 @@ SCHEMA = """
 CREATE TABLE users (id INTEGER PRIMARY KEY, username TEXT, role TEXT);
 CREATE TABLE campaigns (
     id INTEGER PRIMARY KEY, name TEXT, created_by INTEGER, rules_edition TEXT DEFAULT 'v5',
-    language TEXT, is_active INTEGER DEFAULT 1
+    language TEXT, is_active INTEGER DEFAULT 1, chronicle_settings TEXT NOT NULL DEFAULT '{}'
 );
 CREATE TABLE campaign_players (campaign_id INTEGER, user_id INTEGER, role TEXT DEFAULT 'player');
 CREATE TABLE locations (

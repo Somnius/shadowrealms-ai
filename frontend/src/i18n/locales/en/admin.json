@@ -9,7 +9,8 @@
     "moderation": "Moderation log",
     "security": "Logins & lockouts",
     "ai": "AI system",
-    "label": "Admin sections"
+    "label": "Admin sections",
+    "archives": "Archives"
   },
   "common": {
     "cancel": "Cancel",
@@ -499,7 +500,8 @@
     "downtime": "sheet change requests from players; approve or reject with a reason.",
     "moderation": "recent admin actions for audit and follow-up.",
     "security": "unlock an account or address after failed sign-ins; read the login audit (sign-ins, failures, lockouts, logouts).",
-    "ai": "local model, global master prompt, model per role, cloud keys, classifier and embeddings."
+    "ai": "local model, global master prompt, model per role, cloud keys, classifier and embeddings.",
+    "archives": "deleted chronicles: their minutes and full transcripts to download."
   },
   "loading": "Loading…"
 }

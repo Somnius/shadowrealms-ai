@@ -15,7 +15,7 @@ How each phase runs: build in its own git worktree → tests and CI green → on
 | 2 | Sheet-look PDF, edits, languages | PDF in the sheet's look · Storyteller's edit copy · translation on request · chronicle language asked at creation | 0.25 | done: released 0.25.0 (17 Oct) |
 | 3 | Horror look, date ranges, session marks | horror PDF (committed paper image + reportlab, A4 and Letter, one test print) · minutes for a date range · "session ended here" from the message menu, shown to players | 0.26 | done: released 0.26.0 (17 Oct) |
 | 4 | Previously on… | recap card after 12 h away and a button · jump to the message · read-out | 0.27 | done: released 0.27.0 (17 Oct) |
-| 5 | Ops | nightly run (quiet window) · per-chronicle settings · caps · admin health · admin archive page | 0.28 | not started |
+| 5 | Ops | nightly run (quiet window) · per-chronicle settings · caps · admin health · admin archive page | 0.28 | built on `chronicle/p5` (17 Oct); review next |
 
 ## Decisions (2026-10-17, confirmed by Lef)
 
@@ -196,13 +196,14 @@ Build rules that come out of the reviews. These are not product choices; Lef's c
 
 ## Phase 5 — Ops (0.28)
 
-- [ ] 5.1 A nightly run at a quiet hour for chronicles with new messages, one at a time, on the first worker only; a per-chronicle switch, off by default. Status: not started.
-- [ ] 5.2 Per-chronicle settings (gap, table talk, nightly, model) and caps (chapters and seconds per job, old jobs pruned). Status: not started.
-- [ ] 5.3 Admin: writer health (jobs, seconds per chapter, failures, last error) and the archive list page. Status: not started.
-- [ ] 5.4 Release 0.28. Status: not started.
+- [x] 5.1 A nightly run at a quiet hour for chronicles with new messages, one at a time, on the first worker only; a per-chronicle switch, off by default. Status: done 17 Oct: `services/chronicle_nightly.py`, started from `main.start_background_jobs` (the first gunicorn worker); `CHRONICLE_NIGHTLY_AT` (05:00), queued for up to 3 hours after it; ordinary Update jobs with no `requested_by`, so the queue, quiet window, busy marker and limits apply; the next one only when the last has ended; "new messages" means since the last finished Update (a partial one counts as unfinished). Tests for switch off, no new messages, one at a time, the limits.
+- [x] 5.2 Per-chronicle settings (gap, table talk, nightly, model) and caps (chapters and seconds per job, old jobs pruned). Status: done 17 Oct: `campaigns.chronicle_settings` (`services/chronicle_settings.py`), `GET/PUT …/chronicle/settings` for the Storyteller and site admins; the gap feeds the cutter, jobs, ranged minutes and the archive, and a new gap leaves only the nights it cuts differently stale; table talk is the exports' default; the model is one of the AI panel's listed models (cloud only by a site admin), tried before the role's chain. Caps `CHRONICLE_MAX_NIGHTS_PER_JOB` (40), `CHRONICLE_MAX_SECONDS_PER_JOB` (3600, stops after the night that passes it), `CHRONICLE_JOB_KEEP_DAYS` (90, pruned daily by the nightly thread).
+- [x] 5.3 Admin: writer health (jobs, seconds per chapter, failures, last error) and the archive list page. Status: done 17 Oct: `GET /api/chronicle-health` and Chronicle writer next to Voice health; Admin → Archives (name, Storyteller, deleted at and by, size, nights covered, both downloads). The routes already let a Storyteller list their own for 30 days, so they also get `/archives` from the account menu (shown only when they have one). 44 px, EN + EL, jest tests.
+- [ ] 5.4 Release 0.28. Status: docs (CHRONICLE, FEATURES, AI_SYSTEMS, CHANGELOG), this file, env vars and the version bump done on the branch 17 Oct; review, merge and release next.
 
 ## Log
 
+- 2026-10-17 — Phase 5 built on `chronicle/p5`: per-chronicle settings (gap, table talk, nightly, writer model), the nightly run on the first worker, caps from the environment and pruning of old jobs, writer health in Admin → AI system, the archives page, docs and version 0.28.0. Backend and frontend tests green with fake models. Review next.
 - 2026-10-17 — **0.27.0 released**, tested on the live chronicle.
 
 - 2026-10-17 — Two reviews of phase 4 fixed: recap audio indexed with its chronicle and room (`voice_audio.campaign_id`, `location_id`), playable only by members who can read that room and deleted with the chronicle; a translation behind the story is not used; Jump to the start waits for a page in flight; no visit heartbeat in hidden tabs, a visit when the tab is visible again; Read it stops quietly with 409 `recap_changed`, and a speech error is a clean 500; a token refresh no longer re-opens the card; two tabs on a first visit don't collide; on phones a jump hides the sheet without closing it.

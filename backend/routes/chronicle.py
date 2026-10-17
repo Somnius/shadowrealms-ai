@@ -26,6 +26,8 @@ from flask_jwt_extended import get_jwt_identity, jwt_required
 from database import get_db
 from services import chronicle_digest as cd
 from services import chronicle_jobs as cj
+from services import chronicle_settings as cs
+from services.request_validation import RequestValidationError
 
 logger = logging.getLogger(__name__)
 
@@ -170,6 +172,8 @@ def get_chronicle(campaign_id):
             "new_since": bool(last_msg and last_msg > last_written),
             "chapters": [chapter_out(c, i, view) for i, c in cd.number_nights(chapters)],
             "job": cj.job_json(cj.latest_job(cur, campaign_id)),
+            "settings": cs.load(cur, campaign_id),
+            "can_settings": a == "st",
         })
     finally:
         conn.close()
@@ -312,6 +316,13 @@ def _flag(name):
     return (request.args.get(name) or "").strip().lower() in ("1", "true", "yes")
 
 
+def _table_talk(cur, campaign_id):
+    """with_table_talk= when the export says; else the chronicle's default (Chronicle settings)."""
+    if request.args.get("with_table_talk") is not None:
+        return _flag("with_table_talk")
+    return cs.load(cur, campaign_id)["table_talk"]
+
+
 def _paper():
     return "letter" if (request.args.get("paper") or "").strip().lower() == "letter" else "a4"
 
@@ -331,7 +342,7 @@ def _story(cur, camp, view, lang=None, table_talk=None):
     table_talk default to the request's lang= and with_table_talk=."""
     own = cj.chronicle_lang(cur, camp)
     lang = lang or _want_lang(own)
-    table_talk = _flag("with_table_talk") if table_talk is None else table_talk
+    table_talk = _table_talk(cur, camp["id"]) if table_talk is None else table_talk
     if view == "st" and lang == own:
         raw = cj.stored_digest(cur, camp["id"], own)
         if raw and raw.get("_edited_markdown"):
@@ -364,7 +375,7 @@ def _minutes(cur, camp, view, last_n, date_range=None):
     translated = lang != own
     if date_range:
         date_range = dict(date_range, **_range_state(cur, camp, view, readable, date_range, own, lang))
-    text = cd.minutes_markdown(facts, chapters, lang, view, last_n, existing, _flag("with_table_talk"), translated,
+    text = cd.minutes_markdown(facts, chapters, lang, view, last_n, existing, _table_talk(cur, camp["id"]), translated,
                                date_range=date_range)
     return text, lang, translated
 
@@ -897,10 +908,97 @@ def session_mark_delete(campaign_id, message_id):
         conn.close()
 
 
+@chronicle_bp.route("/campaigns/<int:campaign_id>/chronicle/settings", methods=["GET", "PUT"])
+@jwt_required()
+def chronicle_settings(campaign_id):
+    """The chronicle's own settings (gap, table talk, nightly run, writer model): the Storyteller
+    (creator) and site admins only. A new gap re-cuts the nights: the ones it changes are stale."""
+    uid = _uid()
+    conn = get_db()
+    try:
+        cur = conn.cursor()
+        a, err = _gate(cur, uid, campaign_id)
+        if err:
+            return err
+        if a != "st":
+            return jsonify({"error": "forbidden"}), 403
+        is_admin = _role(cur, uid) == "admin"
+        try:
+            options = cs.model_options()
+        except Exception:  # noqa: BLE001 - the roles can't be read: no override offered
+            logger.warning("chronicle settings: model options unavailable")
+            options = []
+        current = cs.load(cur, campaign_id)
+        if request.method == "PUT":
+            try:
+                new = cs.validate(request.get_json(silent=True), current, options, is_admin)
+            except RequestValidationError as e:
+                conn.rollback()
+                return jsonify({"error": e.public_message}), 400
+            cs.save(cur, campaign_id, new)
+            conn.commit()
+            current = new
+        return jsonify({
+            "settings": current,
+            "models": [o for o in options if is_admin or not o["cloud"]],
+            "gap_range": list(cs.GAP_RANGE),
+            "caps": {"nights_per_job": cs.max_nights_per_job(), "seconds_per_job": cs.max_seconds_per_job()},
+            "nightly_at": _nightly_status()["at"],
+        })
+    finally:
+        conn.close()
+
+
+def _nightly_status():
+    from services.chronicle_nightly import status
+
+    return status()
+
+
+@chronicle_bp.route("/chronicle-health", methods=["GET"])
+@jwt_required()
+def chronicle_health():
+    """Admin → AI system: the writer at a glance (site admins only)."""
+    uid = _uid()
+    conn = get_db()
+    try:
+        cur = conn.cursor()
+        if _role(cur, uid) != "admin":
+            return jsonify({"error": "forbidden"}), 403
+        start = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
+        cur.execute("SELECT status, error, finished_at, updated_at FROM chronicle_jobs WHERE created_at >= %s", (start,))
+        today = cur.fetchall()
+        cur.execute("SELECT error, finished_at, updated_at FROM chronicle_jobs WHERE status = 'failed' "
+                    "ORDER BY id DESC LIMIT 1")
+        last = cur.fetchone()
+        cur.execute(
+            "SELECT j.id, j.campaign_id, c.name AS campaign_name, j.scope, j.status, j.phase, j.night, j.nights, "
+            "j.requested_by, j.created_at FROM chronicle_jobs j LEFT JOIN campaigns c ON c.id = j.campaign_id "
+            "WHERE j.status IN ('queued', 'waiting', 'running') ORDER BY j.id"
+        )
+        live = cur.fetchall()
+        return jsonify({
+            "jobs_today": len(today),
+            "failures_today": sum(1 for r in today if r["status"] == "failed"),
+            "seconds_per_night": round(cj.seconds_per_night(cur), 1),
+            "last_error": {"code": last["error"] or "internal",
+                           "at": _iso(cj._dt(last.get("finished_at") or last.get("updated_at")))} if last else None,
+            "jobs": [{"id": r["id"], "campaign_id": r["campaign_id"], "campaign_name": r["campaign_name"],
+                      "scope": r["scope"], "status": r["status"], "phase": r["phase"], "night": r["night"],
+                      "nights": r["nights"], "nightly": r["requested_by"] is None,
+                      "created_at": _iso(cj._dt(r["created_at"]))} for r in live],
+            "nightly_at": _nightly_status()["at"],
+            "caps": {"nights_per_job": cs.max_nights_per_job(), "seconds_per_job": cs.max_seconds_per_job(),
+                     "keep_days": cs.job_keep_days()},
+        })
+    finally:
+        conn.close()
+
+
 @chronicle_bp.route("/chronicle-archives", methods=["GET"])
 @jwt_required()
 def list_archives():
-    from services.chronicle_archive import ARCHIVE_ST_DAYS, can_download
+    from services.chronicle_archive import ARCHIVE_ST_DAYS, archive_size, can_download
 
     uid = _uid()
     conn = get_db()
@@ -914,10 +1012,21 @@ def list_archives():
             cur.execute("SELECT * FROM chronicle_archives WHERE storyteller_id = %s AND created_at >= %s "
                         "ORDER BY id DESC LIMIT 500", (uid, since))
         rows = [r for r in cur.fetchall() if can_download(r, uid, role)]
+        ids = {int(x) for r in rows for x in (r.get("storyteller_id"), r.get("deleted_by")) if x is not None}
+        names = {}
+        if ids:
+            cur.execute(f"SELECT id, username FROM users WHERE id IN ({', '.join(['%s'] * len(ids))})", tuple(ids))
+            names = {int(u["id"]): u["username"] for u in cur.fetchall()}
+
+        def who(v):
+            return names.get(int(v)) if v is not None else None
+
         return jsonify({"archives": [
             {"id": r["id"], "campaign_id": r["campaign_id"], "campaign_name": r["campaign_name"],
              "nights": r["nights"], "nights_written": r["nights_written"], "messages": r["messages"],
-             "created_at": _iso(cj._dt(r.get("created_at")))} for r in rows]})
+             "storyteller": who(r.get("storyteller_id")), "deleted_by": who(r.get("deleted_by")),
+             "size": archive_size(r), "created_at": _iso(cj._dt(r.get("created_at")))} for r in rows],
+            "st_days": ARCHIVE_ST_DAYS})
     finally:
         conn.close()
 

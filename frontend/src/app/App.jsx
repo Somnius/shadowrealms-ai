@@ -11,6 +11,7 @@ import LoginPage from '../features/auth/LoginPage';
 import ChronicleHallPage from '../features/hall/ChronicleHallPage';
 import CreateChroniclePage from '../features/hall/CreateChroniclePage';
 import ChronicleSettingsPage from '../features/chronicle/ChronicleSettingsPage';
+import ChronicleArchivesPanel from '../features/chronicle/ChronicleArchivesPanel';
 import ProfilePage from '../features/profile/ProfilePage';
 import CharacterCreatePage from '../features/profile/CharacterCreatePage';
 import PlayPage, { PlayRedirect } from '../features/play/PlayPage';
@@ -43,6 +44,18 @@ function AdminRoute() {
             onAdminOpenCampaign={(campaign) => campaign && navigate(`/c/${campaign.id}`)}
           />
         </Suspense>
+      </PageBody>
+    </>
+  );
+}
+
+/** A Storyteller's archives of deleted chronicles (their own, for 30 days; admins use Admin → Archives). */
+function ArchivesRoute() {
+  return (
+    <>
+      <TopBar title={t('chronicle:archives.title', 'Archives of deleted chronicles')} icon="coffin" />
+      <PageBody>
+        <ChronicleArchivesPanel />
       </PageBody>
     </>
   );
@@ -84,6 +97,7 @@ export function AppRoutes() {
         <Route path="/chronicles/:id" element={<ChronicleSettingsPage />} />
         <Route path="/c/:id" element={<PlayRedirect />} />
         <Route path="/c/:id/:locationId" element={<PlayPage />} />
+        <Route path="/archives" element={<ArchivesRoute />} />
         <Route path="/profile" element={<ProfilePage />} />
         <Route path="/profile/characters/new" element={<CharacterCreatePage />} />
         <Route path="/profile/:section" element={<ProfilePage />} />

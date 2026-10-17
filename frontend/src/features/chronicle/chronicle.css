@@ -86,3 +86,15 @@
   .sr-app .sr-sofar__exports > .sr-btn, .sr-app .sr-sofar__actions > .sr-btn { flex: 1 1 100%; }
 }
 .sr-app .sr-sofar__flag { font-size: var(--sr-text-sm); color: var(--sr-amber-600); border: 1px solid currentColor; border-radius: 999px; padding: 0 var(--sr-space-2); }
+
+/* 0.28: settings of the chronicle so far, and the archives of deleted chronicles */
+.sr-app .sr-sofar__settings { margin: var(--sr-space-3) 0; }
+.sr-app .sr-sofar__settings > summary { cursor: pointer; min-height: 44px; display: flex; align-items: center; font-weight: 600; }
+.sr-app .sr-archives .sr-btn { min-height: 44px; }
+.sr-app .sr-archives__lead { margin: 0 0 var(--sr-space-3); color: var(--sr-text-muted); font-size: var(--sr-text-sm); }
+.sr-app .sr-archives__error { color: var(--sr-warn-400); }
+.sr-app .sr-archives__list { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--sr-space-3); }
+.sr-app .sr-archives__item { display: grid; gap: var(--sr-space-1); padding-bottom: var(--sr-space-3); border-bottom: 1px solid var(--sr-border, rgba(255, 255, 255, 0.08)); }
+.sr-app .sr-archives__meta { color: var(--sr-text-2); font-size: var(--sr-text-sm); overflow-wrap: anywhere; }
+.sr-app .sr-archives__actions { display: flex; flex-wrap: wrap; gap: var(--sr-space-2); }
+.sr-app .sr-admin__panel[data-testid="writer-health"] .sr-btn { min-height: 44px; }

@@ -28,7 +28,8 @@
     "atmosphereSystem": "Motion is off in your system settings",
     "logoutAll": "Sign out everywhere",
     "logoutAllHint": "Ends your sessions on every device, this one too",
-    "logoutAllFailed": "Could not sign out the other devices. Try again in a moment."
+    "logoutAllFailed": "Could not sign out the other devices. Try again in a moment.",
+    "archives": "Deleted chronicles"
   },
   "language": {
     "label": "Language"

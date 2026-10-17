@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { Button, Input, Panel, ProgressBar, Select, Spinner, Switch, Textarea } from '../../design';
 import { errorText } from '../../app/http';
 import { getLanguage, t } from '../../i18n';
+import ChronicleSoFarSettings from './ChronicleSoFarSettings';
 import { clock, downloadMarkdown, isLive, mdFileName, number, pollDelay, query, shortDate } from './soFar';
 
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -55,7 +56,7 @@ export function ProgressCard({ job, onCancel, cancelling, quietMinutes = 10 }) {
 }
 
 /** Job error codes from the server (never the provider's own text). */
-function jobError(code) {
+export function jobError(code) {
   if (code === 'context') return t('chronicle:soFar.errContext', 'a night did not fit the model’s context');
   if (code === 'no_json') return t('chronicle:soFar.errJson', 'the model did not answer in the expected form');
   if (code === 'model_failed') return t('chronicle:soFar.errModel', 'the model did not answer');
@@ -287,6 +288,7 @@ export default function ChronicleSoFarPanel({ api, campaign, toast, timeZone = n
   const [fromDay, setFromDay] = useState('');
   const [toDay, setToDay] = useState('');
   const alive = useRef(true);
+  const tableTalkSet = useRef(false);
 
   useEffect(() => {
     alive.current = true;
@@ -303,6 +305,11 @@ export default function ChronicleSoFarPanel({ api, campaign, toast, timeZone = n
       return;
     }
     setData(r.data);
+    if (!tableTalkSet.current && r.data.settings) {
+      // the chronicle's default for exports; the switch then belongs to the viewer
+      tableTalkSet.current = true;
+      setTableTalk(!!r.data.settings.table_talk);
+    }
     setState('ready');
     if (isLive(r.data.job)) setJob(r.data.job);
   }, [api, id, viewLang]);
@@ -396,8 +403,12 @@ export default function ChronicleSoFarPanel({ api, campaign, toast, timeZone = n
   // one date alone is open-ended: From alone runs to today, To alone from the beginning
   const rangeSet = !!((fromDay || toDay) && !rangeBad);
 
+  // table talk is sent only when the switch differs from the chronicle's default (the server applies that)
+  const talkDefault = !!(data && data.settings && data.settings.table_talk);
+  const talkParam = tableTalk === talkDefault ? undefined : (tableTalk ? 1 : 0);
+
   const exportStory = async (ext) => {
-    const q = query({ lang: other, with_table_talk: tableTalk, ...pdfOpts(ext) });
+    const q = query({ lang: other, with_table_talk: talkParam, ...pdfOpts(ext) });
     const res = await downloadMarkdown(`/campaigns/${id}/chronicle.${ext}${q}`, mdFileName(campaign.name, fileLang === 'el' ? 'ως τώρα' : 'so far', ext));
     if (!res.ok) toast({ tone: 'danger', title: t('chronicle:soFar.exportFailed', 'Export failed.') });
   };
@@ -405,7 +416,7 @@ export default function ChronicleSoFarPanel({ api, campaign, toast, timeZone = n
   const exportMinutes = async (ext) => {
     const n = parseInt(lastN, 10);
     const range = rangeSet ? { from: fromDay, to: toDay, tz: zone } : { last: n > 0 ? n : '' };
-    const q = query({ ...range, lang: other, with_table_talk: tableTalk, ...pdfOpts(ext) });
+    const q = query({ ...range, lang: other, with_table_talk: talkParam, ...pdfOpts(ext) });
     const res = await downloadMarkdown(`/campaigns/${id}/chronicle/minutes.${ext}${q}`, mdFileName(campaign.name, fileLang === 'el' ? 'πρακτικά' : 'minutes', ext));
     if (!res.ok) toast({ tone: 'danger', title: t('chronicle:soFar.exportFailed', 'Export failed.') });
   };
@@ -419,7 +430,7 @@ export default function ChronicleSoFarPanel({ api, campaign, toast, timeZone = n
   const live = isLive(job);
   return (
     <Panel title={t('chronicle:soFar.title', 'The chronicle so far')} icon="scroll" className="sr-sofar">
-      <p className="sr-sofar__lead">{t('chronicle:soFar.lead', 'The chat written up as a story, night by night, by the local model. It only runs when you press Update, and waits for a quiet moment in play.')}</p>
+      <p className="sr-sofar__lead">{t('chronicle:soFar.lead', 'The chat written up as a story, night by night, by the local model. It runs when you press Update (or nightly, if you turn that on in Settings), and waits for a quiet moment in play.')}</p>
       {state === 'loading' ? <Spinner label={t('common:loading', 'Loading')} /> : null}
       {state === 'error' ? <p className="sr-sofar__error">{t('chronicle:soFar.loadFailed', 'Could not load the chronicle so far.')}</p> : null}
       {state === 'ready' ? (
@@ -468,6 +479,7 @@ export default function ChronicleSoFarPanel({ api, campaign, toast, timeZone = n
               ) : null}
             </div>
           ) : null}
+          {data.can_settings ? <ChronicleSoFarSettings api={api} id={id} toast={toast} onSaved={() => load()} /> : null}
           {data.nights_written ? (
             <div className="sr-sofar__exports">
               <div className="sr-sofar__actions">

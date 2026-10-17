@@ -1,4 +1,6 @@
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router';
+import { apiFetch, getCurrentToken } from './http';
 import { Avatar, Glyph, useAtmosphere } from '../design';
 import MenuButton from './Menu';
 import { useAuth } from './AuthContext';
@@ -13,6 +15,21 @@ export default function UserMenu({ compact = false }) {
   const name = user?.username || '';
   const lang = useLanguage();
   const everywhere = useSignOutEverywhere();
+  // a Storyteller whose chronicle was deleted gets its archive for 30 days (admins: Admin → Archives)
+  const [hasArchives, setHasArchives] = useState(false);
+  const uid = user && user.id;
+  useEffect(() => {
+    if (!uid || isAdmin) return undefined;
+    let alive = true;
+    Promise.resolve(apiFetch(getCurrentToken(), '/chronicle-archives'))
+      .then((r) => {
+        if (alive && r && r.ok && r.data && Array.isArray(r.data.archives)) setHasArchives(r.data.archives.length > 0);
+      })
+      .catch(() => {});
+    return () => {
+      alive = false;
+    };
+  }, [uid, isAdmin]);
 
   const signOut = async () => {
     await logout();
@@ -51,6 +68,7 @@ export default function UserMenu({ compact = false }) {
       onSelect: () => setLevel(value),
     })),
     { divider: true },
+    ...(hasArchives ? [{ id: 'archives', icon: 'coffin', label: t('shell:menu.archives', 'Deleted chronicles'), onSelect: () => navigate('/archives') }] : []),
     ...(isAdmin ? [{ id: 'admin', icon: 'crown', label: t('shell:menu.admin', 'Admin panel'), onSelect: () => navigate('/admin') }] : []),
     { id: 'showcase', icon: 'eye', label: t('shell:menu.showcase', 'Theme preview'), onSelect: () => navigate('/showcase') },
     { divider: true },

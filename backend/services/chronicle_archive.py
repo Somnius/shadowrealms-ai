@@ -60,7 +60,10 @@ def write_archive(cursor, campaign_id: int, actor_id: int, root: Optional[str] =
     except Exception:  # noqa: BLE001 - no chapter table yet: nothing written
         cj._rollback(cursor)
         chapters = []
-    fresh = cd.cut_chapters(rows, cd.GAP_HOURS, cj.session_marks(cursor, campaign_id))
+    from services.chronicle_settings import load as load_settings
+
+    gap = load_settings(cursor, campaign_id)["gap_hours"]
+    fresh = cd.cut_chapters(rows, gap, cj.session_marks(cursor, campaign_id))
     flags = cd.roll_flags(rows)
     total = sum(1 for c in fresh if c["kind"] == "story" and cd.chapter_material(c, lang, flags)["lines"])
     written = sum(1 for c in chapters if c["kind"] == "story")
@@ -123,3 +126,16 @@ def archive_file(row: Dict[str, Any], which: str, root: Optional[str] = None) ->
     if not path.startswith(base + os.sep) or not os.path.isfile(path):
         return None
     return path
+
+
+def archive_size(row: Dict[str, Any], root: Optional[str] = None) -> int:
+    """Bytes on disk of the archive's files (0 when they are gone)."""
+    total = 0
+    for which in FILES:
+        path = archive_file(row, which, root)
+        if path:
+            try:
+                total += os.path.getsize(path)
+            except OSError:
+                pass
+    return total

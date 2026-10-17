@@ -29,10 +29,11 @@ from datetime import datetime, timedelta
 from typing import Any, Callable, Dict, List, Optional, Sequence, Set
 
 from services import chronicle_digest as cd
+from services import chronicle_settings as cs
 
 logger = logging.getLogger(__name__)
 
-MAX_NIGHTS_PER_RUN = 40
+MAX_NIGHTS_PER_RUN = 40  # the default; CHRONICLE_MAX_NIGHTS_PER_JOB (services/chronicle_settings.py)
 UPDATE_EVERY_S = 300
 REWRITE_ALL_EVERY_S = 3600
 PROGRESS_EVERY_S = 1.5
@@ -394,12 +395,14 @@ def message_ids(cursor, campaign_id: int) -> Set[int]:
 # ---------------------------------------------------------------------------------------------
 # Planning a run
 
-def plan(cursor, campaign_id: int, scope: str = "update", gap_hours: float = cd.GAP_HOURS,
+def plan(cursor, campaign_id: int, scope: str = "update", gap_hours: Optional[float] = None,
          only=None) -> Dict[str, Any]:
     """Fresh chapters with their hashes, and which story nights need writing (no model calls).
     only(chapter) -> bool limits the material and hashes (the costly part) to some chapters, e.g. a
     date range; the others are cut but not looked at, so story and stale hold only those."""
     camp = campaign_row(cursor, campaign_id)
+    if gap_hours is None:  # the chronicle's own night gap (Chronicle settings)
+        gap_hours = cs.load(cursor, campaign_id)["gap_hours"]
     rows = load_rows(cursor, campaign_id)
     lang = chronicle_lang(cursor, camp, rows)
     names = spelling_names(cursor, campaign_id, lang)
@@ -455,11 +458,12 @@ def estimate_seconds(nights: int, eras: int, spn: float) -> int:
 def estimate(cursor, campaign_id: int, scope: str = "update") -> Dict[str, Any]:
     p = plan(cursor, campaign_id, scope)
     stale = len(p["stale"])
-    nights = min(stale, MAX_NIGHTS_PER_RUN)
+    cap = cs.max_nights_per_job()
+    nights = min(stale, cap)
     spn = seconds_per_night(cursor)
     return {
         "lang": p["lang"], "nights_to_write": nights, "nights_stale": stale, "nights_total": len(p["story"]),
-        "capped": stale > MAX_NIGHTS_PER_RUN, "max_nights": MAX_NIGHTS_PER_RUN,
+        "capped": stale > cap, "max_nights": cap,
         "seconds": estimate_seconds(nights, changed_eras(p, p["stale"][:nights]), spn), "seconds_per_night": round(spn, 1),
         "quiet_minutes": round(quiet_seconds() / 60),
         "story_messages": p["story_messages"], "enough": p["story_messages"] >= cd.MIN_STORY_MESSAGES,
@@ -681,6 +685,7 @@ class Runner:
         self.ctx = ctx_tokens or context_tokens()
         self.progress = Progress(conn, int(job["id"]), clock)
         self.model = None
+        self.chain = None  # the chronicle's writer model override, set in run()
 
     # -- model calls ---------------------------------------------------------------------------
 
@@ -708,13 +713,14 @@ class Runner:
 
         self._night_stream = 0
         role = "chronicler_el" if self.lang == "el" else "chronicler_en"
+        kw = {"chain": self.chain} if self.chain else {}
         params = {"max_tokens": max_tokens, "temperature": 0.1, "timeout": 300,
                   "response_format": cd.response_format(schema_name, schema), "on_token": on_token,
                   "stream_idle_timeout": 60}
         from services.ai_providers import Cancelled
 
         try:
-            res = self.generate(role, messages, params, shrink=False)
+            res = self.generate(role, messages, params, shrink=False, **kw)
         except Cancelled:
             raise JobCancelled()
         if self.progress.cancelled:
@@ -964,7 +970,14 @@ class Runner:
         self.lang, self.names = p["lang"], p["names"]
         self.places = room_names(cur, self.cid)
         self.edition = edition_name((p["campaign"] or {}).get("rules_edition"))
-        todo = p["stale"][:MAX_NIGHTS_PER_RUN]
+        settings = cs.load(cur, self.cid)
+        try:
+            self.chain = cs.writer_chain(settings, "chronicler_el" if self.lang == "el" else "chronicler_en")
+        except Exception:  # noqa: BLE001 - the roles' own chain then
+            logger.warning("chronicle %s: writer model override not usable", self.cid)
+            self.chain = None
+        todo = p["stale"][:cs.max_nights_per_job()]
+        max_s = cs.max_seconds_per_job()
         spn = seconds_per_night(cur)
         self.progress.set(lang=self.lang, phase="writing", nights=len(todo), nights_total=len(p["stale"]),
                           nights_done=0, night=0)
@@ -987,8 +1000,14 @@ class Runner:
             done_s = self.clock() - t0
             per = done_s / n
             self.progress.set(nights_done=n)
+            if n < len(todo) and done_s >= max_s:  # the seconds cap: stop here, the next Update carries on
+                logger.info("chronicle %s: job stopped after %s nights (%s s cap)", self.cid, n, max_s)
+                todo = todo[:n]
+                self.progress.set(nights=n)
             self.progress.set_eta(estimate_seconds(len(todo) - n, eras, per) if n < len(todo) else (eras + 1) * per)
             self.progress.tick(force=True)
+            if n >= len(todo):
+                break
         if todo:
             self.progress.set(seconds_per_night=round((self.clock() - t0) / len(todo), 2))
         self._sync_unwritten(p)
@@ -1159,6 +1178,18 @@ def run_job(conn, job: Dict[str, Any], **kw) -> str:
         except Exception:  # noqa: BLE001
             logger.exception("chronicle job %s: could not record the failure", job.get("id"))
         return "failed"
+
+
+def prune_jobs(cursor, now: Optional[datetime] = None, days: Optional[int] = None) -> int:
+    """Delete finished job rows older than CHRONICLE_JOB_KEEP_DAYS days; live ones are kept."""
+    now = now or datetime.now()
+    days = days or cs.job_keep_days()
+    cursor.execute(
+        "DELETE FROM chronicle_jobs WHERE status NOT IN ('queued', 'waiting', 'running') "
+        "AND COALESCE(finished_at, created_at) < %s",
+        (now - timedelta(days=days),),
+    )
+    return cursor.rowcount or 0
 
 
 def _safe_rollback(conn):

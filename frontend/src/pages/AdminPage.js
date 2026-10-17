@@ -9,17 +9,20 @@ import AiProvidersPanel from './admin/AiProvidersPanel';
 import SecurityPanel from './admin/SecurityPanel';
 import LayaPanel from './admin/LayaPanel';
 import VoiceHealthPanel from '../features/voice/VoiceHealthPanel';
+import WriterHealthPanel from '../features/chronicle/WriterHealthPanel';
+import ChronicleArchivesPanel from '../features/chronicle/ChronicleArchivesPanel';
 import CloudVoicesPanel from '../features/voice/CloudVoicesPanel';
 import formatWhen from './admin/formatWhen';
 import './admin/admin.css';
 
 /** Admin sections, in tab order; each is a sub-route (/admin/<id>, overview at /admin). */
-export const ADMIN_SECTIONS = ['home', 'invites', 'chronicles', 'users', 'downtime', 'moderation', 'security', 'ai', 'laya'];
+export const ADMIN_SECTIONS = ['home', 'invites', 'chronicles', 'archives', 'users', 'downtime', 'moderation', 'security', 'ai', 'laya'];
 
 export const sectionLabels = () => ({
   home: t('admin:nav.home', 'Overview'),
   invites: t('admin:nav.invites', 'Invite codes'),
   chronicles: t('admin:nav.chronicles', 'All chronicles'),
+  archives: t('admin:nav.archives', 'Archives'),
   users: t('admin:nav.users', 'Users'),
   downtime: t('admin:nav.downtime', 'Downtime requests'),
   moderation: t('admin:nav.moderation', 'Moderation log'),
@@ -32,6 +35,7 @@ const SECTION_ICONS = {
   home: 'crown',
   invites: 'key',
   chronicles: 'book',
+  archives: 'coffin',
   users: 'users',
   downtime: 'hourglass',
   moderation: 'scroll',
@@ -945,6 +949,7 @@ function AdminPage({ token, user, displayTimezone = null, onAdminOpenCampaign = 
       <ul>
         <li><strong>{t('admin:nav.invites', 'Invite codes')}</strong> — {t('admin:home.invites', 'create and copy registration codes; track uses and optional notes.')}</li>
         <li><strong>{t('admin:nav.chronicles', 'All chronicles')}</strong> — {t('admin:home.chronicles', 'every campaign in the database; open one in the app to visit locations and chat (site admins only).')}</li>
+        <li><strong>{t('admin:nav.archives', 'Archives')}</strong> — {t('admin:home.archives', 'deleted chronicles: their minutes and full transcripts to download.')}</li>
         <li><strong>{t('admin:nav.users', 'Users')}</strong> — {t('admin:home.users', 'edit accounts, grant Helper ST privileges (multi-chronicle + self-switch PC), reset passwords, ban or unban users.')}</li>
         <li><strong>{t('admin:nav.downtime', 'Downtime requests')}</strong> — {t('admin:home.downtime', 'sheet change requests from players; approve or reject with a reason.')}</li>
         <li><strong>{t('admin:nav.moderation', 'Moderation log')}</strong> — {t('admin:home.moderation', 'recent admin actions for audit and follow-up.')}</li>
@@ -1343,6 +1348,7 @@ function AdminPage({ token, user, displayTimezone = null, onAdminOpenCampaign = 
         {t('admin:ai.lead', 'Choose which model id the backend sends to LM Studio’s OpenAI-compatible API, or leave the default to follow LM_STUDIO_MODEL in the environment and the model LM Studio reports as loaded. This is the default LM Studio model (used by the English Storyteller and fallbacks unless a role below names a model). The master system prompt is prepended to every feature-specific system prompt.')}
       </p>
       <VoiceHealthPanel />
+      <WriterHealthPanel />
       <CloudVoicesPanel />
       {aiSectionLoading ? (
         <p className="sr-admin__muted">{t('admin:loading', 'Loading…')}</p>
@@ -1411,6 +1417,7 @@ function AdminPage({ token, user, displayTimezone = null, onAdminOpenCampaign = 
     home: renderHome,
     invites: renderInvites,
     chronicles: renderChronicles,
+    archives: () => <div className="sr-admin__section"><ChronicleArchivesPanel admin /></div>,
     users: renderUsers,
     downtime: renderDowntime,
     moderation: renderModeration,

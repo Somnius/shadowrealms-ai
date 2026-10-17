@@ -77,7 +77,8 @@ CREATE TABLE IF NOT EXISTS campaigns (
     rules_edition         TEXT NOT NULL DEFAULT 'classic',              -- 'classic' (oWoD Revised) | 'v5'
     creation_settings     TEXT NOT NULL DEFAULT '{}',                   -- V5 creation rules JSON (services/creation_settings.py)
     voice_settings        TEXT NOT NULL DEFAULT '{}',                   -- voice read-out defaults JSON (docs/VOICE.md)
-    language              TEXT                                          -- 'el' | 'en' | NULL = the language most messages are in
+    language              TEXT,                                         -- 'el' | 'en' | NULL = the language most messages are in
+    chronicle_settings    TEXT NOT NULL DEFAULT '{}'                    -- "The chronicle so far" settings JSON (services/chronicle_settings.py)
 );
 
 CREATE INDEX IF NOT EXISTS idx_campaigns_created_by ON campaigns(created_by);

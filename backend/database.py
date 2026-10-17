@@ -960,6 +960,24 @@ def ensure_campaigns_language_column(cursor):
 
 
 @once_per_process
+def ensure_campaigns_chronicle_settings_column(cursor):
+    """Per-chronicle settings of "The chronicle so far" as JSON text (services.chronicle_settings)."""
+    db_type = os.getenv("DATABASE_TYPE", "sqlite").lower()
+    if db_type == "postgresql":
+        cursor.execute(
+            "ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS chronicle_settings TEXT NOT NULL DEFAULT '{}'"
+        )
+        return
+    cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='campaigns'")
+    if not cursor.fetchone():
+        return
+    cursor.execute("PRAGMA table_info(campaigns)")
+    cols = [row["name"] for row in cursor.fetchall()]
+    if "chronicle_settings" not in cols:
+        cursor.execute("ALTER TABLE campaigns ADD COLUMN chronicle_settings TEXT NOT NULL DEFAULT '{}'")
+
+
+@once_per_process
 def ensure_chronicle_tables(cursor):
     """Chapters, digests, jobs, archives, session-end marks, the Storyteller-busy marker and room visits."""
     pg = os.getenv("DATABASE_TYPE", "sqlite").lower() == "postgresql"
@@ -1492,6 +1510,7 @@ def migrate_db():
                 ensure_campaigns_creation_settings_column(cursor)
                 ensure_users_voice_settings_column(cursor)
                 ensure_campaigns_voice_settings_column(cursor)
+                ensure_campaigns_chronicle_settings_column(cursor)
                 ensure_characters_gender_column(cursor)
                 ensure_voice_audio_table(cursor)
                 ensure_messages_voice_columns(cursor)
@@ -1873,6 +1892,7 @@ def migrate_db():
         ensure_campaigns_creation_settings_column(cursor)
         ensure_users_voice_settings_column(cursor)
         ensure_campaigns_voice_settings_column(cursor)
+        ensure_campaigns_chronicle_settings_column(cursor)
         ensure_campaigns_language_column(cursor)
         ensure_chronicle_tables(cursor)
         ensure_characters_gender_column(cursor)
