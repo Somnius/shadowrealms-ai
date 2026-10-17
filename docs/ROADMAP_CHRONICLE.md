@@ -10,11 +10,12 @@ How each phase runs: build in its own git worktree → tests and CI green → on
 
 | # | Phase | Parts | Version | Status |
 |---|---|---|---|---|
-| 0 | Measure | synthetic chronicles · Krikri timed on a chapter · results read by eye | — | not started |
-| 1 | Chapters and the digest | tables and the chronicler role · chaptering, prompts, checks, join · jobs · routes · settings panel · Markdown export | 0.24 | not started |
-| 2 | PDF, edit, languages | PDF in two looks · Storyteller edits a copy · the other language on request · chronicle language · session-end marks | 0.25 | not started |
-| 3 | Previously on… | recap route · recap sheet on the play page · jump to the message · read-out | 0.26 | not started |
-| 4 | Ops | nightly update · caps · admin health | 0.27 | not started |
+| 0 | Measure | synthetic chronicles · a chapter timed on Krikri · does LM Studio queue a Storyteller reply behind a chapter call · VRAM headroom with Whisper and TTS · the live chronicle read by eye with Lef | — | not started |
+| 1 | Summary, minutes, archive | chronicler roles · busy marker · chapters (gap, session-mark ids, cleanup) · era digests · jobs · routes · panel · Markdown export · minutes for the whole chronicle or the last N nights · archive on delete (stored minutes + raw transcript) · `campaigns.language` column | 0.24 | not started |
+| 2 | Sheet-look PDF, edits, languages | PDF in the sheet's look · Storyteller's edit copy · translation on request · chronicle language asked at creation | 0.25 | not started |
+| 3 | Horror look, date ranges, session marks | horror PDF (committed paper image + reportlab, A4 and Letter, one test print) · minutes for a date range · "session ended here" from the message menu, shown to players | 0.26 | not started |
+| 4 | Previously on… | recap card after 12 h away and a button · jump to the message · read-out | 0.27 | not started |
+| 5 | Ops | nightly run (quiet window) · per-chronicle settings · caps · admin health · admin archive page | 0.28 | not started |
 
 ## Decisions (2026-10-17, confirmed by Lef)
 
@@ -59,9 +60,29 @@ Earlier technical decisions:
 - Schema changes go through `ensure_*` functions in `backend/database.py` and the same DDL in `init_postgresql_schema.sql`, like every other column.
 - Nothing in the public repo names a host, a player or a tool.
 
+## Round 2 decisions (2026-10-17, Lef)
+
+- **Archive on delete:**
+  - If it can't be written, the delete stops with an error and the chronicle stays.
+  - It always holds two files: the minutes from the nights already written, and the full raw transcript of every room with hidden rolls marked. The top says what's covered.
+  - It's kept until an admin deletes it.
+  - **Downloads: site admins, plus the Storyteller who deleted it, for 30 days (Lef).**
+- **GPU:** the writer runs only after 10 minutes with no new message in that chronicle. An Update pressed during play queues and says "waiting for a quiet moment".
+- **Minutes for a date range:**
+  - The range is the real date, in the Storyteller's timezone, and a night counts by its first message.
+  - Unwritten nights are reported, not written.
+  - The file is always the generated record; hand edits apply only to the whole story.
+- **Helpers:** they read and export but don't edit, and they see only the chronicles they can already open.
+- **OOC said in a story room** counts as table talk, so it shows only "with table talk".
+- **Session-end marks** show to players as a thin "— end of session —" line.
+- **"Previously on…"** appears as a card when a player opens a room after 12 hours or more away, and from a button.
+- **The horror look** is rebuilt in reportlab with a committed paper image. Sizes are A4 and Letter, with one test print by Lef.
+- **Phase 0** may read "The Echoing Basement" with the local model only; Lef reads the result by eye.
+- **Five releases, 0.24 to 0.28,** as in the table above.
+
 ## Review findings (2026-10-17, two independent reviews of the plan)
 
-Build rules that come out of the reviews. These are not product choices. Product choices still open are in round 2 of the questions; the release order may change with that answer.
+Build rules that come out of the reviews. These are not product choices; Lef's choices are in the two decision sections above.
 
 - **Two writer roles, one per language:** `chronicler_el` (Krikri) and `chronicler_en` (the loaded model), split like the Storyteller roles. They never fall through to the small Ollama model. They are added to `ROLES` and to the admin AI panel, EN + EL.
 - **Never cut a night silently:** `generate_for_role` shrinks prompts that overflow (`ai_roles.py`). For the writer an overflow is a failure, so the night is split smaller and run again (`trimmed > 0` or a `shrink=False` option).
@@ -83,45 +104,93 @@ Build rules that come out of the reviews. These are not product choices. Product
 
 ## Phase 0 — Measure
 
-- [ ] 0.1 Three synthetic chronicles (Greek, English, mixed; 1, 10 and 60 nights; hidden rolls and a closed room) as a pytest fixture generator. Status: not started.
-- [ ] 0.2 Krikri at the loaded 8k context on one 4000-token chapter prompt: seconds, tokens per second, how often the JSON is usable, how often the Greek check passes; the same for the English model. Sets the chapter budget. Status: not started; no such measurement exists yet.
-- [ ] 0.3 The digest of the live chronicles read by eye with Lef in both languages: does it get the gist, does it invent. Status: not started.
+- [ ] 0.1 Three synthetic chronicles (Greek, English, mixed; 1, 10 and 60 nights; hidden rolls, a closed room, in-room OOC, a session mark) as a pytest fixture generator. Status: not started.
+- [ ] 0.2 Krikri at the loaded context on one ~4000-token chapter prompt: seconds, tokens per second, how often the JSON is usable, how often the Greek check passes. The same for the English model. This sets the chapter budget. Status: not started.
+- [ ] 0.3 Does LM Studio queue a Storyteller reply sent during a chapter call, and how long does the player wait? Plus VRAM headroom with Whisper and TTS loaded (decides whether 16k context is possible). Status: not started.
+- [ ] 0.4 "The Echoing Basement" summarised by the local model only and read by eye with Lef in both languages: does it get the gist, does it invent? Status: not started.
 
-## Phase 1 — Chapters and the digest, Markdown (0.24)
+## Phase 1 — Summary, minutes, archive (0.24)
 
-- [ ] 1.1 Tables `chronicle_chapters`, `chronicle_digests`, `chronicle_jobs` through `ensure_chronicle_tables`; the `chronicler` AI role with its row in Admin → AI system and the table in AI_SYSTEMS.md. Status: not started.
-- [ ] 1.2 Pure core `services/chronicle_digest.py`: lines from message rows for the player and Storyteller views, chaptering by room and night, token budget and splitting at a message, chapter and join and digest prompts with the schema in the prompt, parse and checks (ids, names, empty, language share, mixed scripts) with the retry reason, hashes, the fixed words in EL and EN, Markdown. pytest on the synthetic chronicles with a fake model. Status: not started.
-- [ ] 1.3 Jobs `services/chronicle_jobs.py`: a worker thread per process, an advisory lock per chronicle, progress "chapter 3 of 7", cancel between calls, the wait after a Storyteller reply, only stale chapters rewritten. Status: not started.
-- [ ] 1.4 Routes under `/api/campaigns/<id>/chronicle`: the digest, jobs (create, poll, cancel), chapters, `chronicle.md`, and the minutes (`minutes.md?from=&to=`, full detail per night, a date range or the whole chronicle). Permission tests: outsider 404, player 403 on Update and exports, helper and Storyteller allowed, hidden rolls and closed rooms never in the player view. Status: not started.
-- [ ] 1.5 Panel "The chronicle so far" in Chronicle settings: status line, Update with progress and Cancel, Export Markdown, Minutes with a from/to date picker or "whole chronicle", the digest read-only, Storyteller-only section behind a toggle; 44 px buttons, works on a phone. EN + EL. jest for the panel states. Status: not started.
-- [ ] 1.6 Release 0.24: `docs/CHRONICLE.md`, FEATURES, CHANGELOG, this file. Status: not started.
+- [ ] 1.1 Schema through `ensure_*` and `init_postgresql_schema.sql`:
+  - tables `chronicle_chapters`, `chronicle_digests`, `chronicle_jobs`, `chronicle_archives`
+  - `campaigns.language` (nullable)
+  - `messages.session_end` (or a marks table)
+  - roles `chronicler_el` and `chronicler_en`, in `ROLES`, the admin AI panel and AI_SYSTEMS.md
+  - the cross-process "Storyteller busy" marker
 
-## Phase 2 — PDF, edit, languages (0.25)
+  Status: not started.
+- [ ] 1.2 Pure core `services/chronicle_digest.py`:
+  - lines per view
+  - the cutter: room, a 6-hour gap and session-mark ids
+  - token budget and splitting; overflow is a failure, never a shrink
+  - prompts with the schema
+  - parse and checks: ids, names, language share, mixed scripts
+  - botch and critical injection
+  - table talk stored as `ooc`
+  - `st_notes` from hidden rows only
+  - hashes that include the room state
+  - era digests
+  - fixed words in EL and EN
+  - Markdown for the story and the minutes
 
-- [ ] 2.1 The sheet's frame, sigil, section rule, footer and fonts lifted into `services/pdf_look.py` (sheet tests unchanged); `services/chronicle_pdf.py` with two looks, `look=sheet|horror`. The horror look follows the print PDFs made for Serkan: a stained paper background at about 250 dpi as an image, then a vector frame, thorned corners and blood, with the text stamped on top. `chronicle.pdf` route; Export PDF with a look choice; Greek checked in the file; A4 and Letter; footer with the lefteros.com link. Status: not started.
-- [ ] 2.2 Edit: the Storyteller's Markdown copy, saved with `PUT`, used by the exports and marked in the footer; the notice when a newer digest exists. Status: not started.
-- [ ] 2.3 The other language on request: a translate job through the translator role with the chronicle's names protected, cached as its own row, a language switch in the panel and `lang=` on exports. Status: not started.
-- [ ] 2.4 `campaigns.language` asked at creation (default: the creator's UI language) and in Chronicle settings; the digest's default language. Status: not started (Lef: yes).
-- [ ] 2.4b Session-end marks: the Storyteller marks "session ended here" on a message (the message menu, Storyteller only); a mark always starts a new chapter, and the 6-hour gap still applies. Status: not started.
+  pytest on the synthetic chronicles with a fake model. Status: not started.
+- [ ] 1.3 Jobs `services/chronicle_jobs.py`:
+  - claim with `FOR UPDATE SKIP LOCKED` plus a per-chronicle lock
+  - the quiet window (10 minutes with no message)
+  - progress, partial runs reported ("40 of 63 nights"), cancel
+  - stale chapters only; orphan chapter rows deleted
+
+  Status: not started.
+- [ ] 1.4 Routes under `/api/campaigns/<id>/chronicle`:
+  - the digest, jobs, chapters
+  - `chronicle.md` (story, optional table talk)
+  - `minutes.md` for the whole chronicle or the last N nights, as a render of stored chapters
+
+  Permission tests: outsider 404; player 403 on Update and exports; helper read and export only when they can open the chronicle; no username and no Storyteller keys in player data; rooms checked again at read time. Status: not started.
+- [ ] 1.5 Archive on delete:
+  - inside `delete_campaign` before the SQL delete, write the stored minutes plus the raw Storyteller-view transcript (hidden rolls marked, header saying what's covered) to `data/chronicle_archive/`
+  - an index row in `chronicle_archives`
+  - if the write fails, the delete stops
+  - download routes: site admins always, the deleting Storyteller for 30 days; the path comes from the row
+  - noted in SECURITY_MODEL.md
+
+  Status: not started.
+- [ ] 1.6 Panel "The chronicle so far" in Chronicle settings: the status line (partial runs), Update ("waiting for a quiet moment"), Cancel, Export story / minutes, the digest read-only, the Storyteller part behind a toggle. 44 px buttons, EN + EL, jest. Status: not started.
+- [ ] 1.7 Release 0.24: `docs/CHRONICLE.md`, FEATURES, CHANGELOG, this file. Status: not started.
+
+## Phase 2 — Sheet-look PDF, edits, languages (0.25)
+
+- [ ] 2.1 The sheet's frame, sigil, rule, footer and fonts lifted into `services/pdf_look.py` (sheet tests unchanged); `chronicle.pdf` in the sheet look; footer with the lefteros.com link in the file's language; Greek checked; A4 and Letter. Status: not started.
+- [ ] 2.2 The Storyteller's edit copy (Storyteller and admins only), used by the exports and marked in the footer; a notice when a newer digest exists. Status: not started.
+- [ ] 2.3 Translation on request through the translator role with the names protected, cached; a language switch and `lang=` on exports. Status: not started.
+- [ ] 2.4 Chronicle language asked at creation and in Chronicle settings. Status: not started.
 - [ ] 2.5 Release 0.25. Status: not started.
 
-## Phase 3 — Previously on… (0.26)
+## Phase 3 — Horror look, date ranges, session marks (0.26)
 
-- [ ] 3.1 `GET …/chronicle/recap`: the player view's last nights for one room since the character's last read, plus the story so far in short; 404 for rooms the viewer can't read. Status: not started.
-- [ ] 3.2 Recap sheet on the play page (a bottom sheet on phones) with a jump from a night to its first message in the room. Status: not started.
-- [ ] 3.3 Read the recap aloud through Listen as its own kind, off by default. Status: not started.
+- [ ] 3.1 Horror look: the paper image made once from Serkan's builder (fixed seed) and committed per paper size; reportlab draws the paper, then the frame, thorns and blood as paths, then the text as vector. `look=horror` on exports. One test print by Lef. Status: not started.
+- [ ] 3.2 Minutes for a date range: a from/to picker in the Storyteller's timezone, nights counted by their first message, unwritten nights reported. Status: not started.
+- [ ] 3.3 "Session ended here" in the message menu (Storyteller only); players see a thin "— end of session —" line; the cutter already honours it. Status: not started.
 - [ ] 3.4 Release 0.26. Status: not started.
 
-## Phase 4 — Ops (0.27)
+## Phase 4 — Previously on… (0.27)
 
-- [ ] 4.1 Nightly update at a quiet hour for chronicles with new messages, one at a time, skipped while the Storyteller is answering; a per-chronicle switch, off by default. Status: not started.
-- [ ] 4.2 Caps: chapters per job, seconds per job, one job per chronicle, old job rows pruned. Deleting a chronicle first writes its full-detail minutes as Markdown to a server folder only site admins can reach (Admin → archived chronicles, download), then removes its chapters, digests and jobs. Tested. Status: not started.
-- [ ] 4.3 Chronicler block in Admin → AI system: jobs today, seconds per chapter, failures, last error. Status: not started.
+- [ ] 4.1 `GET …/chronicle/recap`: the player view's last nights for one room since the character's last visit, plus the story so far in short; rooms checked at read time; 404 for rooms the viewer can't read. Status: not started.
+- [ ] 4.2 The recap card when a room is opened after 12 hours or more away (closable), plus a button; a bottom sheet on phones; jump from a night to its first message. Status: not started.
+- [ ] 4.3 Read aloud through Listen, off by default. Status: not started.
 - [ ] 4.4 Release 0.27. Status: not started.
+
+## Phase 5 — Ops (0.28)
+
+- [ ] 5.1 A nightly run at a quiet hour for chronicles with new messages, one at a time, on the first worker only; a per-chronicle switch, off by default. Status: not started.
+- [ ] 5.2 Per-chronicle settings (gap, table talk, nightly, model) and caps (chapters and seconds per job, old jobs pruned). Status: not started.
+- [ ] 5.3 Admin: writer health (jobs, seconds per chapter, failures, last error) and the archive list page. Status: not started.
+- [ ] 5.4 Release 0.28. Status: not started.
 
 ## Log
 
 - 2026-10-17 — Plan written from recmeets' minutes pipeline and the current code; questions for Lef listed in the plan. Nothing built yet.
+- 2026-10-17 — Lef answered round 2: defaults, plus 30-day archive downloads for the deleting Storyteller; five releases 0.24–0.28. Plan final.
 - 2026-10-17 — Plan reviewed twice; build rules above; round 2 of questions (17) for Lef.
 - 2026-10-17 — Lef answered the 28 questions: defaults, plus session-end marks, both PDF looks, the lefteros.com link in the footer, minutes kept when a chronicle is deleted, and minutes for a date range. Decisions above updated.
 
