@@ -146,7 +146,7 @@
 .sr-app .sr-dicecard__outcome { display: flex; flex-wrap: wrap; gap: var(--sr-space-2); margin-bottom: var(--sr-space-2); }
 .sr-app .sr-dicecard__text { color: var(--sr-text-2); font-size: var(--sr-text-sm); line-height: 1.5; }
 /* phase 4: roll moods + landing (fresh cards only; history stays still) */
-.sr-app .sr-dicecard { position: relative; overflow: hidden; }
+.sr-app .sr-dicecard { position: relative; overflow: hidden; isolation: isolate; } /* its layers stay below the message actions bar */
 .sr-app .sr-dicecard__head,
 .sr-app .sr-dicecard__outcome,
 .sr-app .sr-dicecard__text { position: relative; z-index: 3; }
@@ -382,7 +382,7 @@
   position: absolute;
   top: -12px;
   right: var(--sr-space-4);
-  z-index: 2;
+  z-index: 5;
   display: flex;
   align-items: center;
   gap: 2px;
