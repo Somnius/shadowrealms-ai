@@ -15,8 +15,8 @@ from services.chronicle_pdf import blocks, build_pdf, inline  # noqa: E402
 from tests.unit.chronicle_fixtures import Conn, FakeModel  # noqa: E402
 from tests.unit.test_chronicle_routes import ADMIN, HELPER_IN, HELPER_OUT, OUTSIDER, PLAYER, ST, api, write  # noqa: E402,F401
 
-EL_URL = "https://lefteros.com/apps/shadowrealms-ai/"
-EN_URL = "https://lefteros.com/en/apps/shadowrealms-ai/"
+EL_URL = cd.FOOTER_URL["el"]  # the one link allowed in exported files
+EN_URL = cd.FOOTER_URL["en"]
 
 
 def pdf_pages(data):
@@ -115,7 +115,7 @@ def test_edit_copy_who_may_save(api):
     assert api("PUT", url, OUTSIDER, {"markdown": EDIT}).status_code == 404
     g = api("GET", url, ST).get_json()
     assert g["edited"] is False and g["markdown"].startswith("# Athens: Blood and Concrete")
-    assert "lefteros.com" not in g["markdown"]  # the footer is added on export
+    assert EL_URL not in g["markdown"]  # the footer is added on export
     assert api("PUT", url, ST, {"markdown": "  "}).status_code == 400
     assert api("PUT", url, ST, {"markdown": "x" * (cj.EDIT_MAX_CHARS + 1)}).status_code == 413
     r = api("PUT", url, ADMIN, {"markdown": EDIT})
@@ -132,7 +132,7 @@ def test_exports_use_the_edit_and_say_so(api):
     generated = api.raw.execute("SELECT digest FROM chronicle_digests WHERE kind = 'final'").fetchone()[0]
     api("PUT", "/api/campaigns/10/chronicle/edit", ST, {"markdown": EDIT})
     md = _story(api)
-    assert "Η δική μου εκδοχή" in md and "με αλλαγές του Storyteller" in md and md.count("lefteros.com") == 1
+    assert "Η δική μου εκδοχή" in md and "με αλλαγές του Storyteller" in md and md.count(EL_URL) == 1
     text = "\n".join(pdf_pages(api("GET", "/api/campaigns/10/chronicle.pdf", HELPER_IN).get_data()))
     assert "Η δική μου εκδοχή" in text and "με αλλαγές του Storyteller" in text
     # the generated text is untouched; the player view and the minutes stay the generated record

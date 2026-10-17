@@ -170,6 +170,8 @@ def flowables(markdown: str, st_heading: Optional[str] = None) -> List[Flowable]
                 out.append(PageBreak())  # the Storyteller-only part starts on its own page
             else:
                 out.append(CondPageBreak(60))
+                if out[:-1]:
+                    out.append(Spacer(1, 8))
             out.append(SectionRule(plain(text)))
         elif kind == "h3":
             out.append(CondPageBreak(40))

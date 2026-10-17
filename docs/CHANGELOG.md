@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.25.0] - 2026-10-17 - Chronicle PDF, edits and languages
+
+### Added
+- **PDF exports of the chronicle so far.** Export story PDF and Minutes PDF (whole chronicle or the last N nights) in the character sheet's look: black ink on white, the sheet's frame and sigil, section headings between hairlines, Cinzel and EB Garamond, Greek included. A4 or Letter. The Storyteller's part starts on its own page. The footer on every page says "Written by ShadowRealms AI" with a link to the app's page in the file's language, and the page number. Same permissions as the Markdown exports.
+- **The Storyteller's edit copy.** The chronicle's Storyteller and site admins can edit the whole story in one Markdown box. The written text is kept apart; story exports use the edited copy and say so in the footer, while the minutes stay the written record. When the story is written again after an edit, the panel offers "Keep my edit" or "Start from the new one". Helpers read and export only.
+- **The story in the other language.** A language switch in the panel, and Translate: the whole story and every night are translated by the translator role, with names protected as in chat translation, through the same job queue as Update (quiet window, live progress, Cancel). The translation is saved and the panel says when it is behind the story. `lang=` on every export.
+- **Chronicle language.** Asked when a chronicle is made (default: your app language) and editable in Chronicle settings; the story is written in it.
+
+### Changed
+- The character sheet's frame, sigil, section rule, footer and fonts moved to a shared module, so the sheet and the chronicle PDF look the same. The sheet itself is unchanged.
+
 ## [0.24.0] - 2026-10-17 - The chronicle so far
 
 ### Added

@@ -27,7 +27,7 @@ Feature notes for ShadowRealms AI that don't have their own document. The full l
 
 ## What's new in v0.24.0
 
-- **The chronicle so far.** Chronicle settings → The chronicle so far: the chat written up as a story night by night by the local model, with a time estimate, live progress (night, tokens, time left, Cancel), Markdown exports of the story and of the minutes (whole chronicle or last N nights), and an archive of the minutes and transcript when a chronicle is deleted. See [CHRONICLE.md](CHRONICLE.md).
+- **The chronicle so far.** Chronicle settings → The chronicle so far: the chat written up as a story night by night by the local model, with a time estimate, live progress (night, tokens, time left, Cancel), Markdown and PDF exports of the story and of the minutes (whole chronicle or last N nights; the PDF in the character sheet's look, A4 or Letter), the Storyteller's edit copy of the story, the whole story translated into the other language on request, the chronicle's language asked at creation, and an archive of the minutes and transcript when a chronicle is deleted. See [CHRONICLE.md](CHRONICLE.md).
 
 ## What's new in v0.22.0
 

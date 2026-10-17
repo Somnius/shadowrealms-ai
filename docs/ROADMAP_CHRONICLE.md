@@ -12,7 +12,7 @@ How each phase runs: build in its own git worktree → tests and CI green → on
 |---|---|---|---|---|
 | 0 | Measure | synthetic chronicles · a chapter timed on Krikri · does LM Studio queue a Storyteller reply behind a chapter call · VRAM headroom with Whisper and TTS · the live chronicle read by eye with Lef | — | done 17 Oct (Lef read the results and agreed; Krikri at 32k) |
 | 1 | Summary, minutes, archive | chronicler roles · busy marker · chapters (gap, session-mark ids, cleanup) · era digests · jobs · routes · panel · Markdown export · minutes for the whole chronicle or the last N nights · archive on delete (stored minutes + raw transcript) · `campaigns.language` column | 0.24 | done: released 0.24.0 (17 Oct) |
-| 2 | Sheet-look PDF, edits, languages | PDF in the sheet's look · Storyteller's edit copy · translation on request · chronicle language asked at creation | 0.25 | not started |
+| 2 | Sheet-look PDF, edits, languages | PDF in the sheet's look · Storyteller's edit copy · translation on request · chronicle language asked at creation | 0.25 | built on `chronicle/p2` (17 Oct); review and release next |
 | 3 | Horror look, date ranges, session marks | horror PDF (committed paper image + reportlab, A4 and Letter, one test print) · minutes for a date range · "session ended here" from the message menu, shown to players | 0.26 | not started |
 | 4 | Previously on… | recap card after 12 h away and a button · jump to the message · read-out | 0.27 | not started |
 | 5 | Ops | nightly run (quiet window) · per-chronicle settings · caps · admin health · admin archive page | 0.28 | not started |
@@ -174,11 +174,11 @@ Build rules that come out of the reviews. These are not product choices; Lef's c
 
 ## Phase 2 — Sheet-look PDF, edits, languages (0.25)
 
-- [ ] 2.1 The sheet's frame, sigil, rule, footer and fonts lifted into `services/pdf_look.py` (sheet tests unchanged); `chronicle.pdf` in the sheet look; footer with the lefteros.com link in the file's language; Greek checked; A4 and Letter. Status: not started.
-- [ ] 2.2 The Storyteller's edit copy (Storyteller and admins only), used by the exports and marked in the footer; a notice when a newer digest exists. Status: not started.
-- [ ] 2.3 Translation on request through the translator role with the names protected, cached; a language switch and `lang=` on exports. Status: not started.
-- [ ] 2.4 Chronicle language asked at creation and in Chronicle settings. Status: not started.
-- [ ] 2.5 Release 0.25. Status: not started.
+- [x] 2.1 The sheet's frame, sigil, rule, footer and fonts lifted into `services/pdf_look.py` (sheet tests unchanged); `chronicle.pdf` in the sheet look; footer with the lefteros.com link in the file's language; Greek checked; A4 and Letter. Status: done 17 Oct: `services/chronicle_pdf.py` draws the PDF from the same Markdown as the `.md` (headings, paragraphs, lists, bold, italic only; no links from the text), `chronicle.pdf` and `minutes.pdf` with the `.md` permissions, the Storyteller part after a page break, footer with page numbers and the one link, producer "ShadowRealms AI". Greek checked by extracting the text with pypdf (added to CI's unit job). The sheet's `section` and `footer` still draw through `SheetCanvas.text`, so the sheet tests are unchanged and pass.
+- [x] 2.2 The Storyteller's edit copy (Storyteller and admins only), used by the exports and marked in the footer; a notice when a newer digest exists. Status: done 17 Oct: `GET/PUT/DELETE …/chronicle/edit`, kept across rewrites (`edited_from_hash` tells a newer digest), Keep my edit / Start from the new one. Built so: the player view and the minutes never use the edit; the edit is for the chronicle's own language only; with an edit the table talk option doesn't apply.
+- [x] 2.3 Translation on request through the translator role with the names protected, cached; a language switch and `lang=` on exports. Status: done 17 Oct: a `translate` job in the same queue (quiet window, progress per text, Cancel between texts), every text through `translation.translate` with `chronicle_names`, cached as a `chronicle_digests` row marked `translated_from` with a source hash (the panel says when it's behind). Tested with a fake translator; not yet run against a real model.
+- [x] 2.4 Chronicle language asked at creation and in Chronicle settings. Status: done 17 Oct: create and update validate `el`/`en` (empty clears it); the settings page has a Chronicle language panel with "most messages decide".
+- [ ] 2.5 Release 0.25. Status: docs, changelog and the version bump done on the branch 17 Oct; review, merge and release next.
 
 ## Phase 3 — Horror look, date ranges, session marks (0.26)
 
@@ -203,6 +203,7 @@ Build rules that come out of the reviews. These are not product choices; Lef's c
 
 ## Log
 
+- 2026-10-17 — Phase 2 built on `chronicle/p2`: sheet-look PDF (A4 and Letter), the Storyteller's edit copy, translation on request, the chronicle language at creation and in settings, docs and version 0.25.0. Backend and frontend tests green with fake models. Review next.
 - 2026-10-17 — **0.24.0 released.**
   - Two reviews fixed, then a polish round after the first real run: Greek dice lines, no repeated citations, Greek titles.
   - A last fix: each night only gets the names its lines use (prompt version 2), after the model placed a night in a room where it never happened.

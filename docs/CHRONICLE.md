@@ -6,7 +6,7 @@ Since 0.24. The chat of a chronicle written up as a story, night by night, by th
 
 | Who | What |
 |---|---|
-| The Storyteller (the chronicle's creator) and site admins | read, Update, Rewrite everything, export; edits come in 0.25 |
+| The Storyteller (the chronicle's creator) and site admins | read, Update, Rewrite everything, Translate, export, and the edit copy (0.25) |
 | Helpers who can open the chronicle (they are a member of it) | read and export only |
 | Players | nothing yet: "Previously on…" comes in 0.27 and never includes the Storyteller's part |
 | Anyone else | 404, as for the chronicle itself |
@@ -29,7 +29,9 @@ Nothing runs per message. Nothing is written below 8 story messages.
 
 ## The language
 
-`campaigns.language` (`el` or `en`) when it is set; otherwise the language most story messages are in. Asking for it when a chronicle is made comes in 0.25, and so does translating the whole digest into the other language on request (the per-night fallback above is a different thing and is in 0.24). Greek is written by the `chronicler_el` role (default Krikri), English by `chronicler_en` (default: the loaded LM Studio model); both are in Admin → AI system and never fall back to the small Ollama model.
+`campaigns.language` (`el` or `en`) when it is set; otherwise the language most story messages are in. Since 0.25 it is asked when a chronicle is made (the default is the creator's app language) and can be changed in Chronicle settings → Chronicle language (or set back to "most messages decide"); the backend takes only `el`, `en` or empty. The next Update writes in the new language.
+
+**The other language (0.25).** The language switch in the panel shows the story in the other language. Translate (Storyteller and site admins) starts a job with `scope: translate` that goes through the same queue as Update: one job per chronicle, the quiet window, at most every 5 minutes, live progress ("Translating: text 3 of 40") and Cancel. Every text of the finished digest and of each written night (titles, paragraphs, events, threads, notes, the Storyteller part) goes through the `translator` role one at a time, with the chronicle's names hidden behind placeholders and put back, exactly as chat translation does (`services/translation.py`). A text the translator can't do stays as written; if none can be done the job fails with `translate_failed`. The result is cached as its own `chronicle_digests` row in the other language, marked `translated_from`, with a hash of the digest and nights it was made from: when the story is written again the panel says the translation is behind and offers Translate again. The writer never reads a translated row as its own digest. The per-night fallback above (a night that came out in the wrong language) is a different thing. Greek is written by the `chronicler_el` role (default Krikri), English by `chronicler_en` (default: the loaded LM Studio model); both are in Admin → AI system and never fall back to the small Ollama model.
 
 ## Running it
 
@@ -51,7 +53,18 @@ The panel polls the job every 1.5 s (5 s while waiting for a quiet moment, whose
 
 - **Story** (`chronicle.md`): in short, the story so far, open threads, cast and places from the database (players' usernames only in the Storyteller's view, in brackets in the cast list), every night in short, and the Storyteller-only part. Optional `with_table_talk=1`.
 - **Minutes** (`chronicle/minutes.md`, whole chronicle or `last=N` nights): every written night in full — summary, what happened with message numbers, who, where, threads, rolls, what the players didn't see. It is a render of the stored nights: no model call, and it says which nights it covers and how many aren't written yet.
-- Model text is never read as markup: it is escaped before it goes into Markdown. Citations of deleted messages show "(message removed)". The footer says "Written by ShadowRealms AI" with a link to the app's page; there is no model name, server or version in the file.
+- **PDF** (`chronicle.pdf`, `chronicle/minutes.pdf`, since 0.25): the same text in the character sheet's look, black ink on white: the sheet's double frame, the sigil at the top of every page, section headings between hairlines and diamonds, Cinzel for English headings, EB Garamond for the text and for Greek headings (in capitals without accents). `paper=a4` (default) or `paper=letter`. It is drawn from the same Markdown as the `.md` export, which is built from the stored digest and chapter JSON (or from the edit copy); only headings, paragraphs, lists, bold and italic are read from it, and nothing in the text becomes a link. In the Storyteller's view the Storyteller-only part starts on a new page. The fonts have no bold face, so bold shows as regular. The look is shared with the sheet in `services/pdf_look.py` (frame, sigil, section rule, footer, fonts).
+- **`lang=`** on every export (and on `GET …/chronicle`) asks for the other language: the cached translation. The footer then adds "translated from Greek" (or English).
+- Model text is never read as markup: it is escaped before it goes into Markdown. Citations of deleted messages show "(message removed)". The footer says "Written by ShadowRealms AI" with a link to the app's page on lefteros.com in the file's language (`/apps/shadowrealms-ai/` for Greek, `/en/apps/shadowrealms-ai/` for English), the one link in the file; in a PDF it is on every page with the page number. There is no model name, server or version in the file; the PDF's producer is "ShadowRealms AI".
+
+## The Storyteller's edit copy (0.25)
+
+The chronicle's Storyteller and site admins can edit the story: **Edit the story** opens one Markdown box with the whole story in the Storyteller's view (without the footer), and **Save my edit** stores it with `PUT …/chronicle/edit`. Helpers read and export it but can't save (403). The generated text is never changed; the copy is kept on the digest row (`edited_markdown`, `edited_by`, `edited_at`) and survives Update and Rewrite everything.
+
+- The story exports in the Storyteller's view (`chronicle.md`, `chronicle.pdf`) use the copy when there is one, and the footer says "edited by the Storyteller". The table talk option doesn't apply to an edited copy.
+- The player view never uses it (it could hold the Storyteller's part), and neither do the minutes: they are always the generated record, whole chronicle or last N nights (Lef's decision). A translation is made from the generated text, not from the edit; the edit is for the chronicle's own language only.
+- The copy remembers which digest it was based on (`edited_from_hash`). When the story is written again after the edit, the panel says so and offers **Keep my edit** (`PUT {keep: true}`) or **Start from the new one** (`DELETE`, which drops the copy and opens the new text).
+- At most 200,000 characters.
 
 ## When a chronicle is deleted
 
@@ -71,14 +84,16 @@ All under `/api/campaigns/<id>/chronicle`:
 | `GET …/chronicle?view=st\|player` | the digest, the nights, the status (written, total, new messages since) and the last job |
 | `GET …/chronicle/chapters` (`?key=`) | the nights |
 | `GET …/chronicle/estimate` | nights to write, seconds, capped at 40, enough messages or not |
-| `POST …/chronicle/jobs` `{scope: update\|all}` | 202 with the job; 409 while one runs; 429 with `retry_after` |
+| `GET …/chronicle/estimate?scope=translate` | texts to translate and seconds |
+| `POST …/chronicle/jobs` `{scope: update\|all}` or `{scope: translate, lang}` | 202 with the job; 409 while one runs (or no digest to translate); 429 with `retry_after`; 400 for the chronicle's own language |
 | `GET` / `DELETE …/chronicle/jobs/<job>` | poll / cancel |
-| `GET …/chronicle.md`, `GET …/chronicle/minutes.md` | the exports |
+| `GET …/chronicle.md\|pdf`, `GET …/chronicle/minutes.md\|pdf` | the exports (`view`, `lang`, `last`, `with_table_talk`, `paper`) |
+| `GET` / `PUT` / `DELETE …/chronicle/edit` | the edit copy (Storyteller and site admins): read, save `{markdown}` or `{keep: true}`, drop |
 
 `view=player` is what players will get: no Storyteller keys, no message ids, no usernames, no NPC that no visible night names, no closed room in the places, and rooms are checked again when it is read (a room closed since the last Update drops out, and the digest is held back until the next Update).
 
 ## Data
 
-`chronicle_chapters` (one row per night and language: the JSON, the hash, the message range), `chronicle_digests` (eras and the final digest; `edited_markdown` is for 0.25), `chronicle_jobs`, `chronicle_archives`, `chronicle_session_marks`, `ai_busy_marks`, and `campaigns.language`. They are created by `ensure_chronicle_tables` and `ensure_campaigns_language_column` in `backend/database.py` with the same DDL in `init_postgresql_schema.sql`. Chapters, digests and jobs go with the chronicle.
+`chronicle_chapters` (one row per night and language: the JSON, the hash, the message range), `chronicle_digests` (eras and the final digest; the edit copy in `edited_markdown`, `edited_by`, `edited_at`, `edited_from_hash`; a cached translation is a row in the other language with `translated_from`), `chronicle_jobs`, `chronicle_archives`, `chronicle_session_marks`, `ai_busy_marks`, and `campaigns.language`. They are created by `ensure_chronicle_tables` and `ensure_campaigns_language_column` in `backend/database.py` with the same DDL in `init_postgresql_schema.sql`. Chapters, digests and jobs go with the chronicle.
 
-Code: `backend/services/chronicle_digest.py` (the pure part: lines, cutting, prompts, checks, Markdown), `backend/services/chronicle_jobs.py` (the database, jobs and the writer thread), `backend/services/chronicle_archive.py`, `backend/routes/chronicle.py`, `frontend/src/features/chronicle/ChronicleSoFarPanel.jsx`.
+Code: `backend/services/chronicle_digest.py` (the pure part: lines, cutting, prompts, checks, Markdown, translation texts), `backend/services/chronicle_pdf.py` and `backend/services/pdf_look.py` (the PDF), `backend/services/chronicle_jobs.py` (the database, jobs and the writer thread), `backend/services/chronicle_archive.py`, `backend/routes/chronicle.py`, `frontend/src/features/chronicle/ChronicleSoFarPanel.jsx`.
