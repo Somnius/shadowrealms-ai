@@ -8,12 +8,12 @@ How each phase runs: build in its own git worktree → tests and CI green → on
 
 | # | Phase | Parts | Version | Time box | Status |
 |---|---|---|---|---|---|
-| 0 | Measure | voices listened to · Whisper on the GPU timed and its real VRAM read · phone test page | — | until 00:00 | done except 0.5 (phones) |
+| 0 | Measure | voices listened to · Whisper on the GPU timed and its real VRAM read · phone test page | — | until 00:00 | done (phones: Lef OK, 17 Oct) |
 | 1 | Listen with the phone's own voices | CSP and glyphs · player voice settings · chronicle read-out defaults · Listen toggle and queue · read-out rules | 0.16 | until 02:00 | done: released 0.16.0 |
 | 2 | Server voices | speech container · gender on the sheet · TTS jobs and cache · voice catalog and narrator voices · server mode in the app | 0.17 | until 03:45 | done: released 0.17.0 |
 | 3 | Speaking | clip upload · transcription jobs and the GPU policy · recorder with the timer · review and text steps · mic marker and replay · phone dictation | 0.18 | until 06:00 | done: released 0.18.0 |
 | 4 | Language override | translator · ahead-of-time translation · captions with "show original" · speak in one language, write in the other | 0.19 | until 06:45 | done: released 0.19.0 |
-| 5 | Ops and polish | health panel · cache and disk caps · per-character voice · device checklist | 0.20 | after the deadline | done: released 0.20.0 (phone checklist still open) |
+| 5 | Ops and polish | health panel · cache and disk caps · per-character voice · device checklist | 0.20 | after the deadline | done: released 0.20.0 (phones: Lef OK, 17 Oct) |
 | 6 | Transcript check | Whisper hints with the chronicle's names · recmeets Laya-words flags misheard words · Krikri fixes only those (split words, slang) · changed words marked, tap to undo | 0.21 | until 06:30 | done: released 0.21.0 |
 | 7 | Read along | sentence by sentence (first audio fast) · highlight the message and sentence being read · "Read this" / "Read from here" in the message menu (long-press on phones) · catch-up choice · dice read in the listener's language · NPC voices · ST deletes all recordings | 0.22 | night of 17 Oct | done: released 0.22.0 |
 | 8 | Cloud voices | Gemini TTS opt-in: admin Off / Free / Paid and model · keys shown present or not · per-chronicle opt-in · Gemini narrator voices and gender mapping · fallback to local voices on error, timeout or 429 · cloud errors in the health panel · cached like local lines | 0.23 | 17 Oct | done: released 0.23.0 (two reviews fixed; real Gemini calls checked in Greek and English with Charon, Kore and Schedar; the fallback is covered by tests, not yet forced live) |
@@ -36,7 +36,7 @@ How each phase runs: build in its own git worktree → tests and CI green → on
 - [x] 0.2 Pocket TTS Greek (the only local Greek male voice found): same test. Status: done 23:17. Pocket TTS Greek go (kostas, spyros, eleni, athina), about 0.28× real time on one thread.
 - [x] 0.3 Whisper large-v3-turbo on the GPU in the CUDA image: seconds for 10 s / 60 s / 180 s clips, cold start, real VRAM read from `nvidia-smi` during a clip, name prompt on/off, Parakeet A/B. Status: done 23:17. faster-whisper large-v3-turbo int8_float16 on the GPU go: +1.6 GB VRAM, about 30× real time.
 - [x] 0.4 Opus bitrate (64/48/32) against transcription accuracy; 20 chat lines translated each way, timed. Status: done 23:17. Clips as Opus 16 kbps mono (about 115 KB a minute); Krikri translation go with a game-term glossary. Models in data/voice/models (2.5 GB).
-- [ ] 0.5 Phone test page (recording formats, voices, home-screen mic, silent switch, 2× playback, Opus playback, phone recognition) on an iPhone and an Android phone. Status: still needs Lef's phones.
+- [x] 0.5 Phone test page (recording formats, voices, home-screen mic, silent switch, 2× playback, Opus playback, phone recognition) on an iPhone and an Android phone. Status: Lef played on his phone and is happy with it (17 Oct); no recordings needed.
 
 ## Phase 1 — Listen with the phone's own voices (0.16)
 
@@ -79,7 +79,7 @@ How each phase runs: build in its own git worktree → tests and CI green → on
 - [x] 5.1 Admin health: queue depths, VRAM, minutes per player today, clip disk use, in the monitoring panel. Status: done. `GET /api/voice/health` (admin only) and a Voice panel in Admin → AI system; pytest for 403s and the speech-down path, jest for the panel.
 - [x] 5.2 TTS cache LRU, clip folder removed with the chronicle, orphan sweep. Status: done. `VOICE_TTS_CACHE_GB` (default 5) with LRU in the speech service (tested with a tiny cap); unsent clips older than 24 h swept at start and daily; chronicle delete already removed its clips since 0.18.
 - [x] 5.3 Per-character voice pick; desktop Space push-to-talk. Status: done. `characters.voice_override` checked against the catalog, used for in-character lines in its language; Space held records, release stops (not while typing).
-- [ ] 5.4 Device checklist in VOICE.md and a load check (4 listeners + one narration under 3 s to first audio). Status: checklist written in VOICE.md; results and the load check still need the real phones and the live server.
+- [x] 5.4 Device checklist in VOICE.md and a load check (4 listeners + one narration under 3 s to first audio). Status: checklist in VOICE.md; Lef played on his phone and is happy with it (17 Oct).
 - [x] 5.5 Release 0.20. Status: done (0.20.0).
 
 ## Phase 6 — Transcript check (0.21)
