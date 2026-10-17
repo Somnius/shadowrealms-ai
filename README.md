@@ -189,9 +189,8 @@ For development, `docker compose --profile dev up -d frontend` starts the live-r
 | Frontend | React 18, Vite 8, react-router 7, motion, i18next (English and Greek), DOMPurify, d3, own SVG design system |
 | Infrastructure | Docker Compose (the voice in its own `speech` container, `--profile voice`), nginx with a strict CSP, NVIDIA container runtime |
 | Quality and security | GitHub Actions (pytest, Jest, ESLint, schema checks), CodeQL, Dependabot, branch protection |
-| Built with | [Cursor AI](https://cursor.sh), [OpenCode](https://opencode.ai), [Claude Code](https://claude.com/claude-code) with Claude Opus 5.5 and Claude Fable 5.1 |
 
-The full list with versions, how Laya was trained, and how each release was built and reviewed: [docs/TECH_STACK.md](docs/TECH_STACK.md).
+The full list with versions, how Laya was trained, and how each release was built: [docs/TECH_STACK.md](docs/TECH_STACK.md).
 
 ---
 
@@ -223,7 +222,6 @@ MIT, see [LICENSE](LICENSE).
 ## Credits
 
 - Made with ❤️ for tabletop RPG games by **Lefteris Iliadis** ([Somnius](https://github.com/Somnius), @SomniusX).
-- Built with the help of AI coding tools: [Cursor AI](https://cursor.sh), [OpenCode](https://opencode.ai), and [Claude Code](https://claude.com/claude-code) with Claude Opus 5.5 and Claude Fable 5.1 (see [Tech stack](#tech-stack)).
 - Greek Storyteller model: Llama-Krikri by ILSP. Embeddings: bge-m3 by BAAI.
 
 ## Disclaimer

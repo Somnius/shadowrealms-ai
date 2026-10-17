@@ -85,10 +85,4 @@ Fallbacks: cloud → the role's local model → LM Studio's loaded model → Oll
 
 ## How it was built
 
-The code was written with the help of AI coding tools:
-
-- [Cursor AI](https://cursor.sh)
-- [OpenCode](https://opencode.ai)
-- [Claude Code](https://claude.com/claude-code) with **Claude Opus 5.5** and **Claude Fable 5.1**
-
-In v0.10 every phase was built in its own branch, reviewed twice (the second review by a different model, Claude Fable 5.1), tested in CI, and checked on the running site before it was released. The plans and logs are in [ROADMAP_v0.9.md](ROADMAP_v0.9.md) and [ROADMAP_v0.10.md](ROADMAP_v0.10.md).
+Every phase was built in its own branch, reviewed, tested in CI, and checked on the running site before it was released. The plans and logs are in [ROADMAP_v0.9.md](ROADMAP_v0.9.md), [ROADMAP_v0.10.md](ROADMAP_v0.10.md) and [ROADMAP_VOICE.md](ROADMAP_VOICE.md).
