@@ -14,7 +14,7 @@ How each phase runs: build in its own git worktree → tests and CI green → on
 | 1 | Summary, minutes, archive | chronicler roles · busy marker · chapters (gap, session-mark ids, cleanup) · era digests · jobs · routes · panel · Markdown export · minutes for the whole chronicle or the last N nights · archive on delete (stored minutes + raw transcript) · `campaigns.language` column | 0.24 | done: released 0.24.0 (17 Oct) |
 | 2 | Sheet-look PDF, edits, languages | PDF in the sheet's look · Storyteller's edit copy · translation on request · chronicle language asked at creation | 0.25 | done: released 0.25.0 (17 Oct) |
 | 3 | Horror look, date ranges, session marks | horror PDF (committed paper image + reportlab, A4 and Letter, one test print) · minutes for a date range · "session ended here" from the message menu, shown to players | 0.26 | built on `chronicle/p3` (17 Oct); review and Lef's test print next |
-| 4 | Previously on… | recap card after 12 h away and a button · jump to the message · read-out | 0.27 | not started |
+| 4 | Previously on… | recap card after 12 h away and a button · jump to the message · read-out | 0.27 | built on `chronicle/p4` (17 Oct); review next |
 | 5 | Ops | nightly run (quiet window) · per-chronicle settings · caps · admin health · admin archive page | 0.28 | not started |
 
 ## Decisions (2026-10-17, confirmed by Lef)
@@ -189,10 +189,10 @@ Build rules that come out of the reviews. These are not product choices; Lef's c
 
 ## Phase 4 — Previously on… (0.27)
 
-- [ ] 4.1 `GET …/chronicle/recap`: the player view's last nights for one room since the character's last visit, plus the story so far in short; rooms checked at read time; 404 for rooms the viewer can't read. Status: not started.
-- [ ] 4.2 The recap card when a room is opened after 12 hours or more away (closable), plus a button; a bottom sheet on phones; jump from a night to its first message. Status: not started.
-- [ ] 4.3 Read aloud through Listen, off by default. Status: not started.
-- [ ] 4.4 Release 0.27. Status: not started.
+- [x] 4.1 `GET …/chronicle/recap`: the player view's last nights for one room since the character's last visit, plus the story so far in short; rooms checked at read time; 404 for rooms the viewer can't read. Status: done 17 Oct: every member, the stored player view only, no model call; the room checked with `fetch_readable_location_ids` (404), the nights and digest with what players can read now; at most 5 nights, the digest's tldr or about 600 characters of the story so far; the viewer's language when a translation is saved. "Last there" is a new `chronicle_room_visits` row per user and room (`POST …/recap/visit` on opening the room and every 10 minutes in it; `away_since` moves after 12 hours): `location_reads` is per character and moves as messages are read, so it can't tell where an absence began. `recent=1` for the button (the room's last 3 nights). A night’s jump target is its first message players can see. 7 tests.
+- [x] 4.2 The recap card when a room is opened after 12 hours or more away (closable), plus a button; a bottom sheet on phones; jump from a night to its first message. Status: done 17 Oct: `PreviouslyOn.jsx` and `previouslyOn.js` in the play page; a scroll button in the room header; closing remembered per room and absence in the browser; Jump to the start pages older history with the reply-quote jump; 44 px, EN + EL. Jest tests.
+- [x] 4.3 Read aloud through Listen, off by default. Status: done 17 Oct: Read it on the card, `listen.readRecap` through the same queue as Read this (Listen off too, the user's voice settings); server voices through `POST …/recap/tts`, the text made on the server from the same recap in the narrator's voice. Tests for both paths.
+- [ ] 4.4 Release 0.27. Status: docs (CHRONICLE, FEATURES, CHANGELOG), this file and the version bump done on the branch 17 Oct; review, merge and release next.
 
 ## Phase 5 — Ops (0.28)
 
@@ -203,6 +203,7 @@ Build rules that come out of the reviews. These are not product choices; Lef's c
 
 ## Log
 
+- 2026-10-17 — Phase 4 built on `chronicle/p4`: `…/chronicle/recap` and `…/recap/visit` for every member from the stored player view, `chronicle_room_visits` for "last there", the Previously on… card (bottom sheet on phones, header button, jump to a night's first message), Read it through the voice queue with phone or server voices, docs and version 0.27.0. Backend and frontend tests green. Review next.
 - 2026-10-17 — Colour or print on the chronicle PDFs (Lef): `color=colour|print` for both looks, default by look (horror colour, sheet print, the sheet unchanged byte for byte); horror in print on white with the art in black and greys; the sheet in colour with red headings, rules and sigil; a third choice in the panel. Samples `horror-el-a4-story-print.pdf` and `sheet-el-a4-story-colour.pdf`.
 - 2026-10-17 — Two reviews of phase 3 fixed and Lef's sample notes applied: a much lighter paper, the short footer link (`lefteros.com/apps/shadowrealms-ai`) in every export, hidden-roll marks kept from players, ranged minutes in the user's timezone with a single count of changed nights, cheaper ranged exports, the paper JPEG passed through unchanged, 44 px message toolbar on phones, open-ended dates, 404 for a missing mark, untranslated nights reported.
 - 2026-10-17 — Phase 3 built on `chronicle/p3`: the horror look (committed paper images, vector frame and blood, `look=horror`), minutes for a date range in the Storyteller's timezone, "Session ended here" in the message menu with the end-of-session line, docs and version 0.26.0. Backend and frontend tests green with fake models. Review and Lef's test print next.

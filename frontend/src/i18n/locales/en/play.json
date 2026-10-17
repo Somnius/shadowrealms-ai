@@ -69,5 +69,17 @@
     "flavorWerewolf": "The caern’s pulse says “hunt elsewhere tonight.”",
     "flavorMage": "The Consensus politely declines your Paradigm until further notice.",
     "title": "{{room}}: unavailable"
+  },
+  "recap": {
+    "title": "Previously on…",
+    "open": "Previously on…",
+    "close": "Close the recap",
+    "night": "Night {{n}}",
+    "nightTitled": "Night {{n}}: {{title}}",
+    "soFar": "The story so far",
+    "jump": "Jump to the start",
+    "read": "Read it",
+    "nothing": "Nothing to recap here yet.",
+    "notFound": "That night’s first message could not be found."
   }
 }

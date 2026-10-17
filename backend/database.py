@@ -930,6 +930,15 @@ CHRONICLE_TABLES_SQL = (
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )
     """,
+    """
+    CREATE TABLE IF NOT EXISTS chronicle_room_visits (
+        user_id      INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        location_id  INTEGER NOT NULL REFERENCES locations(id) ON DELETE CASCADE,
+        last_seen_at TIMESTAMP NOT NULL,
+        away_since   TIMESTAMP,
+        PRIMARY KEY (user_id, location_id)
+    )
+    """,
 )
 
 
@@ -941,7 +950,7 @@ def ensure_campaigns_language_column(cursor):
 
 @once_per_process
 def ensure_chronicle_tables(cursor):
-    """Chapters, digests, jobs, archives, session-end marks and the Storyteller-busy marker."""
+    """Chapters, digests, jobs, archives, session-end marks, the Storyteller-busy marker and room visits."""
     pg = os.getenv("DATABASE_TYPE", "sqlite").lower() == "postgresql"
     for stmt in CHRONICLE_TABLES_SQL:
         # SQLite keeps the tables (archive on delete, reads); the writer jobs need PostgreSQL.

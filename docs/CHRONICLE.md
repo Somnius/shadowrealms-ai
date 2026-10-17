@@ -8,7 +8,7 @@ Since 0.24. The chat of a chronicle written up as a story, night by night, by th
 |---|---|
 | The Storyteller (the chronicle's creator) and site admins | read, Update, Rewrite everything, Translate, export, and the edit copy (0.25) |
 | Helpers who can open the chronicle (they are a member of it) | read and export only |
-| Players | nothing yet: "Previously on…" comes in 0.27 and never includes the Storyteller's part |
+| Every member, players included | "Previously on…" in the play page (0.27): the player view of a room's recent nights, never the Storyteller's part, never the export |
 | Anyone else | 404, as for the chronicle itself |
 
 It lives in **Chronicle settings → The chronicle so far**.
@@ -76,6 +76,19 @@ The chronicle's Storyteller and site admins (not helpers, not players) can mark 
 - The marks are `chronicle_session_marks` rows (one per message). The chat loads them with one small request per chronicle (`GET …/chronicle/session-marks`), apart from the room's messages, so the chat never waits for it. Players only get marks in rooms they can read, and never the id of a row hidden from them: a mark on a hidden roll is given to them as the latest message they can see in that room at or before it, so the line still shows in the right place. Removing a mark that doesn't exist answers 404. On phones the message toolbar's buttons are 44 px.
 - A mark ends the session in every room at its time, so it changes how the nights around it are cut. Those nights' hashes change, and the next Update writes them again; removing the mark puts the old cut back.
 
+## Previously on… (0.27)
+
+When someone opens a room after 12 hours or more away, a closable **Previously on…** card («Προηγουμένως…») shows above the chat: the nights of that room since they were last there (titles and summaries, newest last, at most 5) and the story so far in short (the digest's short version, or the start of the story so far, about 600 characters). On phones it is a bottom sheet. The scroll button in the room header shows it any time; with nothing new it shows the room's last 3 nights, and says so when there is nothing at all.
+
+- **Jump to the start** under each night scrolls the chat to that night's first message, loading older messages until it is there, and flashes it like the reply-quote jump.
+- **Read it** reads the card aloud with the user's own voices (phone or server, speed and volume as set in voice settings), even with Listen off, like "Read this". It is never read on its own. With server voices the text is made on the server from the same recap, in the narrator's voice; the browser never sends text to speak.
+- Closing the card is remembered per room in the browser until the next absence of 12 hours or more.
+- Nothing shows when there is no written story yet, when the story is held back (a room closed since the last Update), or when there are no nights in that room since the last visit.
+
+Where it comes from: the stored player view only (chapters and digest), with no model call. The room is checked again when it is read with the viewer's readable rooms, so a room they can't read is 404; the nights and the digest are checked against what players can read now, for everyone who asks (the Storyteller sees the players' recap too). There are no usernames, no `st_*` fields, no hidden rolls (a night's jump target is never a hidden roll's id), no closed rooms and never the Storyteller's edit copy. It is in the chronicle's language, or in the viewer's language when a translation of the story is saved.
+
+"Last there" is a `chronicle_room_visits` row per user and room: `last_seen_at` is set when the room is opened (and every 10 minutes while it stays open); when the gap since the last one is 12 hours or more, `away_since` moves to the old `last_seen_at`. The recap counts the nights that ended after `away_since`, so a reload shows the same card. The chat's own read markers (`location_reads`) are per character and move as messages are read, so they couldn't say where an absence began.
+
 ## When a chronicle is deleted
 
 Before anything is deleted, `delete_campaign` writes `data/chronicle_archive/<id>-<name>-<time>/` (or `CHRONICLE_ARCHIVE_DIR`) with two files and an index row in `chronicle_archives`, with no model call:
@@ -100,11 +113,14 @@ All under `/api/campaigns/<id>/chronicle`:
 | `GET …/chronicle.md\|pdf`, `GET …/chronicle/minutes.md\|pdf` | the exports (`view`, `lang`, `last`, `with_table_talk`, `paper`, `look`, `color`; minutes also `from`, `to`, `tz`) |
 | `GET` / `POST …/chronicle/session-marks` `{message_id}`, `DELETE …/chronicle/session-marks/<message>` | the session-end marks: any member reads, the Storyteller and site admins mark and unmark |
 | `GET` / `PUT` / `DELETE …/chronicle/edit` | the edit copy (Storyteller and site admins): read, save `{markdown}` or `{keep: true}`, drop |
+| `POST …/chronicle/recap/visit` `{location_id}` | any member, a room they can read: records the visit, returns `away_since` |
+| `GET …/chronicle/recap?location_id=` (`recent=1`, `lang=`) | any member, a room they can read: `nights` (night, title, summary, dates, `first_message_id`), `so_far`, `since`, `lang` |
+| `POST …/chronicle/recap/tts` `{location_id, chunk, recent}` | "Read it" with server voices: a speech job for one chunk of the same recap |
 
 `view=player` is what players will get: no Storyteller keys, no message ids, no usernames, no NPC that no visible night names, no closed room in the places, and rooms are checked again when it is read (a room closed since the last Update drops out, and the digest is held back until the next Update).
 
 ## Data
 
-`chronicle_chapters` (one row per night and language: the JSON, the hash, the message range), `chronicle_digests` (eras and the final digest; the edit copy in `edited_markdown`, `edited_by`, `edited_at`, `edited_from_hash`; a cached translation is a row in the other language with `translated_from`), `chronicle_jobs`, `chronicle_archives`, `chronicle_session_marks`, `ai_busy_marks`, and `campaigns.language`. They are created by `ensure_chronicle_tables` and `ensure_campaigns_language_column` in `backend/database.py` with the same DDL in `init_postgresql_schema.sql`. Chapters, digests and jobs go with the chronicle.
+`chronicle_chapters` (one row per night and language: the JSON, the hash, the message range), `chronicle_digests` (eras and the final digest; the edit copy in `edited_markdown`, `edited_by`, `edited_at`, `edited_from_hash`; a cached translation is a row in the other language with `translated_from`), `chronicle_jobs`, `chronicle_archives`, `chronicle_session_marks`, `ai_busy_marks`, `chronicle_room_visits` (0.27), and `campaigns.language`. They are created by `ensure_chronicle_tables` and `ensure_campaigns_language_column` in `backend/database.py` with the same DDL in `init_postgresql_schema.sql`. Chapters, digests and jobs go with the chronicle.
 
-Code: `backend/services/chronicle_digest.py` (the pure part: lines, cutting, prompts, checks, Markdown, translation texts), `backend/services/chronicle_pdf.py`, `backend/services/pdf_look.py` and `backend/services/pdf_horror.py` (the PDF), `backend/services/chronicle_jobs.py` (the database, jobs and the writer thread), `backend/services/chronicle_archive.py`, `backend/routes/chronicle.py`, `frontend/src/features/chronicle/ChronicleSoFarPanel.jsx`, and the marks in `frontend/src/features/chat/MessageActions.jsx`.
+Code: `backend/services/chronicle_digest.py` (the pure part: lines, cutting, prompts, checks, Markdown, translation texts), `backend/services/chronicle_pdf.py`, `backend/services/pdf_look.py` and `backend/services/pdf_horror.py` (the PDF), `backend/services/chronicle_jobs.py` (the database, jobs and the writer thread), `backend/services/chronicle_archive.py`, `backend/routes/chronicle.py`, `frontend/src/features/chronicle/ChronicleSoFarPanel.jsx`, the marks in `frontend/src/features/chat/MessageActions.jsx`, and the recap in `frontend/src/features/play/PreviouslyOn.jsx` and `previouslyOn.js`.

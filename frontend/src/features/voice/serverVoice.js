@@ -147,7 +147,9 @@ export function serverEngine({ api, getAudio, getSettings, fallback, onFallback 
   const load = (item, i) => {
     const k = `${item.id}:${i}`;
     if (!loads.has(k)) {
-      const p = awaitJobInfo(api, startTtsJob(api, Number(item.id), { chunk: i, lang: item.listenLang, original: !!item.original })).then(
+      // item.startJob(chunk): a line that isn't a message ("Previously on…", 0.27) starts its own job
+      const start = item.startJob ? item.startJob(i) : startTtsJob(api, Number(item.id), { chunk: i, lang: item.listenLang, original: !!item.original });
+      const p = awaitJobInfo(api, start).then(
         (job) => {
           if (job.original) item.original = true; // the rest of the line in the same language
           return fetchAudioUrl(job.key, preferredFormat(getAudio())).then((url) => ({

@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.27.0] - 2026-10-17 - Previously on…
+
+### Added
+- **Previously on…** When you open a room after 12 hours or more away, a card above the chat (a bottom sheet on phones) recaps that room's nights since you were last there, newest last, and the story so far in short. It's for everyone in the chronicle, players included, and it's built only from the written player view of the chronicle so far: no hidden rolls, no closed rooms, no player names, nothing for the Storyteller's eyes only, and no model call. Close it and it stays closed for that room until your next long absence. A button in the room header shows it any time (the last nights of the room when nothing is new). Greek: «Προηγουμένως…».
+- **Jump to the start** on each night scrolls the chat to that night's first message, loading older messages when needed.
+- **Read it** on the card reads the recap aloud with your own voice settings (phone or server voices), with Listen off too. It is never read by itself.
+
 ## [0.26.0] - 2026-10-17 - Horror look, date ranges, session marks
 
 ### Added

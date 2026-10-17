@@ -802,4 +802,13 @@ CREATE TABLE IF NOT EXISTS ai_busy_marks (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+-- "Previously on…" (0.27): when a user last opened a room, and where their last 12-hour absence began
+CREATE TABLE IF NOT EXISTS chronicle_room_visits (
+    user_id      INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    location_id  INTEGER NOT NULL REFERENCES locations(id) ON DELETE CASCADE,
+    last_seen_at TIMESTAMP NOT NULL,
+    away_since   TIMESTAMP,
+    PRIMARY KEY (user_id, location_id)
+);
+
 COMMIT;
