@@ -305,3 +305,13 @@ def test_untranslated_night_is_flagged():
     chs[0]["chapter"]["check"] = ["language"]
     assert "όχι πλήρως στα ελληνικά" in cd.minutes_markdown({"name": "A"}, chs, "el", "st")
     assert "not fully in English" in cd.story_markdown({"name": "A"}, None, chs, "en", "st")
+
+
+def test_prompt_names_only_those_in_the_night():
+    from services import chronicle_digest as cd
+    lines = [{"text": "M1 [20:00] [IC] Κωνσταντίνος: Η Μαρώ άφησε το υπόγειο ανοιχτό."}]
+    msgs = cd.chapter_messages("el", "The Echoing Basement", None, lines,
+                               ["Κωνσταντίνος", "Μαρώ", "Metaxourgio Archive", "The Echoing Basement"])
+    system = msgs[0]["content"]
+    assert "Metaxourgio Archive" not in system
+    assert "Μαρώ" in system and "The Echoing Basement" in system

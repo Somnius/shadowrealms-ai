@@ -665,12 +665,19 @@ def _names(names: Sequence[str]) -> str:
     return ", ".join(sorted(set(n for n in names if n))) or "—"
 
 
+def names_in_lines(names: Sequence[str], lines: Sequence[Dict[str, Any]], room: str = "") -> List[str]:
+    """Only the names this night's lines use (plus its room). Handing the model every room and NPC of
+    the chronicle made it place the night somewhere it never happened."""
+    text = (room + "\n" + "\n".join(ln.get("text", "") for ln in lines)).casefold()
+    return [n for n in names if n and n.casefold() in text]
+
+
 def chapter_messages(lang: str, room: str, night: Optional[datetime], lines: Sequence[Dict[str, Any]],
                      names: Sequence[str], edition: str = "Vampire: The Masquerade") -> List[Dict[str, str]]:
     lang = "el" if lang == "el" else "en"
     head = _USER_HEAD[lang].format(room=room, date=fmt_date(night, lang))
     return [
-        {"role": "system", "content": SYSTEM_CHAPTER[lang].format(edition=edition, names=_names(names))},
+        {"role": "system", "content": SYSTEM_CHAPTER[lang].format(edition=edition, names=_names(names_in_lines(names, lines, room)))},
         {"role": "user", "content": head + "\n".join(ln["text"] for ln in lines)},
     ]
 
@@ -678,7 +685,7 @@ def chapter_messages(lang: str, room: str, night: Optional[datetime], lines: Seq
 def notes_messages(lang: str, lines: Sequence[Dict[str, Any]], names: Sequence[str]) -> List[Dict[str, str]]:
     lang = "el" if lang == "el" else "en"
     return [
-        {"role": "system", "content": SYSTEM_NOTES[lang].format(names=_names(names))},
+        {"role": "system", "content": SYSTEM_NOTES[lang].format(names=_names(names_in_lines(names, lines)))},
         {"role": "user", "content": "\n".join(ln["text"] for ln in lines)},
     ]
 
