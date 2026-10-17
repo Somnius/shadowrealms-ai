@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router';
-import { Avatar, Badge, Button, Card, EmptyState, Glyph, Input, Panel, Select, Tabs, Textarea, useToast } from '../../design';
+import { Avatar, Badge, Button, Card, EmptyState, Glyph, Input, Panel, Select, Spinner, Tabs, Textarea, useToast } from '../../design';
 import { PageBody, TopBar } from '../../app/AppShell';
 import ButtonLink from '../../app/ButtonLink';
 import { useApi, useAuth } from '../../app/AuthContext';
@@ -18,6 +18,28 @@ import { VoiceSettingsPanel } from '../voice/VoiceSettings';
 import './profile.css';
 
 const MAX_IMAGE = 360000;
+
+// The last character list, kept for this tab, so the page shows it at once and refreshes it behind.
+const charsCacheKey = (user) => (user && user.id != null ? `sr_profile_chars_${user.id}` : null);
+function readCachedChars(user) {
+  const key = charsCacheKey(user);
+  if (!key) return null;
+  try {
+    const v = JSON.parse(sessionStorage.getItem(key) || 'null');
+    return Array.isArray(v) ? v : null;
+  } catch {
+    return null;
+  }
+}
+function writeCachedChars(user, list) {
+  const key = charsCacheKey(user);
+  if (!key) return;
+  try {
+    sessionStorage.setItem(key, JSON.stringify(list));
+  } catch {
+    /* full or blocked: the page still works, only without the instant list */
+  }
+}
 
 /** Account role in the interface language. */
 export function roleLabel(role) {
@@ -296,13 +318,23 @@ function CharactersSection() {
   const { openSheet } = useSheet();
   const { user } = useAuth();
   const { chronicles, reload: reloadChronicles } = useChronicles();
-  const [chars, setChars] = useState(null);
+  const [chars, setChars] = useState(() => readCachedChars(user));
   const [bringing, setBringing] = useState(null);
+  const userRef = useRef(user);
+  userRef.current = user;
+  const userId = user ? user.id : null;
+  // Keyed on the user's id, not the user object: a refreshed /users/me must not fetch the list again.
   const load = useCallback(async () => {
     const r = await api('/characters/');
+    if (!r.ok || !Array.isArray(r.data.characters)) {
+      setChars((cur) => cur || []);
+      return;
+    }
     // Admins get every character from this endpoint; the profile lists your own.
-    setChars(r.ok && Array.isArray(r.data.characters) ? ownCharacters(r.data.characters, user) : []);
-  }, [api, user]);
+    const mine = ownCharacters(r.data.characters, userRef.current);
+    setChars(mine);
+    writeCachedChars(userRef.current, mine);
+  }, [api, userId]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => {
     load();
   }, [load]);
@@ -327,6 +359,12 @@ function CharactersSection() {
           {t('profile:characters.new', 'New character')}
         </ButtonLink>
       </div>
+      {chars === null ? (
+        <div className="sr-row sr-chars-loading">
+          <Spinner decorative />
+          <span className="sr-muted" role="status">{t('profile:characters.loading', 'Drawing blood…')}</span>
+        </div>
+      ) : null}
       {chars && chars.length === 0 ? (
         <EmptyState glyph="mask" title={t('profile:characters.empty', 'No characters yet')}>
           {t('profile:characters.emptyBody', 'Join or create a chronicle, then forge a character for it.')}
@@ -407,14 +445,17 @@ function DowntimeSection() {
   const [charId, setCharId] = useState('');
   const [text, setText] = useState('');
   const [busy, setBusy] = useState(false);
+  const userRef = useRef(user);
+  userRef.current = user;
+  const userId = user ? user.id : null;
   const load = useCallback(async () => {
     const [c, d] = await Promise.all([api('/characters/'), api('/characters/downtime-requests/mine')]);
     // Downtime goes to a chronicle's Storyteller: characters without one can't ask yet.
-    const list = c.ok && Array.isArray(c.data.characters) ? ownCharacters(c.data.characters, user).filter((ch) => !isUnassigned(ch)) : [];
+    const list = c.ok && Array.isArray(c.data.characters) ? ownCharacters(c.data.characters, userRef.current).filter((ch) => !isUnassigned(ch)) : [];
     setChars(list);
     setCharId((cur) => cur || (list[0] ? String(list[0].id) : ''));
     setMine(d.ok && Array.isArray(d.data.requests) ? d.data.requests : []);
-  }, [api, user]);
+  }, [api, userId]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => {
     load();
   }, [load]);

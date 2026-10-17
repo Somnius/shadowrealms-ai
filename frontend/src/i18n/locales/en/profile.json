@@ -4,6 +4,7 @@
     "body": "Inside a chronicle you always play that chronicle’s character. Sheets lock after creation; ask for changes through downtime.",
     "empty": "No characters yet",
     "emptyBody": "Join or create a chronicle, then forge a character for it.",
+    "loading": "Drawing blood…",
     "suspended": "Unavailable for play",
     "noChronicle": "No chronicle yet"
   },

@@ -28,3 +28,4 @@
 }
 .sr-app .sr-guide summary { cursor: pointer; font-family: var(--sr-font-display); font-variant-numeric: lining-nums; color: var(--sr-accent-text); }
 .sr-app .sr-guide ol { margin: var(--sr-space-3) 0 0; padding-left: 1.4em; color: var(--sr-text-2); }
+.sr-app .sr-chars-loading { gap: var(--sr-space-2); align-items: center; padding: var(--sr-space-4) 0; }

@@ -45,6 +45,7 @@ const theodore = {
 let assigned;
 beforeEach(() => {
   assigned = false;
+  sessionStorage.clear();
   mockApi.mockReset();
   mockReloadChronicles.mockReset();
   mockApi.mockImplementation(async (path, opts) => {
@@ -246,4 +247,27 @@ test("the ghoul page opens the forge of the domitor's edition", async () => {
   expect(await screen.findByText(/isn't one of your characters, or can't have ghouls/)).toBeInTheDocument();
   expect(screen.queryByText(/Ghoul forge/)).not.toBeInTheDocument();
   expect(screen.getByRole('button', { name: 'Back to your characters' })).toBeInTheDocument();
+});
+
+test('while the list loads the page says blood is being drawn, and the next visit shows the last list at once', async () => {
+  let release;
+  mockApi.mockImplementation((path) =>
+    path === '/characters/'
+      ? new Promise((r) => {
+          release = () => r({ ok: true, status: 200, data: { characters: [volkan, theodore] } });
+        })
+      : Promise.resolve({ ok: false, status: 404, data: {} })
+  );
+  const first = renderProfile();
+  expect(screen.getByRole('status')).toHaveTextContent('Drawing blood…');
+  await act(async () => release());
+  expect(await screen.findByText('Volkan Kibar')).toBeInTheDocument();
+  expect(screen.queryByText('Drawing blood…')).toBeNull();
+  first.unmount();
+
+  // second visit: the cached list is there before the server answers
+  renderProfile();
+  expect(screen.getByText('Volkan Kibar')).toBeInTheDocument();
+  expect(screen.queryByText('Drawing blood…')).toBeNull();
+  await act(async () => release());
 });
