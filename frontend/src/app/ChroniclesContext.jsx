@@ -29,10 +29,14 @@ export function ChroniclesProvider({ children }) {
   const [chronicles, setChronicles] = useState([]);
   const [loaded, setLoaded] = useState(false);
   const lastJson = useRef('');
+  const inflight = useRef(null);
+  const lastLoadAt = useRef(0);
 
+  // An explicit reload (after creating or changing a chronicle) always asks the server.
   const reload = useCallback(async () => {
     if (!authed) return [];
     const r = await apiFetch(getCurrentToken(), '/campaigns/');
+    lastLoadAt.current = Date.now();
     const list = r.ok && Array.isArray(r.data) ? r.data : [];
     if (r.ok) {
       // Background refreshes usually return the same list: keep the old array (no re-render).
@@ -51,11 +55,22 @@ export function ChroniclesProvider({ children }) {
     return list;
   }, [authed]);
 
+  // Background refreshes (mount, focus, the timer) share one request: at page load the mount and
+  // the window's first focus event both ask, and one answer serves both.
+  const refresh = useCallback(() => {
+    if (inflight.current) return inflight.current;
+    inflight.current = reload().finally(() => {
+      inflight.current = null;
+    });
+    return inflight.current;
+  }, [reload]);
+
   useEffect(() => {
     if (!authed) return undefined;
     const visible = () => typeof document === 'undefined' || document.visibilityState !== 'hidden';
     const onFocus = () => {
-      if (getCurrentToken()) reload();
+      // A focus right after a load (the page just opened) has nothing new to fetch.
+      if (getCurrentToken() && Date.now() - lastLoadAt.current > 5000) refresh();
     };
     const onVisible = () => {
       if (visible()) onFocus();
@@ -70,16 +85,16 @@ export function ChroniclesProvider({ children }) {
       document.removeEventListener('visibilitychange', onVisible);
       clearInterval(timer);
     };
-  }, [authed, reload]);
+  }, [authed, refresh]);
 
   useEffect(() => {
-    if (authed) reload();
+    if (authed) refresh();
     else {
       lastJson.current = '';
       setChronicles([]);
       setLoaded(false);
     }
-  }, [authed, reload]);
+  }, [authed, refresh]);
 
   const byId = useCallback((id) => chronicles.find((c) => String(c.id) === String(id)) || null, [chronicles]);
 

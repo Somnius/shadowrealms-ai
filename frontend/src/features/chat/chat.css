@@ -422,7 +422,8 @@
   .sr-app .sr-msg-actions { top: 2px; right: var(--sr-space-2); }
   .sr-app .sr-msg-actions__more { display: inline-flex; }
   .sr-app .sr-msg-actions__bar { display: none; }
-  .sr-app .sr-msg-actions.is-open .sr-msg-actions__bar { display: inline-flex; }
+  /* the open bar drops below the … button instead of pushing it left over the name and badges */
+  .sr-app .sr-msg-actions.is-open .sr-msg-actions__bar { display: inline-flex; position: absolute; top: calc(100% + 4px); right: 0; }
   .sr-app .sr-msg { padding-right: 44px; }
 }
 .sr-app .sr-msg.is-flash,
