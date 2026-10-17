@@ -179,6 +179,46 @@ def cast_names(cursor, campaign_id: int) -> List[str]:
     return names
 
 
+_TRANSLIT = str.maketrans({
+    "α": "a", "β": "v", "γ": "g", "δ": "d", "ε": "e", "ζ": "z", "η": "i", "θ": "th", "ι": "i", "κ": "k",
+    "λ": "l", "μ": "m", "ν": "n", "ξ": "x", "ο": "o", "π": "p", "ρ": "r", "σ": "s", "ς": "s", "τ": "t",
+    "υ": "y", "φ": "f", "χ": "ch", "ψ": "ps", "ω": "o",
+})
+
+
+def _latin_key(name: str) -> str:
+    import unicodedata
+
+    s = unicodedata.normalize("NFD", name.casefold())
+    s = "".join(c for c in s if not unicodedata.combining(c)).translate(_TRANSLIT)
+    s = s.replace("ou", "u").replace("y", "i").replace("h", "")
+    return "".join(c for c in s if c.isalnum())
+
+
+def spelling_names(cursor, campaign_id: int, lang: str) -> List[str]:
+    """
+    The exact spellings the writer must use: characters, NPCs and rooms (translation.chronicle_names).
+    When the data holds one name in both alphabets ("Maro" and «Μαρώ»), only the form in the
+    chronicle's language is kept.
+    """
+    from services.translation import chronicle_names
+
+    names = list(dict.fromkeys(n.strip() for n in chronicle_names(cursor, campaign_id) + cast_names(cursor, campaign_id)
+                               if n and n.strip()))
+    groups: Dict[str, List[str]] = {}
+    for n in names:
+        groups.setdefault(_latin_key(n), []).append(n)
+    out = []
+    for n in names:
+        same = groups.get(_latin_key(n)) or [n]
+        if len(same) > 1:
+            mine = [x for x in same if (cd.greek_share(x) >= 0.5) == (lang == "el")]
+            if mine and n not in mine:
+                continue
+        out.append(n)
+    return out
+
+
 def room_names(cursor, campaign_id: int) -> List[str]:
     cursor.execute("SELECT name FROM locations WHERE campaign_id = %s", (campaign_id,))
     return [str(r["name"]) for r in cursor.fetchall() if r.get("name")]
@@ -315,7 +355,7 @@ def plan(cursor, campaign_id: int, scope: str = "update", gap_hours: float = cd.
     camp = campaign_row(cursor, campaign_id)
     rows = load_rows(cursor, campaign_id)
     lang = chronicle_lang(cursor, camp, rows)
-    names = cast_names(cursor, campaign_id)
+    names = spelling_names(cursor, campaign_id, lang)
     flags = cd.roll_flags(rows)
     chapters = cd.cut_chapters(rows, gap_hours, session_marks(cursor, campaign_id))
     stored = {c["key"]: c for c in stored_chapters(cursor, campaign_id, lang)}
@@ -658,6 +698,24 @@ class Runner:
             chapter = self._translate(chapter)
         return chapter
 
+    def _title(self, ch, chapter):
+        """A title that is the room's name or in the wrong language is asked for once more, alone;
+        then a fixed one in the chronicle's language."""
+        title = chapter.get("title", "")
+        if not cd.title_problem(title, ch["room"], self.lang, self.names):
+            return title
+        try:
+            raw = self._call(cd.title_messages(self.lang, ch["room"], chapter.get("summary") or []), 60,
+                             "title", cd.TITLE_SCHEMA)
+            again = cd._str(cd.parse_json(raw).get("title"))
+            if not cd.title_problem(again, ch["room"], self.lang, self.names):
+                return again
+        except JobCancelled:
+            raise
+        except Exception as e:  # noqa: BLE001 - the fixed title will do
+            logger.info("chronicle %s: title retry failed: %s", self.cid, e)
+        return cd.fallback_title(ch["room"], ch.get("started_at"), self.lang)
+
     def _translate(self, chapter):
         """The night is in the wrong language after the retry: the translator role puts it into the
         chronicle's language (names protected, services/translation.py). If that fails it is kept and flagged."""
@@ -701,6 +759,7 @@ class Runner:
         budget = cd.prompt_budget(self.ctx, cd.CHAPTER_MAX_TOKENS, storyteller_reserve())
         parts = [self._write_part(ch, p) for p in cd.split_lines(mat["lines"], budget)]
         chapter = cd.merge_parts(parts)
+        chapter["title"] = self._title(ch, chapter)
         chapter["events"] = cd.inject_rolls(chapter.get("events") or [], mat["lines"], self.lang)
         if mat["hidden"]:
             raw = self._call(cd.notes_messages(self.lang, mat["hidden"], self.names), cd.NOTES_MAX_TOKENS,

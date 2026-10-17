@@ -210,8 +210,10 @@ class FakeModel:
     """Answers each kind of call (by response_format name) in the language of its instructions."""
 
     def __init__(self, wrong_language_first=False, overflow_once=False, wrong_language=0, translate_fails=False,
-                 length_once=False):
+                 length_once=False, chapter_title=None, title_answer=None):
         self.calls = []
+        self.chapter_title = chapter_title
+        self.title_answer = title_answer
         self.wrong_language = wrong_language
         self.translate_fails = translate_fails
         self.length_once = length_once
@@ -245,11 +247,13 @@ class FakeModel:
             w = ENGLISH if el else GREEK
         ids = [int(x) for x in re.findall(r"^M(\d+)", messages[1]["content"], re.M)]
         if name == "chapter":
-            out = {"title": w["title"], "summary": [w["p"], w["p"]],
+            out = {"title": self.chapter_title or w["title"], "summary": [w["p"], w["p"]],
                    "events": [{"text": w["event"], "ids": ids[:2] + [999999]}, {"text": "uncited", "ids": []}],
                    "characters": [{"name": "Κωνσταντίνος", "note": w["event"]}, {"name": "Ventrue Prince", "note": "x"}],
                    "places": [{"name": "Σκουφά", "note": w["event"]}],
                    "threads_opened": [{"text": w["event"], "ids": ids[:1]}], "threads_closed": []}
+        elif name == "title":
+            out = {"title": self.title_answer if self.title_answer is not None else w["title"]}
         elif name == "notes":
             out = {"notes": [{"text": w["event"], "ids": ids[:1]}]}
         elif name == "era":

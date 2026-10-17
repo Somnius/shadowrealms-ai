@@ -50,7 +50,7 @@ def test_greek_chronicle_written_end_to_end():
     assert n1["title"] == "Η νύχτα στο υπόγειο" and len(n1["summary"]) == 2
     assert all(999999 not in e["ids"] for e in n1["events"])  # unknown id dropped
     assert [c["name"] for c in n1["characters"]] == ["Κωνσταντίνος"]  # invented title dropped
-    assert any(e.get("fixed") and e["text"].startswith("Καταστροφική αποτυχία") for e in n1["events"])
+    assert any(e.get("fixed") and "καταστροφική αποτυχία" in e["text"] and "rolled" not in e["text"] for e in n1["events"])
     with_notes = [c for _, c in chs if c.get("st_notes")]
     assert len(with_notes) == 1  # only night 2 has a hidden roll
     assert any(o["text"] == "brb, coffee" for _, c in chs for o in c.get("ooc") or [])
@@ -318,3 +318,25 @@ def test_claim_skips_a_chronicle_that_is_not_quiet():
     assert got["id"] == quiet and got["status"] == "running"
     assert cj.get_job(cur, 11, busy)["status"] == "waiting"
     assert cj.claim(conn) is None  # the waiting row was just checked: not again within 5 s
+
+
+def test_room_name_title_is_asked_again_then_falls_back():
+    raw, conn = setup("el", 1)
+    model = FakeModel(chapter_title="The Echoing Basement")
+    run(conn, model)
+    assert chapters(raw)[0][1]["title"] == "Η νύχτα στο υπόγειο"  # the title-only answer
+    assert [c["name"] for c in model.calls].count("title") == 1
+    raw2, conn2 = setup("el", 1)
+    run(conn2, FakeModel(chapter_title="The Echoing Basement", title_answer="Basement night"))
+    assert chapters(raw2)[0][1]["title"].startswith("Νύχτα της ") and "The Echoing Basement" in chapters(raw2)[0][1]["title"]
+
+
+def test_spellings_include_npcs_and_rooms_in_the_chronicles_language():
+    raw, conn = setup("el", 1)
+    raw.execute("INSERT INTO npcs (id, campaign_id, name) VALUES (31, 10, 'Maro')")
+    names = cj.spelling_names(conn.cursor(), 10, "el")
+    assert "Μαρώ" in names and "Maro" not in names and "The Echoing Basement" in names and "Marcus Vell" in names
+    assert "Maro" in cj.spelling_names(conn.cursor(), 10, "en")
+    model = FakeModel()
+    run(conn, model)
+    assert "Μαρώ" in model.calls[0]["messages"][0]["content"] and "The Echoing Basement" in model.calls[0]["messages"][0]["content"]

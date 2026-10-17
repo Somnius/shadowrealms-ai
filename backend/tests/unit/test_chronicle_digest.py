@@ -149,12 +149,48 @@ def test_language_and_mixed_scripts():
 
 
 def test_botches_and_criticals_always_listed():
-    lines = [{"id": 7, "kind": "roll", "say": "Marcus: 0 successes", "botch": True, "critical": False},
-             {"id": 8, "kind": "roll", "say": "Marcus: 5 successes", "botch": False, "critical": True},
-             {"id": 9, "kind": "roll", "say": "plain", "botch": False, "critical": False}]
+    lines = [{"id": 7, "kind": "roll", "who": "Marcus", "say": "Marcus rolls for Brawl", "botch": True, "critical": False,
+              "roll": "Brawl", "outcome": "botch"},
+             {"id": 8, "kind": "roll", "who": "Marcus", "say": "x", "botch": False, "critical": True},
+             {"id": 9, "kind": "roll", "who": "Marcus", "say": "plain", "botch": False, "critical": False}]
     out = cd.inject_rolls([{"text": "cited", "ids": [8]}], lines, "el")
     assert [e["ids"] for e in out] == [[8], [7]]
-    assert out[1]["text"].startswith("Καταστροφική αποτυχία: ")
+    assert out[1]["text"] == "Marcus: καταστροφική αποτυχία στη ρίψη Brawl."
+
+
+def test_roll_sentence_from_the_dice_row_in_the_chronicles_language():
+    t = datetime(2026, 10, 5, 21)
+    marker = {"rules_edition": "v5", "successes": 5, "difficulty": 2, "is_critical": True}
+    rows = [{"id": 1, "location_id": 1, "ai_message_kind": "dice_animation:r1", "content": json.dumps(marker),
+             "message_type": "system", "role": "assistant", "created_at": t},
+            {"id": 2, "location_id": 1, "ai_message_kind": "dice_roll:r1", "message_type": "action", "role": "user",
+             "speaker_mode": "character", "character_name": "Κωνσταντίνος Κατακουζηνός", "created_at": t,
+             "content": "Κωνσταντίνος Κατακουζηνός rolls (V5) for **Intelligence + Investigation**\n5 successes"}]
+    ln = cd.make_line(rows[1], "el", cd.roll_flags(rows))
+    el = cd.inject_rolls([], [ln], "el")[0]["text"]
+    assert el == "Κωνσταντίνος Κατακουζηνός: κρίσιμη επιτυχία στη ρίψη Intelligence + Investigation."
+    assert "rolls" not in el and "V5" not in el
+    en = cd.inject_rolls([], [cd.make_line(rows[1], "en", cd.roll_flags(rows))], "en")[0]["text"]
+    assert en == "Κωνσταντίνος Κατακουζηνός: critical win on Intelligence + Investigation."
+    rows[1]["content"] = "Marcus rolls (V5) for Brawl"  # no bold
+    assert cd.make_line(rows[1], "el", cd.roll_flags(rows))["roll"] == "Brawl"
+
+
+def test_citations_are_stripped_from_the_text():
+    raw = _answer(events=[{"text": "Βρήκε το σημείωμα (M5). Μετά έφυγε (M5, M6) και M6 το είδε.", "ids": [5, 6]}],
+                  threads_opened=[{"text": "Ποιος παρακολουθεί; (M6)", "ids": [6]}])
+    ch, _p = cd.check_chapter(raw, [5, 6], [], "el")
+    assert ch["events"][0] == {"text": "Βρήκε το σημείωμα. Μετά έφυγε και το είδε.", "ids": [5, 6]}
+    assert ch["threads_opened"][0]["text"] == "Ποιος παρακολουθεί;"
+    assert cd.check_notes('{"notes": [{"text": "Κρυφή ρίψη (M5)", "ids": [5]}]}', [5])[0]["text"] == "Κρυφή ρίψη"
+
+
+def test_title_checks():
+    assert cd.title_problem("The Echoing Basement", "The Echoing Basement", "el")
+    assert cd.title_problem("The Echoing Basement Investigation", "The Echoing Basement", "el")
+    assert not cd.title_problem("Το μυστικό στο The Echoing Basement", "The Echoing Basement", "el")
+    assert not cd.title_problem("Το μυστικό του υπογείου", "The Echoing Basement", "el")
+    assert cd.fallback_title("The Echoing Basement", datetime(2026, 10, 5), "el") == "Νύχτα της 5 Οκτ 2026 στο The Echoing Basement"
 
 
 def test_player_chapter_and_digest_have_no_storyteller_keys_or_ids():

@@ -203,6 +203,7 @@ Build rules that come out of the reviews. These are not product choices; Lef's c
 
 ## Log
 
+- 2026-10-17 — Polish after the first real run (branch `chronicle/p1-polish`): rolls as a sentence in the chronicle's language, no message numbers inside texts, room-name titles asked again, NPC and room spellings in the prompt.
 - 2026-10-17 — Two reviews of phase 1 fixed and Lef's answers applied (helpers read and export only; the Storyteller downloads archives for 30 days; wrong-language nights translated; closed rooms kept; a session mark cuts every room).
 - 2026-10-17 — Phase 1 built on `chronicle/p1`: schema, roles, busy marker, digest core, jobs with live progress, routes, archive on delete, panel, docs. Backend and frontend tests green; one chapter checked against Krikri. Review next.
 - 2026-10-17 — Plan written from recmeets' minutes pipeline and the current code; questions for Lef listed in the plan. Nothing built yet.
