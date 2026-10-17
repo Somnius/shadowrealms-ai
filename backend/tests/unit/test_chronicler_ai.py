@@ -13,18 +13,18 @@ class FakeStream:
     def __init__(self, lines, status=200):
         self.lines, self.status_code, self.closed, self.text = lines, status, False, "error body"
 
-    def iter_lines(self, decode_unicode=True):
+    def iter_lines(self):
         for ln in self.lines:
             if self.closed:
                 return
-            yield ln
+            yield ln.encode("utf-8")  # the wire is UTF-8 bytes; requests would guess Latin-1 for SSE
 
     def close(self):
         self.closed = True
 
 
 def sse(*chunks):
-    return [f"data: {json.dumps(c)}" for c in chunks] + ["data: [DONE]"]
+    return [f"data: {json.dumps(c, ensure_ascii=False)}" for c in chunks] + ["data: [DONE]"]
 
 
 def delta(text):

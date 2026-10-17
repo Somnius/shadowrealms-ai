@@ -173,7 +173,9 @@ class LMStudioProvider(Provider):
         try:
             if r.status_code != 200:
                 raise ProviderError(f"LM Studio {_short(r)}")
-            for raw in r.iter_lines(decode_unicode=True):
+            # bytes, decoded here: requests would guess ISO-8859-1 for text/event-stream without a charset
+            for raw_bytes in r.iter_lines():
+                raw = raw_bytes.decode("utf-8", "replace") if isinstance(raw_bytes, bytes) else raw_bytes
                 if not raw or not raw.startswith("data:"):
                     continue
                 data = raw[5:].strip()
