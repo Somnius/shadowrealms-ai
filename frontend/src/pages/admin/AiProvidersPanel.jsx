@@ -9,6 +9,8 @@ export const roleLabels = () => ({
   storyteller_el: t('admin:ai.role.storyteller_el', 'Storyteller — Greek players'),
   utility: t('admin:ai.role.utility', 'Utility (quick dice/combat answers)'),
   classifier: t('admin:ai.role.classifier', 'Classifier fallback (OOC check when Laya/Jev are not used)'),
+  chronicler_el: t('admin:ai.role.chronicler_el', 'Chronicle writer — Greek chronicles'),
+  chronicler_en: t('admin:ai.role.chronicler_en', 'Chronicle writer — English chronicles'),
 });
 
 export const providerLabels = () => ({

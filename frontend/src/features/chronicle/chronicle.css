@@ -57,3 +57,29 @@
 .sr-app .sr-approvals__item p { margin: 0; }
 .sr-app .sr-approvals__problems { margin: 0; padding-left: 1.2rem; color: var(--sr-warn-400); }
 .sr-app .sr-approvals__problems-intro { color: var(--sr-warn-400); }
+
+/* The chronicle so far (0.24): phones first, 44 px targets */
+.sr-app .sr-sofar .sr-btn, .sr-app .sr-sofar .sr-switch, .sr-app .sr-sofar input { min-height: 44px; }
+.sr-app .sr-sofar__lead, .sr-app .sr-sofar__hint { color: var(--sr-text-muted); margin: 0 0 var(--sr-space-3); }
+.sr-app .sr-sofar__status { margin: 0 0 var(--sr-space-3); }
+.sr-app .sr-sofar__error { color: var(--sr-danger-400); }
+.sr-app .sr-sofar__actions, .sr-app .sr-sofar__exports, .sr-app .sr-sofar__minutes {
+  display: flex; flex-wrap: wrap; gap: var(--sr-space-2); align-items: center; margin-bottom: var(--sr-space-3);
+}
+.sr-app .sr-sofar__minutes input { width: 5.5em; }
+.sr-app .sr-sofar__progress, .sr-app .sr-sofar__notice {
+  display: flex; flex-direction: column; gap: var(--sr-space-2); padding: var(--sr-space-3);
+  margin-bottom: var(--sr-space-3); border: 1px solid var(--sr-border); border-radius: var(--sr-radius-md, 8px);
+}
+.sr-app .sr-sofar__notice p { margin: 0; }
+.sr-app .sr-sofar__waiting { display: flex; gap: var(--sr-space-3); align-items: flex-start; }
+.sr-app .sr-sofar__tokens, .sr-app .sr-sofar__time { margin: 0; font-variant-numeric: tabular-nums; color: var(--sr-text-muted); }
+.sr-app .sr-sofar__progress > .sr-btn { align-self: flex-start; }
+.sr-app .sr-sofar__digest h3 { margin: var(--sr-space-4) 0 var(--sr-space-2); font-size: var(--sr-text-lg); }
+.sr-app .sr-sofar__night-item { border-top: 1px solid var(--sr-border); padding: var(--sr-space-2) 0; }
+.sr-app .sr-sofar__night-item > summary { cursor: pointer; min-height: 44px; display: flex; flex-wrap: wrap; align-items: center; gap: var(--sr-space-2); }
+.sr-app .sr-sofar__night-title { font-weight: 600; }
+.sr-app .sr-sofar__st { border-left: 2px solid var(--sr-gold-500); padding-left: var(--sr-space-3); margin: var(--sr-space-3) 0; }
+@media (max-width: 767px) {
+  .sr-app .sr-sofar__exports > .sr-btn, .sr-app .sr-sofar__actions > .sr-btn { flex: 1 1 100%; }
+}

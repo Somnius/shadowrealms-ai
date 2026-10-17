@@ -26,6 +26,7 @@ export { GLYPHS, GLYPH_NAMES, GLYPH_GROUPS, sigilFor } from './glyphs/glyphData'
 /* components */
 export { default as Button, IconButton } from './components/Button';
 export { default as Spinner } from './components/Spinner';
+export { default as ProgressBar } from './components/ProgressBar';
 export { default as Tooltip } from './components/Tooltip';
 export { default as Tabs } from './components/Tabs';
 export { default as DotTrack } from './components/DotTrack';

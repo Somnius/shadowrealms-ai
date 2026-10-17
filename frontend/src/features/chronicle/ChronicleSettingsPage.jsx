@@ -12,6 +12,7 @@ import { editionLabel } from '../../rules/rulesEdition';
 import LocationManager from './LocationManager';
 import CreationRulesPanel from './CreationRulesPanel';
 import SpendApprovalsPanel from './SpendApprovalsPanel';
+import ChronicleSoFarPanel from './ChronicleSoFarPanel';
 import { ChronicleVoicePanel } from '../voice/VoiceSettings';
 import { t } from '../../i18n';
 import { Term } from '../../i18n/glossary';
@@ -441,6 +442,8 @@ export default function ChronicleSettingsPage() {
               initialStMode={(campaign.creation_settings && campaign.creation_settings.st_mode) || 'human'}
             />
           ) : null}
+
+          {staff ? <ChronicleSoFarPanel api={api} campaign={campaign} toast={toast} /> : null}
 
           {staff ? <LocationManager api={api} campaign={campaign} canEditAccess={canManage} toast={toast} onChanged={load} /> : null}
 

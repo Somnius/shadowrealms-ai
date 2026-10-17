@@ -321,3 +321,35 @@
 .sr-empty--ambient { position: relative; overflow: hidden; isolation: isolate; border-radius: var(--sr-radius-lg); }
 .sr-empty--ambient > :not(.sr-empty__fog) { position: relative; z-index: 1; }
 .sr-empty__fog { z-index: 0; }
+
+/* ProgressBar (0.24): a thin track with a filled part; indeterminate sweeps slowly */
+.sr-progress {
+  position: relative;
+  width: 100%;
+  height: 8px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--sr-night-700);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.06);
+}
+.sr-progress__fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 0;
+  border-radius: inherit;
+  background: var(--sr-blood-500);
+  transition: width 0.4s ease;
+}
+.sr-progress--arcane .sr-progress__fill { background: var(--sr-arcane-400); }
+.sr-progress.is-indeterminate .sr-progress__fill {
+  width: 35%;
+  animation: sr-progress-sweep 1.6s ease-in-out infinite;
+}
+@keyframes sr-progress-sweep {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(300%); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .sr-progress__fill { transition: none; }
+  .sr-progress.is-indeterminate .sr-progress__fill { animation: none; width: 100%; opacity: 0.4; }
+}
