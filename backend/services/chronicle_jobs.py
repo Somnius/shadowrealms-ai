@@ -1076,6 +1076,7 @@ class Runner:
         body, kept = cd.lift_latin_brackets(text)
         tr, model = translation.translate(cd.sentence_case(body, names), src, dst, generate=self.generate, names=names,
                                           timeout=TRANSLATE_TIMEOUT_S, before_retry=check_cancel)
+        tr = cd.strip_placeholder_marks(tr)
         tr = cd.put_back_brackets(tr[:1].upper() + tr[1:], kept)
         self.model = model or self.model
         self.progress.token(cd.estimate_tokens(tr))

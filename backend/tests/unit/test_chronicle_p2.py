@@ -454,3 +454,8 @@ def test_rolls_in_brackets_stay_as_written():
     body, kept = cd.lift_latin_brackets("Η Μαρώ δείχνει μια σημείωση (Dexterity + Investigation).")
     assert body == "Η Μαρώ δείχνει μια σημείωση." and kept == ["(Dexterity + Investigation)"]
     assert cd.put_back_brackets("Maro shows a note.", kept) == "Maro shows a note (Dexterity + Investigation)."
+
+
+def test_placeholder_marks_never_reach_the_story():
+    from services import chronicle_digest as cd
+    assert cd.strip_placeholder_marks("Ελένη ⟨Βλαχάκη⟩ appears.") == "Ελένη Βλαχάκη appears."

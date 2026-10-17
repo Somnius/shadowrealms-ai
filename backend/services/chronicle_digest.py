@@ -1168,6 +1168,12 @@ def lift_latin_brackets(text: str):
     return _LATIN_BRACKET.sub("", text or "").strip(), kept
 
 
+def strip_placeholder_marks(text: str) -> str:
+    """The translator sometimes wraps a word it wasn't given in the placeholder style (⟨Βλαχάκη⟩): those marks
+    never belong in a story."""
+    return re.sub(r"[\u27e6\u27e7\u27e8\u27e9]", "", text or "")
+
+
 def put_back_brackets(text: str, kept: Sequence[str]) -> str:
     """The lifted brackets back, before the final full stop."""
     if not kept:
