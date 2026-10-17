@@ -11,7 +11,7 @@ How each phase runs: build in its own git worktree → tests and CI green → on
 | # | Phase | Parts | Version | Status |
 |---|---|---|---|---|
 | 0 | Measure | synthetic chronicles · a chapter timed on Krikri · does LM Studio queue a Storyteller reply behind a chapter call · VRAM headroom with Whisper and TTS · the live chronicle read by eye with Lef | — | done 17 Oct (Lef read the results and agreed; Krikri at 32k) |
-| 1 | Summary, minutes, archive | chronicler roles · busy marker · chapters (gap, session-mark ids, cleanup) · era digests · jobs · routes · panel · Markdown export · minutes for the whole chronicle or the last N nights · archive on delete (stored minutes + raw transcript) · `campaigns.language` column | 0.24 | built on branch `chronicle/p1` 17 Oct; two reviews fixed and Lef's answers applied; merge and release pending |
+| 1 | Summary, minutes, archive | chronicler roles · busy marker · chapters (gap, session-mark ids, cleanup) · era digests · jobs · routes · panel · Markdown export · minutes for the whole chronicle or the last N nights · archive on delete (stored minutes + raw transcript) · `campaigns.language` column | 0.24 | done: released 0.24.0 (17 Oct) |
 | 2 | Sheet-look PDF, edits, languages | PDF in the sheet's look · Storyteller's edit copy · translation on request · chronicle language asked at creation | 0.25 | not started |
 | 3 | Horror look, date ranges, session marks | horror PDF (committed paper image + reportlab, A4 and Letter, one test print) · minutes for a date range · "session ended here" from the message menu, shown to players | 0.26 | not started |
 | 4 | Previously on… | recap card after 12 h away and a button · jump to the message · read-out | 0.27 | not started |
@@ -202,6 +202,11 @@ Build rules that come out of the reviews. These are not product choices; Lef's c
 - [ ] 5.4 Release 0.28. Status: not started.
 
 ## Log
+
+- 2026-10-17 — **0.24.0 released.**
+  - Two reviews fixed, then a polish round after the first real run: Greek dice lines, no repeated citations, Greek titles.
+  - A last fix: each night only gets the names its lines use (prompt version 2), after the model placed a night in a room where it never happened.
+  - Tested on the live chronicle: the estimate matched the run, the progress was live, Cancel stopped the GPU within 2 s, and the player view had no leaks.
 
 - 2026-10-17 — Polish after the first real run (branch `chronicle/p1-polish`): rolls as a sentence in the chronicle's language, no message numbers inside texts, room-name titles asked again, NPC and room spellings in the prompt.
 - 2026-10-17 — Two reviews of phase 1 fixed and Lef's answers applied (helpers read and export only; the Storyteller downloads archives for 30 days; wrong-language nights translated; closed rooms kept; a session mark cuts every room).
