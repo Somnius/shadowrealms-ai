@@ -192,6 +192,11 @@ export function serverEngine({ api, getAudio, getSettings, fallback, onFallback 
       };
       const viaPhone = (err, from = 0) => {
         if (cancelled || finished) return;
+        // a recap that changed while it was read (0.27): stop quietly, no phone voice, no notice
+        if (err && err.message === 'recap_changed') {
+          finish();
+          return;
+        }
         if (onFallback) onFallback(err);
         // the phone goes on from the same chunks the server used (original or translation), after
         // the last chunk heard, so no sentence is skipped or said twice

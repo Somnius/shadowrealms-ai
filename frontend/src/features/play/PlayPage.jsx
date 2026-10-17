@@ -272,6 +272,7 @@ export default function PlayPage() {
       const ok = await jumpLoadingOlder(id, {
         loadOlder: () => roomNow.current.loadOlder(),
         hasMore: () => !!roomNow.current.hasMore,
+        isLoading: () => !!roomNow.current.loadingOlder,
         jump: (mid) => jumpToMessage(mid, { reduced: reducedMotion }),
       });
       if (!ok) toast({ tone: 'info', title: t('play:recap.notFound', 'That night’s first message could not be found.') });

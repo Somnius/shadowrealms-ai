@@ -104,12 +104,67 @@ test('jump: loads older history until the night’s first message is there', asy
   });
   await expect(jumpLoadingOlder(21, { loadOlder, hasMore: () => true, jump, tick: async () => {} })).resolves.toBe(true);
   expect(loadOlder).toHaveBeenCalledTimes(2);
-  const never = jest.fn(async () => 0);
-  await expect(jumpLoadingOlder(21, { loadOlder: never, hasMore: () => true, jump: () => false, tick: async () => {} })).resolves.toBe(false);
-  expect(never).toHaveBeenCalledTimes(1);
+  // a load already in flight returns nothing: wait for it instead of giving up
+  let busy = 3;
+  let shown = false;
+  const inflight = jest.fn(async () => 0);
+  await expect(
+    jumpLoadingOlder(21, {
+      loadOlder: inflight,
+      hasMore: () => true,
+      isLoading: () => (busy > 0 ? ((busy -= 1), (shown = busy === 0), true) : false),
+      jump: () => shown,
+      tick: async () => {},
+    }),
+  ).resolves.toBe(true);
+  expect(inflight).not.toHaveBeenCalled();
+  // no more history once the load settles: not found
+  let more = true;
+  const last = jest.fn(async () => {
+    more = false;
+    return 0;
+  });
+  await expect(jumpLoadingOlder(21, { loadOlder: last, hasMore: () => more, jump: () => false, tick: async () => {} })).resolves.toBe(false);
+  expect(last).toHaveBeenCalledTimes(1);
 });
 
-const stateOf = (over = {}) => ({ recap: RECAP, open: true, close: jest.fn(), startJob: jest.fn(), ...over });
+test('a new api identity (token refresh) doesn’t post the visit again', async () => {
+  const api = apiFor({ away: null });
+  const { rerender } = renderHook(({ a }) => usePreviouslyOn({ api: a, campaignId: 3, locationId: 7, userId: 1, enabled: true }), { initialProps: { a: api } });
+  await act(async () => {
+    await new Promise((r) => setTimeout(r, 0));
+  });
+  const api2 = apiFor({ away: null });
+  rerender({ a: api2 });
+  await act(async () => {
+    await new Promise((r) => setTimeout(r, 0));
+  });
+  expect(api.mock.calls.filter(([p]) => p.endsWith('/visit'))).toHaveLength(1);
+  expect(api2).not.toHaveBeenCalled();
+});
+
+test('coming back to a hidden tab sends a visit and opens the card for a new absence', async () => {
+  let away = null;
+  const api = jest.fn(async (path) => {
+    if (path.endsWith('/recap/visit')) return { ok: true, data: { away_since: away } };
+    return { ok: true, data: RECAP };
+  });
+  const { result } = renderHook(() => usePreviouslyOn({ api, campaignId: 3, locationId: 7, userId: 1, enabled: true }));
+  await act(async () => {
+    await new Promise((r) => setTimeout(r, 0));
+  });
+  expect(result.current.open).toBe(false);
+  away = '2026-10-17T02:00:00';
+  Object.defineProperty(document, 'visibilityState', { configurable: true, get: () => 'visible' });
+  await act(async () => {
+    document.dispatchEvent(new Event('visibilitychange'));
+    await new Promise((r) => setTimeout(r, 0));
+  });
+  await waitFor(() => expect(result.current.open).toBe(true));
+  expect(api.mock.calls.filter(([p]) => p.endsWith('/visit'))).toHaveLength(2);
+});
+
+const stateOf = (over = {}) => ({ recap: RECAP, open: true, close: jest.fn(), hide: jest.fn(), startJob: jest.fn(), ...over });
 
 test('the card: nights newest last, the story so far, 44 px controls, jump and close', () => {
   const state = stateOf();
@@ -132,7 +187,8 @@ test('phones get a bottom sheet; jumping closes it', () => {
   render(<PreviouslyOn state={state} listen={null} isMobile onJump={onJump} />, { wrapper: wrap });
   expect(document.querySelector('.sr-drawer--bottom')).not.toBeNull();
   fireEvent.click(screen.getAllByRole('button', { name: 'Jump to the start' })[0]);
-  expect(state.close).toHaveBeenCalled();
+  expect(state.hide).toHaveBeenCalled();
+  expect(state.close).not.toHaveBeenCalled(); // not closed for this absence: the button brings it back
   expect(onJump).toHaveBeenCalledWith(21);
 });
 
@@ -173,4 +229,19 @@ test('server voices: a recap item starts its own job, never a message job', asyn
   expect(startJob).toHaveBeenCalledWith(0);
   expect(api.mock.calls.every(([p]) => !p.startsWith('/voice/tts/jobs'))).toBe(true);
   expect(el.played).toHaveLength(1);
+});
+
+test('a recap that changed mid-read stops quietly', async () => {
+  const el = { played: [], canPlayType: () => 'probably', play() { this.played.push(this.src); return Promise.resolve(); }, pause: jest.fn() };
+  const api = jest.fn(async () => ({ ok: false, status: 409, data: { error: 'recap_changed' } }));
+  const phone = { speak: jest.fn(), cancel: jest.fn() };
+  const onFallback = jest.fn();
+  const server = serverEngine({ api, getAudio: () => el, getSettings: () => ({}), fallback: phone, onFallback });
+  const done = jest.fn();
+  server.speak({ id: 'recap:7', parts: [{ text: 'x', lang: 'en' }], startJob: () => api('/x') }, done);
+  await new Promise((r) => setTimeout(r, 0));
+  await new Promise((r) => setTimeout(r, 0));
+  expect(done).toHaveBeenCalled();
+  expect(phone.speak).not.toHaveBeenCalled();
+  expect(onFallback).not.toHaveBeenCalled();
 });

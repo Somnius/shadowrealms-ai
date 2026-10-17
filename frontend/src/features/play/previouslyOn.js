@@ -51,16 +51,24 @@ export function recapParts(recap) {
 
 /**
  * Scroll to a message, loading older history until it is there (the reply-quote jump, with paging).
- * loadOlder() -> rows added; hasMore() -> more history on the server. Resolves true when shown.
+ * loadOlder() loads a page; hasMore() -> more history on the server; isLoading() -> a page is on its
+ * way (then wait and look again). It gives up only when there is no more history once loads settle.
  */
-export async function jumpLoadingOlder(id, { loadOlder, hasMore, jump = jumpToMessage, tick = () => new Promise((r) => setTimeout(r, 60)), maxPages = 40 }) {
+export async function jumpLoadingOlder(
+  id,
+  { loadOlder, hasMore, isLoading = () => false, jump = jumpToMessage, tick = () => new Promise((r) => setTimeout(r, 60)), maxTries = 80 },
+) {
   if (id == null) return false;
   if (jump(id)) return true;
-  for (let i = 0; i < maxPages && hasMore(); i += 1) {
-    const added = await loadOlder();
-    await tick();
+  for (let i = 0; i < maxTries; i += 1) {
+    if (isLoading()) {
+      await tick();
+    } else {
+      if (!hasMore()) break;
+      await loadOlder();
+      await tick();
+    }
     if (jump(id)) return true;
-    if (!added) break;
   }
   return jump(id);
 }
@@ -75,45 +83,62 @@ export function usePreviouslyOn({ api, campaignId, locationId, userId, enabled }
   const [recap, setRecap] = useState(null);
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
-  const roomRef = useRef(null);
+  // a token refresh gives api a new identity: kept in a ref so the room isn't "opened" again
+  const apiRef = useRef(api);
+  apiRef.current = api;
   const base = `/campaigns/${campaignId}/chronicle/recap`;
 
   const load = useCallback(
     async (recent) => {
-      const r = await api(`${base}?location_id=${locationId}&lang=${getLanguage()}${recent ? '&recent=1' : ''}`);
+      const r = await apiRef.current(`${base}?location_id=${locationId}&lang=${getLanguage()}${recent ? '&recent=1' : ''}`);
       return r.ok && r.data ? r.data : null;
     },
-    [api, base, locationId],
+    [base, locationId],
   );
 
   useEffect(() => {
     setRecap(null);
     setOpen(false);
     if (!enabled || !campaignId || !locationId) return undefined;
-    const key = `${campaignId}:${locationId}`;
-    roomRef.current = key;
     let live = true;
-    const visit = () => api(`${base}/visit`, { method: 'POST', body: { location_id: Number(locationId) } });
-    (async () => {
-      const v = await visit();
-      if (!live || !v.ok || !v.data || !v.data.away_since) return;
-      if (readClosed(userId, campaignId, locationId) === String(v.data.away_since)) return;
+    let lastAway = null;
+    const hidden = () => typeof document !== 'undefined' && document.visibilityState === 'hidden';
+    // Each visit: when the server says a (new) absence of 12 hours or more began and the card wasn't
+    // closed for it, load the recap and open the card. Also after a laptop wakes in a visible tab.
+    const visit = async () => {
+      const v = await apiRef.current(`${base}/visit`, { method: 'POST', body: { location_id: Number(locationId) } });
+      const away = v && v.ok && v.data ? v.data.away_since : null;
+      if (!live || !away || away === lastAway) return;
+      lastAway = away;
+      if (readClosed(userId, campaignId, locationId) === String(away)) return;
       const r = await load(false);
-      if (!live || roomRef.current !== key || !hasRecap(r)) return;
+      if (!live || !hasRecap(r)) return;
       setRecap(r);
       setOpen(true);
-    })();
-    const timer = setInterval(visit, VISIT_EVERY_MS);
+    };
+    visit();
+    // a hidden tab sends no heartbeat, so the player can be away while it sits in the background
+    const timer = setInterval(() => {
+      if (!hidden()) visit();
+    }, VISIT_EVERY_MS);
+    const onVis = () => {
+      if (!hidden()) visit();
+    };
+    if (typeof document !== 'undefined') document.addEventListener('visibilitychange', onVis);
     return () => {
       live = false;
       clearInterval(timer);
+      if (typeof document !== 'undefined') document.removeEventListener('visibilitychange', onVis);
     };
-  }, [api, base, campaignId, locationId, userId, enabled, load]);
+  }, [campaignId, locationId, userId, enabled]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const close = useCallback(() => {
     setOpen(false);
     if (recap && recap.since) writeClosed(userId, campaignId, locationId, recap.since);
   }, [recap, userId, campaignId, locationId]);
+
+  /** Hide without remembering it as closed (a jump on phones): the header button brings it back. */
+  const hide = useCallback(() => setOpen(false), []);
 
   /** The header button: true when there was something to show. */
   const showNow = useCallback(async () => {
@@ -132,12 +157,12 @@ export function usePreviouslyOn({ api, campaignId, locationId, userId, enabled }
   /** startJob(chunk) for server voices: the server builds the text from the same recap. */
   const startJob = useCallback(
     (chunk) =>
-      api(`${base}/tts?lang=${getLanguage()}`, {
+      apiRef.current(`${base}/tts?lang=${getLanguage()}`, {
         method: 'POST',
-        body: { location_id: Number(locationId), chunk, recent: !!(recap && recap.recent) },
+        body: { location_id: Number(locationId), chunk, recent: !!(recap && recap.recent), recap_hash: recap ? recap.recap_hash : undefined },
       }),
-    [api, base, locationId, recap],
+    [base, locationId, recap],
   );
 
-  return { recap, open, loading, close, showNow, startJob };
+  return { recap, open, loading, close, hide, showNow, startJob };
 }

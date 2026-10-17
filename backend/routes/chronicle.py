@@ -12,6 +12,8 @@ Archives of deleted chronicles: /api/chronicle-archives (site admins; the deleti
 
 from __future__ import annotations
 
+import hashlib
+import json
 import logging
 import re
 from datetime import date, datetime, timedelta
@@ -591,9 +593,12 @@ def record_visit(cur, uid, lid, now=None):
     now = now or datetime.now()
     row = _visit_row(cur, uid, lid)
     if not row:
-        cur.execute("INSERT INTO chronicle_room_visits (user_id, location_id, last_seen_at) VALUES (%s, %s, %s)",
-                    (uid, lid, now))
-        return None
+        # two tabs on a first visit: the second insert does nothing, and both read the row again
+        cur.execute("INSERT INTO chronicle_room_visits (user_id, location_id, last_seen_at) VALUES (%s, %s, %s) "
+                    "ON CONFLICT (user_id, location_id) DO NOTHING", (uid, lid, now))
+        row = _visit_row(cur, uid, lid)
+        if not row or cj._dt(row.get("last_seen_at")) == now:
+            return cj._dt((row or {}).get("away_since"))
     last = cj._dt(row.get("last_seen_at"))
     away = cj._dt(row.get("away_since"))
     if last and now - last >= AWAY:
@@ -677,16 +682,16 @@ def recap_of(cur, uid, campaign_id, lid, recent=False):
     camp = cj.campaign_row(cur, campaign_id)
     own = cj.chronicle_lang(cur, camp)
     lang = _ui_lang(cur, uid) or own
-    if lang != own and not cj.stored_digest(cur, campaign_id, lang, translated=True):
-        lang = own
     # the player view for everyone: what players can read now, whoever asks
     readable = _readable_for_players(cur, campaign_id)
     stored = cj.stored_chapters(cur, campaign_id, own)
     digest = cj.stored_digest(cur, campaign_id, own)
-    if lang != own:
-        tr = cj.stored_digest(cur, campaign_id, lang, translated=True)
+    tr = cj.stored_digest(cur, campaign_id, lang, translated=True) if lang != own and digest else None
+    if tr and tr.get("_hash") == cd.translation_hash(digest, stored):
         stored = cd.overlay_translation(stored, tr)
         digest = {k: v for k, v in tr.items() if k != "chapters"}
+    else:
+        lang = own  # no translation, or one behind the story: the chronicle's own language
     if digest and any(int(r) not in readable for r in digest.get("rooms") or []):
         digest = None  # a room closed since the digest was written keeps it back
     row = _visit_row(cur, uid, lid) or {}
@@ -705,7 +710,14 @@ def recap_of(cur, uid, campaign_id, lid, recent=False):
                               "started_at": _iso(c.get("started_at")), "ended_at": _iso(c.get("ended_at")),
                               "first_message_id": _first_visible(cur, campaign_id, lid, c)})
     out["so_far"] = _so_far_short(cd.player_digest(digest)) or None
+    out["recap_hash"] = hashlib.sha1(json.dumps(recap_chunks(out), ensure_ascii=False).encode()).hexdigest()[:16]
     return out
+
+
+def recap_chunks(recap):
+    from services.voice_tts import split_chunks
+
+    return [c for t in recap_spoken(recap) for c in split_chunks(t)]
 
 
 RECAP_HEADING = {"en": "Previously on…", "el": "Προηγουμένως…"}
@@ -743,10 +755,13 @@ def get_recap(campaign_id):
 @chronicle_bp.route("/campaigns/<int:campaign_id>/chronicle/recap/tts", methods=["POST"])
 @jwt_required()
 def recap_tts(campaign_id):
-    """{location_id, chunk, recent, lang}: "Read it" with server voices. The text is built here from
-    the same recap (never sent by the browser), in the narrator's voice and the user's settings."""
+    """?lang= (query) and {location_id, chunk, recent, recap_hash}: "Read it" with server voices. The
+    text is built here from the same recap (never sent by the browser), in the narrator's voice and the
+    user's settings. The audio is remembered with the chronicle and room, so only members who can read
+    that room can play it, and it goes with the chronicle. 409 recap_changed when the recap is no longer
+    the one being read (its recap_hash from GET)."""
     from routes import voice as rv
-    from services.voice_tts import _body, split_chunks
+    from services.voice_tts import _body
 
     uid = _uid()
     body = request.get_json(silent=True) or {}
@@ -760,21 +775,27 @@ def recap_tts(campaign_id):
         if err:
             return err
         recap = recap_of(cur, uid, campaign_id, lid, bool(body.get("recent")))
-        lang = recap["lang"]
-        texts = [c for t in recap_spoken(recap) for c in split_chunks(t)]
+        if body.get("recap_hash") and body["recap_hash"] != recap["recap_hash"]:
+            return jsonify({"error": "recap_changed"}), 409
+        texts = recap_chunks(recap)
         if not texts:
             return jsonify({"error": "not_spoken"}), 400
         if chunk >= len(texts):
             return jsonify({"error": "no_such_chunk"}), 400
+        rv.ensure_voice_audio_table(cur)
         cur.execute("SELECT voice_settings FROM campaigns WHERE id = %s", (campaign_id,))
         camp = (cur.fetchone() or {}).get("voice_settings")
         user_settings = rv._user_settings(cur, uid)
-        tts = _body("storyteller", texts[chunk], lang, None, user_settings, camp, None)
-        out, status = rv._speech_tts(cur, rv.cloud_voices.apply(tts, rv._cloud_config(), camp), None)
+        tts = _body("storyteller", texts[chunk], recap["lang"], None, user_settings, camp, None)
+        out, status = rv._speech_tts(cur, rv.cloud_voices.apply(tts, rv._cloud_config(), camp), None,
+                                     campaign_id, lid)
         conn.commit()
         if status == 200:
             out.update({"chunk": chunk, "chunks": len(texts), "text": texts[chunk]})
         return jsonify(out), status
+    except Exception as e:  # noqa: BLE001
+        logger.error("recap tts error: %s", type(e).__name__)
+        return jsonify({"error": "Failed to start speech"}), 500
     finally:
         conn.close()
 

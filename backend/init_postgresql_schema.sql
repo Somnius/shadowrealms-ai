@@ -657,14 +657,16 @@ CREATE OR REPLACE TRIGGER trg_messages_activity
 
 
 -- -----------------------------------------------------------------------------
--- voice_audio: spoken lines in the speech service's cache, per message (NULL = a voice preview)
+-- voice_audio: spoken lines in the speech service's cache, per message (NULL = a voice preview, or a "Previously on…" recap when campaign_id is set)
 -- -----------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS voice_audio (
     id          SERIAL PRIMARY KEY,
     message_id  INTEGER,
     audio_key   TEXT NOT NULL,
     voice_id    TEXT,
-    created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    campaign_id INTEGER,
+    location_id INTEGER
 );
 
 CREATE INDEX IF NOT EXISTS idx_voice_audio_message ON voice_audio(message_id);

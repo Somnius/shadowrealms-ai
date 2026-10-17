@@ -48,12 +48,12 @@ function Body({ recap, onJump, onRead, canRead }) {
 }
 
 export default function PreviouslyOn({ state, listen, isMobile, onJump }) {
-  const { recap, open, close, startJob } = state;
+  const { recap, open, close, hide, startJob } = state;
   if (!open || !recap) return null;
   const canRead = !!(listen && listen.available && listen.readRecap);
   const onRead = () => listen.readRecap({ key: recap.location_id, parts: recapParts(recap), startJob });
   const jump = (id) => {
-    if (isMobile) close();
+    if (isMobile) (hide || close)(); // hidden, not closed: the header button brings it back
     onJump(id);
   };
   const title = t('play:recap.title', 'Previously on…');
