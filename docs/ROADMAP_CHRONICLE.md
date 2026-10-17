@@ -13,7 +13,7 @@ How each phase runs: build in its own git worktree → tests and CI green → on
 | 0 | Measure | synthetic chronicles · a chapter timed on Krikri · does LM Studio queue a Storyteller reply behind a chapter call · VRAM headroom with Whisper and TTS · the live chronicle read by eye with Lef | — | done 17 Oct (Lef read the results and agreed; Krikri at 32k) |
 | 1 | Summary, minutes, archive | chronicler roles · busy marker · chapters (gap, session-mark ids, cleanup) · era digests · jobs · routes · panel · Markdown export · minutes for the whole chronicle or the last N nights · archive on delete (stored minutes + raw transcript) · `campaigns.language` column | 0.24 | done: released 0.24.0 (17 Oct) |
 | 2 | Sheet-look PDF, edits, languages | PDF in the sheet's look · Storyteller's edit copy · translation on request · chronicle language asked at creation | 0.25 | done: released 0.25.0 (17 Oct) |
-| 3 | Horror look, date ranges, session marks | horror PDF (committed paper image + reportlab, A4 and Letter, one test print) · minutes for a date range · "session ended here" from the message menu, shown to players | 0.26 | built on `chronicle/p3` (17 Oct); review and Lef's test print next |
+| 3 | Horror look, date ranges, session marks | horror PDF (committed paper image + reportlab, A4 and Letter, one test print) · minutes for a date range · "session ended here" from the message menu, shown to players | 0.26 | done: released 0.26.0 (17 Oct) |
 | 4 | Previously on… | recap card after 12 h away and a button · jump to the message · read-out | 0.27 | not started |
 | 5 | Ops | nightly run (quiet window) · per-chronicle settings · caps · admin health · admin archive page | 0.28 | not started |
 
@@ -202,6 +202,12 @@ Build rules that come out of the reviews. These are not product choices; Lef's c
 - [ ] 5.4 Release 0.28. Status: not started.
 
 ## Log
+
+- 2026-10-17 — **0.26.0 released.**
+  - Two reviews fixed, including a session mark revealing a hidden roll's message number to players.
+  - Lef's changes: a lighter horror paper, the short footer link, and Colour / Print exports.
+  - Lef printed the samples and approved them.
+  - Tested on the live chronicle: the export looks, date ranges in Athens time, and session marks splitting and rejoining a night.
 
 - 2026-10-17 — Colour or print on the chronicle PDFs (Lef): `color=colour|print` for both looks, default by look (horror colour, sheet print, the sheet unchanged byte for byte); horror in print on white with the art in black and greys; the sheet in colour with red headings, rules and sigil; a third choice in the panel. Samples `horror-el-a4-story-print.pdf` and `sheet-el-a4-story-colour.pdf`.
 - 2026-10-17 — Two reviews of phase 3 fixed and Lef's sample notes applied: a much lighter paper, the short footer link (`lefteros.com/apps/shadowrealms-ai`) in every export, hidden-roll marks kept from players, ranged minutes in the user's timezone with a single count of changed nights, cheaper ranged exports, the paper JPEG passed through unchanged, 44 px message toolbar on phones, open-ended dates, 404 for a missing mark, untranslated nights reported.
