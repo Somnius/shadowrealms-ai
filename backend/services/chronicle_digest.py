@@ -94,6 +94,7 @@ WORDS: Dict[str, Dict[str, str]] = {
         "edited": "edited by the Storyteller",
         "transcript": "Transcript",
         "not_in_lang": "not fully in English",
+        "translated": "translated from Greek",
     },
     "el": {
         "so_far_title": "Το χρονικό ως τώρα",
@@ -141,6 +142,7 @@ WORDS: Dict[str, Dict[str, str]] = {
         "edited": "με αλλαγές του Storyteller",
         "transcript": "Απομαγνητοφώνηση",
         "not_in_lang": "όχι πλήρως στα ελληνικά",
+        "translated": "μετάφραση από τα αγγλικά",
     },
 }
 
@@ -169,6 +171,16 @@ def greek_share(text: str) -> float:
     if not letters:
         return 0.0
     return sum(1 for c in letters if _is_greek(c)) / len(letters)
+
+
+def validate_chronicle_language(value: Any) -> Tuple[Optional[str], Optional[str]]:
+    """(language, error) for campaigns.language: 'el' or 'en'; missing or empty means not set (the
+    chronicle then follows the language most of its messages are in)."""
+    if value is None or value == "":
+        return None, None
+    if isinstance(value, str) and value.strip().lower() in LANGS:
+        return value.strip().lower(), None
+    return None, "language must be el or en"
 
 
 def chronicle_language(campaign_language: Optional[str], rows: Iterable[Dict[str, Any]]) -> str:
@@ -1068,9 +1080,102 @@ def _cite(ids: Sequence[int], lang: str, existing: Optional[Set[int]]) -> str:
     return f" _({w['messages']} {', '.join(shown)})_"
 
 
-def _footer(lang: str) -> List[str]:
+def footer_text(lang: str, edited: bool = False, translated: bool = False) -> str:
+    """'Written by ShadowRealms AI', plus 'edited by the Storyteller' / 'translated from …'."""
     w = words(lang)
-    return ["", "---", f"_{w['written_by']}_ · <{FOOTER_URL['el' if lang == 'el' else 'en']}>", ""]
+    parts = [w["written_by"]] + ([w["edited"]] if edited else []) + ([w["translated"]] if translated else [])
+    return " · ".join(parts)
+
+
+def footer_url(lang: str) -> str:
+    return FOOTER_URL["el" if lang == "el" else "en"]
+
+
+def _footer(lang: str, edited: bool = False, translated: bool = False) -> List[str]:
+    return ["", "---", f"_{footer_text(lang, edited, translated)}_ · <{footer_url(lang)}>", ""]
+
+
+_FOOTER_TAIL = re.compile(r"\n*-{3,}\s*\n_[^\n]*_ · <https://lefteros\.com/[^>\n]*>\s*$")
+
+
+def strip_footer(text: str) -> str:
+    """Markdown without its footer (the edit box starts from this; exports add the footer again)."""
+    return _FOOTER_TAIL.sub("", str(text or "")).rstrip() + "\n"
+
+
+def edited_markdown(text: str, lang: str, translated: bool = False) -> str:
+    """The Storyteller's edit copy as exported: their text, then the footer that says it was edited."""
+    return strip_footer(text).rstrip() + "\n" + "\n".join(_footer(lang, edited=True, translated=translated))
+
+
+# ---------------------------------------------------------------------------------------------
+# Translation of a finished digest (the texts out, the translated texts back in)
+
+_TR_CHAPTER_LISTS = ("events", "threads_opened", "threads_closed", "st_notes")
+
+
+def translation_texts(digest: Optional[Dict[str, Any]], chapters: Sequence[Dict[str, Any]]) -> List[str]:
+    """Every text of the digest and the story nights, in a fixed order (see apply_translation)."""
+    out: List[str] = []
+    d = digest or {}
+    out.append(d.get("tldr") or "")
+    out += list(d.get("so_far") or [])
+    out += [t.get("text", "") for t in d.get("threads_open") or []]
+    out += list(d.get("st_so_far") or [])
+    for ch in chapters:
+        if ch.get("kind") != "story":
+            continue
+        c = ch.get("chapter") or {}
+        out.append(c.get("title") or "")
+        out += list(c.get("summary") or [])
+        for k in _TR_CHAPTER_LISTS:
+            out += [e.get("text", "") for e in c.get(k) or []]
+        for k in ("characters", "places"):
+            out += [e.get("note", "") for e in c.get(k) or []]
+    return out
+
+
+def apply_translation(digest: Optional[Dict[str, Any]], chapters: Sequence[Dict[str, Any]],
+                      texts: Sequence[str]) -> Dict[str, Any]:
+    """The translated digest row: the digest's fields plus {'chapters': {key: translated chapter fields}}."""
+    it = iter(texts)
+    d = {k: v for k, v in (digest or {}).items() if not k.startswith("_")}
+    d["tldr"] = next(it)
+    d["so_far"] = [next(it) for _ in (digest or {}).get("so_far") or []]
+    d["threads_open"] = [{**t, "text": next(it)} for t in (digest or {}).get("threads_open") or []]
+    d["st_so_far"] = [next(it) for _ in (digest or {}).get("st_so_far") or []]
+    chs: Dict[str, Any] = {}
+    for ch in chapters:
+        if ch.get("kind") != "story":
+            continue
+        c = ch.get("chapter") or {}
+        t: Dict[str, Any] = {"title": next(it), "summary": [next(it) for _ in c.get("summary") or []]}
+        for k in _TR_CHAPTER_LISTS:
+            t[k] = [{**e, "text": next(it)} for e in c.get(k) or []]
+        for k in ("characters", "places"):
+            t[k] = [{**e, "note": next(it)} for e in c.get(k) or []]
+        chs[ch["key"]] = t
+    d["chapters"] = chs
+    return d
+
+
+def translation_hash(digest: Optional[Dict[str, Any]], chapters: Sequence[Dict[str, Any]]) -> str:
+    """What a translation was made from: the digest's hash and each story night's hash."""
+    src = {"d": (digest or {}).get("_hash"),
+           "ch": [(c.get("key"), c.get("source_hash")) for c in chapters if c.get("kind") == "story"]}
+    return hashlib.sha1(json.dumps(src, sort_keys=True).encode()).hexdigest()
+
+
+def overlay_translation(chapters: Sequence[Dict[str, Any]], translated: Dict[str, Any]) -> List[Dict[str, Any]]:
+    """Stored chapters with their texts replaced by the translation's (nights it lacks stay as written)."""
+    tr = translated.get("chapters") or {}
+    out = []
+    for ch in chapters:
+        t = tr.get(ch.get("key"))
+        if t and ch.get("kind") == "story":
+            ch = {**ch, "chapter": {**(ch.get("chapter") or {}), **t}}
+        out.append(ch)
+    return out
 
 
 def _night_heading(seq: int, ch: Dict[str, Any], lang: str, level: str = "###") -> str:
@@ -1117,7 +1222,7 @@ def visible_chapters(chapters: Sequence[Dict[str, Any]], view: str,
 
 def story_markdown(facts: Dict[str, Any], digest: Optional[Dict[str, Any]], chapters: Sequence[Dict[str, Any]],
                    lang: str, view: str = "st", with_table_talk: bool = False,
-                   existing_ids: Optional[Set[int]] = None) -> str:
+                   existing_ids: Optional[Set[int]] = None, translated: bool = False) -> str:
     """The story so far: the digest, cast, places and every written night in short."""
     w = words(lang)
     st = view == "st"
@@ -1172,7 +1277,7 @@ def story_markdown(facts: Dict[str, Any], digest: Optional[Dict[str, Any]], chap
             for s, ch in notes:
                 out += [f"### {w['st_notes']} — {_label(s, lang)}", ""]
                 out += _items(ch["chapter"]["st_notes"], lang, True, existing_ids) + [""]
-    out += _footer(lang)
+    out += _footer(lang, translated=translated)
     return "\n".join(out)
 
 
@@ -1223,7 +1328,7 @@ def _cast(facts: Dict[str, Any], lang: str, st: bool) -> List[str]:
 
 def minutes_markdown(facts: Dict[str, Any], chapters: Sequence[Dict[str, Any]], lang: str, view: str = "st",
                      last_n: Optional[int] = None, existing_ids: Optional[Set[int]] = None,
-                     with_table_talk: bool = False) -> str:
+                     with_table_talk: bool = False, translated: bool = False) -> str:
     """The full record of the written nights (all, or the last N), in a minutes layout. No model calls."""
     w = words(lang)
     st = view == "st"
@@ -1260,7 +1365,7 @@ def minutes_markdown(facts: Dict[str, Any], chapters: Sequence[Dict[str, Any]], 
         for key, items in sections:
             if items:
                 out += [f"### {w[key]}", ""] + items + [""]
-    out += _footer(lang)
+    out += _footer(lang, translated=translated)
     return "\n".join(out)
 
 

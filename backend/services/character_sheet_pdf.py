@@ -34,154 +34,41 @@ import json
 import math
 import os
 import re
-import threading
 from typing import Any, Dict, List, Optional, Sequence, Tuple
 from xml.sax.saxutils import escape as _xml_escape
 
-from reportlab.lib.pagesizes import A4, LETTER
+from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import ParagraphStyle
 from reportlab.lib.utils import simpleSplit
 from reportlab.pdfbase import pdfdoc, pdfmetrics
 from reportlab.pdfbase.acroform import PDFFromString
-from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.pdfgen import canvas as rl_canvas
 from reportlab.platypus import Paragraph
 
 from services.character_sheet_v5 import ghoul_feeding
 from services.classic_ghoul import BLOOD_BOND_DRINKS, ghoul_pool, kind_label
 
-FONT_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "assets", "fonts")
+from services.pdf_look import (  # noqa: E402,F401 - the sheet's look, shared with the chronicle PDF
+    CINZEL,
+    CINZEL_BOLD,
+    FONT_DIR,
+    HAIR,
+    PAPER,
+    RULE,
+    SERIF,
+    SERIF_ITALIC,
+    _arc_points,
+    _draw_svg_path,
+    _ellipsize,
+    draw_diamond,
+    draw_footer,
+    draw_frame,
+    draw_section,
+    draw_sigil,
+    ensure_fonts as _ensure_fonts,
+)
 
-CINZEL = "SR-Cinzel"
-CINZEL_BOLD = "SR-Cinzel-Bold"
-SERIF = "SR-Garamond"
-SERIF_ITALIC = "SR-Garamond-Italic"
-_FONT_FILES = {
-    CINZEL: "Cinzel-Regular.ttf",
-    CINZEL_BOLD: "Cinzel-Bold.ttf",
-    SERIF: "EBGaramond-Regular.ttf",
-    SERIF_ITALIC: "EBGaramond-Italic.ttf",
-}
 FORM_FONT_KEY = "Helv"  # resource name in the AcroForm /DR
-
-PAPER = {"a4": A4, "letter": LETTER}
-
-_fonts_lock = threading.Lock()
-_fonts_ready = False
-
-
-def _ensure_fonts() -> None:
-    global _fonts_ready
-    if _fonts_ready:
-        return
-    with _fonts_lock:
-        if _fonts_ready:
-            return
-        for name, fn in _FONT_FILES.items():
-            pdfmetrics.registerFont(TTFont(name, os.path.join(FONT_DIR, fn)))
-        _fonts_ready = True
-
-
-# ---------------------------------------------------------------------------------------------
-# Sigil (assets/logos/shadowrealms-sigil.svg, our own art) as line art.
-
-_SIGIL_PATHS = [
-    # (path data, stroke width in sigil units, filled)
-    ("M0,-47L10.741,-40.086L23.5,-40.703L29.345,-29.345L40.703,-23.5L40.086,-10.741L47,0L40.086,10.741"
-     "L40.703,23.5L29.345,29.345L23.5,40.703L10.741,40.086L0,47L-10.741,40.086L-23.5,40.703"
-     "L-29.345,29.345L-40.703,23.5L-40.086,10.741L-47,0L-40.086,-10.741L-40.703,-23.5"
-     "L-29.345,-29.345L-23.5,-40.703L-10.741,-40.086Z", 1.6, False),
-    ("CIRCLE 36", 0.8, False),
-    ("M11.48 -27.72L12.82 -30.95M27.72 -11.48L30.95 -12.82M27.72 11.48L30.95 12.82M11.48 27.72"
-     "L12.82 30.95M-11.48 27.72L-12.82 30.95M-27.72 11.48L-30.95 12.82M-27.72 -11.48L-30.95 -12.82"
-     "M-11.48 -27.72L-12.82 -30.95", 1.4, False),
-    ("M-24 -14 L24 -14 L0 28 Z", 1.8, False),
-    ("M6 -33 A9 9 0 1 0 6 -17 A7.2 7.2 0 0 1 6 -33 Z", 1.2, False),
-    ("M0 -12 C3.6 -7.4 6.2 -3.6 6.2 0.6 A6.2 6.2 0 0 1 -6.2 0.6 C-6.2 -3.6 -3.6 -7.4 0 -12 Z", 0.8, True),
-]
-
-
-def _arc_points(x1, y1, rx, ry, large, sweep, x2, y2, steps=24):
-    """SVG elliptical arc (no rotation) as points, per the SVG implementation notes."""
-    dx, dy = (x1 - x2) / 2.0, (y1 - y2) / 2.0
-    lam = (dx * dx) / (rx * rx) + (dy * dy) / (ry * ry)
-    if lam > 1:
-        s = math.sqrt(lam)
-        rx, ry = rx * s, ry * s
-    num = rx * rx * ry * ry - rx * rx * dy * dy - ry * ry * dx * dx
-    den = rx * rx * dy * dy + ry * ry * dx * dx
-    co = math.sqrt(max(0.0, num / den)) if den else 0.0
-    if large == sweep:
-        co = -co
-    cxp, cyp = co * rx * dy / ry, -co * ry * dx / rx
-    cx, cy = cxp + (x1 + x2) / 2.0, cyp + (y1 + y2) / 2.0
-    a1 = math.atan2((dy - cyp) / ry, (dx - cxp) / rx)
-    a2 = math.atan2((-dy - cyp) / ry, (-dx - cxp) / rx)
-    da = a2 - a1
-    if sweep and da < 0:
-        da += 2 * math.pi
-    elif not sweep and da > 0:
-        da -= 2 * math.pi
-    return [(cx + rx * math.cos(a1 + da * i / steps), cy + ry * math.sin(a1 + da * i / steps))
-            for i in range(1, steps + 1)]
-
-
-def _draw_svg_path(p, d: str, tf) -> None:
-    toks = re.findall(r"[MLCAZ]|-?\d*\.?\d+(?:e-?\d+)?", d)
-    i, cmd, cur, start = 0, None, (0.0, 0.0), (0.0, 0.0)
-
-    def num():
-        nonlocal i
-        v = float(toks[i])
-        i += 1
-        return v
-
-    while i < len(toks):
-        if toks[i] in "MLCAZ":
-            cmd = toks[i]
-            i += 1
-            if cmd == "Z":
-                p.close()
-                cur = start
-                continue
-        if cmd == "M":
-            cur = start = (num(), num())
-            p.moveTo(*tf(*cur))
-            cmd = "L"
-        elif cmd == "L":
-            cur = (num(), num())
-            p.lineTo(*tf(*cur))
-        elif cmd == "C":
-            pts = [(num(), num()) for _ in range(3)]
-            p.curveTo(*tf(*pts[0]), *tf(*pts[1]), *tf(*pts[2]))
-            cur = pts[2]
-        elif cmd == "A":
-            rx, ry, _rot, large, sweep, x, y = (num() for _ in range(7))
-            for pt in _arc_points(cur[0], cur[1], rx, ry, int(large), int(sweep), x, y):
-                p.lineTo(*tf(*pt))
-            cur = (x, y)
-
-
-def draw_sigil(c, cx: float, cy: float, size: float) -> None:
-    k = size / 100.0
-
-    def tf(x, y):
-        return cx + x * k, cy - y * k  # SVG y grows downwards
-
-    c.saveState()
-    c.setStrokeGray(0)
-    c.setFillGray(0)
-    c.setLineCap(1)
-    c.setLineJoin(1)
-    for d, width, filled in _SIGIL_PATHS:
-        c.setLineWidth(max(0.3, width * k))
-        if d.startswith("CIRCLE"):
-            c.circle(cx, cy, float(d.split()[1]) * k, stroke=1, fill=0)
-            continue
-        p = c.beginPath()
-        _draw_svg_path(p, d, tf)
-        c.drawPath(p, stroke=1, fill=1 if filled else 0)
-    c.restoreState()
 
 
 # ---------------------------------------------------------------------------------------------
@@ -254,18 +141,6 @@ def _label(key: str) -> str:
 MIN_TEXT = 5.5  # smallest size long text shrinks to
 
 
-def _ellipsize(text: str, font: str, size: float, width: float) -> str:
-    """Cut text to fit width on one line, ending in '…' when cut."""
-    if pdfmetrics.stringWidth(text, font, size) <= width:
-        return text
-    lo, hi = 0, min(len(text), 400)
-    while lo < hi:
-        mid = (lo + hi + 1) // 2
-        if pdfmetrics.stringWidth(text[:mid].rstrip() + "…", font, size) <= width:
-            lo = mid
-        else:
-            hi = mid - 1
-    return text[:lo].rstrip() + "…"
 
 
 def _fit_lines(text: str, width: float, height: float, size: float) -> Tuple[float, List[str]]:
@@ -304,8 +179,6 @@ def _fit_lines(text: str, width: float, height: float, size: float) -> Tuple[flo
         lines = wrap(s)
     return s, lines
 
-HAIR = 0.45
-RULE = 0.8
 
 
 class SheetCanvas:
@@ -395,59 +268,19 @@ class SheetCanvas:
         c.restoreState()
 
     def diamond(self, x, y, r, fill=True):
-        p = self.c.beginPath()
-        p.moveTo(x, y + r)
-        p.lineTo(x + r, y)
-        p.lineTo(x, y - r)
-        p.lineTo(x - r, y)
-        p.close()
-        self.c.drawPath(p, stroke=1, fill=1 if fill else 0)
+        draw_diamond(self.c, x, y, r, fill)
 
-    # -- ornament ----------------------------------------------------------------------------
+    # -- ornament (services/pdf_look.py) -----------------------------------------------------
     def frame(self):
-        c, M, W, H = self.c, self.M, self.W, self.H
-        c.saveState()
-        c.setLineWidth(RULE)
-        c.rect(M, M, W - 2 * M, H - 2 * M)
-        c.setLineWidth(HAIR)
-        g = 3.0
-        c.rect(M + g, M + g, W - 2 * (M + g), H - 2 * (M + g))
-        for (cx, cy, sx, sy) in ((M, M, 1, 1), (W - M, M, -1, 1), (M, H - M, 1, -1), (W - M, H - M, -1, -1)):
-            c.setLineWidth(HAIR)
-            c.setFillGray(1)
-            c.rect(cx + sx * 0 - (14 if sx < 0 else 0), cy - (14 if sy < 0 else 0), 14, 14, stroke=1, fill=1)
-            c.setFillGray(0)
-            self.diamond(cx + sx * 7, cy + sy * 7, 3.6, fill=True)
-            p = c.beginPath()
-            p.arc(cx + sx * 7 - 11, cy + sy * 7 - 11, cx + sx * 7 + 11, cy + sy * 7 + 11,
-                  startAng={(1, 1): 0, (-1, 1): 90, (-1, -1): 180, (1, -1): 270}[(sx, sy)], extent=90)
-            c.drawPath(p, stroke=1, fill=0)
-        c.restoreState()
+        draw_frame(self.c, self.W, self.H, self.M)
 
     def section(self, title: str, y: float, x0: Optional[float] = None, x1: Optional[float] = None) -> float:
         """Centered Cinzel heading between hairlines ending in diamonds; returns the y below it."""
-        x0 = self.x0 if x0 is None else x0
-        x1 = self.x1 if x1 is None else x1
-        mid = (x0 + x1) / 2
-        size = 9.0
-        tw = pdfmetrics.stringWidth(title.upper(), CINZEL_BOLD, size)
-        base = y - 9
-        self.label(mid, base, title, size=size, align="center", bold=True)
-        ly = base + 3
-        self.hline(x0 + 4, mid - tw / 2 - 10, ly)
-        self.hline(mid + tw / 2 + 10, x1 - 4, ly)
-        self.diamond(x0 + 2, ly, 1.8)
-        self.diamond(x1 - 2, ly, 1.8)
-        self.diamond(mid - tw / 2 - 6, ly, 1.3, fill=False)
-        self.diamond(mid + tw / 2 + 6, ly, 1.3, fill=False)
-        return y - 15
+        return draw_section(self.c, title, y, self.x0 if x0 is None else x0, self.x1 if x1 is None else x1,
+                            text=self.text)
 
     def footer(self, left: str, page: int, pages: int):
-        y = self.M + 9
-        room = 2 * (self.x1 - 8 - 30 - self.W / 2)  # centred, clear of the page number
-        self.text(self.W / 2, y, _ellipsize(" ".join(left.split()), SERIF_ITALIC, 7.5, room), SERIF_ITALIC, 7.5,
-                  "center")
-        self.text(self.x1 - 8, y, f"{page} / {pages}", SERIF_ITALIC, 7.5, "right")
+        draw_footer(self.c, self.W, self.M, self.x1, left, page, pages, text=self.text)
 
     # -- widgets -----------------------------------------------------------------------------
     def _register(self, d: Dict[str, Any]):

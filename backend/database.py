@@ -868,6 +868,8 @@ CHRONICLE_TABLES_SQL = (
         edited_markdown TEXT,
         edited_by       INTEGER,
         edited_at       TIMESTAMP,
+        edited_from_hash TEXT,
+        translated_from TEXT,
         UNIQUE (campaign_id, kind, era, lang)
     )
     """,
@@ -944,6 +946,9 @@ def ensure_chronicle_tables(cursor):
     for stmt in CHRONICLE_TABLES_SQL:
         # SQLite keeps the tables (archive on delete, reads); the writer jobs need PostgreSQL.
         cursor.execute(stmt if pg else sqlite_ddl(stmt))
+    # 0.25: the edit copy's base digest and translations (tables made by 0.24 lack them)
+    _ensure_text_column(cursor, "chronicle_digests", "edited_from_hash")
+    _ensure_text_column(cursor, "chronicle_digests", "translated_from")
 
 
 def sqlite_ddl(stmt: str) -> str:

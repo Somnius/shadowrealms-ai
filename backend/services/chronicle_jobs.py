@@ -324,14 +324,16 @@ def stored_chapters(cursor, campaign_id: int, lang: str) -> List[Dict[str, Any]]
     return out
 
 
-def stored_digest(cursor, campaign_id: int, lang: str, kind: str = "final", era: int = 0) -> Optional[Dict[str, Any]]:
+def stored_digest(cursor, campaign_id: int, lang: str, kind: str = "final", era: int = 0,
+                  translated: bool = False) -> Optional[Dict[str, Any]]:
+    """The written digest (translated=False) or the cached translation into `lang` (translated=True)."""
     cursor.execute(
-        "SELECT digest, source_hash, written_at, model FROM chronicle_digests "
-        "WHERE campaign_id = %s AND kind = %s AND era = %s AND lang = %s",
+        "SELECT digest, source_hash, written_at, model, edited_markdown, edited_by, edited_at, edited_from_hash, "
+        "translated_from FROM chronicle_digests WHERE campaign_id = %s AND kind = %s AND era = %s AND lang = %s",
         (campaign_id, kind, era, lang),
     )
     r = cursor.fetchone()
-    if not r:
+    if not r or bool(r.get("translated_from")) != translated:
         return None
     try:
         d = json.loads(r["digest"])
@@ -339,7 +341,48 @@ def stored_digest(cursor, campaign_id: int, lang: str, kind: str = "final", era:
         return None
     d["_hash"] = r["source_hash"]
     d["_written_at"] = _dt(r.get("written_at"))
+    d["_edited_markdown"] = r.get("edited_markdown")
+    d["_edited_at"] = _dt(r.get("edited_at"))
+    d["_edited_from"] = r.get("edited_from_hash")
+    d["_translated_from"] = r.get("translated_from")
     return d
+
+
+# ---------------------------------------------------------------------------------------------
+# The Storyteller's edit copy (one Markdown text on the final digest row; the generated text is never touched)
+
+EDIT_MAX_CHARS = 200_000
+
+
+def edit_state(digest: Optional[Dict[str, Any]]) -> Dict[str, Any]:
+    """{'edited', 'newer', 'edited_at'}: newer = the digest was written again after the edit was based on it."""
+    if not digest or not digest.get("_edited_markdown"):
+        return {"edited": False, "newer": False, "edited_at": None}
+    at = digest.get("_edited_at")
+    return {"edited": True, "newer": digest.get("_edited_from") != digest.get("_hash"),
+            "edited_at": at.isoformat() if at else None}
+
+
+def save_edit(cursor, campaign_id: int, lang: str, markdown: Optional[str], user_id: int,
+              keep: bool = False) -> bool:
+    """Save (markdown), keep the edit over a newer digest (keep=True), or drop it (markdown None).
+    False when there is no written digest to edit."""
+    cursor.execute(
+        "SELECT id, source_hash FROM chronicle_digests WHERE campaign_id = %s AND kind = 'final' AND era = 0 "
+        "AND lang = %s AND translated_from IS NULL", (campaign_id, lang))
+    row = cursor.fetchone()
+    if not row:
+        return False
+    if keep:
+        cursor.execute("UPDATE chronicle_digests SET edited_from_hash = %s WHERE id = %s", (row["source_hash"], row["id"]))
+    elif markdown is None:
+        cursor.execute("UPDATE chronicle_digests SET edited_markdown = NULL, edited_by = NULL, edited_at = NULL, "
+                       "edited_from_hash = NULL WHERE id = %s", (row["id"],))
+    else:
+        cursor.execute("UPDATE chronicle_digests SET edited_markdown = %s, edited_by = %s, edited_at = %s, "
+                       "edited_from_hash = %s WHERE id = %s",
+                       (markdown, user_id, datetime.now(), row["source_hash"], row["id"]))
+    return True
 
 
 def message_ids(cursor, campaign_id: int) -> Set[int]:
@@ -456,11 +499,14 @@ class JobRefused(Exception):
 
 
 def create_job(cursor, campaign_id: int, user_id: int, scope: str = "update",
-               now: Optional[datetime] = None) -> int:
-    """One job per chronicle; Update at most every 5 minutes, Rewrite everything once an hour."""
+               now: Optional[datetime] = None, lang: Optional[str] = None) -> int:
+    """One job per chronicle; Update at most every 5 minutes, Rewrite everything once an hour, a
+    translation (scope 'translate', into `lang`) at most every 5 minutes."""
     now = now or datetime.now()
-    if scope not in ("update", "all"):
+    if scope not in ("update", "all", "translate"):
         raise JobRefused("bad_scope", 400)
+    if scope == "translate" and lang not in cd.LANGS:
+        raise JobRefused("bad_lang", 400)
     cursor.execute(
         "SELECT id FROM chronicle_jobs WHERE campaign_id = %s AND status IN ('queued', 'waiting', 'running')",
         (campaign_id,),
@@ -479,9 +525,9 @@ def create_job(cursor, campaign_id: int, user_id: int, scope: str = "update",
         if left > 0:
             raise JobRefused("too_soon", 429, int(left) + 1)
     cursor.execute(
-        "INSERT INTO chronicle_jobs (campaign_id, requested_by, scope, status, phase, created_at, updated_at) "
-        "VALUES (%s, %s, %s, 'queued', 'waiting', %s, %s) RETURNING id",
-        (campaign_id, user_id, scope, now, now),
+        "INSERT INTO chronicle_jobs (campaign_id, requested_by, scope, lang, status, phase, created_at, updated_at) "
+        "VALUES (%s, %s, %s, %s, 'queued', 'waiting', %s, %s) RETURNING id",
+        (campaign_id, user_id, scope, lang if scope == "translate" else None, now, now),
     )
     return int(cursor.fetchone()["id"])
 
@@ -789,14 +835,24 @@ class Runner:
         )
         self.conn.commit()
 
-    def _save_digest(self, kind, era, digest, h):
+    def _save_digest(self, kind, era, digest, h, lang=None, translated_from=None):
+        """Replaces the row; the Storyteller's edit copy on it is kept (never on a translation)."""
+        lang = lang or self.lang
         cur = self.conn.cursor()
+        cur.execute("SELECT edited_markdown, edited_by, edited_at, edited_from_hash, translated_from FROM chronicle_digests "
+                    "WHERE campaign_id = %s AND kind = %s AND era = %s AND lang = %s", (self.cid, kind, era, lang))
+        old = cur.fetchone() or {}
+        if old.get("translated_from") or translated_from:
+            old = {}
         cur.execute("DELETE FROM chronicle_digests WHERE campaign_id = %s AND kind = %s AND era = %s AND lang = %s",
-                    (self.cid, kind, era, self.lang))
+                    (self.cid, kind, era, lang))
         cur.execute(
-            "INSERT INTO chronicle_digests (campaign_id, kind, era, lang, digest, source_hash, model, written_at) "
-            "VALUES (%s, %s, %s, %s, %s, %s, %s, %s)",
-            (self.cid, kind, era, self.lang, json.dumps(digest, ensure_ascii=False), h, self.model, datetime.now()),
+            "INSERT INTO chronicle_digests (campaign_id, kind, era, lang, digest, source_hash, model, written_at, "
+            "edited_markdown, edited_by, edited_at, edited_from_hash, translated_from) "
+            "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)",
+            (self.cid, kind, era, lang, json.dumps(digest, ensure_ascii=False), h, self.model, datetime.now(),
+             old.get("edited_markdown"), old.get("edited_by"), old.get("edited_at"), old.get("edited_from_hash"),
+             translated_from),
         )
         self.conn.commit()
 
@@ -893,6 +949,8 @@ class Runner:
     def run(self) -> str:
         cur = self.conn.cursor()
         scope = self.job.get("scope") or "update"
+        if scope == "translate":
+            return self.run_translate()
         p = plan(cur, self.cid, scope)
         self.lang, self.names = p["lang"], p["names"]
         self.places = room_names(cur, self.cid)
@@ -927,6 +985,77 @@ class Runner:
         self._sync_unwritten(p)
         self.write_digests(len(p["story"]))
         return "partial" if len(p["stale"]) > len(todo) else "done"
+
+
+    # -- translation of the finished digest (the translator role, names protected) --------------
+
+    def run_translate(self) -> str:
+        from services import translation
+
+        cur = self.conn.cursor()
+        camp = campaign_row(cur, self.cid)
+        src = chronicle_lang(cur, camp)
+        dst = self.job.get("lang")
+        if dst not in cd.LANGS or dst == src:
+            raise NightFailed("bad_lang")
+        self.lang = src
+        digest = stored_digest(cur, self.cid, src)
+        if not digest:
+            raise NightFailed("no_digest")
+        chapters = [c for c in stored_chapters(cur, self.cid, src) if c["kind"] == "story"]
+        texts = cd.translation_texts(digest, chapters)
+        todo = [i for i, t in enumerate(texts) if t and t.strip()]
+        names = translation.chronicle_names(cur, self.cid)
+        self.progress.set(lang=dst, phase="translating", nights=len(todo), nights_total=len(todo), nights_done=0,
+                          night=0)
+        self.progress.set_eta(len(todo) * TRANSLATE_SECONDS_PER_TEXT)
+        self.progress.tick(force=True)
+        out = list(texts)
+        failed = 0
+        t0 = self.clock()
+        for n, i in enumerate(todo, 1):
+            self._wait_for_play()
+            self.progress.set(night=n, tokens_night=0)
+            if not self.progress.tick(force=True):
+                raise JobCancelled()
+            try:
+                out[i], model = translation.translate(texts[i], src, dst, generate=self.generate, names=names)
+                self.model = model or self.model
+                self.progress.token(cd.estimate_tokens(out[i]))
+            except (ValueError, KeyError) as e:  # an unusable answer: this text stays as written
+                logger.info("chronicle %s: a text was not translated: %s", self.cid, e)
+                failed += 1
+            per = (self.clock() - t0) / n
+            self.progress.set(nights_done=n)
+            self.progress.set_eta((len(todo) - n) * per)
+            if not self.progress.tick(force=True):
+                raise JobCancelled()
+        if todo and failed == len(todo):
+            raise NightFailed("translate_failed")
+        row = cd.apply_translation(digest, chapters, out)
+        row["untranslated"] = failed
+        self._save_digest("final", 0, row, cd.translation_hash(digest, chapters), lang=dst, translated_from=src)
+        return "done"
+
+    def _wait_for_play(self):
+        waited = 0.0
+        while self.busy() and waited < 60:  # live play first
+            if not self.progress.tick(force=True):
+                raise JobCancelled()
+            self.sleep(2)
+            waited += 2
+
+
+TRANSLATE_SECONDS_PER_TEXT = 2.0
+
+
+def translation_estimate(cursor, campaign_id: int) -> Dict[str, Any]:
+    camp = campaign_row(cursor, campaign_id)
+    src = chronicle_lang(cursor, camp)
+    digest = stored_digest(cursor, campaign_id, src)
+    chapters = [c for c in stored_chapters(cursor, campaign_id, src) if c["kind"] == "story"]
+    n = sum(1 for t in cd.translation_texts(digest, chapters) if t and t.strip()) if digest else 0
+    return {"texts": n, "seconds": int(n * TRANSLATE_SECONDS_PER_TEXT), "from": src}
 
 
 def finish(conn, job_id: int, status: str, error: Optional[str] = None, fields: Optional[Dict[str, Any]] = None):

@@ -742,6 +742,8 @@ CREATE TABLE IF NOT EXISTS chronicle_digests (
     edited_markdown TEXT,
     edited_by       INTEGER,
     edited_at       TIMESTAMP,
+    edited_from_hash TEXT,
+    translated_from TEXT,
     UNIQUE (campaign_id, kind, era, lang)
 );
 

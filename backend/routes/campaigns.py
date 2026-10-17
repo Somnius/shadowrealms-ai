@@ -43,6 +43,9 @@ logger = logging.getLogger(__name__)
 campaigns_bp = Blueprint('campaigns', __name__, url_prefix='/api/campaigns')
 
 
+
+from services.chronicle_digest import LANGS as CHRONICLE_LANGS, validate_chronicle_language  # noqa: E402
+
 def _fetch_ooc_lobby_location_ids(cursor, campaign_id: int) -> list:
     """
     IDs of the Out of Character Lobby for this campaign (never counted as story locations
@@ -132,6 +135,9 @@ def create_campaign():
         )
         if ed_err:
             return jsonify({'error': ed_err}), 400
+        language, lang_err = validate_chronicle_language(data.get('language'))
+        if lang_err:
+            return jsonify({'error': lang_err}), 400
 
         # Get database connection
         conn = get_db()
@@ -139,8 +145,9 @@ def create_campaign():
         
         # Create campaign in database
         cursor.execute("""
-            INSERT INTO campaigns (name, description, game_system, created_by, created_at, status, rules_edition)
-            VALUES (%s, %s, %s, %s, %s, %s, %s)
+            INSERT INTO campaigns (name, description, game_system, created_by, created_at, status, rules_edition,
+                                   language)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
             RETURNING id
         """, (
             data['name'],
@@ -150,6 +157,7 @@ def create_campaign():
             datetime.now().isoformat(),
             'active',
             rules_edition,
+            language,
         ))
         
         result = cursor.fetchone()
@@ -209,6 +217,7 @@ def create_campaign():
             'message': 'Campaign created successfully',
             'campaign_id': campaign_id,
             'rules_edition': rules_edition,
+            'language': language,
             'memory_id': memory_id
         }), 201
         
@@ -587,7 +596,7 @@ def get_or_update_campaign(campaign_id):
             cursor.execute("""
                 SELECT id, name, description, game_system, created_by, created_at, status,
                        max_players, listing_visibility, accepting_players, rules_edition,
-                       creation_settings
+                       creation_settings, language
                 FROM campaigns
                 WHERE id = %s
             """, (campaign_id,))
@@ -595,7 +604,7 @@ def get_or_update_campaign(campaign_id):
             cursor.execute("""
                 SELECT id, name, description, game_system, created_by, created_at, status,
                        max_players, listing_visibility, accepting_players, rules_edition,
-                       creation_settings
+                       creation_settings, language
                 FROM campaigns
                 WHERE id = %s AND (created_by = %s OR id IN (
                     SELECT campaign_id FROM campaign_players WHERE user_id = %s
@@ -627,6 +636,7 @@ def get_or_update_campaign(campaign_id):
             'accepting_players': acc,
             'rules_edition': edition_of(row),
             'creation_settings': normalize_creation_settings(row.get('creation_settings')),
+            'language': row.get('language') if row.get('language') in CHRONICLE_LANGS else None,
         }
 
         cursor.execute(
@@ -909,6 +919,13 @@ def update_campaign(campaign_id):
                 updates.append('admin_inactive_at = %s')
                 params.append(datetime.utcnow())
         
+        if 'language' in data:
+            language, lang_err = validate_chronicle_language(data.get('language'))
+            if lang_err:
+                return jsonify({'error': lang_err}), 400
+            updates.append('language = %s')
+            params.append(language)
+
         if 'creation_settings' in data:
             if edition_of(row) != V5:
                 return jsonify({'error': 'creation_settings are for V5 chronicles'}), 400
