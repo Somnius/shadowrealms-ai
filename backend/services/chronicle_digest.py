@@ -1159,6 +1159,20 @@ def apply_translation(digest: Optional[Dict[str, Any]], chapters: Sequence[Dict[
     return d
 
 
+def sentence_case(text: str, names: Sequence[str] = ()) -> str:
+    """A short Title Case text (a night's title) in sentence case before translation: the translator takes
+    capitalised words for names and leaves them as they are. Words of the chronicle's names keep their case."""
+    t = str(text or "")
+    words = t.split()
+    if len(words) < 2 or len(t) > 120 or re.search(r"[.!?;]\s", t):
+        return t
+    if sum(1 for w in words if w[:1].isupper()) < len(words) - 1:
+        return t
+    keep = {w for n in names or () for w in str(n).split()}
+    out = [words[0]] + [w if w in keep else w[:1].lower() + w[1:] for w in words[1:]]
+    return " ".join(out)
+
+
 def fix_question_mark(source: str, translated: str, dst: str) -> str:
     """The Greek question mark is ';' (or U+037E). Into English it must become '?': the model sometimes copies it."""
     src = (source or "").rstrip()

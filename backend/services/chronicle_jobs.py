@@ -1071,8 +1071,9 @@ class Runner:
 
     def _translate_piece(self, text, src, dst, names, check_cancel):
         from services import translation
-        tr, model = translation.translate(text, src, dst, generate=self.generate, names=names,
+        tr, model = translation.translate(cd.sentence_case(text, names), src, dst, generate=self.generate, names=names,
                                           timeout=TRANSLATE_TIMEOUT_S, before_retry=check_cancel)
+        tr = tr[:1].upper() + tr[1:]
         self.model = model or self.model
         self.progress.token(cd.estimate_tokens(tr))
         # half-translated output ("Αναζήτηση of Δοκιμαστή"): the names put back are allowed to stay as written,

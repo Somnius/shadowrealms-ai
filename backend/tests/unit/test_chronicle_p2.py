@@ -440,3 +440,10 @@ def test_question_mark_follows_the_language():
     assert cd.fix_question_mark("Ποιος μας παρακολουθεί;", "Who is watching us;", "en") == "Who is watching us?"
     assert cd.fix_question_mark("Who is watching us?", "Ποιος μας παρακολουθεί?", "el") == "Ποιος μας παρακολουθεί;"
     assert cd.fix_question_mark("Μια λίστα; και άλλα.", "A list; and more.", "en") == "A list; and more."
+
+
+def test_titles_go_to_the_translator_in_sentence_case():
+    from services import chronicle_digest as cd
+    assert cd.sentence_case("Αινιγματικά Μηνύματα στο Υπόγειο") == "Αινιγματικά μηνύματα στο υπόγειο"
+    assert cd.sentence_case("Η Αναζήτηση της Ελένης Βλαχάκη", ["Ελένης", "Βλαχάκη"]) == "Η αναζήτηση της Ελένης Βλαχάκη"
+    assert cd.sentence_case("Ο Κωνσταντίνος βρήκε το υπόγειο. Μετά έφυγε.") == "Ο Κωνσταντίνος βρήκε το υπόγειο. Μετά έφυγε."
