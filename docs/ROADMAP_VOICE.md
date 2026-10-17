@@ -16,7 +16,7 @@ How each phase runs: build in its own git worktree → tests and CI green → on
 | 5 | Ops and polish | health panel · cache and disk caps · per-character voice · device checklist | 0.20 | after the deadline | done: released 0.20.0 (phone checklist still open) |
 | 6 | Transcript check | Whisper hints with the chronicle's names · recmeets Laya-words flags misheard words · Krikri fixes only those (split words, slang) · changed words marked, tap to undo | 0.21 | until 06:30 | done: released 0.21.0 |
 | 7 | Read along | sentence by sentence (first audio fast) · highlight the message and sentence being read · "Read this" / "Read from here" in the message menu (long-press on phones) · catch-up choice · dice read in the listener's language · NPC voices · ST deletes all recordings | 0.22 | night of 17 Oct | done: released 0.22.0 |
-| 8 | Cloud voices | Gemini TTS opt-in: admin Off / Free / Paid and model · keys shown present or not · per-chronicle opt-in · Gemini narrator voices and gender mapping · fallback to local voices on error, timeout or 429 · cloud errors in the health panel · cached like local lines | 0.23 | 17 Oct | built on `voice/gemini`, release 0.23.0 pending review |
+| 8 | Cloud voices | Gemini TTS opt-in: admin Off / Free / Paid and model · keys shown present or not · per-chronicle opt-in · Gemini narrator voices and gender mapping · fallback to local voices on error, timeout or 429 · cloud errors in the health panel · cached like local lines | 0.23 | 17 Oct | done: released 0.23.0 (two reviews fixed; real Gemini calls checked in Greek and English with Charon, Kore and Schedar; the fallback is covered by tests, not yet forced live) |
 
 ## Decisions (2026-10-16)
 
