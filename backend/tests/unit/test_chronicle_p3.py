@@ -348,3 +348,49 @@ def test_the_paper_jpeg_goes_into_the_pdf_unchanged():
         pypdf = pytest.importorskip("pypdf")
         for page in pypdf.PdfReader(io.BytesIO(data)).pages:  # every page lists it in its resources
             assert len(page["/Resources"]["/XObject"]) == 1
+
+
+# --- colour or print -------------------------------------------------------------------------
+
+def _colours(data):
+    """Every rg/RG colour set in the page content streams, as (r, g, b) tuples."""
+    import re
+
+    pypdf = pytest.importorskip("pypdf")
+    out = set()
+    for page in pypdf.PdfReader(io.BytesIO(data)).pages:
+        raw = page.get_contents().get_data().decode("latin-1")
+        for m in re.finditer(r"(-?[\d.]+) (-?[\d.]+) (-?[\d.]+) (?:rg|RG)\b", raw):
+            out.add(tuple(round(float(x), 3) for x in m.groups()))
+    return out
+
+
+def test_horror_print_is_white_paper_black_and_greys(api):
+    write(api)
+    r = api("GET", "/api/campaigns/10/chronicle.pdf?look=horror&color=print", ST)
+    data = r.get_data()
+    assert r.status_code == 200 and b"/Subtype /Image" not in data
+    cols = _colours(data)
+    assert cols and all(c[0] == c[1] == c[2] for c in cols), cols
+    text = "\n".join(pdf_pages(data))
+    assert "Το χρονικό ως τώρα" in text and "Κωνσταντίνος" in text
+    # the same layout as the colour version: same number of pages
+    colour = api("GET", "/api/campaigns/10/chronicle.pdf?look=horror", ST).get_data()
+    assert len(pdf_pages(colour)) == len(pdf_pages(data))
+    assert any(c[0] != c[1] for c in _colours(colour))  # colour is the horror default
+
+
+def test_sheet_colour_has_the_red_and_sheet_print_is_the_sheet(monkeypatch):
+    from reportlab import rl_config
+
+    from services.pdf_horror import BLOOD
+
+    monkeypatch.setattr(rl_config, "invariant", 1)
+    md = cd.story_markdown({"name": "Νύχτες"}, {"tldr": "Σύντομα.", "so_far": ["Ένα."]}, [], "el", "st")
+    plain = build_pdf(md, "el", "a4")
+    assert build_pdf(md, "el", "a4", color="print") == plain == build_pdf(md, "el", "a4", look="sheet", color="nope")
+    assert all(c[0] == c[1] == c[2] for c in _colours(plain))
+    colour = build_pdf(md, "el", "a4", color="colour")
+    red = (round(BLOOD.red, 3), round(BLOOD.green, 3), round(BLOOD.blue, 3))
+    assert red in _colours(colour)
+    assert b"/Subtype /Image" not in colour and "ΜΕ ΛΙΓΑ ΛΟΓΙΑ" in "\n".join(pdf_pages(colour))

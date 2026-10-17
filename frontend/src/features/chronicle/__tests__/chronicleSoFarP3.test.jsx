@@ -87,3 +87,21 @@ test('one date alone is open-ended', async () => {
   await waitFor(() => expect(global.fetch).toHaveBeenCalledTimes(2));
   expect(global.fetch.mock.calls[1][0]).toBe('/api/campaigns/10/chronicle/minutes.md?to=2026-10-04&tz=UTC');
 });
+
+test('colour or print: the default follows the look and only a change is sent', async () => {
+  const user = setupUser();
+  renderPanel();
+  const color = await screen.findByRole('combobox', { name: 'Colour' });
+  expect(color).toHaveValue('print'); // the sheet
+  expect(screen.getByRole('option', { name: 'Print (black and white)' })).toBeInTheDocument();
+  await user.selectOptions(color, 'colour');
+  await user.click(screen.getByRole('button', { name: 'Export story PDF' }));
+  await waitFor(() => expect(global.fetch).toHaveBeenCalledTimes(1));
+  expect(global.fetch.mock.calls[0][0]).toBe('/api/campaigns/10/chronicle.pdf?paper=a4&color=colour');
+  await user.selectOptions(screen.getByRole('combobox', { name: 'Look' }), 'horror');
+  expect(color).toHaveValue('colour'); // horror's default
+  await user.selectOptions(color, 'print');
+  await user.click(screen.getByRole('button', { name: 'Minutes PDF' }));
+  await waitFor(() => expect(global.fetch).toHaveBeenCalledTimes(2));
+  expect(global.fetch.mock.calls[1][0]).toBe('/api/campaigns/10/chronicle/minutes.pdf?paper=a4&look=horror&color=print');
+});

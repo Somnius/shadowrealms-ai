@@ -14,6 +14,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Minutes for a date range.** From and To date pickers beside "last N nights" and "whole chronicle" (`from=`, `to=`, `tz=` on the minutes exports). The days are in the Storyteller's timezone and a night counts by its first message. One date alone is open-ended. Every date in the file is in that timezone. Only written nights are included; nights in the range that are new or changed since the last Update are counted at the top ("3 nights in this range are not written yet or changed since: press Update"), and so are nights still waiting for a translation.
 - **Session ended here.** The chronicle's Storyteller and site admins can mark a message as the end of a session from the message menu, and take the mark away again. Everyone sees a thin "— end of session —" line under it (a mark on a hidden roll shows players the line under the last message they can see). The next Update of the chronicle so far rewrites the nights the mark cuts. Message toolbar buttons are 44 px on phones.
 
+- **Colour or print for the chronicle PDFs.** A third choice beside Look and Paper: Colour / Print (black and white). The horror look in print is a white page with the frame, thorns and blood in black and greys, for home printers; the sheet look in colour has blood-red headings, rules and sigil. The default follows the look (horror in colour, the sheet in print).
+
 ### Changed
 - The footer link in every chronicle PDF and Markdown export reads `lefteros.com/apps/shadowrealms-ai` (English: `lefteros.com/en/apps/shadowrealms-ai`) and still points to the full address.
 

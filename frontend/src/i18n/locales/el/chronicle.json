@@ -283,7 +283,10 @@
     "lookSheet": "Χαρτί του χαρακτήρα",
     "lookHorror": "Τρόμου",
     "minutesSince": "από {{from}} έως σήμερα",
-    "minutesUntil": "από την αρχή έως {{to}}"
+    "minutesUntil": "από την αρχή έως {{to}}",
+    "color": "Χρώμα",
+    "colorColour": "Έγχρωμο",
+    "colorPrint": "Για εκτύπωση (ασπρόμαυρο)"
   },
   "language": {
     "title": "Γλώσσα του χρονικού",

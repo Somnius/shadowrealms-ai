@@ -317,6 +317,11 @@ def _look():
     return "horror" if (request.args.get("look") or "").strip().lower() == "horror" else "sheet"
 
 
+def _color():
+    v = (request.args.get("color") or "").strip().lower()
+    return v if v in ("colour", "print") else None  # None: the look's default
+
+
 def _story(cur, camp, view, lang=None, table_talk=None):
     """(markdown, lang, edited, translated) of the story so far. The Storyteller's view uses the edit
     copy when there is one (in the chronicle's own language); the player view never does. lang and
@@ -467,7 +472,7 @@ def _export(campaign_id, what, fmt):
 
         title = f"{camp['name']} — {cd.words(lang)['so_far_title' if what == 'story' else 'minutes_title']}"
         data = build_pdf(text, lang, _paper(), edited=edited, translated=translated, title=title,
-                         look=_look())
+                         look=_look(), color=_color())
         return _pdf_response(data, _file_name(camp["name"], suffix, "pdf"))
     finally:
         conn.close()

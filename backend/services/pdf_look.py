@@ -131,15 +131,20 @@ def _draw_svg_path(p, d: str, tf) -> None:
             cur = (x, y)
 
 
-def draw_sigil(c, cx: float, cy: float, size: float) -> None:
+def draw_sigil(c, cx: float, cy: float, size: float, color=None) -> None:
+    """The sigil in black, or in color (the chronicle PDF's sheet look in colour)."""
     k = size / 100.0
 
     def tf(x, y):
         return cx + x * k, cy - y * k  # SVG y grows downwards
 
     c.saveState()
-    c.setStrokeGray(0)
-    c.setFillGray(0)
+    if color is None:
+        c.setStrokeGray(0)
+        c.setFillGray(0)
+    else:
+        c.setStrokeColor(color)
+        c.setFillColor(color)
     c.setLineCap(1)
     c.setLineJoin(1)
     for d, width, filled in _SIGIL_PATHS:

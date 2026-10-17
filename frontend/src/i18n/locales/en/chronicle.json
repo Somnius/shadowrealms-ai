@@ -283,7 +283,10 @@
     "lookSheet": "Sheet",
     "lookHorror": "Horror",
     "minutesSince": "from {{from}} to today",
-    "minutesUntil": "from the beginning to {{to}}"
+    "minutesUntil": "from the beginning to {{to}}",
+    "color": "Colour",
+    "colorColour": "Colour",
+    "colorPrint": "Print (black and white)"
   },
   "language": {
     "title": "Chronicle language",

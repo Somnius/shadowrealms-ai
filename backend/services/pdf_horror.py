@@ -17,7 +17,7 @@ import random
 import threading
 from typing import List, Tuple
 
-from reportlab.lib.colors import HexColor
+from reportlab.lib.colors import Color, HexColor
 
 from services.pdf_look import _arc_points
 
@@ -43,6 +43,17 @@ class _Page:
     def pt(self, x, y):
         return x * MM, self.H - y * MM
 
+class _Palette:
+    def __init__(self, blood, dark, light, splat, splat_light, ink, heading):
+        self.blood, self.dark, self.light = blood, dark, light
+        self.splat, self.splat_light, self.ink, self.heading = splat, splat_light, ink, heading
+
+
+# colour: the print PDFs' blood on stained paper; print: black and greys on white, ink-friendly
+COLOUR = _Palette(BLOOD, BLOOD_D, BLOOD_L, BLOOD, BLOOD_L, INK, BLOOD)
+PRINT = _Palette(Color(0.4, 0.4, 0.4), Color(0, 0, 0), Color(0.4, 0.4, 0.4), Color(0.62, 0.62, 0.62),
+                 Color(0.72, 0.72, 0.72), Color(0, 0, 0), Color(0, 0, 0))
+
 
 def _quad(p, page, p0, ctrl, end):
     """A quadratic curve from p0 as a cubic (reportlab paths have no quadratic)."""
@@ -63,7 +74,8 @@ def _poly(page, pts: List[Tuple[float, float]], fill, alpha=1.0):
     c.drawPath(p, stroke=0, fill=1)
 
 
-def blob(page, cx, cy, r, rnd, alpha, pts=22, jag=0.35):
+def blob(page, cx, cy, r, rnd, alpha, pal=None, pts=22, jag=0.35):
+    pal = pal or COLOUR
     """A jagged round stain: points on a wobbly circle joined by quadratic curves through the midpoints."""
     d = []
     for k in range(pts):
@@ -80,22 +92,23 @@ def blob(page, cx, cy, r, rnd, alpha, pts=22, jag=0.35):
         _quad(p, page, cur, p1, mid)
         cur = mid
     p.close()
-    c.setFillColor(BLOOD)
+    c.setFillColor(pal.splat)
     c.setFillAlpha(alpha)
     c.drawPath(p, stroke=0, fill=1)
     # the builder's radial gradient, as a darker rim and a lighter heart
-    c.setFillColor(BLOOD_L)
+    c.setFillColor(pal.splat_light)
     c.setFillAlpha(alpha * 0.55)
     x, y = page.pt(cx - r * 0.15, cy - r * 0.15)
     c.circle(x, y, r * 0.45 * MM, stroke=0, fill=1)
 
 
-def splatter(page, cx, cy, r, rnd, alpha=0.82):
+def splatter(page, cx, cy, r, rnd, alpha=0.82, pal=None):
+    pal = pal or COLOUR
     """A stain with droplets thrown outwards, some with a streak towards them."""
     c = page.c
-    blob(page, cx, cy, r, rnd, alpha)
-    c.setFillColor(BLOOD)
-    c.setStrokeColor(BLOOD)
+    blob(page, cx, cy, r, rnd, alpha, pal)
+    c.setFillColor(pal.splat)
+    c.setStrokeColor(pal.splat)
     c.setLineCap(1)
     for _ in range(rnd.randint(14, 26)):
         a = rnd.uniform(0, 2 * math.pi)
@@ -111,10 +124,11 @@ def splatter(page, cx, cy, r, rnd, alpha=0.82):
             c.line(*page.pt(x2, y2), *page.pt(x, y))
 
 
-def drips(page, w, rnd, n=9, maxlen=22.0):
+def drips(page, w, rnd, n=9, maxlen=22.0, pal=None):
+    pal = pal or COLOUR
     """Blood running down from the top edge."""
     c = page.c
-    c.setFillColor(BLOOD)
+    c.setFillColor(pal.blood)
     c.setFillAlpha(1)
     p = c.beginPath()
     p.moveTo(*page.pt(0, 0))
@@ -135,11 +149,12 @@ def drips(page, w, rnd, n=9, maxlen=22.0):
             p.lineTo(*page.pt(*q))
         p.curveTo(*page.pt(x + wd * 0.45, L * 0.8), *page.pt(x + wd * 0.7, L * 0.5), *page.pt(x + wd, 0))
         p.close()
-        c.setFillColor(BLOOD_D if L > maxlen * 0.8 else BLOOD)
+        c.setFillColor(pal.blood if pal is PRINT or L <= maxlen * 0.8 else pal.dark)
         c.drawPath(p, stroke=0, fill=1)
 
 
-def corner(page, x, y, sx, sy):
+def corner(page, x, y, sx, sy, pal=None):
+    pal = pal or COLOUR
     """The thorned corner (builder's corner()), at (x, y) mm, mirrored by sx, sy."""
     c = page.c
 
@@ -154,13 +169,13 @@ def corner(page, x, y, sx, sy):
         c.setLineWidth(width * MM)
         c.drawPath(p, stroke=1, fill=0)
 
-    c.setStrokeColor(BLOOD_D)
+    c.setStrokeColor(pal.dark)
     c.setStrokeAlpha(1)
     stroke([(0, 16), (0, 0), (16, 0)], 0.35)
     stroke([(2.2, 13), (2.2, 2.2), (13, 2.2)], 0.2)
     stroke([(0, 0), (6, 6)], 0.3)
     _poly(page, [t(*q) for q in ((6, 6), (7.4, 3.8), (8.2, 6), (10.4, 6.8), (8.2, 7.6), (7.4, 9.8), (6.6, 7.6),
-                                 (4.4, 6.8))], BLOOD)
+                                 (4.4, 6.8))], pal.blood)
     c.setLineWidth(0.3 * MM)
     for p0, ctrl, end in (((16, 0), (19, 1.6), (17.2, 3.4)), ((0, 16), (1.6, 19), (3.4, 17.2))):
         p = c.beginPath()
@@ -168,8 +183,8 @@ def corner(page, x, y, sx, sy):
         _quad(p, page, t(*p0), t(*ctrl), t(*end))
         c.drawPath(p, stroke=1, fill=0)
     for a in (5, 10):
-        _poly(page, [t(a, 0), t(a + 0.6, -1.4), t(a + 1.2, 0)], BLOOD_D)
-        _poly(page, [t(0, a), t(-1.4, a + 0.6), t(0, a + 1.2)], BLOOD_D)
+        _poly(page, [t(a, 0), t(a + 0.6, -1.4), t(a + 1.2, 0)], pal.dark)
+        _poly(page, [t(0, a), t(-1.4, a + 0.6), t(0, a + 1.2)], pal.dark)
 
 
 _PAPER_DATA = {}
@@ -216,28 +231,31 @@ def _draw_paper(c, paper: str, W: float, H: float) -> None:
     c.restoreState()
 
 
-def draw_page(c, W: float, H: float, paper: str, page_no: int) -> None:
-    """Paper, frame, corners and blood for one page (page_no from 1). Text goes on top afterwards."""
+def draw_page(c, W: float, H: float, paper: str, page_no: int, print_mode: bool = False) -> None:
+    """Paper, frame, corners and blood for one page (page_no from 1). Text goes on top afterwards.
+    print_mode: no paper (a white page) and the same art in black and greys, for home printers."""
     w, h = W / MM, H / MM
     page = _Page(c, H)
+    pal = PRINT if print_mode else COLOUR
     c.saveState()
-    _draw_paper(c, paper, W, H)
+    if not print_mode:
+        _draw_paper(c, paper, W, H)
     m = FRAME_MM
-    c.setStrokeColor(BLOOD_D)
+    c.setStrokeColor(pal.dark)
     c.setLineWidth(0.5 * MM)
     c.rect(m * MM, m * MM, W - 2 * m * MM, H - 2 * m * MM, stroke=1, fill=0)
     c.setLineWidth(0.18 * MM)
     g = m + 1.3
     c.rect(g * MM, g * MM, W - 2 * g * MM, H - 2 * g * MM, stroke=1, fill=0)
     for (x, y, sx, sy) in ((m, m, 1, 1), (w - m, m, -1, 1), (m, h - m, 1, -1), (w - m, h - m, -1, -1)):
-        corner(page, x, y, sx, sy)
+        corner(page, x, y, sx, sy, pal)
     rnd = random.Random(26 + page_no)
     if page_no == 1:
-        splatter(page, w - 12, h - 46, 2.6, rnd, 0.85)
-        splatter(page, 12, h - 34, 1.4, rnd, 0.6)
-        drips(page, w, rnd)
+        splatter(page, w - 12, h - 46, 2.6, rnd, 0.85, pal)
+        splatter(page, 12, h - 34, 1.4, rnd, 0.6, pal)
+        drips(page, w, rnd, pal=pal)
     elif page_no % 2:
-        splatter(page, 11, h - 30 - 40 * (page_no % 3), 2.0, rnd, 0.7)
+        splatter(page, 11, h - 30 - 40 * (page_no % 3), 2.0, rnd, 0.7, pal)
     else:
-        splatter(page, w - 10, 30 + 40 * (page_no % 3), 2.0, rnd, 0.7)
+        splatter(page, w - 10, 30 + 40 * (page_no % 3), 2.0, rnd, 0.7, pal)
     c.restoreState()

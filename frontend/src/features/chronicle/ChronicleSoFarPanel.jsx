@@ -282,6 +282,8 @@ export default function ChronicleSoFarPanel({ api, campaign, toast, timeZone = n
   const [viewLang, setViewLang] = useState('');
   const [paper, setPaper] = useState('a4');
   const [look, setLook] = useState('sheet');
+  // colour or print (black and white); the default follows the look: colour for horror, print for the sheet
+  const [color, setColor] = useState('print');
   const [fromDay, setFromDay] = useState('');
   const [toDay, setToDay] = useState('');
   const alive = useRef(true);
@@ -385,7 +387,9 @@ export default function ChronicleSoFarPanel({ api, campaign, toast, timeZone = n
   const other = data && data.lang !== own ? data.lang : '';
 
   // PDF options: paper and look (the sheet is the default and is not sent)
-  const pdfOpts = (ext) => (ext === 'pdf' ? { paper, look: look === 'horror' ? 'horror' : '' } : {});
+  const lookColor = (l) => (l === 'horror' ? 'colour' : 'print');
+  const pdfOpts = (ext) =>
+    ext === 'pdf' ? { paper, look: look === 'horror' ? 'horror' : '', color: color !== lookColor(look) ? color : '' } : {};
   // a date range: calendar days in the Storyteller's timezone (the app's display timezone, else this device's)
   const zone = timeZone || deviceTimeZone();
   const rangeBad = !!(fromDay && toDay && fromDay > toDay);
@@ -524,12 +528,24 @@ export default function ChronicleSoFarPanel({ api, campaign, toast, timeZone = n
                 <Select
                   label={t('chronicle:soFar.look', 'Look')}
                   value={look}
-                  onChange={(e) => setLook(e.target.value)}
+                  onChange={(e) => {
+                    setLook(e.target.value);
+                    setColor(lookColor(e.target.value));
+                  }}
                   options={[
                     { value: 'sheet', label: t('chronicle:soFar.lookSheet', 'Sheet') },
                     { value: 'horror', label: t('chronicle:soFar.lookHorror', 'Horror') },
                   ]}
                   fieldClassName="sr-field--short"
+                />
+                <Select
+                  label={t('chronicle:soFar.color', 'Colour')}
+                  value={color}
+                  onChange={(e) => setColor(e.target.value)}
+                  options={[
+                    { value: 'colour', label: t('chronicle:soFar.colorColour', 'Colour') },
+                    { value: 'print', label: t('chronicle:soFar.colorPrint', 'Print (black and white)') },
+                  ]}
                 />
               </div>
               <Switch checked={tableTalk} onChange={setTableTalk} label={t('chronicle:soFar.withTableTalk', 'With table talk')} />

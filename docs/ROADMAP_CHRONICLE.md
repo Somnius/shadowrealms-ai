@@ -203,6 +203,7 @@ Build rules that come out of the reviews. These are not product choices; Lef's c
 
 ## Log
 
+- 2026-10-17 — Colour or print on the chronicle PDFs (Lef): `color=colour|print` for both looks, default by look (horror colour, sheet print, the sheet unchanged byte for byte); horror in print on white with the art in black and greys; the sheet in colour with red headings, rules and sigil; a third choice in the panel. Samples `horror-el-a4-story-print.pdf` and `sheet-el-a4-story-colour.pdf`.
 - 2026-10-17 — Two reviews of phase 3 fixed and Lef's sample notes applied: a much lighter paper, the short footer link (`lefteros.com/apps/shadowrealms-ai`) in every export, hidden-roll marks kept from players, ranged minutes in the user's timezone with a single count of changed nights, cheaper ranged exports, the paper JPEG passed through unchanged, 44 px message toolbar on phones, open-ended dates, 404 for a missing mark, untranslated nights reported.
 - 2026-10-17 — Phase 3 built on `chronicle/p3`: the horror look (committed paper images, vector frame and blood, `look=horror`), minutes for a date range in the Storyteller's timezone, "Session ended here" in the message menu with the end-of-session line, docs and version 0.26.0. Backend and frontend tests green with fake models. Review and Lef's test print next.
 - 2026-10-17 — **0.25.0 released.**
