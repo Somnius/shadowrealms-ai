@@ -81,6 +81,7 @@ def create_app(config_class=Config):
     from routes.events import events_bp; app.register_blueprint(events_bp, url_prefix='/api')  # v0.9 live updates (SSE), unread, roster
     from routes.voice import voice_bp; app.register_blueprint(voice_bp, url_prefix='/api')  # voice (0.16)
     from routes.laya_eval import laya_eval_bp; app.register_blueprint(laya_eval_bp)  # admin: Laya labels + evaluation
+    from routes.chronicle import chronicle_bp; app.register_blueprint(chronicle_bp, url_prefix='/api')  # the chronicle so far (0.24)
     
     # Version endpoint
     @app.route('/api/version')
@@ -184,6 +185,14 @@ def start_background_jobs(app):
         threading.Thread(target=sweep_loop, args=(app,), daemon=True, name="voice-sweep").start()
     except Exception as e:  # noqa: BLE001
         logger.warning("Could not start voice clip sweep: %s", e)
+    # "The chronicle so far": jobs left queued or waiting from before a restart (docs/CHRONICLE.md).
+    # Every worker that creates a job also starts its own writer thread; claiming is safe across them.
+    try:
+        from services.chronicle_jobs import ensure_worker
+
+        ensure_worker()
+    except Exception as e:  # noqa: BLE001
+        logger.warning("Could not start the chronicle writer: %s", e)
 
 def test_main_application():
     """Standalone test function for Main Application"""

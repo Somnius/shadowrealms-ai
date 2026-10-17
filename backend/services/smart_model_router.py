@@ -326,7 +326,14 @@ class SmartModelRouter:
             params['timeout'] = config['timeout']
         try:
             messages = self.build_messages(prompt, context)
-            res = generate_for_role(role, messages, params, budget_s=budget)
+            if role.startswith('storyteller'):
+                # cross-process marker: the chronicle writer waits while a reply is being written
+                from services.ai_busy import storyteller_busy
+
+                with storyteller_busy():
+                    res = generate_for_role(role, messages, params, budget_s=budget)
+            else:
+                res = generate_for_role(role, messages, params, budget_s=budget)
         except ProviderError as e:
             logger.error(f"All providers failed for role {role}: {e}")
             return {

@@ -76,7 +76,8 @@ CREATE TABLE IF NOT EXISTS campaigns (
     admin_inactive_at     TIMESTAMP,
     rules_edition         TEXT NOT NULL DEFAULT 'classic',              -- 'classic' (oWoD Revised) | 'v5'
     creation_settings     TEXT NOT NULL DEFAULT '{}',                   -- V5 creation rules JSON (services/creation_settings.py)
-    voice_settings        TEXT NOT NULL DEFAULT '{}'                    -- voice read-out defaults JSON (docs/VOICE.md)
+    voice_settings        TEXT NOT NULL DEFAULT '{}',                   -- voice read-out defaults JSON (docs/VOICE.md)
+    language              TEXT                                          -- 'el' | 'en' | NULL = the language most messages are in
 );
 
 CREATE INDEX IF NOT EXISTS idx_campaigns_created_by ON campaigns(created_by);
@@ -701,6 +702,102 @@ CREATE TABLE IF NOT EXISTS message_translations (
     model           TEXT,
     created_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (message_id, lang)
+);
+
+-- -----------------------------------------------------------------------------
+-- The chronicle so far (0.24, docs/CHRONICLE.md): chapters per room and night, era and final digests,
+-- writer jobs with live progress, archives written when a chronicle is deleted, session-end marks,
+-- and the cross-process "Storyteller busy" marker. Same DDL as database.CHRONICLE_TABLES_SQL.
+-- -----------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS chronicle_chapters (
+    id               SERIAL PRIMARY KEY,
+    campaign_id      INTEGER NOT NULL REFERENCES campaigns(id) ON DELETE CASCADE,
+    location_id      INTEGER NOT NULL REFERENCES locations(id) ON DELETE CASCADE,
+    chapter_key      TEXT NOT NULL,
+    lang             TEXT NOT NULL,
+    kind             TEXT NOT NULL DEFAULT 'story',
+    first_message_id INTEGER NOT NULL,
+    last_message_id  INTEGER NOT NULL,
+    started_at       TIMESTAMP,
+    ended_at         TIMESTAMP,
+    chapter          TEXT NOT NULL,
+    source_hash      TEXT NOT NULL,
+    model            TEXT,
+    written_at       TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE (campaign_id, chapter_key, lang)
+);
+
+CREATE INDEX IF NOT EXISTS idx_chronicle_chapters_campaign ON chronicle_chapters(campaign_id, started_at);
+
+CREATE TABLE IF NOT EXISTS chronicle_digests (
+    id              SERIAL PRIMARY KEY,
+    campaign_id     INTEGER NOT NULL REFERENCES campaigns(id) ON DELETE CASCADE,
+    kind            TEXT NOT NULL DEFAULT 'final',
+    era             INTEGER NOT NULL DEFAULT 0,
+    lang            TEXT NOT NULL,
+    digest          TEXT NOT NULL,
+    source_hash     TEXT NOT NULL,
+    model           TEXT,
+    written_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    edited_markdown TEXT,
+    edited_by       INTEGER,
+    edited_at       TIMESTAMP,
+    UNIQUE (campaign_id, kind, era, lang)
+);
+
+CREATE TABLE IF NOT EXISTS chronicle_jobs (
+    id                SERIAL PRIMARY KEY,
+    campaign_id       INTEGER NOT NULL REFERENCES campaigns(id) ON DELETE CASCADE,
+    requested_by      INTEGER,
+    scope             TEXT NOT NULL DEFAULT 'update',
+    lang              TEXT,
+    status            TEXT NOT NULL DEFAULT 'queued',
+    phase             TEXT,
+    night             INTEGER NOT NULL DEFAULT 0,
+    nights            INTEGER NOT NULL DEFAULT 0,
+    nights_total      INTEGER NOT NULL DEFAULT 0,
+    nights_done       INTEGER NOT NULL DEFAULT 0,
+    tokens_night      INTEGER NOT NULL DEFAULT 0,
+    tokens_total      INTEGER NOT NULL DEFAULT 0,
+    tok_per_s         REAL,
+    eta_s             INTEGER,
+    seconds_per_night REAL,
+    cancel_requested  BOOLEAN NOT NULL DEFAULT FALSE,
+    error             TEXT,
+    created_at        TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    started_at        TIMESTAMP,
+    updated_at        TIMESTAMP,
+    finished_at       TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_chronicle_jobs_campaign ON chronicle_jobs(campaign_id, id);
+
+CREATE INDEX IF NOT EXISTS idx_chronicle_jobs_status ON chronicle_jobs(status);
+
+CREATE TABLE IF NOT EXISTS chronicle_archives (
+    id             SERIAL PRIMARY KEY,
+    campaign_id    INTEGER NOT NULL,
+    campaign_name  TEXT NOT NULL,
+    dir_name       TEXT NOT NULL,
+    deleted_by     INTEGER,
+    storyteller_id INTEGER,
+    nights         INTEGER NOT NULL DEFAULT 0,
+    nights_written INTEGER NOT NULL DEFAULT 0,
+    messages       INTEGER NOT NULL DEFAULT 0,
+    created_at     TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS chronicle_session_marks (
+    message_id  INTEGER PRIMARY KEY REFERENCES messages(id) ON DELETE CASCADE,
+    campaign_id INTEGER NOT NULL REFERENCES campaigns(id) ON DELETE CASCADE,
+    created_by  INTEGER,
+    created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS ai_busy_marks (
+    name       TEXT PRIMARY KEY,
+    active     INTEGER NOT NULL DEFAULT 0,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 COMMIT;

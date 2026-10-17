@@ -962,6 +962,21 @@ def delete_campaign(campaign_id):
             not user_row or user_row['role'] != 'admin'
         ):
             return jsonify({'error': 'Unauthorized'}), 403
+
+        # The chronicle so far (0.24): its minutes and the raw transcript are archived first, with
+        # no model calls. If that can't be written, nothing is deleted (docs/CHRONICLE.md).
+        try:
+            from services.chronicle_archive import write_archive
+
+            write_archive(cursor, campaign_id, user_id)
+            conn.commit()
+        except Exception as e:  # noqa: BLE001
+            conn.rollback()
+            logger.error("Chronicle archive failed; delete stopped: %s", safe_log_value(e))
+            return jsonify({
+                'error': 'archive_failed',
+                'message': 'The chronicle could not be archived, so it was not deleted.',
+            }), 500
         
         # Count what will be deleted for audit
         cursor.execute("SELECT COUNT(*) FROM locations WHERE campaign_id = %s", (campaign_id,))

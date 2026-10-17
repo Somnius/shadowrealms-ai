@@ -15,6 +15,10 @@ Roles:
 - translator: a chat line into the other language for players who hear/read in it (voice
   phase 4, services/translation.py). Default: LM Studio `llama-krikri-8b-instruct` (0.1-0.5 s a
   line in phase 0). Never falls back to the small Ollama model either (it writes poor Greek).
+- chronicler_el / chronicler_en: the writer of "The chronicle so far" (docs/CHRONICLE.md), one
+  per chronicle language like the Storyteller roles. Greek defaults to Krikri, English to the
+  loaded LM Studio model. Never the small Ollama model, and a prompt that overflows is never
+  trimmed for them: the caller splits the night instead (generate_for_role(shrink=False)).
 
 Settings live in app_settings (`ai_role:<role>:provider`, `ai_role:<role>:model`);
 cloud keys in secret_store (`anthropic_api_key`, `openai_api_key`). A cloud provider is
@@ -37,6 +41,7 @@ from services.ai_providers import (
     CLOUD_PROVIDERS,
     DEFAULT_MODELS,
     AnthropicProvider,
+    Cancelled,
     LMStudioProvider,
     OllamaProvider,
     OpenAIProvider,
@@ -46,7 +51,9 @@ from services.ai_providers import (
 
 logger = logging.getLogger(__name__)
 
-ROLES = ("storyteller_en", "storyteller_el", "utility", "classifier", "translator")
+ROLES = ("storyteller_en", "storyteller_el", "utility", "classifier", "translator", "chronicler_el", "chronicler_en")
+# Roles that never fall back to the small Ollama model.
+NO_OLLAMA_ROLES = ("classifier", "translator", "chronicler_el", "chronicler_en")
 CLOUD_KEY_NAMES = {"anthropic": "anthropic_api_key", "openai": "openai_api_key"}
 
 
@@ -61,6 +68,8 @@ def role_defaults() -> Dict[str, Dict[str, str]]:
         "utility": {"provider": _env("UTILITY_PROVIDER", "ollama"), "model": _env("UTILITY_MODEL", "llama3.2:3b")},
         "classifier": {"provider": "lm_studio", "model": ""},  # "" = the loaded LM Studio model
         "translator": {"provider": "lm_studio", "model": _env("TRANSLATOR_MODEL", "llama-krikri-8b-instruct")},
+        "chronicler_el": {"provider": "lm_studio", "model": _env("CHRONICLER_EL_MODEL", "llama-krikri-8b-instruct")},
+        "chronicler_en": {"provider": "lm_studio", "model": _env("CHRONICLER_EN_MODEL", "")},  # "" = loaded model
     }
 
 
@@ -134,7 +143,7 @@ def _model_for(provider: str, model: str, role: str) -> str:
     if model:
         return model
     if provider == "lm_studio":
-        if role in ("storyteller_el", "translator"):
+        if role in ("storyteller_el", "translator", "chronicler_el"):
             return role_defaults()[role]["model"]
         return effective_lm_studio_model()
     return DEFAULT_MODELS.get(provider, "")
@@ -156,7 +165,7 @@ def fallback_chain(role: str, cfg: Optional[Dict[str, str]] = None) -> List[Tupl
             if m != loaded:
                 chain.append(("lm_studio", loaded))
             break
-    if not any(p == "ollama" for p, _ in chain) and role not in ("classifier", "translator"):
+    if not any(p == "ollama" for p, _ in chain) and role not in NO_OLLAMA_ROLES:
         util = role_defaults()["utility"]
         chain.append(("ollama", util["model"] if util["provider"] == "ollama" else DEFAULT_MODELS["ollama"]))
     if not any(p == "lm_studio" for p, _ in chain):
@@ -247,12 +256,16 @@ def generate_for_role(
     chain: Optional[List[Tuple[str, str]]] = None,
     builder=build_provider,
     budget_s: Optional[float] = None,
+    shrink: bool = True,
 ) -> Dict[str, Any]:
     """
     Try each (provider, model) in the role's chain until one returns text.
 
     budget_s: total seconds for the whole chain; each attempt's timeout is capped to what is
     left, and attempts are skipped once less than MIN_ATTEMPT_SEC remain.
+    shrink: on a context overflow, trim the prompt and retry (the Storyteller). With shrink=False
+    an overflow raises ProviderError at once (the chronicle writer splits the night instead of
+    losing part of it). A Cancelled from the provider (on_token said stop) is never retried.
 
     Returns {'text', 'provider', 'model', 'role', 'attempts': [{'provider','model','error'}], 'ms'}.
     Raises ProviderError when every attempt failed.
@@ -294,6 +307,8 @@ def generate_for_role(
                     logger.warning("AI role %s answered by fallback %s/%s after: %s", role, provider_name, model, attempts)
                 return {"text": text, "provider": provider_name, "model": model, "role": role,
                         "attempts": attempts, "ms": ms, "trimmed": shrink_round}
+            except Cancelled:
+                raise
             except (ProviderError, ValueError) as e:
                 logger.warning("AI role %s: %s/%s failed: %s", role, provider_name, model, e)
                 if _is_load_failure(e):
@@ -301,6 +316,8 @@ def generate_for_role(
                 attempts.append({"provider": provider_name, "model": model, "error": str(e)[:300]})
                 if not is_context_overflow(e):
                     break
+                if not shrink:
+                    raise ProviderError(f"context overflow for role {role}: {str(e)[:300]}") from e
                 overflowed = True
                 if shrink_round < MAX_SHRINK_RETRIES:
                     msgs = shrink_messages(msgs, SHRINK_FACTOR)

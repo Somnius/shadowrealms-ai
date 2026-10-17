@@ -831,6 +831,125 @@ def ensure_voice_clips_table(cursor):
     _ensure_text_column(cursor, "voice_clips", "translated_text")
 
 
+# "The chronicle so far" (0.24, docs/CHRONICLE.md). The same DDL is in init_postgresql_schema.sql;
+# CI checks that migrate_db() changes nothing after it.
+CHRONICLE_TABLES_SQL = (
+    """
+    CREATE TABLE IF NOT EXISTS chronicle_chapters (
+        id               SERIAL PRIMARY KEY,
+        campaign_id      INTEGER NOT NULL REFERENCES campaigns(id) ON DELETE CASCADE,
+        location_id      INTEGER NOT NULL REFERENCES locations(id) ON DELETE CASCADE,
+        chapter_key      TEXT NOT NULL,
+        lang             TEXT NOT NULL,
+        kind             TEXT NOT NULL DEFAULT 'story',
+        first_message_id INTEGER NOT NULL,
+        last_message_id  INTEGER NOT NULL,
+        started_at       TIMESTAMP,
+        ended_at         TIMESTAMP,
+        chapter          TEXT NOT NULL,
+        source_hash      TEXT NOT NULL,
+        model            TEXT,
+        written_at       TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE (campaign_id, chapter_key, lang)
+    )
+    """,
+    "CREATE INDEX IF NOT EXISTS idx_chronicle_chapters_campaign ON chronicle_chapters(campaign_id, started_at)",
+    """
+    CREATE TABLE IF NOT EXISTS chronicle_digests (
+        id              SERIAL PRIMARY KEY,
+        campaign_id     INTEGER NOT NULL REFERENCES campaigns(id) ON DELETE CASCADE,
+        kind            TEXT NOT NULL DEFAULT 'final',
+        era             INTEGER NOT NULL DEFAULT 0,
+        lang            TEXT NOT NULL,
+        digest          TEXT NOT NULL,
+        source_hash     TEXT NOT NULL,
+        model           TEXT,
+        written_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        edited_markdown TEXT,
+        edited_by       INTEGER,
+        edited_at       TIMESTAMP,
+        UNIQUE (campaign_id, kind, era, lang)
+    )
+    """,
+    """
+    CREATE TABLE IF NOT EXISTS chronicle_jobs (
+        id                SERIAL PRIMARY KEY,
+        campaign_id       INTEGER NOT NULL REFERENCES campaigns(id) ON DELETE CASCADE,
+        requested_by      INTEGER,
+        scope             TEXT NOT NULL DEFAULT 'update',
+        lang              TEXT,
+        status            TEXT NOT NULL DEFAULT 'queued',
+        phase             TEXT,
+        night             INTEGER NOT NULL DEFAULT 0,
+        nights            INTEGER NOT NULL DEFAULT 0,
+        nights_total      INTEGER NOT NULL DEFAULT 0,
+        nights_done       INTEGER NOT NULL DEFAULT 0,
+        tokens_night      INTEGER NOT NULL DEFAULT 0,
+        tokens_total      INTEGER NOT NULL DEFAULT 0,
+        tok_per_s         REAL,
+        eta_s             INTEGER,
+        seconds_per_night REAL,
+        cancel_requested  BOOLEAN NOT NULL DEFAULT FALSE,
+        error             TEXT,
+        created_at        TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        started_at        TIMESTAMP,
+        updated_at        TIMESTAMP,
+        finished_at       TIMESTAMP
+    )
+    """,
+    "CREATE INDEX IF NOT EXISTS idx_chronicle_jobs_campaign ON chronicle_jobs(campaign_id, id)",
+    "CREATE INDEX IF NOT EXISTS idx_chronicle_jobs_status ON chronicle_jobs(status)",
+    """
+    CREATE TABLE IF NOT EXISTS chronicle_archives (
+        id             SERIAL PRIMARY KEY,
+        campaign_id    INTEGER NOT NULL,
+        campaign_name  TEXT NOT NULL,
+        dir_name       TEXT NOT NULL,
+        deleted_by     INTEGER,
+        storyteller_id INTEGER,
+        nights         INTEGER NOT NULL DEFAULT 0,
+        nights_written INTEGER NOT NULL DEFAULT 0,
+        messages       INTEGER NOT NULL DEFAULT 0,
+        created_at     TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )
+    """,
+    """
+    CREATE TABLE IF NOT EXISTS chronicle_session_marks (
+        message_id  INTEGER PRIMARY KEY REFERENCES messages(id) ON DELETE CASCADE,
+        campaign_id INTEGER NOT NULL REFERENCES campaigns(id) ON DELETE CASCADE,
+        created_by  INTEGER,
+        created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )
+    """,
+    """
+    CREATE TABLE IF NOT EXISTS ai_busy_marks (
+        name       TEXT PRIMARY KEY,
+        active     INTEGER NOT NULL DEFAULT 0,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )
+    """,
+)
+
+
+@once_per_process
+def ensure_campaigns_language_column(cursor):
+    """campaigns.language ('el' | 'en' | NULL): the chronicle's language; NULL = what most messages are in."""
+    _ensure_text_column(cursor, "campaigns", "language")
+
+
+@once_per_process
+def ensure_chronicle_tables(cursor):
+    """Chapters, digests, jobs, archives, session-end marks and the Storyteller-busy marker."""
+    pg = os.getenv("DATABASE_TYPE", "sqlite").lower() == "postgresql"
+    for stmt in CHRONICLE_TABLES_SQL:
+        # SQLite keeps the tables (archive on delete, reads); the writer jobs need PostgreSQL.
+        cursor.execute(stmt if pg else sqlite_ddl(stmt))
+
+
+def sqlite_ddl(stmt: str) -> str:
+    return stmt.replace("SERIAL PRIMARY KEY", "INTEGER PRIMARY KEY AUTOINCREMENT")
+
+
 @once_per_process
 def ensure_message_translations_table(cursor):
     """A message's text in another language (kind 'ai': translated by the translator role) or the
@@ -1365,6 +1484,8 @@ def migrate_db():
                 ensure_auth_security_schema(cursor)
                 ensure_campaign_activity_schema(cursor)
                 ensure_dice_tables(cursor, 'postgresql')
+                ensure_campaigns_language_column(cursor)
+                ensure_chronicle_tables(cursor)
                 backfill_campaign_players_active_character(cursor)
                 from services.ai_runtime_settings import ensure_app_settings_table
 
@@ -1727,6 +1848,8 @@ def migrate_db():
         ensure_campaigns_creation_settings_column(cursor)
         ensure_users_voice_settings_column(cursor)
         ensure_campaigns_voice_settings_column(cursor)
+        ensure_campaigns_language_column(cursor)
+        ensure_chronicle_tables(cursor)
         ensure_characters_gender_column(cursor)
         ensure_voice_audio_table(cursor)
         ensure_messages_voice_columns(cursor)

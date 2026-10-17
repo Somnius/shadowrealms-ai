@@ -9,6 +9,11 @@ so the caller (services/ai_roles.py) can fall back to the next provider in the c
 
 - lm_studio: LM Studio's OpenAI-compatible /v1/chat/completions (local, default).
   Sends reasoning_effort when set (Qwen3.5 needs "none" or it spends the budget thinking).
+  Optional params for the chronicle writer only (the Storyteller stays non-streaming):
+  response_format (sent as is, e.g. a json_schema), and on_token(delta, usage) -> bool: then the
+  answer is streamed with stream_options.include_usage; the callback gets each piece of text
+  (usage None) and finally ("", usage); returning False closes the stream (raises Cancelled).
+  stream_idle_timeout caps the wait between two chunks.
 - ollama: /api/chat (local).
 - anthropic: Messages API (cloud, admin key). Some current models (e.g. claude-sonnet-5-5)
   reject a non-default temperature with 400; we leave it out for those, and on a 400 that
@@ -49,6 +54,10 @@ _NO_TEMPERATURE = re.compile(r"^claude-(sonnet|opus|fable)-5", re.IGNORECASE)
 
 class ProviderError(Exception):
     """A provider couldn't produce text; message is safe to log (never contains keys)."""
+
+
+class Cancelled(ProviderError):
+    """The caller's on_token callback asked to stop; the stream was closed."""
 
 
 def _post(url: str, payload: dict, headers: dict, timeout: float) -> requests.Response:
@@ -129,9 +138,13 @@ class LMStudioProvider(Provider):
         }
         if self.reasoning_effort:
             payload["reasoning_effort"] = self.reasoning_effort
+        if params.get("response_format"):
+            payload["response_format"] = params["response_format"]
         headers = {"Content-Type": "application/json"}
         if self.api_key:
             headers["Authorization"] = f"Bearer {self.api_key}"
+        if params.get("on_token"):
+            return self._stream(payload, headers, params)
         r = _post(f"{self.base_url}/v1/chat/completions", payload, headers, params.get("timeout") or self.timeout)
         if r.status_code != 200:
             raise ProviderError(f"LM Studio {_short(r)}")
@@ -141,6 +154,55 @@ class LMStudioProvider(Provider):
             raise ProviderError(f"LM Studio: unexpected response ({e})") from e
         if not text.strip():
             raise ProviderError("LM Studio returned empty content (reasoning model without reasoning_effort=none?)")
+        return text
+
+    def _stream(self, payload, headers, params):
+        """Server-sent chunks of /v1/chat/completions; see the module docstring."""
+        import json
+
+        on_token = params["on_token"]
+        payload = {**payload, "stream": True, "stream_options": {"include_usage": True}}
+        idle = float(params.get("stream_idle_timeout") or 60)
+        try:
+            r = requests.post(f"{self.base_url}/v1/chat/completions", json=payload, headers=headers,
+                              timeout=(10, idle), stream=True)
+        except requests.RequestException as e:
+            raise ProviderError(f"{type(e).__name__}: {e}") from e
+        parts: List[str] = []
+        usage = None
+        try:
+            if r.status_code != 200:
+                raise ProviderError(f"LM Studio {_short(r)}")
+            for raw in r.iter_lines(decode_unicode=True):
+                if not raw or not raw.startswith("data:"):
+                    continue
+                data = raw[5:].strip()
+                if data == "[DONE]":
+                    break
+                try:
+                    chunk = json.loads(data)
+                except ValueError:
+                    continue
+                if chunk.get("error"):
+                    err = chunk["error"]
+                    raise ProviderError(f"LM Studio: {err.get('message') if isinstance(err, dict) else err}")
+                if chunk.get("usage"):
+                    usage = chunk["usage"]
+                for choice in chunk.get("choices") or []:
+                    delta = (choice.get("delta") or {}).get("content") or ""
+                    if delta:
+                        parts.append(delta)
+                        if on_token(delta, None) is False:
+                            raise Cancelled("cancelled")
+        except requests.RequestException as e:
+            raise ProviderError(f"{type(e).__name__}: {e}") from e
+        finally:
+            r.close()  # on cancel this stops LM Studio generating
+        text = "".join(parts)
+        if not text.strip():
+            raise ProviderError("LM Studio returned empty content")
+        if on_token("", usage or {}) is False:
+            raise Cancelled("cancelled")
         return text
 
 
