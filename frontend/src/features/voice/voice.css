@@ -417,3 +417,10 @@
   margin: 0 0 4px;
   font-size: 15px;
 }
+/* Phones: the title keeps the first line to itself; the language flags and the speaker picker go
+   to a second line, so "Your recording · 0:12" is never cut. */
+@media (max-width: 560px) {
+  .sr-recsheet__head { flex-wrap: wrap; row-gap: 6px; }
+  .sr-recsheet__title { flex: 1 1 calc(100% - 56px); }
+  .sr-rec-lang { margin-inline: 0 auto; }
+}

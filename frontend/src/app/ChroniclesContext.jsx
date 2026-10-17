@@ -29,12 +29,20 @@ export function ChroniclesProvider({ children }) {
   const [chronicles, setChronicles] = useState([]);
   const [loaded, setLoaded] = useState(false);
   const lastJson = useRef('');
+  const inflight = useRef(null);
+  const lastLoadAt = useRef(0);
+  const seq = useRef(0); // only the newest request may change the list
 
+  // An explicit reload (after creating or changing a chronicle) always asks the server.
   const reload = useCallback(async () => {
     if (!authed) return [];
+    const mine = ++seq.current;
     const r = await apiFetch(getCurrentToken(), '/campaigns/');
     const list = r.ok && Array.isArray(r.data) ? r.data : [];
+    // A newer request was sent meanwhile (or the session ended): its answer counts, not this one.
+    if (mine !== seq.current) return list;
     if (r.ok) {
+      lastLoadAt.current = Date.now();
       // Background refreshes usually return the same list: keep the old array (no re-render).
       const json = JSON.stringify(list);
       if (json !== lastJson.current) {
@@ -51,11 +59,22 @@ export function ChroniclesProvider({ children }) {
     return list;
   }, [authed]);
 
+  // Background refreshes (mount, focus, the timer) share one request: at page load the mount and
+  // the window's first focus event both ask, and one answer serves both.
+  const refresh = useCallback(() => {
+    if (inflight.current) return inflight.current;
+    inflight.current = reload().finally(() => {
+      inflight.current = null;
+    });
+    return inflight.current;
+  }, [reload]);
+
   useEffect(() => {
     if (!authed) return undefined;
     const visible = () => typeof document === 'undefined' || document.visibilityState !== 'hidden';
     const onFocus = () => {
-      if (getCurrentToken()) reload();
+      // A focus right after a load (the page just opened) has nothing new to fetch.
+      if (getCurrentToken() && Date.now() - lastLoadAt.current > 5000) refresh();
     };
     const onVisible = () => {
       if (visible()) onFocus();
@@ -70,21 +89,24 @@ export function ChroniclesProvider({ children }) {
       document.removeEventListener('visibilitychange', onVisible);
       clearInterval(timer);
     };
-  }, [authed, reload]);
+  }, [authed, refresh]);
 
   useEffect(() => {
-    if (authed) reload();
+    if (authed) refresh();
     else {
+      seq.current += 1; // answers still on their way belong to the old session
+      inflight.current = null;
+      lastLoadAt.current = 0;
       lastJson.current = '';
       setChronicles([]);
       setLoaded(false);
     }
-  }, [authed, reload]);
+  }, [authed, refresh]);
 
   const byId = useCallback((id) => chronicles.find((c) => String(c.id) === String(id)) || null, [chronicles]);
 
   const [expectedCount] = useState(rememberedCount);
-  const value = useMemo(() => ({ chronicles, loaded, reload, byId, expectedCount }), [chronicles, loaded, reload, byId, expectedCount]);
+  const value = useMemo(() => ({ chronicles, loaded, reload, refresh, byId, expectedCount }), [chronicles, loaded, reload, refresh, byId, expectedCount]);
   return <ChroniclesContext.Provider value={value}>{children}</ChroniclesContext.Provider>;
 }
 

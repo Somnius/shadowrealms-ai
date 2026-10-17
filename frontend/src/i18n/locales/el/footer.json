@@ -2,8 +2,6 @@
   "readmeTitle": "Δες το README",
   "madeWith": "Φτιαγμένο με",
   "madeFor": "για επιτραπέζια RPG από",
-  "builtWith": "Με Blood Bond στα",
-  "builtWithAfter": "Κανένας άνθρωπος δεν δέχτηκε το Embrace για να φτιαχτεί αυτή η εφαρμογή. Η Masquerade κρατάει.",
   "readme": {
     "failed": "Δεν ήταν δυνατή η φόρτωση του README.md: {{error}}",
     "close": "Κλείσιμο",
