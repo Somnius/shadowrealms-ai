@@ -131,6 +131,7 @@ def test_wrong_language_is_retried_once_with_the_reason():
     chapter_calls = [c for c in model.calls if c["name"] == "chapter"]
     assert len(chapter_calls) == 2
     assert "Η απάντηση δεν ήταν στα ελληνικά" in chapter_calls[1]["messages"][-1]["content"]
+    assert chapter_calls[1]["messages"][-2]["role"] == "assistant"  # its own answer, then the reason
     assert chapters(raw)[0][1]["title"] == "Η νύχτα στο υπόγειο"
 
 
@@ -181,7 +182,8 @@ def test_failure_is_recorded():
 
     status = cj.run_job(conn, new_job(conn), generate=broken, sleep=lambda s: None, ctx_tokens=32768)
     assert status == "failed"
-    assert "all providers failed" in raw.execute("SELECT error FROM chronicle_jobs").fetchone()[0]
+    # a short code for the panel; the provider's text (it can name the LM Studio address) only in the log
+    assert raw.execute("SELECT error FROM chronicle_jobs").fetchone()[0] == "model_failed"
 
 
 def test_too_few_story_messages_writes_nothing():
@@ -212,13 +214,26 @@ def test_job_limits():
     j2 = cj.create_job(cur, 10, 2, "update", now=t + timedelta(minutes=10))
     assert cj.cancel_job(cur, 10, j2) is True
     assert cj.get_job(cur, 10, j2)["status"] == "cancelled"
+    # a cancelled or failed job doesn't count against the 5 minutes
+    j3 = cj.create_job(cur, 10, 2, "update", now=t + timedelta(minutes=11))
+    raw.execute("UPDATE chronicle_jobs SET status = 'failed' WHERE id = ?", (j3,))
+    cj.create_job(cur, 10, 2, "update", now=t + timedelta(minutes=12))
 
 
 def test_estimate_falls_back_to_six_seconds_a_night():
     raw, conn = setup("el", 3)
     est = cj.estimate(conn.cursor(), 10)
     assert est["nights_to_write"] == 4 and est["seconds_per_night"] == 6.0
-    assert est["seconds"] == 4 * 6 + 2 * 6 and est["capped"] is False and est["enough"] is True
+    assert est["seconds"] == (4 + 1 + 1) * 6 and est["capped"] is False and est["enough"] is True
+    assert est["quiet_minutes"] == 10
+    # after a run, one new night costs that night, its era and the join, not every era
+    run(conn2 := setup("el", 30)[1])
+    raw3 = conn2._raw
+    raw3.execute("INSERT INTO messages (id, campaign_id, location_id, user_id, character_id, content, created_at, lang) "
+                 "SELECT (SELECT MAX(id) FROM messages) + 1, 10, 101, 3, 20, 'Νέα.', datetime(MAX(created_at), '+1 day'), 'el' FROM messages")
+    raw3.commit()
+    est = cj.estimate(conn2.cursor(), 10)
+    assert est["nights_to_write"] == 1 and est["seconds"] == 3 * est["seconds_per_night"]
     raw2, conn2 = setup("el", 50)
     est = cj.estimate(conn2.cursor(), 10)
     assert est["capped"] is True and est["nights_to_write"] == 40
@@ -260,3 +275,46 @@ def test_job_json_has_no_requester():
     raw, conn = setup("el", 1)
     j = cj.job_json(new_job(conn))
     assert "requested_by" not in j and j["status"] == "running" and j["elapsed_s"] >= 0
+
+
+def test_wrong_language_twice_is_translated():
+    raw, conn = setup("el", 1)
+    model = FakeModel(wrong_language=2)
+    run(conn, model)
+    ch = chapters(raw)[0][1]
+    assert ch.get("translated") is True and "check" not in ch
+    assert ch["summary"][0] == "Μεταφρασμένο κείμενο."
+    assert any(c["role"] == "translator" for c in model.calls)
+
+
+def test_translation_failure_keeps_and_flags_the_night():
+    raw, conn = setup("el", 1)
+    run(conn, FakeModel(wrong_language=2, translate_fails=True))
+    ch = chapters(raw)[0][1]
+    assert ch["check"] == ["language"] and not ch.get("translated")
+
+
+def test_cut_at_max_tokens_halves_without_waiting():
+    raw, conn = setup("el", 1)
+    model = FakeModel(length_once=True)
+    waits = []
+    assert cj.run_job(conn, new_job(conn), generate=model, sleep=waits.append, ctx_tokens=32768) == "done"
+    assert chapters(raw)[0][1]["parts"] == 2 and waits == []
+
+
+def test_claim_skips_a_chronicle_that_is_not_quiet():
+    raw, conn = setup("el", 1)
+    raw.executescript("""
+        INSERT INTO campaigns (id, name, created_by) VALUES (11, 'Busy table', 2);
+        INSERT INTO locations (id, campaign_id, name) VALUES (201, 11, 'Bar');
+    """)
+    raw.execute("INSERT INTO messages (id, campaign_id, location_id, user_id, content, created_at) VALUES (9001, 11, 201, 2, 'now', ?)",
+                (datetime.now().isoformat(" "),))
+    cur = conn.cursor()
+    busy = cj.create_job(cur, 11, 2, "update")  # older, but its table is playing
+    quiet = cj.create_job(cur, 10, 2, "update")
+    conn.commit()
+    got = cj.claim(conn)
+    assert got["id"] == quiet and got["status"] == "running"
+    assert cj.get_job(cur, 11, busy)["status"] == "waiting"
+    assert cj.claim(conn) is None  # the waiting row was just checked: not again within 5 s

@@ -4,15 +4,15 @@
 Who:
 - someone who can't open the chronicle: 404 (as messages do)
 - a player: 403 (players get "Previously on…" in a later release, never these routes)
-- a helper who can open the chronicle (a member): reads, exports and Update; never edits
-- the Storyteller (creator) and site admins: everything (edits come in 0.25)
+- a helper who can open the chronicle (a member): reads and exports only
+- the Storyteller (creator) and site admins: also Update and Rewrite everything (edits come in 0.25)
 Archives of deleted chronicles: /api/chronicle-archives (site admins; the deleting Storyteller for 30 days).
 """
 
 from __future__ import annotations
 
 import logging
-from datetime import datetime
+from datetime import datetime, timedelta
 from urllib.parse import quote
 
 from flask import Blueprint, Response, jsonify, request, send_file
@@ -129,13 +129,15 @@ def get_chronicle(campaign_id):
             "view": view,
             "access": a,
             "can_edit": a == "st",
+            "can_update": a == "st",
+            "quiet_minutes": round(cj.quiet_seconds() / 60),
             "digest": digest,
             "withheld": withheld,
             "written_at": _iso(written_at),
             "nights_written": len(chapters),
             "nights_total": total if total is not None else len(chapters),
             "new_since": bool(last_msg and last_msg > last_written),
-            "chapters": [chapter_out(c, i, view) for i, c in enumerate(chapters, 1)],
+            "chapters": [chapter_out(c, i, view) for i, c in cd.number_nights(chapters)],
             "job": cj.job_json(cj.latest_job(cur, campaign_id)),
         })
     finally:
@@ -155,7 +157,7 @@ def get_chapters(campaign_id):
         view = _view(request.args.get("view"))
         camp = cj.campaign_row(cur, campaign_id)
         _lang, chapters, _d, _w, _at = _state(cur, camp, view)
-        out = [chapter_out(c, i, view) for i, c in enumerate(chapters, 1)]
+        out = [chapter_out(c, i, view) for i, c in cd.number_nights(chapters)]
         key = request.args.get("key")
         if key:
             one = [c for c in out if c["key"] == key]
@@ -196,8 +198,10 @@ def post_job(campaign_id):
         body = request.get_json(silent=True) or {}
         scope = body.get("scope") if isinstance(body, dict) else None
         scope = scope if scope in ("update", "all") else "update"
-        if scope == "all" and a != "st":
+        if a != "st":  # helpers read and export only
             return jsonify({"error": "forbidden"}), 403
+        if not cj._pg():  # no writer thread without PostgreSQL: the job would never run
+            return jsonify({"error": "no_worker"}), 503
         try:
             job_id = cj.create_job(cur, campaign_id, uid, scope)
         except cj.JobRefused as e:
@@ -272,7 +276,7 @@ def export_story(campaign_id):
         camp = cj.campaign_row(cur, campaign_id)
         lang, chapters, digest, _w, written_at = _state(cur, camp, view)
         readable = _readable_for_players(cur, campaign_id) if view == "player" else None
-        facts = cj.facts(cur, camp, view, readable)
+        facts = cj.facts(cur, camp, view, readable, chapters)
         facts["written_at"] = written_at
         facts["nights_total"] = max((digest or {}).get("nights_total") or 0, len(chapters))
         if chapters:
@@ -307,7 +311,8 @@ def export_minutes(campaign_id):
             return jsonify({"error": "bad_last"}), 400
         camp = cj.campaign_row(cur, campaign_id)
         lang, chapters, digest, _w, _at = _state(cur, camp, view)
-        facts = cj.facts(cur, camp, view)
+        readable = _readable_for_players(cur, campaign_id) if view == "player" else None
+        facts = cj.facts(cur, camp, view, readable, chapters)
         facts["nights_total"] = max((digest or {}).get("nights_total") or 0, len(chapters))
         existing = cj.message_ids(cur, campaign_id) if view == "st" else None
         text = cd.minutes_markdown(facts, chapters, lang, view, last_n, existing, _flag("with_table_talk"))
@@ -327,14 +332,19 @@ def _role(cur, uid):
 @chronicle_bp.route("/chronicle-archives", methods=["GET"])
 @jwt_required()
 def list_archives():
-    from services.chronicle_archive import can_download
+    from services.chronicle_archive import ARCHIVE_ST_DAYS, can_download
 
     uid = _uid()
     conn = get_db()
     try:
         cur = conn.cursor()
         role = _role(cur, uid)
-        cur.execute("SELECT * FROM chronicle_archives ORDER BY id DESC LIMIT 500")
+        if role == "admin":
+            cur.execute("SELECT * FROM chronicle_archives ORDER BY id DESC LIMIT 500")
+        else:  # the chronicle's Storyteller, for ARCHIVE_ST_DAYS days
+            since = datetime.now() - timedelta(days=ARCHIVE_ST_DAYS)
+            cur.execute("SELECT * FROM chronicle_archives WHERE storyteller_id = %s AND created_at >= %s "
+                        "ORDER BY id DESC LIMIT 500", (uid, since))
         rows = [r for r in cur.fetchall() if can_download(r, uid, role)]
         return jsonify({"archives": [
             {"id": r["id"], "campaign_id": r["campaign_id"], "campaign_name": r["campaign_name"],

@@ -202,8 +202,12 @@ def edition_name(rules_edition: Optional[str]) -> str:
     return "Vampire: The Masquerade V5" if str(rules_edition or "").lower() == "v5" else "Vampire: The Masquerade (Revised)"
 
 
-def facts(cursor, campaign: Dict[str, Any], view: str, readable_rooms: Optional[Set[int]] = None) -> Dict[str, Any]:
-    """Heading facts from the database, never from the model. Usernames only in the Storyteller's view."""
+def facts(cursor, campaign: Dict[str, Any], view: str, readable_rooms: Optional[Set[int]] = None,
+          chapters: Optional[Sequence[Dict[str, Any]]] = None) -> Dict[str, Any]:
+    """
+    Heading facts from the database, never from the model. Usernames only in the Storyteller's view.
+    Outside it, an NPC is listed only when a visible night names it (chapters), else not at all.
+    """
     cid = campaign["id"]
     cast = []
     cursor.execute(
@@ -226,7 +230,10 @@ def facts(cursor, campaign: Dict[str, Any], view: str, readable_rooms: Optional[
         cast.append(entry)
     try:
         cursor.execute("SELECT name, type, faction FROM npcs WHERE campaign_id = %s ORDER BY name", (cid,))
+        named = [c["name"] for ch in chapters or [] for c in (ch.get("chapter") or {}).get("characters") or []]
         for r in cursor.fetchall():
+            if view != "st" and not any(cd._name_ok(n, [r["name"]]) for n in named):
+                continue
             note = ", ".join(x for x in (r.get("type"), r.get("faction")) if x)
             cast.append({"name": r["name"], "npc": True, "note": note})
     except Exception:  # noqa: BLE001
@@ -345,9 +352,15 @@ def seconds_per_night(cursor) -> float:
     return statistics.median(vals) if vals else FALLBACK_SECONDS_PER_NIGHT
 
 
-def estimate_seconds(nights: int, story_total: int, spn: float) -> int:
-    eras = cd.ceil_div(story_total, cd.ERA_SIZE)
-    return int(round(nights * spn + (eras + 1) * spn if nights else 0))
+def changed_eras(p: Dict[str, Any], todo: Sequence[Dict[str, Any]]) -> int:
+    """Era digests the run rewrites: the eras that hold a night being written."""
+    pos = {c["key"]: i for i, c in enumerate(p["story"])}
+    return len({pos[c["key"]] // cd.ERA_SIZE for c in todo if c["key"] in pos})
+
+
+def estimate_seconds(nights: int, eras: int, spn: float) -> int:
+    """Nights to write, the eras that change and the final join, at spn seconds a call."""
+    return int(round((nights + eras + 1) * spn)) if nights else 0
 
 
 def estimate(cursor, campaign_id: int, scope: str = "update") -> Dict[str, Any]:
@@ -358,7 +371,8 @@ def estimate(cursor, campaign_id: int, scope: str = "update") -> Dict[str, Any]:
     return {
         "lang": p["lang"], "nights_to_write": nights, "nights_stale": stale, "nights_total": len(p["story"]),
         "capped": stale > MAX_NIGHTS_PER_RUN, "max_nights": MAX_NIGHTS_PER_RUN,
-        "seconds": estimate_seconds(nights, len(p["story"]), spn), "seconds_per_night": round(spn, 1),
+        "seconds": estimate_seconds(nights, changed_eras(p, p["stale"][:nights]), spn), "seconds_per_night": round(spn, 1),
+        "quiet_minutes": round(quiet_seconds() / 60),
         "story_messages": p["story_messages"], "enough": p["story_messages"] >= cd.MIN_STORY_MESSAGES,
     }
 
@@ -416,7 +430,7 @@ def create_job(cursor, campaign_id: int, user_id: int, scope: str = "update",
     every = REWRITE_ALL_EVERY_S if scope == "all" else UPDATE_EVERY_S
     cursor.execute(
         "SELECT created_at FROM chronicle_jobs WHERE campaign_id = %s AND (scope = %s OR %s = 'update') "
-        "ORDER BY id DESC LIMIT 1",
+        "AND status NOT IN ('cancelled', 'failed') ORDER BY id DESC LIMIT 1",
         (campaign_id, scope, scope),
     )
     last = cursor.fetchone()
@@ -512,6 +526,11 @@ class Progress:
         if row is None or _bool(row.get("cancel_requested"), False) or row.get("status") == "cancelled":
             self.cancelled = True
         return not self.cancelled
+
+
+def is_length_cut(err) -> bool:
+    """The answer stopped at max_tokens (finish_reason "length"): write the night in halves."""
+    return "finish_reason=length" in str(err or "")
 
 
 class JobCancelled(Exception):
@@ -616,25 +635,56 @@ class Runner:
         try:
             raw = self._call(msgs, cd.CHAPTER_MAX_TOKENS, "chapter", cd.CHAPTER_SCHEMA)
         except ProviderError as e:
-            if not is_context_overflow(e) or split_left <= 0 or len(lines) < 2:
-                raise NightFailed(str(e)[:300]) from e
-            logger.warning("chronicle %s: context exceeded on %s; waiting, then splitting the night", self.cid, ch["key"])
-            self._wait(overflow_wait_seconds())
+            cut = is_length_cut(e)
+            if not (cut or is_context_overflow(e)) or split_left <= 0 or len(lines) < 2:
+                logger.warning("chronicle %s: night %s failed: %s", self.cid, ch["key"], e)
+                raise NightFailed("context" if is_context_overflow(e) else "model_failed") from e
+            if not cut:  # the context is full (maybe a live Storyteller prompt): wait, then smaller
+                logger.warning("chronicle %s: context exceeded on %s; waiting, then splitting the night", self.cid, ch["key"])
+                self._wait(overflow_wait_seconds())
             return cd.merge_parts([self._write_part(ch, h, split_left - 1) for h in cd.halve(lines)])
         ids = [ln["id"] for ln in lines]
         chapter, problems = cd.check_chapter(raw, ids, self.names, self.lang, self.places)
         if problems:
-            again = self._call(cd.retry_messages(msgs, problems, self.lang), cd.CHAPTER_MAX_TOKENS, "chapter", cd.CHAPTER_SCHEMA)
+            again = self._call(cd.retry_messages(msgs, raw, problems, self.lang), cd.CHAPTER_MAX_TOKENS, "chapter", cd.CHAPTER_SCHEMA)
             chapter2, problems2 = cd.check_chapter(again, ids, self.names, self.lang, self.places)
             if chapter2 is not None and (chapter is None or len(problems2) <= len(problems)):
                 chapter, problems = chapter2, problems2
         if chapter is None:
-            raise NightFailed("the model did not answer with JSON")
+            raise NightFailed("no_json")
         if "mixed_script" in problems:
             chapter = cd.strip_foreign(chapter)
         if "language" in problems:
-            chapter["check"] = ["language"]
+            chapter = self._translate(chapter)
         return chapter
+
+    def _translate(self, chapter):
+        """The night is in the wrong language after the retry: the translator role puts it into the
+        chronicle's language (names protected, services/translation.py). If that fails it is kept and flagged."""
+        from services import translation
+
+        src = "en" if self.lang == "el" else "el"
+        out = dict(chapter)
+
+        def tr(text):
+            if not text or not cd.language_problems(text, self.lang).count("language"):
+                return text
+            return translation.translate(text, src, self.lang, generate=self.generate, names=self.names)[0]
+
+        try:
+            out["title"] = tr(chapter.get("title", ""))
+            out["summary"] = [tr(x) for x in chapter.get("summary") or []]
+            for key in ("events", "threads_opened", "threads_closed"):
+                out[key] = [{**e, "text": tr(e["text"])} for e in chapter.get(key) or []]
+            for key in ("characters", "places"):
+                out[key] = [{**e, "note": tr(e.get("note", ""))} for e in chapter.get(key) or []]
+        except Exception as e:  # noqa: BLE001 - kept as written, and flagged
+            logger.warning("chronicle %s: translating a night failed: %s", self.cid, e)
+            flagged = dict(chapter)
+            flagged["check"] = ["language"]
+            return flagged
+        out["translated"] = True
+        return out
 
     def _wait(self, seconds):
         """Sleep in short steps, keeping the job row fresh (not stale) and honouring Cancel."""
@@ -792,7 +842,8 @@ class Runner:
         spn = seconds_per_night(cur)
         self.progress.set(lang=self.lang, phase="writing", nights=len(todo), nights_total=len(p["stale"]),
                           nights_done=0, night=0)
-        self.progress.set_eta(estimate_seconds(len(todo), len(p["story"]), spn))
+        eras = changed_eras(p, todo)
+        self.progress.set_eta(estimate_seconds(len(todo), eras, spn))
         self.progress.tick(force=True)
         if p["story_messages"] < cd.MIN_STORY_MESSAGES:
             self._sync_unwritten(p)
@@ -810,8 +861,7 @@ class Runner:
             done_s = self.clock() - t0
             per = done_s / n
             self.progress.set(nights_done=n)
-            self.progress.set_eta(estimate_seconds(len(todo) - n, len(p["story"]), per) if n < len(todo)
-                                  else (cd.ceil_div(len(p["story"]), cd.ERA_SIZE) + 1) * per)
+            self.progress.set_eta(estimate_seconds(len(todo) - n, eras, per) if n < len(todo) else (eras + 1) * per)
             self.progress.tick(force=True)
         if todo:
             self.progress.set(seconds_per_night=round((self.clock() - t0) / len(todo), 2))
@@ -844,7 +894,10 @@ def run_job(conn, job: Dict[str, Any], **kw) -> str:
     except Exception as e:  # noqa: BLE001
         logger.exception("chronicle job %s failed", job.get("id"))
         _safe_rollback(conn)
-        msg = str(e)[:300] if isinstance(e, NightFailed) else type(e).__name__
+        from services.ai_providers import ProviderError
+
+        # a short code for the panel; the provider's text (it can hold the LM Studio address) only in the log
+        msg = str(e) if isinstance(e, NightFailed) else ("model_failed" if isinstance(e, ProviderError) else "internal")
         try:
             finish(conn, job["id"], "failed", msg, {**runner.progress.fields, "phase": None})
         except Exception:  # noqa: BLE001
@@ -870,49 +923,60 @@ def is_quiet(cursor, campaign_id: int, now: Optional[datetime] = None) -> bool:
     return last is None or (now - last).total_seconds() >= quiet_seconds()
 
 
+WAITING_RECHECK_S = 5
+
+
 def claim(conn) -> Optional[Dict[str, Any]]:
     """
-    The next job to run, or None. FOR UPDATE SKIP LOCKED picks a row no other worker holds; the
-    advisory lock (kept on this connection until it closes) makes sure one chronicle never has two
-    writers, even when a stale job is picked up again. A job inside its quiet window becomes 'waiting'.
+    The next job to run, or None. Candidates come queued first, then waiting ones, oldest first;
+    a chronicle that isn't quiet yet is marked 'waiting' and skipped, so it never blocks the
+    others. FOR UPDATE SKIP LOCKED skips rows another worker holds; the advisory lock (kept on this
+    connection until it closes) means one chronicle never has two writers, even when a stale job
+    is picked up again. While a Storyteller reply is being written nothing is claimed.
     """
     from services.ai_busy import is_busy
 
     cur = conn.cursor()
-    stale_before = datetime.now() - timedelta(seconds=STALE_JOB_S)
-    cur.execute(
-        """
-        SELECT * FROM chronicle_jobs
-        WHERE status IN ('queued', 'waiting') OR (status = 'running' AND updated_at < %s)
-        ORDER BY id LIMIT 1 FOR UPDATE SKIP LOCKED
-        """,
-        (stale_before,),
-    )
-    job = cur.fetchone()
-    if not job:
-        conn.rollback()
-        return None
-    cur.execute("SELECT pg_try_advisory_lock(%s, %s) AS ok", (ADVISORY_CLASS, int(job["campaign_id"])))
-    if not (cur.fetchone() or {}).get("ok"):
+    if is_busy(cur):
         conn.rollback()
         return None
     now = datetime.now()
-    if not is_quiet(cur, job["campaign_id"], now) or is_busy(cur):
-        cur.execute("UPDATE chronicle_jobs SET status = 'waiting', phase = 'waiting', updated_at = %s WHERE id = %s",
-                    (now, job["id"]))
-        conn.commit()
-        cur.execute("SELECT pg_advisory_unlock(%s, %s)", (ADVISORY_CLASS, int(job["campaign_id"])))
-        conn.commit()
-        return None
     cur.execute(
-        "UPDATE chronicle_jobs SET status = 'running', phase = 'writing', started_at = COALESCE(started_at, %s), "
-        "updated_at = %s WHERE id = %s",
-        (now, now, job["id"]),
+        """
+        SELECT * FROM chronicle_jobs
+        WHERE status = 'queued'
+           OR (status = 'waiting' AND (updated_at IS NULL OR updated_at < %s))
+           OR (status = 'running' AND updated_at < %s)
+        ORDER BY (status = 'waiting'), id LIMIT 20 FOR UPDATE SKIP LOCKED
+        """,
+        (now - timedelta(seconds=WAITING_RECHECK_S), now - timedelta(seconds=STALE_JOB_S)),
     )
+    for job in cur.fetchall():
+        cid = int(job["campaign_id"])
+        if not is_quiet(cur, cid, now):
+            cur.execute("UPDATE chronicle_jobs SET status = 'waiting', phase = 'waiting', updated_at = %s WHERE id = %s",
+                        (now, job["id"]))
+            continue
+        if not _try_lock(cur, cid):
+            continue
+        cur.execute(
+            "UPDATE chronicle_jobs SET status = 'running', phase = 'writing', started_at = COALESCE(started_at, %s), "
+            "updated_at = %s WHERE id = %s",
+            (now, now, job["id"]),
+        )
+        conn.commit()
+        job = dict(job)
+        job["status"] = "running"
+        return job
     conn.commit()
-    job = dict(job)
-    job["status"] = "running"
-    return job
+    return None
+
+
+def _try_lock(cur, campaign_id: int) -> bool:
+    if not _pg():
+        return True
+    cur.execute("SELECT pg_try_advisory_lock(%s, %s) AS ok", (ADVISORY_CLASS, int(campaign_id)))
+    return bool((cur.fetchone() or {}).get("ok"))
 
 
 _worker_lock = threading.Lock()

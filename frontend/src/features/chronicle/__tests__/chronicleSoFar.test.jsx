@@ -13,12 +13,13 @@ const toast = jest.fn();
 const campaign = { id: 10, name: 'Athens: Blood / Concrete' };
 
 const written = {
-  lang: 'el', view: 'st', access: 'st', nights_written: 2, nights_total: 2, new_since: false,
+  lang: 'el', view: 'st', access: 'st', can_update: true, quiet_minutes: 15, nights_written: 2, nights_total: 2, new_since: false,
   written_at: '2026-10-16T22:00:00', job: null,
   digest: { tldr: 'In short.', so_far: ['The story.'], threads_open: [{ text: 'Who watches?', nights: [1] }], st_so_far: ['Secret part.'] },
   chapters: [
     { key: '101:1', night: 1, room: 'Basement', visibility: 'all', started_at: '2026-10-05T21:00:00', chapter: { title: 'The note', summary: ['P1'], st_notes: [{ text: 'Hidden roll failed.' }] } },
-    { key: '103:9', night: 2, room: 'Crypt', visibility: 'st', started_at: '2026-10-06T21:00:00', chapter: { title: 'Sealed', summary: ['P2'] } },
+    { key: '103:9', night: null, room: 'Crypt', visibility: 'st', started_at: '2026-10-06T21:00:00', chapter: { title: 'Sealed', summary: ['P2'] } },
+    { key: '101:20', night: 2, room: 'Basement', visibility: 'all', started_at: '2026-10-07T21:00:00', chapter: { title: 'Kept', summary: ['P3'], check: ['language'] } },
   ],
 };
 
@@ -57,14 +58,16 @@ test('the progress card shows the night, tokens, time and the waiting state', ()
   expect(screen.getByRole('progressbar')).toHaveAttribute('aria-valuenow', '2');
   rerender(<DesignProvider><ProgressCard job={job({ tokens_night: 0, tok_per_s: null })} onCancel={() => {}} /></DesignProvider>);
   expect(screen.getByText('Reading the night…')).toBeInTheDocument();
-  rerender(<DesignProvider><ProgressCard job={job({ status: 'waiting', phase: 'waiting' })} onCancel={() => {}} /></DesignProvider>);
+  rerender(<DesignProvider><ProgressCard job={job({ status: 'waiting', phase: 'waiting' })} onCancel={() => {}} quietMinutes={15} /></DesignProvider>);
   expect(screen.getAllByText('Waiting for a quiet moment').length).toBeGreaterThan(0);
+  expect(screen.getByText(/after 15 minutes with no new message/)).toBeInTheDocument();
   expect(screen.getByRole('status')).toBeInTheDocument(); // the spinner
   expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
 });
 
 test('helpers: polling delay, clock, file names', () => {
   expect(pollDelay({ status: 'running' })).toBe(1500);
+  expect(pollDelay({ status: 'queued' })).toBe(1500);
   expect(pollDelay({ status: 'waiting' })).toBe(5000);
   expect(clock(75)).toBe('1:15');
   expect(clock(3725)).toBe('1:02:05');
@@ -94,7 +97,7 @@ test('Update shows the estimate first; Start creates the job and the card polls 
   expect(api).toHaveBeenCalledWith('/campaigns/10/chronicle/jobs', { method: 'POST', body: { scope: 'update' } });
   expect(await screen.findByText('Queued…')).toBeInTheDocument();
   await act(async () => {
-    jest.advanceTimersByTime(5000);
+    jest.advanceTimersByTime(1500);
   });
   expect(await screen.findByText('Night 3 of 12')).toBeInTheDocument();
   await act(async () => {
@@ -148,6 +151,7 @@ test('partial runs say so; the Storyteller part is behind a toggle; exports', as
   await user.click(screen.getByRole('switch', { name: 'Show the Storyteller part' }));
   expect(screen.getByText('Secret part.')).toBeInTheDocument();
   expect(screen.getByText(/Crypt/)).toBeInTheDocument();
+  expect(screen.getByText('not fully in Greek')).toBeInTheDocument();
   await user.type(screen.getByRole('spinbutton', { name: 'Number of nights' }), '3');
   await user.click(screen.getByRole('button', { name: /Export minutes · the last 3 nights/ }));
   await waitFor(() => expect(global.fetch).toHaveBeenCalled());
@@ -155,4 +159,33 @@ test('partial runs say so; the Storyteller part is behind a toggle; exports', as
   await user.click(screen.getByRole('button', { name: 'Export story' }));
   await waitFor(() => expect(global.fetch).toHaveBeenCalledTimes(2));
   expect(global.fetch.mock.calls[1][0]).toBe('/api/campaigns/10/chronicle.md');
+});
+
+test('helpers read and export but get no Update or Rewrite everything', async () => {
+  const api = jest.fn(async () => ({ ok: true, data: { ...written, access: 'helper', can_update: false } }));
+  renderPanel(api);
+  expect(await screen.findByRole('button', { name: 'Export story' })).toBeInTheDocument();
+  expect(screen.queryByRole('button', { name: 'Update' })).not.toBeInTheDocument();
+  expect(screen.queryByRole('button', { name: 'Rewrite everything' })).not.toBeInTheDocument();
+});
+
+test('Rewrite everything asks the estimate at scope=all and starts a scope all job; 429 is explained', async () => {
+  const api = jest.fn(async (path, opts) => {
+    if (path.endsWith('/estimate?scope=all')) return { ok: true, data: { enough: true, nights_to_write: 2, nights_stale: 2, seconds: 30 } };
+    if (opts && opts.method === 'POST') return { ok: false, status: 429, data: { error: 'too_soon', retry_after: 1200 } };
+    return { ok: true, data: written };
+  });
+  const user = setupUser();
+  renderPanel(api);
+  await user.click(await screen.findByRole('button', { name: 'Rewrite everything' }));
+  expect(await screen.findByText('Every night is written again, the oldest first.')).toBeInTheDocument();
+  await user.click(screen.getByRole('button', { name: 'Start' }));
+  expect(api).toHaveBeenCalledWith('/campaigns/10/chronicle/jobs', { method: 'POST', body: { scope: 'all' } });
+  await waitFor(() => expect(toast).toHaveBeenCalledWith({ tone: 'danger', title: 'Update was pressed a moment ago; try again in 1200 s.' }));
+});
+
+test('a failed job shows a short reason, never the provider text', async () => {
+  const api = jest.fn(async () => ({ ok: true, data: { ...written, job: { id: 3, status: 'failed', error: 'model_failed' } } }));
+  renderPanel(api);
+  expect(await screen.findByText(/The last update failed: the model did not answer/)).toBeInTheDocument();
 });

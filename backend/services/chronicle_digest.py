@@ -93,6 +93,7 @@ WORDS: Dict[str, Dict[str, str]] = {
         "roll": "roll",
         "edited": "edited by the Storyteller",
         "transcript": "Transcript",
+        "not_in_lang": "not fully in English",
     },
     "el": {
         "so_far_title": "Το χρονικό ως τώρα",
@@ -139,6 +140,7 @@ WORDS: Dict[str, Dict[str, str]] = {
         "roll": "ρίψη",
         "edited": "με αλλαγές του Storyteller",
         "transcript": "Απομαγνητοφώνηση",
+        "not_in_lang": "όχι πλήρως στα ελληνικά",
     },
 }
 
@@ -320,9 +322,11 @@ def cut_chapters(rows: Sequence[Dict[str, Any]], gap_hours: float = GAP_HOURS,
                  session_marks: Iterable[int] = ()) -> List[Dict[str, Any]]:
     """
     Rows of every room (oldest first) -> chapters in timeline order. A new chapter starts at a new
-    room, after a gap over gap_hours, and after a message marked as the end of a session.
+    room, after a gap over gap_hours, and at a session-end mark: a mark ends the session in every
+    room, so each room is cut at the marked message's time.
     """
     marks = {int(m) for m in session_marks}
+    cuts = sorted(r["created_at"] for r in rows if int(r["id"]) in marks and r.get("created_at"))
     by_room: Dict[Any, List[Dict[str, Any]]] = {}
     for r in sorted(rows, key=lambda x: int(x["id"])):
         by_room.setdefault(r["location_id"], []).append(r)
@@ -334,7 +338,8 @@ def cut_chapters(rows: Sequence[Dict[str, Any]], gap_hours: float = GAP_HOURS,
             if cur:
                 prev = cur[-1]
                 t0, t1 = prev.get("created_at"), r.get("created_at")
-                if int(prev["id"]) in marks or (t0 and t1 and t1 - t0 > gap):
+                crossed = bool(t0 and t1 and any(t0 <= c < t1 for c in cuts))
+                if int(prev["id"]) in marks or crossed or (t0 and t1 and t1 - t0 > gap):
                     out.append(_chapter(lid, cur))
                     cur = []
             cur.append(r)
@@ -396,7 +401,8 @@ def chapter_hash(ch: Dict[str, Any], material: Dict[str, Any], lang: str, names:
         "v": PROMPT_VERSION, "lang": lang, "room": ch["room"], "vis": ch["visibility"], "kind": ch["kind"],
         "lines": [ln["text"] for ln in material["lines"]],
         "hidden": [ln["text"] for ln in material["hidden"]],
-        "names": sorted(set(names)),
+        # only the names this night's lines mention: a new character elsewhere changes nothing here
+        "names": sorted({n for n in names if n and any(n in ln["text"] for ln in material["lines"] + material["hidden"])}),
     }
     return hashlib.sha1(json.dumps(src, ensure_ascii=False, sort_keys=True).encode("utf-8")).hexdigest()
 
@@ -635,15 +641,22 @@ def notes_messages(lang: str, lines: Sequence[Dict[str, Any]], names: Sequence[s
     ]
 
 
-def retry_messages(messages: List[Dict[str, str]], problems: Sequence[str], lang: str) -> List[Dict[str, str]]:
+def retry_messages(messages: List[Dict[str, str]], answer: str, problems: Sequence[str], lang: str) -> List[Dict[str, str]]:
+    """The model's answer as its own turn, then the reason it is asked again."""
     rr = RETRY_REASON["el" if lang == "el" else "en"]
     reasons = " ".join(rr[p] for p in problems if p in rr)
-    return messages + [{"role": "user", "content": rr["head"].format(reasons=reasons)}]
+    return messages + [{"role": "assistant", "content": answer or ""},
+                       {"role": "user", "content": rr["head"].format(reasons=reasons)}]
 
 
-def _chapter_brief(seq: int, ch: Dict[str, Any], lang: str) -> str:
+def _label(seq: Optional[int], lang: str) -> str:
+    w = words(lang)
+    return f"{w['night']} {seq}" if seq is not None else w["closed_room"]
+
+
+def _chapter_brief(seq: Optional[int], ch: Dict[str, Any], lang: str) -> str:
     c = ch.get("chapter") or {}
-    out = [f"{words(lang)['night']} {seq} · {fmt_date(ch.get('started_at'), lang)} · {ch.get('room')}: {c.get('title', '')}"]
+    out = [f"{_label(seq, lang)} · {fmt_date(ch.get('started_at'), lang)} · {ch.get('room')}: {c.get('title', '')}"]
     out.extend(c.get("summary") or [])
     threads = [t["text"] for t in c.get("threads_opened") or []]
     if threads:
@@ -896,9 +909,22 @@ def player_digest(digest: Optional[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
     return {k: v for k, v in digest.items() if not k.startswith("st_") and k != "rooms"}
 
 
-def eras_of(story: Sequence[Dict[str, Any]], size: int = ERA_SIZE) -> List[List[Tuple[int, Dict[str, Any]]]]:
-    """Story chapters (timeline order) numbered from 1 and grouped in eras of `size` nights."""
-    numbered = list(enumerate(story, 1))
+def number_nights(story: Sequence[Dict[str, Any]]) -> List[Tuple[Optional[int], Dict[str, Any]]]:
+    """Night numbers count only the nights players can see, so the player view, the Storyteller's
+    view and the threads' night numbers agree; a closed room's night has no number (None)."""
+    out, n = [], 0
+    for ch in story:
+        if ch.get("visibility") == "st":
+            out.append((None, ch))
+        else:
+            n += 1
+            out.append((n, ch))
+    return out
+
+
+def eras_of(story: Sequence[Dict[str, Any]], size: int = ERA_SIZE) -> List[List[Tuple[Optional[int], Dict[str, Any]]]]:
+    """Story chapters (timeline order), numbered as number_nights, grouped in eras of `size` nights."""
+    numbered = number_nights(story)
     return [numbered[i:i + size] for i in range(0, len(numbered), size)]
 
 
@@ -920,7 +946,7 @@ def st_material(era: Sequence[Tuple[int, Dict[str, Any]]], lang: str) -> List[st
         if ch.get("visibility") == "st":
             out.append(_chapter_brief(s, ch, lang))
         for n in c.get("st_notes") or []:
-            out.append(f"{words(lang)['night']} {s}: {n['text']}")
+            out.append(f"{_label(s, lang)}: {n['text']}")
     return out
 
 
@@ -956,9 +982,10 @@ def _night_heading(seq: int, ch: Dict[str, Any], lang: str, level: str = "###") 
     c = ch.get("chapter") or {}
     title = md(c.get("title")) if c.get("title") else ""
     closed = f" ({w['closed_room']})" if ch.get("visibility") == "st" else ""
-    parts = [f"{w['night']} {seq}", md(ch.get("room")) + closed, fmt_date(ch.get("started_at"), lang)]
+    parts = [_label(seq, lang), md(ch.get("room")) + closed, fmt_date(ch.get("started_at"), lang)]
     head = f"{level} " + " — ".join(parts)
-    return head + (f": {title}" if title else "")
+    flag = f" _({w['not_in_lang']})_" if "language" in (c.get("check") or []) else ""
+    return head + (f": {title}" if title else "") + flag
 
 
 def _items(items, lang, cite, existing) -> List[str]:
@@ -999,7 +1026,7 @@ def story_markdown(facts: Dict[str, Any], digest: Optional[Dict[str, Any]], chap
     w = words(lang)
     st = view == "st"
     story = [c for c in chapters if c.get("kind") == "story"]
-    numbered = list(enumerate(story, 1))
+    numbered = number_nights(story)
     out = [f"# {md(facts.get('name'))} — {w['so_far_title']}", ""]
     if story and not facts.get("first_at"):
         facts = {**facts, "first_at": story[0].get("started_at"), "last_at": story[-1].get("started_at")}
@@ -1047,7 +1074,7 @@ def story_markdown(facts: Dict[str, Any], digest: Optional[Dict[str, Any]], chap
             for p in (digest or {}).get("st_so_far") or []:
                 out += [md(p), ""]
             for s, ch in notes:
-                out += [f"### {w['st_notes']} — {w['night']} {s}", ""]
+                out += [f"### {w['st_notes']} — {_label(s, lang)}", ""]
                 out += _items(ch["chapter"]["st_notes"], lang, True, existing_ids) + [""]
     out += _footer(lang)
     return "\n".join(out)
@@ -1105,7 +1132,7 @@ def minutes_markdown(facts: Dict[str, Any], chapters: Sequence[Dict[str, Any]], 
     w = words(lang)
     st = view == "st"
     story = [c for c in chapters if c.get("kind") == "story"]
-    numbered = list(enumerate(story, 1))
+    numbered = number_nights(story)
     if last_n:
         numbered = numbered[-int(last_n):]
     out = [f"# {md(facts.get('name'))} — {w['minutes_title']}", ""]

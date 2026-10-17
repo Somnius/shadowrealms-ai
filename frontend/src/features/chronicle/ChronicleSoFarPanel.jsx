@@ -7,7 +7,7 @@ import { clock, downloadMarkdown, isLive, mdFileName, number, pollDelay, shortDa
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 
 /** The live card while a job runs: night x of y, the bar, tokens from the model's stream, time, Cancel. */
-export function ProgressCard({ job, onCancel, cancelling }) {
+export function ProgressCard({ job, onCancel, cancelling, quietMinutes = 10 }) {
   const lang = getLanguage();
   let line;
   if (job.status === 'queued') line = t('chronicle:soFar.queued', 'Queued…');
@@ -27,7 +27,7 @@ export function ProgressCard({ job, onCancel, cancelling }) {
           <Spinner variant="candle" size={20} label={t('chronicle:soFar.waiting', 'Waiting for a quiet moment')} />
           <div>
             <strong>{t('chronicle:soFar.waiting', 'Waiting for a quiet moment')}</strong>
-            <p className="sr-sofar__hint">{t('chronicle:soFar.waitingHint', 'The writer starts after 10 minutes with no new message, so play comes first.')}</p>
+            <p className="sr-sofar__hint">{t('chronicle:soFar.waitingHint', 'The writer starts after {{minutes}} minutes with no new message, so play comes first.', { minutes: quietMinutes })}</p>
           </div>
         </div>
       ) : (
@@ -53,6 +53,14 @@ export function ProgressCard({ job, onCancel, cancelling }) {
   );
 }
 
+/** Job error codes from the server (never the provider's own text). */
+function jobError(code) {
+  if (code === 'context') return t('chronicle:soFar.errContext', 'a night did not fit the model’s context');
+  if (code === 'no_json') return t('chronicle:soFar.errJson', 'the model did not answer in the expected form');
+  if (code === 'model_failed') return t('chronicle:soFar.errModel', 'the model did not answer');
+  return t('chronicle:soFar.errOther', 'something went wrong on the server');
+}
+
 function statusLine(data, lang) {
   if (!data) return '';
   const parts = [];
@@ -66,12 +74,13 @@ function statusLine(data, lang) {
   }
   if (data.new_since) parts.push(t('chronicle:soFar.newSince', 'New messages since the last update.'));
   const job = data.job;
-  if (job && job.status === 'failed') parts.push(t('chronicle:soFar.failed', 'The last update failed: {{error}}', { error: job.error || '—' }));
+  if (job && job.status === 'failed') parts.push(t('chronicle:soFar.failed', 'The last update failed: {{error}}', { error: jobError(job.error) }));
   return parts.join(' ');
 }
 
 function EstimateNotice({ estimate, onStart, onClose, starting }) {
   let text;
+  const all = estimate.scope === 'all';
   if (!estimate.enough) text = t('chronicle:soFar.notEnough', 'Nothing to tell yet: write a few scenes first.');
   else if (!estimate.nights_to_write) text = t('chronicle:soFar.estimateNone', 'Nothing new to write; the summary is checked again.');
   else if (estimate.seconds < 60) text = t('chronicle:soFar.estimateShort', 'This will take less than a minute: {{nights}} nights to write, then the summary.', { nights: estimate.nights_to_write });
@@ -79,6 +88,7 @@ function EstimateNotice({ estimate, onStart, onClose, starting }) {
   return (
     <div className="sr-sofar__notice" role="alert" data-testid="sofar-estimate">
       <p>{text}</p>
+      {all ? <p>{t('chronicle:soFar.rewriteNote', 'Every night is written again, the oldest first.')}</p> : null}
       {estimate.capped ? (
         <p>{t('chronicle:soFar.capped', 'It stops after {{max}} nights ({{total}} are waiting); press Update again to carry on.', { max: estimate.max_nights, total: estimate.nights_stale })}</p>
       ) : null}
@@ -129,9 +139,14 @@ function Digest({ data, showSt, lang }) {
             return (
               <details key={c.key} className="sr-sofar__night-item">
                 <summary>
-                  {t('chronicle:soFar.nightHeading', 'Night {{n}} · {{room}} · {{date}}', { n: c.night, room: c.room, date: shortDate(c.started_at, lang) })}
+                  {c.night != null
+                    ? t('chronicle:soFar.nightHeading', 'Night {{n}} · {{room}} · {{date}}', { n: c.night, room: c.room, date: shortDate(c.started_at, lang) })
+                    : t('chronicle:soFar.closedHeading', '{{room}} · {{date}}', { room: c.room, date: shortDate(c.started_at, lang) })}
                   {c.visibility === 'st' ? ` (${t('chronicle:soFar.closedRoom', 'closed room')})` : ''}
                   {ch.title ? <span className="sr-sofar__night-title">{ch.title}</span> : null}
+                  {(ch.check || []).includes('language') ? (
+                    <span className="sr-sofar__flag">{data.lang === 'el' ? t('chronicle:soFar.notInGreek', 'not fully in Greek') : t('chronicle:soFar.notInEnglish', 'not fully in English')}</span>
+                  ) : null}
                 </summary>
                 {(ch.summary || []).map((p, i) => <p key={i}>{p}</p>)}
                 {showSt && ch.st_notes && ch.st_notes.length ? (
@@ -220,20 +235,21 @@ export default function ChronicleSoFarPanel({ api, campaign, toast }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [jobId, api, id, load]);
 
-  const askEstimate = async () => {
-    setEstimating(true);
-    const r = await api(`/campaigns/${id}/chronicle/estimate`);
+  const askEstimate = async (scope = 'update') => {
+    setEstimating(scope);
+    const r = await api(`/campaigns/${id}/chronicle/estimate${scope === 'all' ? '?scope=all' : ''}`);
     setEstimating(false);
     if (!r.ok) {
       toast({ tone: 'danger', title: errorText(r.data, t('chronicle:soFar.startFailed', 'Could not start the update.')) });
       return;
     }
-    setEstimate(r.data);
+    setEstimate({ ...r.data, scope });
   };
 
   const start = async () => {
+    const scope = (estimate && estimate.scope) || 'update';
     setStarting(true);
-    const r = await api(`/campaigns/${id}/chronicle/jobs`, { method: 'POST', body: { scope: 'update' } });
+    const r = await api(`/campaigns/${id}/chronicle/jobs`, { method: 'POST', body: { scope } });
     setStarting(false);
     setEstimate(null);
     if (r.ok && r.data && r.data.job) {
@@ -244,6 +260,8 @@ export default function ChronicleSoFarPanel({ api, campaign, toast }) {
     let title = t('chronicle:soFar.startFailed', 'Could not start the update.');
     if (code === 'too_soon') title = t('chronicle:soFar.tooSoon', 'Update was pressed a moment ago; try again in {{seconds}} s.', { seconds: r.data.retry_after || 0 });
     if (code === 'job_running') title = t('chronicle:soFar.busy', 'An update is already running.');
+    if (r.status === 403) title = t('chronicle:soFar.forbidden', 'Only the Storyteller and site admins can update the chronicle so far.');
+    if (code === 'no_worker') title = t('chronicle:soFar.noWorker', 'The writer isn’t running on this server.');
     toast({ tone: 'danger', title });
   };
 
@@ -282,15 +300,20 @@ export default function ChronicleSoFarPanel({ api, campaign, toast }) {
       {state === 'ready' ? (
         <>
           <p className="sr-sofar__status" data-testid="sofar-status">{statusLine(data, lang)}</p>
-          {live ? <ProgressCard job={job} onCancel={cancel} cancelling={cancelling} /> : null}
+          {live ? <ProgressCard job={job} onCancel={cancel} cancelling={cancelling} quietMinutes={data.quiet_minutes} /> : null}
           {!live && estimate ? (
             <EstimateNotice estimate={estimate} onStart={start} onClose={() => setEstimate(null)} starting={starting} />
           ) : null}
-          {!live && !estimate ? (
+          {!live && !estimate && data.can_update ? (
             <div className="sr-sofar__actions">
-              <Button variant="primary" icon="reroll" onClick={askEstimate} loading={estimating} loadingLabel={t('chronicle:soFar.estimating', 'Working out how long it takes…')}>
+              <Button variant="primary" icon="reroll" onClick={() => askEstimate('update')} loading={estimating === 'update'} loadingLabel={t('chronicle:soFar.estimating', 'Working out how long it takes…')}>
                 {t('chronicle:soFar.update', 'Update')}
               </Button>
+              {data.nights_written ? (
+                <Button variant="secondary" onClick={() => askEstimate('all')} loading={estimating === 'all'} loadingLabel={t('chronicle:soFar.estimating', 'Working out how long it takes…')}>
+                  {t('chronicle:soFar.rewriteAll', 'Rewrite everything')}
+                </Button>
+              ) : null}
             </div>
           ) : null}
           {data.nights_written ? (

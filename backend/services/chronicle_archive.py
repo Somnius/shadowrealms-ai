@@ -5,7 +5,8 @@ every room in the Storyteller's view (hidden rolls marked) are written to
 data/chronicle_archive/<id>-<slug>-<time>/, with an index row in chronicle_archives. If that
 fails, the delete stops.
 
-Downloads: site admins always; the Storyteller who deleted it for ARCHIVE_ST_DAYS days. The path
+Downloads: site admins always; the chronicle's Storyteller (its creator) for ARCHIVE_ST_DAYS days,
+whoever pressed delete. The path
 on disk always comes from the index row, never from the request.
 """
 
@@ -25,10 +26,10 @@ FILES = {"minutes": "minutes.md", "transcript": "transcript.md"}
 _HEADER = {
     "en": ("Archive of “{name}”, written on {date} when the chronicle was deleted.\n\n"
            "- Minutes: {written} of {total} nights, from the chapters already written (nothing new was written).\n"
-           "- Transcript: every room and every message ({messages}), as the Storyteller saw them; hidden rolls are marked.\n"),
+           "- Transcript: every chat line of every room ({messages} messages; dice animations and system rows left out), as the Storyteller saw them; hidden rolls are marked.\n"),
     "el": ("Αρχείο του «{name}», γράφτηκε στις {date} όταν διαγράφηκε το χρονικό.\n\n"
            "- Πρακτικά: {written} από {total} νύχτες, από τα κεφάλαια που είχαν ήδη γραφτεί (δεν γράφτηκε τίποτα νέο).\n"
-           "- Απομαγνητοφώνηση: κάθε αίθουσα και κάθε μήνυμα ({messages}), όπως τα έβλεπε ο Storyteller· οι κρυφές ρίψεις σημειώνονται.\n"),
+           "- Απομαγνητοφώνηση: κάθε γραμμή συνομιλίας κάθε αίθουσας ({messages} μηνύματα· χωρίς τα κινούμενα ζάρια και τις γραμμές συστήματος), όπως τα έβλεπε ο Storyteller· οι κρυφές ρίψεις σημειώνονται.\n"),
 }
 
 
@@ -90,14 +91,27 @@ def write_archive(cursor, campaign_id: int, actor_id: int, root: Optional[str] =
 
 
 def can_download(row: Dict[str, Any], user_id: Any, user_role: Optional[str], now: Optional[datetime] = None) -> bool:
-    """Site admins always; the Storyteller who deleted it, for ARCHIVE_ST_DAYS days."""
+    """Site admins always; the chronicle's Storyteller for ARCHIVE_ST_DAYS days, whoever deleted it."""
     if (user_role or "") == "admin":
         return True
     now = now or datetime.now()
     created = cj._dt(row.get("created_at"))
-    return (row.get("deleted_by") is not None and str(row["deleted_by"]) == str(user_id)
-            and str(row.get("storyteller_id")) == str(user_id)
+    return (row.get("storyteller_id") is not None and str(row["storyteller_id"]) == str(user_id)
             and created is not None and now - created <= timedelta(days=ARCHIVE_ST_DAYS))
+
+
+def remove_archive(cursor, archive_id: int, root: Optional[str] = None) -> None:
+    """Undo write_archive when the delete fails after it, so a retry doesn't leave two copies."""
+    import shutil
+
+    cursor.execute("SELECT dir_name FROM chronicle_archives WHERE id = %s", (archive_id,))
+    row = cursor.fetchone()
+    cursor.execute("DELETE FROM chronicle_archives WHERE id = %s", (archive_id,))
+    if row:
+        base = os.path.realpath(root or archive_root())
+        path = os.path.realpath(os.path.join(base, str(row["dir_name"])))
+        if path.startswith(base + os.sep):
+            shutil.rmtree(path, ignore_errors=True)
 
 
 def archive_file(row: Dict[str, Any], which: str, root: Optional[str] = None) -> Optional[str]:

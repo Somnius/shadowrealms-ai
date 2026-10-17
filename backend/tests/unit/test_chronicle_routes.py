@@ -12,6 +12,7 @@ from tests.unit.chronicle_fixtures import Conn, FakeModel, build, db
 
 ADMIN, ST, PLAYER, OUTSIDER, HELPER_IN, HELPER_OUT = 1, 2, 3, 4, 5, 6
 USERNAMES = ("siteadmin", "storyteller_lef", "eleni_player", "nikos_player", "helper_in", "outsider")
+NPC = "Μαρώ"  # an NPC no visible night names: never in the player view
 
 
 @pytest.fixture
@@ -66,11 +67,17 @@ def test_who_may_read_and_export(api):
     assert api("GET", "/api/campaigns/99/chronicle", ADMIN).status_code == 404
 
 
-def test_update_permissions_and_limits(api):
+def test_update_permissions_and_limits(api, monkeypatch):
+    assert api("POST", "/api/campaigns/10/chronicle/jobs", ST, {}).status_code == 503  # SQLite: no writer
+    assert api.raw.execute("SELECT COUNT(*) FROM chronicle_jobs").fetchone()[0] == 0
+    monkeypatch.setattr(cj, "_pg", lambda: True)
     assert api("POST", "/api/campaigns/10/chronicle/jobs", PLAYER, {}).status_code == 403
     assert api("POST", "/api/campaigns/10/chronicle/jobs", OUTSIDER, {}).status_code == 404
+    assert api("POST", "/api/campaigns/10/chronicle/jobs", HELPER_IN, {}).status_code == 403  # helpers read and export only
     assert api("POST", "/api/campaigns/10/chronicle/jobs", HELPER_IN, {"scope": "all"}).status_code == 403
-    r = api("POST", "/api/campaigns/10/chronicle/jobs", HELPER_IN, {})
+    assert api("GET", "/api/campaigns/10/chronicle", HELPER_IN).get_json()["can_update"] is False
+    assert api("GET", "/api/campaigns/10/chronicle", ST).get_json()["can_update"] is True
+    r = api("POST", "/api/campaigns/10/chronicle/jobs", ADMIN, {})
     assert r.status_code == 202
     job = r.get_json()["job"]
     assert job["status"] == "queued" and "requested_by" not in job
@@ -81,7 +88,12 @@ def test_update_permissions_and_limits(api):
     r = api("DELETE", f"/api/campaigns/10/chronicle/jobs/{job['id']}", ST)
     assert r.status_code == 200 and r.get_json()["job"]["status"] == "cancelled"
     r = api("POST", "/api/campaigns/10/chronicle/jobs", ST, {})
+    assert r.status_code == 202  # a cancelled job doesn't count against the 5 minutes
+    api.raw.execute("UPDATE chronicle_jobs SET status = 'done'")
+    api.raw.commit()
+    r = api("POST", "/api/campaigns/10/chronicle/jobs", ST, {})
     assert r.status_code == 429 and r.get_json()["retry_after"] > 0
+    assert api("POST", "/api/campaigns/10/chronicle/jobs", ST, {"scope": "all"}).status_code == 202
     assert api("GET", "/api/campaigns/10/chronicle/jobs/9999", ST).status_code == 404
 
 
@@ -102,15 +114,18 @@ def test_player_view_has_no_usernames_and_no_storyteller_keys(api):
     assert st["digest"]["st_so_far"]
     p = api("GET", "/api/campaigns/10/chronicle?view=player", ST).get_json()
     text = json.dumps(p, ensure_ascii=False)
-    assert not any(u in text for u in USERNAMES)
+    assert not any(u in text for u in USERNAMES) and NPC not in text
     assert not any(str(k).startswith("st_") for k in _walk_keys(p))
     assert "ids" not in set(_walk_keys(p["chapters"]))
     assert len(p["chapters"]) == 3 and p["digest"]["so_far"]
     md = api("GET", "/api/campaigns/10/chronicle.md?view=player", ST).get_data(as_text=True)
     assert not any(u.replace("_", "\\_") in md or u in md for u in USERNAMES)
+    assert NPC not in md
+    pm = api("GET", "/api/campaigns/10/chronicle/minutes.md?view=player", ST).get_data(as_text=True)
+    assert NPC not in pm and "The Crypt" not in pm and "Sealed by the Storyteller" not in pm
     assert "Μόνο για τον Storyteller" not in md and "The Crypt" not in md
     st_md = api("GET", "/api/campaigns/10/chronicle.md", ST).get_data(as_text=True)
-    assert "Μόνο για τον Storyteller" in st_md and "eleni\\_player" in st_md
+    assert "Μόνο για τον Storyteller" in st_md and "eleni\\_player" in st_md and NPC in st_md
 
 
 def test_rooms_checked_again_when_read(api):
@@ -151,16 +166,19 @@ def test_archive_on_delete_and_downloads(api):
     write(api)
     conn = Conn(api.raw)
     cur = conn.cursor()
-    aid = ca.write_archive(cur, 10, ST, root=str(api.tmp), now=datetime(2026, 10, 17, 22, 0))
+    # an admin presses delete; the chronicle's Storyteller still gets 30 days
+    aid = ca.write_archive(cur, 10, ADMIN, root=str(api.tmp), now=datetime.now())
     conn.commit()
     row = cur.execute("SELECT * FROM chronicle_archives WHERE id = %s", (aid,)) or cur.fetchone()
-    assert row["dir_name"].startswith("10-athens-blood-and-concrete-20261017-2200")
+    assert row["dir_name"].startswith("10-athens-blood-and-concrete-")
     folder = os.path.join(str(api.tmp), row["dir_name"])
     minutes = open(os.path.join(folder, "minutes.md"), encoding="utf-8").read()
     transcript = open(os.path.join(folder, "transcript.md"), encoding="utf-8").read()
     assert "Πρακτικά: 4 από 4 νύχτες" in minutes and "Τι δεν είδαν οι παίκτες" in minutes
     assert "[κρυφή ρίψη]" in transcript and "The Crypt" in transcript
-    assert row["nights_written"] == 4 and row["storyteller_id"] == ST and row["deleted_by"] == ST
+    assert "every chat line" not in minutes  # Greek chronicle
+    assert "κάθε γραμμή συνομιλίας" in minutes
+    assert row["nights_written"] == 4 and row["storyteller_id"] == ST and row["deleted_by"] == ADMIN
     # downloads: site admins always, the deleting Storyteller for 30 days, nobody else
     assert api("GET", f"/api/chronicle-archives/{aid}/minutes", ADMIN).status_code == 200
     assert api("GET", f"/api/chronicle-archives/{aid}/transcript", ST).status_code == 200
@@ -173,6 +191,16 @@ def test_archive_on_delete_and_downloads(api):
     assert ca.can_download(row, ADMIN, "admin", now=datetime.now() + timedelta(days=400)) is True
     # the path comes from the row: a tampered row can't leave the archive folder
     assert ca.archive_file({**row, "dir_name": "../../etc"}, "minutes", root=str(api.tmp)) is None
+    # old archives drop out of the Storyteller's list (filtered in SQL)
+    api.raw.execute("UPDATE chronicle_archives SET created_at = '2020-01-01 00:00:00'")
+    api.raw.commit()
+    assert api("GET", "/api/chronicle-archives", ST).get_json()["archives"] == []
+    assert len(api("GET", "/api/chronicle-archives", ADMIN).get_json()["archives"]) == 1
+    # a delete that fails after the archive removes it again
+    ca.remove_archive(cur, aid, root=str(api.tmp))
+    conn.commit()
+    assert not os.path.exists(folder)
+    assert api.raw.execute("SELECT COUNT(*) FROM chronicle_archives").fetchone()[0] == 0
 
 
 def test_archive_failure_raises(api, tmp_path):
@@ -192,4 +220,4 @@ def test_delete_campaign_archives_first():
     body = body[:body.index("\n@campaigns_bp.route")]
     assert body.index("write_archive(cursor, campaign_id, user_id)") < body.index("DELETE FROM campaigns")
     assert body.index("write_archive(") < body.index("forget_message_audio")
-    assert "'archive_failed'" in body
+    assert "'archive_failed'" in body and "remove_archive(" in body

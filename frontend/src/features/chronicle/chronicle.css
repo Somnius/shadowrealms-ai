@@ -83,3 +83,4 @@
 @media (max-width: 767px) {
   .sr-app .sr-sofar__exports > .sr-btn, .sr-app .sr-sofar__actions > .sr-btn { flex: 1 1 100%; }
 }
+.sr-app .sr-sofar__flag { font-size: var(--sr-text-sm); color: var(--sr-amber-600); border: 1px solid currentColor; border-radius: 999px; padding: 0 var(--sr-space-2); }

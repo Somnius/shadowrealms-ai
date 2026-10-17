@@ -10,8 +10,8 @@ export const POLL_WAITING_MS = 5000;
 
 export const isLive = (job) => !!job && LIVE.includes(job.status);
 
-/** 1.5 s while writing, 5 s while queued or waiting for a quiet moment. */
-export const pollDelay = (job) => (job && job.status === 'running' ? POLL_MS : POLL_WAITING_MS);
+/** 5 s while waiting for a quiet moment, 1.5 s otherwise (queued or writing). */
+export const pollDelay = (job) => (job && job.status === 'waiting' ? POLL_WAITING_MS : POLL_MS);
 
 /** 75 -> "1:15"; 3725 -> "1:02:05". */
 export function clock(seconds) {

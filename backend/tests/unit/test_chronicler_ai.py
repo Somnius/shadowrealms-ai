@@ -133,3 +133,24 @@ def test_cancel_is_never_retried(app_settings):
         ai_roles.generate_for_role("chronicler_el", [], {}, chain=[("lm_studio", "a"), ("lm_studio", "b")],
                                    builder=lambda n: P())
     assert calls == [1]
+
+
+def test_finish_reason_length_is_its_own_error(monkeypatch):
+    chunks = sse(delta('{"title": "x'), {"choices": [{"delta": {}, "finish_reason": "length"}]})
+    monkeypatch.setattr(ai_providers.requests, "post", lambda *a, **k: FakeStream(chunks))
+    with pytest.raises(ProviderError, match="finish_reason=length"):
+        LMStudioProvider("http://lm").generate([], {"on_token": lambda d, u: True, "model": "m"})
+
+
+def test_length_is_not_retried_on_another_model(app_settings):
+    calls = []
+
+    class P:
+        def generate(self, messages, params):
+            calls.append(1)
+            raise ProviderError("LM Studio: finish_reason=length")
+
+    with pytest.raises(ProviderError, match="length"):
+        ai_roles.generate_for_role("chronicler_el", [], {}, chain=[("lm_studio", "a"), ("lm_studio", "b")],
+                                   builder=lambda n: P(), shrink=False)
+    assert calls == [1]

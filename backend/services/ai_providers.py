@@ -170,6 +170,7 @@ class LMStudioProvider(Provider):
             raise ProviderError(f"{type(e).__name__}: {e}") from e
         parts: List[str] = []
         usage = None
+        finish = None
         try:
             if r.status_code != 200:
                 raise ProviderError(f"LM Studio {_short(r)}")
@@ -191,6 +192,8 @@ class LMStudioProvider(Provider):
                 if chunk.get("usage"):
                     usage = chunk["usage"]
                 for choice in chunk.get("choices") or []:
+                    if choice.get("finish_reason") == "length":
+                        finish = "length"
                     delta = (choice.get("delta") or {}).get("content") or ""
                     if delta:
                         parts.append(delta)
@@ -201,6 +204,8 @@ class LMStudioProvider(Provider):
         finally:
             r.close()  # on cancel this stops LM Studio generating
         text = "".join(parts)
+        if finish == "length":  # cut at max_tokens: the JSON is unfinished
+            raise ProviderError("LM Studio: finish_reason=length")
         if not text.strip():
             raise ProviderError("LM Studio returned empty content")
         if on_token("", usage or {}) is False:

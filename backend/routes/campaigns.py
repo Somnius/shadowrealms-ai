@@ -934,6 +934,7 @@ def update_campaign(campaign_id):
 
 def delete_campaign(campaign_id):
     """Delete campaign with full AI memory cleanup"""
+    archive_id = None
     try:
         user_id = int(get_jwt_identity())
         
@@ -968,7 +969,7 @@ def delete_campaign(campaign_id):
         try:
             from services.chronicle_archive import write_archive
 
-            write_archive(cursor, campaign_id, user_id)
+            archive_id = write_archive(cursor, campaign_id, user_id)
             conn.commit()
         except Exception as e:  # noqa: BLE001
             conn.rollback()
@@ -1071,6 +1072,15 @@ def delete_campaign(campaign_id):
         logger.error(f"❌ Error deleting campaign: {e}")
         import traceback
         traceback.print_exc()
+        if archive_id is not None:  # the chronicle stays, so its archive goes: a retry writes a fresh one
+            try:
+                from services.chronicle_archive import remove_archive
+
+                conn.rollback()
+                remove_archive(conn.cursor(), archive_id)
+                conn.commit()
+            except Exception as e2:  # noqa: BLE001
+                logger.error("Could not remove the archive of a failed delete: %s", safe_log_value(e2))
         return jsonify({'error': 'Failed to delete campaign'}), 500
 
 @campaigns_bp.route('/<int:campaign_id>/world', methods=['POST'])

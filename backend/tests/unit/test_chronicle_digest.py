@@ -143,8 +143,9 @@ def test_language_and_mixed_scripts():
     assert "mixed_script" in p
     fixed = cd.strip_foreign({"title": "a", "summary": ["Ο 下 Κ."], "events": []})
     assert "下" not in fixed["summary"][0]
-    retry = cd.retry_messages([{"role": "user", "content": "x"}], ["language"], "el")
-    assert "ελληνικά" in retry[-1]["content"]
+    retry = cd.retry_messages([{"role": "user", "content": "x"}], '{"title": "The night"}', ["language"], "el")
+    assert retry[-2] == {"role": "assistant", "content": '{"title": "The night"}'}
+    assert "ελληνικά" in retry[-1]["content"] and retry[-1]["role"] == "user"
 
 
 def test_botches_and_criticals_always_listed():
@@ -223,9 +224,10 @@ def test_minutes_markdown_whole_and_last_n():
     facts = {"name": "Athens", "nights_total": 4}
     chs = _stored(4)
     whole = cd.minutes_markdown(facts, chs, "en", "st")
-    assert "Covers 4 nights" in whole and whole.count("\n## Night ") == 4
+    # closed-room nights have no number, so the numbers match the player view and the threads
+    assert "Covers 4 nights" in whole and whole.count("\n## Night ") == 3 and "\n## closed room — " in whole
     last = cd.minutes_markdown(facts, chs, "en", "st", last_n=2)
-    assert "The last 2 nights" in last and "## Night 3" in last and "## Night 1 " not in last
+    assert "The last 2 nights" in last and "## Night 3" in last and "## Night 2" in last and "## Night 1 " not in last
     assert "What the players didn't see" in last
     pl = cd.minutes_markdown(facts, cd.visible_chapters(chs, "player"), "el", "player")
     assert "Τι δεν είδαν οι παίκτες" not in pl and "_(μηνύματα" not in pl
@@ -243,3 +245,27 @@ def test_transcript_marks_hidden_rolls():
     t = cd.transcript_markdown({"name": "Athens"}, rows, "el")
     assert "[κρυφή ρίψη]" in t and "The Crypt" in t and "Out of Character Lobby" in t
     assert not any(u in t for u in USERNAMES)
+
+
+def test_session_mark_cuts_every_room_at_its_time():
+    t = datetime(2026, 10, 1, 21)
+    r = [{"id": 1, "location_id": 1, "created_at": t}, {"id": 2, "location_id": 2, "created_at": t + timedelta(minutes=5)},
+         {"id": 3, "location_id": 1, "created_at": t + timedelta(minutes=10)},
+         {"id": 4, "location_id": 2, "created_at": t + timedelta(minutes=20)},
+         {"id": 5, "location_id": 1, "created_at": t + timedelta(minutes=30)}]
+    chs = cd.cut_chapters(r, cd.GAP_HOURS, [3])  # message 3 (room 1, 21:10) ends the session
+    assert sorted((c["location_id"], c["first_id"]) for c in chs) == [(1, 1), (1, 5), (2, 2), (2, 4)]
+
+
+def test_hash_only_counts_names_in_the_night():
+    _rows, chs = chapters_of("el", 1)
+    ch = [c for c in chs if c["kind"] == "story"][0]
+    m = cd.chapter_material(ch, "el", {})
+    assert cd.chapter_hash(ch, m, "el", ["Μαρώ"]) == cd.chapter_hash(ch, m, "el", ["Μαρώ", "Νέος Χαρακτήρας"])
+
+
+def test_untranslated_night_is_flagged():
+    chs = _stored(1)
+    chs[0]["chapter"]["check"] = ["language"]
+    assert "όχι πλήρως στα ελληνικά" in cd.minutes_markdown({"name": "A"}, chs, "el", "st")
+    assert "not fully in English" in cd.story_markdown({"name": "A"}, None, chs, "en", "st")

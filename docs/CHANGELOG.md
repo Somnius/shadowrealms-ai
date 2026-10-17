@@ -15,7 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Written in the chronicle's language**, with instructions in that language; Greek by Krikri, English by the loaded model, as two new roles in Admin → AI system (`chronicler_el`, `chronicler_en`). Answers are checked: message numbers must exist, names must be the chronicle's own, the language and the alphabet must be right, and botches and criticals are always listed. A night that doesn't fit the model's context is split, never cut.
 - **Two views.** The story is built from what players could read (no hidden rolls, no closed rooms); the Storyteller's part, behind a toggle, adds what the players didn't see. Table talk is kept apart and exported only when asked.
 - **Exports as Markdown:** the story, and the full minutes of the whole chronicle or the last N nights, with or without table talk.
-- **Archive on delete.** Deleting a chronicle first saves its minutes and the full transcript of every room (hidden rolls marked) on the server; if that can't be written, the chronicle isn't deleted. Site admins can download them, and the Storyteller who deleted it can for 30 days.
+- **Archive on delete.** Deleting a chronicle first saves its minutes and the full transcript of every room (hidden rolls marked) on the server; if that can't be written, the chronicle isn't deleted. Site admins can download them, and the chronicle's Storyteller can for 30 days.
 - A `ProgressBar` in the design system; `campaigns.language` (empty = the language most messages are in); session-end marks in the database (the menu for them comes later).
 
 ## [0.23.0] - 2026-10-17 - Cloud voices

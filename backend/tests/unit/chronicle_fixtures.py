@@ -209,17 +209,29 @@ ENGLISH = {
 class FakeModel:
     """Answers each kind of call (by response_format name) in the language of its instructions."""
 
-    def __init__(self, wrong_language_first=False, overflow_once=False):
+    def __init__(self, wrong_language_first=False, overflow_once=False, wrong_language=0, translate_fails=False,
+                 length_once=False):
         self.calls = []
+        self.wrong_language = wrong_language
+        self.translate_fails = translate_fails
+        self.length_once = length_once
         self.wrong_language_first = wrong_language_first
         self.overflow_once = overflow_once
 
     def __call__(self, role, messages, params, **kw):
         from services.ai_providers import ProviderError
 
+        if role == "translator":  # services/translation.translate: plain text, names behind placeholders
+            self.calls.append({"role": role, "name": "translate", "messages": messages, "kw": kw})
+            if self.translate_fails:
+                raise ProviderError("translator down")
+            return {"text": "Μεταφρασμένο κείμενο.", "model": "fake-translator"}
         name = params["response_format"]["json_schema"]["name"]
         self.calls.append({"role": role, "name": name, "messages": messages, "kw": kw})
         assert kw.get("shrink") is False
+        if self.length_once and name == "chapter":
+            self.length_once = False
+            raise ProviderError("LM Studio: finish_reason=length")
         if self.overflow_once and name == "chapter":
             self.overflow_once = False
             raise ProviderError("LM Studio HTTP 400: Context size has been exceeded.")
@@ -227,6 +239,9 @@ class FakeModel:
         w = GREEK if el else ENGLISH
         if self.wrong_language_first and name == "chapter":
             self.wrong_language_first = False
+            w = ENGLISH if el else GREEK
+        if self.wrong_language and name == "chapter":
+            self.wrong_language -= 1
             w = ENGLISH if el else GREEK
         ids = [int(x) for x in re.findall(r"^M(\d+)", messages[1]["content"], re.M)]
         if name == "chapter":

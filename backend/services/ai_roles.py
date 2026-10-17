@@ -314,6 +314,8 @@ def generate_for_role(
                 if _is_load_failure(e):
                     _load_failed_until[(provider_name, model)] = time.monotonic() + LOAD_FAILURE_COOLDOWN_SEC
                 attempts.append({"provider": provider_name, "model": model, "error": str(e)[:300]})
+                if not shrink and "finish_reason=length" in str(e):
+                    raise  # the caller writes smaller parts; another model wouldn't help
                 if not is_context_overflow(e):
                     break
                 if not shrink:
