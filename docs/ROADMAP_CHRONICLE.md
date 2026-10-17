@@ -100,6 +100,20 @@ Build rules that come out of the reviews. These are not product choices; Lef's c
 - **The archive on delete makes no model calls:** inside `delete_campaign`, before the SQL delete, it writes `data/chronicle_archive/<id>-<slug>-<time>/` with the minutes rendered from stored chapters plus the raw Storyteller-view transcript. It adds an index row in `chronicle_archives` and admin-only routes to list and download, with the path taken from the row and never from the request. It goes in docs/SECURITY_MODEL.md, because the archive holds hidden rolls.
 - **Jobs are claimed safely:** two gunicorn workers claim with `SELECT … FOR UPDATE SKIP LOCKED`, then the per-chronicle lock. The nightly run is on the first worker only.
 - **The horror look in the app:** no browser engine in the backend. The stained-paper image is made once (with a fixed seed) by Serkan's builder and committed per paper size; reportlab draws it as the page background, the frame, thorns and blood as vector paths (the sheet code already draws SVG paths), and the text as vector. One test print before release.
+- **Live progress (Lef: tell the viewer it takes time, and show live data from LM Studio):**
+  - **The source:** `POST /v1/chat/completions` with `stream: true` and `stream_options.include_usage: true`. LM Studio sends one chunk per token, then a final `usage` chunk; this was checked on this LM Studio. `LMStudioProvider.generate` gets an `on_token` callback (`ai_providers.py` hard-codes `stream: False` today), used only by the writer roles. The Storyteller stays non-streaming.
+  - **Progress:** the job thread keeps it in memory and writes it to `chronicle_jobs` at most every 1.5 s, plus at each night and at the end:
+    - the night and the number of nights
+    - tokens for this night and in total
+    - tokens per second over the last 2 s
+    - elapsed time, time left, and the phase (waiting / writing / era digests / joining)
+  - **The browser:** it polls `GET …/chronicle/jobs/<id>` every 1.5 s (5 s while waiting), reusing the recorder's job-polling pattern; no SSE, because the room stream carries players' traffic.
+  - **Up front:** the page says how long it will take: nights to write × the median seconds per night of the last 10 jobs (6 s before there are any), plus the era digests and the join, and it warns when the run stops at 40 nights. During the run the estimate is refined after each night, and it never jumps up.
+  - **The card:** "Night 3 of 12", a progress bar (a new `ProgressBar` in the design system), "1,240 tokens · 104 tok/s" ("Reading the night…" before the first token), elapsed and time left, "Waiting for a quiet moment" with a spinner, and Cancel. 44 px, EN + EL.
+  - **Cancel** closes the stream, so LM Studio stops generating; this is checked once with `lms log stream`. Each call has a timeout between chunks. A job whose row hasn't been updated for 60 s is marked stale and picked up again on the next claim.
+  - **Context before each night:** the night's prompt, its `max_tokens` and the Storyteller's context must fit in the loaded context, or the night is split smaller. On "Context size has been exceeded" it waits 30 s and retries once with the night split.
+- **Krikri at 32,768 context (phase 0):** it fits with Whisper loaded (13.4 GB of 16 GB). The quick start and the docs load it like that.
+- **Instructions in the chronicle's language,** with a rule against clans, titles and relationships that aren't in the lines. The summary is a list of 2–4 explained paragraphs in the enforced format, and the title is in the chronicle's language.
 - **The footer link to lefteros.com** is the one host named in exported files, at the user's request. Docs and tests still name no host.
 
 ## Phase 0 — Measure
@@ -155,7 +169,7 @@ Build rules that come out of the reviews. These are not product choices; Lef's c
   - noted in SECURITY_MODEL.md
 
   Status: not started.
-- [ ] 1.6 Panel "The chronicle so far" in Chronicle settings: the status line (partial runs), Update ("waiting for a quiet moment"), Cancel, Export story / minutes, the digest read-only, the Storyteller part behind a toggle. 44 px buttons, EN + EL, jest. Status: not started.
+- [ ] 1.6 Panel "The chronicle so far" in Chronicle settings: the time estimate before starting (Start / Cancel), the live progress card (night x of y, bar, tokens and tok/s from the LM Studio stream, elapsed and time left, waiting state, Cancel), the status line for partial runs, Export story / minutes, the digest read-only, the Storyteller part behind a toggle. A new `ProgressBar` component. 44 px buttons, EN + EL, jest. Status: not started.
 - [ ] 1.7 Release 0.24: `docs/CHRONICLE.md`, FEATURES, CHANGELOG, this file. Status: not started.
 
 ## Phase 2 — Sheet-look PDF, edits, languages (0.25)
@@ -190,6 +204,7 @@ Build rules that come out of the reviews. These are not product choices; Lef's c
 ## Log
 
 - 2026-10-17 — Plan written from recmeets' minutes pipeline and the current code; questions for Lef listed in the plan. Nothing built yet.
+- 2026-10-17 — Live progress designed from what LM Studio actually returns (stream with usage); Krikri at 32k recommended (12.1 GB, 13.4 GB with Whisper; 64k does not fit).
 - 2026-10-17 — Phase 0 measured on the live chronicle (results: Greek instructions needed, shared context at 8k fails under load, 16k works with headroom).
 - 2026-10-17 — Lef answered round 2: defaults, plus 30-day archive downloads for the deleting Storyteller; five releases 0.24–0.28. Plan final.
 - 2026-10-17 — Plan reviewed twice; build rules above; round 2 of questions (17) for Lef.

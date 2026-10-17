@@ -142,7 +142,7 @@ python3 scripts/generate_secret_key.py
 
 ```bash
 lms server start
-lms load llama-krikri-8b-instruct -y    # Storyteller, English and Greek
+lms load llama-krikri-8b-instruct -y --context-length 32768   # Storyteller, English and Greek (32k: ~12 GB VRAM; use 16384 on smaller cards)
 lms load text-embedding-bge-m3 -y       # memory and rule-book embeddings
 ollama pull llama3.2:3b                 # utility model
 ```
