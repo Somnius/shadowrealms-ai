@@ -42,7 +42,7 @@ export function shortDate(iso, lang) {
 }
 
 /** 'Athens / X?' + ' — so far' -> 'Athens X — so far.md' (no path or reserved characters, keeps Greek). */
-export function mdFileName(name, suffix) {
+export function mdFileName(name, suffix, ext = 'md') {
   const base = String(name || '')
     // eslint-disable-next-line no-control-regex
     .replace(/[\\/:*?"<>|\u0000-\u001f\u007f]+/g, ' ')
@@ -50,10 +50,18 @@ export function mdFileName(name, suffix) {
     .replace(/\s+/g, ' ')
     .replace(/^[\s.]+|[\s.]+$/g, '')
     .slice(0, 80);
-  return `${base || 'chronicle'} — ${suffix}.md`;
+  return `${base || 'chronicle'} — ${suffix}.${ext}`;
 }
 
-/** GET a Markdown export with the Bearer token and save it. Resolves { ok } or { ok: false, status }. */
+/** '?a=1&b=2' from the set values of an object ('' when none). */
+export function query(params) {
+  const q = Object.entries(params)
+    .filter(([, v]) => v !== undefined && v !== null && v !== '' && v !== false)
+    .map(([k, v]) => `${k}=${encodeURIComponent(v === true ? '1' : v)}`);
+  return q.length ? `?${q.join('&')}` : '';
+}
+
+/** GET an export (Markdown or PDF) with the Bearer token and save it. Resolves { ok } or { ok: false, status }. */
 export async function downloadMarkdown(path, fileName) {
   const token = getCurrentToken();
   let blob;

@@ -60,7 +60,9 @@
     "descriptionHint": "The Storyteller AI reads this as the chronicle’s world. You can edit it later.",
     "system": "Game line",
     "edition": "Edition",
-    "systemV5Hint": "V5 currently supports Vampire: The Masquerade."
+    "systemV5Hint": "V5 currently supports Vampire: The Masquerade.",
+    "language": "Chronicle language",
+    "languageHint": "The chronicle so far is written in this language. You can change it later in Chronicle settings."
   },
   "youAreST": "You are the Storyteller",
   "stats": {
@@ -237,6 +239,44 @@
     "notInEnglish": "not fully in English",
     "closedHeading": "{{room}} · {{date}}",
     "forbidden": "Only the Storyteller and site admins can update the chronicle so far.",
-    "noWorker": "The writer isn’t running on this server."
+    "noWorker": "The writer isn’t running on this server.",
+    "translatingText": "Translating: text {{n}} of {{total}}",
+    "errTranslate": "the translator gave no usable text",
+    "errNoDigest": "there is no story so far to translate yet",
+    "langEl": "Ελληνικά",
+    "langEn": "English",
+    "editLoadFailed": "Could not open the story for editing.",
+    "editTooLong": "The story is too long to save.",
+    "editSaveFailed": "Could not save the edit.",
+    "edited": "Exports of the story use your edited copy (the minutes stay as written).",
+    "newer": "The story so far was written again after your edit.",
+    "kept": "Your edit is kept.",
+    "keepEdit": "Keep my edit",
+    "freshDone": "Starting from the new text.",
+    "startFresh": "Start from the new one",
+    "editAgain": "Edit my copy",
+    "edit": "Edit the story",
+    "editLabel": "The story so far (Markdown)",
+    "editHint": "Your copy of the whole story. The written text is kept apart; exports of the story use this copy.",
+    "editSaved": "Your edit is saved.",
+    "editSave": "Save my edit",
+    "translateShort": "Translating {{texts}} texts takes less than a minute.",
+    "translateEstimate": "Translating {{texts}} texts takes about {{minutes}} min.",
+    "language": "Language",
+    "translation": "translation",
+    "translatedOn": "Translated {{date}}.",
+    "translationStale": "The story was written again since; translate again to catch up.",
+    "noTranslation": "Not translated yet.",
+    "translate": "Translate",
+    "exportStoryPdf": "Export story PDF",
+    "exportMinutesPdf": "Minutes PDF",
+    "paper": "Paper"
+  },
+  "language": {
+    "title": "Chronicle language",
+    "saved": "Chronicle language saved.",
+    "label": "Language of the chronicle so far",
+    "auto": "Most messages decide",
+    "hint": "The next Update writes the story in this language; the other one comes from Translate."
   }
 }

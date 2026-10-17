@@ -420,6 +420,37 @@ export default function ChronicleSettingsPage() {
             </Panel>
           ) : null}
 
+          {canManage ? (
+            <Panel title={t('chronicle:language.title', 'Chronicle language')} icon="scroll">
+              <form
+                className="sr-form"
+                key={`lang-${campaign.id}-${campaign.language || ''}`}
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  const v = new FormData(e.currentTarget).get('language');
+                  update({ language: v || null }, t('chronicle:language.saved', 'Chronicle language saved.'));
+                }}
+              >
+                <Select
+                  name="language"
+                  label={t('chronicle:language.label', 'Language of the chronicle so far')}
+                  defaultValue={campaign.language || ''}
+                  options={[
+                    { value: '', label: t('chronicle:language.auto', 'Most messages decide') },
+                    { value: 'el', label: 'Ελληνικά' },
+                    { value: 'en', label: 'English' },
+                  ]}
+                  hint={t('chronicle:language.hint', 'The next Update writes the story in this language; the other one comes from Translate.')}
+                />
+                <div className="sr-form__actions">
+                  <Button type="submit" variant="primary" loading={saving}>
+                    {t('common:save', 'Save')}
+                  </Button>
+                </div>
+              </form>
+            </Panel>
+          ) : null}
+
           {canManage && campaign.rules_edition === 'v5' ? (
             <CreationRulesPanel
               key={`creation-${campaign.id}-${JSON.stringify(campaign.creation_settings || {})}`}

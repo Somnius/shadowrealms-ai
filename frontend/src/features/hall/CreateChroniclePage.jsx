@@ -7,7 +7,7 @@ import { useApi } from '../../app/AuthContext';
 import { useChronicles } from '../../app/ChroniclesContext';
 import { errorText } from '../../app/http';
 import { isV5Allowed } from '../../rules/rulesEdition';
-import { t } from '../../i18n';
+import { getLanguage, t } from '../../i18n';
 import './hall.css';
 import { CloudVoicesChoice, DEFAULT_READOUT, NarratorVoices, ReadoutDefaults, narratorOf, useVoiceCatalog } from '../voice/VoiceSettings';
 
@@ -43,6 +43,8 @@ export default function CreateChroniclePage() {
     if (!(GAME_LINES[next] || []).some((g) => g.value === system)) setSystem(GAME_LINES[next][0].value);
   };
   const [busy, setBusy] = useState(false);
+  // the chronicle's language: what "The chronicle so far" is written in (default: the creator's app language)
+  const [chronLang, setChronLang] = useState(getLanguage() === 'el' ? 'el' : 'en');
   const [readout, setReadout] = useState(DEFAULT_READOUT);
   const [narrator, setNarrator] = useState(narratorOf(null));
   const [cloud, setCloud] = useState(false);
@@ -63,6 +65,7 @@ export default function CreateChroniclePage() {
         description: String(fd.get('description') || '').trim(),
         game_system: system,
         rules_edition: edition === 'v5' && isV5Allowed(system) ? 'v5' : 'classic',
+        language: chronLang,
       },
     });
     setBusy(false);
@@ -112,6 +115,17 @@ export default function CreateChroniclePage() {
               onChange={(e) => setSystem(e.target.value)}
               options={lines.map((g) => ({ value: g.value, label: g.label() }))}
               hint={edition === 'v5' ? t('chronicle:field.systemV5Hint', 'V5 currently supports Vampire: The Masquerade.') : undefined}
+            />
+            <Select
+              label={t('chronicle:field.language', 'Chronicle language')}
+              value={chronLang}
+              onChange={(e) => setChronLang(e.target.value)}
+              options={[
+                { value: 'el', label: 'Ελληνικά' },
+                { value: 'en', label: 'English' },
+              ]}
+              hint={t('chronicle:field.languageHint', 'The chronicle so far is written in this language. You can change it later in Chronicle settings.')}
+              data-testid="chronicle-language"
             />
             <ReadoutDefaults value={readout} onChange={setReadout} />
             {cloudAvailable ? <CloudVoicesChoice checked={cloud} onChange={setCloud} /> : null}

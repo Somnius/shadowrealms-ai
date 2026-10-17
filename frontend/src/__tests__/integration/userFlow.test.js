@@ -143,6 +143,7 @@ describe('Chronicle management', () => {
     await u.click(screen.getByRole('button', { name: /create chronicle/i }));
     await waitFor(() => expect(calls('POST', '/api/campaigns')).toHaveLength(1));
     expect(JSON.parse(calls('POST', '/api/campaigns')[0][1].body)).toEqual({
+      language: 'en', // the chronicle's language, asked at creation (default: the app language)
       name: 'New Night',
       description: 'A city of masks.',
       game_system: 'vampire',
