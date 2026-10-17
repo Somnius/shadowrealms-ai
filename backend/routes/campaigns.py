@@ -1009,10 +1009,11 @@ def delete_campaign(campaign_id):
         
         # Spoken audio of the chronicle's lines goes too (best effort; never fails the delete).
         try:
-            from services.voice_audio import forget_message_audio
+            from services.voice_audio import forget_campaign_audio, forget_message_audio
 
             cursor.execute("SELECT id FROM messages WHERE campaign_id = %s", (campaign_id,))
             forget_message_audio(cursor, [r['id'] for r in cursor.fetchall()])
+            forget_campaign_audio(cursor, campaign_id)  # "Previously on…" recaps (no message)
             conn.commit()
         except Exception as e:
             conn.rollback()

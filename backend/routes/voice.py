@@ -205,8 +205,8 @@ def _job_out(job):
     return out
 
 
-def _speech_tts(cursor, body, message_id):
-    """POST /tts on the speech service; remembers the key. (json, status)."""
+def _speech_tts(cursor, body, message_id, campaign_id=None, location_id=None):
+    """POST /tts on the speech service; remembers the key (with the room for a recap). (json, status)."""
     try:
         status, job = speech_client.call_json("POST", "/tts", body)
         if status == 400 and job.get("error") == "unknown_voice" and body.get("voice"):
@@ -219,9 +219,9 @@ def _speech_tts(cursor, body, message_id):
         code = job.get("error") if isinstance(job.get("error"), str) else "speech_failed"
         return {"error": code}, (503 if status >= 500 else 400)
     if job.get("key"):
-        voice_audio.remember(cursor, message_id, job["key"], job.get("voice"))
+        voice_audio.remember(cursor, message_id, job["key"], job.get("voice"), campaign_id, location_id)
     if job.get("fallback_key"):  # a cloud line that may end up in the local voice
-        voice_audio.remember(cursor, message_id, job["fallback_key"], None)
+        voice_audio.remember(cursor, message_id, job["fallback_key"], None, campaign_id, location_id)
     return _job_out(job), 200
 
 
@@ -379,6 +379,21 @@ def tts_job_status(job_id):
     return jsonify(_job_out(job)), 200
 
 
+def _may_hear(cursor, row, user_id):
+    """A message's audio: whoever may read the message. A recap's (no message, a campaign): a member
+    who can still read that room. No message and no campaign: a voice preview."""
+    if row.get("message_id") is not None:
+        return visible_message(cursor, row["message_id"], user_id) is not None
+    if row.get("campaign_id") is None:
+        return True
+    from services.location_access import fetch_readable_location_ids, user_is_campaign_viewer
+
+    cid = int(row["campaign_id"])
+    return (user_is_campaign_viewer(cursor, user_id, cid)
+            and row.get("location_id") is not None
+            and int(row["location_id"]) in fetch_readable_location_ids(cursor, user_id, cid))
+
+
 @voice_bp.route("/voice/audio/<key>", methods=["GET"])
 @jwt_required()
 def tts_audio(key):
@@ -391,8 +406,7 @@ def tts_audio(key):
         for ensure in (ensure_character_portrait_url_column, ensure_messages_ai_message_kind_column, ensure_messages_speaker_mode_column,
                        ensure_messages_reply_to_column, ensure_users_player_profile_columns):
             ensure(cursor)
-        ids = voice_audio.message_ids_for_key(cursor, key)
-        ok = any(i is None or visible_message(cursor, i, user_id) is not None for i in ids)
+        ok = any(_may_hear(cursor, r, user_id) for r in voice_audio.rows_for_key(cursor, key))
     finally:
         conn.close()
     if not ok:

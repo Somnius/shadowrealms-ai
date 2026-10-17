@@ -766,7 +766,8 @@ def ensure_characters_gender_column(cursor):
 
 @once_per_process
 def ensure_voice_audio_table(cursor):
-    """Index of spoken lines in the speech cache: which message (NULL for a preview) used which key,
+    """Index of spoken lines in the speech cache: which message (NULL for a preview, or a recap with
+    campaign_id and location_id set) used which key,
     so deleting a message can delete its audio, and the audio route can check who may hear it."""
     db_type = os.getenv("DATABASE_TYPE", "sqlite").lower()
     pk = "SERIAL PRIMARY KEY" if db_type == "postgresql" else "INTEGER PRIMARY KEY AUTOINCREMENT"
@@ -777,10 +778,20 @@ def ensure_voice_audio_table(cursor):
             message_id INTEGER,
             audio_key TEXT NOT NULL,
             voice_id TEXT,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            campaign_id INTEGER,
+            location_id INTEGER
         )
         """
     )
+    # 0.27: "Previously on…" audio has no message but belongs to a chronicle's room
+    for col in ("campaign_id", "location_id"):
+        if db_type == "postgresql":
+            cursor.execute(f"ALTER TABLE voice_audio ADD COLUMN IF NOT EXISTS {col} INTEGER")
+        else:
+            cursor.execute("PRAGMA table_info(voice_audio)")
+            if col not in [row["name"] for row in cursor.fetchall()]:
+                cursor.execute(f"ALTER TABLE voice_audio ADD COLUMN {col} INTEGER")
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_voice_audio_message ON voice_audio(message_id)")
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_voice_audio_key ON voice_audio(audio_key)")
 
@@ -930,6 +941,15 @@ CHRONICLE_TABLES_SQL = (
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )
     """,
+    """
+    CREATE TABLE IF NOT EXISTS chronicle_room_visits (
+        user_id      INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        location_id  INTEGER NOT NULL REFERENCES locations(id) ON DELETE CASCADE,
+        last_seen_at TIMESTAMP NOT NULL,
+        away_since   TIMESTAMP,
+        PRIMARY KEY (user_id, location_id)
+    )
+    """,
 )
 
 
@@ -941,7 +961,7 @@ def ensure_campaigns_language_column(cursor):
 
 @once_per_process
 def ensure_chronicle_tables(cursor):
-    """Chapters, digests, jobs, archives, session-end marks and the Storyteller-busy marker."""
+    """Chapters, digests, jobs, archives, session-end marks, the Storyteller-busy marker and room visits."""
     pg = os.getenv("DATABASE_TYPE", "sqlite").lower() == "postgresql"
     for stmt in CHRONICLE_TABLES_SQL:
         # SQLite keeps the tables (archive on delete, reads); the writer jobs need PostgreSQL.

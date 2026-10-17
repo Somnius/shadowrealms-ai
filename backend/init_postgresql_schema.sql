@@ -657,14 +657,16 @@ CREATE OR REPLACE TRIGGER trg_messages_activity
 
 
 -- -----------------------------------------------------------------------------
--- voice_audio: spoken lines in the speech service's cache, per message (NULL = a voice preview)
+-- voice_audio: spoken lines in the speech service's cache, per message (NULL = a voice preview, or a "Previously on…" recap when campaign_id is set)
 -- -----------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS voice_audio (
     id          SERIAL PRIMARY KEY,
     message_id  INTEGER,
     audio_key   TEXT NOT NULL,
     voice_id    TEXT,
-    created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    campaign_id INTEGER,
+    location_id INTEGER
 );
 
 CREATE INDEX IF NOT EXISTS idx_voice_audio_message ON voice_audio(message_id);
@@ -800,6 +802,15 @@ CREATE TABLE IF NOT EXISTS ai_busy_marks (
     name       TEXT PRIMARY KEY,
     active     INTEGER NOT NULL DEFAULT 0,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- "Previously on…" (0.27): when a user last opened a room, and where their last 12-hour absence began
+CREATE TABLE IF NOT EXISTS chronicle_room_visits (
+    user_id      INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    location_id  INTEGER NOT NULL REFERENCES locations(id) ON DELETE CASCADE,
+    last_seen_at TIMESTAMP NOT NULL,
+    away_since   TIMESTAMP,
+    PRIMARY KEY (user_id, location_id)
 );
 
 COMMIT;

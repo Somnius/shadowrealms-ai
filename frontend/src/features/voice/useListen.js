@@ -302,6 +302,32 @@ export function useListen({ api, campaignId, roomKey, messages, status, userId, 
     [queue, readable, item, unlock],
   );
 
+  /**
+   * "Read it" on the "Previously on…" card (0.27): its own kind, read only on a tap, with listening
+   * off too. parts: [{text, lang}] for phone voices; startJob(chunk): the server's job for a chunk.
+   */
+  const readRecap = useCallback(
+    ({ key, parts, startJob }) => {
+      if (!parts || !parts.length) return;
+      unlock();
+      setCatchUp(0);
+      queue.play([
+        {
+          id: `recap:${key || ''}`,
+          kind: 'recap',
+          parts,
+          originalParts: parts,
+          text: parts.map((p) => p.text).join(' '),
+          lang: parts[0].lang,
+          listenLang: parts[0].lang,
+          speaker: '',
+          startJob,
+        },
+      ]);
+    },
+    [queue, unlock],
+  );
+
   const source = settings ? settings.tts_source : 'phone';
   const available = source !== 'off' && (source === 'server' || hasPhoneVoices());
   return {
@@ -317,6 +343,7 @@ export function useListen({ api, campaignId, roomKey, messages, status, userId, 
     acceptCatchUp: () => chooseCatchUp(rememberedChoice()),
     declineCatchUp: () => setCatchUp(0),
     readFrom,
+    readRecap,
     canRead: (msg) => available && !!msg && msg.id != null && !msg.temp && !!readoutKind(msg) && !!String(msg.content || '').trim(),
     follow,
     resumeFollow: () => setFollow(true),

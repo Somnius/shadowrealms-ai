@@ -22,7 +22,7 @@ import { ListenButton, SpeakingBar } from '../voice/ListenControls';
 import { speechRecognitionCtor, sttLang } from '../voice/recorder';
 import * as clipPlayer from '../voice/clipPlayer';
 import { useLiveUpdates } from '../chat/useLiveUpdates';
-import { MessageActionsContext, useMessageActions } from '../chat/MessageActions';
+import { MessageActionsContext, jumpToMessage, useMessageActions } from '../chat/MessageActions';
 import { setDefaults as setClipDefaults } from '../voice/clipPlayer';
 import { useDiceOverlay } from '../dice/useDiceOverlay';
 import { useDiceActions } from '../dice/useDiceActions';
@@ -32,6 +32,8 @@ import { rollPrefill } from '../dice/rollRequests';
 import ChannelList, { isOpenRoom, localizeRooms, roomGlyph, sortRooms } from './ChannelList';
 import MemberPanel from './MemberPanel';
 import QuickSwitcher from './QuickSwitcher';
+import PreviouslyOn from './PreviouslyOn';
+import { jumpLoadingOlder, usePreviouslyOn } from './previouslyOn';
 import { closedRoomCopy } from './closedRoom';
 import { editionOf } from '../../rules/rulesEdition';
 import { getLanguage, t } from '../../i18n';
@@ -255,6 +257,31 @@ export default function PlayPage() {
     reduced: reducedMotion,
     onReplyStart: () => requestAnimationFrame(() => composerRef.current && composerRef.current.focus()),
   });
+  // "Previously on…" (0.27): the recap card after 12 hours or more away, and the header button.
+  const recap = usePreviouslyOn({
+    api,
+    campaignId,
+    locationId: location ? location.id : null,
+    userId: user ? user.id : null,
+    enabled: ready && room.status !== 'closed',
+  });
+  const roomNow = useRef(room);
+  roomNow.current = room;
+  const jumpToNight = useCallback(
+    async (id) => {
+      const ok = await jumpLoadingOlder(id, {
+        loadOlder: () => roomNow.current.loadOlder(),
+        hasMore: () => !!roomNow.current.hasMore,
+        isLoading: () => !!roomNow.current.loadingOlder,
+        jump: (mid) => jumpToMessage(mid, { reduced: reducedMotion }),
+      });
+      if (!ok) toast({ tone: 'info', title: t('play:recap.notFound', 'That night’s first message could not be found.') });
+    },
+    [toast, reducedMotion],
+  );
+  const showRecap = useCallback(async () => {
+    if (!(await recap.showNow())) toast({ tone: 'info', title: t('play:recap.nothing', 'Nothing to recap here yet.') });
+  }, [recap, toast]);
   // Read along (0.22): "Read this" / "Read from here" in the message menu.
   const listenRef = useRef(listen);
   listenRef.current = listen;
@@ -529,6 +556,13 @@ export default function PlayPage() {
               ) : null}
               <ListenButton listen={listen} />
               <IconButton
+                icon="scroll"
+                label={t('play:recap.open', 'Previously on…')}
+                aria-expanded={recap.open}
+                aria-busy={recap.loading || undefined}
+                onClick={showRecap}
+              />
+              <IconButton
                 icon="users"
                 label={isWide && panelOpen ? t('play:panel.hide', 'Hide member list') : t('play:panel.show', 'Show member list')}
                 aria-pressed={isWide ? panelOpen : undefined}
@@ -548,6 +582,7 @@ export default function PlayPage() {
               </div>
             ) : (
               <RollRequestContext.Provider value={rollRequestCtx}>
+                <PreviouslyOn state={recap} listen={listen} isMobile={isMobile} onJump={jumpToNight} />
                 <TranslationsContext.Provider value={translationsCtx}>
                 <MessageActionsContext.Provider value={actionsValue}>
                   <MessageList

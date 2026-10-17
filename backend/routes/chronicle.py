@@ -3,7 +3,8 @@
 
 Who:
 - someone who can't open the chronicle: 404 (as messages do)
-- a player: 403 (players get "Previously on…" in a later release, never these routes)
+- a player: 403 on these routes; every member (players too) gets "Previously on…" from
+  …/chronicle/recap and …/chronicle/recap/visit, built from the stored player view only
 - a helper who can open the chronicle (a member): reads and exports only
 - the Storyteller (creator) and site admins: also Update, Rewrite everything, Translate and the edit copy
 Archives of deleted chronicles: /api/chronicle-archives (site admins; the deleting Storyteller for 30 days).
@@ -11,6 +12,8 @@ Archives of deleted chronicles: /api/chronicle-archives (site admins; the deleti
 
 from __future__ import annotations
 
+import hashlib
+import json
 import logging
 import re
 from datetime import date, datetime, timedelta
@@ -549,6 +552,250 @@ def edit_copy(campaign_id):
         else:
             text = cd.strip_footer(_story(cur, camp, "st", lang=lang, table_talk=False)[0])
         return jsonify({"lang": lang, "markdown": text, "max": cj.EDIT_MAX_CHARS, **state})
+    finally:
+        conn.close()
+
+
+# ---------------------------------------------------------------------------------------------
+# "Previously on…" (0.27): every member, the stored player view only, no model calls
+
+AWAY = timedelta(hours=12)
+RECAP_NIGHTS = 5        # at most this many nights on the card, the newest
+RECENT_NIGHTS = 3       # the button with nothing new: the room's last nights
+SO_FAR_CHARS = 600      # "the story so far" in short when the digest has no tldr
+
+
+def _member_room(cur, uid, campaign_id):
+    """(access, location_id, error response). The room must be one the viewer can read right now."""
+    from services.location_access import fetch_readable_location_ids
+
+    a = access(cur, uid, campaign_id)
+    if a == "none":
+        return a, None, (jsonify({"error": "not_found"}), 404)
+    try:
+        lid = int(request.args.get("location_id") or (request.get_json(silent=True) or {}).get("location_id"))
+    except (TypeError, ValueError):
+        return a, None, (jsonify({"error": "bad_location"}), 400)
+    if lid not in fetch_readable_location_ids(cur, uid, campaign_id):
+        return a, None, (jsonify({"error": "not_found"}), 404)
+    return a, lid, None
+
+
+def _visit_row(cur, uid, lid):
+    cur.execute("SELECT last_seen_at, away_since FROM chronicle_room_visits WHERE user_id = %s AND location_id = %s",
+                (uid, lid))
+    return cur.fetchone()
+
+
+def record_visit(cur, uid, lid, now=None):
+    """The user opened (or is still in) the room. An absence of 12 hours or more moves away_since to
+    the last time they were there; otherwise it stays, so a reload keeps the same recap."""
+    now = now or datetime.now()
+    row = _visit_row(cur, uid, lid)
+    if not row:
+        # two tabs on a first visit: the second insert does nothing, and both read the row again
+        cur.execute("INSERT INTO chronicle_room_visits (user_id, location_id, last_seen_at) VALUES (%s, %s, %s) "
+                    "ON CONFLICT (user_id, location_id) DO NOTHING", (uid, lid, now))
+        row = _visit_row(cur, uid, lid)
+        if not row or cj._dt(row.get("last_seen_at")) == now:
+            return cj._dt((row or {}).get("away_since"))
+    last = cj._dt(row.get("last_seen_at"))
+    away = cj._dt(row.get("away_since"))
+    if last and now - last >= AWAY:
+        away = last
+    cur.execute("UPDATE chronicle_room_visits SET last_seen_at = %s, away_since = %s WHERE user_id = %s AND location_id = %s",
+                (now, away, uid, lid))
+    return away
+
+
+def _ui_lang(cur, uid):
+    lang = (request.args.get("lang") or "").strip().lower()
+    if lang in cd.LANGS:
+        return lang
+    try:
+        cur.execute("SELECT ui_language FROM users WHERE id = %s", (uid,))
+        lang = ((cur.fetchone() or {}).get("ui_language") or "").strip().lower()
+    except Exception:
+        try:
+            cur.connection.rollback()
+        except Exception:
+            pass
+        return None
+    return lang if lang in cd.LANGS else None
+
+
+def _so_far_short(digest):
+    tldr = str(digest.get("tldr") or "").strip()
+    if tldr:
+        return tldr
+    text = ""
+    for p in digest.get("so_far") or []:
+        p = str(p).strip()
+        if not p:
+            continue
+        if text and len(text) + 1 + len(p) > SO_FAR_CHARS:
+            break
+        text = (text + "\n\n" + p) if text else p
+    if len(text) > SO_FAR_CHARS:
+        text = text[:SO_FAR_CHARS].rsplit(" ", 1)[0].rstrip(",;:") + "…"
+    return text
+
+
+def _first_visible(cur, campaign_id, lid, ch):
+    """The night's first message as the player sees the chat (never a hidden roll's id)."""
+    from services.message_actions import hidden_dice_sql_filter
+
+    if not ch.get("first_id"):
+        return None
+    cur.execute(
+        "SELECT m.id FROM messages m WHERE m.campaign_id = %s AND m.location_id = %s AND m.id >= %s AND m.id <= %s"
+        + hidden_dice_sql_filter("m.ai_message_kind") + " ORDER BY m.id LIMIT 1",
+        (campaign_id, lid, ch["first_id"], ch.get("last_id") or ch["first_id"]),
+    )
+    r = cur.fetchone()
+    return int(r["id"]) if r else None
+
+
+@chronicle_bp.route("/campaigns/<int:campaign_id>/chronicle/recap/visit", methods=["POST"])
+@jwt_required()
+def recap_visit(campaign_id):
+    """{location_id}: the user opened the room (also sent while they stay in it). Returns away_since:
+    where their last absence of 12 hours or more began (null if there was none)."""
+    uid = _uid()
+    conn = get_db()
+    try:
+        cur = conn.cursor()
+        _a, lid, err = _member_room(cur, uid, campaign_id)
+        if err:
+            return err
+        away = record_visit(cur, uid, lid)
+        conn.commit()
+        return jsonify({"location_id": lid, "away_since": _iso(away)})
+    finally:
+        conn.close()
+
+
+def recap_of(cur, uid, campaign_id, lid, recent=False):
+    """The recap of one room for one viewer (the room already checked): the player view's nights in
+    that room since the viewer's last absence of 12 hours or more began, newest last, plus the story
+    so far in short. recent: with nothing new, the room's last nights. Nothing without a digest."""
+    camp = cj.campaign_row(cur, campaign_id)
+    own = cj.chronicle_lang(cur, camp)
+    lang = _ui_lang(cur, uid) or own
+    # the player view for everyone: what players can read now, whoever asks
+    readable = _readable_for_players(cur, campaign_id)
+    stored = cj.stored_chapters(cur, campaign_id, own)
+    digest = cj.stored_digest(cur, campaign_id, own)
+    tr = cj.stored_digest(cur, campaign_id, lang, translated=True) if lang != own and digest else None
+    if tr and tr.get("_hash") == cd.translation_hash(digest, stored):
+        stored = cd.overlay_translation(stored, tr)
+        digest = {k: v for k, v in tr.items() if k != "chapters"}
+    else:
+        lang = own  # no translation, or one behind the story: the chronicle's own language
+    if digest and any(int(r) not in readable for r in digest.get("rooms") or []):
+        digest = None  # a room closed since the digest was written keeps it back
+    row = _visit_row(cur, uid, lid) or {}
+    since = cj._dt(row.get("away_since"))
+    out = {"location_id": lid, "lang": lang, "since": _iso(since), "so_far": None, "nights": [], "recent": False}
+    if not digest:
+        return out
+    numbered = cd.number_nights(cd.visible_chapters(stored, "player", readable))
+    room = [(n, c) for n, c in numbered if int(c["location_id"]) == lid]
+    picked = [(n, c) for n, c in room if since and cj._dt(c.get("ended_at")) and cj._dt(c.get("ended_at")) > since]
+    if not picked and recent:
+        picked, out["recent"] = room[-RECENT_NIGHTS:], True
+    for n, c in picked[-RECAP_NIGHTS:]:
+        pc = cd.player_chapter(c)["chapter"]
+        out["nights"].append({"night": n, "title": pc.get("title") or "", "summary": list(pc.get("summary") or []),
+                              "started_at": _iso(c.get("started_at")), "ended_at": _iso(c.get("ended_at")),
+                              "first_message_id": _first_visible(cur, campaign_id, lid, c)})
+    out["so_far"] = _so_far_short(cd.player_digest(digest)) or None
+    out["recap_hash"] = hashlib.sha1(json.dumps(recap_chunks(out), ensure_ascii=False).encode()).hexdigest()[:16]
+    return out
+
+
+def recap_chunks(recap):
+    from services.voice_tts import split_chunks
+
+    return [c for t in recap_spoken(recap) for c in split_chunks(t)]
+
+
+RECAP_HEADING = {"en": "Previously on…", "el": "Προηγουμένως…"}
+
+
+def recap_spoken(recap):
+    """The recap as it is read aloud: [(text, lang)] in reading order, before chunking."""
+    lang = recap.get("lang") if recap.get("lang") in cd.LANGS else "en"
+    if not recap.get("nights") or not recap.get("so_far"):
+        return []
+    out = [RECAP_HEADING[lang]]
+    for n in recap["nights"]:
+        head = cd._label(n.get("night"), lang) + (f": {n['title']}" if n.get("title") else "")
+        out.append(" ".join([head.rstrip(".") + "."] + [str(p) for p in n.get("summary") or []]))
+    out.append(f"{cd.words(lang)['so_far']}. {recap['so_far']}")
+    return out
+
+
+@chronicle_bp.route("/campaigns/<int:campaign_id>/chronicle/recap", methods=["GET"])
+@jwt_required()
+def get_recap(campaign_id):
+    """?location_id=[&recent=1][&lang=]: see recap_of. Every member; the player view only."""
+    uid = _uid()
+    conn = get_db()
+    try:
+        cur = conn.cursor()
+        _a, lid, err = _member_room(cur, uid, campaign_id)
+        if err:
+            return err
+        return jsonify(recap_of(cur, uid, campaign_id, lid, _flag("recent")))
+    finally:
+        conn.close()
+
+
+@chronicle_bp.route("/campaigns/<int:campaign_id>/chronicle/recap/tts", methods=["POST"])
+@jwt_required()
+def recap_tts(campaign_id):
+    """?lang= (query) and {location_id, chunk, recent, recap_hash}: "Read it" with server voices. The
+    text is built here from the same recap (never sent by the browser), in the narrator's voice and the
+    user's settings. The audio is remembered with the chronicle and room, so only members who can read
+    that room can play it, and it goes with the chronicle. 409 recap_changed when the recap is no longer
+    the one being read (its recap_hash from GET)."""
+    from routes import voice as rv
+    from services.voice_tts import _body
+
+    uid = _uid()
+    body = request.get_json(silent=True) or {}
+    chunk = body.get("chunk", 0)
+    if isinstance(chunk, bool) or not isinstance(chunk, int) or not 0 <= chunk < 200:
+        return jsonify({"error": "bad_chunk"}), 400
+    conn = get_db()
+    try:
+        cur = conn.cursor()
+        _a, lid, err = _member_room(cur, uid, campaign_id)
+        if err:
+            return err
+        recap = recap_of(cur, uid, campaign_id, lid, bool(body.get("recent")))
+        if body.get("recap_hash") and body["recap_hash"] != recap["recap_hash"]:
+            return jsonify({"error": "recap_changed"}), 409
+        texts = recap_chunks(recap)
+        if not texts:
+            return jsonify({"error": "not_spoken"}), 400
+        if chunk >= len(texts):
+            return jsonify({"error": "no_such_chunk"}), 400
+        rv.ensure_voice_audio_table(cur)
+        cur.execute("SELECT voice_settings FROM campaigns WHERE id = %s", (campaign_id,))
+        camp = (cur.fetchone() or {}).get("voice_settings")
+        user_settings = rv._user_settings(cur, uid)
+        tts = _body("storyteller", texts[chunk], recap["lang"], None, user_settings, camp, None)
+        out, status = rv._speech_tts(cur, rv.cloud_voices.apply(tts, rv._cloud_config(), camp), None,
+                                     campaign_id, lid)
+        conn.commit()
+        if status == 200:
+            out.update({"chunk": chunk, "chunks": len(texts), "text": texts[chunk]})
+        return jsonify(out), status
+    except Exception as e:  # noqa: BLE001
+        logger.error("recap tts error: %s", type(e).__name__)
+        return jsonify({"error": "Failed to start speech"}), 500
     finally:
         conn.close()
 

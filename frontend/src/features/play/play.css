@@ -198,3 +198,34 @@
 .sr-app .sr-chat__typing { gap: var(--sr-space-3); min-height: 34px; padding-left: var(--sr-space-2); }
 .sr-app .sr-chat__typing-text { animation: sr-fade-in var(--sr-dur-base) var(--sr-ease-out); }
 .sr-app .sr-chat__empty { margin: var(--sr-space-6) var(--sr-space-4); }
+
+/* "Previously on…" (0.27): a closable card above the chat; a bottom sheet on phones */
+.sr-app .sr-recap--card {
+  margin: var(--sr-space-2) var(--sr-space-3) 0;
+  border: 1px solid var(--sr-border);
+  border-radius: var(--sr-radius-md);
+  background: var(--sr-surface-sunken);
+  box-shadow: var(--sr-shadow-1);
+  display: flex;
+  flex-direction: column;
+  max-height: 45vh;
+  flex-shrink: 0;
+}
+.sr-app .sr-recap__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sr-space-2);
+  padding: var(--sr-space-1) var(--sr-space-2) var(--sr-space-1) var(--sr-space-4);
+  border-bottom: 1px solid var(--sr-border);
+}
+.sr-app .sr-recap__title { margin: 0; font-size: var(--sr-text-base); }
+.sr-app .sr-recap__scroll { overflow-y: auto; padding: var(--sr-space-2) var(--sr-space-4) var(--sr-space-3); }
+.sr-app .sr-recap__nights { list-style: none; margin: 0; padding: 0; }
+.sr-app .sr-recap__night { padding: var(--sr-space-2) 0; border-bottom: 1px solid var(--sr-border); }
+.sr-app .sr-recap__night-title { margin: 0 0 var(--sr-space-1); font-size: var(--sr-text-sm); }
+.sr-app .sr-recap__summary { margin: 0 0 var(--sr-space-2); line-height: 1.5; }
+.sr-app .sr-recap__sofar { padding-top: var(--sr-space-2); }
+.sr-app .sr-recap__actions { display: flex; justify-content: flex-end; }
+.sr-app .sr-recap .sr-btn { min-height: 44px; min-width: 44px; }
+.sr-app .sr-recap--sheet .sr-drawer__body { max-height: 70vh; overflow-y: auto; }
