@@ -1159,6 +1159,17 @@ def apply_translation(digest: Optional[Dict[str, Any]], chapters: Sequence[Dict[
     return d
 
 
+def fix_question_mark(source: str, translated: str, dst: str) -> str:
+    """The Greek question mark is ';' (or U+037E). Into English it must become '?': the model sometimes copies it."""
+    src = (source or "").rstrip()
+    out = (translated or "").rstrip()
+    if dst == "en" and src[-1:] in (";", "\u037e") and out[-1:] in (";", "\u037e"):
+        return out[:-1] + "?"
+    if dst == "el" and src[-1:] == "?" and out[-1:] == "?":
+        return out[:-1] + ";"
+    return translated
+
+
 def split_sentences(text: str, limit: int) -> List[str]:
     """Text in pieces of at most `limit` characters, cut after sentence ends where it can (then at spaces,
     then hard), so nothing is lost to a length cap."""

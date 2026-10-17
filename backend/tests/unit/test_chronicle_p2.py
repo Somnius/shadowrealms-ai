@@ -433,3 +433,10 @@ def test_helpers_cannot_cancel(api, monkeypatch):
     assert api("DELETE", url, HELPER_IN).status_code == 403
     assert api("GET", url, HELPER_IN).status_code == 200
     assert api("DELETE", url, ADMIN).status_code == 200
+
+
+def test_question_mark_follows_the_language():
+    from services import chronicle_digest as cd
+    assert cd.fix_question_mark("Ποιος μας παρακολουθεί;", "Who is watching us;", "en") == "Who is watching us?"
+    assert cd.fix_question_mark("Who is watching us?", "Ποιος μας παρακολουθεί?", "el") == "Ποιος μας παρακολουθεί;"
+    assert cd.fix_question_mark("Μια λίστα; και άλλα.", "A list; and more.", "en") == "A list; and more."

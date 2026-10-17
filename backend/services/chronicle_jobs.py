@@ -19,6 +19,7 @@ from __future__ import annotations
 
 import json
 import logging
+import re
 import os
 import statistics
 import threading
@@ -1029,15 +1030,29 @@ class Runner:
             self.progress.set(night=n, tokens_night=0)
             check_cancel()
             try:
-                done = []
+                done, lost = [], 0
                 for piece in cd.split_sentences(texts[i], translation.MAX_CHARS):
                     check_cancel()
-                    tr, model = translation.translate(piece, src, dst, generate=self.generate, names=names,
-                                                      timeout=TRANSLATE_TIMEOUT_S, before_retry=check_cancel)
-                    done.append(tr)
-                    self.model = model or self.model
-                    self.progress.token(cd.estimate_tokens(tr))
+                    try:
+                        done.append(self._translate_piece(piece, src, dst, names, check_cancel))
+                    except ValueError:
+                        # a long piece with many names: the model often drops a name's placeholder. Sentence by
+                        # sentence there are fewer names per call; a sentence that still fails stays as written.
+                        sents = [x for x in re.split(r"(?<=[.!?;\u037e·…])\s+", piece) if x.strip()]
+                        if len(sents) < 2:
+                            raise
+                        for sent in sents:
+                            check_cancel()
+                            try:
+                                done.append(self._translate_piece(sent, src, dst, names, check_cancel))
+                            except ValueError:
+                                done.append(sent)
+                                lost += 1
+                        if lost == len(sents):
+                            raise ValueError("unusable translation")
                 out[i] = " ".join(done)
+                if lost:
+                    failed += 1
             except Cancelled:
                 raise JobCancelled()
             except (ValueError, KeyError, ProviderError) as e:  # this text stays as written; the job goes on
@@ -1053,6 +1068,14 @@ class Runner:
         row["untranslated"] = failed
         self._save_digest("final", 0, row, cd.translation_hash(digest, chapters), lang=dst, translated_from=src)
         return "partial" if failed else "done"
+
+    def _translate_piece(self, text, src, dst, names, check_cancel):
+        from services import translation
+        tr, model = translation.translate(text, src, dst, generate=self.generate, names=names,
+                                          timeout=TRANSLATE_TIMEOUT_S, before_retry=check_cancel)
+        self.model = model or self.model
+        self.progress.token(cd.estimate_tokens(tr))
+        return cd.fix_question_mark(text, tr, dst)
 
     def _wait_for_play(self):
         waited = 0.0
