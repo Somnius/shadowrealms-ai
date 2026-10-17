@@ -15,6 +15,11 @@ Everything ShadowRealms AI runs on, the AI models it uses, and the tools it was 
 | Chat classifier (OOC moderation, intent) | **Laya** (`laya-shadowrealms-chat`), a fine-tuned mmBERT-base (307M) | CPU, [ONNX Runtime](https://onnxruntime.ai) inside the backend | ~230 ms per message on 4 threads, no GPU |
 | Optional cloud | Anthropic (default `claude-sonnet-5-5`) and OpenAI (default `gpt-6.1-sol`) | Their APIs, with an admin-set key | Off by default; keys stored encrypted |
 | Optional classifier | Typesafe [Jev](https://typesafe.ai) (`jev-latest`) | Typesafe API, with a key | Alternative to Laya |
+| Translator (language override, transcript fixes) | `llama-krikri-8b-instruct` | LM Studio | Temperature 0, game-term glossary, names kept out of the text |
+| Voices, English | [Piper](https://pypi.org/project/piper-tts/) `en_US-lessac-medium`, `en_US-ryan-high`, `en_GB-alan-medium`, `en_GB-jenny_dioco-medium`, `en_GB-cori-high` | CPU, the `speech` container | Licences per voice in `speech/app/catalog.py` |
+| Voices, Greek | [Pocket TTS Greek](https://huggingface.co/myned-ai/pocket-tts-greek) (kostas, spyros, eleni, athina); Piper `el_GR-rapunzelina-medium` as fallback | CPU, the `speech` container | CC BY 4.0 / CC0 |
+| Transcription | [faster-whisper](https://github.com/SYSTRAN/faster-whisper) `large-v3-turbo`, int8_float16 | GPU, the `speech` container | Loaded when needed, unloaded after 10 idle minutes |
+| Transcript check | [Laya-words](https://huggingface.co/somniusx/recmeets-laya-words) (from RecMeets) | CPU, ONNX Runtime, the `speech` container | Marks probably misheard words; Krikri fixes only those |
 
 Fallbacks: cloud → the role's local model → LM Studio's loaded model → Ollama (and back). Details in [AI_SYSTEMS.md](AI_SYSTEMS.md).
 
@@ -65,7 +70,7 @@ Fallbacks: cloud → the role's local model → LM Studio's loaded model → Oll
 
 | | |
 |---|---|
-| Containers | Docker Compose: nginx, backend, PostgreSQL, Redis, ChromaDB, monitoring; the frontend container only for development (`--profile dev`) |
+| Containers | Docker Compose: nginx, backend, PostgreSQL, Redis, ChromaDB, monitoring; the `speech` container for the voice (`--profile voice`: FastAPI 0.143, piper-tts 1.8, pocket-tts 3.3, faster-whisper 1.2 on CTranslate2 4.8, PyAV for Opus); the frontend container only for development (`--profile dev`) |
 | Web server | nginx (`nginx:alpine`): serves the built frontend, proxies `/api`, strict Content-Security-Policy |
 | GPU stats | monitoring container (Python 3.11, psutil, GPUtil, nvidia-ml-py) with the NVIDIA container runtime |
 | Public site | an nginx reverse proxy with Let's Encrypt TLS on a separate DietPi box in front of the machine running the stack |
