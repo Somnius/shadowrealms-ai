@@ -49,6 +49,7 @@ CAMPAIGN_DEFAULTS: Dict[str, Any] = {
     "defaults": {k: True for k in READOUT_KINDS},
     "max_clip_seconds": 180,
     "allow_phone_stt": True,
+    "cloud_voices": False,  # 0.23: Gemini voices, when the site admin turned them on
 }
 
 
@@ -137,11 +138,11 @@ def _apply_campaign(out: Dict[str, Any], data: Dict[str, Any], strict: bool) -> 
                 out[key] = value
             elif strict:
                 _bad(f"max_clip_seconds must be a whole number from {lo} to {hi}")
-        elif key == "allow_phone_stt":
+        elif key in ("allow_phone_stt", "cloud_voices"):
             if isinstance(value, bool):
                 out[key] = value
             elif strict:
-                _bad("allow_phone_stt must be true or false")
+                _bad(f"{key} must be true or false")
         elif strict:
             _bad(f"unknown voice setting: {key}"[:120])
 

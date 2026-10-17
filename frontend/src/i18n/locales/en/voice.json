@@ -187,7 +187,10 @@
     "cache": "Spoken-line cache:",
     "today": "Recorded today:",
     "none": "nothing yet",
-    "refresh": "Refresh"
+    "refresh": "Refresh",
+    "cloud": "Cloud voices:",
+    "cloudErrors": "errors today: {{count}}",
+    "cloudLast": "last: {{code}} at {{at}}"
   },
   "hear": {
     "label": "Read and hear messages in",
@@ -219,5 +222,25 @@
     "none": "None"
   },
   "follow": "Follow",
-  "stopReading": "Stop reading"
+  "stopReading": "Stop reading",
+  "cloud": {
+    "legend": "Cloud voices",
+    "use": "Use cloud voices (Google Gemini)",
+    "hint": "Lines are spoken by Google’s Gemini voices: the text of each line is sent to Google. If Gemini fails or is busy, the local voices speak that line.",
+    "voiceLabel": "{{name}} · {{style}} (Gemini)",
+    "adminTitle": "Cloud voices (Gemini)",
+    "loadFailed": "Could not read the cloud voice settings.",
+    "tier": "Cloud voices",
+    "off": "Off",
+    "free": "Free tier",
+    "paid": "Paid tier",
+    "model": "Model",
+    "keyFree": "Free key (GEMINI_API_KEY) set:",
+    "keyPaid": "Paid key (GEMINI_API_KEY_PAID) set:",
+    "noSpeech": "The speech service is not reachable, so the keys cannot be checked.",
+    "missingKey": "There is no key for this tier: lines will use the local voices.",
+    "freeExplain": "Free tier: no cost, but Google may use the text sent to it to improve its products.",
+    "paidExplain": "Paid tier: Google does not use the text to improve its products; use is billed to the key’s Google project. Which tier applies depends on that project’s billing, not on this setting.",
+    "optIn": "Each chronicle must also turn on “Use cloud voices” in Chronicle settings → Voice. If Gemini fails, times out or is rate-limited, that line is spoken by the local voices."
+  }
 }

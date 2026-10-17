@@ -36,6 +36,14 @@ export default function VoiceHealthPanel() {
           <div><strong>{t('voice:health.vram', 'GPU memory:')}</strong> {t('voice:health.vramLine', '{{free}} MB free, {{needed}} MB needed to transcribe', { free: v(h.vram.free_mb), needed: v(h.vram.needed_mb) })}</div>
           <div><strong>{t('voice:health.clips', 'Recordings on disk:')}</strong> {fmtBytes(h.disk.clips_bytes)} / {fmtBytes(h.disk.clips_cap_bytes)}</div>
           <div><strong>{t('voice:health.cache', 'Spoken-line cache:')}</strong> {fmtBytes(h.disk.tts_cache_bytes)} / {fmtBytes(h.disk.tts_cache_cap_bytes)}</div>
+          {h.cloud && (h.cloud.tier !== 'off' || h.cloud.errors_today) ? (
+            <div data-testid="cloud-health">
+              <strong>{t('voice:health.cloud', 'Cloud voices:')}</strong>{' '}
+              {h.cloud.tier === 'paid' ? t('voice:cloud.paid', 'Paid tier') : h.cloud.tier === 'free' ? t('voice:cloud.free', 'Free tier') : t('voice:cloud.off', 'Off')}
+              {' · '}{t('voice:health.cloudErrors', 'errors today: {{count}}', { count: h.cloud.errors_today || 0 })}
+              {h.cloud.last_error ? ` · ${t('voice:health.cloudLast', 'last: {{code}} at {{at}}', { code: h.cloud.last_error.code, at: h.cloud.last_error.at || '' })}` : ''}
+            </div>
+          ) : null}
           <div>
             <strong>{t('voice:health.today', 'Recorded today:')}</strong>{' '}
             {h.minutes_today.length

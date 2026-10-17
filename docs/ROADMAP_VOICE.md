@@ -16,6 +16,7 @@ How each phase runs: build in its own git worktree → tests and CI green → on
 | 5 | Ops and polish | health panel · cache and disk caps · per-character voice · device checklist | 0.20 | after the deadline | done: released 0.20.0 (phone checklist still open) |
 | 6 | Transcript check | Whisper hints with the chronicle's names · recmeets Laya-words flags misheard words · Krikri fixes only those (split words, slang) · changed words marked, tap to undo | 0.21 | until 06:30 | done: released 0.21.0 |
 | 7 | Read along | sentence by sentence (first audio fast) · highlight the message and sentence being read · "Read this" / "Read from here" in the message menu (long-press on phones) · catch-up choice · dice read in the listener's language · NPC voices · ST deletes all recordings | 0.22 | night of 17 Oct | done: released 0.22.0 |
+| 8 | Cloud voices | Gemini TTS opt-in: admin Off / Free / Paid and model · keys shown present or not · per-chronicle opt-in · Gemini narrator voices and gender mapping · fallback to local voices on error, timeout or 429 · cloud errors in the health panel · cached like local lines | 0.23 | 17 Oct | built on `voice/gemini`, release 0.23.0 pending review |
 
 ## Decisions (2026-10-16)
 
@@ -101,6 +102,13 @@ How each phase runs: build in its own git worktree → tests and CI green → on
 - [x] 7.7 NPC voices by gender. Status: checked: NPC lines in rooms are NPC characters and already use `characters.gender`; `npcs` has no room lines and no editing UI, so nothing added. Test added.
 - [x] 7.8 Storyteller deletes all recordings of a chronicle (Chronicle settings → Voice, confirm). Status: done; pytest + jest.
 - [x] 7.9 Roll-request lines get translation captions; roll tags kept out of the translator. Status: done; jest.
+
+## Phase 8 — Cloud voices (0.23)
+
+- [x] 8.1 Gemini client in the speech service (`speech/app/gemini.py`): generateContent with `x-goog-api-key`, WAV (or raw L16) to Opus + AAC, cache key with provider and model, fallback to the local voice per line, errors today and the last one in `/health`. Status: done; speech pytest with the HTTP call mocked.
+- [x] 8.2 Admin setting Off / Free / Paid and model, keys present (yes/no), EN + EL explanation. Status: done; pytest + jest.
+- [x] 8.3 Chronicle opt-in (settings and creation), Gemini voices in the narrator choice, gender mapping. Status: done; pytest + jest.
+- [ ] 8.4 Listen to the neutral voice (Schedar) in Greek and English on the server. Status: not done (Google gives no genders; only Kore and Charon were heard).
 
 ## Log
 

@@ -15,7 +15,7 @@ from fastapi import Depends, FastAPI, File, Form, Header, HTTPException, UploadF
 from fastapi.responses import FileResponse, JSONResponse
 from pydantic import BaseModel
 
-from . import audio, catalog, config, diskcache, textprep
+from . import audio, catalog, config, diskcache, gemini, textprep
 from .check import LayaWords
 from .cachekeys import tts_key
 from .engines import PiperEngine, PocketEngine, WhisperEngine, gpu_free_mb
@@ -31,41 +31,66 @@ TMP_DIR = os.path.join(config.CACHE_DIR, "tmp")
 
 piper, pocket, whisper = PiperEngine(), PocketEngine(), WhisperEngine()
 laya = LayaWords()
+cloud_stats = gemini.Stats()
 
 
 def _tts_paths(key):
     return os.path.join(TTS_DIR, key[:2], key + ".ogg"), os.path.join(TTS_DIR, key[:2], key + ".m4a")
 
 
+def _make(key, text, synth):
+    """Speak `text` part by part with synth(part, wav_path), then store Opus + AAC under `key`."""
+    ogg, m4a = _tts_paths(key)
+    os.makedirs(os.path.dirname(ogg), exist_ok=True)
+    with tempfile.TemporaryDirectory(dir=TMP_DIR) as td:
+        wavs = []
+        for i, part in enumerate(textprep.split_parts(text, config.TEXT_PART_CHARS)):
+            w = os.path.join(td, f"{i:03d}.wav")
+            synth(part, w)
+            wavs.append(w)
+        if len(wavs) == 1:
+            src = wavs[0]
+        else:
+            lst = os.path.join(td, "list.txt")
+            with open(lst, "w") as f:
+                f.writelines(f"file '{w}'\n" for w in wavs)
+            src = os.path.join(td, "all.wav")
+            audio._ff(["-f", "concat", "-safe", "0", "-i", lst, "-c", "copy", src])
+        tmp_ogg = os.path.join(td, "out.ogg")
+        audio.to_opus(src, tmp_ogg, config.TTS_BITRATE)
+        tmp_m4a = os.path.join(td, "out.m4a")
+        audio.to_m4a(tmp_ogg, tmp_m4a)
+        os.replace(tmp_m4a, m4a)
+        os.replace(tmp_ogg, ogg)  # ogg last: its presence means the entry is complete
+    _evict_soon()
+
+
 def run_tts(p):
-    ogg, m4a = _tts_paths(p["key"])
+    out = {}
+    c = p.get("cloud")
+    if c:
+        if os.path.exists(_tts_paths(p["key"])[0]):
+            return dict(key=p["key"], voice=p["voice"], provider="gemini",
+                        duration=round(audio.duration(_tts_paths(p["key"])[0]), 2))
+        try:
+            _make(p["key"], p["text"], lambda part, w: gemini.synth(
+                part, c["name"], c["model"], c["tier"], w, timeout=config.GEMINI_TIMEOUT))
+            cloud_stats.success()
+            return dict(key=p["key"], voice=p["voice"], provider="gemini",
+                        duration=round(audio.duration(_tts_paths(p["key"])[0]), 2))
+        except Exception as e:  # any cloud failure: this line is spoken by the local voice
+            code = e.code if isinstance(e, gemini.CloudError) else "internal"
+            cloud_stats.error(code, c["model"], c["tier"])
+            log.warning("cloud voice failed (%s, %s); local voice used for this line", code, c["model"])
+            out["cloud_error"] = code
+            p = dict(p["fallback"], text=p["text"])
+    ogg = _tts_paths(p["key"])[0]
     if not os.path.exists(ogg):
-        os.makedirs(os.path.dirname(ogg), exist_ok=True)
         engine = piper if catalog.VOICES[p["voice"]]["engine"] == "piper" else pocket
         if engine is pocket and not pocket.ok():  # waits for the warm-up load on the first Greek line
             raise RuntimeError("pocket tts not loaded")
-        with tempfile.TemporaryDirectory(dir=TMP_DIR) as td:
-            wavs = []
-            for i, part in enumerate(textprep.split_parts(p["text"], config.TEXT_PART_CHARS)):
-                w = os.path.join(td, f"{i:03d}.wav")
-                engine.synth(p["voice"], part, w)
-                wavs.append(w)
-            if len(wavs) == 1:
-                src = wavs[0]
-            else:
-                lst = os.path.join(td, "list.txt")
-                with open(lst, "w") as f:
-                    f.writelines(f"file '{w}'\n" for w in wavs)
-                src = os.path.join(td, "all.wav")
-                audio._ff(["-f", "concat", "-safe", "0", "-i", lst, "-c", "copy", src])
-            tmp_ogg = os.path.join(td, "out.ogg")
-            audio.to_opus(src, tmp_ogg, config.TTS_BITRATE)
-            tmp_m4a = os.path.join(td, "out.m4a")
-            audio.to_m4a(tmp_ogg, tmp_m4a)
-            os.replace(tmp_m4a, m4a)
-            os.replace(tmp_ogg, ogg)  # ogg last: its presence means the entry is complete
-        _evict_soon()
-    return dict(key=p["key"], duration=round(audio.duration(ogg), 2))
+        _make(p["key"], p["text"], lambda part, w: engine.synth(p["voice"], part, w))
+    return dict(out, key=p["key"], voice=p["voice"], provider="local", duration=round(audio.duration(ogg), 2))
 
 
 def run_stt(p):
@@ -144,7 +169,8 @@ def health():
                          pocket_error=pocket.error, cache_bytes=diskcache.dir_bytes(TTS_DIR),
                          cache_cap_bytes=config.TTS_CACHE_BYTES),
                 clips=dict(bytes=diskcache.dir_bytes(CLIP_DIR)),
-                check=dict(present=laya.present(), loaded=laya._sess is not None, error=laya.error))
+                check=dict(present=laya.present(), loaded=laya._sess is not None, error=laya.error),
+                cloud=cloud_stats.snapshot())
 
 
 @app.get("/voices", dependencies=[Depends(auth)])
@@ -152,6 +178,7 @@ def voices():
     return dict(voices=[dict(v, available=(piper.available(v["id"]) if v["engine"] == "piper"
                                             else pocket.error is None))
                         for v in catalog.listing()],
+                cloud_voices=gemini.listing(), cloud_models=list(gemini.MODELS),
                 defaults={f"{l}-{a}": t for (l, a), t in catalog.DEFAULTS.items()})
 
 
@@ -162,13 +189,16 @@ class TTSReq(BaseModel):
     gender: str | None = None
     accent: str | None = None
     role: str | None = None
+    cloud: dict | None = None  # {tier: free|paid, model}: Gemini for this line (0.23)
 
 
 @app.post("/tts", dependencies=[Depends(auth)])
 def tts(req: TTSReq):
     check_text(req.text, config.TEXT_MAX_CHARS)
+    cloud = gemini.valid_cloud(req.cloud)
+    local_voice = None if gemini.voice_name(req.voice) else req.voice  # a Gemini pick has no local twin
     try:
-        vid = catalog.resolve(req.lang, req.voice, req.gender, req.accent, req.role,
+        vid = catalog.resolve(req.lang, local_voice, req.gender, req.accent, req.role,
                               pocket_ok=pocket.error is None)
     except ValueError as e:
         raise Refused(str(e))
@@ -176,6 +206,17 @@ def tts(req: TTSReq):
     check_text(text, config.TEXT_MAX_CHARS * 2)
     engine = catalog.VOICES[vid]["engine"]
     key = tts_key(engine, vid, text, config.TTS_BITRATE)
+    if cloud:
+        tier, model = cloud
+        name = gemini.pick(req.voice, req.gender, req.role)
+        gkey = tts_key("gemini", f"{model}/{name}", text, config.TTS_BITRATE)
+        meta = dict(voice=gemini.PREFIX + name, key=gkey, provider="gemini", fallback_key=key)
+        if os.path.exists(_tts_paths(gkey)[0]):
+            diskcache.touch(_tts_paths(gkey)[0])
+            return tts_lane.add_done(dict(meta, cached=True))
+        return tts_lane.submit(dict(voice=meta["voice"], key=gkey, text=text,
+                                    cloud=dict(tier=tier, model=model, name=name),
+                                    fallback=dict(voice=vid, key=key)), dict(meta, cached=False))
     meta = dict(voice=vid, key=key)
     if os.path.exists(_tts_paths(key)[0]):
         diskcache.touch(_tts_paths(key)[0])  # a hit is a use: keep it out of the next eviction

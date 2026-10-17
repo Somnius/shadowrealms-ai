@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.23.0] - 2026-10-17 - Cloud voices
+
+### Added
+- **Cloud voices (Google Gemini), opt-in.** Admin → AI system → Cloud voices: Off / Free tier / Paid tier and the model (default `gemini-3.8-flash-lite-tts`), with whether each key is set (yes/no) and a plain note in English and Greek: on the free tier Google may use the text to improve its products; on the paid tier it does not and use is billed to the key's Google project. Keys come from `GEMINI_API_KEY` and `GEMINI_API_KEY_PAID` in `.env` (speech container). `GET/PUT /api/voice/cloud-settings`.
+- **Per chronicle.** Chronicle settings → Voice and the new chronicle form: "Use cloud voices", shown when the admin turned them on. The narrator voice per language then also lists the Gemini voices; characters map by gender (female Kore, male Charon, neutral Schedar).
+- **Fallback and health.** Any Gemini error, timeout or 429 makes the local voice speak that line; it is logged, and the admin voice panel shows the errors today and the last one.
+- Gemini audio is cached like local lines (Opus + AAC; the key includes provider and model) and uses the same sentence chunks.
+
 ## [0.22.2] - 2026-10-17 - Small fixes
 
 ### Fixed

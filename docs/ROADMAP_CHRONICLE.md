@@ -11,10 +11,10 @@ How each phase runs: build in its own git worktree → tests and CI green → on
 | # | Phase | Parts | Version | Status |
 |---|---|---|---|---|
 | 0 | Measure | synthetic chronicles · Krikri timed on a chapter · results read by eye | — | not started |
-| 1 | Chapters and the digest | tables and the chronicler role · chaptering, prompts, checks, join · jobs · routes · settings panel · Markdown export | 0.23 | not started |
-| 2 | PDF, edit, languages | PDF in the sheet's look · Storyteller edits a copy · the other language on request · chronicle language | 0.24 | not started |
-| 3 | Previously on… | recap route · recap sheet on the play page · jump to the message · read-out | 0.25 | not started |
-| 4 | Ops | nightly update · caps · admin health | 0.26 | not started |
+| 1 | Chapters and the digest | tables and the chronicler role · chaptering, prompts, checks, join · jobs · routes · settings panel · Markdown export | 0.24 | not started |
+| 2 | PDF, edit, languages | PDF in the sheet's look · Storyteller edits a copy · the other language on request · chronicle language | 0.25 | not started |
+| 3 | Previously on… | recap route · recap sheet on the play page · jump to the message · read-out | 0.26 | not started |
+| 4 | Ops | nightly update · caps · admin health | 0.27 | not started |
 
 ## Decisions (2026-10-17, proposed; Lef to confirm)
 
@@ -35,36 +35,36 @@ How each phase runs: build in its own git worktree → tests and CI green → on
 - [ ] 0.2 Krikri at the loaded 8k context on one 4000-token chapter prompt: seconds, tokens per second, how often the JSON is usable, how often the Greek check passes; the same for the English model. Sets the chapter budget. Status: not started; no such measurement exists yet.
 - [ ] 0.3 The digest of the live chronicles read by eye with Lef in both languages: does it get the gist, does it invent. Status: not started.
 
-## Phase 1 — Chapters and the digest, Markdown (0.23)
+## Phase 1 — Chapters and the digest, Markdown (0.24)
 
 - [ ] 1.1 Tables `chronicle_chapters`, `chronicle_digests`, `chronicle_jobs` through `ensure_chronicle_tables`; the `chronicler` AI role with its row in Admin → AI system and the table in AI_SYSTEMS.md. Status: not started.
 - [ ] 1.2 Pure core `services/chronicle_digest.py`: lines from message rows for the player and Storyteller views, chaptering by room and night, token budget and splitting at a message, chapter and join and digest prompts with the schema in the prompt, parse and checks (ids, names, empty, language share, mixed scripts) with the retry reason, hashes, the fixed words in EL and EN, Markdown. pytest on the synthetic chronicles with a fake model. Status: not started.
 - [ ] 1.3 Jobs `services/chronicle_jobs.py`: a worker thread per process, an advisory lock per chronicle, progress "chapter 3 of 7", cancel between calls, the wait after a Storyteller reply, only stale chapters rewritten. Status: not started.
 - [ ] 1.4 Routes under `/api/campaigns/<id>/chronicle`: the digest, jobs (create, poll, cancel), chapters, `chronicle.md`. Permission tests: outsider 404, player 403 on Update and exports, helper and Storyteller allowed, hidden rolls and closed rooms never in the player view. Status: not started.
 - [ ] 1.5 Panel "The chronicle so far" in Chronicle settings: status line, Update with progress and Cancel, Export Markdown, the digest read-only, Storyteller-only section behind a toggle; 44 px buttons, works on a phone. EN + EL. jest for the panel states. Status: not started.
-- [ ] 1.6 Release 0.23: `docs/CHRONICLE.md`, FEATURES, CHANGELOG, this file. Status: not started.
+- [ ] 1.6 Release 0.24: `docs/CHRONICLE.md`, FEATURES, CHANGELOG, this file. Status: not started.
 
-## Phase 2 — PDF, edit, languages (0.24)
+## Phase 2 — PDF, edit, languages (0.25)
 
 - [ ] 2.1 The sheet's frame, sigil, section rule, footer and fonts lifted into `services/pdf_look.py` (sheet tests unchanged); `services/chronicle_pdf.py`; `chronicle.pdf` route; Export PDF button; Greek checked in the file; A4 and Letter. Status: not started.
 - [ ] 2.2 Edit: the Storyteller's Markdown copy, saved with `PUT`, used by the exports and marked in the footer; the notice when a newer digest exists. Status: not started.
 - [ ] 2.3 The other language on request: a translate job through the translator role with the chronicle's names protected, cached as its own row, a language switch in the panel and `lang=` on exports. Status: not started.
 - [ ] 2.4 `campaigns.language` asked at creation (default: the creator's UI language) and in Chronicle settings; the digest's default language. Status: not started; needs Lef's yes.
-- [ ] 2.5 Release 0.24. Status: not started.
+- [ ] 2.5 Release 0.25. Status: not started.
 
-## Phase 3 — Previously on… (0.25)
+## Phase 3 — Previously on… (0.26)
 
 - [ ] 3.1 `GET …/chronicle/recap`: the player view's last nights for one room since the character's last read, plus the story so far in short; 404 for rooms the viewer can't read. Status: not started.
 - [ ] 3.2 Recap sheet on the play page (a bottom sheet on phones) with a jump from a night to its first message in the room. Status: not started.
 - [ ] 3.3 Read the recap aloud through Listen as its own kind, off by default. Status: not started.
-- [ ] 3.4 Release 0.25. Status: not started.
+- [ ] 3.4 Release 0.26. Status: not started.
 
-## Phase 4 — Ops (0.26)
+## Phase 4 — Ops (0.27)
 
 - [ ] 4.1 Nightly update at a quiet hour for chronicles with new messages, one at a time, skipped while the Storyteller is answering; a per-chronicle switch, off by default. Status: not started.
 - [ ] 4.2 Caps: chapters per job, seconds per job, one job per chronicle, old job rows pruned; delete of a chronicle removes its chapters, digests and jobs (tested). Status: not started.
 - [ ] 4.3 Chronicler block in Admin → AI system: jobs today, seconds per chapter, failures, last error. Status: not started.
-- [ ] 4.4 Release 0.26. Status: not started.
+- [ ] 4.4 Release 0.27. Status: not started.
 
 ## Log
 

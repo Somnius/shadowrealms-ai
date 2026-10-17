@@ -121,6 +121,9 @@ services:
       - VOICE_STT_VRAM_MB=${VOICE_STT_VRAM_MB:-2150}
       - VOICE_TTS_CACHE_GB=${VOICE_TTS_CACHE_GB:-5}
       - VOICE_STT_IDLE_SECONDS=${VOICE_STT_IDLE_SECONDS:-600}
+      # Cloud voices (0.23, opt-in in Admin): Gemini keys, free and paid tier; empty = off
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-}
+      - GEMINI_API_KEY_PAID=${GEMINI_API_KEY_PAID:-}
     volumes:
       - ./data/voice/models:/models:ro
       - ./data/voice/cache:/cache

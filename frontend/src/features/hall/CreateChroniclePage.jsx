@@ -9,7 +9,7 @@ import { errorText } from '../../app/http';
 import { isV5Allowed } from '../../rules/rulesEdition';
 import { t } from '../../i18n';
 import './hall.css';
-import { DEFAULT_READOUT, NarratorVoices, ReadoutDefaults, narratorOf } from '../voice/VoiceSettings';
+import { CloudVoicesChoice, DEFAULT_READOUT, NarratorVoices, ReadoutDefaults, narratorOf, useVoiceCatalog } from '../voice/VoiceSettings';
 
 // Game lines per edition: Classic covers the Revised-era lines (and a custom system with Classic
 // dice); V5 currently means Vampire: The Masquerade 5th Edition only (that's what the backend allows).
@@ -45,6 +45,10 @@ export default function CreateChroniclePage() {
   const [busy, setBusy] = useState(false);
   const [readout, setReadout] = useState(DEFAULT_READOUT);
   const [narrator, setNarrator] = useState(narratorOf(null));
+  const [cloud, setCloud] = useState(false);
+  const catalog = useVoiceCatalog();
+  // the catalog lists Gemini voices only when the site admin turned cloud voices on
+  const cloudAvailable = !!(catalog && (catalog.cloud_voices || []).length);
   const [error, setError] = useState('');
 
   const submit = async (e) => {
@@ -67,7 +71,7 @@ export default function CreateChroniclePage() {
       return;
     }
     // voice read-out defaults: best effort, they can be changed later in Chronicle settings
-    await api(`/campaigns/${r.data.campaign_id}/voice-settings`, { method: 'PUT', body: { defaults: readout, ...narrator } });
+    await api(`/campaigns/${r.data.campaign_id}/voice-settings`, { method: 'PUT', body: { defaults: readout, ...narrator, ...(cloudAvailable ? { cloud_voices: cloud } : {}) } });
     toast({ tone: 'ok', title: t('chronicle:create.done', 'Chronicle created.') });
     await reload();
     navigate(`/chronicles/${r.data.campaign_id}`);
@@ -110,7 +114,8 @@ export default function CreateChroniclePage() {
               hint={edition === 'v5' ? t('chronicle:field.systemV5Hint', 'V5 currently supports Vampire: The Masquerade.') : undefined}
             />
             <ReadoutDefaults value={readout} onChange={setReadout} />
-            <NarratorVoices value={narrator} onChange={setNarrator} />
+            {cloudAvailable ? <CloudVoicesChoice checked={cloud} onChange={setCloud} /> : null}
+            <NarratorVoices value={narrator} onChange={setNarrator} cloud={cloudAvailable && cloud} />
             {error ? (
               <p className="sr-error" role="alert">
                 <Glyph name="warning" size={16} /> {error}

@@ -9,7 +9,8 @@ Voice (docs/VOICE.md).
   GET     /api/voice/tts/jobs/<job_id>            job state
   GET     /api/voice/audio/<key>?fmt=ogg|m4a      the audio, for whoever may read one of its messages
   POST    /api/voice/tts/preview {voice_id}       a fixed sample sentence in that voice
-  GET     /api/voice/health                       site admin: speech status, queues, VRAM, disk, minutes today
+  GET     /api/voice/health                       site admin: speech status, queues, VRAM, disk, minutes today, cloud errors
+  GET/PUT /api/voice/cloud-settings               site admin: cloud voices (Gemini) off / free / paid, model
   GET     /api/voice/translations?campaign_id&location_id&ids=1,2&lang=el
                                                   translations / originals of a room's messages
 """
@@ -38,7 +39,7 @@ from database import (
 )
 from routes.messages import room_visible, visible_message
 from services.location_access import user_can_bypass_closed_location
-from services import speech_client, transcript_check, translation, voice_audio, voice_clips
+from services import cloud_voices, speech_client, transcript_check, translation, voice_audio, voice_clips
 from services.request_validation import RequestValidationError
 from services.voice_tts import PREVIEW_TEXT, guess_lang, readout_kind, tts_bodies
 from services.voice_settings import (
@@ -153,6 +154,7 @@ def campaign_voice_settings(campaign_id):
             "settings": normalize_campaign_voice_settings(current),
             "can_edit": can_edit,
             "effective": effective_readout(_user_settings(cursor, user_id), current),
+            "cloud_available": _cloud_config()["tier"] != "off",
         }), 200
     except Exception as e:  # noqa: BLE001
         logger.error("chronicle voice settings error: %s", type(e).__name__)
@@ -218,7 +220,28 @@ def _speech_tts(cursor, body, message_id):
         return {"error": code}, (503 if status >= 500 else 400)
     if job.get("key"):
         voice_audio.remember(cursor, message_id, job["key"], job.get("voice"))
+    if job.get("fallback_key"):  # a cloud line that may end up in the local voice
+        voice_audio.remember(cursor, message_id, job["fallback_key"], None)
     return _job_out(job), 200
+
+
+# Cloud voices (0.23): the site setting; the speech service holds the keys and makes the call.
+
+def _get_setting(key):
+    try:
+        from services.ai_runtime_settings import get_app_setting
+        return get_app_setting(key)
+    except Exception:  # noqa: BLE001  no settings table yet: cloud voices stay off
+        return None
+
+
+def _set_setting(key, value):
+    from services.ai_runtime_settings import set_app_setting
+    set_app_setting(key, value)
+
+
+def _cloud_config():
+    return cloud_voices.read_config(_get_setting)
 
 
 def _in_hear_lang(cursor, msg, user_settings):
@@ -266,9 +289,11 @@ def voices():
     except speech_client.SpeechUnavailable:
         status, data = 503, {}
     if status != 200:
-        return jsonify({"available": False, "voices": [], "defaults": {}}), 200
+        return jsonify({"available": False, "voices": [], "defaults": {}, "cloud_voices": []}), 200
+    on = _cloud_config()["tier"] != "off"
     return jsonify({"available": True, "voices": data.get("voices") or [],
-                    "defaults": data.get("defaults") or {}}), 200
+                    "defaults": data.get("defaults") or {},
+                    "cloud_voices": (data.get("cloud_voices") or []) if on else []}), 200
 
 
 @voice_bp.route("/voice/tts/jobs", methods=["POST"])
@@ -318,7 +343,7 @@ def create_tts_job():
             return jsonify({"error": "not_spoken"}), 400
         if chunk >= len(bodies):
             return jsonify({"error": "no_such_chunk"}), 400
-        out, status = _speech_tts(cursor, dict(bodies[chunk]), mid)
+        out, status = _speech_tts(cursor, cloud_voices.apply(bodies[chunk], _cloud_config(), camp), mid)
         conn.commit()
         if status == 200:
             out.update({"chunk": chunk, "chunks": len(bodies), "text": bodies[chunk]["text"]})
@@ -384,7 +409,13 @@ def tts_preview():
     conn, cursor = _open()
     try:
         ensure_voice_audio_table(cursor)
-        out, status = _speech_tts(cursor, {"text": PREVIEW_TEXT[lang], "lang": lang, "voice": vid}, None)
+        body = {"text": PREVIEW_TEXT[lang], "lang": lang, "voice": vid}
+        cfg = _cloud_config()
+        if cloud_voices.is_cloud_voice(vid):
+            if cfg["tier"] == "off":
+                return jsonify({"error": "cloud_voices_off"}), 400
+            body["cloud"] = {"tier": cfg["tier"], "model": cfg["model"]}
+        out, status = _speech_tts(cursor, body, None)
         conn.commit()
         return jsonify(out), status
     finally:
@@ -608,7 +639,45 @@ def voice_health():
                  "clips_cap_bytes": voice_clips.clips_max_bytes(),
                  "tts_cache_bytes": tts.get("cache_bytes"), "tts_cache_cap_bytes": tts.get("cache_cap_bytes")},
         "minutes_today": minutes,
+        "cloud": dict(speech.get("cloud") or {}, **_cloud_config()) if up else _cloud_config(),
     }), 200
+
+
+def _is_admin(cursor, user_id):
+    cursor.execute("SELECT role FROM users WHERE id = %s", (user_id,))
+    u = cursor.fetchone()
+    return bool(u and u.get("role") == "admin")
+
+
+@voice_bp.route("/voice/cloud-settings", methods=["GET", "PUT"])
+@jwt_required()
+def cloud_settings():
+    """Admin → AI system → Cloud voices (Gemini): off / free / paid, and the model. Keys are
+    reported present or not (asked of the speech service, which holds them), never shown."""
+    user_id = _uid()
+    if user_id is None:
+        return jsonify({"error": "Invalid session"}), 401
+    conn, cursor = _open()
+    try:
+        if not _is_admin(cursor, user_id):
+            return jsonify({"error": "Admin only"}), 403
+    finally:
+        conn.close()
+    if request.method == "PUT":
+        try:
+            cfg = cloud_voices.validate_config(request.get_json(silent=True))
+        except RequestValidationError as e:
+            return jsonify({"error": e.public_message}), 400
+        _set_setting(cloud_voices.SETTING_TIER, None if cfg["tier"] == "off" else cfg["tier"])
+        _set_setting(cloud_voices.SETTING_MODEL,
+                     None if cfg["model"] == cloud_voices.DEFAULT_MODEL else cfg["model"])
+    try:
+        status, speech = speech_client.call_json("GET", "/health")
+    except speech_client.SpeechUnavailable:
+        status, speech = 503, {}
+    keys = (speech.get("cloud") or {}).get("keys") if status == 200 else None
+    return jsonify(dict(_cloud_config(), models=list(cloud_voices.MODELS),
+                        keys=keys if isinstance(keys, dict) else None)), 200
 
 
 # Language override (Phase 4): captions. Translations are made ahead of time (after the message

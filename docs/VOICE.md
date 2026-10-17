@@ -142,6 +142,19 @@ So: it does what it should on a split word in a clear sentence, it does not dama
 - **Delete all recordings.** Chronicle settings → Voice → "Delete all recordings" (creator or admin, with a confirm): `DELETE /api/campaigns/<id>/voice-clips` deletes every clip row and file of the chronicle and clears `messages.clip_id`; the text and the mic mark stay. Answers `{deleted}`.
 - **Roll-line captions.** Storyteller lines with roll chips get the caption and "Show original" like other lines; the translator gets the text with the tags replaced by their labels, and the chips always come from the original.
 
+## Cloud voices (0.23)
+
+Google Gemini text-to-speech, as an option next to the local voices. It is off unless the site admin turns it on, and then only chronicles that opt in use it.
+
+- **Admin → AI system → Cloud voices (Gemini):** Off / Free tier / Paid tier, and the model (default `gemini-3.8-flash-lite-tts`; also `gemini-3.8-flash-tts`, `gemini-3.1-flash-tts-preview`, `gemini-2.5-flash-preview-tts`, `gemini-2.5-pro-preview-tts`). Stored in `app_settings` (`cloud_voices_tier`, `cloud_voices_model`). The panel shows whether each key is set (yes/no only, never the key). `GET/PUT /api/voice/cloud-settings`, site admins only.
+- **Keys** live in the speech container's environment, from `.env`: `GEMINI_API_KEY` (free tier) and `GEMINI_API_KEY_PAID` (paid tier). Free tier: no cost, but Google may use the text to improve its products. Paid tier (billing on for the key's Google project): Google does not use it, and use is billed to that project. Which tier applies depends on the key's project, not on any request parameter; the setting only picks which key is sent.
+- **Chronicle settings → Voice** (and the new chronicle form): "Use cloud voices (Google Gemini)", shown only when the admin turned them on (`voice_settings.cloud_voices`, default false). With it on, each narrator slot (EN US, EN UK, Greek) also lists the 30 Gemini prebuilt voices (they speak both languages); `GET /api/voice/voices` lists them (`cloud_voices`) only while the site setting is on. "Hear it" works for them too.
+- **Which voice.** An explicit Gemini narrator pick wins; else narrator → Charon, female → Kore, male → Charon, neutral and OOC → Schedar (documented style "Even"). Google's docs give no genders: Kore (female) and Charon (male) were checked by ear in Greek and English, Schedar was not. If the chronicle turns cloud voices off again (or the admin does), a Gemini narrator pick is dropped and the local default speaks.
+- **How a line goes.** The backend adds `cloud: {tier, model}` to the speech service's `POST /tts` body (same sentence chunks as 0.22). The speech service calls `POST https://generativelanguage.googleapis.com/v1beta/models/<model>:generateContent` with the `x-goog-api-key` header and `responseModalities: ["AUDIO"]` and the prebuilt voice; the answer is a 24 kHz WAV (raw L16 PCM is wrapped too), turned into Opus + AAC and cached like a local line. The cache key includes the provider and the model (`tts_key("gemini", "<model>/<voice>", text, bitrate)`).
+- **Fallback.** On any error, a timeout (`VOICE_GEMINI_TIMEOUT_S`, 20 s) or a 429, that line is spoken by the local voice it would have had, the error is logged (code and model, never the key), and the job still finishes `done`. The job carries `fallback_key`, which the backend indexes in `voice_audio` with the cloud key, so either file is reachable and cleaned up with its message.
+- **Health.** Admin → AI system → Voice shows the cloud tier, the errors today (UTC day) and the last error (code and time). The speech service's `GET /health` has `cloud: {keys, errors_today, lines_today, last_error}`.
+- Cloud lines use the same TTS lane as local lines, so a slow Gemini answer delays the lines queued behind it (at most the timeout).
+
 ## Speech service (server side)
 
 The `speech` container turns text into audio (TTS) and voice clips into text (transcription). Only the backend talks to it. It is a small FastAPI app in `speech/`.
@@ -173,7 +186,7 @@ Before speaking, text is cleaned: markdown removed, links dropped, and for Greek
 |---|---|
 | `GET /health` | Whisper loaded or not, free VRAM, queue depths, Pocket TTS state |
 | `GET /voices` | the catalog with licences and which role each voice is the default for |
-| `POST /tts` | JSON `{text, lang, voice?, gender?, accent?, role?}` → a job. If the line is already cached the job comes back `done` at once |
+| `POST /tts` | JSON `{text, lang, voice?, gender?, accent?, role?, cloud?}` (`cloud: {tier, model}` for Gemini, 0.23) → a job. If the line is already cached the job comes back `done` at once |
 | `GET /tts/<job>` | job status: `queued` (with `position`), `running`, `done` (with `key`), `failed` (with `error`) |
 | `GET /audio/<key>?fmt=ogg\|m4a` | the spoken line, Ogg/Opus or an AAC copy for phones that cannot play Opus |
 | `POST /stt` | multipart `file` + `lang` (`el` or `en`) → a job; the clip is checked and transcoded before it is queued |
@@ -200,11 +213,11 @@ TTS audio is cached by a hash of the engine version, voice, bitrate and cleaned 
 
 ### Settings (`.env`)
 
-`SPEECH_SECRET`, `SPEECH_PORT` (5055), `VOICE_STT_VRAM_MB` (2150), `VOICE_STT_IDLE_SECONDS` (600), `VOICE_TTS_CACHE_GB` (5). Backend: `VOICE_CLIPS_MAX_GB` (20). Others with defaults in `speech/app/config.py`: text limit 5,000 characters, clip limits, bitrates (clips 16k, TTS 24k), queue sizes.
+`SPEECH_SECRET`, `SPEECH_PORT` (5055), `GEMINI_API_KEY` and `GEMINI_API_KEY_PAID` (cloud voices, empty = off), `VOICE_GEMINI_TIMEOUT_S` (20), `VOICE_STT_VRAM_MB` (2150), `VOICE_STT_IDLE_SECONDS` (600), `VOICE_TTS_CACHE_GB` (5). Backend: `VOICE_CLIPS_MAX_GB` (20). Others with defaults in `speech/app/config.py`: text limit 5,000 characters, clip limits, bitrates (clips 16k, TTS 24k), queue sizes.
 
 ### Tests
 
-`python -m pytest speech/tests` covers text cleaning, Greek numbers, splitting, cache keys, limits, the voice mapping (including neutral) and the TTS cache eviction with a tiny cap. They need no models.
+`python -m pytest speech/tests` covers text cleaning, Greek numbers, splitting, cache keys, limits, the voice mapping (including neutral), the TTS cache eviction with a tiny cap, and the Gemini client with the HTTP call mocked (`tests/test_gemini.py`). They need no models.
 
 ## Device checklist
 

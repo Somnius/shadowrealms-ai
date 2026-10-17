@@ -43,3 +43,6 @@ def _float(name, default):
 
 
 TTS_CACHE_BYTES = int(_float("VOICE_TTS_CACHE_GB", 5) * 1024 ** 3)
+
+# Cloud voices (0.23): seconds to wait for Gemini before the local voice speaks the line
+GEMINI_TIMEOUT = _float("VOICE_GEMINI_TIMEOUT_S", 20)

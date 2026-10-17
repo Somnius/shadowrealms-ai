@@ -50,6 +50,10 @@ export function narratorSlotLabel(slot) {
 }
 
 const voiceLabel = (v) => {
+  if (v.engine === 'gemini') {
+    const name = String(v.id).replace(/^gemini-/, '');
+    return t('voice:cloud.voiceLabel', '{{name}} · {{style}} (Gemini)', { name, style: v.style || '' });
+  }
   const name = String(v.id).replace(/^(en_US|en_GB|el_GR|el)-/, '').replace(/-(medium|high|low)$/, '').replace(/_/g, ' ');
   const gender = v.gender === 'female' ? t('voice:gender.female', 'Female') : v.gender === 'male' ? t('voice:gender.male', 'Male') : '';
   return gender ? `${name} (${gender})` : name;
@@ -71,8 +75,9 @@ export function useVoiceCatalog() {
   return catalog;
 }
 
-/** Narrator voice per language, with "Hear it". value: {narrator_voice_en, narrator_voice_en_gb, narrator_voice_el}. */
-export function NarratorVoices({ value, onChange }) {
+/** Narrator voice per language, with "Hear it". value: {narrator_voice_en, narrator_voice_en_gb, narrator_voice_el}.
+ * cloud: the chronicle uses cloud voices, so the Gemini voices (any language) are listed too. */
+export function NarratorVoices({ value, onChange, cloud = false }) {
   const api = useApi();
   const { toast } = useToast();
   const catalog = useVoiceCatalog();
@@ -94,8 +99,9 @@ export function NarratorVoices({ value, onChange }) {
     <fieldset className="sr-radio-group" data-testid="narrator-voices">
       <legend>{t('voice:narrator.legend', 'Narrator voice (server voices)')}</legend>
       {NARRATOR_SLOTS.map((slot) => {
-        const list = catalog.voices.filter((v) => v.lang === slot.lang && (slot.lang === 'el' || v.accent === slot.accent) && v.available !== false);
-        const def = list.find((v) => (v.default_for || []).includes('narrator'));
+        const local = catalog.voices.filter((v) => v.lang === slot.lang && (slot.lang === 'el' || v.accent === slot.accent) && v.available !== false);
+        const list = cloud ? [...local, ...(catalog.cloud_voices || [])] : local;
+        const def = local.find((v) => (v.default_for || []).includes('narrator'));
         const current = value[slot.key] || '';
         return (
           <div key={slot.key} className="sr-voice-narrator">
@@ -141,6 +147,8 @@ export function ChronicleVoicePanel({ campaignId }) {
   const [speaking, setSpeaking] = useState({ max_clip_seconds: 180, allow_phone_stt: true });
   const [busy, setBusy] = useState(false);
   const [canEdit, setCanEdit] = useState(false);
+  const [cloudAvailable, setCloudAvailable] = useState(false);
+  const [cloud, setCloud] = useState(false);
   useEffect(() => {
     let live = true;
     api(`/campaigns/${campaignId}/voice-settings`).then((r) => {
@@ -148,6 +156,8 @@ export function ChronicleVoicePanel({ campaignId }) {
         setCanEdit(!!r.data.can_edit);
         setDefaults(r.data.settings.defaults);
         setNarrator(narratorOf(r.data.settings));
+        setCloudAvailable(!!r.data.cloud_available);
+        setCloud(!!r.data.settings.cloud_voices);
         setSpeaking({
           max_clip_seconds: r.data.settings.max_clip_seconds || 180,
           allow_phone_stt: r.data.settings.allow_phone_stt !== false,
@@ -162,7 +172,7 @@ export function ChronicleVoicePanel({ campaignId }) {
   const save = async (e) => {
     e.preventDefault();
     setBusy(true);
-    const r = await api(`/campaigns/${campaignId}/voice-settings`, { method: 'PUT', body: { defaults, ...narrator, ...speaking } });
+    const r = await api(`/campaigns/${campaignId}/voice-settings`, { method: 'PUT', body: { defaults, ...narrator, ...speaking, ...(cloudAvailable ? { cloud_voices: cloud } : {}) } });
     setBusy(false);
     if (!r.ok) toast({ tone: 'danger', title: errorText(r.data, t('voice:saveFailed', 'Could not save the voice settings')) });
     else toast({ tone: 'ok', title: t('voice:saved', 'Voice settings saved.') });
@@ -171,7 +181,8 @@ export function ChronicleVoicePanel({ campaignId }) {
     <Panel title={t('voice:chronicle.title', 'Voice')} icon="ear">
       <form className="sr-form" onSubmit={save}>
         <ReadoutDefaults value={defaults} onChange={setDefaults} />
-        <NarratorVoices value={narrator} onChange={setNarrator} />
+        {cloudAvailable ? <CloudVoicesChoice checked={cloud} onChange={setCloud} /> : null}
+        <NarratorVoices value={narrator} onChange={setNarrator} cloud={cloudAvailable && cloud} />
         <SpeakingRules value={speaking} onChange={setSpeaking} />
         <div className="sr-form__actions">
           <Button type="submit" variant="primary" loading={busy}>{t('common:save', 'Save')}</Button>
@@ -179,6 +190,21 @@ export function ChronicleVoicePanel({ campaignId }) {
       </form>
       {canEdit ? <DeleteRecordings campaignId={campaignId} /> : null}
     </Panel>
+  );
+}
+
+/** Chronicle: use cloud voices (Gemini), shown only when the site admin turned them on. */
+export function CloudVoicesChoice({ checked, onChange }) {
+  return (
+    <fieldset className="sr-radio-group" data-testid="cloud-voices-choice">
+      <legend>{t('voice:cloud.legend', 'Cloud voices')}</legend>
+      <Checkbox
+        label={t('voice:cloud.use', 'Use cloud voices (Google Gemini)')}
+        checked={!!checked}
+        onChange={(e) => onChange(e.target.checked)}
+      />
+      <p className="sr-muted sr-small">{t('voice:cloud.hint', 'Lines are spoken by Google’s Gemini voices: the text of each line is sent to Google. If Gemini fails or is busy, the local voices speak that line.')}</p>
+    </fieldset>
   );
 }
 
