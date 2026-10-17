@@ -59,6 +59,28 @@ Earlier technical decisions:
 - Schema changes go through `ensure_*` functions in `backend/database.py` and the same DDL in `init_postgresql_schema.sql`, like every other column.
 - Nothing in the public repo names a host, a player or a tool.
 
+## Review findings (2026-10-17, two independent reviews of the plan)
+
+Build rules that come out of the reviews. These are not product choices. Product choices still open are in round 2 of the questions; the release order may change with that answer.
+
+- **Two writer roles, one per language:** `chronicler_el` (Krikri) and `chronicler_en` (the loaded model), split like the Storyteller roles. They never fall through to the small Ollama model. They are added to `ROLES` and to the admin AI panel, EN + EL.
+- **Never cut a night silently:** `generate_for_role` shrinks prompts that overflow (`ai_roles.py`). For the writer an overflow is a failure, so the night is split smaller and run again (`trimmed > 0` or a `shrink=False` option).
+- **Live play first:** `last_generation_meta()` only works inside a request, so it can't tell a job thread that the Storyteller is busy. A small cross-process marker (a row written around each Storyteller generation) lets the job wait for a quiet moment. Phase 0 measures whether LM Studio queues a Storyteller reply behind a chapter call, and the VRAM headroom with Whisper and TTS loaded.
+- **One chapter per night:** one summary per night for everyone, plus `st_notes` from a second, short call that only gets the rows players can't see. That means hidden dice and closed rooms; there are no whispers in the app. The player digest has no Storyteller keys at all, and a test checks it.
+- **Visibility is checked when it's read:** a chapter's hash includes the room's open/active state. "Previously on…" and every read check `fetch_readable_location_ids` again rather than trusting stored rows. A test checks that no username appears in player-view lines.
+- **Chapters that no longer exist are removed:** after each run, chapter rows whose key isn't in the freshly computed set are deleted. That covers session marks, moved 6-hour boundaries and deleted messages. Citations of deleted messages show as "(message removed)".
+- **The chapter cutter takes session marks from the start:** the column and the cutter's parameter arrive in phase 1, even if the menu control comes later.
+- **`campaigns.language` arrives in phase 1** (nullable; when it's empty, the language most messages are in). Asking for it at creation can come later.
+- **Partial runs say so:** "40 of 63 nights; Update continues". The unwritten nights aren't marked up to date.
+- **Botches and criticals are always listed:** after the model's events are tidied, any botch or critical not already cited is added from the dice row's fixed sentence.
+- **Table talk is always stored:** lobby lines and in-room OOC go into the chapter's `ooc` list, which the story prompt never sees. Exports show it only "with table talk".
+- **The summary of the whole chronicle is updated in steps too:** a digest per era of about 10 chapters, hashed like a chapter, then one final join over at most 8 era digests. Otherwise a 60-night chronicle redoes about 15 join calls on every Update at 8k context.
+- **Minutes are a render, not a second pipeline:** minutes for the whole chronicle, the last N nights or a date range are the stored chapter records rendered as Markdown in a minutes layout. There are no extra model calls, and the file says which nights it covers. A date range uses the Storyteller's timezone, and a night counts by its first message.
+- **The archive on delete makes no model calls:** inside `delete_campaign`, before the SQL delete, it writes `data/chronicle_archive/<id>-<slug>-<time>/` with the minutes rendered from stored chapters plus the raw Storyteller-view transcript. It adds an index row in `chronicle_archives` and admin-only routes to list and download, with the path taken from the row and never from the request. It goes in docs/SECURITY_MODEL.md, because the archive holds hidden rolls.
+- **Jobs are claimed safely:** two gunicorn workers claim with `SELECT … FOR UPDATE SKIP LOCKED`, then the per-chronicle lock. The nightly run is on the first worker only.
+- **The horror look in the app:** no browser engine in the backend. The stained-paper image is made once (with a fixed seed) by Serkan's builder and committed per paper size; reportlab draws it as the page background, the frame, thorns and blood as vector paths (the sheet code already draws SVG paths), and the text as vector. One test print before release.
+- **The footer link to lefteros.com** is the one host named in exported files, at the user's request. Docs and tests still name no host.
+
 ## Phase 0 — Measure
 
 - [ ] 0.1 Three synthetic chronicles (Greek, English, mixed; 1, 10 and 60 nights; hidden rolls and a closed room) as a pytest fixture generator. Status: not started.
@@ -100,6 +122,7 @@ Earlier technical decisions:
 ## Log
 
 - 2026-10-17 — Plan written from recmeets' minutes pipeline and the current code; questions for Lef listed in the plan. Nothing built yet.
+- 2026-10-17 — Plan reviewed twice; build rules above; round 2 of questions (17) for Lef.
 - 2026-10-17 — Lef answered the 28 questions: defaults, plus session-end marks, both PDF looks, the lefteros.com link in the footer, minutes kept when a chronicle is deleted, and minutes for a date range. Decisions above updated.
 
 ## Left for later
