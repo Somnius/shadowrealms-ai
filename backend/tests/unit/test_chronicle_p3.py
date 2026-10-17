@@ -118,6 +118,8 @@ def test_range_uses_the_timezone(api):
     # 21:00 UTC on 1 Oct is midnight on 2 Oct in Athens: night 1 belongs to 2 Oct there
     text = _minutes(api, "from=2026-10-02&to=2026-10-02&tz=Europe/Athens").get_data(as_text=True)
     assert "## Νύχτα 1" in text and "## Νύχτα 2" not in text
+    # every date in the file is in that timezone too
+    assert "## Νύχτα 1 — The Echoing Basement — 2 Οκτ 2026" in text
 
 
 def test_range_defaults_to_the_users_display_timezone(api):
@@ -131,7 +133,7 @@ def test_range_defaults_to_the_users_display_timezone(api):
 
 
 def test_range_bad_input(api):
-    assert _minutes(api, "from=2026-10-02").status_code == 400
+    assert _minutes(api, "from=2026-10-02x").status_code == 400
     assert _minutes(api, "from=2026-10-03&to=2026-10-02").status_code == 400
     assert _minutes(api, "from=2026-13-01&to=2026-13-02").status_code == 400
     assert _minutes(api, "from=yesterday&to=today").status_code == 400
@@ -144,7 +146,7 @@ def test_range_bad_input(api):
 def test_range_reports_unwritten_nights_at_the_top(api):
     text = _minutes(api, "from=2026-10-01&to=2026-10-31&tz=UTC").get_data(as_text=True)
     lines = [ln for ln in text.splitlines() if ln.strip()]
-    assert lines[1] == "4 νύχτες σε αυτό το διάστημα δεν έχουν γραφτεί ακόμα: πάτα Ενημέρωση."
+    assert lines[1] == "4 νύχτες σε αυτό το διάστημα δεν έχουν γραφτεί ακόμα ή άλλαξαν από τότε: πάτα Ενημέρωση."
     write(api)
     text = _minutes(api, "from=2026-10-01&to=2026-10-31&tz=UTC").get_data(as_text=True)
     assert "δεν έχουν γραφτεί" not in text and "## Νύχτα 3" in text
@@ -153,7 +155,7 @@ def test_range_reports_unwritten_nights_at_the_top(api):
                     "role, created_at) VALUES (5000, 10, 101, 3, 20, 'ic', 'Μια νέα νύχτα.', 'user', '2026-10-09 21:00:00')")
     api.raw.commit()
     text = _minutes(api, "from=2026-10-01&to=2026-10-31&tz=UTC").get_data(as_text=True)
-    assert "1 νύχτα σε αυτό το διάστημα δεν έχει γραφτεί ακόμα: πάτα Ενημέρωση." in text
+    assert "1 νύχτα σε αυτό το διάστημα δεν έχει γραφτεί ακόμα ή άλλαξε από τότε: πάτα Ενημέρωση." in text
     # outside the range it is not counted
     text = _minutes(api, "from=2026-10-01&to=2026-10-03&tz=UTC").get_data(as_text=True)
     assert "δεν έχει γραφτεί" not in text
@@ -237,6 +239,8 @@ def test_who_may_mark_and_see_marks(api):
     for uid in (PLAYER, HELPER_IN):
         assert api("DELETE", f"{MARKS}/1003", uid).status_code == 403
     assert api("DELETE", f"{MARKS}/1003", ADMIN).get_json() == {"message_id": 1003, "marked": False}
+    r = api("DELETE", f"{MARKS}/1003", ADMIN)  # no such mark any more
+    assert r.status_code == 404 and r.get_json()["error"] == "not_found"
     assert api("GET", MARKS, ST).get_json() == {"message_ids": []}
     assert api("POST", MARKS, ADMIN, {"message_id": 1003}).status_code == 200
 
@@ -270,3 +274,77 @@ def test_a_mark_cuts_the_chapter_on_the_next_update(api):
     assert cj.run_job(conn, cj.get_job(cur, 10, jid), generate=FakeModel(), sleep=lambda s: None, ctx_tokens=32768) == "done"
     story = [c for c in cj.stored_chapters(cur, 10, "el") if c["kind"] == "story"]
     assert any(c["last_id"] == 1003 for c in story) and any(c["first_id"] == 1004 for c in story)
+
+
+def test_one_date_alone_is_open_ended(api):
+    write(api)
+    since = _minutes(api, "from=2026-10-02&tz=UTC").get_data(as_text=True)
+    assert "## Νύχτα 1" not in since and "## Νύχτα 2" in since and "## Νύχτα 3" in since
+    until = _minutes(api, "to=2026-10-01&tz=UTC").get_data(as_text=True)
+    assert "## Νύχτα 1" in until and "## Νύχτα 2" not in until
+
+
+def test_a_mark_on_a_hidden_roll_moves_to_what_the_player_can_see(api):
+    hidden = api.raw.execute("SELECT id FROM messages WHERE ai_message_kind LIKE 'dice_roll_hidden%' LIMIT 1").fetchone()[0]
+    room = api.raw.execute("SELECT location_id FROM messages WHERE id = ?", (hidden,)).fetchone()[0]
+    seen = api.raw.execute(
+        "SELECT id FROM messages WHERE location_id = ? AND id <= ? AND COALESCE(ai_message_kind, '') NOT LIKE '%hidden%' "
+        "ORDER BY id DESC LIMIT 1", (room, hidden)).fetchone()[0]
+    assert api("POST", MARKS, ST, {"message_id": hidden}).status_code == 200
+    assert api("GET", MARKS, ST).get_json() == {"message_ids": [hidden]}
+    assert api("GET", MARKS, PLAYER).get_json() == {"message_ids": [seen]}
+    assert seen != hidden
+
+
+def test_after_a_mark_the_range_counts_changed_nights_once(api):
+    write(api)
+    assert api("POST", MARKS, ST, {"message_id": 1003}).status_code == 200
+    text = _minutes(api, "from=2026-10-01&to=2026-10-01&tz=UTC").get_data(as_text=True)
+    # night 1 is now two nights: its first part changed, its second part is new
+    assert "2 νύχτες σε αυτό το διάστημα δεν έχουν γραφτεί ακόμα ή άλλαξαν από τότε" in text
+    assert text.count("## Νύχτα") == 1  # the stored night under the same key; nothing doubled
+
+
+def test_range_in_the_other_language_says_what_is_not_translated(api):
+    write(api)
+    text = _minutes(api, "from=2026-10-01&to=2026-10-03&tz=UTC&lang=en").get_data(as_text=True)
+    assert "4 nights in this range are still in Greek or not translated: press Translate." in text
+
+
+def test_footer_link_shows_short_text_and_links_the_full_url(api):
+    write(api)
+    for lang, short in (("el", "lefteros.com/apps/shadowrealms-ai"), ("en", "lefteros.com/en/apps/shadowrealms-ai")):
+        assert cd.footer_link_text(lang) == short
+        url = cd.FOOTER_URL[lang]
+        md = api("GET", f"/api/campaigns/10/chronicle/minutes.md?lang={lang}", ST).get_data(as_text=True)
+        if lang == "el":
+            assert f"[{short}]({url})" in md
+            assert url not in cd.strip_footer(md)
+        for look in ("sheet", "horror"):
+            for what in ("chronicle.pdf", "chronicle/minutes.pdf"):
+                data = api("GET", f"/api/campaigns/10/{what}?look={look}", ST).get_data()
+                text = "\n".join(pdf_pages(data))
+                assert "lefteros.com/apps/shadowrealms-ai" in text and "https://" not in text
+                assert "shadowrealms-ai/" not in text
+                assert pdf_links(data) == {EL_URL}
+    en = build_pdf(cd.story_markdown({"name": "N"}, {"tldr": "S.", "so_far": ["O."]}, [], "en", "st"), "en", "letter",
+                   look="horror")
+    assert "lefteros.com/en/apps/shadowrealms-ai" in "\n".join(pdf_pages(en)) and pdf_links(en) == {cd.FOOTER_URL["en"]}
+    # an edit copy saved with the old footer loses it too
+    old = "# T\n\nText.\n\n---\n_Written by ShadowRealms AI_ · <https://lefteros.com/en/apps/shadowrealms-ai/>\n"
+    assert cd.strip_footer(old) == "# T\n\nText.\n"
+
+
+def test_the_paper_jpeg_goes_into_the_pdf_unchanged():
+    import os
+
+    from services.pdf_horror import PAPER_IMAGE
+
+    for paper in ("a4", "letter"):
+        data = build_pdf("# T\n\ntext\n\n## Two\n\n" + "Line.\n\n" * 200, "en", paper, look="horror")
+        jpeg = open(PAPER_IMAGE[paper], "rb").read()
+        assert data.count(jpeg) == 1  # the file's bytes, once, not re-encoded
+        assert b"/Filter [ /DCTDecode ]" in data and f"/Length {os.path.getsize(PAPER_IMAGE[paper])}".encode() in data
+        pypdf = pytest.importorskip("pypdf")
+        for page in pypdf.PdfReader(io.BytesIO(data)).pages:  # every page lists it in its resources
+            assert len(page["/Resources"]["/XObject"]) == 1

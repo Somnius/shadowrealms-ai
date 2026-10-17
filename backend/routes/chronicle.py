@@ -355,23 +355,32 @@ def _minutes(cur, camp, view, last_n, date_range=None):
     existing = cj.message_ids(cur, camp["id"]) if view == "st" else None
     translated = lang != own
     if date_range:
-        date_range = dict(date_range, unwritten=_unwritten_in_range(cur, camp, view, readable, date_range))
+        date_range = dict(date_range, **_range_state(cur, camp, view, readable, date_range, own, lang))
     text = cd.minutes_markdown(facts, chapters, lang, view, last_n, existing, _flag("with_table_talk"), translated,
                                date_range=date_range)
     return text, lang, translated
 
 
-def _unwritten_in_range(cur, camp, view, readable, rng):
-    """Story nights whose first message falls in the range and that have no stored record yet."""
-    p = cj.plan(cur, camp["id"])
-    n = 0
-    for ch in p["story"]:
-        if ch["key"] in p["stored"] or not cd.in_range(ch.get("started_at"), rng["tz"], rng["start"], rng["end"]):
-            continue
-        if view == "player" and (ch.get("visibility") != "all" or int(ch["location_id"]) not in readable):
-            continue
-        n += 1
-    return n
+def _range_state(cur, camp, view, readable, rng, own, lang):
+    """For a date range: the fresh chapter keys in it (stored nights cut differently since are left
+    out), how many nights in it are new or changed since the last Update (only the chapters in the
+    range are hashed), and, in the other language, how many written nights the translation lacks."""
+    def inside(ch):
+        return cd.in_range(ch.get("started_at"), rng["tz"], rng["start"], rng["end"])
+
+    def shown(ch):
+        return view != "player" or (ch.get("visibility") == "all" and int(ch["location_id"]) in readable)
+
+    p = cj.plan(cur, camp["id"], only=inside)
+    fresh = {ch["key"] for ch in p["chapters"] if inside(ch)}
+    unwritten = sum(1 for ch in p["stale"] if shown(ch))
+    untranslated = 0
+    if lang != own:
+        tr = cj.stored_digest(cur, camp["id"], lang, translated=True) or {}
+        done = set((tr.get("chapters") or {}).keys())
+        untranslated = sum(1 for ch in p["stored"].values()
+                           if ch["kind"] == "story" and ch["key"] in fresh and ch["key"] not in done and shown(ch))
+    return {"fresh_keys": fresh, "unwritten": unwritten, "untranslated": untranslated}
 
 
 _DAY = re.compile(r"^\d{4}-\d{2}-\d{2}$")
@@ -392,17 +401,12 @@ def _user_tz(cur, uid):
 
 def _date_range(cur, uid):
     """(range or None, error code or None) from from=, to= (YYYY-MM-DD) and tz= (an IANA name; default
-    the user's display timezone, then UTC). The dates are calendar days in that timezone, both included."""
+    the user's display timezone, then UTC). The dates are calendar days in that timezone, both included.
+    One date alone is open-ended: from= alone runs to today, to= alone from the beginning."""
     a, b = (request.args.get("from") or "").strip(), (request.args.get("to") or "").strip()
     if not a and not b:
         return None, None
-    if not (_DAY.match(a) and _DAY.match(b)):
-        return None, "bad_range"
-    try:
-        start, end = date.fromisoformat(a), date.fromisoformat(b)
-    except ValueError:
-        return None, "bad_range"
-    if start > end:
+    if (a and not _DAY.match(a)) or (b and not _DAY.match(b)):
         return None, "bad_range"
     name = (request.args.get("tz") or "").strip() or _user_tz(cur, uid) or "UTC"
     try:
@@ -411,6 +415,13 @@ def _date_range(cur, uid):
         if request.args.get("tz"):
             return None, "bad_tz"
         tz = ZoneInfo("UTC")
+    try:
+        start = date.fromisoformat(a) if a else date(1970, 1, 1)
+        end = date.fromisoformat(b) if b else datetime.now(tz).date()
+    except ValueError:
+        return None, "bad_range"
+    if start > end:
+        return None, "bad_range"
     return {"start": start, "end": end, "tz": tz}, None
 
 
@@ -566,8 +577,7 @@ def session_marks_route(campaign_id):
             )
             rows = cur.fetchall()
             if a == "player":
-                readable = _readable_for_players(cur, campaign_id)
-                rows = [r for r in rows if int(r["location_id"]) in readable]
+                return jsonify({"message_ids": _player_marks(cur, campaign_id, rows)})
             return jsonify({"message_ids": [int(r["message_id"]) for r in rows]})
         if a != "st":
             return jsonify({"error": "forbidden"}), 403
@@ -590,6 +600,28 @@ def session_marks_route(campaign_id):
         conn.close()
 
 
+def _player_marks(cur, campaign_id, rows):
+    """Marks as a player may see them: only in rooms they can read, and never the id of a row the chat
+    hides from them (a hidden roll). A mark on such a row moves to the latest message the player can
+    see in that room at or before it, so the line still shows."""
+    from services.message_actions import hidden_dice_sql_filter
+
+    readable = _readable_for_players(cur, campaign_id)
+    out = []
+    for r in rows:
+        if int(r["location_id"]) not in readable:
+            continue
+        cur.execute(
+            "SELECT m.id FROM messages m WHERE m.campaign_id = %s AND m.location_id = %s AND m.id <= %s"
+            + hidden_dice_sql_filter("m.ai_message_kind") + " ORDER BY m.id DESC LIMIT 1",
+            (campaign_id, r["location_id"], r["message_id"]),
+        )
+        seen = cur.fetchone()
+        if seen and int(seen["id"]) not in out:
+            out.append(int(seen["id"]))
+    return sorted(out)
+
+
 @chronicle_bp.route("/campaigns/<int:campaign_id>/chronicle/session-marks/<int:message_id>", methods=["DELETE"])
 @jwt_required()
 def session_mark_delete(campaign_id, message_id):
@@ -605,6 +637,8 @@ def session_mark_delete(campaign_id, message_id):
             return jsonify({"error": "forbidden"}), 403
         cur.execute("DELETE FROM chronicle_session_marks WHERE message_id = %s AND campaign_id = %s",
                     (message_id, campaign_id))
+        if not cur.rowcount:
+            return jsonify({"error": "not_found"}), 404
         conn.commit()
         return jsonify({"message_id": message_id, "marked": False})
     finally:

@@ -86,8 +86,9 @@ WORDS: Dict[str, Dict[str, str]] = {
         "nothing": "Nothing written yet.",
         "covers_range": "From {start} to {end}: {n} written nights.",
         "covers_range_1": "From {start} to {end}: 1 written night.",
-        "range_unwritten": "{n} nights in this range are not written yet: press Update.",
-        "range_unwritten_1": "1 night in this range is not written yet: press Update.",
+        "range_unwritten": "{n} nights in this range are not written yet or changed since: press Update.",
+        "range_unwritten_1": "1 night in this range is not written yet or changed since: press Update.",
+        "range_untranslated": "{n} nights in this range are still in Greek or not translated: press Translate.",
         "botch": "Botch",
         "critical": "Critical",
         "hidden_roll": "hidden roll",
@@ -138,8 +139,9 @@ WORDS: Dict[str, Dict[str, str]] = {
         "nothing": "Δεν έχει γραφτεί τίποτα ακόμα.",
         "covers_range": "Από {start} έως {end}: {n} γραμμένες νύχτες.",
         "covers_range_1": "Από {start} έως {end}: 1 γραμμένη νύχτα.",
-        "range_unwritten": "{n} νύχτες σε αυτό το διάστημα δεν έχουν γραφτεί ακόμα: πάτα Ενημέρωση.",
-        "range_unwritten_1": "1 νύχτα σε αυτό το διάστημα δεν έχει γραφτεί ακόμα: πάτα Ενημέρωση.",
+        "range_unwritten": "{n} νύχτες σε αυτό το διάστημα δεν έχουν γραφτεί ακόμα ή άλλαξαν από τότε: πάτα Ενημέρωση.",
+        "range_unwritten_1": "1 νύχτα σε αυτό το διάστημα δεν έχει γραφτεί ακόμα ή άλλαξε από τότε: πάτα Ενημέρωση.",
+        "range_untranslated": "{n} νύχτες σε αυτό το διάστημα είναι ακόμα στα αγγλικά ή δεν έχουν μεταφραστεί: πάτα Μετάφραση.",
         "botch": "Καταστροφική αποτυχία",
         "critical": "Κρίσιμη επιτυχία",
         "hidden_roll": "κρυφή ρίψη",
@@ -174,9 +176,12 @@ def in_range(at: Optional[datetime], tz, start: date, end: date) -> bool:
     return bool(d and start <= d <= end)
 
 
-def fmt_date(at: Optional[datetime], lang: str) -> str:
+def fmt_date(at: Optional[datetime], lang: str, tz=None) -> str:
+    """'5 Oct 2026'; with tz, the date in that timezone (a stored time without one is UTC)."""
     if not at:
         return "—"
+    if tz is not None:
+        at = local_date(at, tz)
     m = _MONTHS["el" if lang == "el" else "en"][at.month - 1]
     return f"{at.day} {m} {at.year}"
 
@@ -1114,11 +1119,20 @@ def footer_url(lang: str) -> str:
     return FOOTER_URL["el" if lang == "el" else "en"]
 
 
+def footer_link_text(lang: str) -> str:
+    """The link as shown: FOOTER_URL without the scheme and the trailing slash
+    (lefteros.com/apps/shadowrealms-ai); the link itself stays the full URL."""
+    return re.sub(r"^https?://", "", footer_url(lang)).rstrip("/")
+
+
 def _footer(lang: str, edited: bool = False, translated: bool = False) -> List[str]:
-    return ["", "---", f"_{footer_text(lang, edited, translated)}_ · <{footer_url(lang)}>", ""]
+    link = f"[{footer_link_text(lang)}]({footer_url(lang)})"
+    return ["", "---", f"_{footer_text(lang, edited, translated)}_ · {link}", ""]
 
 
-_FOOTER_TAIL = re.compile(r"\n*-{3,}\s*\n_[^\n]*_ · <https://lefteros\.com/[^>\n]*>\s*$")
+# the footer as written since 0.26 ([text](url)) and before (<url>), so older edit copies lose it too
+_FOOTER_TAIL = re.compile(
+    r"\n*-{3,}\s*\n_[^\n]*_ · (?:<https://lefteros\.com/[^>\n]*>|\[lefteros\.com/[^\]\n]*\]\(https://lefteros\.com/[^)\n]*\))\s*$")
 
 
 def strip_footer(text: str) -> str:
@@ -1279,12 +1293,12 @@ def overlay_translation(chapters: Sequence[Dict[str, Any]], translated: Dict[str
     return out
 
 
-def _night_heading(seq: int, ch: Dict[str, Any], lang: str, level: str = "###") -> str:
+def _night_heading(seq: int, ch: Dict[str, Any], lang: str, level: str = "###", tz=None) -> str:
     w = words(lang)
     c = ch.get("chapter") or {}
     title = md(c.get("title")) if c.get("title") else ""
     closed = f" ({w['closed_room']})" if ch.get("visibility") == "st" else ""
-    parts = [_label(seq, lang), md(ch.get("room")) + closed, fmt_date(ch.get("started_at"), lang)]
+    parts = [_label(seq, lang), md(ch.get("room")) + closed, fmt_date(ch.get("started_at"), lang, tz)]
     head = f"{level} " + " — ".join(parts)
     flag = f" _({w['not_in_lang']})_" if "language" in (c.get("check") or []) else ""
     return head + (f": {title}" if title else "") + flag
@@ -1432,8 +1446,10 @@ def minutes_markdown(facts: Dict[str, Any], chapters: Sequence[Dict[str, Any]], 
                      with_table_talk: bool = False, translated: bool = False,
                      date_range: Optional[Dict[str, Any]] = None) -> str:
     """The full record of the written nights (all, the last N, or a date range), in a minutes layout.
-    date_range: {"start": date, "end": date, "tz": ZoneInfo, "unwritten": int}; the nights keep the
-    numbers they have in the whole chronicle. No model calls."""
+    date_range: {"start": date, "end": date, "tz": ZoneInfo, "unwritten": int, "untranslated": int,
+    "fresh_keys": set or None}; the nights keep the numbers they have in the whole chronicle, every
+    date is in tz, and a stored night whose key is no longer in fresh_keys (a mark or a moved cut since
+    the last Update) is left out: it is counted as unwritten instead. No model calls."""
     w = words(lang)
     st = view == "st"
     story = [c for c in chapters if c.get("kind") == "story"]
@@ -1441,12 +1457,17 @@ def minutes_markdown(facts: Dict[str, Any], chapters: Sequence[Dict[str, Any]], 
     if last_n:
         numbered = numbered[-int(last_n):]
     out = [f"# {md(facts.get('name'))} — {w['minutes_title']}", ""]
+    tz = date_range["tz"] if date_range else None
     if date_range:
-        start, end, tz = date_range["start"], date_range["end"], date_range["tz"]
-        numbered = [(seq, ch) for seq, ch in numbered if in_range(ch.get("started_at"), tz, start, end)]
+        start, end = date_range["start"], date_range["end"]
+        fresh = date_range.get("fresh_keys")
+        numbered = [(seq, ch) for seq, ch in numbered if in_range(ch.get("started_at"), tz, start, end)
+                    and (fresh is None or ch.get("key") in fresh)]
         missing = int(date_range.get("unwritten") or 0)
         if missing:
             out += [w["range_unwritten_1"] if missing == 1 else w["range_unwritten"].format(n=missing), ""]
+        if date_range.get("untranslated"):
+            out += [w["range_untranslated"].format(n=int(date_range["untranslated"])), ""]
         fmt = lambda d: fmt_date(datetime(d.year, d.month, d.day), lang)  # noqa: E731
         key = "covers_range_1" if len(numbered) == 1 else "covers_range"
         out += [w[key].format(start=fmt(start), end=fmt(end), n=len(numbered)), ""]
@@ -1463,7 +1484,7 @@ def minutes_markdown(facts: Dict[str, Any], chapters: Sequence[Dict[str, Any]], 
         out += [w["unwritten"].format(n=total - len(story)), ""]
     for seq, ch in numbered:
         c = ch.get("chapter") or {}
-        out += [_night_heading(seq, ch, lang, "##"), ""]
+        out += [_night_heading(seq, ch, lang, "##", tz), ""]
         for p in c.get("summary") or []:
             out += [md(p), ""]
         sections = [

@@ -278,10 +278,12 @@
     "to": "To",
     "clearRange": "Clear dates",
     "rangeBad": "The first day must come before the last.",
-    "rangeHint": "A night counts on the day of its first message ({{zone}}). Nights in the range that aren’t written yet are listed at the top.",
+    "rangeHint": "A night counts on the day of its first message ({{zone}}). From alone runs to today, To alone from the beginning. Nights in the range that aren’t written yet are listed at the top.",
     "look": "Look",
     "lookSheet": "Sheet",
-    "lookHorror": "Horror"
+    "lookHorror": "Horror",
+    "minutesSince": "from {{from}} to today",
+    "minutesUntil": "from the beginning to {{to}}"
   },
   "language": {
     "title": "Chronicle language",

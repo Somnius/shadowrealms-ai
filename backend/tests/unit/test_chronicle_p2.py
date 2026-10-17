@@ -84,7 +84,8 @@ def test_english_letter_pdf():
     data = build_pdf(md, "en", "letter", title="Night Owls — The chronicle so far")
     assert b"/MediaBox [ 0 0 612 792 ]" in data
     text = "\n".join(pdf_pages(data))
-    assert "THE STORY SO FAR" in text and "Written by ShadowRealms AI" in text and EN_URL in text
+    assert "THE STORY SO FAR" in text and "Written by ShadowRealms AI" in text
+    assert "lefteros.com/en/apps/shadowrealms-ai" in text and "https://" not in text
     assert pdf_links(data) == {EN_URL}
 
 

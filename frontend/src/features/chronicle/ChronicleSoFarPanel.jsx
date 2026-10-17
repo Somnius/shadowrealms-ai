@@ -389,7 +389,8 @@ export default function ChronicleSoFarPanel({ api, campaign, toast, timeZone = n
   // a date range: calendar days in the Storyteller's timezone (the app's display timezone, else this device's)
   const zone = timeZone || deviceTimeZone();
   const rangeBad = !!(fromDay && toDay && fromDay > toDay);
-  const rangeSet = !!(fromDay && toDay && !rangeBad);
+  // one date alone is open-ended: From alone runs to today, To alone from the beginning
+  const rangeSet = !!((fromDay || toDay) && !rangeBad);
 
   const exportStory = async (ext) => {
     const q = query({ lang: other, with_table_talk: tableTalk, ...pdfOpts(ext) });
@@ -406,7 +407,9 @@ export default function ChronicleSoFarPanel({ api, campaign, toast, timeZone = n
   };
 
   let minutesWhat = t('chronicle:soFar.minutesWhole', 'the whole chronicle');
-  if (rangeSet) minutesWhat = t('chronicle:soFar.minutesRange', '{{from}} to {{to}}', { from: fromDay, to: toDay });
+  if (rangeSet && fromDay && toDay) minutesWhat = t('chronicle:soFar.minutesRange', '{{from}} to {{to}}', { from: fromDay, to: toDay });
+  else if (rangeSet && fromDay) minutesWhat = t('chronicle:soFar.minutesSince', 'from {{from}} to today', { from: fromDay });
+  else if (rangeSet) minutesWhat = t('chronicle:soFar.minutesUntil', 'from the beginning to {{to}}', { to: toDay });
   else if (parseInt(lastN, 10) > 0) minutesWhat = t('chronicle:soFar.minutesLast', 'the last {{n}} nights', { n: parseInt(lastN, 10) });
 
   const live = isLive(job);
@@ -508,7 +511,7 @@ export default function ChronicleSoFarPanel({ api, campaign, toast, timeZone = n
               <p className="sr-sofar__hint">
                 {rangeBad
                   ? t('chronicle:soFar.rangeBad', 'The first day must come before the last.')
-                  : t('chronicle:soFar.rangeHint', 'A night counts on the day of its first message ({{zone}}). Nights in the range that aren’t written yet are listed at the top.', { zone })}
+                  : t('chronicle:soFar.rangeHint', 'A night counts on the day of its first message ({{zone}}). From alone runs to today, To alone from the beginning. Nights in the range that aren’t written yet are listed at the top.', { zone })}
               </p>
               <div className="sr-sofar__pdfopts">
                 <Select

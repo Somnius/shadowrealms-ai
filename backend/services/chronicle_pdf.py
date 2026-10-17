@@ -316,7 +316,7 @@ def build_pdf(markdown: str, lang: str, paper: str = "a4", edited: bool = False,
     body = cd.strip_footer(markdown)
     w = cd.words(lang)
     story = flowables(body, w["st_only"])
-    footer = f"{cd.footer_text(lang, edited, translated)} · {cd.footer_url(lang)}"
+    footer = f"{cd.footer_text(lang, edited, translated)} · {cd.footer_link_text(lang)}"
     doc.build(story, canvasmaker=_canvas_class(footer, cd.footer_url(lang), title))
     return buf.getvalue()
 
@@ -340,6 +340,6 @@ def _build_horror(buf, markdown, lang, paper, W, H, edited, translated, title) -
     body = cd.strip_footer(markdown)
     w = cd.words(lang)
     story = flowables(body, w["st_only"], horror=True)
-    footer = f"{cd.footer_text(lang, edited, translated)} · {cd.footer_url(lang)}"
+    footer = f"{cd.footer_text(lang, edited, translated)} · {cd.footer_link_text(lang)}"
     doc.build(story, canvasmaker=_canvas_class(footer, cd.footer_url(lang), title, look="horror"))
     return buf.getvalue()

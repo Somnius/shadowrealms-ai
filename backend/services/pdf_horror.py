@@ -14,6 +14,7 @@ from __future__ import annotations
 import math
 import os
 import random
+import threading
 from typing import List, Tuple
 
 from reportlab.lib.colors import HexColor
@@ -171,12 +172,56 @@ def corner(page, x, y, sx, sy):
         _poly(page, [t(0, a), t(-1.4, a + 0.6), t(0, a + 1.2)], BLOOD_D)
 
 
+_PAPER_DATA = {}
+_PAPER_LOCK = threading.Lock()
+
+
+def _paper_jpeg(paper: str):
+    """(bytes, width, height, colour space) of a paper JPEG, read once per paper size and kept."""
+    with _PAPER_LOCK:
+        got = _PAPER_DATA.get(paper)
+        if got is None:
+            from reportlab.pdfbase import pdfutils
+
+            with open(PAPER_IMAGE[paper], "rb") as fh:
+                info = pdfutils.readJPEGInfo(fh)
+                fh.seek(0)
+                data = fh.read()
+            got = (data, info[0], info[1], "DeviceRGB" if info[2] == 3 else "DeviceGray")
+            _PAPER_DATA[paper] = got
+        return got
+
+
+def _draw_paper(c, paper: str, W: float, H: float) -> None:
+    """Draw the paper over the whole page. The JPEG's bytes go into the PDF unchanged, once per file
+    (DCTDecode only; reportlab's own loader would ASCII85-encode them, +25%)."""
+    from reportlab.pdfbase import pdfdoc
+
+    paper = paper if paper in PAPER_IMAGE else "a4"
+    name = f"srpaper{paper}"
+    reg = c._doc.getXObjectName(name)
+    if reg not in c._doc.idToObject:
+        data, w, h, cs = _paper_jpeg(paper)
+        obj = pdfdoc.PDFImageXObject(name)
+        obj.width, obj.height, obj.bitsPerComponent, obj.colorSpace = w, h, 8, cs
+        obj.streamContent, obj._filters, obj.mask = data, ("DCTDecode",), None
+        c._setXObjects(obj)
+        c._doc.Reference(obj, reg)
+        c._doc.addForm(name, obj)
+    c._currentPageHasImages = 1
+    c._formsinuse.append(name)  # the page lists it in its resources
+    c.saveState()
+    c.scale(W, H)
+    c._code.append(f"/{reg} Do")
+    c.restoreState()
+
+
 def draw_page(c, W: float, H: float, paper: str, page_no: int) -> None:
     """Paper, frame, corners and blood for one page (page_no from 1). Text goes on top afterwards."""
     w, h = W / MM, H / MM
     page = _Page(c, H)
     c.saveState()
-    c.drawImage(PAPER_IMAGE.get(paper, PAPER_IMAGE["a4"]), 0, 0, W, H)
+    _draw_paper(c, paper, W, H)
     m = FRAME_MM
     c.setStrokeColor(BLOOD_D)
     c.setLineWidth(0.5 * MM)

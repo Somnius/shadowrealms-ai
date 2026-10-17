@@ -97,3 +97,14 @@ test('a refused mark is taken back and explained', async () => {
   await waitFor(() => expect(toast).toHaveBeenLastCalledWith(expect.objectContaining({ tone: 'danger' })));
   expect(screen.queryByText('— end of session —')).toBeNull();
 });
+
+test('a mark on a row the viewer cannot see still shows the line where it would be', () => {
+  const marker = { id: 20, role: 'assistant', ai_message_kind: 'dice_animation:r1-a', content: '{}', created_at: at(3) };
+  const hidden = { ...line(21, 4), ai_message_kind: 'dice_roll_hidden:r1-a' };
+  const after = line(22, 5);
+  const viaMarker = buildTimeline([...ROOM, marker, after], { sessionEnds: new Set(['20']) });
+  expect(viaMarker.map((r) => r.type)).toEqual(['day', 'group', 'session-end', 'group']);
+  const viaHidden = buildTimeline([...ROOM, hidden, after], { sessionEnds: new Set(['21']), hiddenIds: new Set(['21']) });
+  expect(viaHidden.map((r) => r.type)).toEqual(['day', 'group', 'session-end', 'group']);
+  expect(viaHidden[1].messages.map((m) => m.id)).toEqual([10, 11, 12]);
+});

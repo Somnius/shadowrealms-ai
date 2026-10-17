@@ -38,8 +38,15 @@ export function buildTimeline(
 
   for (const msg of messages || []) {
     const kind = messageKind(msg);
-    if (kind === 'marker') continue;
-    if (hiddenIds && msg.id != null && hiddenIds.has(String(msg.id))) continue;
+    const endsSession = !!(sessionEnds && msg.id != null && sessionEnds.has(String(msg.id)));
+    if (kind === 'marker' || (hiddenIds && msg.id != null && hiddenIds.has(String(msg.id)))) {
+      // a row this viewer doesn't see can still carry the mark: the line shows where it would be
+      if (endsSession && rows.length && rows[rows.length - 1].type !== 'session-end') {
+        rows.push({ type: 'session-end', key: `end-${msg.id}`, id: msg.id });
+        group = null;
+      }
+      continue;
+    }
 
     const ms = messageTime(msg);
     const day = Number.isNaN(ms) ? lastDay : dayKey(ms, timeZone);
@@ -60,7 +67,7 @@ export function buildTimeline(
     if (CARD_KINDS.has(kind)) {
       rows.push({ type: 'card', key: msgKey, kind, message: msg });
       group = null;
-      if (sessionEnds && msg.id != null && sessionEnds.has(String(msg.id))) rows.push({ type: 'session-end', key: `end-${msg.id}`, id: msg.id });
+      if (endsSession) rows.push({ type: 'session-end', key: `end-${msg.id}`, id: msg.id });
       continue;
     }
 
@@ -75,7 +82,7 @@ export function buildTimeline(
       rows.push(group);
     }
     // "Session ended here" (0.26): a thin line under the marked message; the next message starts a new group
-    if (sessionEnds && msg.id != null && sessionEnds.has(String(msg.id))) {
+    if (endsSession) {
       rows.push({ type: 'session-end', key: `end-${msg.id}`, id: msg.id });
       group = null;
     }

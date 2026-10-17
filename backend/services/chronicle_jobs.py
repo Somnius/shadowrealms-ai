@@ -394,8 +394,11 @@ def message_ids(cursor, campaign_id: int) -> Set[int]:
 # ---------------------------------------------------------------------------------------------
 # Planning a run
 
-def plan(cursor, campaign_id: int, scope: str = "update", gap_hours: float = cd.GAP_HOURS) -> Dict[str, Any]:
-    """Fresh chapters with their hashes, and which story nights need writing (no model calls)."""
+def plan(cursor, campaign_id: int, scope: str = "update", gap_hours: float = cd.GAP_HOURS,
+         only=None) -> Dict[str, Any]:
+    """Fresh chapters with their hashes, and which story nights need writing (no model calls).
+    only(chapter) -> bool limits the material and hashes (the costly part) to some chapters, e.g. a
+    date range; the others are cut but not looked at, so story and stale hold only those."""
     camp = campaign_row(cursor, campaign_id)
     rows = load_rows(cursor, campaign_id)
     lang = chronicle_lang(cursor, camp, rows)
@@ -405,6 +408,8 @@ def plan(cursor, campaign_id: int, scope: str = "update", gap_hours: float = cd.
     stored = {c["key"]: c for c in stored_chapters(cursor, campaign_id, lang)}
     stale, story = [], []
     for ch in chapters:
+        if only is not None and not only(ch):
+            continue
         mat = cd.chapter_material(ch, lang, flags)
         ch["material"] = mat
         ch["hash"] = cd.chapter_hash(ch, mat, lang, names)

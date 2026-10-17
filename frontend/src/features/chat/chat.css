@@ -36,6 +36,10 @@
 }
 .sr-app .sr-chat__day::before,
 .sr-app .sr-chat__day::after { content: ''; flex: 1; height: 1px; background: var(--sr-border); }
+/* message toolbar buttons are 44 px on touch screens */
+@media (pointer: coarse), (hover: none) {
+  .sr-app .sr-msg-actions__bar .sr-btn { min-width: 44px; min-height: 44px; }
+}
 .sr-app .sr-chat__session-end {
   display: flex;
   align-items: center;

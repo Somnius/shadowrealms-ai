@@ -73,3 +73,17 @@ test('a range that ends before it starts is refused in the panel', async () => {
   expect(screen.getByText('The first day must come before the last.')).toBeInTheDocument();
   expect(screen.getByRole('button', { name: 'Minutes PDF' })).toBeDisabled();
 });
+
+test('one date alone is open-ended', async () => {
+  const user = setupUser();
+  renderPanel({ timeZone: 'UTC' });
+  await user.type(await screen.findByLabelText('From'), '2026-10-03');
+  await user.click(screen.getByRole('button', { name: /Export minutes · from 2026-10-03 to today/ }));
+  await waitFor(() => expect(global.fetch).toHaveBeenCalledTimes(1));
+  expect(global.fetch.mock.calls[0][0]).toBe('/api/campaigns/10/chronicle/minutes.md?from=2026-10-03&tz=UTC');
+  await user.clear(screen.getByLabelText('From'));
+  await user.type(screen.getByLabelText('To'), '2026-10-04');
+  await user.click(screen.getByRole('button', { name: /Export minutes · from the beginning to 2026-10-04/ }));
+  await waitFor(() => expect(global.fetch).toHaveBeenCalledTimes(2));
+  expect(global.fetch.mock.calls[1][0]).toBe('/api/campaigns/10/chronicle/minutes.md?to=2026-10-04&tz=UTC');
+});
