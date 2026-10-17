@@ -138,3 +138,17 @@ def test_tts_cache_lru_with_tiny_cap(tmp_path):
     assert (tmp_path / "aa" / "aa1.ogg").exists()
     assert not (tmp_path / "bb" / "bb2.ogg").exists() and not (tmp_path / "cc" / "cc3.m4a").exists()
     assert diskcache.dir_bytes(str(tmp_path)) == 200
+
+
+def test_greek_names_for_english_voices():
+    g = textprep.greek_to_english_sound
+    assert g("Κωνσταντίνος") == "Konstandeenos"
+    assert g("Κατακουζηνός") == "Katakoozeenos"
+    assert g("Γιώργος") == "Yorgos"
+    assert g("Παναγιώτης") == "Panayotees"
+    assert g("Ευάγγελος") == "Evangelos"
+    assert g("Λευτέρης") == "Lefterees"
+    assert g("Μπουράκ") == "Boorak"
+    assert g("Ιωάννης") == "Yoannees"
+    assert textprep.normalise("Κωνσταντίνος: Roll 2 dice.", "en") == "Konstandeenos: Roll 2 dice."
+    assert textprep.normalise("Ο Γιώργος.", "el") == "Ο Γιώργος."

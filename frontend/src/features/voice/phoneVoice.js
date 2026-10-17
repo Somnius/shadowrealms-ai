@@ -1,4 +1,5 @@
 /** The phone's (or browser's) own voices through speechSynthesis. Nothing leaves the device. */
+import { greekWordsForEnglish } from "./greekSound";
 
 export function hasPhoneVoices() {
   return (
@@ -116,7 +117,9 @@ export function phoneEngine(getSettings, getFallback = () => null) {
 
   function speakNow(part, next, fallback) {
     const s = getSettings() || {};
-    const u = new window.SpeechSynthesisUtterance(part.text);
+    const u = new window.SpeechSynthesisUtterance(
+      part.lang === "el" ? part.text : greekWordsForEnglish(part.text),
+    );
     const voice = pickVoice(
       window.speechSynthesis.getVoices(),
       part.lang,

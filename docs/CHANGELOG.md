@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.22.1] - 2026-10-17 - Greek names
+
+### Fixed
+- **Greek names in English voices.** An English voice (server or phone) spelled Greek words letter by letter ("Kappa Omega…"). Greek words are now rewritten as sounds before an English voice reads them (Κωνσταντίνος Κατακουζηνός → "Konstandeenos Katakoozeenos", Γιώργος → "Yorgos"): digraphs (ου, αι, ει, οι, αυ/ευ, μπ, ντ, γκ, γγ, τσ, τζ), γ before e/i as "y", unstressed ι before a vowel as "y". Only the spoken text changes; the screen and the speaking bar keep the Greek. Same rules in `speech/app/textprep.py` and `frontend/src/features/voice/greekSound.js`.
+- **Message menu on phones.** On a dice card the name and avatar were drawn over the open action menu (the card's layers sat above the menu). The card now keeps its layers to itself and the menu sits above the message.
+
 ## [0.22.0] - 2026-10-17 - Read along
 
 ### Added
