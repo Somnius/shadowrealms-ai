@@ -35,7 +35,7 @@ export default function WriterHealthPanel() {
         <div className="sr-admin__kv">
           <div>
             <strong>{t('chronicle:health.today', 'Today:')}</strong>{' '}
-            {t('chronicle:health.todayLine', '{{jobs}} jobs, {{failures}} failed', { jobs: h.jobs_today, failures: h.failures_today })}
+            {t('chronicle:health.todayLine', '{{jobs}} runs, {{failures}} failed (translations not counted)', { jobs: h.jobs_today, failures: h.failures_today })}
           </div>
           <div>
             <strong>{t('chronicle:health.speed', 'Median per night:')}</strong>{' '}
@@ -47,7 +47,7 @@ export default function WriterHealthPanel() {
           </div>
           <div>
             <strong>{t('chronicle:health.nightly', 'Nightly run:')}</strong>{' '}
-            {t('chronicle:health.nightlyLine', '{{time}} server time, for chronicles that turned it on', { time: h.nightly_at })}
+            {t('chronicle:health.nightlyLine', '{{time}} {{zone}}, for chronicles that turned it on', { time: h.nightly_at, zone: h.nightly_tz || '' })}
           </div>
           <div data-testid="writer-jobs">
             <strong>{t('chronicle:health.jobs', 'Running and queued:')}</strong>{' '}

@@ -87,7 +87,7 @@ def test_settings_route_is_for_the_storyteller_and_admins(api, monkeypatch):  # 
     # a partial PUT keeps the rest
     assert api("PUT", url, ADMIN, {"nightly": False}).get_json()["settings"]["gap_hours"] == 4
     body = api("GET", "/api/campaigns/10/chronicle", HELPER_IN).get_json()
-    assert body["settings"]["gap_hours"] == 4 and body["can_settings"] is False
+    assert body["settings"] == {"table_talk": True} and body["can_settings"] is False  # no writer model for helpers
     assert api("GET", "/api/campaigns/10/chronicle", ST).get_json()["can_settings"] is True
 
 
@@ -160,6 +160,12 @@ def test_old_job_rows_are_pruned():
 # -- the nightly run --------------------------------------------------------------------------
 
 NIGHT = datetime(2026, 10, 17, 5, 1)
+
+
+@pytest.fixture(autouse=True)
+def utc_nights(monkeypatch):
+    """The nightly tests below read NIGHT as 05:01 in the nightly zone; one test checks Athens."""
+    monkeypatch.setenv("CHRONICLE_NIGHTLY_TZ", "UTC")
 
 
 def test_nightly_window(monkeypatch):
@@ -257,3 +263,89 @@ def test_archive_list_has_names_size_and_nights(api):  # noqa: F811
     assert row["id"] == aid and row["storyteller"] == "storyteller_lef" and row["deleted_by"] == "siteadmin"
     assert row["size"] > 0 and row["nights_written"] == 4 and a["st_days"] == 30
     assert api("GET", "/api/chronicle-archives", ST).get_json()["archives"][0]["id"] == aid
+
+
+def test_a_storyteller_keeps_an_admins_cloud_writer():
+    cloud = {"provider": "anthropic", "model": "claude-x"}
+    cur = cs.normalize({"model": cloud})
+    # unchanged: saved as it is, even when the panel no longer lists it
+    assert cs.validate({"model": dict(cloud), "nightly": True}, cur, OPTIONS[:1], False)["model"] == cloud
+    assert cs.validate({"nightly": True}, cur, OPTIONS, False)["model"] == cloud
+    for change in ({"model": None}, {"model": {"provider": "lm_studio", "model": "krikri-8b"}}):
+        with pytest.raises(RequestValidationError):
+            cs.validate(change, cur, OPTIONS, False)
+    assert cs.validate({"model": None}, cur, OPTIONS, True)["model"] is None  # an admin can
+
+
+def test_the_nightly_hour_is_in_the_nightly_zone(monkeypatch):
+    from services import chronicle_nightly as nightly
+
+    monkeypatch.setenv("CHRONICLE_NIGHTLY_TZ", "Europe/Athens")
+    # server time is UTC: 02:01 UTC is 05:01 in Athens (summer time), 05:01 UTC is 08:01
+    assert nightly.window_day(datetime(2026, 10, 17, 2, 1)) == datetime(2026, 10, 17).date()
+    assert nightly.window_day(datetime(2026, 10, 17, 5, 1)) is None
+    assert nightly.local_day_start(datetime(2026, 10, 17, 12)) == datetime(2026, 10, 16, 21)
+    monkeypatch.setenv("CHRONICLE_NIGHTLY_TZ", "Not/AZone")
+    assert nightly.window_day(datetime(2026, 10, 17, 5, 1)) == datetime(2026, 10, 17).date()  # UTC fallback
+
+
+def test_a_waiting_nightly_job_does_not_block_and_is_cancelled_after_the_window():
+    raw, conn = setup(2)
+    raw.executescript("""
+        INSERT INTO campaigns (id, name, created_by, chronicle_settings) VALUES (11, 'Second table', 2, '{"nightly": true}');
+        INSERT INTO locations (id, campaign_id, name) VALUES (201, 11, 'Bar');
+        INSERT INTO messages (id, campaign_id, location_id, user_id, content, created_at) VALUES (9001, 11, 201, 2, 'hi', '2026-10-10 22:00:00');
+    """)
+    set_settings(raw, nightly=True)
+    n = cn.Nightly()
+    first = n.tick(conn, NIGHT)
+    raw.execute("UPDATE chronicle_jobs SET status = 'waiting' WHERE id = ?", (first,))  # that table is still playing
+    raw.commit()
+    assert n.tick(conn, NIGHT + timedelta(minutes=10)) is None  # still its turn
+    second = n.tick(conn, NIGHT + timedelta(minutes=16))  # waiting over 15 minutes: the next chronicle goes
+    assert second and raw.execute("SELECT campaign_id FROM chronicle_jobs WHERE id = ?", (second,)).fetchone()[0] == 11
+    raw.execute("UPDATE chronicle_jobs SET status = 'queued' WHERE id = ?", (second,))
+    raw.commit()
+    assert n.tick(conn, NIGHT + timedelta(hours=4)) is None  # after the window
+    assert {r[0] for r in raw.execute("SELECT status FROM chronicle_jobs")} == {"cancelled"}
+
+
+def test_a_refused_chronicle_gets_another_turn_and_a_partial_one_continues():
+    raw, conn = setup(2)
+    set_settings(raw, nightly=True)
+    cur = conn.cursor()
+    jid = cj.create_job(cur, 10, 2, "update", now=NIGHT - timedelta(minutes=2))  # the Storyteller pressed Update
+    cur.execute("UPDATE chronicle_jobs SET status = 'done' WHERE id = %s", (jid,))
+    raw.execute("INSERT INTO messages (id, campaign_id, location_id, user_id, content, created_at) VALUES "
+                "(9100, 10, 101, 3, 'x', '2026-10-17 05:00:00')")
+    conn.commit()
+    n = cn.Nightly()
+    assert n.tick(conn, NIGHT) is None  # too soon: not burnt for the night
+    first = n.tick(conn, NIGHT + timedelta(minutes=4))
+    assert first is not None
+    raw.execute("UPDATE chronicle_jobs SET status = 'partial' WHERE id = ?", (first,))
+    raw.commit()
+    assert n.tick(conn, NIGHT + timedelta(minutes=6)) is None  # partial: again, after the 5 minutes
+    assert n.tick(conn, NIGHT + timedelta(minutes=10)) is not None
+
+
+def test_no_job_after_pruning_when_nothing_is_new():
+    raw, conn = setup(2)
+    run(conn, now=datetime(2026, 10, 16))
+    raw.execute("DELETE FROM chronicle_jobs")  # pruned
+    raw.commit()
+    assert cn.has_new_messages(conn.cursor(), 10) is False
+    raw.execute("INSERT INTO messages (id, campaign_id, location_id, user_id, content, created_at) VALUES "
+                "(9200, 10, 101, 3, 'new', '2026-10-17 01:00:00')")
+    raw.commit()
+    assert cn.has_new_messages(conn.cursor(), 10) is True
+
+
+def test_writer_health_counts_runs_not_translations(api):  # noqa: F811
+    conn = Conn(api.raw)
+    cur = conn.cursor()
+    for scope in ("update", "translate"):
+        cur.execute("INSERT INTO chronicle_jobs (campaign_id, scope, status, created_at) VALUES (10, %s, 'done', %s)",
+                    (scope, datetime.now()))
+    conn.commit()
+    assert api("GET", "/api/chronicle-health", ADMIN).get_json()["jobs_today"] == 1

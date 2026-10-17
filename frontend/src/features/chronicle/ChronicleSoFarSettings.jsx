@@ -39,13 +39,22 @@ export default function ChronicleSoFarSettings({ api, id, toast, onSaved }) {
   const gap = parseInt(form.gap_hours, 10);
   const gapBad = !(gap >= low && gap <= high) || String(gap) !== String(form.gap_hours).trim();
   const models = info.models || [];
+  const stored = info.settings.model;
+  // a writer this user can't pick (a cloud writer a site admin set): shown, kept, never sent changed
+  const locked = !!stored && !models.some((m) => modelValue(m) === modelValue(stored));
   const chosen = models.find((m) => modelValue(m) === modelValue(form.model));
 
   const save = async (e) => {
     e.preventDefault();
     if (gapBad) return;
     setSaving(true);
-    const body = { gap_hours: gap, table_talk: !!form.table_talk, nightly: !!form.nightly, model: form.model || null };
+    // only the keys that changed, so a setting this user can't change is never sent
+    const want = { gap_hours: gap, table_talk: !!form.table_talk, nightly: !!form.nightly, model: form.model || null };
+    const body = {};
+    Object.keys(want).forEach((k) => {
+      const was = k === 'model' ? info.settings.model || null : info.settings[k];
+      if (JSON.stringify(want[k]) !== JSON.stringify(was)) body[k] = want[k];
+    });
     const r = await api(`/campaigns/${id}/chronicle/settings`, { method: 'PUT', body });
     setSaving(false);
     if (!r.ok) {
@@ -91,21 +100,23 @@ export default function ChronicleSoFarSettings({ api, id, toast, onSaved }) {
           label={t('chronicle:soFar.settings.nightly', 'Nightly run')}
         />
         <p className="sr-sofar__hint">
-          {t('chronicle:soFar.settings.nightlyHint', 'At {{time}} (server time), when there are new messages, the chronicle is updated by itself, with the same rules as Update.', { time: info.nightly_at || '05:00' })}
+          {t('chronicle:soFar.settings.nightlyHint', 'At {{time}} ({{zone}}), when there are new messages, the chronicle is updated by itself, with the same rules as Update.', { time: info.nightly_at || '05:00', zone: info.nightly_tz || 'Europe/Athens' })}
         </p>
         <Select
           label={t('chronicle:soFar.settings.model', 'Writer model')}
           value={modelValue(form.model)}
+          disabled={locked}
           onChange={(e) => {
             const m = models.find((o) => modelValue(o) === e.target.value);
             setForm({ ...form, model: m ? { provider: m.provider, model: m.model } : null });
           }}
           options={[
             { value: '', label: t('chronicle:soFar.settings.modelDefault', 'Default (the chronicler roles)') },
+            ...(locked ? [{ value: modelValue(stored), label: t('chronicle:soFar.settings.modelLocked', '{{model}} · {{provider}} (set by a site admin)', { model: stored.model, provider: stored.provider }), disabled: true }] : []),
             ...models.map((m) => ({ value: modelValue(m), label: `${m.model} · ${m.provider}` })),
           ]}
         />
-        {chosen && chosen.cloud ? (
+        {(chosen && chosen.cloud) || locked ? (
           <p className="sr-sofar__notice" role="alert">
             {t('chronicle:soFar.settings.cloudWarn', 'A cloud writer sends the whole chat of this chronicle, hidden rolls included, to an outside service.')}
           </p>

@@ -172,7 +172,8 @@ def get_chronicle(campaign_id):
             "new_since": bool(last_msg and last_msg > last_written),
             "chapters": [chapter_out(c, i, view) for i, c in cd.number_nights(chapters)],
             "job": cj.job_json(cj.latest_job(cur, campaign_id)),
-            "settings": cs.load(cur, campaign_id),
+            # helpers get only what the panel needs; the full settings (the writer model) are the Storyteller's
+            "settings": cs.load(cur, campaign_id) if a == "st" else {"table_talk": cs.load(cur, campaign_id)["table_talk"]},
             "can_settings": a == "st",
         })
     finally:
@@ -944,6 +945,7 @@ def chronicle_settings(campaign_id):
             "gap_range": list(cs.GAP_RANGE),
             "caps": {"nights_per_job": cs.max_nights_per_job(), "seconds_per_job": cs.max_seconds_per_job()},
             "nightly_at": _nightly_status()["at"],
+            "nightly_tz": _nightly_status()["tz"],
         })
     finally:
         conn.close()
@@ -965,8 +967,12 @@ def chronicle_health():
         cur = conn.cursor()
         if _role(cur, uid) != "admin":
             return jsonify({"error": "forbidden"}), 403
-        start = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
-        cur.execute("SELECT status, error, finished_at, updated_at FROM chronicle_jobs WHERE created_at >= %s", (start,))
+        from services.chronicle_nightly import local_day_start
+
+        # "today" in the nightly zone; runs only (Update and Rewrite everything, not translations)
+        start = local_day_start(datetime.now())
+        cur.execute("SELECT status, error, finished_at, updated_at FROM chronicle_jobs WHERE created_at >= %s "
+                    "AND scope IN ('update', 'all')", (start,))
         today = cur.fetchall()
         cur.execute("SELECT error, finished_at, updated_at FROM chronicle_jobs WHERE status = 'failed' "
                     "ORDER BY id DESC LIMIT 1")
@@ -988,6 +994,7 @@ def chronicle_health():
                       "nights": r["nights"], "nightly": r["requested_by"] is None,
                       "created_at": _iso(cj._dt(r["created_at"]))} for r in live],
             "nightly_at": _nightly_status()["at"],
+            "nightly_tz": _nightly_status()["tz"],
             "caps": {"nights_per_job": cs.max_nights_per_job(), "seconds_per_job": cs.max_seconds_per_job(),
                      "keep_days": cs.job_keep_days()},
         })

@@ -294,7 +294,7 @@
       "gapBad": "A whole number from {{low}} to {{high}}.",
       "tableTalk": "Table talk in exports by default",
       "nightly": "Nightly run",
-      "nightlyHint": "At {{time}} (server time), when there are new messages, the chronicle is updated by itself, with the same rules as Update.",
+      "nightlyHint": "At {{time}} ({{zone}}), when there are new messages, the chronicle is updated by itself, with the same rules as Update.",
       "model": "Writer model",
       "modelDefault": "Default (the chronicler roles)",
       "cloudWarn": "A cloud writer sends the whole chat of this chronicle, hidden rolls included, to an outside service.",
@@ -303,7 +303,8 @@
       "saved": "Settings saved.",
       "savedGap": "Saved. The nights the new gap cuts differently are written again on the next Update.",
       "saveFailed": "Could not save the settings.",
-      "loadFailed": "Could not load the settings."
+      "loadFailed": "Could not load the settings.",
+      "modelLocked": "{{model}} · {{provider}} (set by a site admin)"
     }
   },
   "language": {
@@ -317,13 +318,13 @@
     "title": "Chronicle writer",
     "failed": "Could not read the writer status.",
     "today": "Today:",
-    "todayLine": "{{jobs}} jobs, {{failures}} failed",
+    "todayLine": "{{jobs}} runs, {{failures}} failed (translations not counted)",
     "speed": "Median per night:",
     "seconds": "{{seconds}} s",
     "lastError": "Last error:",
     "none": "none",
     "nightly": "Nightly run:",
-    "nightlyLine": "{{time}} server time, for chronicles that turned it on",
+    "nightlyLine": "{{time}} {{zone}}, for chronicles that turned it on",
     "jobs": "Running and queued:",
     "noJobs": "nothing",
     "running": "writing",

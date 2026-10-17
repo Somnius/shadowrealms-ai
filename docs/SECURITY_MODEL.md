@@ -165,6 +165,7 @@ A breach returns `429 {"error": "...", "code": "RATE_LIMITED", "retry_after": <s
 
 ## Chronicle data: who reads what
 
+- The chronicle writer's per-chronicle model override (Chronicle settings → The chronicle so far → Settings, 0.28): a site admin can route one chronicle's full chat, hidden rolls and closed rooms included, to a cloud provider. Only site admins can set, change or remove a cloud writer (`services/chronicle_settings.validate`); the Storyteller sees it locked with a warning that the chat leaves the server, and helpers never get the settings' writer model (`GET …/chronicle` sends them only the table-talk default).
 - Campaign membership (creator, `campaign_players` roster member, or site admin) is required for
   messages, events/unread/roster, dice, and the room list / room details
   (`GET /api/campaigns/<id>/locations`, `GET /api/locations/<id>`; non-members get 403).

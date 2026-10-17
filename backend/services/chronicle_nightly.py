@@ -1,7 +1,8 @@
 """
 The nightly run of "The chronicle so far" (docs/CHRONICLE.md, phase 5).
 
-At a quiet hour (CHRONICLE_NIGHTLY_AT, server time, default 05:00) the first gunicorn worker
+At a quiet hour (CHRONICLE_NIGHTLY_AT in CHRONICLE_NIGHTLY_TZ, default 05:00 Europe/Athens; the
+server's own clock stays UTC, as message times are) the first gunicorn worker
 queues an Update for each chronicle whose nightly switch is on (Chronicle settings) and that has
 new messages since its last run, one chronicle at a time: the next one is queued only when the
 previous nightly job has ended. The jobs are ordinary Update jobs (requested_by NULL), so the same
@@ -15,7 +16,8 @@ import logging
 import os
 import threading
 import time
-from datetime import date, datetime, timedelta
+from datetime import date, datetime, timedelta, timezone
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 from typing import Any, Dict, List, Optional, Tuple
 
 from services import chronicle_jobs as cj
@@ -25,6 +27,30 @@ logger = logging.getLogger(__name__)
 
 WINDOW_HOURS = 3  # nightly jobs are queued only in the 3 hours after the set time
 TICK_S = 60
+STUCK_MINUTES = 15  # a nightly job still queued/waiting this long no longer holds up the next chronicle
+
+
+def nightly_zone():
+    """CHRONICLE_NIGHTLY_TZ (default Europe/Athens), UTC when it isn't a known zone."""
+    name = (os.environ.get("CHRONICLE_NIGHTLY_TZ") or "Europe/Athens").strip()
+    try:
+        return ZoneInfo(name)
+    except (ZoneInfoNotFoundError, ValueError):
+        logger.warning("CHRONICLE_NIGHTLY_TZ=%r is not a timezone; using UTC", name)
+        return timezone.utc
+
+
+def local_time(now: datetime) -> datetime:
+    """Server time (naive, UTC like the message times) -> naive wall-clock time in the nightly zone."""
+    return now.replace(tzinfo=timezone.utc).astimezone(nightly_zone()).replace(tzinfo=None)
+
+
+def local_day_start(now: datetime) -> datetime:
+    """The start of today in the nightly zone, as naive server (UTC) time."""
+    zone = nightly_zone()
+    loc = now.replace(tzinfo=timezone.utc).astimezone(zone)
+    start = datetime(loc.year, loc.month, loc.day, tzinfo=zone)
+    return start.astimezone(timezone.utc).replace(tzinfo=None)
 
 
 def nightly_at() -> Tuple[int, int]:
@@ -42,7 +68,8 @@ def nightly_at() -> Tuple[int, int]:
 
 
 def window_day(now: datetime) -> Optional[date]:
-    """The day of the nightly window `now` falls in, or None outside it."""
+    """The day of the nightly window server time `now` falls in (in the nightly zone), or None outside it."""
+    now = local_time(now)
     h, m = nightly_at()
     start = now.replace(hour=h, minute=m, second=0, microsecond=0)
     if now < start:
@@ -63,7 +90,17 @@ def has_new_messages(cursor, campaign_id: int) -> bool:
     )
     run = cursor.fetchone()
     if not run:
-        return True
+        # no finished run on record (e.g. pruned): new only if a message came after the stored nights
+        try:
+            cursor.execute("SELECT MAX(last_message_id) AS last FROM chronicle_chapters WHERE campaign_id = %s",
+                           (campaign_id,))
+            written = (cursor.fetchone() or {}).get("last")
+            cursor.execute("SELECT MAX(id) AS last FROM messages WHERE campaign_id = %s", (campaign_id,))
+            last_id = (cursor.fetchone() or {}).get("last")
+        except Exception:  # noqa: BLE001
+            cj._rollback(cursor)
+            return True
+        return not written or (last_id or 0) > int(written)
     if run["status"] == "partial":
         return True
     at = cj._dt(run["created_at"])
@@ -85,10 +122,26 @@ def due(cursor) -> List[int]:
     return out
 
 
-def nightly_running(cursor) -> bool:
-    cursor.execute("SELECT id FROM chronicle_jobs WHERE requested_by IS NULL AND status IN ('queued', 'waiting', 'running') "
-                   "LIMIT 1")
+def nightly_running(cursor, now: datetime) -> bool:
+    """A nightly job is writing, or was queued less than STUCK_MINUTES ago (one waiting longer for a
+    chronicle still in play doesn't hold up the others)."""
+    cursor.execute(
+        "SELECT id FROM chronicle_jobs WHERE requested_by IS NULL AND (status = 'running' OR "
+        "(status IN ('queued', 'waiting') AND created_at > %s)) LIMIT 1",
+        (now - timedelta(minutes=STUCK_MINUTES),),
+    )
     return cursor.fetchone() is not None
+
+
+def cancel_leftovers(cursor, now: datetime) -> int:
+    """Outside the window: nightly jobs still queued or waiting are cancelled, so they never start in
+    the middle of the next session."""
+    cursor.execute(
+        "UPDATE chronicle_jobs SET status = 'cancelled', finished_at = %s, updated_at = %s "
+        "WHERE requested_by IS NULL AND status IN ('queued', 'waiting')",
+        (now, now),
+    )
+    return cursor.rowcount or 0
 
 
 class Nightly:
@@ -97,6 +150,7 @@ class Nightly:
     def __init__(self):
         self.day: Optional[date] = None
         self.tried: set = set()
+        self.queued: Dict[int, int] = {}  # chronicle -> its nightly job in this window
         self.pruned: Optional[date] = None
 
     def tick(self, conn, now: Optional[datetime] = None) -> Optional[int]:
@@ -115,22 +169,40 @@ class Nightly:
                 logger.warning("chronicle: pruning old jobs failed: %s", e)
         day = window_day(now)
         if day is None:
+            try:
+                if cancel_leftovers(cur, now):
+                    logger.info("chronicle: nightly jobs left waiting were cancelled")
+                conn.commit()
+            except Exception as e:  # noqa: BLE001
+                cj._safe_rollback(conn)
+                logger.warning("chronicle: cancelling nightly leftovers failed: %s", e)
             return None
         if day != self.day:
-            self.day, self.tried = day, set()
-        if nightly_running(cur):  # one at a time
+            self.day, self.tried, self.queued = day, set(), {}
+        for cid, jid in list(self.queued.items()):  # a partial nightly job carries on at the next turn
+            cur.execute("SELECT status FROM chronicle_jobs WHERE id = %s", (jid,))
+            st = (cur.fetchone() or {}).get("status")
+            if st in cj.ACTIVE:
+                continue
+            del self.queued[cid]
+            if st == "partial":
+                self.tried.discard(cid)
+        if nightly_running(cur, now):  # one at a time
             conn.rollback()
             return None
         for cid in due(cur):
             if cid in self.tried:
                 continue
-            self.tried.add(cid)
             try:
                 jid = cj.create_job(cur, cid, None, "update", now=now)
-            except cj.JobRefused as e:  # a job already running, or Update pressed a moment ago
+            except cj.JobRefused as e:
                 conn.rollback()
+                if e.code not in ("too_soon", "job_running"):  # those get another turn later tonight
+                    self.tried.add(cid)
                 logger.info("chronicle %s: nightly run skipped (%s)", cid, e.code)
                 continue
+            self.tried.add(cid)
+            self.queued[cid] = jid
             conn.commit()
             logger.info("chronicle %s: nightly run queued (job %s)", cid, jid)
             return jid
@@ -178,4 +250,5 @@ def start() -> bool:
 
 def status() -> Dict[str, Any]:
     h, m = nightly_at()
-    return {"at": f"{h:02d}:{m:02d}", "window_hours": WINDOW_HOURS}
+    zone = nightly_zone()
+    return {"at": f"{h:02d}:{m:02d}", "tz": getattr(zone, "key", "UTC"), "window_hours": WINDOW_HOURS}

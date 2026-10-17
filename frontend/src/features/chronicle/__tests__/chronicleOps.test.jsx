@@ -34,6 +34,7 @@ const settingsBody = {
   gap_range: [2, 24],
   caps: { nights_per_job: 40, seconds_per_job: 3600 },
   nightly_at: '05:00',
+  nightly_tz: 'Europe/Athens',
 };
 
 afterEach(() => {
@@ -64,13 +65,13 @@ test('settings load, validate the gap and save the whole form', async () => {
   await user.clear(gap);
   await user.type(gap, '4');
   await user.click(screen.getByRole('switch', { name: 'Nightly run' }));
-  expect(screen.getByText(/At 05:00 \(server time\)/)).toBeInTheDocument();
+  expect(screen.getByText(/At 05:00 \(Europe\/Athens\)/)).toBeInTheDocument();
   await user.selectOptions(screen.getByLabelText('Writer model'), 'anthropic|claude-x');
   expect(screen.getByRole('alert')).toHaveTextContent('hidden rolls included');
   await user.click(screen.getByRole('button', { name: 'Save settings' }));
   await waitFor(() => expect(api).toHaveBeenCalledWith('/campaigns/10/chronicle/settings', {
     method: 'PUT',
-    body: { gap_hours: 4, table_talk: false, nightly: true, model: { provider: 'anthropic', model: 'claude-x' } },
+    body: { gap_hours: 4, nightly: true, model: { provider: 'anthropic', model: 'claude-x' } },
   }));
   expect(toast).toHaveBeenCalledWith(expect.objectContaining({ tone: 'ok', title: expect.stringMatching(/new gap/) }));
 });
@@ -108,7 +109,7 @@ test('writer health: jobs today, median, failures, last error and live jobs', as
     jobs: [{ id: 9, campaign_id: 10, campaign_name: 'Athens', status: 'running', night: 2, nights: 5, nightly: true }],
   } });
   wrap(<WriterHealthPanel />);
-  expect(await screen.findByText(/3 jobs, 1 failed/)).toBeInTheDocument();
+  expect(await screen.findByText(/3 runs, 1 failed/)).toBeInTheDocument();
   expect(screen.getByText(/7\.5 s/)).toBeInTheDocument();
   expect(screen.getByText(/did not fit the model’s context \(context\)/)).toBeInTheDocument();
   expect(within(screen.getByTestId('writer-jobs')).getByText(/Athens · writing · night 2 of 5 · nightly/)).toBeInTheDocument();
@@ -135,4 +136,23 @@ test('archives: empty list and the Storyteller lead', async () => {
   wrap(<ChronicleArchivesPanel />);
   expect(await screen.findByText('No archived chronicles.')).toBeInTheDocument();
   expect(screen.getByText(/for 30 days after the delete/)).toBeInTheDocument();
+});
+
+test("a Storyteller sees an admin's cloud writer locked and never sends it", async () => {
+  const user = setupUser();
+  const cloud = { provider: 'anthropic', model: 'claude-x' };
+  const body = { ...settingsBody, models: settingsBody.models.slice(0, 1), settings: { ...settingsBody.settings, model: cloud } };
+  const api = jest.fn(async (path, opts) => (opts && opts.method === 'PUT'
+    ? { ok: true, data: { ...body, settings: { ...body.settings, ...opts.body } } }
+    : { ok: true, data: body }));
+  wrap(<ChronicleSoFarSettings api={api} id={10} toast={toast} />);
+  const box = await screen.findByTestId('sofar-settings');
+  await user.click(within(box).getByText('Settings'));
+  const select = screen.getByLabelText('Writer model');
+  expect(select).toBeDisabled();
+  expect(screen.getByRole('option', { name: 'claude-x · anthropic (set by a site admin)' })).toBeDisabled();
+  expect(screen.getByRole('alert')).toHaveTextContent('hidden rolls included');
+  await user.click(screen.getByRole('switch', { name: 'Nightly run' }));
+  await user.click(screen.getByRole('button', { name: 'Save settings' }));
+  await waitFor(() => expect(api).toHaveBeenCalledWith('/campaigns/10/chronicle/settings', { method: 'PUT', body: { nightly: true } }));
 });

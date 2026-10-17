@@ -93,18 +93,34 @@ def validate(data: Any, current: Dict[str, Any], options: List[Dict[str, Any]], 
             out[k] = data[k]
     if "model" in data:
         m = data["model"]
-        if m is None or m == "":
-            out["model"] = None
-        else:
-            if not isinstance(m, dict):
-                raise RequestValidationError("model must be null or {provider, model}")
-            pick = next((o for o in options if o["provider"] == m.get("provider") and o["model"] == m.get("model")), None)
-            if not pick:
-                raise RequestValidationError("model is not one the admin AI panel lists")
-            if pick["cloud"] and not is_admin:
-                raise RequestValidationError("only a site admin can pick a cloud writer")
-            out["model"] = {"provider": pick["provider"], "model": pick["model"]}
+        same = current.get("model") or None
+        if m == "":
+            m = None
+        if m is not None and not isinstance(m, dict):
+            raise RequestValidationError("model must be null or {provider, model}")
+        unchanged = (m is None and same is None) or (
+            m is not None and same is not None
+            and m.get("provider") == same.get("provider") and m.get("model") == same.get("model"))
+        if not unchanged:
+            # a cloud writer is set and changed by site admins only
+            if same and _is_cloud(same) and not is_admin:
+                raise RequestValidationError("only a site admin can change a cloud writer")
+            if m is None:
+                out["model"] = None
+            else:
+                pick = next((o for o in options if o["provider"] == m.get("provider") and o["model"] == m.get("model")), None)
+                if not pick:
+                    raise RequestValidationError("model is not one the admin AI panel lists")
+                if pick["cloud"] and not is_admin:
+                    raise RequestValidationError("only a site admin can pick a cloud writer")
+                out["model"] = {"provider": pick["provider"], "model": pick["model"]}
     return out
+
+
+def _is_cloud(m: Dict[str, Any]) -> bool:
+    from services.ai_providers import CLOUD_PROVIDERS
+
+    return m.get("provider") in CLOUD_PROVIDERS
 
 
 def model_options() -> List[Dict[str, Any]]:

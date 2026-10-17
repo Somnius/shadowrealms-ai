@@ -11,9 +11,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - **Settings for the chronicle so far.** Chronicle settings → The chronicle so far → Settings, for the Storyteller and site admins: the night gap in hours (6 by default, 2 to 24), table talk in exports by default, the nightly run and the writer model. A new gap cuts the nights again, and the next Update rewrites only the nights it changed.
-- **Nightly run.** Off by default, per chronicle. At a quiet hour (05:00 server time, `CHRONICLE_NIGHTLY_AT`) chronicles with new messages since their last update are updated one at a time, with the same rules as Update (quiet window, limits, one job per chronicle).
-- **Writer model per chronicle.** Pick one of the models the admin AI panel lists, or keep the chronicler roles. Cloud writers only by a site admin, with a warning.
-- **Writer health** in Admin → AI system, next to Voice health: jobs and failures today, the median seconds per night, the last error, and the running and queued jobs.
+- **Nightly run.** Off by default, per chronicle. At a quiet hour (05:00 Athens time, `CHRONICLE_NIGHTLY_AT` and `CHRONICLE_NIGHTLY_TZ`) chronicles with new messages since their last update are updated one at a time, with the same rules as Update (quiet window, limits, one job per chronicle).
+- **Writer model per chronicle.** Pick one of the models the admin AI panel lists, or keep the chronicler roles. Cloud writers are set, changed and removed only by a site admin; the Storyteller sees them locked, with a warning.
+- **Writer health** in Admin → AI system, next to Voice health: runs and failures today (translations not counted), the median seconds per night, the last error, and the running and queued jobs.
 - **Archives page.** Admin → Archives lists deleted chronicles (name, Storyteller, when and by whom, size, nights covered) with the minutes and the transcript to download. A Storyteller whose chronicle was deleted finds the same list under Deleted chronicles in the account menu for 30 days.
 
 ### Changed
