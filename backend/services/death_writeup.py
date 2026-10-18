@@ -2,14 +2,16 @@
 The death description when an admin kills a character (POST /api/admin/characters/<id>/kill).
 
 One call to the chronicler role in the chronicle's language, from the character's name and clan,
-the story so far and the character's last nights in the chapters. Backgrounds stay out (same rule as
-the chronicle writer). Any failure, timeout, empty answer or wrong language gives the canned sentence.
+the story so far and the character's last nights in the chapters. The text is stored for players, so
+only the player view goes in (no closed rooms, no Storyteller-only keys, no digest kept back by a room
+closed since it was written). Backgrounds stay out (same rule as the chronicle writer). Any failure, timeout, empty answer or wrong language gives the canned sentence.
 """
 
 from __future__ import annotations
 
 import json
 import logging
+import re
 from typing import Any, Dict, List, Optional, Tuple
 
 logger = logging.getLogger(__name__)
@@ -56,20 +58,26 @@ def fallback(lang: str, death_type: str) -> str:
     return FALLBACK.get(lang, FALLBACK["en"])[death_type]
 
 
+def _tokens(text: str) -> List[str]:
+    return [t for t in re.split(r"\W+", str(text or "").lower()) if t]
+
+
 def _named(ch: Dict[str, Any], name: str) -> bool:
-    low = name.strip().lower()
+    """The chapter's cast names the character: one cast name's words are all whole words of the
+    character's name (the chapters often use the first name only; Ann never matches Anastasia)."""
+    own = set(_tokens(name))
     for c in (ch.get("chapter") or {}).get("characters") or []:
-        n = c.get("name") if isinstance(c, dict) else c
-        n = str(n or "").strip().lower()
-        if n and low and (n in low or low in n):  # the chapters often use the first name only
+        words = _tokens(c.get("name") if isinstance(c, dict) else c)
+        if own and words and all(w in own for w in words):
             return True
     return False
 
 
 def material(cursor, character_id: int) -> Optional[Dict[str, Any]]:
-    """name, clan, lang, so_far and the character's last chapters; None when the character is gone."""
+    """name, clan, lang, so_far and the character's last chapters, player view; None when the character is gone."""
+    from services import chronicle_digest as cd
     from services import chronicle_jobs as cj
-    from routes.chronicle import _so_far_short
+    from routes.chronicle import _readable_for_players, _so_far_short
 
     cursor.execute("SELECT id, name, campaign_id, wod_meta FROM characters WHERE id = %s", (character_id,))
     row = cursor.fetchone()
@@ -79,12 +87,18 @@ def material(cursor, character_id: int) -> Optional[Dict[str, Any]]:
         meta = json.loads(row.get("wod_meta") or "{}") if isinstance(row.get("wod_meta"), str) else (row.get("wod_meta") or {})
     except ValueError:
         meta = {}
-    camp = cj.campaign_row(cursor, row["campaign_id"]) or {"id": row["campaign_id"]}
+    cid = row["campaign_id"]
+    camp = cj.campaign_row(cursor, cid) or {"id": cid}
     lang = cj.chronicle_lang(cursor, camp)
-    digest = cj.stored_digest(cursor, row["campaign_id"], lang)
-    chapters = [c for c in cj.stored_chapters(cursor, row["campaign_id"], lang) if _named(c, row["name"] or "")]
+    readable = _readable_for_players(cursor, cid)
+    digest = cj.stored_digest(cursor, cid, lang)
+    if digest and any(int(r) not in readable for r in digest.get("rooms") or []):
+        digest = None  # a room closed since the digest was written keeps it back (as in the recap)
+    visible = cd.visible_chapters(cj.stored_chapters(cursor, cid, lang), "player", readable)
+    chapters = [cd.player_chapter(c) for c in visible if _named(c, row["name"] or "")]
     return {"name": row["name"] or "", "clan": str(meta.get("clan") or ""), "lang": lang,
-            "so_far": _so_far_short(digest) if digest else "", "chapters": chapters[-LAST_CHAPTERS:]}
+            "so_far": _so_far_short(cd.player_digest(digest)) if digest else "",
+            "chapters": chapters[-LAST_CHAPTERS:]}
 
 
 def messages(mat: Dict[str, Any], death_type: str) -> List[Dict[str, str]]:
@@ -107,14 +121,26 @@ def messages(mat: Dict[str, Any], death_type: str) -> List[Dict[str, str]]:
             {"role": "user", "content": "\n\n".join(parts)}]
 
 
-def write(cursor, character_id: int, death_type: str, generate=None,
+def _read(get_db, character_id: int) -> Optional[Dict[str, Any]]:
+    """The material on a connection of its own, closed before the model call."""
+    conn = get_db()
+    try:
+        return material(conn.cursor(), character_id)
+    finally:
+        try:
+            conn.close()
+        except Exception:  # noqa: BLE001 - a dead connection must not lose the kill
+            pass
+
+
+def write(get_db, character_id: int, death_type: str, generate=None,
           timeout: float = TIMEOUT_S) -> Tuple[str, bool]:
     """(text, generated). Never raises: any problem gives the canned sentence and generated=False."""
     from services import chronicle_digest as cd
 
     lang = "en"
     try:
-        mat = material(cursor, character_id)
+        mat = _read(get_db, character_id)
         if not mat:
             return fallback(lang, death_type), False
         lang = mat["lang"] if mat["lang"] in FALLBACK else "en"

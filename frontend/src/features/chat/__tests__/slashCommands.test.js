@@ -75,8 +75,10 @@ describe('the list from the server', () => {
 
   test('suggestions come from a provided list, as the server filtered it', () => {
     const commands = fromServer(SERVER);
-    expect(slashSuggestions('/', { commands, limit: 50 }).map((c) => c.name)).toEqual(['/roll', '/ai explain', '/ai dice-diff']);
-    const [v5] = slashSuggestions('/ai d', { commands, edition: 'v5' });
+    expect(slashSuggestions('/', { commands, isAdmin: true, limit: 50 }).map((c) => c.name)).toEqual(['/roll', '/ai explain', '/ai dice-diff']);
+    // a cached admin list after a demotion: the admin entries are dropped here too
+    expect(slashSuggestions('/', { commands, isAdmin: false, limit: 50 }).map((c) => c.name)).toEqual(['/roll', '/ai explain']);
+    const [v5] = slashSuggestions('/ai d', { commands, isAdmin: true, edition: 'v5' });
     expect(v5.args).toBe('<v5>');
     expect(v5.description()).toBe('V5 leniency');
   });

@@ -57,8 +57,9 @@ export function slashSuggestions(input, { isAdmin = false, edition = null, limit
   const s = String(input || '');
   if (!s.startsWith('/') || s.includes('\n')) return [];
   const lower = s.toLowerCase();
-  // A server list is already filtered for this user; the fallback list is filtered here.
-  const visible = commands || SLASH_COMMANDS.filter((c) => isAdmin || !c.admin);
+  // The server already filtered its list for this user; filter again here too (a role can change
+  // while the cached list lives).
+  const visible = (commands || SLASH_COMMANDS).filter((c) => isAdmin || !c.admin);
   // Once a full command plus a space was typed (e.g. "/me waves"), stop suggesting.
   if (visible.some((c) => lower.startsWith(`${c.name} `) && lower.length > c.name.length + 1)) return [];
   return visible

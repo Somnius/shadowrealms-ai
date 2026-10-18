@@ -28,8 +28,8 @@ Started 2026-10-18. One release per phase, same rules as [ROADMAP_CHRONICLE.md](
 
 ## Phase 2 — Small AI pieces (0.30)
 
-- [x] 2.1 AI death description in `admin.py` kill, canned fallback EN + EL, `generated` flag in the response. Status: built, waiting for review. Not tried against a live model yet. No page in the new frontend calls `killCharacter` (`utils/api.js`), so there is no admin UI for it today: UI debt.
-- [x] 2.2 `GET /api/ai/slash/commands`, one list for the composer and the `/ai` hints, EN + EL; the browser's list stays as the fallback. Status: built, waiting for review. The long `/ai help` text is still written by hand (it has per-edition detail); a test checks it names every verb.
+- [x] 2.1 AI death description in `admin.py` kill, canned fallback EN + EL, `generated` flag in the response. Status: built, waiting for review. Not tried against a live model yet. No page in the new frontend calls `killCharacter` (`utils/api.js`), so there is no admin UI for it today: UI debt. After review: player view only in the prompt, whole-word name match, the model call holds no database connection, and kill sets `is_active` false.
+- [x] 2.2 `GET /api/ai/slash/commands`, one list for the composer and the `/ai` hints, EN + EL; the browser's list stays as the fallback. Status: built, waiting for review. The long `/ai help` text is still written by hand (it has per-edition detail); a test checks it names every verb. Later: the `/ai help` body and the permission replies in the caller's language (they are English only; the composer list is EN + EL).
 - [x] 2.3 Chronicle language at creation. Already done before this phase (the creation form sends the language, the chronicle settings page edits it). Residual check: the API stored NULL when the language was left out; it now takes the creator's app language (`users.ui_language`). Status: built, waiting for review.
 
 ## Schedar samples

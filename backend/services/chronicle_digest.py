@@ -211,14 +211,13 @@ def validate_chronicle_language(value: Any) -> Tuple[Optional[str], Optional[str
     return None, "language must be el or en"
 
 
-def creator_language(cursor, user_id: int) -> Optional[str]:
+def creator_language(user_id: int) -> Optional[str]:
     """The creator's app language (users.ui_language) as a chronicle language, for a chronicle created
-    without one; None when unset or unreadable (the chronicle then follows its messages)."""
-    try:
-        cursor.execute("SELECT ui_language FROM users WHERE id = %s", (user_id,))
-        lang = str((cursor.fetchone() or {}).get("ui_language") or "").strip().lower()
-    except Exception:
-        return None
+    without one; None when unset or unreadable (the chronicle then follows its messages). Read on a
+    connection of its own (services.language), so a failed read never aborts the caller's transaction."""
+    from services.language import user_ui_language
+
+    lang = user_ui_language(user_id)
     return lang if lang in LANGS else None
 
 

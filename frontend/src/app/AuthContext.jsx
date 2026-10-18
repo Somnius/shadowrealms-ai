@@ -9,6 +9,7 @@ import {
   setUnauthorizedHandler,
 } from './http';
 import { CHARS_CACHE_PREFIX, clearSessionPrefix, DRAFT_PREFIX } from './hooks';
+import { resetSlashCommands } from '../features/chat/slashCommands';
 import {
   forgetStoredLanguage,
   onLanguageChosen,
@@ -75,6 +76,7 @@ export function AuthProvider({ children }) {
 
   const clearLocal = useCallback((reason) => {
     setCurrentToken(null);
+    resetSlashCommands(); // the next user fetches their own list
     store('token', null);
     store('user', null);
     clearSessionPrefix(DRAFT_PREFIX);

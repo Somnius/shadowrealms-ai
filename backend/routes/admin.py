@@ -429,18 +429,17 @@ def kill_character(character_id):
         if death_type not in ['soft', 'mid', 'horrible']:
             return jsonify({'error': 'Invalid death type'}), 400
         
-        # AI-written in the chronicle's language; the canned sentence on any failure (services/death_writeup.py)
+        # AI-written in the chronicle's language from the player view; the canned sentence on any
+        # failure (services/death_writeup.py). It reads on its own connection and closes it before the
+        # model call, so nothing is held open while the model writes.
         from services import death_writeup
-        rdb = get_db()
-        try:
-            death_description, generated = death_writeup.write(rdb.cursor(), character_id, death_type)
-        finally:
-            rdb.close()
+        death_description, generated = death_writeup.write(get_db, character_id, death_type)
         
         db = get_db()
         cursor = db.cursor()
         
-        # Deactivate character
+        # Retire the character (is_active false: no longer played, rolled for or given to the AI) and log it
+        cursor.execute("UPDATE characters SET is_active = %s WHERE id = %s", (False, character_id))
         cursor.execute("""
             INSERT INTO character_moderation 
             (character_id, action, death_type, death_description, moderated_by, moderated_at)
