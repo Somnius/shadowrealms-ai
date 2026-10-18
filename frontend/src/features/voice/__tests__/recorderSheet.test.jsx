@@ -11,6 +11,11 @@ jest.mock('../../../app/http', () => ({
   errorText: (d, f) => f,
 }));
 const mockAuthFetch = jest.fn();
+// The composer's slash list request is not part of the voice flow (the fallback list is used here).
+jest.mock('../../chat/slashCommands', () => ({
+  ...jest.requireActual('../../chat/slashCommands'),
+  useSlashCommands: () => null,
+}));
 
 class FakeRecorder {
   static isTypeSupported(m) {

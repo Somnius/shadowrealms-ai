@@ -2,7 +2,7 @@ import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from 're
 import { DRAFT_PREFIX, readSession, writeSession } from '../../app/hooks';
 import { Avatar, Glyph, IconButton } from '../../design';
 import MenuButton from '../../app/Menu';
-import { completeSlash, parseLocalCommand, slashSuggestions } from './slashCommands';
+import { completeSlash, parseLocalCommand, slashSuggestions, useSlashCommands } from './slashCommands';
 import { ReplyBar } from './MessageActions';
 import { t } from '../../i18n';
 import RecorderSheet from '../voice/RecorderSheet';
@@ -170,7 +170,11 @@ export default function Composer({
     }
   }, [storeKey]);
 
-  const suggestions = useMemo(() => (dismissed ? [] : slashSuggestions(text, { isAdmin, edition })), [text, isAdmin, edition, dismissed]);
+  const commands = useSlashCommands();
+  const suggestions = useMemo(
+    () => (dismissed ? [] : slashSuggestions(text, { isAdmin, edition, commands })),
+    [text, isAdmin, edition, dismissed, commands],
+  );
   const open = suggestions.length > 0;
   useEffect(() => setActive(0), [text]);
 

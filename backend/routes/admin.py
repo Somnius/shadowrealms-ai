@@ -429,13 +429,13 @@ def kill_character(character_id):
         if death_type not in ['soft', 'mid', 'horrible']:
             return jsonify({'error': 'Invalid death type'}), 400
         
-        # TODO: Generate AI death description based on campaign events
-        death_descriptions = {
-            'soft': "Your character fades peacefully into the shadows, their story complete.",
-            'mid': "In a moment of sacrifice, your character falls to save others.",
-            'horrible': "The darkness claims your character in a brutal and terrifying end."
-        }
-        death_description = death_descriptions[death_type]
+        # AI-written in the chronicle's language; the canned sentence on any failure (services/death_writeup.py)
+        from services import death_writeup
+        rdb = get_db()
+        try:
+            death_description, generated = death_writeup.write(rdb.cursor(), character_id, death_type)
+        finally:
+            rdb.close()
         
         db = get_db()
         cursor = db.cursor()
@@ -453,7 +453,8 @@ def kill_character(character_id):
         
         return jsonify({
             'message': 'Character killed',
-            'death_description': death_description
+            'death_description': death_description,
+            'generated': generated,
         }), 200
         
     except Exception as e:

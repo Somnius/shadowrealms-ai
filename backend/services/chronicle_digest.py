@@ -211,6 +211,17 @@ def validate_chronicle_language(value: Any) -> Tuple[Optional[str], Optional[str
     return None, "language must be el or en"
 
 
+def creator_language(cursor, user_id: int) -> Optional[str]:
+    """The creator's app language (users.ui_language) as a chronicle language, for a chronicle created
+    without one; None when unset or unreadable (the chronicle then follows its messages)."""
+    try:
+        cursor.execute("SELECT ui_language FROM users WHERE id = %s", (user_id,))
+        lang = str((cursor.fetchone() or {}).get("ui_language") or "").strip().lower()
+    except Exception:
+        return None
+    return lang if lang in LANGS else None
+
+
 def chronicle_language(campaign_language: Optional[str], rows: Iterable[Dict[str, Any]]) -> str:
     """campaigns.language when set, else the language most story messages are in (ties: English)."""
     if campaign_language in LANGS:

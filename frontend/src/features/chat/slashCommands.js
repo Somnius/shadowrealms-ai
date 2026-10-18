@@ -4,9 +4,12 @@
  * `/ai …` verbs mirror backend/services/ai_slash_commands.py SUPPORTED_AI_SLASH_VERBS (site admins only,
  * except `/ai explain`, which every member may use; the server runs them via POST /api/ai/slash).
  * Local commands are handled in the browser.
- * TODO(backend): GET /api/ai/slash/commands would let client and server never drift.
+ * The list comes from GET /api/ai/slash/commands (backend COMMANDS, EN + EL, admin verbs only for site
+ * admins), fetched once per session; SLASH_COMMANDS below is the fallback when that fails.
  */
-import { t } from '../../i18n';
+import { useEffect, useState } from 'react';
+import { API_URL, authFetch, getCurrentToken } from '../../app/http';
+import { getLanguage, t } from '../../i18n';
 
 export const SLASH_COMMANDS = [
   // local commands (everyone)
@@ -50,17 +53,81 @@ export const SLASH_COMMANDS = [
  * the text starts with "/" and has no newline; for "/ai x" the verb may still be being typed.
  * `edition` ('classic' | 'v5', the room's campaign) picks edition-specific args and wording.
  */
-export function slashSuggestions(input, { isAdmin = false, edition = null, limit = 8 } = {}) {
+export function slashSuggestions(input, { isAdmin = false, edition = null, limit = 8, commands = null } = {}) {
   const s = String(input || '');
   if (!s.startsWith('/') || s.includes('\n')) return [];
   const lower = s.toLowerCase();
-  const visible = SLASH_COMMANDS.filter((c) => isAdmin || !c.admin);
+  // A server list is already filtered for this user; the fallback list is filtered here.
+  const visible = commands || SLASH_COMMANDS.filter((c) => isAdmin || !c.admin);
   // Once a full command plus a space was typed (e.g. "/me waves"), stop suggesting.
   if (visible.some((c) => lower.startsWith(`${c.name} `) && lower.length > c.name.length + 1)) return [];
   return visible
     .filter((c) => c.name.startsWith(lower.trimEnd()) || (lower.trimEnd() === c.name))
     .slice(0, limit)
     .map((c) => (edition && c[edition] ? { ...c, ...c[edition] } : c));
+}
+
+/** Server entry → the client shape: description() picks the current language (English when missing). */
+function describe(d) {
+  return () => (d && (d[getLanguage()] || d.en)) || '';
+}
+
+export function fromServer(list) {
+  return (Array.isArray(list) ? list : [])
+    .filter((c) => c && typeof c.name === 'string' && c.name.startsWith('/'))
+    .map((c) => {
+      const out = { ...c, args: c.args || '', description: describe(c.description) };
+      for (const ed of ['classic', 'v5']) {
+        if (c[ed]) out[ed] = { ...c[ed], description: describe(c[ed].description) };
+      }
+      return out;
+    });
+}
+
+let loaded = { token: null, promise: null };
+
+/** The server list for this session (one request per sign-in); rejects when it can't be fetched. */
+export function loadSlashCommands(token = getCurrentToken(), fetcher = authFetch) {
+  if (!token) return Promise.reject(new Error('not signed in'));
+  if (loaded.token === token && loaded.promise) return loaded.promise;
+  const promise = Promise.resolve()
+    .then(() => fetcher(`${API_URL}/ai/slash/commands`, { headers: { Authorization: `Bearer ${token}` } }))
+    .then(async (res) => {
+      if (!res || !res.ok) throw new Error(`slash commands: HTTP ${res && res.status}`);
+      const list = fromServer((await res.json()).commands);
+      if (!list.length) throw new Error('slash commands: empty list');
+      return list;
+    });
+  loaded = { token, promise };
+  promise.catch(() => {
+    if (loaded.promise === promise) loaded = { token: null, promise: null }; // try again next time
+  });
+  return promise;
+}
+
+export function resetSlashCommands() {
+  loaded = { token: null, promise: null };
+}
+
+let warned = false;
+
+/** The server list once loaded; null (use the fallback) before that or when it failed. */
+export function useSlashCommands() {
+  const [commands, setCommands] = useState(null);
+  useEffect(() => {
+    let live = true;
+    loadSlashCommands().then(
+      (list) => { if (live) setCommands(list); },
+      (e) => {
+        if (!warned) {
+          warned = true;
+          console.warn('Slash commands: using the built-in list', e);
+        }
+      },
+    );
+    return () => { live = false; };
+  }, []);
+  return commands;
 }
 
 /** Text to put in the composer when a suggestion is accepted. */

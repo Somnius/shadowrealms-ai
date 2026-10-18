@@ -67,20 +67,71 @@ SUPPORTED_AI_SLASH_VERBS: List[str] = [
 GREEK_EXPLAIN_VERBS = frozenset({"εξήγησε", "εξηγησε"})
 EXPLAIN_VERBS = frozenset({"explain"}) | GREEK_EXPLAIN_VERBS
 
+# The composer's slash list (GET /api/ai/slash/commands) and the source of the hints below. Same shape as
+# frontend/src/features/chat/slashCommands.js, which keeps its own copy only as the fallback. `local`
+# commands run in the browser; `admin` ones are only sent to site admins; `classic` / `v5` override args
+# and description once the room's edition is known. tests/unit/test_slash_commands_list.py keeps the
+# /ai entries and SUPPORTED_AI_SLASH_VERBS in step.
+def _cmd(name, args, en, el, i18n_key, admin=False, local=None, **editions):
+    c = {"name": name, "args": args, "admin": admin, "i18n_key": i18n_key, "description": {"en": en, "el": el}}
+    if local:
+        c["local"] = local
+    c.update(editions)
+    return c
+
+
+COMMANDS: List[Dict[str, Any]] = [
+    _cmd("/roll", "", "Open the dice roller for this room", "Ρίξε ζάρια σε αυτή την τοποθεσία",
+         "chat:slash.roll", local="roll"),
+    _cmd("/me", "<action>", "Post an action / emote line", "Γράψε μια ενέργεια / emote", "chat:slash.me", local="me"),
+    _cmd("/chat", "<message>", "Ask the AI assistant directly (out of the story)",
+         "Ρώτα απευθείας τον βοηθό AI (εκτός ιστορίας)", "chat:slash.chat"),
+    _cmd("/ai explain", "", "Explain a dice roll step by step (reply to the dice card)",
+         "Εξήγηση μιας ρίψης ζαριών βήμα βήμα (απάντησε στην κάρτα των ζαριών)", "chat:slash.ai.explain"),
+    _cmd("/ai help", "", "List all /ai commands", "Όλες οι εντολές /ai", "chat:slash.ai.help", admin=True),
+    _cmd("/ai respond", "[note]", "Diagnostics only: LLM echo with latency (to explain a roll use /ai explain)",
+         "Μόνο για διαγνωστικά: ηχώ του LLM με χρόνο απόκρισης (για εξήγηση ρίψης χρησιμοποίησε το /ai explain)",
+         "chat:slash.ai.respond", admin=True),
+    _cmd("/ai health", "", "LLM / vector store health snapshot", "Στιγμιότυπο υγείας LLM / vector store",
+         "chat:slash.ai.health", admin=True),
+    _cmd("/ai model", "", "Configured and active model", "Ρυθμισμένο και ενεργό μοντέλο", "chat:slash.ai.model",
+         admin=True),
+    _cmd("/ai ping", "", "Tiny generation to measure latency", "Μικρή παραγωγή κειμένου για μέτρηση καθυστέρησης",
+         "chat:slash.ai.ping", admin=True),
+    _cmd("/ai context", "", "Show the context sent for this room", "Δείξε το context που στέλνεται για αυτή την τοποθεσία",
+         "chat:slash.ai.context", admin=True),
+    _cmd("/ai summarize", "<text>", "Summarize a wall of text", "Σύνοψη ενός μεγάλου κειμένου",
+         "chat:slash.ai.summarize", admin=True),
+    _cmd("/ai roll", "<pool@diff>", "Roll by campaign rules: classic 4+3@7, V5 6@3h2",
+         "Ρίψη με τους κανόνες του χρονικού: classic 4+3@7, V5 6@3h2", "chat:slash.ai.roll", admin=True),
+    _cmd("/ai roll-hidden", "<pool@diff>", "Same as /ai roll, hidden from players",
+         "Όπως το /ai roll, κρυφό από τους παίκτες", "chat:slash.ai.rollHidden", admin=True),
+    _cmd("/ai rouse", "[hunger]", "V5 Rouse check", "Έλεγχος Rouse (V5)", "chat:slash.ai.rouse", admin=True),
+    _cmd("/ai clean", "<target>", "Remove clutter (see /ai clean)", "Καθάρισμα μηνυμάτων (δες /ai clean)",
+         "chat:slash.ai.clean", admin=True),
+    _cmd("/ai dice-diff", "<2-10 | no-bestial | no-messy | successes | restore>",
+         "Room dice leniency (owner/admin): Classic floor 2-10, V5 no-bestial / no-messy / successes",
+         "Επιείκεια ζαριών της τοποθεσίας (ιδιοκτήτης/διαχ.): Classic όριο 2-10, V5 no-bestial / no-messy / successes",
+         "chat:slash.ai.diceDiff", admin=True,
+         classic={"args": "<2-10 | restore>", "i18n_key": "chat:slash.ai.diceDiffClassic",
+                  "description": {"en": "Room dice leniency (owner/admin): no 1s, one die at least the floor",
+                                  "el": "Επιείκεια ζαριών της τοποθεσίας (ιδιοκτήτης/διαχ.): χωρίς άσους, ένα ζάρι τουλάχιστον στο όριο"}},
+         v5={"args": "<no-bestial on|off | no-messy on|off | successes 0-3 | restore>",
+             "i18n_key": "chat:slash.ai.diceDiffV5",
+             "description": {"en": "Room dice leniency (owner/admin): no bestial failure, no messy critical, minimum successes",
+                             "el": "Επιείκεια ζαριών της τοποθεσίας (ιδιοκτήτης/διαχ.): χωρίς bestial failure, χωρίς messy critical, ελάχιστες επιτυχίες"}}),
+]
+COMMANDS_VERSION = 1
+
+
+def commands_for(is_admin: bool) -> List[Dict[str, Any]]:
+    """The composer list for one user: admin-only commands only for site admins."""
+    return [c for c in COMMANDS if is_admin or not c["admin"]]
+
+
 # Shown in API hints / console (full detail: `/ai help`)
 FUTURE_COMMAND_SUGGESTIONS = [
-    "/ai help — list all /ai commands",
-    "/ai health — LM Studio / Ollama / Chroma snapshot (no generation)",
-    "/ai model — configured + active provider snapshot",
-    "/ai ping — tiny generation for baseline latency",
-    "/ai context — truncated context for this room",
-    "/ai summarize <text> — OOC wall-of-text helper",
-    "/ai roll <expr> — d10 pool by campaign rules: classic `4+3@7` (pool@TN), V5 `6@3h2` (pool@successes, Hunger)",
-    "/ai roll-hidden <expr> — same as `/ai roll`, but hidden from normal players",
-    "/ai explain — explain a dice roll step by step (reply to the dice card; any member)",
-    "/ai rouse [hunger] — V5 Rouse check (one die, 6+ = no Hunger gain)",
-    "/ai clean … — remove clutter (see `/ai clean`)",
-    "/ai dice-diff … — room dice leniency (owner/admin): Classic `<2-10|restore>`, V5 `no-bestial on|off`, `no-messy on|off`, `successes <0-3>`, `restore`",
+    f"{c['name']} {c['args']}".rstrip() + f" — {c['description']['en']}" for c in COMMANDS if c["name"].startswith("/ai ")
 ]
 
 

@@ -16,6 +16,8 @@ from services.gpu_monitor import gpu_monitor_service
 from services.llm_service import get_llm_service, last_generation_meta
 from services.health_check import get_health_check_service, require_llm, require_ai_services
 from services.ai_slash_commands import (
+    COMMANDS_VERSION,
+    commands_for,
     EXPLAIN_VERBS,
     parse_ai_slash_line,
     execute_ai_slash_command,
@@ -370,6 +372,20 @@ def ai_chat():
     finally:
         if db is not None:
             db.close()
+
+
+@bp.route('/slash/commands', methods=['GET'])
+@jwt_required()
+def ai_slash_command_list():
+    """The composer's slash list (services/ai_slash_commands.COMMANDS), EN + EL; admin verbs only for site admins."""
+    db = get_db()
+    try:
+        cur = db.cursor()
+        cur.execute("SELECT role FROM users WHERE id = %s", (int(get_jwt_identity()),))
+        is_admin = ((cur.fetchone() or {}).get("role") or "").strip().lower() == "admin"
+    finally:
+        db.close()
+    return jsonify({'commands': commands_for(is_admin), 'version': COMMANDS_VERSION}), 200
 
 
 @bp.route('/slash', methods=['POST'])

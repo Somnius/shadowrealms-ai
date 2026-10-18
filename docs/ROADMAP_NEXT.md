@@ -7,7 +7,7 @@ Started 2026-10-18. One release per phase, same rules as [ROADMAP_CHRONICLE.md](
 | # | Phase | Parts | Version | Status |
 |---|---|---|---|---|
 | 1 | The Storyteller reads the chronicle | memory block in the Storyteller prompt · per-chronicle switch · `/ai context` shows it | 0.29 | built on `feat/st-memory`, waiting for review |
-| 2 | Small AI pieces | AI death description · slash commands served by the backend · chronicle language default check | 0.30 | not started |
+| 2 | Small AI pieces | AI death description · slash commands served by the backend · chronicle language default check | 0.30 | built on `feat/death-slash`, waiting for review |
 | — | Schedar samples | two sample files for Lef to listen to | — | not started |
 
 ## Decisions (2026-10-18, Lef: full auto)
@@ -28,9 +28,9 @@ Started 2026-10-18. One release per phase, same rules as [ROADMAP_CHRONICLE.md](
 
 ## Phase 2 — Small AI pieces (0.30)
 
-- [ ] 2.1 AI death description in `admin.py` kill, canned fallback EN + EL, `generated` flag in the response. Status: not started.
-- [ ] 2.2 `GET /api/ai/slash/commands`, one list for `/ai help` and the composer, EN + EL; the browser's list stays as the fallback. Status: not started.
-- [ ] 2.3 Creating a chronicle without a language takes the creator's app language on the server too. Status: not started (check first; may already be so).
+- [x] 2.1 AI death description in `admin.py` kill, canned fallback EN + EL, `generated` flag in the response. Status: built, waiting for review. Not tried against a live model yet. No page in the new frontend calls `killCharacter` (`utils/api.js`), so there is no admin UI for it today: UI debt.
+- [x] 2.2 `GET /api/ai/slash/commands`, one list for the composer and the `/ai` hints, EN + EL; the browser's list stays as the fallback. Status: built, waiting for review. The long `/ai help` text is still written by hand (it has per-edition detail); a test checks it names every verb.
+- [x] 2.3 Chronicle language at creation. Already done before this phase (the creation form sends the language, the chronicle settings page edits it). Residual check: the API stored NULL when the language was left out; it now takes the creator's app language (`users.ui_language`). Status: built, waiting for review.
 
 ## Schedar samples
 
@@ -46,3 +46,4 @@ Started 2026-10-18. One release per phase, same rules as [ROADMAP_CHRONICLE.md](
 
 - 2026-10-18 — plan written.
 - 2026-10-18 — phase 1 built on `feat/st-memory` (not reviewed, not merged, not released).
+- 2026-10-18 — phase 2 built on `feat/death-slash` (not reviewed, not merged, not released).

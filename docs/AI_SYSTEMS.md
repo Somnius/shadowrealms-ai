@@ -48,6 +48,8 @@ Roles (admin panel → **Ai System → Models per role**, stored in `app_setting
 | `chronicler_el` | "The chronicle so far" for Greek chronicles ([CHRONICLE.md](CHRONICLE.md)) | LM Studio `llama-krikri-8b-instruct` (`CHRONICLER_EL_MODEL`). Never falls back to Ollama; streamed (`on_token`, `stream_options.include_usage`) with a JSON schema in `response_format`; an overflow is never trimmed (`shrink=False`): the night is split instead |
 | `chronicler_en` | "The chronicle so far" for English chronicles | LM Studio, loaded model (`CHRONICLER_EN_MODEL` to pin one). Same rules as `chronicler_el` |
 
+The chronicler roles also write the death description when an admin kills a character (`services/death_writeup.py`, 0.30): one call, 220 tokens, 25 s, in the chronicle's language; the canned sentence (EN + EL) on any failure.
+
 A chronicle can override the writer model in its own settings (0.28): one of the models this panel lists, tried before the role's chain; cloud ones only by a site admin. Admin → AI system shows the writer's health (Chronicle writer) next to Voice health.
 
 Every Storyteller generation also bumps the `ai_busy_marks` row (`services/ai_busy.py`), a marker that works across gunicorn workers, so the chronicle writer can wait while a reply is being written.
@@ -208,6 +210,8 @@ The server resolves OOC vs IC using `location_id` and the `locations` table (not
 ### `/ai` admin commands (storyteller chat)
 
 **Shipped in v0.7.13** (extended in **v0.7.14** for dice theatre and **`roll-hidden`**). Site **administrators** (`users.role = admin`) can type lines starting with **`/ai`** in storyteller chat. The frontend sends them to **`POST /api/ai/slash`** (`backend/routes/ai.py`), which dispatches **`backend/services/ai_slash_commands.py`**.
+
+The composer's slash list comes from **`GET /api/ai/slash/commands`** (0.30): `COMMANDS` in `ai_slash_commands.py`, English and Greek text, admin-only entries only for site admins. The browser fetches it once per session and keeps `slashCommands.js`'s own list as the fallback. `tests/unit/test_slash_commands_list.py` keeps `COMMANDS` and `SUPPORTED_AI_SLASH_VERBS` in step.
 
 - **`/ai help`** — Lists commands (same detail as the server’s inline help).
 - **`/ai health`** — LM Studio, Ollama, ChromaDB reachability (no text generation).

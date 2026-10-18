@@ -142,6 +142,10 @@ def create_campaign():
         # Get database connection
         conn = get_db()
         cursor = conn.cursor()
+        if language is None and 'language' not in data:
+            # The creation page always sends it; API callers get the creator's app language
+            from services.chronicle_digest import creator_language
+            language = creator_language(cursor, user_id)
         
         # Create campaign in database
         cursor.execute("""
