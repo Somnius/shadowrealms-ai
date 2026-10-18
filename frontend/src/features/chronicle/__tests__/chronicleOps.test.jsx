@@ -26,7 +26,7 @@ jest.mock('../soFar', () => ({
 
 const toast = jest.fn();
 const settingsBody = {
-  settings: { v: 1, gap_hours: 6, table_talk: false, nightly: false, model: null },
+  settings: { v: 1, gap_hours: 6, table_talk: false, nightly: false, memory: true, model: null },
   models: [
     { provider: 'lm_studio', model: 'krikri-8b', cloud: false },
     { provider: 'anthropic', model: 'claude-x', cloud: true },
@@ -155,4 +155,20 @@ test("a Storyteller sees an admin's cloud writer locked and never sends it", asy
   await user.click(screen.getByRole('switch', { name: 'Nightly run' }));
   await user.click(screen.getByRole('button', { name: 'Save settings' }));
   await waitFor(() => expect(api).toHaveBeenCalledWith('/campaigns/10/chronicle/settings', { method: 'PUT', body: { nightly: true } }));
+});
+
+test('the Storyteller memory switch is on by default and sends memory: false', async () => {
+  const user = setupUser();
+  const api = jest.fn(async (path, opts) => (opts && opts.method === 'PUT'
+    ? { ok: true, data: { ...settingsBody, settings: { ...settingsBody.settings, ...opts.body } } }
+    : { ok: true, data: settingsBody }));
+  wrap(<ChronicleSoFarSettings api={api} id={10} toast={toast} />);
+  const box = await screen.findByTestId('sofar-settings');
+  await user.click(within(box).getByText('Settings'));
+  const sw = screen.getByRole('switch', { name: 'The Storyteller remembers the chronicle' });
+  expect(sw).toHaveAttribute('aria-checked', 'true');
+  expect(screen.getByText(/the last nights of this room from the chapters/)).toBeInTheDocument();
+  await user.click(sw);
+  await user.click(screen.getByRole('button', { name: 'Save settings' }));
+  await waitFor(() => expect(api).toHaveBeenCalledWith('/campaigns/10/chronicle/settings', { method: 'PUT', body: { memory: false } }));
 });

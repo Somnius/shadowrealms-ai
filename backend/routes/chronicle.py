@@ -912,7 +912,7 @@ def session_mark_delete(campaign_id, message_id):
 @chronicle_bp.route("/campaigns/<int:campaign_id>/chronicle/settings", methods=["GET", "PUT"])
 @jwt_required()
 def chronicle_settings(campaign_id):
-    """The chronicle's own settings (gap, table talk, nightly run, writer model): the Storyteller
+    """The chronicle's own settings (gap, table talk, nightly run, Storyteller memory, writer model): the Storyteller
     (creator) and site admins only. A new gap re-cuts the nights: the ones it changes are stale."""
     uid = _uid()
     conn = get_db()
@@ -939,6 +939,9 @@ def chronicle_settings(campaign_id):
             cs.save(cur, campaign_id, new)
             conn.commit()
             current = new
+            from services import chronicle_memory
+
+            chronicle_memory.forget(campaign_id)  # this worker; the other one within the cache TTL
         return jsonify({
             "settings": current,
             "models": [o for o in options if is_admin or not o["cloud"]],

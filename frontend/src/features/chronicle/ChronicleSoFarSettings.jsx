@@ -1,6 +1,6 @@
 /**
  * Chronicle settings → The chronicle so far → Settings (the Storyteller and site admins only):
- * the night gap, table talk in exports, the nightly run and the writer model
+ * the night gap, table talk in exports, the nightly run, the Storyteller's memory and the writer model
  * (GET/PUT /api/campaigns/<id>/chronicle/settings, docs/CHRONICLE.md).
  */
 import { useEffect, useState } from 'react';
@@ -49,7 +49,7 @@ export default function ChronicleSoFarSettings({ api, id, toast, onSaved }) {
     if (gapBad) return;
     setSaving(true);
     // only the keys that changed, so a setting this user can't change is never sent
-    const want = { gap_hours: gap, table_talk: !!form.table_talk, nightly: !!form.nightly, model: form.model || null };
+    const want = { gap_hours: gap, table_talk: !!form.table_talk, nightly: !!form.nightly, memory: form.memory !== false, model: form.model || null };
     const body = {};
     Object.keys(want).forEach((k) => {
       const was = k === 'model' ? info.settings.model || null : info.settings[k];
@@ -101,6 +101,14 @@ export default function ChronicleSoFarSettings({ api, id, toast, onSaved }) {
         />
         <p className="sr-sofar__hint">
           {t('chronicle:soFar.settings.nightlyHint', 'At {{time}} ({{zone}}), when there are new messages, the chronicle is updated by itself, with the same rules as Update.', { time: info.nightly_at || '05:00', zone: info.nightly_tz || 'Europe/Athens' })}
+        </p>
+        <Switch
+          checked={form.memory !== false}
+          onChange={(v) => setForm({ ...form, memory: v })}
+          label={t('chronicle:soFar.settings.memory', 'The Storyteller remembers the chronicle')}
+        />
+        <p className="sr-sofar__hint">
+          {t('chronicle:soFar.settings.memoryHint', 'Each reply gets the story so far, the open threads and the last nights of this room from the chapters. Turn it off if replies get slower or the model repeats old events.')}
         </p>
         <Select
           label={t('chronicle:soFar.settings.model', 'Writer model')}

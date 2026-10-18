@@ -243,6 +243,6 @@ Build rules that come out of the reviews. These are not product choices; Lef's c
 
 ## Left for later
 
-- Chapters feeding the Storyteller's prompt instead of the trimmed room history: the tables are shaped for it, not done here.
+- ~~Chapters feeding the Storyteller's prompt~~: built for 0.29 (see "The Storyteller's memory" in [CHRONICLE.md](CHRONICLE.md)); what comes next is in [ROADMAP_NEXT.md](ROADMAP_NEXT.md).
 - "What my character knows": a digest per character. Not planned.
 - A per-section editor, digest history, portraits in the PDF, a cloud writer by default: not planned.

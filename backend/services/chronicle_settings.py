@@ -8,6 +8,7 @@ Shape (every key optional when sent; the normaliser fills defaults):
   "gap_hours": 6,          # a night ends after this many hours with no message (2-24)
   "table_talk": false,     # exports include table talk unless the export says otherwise
   "nightly": false,        # the nightly run (services/chronicle_nightly.py)
+  "memory": true,          # the Storyteller's replies read the chapters (services/chronicle_memory.py)
   "model": null            # null = the chronicler roles; else {"provider", "model"} from model_options()
 }
 """
@@ -21,7 +22,8 @@ from typing import Any, Dict, List, Optional
 from services.request_validation import RequestValidationError
 
 GAP_RANGE = (2, 24)
-DEFAULTS: Dict[str, Any] = {"v": 1, "gap_hours": 6, "table_talk": False, "nightly": False, "model": None}
+DEFAULTS: Dict[str, Any] = {"v": 1, "gap_hours": 6, "table_talk": False, "nightly": False, "memory": True,
+                           "model": None}
 
 
 def _envi(name: str, default: int, low: int = 1) -> int:
@@ -63,7 +65,7 @@ def normalize(raw: Any) -> Dict[str, Any]:
     g = raw.get("gap_hours")
     if _is_int(g) and GAP_RANGE[0] <= g <= GAP_RANGE[1]:
         out["gap_hours"] = g
-    for k in ("table_talk", "nightly"):
+    for k in ("table_talk", "nightly", "memory"):
         if isinstance(raw.get(k), bool):
             out[k] = raw[k]
     m = raw.get("model")
@@ -78,7 +80,7 @@ def validate(data: Any, current: Dict[str, Any], options: List[Dict[str, Any]], 
     if not isinstance(data, dict):
         raise RequestValidationError("expected a JSON object")
     out = normalize(current)
-    unknown = set(data) - {"gap_hours", "table_talk", "nightly", "model", "v"}
+    unknown = set(data) - {"gap_hours", "table_talk", "nightly", "memory", "model", "v"}
     if unknown:
         raise RequestValidationError("unknown setting")
     if "gap_hours" in data:
@@ -86,7 +88,7 @@ def validate(data: Any, current: Dict[str, Any], options: List[Dict[str, Any]], 
         if not _is_int(g) or not GAP_RANGE[0] <= g <= GAP_RANGE[1]:
             raise RequestValidationError(f"gap_hours must be a whole number from {GAP_RANGE[0]} to {GAP_RANGE[1]}")
         out["gap_hours"] = g
-    for k in ("table_talk", "nightly"):
+    for k in ("table_talk", "nightly", "memory"):
         if k in data:
             if not isinstance(data[k], bool):
                 raise RequestValidationError(f"{k} must be true or false")

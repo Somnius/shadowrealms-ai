@@ -51,9 +51,22 @@ Chronicle settings → The chronicle so far → Settings, for the Storyteller (c
 - **Night gap**, in hours (default 6, from 2 to 24): a night ends after that long with no message. The cutter, the jobs, the date-range minutes and the archive on delete all use it. A new gap cuts the nights again: only the nights it cuts differently get a new hash, so the next Update writes those again and removes the chapters that no longer exist.
 - **Table talk in exports by default** (default off): an export without `with_table_talk=` follows it; the panel's switch starts from it and sends `with_table_talk=0|1` only when it differs.
 - **Nightly run** (default off): see below.
+- **The Storyteller remembers the chronicle** (default on): see "The Storyteller's memory" below.
 - **Writer model** (default: the chronicler roles): one of the models the admin AI panel lists (each role's configured provider and model, without the small Ollama model). It is tried first, then the role's own chain. A cloud writer can only be picked, changed or removed by a site admin, and the panel warns that the whole chat, hidden rolls included, leaves the server. A Storyteller sees an admin's cloud writer as a locked choice marked "set by a site admin" and can still save the other settings (the form sends only the keys that changed). An override the AI panel no longer lists is ignored when the writer runs. Helpers get only the table-talk default in `GET …/chronicle`, never the writer model.
 
 **The nightly run.** At 05:00 in `CHRONICLE_NIGHTLY_TZ` (`CHRONICLE_NIGHTLY_AT`, default `05:00` `Europe/Athens`; the container itself stays on UTC, which message times use), for up to 3 hours, the first gunicorn worker (the one `gunicorn.conf.py` `post_fork` starts the background jobs in) queues an ordinary Update for each chronicle with the switch on and new messages since its last finished Update (a partial one counts as unfinished), one chronicle at a time: the next is queued only when the previous nightly job has ended. Nightly jobs have no `requested_by`. They follow the same rules as Update: the job queue and its claim, the quiet window, the busy marker, one job per chronicle, Update every 5 minutes, and the caps. A chronicle refused with `too_soon` or `job_running` gets another turn later that night; a nightly job that ends partial is queued again (after the 5 minutes) to carry on; otherwise each chronicle runs once per night. A nightly job still queued or waiting (its table is playing) after 15 minutes no longer holds up the next chronicle, and when the window ends the nightly jobs still queued or waiting are cancelled, so none starts in the middle of the next session. With no finished run on record (old jobs pruned), "new messages" means a message after the last stored night.
+
+## The Storyteller's memory (0.29)
+
+The AI Storyteller reads the written chronicle on every reply (`services/chronicle_memory.py`, called from `_storyteller_reply` in `routes/ai.py`). The block goes into the system prompt right after the campaign context, before the character, and is headed "Your private memory of this chronicle (never quote or list it to players)" (in Greek for a Greek chronicle). It is the Storyteller view: `st_so_far` and the nights' `st_notes` (hidden rolls) are in it, since the model already sees those in its own room history. In priority order, lowest dropped first when the budget is short:
+
+1. the story so far in short (`tldr`, else the first paragraphs of `so_far`) from the final digest;
+2. the open threads (up to 8);
+3. the last 3 nights of this room (title, summary, `st_notes`), newest first; a night whose last message is already inside the room history in the prompt is skipped;
+4. the last night of up to 4 other rooms, title and first summary paragraph only;
+5. up to 2 `st_so_far` paragraphs.
+
+Era digests are not read. The block gets 25 % of the prompt budget (`CHRONICLE_BUDGET_SHARE`) and never more than 1,500 tokens, and counts as a fixed part, so the history gets what is left. It is read in the chronicle's own language. The digest and chapters are cached per gunicorn worker for 60 s; after that only re-read when the final digest's hash or the newest chapter's `written_at` changed. Nothing written, the switch off, or any error gives no block; there is never a model call or a wait on the writer. The switch is **The Storyteller remembers the chronicle** in Settings (`memory`, default on). `/ai context` (site admins) shows the block under "Chronicle memory".
 
 ## Live progress
 

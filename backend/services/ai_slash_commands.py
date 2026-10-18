@@ -423,16 +423,23 @@ def execute_context_command(
 ) -> Dict[str, Any]:
     """Truncated text the storyteller pipeline would lean on for this room."""
     # Late import avoids circular import with routes.ai
+    from database import get_db
     from routes.ai import get_campaign_context, get_location_context, get_recent_messages
+    from services import chronicle_memory
 
     loc = get_location_context(location_id, campaign_id)
     recent = get_recent_messages(location_id, campaign_id, limit=15)
     camp = get_campaign_context(campaign_id)
+    hist_ids = [m["id"] for m in recent.get("messages") or [] if m.get("id")]
+    memory, _ = chronicle_memory.storyteller_block(
+        get_db, campaign_id, location_id, min(hist_ids) if hist_ids else None, chronicle_memory.MAX_TOKENS)
 
     parts = [
         "**`/ai context`** — truncated room context (no generation)\n",
         "### Location\n",
         loc.get("formatted") or "(none)",
+        "\n\n### Chronicle memory (what the Storyteller is given from the chapters)\n",
+        memory or "(none: off, or nothing written yet)",
         "\n\n### Recent messages (newest-last block may be trimmed)\n",
         (recent.get("formatted") or "(none)").strip(),
         "\n\n### Campaign (header)\n",

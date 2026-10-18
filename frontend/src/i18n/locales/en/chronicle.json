@@ -295,6 +295,8 @@
       "tableTalk": "Table talk in exports by default",
       "nightly": "Nightly run",
       "nightlyHint": "At {{time}} ({{zone}}), when there are new messages, the chronicle is updated by itself, with the same rules as Update.",
+      "memory": "The Storyteller remembers the chronicle",
+      "memoryHint": "Each reply gets the story so far, the open threads and the last nights of this room from the chapters. Turn it off if replies get slower or the model repeats old events.",
       "model": "Writer model",
       "modelDefault": "Default (the chronicler roles)",
       "cloudWarn": "A cloud writer sends the whole chat of this chronicle, hidden rolls included, to an outside service.",

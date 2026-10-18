@@ -42,7 +42,8 @@ def run(conn, model=None, now=datetime(2020, 1, 1), **kw):
 # -- settings -----------------------------------------------------------------------------------
 
 def test_settings_defaults_and_bounds():
-    assert cs.normalize(None) == {"v": 1, "gap_hours": 6, "table_talk": False, "nightly": False, "model": None}
+    assert cs.normalize(None) == {"v": 1, "gap_hours": 6, "table_talk": False, "nightly": False, "memory": True,
+                                 "model": None}
     assert cs.normalize('{"gap_hours": 30, "nightly": "yes"}')["gap_hours"] == 6
     assert cs.normalize("not json")["nightly"] is False
     cur = cs.normalize({})

@@ -765,6 +765,9 @@ STORYTELLER_MODES = {
 # the long-term message memory (system prompt).
 RAG_BUDGET_SHARE = 0.25
 SEMANTIC_BUDGET_SHARE = 0.10
+# Share of the prompt budget the Storyteller's chronicle memory may take (services/chronicle_memory.py
+# also caps it at 1,500 tokens); it counts as a fixed part, so the history gets the rest.
+CHRONICLE_BUDGET_SHARE = 0.25
 
 
 def _storyteller_reply(mode: str, message: str, campaign_id: int, location_id: int = None,
@@ -776,7 +779,7 @@ def _storyteller_reply(mode: str, message: str, campaign_id: int, location_id: i
     of the prompt right before the closing instructions.
 
     The prompt is built to fit the model's context (services.storyteller_prompt): fixed parts
-    first (instructions, campaign, character, location, NPCs), then the newest room history
+    first (instructions, campaign, the chronicle memory, character, location, NPCs), then the newest room history
     that fits, then long-term memory; the RAG sections in the user turn get their own share.
     The player's message is sent once, as the user turn.
     """
@@ -792,6 +795,19 @@ def _storyteller_reply(mode: str, message: str, campaign_id: int, location_id: i
 
         campaign_context = get_campaign_context(campaign_id)
         fixed = [cfg['intro'], campaign_context]
+        # History first: the chronicle memory skips nights the history already holds.
+        history_rows = []
+        if location_id:
+            history_rows = get_recent_messages(location_id, campaign_id, limit=cfg['history_rows'])['messages']
+        if campaign_id:
+            from services import chronicle_memory
+            hist_ids = [r['id'] for r in history_rows if r.get('id')]
+            memory, n_ch = chronicle_memory.storyteller_block(
+                get_db, campaign_id, location_id, min(hist_ids) if hist_ids else None,
+                int(budget * CHRONICLE_BUDGET_SHARE))
+            if memory:
+                fixed.append(memory)
+                logger.info("chronicle memory: %s tokens, %s chapters", sp.estimate_tokens(memory), n_ch)
         roll_rule = ''
         if user_id and campaign_id:
             char_data = get_character_context(user_id, campaign_id)
@@ -800,7 +816,6 @@ def _storyteller_reply(mode: str, message: str, campaign_id: int, location_id: i
                 # Pools from the sheet, and roll tags instead of invented pools (services/dice_pools.py).
                 fixed.append(dice_pools.prompt_block(char_data['row'], char_data['rules_edition']))
                 roll_rule = dice_pools.roll_instruction(char_data['rules_edition'])
-        history_rows = []
         if location_id:
             fixed.append(get_location_context(location_id, campaign_id)['formatted'])
             npc_data = get_location_npcs(location_id, campaign_id)
@@ -812,7 +827,6 @@ def _storyteller_reply(mode: str, message: str, campaign_id: int, location_id: i
                         if npc_hist['count'] > 0:
                             npc_lines.append(f"{npc['name']}'s {npc_hist['formatted']}")
                 fixed.append("\n".join(npc_lines))
-            history_rows = get_recent_messages(location_id, campaign_id, limit=cfg['history_rows'])['messages']
         if reply_context:
             fixed.append(reply_context)
         fixed.append(cfg['outro'])
@@ -1220,6 +1234,7 @@ def get_recent_messages(location_id: int, campaign_id: int, limit: int = 15) -> 
         # Get recent messages from this location
         cursor.execute("""
             SELECT 
+                m.id,
                 m.content,
                 m.role,
                 m.created_at,
