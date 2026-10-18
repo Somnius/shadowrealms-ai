@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.29.0] - 2026-10-18 - The Storyteller remembers
+
 ### Added
 - **The Storyteller remembers the chronicle.** Each AI Storyteller reply now gets a short block from the chronicle so far: the story so far in short, the open threads, the last three nights of the room (the ones the room history doesn't already hold), one line for the last night of up to four other rooms, and the Storyteller-only paragraphs. It takes at most a quarter of the prompt budget and never more than 1,500 tokens, so the history gets the rest. Nothing written means nothing added; no model call, no waiting. It is the Storyteller's private memory and the prompt tells the model never to quote it to players. On for every chronicle, with a switch in Chronicle settings → The chronicle so far → Settings (EN + EL). `/ai context` (admins) shows the block, to the admin only (it is no longer saved to the room).
 
