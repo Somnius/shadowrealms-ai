@@ -7,15 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.30.0] - 2026-10-18 - Death descriptions and server slash commands
+
+### Added
+- **AI death description.** When an admin kills a character, the chronicler model writes 2 to 4 sentences of the death in the chronicle's language (Greek or English), from the character's name and clan, the story so far and the character's last nights in the chronicle so far, player view only (no closed rooms, nothing for the Storyteller's eyes only, since players read the text); the tone follows the death type (soft, mid, horrible). Backgrounds stay out. On any failure, a 25 s timeout or an answer in the wrong language the canned sentence is used, now also in Greek. The kill response says which one it got (`generated`). Kill now also retires the character (`is_active` false), which until now only the log row said.
+- **Slash commands from the server.** `GET /api/ai/slash/commands` returns the composer's slash list with English and Greek text; admin-only commands go only to site admins. The browser fetches it once per session and keeps its own list as the fallback. The `/ai` hints come from the same list, and a test keeps it in step with the commands the server runs.
+
+### Changed
+- **Chronicle language default.** A chronicle created through the API without a language now takes the creator's app language, like the creation page already did.
+
 ## [0.29.0] - 2026-10-18 - The Storyteller remembers
 
 ### Added
 - **The Storyteller remembers the chronicle.** Each AI Storyteller reply now gets a short block from the chronicle so far: the story so far in short, the open threads, the last three nights of the room (the ones the room history doesn't already hold), one line for the last night of up to four other rooms, and the Storyteller-only paragraphs. It takes at most a quarter of the prompt budget and never more than 1,500 tokens, so the history gets the rest. Nothing written means nothing added; no model call, no waiting. It is the Storyteller's private memory and the prompt tells the model never to quote it to players. On for every chronicle, with a switch in Chronicle settings → The chronicle so far → Settings (EN + EL). `/ai context` (admins) shows the block, to the admin only (it is no longer saved to the room).
-- **AI death description (0.30).** When an admin kills a character, the chronicler model writes 2 to 4 sentences of the death in the chronicle's language (Greek or English), from the character's name and clan, the story so far and the character's last nights in the chronicle so far, player view only (no closed rooms, nothing for the Storyteller's eyes only, since players read the text); the tone follows the death type (soft, mid, horrible). Backgrounds stay out. On any failure, a 25 s timeout or an answer in the wrong language the canned sentence is used, now also in Greek. The kill response says which one it got (`generated`). Kill now also retires the character (`is_active` false), which until now only the log row said.
-- **Slash commands from the server (0.30).** `GET /api/ai/slash/commands` returns the composer's slash list with English and Greek text; admin-only commands go only to site admins. The browser fetches it once per session and keeps its own list as the fallback. The `/ai` hints come from the same list, and a test keeps it in step with the commands the server runs.
-
-### Changed
-- **Chronicle language default (0.30).** A chronicle created through the API without a language now takes the creator's app language, like the creation page already did.
 
 ## [0.28.0] - 2026-10-17 - Chronicle ops
 
