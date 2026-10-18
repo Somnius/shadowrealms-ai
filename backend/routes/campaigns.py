@@ -942,6 +942,9 @@ def update_campaign(campaign_id):
             query = f"UPDATE campaigns SET {', '.join(updates)} WHERE id = %s"
             cursor.execute(query, params)
             conn.commit()
+            if 'language' in data:
+                from services import chronicle_memory
+                chronicle_memory.forget(campaign_id)  # this worker; the other one sees it in the stamp
         
         return jsonify({'message': 'Campaign updated successfully'}), 200
         

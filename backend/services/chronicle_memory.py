@@ -7,7 +7,8 @@ header tells the model never to quote it. Priority when the budget is short (low
 the story so far, the open threads, this room's last nights (newest first), one line per other room's
 last night, the Storyteller-only paragraphs.
 
-Never blocks a reply: no model calls, two reads on a cache miss, any error gives ''.
+Read in the reply's language when a translation of the digest is already stored, else in the chronicle's
+own. Never blocks a reply: no model calls, a few reads per minute, any error gives ''.
 """
 
 from __future__ import annotations
@@ -39,8 +40,8 @@ LABELS = {
            "others": "Αλλού, την τελευταία νύχτα", "st": "Μόνο εσύ ξέρεις"},
 }
 
-# campaign_id -> (checked_at, stamp, material); material = {lang, memory, digest, chapters}
-_cache: Dict[int, Tuple[float, Any, Dict[str, Any]]] = {}
+# (campaign_id, wanted language) -> (checked_at, stamp, material); material = {lang, memory, digest, chapters}
+_cache: Dict[Tuple[int, Optional[str]], Tuple[float, Any, Dict[str, Any]]] = {}
 _lock = threading.Lock()
 
 
@@ -50,50 +51,66 @@ def forget(campaign_id: Optional[int] = None) -> None:
         if campaign_id is None:
             _cache.clear()
         else:
-            _cache.pop(campaign_id, None)
+            for k in [k for k in _cache if k[0] == campaign_id]:
+                _cache.pop(k, None)
 
 
-def _stamp(cursor, campaign_id: int, lang: str):
-    """What changes when the writer writes: the final digest's hash and the newest chapter."""
-    cursor.execute("SELECT source_hash FROM chronicle_digests WHERE campaign_id = %s AND kind = 'final' "
-                   "AND era = 0 AND lang = %s", (campaign_id, lang))
-    d = cursor.fetchone() or {}
-    cursor.execute("SELECT MAX(written_at) AS w FROM chronicle_chapters WHERE campaign_id = %s AND lang = %s",
-                   (campaign_id, lang))
-    c = cursor.fetchone() or {}
-    return (d.get("source_hash"), str(c.get("w")))
-
-
-def _load(cursor, campaign_id: int) -> Dict[str, Any]:
+def _stamp(cursor, campaign_id: int, want: Optional[str]):
+    """Everything the block depends on: the memory switch, the chronicle's language, the language used
+    (a stored translation into `want` when one exists; never a new one), the digest's hash and the newest
+    chapter. Re-read after the TTL, so a switch or language changed in the other worker sticks too."""
     from services import chronicle_jobs as cj
     from services import chronicle_settings as cs
 
-    memory = cs.load(cursor, campaign_id)["memory"]
+    if not cs.load(cursor, campaign_id)["memory"]:
+        return (False,)
     camp = cj.campaign_row(cursor, campaign_id)
-    if not memory or not camp:
-        return {"memory": False, "lang": "en", "digest": None, "chapters": []}
+    if not camp:
+        return (False,)
     lang = cj.chronicle_lang(cursor, camp)
-    return {"memory": True, "lang": lang, "digest": cj.stored_digest(cursor, campaign_id, lang),
-            "chapters": cj.stored_chapters(cursor, campaign_id, lang)}
+    use, translated = lang, False
+    cursor.execute("SELECT source_hash, translated_from FROM chronicle_digests WHERE campaign_id = %s "
+                   "AND kind = 'final' AND era = 0 AND lang = %s", (campaign_id, lang))
+    d = cursor.fetchone() or {}
+    if want and want != lang:
+        cursor.execute("SELECT source_hash, translated_from FROM chronicle_digests WHERE campaign_id = %s "
+                       "AND kind = 'final' AND era = 0 AND lang = %s", (campaign_id, want))
+        t = cursor.fetchone()
+        if t and t.get("translated_from"):
+            use, translated, d = want, True, t
+    cursor.execute("SELECT MAX(written_at) AS w FROM chronicle_chapters WHERE campaign_id = %s AND lang = %s",
+                   (campaign_id, use))
+    c = cursor.fetchone() or {}
+    return (True, lang, use, translated, d.get("source_hash"), str(c.get("w")))
 
 
-def material(cursor, campaign_id: int, clock: Callable[[], float] = time.monotonic) -> Dict[str, Any]:
-    """The chronicle's digest and chapters, cached TTL_SECONDS; after that only re-read when the stamp moved."""
+def _load(cursor, campaign_id: int, stamp) -> Dict[str, Any]:
+    from services import chronicle_jobs as cj
+
+    if not stamp[0]:
+        return {"memory": False, "lang": "en", "digest": None, "chapters": []}
+    _, lang, use, translated = stamp[:4]
+    chapters = cj.stored_chapters(cursor, campaign_id, use)
+    if translated and not chapters:  # only the digest was translated: the nights in their own language
+        chapters = cj.stored_chapters(cursor, campaign_id, lang)
+    return {"memory": True, "lang": use, "digest": cj.stored_digest(cursor, campaign_id, use, translated=translated),
+            "chapters": chapters}
+
+
+def material(cursor, campaign_id: int, want: Optional[str] = None,
+             clock: Callable[[], float] = time.monotonic) -> Dict[str, Any]:
+    """The chronicle's digest and chapters, cached TTL_SECONDS; after that the stamp is read again and
+    the material only reloaded when it moved. `want` is the reply language."""
+    key = (campaign_id, want)
     now = clock()
     with _lock:
-        hit = _cache.get(campaign_id)
+        hit = _cache.get(key)
     if hit and now - hit[0] < TTL_SECONDS:
         return hit[2]
-    if hit and hit[2]["memory"]:
-        stamp = _stamp(cursor, campaign_id, hit[2]["lang"])
-        if stamp == hit[1]:
-            with _lock:
-                _cache[campaign_id] = (now, stamp, hit[2])
-            return hit[2]
-    mat = _load(cursor, campaign_id)
-    stamp = _stamp(cursor, campaign_id, mat["lang"]) if mat["memory"] else None
+    stamp = _stamp(cursor, campaign_id, want)
+    mat = hit[2] if hit and hit[1] == stamp else _load(cursor, campaign_id, stamp)
     with _lock:
-        _cache[campaign_id] = (now, stamp, mat)
+        _cache[key] = (now, stamp, mat)
     return mat
 
 
@@ -157,16 +174,17 @@ def build_block(mat: Dict[str, Any], location_id: Optional[int], history_oldest_
     header = HEADER[lang]
     used = sp.estimate_tokens(header) + 20  # header plus the section titles
     kept = []
-    for it in sorted(items):
+    for it in sorted(items):  # by priority; the first that doesn't fit is cut, and nothing after it goes in
         t = sp.estimate_tokens(it[3]) + 1
-        if used + t > max_tokens:
+        if used + t <= max_tokens:
+            used += t
+            kept.append(it)
             continue
-        used += t
-        kept.append(it)
-    if not kept:  # one long story-so-far: cut it rather than drop it
-        if not so_far or max_tokens - used < 40:
-            return "", 0
-        kept = [(0, "so_far", 0, sp.truncate_to_tokens(so_far, max_tokens - used))]
+        if max_tokens - used >= 40:
+            kept.append(it[:3] + (sp.truncate_to_tokens(it[3], max_tokens - used - 1),))
+        break
+    if not kept:
+        return "", 0
     out = [header]
     for sec in ("so_far", "threads", "room", "others", "st"):
         part = sorted((o, t) for _, s, o, t in kept if s == sec)
@@ -177,15 +195,16 @@ def build_block(mat: Dict[str, Any], location_id: Optional[int], history_oldest_
 
 
 def storyteller_block(get_db, campaign_id: int, location_id: Optional[int], history_oldest_id: Optional[int],
-                      max_tokens: int) -> Tuple[str, int]:
-    """The block for one Storyteller reply, (text, chapters); ('', 0) when off, empty or on any error."""
+                      max_tokens: int, reply_lang: Optional[str] = None) -> Tuple[str, int]:
+    """The block for one Storyteller reply, (text, chapters); ('', 0) when off, empty or on any error.
+    reply_lang: the reply's language; a stored translation into it is used when there is one."""
     if not campaign_id or max_tokens <= 0:
         return "", 0
     conn = None
     try:
         conn = get_db()
         cur = conn.cursor()
-        mat = material(cur, campaign_id)
+        mat = material(cur, campaign_id, reply_lang)
         block, n = build_block(mat, location_id, history_oldest_id, min(max_tokens, MAX_TOKENS))
         if not block:
             logger.debug("chronicle memory: nothing for chronicle %s", campaign_id)

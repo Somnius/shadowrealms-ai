@@ -450,10 +450,13 @@ def execute_context_command(
     if truncated:
         blob += "\n\n_(Total preview truncated to ~12k characters.)_"
 
+    # Private: the memory holds the Storyteller's notes and other rooms, and display_markdown is
+    # saved to the room as a slash_assistant line every member reads.
     return {
         "ok": True,
         "command": "context",
-        "display_markdown": blob,
+        "private_markdown": blob,
+        "private_kind": "context",
         "future_commands_suggestion": FUTURE_COMMAND_SUGGESTIONS,
     }
 

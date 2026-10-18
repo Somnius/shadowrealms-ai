@@ -799,12 +799,15 @@ def _storyteller_reply(mode: str, message: str, campaign_id: int, location_id: i
         history_rows = []
         if location_id:
             history_rows = get_recent_messages(location_id, campaign_id, limit=cfg['history_rows'])['messages']
+        # The reply language, resolved here (as llm_service would) so the memory can use a stored translation.
+        from services.language import resolve_reply_language
+        reply_language = resolve_reply_language(message, user_id)
         if campaign_id:
             from services import chronicle_memory
             hist_ids = [r['id'] for r in history_rows if r.get('id')]
             memory, n_ch = chronicle_memory.storyteller_block(
                 get_db, campaign_id, location_id, min(hist_ids) if hist_ids else None,
-                int(budget * CHRONICLE_BUDGET_SHARE))
+                int(budget * CHRONICLE_BUDGET_SHARE), reply_language)
             if memory:
                 fixed.append(memory)
                 logger.info("chronicle memory: %s tokens, %s chapters", sp.estimate_tokens(memory), n_ch)
@@ -867,6 +870,7 @@ def _storyteller_reply(mode: str, message: str, campaign_id: int, location_id: i
             # Only for the reply-language fallback (users.ui_language). Not 'user_id': that
             # would switch on LLMService.store_interaction, which was never on for chat.
             'player_user_id': user_id,
+            'reply_language': reply_language,
             'ai_role': 'storyteller',
             'rag_budget_tokens': rag_budget,
         }

@@ -238,3 +238,15 @@ test('a hidden-roll explanation is shown to the requester only, never saved', as
   expect(onPrivateNotice).toHaveBeenCalledWith({ title: expect.any(String), markdown: '**Roll explained** — secret' });
   expect(c.onAppend).not.toHaveBeenCalled();
 });
+
+test('/ai context is shown to the requester only, never saved to the room', async () => {
+  const { api, calls } = fakeApi({
+    'POST /ai/slash': () => ({ ok: true, status: 200, data: { command: 'context', private_kind: 'context', private_markdown: '### Chronicle memory\nsecret notes' } }),
+  });
+  const onPrivateNotice = jest.fn();
+  const c = ctx({ api, user: admin, location: ooc, onPrivateNotice });
+  await expect(sendChatMessage(c, '/ai context')).resolves.toBe(true);
+  expect(calls.map((x) => `${x.method} ${x.path}`)).toEqual(['POST /campaigns/3/locations/4', 'POST /ai/slash']);
+  expect(onPrivateNotice).toHaveBeenCalledWith({ title: 'Only you can see this (Storyteller context)', markdown: '### Chronicle memory\nsecret notes' });
+  expect(c.onAppend).not.toHaveBeenCalled();
+});

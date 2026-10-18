@@ -141,6 +141,9 @@
     "loading": "Φόρτωση παλαιότερων μηνυμάτων…",
     "beginning": "Η αρχή του δωματίου {{room}}"
   },
+  "context": {
+    "privateTitle": "Το βλέπεις μόνο εσύ (το πλαίσιο του Storyteller)"
+  },
   "explain": {
     "privateTitle": "Το βλέπεις μόνο εσύ (κρυφή ρίψη)"
   },

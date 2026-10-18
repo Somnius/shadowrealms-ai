@@ -176,11 +176,14 @@ def _prompt(ai_routes, monkeypatch, block):  # noqa: F811
     monkeypatch.setattr(roles, "storyteller_context_tokens", lambda: 8192)
     args = {}
 
-    def fake_block(get_db, cid, lid, oldest, max_tokens):
-        args.update(cid=cid, lid=lid, oldest=oldest, max_tokens=max_tokens)
+    def fake_block(get_db, cid, lid, oldest, max_tokens, reply_lang=None):
+        args.update(cid=cid, lid=lid, oldest=oldest, max_tokens=max_tokens, reply_lang=reply_lang)
         return block, 1
 
     monkeypatch.setattr(cm, "storyteller_block", fake_block)
+    import services.language as language
+
+    monkeypatch.setattr(language, "user_ui_language", lambda uid: None)
     assert ai_routes._storyteller_reply("efficient", "what now?", 3, 4, 7) == "ok"
     return seen["system"], args
 
@@ -188,6 +191,7 @@ def _prompt(ai_routes, monkeypatch, block):  # noqa: F811
 def test_the_storyteller_prompt_carries_the_memory_after_the_campaign(ai_routes, monkeypatch):  # noqa: F811
     system, args = _prompt(ai_routes, monkeypatch, "MEMORY BLOCK")
     assert system.index("CAMPAIGN") < system.index("MEMORY BLOCK") < system.index("LOCATION")
+    assert args["reply_lang"] == "en"
     assert args["oldest"] == 77 and 0 < args["max_tokens"] <= 8192 * ai_routes.CHRONICLE_BUDGET_SHARE
 
 
@@ -204,7 +208,51 @@ def test_ai_context_shows_the_memory(ai_routes, monkeypatch):  # noqa: F811
     monkeypatch.setattr(ai_routes, "get_recent_messages",
                         lambda lid, cid, limit=0: {"messages": [{"id": 5}], "formatted": "RECENT"})
     monkeypatch.setattr(cm, "storyteller_block", lambda *a: ("MEMORY BLOCK", 2))
-    out = sc.execute_context_command(1, 3, 4)["display_markdown"]
+    res = sc.execute_context_command(1, 3, 4)
+    assert "display_markdown" not in res and res["private_kind"] == "context"  # never saved to the room
+    out = res["private_markdown"]
     assert "### Chronicle memory" in out and "MEMORY BLOCK" in out
     monkeypatch.setattr(cm, "storyteller_block", lambda *a: ("", 0))
-    assert "(none: off, or nothing written yet)" in sc.execute_context_command(1, 3, 4)["display_markdown"]
+    assert "(none: off, or nothing written yet)" in sc.execute_context_command(1, 3, 4)["private_markdown"]
+
+
+def test_a_night_is_cut_not_replaced_by_shorter_lower_items():
+    long_night = chapter(101, 4, 31, 40, "Basement")
+    long_night["chapter"]["summary"] = ["word " * 400]
+    block, _ = cm.build_block(mat(chapters=[long_night]), 101, None, 200)
+    assert "Night 4 in Basement" in block and "[…]" in block
+    assert "The locksmith is a ghoul." not in block  # nothing after the cut item
+
+
+def test_switch_off_and_language_change_stick_after_the_ttl_without_forget(api):  # noqa: F811
+    write(api)
+    raw = api.raw
+    now = [1000.0]
+    clock = lambda: now[0]  # noqa: E731
+    assert cm.material(Conn(raw).cursor(), 10, clock=clock)["memory"] is True
+    # another worker turns it off: no forget() here
+    raw.execute("UPDATE campaigns SET chronicle_settings = ? WHERE id = 10", (json.dumps({"memory": False}),))
+    now[0] += 61
+    assert cm.material(Conn(raw).cursor(), 10, clock=clock)["memory"] is False
+    raw.execute("UPDATE campaigns SET chronicle_settings = ? WHERE id = 10", (json.dumps({"memory": True}),))
+    now[0] += 61
+    assert cm.material(Conn(raw).cursor(), 10, clock=clock)["lang"] == "el"
+    raw.execute("UPDATE campaigns SET language = 'en' WHERE id = 10")
+    now[0] += 61
+    assert cm.material(Conn(raw).cursor(), 10, clock=clock)["lang"] == "en"
+
+
+def test_a_stored_translation_is_used_for_the_reply_language_only_when_it_exists(api):  # noqa: F811
+    write(api)
+    raw = api.raw
+    assert cm.material(Conn(raw).cursor(), 10, "en")["lang"] == "el"  # no translation stored: own language
+    row = raw.execute("SELECT digest, source_hash FROM chronicle_digests WHERE kind = 'final' AND lang = 'el'").fetchone()
+    d = json.loads(row[0])
+    d["tldr"] = "The translated story so far."
+    raw.execute("INSERT INTO chronicle_digests (campaign_id, kind, era, lang, digest, source_hash, translated_from) "
+                "VALUES (10, 'final', 0, 'en', ?, ?, 'el')", (json.dumps(d), row[1]))
+    cm.forget()
+    m = cm.material(Conn(raw).cursor(), 10, "en")
+    assert m["lang"] == "en" and m["digest"]["tldr"] == "The translated story so far."
+    assert m["chapters"]  # the nights weren't translated: their own language
+    assert cm.material(Conn(raw).cursor(), 10, "el")["lang"] == "el"

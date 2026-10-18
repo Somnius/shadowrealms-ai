@@ -141,6 +141,9 @@
     "loading": "Loading older messages…",
     "beginning": "The beginning of {{room}}"
   },
+  "context": {
+    "privateTitle": "Only you can see this (Storyteller context)"
+  },
   "explain": {
     "privateTitle": "Only you can see this (hidden roll)"
   },

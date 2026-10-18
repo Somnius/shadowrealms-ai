@@ -207,10 +207,13 @@ export async function sendChatMessage(ctx, rawText, opts = {}) {
         body: { line: text.trim(), campaign_id: campaign.id, location_id: location.id, ...(replyTo ? { reply_to_id: replyTo.id } : {}) },
       });
       const d = r.data || {};
-      // /ai explain of a hidden roll: for the requester only, never saved to the room.
+      // /ai explain of a hidden roll, /ai context: for the requester only, never saved to the room.
       if (r.ok && d.private_markdown) {
         if (cb.onPrivateNotice) {
-          cb.onPrivateNotice({ title: t('chat:explain.privateTitle', 'Only you can see this (hidden roll)'), markdown: d.private_markdown });
+          const title = d.private_kind === 'context'
+            ? t('chat:context.privateTitle', 'Only you can see this (Storyteller context)')
+            : t('chat:explain.privateTitle', 'Only you can see this (hidden roll)');
+          cb.onPrivateNotice({ title, markdown: d.private_markdown });
         }
         return true;
       }

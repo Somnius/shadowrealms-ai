@@ -21,7 +21,7 @@ Started 2026-10-18. One release per phase, same rules as [ROADMAP_CHRONICLE.md](
 
 ## Phase 1 — The Storyteller reads the chronicle (0.29)
 
-- [x] 1.1 `services/chronicle_memory.py`: the block from the stored digest and chapters, by priority, cut to the budget, cached 60 s. Status: built. Read in the chronicle's own language only; using the cached translation when the reply language differs is left out (the reply language is only resolved later, in `llm_service`).
+- [x] 1.1 `services/chronicle_memory.py`: the block from the stored digest and chapters, by priority, cut to the budget, cached 60 s. Status: built. A stored translation of the digest is used when the reply language differs; never a new one.
 - [x] 1.2 `_storyteller_reply` adds the block after the campaign context when the chronicle's `memory` setting is on; `/ai context` shows it. Status: built.
 - [x] 1.3 The switch in Chronicle settings, EN + EL; docs (CHRONICLE.md, AI_SYSTEMS.md, SECURITY_MODEL.md). Status: built.
 - [ ] 1.4 Tests: block contents and cuts, empty when nothing is written, off switch, cache; one reply measured on the test chronicle after the build. Status: unit tests done; the live measurement is not done yet.
