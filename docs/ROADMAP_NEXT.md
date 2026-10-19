@@ -8,7 +8,7 @@ Started 2026-10-18. One release per phase, same rules as [ROADMAP_CHRONICLE.md](
 |---|---|---|---|---|
 | 1 | The Storyteller reads the chronicle | memory block in the Storyteller prompt · per-chronicle switch · `/ai context` shows it | 0.29 | released 0.29.0 (2026-10-18) |
 | 2 | Small AI pieces | AI death description · slash commands served by the backend · chronicle language default check | 0.30 | released 0.30.0 (2026-10-18) |
-| — | Schedar samples | two sample files for Lef to listen to | — | samples made, waiting for Lef's ear |
+| — | Schedar samples | two sample files for Lef to listen to | — | done, Lef OK 19 Oct |
 
 ## Decisions (2026-10-18, Lef: full auto)
 
@@ -34,7 +34,7 @@ Started 2026-10-18. One release per phase, same rules as [ROADMAP_CHRONICLE.md](
 
 ## Schedar samples
 
-- [x] S.1 A Greek and an English line in the Schedar voice, written by the speech service to the local to-lef voice folder (`gemini-samples/gemini-Schedar_el.ogg`, `gemini-Schedar_en.ogg`). Status: done 18 Oct; ROADMAP_VOICE 8.4 waits for Lef to listen.
+- [x] S.1 A Greek and an English line in the Schedar voice, written by the speech service to the local to-lef voice folder (`gemini-samples/gemini-Schedar_el.ogg`, `gemini-Schedar_en.ogg`). Status: done 18 Oct; Lef listened 19 Oct: OK; ROADMAP_VOICE 8.4 ticked.
 
 ## Later (not planned in a release)
 

@@ -108,7 +108,7 @@ How each phase runs: build in its own git worktree → tests and CI green → on
 - [x] 8.1 Gemini client in the speech service (`speech/app/gemini.py`): generateContent with `x-goog-api-key`, WAV (or raw L16) to Opus + AAC, cache key with provider and model, fallback to the local voice per line, errors today and the last one in `/health`. Status: done; speech pytest with the HTTP call mocked.
 - [x] 8.2 Admin setting Off / Free / Paid and model, keys present (yes/no), EN + EL explanation. Status: done; pytest + jest.
 - [x] 8.3 Chronicle opt-in (settings and creation), Gemini voices in the narrator choice, gender mapping. Status: done; pytest + jest.
-- [ ] 8.4 Listen to the neutral voice (Schedar) in Greek and English on the server. Status: samples made 18 Oct (`to-lef/voice/gemini-samples/gemini-Schedar_el.ogg`, `_en.ogg`), waiting for Lef to listen (Google gives no genders; only Kore and Charon were heard).
+- [x] 8.4 Listen to the neutral voice (Schedar) in Greek and English on the server. Status: samples made 18 Oct (`to-lef/voice/gemini-samples/gemini-Schedar_el.ogg`, `_en.ogg`), Lef listened 19 Oct: OK (Google gives no genders).
 
 ## Log
 
