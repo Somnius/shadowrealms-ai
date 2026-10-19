@@ -41,3 +41,24 @@
 /* Export PDF / print version: which one to share, on its own line under the two buttons */
 .sr-app .sr-sheet-pdf__note { flex-basis: 100%; font-size: var(--sr-text-sm); text-align: center; }
 .sr-app .sr-modal__footer .sr-sheet-pdf__note { text-align: right; }
+
+/* Phones: the whole sheet scrolls as one page. Only the title bar (name + close) stays on top, so the
+   edition badge and the PDF buttons scroll away with the sheet instead of taking a third of the screen. */
+@media (max-width: 767px) {
+  .sr-overlay:has(> .sr-modal.sr-sheet) { padding: var(--sr-space-2); }
+  .sr-app .sr-modal.sr-sheet { max-height: calc(100dvh - 16px); overflow-y: auto; overscroll-behavior: contain; }
+  .sr-app .sr-modal.sr-sheet .sr-modal__header {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    padding: var(--sr-space-3) var(--sr-space-3) var(--sr-space-2) var(--sr-space-4);
+    background: var(--sr-night-800);
+    border-bottom: 1px solid var(--sr-border);
+  }
+  .sr-app .sr-modal.sr-sheet .sr-modal__title { font-size: var(--sr-text-lg); }
+  .sr-app .sr-modal.sr-sheet .sr-modal__description { padding: var(--sr-space-2) var(--sr-space-4) 0; }
+  .sr-app .sr-modal.sr-sheet .sr-modal__body { overflow: visible; padding: var(--sr-space-3) var(--sr-space-3); }
+  .sr-app .sr-modal.sr-sheet .sr-modal__footer { padding: var(--sr-space-3); }
+  .sr-app .sr-modal.sr-sheet .sr-modal__footer > .sr-btn { flex: 1 1 100%; }
+  .sr-app .sr-modal__footer .sr-sheet-pdf__note { text-align: center; }
+}
