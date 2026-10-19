@@ -155,5 +155,8 @@
       "independent": "Independent",
       "revenant": "Revenant"
     }
+  },
+  "fallen": {
+    "title": "Έπεσε"
   }
 }

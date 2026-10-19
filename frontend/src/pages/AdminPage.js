@@ -7,6 +7,7 @@ import { editionLabel } from '../rules/rulesEdition';
 import { t } from '../i18n';
 import AiProvidersPanel from './admin/AiProvidersPanel';
 import SecurityPanel from './admin/SecurityPanel';
+import CharactersPanel from './admin/CharactersPanel';
 import LayaPanel from './admin/LayaPanel';
 import VoiceHealthPanel from '../features/voice/VoiceHealthPanel';
 import WriterHealthPanel from '../features/chronicle/WriterHealthPanel';
@@ -16,7 +17,7 @@ import formatWhen from './admin/formatWhen';
 import './admin/admin.css';
 
 /** Admin sections, in tab order; each is a sub-route (/admin/<id>, overview at /admin). */
-export const ADMIN_SECTIONS = ['home', 'invites', 'chronicles', 'archives', 'users', 'downtime', 'moderation', 'security', 'ai', 'laya'];
+export const ADMIN_SECTIONS = ['home', 'invites', 'chronicles', 'archives', 'users', 'characters', 'downtime', 'moderation', 'security', 'ai', 'laya'];
 
 export const sectionLabels = () => ({
   home: t('admin:nav.home', 'Overview'),
@@ -24,6 +25,7 @@ export const sectionLabels = () => ({
   chronicles: t('admin:nav.chronicles', 'All chronicles'),
   archives: t('admin:nav.archives', 'Archives'),
   users: t('admin:nav.users', 'Users'),
+  characters: t('admin:nav.characters', 'Characters'),
   downtime: t('admin:nav.downtime', 'Downtime requests'),
   moderation: t('admin:nav.moderation', 'Moderation log'),
   security: t('admin:nav.security', 'Logins & lockouts'),
@@ -37,6 +39,7 @@ const SECTION_ICONS = {
   chronicles: 'book',
   archives: 'coffin',
   users: 'users',
+  characters: 'skull',
   downtime: 'hourglass',
   moderation: 'scroll',
   security: 'lock-chain',
@@ -951,6 +954,7 @@ function AdminPage({ token, user, displayTimezone = null, onAdminOpenCampaign = 
         <li><strong>{t('admin:nav.chronicles', 'All chronicles')}</strong> — {t('admin:home.chronicles', 'every campaign in the database; open one in the app to visit locations and chat (site admins only).')}</li>
         <li><strong>{t('admin:nav.archives', 'Archives')}</strong> — {t('admin:home.archives', 'deleted chronicles: their minutes and full transcripts to download.')}</li>
         <li><strong>{t('admin:nav.users', 'Users')}</strong> — {t('admin:home.users', 'edit accounts, grant Helper ST privileges (multi-chronicle + self-switch PC), reset passwords, ban or unban users.')}</li>
+        <li><strong>{t('admin:nav.characters', 'Characters')}</strong> — {t('admin:home.characters', 'every player character; kill one (the death is written for its owner) or revive it, and the deaths log.')}</li>
         <li><strong>{t('admin:nav.downtime', 'Downtime requests')}</strong> — {t('admin:home.downtime', 'sheet change requests from players; approve or reject with a reason.')}</li>
         <li><strong>{t('admin:nav.moderation', 'Moderation log')}</strong> — {t('admin:home.moderation', 'recent admin actions for audit and follow-up.')}</li>
         <li><strong>{t('admin:nav.security', 'Logins & lockouts')}</strong> — {t('admin:home.security', 'unlock an account or address after failed sign-ins; read the login audit (sign-ins, failures, lockouts, logouts).')}</li>
@@ -1419,6 +1423,7 @@ function AdminPage({ token, user, displayTimezone = null, onAdminOpenCampaign = 
     chronicles: renderChronicles,
     archives: () => <div className="sr-admin__section"><ChronicleArchivesPanel admin /></div>,
     users: renderUsers,
+    characters: () => <CharactersPanel token={token} displayTimezone={displayTimezone} showError={showError} />,
     downtime: renderDowntime,
     moderation: renderModeration,
     security: () => <SecurityPanel token={token} displayTimezone={displayTimezone} showSuccess={showSuccess} showError={showError} />,

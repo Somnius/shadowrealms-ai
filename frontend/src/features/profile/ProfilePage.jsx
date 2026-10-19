@@ -16,6 +16,7 @@ import { useChronicles } from '../../app/ChroniclesContext';
 import { BringIntoChronicleDialog, isUnassigned } from './BringIntoChronicle';
 import { canBeDomitor, ghoulDomitorId, isGhoul } from '../../characterSheet/v5/ghoul';
 import { VoiceSettingsPanel } from '../voice/VoiceSettings';
+import FallenNote from '../../components/FallenNote';
 import './profile.css';
 
 const MAX_IMAGE = 360000;
@@ -399,6 +400,7 @@ function CharactersSection() {
                   )}
                 </div>
               </div>
+              <FallenNote character={ch} compact />
               {ch.play_suspended ? (
                 <p className="sr-error sr-small">
                   <Glyph name="lock-chain" size={14} />

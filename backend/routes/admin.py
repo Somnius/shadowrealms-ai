@@ -28,7 +28,8 @@ from database import (
     ensure_campaigns_listing_columns,
     ensure_campaigns_staff_pause_columns,
 )
-from services.moderation_audit import log_moderation_action, moderation_entry_kind
+from services import character_death
+from services.moderation_audit import log_moderation_action, log_moderation_action_cursor, moderation_entry_kind
 from services.auth_security import check_password_policy, hash_password
 from routes.auth import _invites_locked, load_invites, save_invites
 from services.play_suspension import ALLOWED_REASON_CODES
@@ -416,18 +417,75 @@ def convert_character_to_npc(character_id):
         logger.error(f"Error converting character: {e}")
         return jsonify({'error': 'Failed to convert character'}), 500
 
+@bp.route('/characters', methods=['GET'])
+@require_admin()
+def list_all_characters():
+    """Every player character with owner, chronicle, edition and whether it has fallen (Admin → Characters)."""
+    try:
+        db = get_db()
+        cursor = db.cursor()
+        ensure_characters_is_active_column(cursor)
+        ensure_characters_is_npc_column(cursor)
+        db.commit()
+        cursor.execute("""
+            SELECT ch.id, ch.name, ch.user_id, u.username AS owner_name, ch.campaign_id,
+                   c.name AS campaign_name, ch.rules_edition, ch.is_active, ch.is_npc, ch.created_at
+            FROM characters ch
+            LEFT JOIN users u ON ch.user_id = u.id
+            LEFT JOIN campaigns c ON ch.campaign_id = c.id
+            WHERE COALESCE(ch.is_npc, FALSE) = FALSE
+            ORDER BY ch.name
+        """)
+        rows = cursor.fetchall()
+        fallen = character_death.deaths(cursor, [r['id'] for r in rows])
+        out = [{
+            'id': r['id'],
+            'name': r['name'],
+            'user_id': r['user_id'],
+            'owner_name': r.get('owner_name'),
+            'campaign_id': r.get('campaign_id'),
+            'campaign_name': r.get('campaign_name'),
+            'rules_edition': edition_of(r),
+            'is_active': bool(r.get('is_active', True)),
+            'created_at': r.get('created_at'),
+            'death': fallen.get(int(r['id'])),
+        } for r in rows]
+        cursor.close()
+        db.close()
+        return jsonify(out), 200
+    except Exception as e:
+        logger.error(f"Error listing characters: {e}")
+        return jsonify({'error': 'Failed to list characters'}), 500
+
+
+def _character_for_moderation(cursor, character_id):
+    cursor.execute("SELECT id, name, user_id FROM characters WHERE id = %s", (character_id,))
+    return cursor.fetchone()
+
+
 @bp.route('/characters/<int:character_id>/kill', methods=['POST'])
 @require_admin()
 def kill_character(character_id):
     """Kill a character with AI-generated death description"""
     try:
         admin_id = int(get_jwt_identity())
-        data = request.get_json()
+        data = request.get_json(silent=True) or {}
         
         death_type = data.get('death_type', 'mid')  # 'soft', 'mid', 'horrible'
         
         if death_type not in ['soft', 'mid', 'horrible']:
             return jsonify({'error': 'Invalid death type'}), 400
+
+        db = get_db()
+        cursor = db.cursor()
+        ch = _character_for_moderation(cursor, character_id)
+        already = character_death.death_of(cursor, character_id) if ch else None
+        cursor.close()
+        db.close()
+        if not ch:
+            return jsonify({'error': 'Character not found'}), 404
+        if already:
+            return jsonify({'error': 'Character has already fallen', 'error_code': 'character_fallen'}), 409
         
         # AI-written in the chronicle's language from the player view; the canned sentence on any
         # failure (services/death_writeup.py). It reads on its own connection and closes it before the
@@ -445,6 +503,10 @@ def kill_character(character_id):
             (character_id, action, death_type, death_description, moderated_by, moderated_at)
             VALUES (%s, 'kill', %s, %s, %s, %s)
         """, (character_id, death_type, death_description, admin_id, datetime.now()))
+        log_moderation_action_cursor(cursor, ch['user_id'], admin_id, 'character_kill', {
+            'character_id': character_id, 'character_name': ch['name'], 'death_type': death_type,
+            'generated': generated,
+        })
         
         db.commit()
         cursor.close()
@@ -459,6 +521,70 @@ def kill_character(character_id):
     except Exception as e:
         logger.error(f"Error killing character: {e}")
         return jsonify({'error': 'Failed to kill character'}), 500
+
+
+@bp.route('/characters/<int:character_id>/revive', methods=['POST'])
+@require_admin()
+def revive_character(character_id):
+    """Undo a kill: the character is active again; the kill row stays in the log, a 'revive' row follows it."""
+    try:
+        admin_id = int(get_jwt_identity())
+        db = get_db()
+        cursor = db.cursor()
+        ch = _character_for_moderation(cursor, character_id)
+        if not ch:
+            cursor.close()
+            db.close()
+            return jsonify({'error': 'Character not found'}), 404
+        if not character_death.death_of(cursor, character_id):
+            cursor.close()
+            db.close()
+            return jsonify({'error': 'Character has not fallen', 'error_code': 'character_not_fallen'}), 409
+        cursor.execute("UPDATE characters SET is_active = %s WHERE id = %s", (True, character_id))
+        cursor.execute("""
+            INSERT INTO character_moderation (character_id, action, moderated_by, moderated_at)
+            VALUES (%s, 'revive', %s, %s)
+        """, (character_id, admin_id, datetime.now()))
+        log_moderation_action_cursor(cursor, ch['user_id'], admin_id, 'character_revive', {
+            'character_id': character_id, 'character_name': ch['name'],
+        })
+        db.commit()
+        cursor.close()
+        db.close()
+        return jsonify({'message': 'Character revived'}), 200
+    except Exception as e:
+        logger.error(f"Error reviving character: {e}")
+        return jsonify({'error': 'Failed to revive character'}), 500
+
+
+@bp.route('/character-deaths', methods=['GET'])
+@require_admin()
+def list_character_deaths():
+    """Kill and revive rows, newest first: who, whom, when, death type and the text."""
+    try:
+        limit = max(1, min(request.args.get('limit', 100, type=int), 500))
+        db = get_db()
+        cursor = db.cursor()
+        cursor.execute("""
+            SELECT m.id, m.character_id, ch.name AS character_name, o.username AS owner_name,
+                   c.name AS campaign_name, m.action, m.death_type, m.death_description,
+                   m.moderated_by, a.username AS admin_username, m.moderated_at
+            FROM character_moderation m
+            LEFT JOIN characters ch ON m.character_id = ch.id
+            LEFT JOIN users o ON ch.user_id = o.id
+            LEFT JOIN campaigns c ON ch.campaign_id = c.id
+            LEFT JOIN users a ON m.moderated_by = a.id
+            WHERE m.action IN ('kill', 'revive')
+            ORDER BY m.moderated_at DESC, m.id DESC
+            LIMIT %s
+        """, (limit,))
+        rows = [dict(r) for r in cursor.fetchall()]
+        cursor.close()
+        db.close()
+        return jsonify(rows), 200
+    except Exception as e:
+        logger.error(f"Error listing character deaths: {e}")
+        return jsonify({'error': 'Failed to list character deaths'}), 500
 
 @bp.route('/moderation-log', methods=['GET'])
 @require_admin()

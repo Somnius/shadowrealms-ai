@@ -9,6 +9,7 @@ import RetainersBlock from './RetainersBlock';
 import { isGhoul } from '../characterSheet/v5/ghoul';
 import SavedPointsBlock from './SavedPointsBlock';
 import SheetPdfButton from './SheetPdfButton';
+import FallenNote from './FallenNote';
 import { editionLabel, editionOf, V5 } from '../rules/rulesEdition';
 import {
   KNOWLEDGES,
@@ -158,6 +159,7 @@ export default function CharacterSheetModal({ character, gameSystem, onClose, on
       }
     >
           <div className="sr-sheet__body" data-line={theme}>
+            <FallenNote character={character} />
             <VoiceGenderLine key={character.id} character={character} owner={owner} />
             {ghoul && isV5Sheet ? (
               <V5GhoulSheetView character={character} onOpenSheet={onOpenSheet} />

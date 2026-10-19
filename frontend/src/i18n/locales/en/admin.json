@@ -10,7 +10,8 @@
     "security": "Logins & lockouts",
     "ai": "AI system",
     "label": "Admin sections",
-    "archives": "Archives"
+    "archives": "Archives",
+    "characters": "Characters"
   },
   "common": {
     "cancel": "Cancel",
@@ -501,7 +502,64 @@
     "moderation": "recent admin actions for audit and follow-up.",
     "security": "unlock an account or address after failed sign-ins; read the login audit (sign-ins, failures, lockouts, logouts).",
     "ai": "local model, global master prompt, model per role, cloud keys, classifier and embeddings.",
-    "archives": "deleted chronicles: their minutes and full transcripts to download."
+    "archives": "deleted chronicles: their minutes and full transcripts to download.",
+    "characters": "every player character; kill one (the death is written for its owner) or revive it, and the deaths log."
   },
-  "loading": "Loading…"
+  "loading": "Loading…",
+  "characters": {
+    "title": "Characters",
+    "lead": "Every player character. Killing one retires it for good and writes its death, which the owner sees on their profile and sheet. Revive undoes a death.",
+    "search": "Search name, owner or chronicle",
+    "status": "Status",
+    "filter": {
+      "all": "All"
+    },
+    "alive": "Alive",
+    "fallen": "Fallen",
+    "loading": "Loading characters…",
+    "empty": "No characters match",
+    "ownerChronicle": "{{owner}} · {{chronicle}}",
+    "noChronicle": "no chronicle",
+    "byAi": "Written by the AI",
+    "byFallback": "Fixed sentence (the AI could not write it)",
+    "type": {
+      "soft": "Soft",
+      "mid": "Sacrifice",
+      "horrible": "Horrible"
+    },
+    "typeHint": {
+      "soft": "A quiet end: the character fades away, their story complete.",
+      "mid": "A bittersweet end: the character falls for someone or something.",
+      "horrible": "A brutal, terrifying end."
+    },
+    "kill": {
+      "action": "Kill",
+      "title": "Kill {{name}}",
+      "close": "Close",
+      "writing": "Writing the death…",
+      "confirm": "Kill for good",
+      "done": "{{name}} has fallen. The owner sees this on their profile and sheet.",
+      "writingLong": "The chronicler is writing the death. This can take up to 25 seconds.",
+      "warning": "This retires the character for good: no more play, rolls or AI scenes. The death is written once, in the chronicle’s language, from what the players have seen.",
+      "type": "How do they die?"
+    },
+    "revive": {
+      "action": "Revive",
+      "title": "Revive {{name}}",
+      "confirm": "Revive",
+      "body": "Undo the death: the character can be played again. The death stays in the log."
+    },
+    "log": {
+      "title": "Deaths and revivals",
+      "empty": "No deaths yet",
+      "revived": "{{admin}} revived {{name}}",
+      "killed": "{{admin}} killed {{name}} ({{type}})"
+    },
+    "error": {
+      "alreadyFallen": "This character has already fallen.",
+      "kill": "Could not kill the character.",
+      "revive": "Could not revive the character.",
+      "load": "Could not load characters."
+    }
+  }
 }

@@ -4,7 +4,9 @@ The death description when an admin kills a character (POST /api/admin/character
 One call to the chronicler role in the chronicle's language, from the character's name and clan,
 the story so far and the character's last nights in the chapters. The text is stored for players, so
 only the player view goes in (no closed rooms, no Storyteller-only keys, no digest kept back by a room
-closed since it was written). Backgrounds stay out (same rule as the chronicle writer). Any failure, timeout, empty answer or wrong language gives the canned sentence.
+closed since it was written). Backgrounds stay out (same rule as the chronicle writer). Any failure,
+timeout, empty answer, wrong language or mixed script (also a Latin word in a Greek text that the
+material doesn't have) gives the canned sentence.
 """
 
 from __future__ import annotations
@@ -41,11 +43,16 @@ TONE = {
 
 SYSTEM = {
     "en": ("You write the death of a character in a Vampire: The Masquerade chronicle. Write 2 to 4 sentences "
-           "in English, second person (\"you\"), tone: {tone}. Use only the names, clans and events in the "
-           "material; invent no new names. Answer with the text only."),
+           "in English, second person (\"you\"), tone: {tone}. Use only facts that are in the material below: "
+           "its names, clan, places and events. Invent nothing: no new names, clans, titles, ranks, places, "
+           "sects or lore. If the material is thin, keep the death plain rather than add details. "
+           "Answer with the text only, no title."),
     "el": ("Γράφεις τον θάνατο ενός χαρακτήρα σε ένα χρονικό του Vampire: The Masquerade. Γράψε 2 έως 4 "
-           "προτάσεις στα ελληνικά, σε δεύτερο πρόσωπο (\"εσύ\"), ύφος: {tone}. Χρησιμοποίησε μόνο τα ονόματα, "
-           "τους κλάνους και τα γεγονότα του υλικού· μην επινοείς νέα ονόματα. Απάντησε μόνο με το κείμενο."),
+           "προτάσεις στα ελληνικά, σε δεύτερο πρόσωπο (\"εσύ\"), ύφος: {tone}. Χρησιμοποίησε μόνο ό,τι υπάρχει "
+           "στο υλικό παρακάτω: τα ονόματα, τον κλάνο, τους τόπους και τα γεγονότα του. Μην επινοείς τίποτα: "
+           "ούτε ονόματα, κλάνους, τίτλους, αξιώματα, τόπους, σέκτες ή μύθους. Αν το υλικό είναι λίγο, κράτα τον "
+           "θάνατο απλό αντί να προσθέσεις λεπτομέρειες. Γράψε μόνο με ελληνικά γράμματα· λατινικά μόνο για ονόματα "
+           "που είναι γραμμένα έτσι στο υλικό. Απάντησε μόνο με το κείμενο, χωρίς τίτλο."),
 }
 
 LABELS = {
@@ -56,6 +63,23 @@ LABELS = {
 
 def fallback(lang: str, death_type: str) -> str:
     return FALLBACK.get(lang, FALLBACK["en"])[death_type]
+
+
+_LATIN_WORD = re.compile(r"[A-Za-z]+")
+
+
+def script_problems(text: str, lang: str, mat: Dict[str, Any]) -> List[str]:
+    """Why the answer can't be shown: 'language' (mostly the wrong language), 'mixed_script' (a word
+    mixing Greek and Latin letters, or letters of another script), 'latin_word' (a Greek text with a
+    Latin word the material doesn't have, e.g. an invented English clan or title)."""
+    from services import chronicle_digest as cd
+
+    probs = cd.language_problems(text, lang)
+    if lang == "el":
+        known = set(_tokens(json.dumps(mat, ensure_ascii=False, default=str)))
+        if any(t not in known for w in _LATIN_WORD.findall(text) for t in _tokens(w)):
+            probs.append("latin_word")
+    return probs
 
 
 def _tokens(text: str) -> List[str]:
@@ -136,8 +160,6 @@ def _read(get_db, character_id: int) -> Optional[Dict[str, Any]]:
 def write(get_db, character_id: int, death_type: str, generate=None,
           timeout: float = TIMEOUT_S) -> Tuple[str, bool]:
     """(text, generated). Never raises: any problem gives the canned sentence and generated=False."""
-    from services import chronicle_digest as cd
-
     lang = "en"
     try:
         mat = _read(get_db, character_id)
@@ -149,8 +171,10 @@ def write(get_db, character_id: int, death_type: str, generate=None,
         out = generate(f"chronicler_{lang}", messages(mat, death_type),
                        {"max_tokens": MAX_TOKENS, "temperature": 0.8, "timeout": timeout}, budget_s=timeout)
         text = str((out or {}).get("text") or "").strip()
-        if not text or "language" in cd.language_problems(text, lang):
-            logger.info("death description for character %s: unusable answer, canned sentence used", character_id)
+        probs = script_problems(text, lang, mat) if text else ["empty"]
+        if probs:
+            logger.info("death description for character %s: unusable answer (%s), canned sentence used",
+                        character_id, ",".join(probs))
             return fallback(lang, death_type), False
         return text, True
     except Exception as e:

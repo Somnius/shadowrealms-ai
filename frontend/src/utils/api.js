@@ -234,6 +234,24 @@ export const api = {
       body: JSON.stringify({ death_type: deathType })
     }),
   
+  /** Every player character with owner, chronicle, edition and `death` (null while alive). */
+  listAdminCharacters: (token) =>
+    authFetch(`${API_URL}/admin/characters`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    }),
+
+  reviveCharacter: (token, characterId) =>
+    authFetch(`${API_URL}/admin/characters/${characterId}/revive`, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${token}` }
+    }),
+
+  /** Kill and revive rows, newest first. */
+  getCharacterDeaths: (token, limit = 100) =>
+    authFetch(`${API_URL}/admin/character-deaths?limit=${limit}`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    }),
+
   getModerationLog: (token, limit = 50) =>
     authFetch(`${API_URL}/admin/moderation-log?limit=${limit}`, {
       headers: { 'Authorization': `Bearer ${token}` }

@@ -139,3 +139,28 @@
 @media (max-width: 520px) {
   .sr-app .sr-admin__grid2 { grid-template-columns: 1fr; }
 }
+
+/* Characters (pages/admin/CharactersPanel.jsx): cards, one column on phones; 44px targets. */
+.sr-app .sr-admin__chars { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--sr-space-3); grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr)); }
+.sr-app .sr-admin__char { display: grid; gap: var(--sr-space-2); min-width: 0; }
+.sr-app .sr-admin__char.is-fallen { border-left: 4px solid var(--sr-danger-400); }
+.sr-app .sr-admin__char-head { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sr-space-2); min-width: 0; }
+.sr-app .sr-admin__char-name { color: var(--sr-text); overflow-wrap: anywhere; }
+.sr-app .sr-admin__char .sr-btn,
+.sr-app .sr-admin__section > .sr-admin__row .sr-input,
+.sr-app .sr-admin__section > .sr-admin__row .sr-select { min-height: var(--sr-tap); }
+.sr-app .sr-admin__death { display: grid; gap: var(--sr-space-2); justify-items: start; }
+.sr-app .sr-admin__choices { border: 0; margin: 0; padding: 0; display: grid; gap: var(--sr-space-2); min-width: 0; }
+.sr-app .sr-admin__choice {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--sr-space-3);
+  min-height: var(--sr-tap);
+  padding: var(--sr-space-2) var(--sr-space-3);
+  border: 1px solid var(--sr-border);
+  border-radius: var(--sr-radius-md);
+  cursor: pointer;
+}
+.sr-app .sr-admin__choice:has(input:checked) { border-color: var(--sr-accent); background: var(--sr-surface-hover); }
+.sr-app .sr-admin__choice input { margin-top: 0.3rem; width: 20px; height: 20px; flex: none; accent-color: var(--sr-accent); }
+.sr-app .sr-admin__choice > span { display: grid; gap: 2px; min-width: 0; }

@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Admin → Characters.** Every player character with owner, chronicle, edition and whether it has fallen, with search and an alive/fallen filter. Kill picks the death (soft, sacrifice, horrible), warns that it retires the character for good, shows a writing state while the model works, then the death text and whether the AI wrote it or the fixed sentence was used. Revive undoes a death (the kill stays in the log). A deaths log in the same tab shows who killed or revived whom, when, the type and the text; both also go to the moderation log. EN + EL.
+- **Fallen characters show it.** The owner's profile card and the character sheet show the death text. It comes with the sheet, so the same people see it: the owner, the chronicle's Storyteller, admins and helpers.
+
+### Changed
+- **Death text stays with the facts.** The prompt forbids invented names, clans, titles, places and lore, and Greek text must use Greek letters except for names the material spells in Latin. An answer with mixed scripts or a Latin word the material doesn't have gets the fixed sentence instead.
+- **Kill** refuses a character that has already fallen (409, before any model call) and answers 404 for a missing one. Only an admin revive brings a fallen character back.
+
 ## [0.30.0] - 2026-10-18 - Death descriptions and server slash commands
 
 ### Added

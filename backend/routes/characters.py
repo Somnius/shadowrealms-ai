@@ -13,6 +13,7 @@ from flask_jwt_extended import jwt_required, get_jwt_identity
 import logging
 import json
 from datetime import datetime
+from services import character_death
 from services.rules_edition import CLASSIC, V5, edition_of
 from services.classic_ghoul import CLASSIC_GHOUL_RULES_VERSION, domitor_generation, sanity_check_classic_ghoul
 from services.character_sheet_v5 import is_ghoul, sanity_check_v5, stamp_v5_meta
@@ -338,11 +339,14 @@ def get_characters():
                     ORDER BY ch.created_at DESC
                 """, (current_user_id,))
         
+        rows = cursor.fetchall()
+        fallen = character_death.deaths(cursor, [r['id'] for r in rows])
         characters = []
-        for row in cursor.fetchall():
+        for row in rows:
             ch = _character_public_dict(
                 row, owner_name=row['owner_name'], campaign_name=row['campaign_name']
             )
+            ch['death'] = fallen.get(int(row['id']))
             characters.append(ch)
         
         return jsonify({
@@ -1030,6 +1034,8 @@ def get_character(character_id):
             campaign_name=character['campaign_name'],
         )
         _add_ghoul_links(cursor, character, ch)
+        # fallen by an admin kill: the death text, for whoever may read the sheet
+        ch['death'] = character_death.death_of(cursor, character_id)
         return jsonify({'character': ch}), 200
         
     except Exception as e:
@@ -1256,6 +1262,9 @@ def update_character(character_id):
                 updates.append("wod_meta = %s")
                 params.append(json.dumps(wm if isinstance(wm, dict) else {}))
             if 'is_active' in data:
+                # a fallen character comes back only through an admin revive
+                if data['is_active'] and current_user['role'] != 'admin' and character_death.death_of(cursor, character_id):
+                    return jsonify({'error': 'This character has fallen', 'error_code': 'character_fallen'}), 409
                 updates.append("is_active = %s")
                 params.append(bool(data['is_active']))
 

@@ -878,6 +878,8 @@ def api(monkeypatch):
                 return {"role": roles[str(self.args[0])]}
             if "FROM campaigns" in self.sql:
                 return {"created_by": 3}
+            if "sqlite_master" in self.sql:
+                return None  # no character_moderation table: nobody has fallen
             raise AssertionError(self.sql)
 
         def close(self):

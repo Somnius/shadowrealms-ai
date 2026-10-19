@@ -1,4 +1,4 @@
-# Roadmap: after the chronicle (0.29–0.30)
+# Roadmap: after the chronicle (0.29–0.31)
 
 Started 2026-10-18. One release per phase, same rules as [ROADMAP_CHRONICLE.md](ROADMAP_CHRONICLE.md): build in a worktree → tests and CI green → one independent review → fixes → merge to `main` → docs and this file → release. Builds run niced and never above 80 % of the machine.
 
@@ -8,6 +8,7 @@ Started 2026-10-18. One release per phase, same rules as [ROADMAP_CHRONICLE.md](
 |---|---|---|---|---|
 | 1 | The Storyteller reads the chronicle | memory block in the Storyteller prompt · per-chronicle switch · `/ai context` shows it | 0.29 | released 0.29.0 (2026-10-18) |
 | 2 | Small AI pieces | AI death description · slash commands served by the backend · chronicle language default check | 0.30 | released 0.30.0 (2026-10-18) |
+| 3 | Kill page and death text | Admin → Characters (kill, revive, deaths log) · fallen on the profile card and sheet · stricter death prompt and script check | 0.31 | built, waiting for review |
 | — | Schedar samples | two sample files for Lef to listen to | — | done, Lef OK 19 Oct |
 
 ## Decisions (2026-10-18, Lef: full auto)
@@ -32,6 +33,15 @@ Started 2026-10-18. One release per phase, same rules as [ROADMAP_CHRONICLE.md](
 - [x] 2.2 `GET /api/ai/slash/commands`, one list for the composer and the `/ai` hints, EN + EL; the browser's list stays as the fallback. Status: released in 0.30; live list has 16 commands for an admin, 401 without a login. The long `/ai help` text is still written by hand (it has per-edition detail); a test checks it names every verb. Later: the `/ai help` body and the permission replies in the caller's language (they are English only; the composer list is EN + EL).
 - [x] 2.3 Chronicle language at creation. Already done before this phase (the creation form sends the language, the chronicle settings page edits it). Residual check: the API stored NULL when the language was left out; it now takes the creator's app language (`users.ui_language`). Status: released in 0.30.
 
+## Phase 3 — Kill page and death text (0.31)
+
+- [x] 3.1 Admin → Characters (`pages/admin/CharactersPanel.jsx`, `GET /api/admin/characters`): every player character with owner, chronicle, edition and alive/fallen, search and a status filter, cards in one column on phones. Kill: soft / sacrifice / horrible with a line each, a warning that it retires the character for good, a "writing" state while the model works (up to 25 s), then the text and whether the AI wrote it or the fixed sentence was used. Kill on a fallen character is a 409 now, before any model call; a missing character a 404. Status: built.
+- [x] 3.2 Deaths log in the same tab (`GET /api/admin/character-deaths`): who killed or revived whom, when, the type and the text. Kill and revive also write a row to the general moderation log (`character_kill`, `character_revive`). Status: built.
+- [x] 3.3 Players see it: `death` (type, text, date) on `GET /api/characters/` and `/api/characters/<id>`, same permission as the sheet (owner, the chronicle's Storyteller, admins and helpers; other players at the table don't get the sheet). Shown on the profile card and at the top of the sheet. Fallen comes from the latest kill/revive row (`services/character_death.py`), not from `is_active`. Status: built.
+- [x] 3.4 Death text: the prompt now says to use only facts from the material (no invented names, clans, titles, places, sects or lore) and, in Greek, Greek letters only except names the material spells in Latin. Post-check: wrong language, a word mixing scripts, or a Latin word the material doesn't have gives the fixed sentence. Status: built; not tried against the live model yet.
+- [x] 3.5 Revive: `POST /api/admin/characters/<id>/revive` sets `is_active` true and logs a `revive` row; the kill row stays. Only an admin revive brings a fallen character back (a staff `PUT is_active` on a fallen character is a 409). Status: built.
+- [ ] 3.6 Review, then a look on a phone (390 px) in the browser, then a live kill and revive on a test character.
+
 ## Schedar samples
 
 - [x] S.1 A Greek and an English line in the Schedar voice, written by the speech service to the local to-lef voice folder (`gemini-samples/gemini-Schedar_el.ogg`, `gemini-Schedar_en.ogg`). Status: done 18 Oct; Lef listened 19 Oct: OK; ROADMAP_VOICE 8.4 ticked.
@@ -41,9 +51,9 @@ Started 2026-10-18. One release per phase, same rules as [ROADMAP_CHRONICLE.md](
 - [ ] A live nightly run on a test chronicle, watched once at the quiet hour.
 - [ ] Site screenshots from a test chronicle (chronicle so far, Previously on…).
 - [ ] The voice-showcase trailer (0.16–0.22).
-- [ ] An admin page that calls kill and shows the death text (the new frontend has none).
+- [x] An admin page that calls kill and shows the death text: phase 3.
 - [ ] `/ai help` and the permission replies in Greek.
-- [ ] A death-description prompt rule against clans and details that aren't in the chapters.
+- [x] A death-description prompt rule against clans and details that aren't in the chapters: phase 3.
 
 ## Log
 
@@ -51,3 +61,4 @@ Started 2026-10-18. One release per phase, same rules as [ROADMAP_CHRONICLE.md](
 - 2026-10-18 — phase 1 built on `feat/st-memory` (not reviewed, not merged, not released).
 - 2026-10-18 — phase 2 built on `feat/death-slash` (not reviewed, not merged, not released).
 - 2026-10-18 — both reviewed (Grok), fixed, merged; 0.29.0 and 0.30.0 released; Schedar samples made.
+- 2026-10-19 — phase 3 built on `feat/kill-page` (not reviewed, not merged, not released).

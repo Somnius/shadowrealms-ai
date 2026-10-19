@@ -1,0 +1,21 @@
+/* FallenNote: the death of a fallen character (profile card and sheet). Tokens only. */
+.sr-app .sr-fallen {
+  margin: 0 0 var(--sr-space-3);
+  padding: var(--sr-space-3);
+  border: 1px solid var(--sr-border);
+  border-left: 4px solid var(--sr-danger-400);
+  border-radius: var(--sr-radius-md);
+  background: var(--sr-surface-sunken);
+  min-width: 0;
+}
+.sr-app .sr-fallen--compact { margin: 0; padding: var(--sr-space-2) var(--sr-space-3); }
+.sr-app .sr-fallen__title {
+  display: flex;
+  align-items: center;
+  gap: var(--sr-space-2);
+  margin: 0;
+  color: var(--sr-danger-400);
+  font-weight: 700;
+}
+.sr-app .sr-fallen__text { margin: var(--sr-space-2) 0 0; color: var(--sr-text-2); line-height: 1.6; white-space: pre-wrap; overflow-wrap: anywhere; }
+.sr-app .sr-fallen--compact .sr-fallen__text { font-size: var(--sr-text-sm); }
