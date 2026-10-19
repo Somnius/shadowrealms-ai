@@ -196,6 +196,7 @@ The full list with versions, how Laya was trained, and how each release was buil
 
 ## Documentation
 
+- [SPEC.md](SPEC.md): the system specification: roles, rules, visibility, architecture, API and data model
 - [docs/README.md](docs/README.md): index of everything in `docs/`
 - [docs/TECH_STACK.md](docs/TECH_STACK.md): the AI models, technologies and tools used
 - Wiki: [Installation](https://github.com/Somnius/shadowrealms-ai/wiki/Installation), [Configuration](https://github.com/Somnius/shadowrealms-ai/wiki/Configuration), [Rules Editions](https://github.com/Somnius/shadowrealms-ai/wiki/Rules-Editions), [AI Models](https://github.com/Somnius/shadowrealms-ai/wiki/AI-Models), [Architecture](https://github.com/Somnius/shadowrealms-ai/wiki/Architecture), [Security](https://github.com/Somnius/shadowrealms-ai/wiki/Security), [Troubleshooting](https://github.com/Somnius/shadowrealms-ai/wiki/Troubleshooting)
