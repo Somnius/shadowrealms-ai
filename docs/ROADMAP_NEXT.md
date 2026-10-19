@@ -8,7 +8,7 @@ Started 2026-10-18. One release per phase, same rules as [ROADMAP_CHRONICLE.md](
 |---|---|---|---|---|
 | 1 | The Storyteller reads the chronicle | memory block in the Storyteller prompt · per-chronicle switch · `/ai context` shows it | 0.29 | released 0.29.0 (2026-10-18) |
 | 2 | Small AI pieces | AI death description · slash commands served by the backend · chronicle language default check | 0.30 | released 0.30.0 (2026-10-18) |
-| 3 | Kill page and death text | Admin → Characters (kill, revive, deaths log) · fallen on the profile card and sheet · stricter death prompt and script check | 0.31 | built, waiting for review |
+| 3 | Kill page and death text | Admin → Characters (kill, revive, deaths log) · fallen on the profile card and sheet · stricter death prompt and script check | 0.31 | released 0.31.0 (2026-10-19) |
 | — | Schedar samples | two sample files for Lef to listen to | — | done, Lef OK 19 Oct |
 
 ## Decisions (2026-10-18, Lef: full auto)
