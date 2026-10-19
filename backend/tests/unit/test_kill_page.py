@@ -142,9 +142,34 @@ def test_players_see_the_death_on_their_list_and_sheet(api):
 
 def test_only_an_admin_revive_brings_a_fallen_character_back(api):
     api("POST", "/api/admin/characters/20/kill", 1, {"death_type": "mid"})
-    r = api("PUT", "/api/characters/20", 5, {"is_active": True})
-    assert r.status_code == 409 and r.get_json()["error_code"] == "character_fallen"
+    for uid in (5, 1):  # helper and admin alike: the sheet editor writes no revive row
+        r = api("PUT", "/api/characters/20", uid, {"is_active": True})
+        assert r.status_code == 409 and r.get_json()["error_code"] == "character_fallen", uid
     assert api.raw.execute("SELECT is_active FROM characters WHERE id = 20").fetchone() == (0,)
+
+
+def test_a_kill_that_finished_while_the_model_wrote_wins(api, monkeypatch):
+    from services import death_writeup
+
+    def slow_write(get_db, character_id, death_type):
+        # the other admin's kill lands while this one waits for the model
+        api.raw.execute("INSERT INTO character_moderation (character_id, action, death_type, death_description, "
+                        "moderated_by, moderated_at) VALUES (20, 'kill', 'soft', 'First.', 1, '2026-10-19 10:00:00')")
+        api.raw.commit()
+        return TEXT, True
+
+    monkeypatch.setattr(death_writeup, "write", slow_write)
+    r = api("POST", "/api/admin/characters/20/kill", 1, {"death_type": "horrible"})
+    assert r.status_code == 409 and r.get_json()["error_code"] == "character_fallen"
+    assert api.raw.execute("SELECT death_description FROM character_moderation").fetchall() == [("First.",)]
+    assert api.raw.execute("SELECT COUNT(*) FROM user_moderation_log").fetchone() == (0,)
+
+
+def test_the_kill_locks_the_row_on_postgres():
+    from pathlib import Path
+    src = (Path(__file__).resolve().parents[2] / "routes" / "admin.py").read_text(encoding="utf-8")
+    kill = src[src.index("def kill_character"):src.index("def revive_character")]
+    assert kill.index("death_writeup.write(") < kill.index('" FOR UPDATE"') < kill.index("UPDATE characters SET is_active")
 
 
 # --- the death text's script check -------------------------------------------------------------
@@ -163,6 +188,18 @@ def test_greek_script_check(text, ok):
     from services import death_writeup as dw
 
     assert (dw.script_problems(text, "el", MAT) == []) is ok
+
+
+def test_names_dont_count_against_the_language():
+    from services import death_writeup as dw
+
+    en = {"name": "Κωνσταντίνος Κατακουζηνός", "clan": "Tremere", "lang": "en", "so_far": "", "chapters": [
+        {"chapter": {"characters": [{"name": "Μαρώ"}], "places": [{"name": "Ελληνικό"}]}}]}
+    assert dw.script_problems("Κωνσταντίνος Κατακουζηνός, dawn finds you as Μαρώ watches from Ελληνικό.", "en", en) == []
+    el = dict(MAT, chapters=[{"chapter": {"characters": [{"name": "Marcus Vell"}]}}])
+    assert dw.script_problems("Ο Marcus σε βλέπει να πέφτεις.", "el", el) == []  # a first name of the cast
+    for key in ("title", "summary", "text"):  # material keys are not names
+        assert dw.script_problems(f"Η αυγή σε βρίσκει, {key}.", "el", el) == ["latin_word"], key
 
 
 def test_a_mixed_script_answer_gives_the_canned_sentence(monkeypatch):

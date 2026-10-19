@@ -1262,8 +1262,8 @@ def update_character(character_id):
                 updates.append("wod_meta = %s")
                 params.append(json.dumps(wm if isinstance(wm, dict) else {}))
             if 'is_active' in data:
-                # a fallen character comes back only through an admin revive
-                if data['is_active'] and current_user['role'] != 'admin' and character_death.death_of(cursor, character_id):
+                # a fallen character comes back only through the admin revive (it logs the row), for every role
+                if data['is_active'] and character_death.death_of(cursor, character_id):
                     return jsonify({'error': 'This character has fallen', 'error_code': 'character_fallen'}), 409
                 updates.append("is_active = %s")
                 params.append(bool(data['is_active']))

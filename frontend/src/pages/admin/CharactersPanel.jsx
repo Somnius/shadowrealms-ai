@@ -260,23 +260,28 @@ export default function CharactersPanel({ token, displayTimezone = null, showErr
   const errorRef = useRef(showError);
   errorRef.current = showError;
 
+  // Only the newest request may set the list: a slow reload after a kill must not land after a revive.
+  const latest = useRef(0);
   const load = useCallback(async () => {
+    const mine = ++latest.current;
+    let data = null;
     try {
       const r = await api.listAdminCharacters(token);
       const d = await r.json().catch(() => null);
-      if (r.ok && Array.isArray(d)) {
-        setList(d);
-        return;
-      }
+      if (r.ok && Array.isArray(d)) data = d;
     } catch {
       /* falls through to the error */
     }
-    setList([]);
-    errorRef.current(t('admin:characters.error.load', 'Could not load characters.'));
+    if (mine !== latest.current) return;
+    setList(data || []);
+    if (!data) errorRef.current(t('admin:characters.error.load', 'Could not load characters.'));
   }, [token]);
 
   useEffect(() => {
     load();
+    return () => {
+      latest.current += 1; // unmounted or reloading: drop the answer in flight
+    };
   }, [load, version]);
 
   const shown = useMemo(() => filterCharacters(list, query, status), [list, query, status]);

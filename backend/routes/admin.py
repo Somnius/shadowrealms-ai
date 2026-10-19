@@ -495,6 +495,14 @@ def kill_character(character_id):
         
         db = get_db()
         cursor = db.cursor()
+        # Another kill may have finished while the model wrote: lock the row and look again; the later one loses
+        lock = " FOR UPDATE" if os.getenv("DATABASE_TYPE", "sqlite").lower() == "postgresql" else ""
+        cursor.execute(f"SELECT id FROM characters WHERE id = %s{lock}", (character_id,))
+        if not cursor.fetchone() or character_death.death_of(cursor, character_id):
+            db.rollback()
+            cursor.close()
+            db.close()
+            return jsonify({'error': 'Character has already fallen', 'error_code': 'character_fallen'}), 409
         
         # Retire the character (is_active false: no longer played, rolled for or given to the AI) and log it
         cursor.execute("UPDATE characters SET is_active = %s WHERE id = %s", (False, character_id))

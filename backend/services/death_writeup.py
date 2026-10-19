@@ -68,16 +68,32 @@ def fallback(lang: str, death_type: str) -> str:
 _LATIN_WORD = re.compile(r"[A-Za-z]+")
 
 
+def _names(mat: Dict[str, Any]) -> List[str]:
+    """The character's name and clan and the cast and place names of its chapters, longest first."""
+    out = [mat.get("name"), mat.get("clan")]
+    for ch in mat.get("chapters") or []:
+        c = ch.get("chapter") or {}
+        for key in ("characters", "places"):
+            for n in c.get(key) or []:
+                out.append(n.get("name") if isinstance(n, dict) else n)
+    return sorted({str(n).strip() for n in out if n and str(n).strip()}, key=len, reverse=True)
+
+
 def script_problems(text: str, lang: str, mat: Dict[str, Any]) -> List[str]:
     """Why the answer can't be shown: 'language' (mostly the wrong language), 'mixed_script' (a word
     mixing Greek and Latin letters, or letters of another script), 'latin_word' (a Greek text with a
-    Latin word the material doesn't have, e.g. an invented English clan or title)."""
+    Latin word that isn't one of the material's names, e.g. an invented English clan or title).
+    Names are written as the chronicle spells them, so they don't count against the language."""
     from services import chronicle_digest as cd
 
-    probs = cd.language_problems(text, lang)
+    names = _names(mat)
+    rest = text
+    for n in names:
+        rest = rest.replace(n, " ")
+    probs = cd.language_problems(rest, lang)
     if lang == "el":
-        known = set(_tokens(json.dumps(mat, ensure_ascii=False, default=str)))
-        if any(t not in known for w in _LATIN_WORD.findall(text) for t in _tokens(w)):
+        known = {t for n in names for t in _tokens(n)}  # also a first name on its own
+        if any(t not in known for w in _LATIN_WORD.findall(rest) for t in _tokens(w)):
             probs.append("latin_word")
     return probs
 
