@@ -1,0 +1,126 @@
+name: Beta test report / Αναφορά beta test
+description: Αναφορά από τη δοκιμή της πλατφόρμας (beta). / A report from testing the platform (beta).
+labels: ["beta"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Ευχαριστώ που δοκιμάζεις! Τα issues είναι δημόσια: μη γράψεις ποτέ τη διεύθυνση του server, κωδικούς, emails ή άλλα προσωπικά στοιχεία. Για θέματα ασφάλειας χρησιμοποίησε το Security tab («Report a vulnerability»), όχι δημόσιο issue.
+
+        Thanks for testing! Issues are public: never write the server's address, passwords, emails or other personal data here. For security problems use the Security tab ("Report a vulnerability"), not a public issue.
+  - type: dropdown
+    id: type
+    attributes:
+      label: Τύπος αναφοράς / Report type
+      options:
+        - Σφάλμα / Bug
+        - Κάτι μπερδεύει / Something confusing
+        - Ιδέα / Idea
+        - Δουλεύει μια χαρά / It works fine
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Περιοχή / Area
+      options:
+        - Εγγραφή, σύνδεση, προφίλ / Sign-up, login, profile
+        - Χρονικά και δωμάτια / Chronicles and rooms
+        - Συνομιλία / Chat
+        - Ζάρια / Dice
+        - AI Αφηγητής / AI Storyteller
+        - Σφυρηλατείο χαρακτήρων, Classic / Character forge, Classic
+        - Σφυρηλατείο χαρακτήρων, V5 / Character forge, V5
+        - Χαρτί χαρακτήρα, PDF / Character sheet, PDF
+        - Φωνή, ακρόαση / Voice, listen
+        - Φωνή, ηχογράφηση και μεταγραφή / Voice, record and transcribe
+        - Μετάφραση της συνομιλίας / Chat translation
+        - Το χρονικό ως τώρα / The chronicle so far
+        - Γλώσσα διεπαφής (EL/EN) / Interface language (EL/EN)
+        - Εμφάνιση στο κινητό / Phone layout
+        - Θέμα, εφέ, ατμόσφαιρα / Theme, effects, atmosphere
+        - Άλλο / Other
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Τι έκανες / What you did
+      description: Βήμα βήμα, για να μπορώ να το ξανακάνω. / Step by step, so I can do it again.
+      placeholder: |
+        1. Άνοιξα ένα χρονικό V5 ως παίκτης / Opened a V5 chronicle as a player
+        2. Έριξα ... / Rolled ...
+        3. ...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Τι περίμενες / What you expected
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Τι έγινε / What happened
+      description: Αν δούλεψε μια χαρά, γράψε το κι αυτό. / If it worked fine, say so too.
+    validations:
+      required: true
+  - type: dropdown
+    id: severity
+    attributes:
+      label: Πόσο σοβαρό / How serious
+      options:
+        - Δεν μπορώ να συνεχίσω / I can't continue
+        - Δουλεύει με παράκαμψη / Works with a workaround
+        - Μικρό, ενοχλητικό / Minor, annoying
+        - Απλή παρατήρηση / Just a note
+    validations:
+      required: true
+  - type: input
+    id: device
+    attributes:
+      label: Συσκευή, browser, κινητό ή υπολογιστής / Device, browser, phone or desktop
+      placeholder: Android 15, Chrome 142, κινητό / iPhone 16, Safari, phone / Windows 11, Firefox, desktop
+    validations:
+      required: true
+  - type: dropdown
+    id: ui-language
+    attributes:
+      label: Γλώσσα διεπαφής / Interface language
+      options:
+        - Ελληνικά / Greek
+        - English
+        - Και τις δύο / Both
+    validations:
+      required: true
+  - type: dropdown
+    id: edition
+    attributes:
+      label: Έκδοση κανόνων του χρονικού / Chronicle rules edition
+      options:
+        - Δεν αφορά χρονικό / Not related to a chronicle
+        - Classic (Revised)
+        - V5
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Έκδοση της εφαρμογής / App version
+      description: Φαίνεται στο υποσέλιδο της εφαρμογής. / Shown in the app's footer.
+      placeholder: v0.31.0
+    validations:
+      required: true
+  - type: textarea
+    id: screenshots
+    attributes:
+      label: Στιγμιότυπα οθόνης (προαιρετικά) / Screenshots (optional)
+      description: Σύρε εικόνες εδώ. Κάλυψε ονόματα, emails και τη γραμμή διεύθυνσης του browser. / Drag images here. Cover names, emails and the browser's address bar.
+  - type: checkboxes
+    id: privacy
+    attributes:
+      label: Απόρρητο / Privacy
+      options:
+        - label: Αφαίρεσα κάθε προσωπικό στοιχείο ΚΑΙ δεν έγραψα πουθενά τη διεύθυνση ή τον σύνδεσμο του server (τα issues είναι δημόσια). / I removed all personal data AND did not write the server's address or link anywhere in this issue (issues are public).
+          required: true
