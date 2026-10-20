@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - **Death text stays with the facts.** The prompt forbids invented names, clans, titles, places and lore, and Greek text must use Greek letters except for names the material spells in Latin. An answer with mixed scripts or a Latin word the material doesn't have gets the fixed sentence instead.
 - **Kill** refuses a character that has already fallen (409, before any model call) and answers 404 for a missing one. Only an admin revive brings a fallen character back.
+- **Sheet on phones.** The whole character sheet scrolls as one page and only the name bar stays on top; the version badge and the PDF buttons no longer take a third of the screen.
 
 ## [0.30.0] - 2026-10-18 - Death descriptions and server slash commands
 
