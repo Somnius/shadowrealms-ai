@@ -150,9 +150,11 @@ ollama pull llama3.2:3b                 # utility model
 5. Start the stack and build the frontend:
 
 ```bash
-./docker-up.sh
+./site.sh start
 ./scripts/build-frontend.sh
 ```
+
+After that, `./site.sh start` is all you need after a reboot; `./site.sh status`, `stop` and `logs` are there too. See [RUNNING.md](RUNNING.md).
 
 6. Optional, for the voice: set `SPEECH_SECRET` in `.env` and start the speech container with `docker compose --profile voice up -d speech` (an NVIDIA GPU for transcription; the voices run on the CPU). See [docs/VOICE.md](docs/VOICE.md).
 
@@ -196,6 +198,7 @@ The full list with versions, how Laya was trained, and how each release was buil
 
 ## Documentation
 
+- [RUNNING.md](RUNNING.md): starting, stopping and checking the site, and what to do after a reboot
 - [SPEC.md](SPEC.md): the system specification: roles, rules, visibility, architecture, API and data model
 - [docs/README.md](docs/README.md): index of everything in `docs/`
 - [docs/TECH_STACK.md](docs/TECH_STACK.md): the AI models, technologies and tools used
