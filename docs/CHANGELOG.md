@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.31.1] - 2026-10-22 - Security updates
+
+### Security
+- **DOMPurify 3.4.17** (was 3.4.16): fixes a critical `SAFE_FOR_TEMPLATES` bypass. DOMPurify cleans the HTML the app renders in the browser.
+- **vite 8.3.5** (was 8.3.2) and other build-time packages, through `npm audit fix` (no breaking upgrades). Still open: tailwindcss 3 and its file-watching chain (braces, micromatch, chokidar, fast-glob), build-time only; the fix needs tailwindcss 4.
+- Running sites should also pull `nginx:alpine` (1.31.8, fixes the five nginx advisories of 14 October 2026) and recreate the nginx container: `docker compose pull nginx && docker compose up -d nginx`.
+
 ## [0.31.0] - 2026-10-19 - Kill page and fallen characters
 
 ### Added
