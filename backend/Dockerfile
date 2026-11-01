@@ -1,5 +1,5 @@
 # ShadowRealms AI Backend (Python 3.12, same as CI)
-FROM python:3.12-slim
+FROM python:3.15-slim
 
 # Set environment variables
 ENV PYTHONDONTWRITEBYTECODE=1
