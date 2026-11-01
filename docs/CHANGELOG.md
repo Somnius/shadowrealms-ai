@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.31.2] - 2026-11-01 - Frontend dependency updates
+
+### Changed
+- i18next 26.5.11, react-i18next 17.1.9, motion 14.8.0, react-router 7.18.5, and small build-tool updates.
+
 ## [0.31.1] - 2026-10-22 - Security updates
 
 ### Security
