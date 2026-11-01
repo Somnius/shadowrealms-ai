@@ -14,7 +14,7 @@ py-cpuinfo>=9.0.0
 
 # API and communication
 requests>=2.31.0
-fastapi>=0.104.0
+fastapi>=0.162.0
 uvicorn>=0.24.0
 
 # Data processing
