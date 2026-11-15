@@ -37,7 +37,7 @@ from services.dice_chat import DicePostError
 from services.dice_rolls import json_field, perform_manual_roll
 from services.playing_character import is_campaign_storyteller_or_staff
 from services.request_validation import RequestValidationError, body_object, strict_bool, strict_int
-from services.rules_edition import V5
+from services.rules_edition import V5, edition_of
 from services.wod_dice import parse_pool_expression
 
 logger = logging.getLogger(__name__)
@@ -618,3 +618,541 @@ def roll_phase(cursor, user_id, campaign_id, phase_id):
     ph = cursor.fetchone()
     rolls = _rolls_by_id(cursor, [out["roll_id"]])
     return {"phase": _player_phase(ph, _player_roll(rolls.get(int(out["roll_id"])), ph))}, 200
+
+
+# --------------------------------------------------------------------------- Storyteller
+
+RESULT_KINDS = ("scene", "result", "feedback", "skip")
+TARGET_KINDS = ("indicator", "variable")
+PROJECT_STATUSES = ("active", "done", "abandoned")
+NAME_MAX = 60
+TEXT_MAX = 5000
+NOTE_MAX = 2000
+DELTAS_MAX = 20
+DELTA_LIMIT = 1000
+VALUE_LIMIT = 1_000_000
+
+
+def _st_roll(row):
+    if not row:
+        return None
+    out, mods = _roll_faces(row)
+    out.update({
+        "difficulty": row.get("difficulty"),
+        "successes": row.get("successes"),
+        "is_botch": bool(row.get("is_botch")),
+        "is_critical": bool(row.get("is_critical")),
+        "specialty": bool(mods.get("specialty")),
+        "willpower": bool(mods.get("willpower")),
+        "pool_expression": mods.get("pool_expression"),
+        "action_description": row.get("action_description"),
+    })
+    return out
+
+
+def _change_dict(c):
+    return {
+        "id": c["id"],
+        "phase_id": c.get("phase_id"),
+        "target_kind": c["target_kind"],
+        "target_id": c["target_id"],
+        "old_value": c["old_value"],
+        "new_value": c["new_value"],
+        "delta": c["delta"],
+        "by_user": c.get("by_user"),
+        "at": _ts(c.get("at")),
+    }
+
+
+def _indicator_dict(i):
+    return {"id": i["id"], "project_id": i["project_id"], "name": i["name"], "value": i["value"],
+            "updated_at": _ts(i.get("updated_at"))}
+
+
+def _variable_dict(v):
+    return {"id": v["id"], "name": v["name"], "value": v["value"], "note": v.get("note") or "",
+            "updated_at": _ts(v.get("updated_at"))}
+
+
+def _st_project(p, indicators):
+    return {
+        "id": p["id"],
+        "title": p["title"],
+        "goal": p.get("goal") or "",
+        "status": p["status"],
+        "parent_id": p.get("parent_id"),
+        "parent_title": p.get("parent_title"),
+        "character_id": p.get("character_id"),
+        # Stored at filing time, so a project outlives its character (account or sheet deleted).
+        "character_name": p.get("current_character_name") or p.get("character_name") or "",
+        "orphaned": p.get("character_id") is None,
+        "created_at": _ts(p.get("created_at")),
+        "indicators": indicators,
+    }
+
+
+def _st_phase(ph, roll_row, changes):
+    return {
+        "id": ph["id"],
+        "version": ph["version"],
+        "project_id": ph["project_id"],
+        "round_id": ph["round_id"],
+        "round_status": ph.get("round_status"),
+        "action": ph["action"],
+        "difficulty": ph.get("difficulty"),
+        "difficulty_hidden": _flag(ph.get("difficulty_hidden")),
+        "roll": _st_roll(roll_row),
+        "no_roll": ph.get("dice_roll_id") is None,
+        "result_kind": ph.get("result_kind"),
+        "result_text": ph.get("result_text") or "",
+        "result_location_id": ph.get("result_location_id"),
+        "result_location_name": ph.get("result_location_name"),
+        "st_note": ph.get("st_note") or "",
+        "resolved": ph.get("resolved_at") is not None,
+        "resolved_by": ph.get("resolved_by"),
+        "resolved_at": _ts(ph.get("resolved_at")),
+        "updated_at": _ts(ph.get("updated_at")),
+        "changes": changes,
+    }
+
+
+_ST_PHASE_SELECT = """
+    SELECT ph.*, r.title AS round_title, r.status AS round_status, l.name AS result_location_name
+    FROM downtime_phases ph
+    JOIN downtime_rounds r ON r.id = ph.round_id
+    LEFT JOIN locations l ON l.id = ph.result_location_id
+"""
+
+
+def _st_phase_by_id(cursor, phase_id):
+    cursor.execute(_ST_PHASE_SELECT + " WHERE ph.id = %s", (phase_id,))
+    ph = cursor.fetchone()
+    cursor.execute("SELECT * FROM downtime_changes WHERE phase_id = %s ORDER BY id", (phase_id,))
+    changes = [_change_dict(c) for c in cursor.fetchall()]
+    rolls = _rolls_by_id(cursor, [ph.get("dice_roll_id")])
+    return _st_phase(ph, rolls.get(ph.get("dice_roll_id")), changes)
+
+
+def _phase_in_campaign(cursor, campaign_id, phase_id):
+    cursor.execute(
+        "SELECT ph.round_id, ph.project_id FROM downtime_phases ph "
+        "JOIN downtime_projects p ON p.id = ph.project_id WHERE ph.id = %s AND p.campaign_id = %s",
+        (phase_id, campaign_id),
+    )
+    row = cursor.fetchone()
+    if not row:
+        raise DowntimeError("phase_not_found", "Phase not found", 404)
+    return row
+
+
+@downtime_bp.route("/campaigns/<int:campaign_id>/downtime/inbox", methods=["GET"])
+@_api
+def st_inbox(cursor, user_id, campaign_id):
+    _require_st(cursor, user_id, campaign_id)
+    round_id = strict_int(request.args.get("round_id"), "round_id") if request.args.get("round_id") else None
+    unresolved_only = request.args.get("unresolved") in ("1", "true")
+    if round_id is not None:
+        cursor.execute("SELECT * FROM downtime_rounds WHERE id = %s AND campaign_id = %s",
+                       (round_id, campaign_id))
+        rnd = cursor.fetchone()
+        if not rnd:
+            raise DowntimeError("round_not_found", "Downtime round not found", 404)
+    else:
+        rnd = _live_round(cursor, campaign_id)
+        if not rnd:
+            cursor.execute("SELECT * FROM downtime_rounds WHERE campaign_id = %s ORDER BY id DESC LIMIT 1",
+                           (campaign_id,))
+            rnd = cursor.fetchone()
+
+    cursor.execute(
+        """
+        SELECT p.*, pp.title AS parent_title, ch.name AS current_character_name
+        FROM downtime_projects p
+        LEFT JOIN downtime_projects pp ON pp.id = p.parent_id
+        LEFT JOIN characters ch ON ch.id = p.character_id
+        WHERE p.campaign_id = %s ORDER BY p.id
+        """,
+        (campaign_id,),
+    )
+    projects = cursor.fetchall()
+    cursor.execute(
+        "SELECT i.* FROM downtime_indicators i JOIN downtime_projects p ON p.id = i.project_id "
+        "WHERE p.campaign_id = %s ORDER BY i.id",
+        (campaign_id,),
+    )
+    indicators = {}
+    for i in cursor.fetchall():
+        indicators.setdefault(i["project_id"], []).append(_indicator_dict(i))
+
+    phases = []
+    if rnd:
+        cursor.execute(_ST_PHASE_SELECT + " WHERE ph.round_id = %s ORDER BY ph.id", (rnd["id"],))
+        rows = cursor.fetchall()
+        if unresolved_only:
+            rows = [r for r in rows if r.get("resolved_at") is None]
+        changes = {}
+        if rows:
+            marks = ", ".join(["%s"] * len(rows))
+            cursor.execute(f"SELECT * FROM downtime_changes WHERE phase_id IN ({marks}) ORDER BY id",
+                           tuple(r["id"] for r in rows))
+            for c in cursor.fetchall():
+                changes.setdefault(c["phase_id"], []).append(_change_dict(c))
+        rolls = _rolls_by_id(cursor, [r.get("dice_roll_id") for r in rows])
+        phases = [_st_phase(r, rolls.get(r.get("dice_roll_id")), changes.get(r["id"], [])) for r in rows]
+
+    cursor.execute("SELECT * FROM chronicle_variables WHERE campaign_id = %s ORDER BY name", (campaign_id,))
+    variables = [_variable_dict(v) for v in cursor.fetchall()]
+    cursor.execute(
+        "SELECT id, name FROM locations WHERE campaign_id = %s AND is_active = TRUE ORDER BY name",
+        (campaign_id,),
+    )
+    locations = [{"id": r["id"], "name": r["name"]} for r in cursor.fetchall()]
+    return {
+        "round": _round_dict(rnd) if rnd else None,
+        "phases": phases,
+        "projects": [_st_project(p, indicators.get(p["id"], [])) for p in projects],
+        "variables": variables,
+        "locations": locations,
+    }, 200
+
+
+def _difficulty_ok(edition, value):
+    return 0 <= value <= 10 if edition == V5 else 2 <= value <= 10
+
+
+@downtime_bp.route("/campaigns/<int:campaign_id>/downtime/phases/<int:phase_id>/setup", methods=["PUT"])
+@_api
+def setup_phase(cursor, user_id, campaign_id, phase_id):
+    camp = _require_st(cursor, user_id, campaign_id)
+    data = _body()
+    difficulty = strict_int(data.get("difficulty"), "difficulty")
+    hidden = strict_bool(data.get("difficulty_hidden"), "difficulty_hidden")
+    if difficulty is not None and not _difficulty_ok(edition_of(camp), difficulty):
+        raise DowntimeError("invalid_difficulty", "That difficulty is out of range for this chronicle")
+    if hidden and difficulty is None:
+        raise DowntimeError("difficulty_required", "Set a difficulty to hide it")
+    found = _phase_in_campaign(cursor, campaign_id, phase_id)
+    rnd = _locked_round(cursor, campaign_id, found["round_id"])
+    if rnd["status"] == "released":
+        raise DowntimeError("round_released", "This round has been released", 409)
+    cursor.execute("SELECT dice_roll_id FROM downtime_phases WHERE id = %s" + _for_update(), (phase_id,))
+    if cursor.fetchone().get("dice_roll_id") is not None:
+        raise DowntimeError("already_rolled", "The phase has been rolled; its difficulty is fixed", 409)
+    cursor.execute(
+        "UPDATE downtime_phases SET difficulty = %s, difficulty_hidden = %s, version = version + 1, "
+        "updated_at = %s WHERE id = %s",
+        (difficulty, bool(hidden), _now(), phase_id),
+    )
+    return {"phase": _st_phase_by_id(cursor, phase_id)}, 200
+
+
+def _parse_deltas(raw):
+    if not isinstance(raw, list):
+        raise DowntimeError("invalid_deltas", "deltas must be a list")
+    if len(raw) > DELTAS_MAX:
+        raise DowntimeError("too_many_deltas", f"At most {DELTAS_MAX} changes per phase", max=DELTAS_MAX)
+    net = {}
+    for item in raw:
+        if not isinstance(item, dict) or item.get("target_kind") not in TARGET_KINDS:
+            raise DowntimeError("invalid_deltas", "Each change needs target_kind indicator or variable")
+        tid = strict_int(item.get("target_id"), "target_id")
+        delta = strict_int(item.get("delta"), "delta")
+        if tid is None or delta is None or not -DELTA_LIMIT <= delta <= DELTA_LIMIT:
+            raise DowntimeError("invalid_deltas", f"Each change needs target_id and a delta within "
+                                                  f"+/-{DELTA_LIMIT}", max=DELTA_LIMIT)
+        key = (item["target_kind"], tid)
+        net[key] = net.get(key, 0) + delta
+    return {k: v for k, v in net.items() if v}
+
+
+def _apply_value_change(cursor, campaign_id, phase_id, kind, row, delta, user_id, now):
+    table = "downtime_indicators" if kind == "indicator" else "chronicle_variables"
+    new_value = int(row["value"]) + delta
+    if abs(new_value) > VALUE_LIMIT:
+        raise DowntimeError("value_out_of_range", "That change takes a value out of range")
+    cursor.execute(f"UPDATE {table} SET value = %s, updated_at = %s WHERE id = %s", (new_value, now, row["id"]))
+    cursor.execute(
+        "INSERT INTO downtime_changes (campaign_id, phase_id, target_kind, target_id, old_value, new_value, "
+        "delta, by_user, at) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)",
+        (campaign_id, phase_id, kind, row["id"], row["value"], new_value, delta, user_id, now),
+    )
+
+
+@downtime_bp.route("/campaigns/<int:campaign_id>/downtime/phases/<int:phase_id>/resolve", methods=["POST"])
+@_api
+def resolve_phase(cursor, user_id, campaign_id, phase_id):
+    _require_st(cursor, user_id, campaign_id)
+    data = _body()
+    version = strict_int(data.get("version"), "version")
+    if version is None:
+        raise DowntimeError("version_required", "Send the phase version you edited")
+    kind = data.get("result_kind")
+    if kind not in RESULT_KINDS:
+        raise DowntimeError("invalid_result_kind", "result_kind must be scene, result, feedback or skip")
+    text = _text(data, "result_text", TEXT_MAX)
+    note = _text(data, "st_note", NOTE_MAX)
+    location_id = strict_int(data.get("result_location_id"), "result_location_id")
+    if kind != "scene":
+        location_id = None
+    has_deltas = "deltas" in data and data.get("deltas") is not None
+    wanted = _parse_deltas(data.get("deltas")) if has_deltas else None
+
+    found = _phase_in_campaign(cursor, campaign_id, phase_id)
+    rnd = _locked_round(cursor, campaign_id, found["round_id"])
+    if rnd["status"] == "open":
+        raise DowntimeError("round_not_resolving", "Move the round to resolving first", 409)
+    cursor.execute("SELECT * FROM downtime_phases WHERE id = %s" + _for_update(), (phase_id,))
+    phase = cursor.fetchone()
+    if int(phase["version"]) != version:
+        raise DowntimeError("version_conflict", "This phase changed since you opened it; reload it", 409,
+                            current_version=phase["version"])
+    if location_id is not None:
+        cursor.execute("SELECT id FROM locations WHERE id = %s AND campaign_id = %s AND is_active = TRUE",
+                       (location_id, campaign_id))
+        if not cursor.fetchone():
+            raise DowntimeError("invalid_location", "That room is not in this chronicle")
+
+    now = _now()
+    if has_deltas:
+        cursor.execute(
+            "SELECT target_kind, target_id, SUM(delta) AS net FROM downtime_changes WHERE phase_id = %s "
+            "GROUP BY target_kind, target_id",
+            (phase_id,),
+        )
+        applied = {(r["target_kind"], int(r["target_id"])): int(r["net"] or 0) for r in cursor.fetchall()}
+        diff = {}
+        for key in set(applied) | set(wanted):
+            d = wanted.get(key, 0) - applied.get(key, 0)
+            if d:
+                diff[key] = d
+        if diff and rnd["status"] == "released":
+            raise DowntimeError("deltas_locked", "Changes can't be altered after the round is released", 409)
+        # New targets must belong here; a target the phase already changed may be reversed even if
+        # it was renamed since (it is still the same row, checked below).
+        for (tkind, tid) in sorted(diff, key=lambda k: (TARGET_KINDS.index(k[0]), k[1])):
+            if tkind == "indicator":
+                cursor.execute(
+                    "SELECT * FROM downtime_indicators WHERE id = %s AND project_id = %s" + _for_update(),
+                    (tid, phase["project_id"]),
+                )
+            else:
+                cursor.execute(
+                    "SELECT * FROM chronicle_variables WHERE id = %s AND campaign_id = %s" + _for_update(),
+                    (tid, campaign_id),
+                )
+            row = cursor.fetchone()
+            if not row and (tkind, tid) in applied and not wanted.get((tkind, tid)):
+                continue  # the indicator/variable was deleted since: nothing left to reverse
+            if not row:
+                raise DowntimeError("invalid_target", "A change points at an indicator or variable that "
+                                                      "isn't part of this project or chronicle", 400,
+                                    target_kind=tkind, target_id=tid)
+            _apply_value_change(cursor, campaign_id, phase_id, tkind, row, diff[(tkind, tid)], user_id, now)
+
+    cursor.execute(
+        "UPDATE downtime_phases SET result_kind = %s, result_text = %s, result_location_id = %s, st_note = %s, "
+        "resolved_by = %s, resolved_at = %s, version = version + 1, updated_at = %s "
+        "WHERE id = %s AND version = %s",
+        (kind, text, location_id, note, user_id, now, now, phase_id, version),
+    )
+    if cursor.rowcount != 1:
+        raise DowntimeError("version_conflict", "This phase changed since you opened it; reload it", 409)
+    return {"phase": _st_phase_by_id(cursor, phase_id)}, 200
+
+
+@downtime_bp.route("/campaigns/<int:campaign_id>/downtime/rounds/<int:round_id>/release", methods=["POST"])
+@_api
+def release_round(cursor, user_id, campaign_id, round_id):
+    _require_st(cursor, user_id, campaign_id)
+    force = strict_bool(_body().get("force"), "force")
+    r = _locked_round(cursor, campaign_id, round_id)
+    if r["status"] != "resolving":
+        raise DowntimeError("round_wrong_status", f"The round is {r['status']}, not resolving", 409,
+                            round_status=r["status"])
+    cursor.execute(
+        "SELECT COUNT(*) AS n FROM downtime_phases WHERE round_id = %s AND resolved_at IS NULL", (round_id,)
+    )
+    unresolved = int(cursor.fetchone()["n"] or 0)
+    if unresolved and not force:
+        raise DowntimeError("unresolved_phases", "Some phases have no result yet", 409, count=unresolved)
+    cursor.execute("UPDATE downtime_rounds SET status = 'released', released_at = %s WHERE id = %s",
+                   (_now(), round_id))
+    cursor.execute("SELECT * FROM downtime_rounds WHERE id = %s", (round_id,))
+    return {"round": _round_dict(cursor.fetchone())}, 200
+
+
+@downtime_bp.route("/campaigns/<int:campaign_id>/downtime/projects/<int:project_id>", methods=["PATCH"])
+@_api
+def set_project_status(cursor, user_id, campaign_id, project_id):
+    _require_st(cursor, user_id, campaign_id)
+    status = _body().get("status")
+    if status not in PROJECT_STATUSES:
+        raise DowntimeError("invalid_status", "status must be active, done or abandoned")
+    cursor.execute("UPDATE downtime_projects SET status = %s WHERE id = %s AND campaign_id = %s",
+                   (status, project_id, campaign_id))
+    if cursor.rowcount != 1:
+        raise DowntimeError("project_not_found", "Project not found", 404)
+    return {"id": project_id, "status": status}, 200
+
+
+def _name(data):
+    return _text(data, "name", NAME_MAX, required=True)
+
+
+def _value(data, default=None):
+    v = strict_int(data.get("value"), "value", default)
+    if v is not None and abs(v) > VALUE_LIMIT:
+        raise DowntimeError("value_out_of_range", "That value is out of range")
+    return v
+
+
+def _insert_unique(cursor, sql, params):
+    try:
+        cursor.execute(sql, params)
+    except Exception as e:
+        if _is_integrity_error(e):
+            raise DowntimeError("name_taken", "That name is already used", 409)
+        raise
+    return cursor.fetchone()["id"]
+
+
+def _manual_change(cursor, campaign_id, kind, row, new_value, user_id, now):
+    if new_value is None or int(new_value) == int(row["value"]):
+        return
+    cursor.execute(
+        "INSERT INTO downtime_changes (campaign_id, phase_id, target_kind, target_id, old_value, new_value, "
+        "delta, by_user, at) VALUES (%s, NULL, %s, %s, %s, %s, %s, %s, %s)",
+        (campaign_id, kind, row["id"], row["value"], new_value, int(new_value) - int(row["value"]), user_id, now),
+    )
+
+
+@downtime_bp.route("/campaigns/<int:campaign_id>/downtime/projects/<int:project_id>/indicators",
+                   methods=["POST"])
+@_api
+def create_indicator(cursor, user_id, campaign_id, project_id):
+    _require_st(cursor, user_id, campaign_id)
+    data = _body()
+    name, value = _name(data), _value(data, 0)
+    cursor.execute("SELECT id FROM downtime_projects WHERE id = %s AND campaign_id = %s", (project_id, campaign_id))
+    if not cursor.fetchone():
+        raise DowntimeError("project_not_found", "Project not found", 404)
+    cursor.execute("SELECT id FROM downtime_indicators WHERE project_id = %s AND name = %s", (project_id, name))
+    if cursor.fetchone():
+        raise DowntimeError("name_taken", "That name is already used", 409)
+    iid = _insert_unique(
+        cursor,
+        "INSERT INTO downtime_indicators (project_id, name, value, updated_at) VALUES (%s, %s, %s, %s) RETURNING id",
+        (project_id, name, value, _now()),
+    )
+    cursor.execute("SELECT * FROM downtime_indicators WHERE id = %s", (iid,))
+    return {"indicator": _indicator_dict(cursor.fetchone())}, 201
+
+
+def _locked_indicator(cursor, campaign_id, indicator_id):
+    cursor.execute(
+        "SELECT i.id FROM downtime_indicators i JOIN downtime_projects p ON p.id = i.project_id "
+        "WHERE i.id = %s AND p.campaign_id = %s",
+        (indicator_id, campaign_id),
+    )
+    if not cursor.fetchone():
+        raise DowntimeError("indicator_not_found", "Indicator not found", 404)
+    cursor.execute("SELECT * FROM downtime_indicators WHERE id = %s" + _for_update(), (indicator_id,))
+    return cursor.fetchone()
+
+
+@downtime_bp.route("/campaigns/<int:campaign_id>/downtime/indicators/<int:indicator_id>",
+                   methods=["PATCH", "DELETE"])
+@_api
+def edit_indicator(cursor, user_id, campaign_id, indicator_id):
+    _require_st(cursor, user_id, campaign_id)
+    row = _locked_indicator(cursor, campaign_id, indicator_id)
+    if request.method == "DELETE":
+        cursor.execute("DELETE FROM downtime_indicators WHERE id = %s", (indicator_id,))
+        return {"deleted": indicator_id}, 200
+    data = _body()
+    name = _name(data) if "name" in data else row["name"]
+    value = _value(data) if "value" in data else None
+    now = _now()
+    _manual_change(cursor, campaign_id, "indicator", row, value, user_id, now)
+    try:
+        cursor.execute("UPDATE downtime_indicators SET name = %s, value = %s, updated_at = %s WHERE id = %s",
+                       (name, row["value"] if value is None else value, now, indicator_id))
+    except Exception as e:
+        if _is_integrity_error(e):
+            raise DowntimeError("name_taken", "That name is already used", 409)
+        raise
+    cursor.execute("SELECT * FROM downtime_indicators WHERE id = %s", (indicator_id,))
+    return {"indicator": _indicator_dict(cursor.fetchone())}, 200
+
+
+@downtime_bp.route("/campaigns/<int:campaign_id>/downtime/variables", methods=["GET", "POST"])
+@_api
+def variables(cursor, user_id, campaign_id):
+    _require_st(cursor, user_id, campaign_id)
+    if request.method == "GET":
+        cursor.execute("SELECT * FROM chronicle_variables WHERE campaign_id = %s ORDER BY name", (campaign_id,))
+        return {"variables": [_variable_dict(v) for v in cursor.fetchall()]}, 200
+    data = _body()
+    name, value, note = _name(data), _value(data, 0), _text(data, "note", NOTE_MAX)
+    cursor.execute("SELECT id FROM chronicle_variables WHERE campaign_id = %s AND name = %s", (campaign_id, name))
+    if cursor.fetchone():
+        raise DowntimeError("name_taken", "That name is already used", 409)
+    vid = _insert_unique(
+        cursor,
+        "INSERT INTO chronicle_variables (campaign_id, name, value, note, updated_at) "
+        "VALUES (%s, %s, %s, %s, %s) RETURNING id",
+        (campaign_id, name, value, note, _now()),
+    )
+    cursor.execute("SELECT * FROM chronicle_variables WHERE id = %s", (vid,))
+    return {"variable": _variable_dict(cursor.fetchone())}, 201
+
+
+@downtime_bp.route("/campaigns/<int:campaign_id>/downtime/variables/<int:variable_id>",
+                   methods=["PATCH", "DELETE"])
+@_api
+def edit_variable(cursor, user_id, campaign_id, variable_id):
+    _require_st(cursor, user_id, campaign_id)
+    cursor.execute("SELECT * FROM chronicle_variables WHERE id = %s AND campaign_id = %s" + _for_update(),
+                   (variable_id, campaign_id))
+    row = cursor.fetchone()
+    if not row:
+        raise DowntimeError("variable_not_found", "Variable not found", 404)
+    if request.method == "DELETE":
+        cursor.execute("DELETE FROM chronicle_variables WHERE id = %s", (variable_id,))
+        return {"deleted": variable_id}, 200
+    data = _body()
+    name = _name(data) if "name" in data else row["name"]
+    note = _text(data, "note", NOTE_MAX) if "note" in data else (row.get("note") or "")
+    value = _value(data) if "value" in data else None
+    now = _now()
+    _manual_change(cursor, campaign_id, "variable", row, value, user_id, now)
+    try:
+        cursor.execute(
+            "UPDATE chronicle_variables SET name = %s, value = %s, note = %s, updated_at = %s WHERE id = %s",
+            (name, row["value"] if value is None else value, note, now, variable_id),
+        )
+    except Exception as e:
+        if _is_integrity_error(e):
+            raise DowntimeError("name_taken", "That name is already used", 409)
+        raise
+    cursor.execute("SELECT * FROM chronicle_variables WHERE id = %s", (variable_id,))
+    return {"variable": _variable_dict(cursor.fetchone())}, 200
+
+
+@downtime_bp.route("/campaigns/<int:campaign_id>/downtime/changes", methods=["GET"])
+@_api
+def list_changes(cursor, user_id, campaign_id):
+    _require_st(cursor, user_id, campaign_id)
+    kind = request.args.get("target_kind")
+    sql = "SELECT * FROM downtime_changes WHERE campaign_id = %s"
+    params = [campaign_id]
+    if kind:
+        if kind not in TARGET_KINDS:
+            raise DowntimeError("invalid_target", "target_kind must be indicator or variable")
+        sql += " AND target_kind = %s"
+        params.append(kind)
+        if request.args.get("target_id"):
+            sql += " AND target_id = %s"
+            params.append(strict_int(request.args.get("target_id"), "target_id"))
+    cursor.execute(sql + " ORDER BY id DESC LIMIT 200", tuple(params))
+    return {"changes": [_change_dict(c) for c in cursor.fetchall()]}, 200

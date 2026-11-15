@@ -21,6 +21,7 @@ def test_open_round_permissions(dt, uid, status, code):
 
 @pytest.mark.parametrize("url", [
     "/campaigns/10/downtime/rounds/1/resolve", "/campaigns/10/downtime/rounds/1/reopen",
+    "/campaigns/10/downtime/rounds/1/release",
 ])
 @pytest.mark.parametrize("uid", [3, 4, 6, 7, 8])
 def test_round_moves_are_storyteller_only(dt, url, uid):
@@ -227,3 +228,202 @@ def test_downtime_roll_cannot_be_willpower_rerolled(dt):
     assert r.status_code == 400 and r.get_json()["error"] == "Only V5 manual rolls can be rerolled"
     assert dt.sql("SELECT COUNT(*) FROM dice_rolls")[0][0] == 1
     assert '"rerolled": false' in dt.sql("SELECT modifiers FROM dice_rolls")[0][0]
+
+
+# ---------------------------------------------------------------- Storyteller: setup, inbox, resolve
+
+
+def _setup_round(dt, cid=10):
+    """Open round, Anna's project with one declared phase, an indicator and a variable."""
+    rnd = dt.open_round(cid=cid)
+    proj = dt.project(cid=cid)
+    ph = dt.declare(proj["id"], cid=cid)
+    ind = dt.ok(dt.post(f"/campaigns/{cid}/downtime/projects/{proj['id']}/indicators", 2,
+                        {"name": "Pressure", "value": 2}), 201)["indicator"]
+    var = dt.ok(dt.post(f"/campaigns/{cid}/downtime/variables", 2,
+                        {"name": "Harbour unrest", "value": 5, "note": "rises with violence"}), 201)["variable"]
+    return rnd, proj, ph, ind, var
+
+
+def _resolve(dt, phid, version, uid=2, cid=10, **body):
+    payload = {"version": version, "result_kind": "result", "result_text": "The owner agrees.", **body}
+    return dt.post(f"/campaigns/{cid}/downtime/phases/{phid}/resolve", uid, payload)
+
+
+def _to_resolving(dt, rnd, cid=10):
+    dt.ok(dt.post(f"/campaigns/{cid}/downtime/rounds/{rnd['id']}/resolve", 2))
+
+
+def _inbox_phase(dt, phid, cid=10):
+    inbox = dt.ok(dt.get(f"/campaigns/{cid}/downtime/inbox", 2))
+    return next(p for p in inbox["phases"] if p["id"] == phid)
+
+
+def test_setup_sets_difficulty_before_the_roll_only(dt):
+    rnd, proj, ph, ind, var = _setup_round(dt)
+    r = dt.call("PUT", f"/campaigns/10/downtime/phases/{ph['id']}/setup", 2,
+                {"difficulty": 7, "difficulty_hidden": True})
+    out = dt.ok(r)["phase"]
+    assert out["difficulty"] == 7 and out["difficulty_hidden"] is True and out["version"] == 2
+    r = dt.call("PUT", f"/campaigns/10/downtime/phases/{ph['id']}/setup", 2, {"difficulty": 11})
+    assert r.get_json()["code"] == "invalid_difficulty"
+    r = dt.call("PUT", f"/campaigns/10/downtime/phases/{ph['id']}/setup", 3, {"difficulty": 5})
+    assert r.status_code == 403
+    dt.ok(_roll(dt, ph["id"]))
+    r = dt.call("PUT", f"/campaigns/10/downtime/phases/{ph['id']}/setup", 2, {"difficulty": 5})
+    assert r.status_code == 409 and r.get_json()["code"] == "already_rolled"
+    assert dt.sql("SELECT difficulty FROM dice_rolls")[0][0] == 7
+
+
+def test_inbox_shows_unrolled_phase_and_everything_for_the_st(dt):
+    rnd, proj, ph, ind, var = _setup_round(dt)
+    inbox = dt.ok(dt.get("/campaigns/10/downtime/inbox", 2))
+    assert inbox["round"]["id"] == rnd["id"]
+    p = inbox["phases"][0]
+    assert p["no_roll"] is True and p["roll"] is None and p["resolved"] is False
+    assert inbox["projects"][0]["indicators"][0]["name"] == "Pressure"
+    assert inbox["projects"][0]["character_name"] == "Anna"
+    assert inbox["variables"][0]["name"] == "Harbour unrest"
+    assert {loc["name"] for loc in inbox["locations"]} == {"The Harbour", "Sealed Vault"}
+    for uid in (3, 4, 6):
+        assert dt.get("/campaigns/10/downtime/inbox", uid).status_code == 403
+
+
+def test_resolve_needs_resolving_and_applies_deltas(dt):
+    rnd, proj, ph, ind, var = _setup_round(dt)
+    r = _resolve(dt, ph["id"], 1)
+    assert r.status_code == 409 and r.get_json()["code"] == "round_not_resolving"
+    _to_resolving(dt, rnd)
+    deltas = [{"target_kind": "indicator", "target_id": ind["id"], "delta": 3},
+              {"target_kind": "variable", "target_id": var["id"], "delta": -2}]
+    out = dt.ok(_resolve(dt, ph["id"], 1, deltas=deltas, st_note="Owner is a ghoul"))["phase"]
+    assert out["resolved"] and out["version"] == 2 and out["st_note"] == "Owner is a ghoul"
+    assert sorted((c["target_kind"], c["old_value"], c["new_value"]) for c in out["changes"]) == [
+        ("indicator", 2, 5), ("variable", 5, 3)]
+    assert dt.sql("SELECT value FROM downtime_indicators")[0][0] == 5
+    assert dt.sql("SELECT value FROM chronicle_variables")[0][0] == 3
+    # unresolved filter
+    inbox = dt.ok(dt.get("/campaigns/10/downtime/inbox?unresolved=1", 2))
+    assert inbox["phases"] == []
+
+
+def test_amend_applies_only_the_difference(dt):
+    rnd, proj, ph, ind, var = _setup_round(dt)
+    _to_resolving(dt, rnd)
+    dt.ok(_resolve(dt, ph["id"], 1, deltas=[{"target_kind": "indicator", "target_id": ind["id"], "delta": 3}]))
+    out = dt.ok(_resolve(dt, ph["id"], 2, deltas=[{"target_kind": "variable", "target_id": var["id"], "delta": 1}]))
+    assert dt.sql("SELECT value FROM downtime_indicators")[0][0] == 2  # reversed
+    assert dt.sql("SELECT value FROM chronicle_variables")[0][0] == 6
+    assert [c["delta"] for c in out["phase"]["changes"]] == [3, -3, 1]
+    # text-only amend keeps the deltas (no deltas key)
+    dt.ok(_resolve(dt, ph["id"], 3, result_text="Changed my mind on wording"))
+    assert dt.sql("SELECT value FROM chronicle_variables")[0][0] == 6
+
+
+def test_version_conflict(dt):
+    rnd, proj, ph, ind, var = _setup_round(dt)
+    _to_resolving(dt, rnd)
+    dt.ok(_resolve(dt, ph["id"], 1))
+    r = _resolve(dt, ph["id"], 1, result_text="stale form")
+    assert r.status_code == 409 and r.get_json()["code"] == "version_conflict"
+    assert r.get_json()["current_version"] == 2
+
+
+def test_bad_delta_rolls_everything_back(dt):
+    rnd, proj, ph, ind, var = _setup_round(dt)
+    other = dt.project(uid=4, title="Bob's plan")
+    other_ind = dt.ok(dt.post(f"/campaigns/10/downtime/projects/{other['id']}/indicators", 2,
+                              {"name": "Momentum"}), 201)["indicator"]
+    _to_resolving(dt, rnd)
+    deltas = [{"target_kind": "variable", "target_id": var["id"], "delta": 4},
+              {"target_kind": "indicator", "target_id": other_ind["id"], "delta": 1}]
+    r = _resolve(dt, ph["id"], 1, deltas=deltas)
+    assert r.status_code == 400 and r.get_json()["code"] == "invalid_target"
+    assert dt.sql("SELECT value FROM chronicle_variables")[0][0] == 5
+    assert dt.sql("SELECT COUNT(*) FROM downtime_changes")[0][0] == 0
+    assert dt.sql("SELECT resolved_at, version FROM downtime_phases WHERE id = ?", (ph["id"],))[0] == (None, 1)
+    # a variable of another chronicle is refused too
+    other_var = dt.ok(dt.post("/campaigns/11/downtime/variables", 2, {"name": "Elsewhere"}), 201)["variable"]
+    r = _resolve(dt, ph["id"], 1, deltas=[{"target_kind": "variable", "target_id": other_var["id"], "delta": 1}])
+    assert r.get_json()["code"] == "invalid_target"
+
+
+@pytest.mark.parametrize("body,code", [
+    ({"result_kind": "maybe"}, "invalid_result_kind"),
+    ({"deltas": "x"}, "invalid_deltas"),
+    ({"deltas": [{"target_kind": "x", "target_id": 1, "delta": 1}]}, "invalid_deltas"),
+    ({"deltas": [{"target_kind": "variable", "target_id": 1, "delta": 5000}]}, "invalid_deltas"),
+    ({"result_kind": "scene", "result_location_id": 52}, "invalid_location"),
+    ({"version": "missing"}, "version_required"),
+])
+def test_resolve_refusals(dt, body, code):
+    rnd, proj, ph, ind, var = _setup_round(dt)
+    _to_resolving(dt, rnd)
+    if body.get("version") == "missing":
+        r = dt.post(f"/campaigns/10/downtime/phases/{ph['id']}/resolve", 2, {"result_kind": "result"})
+    else:
+        r = _resolve(dt, ph["id"], 1, **body)
+    assert r.status_code == 400 and r.get_json()["code"] == code
+
+
+def test_resolve_is_storyteller_only(dt):
+    rnd, proj, ph, ind, var = _setup_round(dt)
+    _to_resolving(dt, rnd)
+    for uid in (3, 4, 6, 7):
+        assert _resolve(dt, ph["id"], 1, uid=uid).status_code == 403
+    assert dt.ok(_resolve(dt, ph["id"], 1, uid=5))["phase"]["resolved"]  # helper
+
+
+def test_release_and_after_release_rules(dt):
+    rnd, proj, ph, ind, var = _setup_round(dt)
+    second = dt.declare(dt.project(title="Second")["id"])
+    _to_resolving(dt, rnd)
+    dt.ok(_resolve(dt, ph["id"], 1, deltas=[{"target_kind": "variable", "target_id": var["id"], "delta": 1}]))
+    r = dt.post(f"/campaigns/10/downtime/rounds/{rnd['id']}/release", 2)
+    assert r.status_code == 409 and r.get_json() == {
+        "error": "Some phases have no result yet", "code": "unresolved_phases", "count": 1}
+    dt.ok(_resolve(dt, second["id"], 1, result_kind="skip", result_text=""))
+    assert dt.ok(dt.post(f"/campaigns/10/downtime/rounds/{rnd['id']}/release", 2))["round"]["status"] == "released"
+    # text amend allowed, deltas locked
+    dt.ok(_resolve(dt, ph["id"], 2, result_text="Typo fixed",
+                   deltas=[{"target_kind": "variable", "target_id": var["id"], "delta": 1}]))
+    r = _resolve(dt, ph["id"], 3, deltas=[])
+    assert r.status_code == 409 and r.get_json()["code"] == "deltas_locked"
+    # the next round can open
+    assert dt.open_round(title="Spring")["status"] == "open"
+
+
+def test_release_with_force_and_unrolled_phase(dt):
+    rnd, proj, ph, ind, var = _setup_round(dt)
+    _to_resolving(dt, rnd)
+    dt.ok(dt.post(f"/campaigns/10/downtime/rounds/{rnd['id']}/release", 2, {"force": True}))
+    view = dt.ok(dt.get("/campaigns/10/downtime", 3))
+    assert view["projects"][0]["phases"][0]["status"] == "unresolved"
+
+
+def test_indicator_and_variable_editing_keeps_history(dt):
+    rnd, proj, ph, ind, var = _setup_round(dt)
+    out = dt.ok(dt.call("PATCH", f"/campaigns/10/downtime/indicators/{ind['id']}", 2, {"value": 7}))
+    assert out["indicator"]["value"] == 7
+    dt.ok(dt.call("PATCH", f"/campaigns/10/downtime/variables/{var['id']}", 2, {"note": "calmer", "value": 4}))
+    ch = dt.ok(dt.get("/campaigns/10/downtime/changes", 2))["changes"]
+    assert [(c["target_kind"], c["old_value"], c["new_value"], c["phase_id"]) for c in ch] == [
+        ("variable", 5, 4, None), ("indicator", 2, 7, None)]
+    r = dt.post(f"/campaigns/10/downtime/projects/{proj['id']}/indicators", 2, {"name": "Pressure"})
+    assert r.status_code == 409 and r.get_json()["code"] == "name_taken"
+    for uid in (3, 6):
+        assert dt.call("PATCH", f"/campaigns/10/downtime/indicators/{ind['id']}", uid, {"value": 1}).status_code == 403
+        assert dt.get("/campaigns/10/downtime/variables", uid).status_code == 403
+        assert dt.get("/campaigns/10/downtime/changes", uid).status_code == 403
+    # another chronicle's ST view can't reach this indicator
+    assert dt.call("PATCH", f"/campaigns/11/downtime/indicators/{ind['id']}", 2, {"value": 1}).status_code == 404
+    dt.ok(dt.call("DELETE", f"/campaigns/10/downtime/indicators/{ind['id']}", 2))
+
+
+def test_project_status_by_st(dt):
+    proj = dt.project()
+    dt.ok(dt.call("PATCH", f"/campaigns/10/downtime/projects/{proj['id']}", 2, {"status": "done"}))
+    assert dt.call("PATCH", f"/campaigns/10/downtime/projects/{proj['id']}", 3, {"status": "active"}).status_code == 403
+    dt.open_round()
+    r = dt.post(f"/campaigns/10/downtime/projects/{proj['id']}/phases", 3, {"action": "More"})
+    assert r.status_code == 409 and r.get_json()["code"] == "project_closed"
