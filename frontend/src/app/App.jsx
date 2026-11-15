@@ -11,6 +11,7 @@ import LoginPage from '../features/auth/LoginPage';
 import ChronicleHallPage from '../features/hall/ChronicleHallPage';
 import CreateChroniclePage from '../features/hall/CreateChroniclePage';
 import ChronicleSettingsPage from '../features/chronicle/ChronicleSettingsPage';
+import DowntimePage from '../features/downtime/DowntimePage';
 import ChronicleArchivesPanel from '../features/chronicle/ChronicleArchivesPanel';
 import ProfilePage from '../features/profile/ProfilePage';
 import CharacterCreatePage from '../features/profile/CharacterCreatePage';
@@ -95,6 +96,7 @@ export function AppRoutes() {
         <Route path="/chronicles" element={<ChronicleHallPage />} />
         <Route path="/chronicles/new" element={<CreateChroniclePage />} />
         <Route path="/chronicles/:id" element={<ChronicleSettingsPage />} />
+        <Route path="/chronicles/:id/downtime" element={<DowntimePage />} />
         <Route path="/c/:id" element={<PlayRedirect />} />
         <Route path="/c/:id/:locationId" element={<PlayPage />} />
         <Route path="/archives" element={<ArchivesRoute />} />

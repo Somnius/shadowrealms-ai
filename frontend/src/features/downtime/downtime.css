@@ -1,0 +1,21 @@
+/* Downtime page (features/downtime). Lists reuse .sr-approvals from chronicle.css. */
+.sr-app .sr-downtime__banner { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sr-space-2); padding: var(--sr-space-3); border: 1px solid var(--sr-border); border-radius: var(--sr-radius-md); background: var(--sr-surface-sunken); }
+.sr-app .sr-downtime__readonly { margin: 0; padding: var(--sr-space-3); border: 1px solid var(--sr-warn-400); border-radius: var(--sr-radius-md); color: var(--sr-warn-400); }
+.sr-app .sr-downtime__list,
+.sr-app .sr-downtime__phases,
+.sr-app .sr-downtime__values,
+.sr-app .sr-downtime__rounds,
+.sr-app .sr-downtime__history { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--sr-space-2); }
+.sr-app .sr-downtime__project { display: flex; flex-direction: column; gap: var(--sr-space-2); padding: var(--sr-space-3); border: 1px solid var(--sr-border); border-radius: var(--sr-radius-md); background: var(--sr-surface-sunken); }
+.sr-app .sr-downtime__project p,
+.sr-app .sr-downtime__phase p { margin: 0; }
+.sr-app .sr-downtime__phase { display: flex; flex-direction: column; gap: var(--sr-space-1); padding-left: var(--sr-space-3); border-left: 2px solid var(--sr-border); }
+.sr-app .sr-downtime__action { white-space: pre-wrap; overflow-wrap: anywhere; }
+.sr-app .sr-downtime__roll { display: flex; flex-wrap: wrap; gap: var(--sr-space-2); }
+.sr-app .sr-downtime__result { display: flex; flex-direction: column; gap: var(--sr-space-1); }
+.sr-app .sr-downtime__deltas { display: flex; flex-wrap: wrap; gap: var(--sr-space-2); border: 1px solid var(--sr-border); border-radius: var(--sr-radius-md); padding: var(--sr-space-2) var(--sr-space-3); margin: 0; min-width: 0; }
+.sr-app .sr-downtime__confirm { margin-top: var(--sr-space-3); padding: var(--sr-space-3); border: 1px solid var(--sr-warn-400); border-radius: var(--sr-radius-md); }
+.sr-app .sr-downtime__confirm p { margin: 0 0 var(--sr-space-2); }
+@media (max-width: 600px) {
+  .sr-app .sr-downtime .sr-row--end { flex-direction: column; align-items: stretch; }
+}

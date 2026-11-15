@@ -5,6 +5,7 @@ import en_chat from './en/chat.json';
 import en_chronicle from './en/chronicle.json';
 import en_common from './en/common.json';
 import en_dice from './en/dice.json';
+import en_downtime from './en/downtime.json';
 import en_footer from './en/footer.json';
 import en_glossary from './en/glossary.json';
 import en_hall from './en/hall.json';
@@ -23,6 +24,7 @@ import el_chat from './el/chat.json';
 import el_chronicle from './el/chronicle.json';
 import el_common from './el/common.json';
 import el_dice from './el/dice.json';
+import el_downtime from './el/downtime.json';
 import el_footer from './el/footer.json';
 import el_glossary from './el/glossary.json';
 import el_hall from './el/hall.json';
@@ -36,9 +38,9 @@ import el_showcase from './el/showcase.json';
 import el_voice from './el/voice.json';
 import el_wizard from './el/wizard.json';
 
-export const NAMESPACES = ['admin', 'auth', 'chat', 'chronicle', 'common', 'dice', 'footer', 'glossary', 'hall', 'laya', 'locations', 'play', 'profile', 'sheet', 'shell', 'showcase', 'voice', 'wizard'];
+export const NAMESPACES = ['admin', 'auth', 'chat', 'chronicle', 'common', 'dice', 'downtime', 'footer', 'glossary', 'hall', 'laya', 'locations', 'play', 'profile', 'sheet', 'shell', 'showcase', 'voice', 'wizard'];
 
 export const resources = {
-  en: { admin: en_admin, auth: en_auth, chat: en_chat, chronicle: en_chronicle, common: en_common, dice: en_dice, footer: en_footer, glossary: en_glossary, hall: en_hall, laya: en_laya, locations: en_locations, play: en_play, profile: en_profile, sheet: en_sheet, shell: en_shell, showcase: en_showcase, voice: en_voice, wizard: en_wizard },
-  el: { admin: el_admin, auth: el_auth, chat: el_chat, chronicle: el_chronicle, common: el_common, dice: el_dice, footer: el_footer, glossary: el_glossary, hall: el_hall, laya: el_laya, locations: el_locations, play: el_play, profile: el_profile, sheet: el_sheet, shell: el_shell, showcase: el_showcase, voice: el_voice, wizard: el_wizard },
+  en: { admin: en_admin, auth: en_auth, chat: en_chat, chronicle: en_chronicle, common: en_common, dice: en_dice, downtime: en_downtime, footer: en_footer, glossary: en_glossary, hall: en_hall, laya: en_laya, locations: en_locations, play: en_play, profile: en_profile, sheet: en_sheet, shell: en_shell, showcase: en_showcase, voice: en_voice, wizard: en_wizard },
+  el: { admin: el_admin, auth: el_auth, chat: el_chat, chronicle: el_chronicle, common: el_common, dice: el_dice, downtime: el_downtime, footer: el_footer, glossary: el_glossary, hall: el_hall, laya: el_laya, locations: el_locations, play: el_play, profile: el_profile, sheet: el_sheet, shell: el_shell, showcase: el_showcase, voice: el_voice, wizard: el_wizard },
 };

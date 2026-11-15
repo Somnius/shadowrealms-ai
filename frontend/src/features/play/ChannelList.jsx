@@ -104,6 +104,16 @@ export default function ChannelList({ campaign, locations, currentId, unread, ca
           <h2 className="sr-rooms__name sr-usertitle">{campaign?.name}</h2>
           <Badge edition={editionLabel(campaign)} tone="neutral" />
         </div>
+        <Tooltip content={t('downtime:title', 'Downtime')} describe={false} placement="bottom">
+          <Link
+            to={`/chronicles/${campaign.id}/downtime`}
+            className="sr-btn sr-btn--icon sr-btn--sm sr-btn--square"
+            aria-label={t('downtime:title', 'Downtime')}
+            onClick={() => onNavigate && onNavigate()}
+          >
+            <Glyph name="hourglass" size={16} />
+          </Link>
+        </Tooltip>
         <Tooltip content={t('play:rooms.settings', 'Chronicle details & settings')} describe={false} placement="bottom">
           <Link
             to={`/chronicles/${campaign.id}`}

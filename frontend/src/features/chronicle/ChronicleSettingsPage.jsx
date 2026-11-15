@@ -463,6 +463,16 @@ export default function ChronicleSettingsPage() {
 
           {canManage ? <ChronicleVoicePanel campaignId={campaign.id} /> : null}
 
+          {canManage || staff ? (
+            <Panel title={t('downtime:title', 'Downtime')} icon="hourglass">
+              <p className="sr-muted sr-small">{t('downtime:settingsCard', 'Rounds of between-session projects: players declare, you set difficulties, resolve and release.')}</p>
+              <ButtonLink to={`/chronicles/${campaign.id}/downtime`} variant="secondary" size="sm" icon="chevron-right">
+                {t('downtime:open', 'Open downtime')}
+              </ButtonLink>
+            </Panel>
+          ) : null}
+
+
           {staff && campaign.rules_edition === 'v5' ? (
             <SpendApprovalsPanel
               key={`approvals-${campaign.id}-${(campaign.creation_settings && campaign.creation_settings.st_mode) || 'human'}`}
