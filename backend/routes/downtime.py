@@ -35,6 +35,7 @@ from database import get_db
 from services.character_death import death_of
 from services.dice_chat import DicePostError
 from services.dice_rolls import json_field, perform_manual_roll
+from services.location_access import fetch_readable_location_ids
 from services.playing_character import is_campaign_storyteller_or_staff
 from services.request_validation import RequestValidationError, body_object, strict_bool, strict_int
 from services.rules_edition import V5, edition_of
@@ -469,7 +470,22 @@ def _player_roll(row, phase):
 
 
 def _player_rooms(cursor, user_id, campaign_id, phase_rows):
-    return {}
+    """{location_id: {id, name}} for released scene results in rooms this player may read
+    (services.location_access); a room they can't read stays unnamed (result_location null)."""
+    ids = {
+        int(ph["result_location_id"]) for ph in phase_rows
+        if ph.get("round_status") == "released" and ph.get("result_kind") == "scene"
+        and ph.get("result_location_id") is not None
+    }
+    if not ids:
+        return {}
+    readable = fetch_readable_location_ids(cursor, user_id, campaign_id) & ids
+    if not readable:
+        return {}
+    marks = ", ".join(["%s"] * len(readable))
+    cursor.execute(f"SELECT id, name FROM locations WHERE campaign_id = %s AND id IN ({marks})",
+                   (campaign_id, *sorted(readable)))
+    return {int(r["id"]): {"id": r["id"], "name": r["name"]} for r in cursor.fetchall()}
 
 
 @downtime_bp.route("/campaigns/<int:campaign_id>/downtime/projects", methods=["POST"])

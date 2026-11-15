@@ -271,6 +271,21 @@ def delete_player_account_preserving_chats(
 
         char_ids = _character_ids_for_user(cursor, target_user_id)
         stats["characters_deleted"] = len(char_ids)
+        # Downtime projects outlive the character (the Storyteller's inbox shows the stored
+        # character_name); the user's name on rounds, results and changes is cleared. The foreign
+        # keys say ON DELETE SET NULL too; this also covers SQLite without foreign key enforcement.
+        if _table_exists(cursor, "downtime_projects"):
+            for cid in char_ids:
+                cursor.execute(
+                    f"UPDATE downtime_projects SET character_id = NULL WHERE character_id = {ph}",
+                    (cid,),
+                )
+            for table, col in (("downtime_rounds", "opened_by"), ("downtime_phases", "resolved_by"),
+                               ("downtime_changes", "by_user")):
+                cursor.execute(
+                    f"UPDATE {table} SET {col} = NULL WHERE {col} = {ph}",
+                    (target_user_id,),
+                )
         for cid in char_ids:
             cursor.execute(
                 f"UPDATE users SET active_character_id = NULL WHERE active_character_id = {ph}",
