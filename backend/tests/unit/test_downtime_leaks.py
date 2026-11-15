@@ -32,8 +32,8 @@ def scene(dt):
                         {"name": "ZZINDNAME", "value": 424242}), 201)["indicator"]
     var = dt.ok(dt.post("/campaigns/10/downtime/variables", 2,
                         {"name": "ZZVARNAME", "value": 919191, "note": "ZZVARNOTE"}), 201)["variable"]
-    dt.ok(dt.call("PUT", f"/campaigns/10/downtime/phases/{phases[0]['id']}/setup", 2,
-                  {"difficulty": 9, "difficulty_hidden": True}))
+    dt.ready(phases[0]["id"], difficulty=9, hidden=True)
+    dt.ready(phases[1]["id"])
     return dict(rnd=rnd, anna=anna, phases=phases, bob_phase=bob_phase, ind=ind, var=var)
 
 
@@ -57,7 +57,7 @@ def test_no_leaks_through_the_whole_round(dt, scene):
         "version": 3, "result_kind": "result", "result_text": "ZZRESULT one", "st_note": "ZZSTNOTE",
         "deltas": deltas}))
     dt.ok(dt.post(f"/campaigns/10/downtime/phases/{phases[1]['id']}/resolve", 2, {
-        "version": 2, "result_kind": "scene", "result_text": "ZZRESULT two", "result_location_id": 50,
+        "version": 3, "result_kind": "scene", "result_text": "ZZRESULT two", "result_location_id": 50,
         "st_note": "ZZSTNOTE"}))
     dt.ok(dt.post(f"/campaigns/10/downtime/phases/{phases[2]['id']}/resolve", 2, {
         "version": 1, "result_kind": "scene", "result_text": "ZZRESULT three", "result_location_id": 51}))

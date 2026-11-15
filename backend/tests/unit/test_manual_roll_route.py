@@ -157,3 +157,10 @@ def test_refusals(api, cid, uid, body, status, msg):
     if msg:
         assert r.get_json() == {"error": msg}
     assert api.raw.execute("SELECT COUNT(*) FROM dice_rolls").fetchone()[0] == 0
+
+
+def test_refusal_rolls_the_connection_back(api, monkeypatch):
+    calls = []
+    monkeypatch.setattr(Conn, "rollback", lambda self: calls.append("rollback"))
+    r = api(10, 3, {"pool_size": 3, "difficulty": 1})
+    assert r.status_code == 400 and calls == ["rollback"]

@@ -135,6 +135,7 @@ def manual_roll(campaign_id):
                 hidden=hidden, speak_as=speak_as, action_description=action_description,
             )
         except DicePostError as e:
+            conn.rollback()
             return jsonify(e.payload), e.status
         roll_id = out['roll_id']
         edition = out['edition']

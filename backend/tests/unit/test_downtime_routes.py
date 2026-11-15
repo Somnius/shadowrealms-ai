@@ -153,7 +153,7 @@ def _roll(dt, phid, uid=3, cid=10, **body):
 def test_roll_saves_a_downtime_roll_with_the_phase_difficulty(dt):
     dt.open_round()
     ph = dt.declare(dt.project()["id"])
-    dt.sql("UPDATE downtime_phases SET difficulty = 8 WHERE id = ?", (ph["id"],))
+    dt.ready(ph["id"], difficulty=8)
     out = dt.ok(_roll(dt, ph["id"], pool_size=4, difficulty=3))["phase"]
     assert out["status"] == "rolled"
     roll = out["roll"]
@@ -161,13 +161,15 @@ def test_roll_saves_a_downtime_roll_with_the_phase_difficulty(dt):
     assert len(roll["results"]) >= 4 and "successes" in roll
     row = dt.sql("SELECT roll_type, difficulty, location_id, character_id, dice_pool FROM dice_rolls")
     assert row == [("downtime", 8, None, 100, 4)]
-    assert dt.sql("SELECT dice_roll_id, version FROM downtime_phases")[0] == (roll["id"], 2)
+    assert dt.sql("SELECT dice_roll_id, version FROM downtime_phases")[0] == (roll["id"], 3)
 
 
 def test_roll_uses_the_edition_default_when_unset(dt):
     dt.open_round(cid=11)
     ph = dt.declare(dt.project(cid=11)["id"], cid=11)
-    roll = dt.ok(_roll(dt, ph["id"], cid=11, pool_expression="3+1"))["phase"]["roll"]
+    dt.ready(ph["id"], cid=11)
+    roll = dt.ok(_roll(dt, ph["id"], cid=11, pool_expression="3+1", hunger=4))["phase"]["roll"]
+    assert roll["hunger"] == 0  # client hunger ignored; the sheet has none
     assert roll["rules_edition"] == "v5" and roll["difficulty"] == 1
     assert len(roll["normal_dice"]) + len(roll["hunger_dice"]) == 4
 
@@ -175,6 +177,7 @@ def test_roll_uses_the_edition_default_when_unset(dt):
 def test_second_roll_is_409_and_nothing_saved(dt):
     dt.open_round()
     ph = dt.declare(dt.project()["id"])
+    dt.ready(ph["id"])
     dt.ok(_roll(dt, ph["id"]))
     r = _roll(dt, ph["id"])
     assert r.status_code == 409 and r.get_json()["code"] == "already_rolled"
@@ -184,6 +187,7 @@ def test_second_roll_is_409_and_nothing_saved(dt):
 def test_roll_only_own_phase_and_only_while_open(dt):
     rnd = dt.open_round()
     ph = dt.declare(dt.project()["id"])
+    dt.ready(ph["id"])
     r = _roll(dt, ph["id"], uid=4)
     assert r.status_code == 404 and r.get_json()["code"] == "phase_not_found"
     r = _roll(dt, ph["id"], uid=2)
@@ -195,7 +199,7 @@ def test_roll_only_own_phase_and_only_while_open(dt):
 
 
 @pytest.mark.parametrize("body,code", [
-    ({}, "pool_required"), ({"pool_size": 51}, "pool_too_big"), ({"pool_size": 3, "hunger": 6}, "invalid_hunger"),
+    ({}, "pool_required"), ({"pool_size": 51}, "pool_too_big"), 
     ({"pool_expression": "x"}, "invalid_input"), ({"pool_size": True}, "invalid_input"),
 ])
 def test_roll_input_refusals(dt, body, code):
@@ -208,7 +212,7 @@ def test_roll_input_refusals(dt, body, code):
 def test_hidden_difficulty_gives_faces_only(dt):
     dt.open_round()
     ph = dt.declare(dt.project()["id"])
-    dt.sql("UPDATE downtime_phases SET difficulty = 9, difficulty_hidden = 1 WHERE id = ?", (ph["id"],))
+    dt.ready(ph["id"], difficulty=9, hidden=True)
     out = dt.ok(_roll(dt, ph["id"], pool_size=6))["phase"]
     assert out["difficulty"] is None and out["difficulty_hidden"] is True
     roll = out["roll"]
@@ -223,6 +227,7 @@ def test_hidden_difficulty_gives_faces_only(dt):
 def test_downtime_roll_cannot_be_willpower_rerolled(dt):
     dt.open_round(cid=11)
     ph = dt.declare(dt.project(cid=11)["id"], cid=11)
+    dt.ready(ph["id"], cid=11)
     roll = dt.ok(_roll(dt, ph["id"], cid=11, pool_size=5))["phase"]["roll"]
     r = dt.post(f"/campaigns/11/roll/{roll['id']}/reroll", 3, {"indices": [0], "location_id": 52})
     assert r.status_code == 400 and r.get_json()["error"] == "Only V5 manual rolls can be rerolled"
@@ -261,16 +266,21 @@ def _inbox_phase(dt, phid, cid=10):
 
 def test_setup_sets_difficulty_before_the_roll_only(dt):
     rnd, proj, ph, ind, var = _setup_round(dt)
-    r = dt.call("PUT", f"/campaigns/10/downtime/phases/{ph['id']}/setup", 2,
-                {"difficulty": 7, "difficulty_hidden": True})
-    out = dt.ok(r)["phase"]
-    assert out["difficulty"] == 7 and out["difficulty_hidden"] is True and out["version"] == 2
-    r = dt.call("PUT", f"/campaigns/10/downtime/phases/{ph['id']}/setup", 2, {"difficulty": 11})
+    r = _roll(dt, ph["id"])
+    assert r.status_code == 409 and r.get_json()["code"] == "difficulty_not_set"
+    assert dt.ok(dt.get("/campaigns/10/downtime", 3))["projects"][0]["phases"][0]["ready"] is False
+    out = dt.ready(ph["id"], difficulty=7, hidden=True)
+    assert out["difficulty"] == 7 and out["difficulty_hidden"] is True and out["version"] == 2 and out["ready"]
+    r = dt.call("PUT", f"/campaigns/10/downtime/phases/{ph['id']}/setup", 2, {"version": 1, "difficulty": 6})
+    assert r.status_code == 409 and r.get_json()["code"] == "version_conflict"
+    r = dt.call("PUT", f"/campaigns/10/downtime/phases/{ph['id']}/setup", 2, {"version": 2, "difficulty": 11})
     assert r.get_json()["code"] == "invalid_difficulty"
-    r = dt.call("PUT", f"/campaigns/10/downtime/phases/{ph['id']}/setup", 3, {"difficulty": 5})
+    r = dt.call("PUT", f"/campaigns/10/downtime/phases/{ph['id']}/setup", 2, {"difficulty": 5})
+    assert r.get_json()["code"] == "version_required"
+    r = dt.call("PUT", f"/campaigns/10/downtime/phases/{ph['id']}/setup", 3, {"version": 2, "difficulty": 5})
     assert r.status_code == 403
     dt.ok(_roll(dt, ph["id"]))
-    r = dt.call("PUT", f"/campaigns/10/downtime/phases/{ph['id']}/setup", 2, {"difficulty": 5})
+    r = dt.call("PUT", f"/campaigns/10/downtime/phases/{ph['id']}/setup", 2, {"version": 3, "difficulty": 5})
     assert r.status_code == 409 and r.get_json()["code"] == "already_rolled"
     assert dt.sql("SELECT difficulty FROM dice_rolls")[0][0] == 7
 
@@ -384,11 +394,9 @@ def test_release_and_after_release_rules(dt):
         "error": "Some phases have no result yet", "code": "unresolved_phases", "count": 1}
     dt.ok(_resolve(dt, second["id"], 1, result_kind="skip", result_text=""))
     assert dt.ok(dt.post(f"/campaigns/10/downtime/rounds/{rnd['id']}/release", 2))["round"]["status"] == "released"
-    # text amend allowed, deltas locked
-    dt.ok(_resolve(dt, ph["id"], 2, result_text="Typo fixed",
-                   deltas=[{"target_kind": "variable", "target_id": var["id"], "delta": 1}]))
-    r = _resolve(dt, ph["id"], 3, deltas=[])
-    assert r.status_code == 409 and r.get_json()["code"] == "deltas_locked"
+    # results are final once released
+    r = _resolve(dt, ph["id"], 2, result_text="Typo fixed")
+    assert r.status_code == 409 and r.get_json()["code"] == "round_released"
     # the next round can open
     assert dt.open_round(title="Spring")["status"] == "open"
 
@@ -403,9 +411,14 @@ def test_release_with_force_and_unrolled_phase(dt):
 
 def test_indicator_and_variable_editing_keeps_history(dt):
     rnd, proj, ph, ind, var = _setup_round(dt)
-    out = dt.ok(dt.call("PATCH", f"/campaigns/10/downtime/indicators/{ind['id']}", 2, {"value": 7}))
-    assert out["indicator"]["value"] == 7
-    dt.ok(dt.call("PATCH", f"/campaigns/10/downtime/variables/{var['id']}", 2, {"note": "calmer", "value": 4}))
+    out = dt.ok(dt.call("PATCH", f"/campaigns/10/downtime/indicators/{ind['id']}", 2, {"value": 7, "version": 1}))
+    assert out["indicator"]["value"] == 7 and out["indicator"]["version"] == 2
+    r = dt.call("PATCH", f"/campaigns/10/downtime/indicators/{ind['id']}", 2, {"value": 9, "version": 1})
+    assert r.status_code == 409 and r.get_json()["code"] == "version_conflict"
+    r = dt.call("PATCH", f"/campaigns/10/downtime/variables/{var['id']}", 2, {"value": 9})
+    assert r.status_code == 400 and r.get_json()["code"] == "version_required"
+    dt.ok(dt.call("PATCH", f"/campaigns/10/downtime/variables/{var['id']}", 2,
+                  {"note": "calmer", "value": 4, "version": 1}))
     ch = dt.ok(dt.get("/campaigns/10/downtime/changes", 2))["changes"]
     assert [(c["target_kind"], c["old_value"], c["new_value"], c["phase_id"]) for c in ch] == [
         ("variable", 5, 4, None), ("indicator", 2, 7, None)]
@@ -427,3 +440,70 @@ def test_project_status_by_st(dt):
     dt.open_round()
     r = dt.post(f"/campaigns/10/downtime/projects/{proj['id']}/phases", 3, {"action": "More"})
     assert r.status_code == 409 and r.get_json()["code"] == "project_closed"
+
+
+# ---------------------------------------------------------------- review fixes
+
+
+def test_roll_refused_on_resolved_phase_after_reopen(dt):
+    rnd = dt.open_round()
+    ph = dt.declare(dt.project()["id"])
+    dt.ready(ph["id"])
+    _to_resolving(dt, rnd)
+    dt.ok(_resolve(dt, ph["id"], 2, result_kind="skip"))
+    dt.ok(dt.post(f"/campaigns/10/downtime/rounds/{rnd['id']}/reopen", 2))
+    r = _roll(dt, ph["id"])
+    assert r.status_code == 409 and r.get_json()["code"] == "phase_resolved"
+
+
+def test_roll_refused_on_closed_project(dt):
+    dt.open_round()
+    proj = dt.project()
+    ph = dt.declare(proj["id"])
+    dt.ready(ph["id"])
+    dt.ok(dt.call("PATCH", f"/campaigns/10/downtime/projects/{proj['id']}", 2, {"status": "abandoned"}))
+    r = _roll(dt, ph["id"])
+    assert r.status_code == 409 and r.get_json()["code"] == "project_closed"
+
+
+def test_suspended_player_keeps_a_read_only_view(dt):
+    rnd = dt.open_round()
+    ph = dt.declare(dt.project()["id"])
+    dt.ready(ph["id"])
+    _to_resolving(dt, rnd)
+    dt.ok(_resolve(dt, ph["id"], 2, result_text="You got the keys."))
+    dt.ok(dt.post(f"/campaigns/10/downtime/rounds/{rnd['id']}/release", 2))
+    dt.sql("UPDATE characters SET play_suspended = 1 WHERE id = 100")
+    view = dt.ok(dt.get("/campaigns/10/downtime", 3))
+    assert view["can_play"] is False and view["player_problem"] == "character_suspended"
+    assert view["projects"][0]["phases"][0]["result_text"] == "You got the keys."
+    r = dt.post("/campaigns/10/downtime/projects", 3, {"title": "New"})
+    assert r.status_code == 403 and r.get_json()["code"] == "character_suspended"
+    dt.sql("UPDATE characters SET play_suspended = 0 WHERE id = 100")
+    dt.sql("INSERT INTO character_moderation (character_id, action, moderated_at) VALUES (100, 'kill', '2026-02-01')")
+    view = dt.ok(dt.get("/campaigns/10/downtime", 3))
+    assert view["player_problem"] == "character_fallen" and len(view["projects"]) == 1
+
+
+def test_net_delta_cap(dt):
+    rnd, proj, ph, ind, var = _setup_round(dt)
+    _to_resolving(dt, rnd)
+    deltas = [{"target_kind": "variable", "target_id": var["id"], "delta": 1000}] * 2
+    r = _resolve(dt, ph["id"], 1, deltas=deltas)
+    assert r.status_code == 400 and r.get_json()["code"] == "invalid_deltas"
+    assert dt.sql("SELECT value FROM chronicle_variables")[0][0] == 5
+
+
+def test_two_phases_on_one_variable_and_a_patch_between_resolve_and_amend(dt):
+    rnd, proj, ph, ind, var = _setup_round(dt)
+    ph2 = dt.declare(dt.project(uid=4, title="Bob's plan")["id"], uid=4)
+    _to_resolving(dt, rnd)
+    up = lambda n: [{"target_kind": "variable", "target_id": var["id"], "delta": n}]  # noqa: E731
+    dt.ok(_resolve(dt, ph["id"], 1, deltas=up(2)))   # 5 -> 7
+    dt.ok(_resolve(dt, ph2["id"], 1, deltas=up(3)))  # 7 -> 10
+    assert dt.sql("SELECT value, version FROM chronicle_variables")[0] == (10, 3)
+    dt.ok(dt.call("PATCH", f"/campaigns/10/downtime/variables/{var['id']}", 2, {"value": 20, "version": 3}))
+    dt.ok(_resolve(dt, ph["id"], 2, deltas=up(-1)))  # amend: -3 more -> 17
+    assert dt.sql("SELECT value FROM chronicle_variables")[0][0] == 17
+    rows = dt.sql("SELECT old_value, new_value, delta FROM downtime_changes ORDER BY id")
+    assert rows == [(5, 7, 2), (7, 10, 3), (10, 20, 10), (20, 17, -3)]

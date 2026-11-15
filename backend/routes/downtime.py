@@ -115,6 +115,10 @@ def _api(fn):
         cursor = conn.cursor()
         try:
             user_id = int(get_jwt_identity())
+            if request.method != "GET" and not _is_pg():
+                # SQLite has no row locks: take the write lock before any status read, so two
+                # requests can't both pass a check and then both write.
+                cursor.execute("BEGIN IMMEDIATE")
             body, status = fn(cursor, user_id, **kwargs)
             conn.commit()
             return jsonify(body), status
@@ -185,10 +189,12 @@ def _playing_character(cursor, user_id, campaign_id):
     ch = cursor.fetchone()
     if not ch or str(ch.get("user_id")) != str(user_id) or str(ch.get("campaign_id")) != str(campaign_id):
         return None, "no_playing_character"
+    # A suspended or fallen character is returned too (read-only view of past projects);
+    # _require_player refuses any write.
     if _flag(ch.get("play_suspended")):
-        return None, "character_suspended"
+        return ch, "character_suspended"
     if death_of(cursor, ch["id"]):
-        return None, "character_fallen"
+        return ch, "character_fallen"
     return ch, None
 
 
@@ -347,6 +353,7 @@ def _player_phase(ph, roll=None, room=None):
         "round_status": ph.get("round_status"),
         "action": ph["action"],
         "difficulty_hidden": hidden,
+        "ready": _flag(ph.get("difficulty_set")),
         "difficulty": None,
         "created_at": _ts(ph.get("created_at")),
         "roll": roll,
@@ -388,14 +395,14 @@ def player_view(cursor, user_id, campaign_id):
         "is_storyteller": is_st,
         "round": None,
         "character": None,
-        "can_play": ch is not None,
+        "can_play": ch is not None and problem is None,
         "player_problem": problem,
         "projects": [],
     }
     if live:
         body["round"] = {"id": live["id"], "title": live.get("title") or "", "status": live["status"]}
     if ch is None:
-        if is_st or problem in ("character_suspended", "character_fallen", "no_playing_character"):
+        if is_st or problem == "no_playing_character":
             return body, 200
         raise DowntimeError(problem, _PLAYER_REFUSALS[problem], 403)
     body["character"] = {"id": ch["id"], "name": ch["name"]}
@@ -594,9 +601,7 @@ def roll_phase(cursor, user_id, campaign_id, phase_id):
             raise DowntimeError("pool_required", "pool_size must be at least 1 (or send pool_expression)")
     if pool_size > 50:
         raise DowntimeError("pool_too_big", "pool_size must be at most 50", max=50)
-    hunger = strict_int(data.get("hunger"), "hunger")
-    if hunger is not None and not 0 <= hunger <= 5:
-        raise DowntimeError("invalid_hunger", "hunger must be between 0 and 5")
+    # Hunger always comes from the character sheet in downtime (a client value is ignored).
     specialty = strict_bool(data.get("specialty"), "specialty")
     willpower = strict_bool(data.get("willpower"), "willpower")
 
@@ -615,12 +620,19 @@ def roll_phase(cursor, user_id, campaign_id, phase_id):
     phase = cursor.fetchone()
     if phase.get("dice_roll_id") is not None:
         raise DowntimeError("already_rolled", "This phase has already been rolled", 409)
+    if phase.get("resolved_at") is not None:
+        raise DowntimeError("phase_resolved", "The Storyteller has already resolved this phase", 409)
+    if not _flag(phase.get("difficulty_set")):
+        raise DowntimeError("difficulty_not_set", "Wait for the Storyteller to set this phase up", 409)
+    cursor.execute("SELECT status FROM downtime_projects WHERE id = %s", (phase["project_id"],))
+    if cursor.fetchone()["status"] != "active":
+        raise DowntimeError("project_closed", "This project is closed", 409)
 
     out = perform_manual_roll(
         cursor, user_id, campaign_id,
         pool_size=pool_size, pool_expression=pool_expression,
         difficulty_arg=phase.get("difficulty"), character_id=ch["id"], location_id=None,
-        hunger_arg=hunger, specialty_arg=specialty, willpower_arg=willpower,
+        hunger_arg=None, specialty_arg=specialty, willpower_arg=willpower,
         action_description=(phase["action"] or "Downtime")[:200], roll_type="downtime",
     )
     cursor.execute(
@@ -682,12 +694,12 @@ def _change_dict(c):
 
 def _indicator_dict(i):
     return {"id": i["id"], "project_id": i["project_id"], "name": i["name"], "value": i["value"],
-            "updated_at": _ts(i.get("updated_at"))}
+            "version": i["version"], "updated_at": _ts(i.get("updated_at"))}
 
 
 def _variable_dict(v):
     return {"id": v["id"], "name": v["name"], "value": v["value"], "note": v.get("note") or "",
-            "updated_at": _ts(v.get("updated_at"))}
+            "version": v["version"], "updated_at": _ts(v.get("updated_at"))}
 
 
 def _st_project(p, indicators):
@@ -717,6 +729,7 @@ def _st_phase(ph, roll_row, changes):
         "action": ph["action"],
         "difficulty": ph.get("difficulty"),
         "difficulty_hidden": _flag(ph.get("difficulty_hidden")),
+        "ready": _flag(ph.get("difficulty_set")),
         "roll": _st_roll(roll_row),
         "no_roll": ph.get("dice_roll_id") is None,
         "result_kind": ph.get("result_kind"),
@@ -841,6 +854,9 @@ def _difficulty_ok(edition, value):
 def setup_phase(cursor, user_id, campaign_id, phase_id):
     camp = _require_st(cursor, user_id, campaign_id)
     data = _body()
+    version = strict_int(data.get("version"), "version")
+    if version is None:
+        raise DowntimeError("version_required", "Send the phase version you edited")
     difficulty = strict_int(data.get("difficulty"), "difficulty")
     hidden = strict_bool(data.get("difficulty_hidden"), "difficulty_hidden")
     if difficulty is not None and not _difficulty_ok(edition_of(camp), difficulty):
@@ -851,14 +867,21 @@ def setup_phase(cursor, user_id, campaign_id, phase_id):
     rnd = _locked_round(cursor, campaign_id, found["round_id"])
     if rnd["status"] == "released":
         raise DowntimeError("round_released", "This round has been released", 409)
-    cursor.execute("SELECT dice_roll_id FROM downtime_phases WHERE id = %s" + _for_update(), (phase_id,))
-    if cursor.fetchone().get("dice_roll_id") is not None:
+    cursor.execute("SELECT dice_roll_id, version FROM downtime_phases WHERE id = %s" + _for_update(),
+                   (phase_id,))
+    current = cursor.fetchone()
+    if current.get("dice_roll_id") is not None:
         raise DowntimeError("already_rolled", "The phase has been rolled; its difficulty is fixed", 409)
+    if int(current["version"]) != version:
+        raise DowntimeError("version_conflict", "This phase changed since you opened it; reload it", 409,
+                            current_version=current["version"])
     cursor.execute(
-        "UPDATE downtime_phases SET difficulty = %s, difficulty_hidden = %s, version = version + 1, "
-        "updated_at = %s WHERE id = %s",
-        (difficulty, bool(hidden), _now(), phase_id),
+        "UPDATE downtime_phases SET difficulty = %s, difficulty_hidden = %s, difficulty_set = %s, "
+        "version = version + 1, updated_at = %s WHERE id = %s AND version = %s AND dice_roll_id IS NULL",
+        (difficulty, bool(hidden), True, _now(), phase_id, version),
     )
+    if cursor.rowcount != 1:
+        raise DowntimeError("already_rolled", "The phase has been rolled; its difficulty is fixed", 409)
     return {"phase": _st_phase_by_id(cursor, phase_id)}, 200
 
 
@@ -878,19 +901,29 @@ def _parse_deltas(raw):
                                                   f"+/-{DELTA_LIMIT}", max=DELTA_LIMIT)
         key = (item["target_kind"], tid)
         net[key] = net.get(key, 0) + delta
+    for (tkind, tid), v in net.items():
+        if abs(v) > DELTA_LIMIT:
+            raise DowntimeError("invalid_deltas", f"The net change per target must be within +/-{DELTA_LIMIT}",
+                                max=DELTA_LIMIT, target_kind=tkind, target_id=tid)
     return {k: v for k, v in net.items() if v}
 
 
 def _apply_value_change(cursor, campaign_id, phase_id, kind, row, delta, user_id, now):
+    """value = value + delta in one statement (no lost update), then the history row from the
+    value the database returned."""
     table = "downtime_indicators" if kind == "indicator" else "chronicle_variables"
-    new_value = int(row["value"]) + delta
-    if abs(new_value) > VALUE_LIMIT:
+    if abs(int(row["value"]) + delta) > VALUE_LIMIT:
         raise DowntimeError("value_out_of_range", "That change takes a value out of range")
-    cursor.execute(f"UPDATE {table} SET value = %s, updated_at = %s WHERE id = %s", (new_value, now, row["id"]))
+    cursor.execute(
+        f"UPDATE {table} SET value = value + %s, version = version + 1, updated_at = %s WHERE id = %s "
+        "RETURNING value",
+        (delta, now, row["id"]),
+    )
+    new_value = int(cursor.fetchone()["value"])
     cursor.execute(
         "INSERT INTO downtime_changes (campaign_id, phase_id, target_kind, target_id, old_value, new_value, "
         "delta, by_user, at) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)",
-        (campaign_id, phase_id, kind, row["id"], row["value"], new_value, delta, user_id, now),
+        (campaign_id, phase_id, kind, row["id"], new_value - delta, new_value, delta, user_id, now),
     )
 
 
@@ -917,6 +950,8 @@ def resolve_phase(cursor, user_id, campaign_id, phase_id):
     rnd = _locked_round(cursor, campaign_id, found["round_id"])
     if rnd["status"] == "open":
         raise DowntimeError("round_not_resolving", "Move the round to resolving first", 409)
+    if rnd["status"] == "released":
+        raise DowntimeError("round_released", "This round has been released; its results are final", 409)
     cursor.execute("SELECT * FROM downtime_phases WHERE id = %s" + _for_update(), (phase_id,))
     phase = cursor.fetchone()
     if int(phase["version"]) != version:
@@ -941,8 +976,6 @@ def resolve_phase(cursor, user_id, campaign_id, phase_id):
             d = wanted.get(key, 0) - applied.get(key, 0)
             if d:
                 diff[key] = d
-        if diff and rnd["status"] == "released":
-            raise DowntimeError("deltas_locked", "Changes can't be altered after the round is released", 409)
         # New targets must belong here; a target the phase already changed may be reversed even if
         # it was renamed since (it is still the same row, checked below).
         for (tkind, tid) in sorted(diff, key=lambda k: (TARGET_KINDS.index(k[0]), k[1])):
@@ -1032,6 +1065,16 @@ def _insert_unique(cursor, sql, params):
     return cursor.fetchone()["id"]
 
 
+def _check_version(data, row):
+    version = strict_int(data.get("version"), "version")
+    if version is None:
+        raise DowntimeError("version_required", "Send the version you edited")
+    if int(row["version"]) != version:
+        raise DowntimeError("version_conflict", "This changed since you opened it; reload it", 409,
+                            current_version=row["version"])
+    return version
+
+
 def _manual_change(cursor, campaign_id, kind, row, new_value, user_id, now):
     if new_value is None or int(new_value) == int(row["value"]):
         return
@@ -1086,17 +1129,23 @@ def edit_indicator(cursor, user_id, campaign_id, indicator_id):
         cursor.execute("DELETE FROM downtime_indicators WHERE id = %s", (indicator_id,))
         return {"deleted": indicator_id}, 200
     data = _body()
+    version = _check_version(data, row)
     name = _name(data) if "name" in data else row["name"]
     value = _value(data) if "value" in data else None
     now = _now()
     _manual_change(cursor, campaign_id, "indicator", row, value, user_id, now)
     try:
-        cursor.execute("UPDATE downtime_indicators SET name = %s, value = %s, updated_at = %s WHERE id = %s",
-                       (name, row["value"] if value is None else value, now, indicator_id))
+        cursor.execute(
+            "UPDATE downtime_indicators SET name = %s, value = %s, version = version + 1, updated_at = %s "
+            "WHERE id = %s AND version = %s",
+            (name, row["value"] if value is None else value, now, indicator_id, version),
+        )
     except Exception as e:
         if _is_integrity_error(e):
             raise DowntimeError("name_taken", "That name is already used", 409)
         raise
+    if cursor.rowcount != 1:
+        raise DowntimeError("version_conflict", "This changed since you opened it; reload it", 409)
     cursor.execute("SELECT * FROM downtime_indicators WHERE id = %s", (indicator_id,))
     return {"indicator": _indicator_dict(cursor.fetchone())}, 200
 
@@ -1137,6 +1186,7 @@ def edit_variable(cursor, user_id, campaign_id, variable_id):
         cursor.execute("DELETE FROM chronicle_variables WHERE id = %s", (variable_id,))
         return {"deleted": variable_id}, 200
     data = _body()
+    version = _check_version(data, row)
     name = _name(data) if "name" in data else row["name"]
     note = _text(data, "note", NOTE_MAX) if "note" in data else (row.get("note") or "")
     value = _value(data) if "value" in data else None
@@ -1144,13 +1194,16 @@ def edit_variable(cursor, user_id, campaign_id, variable_id):
     _manual_change(cursor, campaign_id, "variable", row, value, user_id, now)
     try:
         cursor.execute(
-            "UPDATE chronicle_variables SET name = %s, value = %s, note = %s, updated_at = %s WHERE id = %s",
-            (name, row["value"] if value is None else value, note, now, variable_id),
+            "UPDATE chronicle_variables SET name = %s, value = %s, note = %s, version = version + 1, "
+            "updated_at = %s WHERE id = %s AND version = %s",
+            (name, row["value"] if value is None else value, note, now, variable_id, version),
         )
     except Exception as e:
         if _is_integrity_error(e):
             raise DowntimeError("name_taken", "That name is already used", 409)
         raise
+    if cursor.rowcount != 1:
+        raise DowntimeError("version_conflict", "This changed since you opened it; reload it", 409)
     cursor.execute("SELECT * FROM chronicle_variables WHERE id = %s", (variable_id,))
     return {"variable": _variable_dict(cursor.fetchone())}, 200
 

@@ -91,3 +91,17 @@ def test_init_schema_has_the_same_tables():
               "chronicle_variables", "downtime_changes"):
         assert f"CREATE TABLE IF NOT EXISTS {t} (" in sql
     assert "uq_downtime_rounds_live" in sql
+
+
+def test_sqlite_to_postgresql_migrator_knows_the_tables():
+    import ast
+    import os
+    path = os.path.join(os.path.dirname(__file__), "..", "..", "migrate_sqlite_to_postgresql.py")
+    tree = ast.parse(open(path, encoding="utf-8").read())
+    order = next(ast.literal_eval(n.value) for n in tree.body
+                 if isinstance(n, ast.Assign) and getattr(n.targets[0], "id", "") == "TABLE_ORDER")
+    want = ["downtime_rounds", "downtime_projects", "downtime_phases", "downtime_indicators",
+            "chronicle_variables", "downtime_changes"]
+    assert [t for t in order if t in want] == want
+    assert order.index("downtime_projects") > order.index("characters")
+    assert order.index("downtime_phases") > order.index("dice_rolls")

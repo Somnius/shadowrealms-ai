@@ -854,6 +854,7 @@ CREATE TABLE IF NOT EXISTS downtime_phases (
     action             TEXT NOT NULL,
     difficulty         INTEGER,
     difficulty_hidden  BOOLEAN NOT NULL DEFAULT FALSE,
+    difficulty_set     BOOLEAN NOT NULL DEFAULT FALSE,
     dice_roll_id       BIGINT REFERENCES dice_rolls(id) ON DELETE SET NULL,
     result_kind        TEXT,
     result_text        TEXT,
@@ -874,6 +875,7 @@ CREATE TABLE IF NOT EXISTS downtime_indicators (
     project_id BIGINT NOT NULL REFERENCES downtime_projects(id) ON DELETE CASCADE,
     name       TEXT NOT NULL,
     value      INTEGER NOT NULL DEFAULT 0,
+    version    INTEGER NOT NULL DEFAULT 1,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     UNIQUE (project_id, name)
 );
@@ -884,6 +886,7 @@ CREATE TABLE IF NOT EXISTS chronicle_variables (
     name        TEXT NOT NULL,
     value       INTEGER NOT NULL DEFAULT 0,
     note        TEXT NOT NULL DEFAULT '',
+    version     INTEGER NOT NULL DEFAULT 1,
     updated_at  TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     UNIQUE (campaign_id, name)
 );

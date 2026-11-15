@@ -55,6 +55,12 @@ TABLE_ORDER = [
     'location_connections',
     'location_deletion_log',
     'moderation_log',
+    'downtime_rounds',
+    'downtime_projects',
+    'downtime_phases',
+    'downtime_indicators',
+    'chronicle_variables',
+    'downtime_changes',
 ]
 
 class DatabaseMigrator:
@@ -105,7 +111,8 @@ class DatabaseMigrator:
         """Convert SQLite value to PostgreSQL-compatible value"""
         # SQLite stores booleans as 0/1, PostgreSQL uses true/false
         # Check if this is likely a boolean column
-        boolean_columns = {'is_active', 'is_system', 'is_bidirectional', 'is_botch', 'is_critical'}
+        boolean_columns = {'is_active', 'is_system', 'is_bidirectional', 'is_botch', 'is_critical',
+                           'difficulty_hidden', 'difficulty_set'}
         
         if column_name in boolean_columns and isinstance(value, int) and value in (0, 1):
             return bool(value)

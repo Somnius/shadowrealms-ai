@@ -1419,6 +1419,7 @@ def ensure_downtime_tables(cursor):
             action             TEXT NOT NULL,
             difficulty         INTEGER,
             difficulty_hidden  {flag},
+            difficulty_set     {flag},
             dice_roll_id       {ref} REFERENCES dice_rolls(id) ON DELETE SET NULL,
             result_kind        TEXT,
             result_text        TEXT,
@@ -1439,6 +1440,7 @@ def ensure_downtime_tables(cursor):
             project_id {ref} NOT NULL REFERENCES downtime_projects(id) ON DELETE CASCADE,
             name       TEXT NOT NULL,
             value      INTEGER NOT NULL DEFAULT 0,
+            version    INTEGER NOT NULL DEFAULT 1,
             updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
             UNIQUE (project_id, name)
         )
@@ -1450,6 +1452,7 @@ def ensure_downtime_tables(cursor):
             name        TEXT NOT NULL,
             value       INTEGER NOT NULL DEFAULT 0,
             note        TEXT NOT NULL DEFAULT '',
+            version     INTEGER NOT NULL DEFAULT 1,
             updated_at  TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
             UNIQUE (campaign_id, name)
         )

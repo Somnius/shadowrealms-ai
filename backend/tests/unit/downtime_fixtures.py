@@ -157,6 +157,10 @@ def dt(monkeypatch):
             return self.ok(self.post(f"/campaigns/{cid}/downtime/projects/{pid}/phases", uid,
                                      {"action": action}), 201)["phase"]
 
+        def ready(self, phid, cid=10, difficulty=None, hidden=False, version=1):
+            body = {"version": version, "difficulty": difficulty, "difficulty_hidden": hidden}
+            return self.ok(self.call("PUT", f"/campaigns/{cid}/downtime/phases/{phid}/setup", 2, body))["phase"]
+
     api = Api()
     api.raw = raw
     api.json = json
