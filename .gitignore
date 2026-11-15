@@ -510,3 +510,4 @@ CLAUDE.md
 
 # the trailer recorder library (tools/trailer/lib) is code, not a Python build folder
 !tools/trailer/lib/
+.claude/jev.sh
