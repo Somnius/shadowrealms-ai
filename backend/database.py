@@ -1368,6 +1368,115 @@ def ensure_campaign_activity_schema(cursor):
 
 
 @once_per_process
+def ensure_downtime_tables(cursor):
+    """
+    Downtime rounds (0.32, routes/downtime.py): the Storyteller opens a round, players declare one
+    phase per project and roll, the Storyteller resolves and releases all results together.
+    Indicators, chronicle variables and downtime_changes are Storyteller-only. Same definitions in
+    init_postgresql_schema.sql. Never call this from a request path (see once_per_process).
+    """
+    if os.getenv("DATABASE_TYPE", "sqlite").lower() == "postgresql":
+        pk, ref, flag = "BIGSERIAL PRIMARY KEY", "BIGINT", "BOOLEAN NOT NULL DEFAULT FALSE"
+    else:
+        pk, ref, flag = "INTEGER PRIMARY KEY AUTOINCREMENT", "INTEGER", "INTEGER NOT NULL DEFAULT 0"
+    statements = [
+        f"""
+        CREATE TABLE IF NOT EXISTS downtime_rounds (
+            id          {pk},
+            campaign_id INTEGER NOT NULL REFERENCES campaigns(id) ON DELETE CASCADE,
+            title       TEXT NOT NULL DEFAULT '',
+            status      TEXT NOT NULL DEFAULT 'open',
+            opened_by   INTEGER REFERENCES users(id) ON DELETE SET NULL,
+            opened_at   TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            resolving_at TIMESTAMP,
+            released_at TIMESTAMP
+        )
+        """,
+        "CREATE UNIQUE INDEX IF NOT EXISTS uq_downtime_rounds_live "
+        "ON downtime_rounds(campaign_id) WHERE status <> 'released'",
+        "CREATE INDEX IF NOT EXISTS idx_downtime_rounds_campaign "
+        "ON downtime_rounds(campaign_id, opened_at DESC)",
+        f"""
+        CREATE TABLE IF NOT EXISTS downtime_projects (
+            id             {pk},
+            campaign_id    INTEGER NOT NULL REFERENCES campaigns(id) ON DELETE CASCADE,
+            character_id   INTEGER REFERENCES characters(id) ON DELETE SET NULL,
+            character_name TEXT NOT NULL DEFAULT '',
+            parent_id      {ref} REFERENCES downtime_projects(id) ON DELETE SET NULL,
+            title          TEXT NOT NULL,
+            goal           TEXT NOT NULL DEFAULT '',
+            status         TEXT NOT NULL DEFAULT 'active',
+            created_at     TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+        )
+        """,
+        "CREATE INDEX IF NOT EXISTS idx_downtime_projects_campaign ON downtime_projects(campaign_id)",
+        "CREATE INDEX IF NOT EXISTS idx_downtime_projects_character ON downtime_projects(character_id)",
+        f"""
+        CREATE TABLE IF NOT EXISTS downtime_phases (
+            id                 {pk},
+            project_id         {ref} NOT NULL REFERENCES downtime_projects(id) ON DELETE CASCADE,
+            round_id           {ref} NOT NULL REFERENCES downtime_rounds(id) ON DELETE CASCADE,
+            action             TEXT NOT NULL,
+            difficulty         INTEGER,
+            difficulty_hidden  {flag},
+            dice_roll_id       {ref} REFERENCES dice_rolls(id) ON DELETE SET NULL,
+            result_kind        TEXT,
+            result_text        TEXT,
+            result_location_id INTEGER REFERENCES locations(id) ON DELETE SET NULL,
+            st_note            TEXT,
+            resolved_by        INTEGER REFERENCES users(id) ON DELETE SET NULL,
+            resolved_at        TIMESTAMP,
+            version            INTEGER NOT NULL DEFAULT 1,
+            created_at         TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            updated_at         TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE (project_id, round_id)
+        )
+        """,
+        "CREATE INDEX IF NOT EXISTS idx_downtime_phases_round ON downtime_phases(round_id)",
+        f"""
+        CREATE TABLE IF NOT EXISTS downtime_indicators (
+            id         {pk},
+            project_id {ref} NOT NULL REFERENCES downtime_projects(id) ON DELETE CASCADE,
+            name       TEXT NOT NULL,
+            value      INTEGER NOT NULL DEFAULT 0,
+            updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE (project_id, name)
+        )
+        """,
+        f"""
+        CREATE TABLE IF NOT EXISTS chronicle_variables (
+            id          {pk},
+            campaign_id INTEGER NOT NULL REFERENCES campaigns(id) ON DELETE CASCADE,
+            name        TEXT NOT NULL,
+            value       INTEGER NOT NULL DEFAULT 0,
+            note        TEXT NOT NULL DEFAULT '',
+            updated_at  TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE (campaign_id, name)
+        )
+        """,
+        f"""
+        CREATE TABLE IF NOT EXISTS downtime_changes (
+            id          {pk},
+            campaign_id INTEGER NOT NULL REFERENCES campaigns(id) ON DELETE CASCADE,
+            phase_id    {ref} REFERENCES downtime_phases(id) ON DELETE SET NULL,
+            target_kind TEXT NOT NULL,
+            target_id   {ref} NOT NULL,
+            old_value   INTEGER NOT NULL,
+            new_value   INTEGER NOT NULL,
+            delta       INTEGER NOT NULL,
+            by_user     INTEGER REFERENCES users(id) ON DELETE SET NULL,
+            at          TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+        )
+        """,
+        "CREATE INDEX IF NOT EXISTS idx_downtime_changes_target "
+        "ON downtime_changes(target_kind, target_id)",
+        "CREATE INDEX IF NOT EXISTS idx_downtime_changes_phase ON downtime_changes(phase_id)",
+    ]
+    for sql in statements:
+        cursor.execute(sql)
+
+
+@once_per_process
 def ensure_dice_tables(cursor, db_kind: str) -> None:
     """
     Create dice_rolls / dice_roll_templates if missing.
@@ -1528,6 +1637,7 @@ def migrate_db():
                 ensure_auth_security_schema(cursor)
                 ensure_campaign_activity_schema(cursor)
                 ensure_dice_tables(cursor, 'postgresql')
+                ensure_downtime_tables(cursor)
                 ensure_campaigns_language_column(cursor)
                 ensure_chronicle_tables(cursor)
                 backfill_campaign_players_active_character(cursor)
@@ -1909,6 +2019,7 @@ def migrate_db():
         ensure_locations_dice_leniency_v5_column(cursor)
         ensure_locations_player_access_columns(cursor)
         ensure_dice_tables(cursor, 'sqlite')
+        ensure_downtime_tables(cursor)
         backfill_campaign_players_active_character(cursor)
         from services.ai_runtime_settings import ensure_app_settings_table
 

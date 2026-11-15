@@ -814,4 +814,95 @@ CREATE TABLE IF NOT EXISTS chronicle_room_visits (
     PRIMARY KEY (user_id, location_id)
 );
 
+-- Downtime rounds (0.32, routes/downtime.py): same definitions as database.ensure_downtime_tables.
+-- Indicators, chronicle_variables and downtime_changes are Storyteller-only.
+CREATE TABLE IF NOT EXISTS downtime_rounds (
+    id          BIGSERIAL PRIMARY KEY,
+    campaign_id INTEGER NOT NULL REFERENCES campaigns(id) ON DELETE CASCADE,
+    title       TEXT NOT NULL DEFAULT '',
+    status      TEXT NOT NULL DEFAULT 'open',
+    opened_by   INTEGER REFERENCES users(id) ON DELETE SET NULL,
+    opened_at   TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    resolving_at TIMESTAMP,
+    released_at TIMESTAMP
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS uq_downtime_rounds_live ON downtime_rounds(campaign_id) WHERE status <> 'released';
+
+CREATE INDEX IF NOT EXISTS idx_downtime_rounds_campaign ON downtime_rounds(campaign_id, opened_at DESC);
+
+CREATE TABLE IF NOT EXISTS downtime_projects (
+    id             BIGSERIAL PRIMARY KEY,
+    campaign_id    INTEGER NOT NULL REFERENCES campaigns(id) ON DELETE CASCADE,
+    character_id   INTEGER REFERENCES characters(id) ON DELETE SET NULL,
+    character_name TEXT NOT NULL DEFAULT '',
+    parent_id      BIGINT REFERENCES downtime_projects(id) ON DELETE SET NULL,
+    title          TEXT NOT NULL,
+    goal           TEXT NOT NULL DEFAULT '',
+    status         TEXT NOT NULL DEFAULT 'active',
+    created_at     TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_downtime_projects_campaign ON downtime_projects(campaign_id);
+
+CREATE INDEX IF NOT EXISTS idx_downtime_projects_character ON downtime_projects(character_id);
+
+CREATE TABLE IF NOT EXISTS downtime_phases (
+    id                 BIGSERIAL PRIMARY KEY,
+    project_id         BIGINT NOT NULL REFERENCES downtime_projects(id) ON DELETE CASCADE,
+    round_id           BIGINT NOT NULL REFERENCES downtime_rounds(id) ON DELETE CASCADE,
+    action             TEXT NOT NULL,
+    difficulty         INTEGER,
+    difficulty_hidden  BOOLEAN NOT NULL DEFAULT FALSE,
+    dice_roll_id       BIGINT REFERENCES dice_rolls(id) ON DELETE SET NULL,
+    result_kind        TEXT,
+    result_text        TEXT,
+    result_location_id INTEGER REFERENCES locations(id) ON DELETE SET NULL,
+    st_note            TEXT,
+    resolved_by        INTEGER REFERENCES users(id) ON DELETE SET NULL,
+    resolved_at        TIMESTAMP,
+    version            INTEGER NOT NULL DEFAULT 1,
+    created_at         TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at         TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE (project_id, round_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_downtime_phases_round ON downtime_phases(round_id);
+
+CREATE TABLE IF NOT EXISTS downtime_indicators (
+    id         BIGSERIAL PRIMARY KEY,
+    project_id BIGINT NOT NULL REFERENCES downtime_projects(id) ON DELETE CASCADE,
+    name       TEXT NOT NULL,
+    value      INTEGER NOT NULL DEFAULT 0,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE (project_id, name)
+);
+
+CREATE TABLE IF NOT EXISTS chronicle_variables (
+    id          BIGSERIAL PRIMARY KEY,
+    campaign_id INTEGER NOT NULL REFERENCES campaigns(id) ON DELETE CASCADE,
+    name        TEXT NOT NULL,
+    value       INTEGER NOT NULL DEFAULT 0,
+    note        TEXT NOT NULL DEFAULT '',
+    updated_at  TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE (campaign_id, name)
+);
+
+CREATE TABLE IF NOT EXISTS downtime_changes (
+    id          BIGSERIAL PRIMARY KEY,
+    campaign_id INTEGER NOT NULL REFERENCES campaigns(id) ON DELETE CASCADE,
+    phase_id    BIGINT REFERENCES downtime_phases(id) ON DELETE SET NULL,
+    target_kind TEXT NOT NULL,
+    target_id   BIGINT NOT NULL,
+    old_value   INTEGER NOT NULL,
+    new_value   INTEGER NOT NULL,
+    delta       INTEGER NOT NULL,
+    by_user     INTEGER REFERENCES users(id) ON DELETE SET NULL,
+    at          TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_downtime_changes_target ON downtime_changes(target_kind, target_id);
+
+CREATE INDEX IF NOT EXISTS idx_downtime_changes_phase ON downtime_changes(phase_id);
+
 COMMIT;
