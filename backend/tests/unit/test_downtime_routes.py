@@ -209,19 +209,21 @@ def test_roll_input_refusals(dt, body, code):
     assert r.status_code == 400 and r.get_json()["code"] == code
 
 
-def test_hidden_difficulty_gives_faces_only(dt):
+def test_hidden_difficulty_hides_faces_and_outcome(dt):
     dt.open_round()
     ph = dt.declare(dt.project()["id"])
     dt.ready(ph["id"], difficulty=9, hidden=True)
     out = dt.ok(_roll(dt, ph["id"], pool_size=6))["phase"]
     assert out["difficulty"] is None and out["difficulty_hidden"] is True
     roll = out["roll"]
-    assert roll["outcome_hidden"] is True and len(roll["results"]) >= 6
-    for key in ("difficulty", "successes", "is_botch", "is_critical"):
+    assert roll["outcome_hidden"] is True
+    for key in ("difficulty", "successes", "is_botch", "is_critical", "results", "normal_dice", "hunger_dice",
+                "specialty_rerolls", "dice_pool"):
         assert key not in roll
     view = dt.ok(dt.get("/campaigns/10/downtime", 3))
     shown = view["projects"][0]["phases"][0]
-    assert shown["difficulty"] is None and "successes" not in shown["roll"]
+    assert shown["difficulty"] is None and "successes" not in shown["roll"] and "results" not in shown["roll"]
+    assert view["rules_edition"] in ("v5", "classic")
 
 
 def test_downtime_roll_cannot_be_willpower_rerolled(dt):

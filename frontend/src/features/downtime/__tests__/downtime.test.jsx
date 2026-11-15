@@ -201,6 +201,7 @@ describe('storyteller view', () => {
     expect(await screen.findByText('1 phase has no result yet. Release anyway?')).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Release anyway' }));
     expect(api).toHaveBeenCalledWith('/campaigns/5/downtime/rounds/3/release', { method: 'POST', body: { force: true } });
+    await waitFor(() => expect(screen.queryByText('1 phase has no result yet. Release anyway?')).toBeNull());
   });
 
   test('setup sends difficulty, hidden and version', async () => {
@@ -214,6 +215,118 @@ describe('storyteller view', () => {
       method: 'PUT', body: { version: 4, difficulty: 3, difficulty_hidden: true },
     });
   });
+});
+
+describe('storyteller view, review cases', () => {
+  const resolvedInbox = () => {
+    const d = inbox();
+    d.phases[0].changes = [
+      { id: 1, phase_id: 11, target_kind: 'indicator', target_id: 21, delta: 2 },
+      { id: 2, phase_id: 11, target_kind: 'indicator', target_id: 99, delta: 1 }, // indicator deleted since
+    ];
+    d.phases[0].resolved = true;
+    d.phases[0].result_kind = 'result';
+    return d;
+  };
+
+  test('re-resolve keeps applied changes for blank boxes and leaves deleted targets out', async () => {
+    const user = setupUser();
+    const api = stApi({ 'GET /campaigns/5/downtime/inbox': () => ok(resolvedInbox()) });
+    wrap(<DowntimeStView api={api} campaignId={5} toast={toast} />);
+    const card = await screen.findByTestId('phase-11');
+    await user.click(within(card).getByRole('button', { name: 'Update result' }));
+    const call = api.mock.calls.find(([p]) => p.endsWith('/phases/11/resolve'));
+    expect(call[1].body.deltas).toEqual([{ target_kind: 'indicator', target_id: 21, delta: 2 }]);
+  });
+
+  test('an explicit 0 is sent (undo), a cleared box keeps the earlier change', async () => {
+    const user = setupUser();
+    const api = stApi({ 'GET /campaigns/5/downtime/inbox': () => ok(resolvedInbox()) });
+    wrap(<DowntimeStView api={api} campaignId={5} toast={toast} />);
+    const card = await screen.findByTestId('phase-11');
+    const box = within(card).getByLabelText('Progress (2)');
+    await user.clear(box);
+    await user.click(within(card).getByRole('button', { name: 'Update result' }));
+    let call = api.mock.calls.filter(([p]) => p.endsWith('/phases/11/resolve')).pop();
+    expect(call[1].body.deltas).toEqual([{ target_kind: 'indicator', target_id: 21, delta: 2 }]);
+    await user.type(box, '0');
+    await user.click(within(card).getByRole('button', { name: 'Update result' }));
+    call = api.mock.calls.filter(([p]) => p.endsWith('/phases/11/resolve')).pop();
+    expect(call[1].body.deltas).toEqual([{ target_kind: 'indicator', target_id: 21, delta: 0 }]);
+  });
+
+  test('a version conflict keeps the draft text', async () => {
+    const user = setupUser();
+    const api = stApi({ 'POST /campaigns/5/downtime/phases/11/resolve': () => fail(409, { code: 'version_conflict' }) });
+    wrap(<DowntimeStView api={api} campaignId={5} toast={toast} />);
+    const card = await screen.findByTestId('phase-11');
+    await user.type(within(card).getByLabelText('What the player reads'), 'Long draft');
+    await user.click(within(card).getByRole('button', { name: 'Resolve' }));
+    await waitFor(() => expect(toast).toHaveBeenCalled());
+    expect(within(await screen.findByTestId('phase-11')).getByLabelText('What the player reads')).toHaveValue('Long draft');
+  });
+
+  test('difficulty range follows the edition and an empty difficulty cannot be saved', async () => {
+    const d = inbox();
+    d.phases[0].difficulty = null;
+    d.phases[0].ready = false;
+    const api = stApi({ 'GET /campaigns/5/downtime/inbox': () => ok(d) });
+    const { unmount } = wrap(<DowntimeStView api={api} campaignId={5} toast={toast} />);
+    let card = await screen.findByTestId('phase-11');
+    expect(within(card).getByRole('spinbutton', { name: /Difficulty/ })).toHaveAttribute('min', '2');
+    expect(within(card).getByRole('button', { name: 'Set and let them roll' })).toBeDisabled();
+    unmount();
+    wrap(<DowntimeStView api={api} campaignId={5} toast={toast} isV5 />);
+    card = await screen.findByTestId('phase-11');
+    expect(within(card).getByRole('spinbutton', { name: /Difficulty/ })).toHaveAttribute('min', '0');
+  });
+
+  test('deleting an indicator asks first; a cleared value cannot be saved', async () => {
+    const user = setupUser();
+    const api = stApi();
+    wrap(<DowntimeStView api={api} campaignId={5} toast={toast} />);
+    await user.click(await screen.findByRole('button', { name: 'Delete Progress' }));
+    expect(api).not.toHaveBeenCalledWith('/campaigns/5/downtime/indicators/21', { method: 'DELETE' });
+    expect(screen.getByText('Delete Progress? Its history stays.')).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Delete Progress' }));
+    expect(api).toHaveBeenCalledWith('/campaigns/5/downtime/indicators/21', { method: 'DELETE' });
+    await user.clear(screen.getByLabelText('Value of Masquerade'));
+    expect(screen.getByRole('button', { name: 'Save Masquerade' })).toBeDisabled();
+  });
+
+  test('a failed rounds call shows an error, not the open-round form', async () => {
+    const api = stApi({ 'GET /campaigns/5/downtime/rounds': () => fail(500, { code: 'server_error' }) });
+    wrap(<DowntimeStView api={api} campaignId={5} toast={toast} />);
+    expect(await screen.findByText('Downtime request failed. Try again.')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Open a round' })).toBeNull();
+  });
+
+  test('released cards show the Storyteller note', async () => {
+    const d = inbox({ round: { id: 3, title: 'Winter', status: 'released' } });
+    Object.assign(d.phases[0], { round_status: 'released', resolved: true, result_kind: 'result', result_text: 'Done.', st_note: 'Pay off later' });
+    wrap(<DowntimeStView api={stApi({ 'GET /campaigns/5/downtime/inbox': () => ok(d) })} campaignId={5} toast={toast} />);
+    expect(await screen.findByText('Your note: Pay off later')).toBeInTheDocument();
+  });
+});
+
+test('a hidden-difficulty roll shows no dice to the player', () => {
+  const data = playerData();
+  data.projects[0].phases = [phase({ ready: true, difficulty_hidden: true, status: 'rolled', roll: { id: 1, outcome_hidden: true } })];
+  wrap(<DowntimePlayerView api={jest.fn()} campaignId={5} isV5 data={data} reload={jest.fn()} toast={toast} />);
+  expect(screen.getByText('Rolled. The result shows when the round is released.')).toBeInTheDocument();
+  expect(screen.queryByText(/Dice:/)).toBeNull();
+});
+
+// Copied from backend/routes/downtime.py (every DowntimeError / code it can answer); keep in sync.
+const BACKEND_CODES = ('already_rolled campaign_not_found character_fallen character_suspended conflict difficulty_not_set '
+  + 'difficulty_required indicator_not_found invalid_deltas invalid_difficulty invalid_input invalid_location invalid_parent '
+  + 'invalid_result_kind invalid_status invalid_target name_taken no_open_round no_playing_character not_a_member phase_exists '
+  + 'phase_not_found phase_resolved pool_required pool_too_big project_closed project_not_found roll_refused round_already_live '
+  + 'round_locked round_not_found round_not_resolving round_released round_wrong_status server_error storyteller_only '
+  + 'too_many_deltas too_many_projects unresolved_phases value_out_of_range variable_not_found version_conflict version_required').split(' ');
+
+test('the frontend maps exactly the backend error codes', () => {
+  expect([...DOWNTIME_ERROR_CODES].sort()).toEqual([...BACKEND_CODES].sort());
 });
 
 describe('Greek', () => {

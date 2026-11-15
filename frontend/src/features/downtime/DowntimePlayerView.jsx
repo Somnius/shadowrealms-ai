@@ -41,6 +41,10 @@ export const roundStatusLabel = (s) =>
 
 function RollSummary({ roll }) {
   if (!roll) return null;
+  if (roll.outcome_hidden) {
+    // The server sends no faces while the difficulty is hidden (they would give the outcome away).
+    return <p className="sr-small sr-muted sr-downtime__roll">{t('downtime:roll.hidden', 'Rolled. The result shows when the round is released.')}</p>;
+  }
   const faces = roll.normal_dice && roll.normal_dice.length ? roll.normal_dice : roll.results || [];
   return (
     <div className="sr-small sr-downtime__roll">
@@ -48,15 +52,11 @@ function RollSummary({ roll }) {
       {roll.hunger_dice && roll.hunger_dice.length ? (
         <span>{t('downtime:roll.hunger', 'Hunger dice: {{faces}}', { faces: roll.hunger_dice.join(', ') })}</span>
       ) : null}
-      {roll.outcome_hidden ? (
-        <span className="sr-muted">{t('downtime:roll.hidden', 'The outcome shows when the round is released.')}</span>
-      ) : (
-        <span>
-          {t('downtime:roll.successes', { one: '{{count}} success', other: '{{count}} successes' }, { count: roll.successes ?? 0 })}
-          {roll.is_botch ? ` · ${t('downtime:roll.botch', 'Botch')}` : ''}
-          {roll.is_critical ? ` · ${t('downtime:roll.critical', 'Critical')}` : ''}
-        </span>
-      )}
+      <span>
+        {t('downtime:roll.successes', { one: '{{count}} success', other: '{{count}} successes' }, { count: roll.successes ?? 0 })}
+        {roll.is_botch ? ` · ${t('downtime:roll.botch', 'Botch')}` : ''}
+        {roll.is_critical ? ` · ${t('downtime:roll.critical', 'Critical')}` : ''}
+      </span>
     </div>
   );
 }
@@ -182,7 +182,7 @@ function NewProjectForm({ projects, busy, onCreate }) {
       <Textarea label={t('downtime:project.goal', 'Goal')} value={goal} rows={2} maxLength={2000} onChange={(e) => setGoal(e.target.value)} />
       {projects.length ? (
         <Select
-          label={t('downtime:project.parent', 'Part of (optional)')}
+          label={t('downtime:project.parent', 'Belongs to project (optional)')}
           value={parent}
           onChange={(e) => setParent(e.target.value)}
           options={[{ value: '', label: t('downtime:project.noParent', 'None') }, ...projects.map((p) => ({ value: String(p.id), label: p.title }))]}
@@ -206,7 +206,7 @@ const projectStatusLabel = (s) =>
 export { projectStatusLabel };
 
 /** The player's side: own projects (flat, parent as a breadcrumb), declare, roll, results. */
-export default function DowntimePlayerView({ api, campaignId, isV5, data, reload, toast }) {
+export default function DowntimePlayerView({ api, campaignId, isV5, data, reload, toast, title, embedded = false }) {
   const [busy, setBusy] = useState(null);
   const { round, can_play: canPlay, player_problem: problem, projects = [], character } = data;
 
@@ -216,7 +216,7 @@ export default function DowntimePlayerView({ api, campaignId, isV5, data, reload
     setBusy(null);
     if (!r.ok) {
       toast({ tone: 'danger', title: downtimeErrorText(r.data) });
-      if (r.status === 409) reload();
+      reload();
       return false;
     }
     if (okText) toast({ tone: 'ok', title: okText });
@@ -226,7 +226,7 @@ export default function DowntimePlayerView({ api, campaignId, isV5, data, reload
 
   return (
     <div className="sr-stack">
-      <RoundBanner round={round} />
+      {embedded ? null : <RoundBanner round={round} />}
       {!canPlay ? (
         <p className="sr-downtime__readonly" role="status">
           {problem ? downtimeErrorText({ code: problem }) : t('downtime:readOnly', 'You can read your projects but not act on them.')}
@@ -234,7 +234,7 @@ export default function DowntimePlayerView({ api, campaignId, isV5, data, reload
       ) : null}
       {character ? <p className="sr-muted sr-small">{t('downtime:character', 'Playing as {{name}}', { name: character.name })}</p> : null}
 
-      <Panel title={t('downtime:projects.title', 'Your projects')} icon="hourglass">
+      <Panel title={title || t('downtime:projects.title', 'Your projects')} icon="hourglass">
         {projects.length === 0 ? <p className="sr-muted">{t('downtime:projects.none', 'No projects yet.')}</p> : null}
         <ul className="sr-downtime__list">
           {projects.map((p) => {
@@ -243,7 +243,7 @@ export default function DowntimePlayerView({ api, campaignId, isV5, data, reload
             return (
               <li key={p.id} className="sr-downtime__project">
                 {p.parent_title ? (
-                  <nav className="sr-small sr-muted sr-downtime__crumb" aria-label={t('downtime:project.crumb', 'Part of')}>
+                  <nav className="sr-small sr-muted sr-downtime__crumb" aria-label={t('downtime:project.crumb', 'Belongs to project')}>
                     {p.parent_title} ›
                   </nav>
                 ) : null}

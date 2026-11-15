@@ -387,12 +387,13 @@ _PHASE_SELECT = """
 @downtime_bp.route("/campaigns/<int:campaign_id>/downtime", methods=["GET"])
 @_api
 def player_view(cursor, user_id, campaign_id):
-    _campaign(cursor, campaign_id)
+    camp = _campaign(cursor, campaign_id)
     is_st = is_campaign_storyteller_or_staff(cursor, user_id, campaign_id)
     ch, problem = _playing_character(cursor, user_id, campaign_id)
     live = _live_round(cursor, campaign_id)
     body = {
         "is_storyteller": is_st,
+        "rules_edition": edition_of(camp),
         "round": None,
         "character": None,
         "can_play": ch is not None and problem is None,
@@ -468,7 +469,11 @@ def _player_roll(row, phase):
     out, _mods = _roll_faces(row)
     hidden = _flag(phase.get("difficulty_hidden")) and phase.get("round_status") != "released"
     out["outcome_hidden"] = hidden
-    if not hidden:
+    if hidden:
+        # The faces would give the hidden difficulty and the outcome away (count the 6s).
+        for key in ("results", "normal_dice", "hunger_dice", "specialty_rerolls", "dice_pool"):
+            out.pop(key, None)
+    else:
         out["difficulty"] = row.get("difficulty")
         out["successes"] = row.get("successes")
         out["is_botch"] = bool(row.get("is_botch"))

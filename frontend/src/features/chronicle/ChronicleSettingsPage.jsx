@@ -463,9 +463,13 @@ export default function ChronicleSettingsPage() {
 
           {canManage ? <ChronicleVoicePanel campaignId={campaign.id} /> : null}
 
-          {canManage || staff ? (
+          {canManage || staff || listEntry ? (
             <Panel title={t('downtime:title', 'Downtime')} icon="hourglass">
-              <p className="sr-muted sr-small">{t('downtime:settingsCard', 'Rounds of between-session projects: players declare, you set difficulties, resolve and release.')}</p>
+              <p className="sr-muted sr-small">
+                {canManage || staff
+                  ? t('downtime:settingsCard', 'Rounds of between-session projects: players declare, you set difficulties, resolve and release.')
+                  : t('downtime:settingsCardPlayer', "Your character's projects between sessions: declare what you do, roll, and read the results.")}
+              </p>
               <ButtonLink to={`/chronicles/${campaign.id}/downtime`} variant="secondary" size="sm" icon="chevron-right">
                 {t('downtime:open', 'Open downtime')}
               </ButtonLink>

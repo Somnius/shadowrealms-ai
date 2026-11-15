@@ -25,7 +25,7 @@
   "roll": {
     "dice": "Dice: {{faces}}",
     "hunger": "Hunger dice: {{faces}}",
-    "hidden": "The outcome shows when the round is released.",
+    "hidden": "Rolled. The result shows when the round is released.",
     "successes_one": "{{count}} success",
     "successes_other": "{{count}} successes",
     "botch": "Botch",
@@ -53,10 +53,10 @@
   "project": {
     "title": "Title",
     "goal": "Goal",
-    "parent": "Part of (optional)",
+    "parent": "Belongs to project (optional)",
     "noParent": "None",
     "create": "Create project",
-    "crumb": "Part of",
+    "crumb": "Belongs to project",
     "new": "New project",
     "created": "Project created."
   },
@@ -104,7 +104,6 @@
     "releaseConfirm_one": "{{count}} phase has no result yet. Release anyway?",
     "releaseConfirm_other": "{{count}} phases have no result yet. Release anyway?",
     "releaseAnyway": "Release anyway",
-    "roundCounts": "{{phases}} phases, {{open}} without a result",
     "inbox": "Inbox",
     "round": "Round",
     "currentRound": "Current round",
@@ -123,7 +122,12 @@
     "showHistory": "Show history",
     "noHistory": "No changes yet.",
     "fromPhase": "from a phase",
-    "manual": "by hand"
+    "manual": "by hand",
+    "rangeV5": "0 to 10 successes",
+    "rangeClassic": "2 to 10",
+    "noteShown": "Your note: {{note}}",
+    "roundCounts_one": "{{count}} phase, {{open}} without a result",
+    "roundCounts_other": "{{count}} phases, {{open}} without a result"
   },
   "values": {
     "name": "Name",
@@ -133,7 +137,15 @@
     "save": "Save",
     "delete": "Delete",
     "saved": "Saved.",
-    "deleted": "Deleted."
+    "deleted": "Deleted.",
+    "newName": "New name in {{scope}}",
+    "newValue": "New value in {{scope}}",
+    "nameOf": "Name of {{name}}",
+    "valueOf": "Value of {{name}}",
+    "noteOf": "Note for {{name}}",
+    "confirmDelete": "Delete {{name}}? Its history stays.",
+    "deleteOf": "Delete {{name}}",
+    "saveOf": "Save {{name}}"
   },
   "cancel": "Cancel",
   "err": {
@@ -181,5 +193,8 @@
     "indicator_not_found": "Indicator not found.",
     "variable_not_found": "Variable not found.",
     "generic": "Something went wrong."
-  }
+  },
+  "settingsCardPlayer": "Your character's projects between sessions: declare what you do, roll, and read the results.",
+  "retry": "Try again",
+  "ownProjects": "Your own projects as a player"
 }
