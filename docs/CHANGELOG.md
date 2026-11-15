@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.32.0] - 2026-11-15 - Downtime rounds
+
+### Added
+- **Downtime rounds.** A Storyteller tool for what characters do between sessions, shaped with input from a long-time Storyteller. The Storyteller opens a round; each player declares one step per project and rolls it; the Storyteller closes the round to players, writes the results and releases them to everyone together. Open it from the hourglass button in the room list or the card in Chronicle settings. EN + EL.
+- **Projects and phases.** A player's projects belong to their playing character, with a goal and an optional parent project. Each round a project gets one phase: what the character does and one roll. The difficulty is set by the Storyteller and can be hidden, then the player sees only the dice until the round is released. Downtime rolls aren't posted in a room and can't be rerolled.
+- **Results.** For each phase the Storyteller picks a scene (optionally in a room), a result or feedback, writes the text and a private note. Phases declared but not rolled show as "no roll" and can still be resolved or skipped.
+- **Indicators and chronicle variables.** The Storyteller keeps numbers per project and for the whole chronicle (influence, heat, whatever the chronicle needs) and a result can move them; every change is logged. Players never see them.
+
+### Changed
+- The old downtime requests (text requests to change a locked sheet, reviewed by an admin) work as before.
+
 ## [0.31.2] - 2026-11-01 - Frontend dependency updates
 
 ### Changed

@@ -26,8 +26,8 @@ Out of scope is listed in section 14.
 |---|---|
 | Site admin (`admin`) | Everything below, plus the admin panel: users, bans, password resets, invites, downtime requests, moderation log, login audit and unlocks, AI roles and cloud keys, embeddings, classifier, voice and writer health, archives, Laya labelling, kill and revive of characters. May open any chronicle for support. May post any `role: assistant` message and `dice_*` message kinds. Only an admin may set a cloud model as a chronicle's writer. `/ai` commands other than `/ai explain` are admin only. |
 | Helper (`helper`) | Reads and edits any character sheet and its `wod_meta`, sees hidden rolls and closed rooms, adds members and sets playing characters in any chronicle, reads and exports the chronicle so far of chronicles they are a member of. Not an admin: every `/api/admin/*` route refuses a helper (`require_admin` checks `role == 'admin'`). Deletes only their own messages. |
-| Storyteller (chronicle creator) | Chronicle settings (listing, enrolment, creation rules, allowed books, voice defaults, chronicle language and chronicle-so-far settings), members and playing characters, closed rooms, hidden rolls, room dice rules, deletes any message in the chronicle, reads and writes the chronicle so far, edit copy, session marks, archives of their own deleted chronicles for 30 days. |
-| Player (`player`) | Joins listed chronicles, creates characters in the Forge, plays in open rooms with their playing character, rolls dice, uses `/roll`, `/me`, `/chat` and `/ai explain`, asks for downtime and saved-point spends, sets their own voice settings, deletes their own messages, sees "Previously on…". |
+| Storyteller (chronicle creator) | Chronicle settings (listing, enrolment, creation rules, allowed books, voice defaults, chronicle language and chronicle-so-far settings), members and playing characters, closed rooms, hidden rolls, room dice rules, deletes any message in the chronicle, reads and writes the chronicle so far, edit copy, session marks, archives of their own deleted chronicles for 30 days. Runs downtime rounds: opens a round, sets each phase's difficulty (optionally hidden), moves the round to resolving, writes results (scene, result or feedback) with Storyteller notes and indicator / chronicle variable changes, then releases the round; keeps project indicators and chronicle variables. Staff can do the same in any chronicle. |
+| Player (`player`) | Joins listed chronicles, creates characters in the Forge, plays in open rooms with their playing character, rolls dice, uses `/roll`, `/me`, `/chat` and `/ai explain`, in an open downtime round creates projects (optionally under a parent project of the same character), declares one phase per project per round and rolls it, sees results once the round is released; still sends downtime requests and saved-point spends, sets their own voice settings, deletes their own messages, sees "Previously on…". |
 
 "Staff" in this document means site admins and helpers. "Chronicle staff" means staff plus the chronicle's Storyteller.
 
@@ -45,7 +45,8 @@ Registration needs an invite code (`admin` or `player` type, with a use count) f
 - **The chronicle so far.** The chat written up as a story, one room and one night at a time, by a local model, with a player view and a Storyteller view, exports, a recap card and a private memory block for the Storyteller. See [docs/CHRONICLE.md](docs/CHRONICLE.md).
 - **Voice.** Listen (phone or server voices), speak (recorded clips transcribed on the server), read along, translation of lines into each player's language, and opt-in cloud voices. See [docs/VOICE.md](docs/VOICE.md).
 - **Forge.** Character creation per edition, with catalogs, a guided mode, a server-side check and per-chronicle creation rules. See [docs/CHARACTER_SHEET_BLOCKS.md](docs/CHARACTER_SHEET_BLOCKS.md).
-- **Downtime and saved points.** Changes to a locked sheet go through downtime requests resolved by an admin; unspent V5 Advantage dots and the free specialty are spent through spend requests approved by the Storyteller, staff, or a deterministic rule check.
+- **Downtime rounds.** Between sessions the Storyteller opens a round; players declare one phase per project and roll; the Storyteller resolves everything and releases all results together. Project indicators and chronicle variables are the Storyteller's private record.
+- **Downtime requests and saved points.** Changes to a locked sheet go through downtime requests resolved by an admin; unspent V5 Advantage dots and the free specialty are spent through spend requests approved by the Storyteller, staff, or a deterministic rule check.
 - **Moderation.** OOC monitoring with warnings and per-chronicle bans, site bans, play suspension, and admin kill and revive of characters with an AI-written or fixed death text.
 
 ## 4. Functional requirements
@@ -102,6 +103,10 @@ Each statement is meant to be checkable against the running system.
 - A character is created in the Forge for a chronicle's edition. Classic uses the Revised budgets (7/5/3, 13/9/5, virtues, freebies); V5 follows the corebook's order with clans, predator types, Disciplines, Advantages, Flaws, loresheets and supplement books picked from a catalog with descriptions in English and Greek.
 - V5 creation is checked on the server; the Storyteller can override the check. Creation rules and allowed books are set per chronicle in `creation_settings`.
 - A guided mode suggests a clan and predator type and fills Attributes and Skills from a few questions.
+- **Downtime rounds** (`/chronicles/:id/downtime`, the hourglass button in the room list; a link card in Chronicle settings). One non-released round per chronicle at a time. Status: `open` (players declare and roll) → `resolving` (players locked out with 409; the Storyteller can reopen) → `released` (results visible to players together; the next round can open). Declared but unrolled phases show to the Storyteller as "no roll" and can still be resolved or skipped.
+- **Downtime projects**: belong to the player's playing character (not fallen, not play-suspended); title, goal, optional parent project of the same character, status active, done or abandoned. The character name is stored, so a project stays readable if the character or account is deleted.
+- **Downtime phases**: one per project per round (unique). The player writes the action and rolls once (409 on a second roll; downtime rolls cannot be rerolled). The difficulty comes from the phase, set by the Storyteller; the client value is ignored. A hidden difficulty means the player sees only the dice faces until release (on Classic the success count is hidden too). Downtime rolls are not posted to a room. The Storyteller's result has a kind (scene, result, feedback), text, an optional scene room (named to the player only with access to that room) and a private note; edits use a version check (409 on conflict).
+- **Project indicators and chronicle variables**: named numbers the Storyteller keeps per project and per chronicle. Resolving a phase can change them by deltas; every change is logged (`downtime_changes`). Players never see indicators, variables, Storyteller notes or a hidden difficulty.
 - A sheet locks after creation. Later changes go through downtime requests (text requests reviewed by an admin, status pending, approved or rejected, with a reason on rejection) or, for saved V5 points, spend requests.
 - Spend requests are approved by the chronicle's creator or staff, or by a deterministic rule check when the chronicle's `st_mode` is `ai`; a spend that fails the check stays pending for a person. Approvals can be reversed.
 - Staff can edit any sheet and its `wod_meta`; owners can change their portrait, voice gender and voice pick on a locked sheet.
@@ -250,6 +255,7 @@ All under `/api`, JSON, JWT bearer auth unless noted. Rate limits per route are 
 | Events | `/campaigns/:id/events` | ticket, SSE stream, unread, roster |
 | Dice | `/campaigns/:id/roll`, `/rouse`, `/rolls` | roll, reroll, rouse, contested, ai, history, templates |
 | Characters | `/characters` | list, create, get, update, delete, sheet.pdf, assign, creation-override, downtime-requests |
+| Downtime rounds | `/campaigns/:id/downtime` | player view (get), projects (create), projects/:pid/phases (declare), phases/:phid/roll; Storyteller: rounds (list, create, resolve, reopen, release), inbox, phases/:phid/setup, phases/:phid/resolve, projects/:pid (edit), projects/:pid/indicators, indicators/:iid, variables (list, create, edit), changes |
 | Spend requests | `/characters/:id/spend-requests`, `/campaigns/:id/spend-requests` | create, list, resolve |
 | Rules catalog | `/rules/v5` | catalog, guided |
 | AI | `/ai` | health, status, llm/status, llm/test, chat, slash, slash/commands, world-building, memory/:campaign |
@@ -270,6 +276,7 @@ Main tables in `backend/init_postgresql_schema.sql` (PostgreSQL):
 | Chronicles | `campaigns`, `campaign_players`, `campaign_bans`, `campaign_activity`, `campaign_location_activity` |
 | Rooms | `locations`, `location_connections`, `location_reads`, `location_deletion_log`, `character_locations` |
 | Characters | `characters`, `character_downtime_requests`, `character_spend_requests`, `character_moderation`, `npcs`, `npc_messages`, `relationships` |
+| Downtime | `downtime_rounds`, `downtime_projects`, `downtime_phases`, `downtime_indicators`, `chronicle_variables`, `downtime_changes` |
 | Chat | `messages`, `message_translations` |
 | Dice | `dice_rolls`, `dice_roll_templates` |
 | AI | `ai_interactions`, `ai_memory`, `ai_reply_grants`, `ai_busy_marks`, `app_settings`, `laya_labels`, `laya_eval_reports`, `ooc_violations` |
@@ -305,6 +312,7 @@ Files on disk: `data/chronicle_archive/`, `data/voice/cache`, `data/voice/models
 - **Hunger, Rouse check, messy critical, bestial failure**: V5 dice terms.
 - **Botch, specialty, difficulty**: Classic dice terms.
 - **Forge**: the character creation flow.
+- **Downtime round / project / phase**: a between-sessions round, a character's long-running plan, and one step of it per round. **Indicator / chronicle variable**: the Storyteller's private numbers for a project or for the whole chronicle.
 - **Downtime request**: a text request to change a locked sheet. **Spend request**: spending saved V5 points.
 - **Ghoul / retainer**: a mortal bound to a vampire, with its own sheet under the domitor.
 - **The chronicle so far**: the written story of the chat; **night**: one room and one session of it; **era**: a digest of about 10 nights.

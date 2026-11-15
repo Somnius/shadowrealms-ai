@@ -9,6 +9,7 @@ Feature notes for ShadowRealms AI that don't have their own document. The full l
 
 ## Table of Contents
 
+1. [Downtime rounds (0.32)](#downtime-rounds-032)
 1. [What's new in v0.14.0](#whats-new-in-v0140)
 1. [What's new in v0.13.0](#whats-new-in-v0130)
 1. [What's new in v0.12.0](#whats-new-in-v0120)
@@ -24,6 +25,18 @@ Feature notes for ShadowRealms AI that don't have their own document. The full l
 8. [Invite Code System](#invite-code-system)
 
 ---
+
+## Downtime rounds (0.32)
+
+Open it from the hourglass button above the room list, or from the Downtime card in Chronicle settings.
+
+**For players.** When the Storyteller opens a round, add a project for your playing character: a title, the goal, and if you like a parent project it belongs to. Then declare this round's phase: what your character does. When the Storyteller has set the difficulty, roll. You get one roll per phase, with no reroll. If the difficulty is hidden you see only your dice until the round is released. Once the Storyteller closes the round you can't change anything; when it is released, every result appears together: a scene (maybe in a room), a result, or feedback.
+
+**For Storytellers.** Open a round and wait for the declarations. In the inbox, set each phase's difficulty (hide it if you like). When everyone has rolled, close the round to players, write each result with a private note, and move the project's indicators or the chronicle's variables if the result changes them. Phases with no roll can still be resolved or skipped. Release the round when you are done; then the next one can open. Players never see indicators, variables or your notes.
+
+**Για τους παίκτες.** Όταν ο Storyteller ανοίξει γύρο, φτιάξε ένα σχέδιο για τον χαρακτήρα σου: τίτλο, στόχο και, αν θες, ένα μεγαλύτερο σχέδιο στο οποίο ανήκει. Μετά δήλωσε τη φάση του γύρου, δηλαδή τι κάνει ο χαρακτήρας σου. Μόλις ο Storyteller ορίσει τη δυσκολία, ρίξε τα ζάρια. Έχεις μία ρίψη ανά φάση, χωρίς επανάληψη. Αν η δυσκολία είναι κρυφή, βλέπεις μόνο τα ζάρια σου μέχρι να δημοσιευτεί ο γύρος. Όταν ο Storyteller κλείσει τις δηλώσεις, δεν αλλάζεις τίποτα. Με τη δημοσίευση βγαίνουν όλα τα αποτελέσματα μαζί: μια σκηνή (ίσως σε κάποιο δωμάτιο), ένα αποτέλεσμα ή ένα σχόλιο.
+
+**Για τους Storytellers.** Άνοιξε γύρο και περίμενε τις δηλώσεις. Στα εισερχόμενα όρισε τη δυσκολία κάθε φάσης (και κρύψ' την αν θες). Όταν ρίξουν όλοι, κλείσε τις δηλώσεις, γράψε το αποτέλεσμα κάθε φάσης με μια ιδιωτική σημείωση και άλλαξε τους δείκτες του σχεδίου ή τις μεταβλητές του χρονικού, αν το αποτέλεσμα τις επηρεάζει. Φάσεις χωρίς ρίψη μπορείς να τις λύσεις ή να τις παραλείψεις. Όταν τελειώσεις, δημοσίευσε τον γύρο· μετά μπορεί να ανοίξει ο επόμενος. Οι παίκτες δεν βλέπουν ποτέ δείκτες, μεταβλητές ή τις σημειώσεις σου.
 
 ## What's new in v0.24.0
 
