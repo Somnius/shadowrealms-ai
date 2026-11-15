@@ -6,7 +6,7 @@ psutil>=5.9.0
 GPUtil>=1.4.0
 
 # NVIDIA GPU monitoring
-nvidia-ml-py>=11.525.84
+nvidia-ml-py>=11.525.150
 pynvml>=11.5.0
 
 # System monitoring
@@ -14,7 +14,7 @@ py-cpuinfo>=9.0.0
 
 # API and communication
 requests>=2.31.0
-fastapi>=0.104.0
+fastapi>=0.162.0
 uvicorn>=0.24.0
 
 # Data processing
@@ -27,3 +27,4 @@ loguru>=0.7.3
 
 # Health checks
 healthcheck>=1.0.0
+pydantic>=2.14.2  # GHSA-qpmf-fgh3-ff25, GHSA-3r8g-cqwr-jr29
