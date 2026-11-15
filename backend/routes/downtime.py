@@ -34,8 +34,11 @@ from flask_jwt_extended import get_jwt_identity, jwt_required
 from database import get_db
 from services.character_death import death_of
 from services.dice_chat import DicePostError
+from services.dice_rolls import json_field, perform_manual_roll
 from services.playing_character import is_campaign_storyteller_or_staff
-from services.request_validation import RequestValidationError, body_object, strict_int
+from services.request_validation import RequestValidationError, body_object, strict_bool, strict_int
+from services.rules_edition import V5
+from services.wod_dice import parse_pool_expression
 
 logger = logging.getLogger(__name__)
 
@@ -345,7 +348,7 @@ def _player_phase(ph, roll=None, room=None):
         "difficulty_hidden": hidden,
         "difficulty": None,
         "created_at": _ts(ph.get("created_at")),
-        "roll": None,
+        "roll": roll,
         "status": "rolled" if ph.get("dice_roll_id") else "declared",
         "result_kind": None,
         "result_text": None,
@@ -422,12 +425,47 @@ def player_view(cursor, user_id, campaign_id):
 
 
 def _rolls_by_id(cursor, ids):
-    """Placeholder until the phase roll lands: no downtime rolls yet."""
-    return {}
+    ids = sorted({int(i) for i in ids if i is not None})
+    if not ids:
+        return {}
+    marks = ", ".join(["%s"] * len(ids))
+    cursor.execute(f"SELECT * FROM dice_rolls WHERE id IN ({marks})", tuple(ids))
+    return {int(r["id"]): r for r in cursor.fetchall()}
+
+
+def _roll_faces(row):
+    mods = json_field(row.get("modifiers"), {})
+    mods = mods if isinstance(mods, dict) else {}
+    out = {
+        "id": row["id"],
+        "rules_edition": mods.get("rules_edition"),
+        "dice_pool": row.get("dice_pool"),
+        "results": json_field(row.get("results"), []),
+        "rolled_at": _ts(row.get("rolled_at")),
+    }
+    if mods.get("rules_edition") == V5:
+        out["normal_dice"] = mods.get("normal_dice") or []
+        out["hunger_dice"] = mods.get("hunger_dice") or []
+        out["hunger"] = mods.get("hunger")
+    else:
+        out["specialty_rerolls"] = mods.get("specialty_rerolls") or []
+    return out, mods
 
 
 def _player_roll(row, phase):
-    return None
+    """Dice faces always; difficulty and the outcome only when the difficulty isn't hidden, or once
+    the round is released (a Classic success count would give a hidden difficulty away)."""
+    if not row:
+        return None
+    out, _mods = _roll_faces(row)
+    hidden = _flag(phase.get("difficulty_hidden")) and phase.get("round_status") != "released"
+    out["outcome_hidden"] = hidden
+    if not hidden:
+        out["difficulty"] = row.get("difficulty")
+        out["successes"] = row.get("successes")
+        out["is_botch"] = bool(row.get("is_botch"))
+        out["is_critical"] = bool(row.get("is_critical"))
+    return out
 
 
 def _player_rooms(cursor, user_id, campaign_id, phase_rows):
@@ -521,3 +559,62 @@ def declare_phase(cursor, user_id, campaign_id, project_id):
     phid = cursor.fetchone()["id"]
     cursor.execute(_PHASE_SELECT + " WHERE ph.id = %s", (phid,))
     return {"phase": _player_phase(cursor.fetchone())}, 201
+
+
+@downtime_bp.route("/campaigns/<int:campaign_id>/downtime/phases/<int:phase_id>/roll", methods=["POST"])
+@_api
+def roll_phase(cursor, user_id, campaign_id, phase_id):
+    ch = _require_player(cursor, user_id, campaign_id)
+    data = _body()
+    pool_expression = data.get("pool_expression")
+    if pool_expression is not None and not isinstance(pool_expression, str):
+        raise DowntimeError("invalid_input", "pool_expression must be text")
+    pool_expression = (pool_expression or "").strip() or None
+    if pool_expression:
+        pool_size = parse_pool_expression(pool_expression)
+    else:
+        pool_size = strict_int(data.get("pool_size"), "pool_size")
+        if not pool_size or pool_size < 1:
+            raise DowntimeError("pool_required", "pool_size must be at least 1 (or send pool_expression)")
+    if pool_size > 50:
+        raise DowntimeError("pool_too_big", "pool_size must be at most 50", max=50)
+    hunger = strict_int(data.get("hunger"), "hunger")
+    if hunger is not None and not 0 <= hunger <= 5:
+        raise DowntimeError("invalid_hunger", "hunger must be between 0 and 5")
+    specialty = strict_bool(data.get("specialty"), "specialty")
+    willpower = strict_bool(data.get("willpower"), "willpower")
+
+    cursor.execute(
+        "SELECT ph.round_id FROM downtime_phases ph JOIN downtime_projects p ON p.id = ph.project_id "
+        "WHERE ph.id = %s AND p.campaign_id = %s AND p.character_id = %s",
+        (phase_id, campaign_id, ch["id"]),
+    )
+    found = cursor.fetchone()
+    if not found:
+        raise DowntimeError("phase_not_found", "Phase not found", 404)
+    rnd = _locked_round(cursor, campaign_id, found["round_id"])
+    if rnd["status"] != "open":
+        raise DowntimeError("round_locked", "The Storyteller is resolving this round", 409)
+    cursor.execute("SELECT * FROM downtime_phases WHERE id = %s" + _for_update(), (phase_id,))
+    phase = cursor.fetchone()
+    if phase.get("dice_roll_id") is not None:
+        raise DowntimeError("already_rolled", "This phase has already been rolled", 409)
+
+    out = perform_manual_roll(
+        cursor, user_id, campaign_id,
+        pool_size=pool_size, pool_expression=pool_expression,
+        difficulty_arg=phase.get("difficulty"), character_id=ch["id"], location_id=None,
+        hunger_arg=hunger, specialty_arg=specialty, willpower_arg=willpower,
+        action_description=(phase["action"] or "Downtime")[:200], roll_type="downtime",
+    )
+    cursor.execute(
+        "UPDATE downtime_phases SET dice_roll_id = %s, version = version + 1, updated_at = %s "
+        "WHERE id = %s AND dice_roll_id IS NULL",
+        (out["roll_id"], _now(), phase_id),
+    )
+    if cursor.rowcount != 1:
+        raise DowntimeError("already_rolled", "This phase has already been rolled", 409)
+    cursor.execute(_PHASE_SELECT + " WHERE ph.id = %s", (phase_id,))
+    ph = cursor.fetchone()
+    rolls = _rolls_by_id(cursor, [out["roll_id"]])
+    return {"phase": _player_phase(ph, _player_roll(rolls.get(int(out["roll_id"])), ph))}, 200

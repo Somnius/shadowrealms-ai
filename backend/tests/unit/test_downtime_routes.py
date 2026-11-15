@@ -140,3 +140,90 @@ def test_player_sees_only_own_projects(dt):
     assert [p["title"] for p in view["projects"]] == ["Buy the old theatre"]
     assert len(view["projects"][0]["phases"]) == 1
     assert "Bob's secret plan" not in dt.get("/campaigns/10/downtime", 3).get_data(as_text=True)
+
+
+# ---------------------------------------------------------------- phase roll
+
+
+def _roll(dt, phid, uid=3, cid=10, **body):
+    return dt.post(f"/campaigns/{cid}/downtime/phases/{phid}/roll", uid, body or {"pool_size": 5})
+
+
+def test_roll_saves_a_downtime_roll_with_the_phase_difficulty(dt):
+    dt.open_round()
+    ph = dt.declare(dt.project()["id"])
+    dt.sql("UPDATE downtime_phases SET difficulty = 8 WHERE id = ?", (ph["id"],))
+    out = dt.ok(_roll(dt, ph["id"], pool_size=4, difficulty=3))["phase"]
+    assert out["status"] == "rolled"
+    roll = out["roll"]
+    assert roll["difficulty"] == 8 and roll["outcome_hidden"] is False
+    assert len(roll["results"]) >= 4 and "successes" in roll
+    row = dt.sql("SELECT roll_type, difficulty, location_id, character_id, dice_pool FROM dice_rolls")
+    assert row == [("downtime", 8, None, 100, 4)]
+    assert dt.sql("SELECT dice_roll_id, version FROM downtime_phases")[0] == (roll["id"], 2)
+
+
+def test_roll_uses_the_edition_default_when_unset(dt):
+    dt.open_round(cid=11)
+    ph = dt.declare(dt.project(cid=11)["id"], cid=11)
+    roll = dt.ok(_roll(dt, ph["id"], cid=11, pool_expression="3+1"))["phase"]["roll"]
+    assert roll["rules_edition"] == "v5" and roll["difficulty"] == 1
+    assert len(roll["normal_dice"]) + len(roll["hunger_dice"]) == 4
+
+
+def test_second_roll_is_409_and_nothing_saved(dt):
+    dt.open_round()
+    ph = dt.declare(dt.project()["id"])
+    dt.ok(_roll(dt, ph["id"]))
+    r = _roll(dt, ph["id"])
+    assert r.status_code == 409 and r.get_json()["code"] == "already_rolled"
+    assert dt.sql("SELECT COUNT(*) FROM dice_rolls")[0][0] == 1
+
+
+def test_roll_only_own_phase_and_only_while_open(dt):
+    rnd = dt.open_round()
+    ph = dt.declare(dt.project()["id"])
+    r = _roll(dt, ph["id"], uid=4)
+    assert r.status_code == 404 and r.get_json()["code"] == "phase_not_found"
+    r = _roll(dt, ph["id"], uid=2)
+    assert r.status_code == 403
+    dt.post(f"/campaigns/10/downtime/rounds/{rnd['id']}/resolve", 2)
+    r = _roll(dt, ph["id"])
+    assert r.status_code == 409 and r.get_json()["code"] == "round_locked"
+    assert dt.sql("SELECT COUNT(*) FROM dice_rolls")[0][0] == 0
+
+
+@pytest.mark.parametrize("body,code", [
+    ({}, "pool_required"), ({"pool_size": 51}, "pool_too_big"), ({"pool_size": 3, "hunger": 6}, "invalid_hunger"),
+    ({"pool_expression": "x"}, "invalid_input"), ({"pool_size": True}, "invalid_input"),
+])
+def test_roll_input_refusals(dt, body, code):
+    dt.open_round()
+    ph = dt.declare(dt.project()["id"])
+    r = dt.post(f"/campaigns/10/downtime/phases/{ph['id']}/roll", 3, body)
+    assert r.status_code == 400 and r.get_json()["code"] == code
+
+
+def test_hidden_difficulty_gives_faces_only(dt):
+    dt.open_round()
+    ph = dt.declare(dt.project()["id"])
+    dt.sql("UPDATE downtime_phases SET difficulty = 9, difficulty_hidden = 1 WHERE id = ?", (ph["id"],))
+    out = dt.ok(_roll(dt, ph["id"], pool_size=6))["phase"]
+    assert out["difficulty"] is None and out["difficulty_hidden"] is True
+    roll = out["roll"]
+    assert roll["outcome_hidden"] is True and len(roll["results"]) >= 6
+    for key in ("difficulty", "successes", "is_botch", "is_critical"):
+        assert key not in roll
+    view = dt.ok(dt.get("/campaigns/10/downtime", 3))
+    shown = view["projects"][0]["phases"][0]
+    assert shown["difficulty"] is None and "successes" not in shown["roll"]
+
+
+def test_downtime_roll_cannot_be_willpower_rerolled(dt):
+    dt.open_round(cid=11)
+    ph = dt.declare(dt.project(cid=11)["id"], cid=11)
+    roll = dt.ok(_roll(dt, ph["id"], cid=11, pool_size=5))["phase"]["roll"]
+    r = dt.post(f"/campaigns/11/roll/{roll['id']}/reroll", 3, {"indices": [0], "location_id": 52})
+    assert r.status_code == 400 and r.get_json()["error"] == "Only V5 manual rolls can be rerolled"
+    assert dt.sql("SELECT COUNT(*) FROM dice_rolls")[0][0] == 1
+    assert '"rerolled": false' in dt.sql("SELECT modifiers FROM dice_rolls")[0][0]
