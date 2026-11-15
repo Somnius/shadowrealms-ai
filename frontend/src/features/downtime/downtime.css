@@ -19,3 +19,7 @@
 @media (max-width: 600px) {
   .sr-app .sr-downtime .sr-row--end { flex-direction: column; align-items: stretch; }
 }
+/* Browser check 2026-11-15: project cards rendered without inner padding, kind badges stretched. */
+.sr-app ul.sr-downtime__list > li.sr-downtime__project { padding: var(--sr-space-3); }
+.sr-app .sr-downtime__result > .sr-badge,
+.sr-app .sr-downtime__result > span:first-child { align-self: flex-start; }
