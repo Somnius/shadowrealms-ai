@@ -52,6 +52,7 @@ Started 2026-10-18. One release per phase, same rules as [ROADMAP_CHRONICLE.md](
 - [ ] A live nightly run on a test chronicle, watched once at the quiet hour.
 - [ ] Site screenshots from a test chronicle (chronicle so far, Previously on…).
 - [ ] The voice-showcase trailer (0.16–0.22).
+- [ ] Next revision, maybe: downtime as a Storyteller tool. Projects under a parent goal, options offered to the player, rolls and rule references, the setting's changing variables, a city whose factions and rivals act too, the Storyteller steps in, and a log sent to the Storyteller (who can review downtime, not only admins). Notes in data/local-keep/notes/downtime-ideas-2026-11-15.md.
 - [ ] Maybe: OpenRouter as a third cloud provider (free models for small jobs or as a backup; needs a Greek test first).
 - [x] An admin page that calls kill and shows the death text: phase 3.
 - [ ] `/ai help` and the permission replies in Greek.
