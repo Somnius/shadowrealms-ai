@@ -82,6 +82,7 @@ def create_app(config_class=Config):
     from routes.voice import voice_bp; app.register_blueprint(voice_bp, url_prefix='/api')  # voice (0.16)
     from routes.laya_eval import laya_eval_bp; app.register_blueprint(laya_eval_bp)  # admin: Laya labels + evaluation
     from routes.chronicle import chronicle_bp; app.register_blueprint(chronicle_bp, url_prefix='/api')  # the chronicle so far (0.24)
+    from routes.downtime import downtime_bp; app.register_blueprint(downtime_bp, url_prefix='/api')  # downtime rounds (0.32)
     
     # Version endpoint
     @app.route('/api/version')
