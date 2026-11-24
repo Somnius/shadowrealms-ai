@@ -1,12 +1,12 @@
 # Versions as measured in Phase 0 (docs/VOICE.md).
-fastapi==0.143.3
+fastapi==0.162.0
 uvicorn==0.54.0
 python-multipart==0.0.32
 piper-tts==1.8.0
-onnxruntime==1.31.0
+onnxruntime==1.31.1
 pocket-tts==3.3.0
 scipy==1.18.1
 faster-whisper==1.2.1
-ctranslate2==4.8.3
+ctranslate2==4.8.4
 av==15.1.0
 tokenizers==0.23.3
