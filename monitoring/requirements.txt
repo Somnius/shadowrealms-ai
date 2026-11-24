@@ -6,7 +6,7 @@ psutil>=5.9.0
 GPUtil>=1.4.0
 
 # NVIDIA GPU monitoring
-nvidia-ml-py>=11.525.84
+nvidia-ml-py>=11.525.150
 pynvml>=11.5.0
 
 # System monitoring
